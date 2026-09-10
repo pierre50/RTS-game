@@ -5,6 +5,7 @@ import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedba
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import { initializeUnitCorpseLootEquipment } from '../../lib/equipment/equipmentLoot'
+import { addUnitCorpseLootResources } from '../../lib/equipment/unitCorpseLoot'
 import { getEntityHitPointsText } from '../../lib/entities/entityHealthDisplay'
 import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import { clearSleepingVisualState } from '../../services/rest/UnitSleepVisuals'
@@ -97,6 +98,7 @@ export class UnitLifecycle {
     unit.action = null
     unit.isDead = true
     initializeUnitCorpseLootEquipment(unit)
+    addUnitCorpseLootResources(unit)
     unit.removeHealthBar?.()
     unit.context?.map.removeFromInstanceBucket(unit)
     unit.unselect?.()

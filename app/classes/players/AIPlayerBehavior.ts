@@ -1,3 +1,4 @@
+import { getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
 import { canAfford } from '../../lib/accounting'
 import { getPositionInGridAroundInstance } from '../../lib/grid/placement'
 import { getClosestInstance } from '../../lib/grid/queries'
@@ -9,6 +10,7 @@ import type { EnemyMemory } from '../../ai/AIThreatManager'
 import type { AIAge, AIBuildingLike, AIEntityLike } from '../../ai/types'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
+import type { BuildingConfig } from '../../types/config'
 import type { PlayerLike } from '../../types/player'
 
 const CHIEF_FORUM_GUARD_RANGE = 8
@@ -17,7 +19,7 @@ const CHIEF_HERO_TALK_RANGE = 2.5
 type AIPlayerBehaviorHost = {
   age: AIAge
   config: {
-    buildings: Record<string, { cost?: unknown }>
+    buildings: Record<string, BuildingConfig>
   }
   context: {
     controls?: { heroUnit?: UnitEntity | null }
@@ -38,7 +40,6 @@ type AIPlayerBehaviorHost = {
   chiefLossDetectedAt: number | null
   chiefWanderReadyAt: Map<string, number>
   strategy: {
-    getAgeUpReserve(): unknown
     canSpendWithReserve(cost: Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>, reserve: unknown): boolean
   }
   buildingsByTypes(types: string[]): AIBuildingLike[]
@@ -91,9 +92,8 @@ export function createAIUnitExtraOptions(ai: AIPlayerBehaviorHost, type: string,
       const buildingType =
         target.type === RESOURCE_TYPES.berrybush || target.isDead ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
       const buildings = ai.buildingsByTypes([buildingType])
-      const reserve = ai.strategy.getAgeUpReserve()
-      const cost = ai.config.buildings[buildingType].cost as Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>
-      if (!canAfford(ai as Parameters<typeof canAfford>[0], cost) || !ai.strategy.canSpendWithReserve(cost, reserve)) {
+      const cost = getPlayerBuildingConfig(ai, buildingType)?.cost as Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>
+      if (!canAfford(ai as Parameters<typeof canAfford>[0], cost) || !ai.strategy.canSpendWithReserve(cost, {})) {
         return
       }
       if (!ai.hasNotReachBuildingLimit(buildingType, buildings)) return

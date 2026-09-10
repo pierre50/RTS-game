@@ -1,8 +1,7 @@
 import { Modal } from '../lib'
 import { getIconPath } from '../lib/graphics/assets'
-import { formatEquipmentLootLabel } from '../lib/equipment/equipmentLoot'
 import {
-  HERO_CRAFT_RECIPES,
+  getAvailableHeroCraftRecipes,
   canCraftHeroRecipe,
   craftHeroRecipe,
   getMissingCraftResources,
@@ -20,31 +19,34 @@ import {
   isHeroToolAvailable,
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
-import { getReservedGameplayHotkeys } from '../lib/audio/settings'
+import { AGE_PROGRESSION, getAgeObjectiveTooltip, isAgeObjectiveComplete } from '../lib/objectives/ageObjectives'
 import { ModalTabs } from './Tabs'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
+import { renderMinimapResourcePanel } from './minimap/MinimapResourcePanel'
 import {
   renderInventoryEquippedEquipment,
   renderInventoryLootedEquipment,
 } from './inventory/InventoryEquipmentRenderer'
+import { appendInventoryEmptyIcon, createInventoryActionRow } from './inventory/InventoryActionRow'
+import { createInventoryEquipmentIcon } from './inventory/InventoryItemIcons'
+import { createEquipmentRowInfo } from './inventory/InventoryTooltips'
 import { renderEquipmentAvatarLazy } from './equipment/EquipmentAvatar'
 import { renderBuildingAvatar } from '../lib/avatar'
-import type { RuntimeEntity } from '../types/entities'
 import type { ResourceAmount } from '../types/common'
 import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'
 
-type ActionMenuTab = 'info' | 'tools' | 'craft' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
+type ActionMenuTab = 'info' | 'tools' | 'craft' | 'progression' | 'minimap' | 'worldmap' | 'construction'
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
   sword: 'heroToolSword',
   bow: 'heroToolBow',
 }
-const FIRST_TECHNOLOGY_OBJECTIVES = ['Farming', 'BowCrafting', 'Village']
-const AGE_TECHNOLOGY_OBJECTIVES = ['ToolAge']
+
+const FREE_HAND_ICON = '003_50721'
 
 export class InventoryManager {
   menu: MenuHost
@@ -56,12 +58,13 @@ export class InventoryManager {
   worldMapPanel: HTMLDivElement
   craftPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
-  technologiesPanel: HTMLDivElement
+  progressionPanel: HTMLDivElement
   weaponPanel: HTMLDivElement
   equippedPanel: HTMLDivElement
   lootedEquipmentPanel: HTMLDivElement
   minimapLayout: HTMLDivElement
   minimapLegend: HTMLDivElement
+  minimapResources: HTMLDivElement
   slots: Map<HeroEquippedItem, HTMLButtonElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
@@ -92,8 +95,8 @@ export class InventoryManager {
     this.worldMapPanel.className = 'action-menu-page action-menu-worldmap-page'
     this.craftPanel = document.createElement('div')
     this.craftPanel.className = 'action-menu-page action-menu-craft-page'
-    this.technologiesPanel = document.createElement('div')
-    this.technologiesPanel.className = 'action-menu-page action-menu-technologies-page'
+    this.progressionPanel = document.createElement('div')
+    this.progressionPanel.className = 'action-menu-page action-menu-progression-page'
     this.constructionPanel = document.createElement('div')
     this.constructionPanel.className = 'action-menu-page action-menu-construction-page'
     this.weaponPanel = document.createElement('div')
@@ -106,13 +109,15 @@ export class InventoryManager {
     this.minimapLayout.className = 'minimap-panel-layout'
     this.minimapLegend = document.createElement('div')
     this.minimapLegend.className = 'minimap-legend'
+    this.minimapResources = document.createElement('div')
+    this.minimapResources.className = 'minimap-resources minimap-legend'
 
     this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
         { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
         { id: 'craft', label: t('inventoryTabCraft'), page: this.craftPanel },
-        { id: 'technologies', label: t('inventoryTabTechnologies'), page: this.technologiesPanel },
+        { id: 'progression', label: t('inventoryTabProgression'), page: this.progressionPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
         { id: 'worldmap', label: t('inventoryTabWorldmap'), page: this.worldMapPanel },
         { id: 'construction', label: t('inventoryTabConstruction'), page: this.constructionPanel },
@@ -125,34 +130,11 @@ export class InventoryManager {
     )
 
     this.toolsPanel.appendChild(this.weaponPanel)
-    for (const tool of HERO_TOOL_ORDER) {
-      const slot = document.createElement('button')
-      slot.type = 'button'
-      slot.className = 'inventory-slot ui-btn'
-      slot.addEventListener('click', () => this.selectTool(tool))
-
-      if (EQUIPPED_ITEM_WEAPON[tool]) {
-        const icon = document.createElement('canvas')
-        icon.className = 'unit-avatar-frame inventory-slot-icon'
-        icon.width = 64
-        icon.height = 64
-        slot.appendChild(icon)
-        this.toolIcons.set(tool, icon)
-      }
-
-      const label = document.createElement('div')
-      label.className = 'inventory-slot-label'
-      label.textContent = t(TOOL_LABEL_KEYS[tool])
-      slot.appendChild(label)
-
-      this.slots.set(tool, slot)
-      this.toolsPanel.appendChild(slot)
-    }
     this.toolsPanel.appendChild(this.equippedPanel)
     this.toolsPanel.appendChild(this.lootedEquipmentPanel)
 
     this.panel.appendChild(this.modalTabs.element)
-    this.minimapLayout.append(menu.minimapWrap, this.minimapLegend)
+    this.minimapLayout.append(menu.minimapWrap, this.minimapLegend, this.minimapResources)
     this.minimapPanel.appendChild(this.minimapLayout)
   }
 
@@ -211,13 +193,14 @@ export class InventoryManager {
       this.menu.activateMiniMap()
       this.menu.clearActionHotkeys()
       this.renderMinimapLegend()
+      this.renderMinimapResources()
       return
     }
 
     this.menu.deactivateMiniMap()
 
-    if (tab === 'technologies') {
-      this.renderTechnologies()
+    if (tab === 'progression') {
+      this.renderProgression()
     } else if (tab === 'craft') {
       this.renderCraft()
     } else if (tab === 'construction') {
@@ -250,21 +233,41 @@ export class InventoryManager {
     renderMinimapLegend(this.minimapLegend, this.menu.context.player)
   }
 
+  renderMinimapResources(): void {
+    renderMinimapResourcePanel(this.minimapResources, this.menu)
+  }
+
+  getActiveWeaponEquipment(tool: HeroEquippedItem): string | undefined {
+    const hero = this.menu.context.controls.heroUnit
+    if (tool === 'bow' && !hero?.inventory?.equipped?.arrow) return undefined
+    return getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0, hero)
+  }
+
+  isActiveWeaponAvailable(tool: HeroEquippedItem): boolean {
+    if (tool === 'interact') return true
+    return Boolean(
+      this.getActiveWeaponEquipment(tool) && isHeroToolAvailable(this.menu.context.controls.heroUnit, tool)
+    )
+  }
+
   renderToolIcons(): void {
     const { app } = this.menu.context
-    const hero = this.menu.context.controls.heroUnit
     for (const [tool, slot] of this.slots) {
-      const available = isHeroToolAvailable(hero, tool)
+      const available = this.isActiveWeaponAvailable(tool)
       slot.disabled = !available
+      slot.setAttribute('aria-disabled', String(!available))
       slot.classList.toggle('empty', !available && tool !== 'interact')
     }
     for (const [tool, canvas] of this.toolIcons) {
-      const equipment = getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0, hero)
+      const equipment = this.getActiveWeaponEquipment(tool)
       canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
       if (equipment) renderEquipmentAvatarLazy(app, equipment, canvas, 'inventory', this.menu.context.performance)
+      const info = equipment ? createEquipmentRowInfo(equipment) : undefined
 
-      const label = this.slots.get(tool)?.querySelector<HTMLDivElement>('.inventory-slot-label')
-      if (label) label.textContent = equipment ? formatEquipmentLootLabel(equipment) : t(TOOL_LABEL_KEYS[tool])
+      const description = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-description')
+      if (description) description.textContent = info?.title ?? ''
+      const meta = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-meta')
+      if (meta) meta.textContent = info?.meta ?? ''
     }
   }
 
@@ -278,11 +281,50 @@ export class InventoryManager {
 
   renderActiveWeapons(): void {
     this.weaponPanel.replaceChildren()
+    this.slots.clear()
+    this.toolIcons.clear()
 
     const title = document.createElement('div')
     title.className = 'inventory-loot-title'
     title.textContent = t('inventoryActiveWeapons')
     this.weaponPanel.appendChild(title)
+
+    const list = document.createElement('div')
+    list.className = 'inventory-loot-list'
+    for (const tool of HERO_TOOL_ORDER) {
+      const available = this.isActiveWeaponAvailable(tool)
+      const equipment = this.getActiveWeaponEquipment(tool)
+      const info = equipment ? createEquipmentRowInfo(equipment) : undefined
+      const { element, icon } = createInventoryActionRow(this.menu, {
+        id: `inventory-tool-${tool}`,
+        className: 'inventory-weapon-row',
+        disabled: !available,
+        title: t(TOOL_LABEL_KEYS[tool]),
+        description: info?.title ?? (tool === 'interact' ? '' : t('inventoryEmptySlot')),
+        meta: info?.meta,
+        onClick: () => this.selectTool(tool),
+      })
+      element.classList.toggle('empty', !available && tool !== 'interact')
+      if (EQUIPPED_ITEM_WEAPON[tool] && equipment) {
+        const canvas = document.createElement('canvas')
+        canvas.className = 'img'
+        canvas.width = 64
+        canvas.height = 64
+        icon.appendChild(canvas)
+        this.toolIcons.set(tool, canvas)
+      } else if (tool === 'interact') {
+        const image = document.createElement('img')
+        image.className = 'img'
+        image.src = getIconPath(FREE_HAND_ICON)
+        image.alt = ''
+        icon.appendChild(image)
+      } else {
+        appendInventoryEmptyIcon(icon)
+      }
+      this.slots.set(tool, element)
+      list.appendChild(element)
+    }
+    this.weaponPanel.appendChild(list)
   }
 
   renderTools(): void {
@@ -300,180 +342,70 @@ export class InventoryManager {
     return getInventoryConstructionButtons(this.menu)
   }
 
-  getTechnologyButtons(): MenuButtonSpec[] {
-    return this.menu.getHeroTechnologyButtons()
-  }
-
-  createTechnologyButton(selection: RuntimeEntity, button: MenuButtonSpec, hotkey: string | null): HTMLButtonElement {
-    const element = document.createElement('button')
-    const disabled = button.disabled?.() ?? false
-    const acquired = button.acquired?.() ?? false
-    element.type = 'button'
-    element.className = 'ui-btn ui-action-row'
-    element.classList.toggle('is-acquired', acquired)
-    element.setAttribute('aria-disabled', String(disabled))
-    element.setAttribute('aria-pressed', String(acquired))
-    element.id = button.id ? `inventory-tech-${button.id}` : ''
-
-    const icon = document.createElement('span')
-    icon.className = 'technology-menu-icon'
-    icon.appendChild(
-      this.menu.createActionIcon(typeof button.icon === 'function' ? button.icon() : (button.icon ?? ''))
-    )
-
-    const label = document.createElement('span')
-    label.className = 'technology-menu-label'
-    label.textContent = button.tooltip
-      ? typeof button.tooltip === 'function'
-        ? button.tooltip().title
-        : button.tooltip.title
-      : button.id || ''
-
-    const meta = document.createElement('span')
-    meta.className = 'technology-menu-meta'
-    const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
-    meta.textContent = tooltip?.meta?.filter(Boolean).join(' | ') || tooltip?.description || ''
-
-    if (hotkey) {
-      const badge = document.createElement('span')
-      badge.className = 'technology-menu-hotkey'
-      badge.textContent = hotkey.toUpperCase()
-      element.appendChild(badge)
-    }
-
-    element.appendChild(icon)
-    element.appendChild(label)
-    element.appendChild(meta)
-
-    if (button.tooltip) this.menu.menuTooltip.bind(element, button.tooltip)
-    element.addEventListener('pointerup', evt => {
-      if (button.disabled?.()) return
-      this.menu.playUiClick()
-      button.onClick?.(selection, evt)
-      this.renderTechnologies()
-    })
-    return element
-  }
-
-  createTechnologyObjectiveItem(button: MenuButtonSpec): HTMLDivElement {
+  createObjectiveItem(button: MenuButtonSpec): HTMLDivElement {
     const item = document.createElement('div')
     const acquired = button.acquired?.() ?? false
     const disabled = button.disabled?.() ?? false
-    item.className = 'technology-objective-row'
+    item.className = 'progression-objective-row'
     item.classList.toggle('is-acquired', acquired)
     item.classList.toggle('is-locked', !acquired && disabled)
-    item.id = button.id ? `inventory-tech-${button.id}` : ''
+    item.id = button.id ? `inventory-objective-${button.id}` : ''
 
     const label = document.createElement('span')
-    label.className = 'technology-objective-label'
+    label.className = 'progression-objective-label'
     const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
     label.textContent = tooltip?.title || button.id || ''
 
     const status = document.createElement('span')
-    status.className = 'technology-objective-status'
-    status.textContent = acquired ? t('technologyObjectiveDone') : t('technologyObjectiveTodo')
+    status.className = 'progression-objective-status'
+    status.textContent = acquired ? t('objectiveDone') : t('objectiveTodo')
 
     item.append(label, status)
     if (button.tooltip) this.menu.menuTooltip.bind(item, button.tooltip)
     return item
   }
 
-  createTechnologySection(
-    titleKey: string,
-    buttons: MenuButtonSpec[],
-    className = '',
-    contentClassName = 'technology-menu-list'
-  ): HTMLDivElement | null {
-    if (!buttons.length) return null
-    const section = document.createElement('div')
-    section.className = `technology-menu-section ${className}`.trim()
-
-    const title = document.createElement('div')
-    title.className = 'technology-menu-section-title'
-    title.textContent = t(titleKey)
-
-    const content = document.createElement('div')
-    content.className = contentClassName
-    section.append(title, content)
-    return section
+  createAgeMilestone(labelKey: string, icon: string, reached: boolean): HTMLDivElement {
+    const milestone = document.createElement('div')
+    milestone.className = 'progression-age'
+    milestone.appendChild(this.menu.createActionIcon(getIconPath(icon)))
+    const name = document.createElement('strong')
+    name.textContent = t(labelKey)
+    const status = document.createElement('span')
+    status.className = 'progression-objective-status'
+    status.textContent = t(reached ? 'progressionReached' : 'progressionUpcoming')
+    milestone.append(name, status)
+    return milestone
   }
 
-  appendTechnologyButton(
-    section: HTMLDivElement,
-    selection: RuntimeEntity,
-    button: MenuButtonSpec,
-    usedKeys: Set<string>
-  ): void {
-    const grid = section.querySelector('.technology-menu-grid')
-    if (!(grid instanceof HTMLElement)) return
-    const hotkey = button.disabled?.() ? null : this.menu.assignActionHotkey(button.id || '', usedKeys)
-    const element = this.createTechnologyButton(selection, button, hotkey)
-    grid.appendChild(element)
-    if (hotkey && typeof button.onClick === 'function') {
-      this.menu.setActionHotkey(hotkey, () => {
-        if (button.disabled?.()) return
-        this.menu.playUiClick()
-        button.onClick!(selection, null)
-        this.renderTechnologies()
-      })
-    }
-  }
-
-  appendTechnologyObjective(section: HTMLDivElement, button: MenuButtonSpec): void {
-    const list = section.querySelector('.technology-menu-list')
-    if (!(list instanceof HTMLElement)) return
-    list.appendChild(this.createTechnologyObjectiveItem(button))
-  }
-
-  renderTechnologies(): void {
-    const selection = this.menu.context.controls.heroUnit || this.menu.selection
-    this.technologiesPanel.textContent = ''
+  renderProgression(): void {
+    this.progressionPanel.textContent = ''
     this.menu.clearActionHotkeys()
-    if (!selection) return
-
-    const usedKeys = new Set<string>(getReservedGameplayHotkeys())
-    const buttons = this.getTechnologyButtons().filter(button => !button.hide || !button.hide())
-    const buttonsById = new Map(buttons.map(button => [button.id || '', button]))
-    const objectiveButtons = FIRST_TECHNOLOGY_OBJECTIVES.map(id => buttonsById.get(id)).filter(
-      (button): button is MenuButtonSpec => Boolean(button)
-    )
-    const ageButtons = AGE_TECHNOLOGY_OBJECTIVES.map(id => buttonsById.get(id)).filter(
-      (button): button is MenuButtonSpec => Boolean(button)
-    )
-    const highlightedIds = new Set([...FIRST_TECHNOLOGY_OBJECTIVES, ...AGE_TECHNOLOGY_OBJECTIVES])
-    const remainingButtons = buttons.filter(button => !highlightedIds.has(button.id || ''))
-    const sections = [
-      {
-        element: this.createTechnologySection('technologySectionFirstObjectives', objectiveButtons),
-        buttons: objectiveButtons,
-      },
-      {
-        element: this.createTechnologySection(
-          'technologySectionAgeAdvance',
-          ageButtons,
-          'technology-menu-section-age',
-          'technology-menu-grid'
-        ),
-        buttons: ageButtons,
-        action: 'button',
-      },
-      {
-        element: this.createTechnologySection('technologySectionOther', remainingButtons),
-        buttons: remainingButtons,
-      },
-    ].filter((section): section is { element: HTMLDivElement; buttons: MenuButtonSpec[]; action?: 'button' } =>
-      Boolean(section.element)
-    )
-
-    for (const { element: section, buttons: sectionButtons, action } of sections) {
-      this.technologiesPanel.appendChild(section)
-      for (const button of sectionButtons) {
-        if (action === 'button') {
-          this.appendTechnologyButton(section, selection, button, usedKeys)
-        } else {
-          this.appendTechnologyObjective(section, button)
-        }
+    const player = this.menu.context.player
+    this.progressionPanel.appendChild(this.createAgeMilestone('stoneAge', '065_50729', true))
+    for (const stage of AGE_PROGRESSION) {
+      const step = document.createElement('section')
+      step.className = 'progression-step'
+      step.classList.toggle('is-current', player.age === stage.age - 1)
+      step.classList.toggle('is-complete', player.age >= stage.age)
+      const heading = document.createElement('div')
+      heading.className = 'progression-section-title'
+      const completed = stage.objectives.filter(objective => isAgeObjectiveComplete(player, objective.id)).length
+      heading.textContent = stage.objectives.length
+        ? t('progressionObjectives', { completed, total: stage.objectives.length })
+        : t('progressionComingSoon')
+      step.appendChild(heading)
+      for (const objective of stage.objectives) {
+        step.appendChild(
+          this.createObjectiveItem({
+            id: objective.id,
+            tooltip: () => getAgeObjectiveTooltip(objective),
+            acquired: () => isAgeObjectiveComplete(player, objective.id),
+          })
+        )
       }
+      step.appendChild(this.createAgeMilestone(stage.labelKey, stage.icon, player.age >= stage.age))
+      this.progressionPanel.appendChild(step)
     }
   }
 
@@ -497,79 +429,66 @@ export class InventoryManager {
     const { app, player } = this.menu.context
     const hero = this.menu.context.controls.heroUnit
     const disabled = !hero || !canCraftHeroRecipe(player, recipe, hero)
-    const element = document.createElement('button')
-    element.type = 'button'
-    element.className = 'ui-btn ui-action-row inventory-craft-row'
-    element.disabled = disabled
-    element.setAttribute('aria-disabled', String(disabled))
-
-    const icon = document.createElement('span')
-    icon.className = 'technology-menu-icon inventory-craft-icon'
+    const { element, icon } = createInventoryActionRow(this.menu, {
+      id: `craft-${recipe.id}`,
+      className: 'inventory-craft-row',
+      disabled,
+      title: t(recipe.labelKey),
+      description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
+      meta: t('tooltipCost', { cost: this.formatResourceAmount(recipe.cost) }),
+      quantity: recipe.outputCount,
+      onClick: () => {
+        if (!hero) return
+        if (!craftHeroRecipe(player, hero, recipe)) {
+          this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
+          this.renderCraft()
+          return
+        }
+        this.menu.updateTopbar?.()
+        this.menu.showMessage(
+          t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount }),
+          'success'
+        )
+        this.renderCraft()
+      },
+    })
     const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
     if (recipe.iconResource) {
       const resourceIcon = document.createElement('img')
-      resourceIcon.className = 'inventory-slot-icon'
+      resourceIcon.className = 'img inventory-resource-icon'
       resourceIcon.src = getIconPath(RESOURCE_ICON_IDS[recipe.iconResource].commodity)
       resourceIcon.alt = ''
       icon.appendChild(resourceIcon)
     } else {
-      const canvas = document.createElement('canvas')
-      canvas.className = 'unit-avatar-frame inventory-slot-icon'
-      canvas.width = 64
-      canvas.height = 64
       if (placeableBuildingType) {
+        const img = document.createElement('img')
+        img.className = 'img'
+        img.alt = ''
+        const canvas = document.createElement('canvas')
+        canvas.width = 120
+        canvas.height = 120
         renderBuildingAvatar(app, placeableBuildingType, player, canvas)
+        img.src = canvas.toDataURL()
+        icon.appendChild(img)
       } else {
-        renderEquipmentAvatarLazy(app, recipe.outputEquipment, canvas, 'craft', this.menu.context.performance)
+        icon.appendChild(createInventoryEquipmentIcon(this.menu.context, recipe.outputEquipment, 'craft'))
       }
-      icon.appendChild(canvas)
     }
-
-    const label = document.createElement('span')
-    label.className = 'technology-menu-label'
-    label.textContent = t(recipe.labelKey)
-
-    const meta = document.createElement('span')
-    meta.className = 'technology-menu-meta'
-    meta.textContent = t('craftRecipeMeta', {
-      count: recipe.outputCount,
-      cost: this.formatResourceAmount(recipe.cost),
-    })
-
-    element.appendChild(icon)
-    element.appendChild(label)
-    element.appendChild(meta)
-    this.menu.menuTooltip.bind(element, {
-      title: t(recipe.labelKey),
-      description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
-      meta: [t('tooltipCost', { cost: this.formatResourceAmount(recipe.cost) })],
-    })
-    element.addEventListener('pointerup', evt => {
-      evt.preventDefault()
-      evt.stopPropagation()
-      if (!hero) return
-      if (!craftHeroRecipe(player, hero, recipe)) {
-        this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
-        this.renderCraft()
-        return
-      }
-      this.menu.playUiClick()
-      this.menu.updateTopbar?.()
-      this.menu.showMessage(t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount }), 'success')
-      this.renderCraft()
-    })
     return element
   }
 
   renderCraft(): void {
     this.craftPanel.textContent = ''
     this.menu.clearActionHotkeys()
-    for (const recipe of HERO_CRAFT_RECIPES) {
+    for (const recipe of getAvailableHeroCraftRecipes(this.menu.context.player)) {
       this.craftPanel.appendChild(this.createCraftButton(recipe))
     }
   }
 
-  syncTechnologyProgress(): void {}
+  syncObjectiveProgress(): void {
+    if (this.opened && this.activeTab === 'progression') this.renderProgression()
+    if (this.opened && this.activeTab === 'craft') this.renderCraft()
+  }
 
   renderConstruction(): void {
     renderInventoryConstruction(this)
@@ -589,10 +508,12 @@ export class InventoryManager {
     }
     if (this.activeTab === 'tools') this.renderLootedEquipment()
     if (this.activeTab === 'craft') this.renderCraft()
+    if (this.activeTab === 'minimap') this.renderMinimapResources()
   }
 
   refresh(): void {
     if (!this.opened) return
+    if (this.activeTab === 'construction') this.renderConstruction()
     if (this.activeTab === 'tools') this.renderTools()
     if (this.activeTab === 'info') this.renderInfo()
     if (this.activeTab === 'craft') this.renderCraft()

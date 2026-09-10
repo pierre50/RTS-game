@@ -12,7 +12,6 @@ import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 const BASE_CONVERSION_MIN_CHANTS = 3
 const BASE_CONVERSION_CHANCE = 0.3
-const ASTROLOGY_CONVERSION_CHANCE = 0.39
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -66,10 +65,7 @@ export class UnitConversionAction {
   }
 
   getConversionRules() {
-    const technologies = this.unit.owner?.technologies || []
-    return technologies.includes('Astrology')
-      ? { minChants: BASE_CONVERSION_MIN_CHANTS, chance: ASTROLOGY_CONVERSION_CHANCE }
-      : { minChants: BASE_CONVERSION_MIN_CHANTS, chance: BASE_CONVERSION_CHANCE }
+    return { minChants: BASE_CONVERSION_MIN_CHANTS, chance: BASE_CONVERSION_CHANCE }
   }
 
   convertTarget(target: RuntimeEntity, options: { grantXp?: boolean; stopConverter?: boolean } = {}): boolean {

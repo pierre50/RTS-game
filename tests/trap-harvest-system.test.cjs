@@ -6,10 +6,14 @@ const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 function loadTrapHarvestSystem() {
   const filename = path.join(__dirname, '../app/services/world/TrapHarvestSystem.ts')
   const overheadCalls = []
+  const soundCalls = []
   const module = requireFromTsFile(filename, filename, {
     '../constants': {
       BUILDING_TYPES: { trap: 'Trap' },
       SHEET_TYPES: { corpse: 'corpse' },
+    },
+    '../lib/audio/sound': {
+      playAudibleSoundCue: (...args) => soundCalls.push(args),
     },
     '../lib': {
       updateInstanceVisibility: animal => {
@@ -37,6 +41,7 @@ function loadTrapHarvestSystem() {
     },
   })
   module.__overheadCalls = overheadCalls
+  module.__soundCalls = soundCalls
   return module
 }
 
@@ -324,4 +329,25 @@ test('recovering a filled trap returns the trap and spawns a gatherable dead pre
   assert.equal(animal.type, 'Fox')
   assert.equal(animal.visibilityUpdated, true)
   assert.equal(trapCell.has, animal)
+})
+
+for (const filled of [false, true]) {
+  test(`recovering a ${filled ? 'filled' : 'empty'} trap plays its recovery sound once`, () => {
+    const { recoverTrapBuilding, __soundCalls } = loadTrapHarvestSystem()
+    const { hero, trap } = createContext()
+    if (filled) trap.containedAnimalType = 'Fox'
+    assert.equal(recoverTrapBuilding(hero, trap), true)
+    assert.deepEqual(__soundCalls, [[trap, 'building/trap-recover', { profile: 'surface' }]])
+    assert.equal(recoverTrapBuilding(hero, trap), false)
+    assert.equal(__soundCalls.length, 1)
+  })
+}
+
+test('failed trap recovery does not play a sound', () => {
+  const { recoverTrapBuilding, __soundCalls } = loadTrapHarvestSystem()
+  const { hero, trap } = createContext()
+  assert.equal(recoverTrapBuilding(null, trap), false)
+  trap.isBuilt = false
+  assert.equal(recoverTrapBuilding(hero, trap), false)
+  assert.equal(__soundCalls.length, 0)
 })

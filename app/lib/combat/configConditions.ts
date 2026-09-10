@@ -48,5 +48,5 @@ function conditionValuesEqual(value: ConfigValue, expectedValue: ConfigValue): b
 }
 
 function isOptionalDiscoveryKey(key: string): boolean {
-  return key === 'discoveredEquipment' || key === 'discoveredResources'
+  return key === 'discoveredEquipment' || key === 'completedObjectives'
 }

@@ -140,7 +140,7 @@ test('a nearby villager interrupts idle behavior immediately', () => {
   assert.deepEqual(calls, [['reaction', 'villager-1']])
 })
 
-test('a tamed horse does not flee from a nearby villager', () => {
+test('a tamed horse keeps walking around a nearby villager without fleeing', () => {
   const villager = { label: 'villager-1', family: 'unit', type: 'Villager', distance: 2 }
   const { behavior, calls, alertCalls } = createBehavior({
     nearby: [villager],
@@ -155,6 +155,7 @@ test('a tamed horse does not flee from a nearby villager', () => {
     calls.some(call => call[0] === 'reaction'),
     false
   )
+  assert.deepEqual(calls, [['sendTo', 4, 5]])
 })
 
 test('an idle animal occasionally walks to a nearby free cell', () => {

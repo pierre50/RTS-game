@@ -30,6 +30,7 @@ const constants = {
     minecopper: 'minecopper',
     mineiron: 'mineiron',
     takemeat: 'takemeat',
+    hunt: 'hunt',
     build: 'build',
     farm: 'farm',
     captureHorse: 'captureHorse',
@@ -70,6 +71,19 @@ const constants = {
 
 function loadVillagerAutonomy() {
   return loadModule('app/lib/units/villagerAutonomy.ts', {
+    '../playerTargetKnowledge': {
+      rememberedStaticTargets: () => [],
+      playerSeesTarget: (owner, target) => owner.views.isViewed(target.i, target.j),
+      knownTarget: (owner, target) =>
+        owner.views.isViewed(target.i, target.j)
+          ? {
+              ...target,
+              mature: Boolean(
+                target.sprite?.textures?.length && target.sprite.currentFrame >= target.sprite.textures.length - 1
+              ),
+            }
+          : undefined,
+    },
     '../constants': constants,
     '../combat': {
       isWheatMature: target => {
@@ -93,9 +107,6 @@ function loadVillagerAutonomy() {
             !building.isDestroyed &&
             (building.stableHorses?.length ?? 0) < 5
         ) ?? null,
-    },
-    '../resources/ironMining': {
-      canOwnerMineIron: owner => (owner?.age ?? 0) >= 2,
     },
   })
 }
@@ -142,6 +153,11 @@ function createVillager(owner, extra = {}) {
       this.work = constants.WORK_TYPES.hunter
       this.action = constants.ACTION_TYPES.takemeat
     },
+    sendToHunt(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.hunter
+      this.action = constants.ACTION_TYPES.hunt
+    },
     sendToCaptureHorse(target) {
       this.dest = target
       this.work = constants.WORK_TYPES.horseCapture
@@ -178,6 +194,71 @@ function createVillager(owner, extra = {}) {
   owner.units.push(villager)
   return villager
 }
+
+test('food hunts known living game immediately and switches to meat after the kill', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const deer = { type: 'Deer', family: 'animal', label: 'deer', i: 3, j: 3, hitPoints: 12, quantity: 20 }
+  const owner = createOwner({ technologies: [] })
+  const unit = createVillager(owner, { context: { map: { gaia: { animals: [deer] } } } })
+  assert.equal(hasVillagerAutonomyTarget(unit, 'food'), true)
+  assert.equal(assignVillagerAutonomy(unit, 'food'), true)
+  assert.equal(unit.action, 'hunt')
+  assert.equal(unit.dest, deer)
+  assert.equal(unit.autonomousJob, 'food')
+  deer.isDead = true
+  deer.hitPoints = 0
+  assert.equal(assignVillagerAutonomy(unit, 'food'), true)
+  assert.equal(unit.action, 'takemeat')
+  assert.equal(unit.dest, deer)
+})
+
+test('autonomous hunting excludes horses, captured companions and unavailable or unknown game', () => {
+  const { hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  for (const patch of [
+    { type: 'Horse' },
+    { companionOwner: {} },
+    { isCatchingPoleCaught: true },
+    { isDestroyed: true },
+    { quantity: 0 },
+    { hitPoints: 0 },
+  ]) {
+    const animal = { type: 'Deer', family: 'animal', i: 1, j: 1, hitPoints: 10, quantity: 10, ...patch }
+    const owner = createOwner({ technologies: ['BowCrafting'], foundedAnimals: new Set([animal]) })
+    assert.equal(hasVillagerAutonomyTarget(createVillager(owner), 'food'), false, JSON.stringify(patch))
+  }
+  const owner = createOwner({ technologies: ['BowCrafting'], views: { isViewed: () => false } })
+  const unit = createVillager(owner, {
+    context: {
+      map: {
+        gaia: {
+          animals: [{ type: 'Deer', family: 'animal', i: 1, j: 1, hitPoints: 10, quantity: 10, visible: false }],
+        },
+      },
+    },
+  })
+  assert.equal(hasVillagerAutonomyTarget(unit, 'food'), false)
+})
+
+test('Hunter keeps berries available and tries another animal when the first hunt order fails', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const deer = { type: 'Deer', family: 'animal', label: 'deer-1', i: 2, j: 2, hitPoints: 10, quantity: 10 }
+  const second = { ...deer, label: 'deer-2', i: 4 }
+  const owner = createOwner({ technologies: ['BowCrafting'], foundedAnimals: new Set([deer, second]) })
+  const unit = createVillager(owner, {
+    sendToHunt(target) {
+      if (target === deer) return false
+      this.dest = target
+      this.action = 'hunt'
+      this.work = 'hunter'
+    },
+  })
+  assert.equal(assignVillagerAutonomy(unit, 'food'), true)
+  assert.equal(unit.dest, second)
+  const berries = { type: 'Berrybush', family: 'resource', label: 'berries', i: 0, j: 0, hitPoints: 10, quantity: 10 }
+  owner.foundedBerrybushs.add(berries)
+  assert.equal(assignVillagerAutonomy(unit, 'food'), true)
+  assert.equal(unit.dest, berries)
+})
 
 test('copper and iron autonomy target only the requested ore and issue the matching mining action', () => {
   const { assignVillagerAutonomy } = loadVillagerAutonomy()
@@ -219,7 +300,7 @@ test('copper and iron autonomy target only the requested ore and issue the match
   assert.equal(ironMiner.autonomousJob, 'iron')
 })
 
-test('iron autonomy is unavailable before the bronze age', () => {
+test('iron autonomy is blocked until the Bronze Age', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const iron = {
     family: constants.FAMILY_TYPES.resource,
@@ -231,7 +312,7 @@ test('iron autonomy is unavailable before the bronze age', () => {
     type: constants.RESOURCE_TYPES.iron,
   }
   const owner = createOwner({
-    age: 1,
+    age: 0,
     foundedResources: {
       [constants.RESOURCE_TYPES.iron]: new Set([iron]),
     },
@@ -241,7 +322,11 @@ test('iron autonomy is unavailable before the bronze age', () => {
   assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), false)
   assert.equal(assignVillagerAutonomy(ironMiner, 'iron'), false)
   assert.equal(ironMiner.dest, null)
-  assert.equal(ironMiner.action, undefined)
+  owner.age = 2
+  assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), true)
+  assert.equal(assignVillagerAutonomy(ironMiner, 'iron'), true)
+  assert.equal(ironMiner.dest, iron)
+  assert.equal(ironMiner.action, constants.ACTION_TYPES.mineiron)
 })
 
 test('food autonomy treats wheat with an incoming farmer as occupied', () => {
@@ -404,7 +489,9 @@ test('horse capture autonomy refuses when no stable can store the horse', () => 
     type: 'Horse',
   }
   const owner = createOwner({
-    buildings: [{ type: 'Stable', isBuilt: true, isDead: false, isDestroyed: false, stableHorses: [{}, {}, {}, {}, {}] }],
+    buildings: [
+      { type: 'Stable', isBuilt: true, isDead: false, isDestroyed: false, stableHorses: [{}, {}, {}, {}, {}] },
+    ],
     foundedAnimals: new Set([horse]),
   })
   const villager = createVillager(owner)
@@ -429,7 +516,7 @@ test('construction autonomy does not explore when there is no construction targe
   assert.equal(hasVillagerAutonomyTarget(villager, 'construction'), false)
   assert.equal(assignVillagerAutonomy(villager, 'construction'), false)
   assert.equal(villager.explored, false)
-  assert.equal(villager.autonomousJob, null)
+  assert.equal(villager.autonomousJob, 'construction')
 })
 
 test('resource autonomy explores when the requested resource is unknown', () => {
@@ -598,7 +685,10 @@ test('resource autonomy scores real path length ahead of raw distance', () => {
     isDestroyed: false,
     j: 0,
     label: 'tree-far-short-path',
-    path: [{ i: 1, j: 1 }, { i: 2, j: 1 }],
+    path: [
+      { i: 1, j: 1 },
+      { i: 2, j: 1 },
+    ],
     quantity: 50,
     type: constants.RESOURCE_TYPES.tree,
   }
@@ -781,14 +871,61 @@ test('construction autonomy repairs own damaged completed buildings', () => {
   assert.equal(villager.action, constants.ACTION_TYPES.build)
 })
 
+test('runtime reconciliation resumes real food selection after restore and resource depletion', () => {
+  const autonomy = loadVillagerAutonomy()
+  const recovery = loadModule('app/lib/units/villagerTaskRecovery.ts', {
+    './villagerAutonomy': autonomy,
+    './villagerAutonomyTargeting': { getAutonomyJobForWork: () => null },
+  })
+  const { VillagerAutonomySystem } = loadModule('app/services/VillagerAutonomySystem.ts', {
+    '../constants': constants,
+    '../lib/units/villagerAutonomy': autonomy,
+    '../lib/units/villagerTaskRecovery': recovery,
+    '../lib/units/villagerAutonomyTargeting': { markVillagerAutonomyTargetRejected() {} },
+  })
+  const owner = createOwner()
+  const berries = { family: 'resource', type: 'Berrybush', label: 'berries-1', i: 2, j: 2, quantity: 10 }
+  owner.foundedBerrybushs.add(berries)
+  const context = {
+    dayNight: { state: { hour: 12, minute: 0 } },
+    players: [owner],
+    scheduler: { elapsedMs: 0, add: () => 1, remove() {} },
+  }
+  const unit = createVillager(owner, { context, autonomousJob: 'food', action: null, path: [], inactif: true })
+  const system = new VillagerAutonomySystem(context)
+  context.scheduler.elapsedMs = 1000
+  system.update()
+  assert.equal(unit.dest, berries)
+  assert.equal(unit.action, 'forageberry')
+  const replacement = { ...berries, label: 'berries-2', i: 4 }
+  berries.quantity = 0
+  owner.foundedBerrybushs.add(replacement)
+  context.scheduler.elapsedMs = 2000
+  system.update()
+  assert.equal(unit.dest, replacement)
+  assert.equal(unit.autonomousJob, 'food')
+  system.destroy()
+})
+
 test('food search retries after failure and collects newly discovered food on the next scheduled check', () => {
   const { assignVillagerAutonomy } = loadVillagerAutonomy()
   const tasks = []
   let explored = 0
   const owner = createOwner()
   const villager = createVillager(owner, {
-    context: { scheduler: { addOneShot(callback, delay) { tasks.push({ callback, delay }); return tasks.length }, remove() {} } },
-    explore() { explored++; return false },
+    context: {
+      scheduler: {
+        addOneShot(callback, delay) {
+          tasks.push({ callback, delay })
+          return tasks.length
+        },
+        remove() {},
+      },
+    },
+    explore() {
+      explored++
+      return false
+    },
   })
   assert.equal(assignVillagerAutonomy(villager, 'food'), false)
   assert.equal(explored, 1)
@@ -797,8 +934,14 @@ test('food search retries after failure and collects newly discovered food on th
   tasks[0].callback()
   assert.equal(explored, 2)
   assert.equal(tasks.length, 2)
-  const berries = { family: constants.FAMILY_TYPES.resource, type: constants.RESOURCE_TYPES.berrybush,
-    i: 5, j: 5, quantity: 10, hitPoints: 10 }
+  const berries = {
+    family: constants.FAMILY_TYPES.resource,
+    type: constants.RESOURCE_TYPES.berrybush,
+    i: 5,
+    j: 5,
+    quantity: 10,
+    hitPoints: 10,
+  }
   owner.foundedBerrybushs.add(berries)
   tasks[1].callback()
   assert.equal(explored, 2)

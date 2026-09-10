@@ -1,5 +1,5 @@
 import { Assets, Polygon, Sprite } from 'pixi.js'
-import { LABEL_TYPES } from '../../constants'
+import { FAMILY_TYPES, LABEL_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
 import {
   attachEntityShadowsToMapSpace,
   cartesianToIsometric,
@@ -52,8 +52,6 @@ export function resumeInitialBuildingWork(building: Building): void {
     building.buyUnit(building.queue[0], true, true)
     return
   }
-  const queuedTechnology = building.technology
-  if (queuedTechnology) building.buyTechnology(queuedTechnology.type, true, true)
 }
 
 export function setupBuildingTransform(building: Building): void {
@@ -95,6 +93,9 @@ export function occupyBuildingFootprint(building: Building): void {
   const updatesOutsideWorldVision = space?.kind !== 'interior'
   const providesOutsideWorldVision = updatesOutsideWorldVision && building.providesVision !== false
   getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
+    if (cell.has?.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(cell.has.type)) {
+      cell.has.die?.(true)
+    }
     clearCellTerrainSet(cell)
     for (const corpse of cell.corpses) {
       typeof corpse.clear === 'function' && corpse.clear()

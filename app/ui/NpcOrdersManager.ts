@@ -1,4 +1,6 @@
-import { assignVillagerAutonomy, hasVillagerAutonomyTarget } from '../lib'
+import { canShowNpcJobOrder } from './menu/NpcOrderEligibility'
+import { npcTrainingDetail } from './menu/NpcTrainingDetails'
+import { assignVillagerAutonomy } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/audio/uiSound'
 import {
@@ -6,16 +8,11 @@ import {
   sendUnitToTraining,
   VILLAGER_TRAINING_UNIT_TYPES,
 } from '../lib/units/unitTrainingOrders'
-import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
-import { formatUnitTrainingDuration, getUnitTrainingDurationDays } from '../lib/training/unitTrainingDuration'
-import { formatActionCost } from './ActionTooltipFactory'
 import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/units/unitExperience'
 import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
-import { discoverHeroEquipment, discoverHeroResource } from '../lib/equipment/equipmentDiscoveries'
-import { canOwnerMineIron } from '../lib/resources/ironMining'
 import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
 import {
   keepNpcHere,
@@ -205,10 +202,10 @@ export class NpcOrdersManager {
             ? pickNpcSleepingChatterLine()
             : pickForeignNpcSleepingChatterLine()
           : ordersEnabled
-          ? restingSoloTarget
-            ? pickNpcRestingChatterLine(soloTarget)
-            : pickNpcGreetingLine(this.menu.context.player?.name ?? '')
-          : pickForeignNpcChatterLine(soloTarget)
+            ? restingSoloTarget
+              ? pickNpcRestingChatterLine(soloTarget)
+              : pickNpcGreetingLine(this.menu.context.player?.name ?? '')
+            : pickForeignNpcChatterLine(soloTarget)
         : null)
     if (chatterLine) {
       const line = document.createElement('p')
@@ -343,12 +340,7 @@ export class NpcOrdersManager {
   }
 
   private getTrainingOrderDetail(trainingType: string): string {
-    const owner = this.npcs.find(npc => npc.type === UNIT_TYPES.villager)?.owner ?? this.menu.context.player
-    const unitConfig = owner?.config?.units?.[trainingType]
-    return [
-      formatActionCost(getUnitTrainingCost(owner, trainingType)),
-      formatUnitTrainingDuration(getUnitTrainingDurationDays(unitConfig)),
-    ].join(' | ')
+    return npcTrainingDetail(this.npcs, this.menu.context.player, trainingType)
   }
 
   private hasVillager(): boolean {
@@ -403,14 +395,7 @@ export class NpcOrdersManager {
   }
 
   private canShowVillagerJobOrder(job: VillagerAutonomyJob): boolean {
-    if (!this.hasVillager() || this.hasNightWorkBlock()) return false
-    if (job === 'iron' && !this.npcs.some(npc => npc.type === UNIT_TYPES.villager && canOwnerMineIron(npc.owner))) {
-      return false
-    }
-    const needsKnownTarget = job === 'construction' || job === 'horseCapture'
-    return (
-      !needsKnownTarget || this.npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, job))
-    )
+    return canShowNpcJobOrder(this.npcs, this.menu.context, job)
   }
 
   refreshInventory(): void {
@@ -454,8 +439,6 @@ export class NpcOrdersManager {
     const heroContainer = createInventoryContainer(hero, {
       id: hero.label,
       labelKey: 'inventoryYourBag',
-      onReceiveEquipment: equipment => discoverHeroEquipment(hero, equipment),
-      onReceiveResource: (resource, amount) => discoverHeroResource(hero, resource, amount),
     })
     this.transferPanel = new InventoryTransferPanel({
       context: this.menu.context,

@@ -1,9 +1,10 @@
 import { ACTION_TYPES, POPULATION_MAX } from '../../constants'
 import { t } from '../../lib/lang'
-import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
-import { refreshOpenBuildingMenu } from './BuildingTechnologyProduction'
+import type { UnitCreationExtra } from '../../types/entities'
+import { refreshOpenBuildingMenu } from './BuildingMenuRefresh'
 import { getTrainingBuilding } from './BuildingTraineeTraining'
 import type { QueuedTrainingTrainee } from './BuildingTypes'
+import type { TrainingTrainee } from '../../types/training'
 
 import type { BuildingProduction } from './BuildingProduction'
 
@@ -65,7 +66,7 @@ export function syncPrimaryTrainingState(runtime: BuildingProduction): void {
 
 export function wakeNextWaitingTrainee(runtime: BuildingProduction): void {
   const building = getTrainingBuilding(runtime.building)
-  if (building.loading !== null || building.queue.length || building.technology || building.trainingUnit) return
+  if (building.loading !== null || building.queue.length || building.trainingUnit) return
   const trainee = building.owner.units?.find(
     unit =>
       unit.dest === building &&
@@ -87,7 +88,7 @@ export function finishUnitTraining(
   runtime: BuildingProduction,
   type: string,
   extra?: UnitCreationExtra,
-  trainee?: UnitEntity | null
+  trainee?: TrainingTrainee | null
 ): boolean {
   const building = getTrainingBuilding(runtime.building)
   const {
@@ -95,6 +96,7 @@ export function finishUnitTraining(
   } = building
 
   const trainingEntry = trainee ? building.trainingQueue?.find(entry => entry.trainee === trainee) : null
+  if (trainee && !trainingEntry) return false
   const completeDay = trainingEntry?.trainingCompleteDay ?? building.trainingCompleteDay
   if (!trainee && building.queue[0] !== type) return false
   if (!map.instantMode && runtime.currentTrainingDay() < (completeDay ?? Number.POSITIVE_INFINITY)) {
@@ -147,7 +149,7 @@ export function finishUnitTraining(
   return true
 }
 
-export function finishTrainingEntry(runtime: BuildingProduction, trainee: UnitEntity): void {
+export function finishTrainingEntry(runtime: BuildingProduction, trainee: TrainingTrainee): void {
   const building = getTrainingBuilding(runtime.building)
   const index = building.trainingQueue?.findIndex(entry => entry.trainee === trainee) ?? -1
   if (index >= 0) {
@@ -159,14 +161,12 @@ export function finishTrainingEntry(runtime: BuildingProduction, trainee: UnitEn
   runtime.syncPrimaryTrainingState()
 }
 
-export function finishTrainingEntryPlacementFailed(runtime: BuildingProduction, trainee: UnitEntity): void {
+export function finishTrainingEntryPlacementFailed(runtime: BuildingProduction, trainee: TrainingTrainee): void {
   const building = getTrainingBuilding(runtime.building)
   const index = building.trainingQueue?.findIndex(item => item.trainee === trainee) ?? -1
   if (index >= 0) {
-    const [entry] = building.trainingQueue?.splice(index, 1) ?? []
-    entry?.trainingDayChangeUnsubscribe?.()
-    const queueIndex = building.queue.findIndex(type => type === entry?.type)
-    if (queueIndex >= 0) building.queue.splice(queueIndex, 1)
+    const entry = building.trainingQueue?.[index]
+    if (entry) entry.loading = 100
     runtime.syncPrimaryTrainingState()
   }
 }

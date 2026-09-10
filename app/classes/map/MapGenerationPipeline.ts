@@ -1,4 +1,5 @@
 import { Gaia } from '../players'
+import { placeCave } from './generation/CaveGeneration'
 import { buildNeighborScenery } from './NeighborScenery'
 import { updateInstanceVisibility } from '../../lib'
 import { getEnvironmentTerrainParams } from '../../constants'
@@ -62,6 +63,7 @@ export async function generateStylishMap(
 
   await callbacks.prepareBaseTerrain(context, { timings, measure }, onProgress)
   await onProgress('generatingPlayers', 0.48)
+  measure('cavePlacement', () => placeCave(map, context))
   measure('playerPlacement', () => map.placePlayers())
   await onProgress('generatingResources', 0.58)
   if (map.pregeneratedResourcesLoaded) {

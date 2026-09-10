@@ -39,6 +39,7 @@ function loadNaturalRegrowthSystem(calls) {
         updateInstanceVisibility: () => null,
       },
       '../lib/units/villagerSchedule': {
+        shouldVillagerWork: () => true,
         isVillagerSleepTime: context => {
           const hour = context?.dayNight?.state?.hour ?? 12
           return hour >= 18 || hour < 8
@@ -96,6 +97,30 @@ test('daily natural regrowth waits for mineral respawn delays before resources r
     ['resumeAutonomy', 'gold-miner', 'gold', { exploreWhenNoTarget: false }],
   ])
   assert.deepEqual(context.map.naturalResourceRespawnSlots, [])
+})
+
+test('regrowth never steals training, energy recovery or player-controlled villagers', () => {
+  const calls = []
+  const NaturalRegrowthSystem = loadNaturalRegrowthSystem(calls)
+  const units = [
+    { trainingTargetType: 'Archer' },
+    { waitingForEnergyAction: 'farm' },
+    { controlMode: 'hero' },
+    { actionLocked: true },
+    { pendingOrder: {} },
+  ].map((extra, index) => ({ type: 'Villager', label: `unit-${index}`, autonomousJob: 'food', ...extra }))
+  const context = {
+    map: {
+      gaia: { animals: [] },
+      resources: new Set(),
+      naturalResourceRespawnSlots: [{ depletedDay: 1, i: 2, j: 2, type: 'Gold' }],
+      respawnNaturalResource: () => true,
+    },
+    menu: {},
+    players: [{ units }],
+  }
+  new NaturalRegrowthSystem(context).applyDailyRegrowth({ day: 20 })
+  assert.deepEqual(calls, [])
 })
 
 test('daily natural regrowth starts legacy mineral slots from the current day', () => {

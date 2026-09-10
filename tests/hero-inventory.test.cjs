@@ -1,12 +1,8 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const discoveries = []
 const { getHeroInventory, addHeroInventoryItem, removeHeroInventoryItem } = loadTsModule(
-  'app/lib/equipment/heroInventory.ts',
-  {
-    mocks: { './equipmentDiscoveries': { discoverHeroEquipment: (hero, item) => discoveries.push([hero, item]) } },
-  }
+  'app/lib/equipment/heroInventory.ts'
 )
 test('inventory initialization fills missing containers and preserves existing references', () => {
   const hero = { inventory: { equipment: ['arrow'], equipped: { helmet: 'iron' } } }
@@ -22,7 +18,7 @@ test('inventory initialization fills missing containers and preserves existing r
   assert.equal(getHeroInventory(hero), initialized)
   assert.deepEqual(getHeroInventory({}).equipment, [])
 })
-test('inventory removals are atomic and additions report equipment discovery', () => {
+test('inventory removals are atomic and additions do not affect progression', () => {
   const hero = { inventory: { equipment: ['arrow', 'sword', 'arrow'] } }
   assert.equal(removeHeroInventoryItem(hero, 'arrow', 3), false)
   assert.deepEqual(hero.inventory.equipment, ['arrow', 'sword', 'arrow'])
@@ -30,7 +26,7 @@ test('inventory removals are atomic and additions report equipment discovery', (
   assert.deepEqual(hero.inventory.equipment, ['sword'])
   assert.equal(addHeroInventoryItem(hero, 'bow', 2.9), true)
   assert.deepEqual(hero.inventory.equipment, ['sword', 'bow', 'bow'])
-  assert.deepEqual(discoveries.at(-1), [hero, 'bow'])
+  assert.equal(Object.hasOwn(hero, 'completedObjectives'), false)
   assert.equal(removeHeroInventoryItem(hero, 'bow'), true)
   assert.equal(addHeroInventoryItem(hero, 'arrow'), true)
 })

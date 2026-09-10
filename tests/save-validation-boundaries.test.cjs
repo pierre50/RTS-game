@@ -122,6 +122,8 @@ test('legacy map and camera validation reject malformed grids and cell metadata'
 test('runtime and weather validation checks every persisted numeric field', () => {
   const runtimeFields = ['dayNightElapsedMs', 'elapsedMs', 'savedAt']
   const weatherFields = [
+    'dailyWeatherSeed',
+    'forcedUntilMs',
     'elapsedMs',
     'flashCooldownMs',
     'lightningBursts',
@@ -405,4 +407,44 @@ test('saved pursuers require distinct identities, valid owners and finite nonneg
   assert.throws(() => validateSaveData(data), /identity/)
   data.runtime.worldPursuers = [{ ...entry, owner: null, entity: { ...entry.entity, type: 'Deer' } }]
   assert.equal(validateSaveData(data), data)
+})
+
+test('save validation accepts runtime bandit unit types', () => {
+  const data = save()
+  data.players.push({
+    type: 'AI',
+    isPlayed: false,
+    views: [
+      [{}, {}],
+      [{}, {}],
+    ],
+    buildings: [],
+    units: [
+      { type: 'BanditChief', label: 'bandit-chief', i: 0, j: 0 },
+      { type: 'BanditSword', label: 'bandit-sword', i: 0, j: 0 },
+      { type: 'BanditArcher', label: 'bandit-archer', i: 0, j: 0 },
+    ],
+    corpses: [{ type: 'BanditSword', label: 'bandit-corpse', i: 0, j: 0 }],
+  })
+
+  assert.equal(validateSaveData(data), data)
+})
+
+test('building age validation accepts legacy saves and rejects invalid explicit tiers', () => {
+  for (const age of [-1, 0.5, '1', Infinity, NaN]) {
+    rejects(data => {
+      data.players[0].buildings = [{ type: 'House', i: 0, j: 0, buildingAge: age }]
+    }, /building age/)
+  }
+  for (const age of [undefined, 0, 1, 2]) {
+    const data = save()
+    data.players[0].buildings = [{ type: 'House', i: 0, j: 0, ...(age == null ? {} : { buildingAge: age }) }]
+    assert.doesNotThrow(() => validateSaveData(data))
+  }
+})
+
+test('save validation accepts a neutral Gaia owner for generated caves', () => {
+  const data = save()
+  data.players.push({ ...data.players[0], type: 'Gaia', isPlayed: false, diplomacy: 'neutral' })
+  assert.doesNotThrow(() => validateSaveData(data))
 })

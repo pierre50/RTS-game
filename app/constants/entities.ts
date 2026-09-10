@@ -59,6 +59,7 @@ export const BUILDING_TYPES = {
   smallWall: 'SmallWall',
   trap: 'Trap',
   chest: 'Chest',
+  cave: 'Cave',
   fireCamp: 'FireCamp',
   campTotemPlain: 'CampTotemPlain',
   campTotemHorns: 'CampTotemHorns',

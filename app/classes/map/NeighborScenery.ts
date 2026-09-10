@@ -46,7 +46,7 @@ function neighborBlueprint(source: MapBlueprint, saved: SerializedSave | null | 
     resources: saved.resources.filter(resource => !resource.isDead && !resource.isDestroyed),
   }
   if (saved.map) {
-    blueprint.terrainAppearance = undefined
+    delete blueprint.terrainAppearance
     blueprint.terrain = prepared.terrain.map(row => row.slice())
     blueprint.relief = prepared.relief?.map(row => row.slice()) ?? prepared.terrain.map(row => row.map(() => 0))
     for (let i = 0; i < saved.map.length; i++) {

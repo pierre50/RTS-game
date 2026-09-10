@@ -5,7 +5,13 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { localToGrid } = loadTsModule('app/lib/localMapLayout.ts')
 const { validateSaveData } = loadTsModule('app/serialization/SaveValidator.ts', {
   mocks: {
-    'pixi.js': { Assets: { cache: { get: () => ({ units: { Hero: {} }, resources: { Tree: {} } }) } } },
+    'pixi.js': {
+      Assets: {
+        cache: {
+          get: () => ({ units: { Hero: {} }, resources: { Tree: {} }, buildings: { TownCenter: {}, Chest: {} } }),
+        },
+      },
+    },
     '../lib/horses/horseTaming': { isHorseTamingStatus: () => true },
   },
 })
@@ -33,12 +39,67 @@ function sparseSave() {
   )
 }
 
+test('legacy interior decorations migrate before sparse exterior coordinate validation', () => {
+  const save = sparseSave()
+  const player = save.players[0]
+  player.label = 'human'
+  player.buildings = [
+    { type: 'TownCenter', label: 'center', ...localToGrid(1, 4, save.world.localGridLayout), isBuilt: true },
+    {
+      type: 'Chest',
+      label: 'interior:human:center:default:storage-chest',
+      i: 11,
+      j: 11,
+      isBuilt: true,
+      inventory: { resources: { wheat: 12 } },
+    },
+  ]
+  assert.equal(validateSaveData(save), save)
+  assert.equal(player.buildings.length, 1)
+  assert.equal(player.buildings[0].interiorBuildings[0].i, 11)
+  assert.equal(player.buildings[0].interiorBuildings[0].inventory.resources.wheat, 12)
+  assert.equal(validateSaveData(JSON.parse(JSON.stringify(save))).players[0].buildings.length, 1)
+})
+
+test('nested interior records reject bad coordinates, unsupported types and duplicate identities', () => {
+  const save = sparseSave()
+  save.players[0].label = 'human'
+  save.players[0].buildings = [
+    {
+      type: 'TownCenter',
+      label: 'center',
+      ...localToGrid(1, 4, save.world.localGridLayout),
+      interiorBuildings: [{ type: 'Chest', label: 'chest', i: 11, j: 11 }],
+    },
+  ]
+  for (const mutate of [
+    child => {
+      child.i = -1
+    },
+    child => {
+      child.type = 'Unknown'
+    },
+    child => {
+      child.label = 'center'
+    },
+    child => {
+      child.interiorBuildings = []
+    },
+  ]) {
+    const invalid = structuredClone(save)
+    mutate(invalid.players[0].buildings[0].interiorBuildings[0])
+    assert.throws(() => validateSaveData(invalid), /Invalid save/)
+  }
+})
+
 test('pending world pursuers validate their identity, arrival and remaining delay', () => {
   const save = sparseSave()
   const entry = {
     entity: { type: 'Hero', label: 'pursuer', i: 99, j: 99 },
     owner: { type: 'AI', label: 'enemy' },
-    targetLabel: 'hero', arrival: localToGrid(1, 4, save.world.localGridLayout), remainingMs: 1200,
+    targetLabel: 'hero',
+    arrival: localToGrid(1, 4, save.world.localGridLayout),
+    remainingMs: 1200,
   }
   save.runtime = { worldPursuers: [entry] }
   assert.equal(validateSaveData(save), save)

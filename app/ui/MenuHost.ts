@@ -42,8 +42,6 @@ export interface MenuHost {
   getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec
   getMountHorseButton(unit: UnitEntity): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
-  getActionTechnologyButton(type: string): MenuButtonSpec
-  getHeroTechnologyButtons(): MenuButtonSpec[]
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[]
   createActionIcon(src: string): HTMLImageElement
   playUiClick(): void

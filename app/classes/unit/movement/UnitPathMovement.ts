@@ -1,3 +1,4 @@
+import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { tryStartUnitContactApproach } from './UnitContactApproach'
 import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
 import {
@@ -36,6 +37,7 @@ import { getEntitySpaceMapLike, isOutsideSpaceId } from '../../../lib/mapSpaces'
 import type { UnitEntity } from '../../../types/entities'
 
 export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
+  if (updateTargetPursuit(unit)) return
   const contextMap = unit.context?.map
   const map = getEntitySpaceMapLike(unit, contextMap)
   if (!map || !unit.path?.length) {
@@ -139,7 +141,9 @@ function handleBlockedPathCell(
   }
   unit.sendToEvt?.(dest, unit.action ?? null, {
     forceRepath: true,
-    allowPassageStop: unit.action === ACTION_TYPES.train,
+    preserveAutonomy: true,
+    allowPassageStop:
+      unit.action === ACTION_TYPES.train || unitHasActivePassageStopIntent(unit, 'has' in dest ? dest : null),
   })
   return true
 }
@@ -168,7 +172,12 @@ function finishPathCellStep(
   updateInstanceVisibility(unit)
   unit.path?.pop()
   if (unit.destHasMoved?.()) {
-    unit.sendToEvt?.(dest, unit.action ?? null, { forceRepath: true })
+    unit.sendToEvt?.(dest, unit.action ?? null, {
+      forceRepath: true,
+      preserveAutonomy: true,
+      allowPassageStop:
+        unit.action === ACTION_TYPES.train || unitHasActivePassageStopIntent(unit, 'has' in dest ? dest : null),
+    })
     return
   }
   if (unit.isUnitAtDest?.(unit.action, dest)) {

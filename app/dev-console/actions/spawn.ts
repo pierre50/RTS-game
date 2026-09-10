@@ -112,7 +112,6 @@ function getOrCreateBanditOwner(context: DevConsoleContext): BanditPlayer {
       team: null,
       diplomacy: null,
       populationMax: Number.POSITIVE_INFINITY,
-      autoTechnologyByAge: false,
     },
     context as unknown as ConstructorParameters<typeof Player>[1]
   ) as BanditPlayer

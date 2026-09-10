@@ -1,6 +1,15 @@
-import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES } from '../constants'
+import { validateTargetKnowledge } from '../lib/units/playerTargetKnowledge'
+import { validateCaveDefinition, validateCaveOccupantReferences } from './CaveSave'
+import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { isHorseTamingStatus } from '../lib/horses/horseTaming'
 import type { LoadedGameConfig } from '../types/save'
+import { validatePlayerTraining } from './TrainingSaveValidation'
+import {
+  groupPlayersInteriorBuildings,
+  normalizeSavedInteriorBuildings,
+  savedBuildingsWithInteriors,
+} from './InteriorBuildingSave'
+import type { SaveEntityState } from '../types/save'
 import {
   fail,
   isObject,
@@ -15,6 +24,15 @@ import {
 
 const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
 const ANIMAL_SHEETS = new Set<string>(Object.values(SHEET_TYPES))
+const RUNTIME_SAVE_UNIT_TYPES = new Set<string>([
+  UNIT_TYPES.banditChief,
+  UNIT_TYPES.banditSword,
+  UNIT_TYPES.banditArcher,
+])
+
+function isSupportedSavedUnitType(type: unknown, config: LoadedGameConfig): type is string {
+  return typeof type === 'string' && (Boolean(config.units?.[type]) || RUNTIME_SAVE_UNIT_TYPES.has(type))
+}
 
 export function validateWorldPursuers(value: unknown, size: number, config: LoadedGameConfig): void {
   if (value == null) return
@@ -36,7 +54,9 @@ export function validateWorldPursuers(value: unknown, size: number, config: Load
       if (
         !isObject(entry.owner) ||
         typeof entry.owner.label !== 'string' ||
-        ![PLAYER_TYPES.human, PLAYER_TYPES.ai, PLAYER_TYPES.bandits].includes(entry.owner.type as string)
+        ![PLAYER_TYPES.human, PLAYER_TYPES.ai, PLAYER_TYPES.bandits, PLAYER_TYPES.gaia].includes(
+          entry.owner.type as string
+        )
       )
         fail('Invalid save file: world pursuer owner is invalid.')
       validatePlayerUnits([entity], 0, size, config)
@@ -74,6 +94,9 @@ export function validatePlayers(
     if (validatePlayerRecord(players[index], index, size, config, containsCell)) playedPlayers++
   }
 
+  const normalized = groupPlayersInteriorBuildings(players as { label?: string; buildings?: SaveEntityState[] }[])
+  normalized.forEach((player, index) => Object.assign(players[index] as object, player))
+  validateCaveOccupantReferences(players)
   if (playedPlayers !== 1) {
     fail('Invalid save file: exactly one played player is required.')
   }
@@ -124,7 +147,7 @@ function validatePlayerRecord(
   if (!isObject(player)) fail(`Invalid save file: player ${index} is invalid.`)
   if (
     typeof player.type !== 'string' ||
-    ![PLAYER_TYPES.human, PLAYER_TYPES.ai, PLAYER_TYPES.bandits].includes(player.type)
+    ![PLAYER_TYPES.human, PLAYER_TYPES.ai, PLAYER_TYPES.bandits, PLAYER_TYPES.gaia].includes(player.type)
   ) {
     fail(`Invalid save file: player ${index} has an unsupported type.`)
   }
@@ -133,17 +156,34 @@ function validatePlayerRecord(
   }
   if (player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.bandits) validateAIState(player.aiState, index)
 
+  validateTargetKnowledge(player.targetKnowledge)
   const buildings = player.buildings ?? []
   const units = player.units ?? []
   const corpses = player.corpses ?? []
   const views = player.views ?? []
   validateArray(buildings, `player ${index} buildings`)
+  for (const building of buildings) {
+    if (!isObject(building)) fail('Invalid save file: building is invalid.')
+    if (building.interiorBuildings != null) validateArray(building.interiorBuildings, 'interior buildings')
+  }
+  normalizeSavedInteriorBuildings(player as { label?: string; buildings?: SaveEntityState[] })
+  const normalizedBuildings = player.buildings as SaveEntityState[]
   validateArray(units, `player ${index} units`)
   validateArray(corpses, `player ${index} corpses`)
   validatePlayerViews(views, index, size, containsCell)
-  validatePlayerBuildings(buildings, index, size, config)
+  validatePlayerBuildings(normalizedBuildings, index, size, config)
   validatePlayerUnits(units, index, size, config)
   validatePlayerCorpses(corpses, index, size, config)
+  const allBuildings = savedBuildingsWithInteriors(normalizedBuildings)
+  const interiorLabels = new Set(normalizedBuildings.map(building => building.label).filter(Boolean))
+  for (const building of normalizedBuildings) {
+    for (const child of building.interiorBuildings ?? []) {
+      if (typeof child.label !== 'string' || !child.label || interiorLabels.has(child.label))
+        fail('Invalid save file: duplicate or missing interior building identity.')
+      interiorLabels.add(child.label)
+    }
+  }
+  validatePlayerTraining(allBuildings, [...units, ...corpses], size, config)
   return player.isPlayed
 }
 
@@ -182,6 +222,25 @@ function validatePlayerBuildings(
     if (typeof building.type !== 'string' || !config.buildings?.[building.type]) {
       fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an unsupported type.`)
     }
+    if (
+      building.buildingAge != null &&
+      (typeof building.buildingAge !== 'number' || !Number.isInteger(building.buildingAge) || building.buildingAge < 0)
+    ) {
+      fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an invalid building age.`)
+    }
+    if (building.cave != null) {
+      if (building.type !== 'Cave') fail('Invalid cave building type.')
+      validateCaveDefinition(building.cave)
+    }
+    if (building.interiorBuildings != null) {
+      validateArray(building.interiorBuildings, 'interior buildings')
+      for (const child of building.interiorBuildings) {
+        if (!isObject(child) || child.interiorBuildings != null || child.spaceId != null)
+          fail('Invalid save file: invalid nested interior building.')
+      }
+      // Interior coordinates belong to the room, not the sparse exterior grid.
+      validatePlayerBuildings(building.interiorBuildings, playerIndex, Number.MAX_SAFE_INTEGER, config)
+    }
     if (isObject(building) && building.stableHorses != null) {
       validateArray(building.stableHorses, `player ${playerIndex} building ${buildingIndex}.stableHorses`)
       building.stableHorses.forEach((horse, horseIndex) =>
@@ -205,8 +264,24 @@ function validatePlayerBuildings(
 function validatePlayerUnits(units: unknown[], playerIndex: number, size: number, config: LoadedGameConfig): void {
   units.forEach((unit, unitIndex) => {
     validateEntityPosition(unit, size, `player ${playerIndex} unit ${unitIndex}`)
-    if (typeof unit.type !== 'string' || !config.units?.[unit.type]) {
+    validateOptionalBoolean(unit.exploringForAutonomy, `player ${playerIndex} unit ${unitIndex}.exploringForAutonomy`)
+    if (!isSupportedSavedUnitType(unit.type, config)) {
       fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has an unsupported type.`)
+    }
+    if (unit.trainingTargetType != null && !isSupportedSavedUnitType(unit.trainingTargetType, config)) {
+      fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has an unsupported training target.`)
+    }
+    if (unit.offlineWork != null) {
+      const progress = unit.offlineWork
+      if (
+        !isObject(progress) ||
+        typeof progress.target !== 'string' ||
+        typeof progress.milliseconds !== 'number' ||
+        !Number.isFinite(progress.milliseconds) ||
+        progress.milliseconds < 0
+      ) {
+        fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has invalid offline work progress.`)
+      }
     }
   })
 }
@@ -214,7 +289,7 @@ function validatePlayerUnits(units: unknown[], playerIndex: number, size: number
 function validatePlayerCorpses(corpses: unknown[], playerIndex: number, size: number, config: LoadedGameConfig): void {
   corpses.forEach((corpse, corpseIndex) => {
     validateEntityPosition(corpse, size, `player ${playerIndex} corpse ${corpseIndex}`)
-    if (typeof corpse.type !== 'string' || !config.units?.[corpse.type]) {
+    if (!isSupportedSavedUnitType(corpse.type, config)) {
       fail(`Invalid save file: player ${playerIndex} corpse ${corpseIndex} has an unsupported type.`)
     }
   })

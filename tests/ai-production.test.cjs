@@ -688,27 +688,13 @@ test('ai growth reserves respect housing capacity, population and the daily arri
   assert.equal(strategy.getVillagerGrowthFoodReserve(), 1300)
 })
 
-test('ai age-up reserves retain the population threshold and can be disabled', () => {
-  const ageCost = { food: 200, gold: 100 }
-  const options = {
+test('AI ignores legacy age costs when planning its economy', () => {
+  const { ai, strategy } = strategyFixture({
     constants: { AGE_UP_ENABLED: true, DAILY_CONSUMPTION_PER_VILLAGER: { food: 0 } },
-    config: { AGE_UP_COSTS: { 1: ageCost }, MAX_VILLAGER_PER_AGE: { 0: 10 } },
-  }
-  const { ai, strategy } = strategyFixture(options)
-  ai.food = 50
-  ai.gold = 120
-  ai.population = 6
-  assert.deepEqual(strategy.getAgeUpReserve(), {})
-  assert.deepEqual(strategy.getEconomicDemand(), { food: 150, gold: 0, wood: 0, stone: 0 })
+    config: { AGE_UP_COSTS: { 1: { food: 500, gold: 800 } } },
+  })
   ai.population = 7
-  assert.deepEqual(strategy.getAgeUpReserve(), ageCost)
-  assert.deepEqual(strategy.getEconomicDemand(), { food: 200, gold: 100, wood: 0, stone: 0 })
-  ai.age = 3
-  assert.deepEqual(strategy.getAgeUpReserve(), {})
-  const frozen = strategyFixture({ ...options, constants: { ...options.constants, AGE_UP_ENABLED: false } })
-  frozen.ai.population = 10
-  assert.deepEqual(frozen.strategy.getAgeUpReserve(), {})
-  assert.deepEqual(frozen.strategy.getEconomicDemand(), { food: 0, gold: 0, wood: 0, stone: 0 })
+  assert.deepEqual(strategy.getEconomicDemand(), { food: 0, gold: 0, wood: 0, stone: 0 })
 })
 
 test('ai berry planning rejects destroyed, depleted and distant bushes', () => {

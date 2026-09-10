@@ -110,7 +110,6 @@ export function applyMapConfig(map: RuntimeMap, config: GameConfig = {}): void {
   map.worldId = config.worldId ?? DEFAULT_WORLD_ID
   map.worldRegionId = config.worldRegionId ?? null
   if (config.startingAge != null) map.startingAge = Number(config.startingAge)
-  if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
   if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
   if (config.revealTerrain !== undefined) map.revealTerrain = config.revealTerrain
   if (config.startingResources) map.startingResources = config.startingResources

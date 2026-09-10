@@ -65,7 +65,6 @@ export function createTemporaryRaidOwner(
       diplomacy: 'neutral' as const,
       factionId: options.factionId,
       populationMax: Number.POSITIVE_INFINITY,
-      autoTechnologyByAge: false,
     }),
     runtime.context
   ) as TributeRaidOwner

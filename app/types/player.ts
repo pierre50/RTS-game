@@ -1,14 +1,8 @@
+import type { GameContextLike } from './context'
 import type { RuntimeCell } from './map'
 import type { AnimalEntity, RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
 import type { SaveDestination, SaveGridPoint, SaveReference } from './save'
-import type {
-  AnimalConfig,
-  BuildingConfig,
-  EquipmentStats,
-  ProjectileConfig,
-  TechnologyConfig,
-  UnitConfig,
-} from './config'
+import type { AnimalConfig, BuildingConfig, EquipmentStats, ProjectileConfig, UnitConfig } from './config'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
 import type { HeroAppearanceConfig } from '../lib/lpc/heroAppearance'
@@ -61,6 +55,7 @@ export type PlayerUnitCreationOptions = Omit<Partial<UnitEntity>, keyof UnitRest
 type PlayerDiplomacy = 'neutral'
 
 export interface PlayerLike {
+  context?: GameContextLike
   label: string
   i: number
   j: number
@@ -97,12 +92,9 @@ export interface PlayerLike {
   isPlayed?: boolean
   views: VisionGridLike
   config: PlayerConfigLike
-  technologies: string[]
-  discoveredEquipment?: string[]
-  discoveredResources?: string[]
-  researchTechnology?: { type?: string; config?: TechnologyConfig } | null
-  researchLoading?: number | null
-  techs: Record<string, TechnologyConfig>
+  onAgeChange?: () => void
+  updatePopulationObjectives?: () => void
+  completedObjectives?: string[]
   selectedUnits: UnitEntity[]
   selectedUnit?: UnitEntity | null
   selectedBuilding?: BuildingEntity | null
@@ -113,7 +105,12 @@ export interface PlayerLike {
   corpses: UnitEntity[]
   enemyPlayers?: () => PlayerLike[]
   isEnemy?: (other?: PlayerLike | null) => boolean
-  buyBuilding?: (i: number, j: number, type: string, options?: { alreadyPaid?: boolean; spaceId?: string }) => boolean
+  buyBuilding?: (
+    i: number,
+    j: number,
+    type: string,
+    options?: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number }
+  ) => boolean
   plantWheatField?: (i: number, j: number, options?: { spaceId?: string }) => boolean
   createBuilding: (
     options: Partial<BuildingConfig> & {
@@ -136,10 +133,6 @@ export interface PlayerLike {
     strategy?: string
   }) => RuntimeEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
-  unlockTechnology?: (type: string) => boolean
-  buyTechnology?: (type: string, alreadyPaid?: boolean, force?: boolean) => boolean
-  cancelTechnology?: () => boolean
-  isTechnologyEligible?: (type: string) => boolean
   spawnBuilding?: (
     options: Partial<BuildingConfig> & { i: number; j: number; type: string; isBuilt?: boolean }
   ) => BuildingEntity | undefined
@@ -161,9 +154,6 @@ export interface PlayerLike {
   rememberEnemy?: (entity: RuntimeEntity) => void
   reportThreat?: (target: RuntimeEntity, attacker: RuntimeEntity) => void
   hasBuilt?: string[]
-  autoTechnologyByAge?: boolean
-  applyEligibleTechnologies?: () => string[]
-  unlockVillagerPopulationMilestoneTechnologies?: () => string[]
   civilizationLevel?: number
 }
 

@@ -38,20 +38,6 @@ function loadWalls() {
 
 const { getWallLevel, getWallTexture, updateWallTexture } = loadWalls()
 
-test('wall technology levels progress independently from player age', () => {
-  const owner = { age: 3, civ: 'Hellas', technologies: [] }
-  assert.equal(getWallLevel(owner), 1)
-  assert.deepEqual(getWallTexture(owner, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
-
-  owner.technologies.push('UpgradeMediumWall')
-  assert.equal(getWallLevel(owner), 2)
-  assert.deepEqual(getWallTexture(owner, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
-
-  owner.technologies.push('UpgradeFortification')
-  assert.equal(getWallLevel(owner), 3)
-  assert.deepEqual(getWallTexture(owner, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
-})
-
 test('all architectures reuse the shared wall sheet until wall age art is added', () => {
   const technologies = ['UpgradeMediumWall']
   assert.deepEqual(getWallTexture({ civ: 'Kemet', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
@@ -88,12 +74,4 @@ test('isolated walls and wall endpoints use the tower block frame', () => {
   const vertical = makeWall()
   updateWallTexture(vertical)
   assert.deepEqual(vertical.sprite.texture, { sheet: 'buildings/wall/level-1', frame: 1 })
-})
-
-test('granary exposes the complete wall technology chain', () => {
-  const buildings = require('../public/assets/data/gameplay/buildings.json')
-  const wallTechnologies = buildings.Granary.technologies.filter(
-    type => type.includes('Wall') || type === 'UpgradeFortification'
-  )
-  assert.deepEqual(wallTechnologies, ['ResearchSmallWall', 'UpgradeMediumWall', 'UpgradeFortification'])
 })

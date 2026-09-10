@@ -1,36 +1,18 @@
 import { POPULATION_MAX, SHEET_TYPES } from '../../constants'
-import { capitalizeFirstLetter, isValidCondition } from '../../lib'
+import { capitalizeFirstLetter } from '../../lib'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/audio/settings'
 import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { CommandResult } from '../DevCommandRegistry'
-import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
-import { findKey, normalizeToggle } from './shared'
+import type { DevConsoleContext, DevPlayer } from '../types'
+import { normalizeToggle } from './shared'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
-import type { ConfigOperation, ConfigValue, TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
 import type { FactionSave } from '../../types/save'
 
-const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
-
-type TechnologyAction =
-  | { type: 'upgradeUnit'; source: string; target: string }
-  | { type: 'upgradeBuilding'; source: string; target: string }
-  | { type: 'improve'; operations: ConfigOperation[] }
-
-type DevTechnologyConfig = BaseTechnologyConfig & {
-  key: string
-  action?: TechnologyAction
-}
-
-type DevTechnologyCallback = (value?: ConfigValue) => void
-
-type DevTechnologyPlayer = DevPlayer & {
-  [key: string]: ConfigValue | object | DevTechnologyCallback | undefined
-  autoTechnologyByAge?: boolean
-  enemyPlayers?: () => DevTechnologyPlayer[]
+type DevPlayerState = DevPlayer & {
+  enemyPlayers?: () => DevPlayerState[]
   onAgeChange?: () => void
   populationMax?: number
-  updateConfig?: (operations: Array<ConfigOperation & { value: number }>) => void
 }
 
 function refreshPlayerUnitEquipmentVisuals(player: DevPlayer): void {
@@ -88,111 +70,13 @@ export function listGlobalPlayers(context: DevConsoleContext): CommandResult {
   return { ok: true, message: lines.length ? lines.join('\n') : 'No global players found' }
 }
 
-function getTechConfig(player: DevTechnologyPlayer, type: string): DevTechnologyConfig | null {
-  return (player.techs[type] as DevTechnologyConfig | undefined) ?? null
-}
-
-function isTechnologyEligible(player: DevTechnologyPlayer, type: string): boolean {
-  if (AGE_TECHNOLOGIES.has(type)) return false
-  if (player.technologies.includes(type)) return false
-  const config = getTechConfig(player, type)
-  if (!config) return false
-  return (config.conditions || []).every(condition => isValidCondition(condition, player))
-}
-
-function applyEligibleTechnologies(context: DevConsoleContext): string[] {
-  const player = context.player as DevTechnologyPlayer
-  const unlocked: string[] = []
-  let appliedInPass = true
-
-  while (appliedInPass) {
-    appliedInPass = false
-    for (const type of Object.keys(player?.techs || {})) {
-      if (!isTechnologyEligible(player, type)) continue
-      const result = applyTechnology(context, type)
-      if (result.ok && result.message !== `${type} already unlocked`) {
-        unlocked.push(type)
-        appliedInPass = true
-      }
-    }
-  }
-
-  return unlocked
-}
-
-export function applyAllTechnologies(context: DevConsoleContext): CommandResult {
-  const player = context.player as DevTechnologyPlayer
-  player.autoTechnologyByAge = true
-  const unlocked = applyEligibleTechnologies(context)
-  return { ok: true, message: `Unlocked ${unlocked.length} technologies` }
-}
-
-export function applyTechnology(context: DevConsoleContext, typeName: string): CommandResult {
-  const player = context.player as DevTechnologyPlayer
-  const { menu } = context
-  const type = findKey(player.techs, typeName)
-  if (!type) return { ok: false, message: `Unknown technology: ${typeName}` }
-  if (player.technologies.includes(type)) return { ok: true, message: `${type} already unlocked` }
-
-  const config = getTechConfig(player, type)
-  if (!config) return { ok: false, message: `Unknown technology: ${typeName}` }
-  const dynamicPlayer: Record<string, ConfigValue | object | DevTechnologyCallback | undefined> = player
-  const currentValue = dynamicPlayer[config.key]
-  if (Array.isArray(currentValue)) {
-    currentValue.push(config.value || type)
-  } else {
-    dynamicPlayer[config.key] = config.value || type
-  }
-
-  const { action } = config
-  if (action) {
-    switch (action.type) {
-      case 'upgradeUnit':
-        player.units.forEach(unit => {
-          if (unit.type === action.source)
-            (unit as DevEntity & { upgrade?: (target: string) => void }).upgrade?.(action.target)
-        })
-        break
-      case 'upgradeBuilding':
-        player.buildings.forEach(building => {
-          if (building.type === action.source)
-            (building as DevEntity & { upgrade?: (target: string) => void }).upgrade?.(action.target)
-        })
-        break
-      case 'improve':
-        player.updateConfig?.(
-          action.operations.map(operation => ({
-            ...operation,
-            value: Number(operation.value),
-          }))
-        )
-        break
-    }
-  }
-
-  const handler = `on${capitalizeFirstLetter(config.key)}Change`
-  const changeHandler = dynamicPlayer[handler]
-  if (typeof changeHandler === 'function') {
-    ;(changeHandler as (value: ConfigValue) => void)(config.value)
-  }
-  if (config.key === 'age' && player.autoTechnologyByAge) {
-    applyEligibleTechnologies(context)
-  }
-  menu.updateActionTarget?.()
-  menu.updateTopbar()
-  return { ok: true, message: `Unlocked ${type}` }
-}
-
 export function setAge(context: DevConsoleContext, value: string): CommandResult {
   const age = Number(value)
-  if (!Number.isInteger(age) || age < 0 || age > 3) return { ok: false, message: 'Age must be between 0 and 3' }
+  if (!Number.isInteger(age) || age < 0 || age > 2) return { ok: false, message: 'Age must be between 0 and 2' }
   context.player.age = age
-  const player = context.player as DevTechnologyPlayer
+  const player = context.player as DevPlayerState
   player.age = age
   player.onAgeChange?.()
-  if (player.autoTechnologyByAge) {
-    applyEligibleTechnologies(context)
-  }
   refreshPlayerUnitEquipmentVisuals(player)
   context.menu.updateActionTarget?.()
   context.menu.updateTopbar()
@@ -204,13 +88,13 @@ export function setCiv(context: DevConsoleContext, value: string): CommandResult
   if (!civ) return { ok: false, message: 'Usage: civ <name>' }
   context.player.civ = civ
   void preloadBakedLpcUnitsForPlayers([context.player])
-  ;(context.player as DevTechnologyPlayer).onAgeChange?.()
+  ;(context.player as DevPlayerState).onAgeChange?.()
   context.menu.updateActionTarget?.()
   return { ok: true, message: `Civilization set to ${civ}` }
 }
 
 export function killEntities(context: DevConsoleContext, target = 'enemies'): CommandResult {
-  const player = context.player as DevTechnologyPlayer
+  const player = context.player as DevPlayerState
 
   if (target === 'enemies') {
     const enemies = player.enemyPlayers?.() ?? []
@@ -269,14 +153,14 @@ export function toggleInstantMode(context: DevConsoleContext, value: string): Co
   const { map } = context
   const enabled = value === 'on' ? true : value === 'off' ? false : !map.instantMode
   map.instantMode = enabled
-  return { ok: true, message: `Instant build/train/tech: ${enabled ? 'on' : 'off'}` }
+  return { ok: true, message: `Instant build/train: ${enabled ? 'on' : 'off'}` }
 }
 
 export function setPopMax(context: DevConsoleContext, value: string): CommandResult {
   const { player, menu } = context
   const amount = value != null ? parseInt(value) : POPULATION_MAX
   if (!Number.isFinite(amount) || amount < 0) return { ok: false, message: 'Usage: popmax [amount]' }
-  ;(player as DevTechnologyPlayer).populationMax = amount
+  ;(player as DevPlayerState).populationMax = amount
   menu.updateTopbar()
   return { ok: true, message: `Population max: ${amount}` }
 }

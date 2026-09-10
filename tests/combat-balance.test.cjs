@@ -6,7 +6,6 @@ const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const equipment = require('../public/assets/data/gameplay/equipment.json')
-const technologies = require('../public/assets/data/technologies/technologies.json')
 const units = require('../public/assets/data/gameplay/units.json')
 const animals = require('../public/assets/data/gameplay/animals.json')
 
@@ -27,7 +26,7 @@ function loadPlayerConfig() {
     fireCamp: 'FireCamp',
   }
   const soundCues = {
-    projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
+    projectile: { arrowLaunch: ['archer-attack'] },
     unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
   }
   const mocks = {
@@ -72,9 +71,8 @@ function createCombatConfig() {
       projectiles: {},
       units,
     },
-    technologies,
     'Hellas'
-  ).config
+  )
 }
 
 test('bandit combat pacing stays in ARPG hit-count ranges', () => {
@@ -187,25 +185,4 @@ test('level-one hero uses the human stamina baseline', () => {
   assert.equal(units.Priest.totalEnergy, 12)
   assert.equal(units.Priest.energyCosts.heal, 1)
   assert.equal(units.Priest.energyCosts.convert, 1.5)
-})
-
-test('melee weapon technologies improve swords and axes across all ages', () => {
-  const expectedTypes = [
-    'axe_ceramic',
-    'axe_copper',
-    'axe_bronze',
-    'axe_iron',
-    'sword_ceramic',
-    'sword_copper',
-    'sword_bronze',
-    'sword_iron',
-  ]
-
-  for (const techName of ['Toolworking', 'Metalworking', 'Metallurgy']) {
-    const weaponOperation = technologies[techName].action.operations.find(operation => operation.key === 'weapon.power')
-    assert.ok(weaponOperation, `${techName} should improve weapon.power`)
-    for (const type of expectedTypes) {
-      assert.ok(weaponOperation.type.includes(type), `${techName} should improve ${type}`)
-    }
-  }
 })

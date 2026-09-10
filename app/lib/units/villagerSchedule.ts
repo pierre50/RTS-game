@@ -2,18 +2,22 @@ import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 
 const VILLAGER_SLEEP_START_HOUR = 18
-const VILLAGER_WAKE_HOUR = 8
+const VILLAGER_WAKE_HOUR = 6
+const VILLAGER_MORNING_LINGER_MINUTES = 60
 const VILLAGER_BED_HOUR = 22
 const VILLAGER_SCHEDULE_VARIANCE_MINUTES = 20
 const VILLAGER_WAKE_WINDOW_START_MINUTE = VILLAGER_WAKE_HOUR * 60 - VILLAGER_SCHEDULE_VARIANCE_MINUTES
 
 type VillagerSchedule = {
   bedMinute: number
+  workStartMinute: number
   wakeMinute: number
   workEndMinute: number
 }
 
-function stableScheduleOffset(unit: Pick<UnitEntity, 'label' | 'type' | 'i' | 'j'>, salt: string): number {
+type ScheduledVillager = Pick<UnitEntity, 'type' | 'i' | 'j'> & { label?: string }
+
+function stableScheduleOffset(unit: ScheduledVillager, salt: string): number {
   const value = `${unit.label ?? `${unit.type}:${unit.i}:${unit.j}`}:${salt}`
   let hash = 2166136261
   for (let index = 0; index < value.length; index += 1) {
@@ -30,10 +34,12 @@ function minuteOfDay(context: Pick<GameContextLike, 'dayNight'> | null | undefin
   return hour * 60 + minute
 }
 
-function getVillagerSchedule(unit: UnitEntity): VillagerSchedule {
+export function getVillagerSchedule(unit: ScheduledVillager): VillagerSchedule {
+  const wakeMinute = VILLAGER_WAKE_HOUR * 60 + stableScheduleOffset(unit, 'wake')
   return {
     bedMinute: VILLAGER_BED_HOUR * 60 + stableScheduleOffset(unit, 'bed'),
-    wakeMinute: VILLAGER_WAKE_HOUR * 60 + stableScheduleOffset(unit, 'wake'),
+    wakeMinute,
+    workStartMinute: wakeMinute + VILLAGER_MORNING_LINGER_MINUTES,
     workEndMinute: VILLAGER_SLEEP_START_HOUR * 60 + stableScheduleOffset(unit, 'workEnd'),
   }
 }
@@ -70,10 +76,20 @@ export function getMinutesUntilVillagerWorkEnds(unit: UnitEntity): number {
   return Math.max(0, workEndMinute - now)
 }
 
+export function getMinutesUntilVillagerWorkStarts(unit: UnitEntity): number {
+  const now = minuteOfDay(unit.context)
+  const { workStartMinute } = getVillagerSchedule(unit)
+  return Math.max(0, workStartMinute - now)
+}
+
+export function shouldVillagerBeAwake(unit: UnitEntity): boolean {
+  return !shouldVillagerBeAsleep(unit)
+}
+
 export function shouldVillagerWork(unit: UnitEntity): boolean {
   const now = minuteOfDay(unit.context)
-  const { wakeMinute, workEndMinute } = getVillagerSchedule(unit)
-  return now >= wakeMinute && now < workEndMinute
+  const { workStartMinute, workEndMinute } = getVillagerSchedule(unit)
+  return now >= workStartMinute && now < workEndMinute
 }
 
 export function isVillagerSleepTime(context: Pick<GameContextLike, 'dayNight'> | null | undefined): boolean {

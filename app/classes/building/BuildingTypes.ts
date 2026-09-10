@@ -7,26 +7,15 @@ import type {
   UnitEntity,
   UnitSounds,
 } from '../../types/entities'
-import type { TechnologyConfig } from '../../types/config'
-import type { ResourceAmount } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { FireAnimation } from './BuildingFire'
+import type { TrainingEntry, TrainingTrainee } from '../../types/training'
 
 type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
-type QueuedTechnology = { type: string; config: TechnologyConfig }
-export type QueuedTrainingTrainee = {
-  type: string
-  extra?: UnitCreationExtra
-  trainee: UnitEntity
-  cost?: ResourceAmount
-  loading?: number
-  trainingStartedDay?: number | null
-  trainingCompleteDay?: number | null
-  trainingDayChangeUnsubscribe?: (() => void) | null
-}
+export type QueuedTrainingTrainee = TrainingEntry
 
 export type BuildingControllerHost = Omit<
   BuildingEntity,
@@ -37,15 +26,11 @@ export type BuildingControllerHost = Omit<
   | 'hitPoints'
   | 'totalHitPoints'
   | 'queue'
-  | 'technology'
   | 'loading'
   | 'addChild'
   | 'setRallyPoint'
   | 'buyUnit'
   | 'cancelUnits'
-  | 'buyTechnology'
-  | 'cancelTechnology'
-  | 'upgrade'
   | 'updateHitPoints'
   | 'placeUnit'
   | 'die'
@@ -59,10 +44,9 @@ export type BuildingControllerHost = Omit<
     hitPoints: number
     totalHitPoints: number
     queue: string[]
-    technology: QueuedTechnology | null
     loading: number | null
     isBuilt?: boolean
-    trainingUnit?: UnitEntity | null
+    trainingUnit?: TrainingTrainee | null
     trainingType?: string | null
     trainingQueue?: QueuedTrainingTrainee[]
     trainingStartedDay?: number | null
@@ -121,7 +105,7 @@ export type BuildingControllerHost = Omit<
   }
 
 export type TrainingBuilding = BuildingControllerHost & {
-  trainingUnit?: UnitEntity | null
+  trainingUnit?: TrainingTrainee | null
   trainingType?: string | null
   trainingQueue?: QueuedTrainingTrainee[]
   trainingStartedDay?: number | null

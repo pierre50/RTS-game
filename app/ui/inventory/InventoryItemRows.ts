@@ -1,0 +1,115 @@
+import { appendInventoryEmptyIcon, createInventoryActionRow, type InventoryActionRowParts } from './InventoryActionRow'
+import { createInventoryEquipmentIcon, createInventoryResourceIcon } from './InventoryItemIcons'
+import { createEquipmentRowInfo, createResourceRowInfo } from './InventoryTooltips'
+import type { ResourceAmount } from '../../types/common'
+import type { GameContextLike } from '../../types/context'
+import type { MenuHost } from '../MenuHost'
+
+type InventoryItemRowMenu = MenuHost | GameContextLike['menu']
+
+type BaseInventoryItemRowOptions = {
+  ariaLabel?: string
+  badge?: string
+  className?: string
+  description?: string
+  descriptionPrefix?: string
+  disabled?: boolean
+  icon?: HTMLElement
+  id: string
+  labelContext?: string
+  onAction?: (mode: 'one' | 'all') => void
+  playClick?: boolean
+  meta?: string
+  showTooltip?: boolean
+  title?: string
+}
+
+type EquipmentItemRowOptions = BaseInventoryItemRowOptions & {
+  count?: number
+  equipment: string
+  mode?: Parameters<typeof createEquipmentRowInfo>[2]
+  showValue?: boolean
+}
+
+type ResourceItemRowOptions = BaseInventoryItemRowOptions & {
+  amount?: number
+  mode?: Parameters<typeof createResourceRowInfo>[2]
+  resource: keyof ResourceAmount
+  showValue?: boolean
+}
+
+function bindItemRowTooltip(
+  menu: InventoryItemRowMenu,
+  element: HTMLButtonElement,
+  parts: InventoryItemRowParts,
+  show: boolean
+): void {
+  if (show) menu.menuTooltip?.bind(element, parts.info.tooltip)
+}
+
+function getRowDescription(options: BaseInventoryItemRowOptions, fallback: string): string {
+  return [options.descriptionPrefix, options.description ?? fallback].filter(Boolean).join(' | ')
+}
+
+export type InventoryItemRowParts = InventoryActionRowParts & {
+  info: ReturnType<typeof createEquipmentRowInfo> | ReturnType<typeof createResourceRowInfo>
+}
+
+export function createInventoryEquipmentRow(
+  context: GameContextLike,
+  menu: InventoryItemRowMenu,
+  options: EquipmentItemRowOptions
+): InventoryItemRowParts {
+  const count = options.count ?? 1
+  const info = createEquipmentRowInfo(options.equipment, count, options.mode, { showValue: options.showValue })
+  const parts = createInventoryActionRow(menu, {
+    id: options.id,
+    badge: options.badge,
+    className: options.className,
+    disabled: options.disabled,
+    title: options.title ?? info.title,
+    description: getRowDescription(options, info.description),
+    meta: options.meta ?? info.meta,
+    quantity: count,
+    playClick: options.playClick,
+    onAction: options.onAction,
+  }) as InventoryItemRowParts
+  parts.info = info
+  if (options.ariaLabel) parts.element.setAttribute('aria-label', options.ariaLabel)
+  if (options.icon) {
+    parts.icon.appendChild(options.icon)
+  } else if (options.equipment) {
+    parts.icon.appendChild(
+      createInventoryEquipmentIcon(context, options.equipment, options.labelContext ?? 'inventory')
+    )
+  } else {
+    appendInventoryEmptyIcon(parts.icon)
+  }
+  bindItemRowTooltip(menu, parts.element, parts, options.showTooltip ?? false)
+  return parts
+}
+
+export function createInventoryResourceRow(
+  menu: InventoryItemRowMenu,
+  options: ResourceItemRowOptions
+): InventoryItemRowParts {
+  const amount = options.amount ?? 1
+  const info = createResourceRowInfo(options.resource, amount, options.mode, { showValue: options.showValue })
+  const parts = createInventoryActionRow(menu, {
+    id: options.id,
+    badge: options.badge,
+    className: options.className,
+    disabled: options.disabled,
+    title: options.title ?? info.title,
+    description: getRowDescription(options, info.description),
+    meta: options.meta ?? info.meta,
+    quantity: amount,
+    playClick: options.playClick,
+    onAction: options.onAction,
+  }) as InventoryItemRowParts
+  parts.info = info
+  if (options.ariaLabel) parts.element.setAttribute('aria-label', options.ariaLabel)
+  parts.icon.appendChild(options.icon ?? createInventoryResourceIcon(options.resource))
+  bindItemRowTooltip(menu, parts.element, parts, options.showTooltip ?? false)
+  return parts
+}

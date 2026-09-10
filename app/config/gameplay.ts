@@ -19,6 +19,10 @@ export const DAY_NIGHT_COLOR_TIMELINE: Array<{ hour: number; color: DayNightColo
     color: { gamma: 0.98, contrast: 1.02, saturation: 0.7, brightness: 0.88, red: 0.76, green: 0.86, blue: 1.16 },
   },
   {
+    hour: 5.5,
+    color: { gamma: 0.99, contrast: 1.02, saturation: 0.82, brightness: 0.93, red: 0.94, green: 0.94, blue: 1.04 },
+  },
+  {
     hour: 7,
     color: { gamma: 1, contrast: 1.02, saturation: 1.08, brightness: 1.02, red: 1.14, green: 1.02, blue: 0.86 },
   },
@@ -56,7 +60,7 @@ export const NATURAL_RESOURCE_REGROWTH_BY_TYPE = {
     respawnQuantityRatio: 0.5,
   },
   [RESOURCE_TYPES.wheat]: {
-    respawnDelayDays: 2,
+    respawnDelayDays: 1,
     respawnQuantityRatio: 0.5,
   },
   [RESOURCE_TYPES.medicinalHerb]: {

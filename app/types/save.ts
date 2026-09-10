@@ -1,5 +1,7 @@
+import type { TargetObservation } from '../lib/units/playerTargetKnowledge'
+import type { CaveDefinition } from './cave'
 import type { ResourceAmount } from './common'
-import type { AnimalConfig, BuildingConfig, ResourceConfig, TechnologyConfig, UnitConfig } from './config'
+import type { AnimalConfig, BuildingConfig, ConfigValue, ResourceConfig, UnitConfig } from './config'
 import type { FogSpriteMemory } from './fog'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid } from './vision'
@@ -7,19 +9,29 @@ import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitT
 import type { VillagerAutonomyJob } from './entities'
 import type { HeroAppearanceConfig } from '../lib/lpc/heroAppearance'
 import type { HorseTamingStatus } from '../lib/horses/horseTaming'
+import type { SavedTrainingEntry, SavedTrainingExtra } from './training'
 
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
 export type SaveDestination = Partial<SaveGridPoint & { x: number; y: number; label: string }>
 export type SaveRallyPoint = SaveGridPoint & { direction: number }
-export type SaveTechnologyState = { type?: string; config?: TechnologyConfig } | null
+
+// Read-only compatibility for saves created before objective-based progression.
+type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValue } } | null
 
 export type SaveEntityState = {
+  cavePosition?: { caveId: string; i: number; j: number }
+  cave?: CaveDefinition
+  buildingAge?: number
+  interiorBuildings?: SaveEntityState[]
+  interiorOwner?: string
+  offlineWork?: { target: string; milliseconds: number }
   action?: string | null
   assetAge?: AssetAge
   assetCiv?: string
   assetType?: string
   autonomousJob?: VillagerAutonomyJob | null
+  exploringForAutonomy?: boolean
   blockedGatherApproach?: { target: SaveReference; action: string } | null
   buildQueue?: string[]
   currentFrame?: number
@@ -72,6 +84,9 @@ export type SaveEntityState = {
   loading?: number | null
   trainingStartedDay?: number | null
   trainingCompleteDay?: number | null
+  trainingTargetType?: string | null
+  trainingQueue?: SavedTrainingEntry[]
+  trainingExtra?: SavedTrainingExtra
   loop?: boolean
   lootEquipment?: string[]
   marketStock?: string[]
@@ -134,7 +149,9 @@ export type SavedAIState = {
 }
 
 export type SavePlayerState = PlayerSetupConfig & {
+  targetKnowledge?: TargetObservation[]
   age?: number
+  ageRulesVersion?: number
   buildings?: SaveEntityState[]
   cellViewed?: number
   colorHex?: string
@@ -146,6 +163,8 @@ export type SavePlayerState = PlayerSetupConfig & {
   wheat?: number
   gold?: number
   iron?: number
+  completedObjectives?: string[]
+  // Legacy discovery data is accepted on load but no longer used or saved.
   discoveredEquipment?: string[]
   discoveredResources?: string[]
   hasBuilt?: string[]
@@ -178,6 +197,8 @@ export type SavePlayerState = PlayerSetupConfig & {
 }
 
 export type SaveWeatherState = {
+  dailyWeatherSeed?: number
+  forcedUntilMs?: number
   elapsedMs?: number
   flashCooldownMs?: number
   lightningBursts?: number
@@ -202,6 +223,7 @@ export type PendingWorldPursuer = {
 }
 
 type SaveRuntimeState = {
+  offlineFromElapsedMs?: number
   worldPursuers?: PendingWorldPursuer[]
   dayNightElapsedMs?: number
   elapsedMs?: number

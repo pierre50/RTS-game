@@ -1,3 +1,4 @@
+import { getCaveInteriorBlueprint } from '../../app/lib/buildings/caveBlueprint'
 import type { MapBlueprint } from '../../app/classes/map/MapGeneration'
 import { createRoundLocalInteriorBlueprint } from '../../app/classes/map/generation/LocalMapBlueprint'
 import { getInteriorMapSizeForBuildingSize } from '../../app/lib/buildings/interiorProfiles'
@@ -25,6 +26,7 @@ export function isBlueprintExitCell(blueprint: MapBlueprint, i: number, j: numbe
 }
 
 export function createDefaultBuildingInteriorBlueprint(building: BuildingEntity): MapBlueprint {
+  if (building.type === 'Cave') return getCaveInteriorBlueprint(building)
   const size = getDefaultInteriorMapSize(building)
   const buildingSize = building.size ?? 2
   return createRoundLocalInteriorBlueprint({

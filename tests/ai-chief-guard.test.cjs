@@ -31,6 +31,11 @@ function loadAI() {
     return tsModule.exports
   }
   const localRequire = request => {
+    if (request.endsWith('/playerTargetKnowledge'))
+      return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
+    if (request.endsWith('/targetPursuit'))
+      return { updateTargetPursuit: () => false, routeToRememberedTarget: () => false }
+
     if (request === './Player') return { Player: class {} }
     if (request === '../../lib' || request === '../lib') {
       return {

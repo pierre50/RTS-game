@@ -10,7 +10,7 @@ function loadRuntimeServices() {
         calls.push(name)
         this.layer = { name: `${name}-layer` }
       }
-      destroy() {}
+      destroy() { calls.push(`destroy:${name}`) }
       register() {}
       getDarknessLevel() {
         return 0
@@ -28,6 +28,7 @@ function loadRuntimeServices() {
       '../../services/DayNightSystem': { DayNightSystem: service('dayNight') },
       '../../services/HeroFollowerPatrolSystem': { HeroFollowerPatrolSystem: service('heroFollowerPatrols') },
       '../../services/IdleUnitPatrolSystem': { IdleUnitPatrolSystem: service('idleUnitPatrols') },
+      '../../services/VillagerAutonomySystem': { VillagerAutonomySystem: service('villagerAutonomy') },
       '../../services/InteriorExitMarkerSystem': { InteriorExitMarkerSystem: service('interiorExitMarker') },
       '../../services/lighting/LightSystem': { LightSystem: service('lights') },
       '../../services/ShadowSystem': { ShadowSystem: service('shadows') },
@@ -43,6 +44,32 @@ function loadRuntimeServices() {
   return { ...module, calls }
 }
 
+test('saved training resumes after the clock is installed and before incoming trainee orders', () => {
+  const { createRuntimeServices } = loadRuntimeServices()
+  const calls = []
+  const context = { players: [] }
+  const building = {
+    resumeSavedTraining() {
+      assert.ok(context.dayNight)
+      calls.push('training')
+    },
+  }
+  const unit = {
+    trainingTargetType: 'Fantassin',
+    action: 'train',
+    dest: building,
+    sendToEvt(dest, action) {
+      assert.ok(context.dayNight)
+      assert.equal(dest, building)
+      assert.equal(action, 'train')
+      calls.push('order')
+    },
+  }
+  context.players.push({ buildings: [building], units: [unit] })
+  createRuntimeServices(context, { mapType: 'world-region' }, () => ({ height: 100, width: 100, x: 0, y: 0 }))
+  assert.deepEqual(calls, ['training', 'order'])
+})
+
 test('runtime services skip weather inside interior maps', () => {
   const { addRuntimeServiceLayers, calls, createRuntimeServices } = loadRuntimeServices()
   const context = {}
@@ -55,6 +82,9 @@ test('runtime services skip weather inside interior maps', () => {
   assert.ok(services.interiorExitMarker)
   assert.equal(context.weather, null)
   assert.equal(context.timeSkip, services.timeSkip)
+  assert.equal(context.worldPursuit, null)
+  assert.equal(services.worldPursuit, null)
+  assert.equal(calls.includes('worldPursuit'), false)
   assert.equal(calls.includes('weather'), false)
   assert.equal(calls.includes('timeSkip'), true)
   assert.equal(calls.includes('idleUnitPatrols'), true)
@@ -80,6 +110,9 @@ test('runtime services keep weather outside interior maps', () => {
   assert.ok(services.buildingInteriorEntryMarker)
   assert.equal(services.interiorExitMarker, null)
   assert.equal(context.weather, services.weather)
+  assert.equal(context.worldPursuit, null)
+  assert.equal(services.worldPursuit, null)
+  assert.equal(calls.includes('worldPursuit'), false)
   assert.equal(context.timeSkip, services.timeSkip)
   assert.equal(calls.includes('weather'), true)
   assert.equal(calls.includes('buildingInteriorEntryMarker'), true)
@@ -91,4 +124,16 @@ test('runtime services keep weather outside interior maps', () => {
     ['weather-layer', 'lights-layer']
   )
   assert.ok(services.weather.layer.zIndex < services.lights.layer.zIndex)
+})
+
+test('autonomy monitor mounts after rest and delivery and is destroyed between visits', () => {
+  const { createRuntimeServices, destroyRuntimeServices, calls } = loadRuntimeServices()
+  const context = {}
+  const services = createRuntimeServices(context, { mapType: 'world-region' }, () => ({ width: 100, height: 100, x: 0, y: 0 }))
+  assert.ok(calls.indexOf('villagerAutonomy') > calls.indexOf('unitRest'))
+  assert.ok(calls.indexOf('villagerAutonomy') > calls.indexOf('resourceDelivery'))
+  assert.ok(services.villagerAutonomy)
+  const cleared = destroyRuntimeServices(services, context)
+  assert.equal(cleared.villagerAutonomy, null)
+  assert.equal(calls.filter(call => call === 'destroy:villagerAutonomy').length, 1)
 })

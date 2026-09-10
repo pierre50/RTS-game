@@ -335,7 +335,9 @@ async function main() {
   console.log(`Manifest: ${path.relative(ROOT, path.join(options.out, 'manifest.json'))}`)
 }
 
-main().catch(error => {
+module.exports = { buildingInterior }
+
+if (require.main === module) main().catch(error => {
   console.error(error)
   process.exitCode = 1
 })

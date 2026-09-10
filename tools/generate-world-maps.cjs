@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const { syncWorldSettlementManifest } = require('./caves/settlements.cjs')
 
 const { writeScenery } = require('./maps/scenery.cjs')
 const fs = require('node:fs')
@@ -220,7 +221,7 @@ async function generateRegionMap(region, worldSeed, mapsDirectory) {
       environment,
       dominantBiome: region.dominantBiome,
       biomeWeights: region.biomeWeights,
-      settlements,
+      settlements: map.settlements ?? settlements,
       waterRatio: region.waterRatio,
       region: { x: region.x, y: region.y },
       path: relativePath,
@@ -271,6 +272,7 @@ async function main() {
     console.log(`Generated ${entry.id}: ${entry.environment}`)
   }
 
+  syncWorldSettlementManifest(manifest)
   const manifestPath = path.join(worldDirectory, 'manifest.json')
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   console.log(`World manifest: ${path.relative(ROOT, manifestPath)}`)

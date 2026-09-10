@@ -1,6 +1,7 @@
 import { MENU_INFO_IDS, RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { getIconPath } from '../../lib'
 import {
+  formatEquipmentLootLabel,
   formatEquipmentStackLabel,
   getEquipmentStacks,
   getUnitCorpseLootEquipment,
@@ -24,7 +25,8 @@ import {
   XP_CATEGORIES,
 } from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
-import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
+import { appendInventoryQuantityBadge } from '../inventory/InventoryActionRow'
+import { createInventoryEquipmentIcon } from '../inventory/InventoryItemIcons'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
@@ -69,19 +71,18 @@ function createCorpseEquipmentLootButton(
   button.className = 'corpse-loot-button ui-btn'
   button.setAttribute('aria-label', t('corpseLootTakeItem', { item: label }))
 
-  const icon = document.createElement('canvas')
-  icon.className = 'unit-avatar-frame corpse-loot-icon'
-  icon.width = 56
-  icon.height = 56
+  const iconWrap = document.createElement('span')
+  iconWrap.className = 'unit-avatar-frame corpse-loot-icon'
   if (unit.context?.app) {
-    renderEquipmentAvatarLazy(unit.context.app, equipment, icon, 'corpse loot', unit.context.performance)
+    iconWrap.appendChild(createInventoryEquipmentIcon(unit.context, equipment, 'corpse loot'))
   }
+  appendInventoryQuantityBadge(iconWrap, count)
 
   const text = document.createElement('span')
   text.className = 'corpse-loot-label'
-  text.textContent = label
+  text.textContent = formatEquipmentLootLabel(equipment)
 
-  button.appendChild(icon)
+  button.appendChild(iconWrap)
   button.appendChild(text)
   button.addEventListener('click', evt => {
     evt.preventDefault()
@@ -113,12 +114,16 @@ function createCorpseResourceLootButton(
   button.className = 'corpse-loot-button ui-btn'
   button.setAttribute('aria-label', t('corpseLootTakeItem', { item: label }))
 
-  button.appendChild(createInfoImage('corpse-loot-icon', getIconPath(RESOURCE_ICON_IDS[resource].commodity)))
+  const iconWrap = document.createElement('span')
+  iconWrap.className = 'unit-avatar-frame corpse-loot-icon'
+  iconWrap.appendChild(createInfoImage('img', getIconPath(RESOURCE_ICON_IDS[resource].commodity)))
+  appendInventoryQuantityBadge(iconWrap, amount)
 
   const text = document.createElement('span')
   text.className = 'corpse-loot-label'
-  text.textContent = label
+  text.textContent = t(resource)
 
+  button.appendChild(iconWrap)
   button.appendChild(text)
   button.addEventListener('click', evt => {
     evt.preventDefault()

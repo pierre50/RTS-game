@@ -1,3 +1,6 @@
+import { knownTarget, playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import type { PlayerLike } from '../types/player'
+import type { RuntimeEntity } from '../types/entities'
 import { ACTION_TYPES, BUILDING_TYPES } from '../constants'
 import { getClosestInstance, getGaiaAnimals, isWheatMature } from '../lib'
 import type { RuntimeMap } from '../types/map'
@@ -66,7 +69,8 @@ export class AIEconomyFoodManager {
 
     return new Set(
       [...ai.foundedBerrybushs].filter((bush: AIEntityLike) => {
-        if (!bush || bush.isDead || (bush.quantity || 0) <= 0 || !this.isLocationSafe(bush)) return false
+        const known = bush && knownTarget(ai as unknown as PlayerLike, bush as RuntimeEntity)
+        if (!known || known.isDead || (known.quantity ?? 0) <= 0 || !this.isLocationSafe(bush)) return false
 
         const nearDropSite =
           effectiveDropSites.length === 0 ||
@@ -116,8 +120,11 @@ export class AIEconomyFoodManager {
   }
 
   getViableHuntAnimals(hasKnownBerryFood: boolean, dropSites: AIBuildingLike[] = []): AIEntityLike[] {
-    return [...this.ai.foundedAnimals].filter((animal: AIEntityLike) =>
-      animal.type !== 'Horse' && this.isViableLiveHunt(animal, hasKnownBerryFood, dropSites)
+    return [...this.ai.foundedAnimals].filter(
+      (animal: AIEntityLike) =>
+        playerSeesTarget(this.ai as unknown as PlayerLike, animal as RuntimeEntity) &&
+        animal.type !== 'Horse' &&
+        this.isViableLiveHunt(animal, hasKnownBerryFood, dropSites)
     )
   }
 
@@ -151,12 +158,11 @@ export class AIEconomyFoodManager {
   releaseExcessFoodWorkers(workers: AIEntityLike[], target: number, availableVillagers: AIEntityLike[]): void {
     let excess = Math.max(0, workers.length - target)
     if (!excess) return
-    const releasable = workers
-      .sort((a, b) => {
-        const aDistance = a.dest ? Math.abs(a.i - a.dest.i) + Math.abs(a.j - a.dest.j) : 0
-        const bDistance = b.dest ? Math.abs(b.i - b.dest.i) + Math.abs(b.j - b.dest.j) : 0
-        return bDistance - aDistance
-      })
+    const releasable = workers.sort((a, b) => {
+      const aDistance = a.dest ? Math.abs(a.i - a.dest.i) + Math.abs(a.j - a.dest.j) : 0
+      const bDistance = b.dest ? Math.abs(b.i - b.dest.i) + Math.abs(b.j - b.dest.j) : 0
+      return bDistance - aDistance
+    })
     for (const villager of releasable) {
       if (excess <= 0) break
       villager.stop?.()
@@ -222,7 +228,7 @@ export class AIEconomyFoodManager {
     const { ai } = this
     for (const animal of getGaiaAnimals(map.gaia)) {
       if (animal.isDead && !animal.isDestroyed && (animal.quantity || 0) > 0) {
-        if (ai.views?.isVisible(animal.i, animal.j)) ai.foundedDeadAnimals.add(animal)
+        if (playerSeesTarget(ai as unknown as PlayerLike, animal as RuntimeEntity)) ai.foundedDeadAnimals.add(animal)
       }
     }
   }
@@ -258,9 +264,10 @@ export class AIEconomyFoodManager {
     const sources = {
       animals: this.getViableHuntAnimals(foodContext.hasKnownBerryFood, foodContext.meatDropSites),
       berries: [...foodContext.viableBerryBushes],
-      carcasses: [...ai.foundedDeadAnimals].filter(
-        (animal: AIEntityLike) => !animal.isDestroyed && (animal.quantity || 0) > 0 && this.isLocationSafe(animal)
-      ),
+      carcasses: [...ai.foundedDeadAnimals].filter((animal: AIEntityLike) => {
+        const known = knownTarget(ai as unknown as PlayerLike, animal as RuntimeEntity)
+        return known && !known.isDestroyed && (known.quantity ?? 0) > 0 && this.isLocationSafe(animal)
+      }),
       farms: [...farmCandidates],
       meatDrops: foodContext.meatDropSites,
       plantDrops: foodContext.plantDropSites,

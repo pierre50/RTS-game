@@ -1,3 +1,4 @@
+import { definedProperties } from '../../lib/definedProperties'
 import { BUILDING_TYPES, FADE_DURATION_MS, MOUNTED_HORSE_SPEED_BONUS, UNIT_TYPES } from '../../constants'
 import { canAfford, payCost } from '../../lib'
 import { fadeOut } from '../../lib/entities/entityFade'
@@ -13,6 +14,7 @@ import { consumeStableHorse, returnStableHorse, type StableHorse } from '../../l
 import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
 import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { ResourceAmount } from '../../types/common'
+import type { TrainingTrainee } from '../../types/training'
 import type { BuildingControllerHost, TrainingBuilding } from './BuildingTypes'
 
 export function getTrainingBuilding(building: BuildingControllerHost): TrainingBuilding {
@@ -31,11 +33,7 @@ function isStableMountTraining(
   return Boolean(building.type === BUILDING_TYPES.stable && trainee && trainee.type === type && !trainee.mountedOnHorse)
 }
 
-function getTrainingCost(
-  building: BuildingControllerHost,
-  trainee: UnitEntity,
-  type: string
-): ResourceAmount {
+export function getTrainingCost(building: BuildingControllerHost, trainee: UnitEntity, type: string): ResourceAmount {
   return isStableMountTraining(building, trainee, type) ? {} : getUnitTrainingCost(building.owner, type)
 }
 
@@ -68,13 +66,13 @@ function getTrainingExtra(
   }
   if (!isStableMountTraining(building, trainee, type)) return { ...baseExtra, experience: {} }
   const traineeSpeed = Number(trainee.speed)
-  const mountedExtra: UnitCreationExtra = {
+  const mountedExtra: UnitCreationExtra = definedProperties({
     ...baseExtra,
     mountedOnHorse: true,
     hitPoints: trainee.hitPoints,
     speed: Number.isFinite(traineeSpeed) ? traineeSpeed + MOUNTED_HORSE_SPEED_BONUS : undefined,
     experience: trainee.experience ? { ...trainee.experience } : undefined,
-  }
+  })
   mountedExtra.horseColor = stableHorse?.horseColor ?? trainee.horseColor
   return mountedExtra
 }
@@ -120,7 +118,7 @@ export function removeTraineeForTraining(trainee: UnitEntity): void {
   })
 }
 
-export function clearActiveTraining(building: BuildingControllerHost, trainee?: UnitEntity | null): void {
+export function clearActiveTraining(building: BuildingControllerHost, trainee?: TrainingTrainee | null): void {
   const trainingBuilding = getTrainingBuilding(building)
   if (trainee && trainingBuilding.trainingUnit && trainingBuilding.trainingUnit !== trainee) return
   trainingBuilding.trainingUnit = null
@@ -159,7 +157,6 @@ export function startTrainingWithUnit(
   if (!hasBuildingTrainingCapacity(building, { excludeUnit: trainee })) return false
   if (!isExpectedTrainingUnit(trainee, type) || !canUnitTrainInto(building, trainee, type)) return false
   if (isBlockedByMissingChief(building, type)) return failTraineeEntry(building, trainee, t('requiresChief'))
-  if (building.technology) return false
 
   const stableHorse = isStableMountTraining(building, trainee, type) ? consumeStableHorse(building) : null
   if (isStableMountTraining(building, trainee, type) && !stableHorse) {

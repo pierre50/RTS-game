@@ -1,9 +1,11 @@
+const { syncBanditSettlementPositions } = require('../caves/settlements.cjs')
 const { loadGenerationTs } = require('./load-generation-ts.cjs')
 const { TERRAIN, TERRAIN_INDEX } = require('./config.cjs')
 const { runtimeFillWaterGaps, runtimeNormalizeWaterTopology } = require('./headless-loader.cjs')
 const { createSquareLocalBlueprint } = loadGenerationTs('app/classes/map/generation/LocalMapBlueprint.ts')
 const { EIGHT_NEIGHBOR_OFFSETS } = require('./topology.cjs')
-const { encodePreparedTerrain } = loadGenerationTs('app/serialization/PreparedTerrainCodec.ts')
+const { encodePreparedTerrain } = loadGenerationTs(require.resolve('../../app/serialization/PreparedTerrainCodec.ts'))
+const { planCaves } = require('../caves/placement.cjs')
 const { prepareContent } = require('./prepared-content.cjs')
 const { normalizeLocalMapRelief } = loadGenerationTs('tools/maps/LocalMapRelief.ts')
 
@@ -55,7 +57,8 @@ function prepareLocalBlueprint(source) {
 }
 
 function finalizeBlueprintPayload(payload, { refreshContent = false } = {}) {
-  if (!refreshContent && payload.version === 2 && payload.preparedContentVersion === 2) return payload
+  if (!refreshContent && payload.version === 2 && payload.preparedContentVersion === 2 && Array.isArray(payload.caves))
+    return syncBanditSettlementPositions(payload)
   const n = payload.size + 1
   const terrain = Buffer.from(payload.terrain, 'base64')
   const relief = new Int8Array(Buffer.from(payload.relief, 'base64'))
@@ -73,7 +76,12 @@ function finalizeBlueprintPayload(payload, { refreshContent = false } = {}) {
         }
   }
   const blueprint = payload.version === 2 ? source : prepareLocalBlueprint(source)
-  const content = prepareContent(blueprint)
+  let content = prepareContent(blueprint)
+  const caves = planCaves(blueprint, content.terrainAppearance)
+  if (!blueprint.caves) {
+    blueprint.caves = caves
+    content = prepareContent(blueprint)
+  }
   const width = blueprint.size + 1
   const finalTerrain = new Uint8Array(width * width).fill(255)
   const finalRelief = new Int8Array(width * width)
@@ -83,11 +91,12 @@ function finalizeBlueprintPayload(payload, { refreshContent = false } = {}) {
       finalTerrain[i * width + j] = TERRAIN_INDEX.get(blueprint.terrain[i][j])
       finalRelief[i * width + j] = blueprint.relief[i][j]
     }
-  return {
+  return syncBanditSettlementPositions({
     ...blueprint,
     version: 2,
     sourceSize: payload.sourceSize ?? payload.size,
     preparedContentVersion: 2,
+    caves,
     animals: content.animals,
     terrainAppearance: undefined,
     terrainAppearanceData: Buffer.from(encodePreparedTerrain(content.terrainAppearance, blueprint.size)).toString(
@@ -96,6 +105,6 @@ function finalizeBlueprintPayload(payload, { refreshContent = false } = {}) {
     cellCount: finalTerrain.length,
     terrain: Buffer.from(finalTerrain).toString('base64'),
     relief: Buffer.from(finalRelief.buffer).toString('base64'),
-  }
+  })
 }
 module.exports = { prepareLocalBlueprint, finalizeBlueprintPayload }

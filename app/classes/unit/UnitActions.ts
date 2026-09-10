@@ -75,10 +75,6 @@ export class UnitActions {
     this.resourceActions.startGathering(loadingType, soundId, options)
   }
 
-  upgrade(type: string) {
-    this.directedActions.upgrade(type)
-  }
-
   prepareLoopingWorkAction(): boolean {
     return this.resourceActions.prepareLoopingWorkAction()
   }

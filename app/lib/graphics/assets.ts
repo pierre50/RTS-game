@@ -1,3 +1,4 @@
+import { getBuildingAge } from '../buildings/buildingAge'
 import type { AssetAge } from '../../types/pixi'
 import type { ConfigValue } from '../../types/config'
 import type { TextureRef } from './textures'
@@ -44,6 +45,7 @@ const DECO_BUILDING_ASSETS: Record<string, BuildingAsset> = {
   CampJarLarge: staticDecoBuildingAsset(14),
   Trap: staticDecoBuildingAsset(15),
   Chest: staticDecoBuildingAsset(16),
+  Cave: { animated: false, images: { final: { sheet: 'buildings/cave', frame: 0 } } },
 }
 
 export type AssetOwner = {
@@ -60,6 +62,7 @@ const INTERFACE_ICON_SHEETS: Record<string, string> = {
 }
 
 export type BuildingWithAssetOwner = {
+  buildingAge?: number
   assetAge?: AssetAge
   assetCiv?: string
   owner: {
@@ -108,7 +111,7 @@ export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetC
 }
 
 export function getBuildingAssetOwner(building: BuildingWithAssetOwner): AssetOwner {
-  const age = typeof building.assetAge === 'number' ? building.assetAge : building.owner.age
+  const age = getBuildingAge(building, building.owner.age)
   return {
     civ: building.assetCiv || building.owner.civ || '',
     age,

@@ -27,7 +27,7 @@ export const SOUND_CUES = {
     meleeWhiff: 'attack-swipe',
   },
   projectile: {
-    arrowLaunch: ['archer-attack', 'archer-attack-2'],
+    arrowLaunch: ['archer-attack'],
     arrowShot: 'arrow-shot',
   },
   unit: {
@@ -52,7 +52,9 @@ export const SOUND_CUES = {
   building: {
     burning: ['building-burning', 'building-burning-2', 'building-burning-3'],
     flame: 'building/campfire-crackle',
+    trapRecover: 'building/trap-recover',
     chestOpen: 'building/chest-open',
+    doorOpen: 'building/door-open',
     collapse: ['building-destroyed', 'building-destroyed-2', 'building-destroyed-3'],
   },
   weather: {
@@ -60,6 +62,7 @@ export const SOUND_CUES = {
     rainHeavy: 'weather/heavy-rain',
     windLight: 'weather/light-wind',
     windHeavy: 'weather/heavy-wind',
+    morning: 'weather/morning-ambience',
     night: 'weather/night-ambience',
     ocean: 'weather/ocean-ambience',
     thunder: ['weather/thunder-1', 'weather/thunder-2', 'weather/thunder-3'],

@@ -235,7 +235,7 @@ test('an animal repaths instead of stepping onto a water cell', () => {
 
   movement.moveToPath()
 
-  assert.deepEqual(calls, [['sendTo', grid[9][9], 'flee', { forceRepath: true, movementSheet: undefined }]])
+  assert.deepEqual(calls, [['sendTo', grid[9][9], 'flee', { forceRepath: true }]])
   assert.equal(animal.i, 5)
   assert.equal(animal.j, 5)
 })

@@ -209,10 +209,10 @@ test('time skip completion callback runs only after completed skips', () => {
   })
 })
 
-test('next morning hours target the next 07:00', () => {
+test('next morning hours target the next 06:00', () => {
   const { getHoursUntilNextMorning } = loadTimeSkipModule()
 
-  assert.equal(getHoursUntilNextMorning(23, 30), 7.5)
-  assert.equal(getHoursUntilNextMorning(6, 45), 0.25)
-  assert.equal(getHoursUntilNextMorning(7, 0), 24)
+  assert.equal(getHoursUntilNextMorning(23, 30), 6.5)
+  assert.equal(getHoursUntilNextMorning(5, 45), 0.25)
+  assert.equal(getHoursUntilNextMorning(6, 0), 24)
 })

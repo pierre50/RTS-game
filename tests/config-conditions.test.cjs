@@ -3,6 +3,36 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { isValidCondition } = loadTsModule('app/lib/combat/configConditions.ts')
 
+test('the stable requires Bronze, never a catching pole discovery', () => {
+  const { Stable } = require('../public/assets/data/gameplay/buildings.json')
+  const player = { age: 0, discoveredEquipment: [], completedObjectives: [] }
+  assert.deepEqual(Stable.conditions, [{ key: 'age', op: '>=', value: 1 }])
+  assert.equal(
+    Stable.conditions.every(condition => isValidCondition(condition, player)),
+    false
+  )
+  player.age = 1
+  assert.equal(
+    Stable.conditions.every(condition => isValidCondition(condition, player)),
+    true
+  )
+})
+
+test('advanced buildings require the Bronze Age while first-age objective buildings remain available', () => {
+  const config = require('../public/assets/data/gameplay/buildings.json')
+  const gated = new Set(['ArcheryRange', 'WatchTower', 'SmallWall', 'Stable'])
+  for (const age of [0, 1, 2]) {
+    const player = { age, completedObjectives: [] }
+    for (const [type, entry] of Object.entries(config)) {
+      assert.equal(
+        (entry.conditions ?? []).every(condition => isValidCondition(condition, player)),
+        !gated.has(type) || age >= 1,
+        `${type}, age ${age}`
+      )
+    }
+  }
+})
+
 test('configuration comparisons preserve numeric boundaries and unordered array equality', () => {
   for (const [op, value, actual, expected] of [
     ['=', 2, 2, true],
@@ -32,7 +62,7 @@ test('configuration guards distinguish optional discovery from malformed rules',
   assert.equal(isValidCondition(null, {}), true)
   assert.equal(isValidCondition(undefined, {}), true)
   assert.equal(isValidCondition({ op: 'includes', key: 'discoveredEquipment', value: 'axe' }, {}), false)
-  assert.equal(isValidCondition({ op: 'includes', key: 'discoveredResources', value: 'wood' }, {}), false)
+  assert.equal(isValidCondition({ op: 'includes', key: 'completedObjectives', value: 'craftBow' }, {}), false)
   assert.throws(() => isValidCondition({ op: '=', key: 'missing', value: 1 }, {}), /Key not found/)
   assert.throws(
     () => isValidCondition({ op: 'invalid', key: 'test', value: 1 }, { test: 1 }),

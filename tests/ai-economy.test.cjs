@@ -47,13 +47,21 @@ function loadAIEconomy() {
     const moduleSource = fs.readFileSync(moduleFilename, 'utf8')
     const { code: moduleCode } = babel.transformSync(moduleSource, {
       filename: moduleFilename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     })
     const tsModule = { exports: {} }
     new Function('module', 'exports', 'require', moduleCode)(tsModule, tsModule.exports, localRequire)
     return tsModule.exports
   }
   const localRequire = request => {
+    if (request.endsWith('/playerTargetKnowledge'))
+      return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
+    if (request.endsWith('/targetPursuit'))
+      return { updateTargetPursuit: () => false, routeToRememberedTarget: () => false }
+
     if (request === '../constants') return constants
     if (request === '../lib') {
       return {
@@ -381,7 +389,10 @@ test('horse capture assignment spreads villagers across unreserved horses and st
     ['villager-1', 'horse-1'],
     ['villager-2', 'horse-2'],
   ])
-  assert.deepEqual(villagers.map(villager => villager.label), ['villager-3'])
+  assert.deepEqual(
+    villagers.map(villager => villager.label),
+    ['villager-3']
+  )
 })
 
 test('horse capture assignment ignores hero companion horses', () => {

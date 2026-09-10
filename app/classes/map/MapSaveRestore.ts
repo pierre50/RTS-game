@@ -1,3 +1,6 @@
+import { restoreLegacyStaticKnowledge, restoreTargetKnowledge } from '../../lib/units/playerTargetKnowledge'
+import type { GameContextLike } from '../../types/context'
+import { restoreCaveOccupants as restoreSavedCaveOccupants } from './generation/CaveSaveRestore'
 import { expandLegacyFoodAmount, syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -5,11 +8,14 @@ import type { PlayerLike } from '../../types/player'
 import type { SaveEntityState, SaveReference } from '../../types/save'
 import type { MapGenerationMap } from './MapGenerationTypes'
 import { getDest, getDestEntity, isRuntimeDestination } from './MapSaveReferences'
+import { ensureRuntimeBuildingInteriorSpace } from '../../../engine/services/BuildingInteriorSpaceSystemRuntime'
 import type { SavedPlayer } from './MapSaveRestoreTypes'
 export { restoreAIState } from './MapSaveAI'
 
 export type { SavedPlayer } from './MapSaveRestoreTypes'
 type RestoringMobileEntity = (UnitEntity | AnimalEntity) & {
+  autonomousJob?: UnitEntity['autonomousJob']
+  exploringForAutonomy?: boolean
   action?: string | null
   blockedGatherApproach?: { target: SaveReference | RuntimeEntity; action: string } | null
   buildQueue?: Array<string | BuildingEntity>
@@ -39,11 +45,14 @@ export function processUnit(unit: RestoringMobileEntity, context: MapGenerationM
       unit.path = []
       unit.setDest?.(dest)
       unit.action = savedAction
+      if (savedAction === 'train' && !context.context.dayNight) return
       const restoredPath = savedPath.map((cell: RuntimeCell) => context.grid[cell.i]?.[cell.j]).filter(Boolean)
       if (restoredPath.length) {
         unit.setPath?.(restoredPath)
       } else if (savedAction && unit.getAction) {
         unit.getAction(savedAction)
+      } else if (unit.exploringForAutonomy && unit.autonomousJob && unit.sendToEvt) {
+        unit.sendToEvt(dest, null, { forceRepath: true, preserveAutonomy: true })
       } else {
         const destEntity = isRuntimeDestination(dest) ? dest : null
         unit.commonSendTo && destEntity
@@ -72,15 +81,30 @@ function migrateLegacyFoodInventory(entity: BuildingEntity | UnitEntity): void {
   entity.inventory!.resources = expandLegacyFoodAmount(resources)
 }
 
-export function restorePlayerEntitiesFromSave(player: PlayerLike, savedPlayer: SavedPlayer): void {
+export function restorePlayerEntitiesFromSave(
+  player: PlayerLike,
+  savedPlayer: SavedPlayer,
+  deferInteriors = false
+): void {
+  restoreTargetKnowledge(player, savedPlayer.targetKnowledge)
+  if (!savedPlayer.targetKnowledge) restoreLegacyStaticKnowledge(player, player.context?.map?.resources ?? [])
   const { buildings, units, corpses } = savedPlayer
-  player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true }))
+  player.buildings = (buildings || []).map(building =>
+    player.createBuilding({ ...building, skipBuiltEffects: true, deferTrainingResume: true })
+  )
   player.units = (units || [])
     .map(unit => player.createUnit?.({ ...unit, suppressCreateSound: true }, { preserveType: true }))
     .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
   player.corpses = (corpses || [])
     .map(unit => player.createUnit?.({ ...unit, suppressCreateSound: true }, { preserveType: true }))
     .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
+
+  for (const building of [...player.buildings]) {
+    if (!deferInteriors && building.interiorBuildings) {
+      if (!building.context) throw new Error('Cannot restore building interior without runtime context')
+      ensureRuntimeBuildingInteriorSpace(building.context, building)
+    }
+  }
 
   // Old saves stored food as one pooled amount per bag; spread it across berry/meat/wheat so it stays visible/spendable.
   for (const entity of [...player.buildings, ...player.units, ...player.corpses]) migrateLegacyFoodInventory(entity)
@@ -131,4 +155,15 @@ export function restorePlayerViewsAndFog(player: PlayerLike, map: MapGenerationM
       }
     }
   }
+}
+
+export function restoreCaveOccupants(context: GameContextLike, players: SavedPlayer[]): void {
+  restoreSavedCaveOccupants(context, players, ensureRuntimeBuildingInteriorSpace)
+}
+
+export function restorePlayerInteriors(player: PlayerLike): void {
+  for (const building of [...player.buildings]) {
+    if (building.interiorBuildings && building.context) ensureRuntimeBuildingInteriorSpace(building.context, building)
+  }
+  syncPlayerResourceFieldsFromChests(player)
 }

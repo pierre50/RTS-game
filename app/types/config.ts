@@ -3,14 +3,7 @@ import type { ResourceAmount } from './common'
 import type { CommandSound, UnitSounds } from './sounds'
 import type { HeroEquipmentSlot } from './unitTypes'
 
-export type ConfigValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | ConfigValue[]
-  | { [key: string]: ConfigValue | TechnologyConfig }
+export type ConfigValue = string | number | boolean | null | undefined | ConfigValue[] | { [key: string]: ConfigValue }
 
 export type Condition = {
   key: string
@@ -74,8 +67,6 @@ export interface CombatBehaviorConfig {
 
 interface EntityConfig {
   contact?: ContactProfileOverride
-  // Optional: still used by technologies, no longer read for units/buildings/
-  // animals/resources now that those show a cropped sprite avatar instead.
   icon?: string
   category?: string
   combatBehavior?: CombatBehaviorConfig
@@ -88,7 +79,6 @@ interface EntityConfig {
     | ResourceAmount
     | Condition[]
     | UnitSounds
-    | TechnologyAction
     | UnitAppearanceConfig
     | undefined
 }
@@ -122,7 +112,11 @@ export type EquipmentStats = {
   pierceArmor?: number
 }
 
+export type BuildingAgeStats = { cost?: ResourceAmount; totalHitPoints?: number }
+
 export interface BuildingConfig extends EntityConfig {
+  ageStats?: Record<string, BuildingAgeStats>
+  totalHitPoints?: number
   hideWhenFogged?: boolean
   indestructible?: boolean
   providesVision?: boolean
@@ -137,27 +131,6 @@ export interface BuildingConfig extends EntityConfig {
   useSpriteShadow?: boolean
   spriteShadowAnchor?: { x?: number; y?: number }
   units?: string[]
-  technologies?: string[]
-}
-
-interface TechnologyAction {
-  type: string
-  source?: string
-  target?: string
-  operations?: ConfigOperation[]
-}
-
-export interface ConfigOperation {
-  type: string | string[]
-  value?: ConfigValue
-  [key: string]: ConfigValue | string[] | undefined
-}
-
-export interface TechnologyConfig extends EntityConfig {
-  researchTime?: number
-  key?: string
-  value?: ConfigValue
-  action?: TechnologyAction
 }
 
 export type ResourceConfig = EntityConfig

@@ -20,7 +20,7 @@ export function renderEquipmentAvatarLazy(
 
   void loadDynamicEquipmentAssetQueued(visualEquipment, {
     metricName: 'lazyEquipmentAvatar.loadAsset',
-    performanceMonitor,
+    performanceMonitor: performanceMonitor ?? null,
   })
     .then(() => {
       if (canvas.isConnected) renderEquipmentAvatar(app, equipment, canvas)

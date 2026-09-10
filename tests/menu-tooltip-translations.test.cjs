@@ -32,20 +32,12 @@ const animals = require('../public/assets/data/gameplay/animals.json')
 const buildings = require('../public/assets/data/gameplay/buildings.json')
 const resources = require('../public/assets/data/gameplay/resources.json')
 const units = require('../public/assets/data/gameplay/units.json')
-const technologies = require('../public/assets/data/technologies/technologies.json')
 
 for (const lang of ['fr', 'en']) {
   test(`${lang} has names and descriptions for every building tooltip`, () => {
     for (const type of Object.keys(buildings)) {
       assert.ok(translations[lang][type], `Missing ${lang} building name: ${type}`)
       assert.ok(translations[lang][`${type}Description`], `Missing ${lang} building description: ${type}`)
-    }
-  })
-
-  test(`${lang} has names and descriptions for every technology tooltip`, () => {
-    for (const type of Object.keys(technologies)) {
-      assert.ok(translations[lang][type], `Missing ${lang} technology name: ${type}`)
-      assert.ok(translations[lang][`${type}Description`], `Missing ${lang} technology description: ${type}`)
     }
   })
 

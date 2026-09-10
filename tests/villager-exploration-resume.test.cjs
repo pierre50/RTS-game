@@ -62,6 +62,13 @@ test('continuation respects death, changed jobs, movement, interaction and map s
     { lookingAtHero: true },
     { followingHero: true },
     { actionLocked: true },
+    { trainingTargetType: 'Archer' },
+    { resourceDeliveryState: {} },
+    { waitingForEnergyAction: 'farm' },
+    { controlMode: 'hero' },
+    { pendingOrder: {} },
+    { combatMode: 'flee' },
+    { interiorExitState: {} },
     { spaceId: 'house' },
   ]) {
     const h = harness()
@@ -70,6 +77,14 @@ test('continuation respects death, changed jobs, movement, interaction and map s
     h.tasks.get(1).callback()
     assert.equal(h.count(), 0, JSON.stringify(change))
   }
+})
+
+test('continuation never starts work outside working hours', () => {
+  const h = harness()
+  scheduleVillagerExplorationResume(h.unit, h.resume)
+  h.unit.context.dayNight = { state: { hour: 0, minute: 0 } }
+  h.tasks.get(1).callback()
+  assert.equal(h.count(), 0)
 })
 
 test('failed searches retry slowly, and exploration memory is isolated by map space', () => {

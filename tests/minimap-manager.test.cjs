@@ -24,6 +24,7 @@ function loadMinimapManager({ renderUnitHeadAvatar = () => false } = {}) {
   const module = { exports: {} }
   const mocks = {
     '../constants': {
+      BUILDING_TYPES: { cave: 'Cave' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       FAMILY_TYPES: { animal: 'animal', resource: 'resource' },
@@ -189,6 +190,54 @@ test('legacy exterior minimap retains its isometric canvas', () => {
   assert.ok(draws.get('east').x > draws.get('origin').x)
   assert.ok(draws.get('south').x < draws.get('east').x)
   assert.ok(draws.get('south').y > draws.get('origin').y)
+})
+
+test('minimap uses a readable dark forest terrain color', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu({ revealEverything: true })
+  menu.context.map.grid[0][0] = {
+    color: '#0F1F0A',
+    i: 0,
+    j: 0,
+    type: 'DarkForest',
+    x: 0,
+    y: 0,
+  }
+  const manager = new MinimapManager(menu)
+  manager.activate()
+
+  const draw = menu.terrainMinimap.context.diamonds.find(([, , , , color]) => color === '#3D5630')
+  assert.ok(draw)
+})
+
+test('minimap dark forest tree markers stay darker than their biome ground', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu({ revealEverything: true })
+  const darkForestCell = {
+    color: '#0F1F0A',
+    i: 1,
+    j: 1,
+    type: 'DarkForest',
+    x: 10,
+    y: 10,
+  }
+  menu.context.map.grid[1][1] = darkForestCell
+  menu.context.map.showResources = true
+  menu.context.map.resources.add({
+    color: '#274F1F',
+    currentCell: darkForestCell,
+    family: 'resource',
+    i: 1,
+    j: 1,
+    label: 'dark-forest-tree',
+    position: { x: 10, y: 10 },
+    textureName: '000_resources/tree/dark-forest',
+    type: 'Tree',
+  })
+  const manager = new MinimapManager(menu)
+  manager.activate()
+
+  assert.equal(menu.resourcesMinimap.context.rectangles.at(-1)[4], '#122A12')
 })
 
 test('minimap clears stale non-player layers instead of redrawing them', () => {
@@ -497,4 +546,20 @@ test('interior minimap uses the active interior local layout', () => {
   manager.initMiniMap()
   assert.equal(menu.terrainMinimap.width, menu.terrainMinimap.height)
   assert.equal(menu.minimapMap.style.clipPath, '')
+})
+
+
+test('caves use a fixed stone color regardless of their owner', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu({ revealEverything: true })
+  const manager = new MinimapManager(menu)
+  manager.activate()
+  for (const colorHex of ['#f00', '#00f']) {
+    manager.updatePlayerMiniMapEvt({
+      label: 'cave-owner', colorHex,
+      buildings: [{ type: 'Cave', position: { x: 10, y: 10 }, size: 3 }], units: [],
+    })
+    const layer = menu.playersMinimap.find(layer => layer.id === 'minimap-cave-owner')
+    assert.equal(layer.context.rectangles.at(-1)[4], '#a89f91')
+  }
 })

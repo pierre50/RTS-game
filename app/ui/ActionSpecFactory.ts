@@ -1,3 +1,5 @@
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
+import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import { Assets } from 'pixi.js'
 import {
   canAfford,
@@ -5,14 +7,13 @@ import {
   getIconPath,
   getStableHorseAmount,
   isBuildingLimitReached,
-  isValidCondition,
   storeStableHorse,
   STABLE_HORSE_CAPACITY,
 } from '../lib'
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { HORSE_COLOR_PALETTES, type HorseColor } from '../lib/horses/horseColors'
 import { t } from '../lib/lang'
-import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/audio/uiSound'
 import {
@@ -27,13 +28,12 @@ import {
   formatActionCost,
   getBuildingTooltip as buildBuildingTooltip,
   getMissingResourceMessage,
-  getTechnologyTooltip as buildTechnologyTooltip,
   getUnitTooltip as buildUnitTooltip,
 } from './ActionTooltipFactory'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, TooltipContent } from '../types/ui'
-import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
+import type { BuildingConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
 import type { MenuHost } from './MenuHost'
 
@@ -101,10 +101,6 @@ export class ActionSpecFactory {
     })
   }
 
-  getTechnologyTooltip(type: string, config: TechnologyConfig): TooltipContent {
-    return buildTechnologyTooltip(type, config, this.menu.context.player, this.isChiefCommandBlocked())
-  }
-
   getUnitTooltip(type: string, config: UnitConfig, building?: BuildingEntity): TooltipContent {
     const cost = getUnitTrainingCost(this.menu.context.player, type)
     return buildUnitTooltip(type, config, cost, this.isChiefCommandBlocked(), building)
@@ -116,7 +112,7 @@ export class ActionSpecFactory {
     return !heroCanCommand(controls.heroUnit) || !hasLivingChief(player)
   }
 
-  preloadIcons(player: PlayerLike): void {
+  preloadIcons(): void {
     const preload = (src: string) => {
       new Image().src = src
     }
@@ -128,9 +124,6 @@ export class ActionSpecFactory {
     ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
       preload(getIconPath(icon))
     )
-    Object.values(player.techs).forEach(config => {
-      if (config.icon) preload(getIconPath(config.icon))
-    })
   }
 
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec {
@@ -288,15 +281,30 @@ export class ActionSpecFactory {
       context: { controls, player },
     } = menu
     const owner = ownerOverride || player
-    const config = owner.config.buildings[type]
+    const buildingAge = owner.age
+    const config = getPlayerBuildingConfig(owner, type, buildingAge)!
     return {
       id: type,
       tooltip: () => this.getBuildingTooltip(type, owner, config),
       hide: () => !owner.isBuildingEligible?.(type),
       disabled: () =>
-        this.isChiefCommandBlocked() || isBuildingLimitReached(owner, type) || !canPayActionCost(owner, config.cost),
+        Boolean(constructionTerritoryBlocker(menu.context, owner)) ||
+        this.isChiefCommandBlocked() ||
+        isBuildingLimitReached(owner, type) ||
+        !config ||
+        !canPayActionCost(owner, config.cost),
       onClick: () => {
         controls.removeMouseBuilding()
+        const territoryOwner = constructionTerritoryBlocker(menu.context, owner)
+        if (territoryOwner) {
+          menu.showMessage(
+            t('constructionTerritoryOccupied', {
+              player: territoryOwner.name || territoryOwner.civ || territoryOwner.label || '',
+            }),
+            'warning'
+          )
+          return
+        }
         if (this.isChiefCommandBlocked()) {
           menu.showMessage(t('requiresChief'), 'warning')
           return
@@ -309,63 +317,11 @@ export class ActionSpecFactory {
         const assets =
           type === 'Farm'
             ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
-            : getBuildingAsset(type, owner, Assets)
-        const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type }
+            : getBuildingAsset(type, { ...owner, age: buildingAge }, Assets)
+        const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type, buildingAge }
         controls.setMouseBuilding?.(placeableBuilding)
       },
     }
-  }
-
-  getActionTechnologyButton(type: string): MenuButtonSpec {
-    const { menu } = this
-    const {
-      context: { controls, player },
-    } = menu
-    const config = player.techs[type]
-    const isAcquired = () => player.technologies.includes(type)
-    return {
-      icon: getIconPath(config.icon ?? ''),
-      id: type,
-      acquired: isAcquired,
-      tooltip: () => this.getTechnologyTooltip(type, config),
-      hide: () =>
-        (!AGE_UP_ENABLED && AGE_TECHNOLOGIES.has(type)) ||
-        (!isAcquired() && this.hasHiddenTechnologyPrerequisite(type)),
-      disabled: () =>
-        isAcquired() ||
-        this.isChiefCommandBlocked() ||
-        !canPayActionCost(player, config.cost) ||
-        (config.conditions || []).some(condition => !isValidCondition(condition, player)),
-      onClick: () => {
-        controls.removeMouseBuilding()
-        if (this.isChiefCommandBlocked()) {
-          menu.showMessage(t('requiresChief'), 'warning')
-          return
-        }
-        if ((config.conditions || []).some(condition => !isValidCondition(condition, player))) {
-          menu.showMessage(t('technologyUnavailable'), 'warning')
-          return
-        }
-        if (!canPayActionCost(player, config.cost)) return
-        player.buyTechnology?.(type)
-      },
-    }
-  }
-
-  hasHiddenTechnologyPrerequisite(type: string): boolean {
-    const { player } = this.menu.context
-    const config = player.techs[type]
-    if (!config) return true
-    return (config.conditions || []).some(
-      condition =>
-        condition.key === 'technologies' &&
-        condition.op === 'includes' &&
-        !player.technologies.includes(String(condition.value))
-    )
-  }
-
-  getHeroTechnologyButtons(): MenuButtonSpec[] {
-    return Object.keys(this.menu.context.player.techs).map(type => this.getActionTechnologyButton(type))
   }
 
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {

@@ -30,7 +30,7 @@ export type TimeSkipStartResult = {
   message: string
 }
 
-export function getHoursUntilNextMorning(hour: number, minute = 0, targetHour = 7): number {
+export function getHoursUntilNextMorning(hour: number, minute = 0, targetHour = 6): number {
   const currentHour = hour + minute / 60
   const normalizedTargetHour = ((targetHour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) %
     DAY_NIGHT_CONFIG.hoursPerDay

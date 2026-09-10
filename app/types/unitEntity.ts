@@ -43,6 +43,8 @@ export type UnitRestState = {
 }
 
 export type UnitCreationExtra = {
+  label?: string
+  inventory?: UnitEntity['inventory']
   name?: string
   gender?: 'male' | 'female'
   isChief?: boolean
@@ -205,7 +207,6 @@ export interface UnitEntity extends EnergyEntity {
   queue?: string[]
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
-  upgrade?: (target: string) => void
   trainingTargetType?: string | null
   trainingRetryTaskId?: number | null
   realDest?: UnitRealDest | null

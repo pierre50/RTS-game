@@ -26,8 +26,7 @@ function canConvert(source?: CombatEntity | null, target?: CombatEntity | null):
   if (target.family === FAMILY_TYPES.unit) {
     return target.type !== UNIT_TYPES.priest && !isBanditUnitType(target.type)
   }
-  const hasMonotheism = sourceOwner.technologies?.includes('Monotheism')
-  return !!hasMonotheism && (target.family === FAMILY_TYPES.building || target.type === UNIT_TYPES.priest)
+  return false
 }
 
 export const getActionCondition = (

@@ -71,14 +71,12 @@ export class AI extends Player {
   difficultyConfig!: AIStrategyPlayerLike['difficultyConfig']
   chiefLossDetectedAt!: number | null
   chiefWanderReadyAt!: Map<string, number>
-  nextAge!: AIStrategyPlayerLike['nextAge']
   maxVillagerPerAge!: AIStrategyPlayerLike['maxVillagerPerAge']
   villageTargetPercentageByAge!: AIStrategyPlayerLike['villageTargetPercentageByAge']
   maxBuildingByAge!: AIStrategyPlayerLike['maxBuildingByAge']
   maxInfantryByAge!: AIStrategyPlayerLike['maxInfantryByAge']
   maxArcherByAge!: AIStrategyPlayerLike['maxArcherByAge']
   maxCavalryByAge!: AIStrategyPlayerLike['maxCavalryByAge']
-  techPriorityByBuilding!: AIStrategyPlayerLike['techPriorityByBuilding']
   _stepTaskId!: SchedulerTaskId | null
 
   constructor({ ...props }: PlayerOptions, context: GameContextLike) {
@@ -91,6 +89,7 @@ export class AI extends Player {
     this.foundedCoppers = new Set()
     this.foundedIrons = new Set()
     this.foundedResources = {
+      [RESOURCE_TYPES.fiberPlant]: new Set(),
       [RESOURCE_TYPES.tree]: this.foundedTrees,
       [RESOURCE_TYPES.berrybush]: this.foundedBerrybushs,
       [RESOURCE_TYPES.wheat]: this.foundedWheats,
@@ -260,10 +259,6 @@ export class AI extends Player {
     return createAIUnitExtraOptions(this, type, DEBUG)
   }
 
-  canResearchTech(techKey: string) {
-    return this.strategy.canResearchTech(techKey)
-  }
-
   getBestInfantryUnit() {
     return this.strategy.getBestInfantryUnit()
   }
@@ -429,7 +424,6 @@ export class AI extends Player {
 
     actions += this.strategy.handleProductionActions(strategySnapshot, DEBUG)
     actions += this.strategy.handleBuildingActions(strategySnapshot, DEBUG)
-    actions += this.strategy.handleTechnologyActions(strategySnapshot, DEBUG)
 
     if (DEBUG) console.log('----Step ended')
     return actions

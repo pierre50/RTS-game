@@ -8,11 +8,12 @@ import type { GameContextLike } from '../types/context'
 
 export type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
 
-export type AIResourceAmount = Partial<Record<AIResourceName, number>>
+export type AICostResourceName = AIResourceName | 'fiber' | 'leather'
+export type AIResourceAmount = Partial<Record<AICostResourceName, number>>
 
 type AIPhase = 'economy' | 'military_build'
 
-export type AIAge = 0 | 1 | 2 | 3
+export type AIAge = 0 | 1 | 2
 
 export type EnemyMemoryOptions = {
   family?: string | null
@@ -107,10 +108,8 @@ export type AIBuildingLike = AIEntityLike & {
   queue?: string[]
   trainingQueue?: Array<{ type?: string; trainee?: AIEntityLike | RuntimeEntity | null }>
   loading?: number | null
-  technology?: { type?: string } | null
   trainingUnit?: AIEntityLike | RuntimeEntity | null
   trainingType?: string | null
-  buyTechnology?(technology: string): boolean | void
 }
 
 export type AIEntityConfig = Record<string, ConfigValue | AIResourceAmount | undefined> & {
@@ -121,17 +120,6 @@ export type AIEntityConfig = Record<string, ConfigValue | AIResourceAmount | und
   speed?: number
   meleeArmor?: number
   pierceArmor?: number
-}
-
-export type AITechCondition = {
-  key: 'age' | 'technologies' | string
-  op: '>=' | '=' | 'includes' | 'notincludes' | string
-  value: ConfigValue
-}
-
-type AITechConfig = {
-  cost?: AIResourceAmount
-  conditions?: AITechCondition[]
 }
 
 export type AIDifficultyConfig = {
@@ -166,6 +154,8 @@ export type AIStrategyPlayerLike = {
   x?: number
   y?: number
   type?: string
+  fiber?: number
+  leather?: number
   wood: number
   food: number
   gold: number
@@ -176,24 +166,18 @@ export type AIStrategyPlayerLike = {
   phase: AIPhase
   population: number
   populationMax: number
-  technologies: string[]
-  researchTechnology?: { type?: string } | null
-  researchLoading?: number | null
   difficultyConfig: AIDifficultyConfig
-  nextAge: Partial<Record<1 | 2 | 3, string>>
   maxVillagerPerAge: Record<AIAge, number>
   villageTargetPercentageByAge: Record<AIAge, Record<AIResourceName, number>>
   maxBuildingByAge: Record<AIAge, Record<string, number>>
   maxInfantryByAge: Record<AIAge, number>
   maxArcherByAge: Record<AIAge, number>
   maxCavalryByAge: Record<AIAge, number>
-  techPriorityByBuilding: Record<string, string[]>
   config: {
     units: Record<string, AIEntityConfig>
     buildings: Record<string, AIEntityConfig>
     equipment?: Record<string, AIEntityConfig>
   }
-  techs: Record<string, AITechConfig>
   units: AIEntityLike[]
   buildings: AIBuildingLike[]
   context: Pick<GameContextLike, 'dayNight'> & { map: RuntimeMap }
@@ -229,8 +213,6 @@ export type AIStrategyPlayerLike = {
   getNow(): number
   isEnemy(owner?: PlayerLike | null): boolean
   buyBuilding(i: number, j: number, type: string): boolean
-  buyTechnology?(type: string): boolean
-  cancelTechnology?(): boolean
   hasNotReachBuildingLimit(type: string, buildings?: AIBuildingLike[]): boolean
   isBuildingThreatened?(building: AIEntityLike): boolean
 }

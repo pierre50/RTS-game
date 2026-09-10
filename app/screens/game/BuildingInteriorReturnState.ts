@@ -1,3 +1,4 @@
+import { definedProperties } from '../../lib/definedProperties'
 import { getFreeLandCellAroundInstance, resumeVillagerAutonomy } from '../../lib'
 import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import {
@@ -13,10 +14,7 @@ import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { CampaignSave, SaveEntityState, SerializedSave } from '../../types/save'
-import {
-  withFogEnabledState,
-  worldStateWithCampaignClock,
-} from './GameStateHelpers'
+import { withFogEnabledState, worldStateWithCampaignClock } from './GameStateHelpers'
 import { extractTravelParty, teleportRuntimeUnit, type TravelPartyGame, type TravelPartyState } from './GameTravelParty'
 import { removeBuildingInteriorOccupants, type BuildingInteriorOccupantState } from './BuildingInteriorOccupants'
 import type { BuildingInteriorSession, BuildingInteriorTravelGame } from './BuildingInteriorTravelTypes'
@@ -157,7 +155,7 @@ function normalizeReturnedOccupant(
   const entryPosition = getBuildingInteriorEntryPosition(building as BuildingEntity | null)
   const resumeAction = savedOccupant.action ?? null
   const resumeDest = savedOccupant.dest ?? null
-  return {
+  return definedProperties({
     ...savedOccupant,
     action: resumeDest ? resumeAction : null,
     currentFrame: undefined,
@@ -170,7 +168,7 @@ function normalizeReturnedOccupant(
     loop: undefined,
     path: [],
     realDest: null,
-  }
+  })
 }
 
 export function uniqueInteriorOccupants(...groups: BuildingInteriorOccupantState[][]): BuildingInteriorOccupantState[] {

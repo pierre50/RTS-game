@@ -131,7 +131,7 @@ function normalizeColorMapKey(colorMap: readonly [number, number][]): string {
 }
 
 function applyColorMapToCanvas(canvas: HTMLCanvasElement, colorMap: readonly [number, number][]): void {
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -165,7 +165,7 @@ export function recolorCanvasPixels(
   const targetColors = COLOR_PALETTES[color]
   if (!targetColors) return
 
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -206,7 +206,7 @@ function createRecoloredTexture(
   canvas.width = frame.width
   canvas.height = frame.height
 
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!baseTexture || !ctx) return texture
 
   ctx.drawImage(baseTexture, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height)

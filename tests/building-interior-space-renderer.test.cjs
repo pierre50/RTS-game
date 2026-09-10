@@ -114,7 +114,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
     },
     '../lib/ui/interactionCellMarker': {
       INTERACTION_CELL_MARKER_PULSE_MS: 1400,
-      INTERACTION_CELL_MARKER_Z_INDEX: 100,
+      INTERACTION_CELL_MARKER_Z_INDEX: -0.25,
       drawInteractionCellMarker: () => {},
       interactionCellPulse: () => 1,
     },
@@ -180,9 +180,9 @@ test('runtime building interiors sort floor cells and entities in one scene laye
   )
   assert.deepEqual(
     renderer.sceneLayer.children.map(child => child.label),
-    ['building-interior-terrain', 'building-interior-entities']
+    ['building-interior-terrain', 'interiorExit', 'building-interior-entities']
   )
-  assert.equal(renderer.exitMarker.parent, renderer.entityLayer)
+  assert.equal(renderer.exitMarker.parent, renderer.sceneLayer)
   assert.equal(renderer.entityLayer.sortableChildren, true)
   assert.equal(renderer.sceneLayer.sortableChildren, true)
   assert.equal(renderer.terrainLayer.sortableChildren, true)
@@ -296,14 +296,14 @@ test('runtime stable interiors synchronize stored horses without default decorat
     })),
     [
       {
-        ambientMovement: false,
+        ambientMovement: true,
         horseColor: 'dark',
         spaceId: space.id,
         tamingStatus: 'tamed',
         type: 'Horse',
       },
       {
-        ambientMovement: false,
+        ambientMovement: true,
         horseColor: 'light',
         spaceId: space.id,
         tamingStatus: 'tamed',
@@ -622,7 +622,7 @@ test('destroyed building interiors merge every interior chest inventory into one
   assert.equal(firstCell.solid, false)
 })
 
-test('runtime building interior exit marker sorts above its floor cell inside the scene layer', () => {
+test('runtime building interior exit marker stays above terrain and below all units after updates', () => {
   const { BuildingInteriorSpaceRenderer } = loadBuildingInteriorSpaceSystem()
   const context = {
     app: { ticker: { add: () => {}, remove: () => {} } },
@@ -635,7 +635,14 @@ test('runtime building interior exit marker sorts above its floor cell inside th
 
   renderer.updateExitMarker(16)
 
-  assert.ok(Math.abs(renderer.exitMarker.zIndex - 8.85) < 0.0001)
+  assert.equal(renderer.exitMarker.parent, renderer.sceneLayer)
+  assert.ok(renderer.exitMarker.zIndex > renderer.terrainLayer.zIndex)
+  assert.ok(renderer.exitMarker.zIndex < renderer.entityLayer.zIndex)
+
+  renderer.space.exitCell = { i: 0, j: 0, zIndex: -10 }
+  renderer.updateExitMarker(16)
+  assert.ok(renderer.exitMarker.zIndex > renderer.terrainLayer.zIndex)
+  assert.ok(renderer.exitMarker.zIndex < renderer.entityLayer.zIndex)
 })
 
 test('runtime building interior activation refreshes both interior and exterior shadows', () => {

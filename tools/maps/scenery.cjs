@@ -1,6 +1,6 @@
 const { loadGenerationTs } = require('./load-generation-ts.cjs')
 const { CELL_WIDTH, CELL_HEIGHT } = loadGenerationTs('app/constants/gridGeometry.ts')
-const { encodePreparedTerrain, decodePreparedTerrain } = loadGenerationTs('app/serialization/PreparedTerrainCodec.ts')
+const { encodePreparedTerrain, decodePreparedTerrain } = loadGenerationTs(require.resolve('../../app/serialization/PreparedTerrainCodec.ts'))
 const fs = require('node:fs')
 const path = require('node:path')
 // A generous margin includes tall trees, shadows and the neighboring slope ring.

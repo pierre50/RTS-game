@@ -62,8 +62,8 @@ function drawHeroHairPreview(
     try {
       const response = await fetch(heroHairPreviewJsonSrc(player))
       const sheet = await response.json()
-      const entry = Object.entries(sheet.frames ?? {}).find(([name]) =>
-        name.startsWith(HERO_WALKING_SOUTH_FRAME_NAME) && name.includes('_front_walking')
+      const entry = Object.entries(sheet.frames ?? {}).find(
+        ([name]) => name.startsWith(HERO_WALKING_SOUTH_FRAME_NAME) && name.includes('_front_walking')
       ) as [string, { frame: { x: number; y: number; w: number; h: number } }] | undefined
       const frameData = entry?.[1]?.frame
       if (!frameData) {
@@ -73,7 +73,7 @@ function drawHeroHairPreview(
       const hair = document.createElement('canvas')
       hair.width = HERO_FRAME_SIZE
       hair.height = HERO_FRAME_SIZE
-      const hairCtx = hair.getContext('2d')
+      const hairCtx = hair.getContext('2d', { willReadFrequently: true })
       if (!hairCtx) {
         onDone()
         return
@@ -102,7 +102,7 @@ function renderHeroPreview(
   let triedFallback = false
   img.onload = () => {
     if (requestId !== host.heroPreviewRequestId) return
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
     if (!ctx) return
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -110,7 +110,7 @@ function renderHeroPreview(
     const frame = document.createElement('canvas')
     frame.width = HERO_FRAME_SIZE
     frame.height = HERO_FRAME_SIZE
-    const frameCtx = frame.getContext('2d')
+    const frameCtx = frame.getContext('2d', { willReadFrequently: true })
     if (!frameCtx) return
     frameCtx.imageSmoothingEnabled = false
 
@@ -131,7 +131,7 @@ function renderHeroPreview(
     if (requestId !== host.heroPreviewRequestId) return
     if (triedFallback) return
     triedFallback = true
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
     if (!ctx) return
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -170,7 +170,10 @@ function humanizeAppearanceValue(value: string): string {
     .join(' ')
 }
 
-export function createHeroAppearanceControls(host: HeroAppearanceHost, player: PlayerSetupConfigWithAge): HTMLDivElement {
+export function createHeroAppearanceControls(
+  host: HeroAppearanceHost,
+  player: PlayerSetupConfigWithAge
+): HTMLDivElement {
   const group = document.createElement('div')
   group.className = 'hero-appearance-controls'
   const gender = normalizeHeroAppearanceGender(player.gender)

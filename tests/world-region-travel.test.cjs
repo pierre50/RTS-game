@@ -380,7 +380,10 @@ test('world region travel carries living hero followers only', () => {
   }
 
   const party = extractTravelParty({
-    players: [{ isPlayed: true, units: [hero, follower, idleVillager, deadFollower, destroyedFollower] }],
+    players: [
+      { isPlayed: true, units: [hero, follower, idleVillager, deadFollower, destroyedFollower] },
+      { isPlayed: false, units: [{ ...follower, label: 'hostile-follower' }] },
+    ],
   })
 
   assert.equal(party.hero, hero)
@@ -423,9 +426,16 @@ test('runtime region travel ignores direct calls while the hero is inside a buil
   assert.equal(calls.travelPartyApplications.length, 0)
 })
 
-for (const square of [false, true]) test(`world region travel restores a visited region with a fade (${square ? 'square' : 'legacy'})`, async () => {
+for (const { square, legacyRoot, duplicate, debug } of [
+  { square: false },
+  { square: true },
+  { square: true, legacyRoot: true },
+  { square: true, legacyRoot: true, duplicate: true },
+  { square: true, legacyRoot: true, duplicate: true, debug: true },
+]) test(`world region travel restores a visited region (${JSON.stringify({ square, legacyRoot, duplicate, debug })})`, async () => {
   const calls = { addedWorlds: [], travelPartyApplications: [] }
-  const { travelToWorldRegion } = loadWorldRegionTravelRuntime(calls)
+  const { travelToWorldRegion, debugTeleportWorldMap } = loadWorldRegionTravelRuntime(calls)
+  const savedWorldId = legacyRoot ? 'world-4242' : 'region-b'
   const departureState = {
     config: { worldId: 'world-test', worldRegionId: 'region-a' },
     players: [{ isPlayed: true, units: [{ i: 2, j: 2, label: 'hero', type: 'Hero' }] }],
@@ -437,6 +447,8 @@ for (const square of [false, true]) test(`world region travel restores a visited
     players: [
       {
         isPlayed: true,
+        views: [[{ viewed: true, viewBy: ['woodcutter'] }]],
+        buildings: [{ type: 'TownCenter', inventory: { resources: { wood: 123 } } }],
         units: [
           { i: 3, j: 3, label: 'hero', type: 'Hero' },
           { action: 'wood', i: 4, j: 4, label: 'woodcutter', type: 'Villager' },
@@ -458,6 +470,7 @@ for (const square of [false, true]) test(`world region travel restores a visited
       getViewportMetrics: () => ({ visibleLeft: 0, visibleTop: 100, visibleWidth: 200, visibleHeight: 100 }),
     },
     dayNight: { getElapsedMs: () => 555 },
+    unitRest: { synchronizeAfterTimeJump: () => { calls.restSynchronized = true } },
     hero: { i: 2, j: 2, x: 0, y: 0 },
     map: { size: 12, worldId: 'world-test', localGridLayout: square ? { columns: 8, rows: 29 } : undefined },
     menu: { refreshMiniMap: () => {}, show: () => {}, updateHeroStatus: () => {} },
@@ -468,9 +481,10 @@ for (const square of [false, true]) test(`world region travel restores a visited
       currentWorldId: 'region-a',
       worlds: {
         'region-a': { id: 'region-a', state: departureState },
-        'region-b': { id: 'region-b', state: visitedRegionState },
+        ...(duplicate ? { 'region-b': { id: 'region-b', state: { ...visitedRegionState, players: [] } } } : {}),
+        [savedWorldId]: { id: savedWorldId, state: visitedRegionState },
       },
-      worldGraph: { nodes: {} },
+      worldGraph: { rootWorldId: legacyRoot ? savedWorldId : 'region-a', nodes: {} },
     },
     _autosaveCampaign: () => {
       game.autosaved = true
@@ -479,6 +493,8 @@ for (const square of [false, true]) test(`world region travel restores a visited
       game.bootedFromConfig = true
     },
     _bootFromSave: async state => {
+      assert.equal(state.runtime.offlineFromElapsedMs, 200)
+      delete state.runtime.offlineFromElapsedMs
       game.bootedFromSave = state
       currentContext = { ...currentContext, hero: { i: 3, j: 3, x: 0, y: 0 }, serialized: state }
     },
@@ -493,37 +509,44 @@ for (const square of [false, true]) test(`world region travel restores a visited
     context: currentContext,
   }
 
-  await travelToWorldRegion(game, 'region-b', 'east')
+  if (debug) await debugTeleportWorldMap(game, { worldRegionId: 'region-b', worldI: 9, worldJ: 9 })
+  else await travelToWorldRegion(game, 'region-b', 'east')
 
   assert.equal(game.bootedFromConfig, undefined)
   assert.equal(game.bootedFromSave.players[0].units[1].label, 'woodcutter')
   assert.equal(game.bootedFromSave.runtime.dayNightElapsedMs, 555)
+  assert.equal(calls.restSynchronized, true)
+  assert.equal(visitedRegionState.runtime.dayNightElapsedMs, 200)
   assert.equal(game.bootedFromSave.runtime.weather.phase, 'rainHeavy')
   assert.equal(calls.travelPartyApplications[0][3].freshWorld, false)
   assert.equal(calls.addedWorlds.length, 0)
-  assert.equal(game._campaignSave.currentWorldId, 'region-b')
-  assert.equal(game._campaignSave.worlds['region-b'].state.players[0].units[1].label, 'woodcutter')
+  assert.equal(game._campaignSave.currentWorldId, savedWorldId)
+  assert.equal(game._campaignSave.worlds[savedWorldId].state.players[0].units[1].label, 'woodcutter')
+  assert.deepEqual(game.bootedFromSave.players[0].views, visitedRegionState.players[0].views)
+  assert.deepEqual(game.bootedFromSave.players[0].buildings, visitedRegionState.players[0].buildings)
+  assert.equal(game._restartSaveData.currentWorldId, savedWorldId)
   assert.equal(game.autosaved, true)
   assert.equal(calls.paused, false)
   assert.equal(game._worldRegionTransitioning, false)
-  assert.equal(calls.preloaded, true)
+  if (!debug) assert.equal(calls.preloaded, true)
   assert.equal(calls.concealed, true)
   assert.equal(calls.revealed, true)
   assert.equal(calls.fadeDestroyed, true)
 })
 
-test('border travel transfers visible pursuers out of the source save and schedules the new hero target', async () => {
+test('border travel leaves hostile units and animals in their source region without scheduling pursuit', async () => {
   const calls = { addedWorlds: [], travelPartyApplications: [] }
   const { travelToWorldRegion } = loadWorldRegionTravelRuntime(calls)
   const hero = { label: 'old-hero', type: 'Hero', i: 2, j: 2 }
   const enemy = { label: 'enemy-unit', type: 'Villager', i: 2, j: 3, sight: 5, hitPoints: 12, dest: hero }
+  const wolf = { label: 'wolf', type: 'Wolf', i: 2, j: 4, sight: 5, hitPoints: 12, dest: hero }
   const snapshot = {
-    config: { worldId: 'world-test' }, resources: [], animals: [],
+    config: { worldId: 'world-test' }, resources: [], animals: [wolf],
     players: [{ label: 'human', isPlayed: true, units: [hero] }, { label: 'enemy', units: [enemy] }],
   }
   let context = {
     hero, serialized: snapshot, players: snapshot.players,
-    controls: {}, menu: {}, map: { size: 12, worldId: 'world-test' },
+    controls: {}, menu: {}, map: { size: 12, worldId: 'world-test', gaia: { animals: [wolf] } },
   }
   const game = {
     context, config: snapshot.config,
@@ -537,11 +560,9 @@ test('border travel transfers visible pursuers out of the source save and schedu
     _autosaveCampaign() {},
   }
   await travelToWorldRegion(game, 'destination', 'east')
-  assert.equal(calls.pending.length, 1)
-  assert.equal(calls.pending[0].targetLabel, 'new-hero')
-  assert.equal(calls.pending[0].remainingMs, 3000)
-  assert.deepEqual(calls.pending[0].arrival, { i: 9, j: 9 })
-  assert.deepEqual(game._campaignSave.worlds.source.state.players[1].units, [])
+  assert.equal(calls.pending, undefined)
+  assert.deepEqual(game._campaignSave.worlds.source.state.players[1].units, [enemy])
+  assert.deepEqual(game._campaignSave.worlds.source.state.animals, [wolf])
   assert.equal(snapshot.players[1].units[0], enemy)
 })
 

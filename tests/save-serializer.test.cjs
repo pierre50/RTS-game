@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadSaveSerializer() {
   const filename = path.join(__dirname, '../app/serialization/SaveSerializer.ts')
@@ -13,8 +14,13 @@ function loadSaveSerializer() {
   })
   const module = { exports: {} }
   const mockRequire = id => {
-    if (id === '../lib/definedProperties') {
-      const dependency = path.join(__dirname, '../app/lib/definedProperties.ts')
+    if (id.endsWith('/playerTargetKnowledge')) return { exportTargetKnowledge: () => [] }
+    if (id === './InteriorBuildingSave') return loadTsModule('app/serialization/InteriorBuildingSave.ts')
+    if (id === '../lib/definedProperties' || id === './TrainingSave') {
+      const dependency = path.join(
+        __dirname,
+        id === './TrainingSave' ? '../app/serialization/TrainingSave.ts' : '../app/lib/definedProperties.ts'
+      )
       const transformed = babel.transformSync(fs.readFileSync(dependency, 'utf8'), {
         filename: dependency,
         presets: [
@@ -23,7 +29,7 @@ function loadSaveSerializer() {
         ],
       })
       const loaded = { exports: {} }
-      new Function('module', 'exports', 'require', transformed.code)(loaded, loaded.exports, require)
+      new Function('module', 'exports', 'require', transformed.code)(loaded, loaded.exports, mockRequire)
       return loaded.exports
     }
     if (id === '../lib') {
@@ -34,6 +40,8 @@ function loadSaveSerializer() {
             return result
           }, {})
         },
+        getEntityMapSpace: entity => entity.context?.map?.spaces?.get(entity.spaceId),
+        getCellMapPoint: cell => ({ x: cell.x, y: cell.y }),
         getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
       }
     }
@@ -81,6 +89,49 @@ test('pending world pursuers are included in the runtime save', () => {
   assert.deepEqual(serializeGame(context).runtime.worldPursuers, entries)
 })
 
+test('harvested and growing wheat saves its exact growth frame and original planted position', () => {
+  const { serializeGame } = loadSaveSerializer()
+  for (const frame of [0, 1, 3]) {
+    const crop = {
+      type: 'Wheat',
+      label: 'farm-plot',
+      i: 0,
+      j: 0,
+      quantity: 12,
+      totalQuantity: 12,
+      isNaturalResource: false,
+      sprite: { currentFrame: frame },
+    }
+    const saved = serializeGame(makeContext({ resources: new Set([crop]) })).resources[0]
+    assert.equal(saved.currentFrame, frame)
+    assert.equal(saved.quantity, 12)
+    assert.equal(saved.isNaturalResource, false)
+    assert.deepEqual([saved.i, saved.j], [0, 0])
+  }
+})
+
+test('autonomous exploration remains distinguishable from manual movement after saving', () => {
+  const { serializeGame } = loadSaveSerializer()
+  const context = makeContext()
+  context.players[0].units = [
+    {
+      label: 'food-explorer',
+      type: 'Villager',
+      i: 1,
+      j: 1,
+      autonomousJob: 'food',
+      exploringForAutonomy: true,
+      dest: { i: 2, j: 2 },
+      action: null,
+      path: [{ i: 2, j: 2 }],
+    },
+  ]
+  const saved = serializeGame(context).players[0].units[0]
+  assert.equal(saved.autonomousJob, 'food')
+  assert.equal(saved.exploringForAutonomy, true)
+  assert.equal(saved.action, null)
+})
+
 function makeContext(mapOverrides = {}) {
   return {
     scheduler: { elapsedMs: 123 },
@@ -109,7 +160,90 @@ function makeContext(mapOverrides = {}) {
   }
 }
 
+test('building saves include concurrent recruits and pending unit training orders without live references', () => {
+  const { serializeGame } = loadSaveSerializer()
+  const context = makeContext()
+  const trainee = { type: 'Villager', label: 'recruit', i: 0, j: 0, name: 'Aline' }
+  trainee.owner = context.players[0]
+  context.players[0].buildings.push({
+    type: 'Barracks',
+    label: 'barracks',
+    i: 0,
+    j: 0,
+    queue: ['Fantassin'],
+    trainingQueue: [
+      {
+        type: 'Fantassin',
+        trainee,
+        cost: { food: 35 },
+        trainingStartedDay: 3,
+        trainingCompleteDay: 13,
+        extra: { name: 'Aline' },
+        trainingDayChangeUnsubscribe() {},
+      },
+    ],
+  })
+  context.players[0].units.push({
+    type: 'Villager',
+    label: 'incoming',
+    i: 0,
+    j: 0,
+    trainingTargetType: 'Fantassin',
+    action: 'train',
+    dest: context.players[0].buildings[0],
+  })
+  const save = JSON.parse(JSON.stringify(serializeGame(context)))
+  assert.equal(save.players[0].units[0].trainingTargetType, 'Fantassin')
+  const saved = save.players[0].buildings[0].trainingQueue[0]
+  assert.equal(saved.trainee.label, 'recruit')
+  assert.equal(saved.trainee.owner, undefined)
+  assert.equal(saved.trainingCompleteDay, 13)
+  assert.deepEqual(saved.cost, { food: 35 })
+})
+
 const { serializeGame } = loadSaveSerializer()
+
+test('new saves keep objectives but discard legacy technology and research state', () => {
+  const context = makeContext({ allTechnologies: true })
+  Object.assign(context.players[0], {
+    completedObjectives: ['huntAnimal'],
+    discoveredEquipment: ['catchingPole'],
+    technologies: ['Alchemy', 'Woodworking'],
+    researchTechnology: { type: 'Toolworking' },
+    researchLoading: 50,
+  })
+  context.players[0].buildings.push({
+    type: 'Granary',
+    i: 0,
+    j: 0,
+    label: 'granary',
+    technology: { type: 'UpgradeFortification' },
+  })
+  const save = serializeGame(context)
+  assert.deepEqual(save.players[0].completedObjectives, ['huntAnimal'])
+  for (const key of ['discoveredEquipment', 'technologies', 'researchTechnology', 'researchLoading']) {
+    assert.equal(Object.hasOwn(save.players[0], key), false)
+  }
+  assert.equal(Object.hasOwn(save.players[0].buildings[0], 'technology'), false)
+})
+
+test('sleeping villagers retain their work assignment and fractional offline progress in saves', () => {
+  const context = makeContext()
+  context.players[0].units.push({
+    type: 'Villager',
+    label: 'sleeper',
+    i: 1,
+    j: 1,
+    work: null,
+    autonomousJob: null,
+    shelterState: { previousWork: 'woodcutter', previousAutonomousJob: 'wood' },
+    offlineWork: { target: 'woodcutter:tree', milliseconds: 250 },
+  })
+  const unit = serializeGame(context).players[0].units[0]
+  assert.equal(unit.work, 'woodcutter')
+  assert.equal(unit.autonomousJob, 'wood')
+  assert.deepEqual(unit.offlineWork, { target: 'woodcutter:tree', milliseconds: 250 })
+})
 
 test('seeded saves omit the full map grid', () => {
   const save = serializeGame(makeContext())
@@ -239,6 +373,86 @@ test('serializes animal movement and corpse state while skipping destroyed anima
   assert.equal(save.animals[0].tamingStatus, 'tamed')
 })
 
+test('dead wildlife respawn slots survive saves without accessing destroyed graphics or reviving captured animals', () => {
+  const slot = {
+    type: 'Hare',
+    label: 'hare-slot',
+    i: 1,
+    j: 2,
+    isDead: true,
+    isDestroyed: true,
+    totalHitPoints: 8,
+    totalQuantity: 12,
+  }
+  Object.defineProperty(slot, 'sprite', {
+    get() {
+      assert.fail('destroyed graphics must not be accessed')
+    },
+  })
+  const context = makeContext({
+    gaia: {
+      animals: [slot, { ...slot, label: 'trapped', trapPrey: true }, { ...slot, label: 'captured', isDead: false }],
+    },
+  })
+  const save = serializeGame(context)
+  assert.equal(save.animals.length, 1)
+  assert.equal(save.animals[0].label, 'hare-slot')
+  assert.equal(save.animals[0].isDead, true)
+  assert.equal(save.animals[0].totalQuantity, 12)
+  assert.equal(save.animals[0].quantity, 0)
+})
+
+test('serializer nests interior buildings under the exterior parent and preserves every chest inventory', () => {
+  const context = makeContext()
+  const owner = context.players[0]
+  owner.buildings = [
+    { type: 'TownCenter', label: 'center', i: 40, j: 40, inventory: { resources: {} } },
+    {
+      type: 'Chest',
+      label: 'interior:player-1:center:default:storage-chest',
+      spaceId: 'interior:player-1:center',
+      i: 11,
+      j: 11,
+      inventory: { resources: { wheat: 30, wood: 5 }, equipment: ['hammer'] },
+    },
+  ]
+  const save = serializeGame(context)
+  assert.equal(save.players[0].buildings.length, 1)
+  const inside = save.players[0].buildings[0].interiorBuildings[0]
+  assert.equal(inside.i, 11)
+  assert.equal(inside.spaceId, undefined)
+  assert.equal(inside.inventory.resources.wheat, 30)
+  assert.deepEqual(inside.inventory.equipment, ['hammer'])
+  assert.equal(owner.buildings.length, 2)
+  assert.equal(owner.buildings[1].spaceId, 'interior:player-1:center')
+})
+
+test('stable display horses are saved only as stable stock, not duplicated as outdoor animals', () => {
+  const context = makeContext({
+    gaia: {
+      animals: [
+        { type: 'Horse', label: 'interior:player-1:stable:stable-horse:0', i: 11, j: 11 },
+        { type: 'Horse', label: 'wild-horse', i: 8, j: 9 },
+      ],
+    },
+  })
+  context.players[0].buildings = [
+    { type: 'Stable', label: 'stable', i: 40, j: 40, stableHorses: [{ horseColor: 'black' }] },
+  ]
+  const save = serializeGame(context)
+  assert.equal(save.animals.length, 1)
+  assert.equal(save.animals[0].label, 'wild-horse')
+  assert.deepEqual(save.players[0].buildings[0].stableHorses, [{ horseColor: 'black' }])
+})
+
+test('an opened room with no remaining decorations is persisted as empty', () => {
+  const context = makeContext()
+  context.map.spaces = new Map([['interior:player-1:center', {}]])
+  context.players[0].buildings = [{ type: 'TownCenter', label: 'center', i: 40, j: 40, context }]
+  const saved = serializeGame(context).players[0].buildings[0]
+  assert.deepEqual(saved.interiorBuildings, [])
+})
+
 test('serializes unit work orders, equipment state and build queues', () => {
   const context = makeContext()
   context.players[0].units = [
@@ -322,7 +536,7 @@ test('serializes unit work orders, equipment state and build queues', () => {
   assert.deepEqual(save.players[0].units[0].lootEquipment, ['helmet_barbarian_ceramic'])
 })
 
-test('serializes building production, research, rally points and active user links', () => {
+test('serializes production and rally points without obsolete research', () => {
   const context = makeContext()
   context.players[0].buildings = [
     {
@@ -332,7 +546,6 @@ test('serializes building production, research, rally points and active user lin
       i: 20,
       j: 21,
       queue: ['Villager'],
-      technology: { type: 'Loom', config: { cost: { food: 50 } } },
       loading: 42,
       trainingStartedDay: 3,
       trainingCompleteDay: 5,
@@ -347,6 +560,8 @@ test('serializes building production, research, rally points and active user lin
       rallyPoint: { i: 22, j: 23, direction: 1 },
       assetCiv: 'hellas',
       assetAge: 1,
+      buildingAge: 0,
+      totalHitPoints: 600,
       assetType: 'TownCenter',
       inventory: { equipment: ['trap'], resources: { wood: 5 } },
       isUsedBy: { label: 'villager-1' },
@@ -361,7 +576,6 @@ test('serializes building production, research, rally points and active user lin
     j: 21,
     type: 'TownCenter',
     queue: ['Villager'],
-    technology: { type: 'Loom', config: { cost: { food: 50 } } },
     loading: 42,
     trainingStartedDay: 3,
     trainingCompleteDay: 5,
@@ -376,6 +590,8 @@ test('serializes building production, research, rally points and active user lin
     rallyPoint: { i: 22, j: 23, direction: 1 },
     assetCiv: 'hellas',
     assetAge: 1,
+    buildingAge: 0,
+    totalHitPoints: 600,
     assetType: 'TownCenter',
     inventory: { equipment: ['trap'], resources: { wood: 5 } },
     isUsedBy: 'villager-1',
@@ -395,4 +611,26 @@ test('saving an unseen static resource does not materialize its sprite', () => {
   Object.defineProperty(resource, 'sprite', { get: () => assert.fail('save should not create visuals') })
   const save = serializeGame(makeContext({ resources: new Set([resource]) }))
   assert.equal(save.resources[0].textureName, 'tree_0')
+})
+
+test('cave identity, interior chest state and occupant positions survive serialization', () => {
+  const context = makeContext()
+  const owner = context.players[0]
+  const cave = { id: 'region:cave-1', blueprintId: 'cave-large-loop', tier: 'large', seed: 42 }
+  const building = { type: 'Cave', cave, label: 'cave', i: 40, j: 40, context }
+  const spaceId = 'interior:player-1:cave'
+  context.map.spaces = new Map([
+    [spaceId, { kind: 'interior', building, exteriorEntryCell: { i: 41, j: 42, x: 1, y: 2, z: 0 } }],
+  ])
+  owner.buildings = [
+    building,
+    { type: 'Chest', label: 'loot', spaceId, i: 30, j: 35, inventory: { equipment: [], resources: { gold: 3 } } },
+  ]
+  owner.units = [{ type: 'Hero', label: 'hero', i: 25, j: 28, spaceId, context }]
+  const saved = loadSaveSerializer().serializeGame(context)
+  assert.deepEqual(saved.players[0].buildings[0].cave, cave)
+  assert.equal(saved.players[0].buildings[0].interiorBuildings[0].inventory.resources.gold, 3)
+  assert.deepEqual(saved.players[0].units[0].cavePosition, { caveId: cave.id, i: 25, j: 28 })
+  assert.equal(saved.players[0].units[0].i, 41)
+  assert.equal(owner.units[0].i, 25)
 })

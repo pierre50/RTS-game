@@ -1,3 +1,4 @@
+import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { scheduleVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
 import { isVillagerWorkTargetRejected } from '../../../lib/units/villagerAutonomyTargeting'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../../constants'
@@ -33,6 +34,7 @@ function isCompletedBuildTarget(unit: UnitEntity): boolean {
 }
 
 export function affectNewDest(unit: UnitEntity): void {
+  if (updateTargetPursuit(unit)) return
   unit.stopInterval?.()
   if (!unit.action) {
     handleIdleDestination(unit)

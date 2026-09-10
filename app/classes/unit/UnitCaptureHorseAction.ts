@@ -170,7 +170,7 @@ function tryStartCaptureHorseCatchingPole(
     allowStableOnRelease: false,
     releaseHorseOnClear: false,
     autoRouteStableWhileAttached: false,
-    showMessages: unit.owner?.isPlayed,
+    showMessages: Boolean(unit.owner?.isPlayed),
     onThrowResolved: () => finishHeroCatchingPoleThrowAnimation(unit),
   })
   unit.context.map?.addChild(catchingPole)

@@ -56,10 +56,6 @@ function isForageResource(target?: CombatEntity | null): boolean {
   return type ? FORAGE_RESOURCE_TYPES.has(type) : false
 }
 
-function ownerHasTechnology(source: CombatEntity, technology: string): boolean {
-  return Boolean(source.owner?.technologies?.includes(technology))
-}
-
 export function getResourceActionConditions(source: CombatEntity, target: CombatEntity): Record<string, () => boolean> {
   return {
     takemeat: () =>
@@ -72,13 +68,13 @@ export function getResourceActionConditions(source: CombatEntity, target: Combat
       ),
     hunt: () =>
       isVillagerOrHero(source) &&
-      (source.type === UNIT_TYPES.hero || ownerHasTechnology(source, 'BowCrafting')) &&
       target.family === FAMILY_TYPES.animal &&
       (target.quantity ?? 0) > 0 &&
       (target.hitPoints ?? 0) > 0 &&
       !target.isDead,
     captureHorse: () =>
       source.type === UNIT_TYPES.villager &&
+      (source.owner?.age ?? 0) >= 1 &&
       target.family === FAMILY_TYPES.animal &&
       target.type === 'Horse' &&
       isWildHorse(target as { type: string; tamingStatus?: unknown }) &&
@@ -104,7 +100,6 @@ export function getResourceActionConditions(source: CombatEntity, target: Combat
         config.action,
         () =>
           isVillagerOrHero(source) &&
-          ownerHasTechnology(source, 'Pickaxe') &&
           canMineIronResource(source, target) &&
           target.type === resourceType &&
           (target.quantity ?? 0) > 0 &&

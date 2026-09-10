@@ -104,6 +104,7 @@ export function getBuildingInteriorDecorationLayout(
   building: Pick<BuildingEntity, 'type'>,
   options: { includeFireCamp?: boolean } = {}
 ): BuildingInteriorDecorationSpec[] {
+  if (building.type === BUILDING_TYPES.cave) return []
   const { includeFireCamp = true } = options
   const layout = DECORATION_LAYOUTS[building.type] ?? DEFAULT_DECORATION_LAYOUT
   const base = shouldIncludeFireCamp(building.type, includeFireCamp)

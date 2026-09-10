@@ -1,8 +1,8 @@
-import { AGE_UP_ENABLED, BUILDING_TYPES, DAILY_CONSUMPTION_PER_VILLAGER, VILLAGER_ARRIVAL_CONFIG } from '../constants'
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
+import { BUILDING_TYPES, DAILY_CONSUMPTION_PER_VILLAGER, VILLAGER_ARRIVAL_CONFIG } from '../constants'
 import { getPlayerResourceTotals, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import type { AIStrategy } from './AIStrategy'
 import { resourceEntries } from './AIStrategyResources'
-import { AGE_UP_COSTS } from './config'
 import type { AIBuildingLike, AIEntityLike, AIResourceAmount } from './types'
 
 function getExpectedVillagerArrivalWave(population: number): number {
@@ -24,6 +24,8 @@ export function getCurrentResources(strategy: AIStrategy): AIResourceAmount {
     gold: resources.gold ?? 0,
     stone: resources.stone ?? 0,
     wood: resources.wood ?? 0,
+    ...(resources.fiber != null ? { fiber: resources.fiber } : {}),
+    ...(resources.leather != null ? { leather: resources.leather } : {}),
   }
 }
 
@@ -46,7 +48,7 @@ export function addBuildingReserve(
   buildingType: string,
   count: number = 1
 ): void {
-  const cost = strategy.ai.config.buildings[buildingType]?.cost ?? {}
+  const cost = getPlayerBuildingConfig(strategy.ai, buildingType)?.cost ?? {}
   for (const [resource, amount] of resourceEntries(cost)) {
     demand[resource] = (demand[resource] ?? 0) + amount * count
   }
@@ -54,20 +56,10 @@ export function addBuildingReserve(
 
 export function getEconomicDemand(strategy: AIStrategy): AIResourceAmount {
   const { ai } = strategy
-  const demand: Record<keyof AIResourceAmount, number> = { food: 0, wood: 0, gold: 0, stone: 0 }
+  const demand: AIResourceAmount = { food: 0, wood: 0, gold: 0, stone: 0 }
   const resources = strategy.getCurrentResources()
   const growthReserveFood = strategy.getVillagerGrowthFoodReserve()
-  if (growthReserveFood > 0) demand.food += Math.max(0, growthReserveFood - (resources.food ?? 0))
-
-  const nextAgeKey = ai.age + 1
-  const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[nextAgeKey]
-  if (AGE_UP_ENABLED && nextAgeCost) {
-    const maxVillagers = Math.floor(strategy.maxVillagerPerAge[ai.age] * (ai.difficultyConfig.popCapMultiplier ?? 1))
-    const shouldReserveAgeUp = ai.population >= Math.floor(maxVillagers * 0.7)
-    for (const [resource, amount] of resourceEntries(nextAgeCost)) {
-      demand[resource] += shouldReserveAgeUp ? amount : Math.max(0, amount - (resources[resource] ?? 0))
-    }
-  }
+  if (growthReserveFood > 0) demand.food = (demand.food ?? 0) + Math.max(0, growthReserveFood - (resources.food ?? 0))
 
   const expectedArrivals = getExpectedVillagerArrivalWave(ai.population)
   if (ai.population + expectedArrivals + 2 > ai.populationMax) {
@@ -90,16 +82,6 @@ export function getEconomicDemand(strategy: AIStrategy): AIResourceAmount {
   }
 
   return demand
-}
-
-export function getAgeUpReserve(strategy: AIStrategy): AIResourceAmount {
-  if (!AGE_UP_ENABLED) return {}
-  const { ai } = strategy
-  const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[ai.age + 1]
-  if (!nextAgeCost) return {}
-
-  const maxVillagers = Math.floor(strategy.maxVillagerPerAge[ai.age] * (ai.difficultyConfig.popCapMultiplier ?? 1))
-  return ai.population >= Math.floor(maxVillagers * 0.7) ? nextAgeCost : {}
 }
 
 export function canSpendWithReserve(

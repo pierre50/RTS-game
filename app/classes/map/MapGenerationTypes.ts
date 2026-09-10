@@ -36,7 +36,6 @@ export type MapGenerationMap = RuntimeMap & {
   generationTimings?: Record<string, number>
   difficulty: string
   chanceOfSets: number
-  allTechnologies: boolean
   startingAge: number
   instanceBuckets: Array<Array<Set<RuntimeEntity>>> | null
   pregeneratedBlueprintId?: string | null
@@ -138,6 +137,7 @@ export type MapSettlement = {
 }
 
 export type MapBlueprint = {
+  caves?: import('../../types/cave').PlacedCave[]
   terrainAppearance?: PreparedTerrainCell[]
   animals?: Array<{ i: number; j: number; type: string }>
 

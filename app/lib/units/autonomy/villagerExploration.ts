@@ -1,4 +1,5 @@
 import type { UnitEntity } from '../../../types/entities'
+import { villagerAutonomySuspension } from './villagerAutonomyAvailability'
 
 const pending = new WeakMap<UnitEntity, { id: number; scheduler: NonNullable<UnitEntity['context']>['scheduler'] }>()
 const memories = new WeakMap<UnitEntity, { space: unknown; radius: number; cells: Map<string, number> }>()
@@ -32,10 +33,7 @@ export function scheduleVillagerExplorationResume(
         unit.dest ||
         unit.action ||
         unit.path?.length ||
-        unit.actionLocked ||
-        unit.shelterState ||
-        unit.lookingAtHero ||
-        unit.followingHero
+        villagerAutonomySuspension(unit)
       )
         return
       resume(unit)

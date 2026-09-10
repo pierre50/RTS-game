@@ -92,6 +92,7 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
             thunder: 'thunder',
             windHeavy: 'wind-heavy',
             windLight: 'wind-light',
+            morning: 'morning',
           },
         },
       },
@@ -107,6 +108,15 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
         },
         NIGHT_AMBIENCE_LERP_PER_SECOND: 1,
       },
+      '../../lib/audio/morningAmbience': {
+        duckNightAmbienceForMorning: (_morningVolume, nightVolume) => nightVolume,
+        getMorningAmbienceTargetVolume: () => {
+          if (failOnAmbience)
+            throw new Error('morning ambience should not be calculated while gameplay sound is suppressed')
+          return 0
+        },
+        MORNING_AMBIENCE_LERP_PER_SECOND: 1,
+      },
       '../../lib/audio/oceanAmbience': {
         getOceanAmbienceTargetVolume: () => {
           if (failOnAmbience)
@@ -115,64 +125,8 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
         },
         OCEAN_AMBIENCE_LERP_PER_SECOND: 1,
       },
-      './WeatherProfiles': {
-        AMBIENT_CROSSFADE_MID: 0.5,
-        BIOME_WEATHER_PROFILES: {
-          Temperate: { precipMultiplier: 1, veilMultiplier: 1, windMultiplier: 1 },
-        },
-        COLOR_LERP_PER_SECOND: 1,
-        FIRST_SUNNY_MAX_SECONDS: 1,
-        FIRST_SUNNY_MIN_SECONDS: 1,
-        MAX_RAIN_DROPS: 0,
-        MAX_SAND_GRAINS: 0,
-        MAX_SNOW_FLAKES: 0,
-        PARTICLE_TARGETS: { sunny: { rain: 0, sand: 0, snow: 0 } },
-        RAIN_BASE_SLANT_RATIO: 0,
-        RAIN_DRIFT_PER_SECOND: 0,
-        RAIN_LERP_PER_SECOND: 1,
-        RAIN_LOOP_MAX_VOLUME: 1,
-        RAIN_TEXTURE_HEIGHT: 1,
-        RAIN_WIND_SLANT_FACTOR: 0,
-        SNOW_COLOR: 0,
-        TARGET_FRAME_MS: 1000 / 60,
-        VEIL_TARGETS: { sunny: 0 },
-        WEATHER_COLORS: {
-          sunny: {
-            blue: 1,
-            brightness: 1,
-            contrast: 1,
-            gamma: 1,
-            green: 1,
-            red: 1,
-            saturation: 1,
-          },
-        },
-        WIND_LERP_PER_SECOND: 1,
-        WIND_LOOP_MAX_VOLUME: 1,
-        WIND_TARGETS: { sunny: 0 },
-      },
-      './WeatherUtils': {
-        addParticleDrift: () => {},
-        biomeKeyFromEnvironment: () => 'Temperate',
-        clamp: (value, min, max) => Math.max(min, Math.min(max, value)),
-        combineColor: () => ({
-          blue: 1,
-          brightness: 1,
-          contrast: 1,
-          gamma: 1,
-          green: 1,
-          red: 1,
-          saturation: 1,
-        }),
-        crossfadeVolumes: () => ({ high: 0.5, low: 0.5 }),
-        lerp: (current, target) => target,
-        nextPhase: phase => phase,
-        phaseDuration: () => 1,
-        randomBetween: () => 0,
-        randomDuration: () => 1,
-        scaleParticleTarget: value => value,
-        seconds: value => value * 1000,
-      },
+      './WeatherProfiles': loadTsModule('app/services/weather/WeatherProfiles.ts'),
+      './WeatherUtils': loadTsModule('app/services/weather/WeatherUtils.ts'),
       './WeatherParticles': {
         createRainTexture: () => ({ destroy() {} }),
         createSandTexture: () => ({ destroy() {} }),
@@ -261,6 +215,7 @@ test('weather ambient loops are silenced while gameplay sound is suppressed', ()
     rainLoopHeavy: { volume: 1 },
     windLoopLight: { volume: 1 },
     windLoopHeavy: { volume: 1 },
+    morningLoop: { volume: 1 },
     nightLoop: { volume: 1 },
     oceanLoop: { volume: 1 },
   }
@@ -269,6 +224,7 @@ test('weather ambient loops are silenced while gameplay sound is suppressed', ()
     colorGrading: { shouldRender: () => false },
     context: {},
     map: {},
+    morningVolume: 0.2,
     nightVolume: 0.4,
     oceanVolume: 0.7,
     rainIntensity: 1,
@@ -278,6 +234,7 @@ test('weather ambient loops are silenced while gameplay sound is suppressed', ()
   WeatherSystem.prototype.updateAmbientSound.call(weather, 1)
 
   assert.equal(weather.nightVolume, 0)
+  assert.equal(weather.morningVolume, 0)
   assert.equal(weather.oceanVolume, 0)
   for (const loop of Object.values(loops)) {
     assert.equal(loop.volume, 0)
@@ -291,6 +248,7 @@ test('weather ambient loops are silenced while the game is paused', () => {
     rainLoopHeavy: { volume: 1 },
     windLoopLight: { volume: 1 },
     windLoopHeavy: { volume: 1 },
+    morningLoop: { volume: 1 },
     nightLoop: { volume: 1 },
     oceanLoop: { volume: 1 },
   }
@@ -299,6 +257,7 @@ test('weather ambient loops are silenced while the game is paused', () => {
     colorGrading: { shouldRender: () => true },
     context: { paused: true },
     map: {},
+    morningVolume: 0.2,
     nightVolume: 0.4,
     oceanVolume: 0.7,
     rainIntensity: 1,
@@ -309,6 +268,7 @@ test('weather ambient loops are silenced while the game is paused', () => {
   WeatherSystem.prototype.update.call(weather, 16.67)
 
   assert.equal(weather.nightVolume, 0)
+  assert.equal(weather.morningVolume, 0)
   assert.equal(weather.oceanVolume, 0)
   for (const loop of Object.values(loops)) {
     assert.equal(loop.volume, 0)
@@ -338,6 +298,7 @@ test('weather ambient loops are silenced while a runtime interior is active', ()
     rainLoopHeavy: { volume: 1 },
     windLoopLight: { volume: 1 },
     windLoopHeavy: { volume: 1 },
+    morningLoop: { volume: 1 },
     nightLoop: { volume: 1 },
     oceanLoop: { volume: 1 },
   }
@@ -346,6 +307,7 @@ test('weather ambient loops are silenced while a runtime interior is active', ()
     colorGrading: { shouldRender: () => false },
     context: {},
     map,
+    morningVolume: 0.2,
     nightVolume: 0.4,
     oceanVolume: 0.7,
     rainIntensity: 1,
@@ -355,6 +317,7 @@ test('weather ambient loops are silenced while a runtime interior is active', ()
   WeatherSystem.prototype.updateAmbientSound.call(weather, 1)
 
   assert.equal(weather.nightVolume, 0)
+  assert.equal(weather.morningVolume, 0)
   assert.equal(weather.oceanVolume, 0)
   for (const loop of Object.values(loops)) {
     assert.equal(loop.volume, 0)
@@ -432,4 +395,68 @@ test('weather visuals and exterior map grading pause while a runtime interior is
   assert.equal(map.filters, null)
   assert.equal(map.filterArea, undefined)
   assert.equal(terrainChunk.filters, null)
+})
+
+test('daily weather survives saving and follows world time while cosmetics are suppressed', () => {
+  const WeatherSystem = loadWeatherSystem({ suppressed: true })
+  const { DailyWeatherSchedule } = loadTsModule('app/services/weather/DailyWeatherSchedule.ts')
+  const map = createMap()
+  const context = createContext(map)
+  let worldMs = 0
+  context.dayNight.getElapsedMs = () => worldMs
+  context.timeSkip = { suppressCosmetics: true }
+  const weather = new WeatherSystem(context, map, () => ({ height: 600, width: 800, x: 0, y: 0 }))
+  weather.applyState({ dailyWeatherSeed: 3 })
+  assert.equal(weather.phase, 'clouding')
+  worldMs = 2 * 60000 // 10:00, during the day's single shower.
+  weather.update(1000)
+  assert.equal(weather.elapsedMs, worldMs)
+  assert.equal(weather.phase, 'rainLight')
+  assert.ok(weather.rainIntensity > 0.25)
+  assert.equal(weather.layer.visible, false)
+  const saved = JSON.parse(JSON.stringify(weather.serializeState()))
+  const restored = new WeatherSystem(context, map, () => ({ height: 600, width: 800, x: 0, y: 0 }))
+  restored.applyState(saved)
+  assert.deepEqual(restored.serializeState(), saved)
+  const schedule = new DailyWeatherSchedule(saved.dailyWeatherSeed, 'Temperate')
+  for (const target of [8 * 60000, 25 * 60000, 4 * 24 * 60000]) {
+    worldMs = target
+    weather.update(1000)
+    restored.update(1000)
+    assert.equal(restored.phase, schedule.sample(worldMs).phase)
+    assert.equal(restored.phaseEndsAt, weather.phaseEndsAt)
+    assert.equal(restored.rainIntensity, weather.rainIntensity)
+  }
+  weather.destroy()
+  restored.destroy()
+})
+
+test('legacy saves adopt the daily plan and debug overrides expire back into it', () => {
+  const WeatherSystem = loadWeatherSystem()
+  const map = createMap()
+  const context = createContext(map)
+  let worldMs = 0
+  context.dayNight.getElapsedMs = () => worldMs
+  const weather = new WeatherSystem(
+    context,
+    map,
+    () => ({ height: 600, width: 800, x: 0, y: 0 }),
+    () => 0
+  )
+  weather.applyState({ dailyWeatherSeed: 5 })
+  weather.applyState({ phase: 'rainHeavy', elapsedMs: 5000, phaseEndsAt: 5100 })
+  assert.equal(weather.phase, 'sunny')
+  assert.equal(weather.elapsedMs, worldMs)
+  weather.forcePhase('rainHeavy')
+  worldMs = 16
+  weather.update(16)
+  assert.equal(weather.phase, 'rainHeavy')
+  assert.ok(weather.rainIntensity < 0.01)
+  assert.ok(weather.currentColor.brightness > 0.99)
+  assert.ok(weather.veilIntensity < 0.001)
+  worldMs = 3 * 60000
+  weather.update(1000)
+  assert.equal(weather.phase, 'sunny')
+  assert.ok(weather.rainIntensity < 0.001)
+  weather.destroy()
 })

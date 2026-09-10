@@ -1,3 +1,4 @@
+import { definedProperties } from '../../lib/definedProperties'
 import { ACTION_TYPES, FAMILY_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 import { getActionCondition, getFreeLandCellAroundInstance } from '../../lib'
 import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
@@ -59,7 +60,9 @@ export function placeProducedUnit(
   if (consumePopulationSlot) building.owner.population++
 
   const unitExtra = { ...(building.owner.getUnitExtraOptions?.(type) || {}), ...(extra || {}) }
-  const unit = building.owner.createUnit?.(withCellSpaceId(spawnCell, { i: spawnCell.i, j: spawnCell.j, type, ...unitExtra }))
+  const unit = building.owner.createUnit?.(
+    withCellSpaceId(spawnCell, definedProperties({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra }))
+  )
   if (!unit) return false
   const rallyPoint = building.rallyPoint
   const space = getEntityMapSpace(building, map)
@@ -79,5 +82,10 @@ export function ejectTrainingVillager(building: BuildingControllerHost): void {
   const spawnCell = findSpawnCell(building)
   if (!spawnCell) return
   const unitExtra = building.owner.getUnitExtraOptions?.(UNIT_TYPES.villager) || {}
-  building.owner.createUnit?.(withCellSpaceId(spawnCell, { i: spawnCell.i, j: spawnCell.j, type: UNIT_TYPES.villager, ...unitExtra }))
+  building.owner.createUnit?.(
+    withCellSpaceId(
+      spawnCell,
+      definedProperties({ i: spawnCell.i, j: spawnCell.j, type: UNIT_TYPES.villager, ...unitExtra })
+    )
+  )
 }

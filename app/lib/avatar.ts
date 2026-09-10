@@ -1,12 +1,12 @@
-import { Assets, Rectangle, Texture } from 'pixi.js'
+import { extractSquareAvatar, extractSquareCanvasAvatar } from './graphics/avatarCrop'
+import { Assets, Rectangle, type Texture } from 'pixi.js'
 import { SHEET_TYPES } from '../constants'
 import { getAnimationFrames } from './extra'
 import { getBuildingAsset, type AssetOwner } from './graphics/assets'
-import { recolorCanvasByPalette, recolorCanvasPixels, SOURCE_COLORS } from './graphics/colors'
+import { recolorCanvasByPalette, SOURCE_COLORS } from './graphics/colors'
 import { getTexture, type TextureRef } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { getAppearanceAgeSheetOverride } from './lpc/appearanceLayers'
-import { dynamicEquipmentVisualKey } from './lpc/equipment'
 import { getUnitEquipmentTier } from './units/unitExperience'
 import type { Application, Sprite } from 'pixi.js'
 import type { UnitAppearanceLayerConfig } from '../types/config'
@@ -18,8 +18,6 @@ import type { SpritesheetLike } from '../types/pixi'
 // start widening past ~y=34, so scanning above that keeps torso/arms out of
 // the bounding-box search regardless of civ/gear.
 const HEAD_SCAN_HEIGHT_RATIO = 34 / 64
-const BBOX_PADDING_RATIO = 0.12
-const ALPHA_THRESHOLD = 16
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
 
 type PortraitSource = Pick<
@@ -48,130 +46,6 @@ function getUnitFacePortraitTexture(unit: PortraitSource): Texture | null {
 
   const frames = getAnimationFrames(sheet.textures, 'south', directionCount, directionOrder) as Texture[]
   return frames[0] ?? null
-}
-
-// Finds the tight square around the actual opaque pixels (hair/face, or a
-// whole building), so the crop isn't stuck with the source's empty margins.
-function findOpaqueSquare(pixels: Uint8ClampedArray, width: number, height: number): Rectangle | null {
-  let minX = width
-  let maxX = -1
-  let minY = height
-  let maxY = -1
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (pixels[(y * width + x) * 4 + 3] > ALPHA_THRESHOLD) {
-        if (x < minX) minX = x
-        if (x > maxX) maxX = x
-        if (y < minY) minY = y
-        if (y > maxY) maxY = y
-      }
-    }
-  }
-  if (maxX < minX || maxY < minY) return null
-
-  const boxWidth = maxX - minX + 1
-  const boxHeight = maxY - minY + 1
-  const centerX = minX + boxWidth / 2
-  const centerY = minY + boxHeight / 2
-  const side = Math.max(boxWidth, boxHeight) * (1 + BBOX_PADDING_RATIO * 2)
-
-  return new Rectangle(
-    Math.round(centerX - side / 2),
-    Math.round(centerY - side / 2),
-    Math.round(side),
-    Math.round(side)
-  )
-}
-
-// `extract.canvas`/`extract.pixels` ignore the `frame` option when the
-// target is a Texture (only Containers get clipped) — so cropping a
-// sub-region means building a real sub-Texture sharing the same source.
-function subTexture(texture: Texture, frame: Rectangle): Texture {
-  return new Texture({ source: texture.source, frame })
-}
-
-// Crops `texture` to a tight square around its opaque content within
-// `scanRect` (an absolute rect in the texture's atlas), draws it scaled to
-// fill `canvas`, and repaints it from the neutral "blue" template to the
-// player's color. Shared by unit and building portraits — only what counts
-// as "the subject" (a head vs. a whole building) differs between callers.
-function extractSquareAvatar(
-  app: Application,
-  texture: Texture,
-  scanRect: Rectangle,
-  canvas: HTMLCanvasElement,
-  color: string,
-  sourceColors: readonly number[]
-): boolean {
-  const scanTexture = subTexture(texture, scanRect)
-  const { pixels, width, height } = app.renderer.extract.pixels(scanTexture)
-
-  const square = findOpaqueSquare(pixels, width, height) ?? new Rectangle(0, 0, scanRect.width, scanRect.height)
-  // Clamp to the source texture so the extraction never samples outside it.
-  square.width = Math.min(square.width, texture.width, texture.height)
-  square.height = square.width
-  square.x = Math.max(0, Math.min(square.x, texture.width - square.width))
-  square.y = Math.max(0, Math.min(square.y, texture.height - square.height))
-
-  const cropTexture = subTexture(
-    texture,
-    new Rectangle(texture.frame.x + square.x, texture.frame.y + square.y, square.width, square.height)
-  )
-  const extracted = app.renderer.extract.canvas(cropTexture)
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return false
-  ctx.imageSmoothingEnabled = false
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.drawImage(
-    extracted as unknown as CanvasImageSource,
-    0,
-    0,
-    square.width,
-    square.height,
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  )
-
-  // The source art ships in the neutral "blue" template convention — real
-  // team color is repainted at runtime elsewhere (see applyOwnerColorToSprite /
-  // changeSpriteColorDirectly). Recoloring the already-drawn canvas (plain
-  // Canvas2D) rather than the Pixi texture avoids extract() reading back a
-  // texture that was never uploaded through a real render pass.
-  recolorCanvasPixels(canvas, color, sourceColors)
-  return true
-}
-
-function extractSquareCanvasAvatar(
-  source: HTMLCanvasElement,
-  scanHeight: number,
-  canvas: HTMLCanvasElement,
-  color: string,
-  sourceColors: readonly number[]
-): boolean {
-  const sourceCtx = source.getContext('2d')
-  if (!sourceCtx) return false
-
-  const scanWidth = source.width
-  const clampedScanHeight = Math.max(1, Math.min(source.height, scanHeight))
-  const imageData = sourceCtx.getImageData(0, 0, scanWidth, clampedScanHeight)
-  const square =
-    findOpaqueSquare(imageData.data, scanWidth, clampedScanHeight) ?? new Rectangle(0, 0, scanWidth, clampedScanHeight)
-  square.width = Math.min(square.width, source.width, source.height)
-  square.height = square.width
-  square.x = Math.max(0, Math.min(square.x, source.width - square.width))
-  square.y = Math.max(0, Math.min(square.y, source.height - square.height))
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return false
-  ctx.imageSmoothingEnabled = false
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.drawImage(source, square.x, square.y, square.width, square.height, 0, 0, canvas.width, canvas.height)
-  recolorCanvasPixels(canvas, color, sourceColors)
-  return true
 }
 
 export function renderUnitHeadCanvasAvatar(
@@ -234,7 +108,7 @@ function renderLayeredUnitHeadAvatar(
   const composed = document.createElement('canvas')
   composed.width = baseTexture.width
   composed.height = baseTexture.height
-  const ctx = composed.getContext('2d')
+  const ctx = composed.getContext('2d', { willReadFrequently: true })
   if (!ctx) return false
   ctx.imageSmoothingEnabled = false
 
@@ -397,96 +271,4 @@ export function renderResourceAvatar(
 // appearing once "action" (its draw/shoot pose) is played. So each sheet is
 // tried in turn and the first with enough opaque pixels wins, rather than
 // assuming 'walking' always has visible art the way unit/building sheets do.
-const EQUIPMENT_LAYERS = ['back', 'front'] as const
-const EQUIPMENT_SHEETS = ['walking', 'action'] as const
-const EQUIPMENT_VARIANTS = ['', 'male', 'female'] as const
-const MIN_EQUIPMENT_OPAQUE_PIXELS = 30
-const equipmentAvatarCache = new Map<string, HTMLCanvasElement>()
-
-function getEquipmentLayerTexture(equipment: string, layer: string, sheet: string): Texture | null {
-  let sheetData: SpritesheetLike | undefined
-  for (const variant of EQUIPMENT_VARIANTS) {
-    const sheetId = `equipments/${equipment}/${layer}/${sheet}${variant ? `/${variant}` : ''}`
-    sheetData = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
-    if (sheetData?.textures) break
-  }
-  if (!sheetData?.textures) return null
-
-  const frames = getAnimationFrames(sheetData.textures, 'south', 3, null) as Texture[]
-  return frames[0] ?? null
-}
-
-function countOpaquePixels(pixels: Uint8ClampedArray): number {
-  let count = 0
-  for (let i = 3; i < pixels.length; i += 4) {
-    if (pixels[i] > ALPHA_THRESHOLD) count++
-  }
-  return count
-}
-
-function drawCachedEquipmentAvatar(source: HTMLCanvasElement, canvas: HTMLCanvasElement): boolean {
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return false
-  ctx.imageSmoothingEnabled = false
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.drawImage(source, 0, 0, source.width, source.height, 0, 0, canvas.width, canvas.height)
-  return true
-}
-
-// Renders the weapon/tool an inventory slot equips into `canvas` — composites
-// its back+front layers (both drawn at once; some equipment splits its shape
-// across both, e.g. a halberd's shaft going behind the arm), then crops
-// tightly to whatever's actually drawn.
-export function renderEquipmentAvatar(app: Application, equipment: string, canvas: HTMLCanvasElement): boolean {
-  const visualEquipment = dynamicEquipmentVisualKey(equipment)
-  if (!visualEquipment) return false
-
-  const cacheKey = `${equipment}:${canvas.width}x${canvas.height}`
-  const cached = equipmentAvatarCache.get(cacheKey)
-  if (cached) return drawCachedEquipmentAvatar(cached, canvas)
-
-  for (const sheet of EQUIPMENT_SHEETS) {
-    const layerTextures = EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(visualEquipment, layer, sheet)).filter(
-      (texture): texture is Texture => Boolean(texture)
-    )
-    if (!layerTextures.length) continue
-
-    const size = layerTextures[0]
-    const composed = document.createElement('canvas')
-    composed.width = size.width
-    composed.height = size.height
-    const ctx = composed.getContext('2d')
-    if (!ctx) continue
-    ctx.imageSmoothingEnabled = false
-    for (const texture of layerTextures) {
-      ctx.drawImage(app.renderer.extract.canvas(texture) as unknown as CanvasImageSource, 0, 0)
-    }
-
-    const imageData = ctx.getImageData(0, 0, composed.width, composed.height)
-    if (countOpaquePixels(imageData.data) < MIN_EQUIPMENT_OPAQUE_PIXELS) continue
-
-    const square = findOpaqueSquare(imageData.data, composed.width, composed.height)
-    if (!square) continue
-    square.width = Math.min(square.width, composed.width, composed.height)
-    square.height = square.width
-    square.x = Math.max(0, Math.min(square.x, composed.width - square.width))
-    square.y = Math.max(0, Math.min(square.y, composed.height - square.height))
-
-    const outCtx = canvas.getContext('2d')
-    if (!outCtx) return false
-    outCtx.imageSmoothingEnabled = false
-    outCtx.clearRect(0, 0, canvas.width, canvas.height)
-    outCtx.drawImage(composed, square.x, square.y, square.width, square.height, 0, 0, canvas.width, canvas.height)
-    const cachedCanvas = document.createElement('canvas')
-    cachedCanvas.width = canvas.width
-    cachedCanvas.height = canvas.height
-    const cachedCtx = cachedCanvas.getContext('2d')
-    if (cachedCtx) {
-      cachedCtx.imageSmoothingEnabled = false
-      cachedCtx.drawImage(canvas, 0, 0)
-      equipmentAvatarCache.set(cacheKey, cachedCanvas)
-    }
-    return true
-  }
-  return false
-}
+export { renderEquipmentAvatar } from './graphics/equipmentAvatar'

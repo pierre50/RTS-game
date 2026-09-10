@@ -1,3 +1,4 @@
+import { definedProperties } from '../definedProperties'
 import { CELL_HEIGHT, CELL_WIDTH, SHEET_TYPES, SOUND_CUES } from '../constants'
 import { HeroCatchingPoleThrow } from '../../classes/HeroCatchingPoleThrow'
 import { consumeHeroEquippedItem } from '../equipment/equipmentLoot'
@@ -103,8 +104,8 @@ export function finishHeroCatchingPoleThrowAnimation(hero: UnitEntity): void {
     finishHeroToolAnimation(hero)
     return
   }
-  sprite.onComplete = undefined
-  sprite.onFrameChange = undefined
+  delete sprite.onComplete
+  delete sprite.onFrameChange
   sprite.loop = false
   const taskId = playSpriteFrameSequence(sprite, scheduler, {
     frameMs: lpcSlashFrameMs(),
@@ -124,8 +125,8 @@ export function holdHeroCatchingPoleThrowFrame(hero: UnitEntity): void {
   if (!sprite?.gotoAndStop) return
   const releaseFrame = getHeroShootReleaseFrame('catchingPole')
   const frame = Math.min(releaseFrame, Math.max(0, sprite.textures.length - 1))
-  sprite.onComplete = undefined
-  sprite.onFrameChange = undefined
+  delete sprite.onComplete
+  delete sprite.onFrameChange
   sprite.loop = false
   sprite.gotoAndStop(frame)
   hero.syncShadow?.()
@@ -138,6 +139,7 @@ export function throwCatchingPoleAt(
   power = 1,
   options: { onThrowResolved?: () => void } = {}
 ): HeroCatchingPoleThrow | null {
+  if ((hero.owner?.age ?? 0) < 1) return null
   const map = hero.context?.map
   if (!map || !hero.context) return null
   const rangePower = Math.max(HERO_BOW_MIN_POWER, Math.min(1, power))
@@ -148,7 +150,7 @@ export function throwCatchingPoleAt(
   }
   playAudibleSoundCue(hero, SOUND_CUES.projectile.arrowShot, { profile: 'projectile' })
   const catchingPole = new HeroCatchingPoleThrow(hero, maxDestination, hero.context, {
-    onThrowResolved: options.onThrowResolved,
+    ...definedProperties({ onThrowResolved: options.onThrowResolved }),
   })
   map.addChild(catchingPole)
   return catchingPole

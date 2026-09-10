@@ -17,7 +17,7 @@ type VillagerArrivalInput = {
   populationMax: number
 }
 
-function calculateVillagerArrivals({ foodAvailable, population, populationMax }: VillagerArrivalInput): number {
+export function calculateVillagerArrivals({ foodAvailable, population, populationMax }: VillagerArrivalInput): number {
   const freeHousing = Math.max(0, Math.min(populationMax, Number.POSITIVE_INFINITY) - population)
   if (population <= 0 || freeHousing <= 0) return 0
 

@@ -4,6 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
   const heroTools = {
+    isHeroCatchingPoleEquipped: () => false,
     aimHeroDefenseAt: () => false,
     aimHeroPowerChargeAt: () => false,
     beginHeroDefense: () => false,

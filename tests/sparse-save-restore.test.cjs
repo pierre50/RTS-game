@@ -87,7 +87,7 @@ function savedGeneration() {
           }
         },
       },
-      '../MapSaveRestore': {},
+      '../MapSaveRestore': { restorePlayerInteriors: () => {}, restoreCaveOccupants: () => {} },
     },
   })
 }

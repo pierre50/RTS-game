@@ -3,7 +3,7 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entitie
 import type { RuntimeCell } from '../types/map'
 import type { RuntimeMap } from '../types/map'
 import type { PlayerLike, PlayerUnitCreationOptions } from '../types/player'
-import type { TechnologyConfig, UnitConfig, BuildingConfig } from '../types/config'
+import type { UnitConfig, BuildingConfig } from '../types/config'
 import type { DayNightColorAdjustment, DayNightStateLike } from '../types/context'
 import type { FactionSave } from '../types/save'
 
@@ -327,7 +327,6 @@ export type DevPlayer = PlayerLike & {
   buildings: BuildingEntity[]
   units: UnitEntity[]
   corpses: UnitEntity[]
-  techs: Record<string, TechnologyConfig>
   popMax?: number
   population?: number
   hasBuilt?: string[]

@@ -182,22 +182,22 @@ test('villager and hero work tools follow civilization metal age', () => {
   assert.equal(woodcutterFront?.walkingSheet, 'equipments/axe_ceramic/front/walking')
   assert.equal(woodcutterFront?.appearanceVariantKey, 'gender')
   assert.equal(woodcutterFront?.actionWorkSheetOverrides?.['attacker:attack'], undefined)
-  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/axe_copper/front/walking')
-  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/axe_copper/front/action')
+  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/axe_bronze/front/walking')
+  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/axe_bronze/front/action')
   assert.equal(builderFront?.walkingSheet, 'equipments/hammer_ceramic/front/walking')
   assert.equal(builderFront?.appearanceVariantKey, 'gender')
-  assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/hammer_copper/front/action')
-  assert.equal(builderFront?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/hammer_bronze/front/action')
-  assert.equal(builderFront?.ageSheetOverrides?.['3']?.actionSheet, 'equipments/hammer_iron/front/action')
-  assert.equal(farmerFront?.minAge, 1)
+  assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/hammer_bronze/front/action')
+  assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/hammer_bronze/front/action')
+  assert.equal(builderFront?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/hammer_iron/front/action')
+  assert.equal(farmerFront?.minAge, undefined)
 
-  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 0), [])
-  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 1), ['scythe_copper'])
+  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 0), ['scythe_ceramic'])
+  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 1), ['scythe_bronze'])
   assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.horseCapture, 0), ['longstick'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 0), ['sword_ceramic'])
-  assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_copper'])
-  assert.deepEqual(dynamicEquipmentForWork('heroSword', 2), ['sword_bronze'])
-  assert.deepEqual(dynamicEquipmentForWork('heroSword', 3), ['sword_iron'])
+  assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_bronze'])
+  assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_bronze'])
+  assert.deepEqual(dynamicEquipmentForWork('heroSword', 2), ['sword_iron'])
 })
 
 test('catchingPole inventory equipment renders through the longstick visual layers', () => {
@@ -739,12 +739,12 @@ test('infantry equipment layers unlock by level and switch metal by civilization
   })
 
   assert.deepEqual(dynamicEquipmentForUnit('Chief', 0, 0), ['sword_ceramic'])
-  assert.deepEqual(dynamicEquipmentForUnit('Chief', 1, 0), ['sword_copper'])
-  assert.deepEqual(dynamicEquipmentForUnit('Chief', 2, 0), ['sword_bronze'])
-  assert.deepEqual(dynamicEquipmentForUnit('Chief', 3, 0), ['sword_iron'])
+  assert.deepEqual(dynamicEquipmentForUnit('Chief', 1, 0), ['sword_bronze'])
+  assert.deepEqual(dynamicEquipmentForUnit('Chief', 1, 0), ['sword_bronze'])
+  assert.deepEqual(dynamicEquipmentForUnit('Chief', 2, 0), ['sword_iron'])
   assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 0, 0), ['sword_ceramic'])
   assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 0, 2), ['sword_ceramic', 'armor_leather'])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 15), [
+  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 15), [
     'sword_bronze',
     'shoulder_legion_bronze',
     'bracers_bronze',
@@ -754,7 +754,7 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'cape_solid',
     'helmet_barbuta_bronze',
   ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 3, 15), [
+  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 15), [
     'sword_iron',
     'shoulder_legion_iron',
     'bracers_iron',
@@ -764,7 +764,7 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'cape_solid',
     'helmet_barbuta_iron',
   ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 16), [
+  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 16), [
     'sword_bronze',
     'shoulder_legion_bronze',
     'bracers_bronze',
@@ -775,7 +775,7 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'helmet_barbuta_bronze',
     'centurion_crest',
   ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 18), [
+  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 18), [
     'sword_bronze',
     'shoulder_legion_bronze',
     'bracers_bronze',
@@ -786,7 +786,7 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'helmet_barbuta_bronze',
     'centurion_crest',
   ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 20), [
+  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 20), [
     'sword_bronze',
     'shoulder_legion_bronze',
     'bracers_bronze',
@@ -797,16 +797,16 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'helmet_barbuta_bronze',
     'centurion_crest',
   ])
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Latium').includes('helmet_legion_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Latium').includes('centurion_plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Sumeria').includes('helmet_nasal_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Sumeria').includes('legion_plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Kemet').includes('helmet_bascinet_round_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Xia').includes('plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Alba').includes('helmet_wings'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nord').includes('helmet_norman_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nord').includes('upward_horns_white'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nobatia').includes('helmet_nasal_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Latium').includes('helmet_legion_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Latium').includes('centurion_plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Sumeria').includes('helmet_nasal_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Sumeria').includes('legion_plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Kemet').includes('helmet_bascinet_round_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Xia').includes('plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Alba').includes('helmet_wings'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Nord').includes('helmet_norman_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Nord').includes('upward_horns_white'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Nobatia').includes('helmet_nasal_bronze'), true)
 
   const layers = dynamicEquipmentLayersForUnit('Fantassin')
   const sword = layers.find(layer => layer.walkingSheet === 'equipments/sword_ceramic/front/walking')
@@ -834,20 +834,20 @@ test('infantry equipment layers unlock by level and switch metal by civilization
   assert.equal(mail?.mountedCut, undefined)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.maxLevel, 17)
-  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
-  assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
   assert.equal(pointed?.zIndex, 11)
   assert.equal(pointed?.mountedCut, false)
   assert.equal(pointed?.minLevel, 6)
   assert.equal(pointed?.maxLevel, 14)
-  assert.equal(pointed?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/helmet_pointed_bronze/front/walking')
-  assert.equal(pointed?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/helmet_pointed_iron/front/walking')
+  assert.equal(pointed?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/helmet_pointed_bronze/front/walking')
+  assert.equal(pointed?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/helmet_pointed_iron/front/walking')
   assert.equal(barbuta?.minLevel, 15)
-  assert.equal(barbuta?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/helmet_barbuta_bronze/front/action')
+  assert.equal(barbuta?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/helmet_barbuta_bronze/front/action')
   assert.equal(bracers?.minLevel, 5)
   assert.equal(bracers?.mountedCut, undefined)
-  assert.equal(bracers?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/bracers_bronze/front/walking')
-  assert.equal(bracers?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/bracers_iron/front/walking')
+  assert.equal(bracers?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/bracers_bronze/front/walking')
+  assert.equal(bracers?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/bracers_iron/front/walking')
   assert.equal(cape?.minLevel, 14)
   assert.equal(cape?.palette, 'player')
   assert.equal(crest, undefined)
@@ -877,9 +877,9 @@ test('archer equipment follows soldier armor progression without shield', () => 
   )
 
   assert.deepEqual(dynamicEquipmentForUnit('Bowman', 0, 0), ['quiver', 'bow', 'arrow_ceramic'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_great', 'arrow_copper'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 2, 0), ['quiver', 'bow_recurve', 'arrow_bronze'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 2, 15), [
+  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_recurve', 'arrow_bronze'])
+  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_recurve', 'arrow_bronze'])
+  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 15), [
     'quiver',
     'bow_recurve',
     'arrow_bronze',
@@ -890,7 +890,7 @@ test('archer equipment follows soldier armor progression without shield', () => 
     'cape_solid',
     'helmet_barbuta_bronze',
   ])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 3, 15), [
+  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 2, 15), [
     'quiver',
     'bow_recurve',
     'arrow_iron',
@@ -901,8 +901,8 @@ test('archer equipment follows soldier armor progression without shield', () => 
     'cape_solid',
     'helmet_barbuta_iron',
   ])
-  assert.equal(dynamicEquipmentForUnit('Bowman', 2, 20).includes('round_shield_bronze_slash'), false)
-  assert.equal(dynamicEquipmentForUnit('Bowman', 3, 20).includes('round_shield_iron_slash'), false)
+  assert.equal(dynamicEquipmentForUnit('Bowman', 1, 20).includes('round_shield_bronze_slash'), false)
+  assert.equal(dynamicEquipmentForUnit('Bowman', 2, 20).includes('round_shield_iron_slash'), false)
 
   const layers = dynamicEquipmentLayersForUnit('Bowman')
   const bow = layers.find(layer => layer.walkingSheet === 'equipments/bow/front/walking')
@@ -910,28 +910,28 @@ test('archer equipment follows soldier armor progression without shield', () => 
   const quiver = layers.find(layer => layer.walkingSheet === 'equipments/quiver/back/walking')
   const mail = layers.find(layer => layer.walkingSheet === 'equipments/armor_mail_ceramic/front/walking')
   const shield = layers.find(layer => layer.walkingSheet === 'equipments/round_shield_ceramic_slash/front/walking')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/bow_great/front/walking')
-  assert.equal(bow?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/bow_recurve/front/action')
+  assert.equal(bow?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/bow_recurve/front/walking')
+  assert.equal(bow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/bow_recurve/front/action')
   assert.equal(bow?.shootingSheet, 'equipments/bow/front/action')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/bow_great/front/action')
-  assert.equal(bow?.ageSheetOverrides?.['2']?.shootingSheet, 'equipments/bow_recurve/front/action')
+  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/bow_recurve/front/action')
+  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/bow_recurve/front/action')
   assert.equal(bow?.mountedCut, false)
   assert.equal(arrow?.walkingSheet, undefined)
   assert.equal(arrow?.shootingSheet, 'equipments/arrow_ceramic/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/arrow_copper/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/arrow_copper/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['2']?.shootingSheet, 'equipments/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['3']?.actionSheet, 'equipments/arrow_iron/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['3']?.shootingSheet, 'equipments/arrow_iron/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/arrow_iron/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['2']?.shootingSheet, 'equipments/arrow_iron/front/action')
   assert.equal(arrow?.mountedCut, false)
   assert.equal(arrow?.hideOnOrAfterFrame, 9)
   assert.equal(quiver?.shootingSheet, 'equipments/quiver/back/action')
   assert.equal(quiver?.mountedCut, false)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.mountedCut, undefined)
-  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
-  assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
   assert.equal(shield, undefined)
 
   const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/weapon/arrow'))

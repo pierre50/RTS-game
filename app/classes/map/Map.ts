@@ -64,7 +64,6 @@ export default class Map extends Container {
   grid: RuntimeCell[][]
   spaces: globalThis.Map<string, RuntimeMapSpace>
   activeSpaceId: string | null
-  allTechnologies: boolean
   startingAge: number
   noAI: boolean
   heroOnlyStart: boolean
@@ -129,7 +128,6 @@ export default class Map extends Container {
     this.activeSpaceId = null
     this.sortableChildren = true
 
-    this.allTechnologies = false
     this.startingAge = 0
     this.noAI = false
     this.heroOnlyStart = false

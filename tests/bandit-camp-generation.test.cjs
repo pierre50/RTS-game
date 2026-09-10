@@ -2,9 +2,10 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadBanditCampGeneration() {
+function loadBanditCampGeneration(furnishBanditCave = () => {}) {
   return loadTsModule('app/classes/map/BanditCampGeneration.ts', {
     mocks: {
+      './BanditCaveGeneration': { furnishBanditCave },
       '../players': {
         AI: class AI {
           constructor(options) {
@@ -118,4 +119,28 @@ test('bandit camps place a bandit-owned chest with loot', () => {
   assert.ok(chest.inventory.equipment.includes('sword_ceramic'))
   assert.equal(chest.i, 18)
   assert.equal(chest.j, 17)
+})
+
+test('linked camps keep one fire and guards outside and move all furniture into their cave', () => {
+  const calls = []
+  const { placeBanditCamps } = loadBanditCampGeneration((...args) => calls.push(args))
+  const owner = createBanditOwner()
+  const cave = { cave: { id: 'lair' } }
+  const map = {
+    banditCampPositions: [{ i: 24, j: 24, caveId: 'lair' }],
+    context: { players: [owner, { buildings: [cave] }] },
+    grid: [],
+    noAI: false,
+    randomItem: items => items[0],
+    randomRange: min => min,
+  }
+  placeBanditCamps(map, map.context)
+  assert.deepEqual(
+    owner.buildings.map(item => item.type),
+    ['FireCamp']
+  )
+  assert.equal(owner.population, 3)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0][1], cave)
+  assert.ok(calls[0][4].equipment.length > 0)
 })

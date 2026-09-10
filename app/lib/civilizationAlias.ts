@@ -2,6 +2,7 @@ const DEFAULT_CIVILIZATION = 'Hellas'
 
 const CIVILIZATION_CANONICAL_BY_KEY: Record<string, string> = {
   hellas: 'Hellas',
+  greek: 'Hellas',
   latium: 'Latium',
   kemet: 'Kemet',
   sumeria: 'Sumeria',
@@ -23,7 +24,9 @@ const CIVILIZATION_ASSET_SLUG_BY_CANONICAL: Record<string, string> = {
 }
 
 function civilizationKey(value: string | null | undefined): string {
-  return String(value ?? '').trim().toLowerCase()
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
 }
 
 export function normalizeCivilization(civilization: string | null | undefined): string {

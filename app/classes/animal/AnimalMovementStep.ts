@@ -98,7 +98,10 @@ function destHasMoved(animal: AnimalControllerHost): boolean {
 
 function resolveArrivalAfterStep(animal: AnimalControllerHost): boolean {
   if (destHasMoved(animal)) {
-    animal.sendTo(animal.dest, animal.action ?? null, { forceRepath: true, movementSheet: animal.movementSheet })
+    animal.sendTo(animal.dest, animal.action ?? null, {
+      forceRepath: true,
+      ...(animal.movementSheet ? { movementSheet: animal.movementSheet } : {}),
+    })
     return true
   }
   const inRange =
@@ -179,7 +182,10 @@ function canContinueAnimalStep(animal: AnimalControllerHost, nextCell: AnimalCon
     return false
   }
   if ((nextCell.solid || nextCell.category === 'Water') && animal.dest) {
-    animal.sendTo(animal.dest, animal.action, { forceRepath: true, movementSheet: animal.movementSheet })
+    animal.sendTo(animal.dest, animal.action, {
+      forceRepath: true,
+      ...(animal.movementSheet ? { movementSheet: animal.movementSheet } : {}),
+    })
     return false
   }
 

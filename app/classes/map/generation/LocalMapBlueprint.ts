@@ -1,3 +1,4 @@
+import { definedProperties } from '../../../lib/definedProperties'
 import { blueprintToLocalGrid, createLocalMapLayout, gridToLocal, localToGrid } from '../../../lib/localMapLayout'
 import type { MapBlueprint } from '../MapGenerationTypes'
 
@@ -65,7 +66,7 @@ export function createSquareLocalBlueprint(source: MapBlueprint): MapBlueprint {
     ...value,
     ...blueprintToLocalGrid(value.i, value.j, layout),
   })
-  const blueprint: MapBlueprint = {
+  const blueprint: MapBlueprint = definedProperties({
     ...source,
     size,
     localGridLayout: layout,
@@ -78,7 +79,7 @@ export function createSquareLocalBlueprint(source: MapBlueprint): MapBlueprint {
     resources: source.resources?.map(position),
     banditCampPositions: source.banditCampPositions?.map(position),
     settlements: source.settlements?.map(value => ({ ...value, local: position(value.local) })),
-  }
+  })
   return blueprint
 }
 
@@ -171,12 +172,14 @@ export function createRoundLocalInteriorBlueprint(source: MapBlueprint): MapBlue
   const borderMask = computeInteriorBorderMask(floorMask, size)
   const exit = bottomLeftVisualFloorCell(floorMask, size, layout, centerColumn, centerRow, radiusColumns)
   setInteriorCell(borderMask, exit.i, exit.j, 0)
-  const sourceExit = source.exits?.find(Boolean) as ({ direction?: string; id?: string } & {
-    i: number
-    j: number
-  }) | null
+  const sourceExit = source.exits?.find(Boolean) as
+    | ({ direction?: string; id?: string } & {
+        i: number
+        j: number
+      })
+    | null
 
-  return {
+  return definedProperties({
     ...source,
     size,
     localGridLayout: layout,
@@ -185,7 +188,13 @@ export function createRoundLocalInteriorBlueprint(source: MapBlueprint): MapBlue
     floorMask,
     borderMask,
     spawns: [exit],
-    exits: [{ ...exit, ...(sourceExit?.id ? { id: sourceExit.id } : {}), ...(sourceExit?.direction ? { direction: sourceExit.direction } : {}) }],
+    exits: [
+      {
+        ...exit,
+        ...(sourceExit?.id ? { id: sourceExit.id } : {}),
+        ...(sourceExit?.direction ? { direction: sourceExit.direction } : {}),
+      },
+    ],
     resources: [],
     floorShape: {
       type: 'round-local',
@@ -193,5 +202,5 @@ export function createRoundLocalInteriorBlueprint(source: MapBlueprint): MapBlue
       radius: { columns: radiusColumns, rows: radiusRows },
       curvePower,
     },
-  }
+  })
 }

@@ -1,0 +1,56 @@
+{
+  "format": "cave-map-manifest",
+  "version": 1,
+  "seed": 4242,
+  "blueprints": [
+    {
+      "id": "cave-small-circle",
+      "tier": "small",
+      "variant": "circle",
+      "size": 21,
+      "path": "small/cave-small-circle.map"
+    },
+    {
+      "id": "cave-medium-branches",
+      "tier": "medium",
+      "variant": "branches",
+      "size": 31,
+      "path": "medium/cave-medium-branches.map"
+    },
+    {
+      "id": "cave-medium-loop",
+      "tier": "medium",
+      "variant": "loop",
+      "size": 31,
+      "path": "medium/cave-medium-loop.map"
+    },
+    {
+      "id": "cave-medium-chamber",
+      "tier": "medium",
+      "variant": "chamber",
+      "size": 31,
+      "path": "medium/cave-medium-chamber.map"
+    },
+    {
+      "id": "cave-large-branches",
+      "tier": "large",
+      "variant": "branches",
+      "size": 63,
+      "path": "large/cave-large-branches.map"
+    },
+    {
+      "id": "cave-large-loop",
+      "tier": "large",
+      "variant": "loop",
+      "size": 63,
+      "path": "large/cave-large-loop.map"
+    },
+    {
+      "id": "cave-large-chamber",
+      "tier": "large",
+      "variant": "chamber",
+      "size": 63,
+      "path": "large/cave-large-chamber.map"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    throw new Error(`Unexpected require: ${request}`)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -129,7 +130,8 @@ function buildMocks(calls, context) {
     },
     '../lib/units/unitTrainingOrders': {
       findBestTrainingBuildingForUnit: () => null,
-      sendUnitToTraining: (npc, type) => calls.push(['sendUnitToTraining', npc.label, type, `paused=${context.paused}`]),
+      sendUnitToTraining: (npc, type) =>
+        calls.push(['sendUnitToTraining', npc.label, type, `paused=${context.paused}`]),
       VILLAGER_TRAINING_UNIT_TYPES: ['Fantassin', 'Bowman'],
     },
     '../lib/training/unitTrainingCost': {
@@ -162,12 +164,9 @@ function buildMocks(calls, context) {
     '../lib/equipment/equipmentStats': {
       refreshUnitEquipmentStats: npc => calls.push(['refreshUnitEquipmentStats', npc.label]),
     },
-    '../lib/equipment/equipmentDiscoveries': {
-      discoverHeroEquipment: () => {},
-      discoverHeroResource: () => {},
-    },
     '../lib/resources/ironMining': {
-      canOwnerMineIron: owner => (owner?.age ?? 0) >= 2,
+      canOwnerMineMineral: (owner, resource) =>
+        (owner?.age ?? 0) >= (resource === 'iron' ? 2 : resource === 'copper' ? 1 : 0),
     },
     '../lib/lpc': {
       ensureAndRefreshBakedLpcUnitAssets: async npc => {
@@ -523,17 +522,17 @@ test('resource orders live behind a resources submenu without a visible back but
     assert.equal(manager.buttons.get('wood').hidden, false)
     assert.equal(manager.buttons.get('stone').hidden, false)
     assert.equal(manager.buttons.get('gold').hidden, false)
-    assert.equal(manager.buttons.get('copper').hidden, false)
+    assert.equal(manager.buttons.get('copper').hidden, context.player.age < 1)
     assert.equal(manager.buttons.get('iron').hidden, false)
     assert.equal(manager.buttons.get('back').hidden, true)
   })
 })
 
-test('iron resource order stays hidden before the bronze age', () => {
+test('iron resource order stays hidden before the Bronze Age', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
-    context.player.age = 1
+    context.player.age = 0
     const menu = { context }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const manager = new NpcOrdersManager(menu)
@@ -543,7 +542,7 @@ test('iron resource order stays hidden before the bronze age', () => {
     manager.buttons.get('resources').click()
 
     assert.equal(manager.buttons.get('iron').hidden, true)
-    assert.equal(manager.buttons.get('copper').hidden, false)
+    assert.equal(manager.buttons.get('copper').hidden, true)
   })
 })
 

@@ -163,7 +163,7 @@ async function loadInteriorManifest(): Promise<InteriorBlueprintManifest> {
   return manifest
 }
 
-function decodeInteriorPayload(
+export function decodeInteriorPayload(
   payload: InteriorBlueprintPayload,
   selected: SelectedInterior,
   requestedBuildingType?: string
@@ -178,6 +178,7 @@ function decodeInteriorPayload(
     interiorType: requestedBuildingType || selected.buildingType || payload.interiorType,
     mapType: 'interior',
     localGridLayout: payload.localGridLayout,
+    preserveLegacyGrid: payload.preserveLegacyGrid,
     size,
     seed: payload.seed,
     terrain: toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass')),

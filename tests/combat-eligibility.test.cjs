@@ -80,7 +80,7 @@ test('healing requires a living injured allied unit', () => {
   }
 })
 
-test('conversion respects enemy relations, bandit immunity and the building technology requirement', () => {
+test('conversion respects enemy relations and ignores obsolete technology bonuses', () => {
   const priest = source({ type: U.priest })
   const enemy = source({ type: U.infantry, owner: { label: 'enemy' } })
   assert.equal(getActionCondition(priest, enemy, 'convert'), true)
@@ -94,7 +94,7 @@ test('conversion respects enemy relations, bandit immunity and the building tech
   const enemyBuilding = building({ owner: enemy.owner })
   assert.equal(getActionCondition(priest, enemyBuilding, 'convert'), false)
   const advancedPriest = { ...priest, owner: { ...owner, technologies: ['Monotheism'] } }
-  assert.equal(getActionCondition(advancedPriest, enemyBuilding, 'convert'), true)
+  assert.equal(getActionCondition(advancedPriest, enemyBuilding, 'convert'), false)
   assert.equal(getActionCondition(advancedPriest, { ...enemy, family: F.animal }, 'convert'), false)
 })
 

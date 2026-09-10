@@ -6,6 +6,7 @@ import { DayNightSystem } from '../../services/DayNightSystem'
 import { InteriorExitMarkerSystem } from '../../services/InteriorExitMarkerSystem'
 import { HeroFollowerPatrolSystem } from '../../services/HeroFollowerPatrolSystem'
 import { IdleUnitPatrolSystem } from '../../services/IdleUnitPatrolSystem'
+import { VillagerAutonomySystem } from '../../services/VillagerAutonomySystem'
 import { LightSystem } from '../../services/lighting/LightSystem'
 import { ShadowSystem } from '../../services/ShadowSystem'
 import { TimeSkipSystem } from '../../services/TimeSkipSystem'
@@ -36,6 +37,7 @@ export type RuntimeServices = {
   dayNight: DayNightSystem | null
   heroFollowerPatrols: HeroFollowerPatrolSystem | null
   idleUnitPatrols: IdleUnitPatrolSystem | null
+  villagerAutonomy: VillagerAutonomySystem | null
   interiorExitMarker: InteriorExitMarkerSystem | null
   lights: LightSystem | null
   resourceDelivery: ResourceDeliverySystem | null
@@ -57,6 +59,7 @@ export function createEmptyRuntimeServices(): RuntimeServices {
     dayNight: null,
     heroFollowerPatrols: null,
     idleUnitPatrols: null,
+    villagerAutonomy: null,
     interiorExitMarker: null,
     lights: null,
     resourceDelivery: null,
@@ -78,13 +81,21 @@ export function createRuntimeServices(
   worldRegionTravelHost?: RegionTravelHost | null
 ): RuntimeServices {
   const isInterior = map.mapType === 'interior'
-  const worldPursuit = new WorldPursuitSystem(context)
-  context.worldPursuit = worldPursuit
+  // Cross-region pursuit is disabled, including pending arrivals from older saves.
+  context.worldPursuit = null
   const timeSkip = new TimeSkipSystem(context)
   context.timeSkip = timeSkip
 
   const dayNight = new DayNightSystem(context, { elapsedMs: dayNightElapsedMs })
   context.dayNight = dayNight
+  for (const player of context.players ?? []) {
+    for (const building of player.buildings ?? []) building.resumeSavedTraining?.()
+    for (const unit of [...(player.units ?? [])]) {
+      if (unit.trainingTargetType && unit.action === 'train' && unit.dest && !unit.isDead && !unit.isDestroyed) {
+        unit.sendToEvt?.(unit.dest, 'train', { forceRepath: true, allowPassageStop: true })
+      }
+    }
+  }
 
   const dailyWorldEvents = new DailyWorldEventSystem(context)
   const unitRest = new UnitRestSystem(context)
@@ -99,6 +110,7 @@ export function createRuntimeServices(
   const idleUnitPatrols = new IdleUnitPatrolSystem(context)
   const unitEnergyRegen = new UnitEnergyRegenSystem(context)
   const resourceDelivery = new ResourceDeliverySystem(context)
+  const villagerAutonomy = new VillagerAutonomySystem(context)
   const shadows = new ShadowSystem(context, map)
   const buildingInteriorEntryMarker = isInterior ? null : new BuildingInteriorEntryMarkerSystem(context, map)
   const interiorExitMarker = isInterior ? new InteriorExitMarkerSystem(context, map) : null
@@ -109,13 +121,14 @@ export function createRuntimeServices(
 
   const lights = new LightSystem(context, getScreenRect, () => dayNight.getDarknessLevel())
   const services = {
-    worldPursuit,
+    worldPursuit: null,
     buildingInteriorEntryMarker,
     campPatrols,
     dailyWorldEvents,
     dayNight,
     heroFollowerPatrols,
     idleUnitPatrols,
+    villagerAutonomy,
     interiorExitMarker,
     lights,
     resourceDelivery,
@@ -156,6 +169,7 @@ export function destroyRuntimeServices(services: RuntimeServices, context: Runti
   services.campPatrols?.destroy()
   services.heroFollowerPatrols?.destroy()
   services.idleUnitPatrols?.destroy()
+  services.villagerAutonomy?.destroy()
   services.unitEnergyRegen?.destroy()
   services.resourceDelivery?.destroy()
   services.dayNight?.destroy()
@@ -192,4 +206,4 @@ function clearRuntimeServiceDebugGlobals(): void {
   runtimeWindow.__weatherSystem = null
   runtimeWindow.__lightSystem = null
 }
-import { WorldPursuitSystem } from '../../services/world/WorldPursuitSystem'
+import type { WorldPursuitSystem } from '../../services/world/WorldPursuitSystem'

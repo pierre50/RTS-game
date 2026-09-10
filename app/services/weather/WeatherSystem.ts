@@ -1,7 +1,14 @@
 import { Container, Graphics, ParticleContainer, type Texture } from 'pixi.js'
 import { AdjustmentFilter } from 'pixi-filters'
+import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
+import { DailyWeatherSchedule } from './DailyWeatherSchedule'
 import { SOUND_CUES, type EnvironmentId } from '../../constants'
 import { isGameplaySoundSuppressed, playSoundCue } from '../../lib'
+import {
+  duckNightAmbienceForMorning,
+  getMorningAmbienceTargetVolume,
+  MORNING_AMBIENCE_LERP_PER_SECOND,
+} from '../../lib/audio/morningAmbience'
 import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../../lib/audio/nightAmbience'
 import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../../lib/audio/oceanAmbience'
 import type { GameContextLike } from '../../types/context'
@@ -11,8 +18,6 @@ import {
   AMBIENT_CROSSFADE_MID,
   BIOME_WEATHER_PROFILES,
   COLOR_LERP_PER_SECOND,
-  FIRST_SUNNY_MAX_SECONDS,
-  FIRST_SUNNY_MIN_SECONDS,
   MAX_RAIN_DROPS,
   MAX_SAND_GRAINS,
   MAX_SNOW_FLAKES,
@@ -44,8 +49,6 @@ import {
   combineColor,
   crossfadeVolumes,
   lerp,
-  nextPhase,
-  phaseDuration,
   randomBetween,
   randomDuration,
   scaleParticleTarget,
@@ -67,10 +70,14 @@ function finiteOr(value: unknown, fallback: number): number {
 }
 
 function isWeatherPhase(phase: unknown): phase is WeatherPhase {
-  return typeof phase === 'string' && phase in WEATHER_COLORS
+  return typeof phase === 'string' && Object.hasOwn(WEATHER_COLORS, phase)
 }
 
 export class WeatherSystem {
+  schedule: DailyWeatherSchedule
+  forcedUntilMs = 0
+  weatherColor: WeatherColor
+  veilIntensity: number
   colorGrading: WeatherColorGrading
   context: GameContextLike
   currentColor: WeatherColor
@@ -105,6 +112,8 @@ export class WeatherSystem {
   rainLoopLight: WeatherLoopInstance | null
   nightLoop: WeatherLoopInstance | null
   nightVolume: number
+  morningLoop: WeatherLoopInstance | null
+  morningVolume: number
   oceanLoop: WeatherLoopInstance | null
   oceanVolume: number
   random: RandomFn
@@ -131,15 +140,23 @@ export class WeatherSystem {
     this.random = random
     this.biome = biomeKeyFromEnvironment(map.environment)
     this.biomeProfile = BIOME_WEATHER_PROFILES[this.biome]
-    this.phase = 'sunny'
-    this.elapsedMs = 0
-    this.phaseEndsAt = randomDuration(FIRST_SUNNY_MIN_SECONDS, FIRST_SUNNY_MAX_SECONDS, this.random)
-    this.currentColor = { ...WEATHER_COLORS.sunny }
-    this.precipIntensity = 0
-    this.rainIntensity = 0
-    this.snowIntensity = 0
-    this.sandIntensity = 0
-    this.windIntensity = 0
+    this.schedule = new DailyWeatherSchedule(Math.floor(this.random() * 0x100000000), this.biome)
+    this.elapsedMs = context.dayNight?.getElapsedMs?.() ?? 0
+    const initial = this.schedule.sample(this.elapsedMs)
+    this.phase = initial.phase
+    this.phaseEndsAt = initial.endsAt
+    this.weatherColor = { ...WEATHER_COLORS[this.phase] }
+    this.currentColor = combineColor(
+      context.dayNight?.getColorAdjustment?.() ?? WEATHER_COLORS.sunny,
+      this.weatherColor
+    )
+    const targets = scaleParticleTarget(PARTICLE_TARGETS[this.phase], this.biomeProfile.precipMultiplier)
+    this.rainIntensity = targets.rain
+    this.snowIntensity = targets.snow
+    this.sandIntensity = targets.sand
+    this.precipIntensity = Math.max(targets.rain, targets.snow, targets.sand)
+    this.windIntensity = WIND_TARGETS[this.phase] * this.biomeProfile.windMultiplier
+    this.veilIntensity = VEIL_TARGETS[this.phase] * this.biomeProfile.veilMultiplier
     this.windX = randomBetween(-5, 5, this.random)
     this.windTargetX = this.windX
     this.flashAlpha = 0
@@ -186,6 +203,8 @@ export class WeatherSystem {
     this.rainLoopHeavy = null
     this.nightLoop = null
     this.nightVolume = 0
+    this.morningLoop = null
+    this.morningVolume = 0
     this.oceanLoop = null
     this.oceanVolume = 0
     this.windLoopLight = null
@@ -194,6 +213,7 @@ export class WeatherSystem {
     startAmbientLoop(SOUND_CUES.weather.rainHeavy, instance => (this.rainLoopHeavy = instance))
     startAmbientLoop(SOUND_CUES.weather.windLight, instance => (this.windLoopLight = instance))
     startAmbientLoop(SOUND_CUES.weather.windHeavy, instance => (this.windLoopHeavy = instance))
+    startAmbientLoop(SOUND_CUES.weather.morning, instance => (this.morningLoop = instance))
     startAmbientLoop(SOUND_CUES.weather.night, instance => (this.nightLoop = instance))
     startAmbientLoop(SOUND_CUES.weather.ocean, instance => (this.oceanLoop = instance))
 
@@ -263,12 +283,15 @@ export class WeatherSystem {
 
   forcePhase(phase: WeatherPhase): void {
     this.phase = phase
-    this.phaseEndsAt = this.elapsedMs + phaseDuration(phase, this.random, this.biome)
+    this.forcedUntilMs = this.elapsedMs + (DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay) * 2
+    this.phaseEndsAt = this.forcedUntilMs
     if (phase === 'stormBuildUp' || phase === 'rainHeavy') this.flashCooldownMs = randomDuration(2, 7, this.random)
   }
 
   serializeState(): SaveWeatherState {
     return {
+      dailyWeatherSeed: this.schedule.seed,
+      forcedUntilMs: this.forcedUntilMs,
       elapsedMs: this.elapsedMs,
       flashCooldownMs: this.flashCooldownMs,
       lightningBursts: this.lightningBursts,
@@ -287,8 +310,12 @@ export class WeatherSystem {
 
   applyState(state?: SaveWeatherState | null): void {
     if (!state) return
+    if (typeof state.dailyWeatherSeed === 'number' && Number.isFinite(state.dailyWeatherSeed)) {
+      this.schedule = new DailyWeatherSchedule(state.dailyWeatherSeed, this.biome)
+    }
     if (isWeatherPhase(state.phase)) this.phase = state.phase
-    this.elapsedMs = Math.max(0, finiteOr(state.elapsedMs, this.elapsedMs))
+    this.elapsedMs = Math.max(0, this.context.dayNight?.getElapsedMs?.() ?? finiteOr(state.elapsedMs, this.elapsedMs))
+    this.forcedUntilMs = isWeatherPhase(state.phase) ? Math.max(0, finiteOr(state.forcedUntilMs, 0)) : 0
     this.phaseEndsAt = Math.max(this.elapsedMs + 1000, finiteOr(state.phaseEndsAt, this.phaseEndsAt))
     this.flashCooldownMs = Math.max(0, finiteOr(state.flashCooldownMs, this.flashCooldownMs))
     this.lightningBursts = Math.max(0, Math.round(finiteOr(state.lightningBursts, this.lightningBursts)))
@@ -300,15 +327,27 @@ export class WeatherSystem {
     this.windIntensity = clamp(finiteOr(state.windIntensity, this.windIntensity), 0, 1)
     this.windX = clamp(finiteOr(state.windX, this.windX), -12, 12)
     this.windTargetX = clamp(finiteOr(state.windTargetX, this.windTargetX), -12, 12)
+    this.syncSchedule()
+    this.weatherColor = { ...WEATHER_COLORS[this.phase] }
+    this.veilIntensity = VEIL_TARGETS[this.phase] * this.biomeProfile.veilMultiplier
+    this.updateColor(0)
   }
 
-  advancePhase(): void {
-    this.phase = nextPhase(this.phase, this.random, this.biome)
-    this.phaseEndsAt = this.elapsedMs + phaseDuration(this.phase, this.random, this.biome)
-    this.windTargetX = randomBetween(-9, 9, this.random)
-    if (this.phase === 'stormBuildUp' || this.phase === 'rainHeavy') {
-      this.flashCooldownMs = randomDuration(4, 14, this.random)
+  syncSchedule(): void {
+    if (this.elapsedMs < this.forcedUntilMs) {
+      this.phaseEndsAt = this.forcedUntilMs
+      return
     }
+    this.forcedUntilMs = 0
+    const scheduled = this.schedule.sample(this.elapsedMs)
+    if (this.phase !== scheduled.phase) {
+      this.phase = scheduled.phase
+      this.windTargetX = randomBetween(-9, 9, this.random)
+      if (this.phase === 'stormBuildUp' || this.phase === 'rainHeavy') {
+        this.flashCooldownMs = randomDuration(4, 14, this.random)
+      }
+    }
+    this.phaseEndsAt = scheduled.endsAt
   }
 
   update(elapsedMs: number): void {
@@ -318,9 +357,17 @@ export class WeatherSystem {
     }
     const safeElapsedMs = Math.min(Math.max(elapsedMs, 0), 250)
     const elapsedSeconds = safeElapsedMs / 1000
-    this.elapsedMs += safeElapsedMs
-
-    if (this.elapsedMs >= this.phaseEndsAt) this.advancePhase()
+    const previousElapsedMs = this.elapsedMs
+    this.elapsedMs = this.context.dayNight?.getElapsedMs?.() ?? this.elapsedMs + safeElapsedMs
+    this.syncSchedule()
+    // Simulation follows the world clock, even while particles are hidden or time is accelerated.
+    const simulationSeconds = Math.max(0, this.elapsedMs - previousElapsedMs) / 1000
+    this.updatePrecipitationIntensity(simulationSeconds)
+    this.veilIntensity = lerp(
+      this.veilIntensity,
+      VEIL_TARGETS[this.phase] * this.biomeProfile.veilMultiplier,
+      1 - Math.exp(-COLOR_LERP_PER_SECOND * simulationSeconds)
+    )
     const mapShiftX = this.map.x - this.lastMapX
     const mapShiftY = this.map.y - this.lastMapY
     this.lastMapX = this.map.x
@@ -328,19 +375,19 @@ export class WeatherSystem {
 
     this.screenRect = this.getScreenRect()
     this.layer.position.set(this.screenRect.x, this.screenRect.y)
-    this.windTargetX += Math.sin(this.elapsedMs * 0.00019) * 0.006
+    this.windTargetX += Math.sin(this.elapsedMs * 0.00019) * 0.36 * elapsedSeconds
     this.windTargetX = Math.max(-12, Math.min(12, this.windTargetX))
     if (this.phase === 'sandstorm') this.windTargetX = Math.min(this.windTargetX, -7)
     this.windX = lerp(this.windX, this.windTargetX, elapsedSeconds * 0.45)
     this.windIntensity = lerp(
       this.windIntensity,
       WIND_TARGETS[this.phase] * this.biomeProfile.windMultiplier,
-      elapsedSeconds * WIND_LERP_PER_SECOND
+      1 - Math.exp(-simulationSeconds * WIND_LERP_PER_SECOND)
     )
 
     const shouldRenderWeatherEffects = this.colorGrading.shouldRender()
     this.colorGrading.sync(shouldRenderWeatherEffects)
-    this.updateColor(elapsedSeconds)
+    this.updateColor(simulationSeconds)
     this.updateAmbientSound(elapsedSeconds)
     if (!shouldRenderWeatherEffects || this.context.timeSkip?.suppressCosmetics) {
       this.layer.visible = false
@@ -361,11 +408,13 @@ export class WeatherSystem {
       !this.colorGrading.shouldRender()
     ) {
       this.nightVolume = 0
+      this.morningVolume = 0
       this.oceanVolume = 0
       if (this.rainLoopLight) this.rainLoopLight.volume = 0
       if (this.rainLoopHeavy) this.rainLoopHeavy.volume = 0
       if (this.windLoopLight) this.windLoopLight.volume = 0
       if (this.windLoopHeavy) this.windLoopHeavy.volume = 0
+      if (this.morningLoop) this.morningLoop.volume = 0
       if (this.nightLoop) this.nightLoop.volume = 0
       if (this.oceanLoop) this.oceanLoop.volume = 0
       return
@@ -373,35 +422,43 @@ export class WeatherSystem {
 
     const rainVolumes = crossfadeVolumes(this.rainIntensity, AMBIENT_CROSSFADE_MID)
     const windVolumes = crossfadeVolumes(this.windIntensity, AMBIENT_CROSSFADE_MID)
-    const nightTargetVolume = getNightAmbienceTargetVolume(this.context.dayNight?.getDarknessLevel?.())
+    const dayNightState = this.context.dayNight?.state
+    const morningTargetVolume = getMorningAmbienceTargetVolume(dayNightState?.hour, dayNightState?.minute)
+    const nightTargetVolume = duckNightAmbienceForMorning(
+      morningTargetVolume,
+      getNightAmbienceTargetVolume(this.context.dayNight?.getDarknessLevel?.())
+    )
     const hero = this.context.controls?.heroUnit
     const oceanTargetVolume =
       hero && !hero.isDead && !hero.isDestroyed
         ? getOceanAmbienceTargetVolume(this.map.grid, hero, undefined, { mapType: this.map.mapType })
         : 0
+    this.morningVolume = lerp(
+      this.morningVolume,
+      morningTargetVolume,
+      elapsedSeconds * MORNING_AMBIENCE_LERP_PER_SECOND
+    )
     this.nightVolume = lerp(this.nightVolume, nightTargetVolume, elapsedSeconds * NIGHT_AMBIENCE_LERP_PER_SECOND)
     this.oceanVolume = lerp(this.oceanVolume, oceanTargetVolume, elapsedSeconds * OCEAN_AMBIENCE_LERP_PER_SECOND)
     if (this.rainLoopLight) this.rainLoopLight.volume = rainVolumes.low * RAIN_LOOP_MAX_VOLUME
     if (this.rainLoopHeavy) this.rainLoopHeavy.volume = rainVolumes.high * RAIN_LOOP_MAX_VOLUME
     if (this.windLoopLight) this.windLoopLight.volume = windVolumes.low * WIND_LOOP_MAX_VOLUME
     if (this.windLoopHeavy) this.windLoopHeavy.volume = windVolumes.high * WIND_LOOP_MAX_VOLUME
+    if (this.morningLoop) this.morningLoop.volume = this.morningVolume
     if (this.nightLoop) this.nightLoop.volume = this.nightVolume
     if (this.oceanLoop) this.oceanLoop.volume = this.oceanVolume
   }
 
   updateColor(elapsedSeconds: number): void {
-    const target = combineColor(
+    const target = WEATHER_COLORS[this.phase]
+    const amount = 1 - Math.exp(-elapsedSeconds * COLOR_LERP_PER_SECOND)
+    for (const key of Object.keys(target) as Array<keyof WeatherColor>) {
+      this.weatherColor[key] = lerp(this.weatherColor[key], target[key], amount)
+    }
+    this.currentColor = combineColor(
       this.context.dayNight?.getColorAdjustment?.() ?? WEATHER_COLORS.sunny,
-      WEATHER_COLORS[this.phase]
+      this.weatherColor
     )
-    const amount = elapsedSeconds * COLOR_LERP_PER_SECOND
-    this.currentColor.gamma = lerp(this.currentColor.gamma, target.gamma, amount)
-    this.currentColor.contrast = lerp(this.currentColor.contrast, target.contrast, amount)
-    this.currentColor.saturation = lerp(this.currentColor.saturation, target.saturation, amount)
-    this.currentColor.brightness = lerp(this.currentColor.brightness, target.brightness, amount)
-    this.currentColor.red = lerp(this.currentColor.red, target.red, amount)
-    this.currentColor.green = lerp(this.currentColor.green, target.green, amount)
-    this.currentColor.blue = lerp(this.currentColor.blue, target.blue, amount)
 
     this.tintFilter.gamma = this.currentColor.gamma
     this.tintFilter.contrast = this.currentColor.contrast
@@ -449,7 +506,7 @@ export class WeatherSystem {
   drawRainVeil(): void {
     this.rainVeil.clear()
     const precipitationBoost = Math.max(this.rainIntensity, this.snowIntensity, this.sandIntensity) * 0.045
-    const veilAlpha = clamp(VEIL_TARGETS[this.phase] * this.biomeProfile.veilMultiplier + precipitationBoost, 0, 0.2)
+    const veilAlpha = clamp(this.veilIntensity + precipitationBoost, 0, 0.2)
     if (veilAlpha < 0.01) return
     this.rainVeil.rect(0, 0, this.screenRect.width, this.screenRect.height)
     const color =
@@ -461,14 +518,16 @@ export class WeatherSystem {
     this.rainVeil.fill({ alpha: veilAlpha, color })
   }
 
-  updatePrecipitation(elapsedSeconds: number, mapShiftX = 0, mapShiftY = 0): void {
+  updatePrecipitationIntensity(elapsedSeconds: number): void {
     const targets = scaleParticleTarget(PARTICLE_TARGETS[this.phase], this.biomeProfile.precipMultiplier)
-    const amount = elapsedSeconds * RAIN_LERP_PER_SECOND
+    const amount = 1 - Math.exp(-elapsedSeconds * RAIN_LERP_PER_SECOND)
     this.rainIntensity = lerp(this.rainIntensity, addParticleDrift(targets.rain, this.elapsedMs), amount)
     this.snowIntensity = lerp(this.snowIntensity, addParticleDrift(targets.snow, this.elapsedMs + 900), amount)
     this.sandIntensity = lerp(this.sandIntensity, addParticleDrift(targets.sand, this.elapsedMs + 1800), amount)
     this.precipIntensity = Math.max(this.rainIntensity, this.snowIntensity, this.sandIntensity)
+  }
 
+  updatePrecipitation(elapsedSeconds: number, mapShiftX = 0, mapShiftY = 0): void {
     const activeDrops = this.rainIntensity < 0.015 ? 0 : Math.round(MAX_RAIN_DROPS * this.rainIntensity)
     const activeFlakes = this.snowIntensity < 0.015 ? 0 : Math.round(MAX_SNOW_FLAKES * this.snowIntensity)
     const activeGrains = this.sandIntensity < 0.015 ? 0 : Math.round(MAX_SAND_GRAINS * this.sandIntensity)
@@ -598,6 +657,8 @@ export class WeatherSystem {
           MAX_SNOW_FLAKES * this.snowIntensity +
           MAX_SAND_GRAINS * this.sandIntensity
       ),
+      dailyWeather: this.schedule.sample(this.elapsedMs).kind,
+      forced: this.forcedUntilMs > this.elapsedMs,
       nextPhaseInSeconds: Math.max(0, seconds(this.phaseEndsAt - this.elapsedMs)),
       phase: this.phase,
       biome: this.biome,
@@ -615,6 +676,7 @@ export class WeatherSystem {
         y: Math.round(this.screenRect.y),
       },
       windX: Number(this.windX.toFixed(2)),
+      morningVolume: Number(this.morningVolume.toFixed(2)),
       nightVolume: Number(this.nightVolume.toFixed(2)),
       oceanVolume: Number(this.oceanVolume.toFixed(2)),
     }
@@ -631,6 +693,7 @@ export class WeatherSystem {
     this.rainLoopHeavy?.stop()
     this.windLoopLight?.stop()
     this.windLoopHeavy?.stop()
+    this.morningLoop?.stop()
     this.nightLoop?.stop()
     this.oceanLoop?.stop()
   }

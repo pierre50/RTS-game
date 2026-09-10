@@ -1,7 +1,9 @@
 import { ACTION_TYPES, FADE_DURATION_MS, SHEET_TYPES, UNIT_TYPES } from '../../constants'
+import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { cancelFade, fadeIn } from '../../lib/entities/entityFade'
 import { clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { resumeStrictVillagerAutonomy, resumeVillagerStoredTask } from '../../lib/units/villagerTaskRecovery'
+import { getMinutesUntilVillagerWorkStarts, shouldVillagerWork } from '../../lib/units/villagerSchedule'
 import type { UnitEntity, UnitRestState } from '../../types/entities'
 import { getBuildingInteriorSpaceForUnit } from '../BuildingInteriorSpaceSystem'
 import {
@@ -19,6 +21,8 @@ import {
 } from './UnitSleepVisuals'
 
 type UnitWakeMode = 'resume' | 'order'
+
+const GAME_MINUTE_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay / 60
 
 function restoreAwakeState(unit: UnitEntity, options: { clearShelterState?: boolean } = {}): void {
   if (options.clearShelterState ?? true) unit.shelterState = null
@@ -55,6 +59,10 @@ function resumeStoredReturnTask(unit: UnitEntity, state: UnitRestState): boolean
 
 export function finishUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
   unit.shelterState = null
+  if (unit.type === UNIT_TYPES.villager && !shouldVillagerWork(unit)) {
+    unit.autonomousJob = state.previousAutonomousJob ?? unit.autonomousJob ?? null
+    return
+  }
   if (resumeStoredReturnTask(unit, state)) return
 
   if (unit.type !== UNIT_TYPES.villager) return
@@ -66,19 +74,23 @@ export function finishUnitWakeTransition(unit: UnitEntity, state: UnitRestState)
 function startUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
   const now = unit.context?.scheduler?.elapsedMs ?? 0
   const transitionTargetCell = getRestTransitionCell(unit)
+  const transitionDurationMs = Math.max(
+    getRestTransitionDurationMs(unit, 'wakingUp'),
+    unit.type === UNIT_TYPES.villager ? getMinutesUntilVillagerWorkStarts(unit) * GAME_MINUTE_MS : 0
+  )
   unit.shelterState = {
     ...state,
     status: 'wakingUp',
     transitionTargetCell,
-    transitionUntilMs: now + getRestTransitionDurationMs(unit, 'wakingUp'),
+    transitionUntilMs: now + transitionDurationMs,
     startedAtMs: now,
     retryCount: 0,
   }
-  if (!transitionTargetCell) {
+  if (!transitionTargetCell && transitionDurationMs <= 0) {
     finishUnitWakeTransition(unit, unit.shelterState)
     return
   }
-  unit.sendToEvt?.(transitionTargetCell, null, { forceRepath: true, preserveAutonomy: true })
+  if (transitionTargetCell) unit.sendToEvt?.(transitionTargetCell, null, { forceRepath: true, preserveAutonomy: true })
 }
 
 export function startUnitWakeTransitionFromTask(unit: UnitEntity, task: ReturnType<typeof getRestReturnTask>): boolean {

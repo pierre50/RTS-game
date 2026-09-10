@@ -1,3 +1,4 @@
+import { playerSeesTarget, observeTarget } from '../../../lib/units/playerTargetKnowledge'
 import { getVillagerExplorationSearch } from '../../../lib/units/autonomy/villagerExploration'
 import { canReachActionTarget, usesUnitContactAction } from '../../../lib/actions/contactActions'
 import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../../../constants'
@@ -195,9 +196,9 @@ export class UnitMovement {
     const unit = this.unit
     const dest = unit.dest
     if (!dest || !unit.realDest) return false
-    return (
-      (dest.i !== unit.realDest.i || dest.j !== unit.realDest.j) && instancesDistance(unit, dest) <= (unit.sight ?? 0)
-    )
+    if (!('family' in dest) || !playerSeesTarget(unit.owner, dest as RuntimeEntity)) return false
+    observeTarget(unit.owner, dest as RuntimeEntity)
+    return dest.i !== unit.realDest.i || dest.j !== unit.realDest.j
   }
 
   moveToPath() {

@@ -103,7 +103,12 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
       `  ! ${size} seed ${seed}: ${resourcesOnReliefBorders.length} resource(s) landed on relief border tiles`
     )
   }
-  return finalizeBlueprintPayload(encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions))
+  try {
+    return finalizeBlueprintPayload(encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions))
+  } catch (error) {
+    if (error.code === 'CAVE_PLACEMENT_FAILED') return null
+    throw error
+  }
 }
 
 module.exports = { blueprint }

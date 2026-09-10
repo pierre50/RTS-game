@@ -78,6 +78,7 @@ function makeHero(extra = {}) {
   )
   return {
     i: 6,
+    owner: { age: 1 },
     isChief: true,
     j: 7,
     degree: 90,
@@ -329,6 +330,8 @@ test('hero proximity interaction resolves a close companion horse as mount', () 
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const horse = { family: 'animal', i: 0, isDead: false, isDestroyed: false, j: 1, type: 'Horse', x: 110, y: 250 }
 
+  assert.equal(resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ owner: { age: 0 }, y: 100 }) }), null)
+
   assert.deepEqual(resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ y: 100 }) }), {
     action: 'mount',
     labelKey: 'heroInteractionMount',
@@ -366,7 +369,7 @@ test('hero proximity interaction labels a foreign stable horse as theft', () => 
     },
   })
   const spaceId = 'interior:foreign-stable'
-  const hero = makeHero({ owner: { label: 'player' }, y: 100 })
+  const hero = makeHero({ owner: { age: 1, label: 'player' }, y: 100 })
   hero.context.map.spaces = new Map([
     [
       spaceId,
@@ -404,7 +407,7 @@ test('hero proximity interaction labels a foreign stable horse as theft', () => 
 
 test('hero proximity interaction labels an outdoor foreign tamed horse as mount', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
-  const hero = makeHero({ owner: { label: 'player' }, y: 100 })
+  const hero = makeHero({ owner: { age: 1, label: 'player' }, y: 100 })
   const horse = {
     family: 'animal',
     i: 6,

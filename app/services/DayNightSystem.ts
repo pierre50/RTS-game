@@ -1,3 +1,4 @@
+import { clamp, smoothstep } from '../lib/interpolation'
 import type { GameContextLike } from '../types/context'
 import { t } from '../lib/lang'
 import { DAY_NIGHT_COLOR_TIMELINE, DAY_NIGHT_CONFIG } from '../config/gameplay'
@@ -18,26 +19,17 @@ type DayNightSystemOptions = {
 
 const TARGET_FRAME_MS = 1000 / 60
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
-}
-
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1)
-  return t * t * (3 - 2 * t)
-}
-
 function darknessForHour(hour: number): number {
-  if (hour >= 22 || hour < 5) return 1
+  if (hour >= 22 || hour < 5.5) return 1
   if (hour >= 20) return 0.72 + smoothstep(20, 22, hour) * 0.28
   if (hour >= 18) return smoothstep(18, 20, hour) * 0.72
   if (hour >= 7) return 0
-  return 1 - smoothstep(5, 7, hour)
+  return 1 - smoothstep(5.5, 7, hour)
 }
 
 function phaseForHour(hour: number): DayNightPhase {
-  if (hour >= 5 && hour < 8) return 'dawn'
-  if (hour >= 8 && hour < 18) return 'day'
+  if (hour >= 5.5 && hour < 7) return 'dawn'
+  if (hour >= 7 && hour < 18) return 'day'
   if (hour >= 18 && hour < 22) return 'dusk'
   return 'night'
 }

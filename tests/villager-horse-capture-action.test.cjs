@@ -162,7 +162,6 @@ function loadUnitActions(calls, captureHorse) {
       }
     }
     if (request === '../../lib/entities/workImpactFragments') return { emitWorkImpactFragments: () => {} }
-    if (request === '../../lib/equipment/equipmentDiscoveries') return { discoverHeroResource: () => [] }
     if (request === '../../lib/resources/ironMining') return { showIronMiningBlockedMessage: () => {} }
     if (request === '../../lib/graphics') return { onSpriteLoopAtFrame: () => {} }
     if (request === '../../lib/animations/actionFrameSequences') return { getActionFrameSequence: () => [] }

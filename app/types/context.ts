@@ -139,8 +139,6 @@ export interface MenuLike {
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
-  getActionTechnologyButton(type: string): MenuButtonSpec
-  getHeroTechnologyButtons?(): MenuButtonSpec[]
   getActionRallyPointButton(): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   init?(): void
@@ -149,7 +147,7 @@ export interface MenuLike {
   closeInventory?(): void
   isInventoryOpen?(): boolean
   refreshInventory?(): void
-  syncTechnologyProgress?(): void
+  syncObjectiveProgress?(): void
   setEquippedItem?(item: HeroEquippedItem | null): void
   setEquippedTool?(tool: HeroEquippedItem | null): void
   setHeroStatusTarget?(hero: UnitEntity | null): void

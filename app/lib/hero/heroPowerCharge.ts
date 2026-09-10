@@ -139,7 +139,7 @@ function clearHeroPowerCharge(hero: UnitEntity): void {
   hero.heroPowerChargeFacingDegree = null
   hero.heroPowerChargeVisualLocked = false
   hero.heroPowerChargeLastEnergyAt = undefined
-  hero.heroPowerChargeTool = undefined
+  delete hero.heroPowerChargeTool
   hero.removeHeroPowerBar?.()
 }
 

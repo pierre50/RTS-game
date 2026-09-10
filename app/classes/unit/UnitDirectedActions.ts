@@ -9,7 +9,6 @@ import {
   showResourceGainFeedback,
 } from '../../lib'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
-import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
 import { isHeroControlled } from '../../lib/units/unitControl'
@@ -69,25 +68,6 @@ export class UnitDirectedActions {
     this.playSound = playSound
   }
 
-  upgrade(type: string): void {
-    const unit = this.unit
-    const menu = unit.context?.menu
-    const data = unit.owner?.config.units[type]
-    if (!data) return
-    unit.type = type
-    unit.hitPoints = (data.totalHitPoints as number) - ((unit.totalHitPoints ?? 0) - (unit.hitPoints ?? 0))
-    Object.assign(unit, data)
-    refreshBakedLpcUnitAssets(unit)
-    if (unit.action && !unit.path?.length) {
-      unit.getAction?.(unit.action)
-    } else {
-      unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
-    }
-    if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-      menu?.setActionTarget(unit)
-    }
-  }
-
   handleTrainAction(): void {
     const unit = this.unit
     const dest = isBuildingEntity(unit.dest) ? unit.dest : null
@@ -107,7 +87,7 @@ export class UnitDirectedActions {
     }
     {
       const buildingBusy = Boolean(
-        dest && (dest.loading != null || dest.queue?.length || dest.technology || dest.trainingUnit)
+        dest && (dest.loading != null || dest.queue?.length || dest.trainingUnit)
       )
       if (buildingBusy) {
         unit.path = []

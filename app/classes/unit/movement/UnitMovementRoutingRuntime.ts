@@ -1,3 +1,4 @@
+import { routeToRememberedTarget } from '../../../lib/units/targetPursuit'
 import { cancelVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
 import { tryStartUnitContactApproach } from './UnitContactApproach'
 import { ACTION_TYPES, UNIT_TYPES } from '../../../constants'
@@ -227,7 +228,8 @@ export class UnitMovementRouting {
       return true
     }
     if (!action) {
-      unit.sendToEvt?.(approach.cell, null)
+      // The original order already decided whether to clear the job; this is only a detour.
+      unit.sendToEvt?.(approach.cell, null, { preserveAutonomy: true })
       return true
     }
     unit.setDest?.(dest)
@@ -256,6 +258,7 @@ export class UnitMovementRouting {
     if (unit.actionLocked) {
       return unit.queueOrder?.(dest ?? (() => {}), action)
     }
+    if (dest && isRuntimeEntity(dest) && routeToRememberedTarget(unit, dest, action)) return
     const currentDestMatchesTarget = this.matchesCurrentTarget(dest)
     if (this.isRedundantOrder(dest, action, forceRepath, currentDestMatchesTarget)) return
     cancelVillagerExplorationResume(unit)

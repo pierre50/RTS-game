@@ -1,5 +1,4 @@
 import { MAX_ARCHER_BY_AGE, MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE } from '../../ai/config'
-import { ARCHER_TECH_UPGRADES, getBestUnitFromTechs } from '../../ai/unitGroups'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
 import { canPlaceBuildingAt, getPositionInGridAroundInstance } from '../../lib'
 import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
@@ -68,7 +67,7 @@ export function applyCivilizationLevelStartingKit(
   }
 
   const infantryType = UNIT_TYPES.infantry
-  const archerType = getBestUnitFromTechs(player.technologies, ARCHER_TECH_UPGRADES, UNIT_TYPES.bowman)
+  const archerType = UNIT_TYPES.bowman
   const maxByAge = (table: Record<number, number>) => table[level] || 0
   const unitTargets: Array<[string, number]> = [
     [infantryType, maxByAge(MAX_INFANTRY_BY_AGE)],
@@ -100,7 +99,6 @@ export function applyCivilizationLevelStartingKit(
 
   placeStartingWalls(map, player, level, townCenter, markBuilt)
 
-  player.applyEligibleTechnologies?.()
   applyStartingResourceBonus(player, level)
   placeStartingMilitaryUnits(map, player, townCenter, unitTargets)
 }

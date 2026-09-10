@@ -5,6 +5,7 @@ import { CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES } from '../../app/constants'
 import {
   drawInteractionCellMarker,
   INTERACTION_CELL_MARKER_PULSE_MS,
+  INTERACTION_CELL_MARKER_Z_INDEX,
   interactionCellPulse,
 } from '../../app/lib/ui/interactionCellMarker'
 import type { GameContextLike } from '../../app/types/context'
@@ -117,9 +118,9 @@ export class BuildingInteriorSpaceRenderer extends Container {
     this.exitMarker = new Graphics()
     this.exitMarker.eventMode = 'none'
     this.exitMarker.label = LABEL_TYPES.interiorExit
+    this.exitMarker.zIndex = INTERACTION_CELL_MARKER_Z_INDEX
     this.addChild(this.backdrop, this.sceneLayer)
-    this.sceneLayer.addChild(this.terrainLayer, this.entityLayer)
-    this.entityLayer.addChild(this.exitMarker)
+    this.sceneLayer.addChild(this.terrainLayer, this.exitMarker, this.entityLayer)
 
     this._onTick = ticker => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
     context.app.ticker.add(this._onTick)
@@ -157,7 +158,6 @@ export class BuildingInteriorSpaceRenderer extends Container {
     const cell = this.space?.exitCell
     if (!cell) return
     this.elapsedMs = (this.elapsedMs + deltaMs) % INTERACTION_CELL_MARKER_PULSE_MS
-    this.exitMarker.zIndex = (cell.zIndex ?? cell.i + cell.j) + 0.05
     drawInteractionCellMarker(this.exitMarker, cell, interactionCellPulse(this.elapsedMs))
   }
 

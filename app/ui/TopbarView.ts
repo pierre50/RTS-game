@@ -1,140 +1,50 @@
-import { DAILY_CONSUMPTION_PER_VILLAGER, RESOURCE_NAMES } from '../constants'
-import { t } from '../lib/lang'
-import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
-import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import { createResourceIconMaps } from './utils/resourceIcons'
-import type { UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
-const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
-type ResourceName = (typeof RESOURCE_NAMES)[number]
-type ResourcePlayer = { age?: number; units?: UnitEntity[] }
+const AGE_LABEL_KEYS = ['stoneAge', 'bronzeAge', 'ironAge'] as const
+type ResourcePlayer = { age?: number }
 
 export class TopbarView {
   menu: MenuHost
-  resourceEls: Record<string, HTMLDivElement>
-  resourceWorkerEls: Record<string, HTMLSpanElement>
-  resourceConsumptionEls: Record<string, HTMLDivElement>
-  villagerTotalEl: HTMLDivElement | null
+  optionsEl: HTMLDivElement | null
 
   constructor(menu: MenuHost) {
     this.menu = menu
-    this.resourceEls = {}
-    this.resourceWorkerEls = {}
-    this.resourceConsumptionEls = {}
-    this.villagerTotalEl = null
+    this.optionsEl = null
   }
 
   build(): void {
     const { menu } = this
-    menu.topbar = document.createElement('div')
-    menu.topbar.id = 'topbar'
-    menu.topbar.className = 'topbar bar'
     const resourceIcons = createResourceIconMaps()
     menu.icons = resourceIcons.icons
     menu.infoIcons = resourceIcons.infoIcons
 
     menu.topbarStatusStack = document.createElement('div')
-    menu.topbarStatusStack.className = 'topbar-status-stack'
-
     menu.age = document.createElement('div')
-    menu.age.className = 'topbar-age'
-
     menu.dayTime = document.createElement('div')
-    menu.dayTime.className = 'topbar-daytime'
-
-    const status = document.createElement('div')
-    status.className = 'topbar-status hud-info-panel'
-
     menu.resources = document.createElement('div')
-    menu.resources.className = 'topbar-resources'
-    RESOURCE_NAMES.forEach(res => this.setResourceBox(res))
-
-    this.villagerTotalEl = document.createElement('div')
-    this.villagerTotalEl.className = 'topbar-villagers'
-    this.villagerTotalEl.title = 'Villageois'
 
     const options = document.createElement('div')
     options.className = 'topbar-options'
+    menu.dayTime.className = 'topbar-daytime hud-info-panel'
     options.appendChild(menu.pauseMenu.createOpenButton())
-
-    status.appendChild(menu.resources)
-    status.appendChild(this.villagerTotalEl)
-    status.appendChild(menu.age)
-    status.appendChild(menu.dayTime)
-    menu.topbarStatusStack.appendChild(status)
-    menu.topbar.appendChild(menu.topbarStatusStack)
-    menu.topbar.appendChild(options)
-    menu.gameHud.prepend(menu.topbar)
-  }
-
-  setResourceBox(name: ResourceName): void {
-    const { menu } = this
-    const icons = menu.icons as Record<ResourceName, string>
-    const box = document.createElement('div')
-    box.className = 'resource'
-
-    const img = document.createElement('img')
-    img.className = 'resource-content'
-    img.src = icons[name]
-
-    const valueEl = document.createElement('div')
-    valueEl.className = 'resource-value'
-    this.resourceEls[name] = valueEl
-
-    const workerEl = document.createElement('span')
-    workerEl.className = 'resource-workers'
-    workerEl.title = 'Villageois affectes'
-    this.resourceWorkerEls[name] = workerEl
-    valueEl.appendChild(workerEl)
-
-    const consumptionEl = document.createElement('div')
-    consumptionEl.className = 'resource-consumption'
-    consumptionEl.title = 'Consommation journaliere'
-    this.resourceConsumptionEls[name] = consumptionEl
-
-    box.appendChild(img)
-    box.appendChild(valueEl)
-    box.appendChild(consumptionEl)
-    menu.resources.appendChild(box)
+    this.optionsEl = options
+    menu.gameHud.appendChild(menu.dayTime)
+    menu.gameHud.appendChild(options)
   }
 
   update(): void {
-    const {
-      menu: {
-        context: { controls, player },
-      },
-    } = this
-    const assignments = summarizeVillagerAssignments(player?.units ?? [])
-    const storedResources = getPlayerResourceTotals(player, {
-      hero: controls?.heroUnit,
-      visibleOnly: true,
-    })
-    RESOURCE_NAMES.forEach(prop => {
-      const val = Math.min(storedResources[prop] || 0, 99999)
-      const valueEl = this.resourceEls[prop]
-      valueEl.textContent = String(val)
-      const workerEl = this.resourceWorkerEls[prop]
-      if (workerEl) {
-        workerEl.textContent = ` (${assignments.assigned[prop] ?? 0})`
-        valueEl.appendChild(workerEl)
-      }
-      const consumptionEl = this.resourceConsumptionEls[prop]
-      if (consumptionEl) {
-        const rate = DAILY_CONSUMPTION_PER_VILLAGER[prop]
-        consumptionEl.textContent = rate ? `-${rate * assignments.total}/j` : ''
-      }
-    })
-    if (this.villagerTotalEl) this.villagerTotalEl.textContent = `V: ${assignments.total}`
-    const age = this.getClampedAge()
-    this.menu.age.textContent = t(AGE_LABEL_KEYS[age])
-    this.updateDayTime()
     this.updateAgeTheme()
+    this.updateDayTime()
   }
 
   updateDayTime(): void {
     const dayNight = this.menu.context.dayNight
-    this.menu.dayTime.textContent = dayNight ? `${dayNight.getDayLabel()} - ${dayNight.getTimeLabel()}` : ''
+    const dayLabel = dayNight?.getDayLabel?.()
+    const timeLabel = dayNight?.getTimeLabel?.()
+    this.menu.dayTime.textContent = dayLabel && timeLabel ? `${dayLabel} - ${timeLabel}` : ''
+    if (dayLabel && timeLabel) this.menu.dayTime.classList.remove('hidden')
+    else this.menu.dayTime.classList.add('hidden')
   }
 
   updateAgeTheme(): void {
@@ -153,6 +63,8 @@ export class TopbarView {
   }
 
   destroy(): void {
-    this.menu.topbar?.remove()
+    this.menu.dayTime?.remove()
+    this.optionsEl?.remove()
+    this.optionsEl = null
   }
 }

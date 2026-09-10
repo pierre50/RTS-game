@@ -80,6 +80,8 @@ export class ModalTabs<T extends string> {
   mountHeader(panel: HTMLElement | null | undefined, className?: string): void {
     const header = panel?.querySelector<HTMLElement>('.modal-header')
     if (!header) return
+    panel?.classList.add('modal-panel--tabbed')
+    header.classList.add('modal-tabs-header')
     if (className) header.classList.add(className)
     header.insertBefore(this.tabs.element, header.firstChild)
   }

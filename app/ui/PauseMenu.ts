@@ -16,7 +16,17 @@ export class PauseMenu {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'topbar-options-menu ui-btn'
-    button.innerText = t('menuBtn')
+    button.setAttribute('aria-label', t('menuBtn'))
+    button.title = t('menuBtn')
+
+    const icon = document.createElement('span')
+    icon.className = 'topbar-options-menu-icon'
+    icon.setAttribute('aria-hidden', 'true')
+    for (let i = 0; i < 3; i += 1) {
+      icon.appendChild(document.createElement('span'))
+    }
+    button.appendChild(icon)
+
     button.addEventListener('pointerdown', playClickSound)
     button.addEventListener('click', () => {
       button.blur()

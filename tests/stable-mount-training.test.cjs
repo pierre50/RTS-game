@@ -30,7 +30,7 @@ test('Stable trains only unmounted matching military units into mounted units', 
     '../horses/stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
   })
 
-  const owner = {}
+  const owner = { age: 1 }
   const stable = {
     type: 'Stable',
     units: ['Fantassin', 'Bowman'],

@@ -1,3 +1,4 @@
+import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import type { AnimatedSprite, Graphics, Sprite, Texture } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
 import { drawInstanceBlinkingSelection, canUpdateMinimap } from '../../lib'
@@ -44,14 +45,20 @@ import type {
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { ResourceAmount } from '../../types/common'
-import type { BuildingConfig, TechnologyConfig } from '../../types/config'
+import type { BuildingConfig } from '../../types/config'
 import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
+import type { SavedTrainingEntry, SavedTrainingExtra, TrainingTrainee } from '../../types/training'
 
 type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
-type QueuedTechnology = { type: string; config: TechnologyConfig }
 
-export type BuildingOptions = Partial<BuildingConfig> & {
+export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
+  cave?: import('../../types/cave').CaveDefinition
+  buildingAge?: number
+  assetAge?: number
+  trainingQueue?: SavedTrainingEntry[]
+  trainingExtra?: SavedTrainingExtra
+  deferTrainingResume?: boolean
   i: number
   j: number
   type: string
@@ -71,10 +78,11 @@ export class Building extends Instance implements BuildingEntity {
   buildingTrainingPreview: BuildingTrainingPreview | null
   buildingCombat: BuildingCombat
   queue: string[]
-  technology: QueuedTechnology | null
   loading: number | null
   isUsedBy: RuntimeEntity | null
-  trainingUnit: UnitEntity | null
+  trainingUnit: TrainingTrainee | null
+  private trainingResumePending = false
+  private savedTrainingExtra?: SavedTrainingExtra
   trainingType: string | null
   trainingQueue: NonNullable<BuildingEntity['trainingQueue']>
   trainingStartedDay: number | null
@@ -95,11 +103,11 @@ export class Building extends Instance implements BuildingEntity {
   quantity?: number
   totalQuantity?: number
   units?: string[]
-  technologies?: string[]
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   mountingDays?: number
   interface!: EntityInterfaceLike
+  buildingAge!: number
   assetType?: string
   textureName?: string
   hideWhenFogged?: boolean
@@ -121,6 +129,7 @@ export class Building extends Instance implements BuildingEntity {
   flameSoundStopped?: boolean
   increasePopulation?: number
   shelterCapacity?: number
+  cave?: import('../../types/cave').CaveDefinition
   indestructible?: boolean
   containedAnimalType?: string | null
   inventory?: {
@@ -142,7 +151,6 @@ export class Building extends Instance implements BuildingEntity {
     this.buildingTrainingPreview = null
     this.buildingCombat = new BuildingCombat(this)
     this.queue = []
-    this.technology = null
     this.loading = null
     this.isUsedBy = null
     this.trainingUnit = null
@@ -163,7 +171,8 @@ export class Building extends Instance implements BuildingEntity {
     this.visualSettingsCleanup = null
 
     this.assignProperties(options)
-    this.assignProperties(this.owner.config.buildings[this.type])
+    this.buildingAge = getBuildingAge(options, this.owner.age)
+    this.assignProperties(getBuildingConfigForAge(this.owner.config.buildings[this.type], this.buildingAge))
     this.stableHorses = stableHorsesFromOptions(options)
     this.horseAmount = this.stableHorses.length
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
@@ -171,10 +180,17 @@ export class Building extends Instance implements BuildingEntity {
     this.intervalId = null
     this.attackIntervalId = null
 
-    resumeInitialBuildingWork(this)
+    if (options.deferTrainingResume && options.trainingQueue) {
+      this.trainingQueue = structuredClone(options.trainingQueue)
+    }
+    this.trainingResumePending = Boolean(
+      options.deferTrainingResume && (this.queue.length || this.trainingQueue.length)
+    )
+    if (options.trainingExtra) this.savedTrainingExtra = structuredClone(options.trainingExtra)
+    if (!this.trainingResumePending) resumeInitialBuildingWork(this)
 
     this.quantity = this.quantity ?? this.totalQuantity
-    this.hitPoints = this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1)
+    this.hitPoints = Math.min(this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1), this.totalHitPoints)
 
     setupBuildingTransform(this)
     createInitialBuildingSprite(this)
@@ -326,6 +342,10 @@ export class Building extends Instance implements BuildingEntity {
     stopFlameAmbientSound(this)
     this.trainingDayChangeUnsubscribe?.()
     this.trainingDayChangeUnsubscribe = null
+    for (const entry of this.trainingQueue) {
+      entry.trainingDayChangeUnsubscribe?.()
+      entry.trainingDayChangeUnsubscribe = null
+    }
     this.buildingTrainingPreview?.destroy()
     this.buildingTrainingPreview = null
     destroyBuildingVisuals(this)
@@ -370,6 +390,13 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   // BuildingProduction
+  resumeSavedTraining(): void {
+    if (!this.trainingResumePending || !this.context.dayNight) return
+    this.trainingResumePending = false
+    this.buildingProduction.resumeSavedTraining(this.savedTrainingExtra)
+    delete this.savedTrainingExtra
+  }
+
   placeUnit(type: string, extra?: UnitCreationExtra, options?: { consumePopulationSlot?: boolean }): boolean {
     return this.buildingProduction.placeUnit(type, extra, options)
   }
@@ -388,18 +415,6 @@ export class Building extends Instance implements BuildingEntity {
 
   cancelAllUnitTraining(): boolean {
     return this.buildingProduction.cancelAllUnitTraining()
-  }
-
-  cancelTechnology(): boolean {
-    return this.buildingProduction.cancelTechnology()
-  }
-
-  upgrade(type: string): void {
-    return this.buildingProduction.upgrade(type)
-  }
-
-  buyTechnology(type: string, alreadyPaid?: boolean, force?: boolean): boolean {
-    return this.buildingProduction.buyTechnology(type, alreadyPaid, force)
   }
 
   // BuildingInterface

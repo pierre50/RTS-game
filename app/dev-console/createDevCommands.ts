@@ -6,8 +6,6 @@ import {
   addHeroInventoryEquipment,
   addHeroInventoryResources,
   aiInfo,
-  applyAllTechnologies,
-  applyTechnology,
   advanceTime,
   forceNextDay,
   healAll,
@@ -71,9 +69,9 @@ function registerCoreCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'list',
     aliases: ['ls'],
-    usage: 'list <units|buildings|techs|resources|inventories|players|factions>',
+    usage: 'list <units|buildings|resources|inventories|players|factions>',
     describe: 'List available items for a category',
-    complete: () => ['units', 'buildings', 'techs', 'resources', 'inventories', 'players', 'factions'],
+    complete: () => ['units', 'buildings', 'resources', 'inventories', 'players', 'factions'],
     run: ([category], context) => {
       const { player } = context
       switch (category?.toLowerCase()) {
@@ -81,8 +79,6 @@ function registerCoreCommands(registry: DevCommandRegistry): void {
           return { ok: true, message: Object.keys(player.config.units).join('  ') }
         case 'buildings':
           return { ok: true, message: Object.keys(player.config.buildings).join('  ') }
-        case 'techs':
-          return { ok: true, message: Object.keys(player.techs).join('  ') }
         case 'resources':
           return { ok: true, message: RESOURCE_NAMES.join('  ') }
         case 'inventories':
@@ -92,7 +88,7 @@ function registerCoreCommands(registry: DevCommandRegistry): void {
         case 'factions':
           return listGlobalPlayers(context)
         default:
-          return { ok: false, message: 'Usage: list <units|buildings|techs|resources|inventories|players|factions>' }
+          return { ok: false, message: 'Usage: list <units|buildings|resources|inventories|players|factions>' }
       }
     },
   })
@@ -186,21 +182,8 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
 
 function registerGameplayCommands(registry: DevCommandRegistry): void {
   registry.register({
-    name: 'tech',
-    aliases: ['technology'],
-    usage: 'tech <technology|all>',
-    describe: 'Unlock a technology, or all technologies at once',
-    complete: (_args, { player }) => ['all', ...Object.keys(player?.techs || {})],
-    run: ([type], context) => {
-      if (!type) return { ok: false, message: 'Usage: tech <technology|all>' }
-      if (type === 'all') return applyAllTechnologies(context)
-      return applyTechnology(context, type)
-    },
-  })
-
-  registry.register({
     name: 'age',
-    usage: 'age <0-3>',
+    usage: 'age <0-2>',
     describe: 'Set player age',
     complete: () => ['0', '1', '2', '3'],
     run: ([value], context) => setAge(context, value),

@@ -93,7 +93,6 @@ test('defeated player buildings transfer to the only remaining player', () => {
   assert.equal(defeated.buildings.includes(chest), false)
   assert.equal(winner.buildings.includes(chest), true)
   assert.deepEqual(chest.queue, [])
-  assert.equal(chest.technology, null)
   assert.equal(chest.loading, null)
   assert.deepEqual(
     calls.filter(([name]) => name === 'updateTopbar'),
@@ -133,7 +132,7 @@ test('unit transfers move membership and population once and clear interrupted r
   oldOwner.population = 1
   oldOwner.civ = 'OldCiv'
   oldOwner.age = 2
-  newOwner.unlockVillagerPopulationMilestoneTechnologies = () => calls.push(['milestone'])
+  newOwner.updatePopulationObjectives = () => calls.push(['milestone'])
   const target = {
     family: 'unit',
     label: 'u',

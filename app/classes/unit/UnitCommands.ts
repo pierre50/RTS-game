@@ -1,3 +1,5 @@
+import { routeToRememberedTarget } from '../../lib/units/targetPursuit'
+import { knownTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
 import {
   ACTION_TYPES,
   MINING_RESOURCE_CONFIG,
@@ -45,6 +47,11 @@ function checkActionCondition(
   props?: ActionProps | UnitCreationExtra
 ): boolean {
   if (!target) return false
+  if (
+    ['attack', 'hunt', 'captureHorse', 'convert'].includes(action ?? '') &&
+    !playerSeesTarget(source.owner, target as RuntimeEntity)
+  )
+    return false
   const actionProps =
     action === ACTION_TYPES.train && !props ? { trainingType: source.trainingTargetType ?? '' } : props
   return getActionCondition(source, target as RuntimeEntity, action ?? '', actionProps as ActionProps)
@@ -87,7 +94,13 @@ export class UnitCommands {
     actionProps?: ActionProps
   ) {
     const unit = this.unit
-    if (!target || target.isDestroyed || unit.isDead) return false
+    if (!target || unit.isDead) return false
+    if (!playerSeesTarget(unit.owner, target) && knownTarget(unit.owner, target)) {
+      applyWorkForAction(unit, work, action)
+      setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(work) ?? null)
+      if (routeToRememberedTarget(unit, target, action)) return true
+    }
+    if (target.isDestroyed) return false
     if (!preserveBuildQueue) unit.buildQueue = []
     if (action && !checkActionCondition(unit, target, action, actionProps)) {
       if (

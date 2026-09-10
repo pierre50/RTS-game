@@ -178,11 +178,43 @@
   overflow: auto;
 }
 
+.modal-panel--tabbed {
+  overflow: hidden;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--ui-gap-16);
+  flex-shrink: 0;
+}
+
+.modal-panel--tabbed > :not(.modal-header),
+.modal-panel--tabbed .modal-tabs-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-panel--tabbed .modal-tab-page {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-tabs-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin: -24px -32px -2px;
+}
+
+.modal-tabs-header .ui-tabs {
+  flex: 1 1 auto;
+  top: -2px;
+  left: -2px;
 }
 
 .modal-title {
@@ -283,5 +315,13 @@
     max-height: none;
     margin: auto 0;
     padding: 18px 16px;
+  }
+
+  .modal-panel--tabbed {
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  .modal-tabs-header {
+    margin: -18px -16px -2px;
   }
 }

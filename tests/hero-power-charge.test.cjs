@@ -96,7 +96,7 @@ function loadHeroTools(overrides = {}) {
       },
       SOUND_CUES: {
         hero: { meleeWhiff: 'meleeWhiff' },
-        projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'], arrowShot: 'arrow-shot' },
+        projectile: { arrowLaunch: ['archer-attack'], arrowShot: 'arrow-shot' },
         unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
       },
       UNIT_TYPES: { bowman: 'Bowman', hero: 'Hero', villager: 'Villager' },
@@ -537,7 +537,7 @@ function makeHero() {
     isDead: false,
     isDestroyed: false,
     label: 'hero',
-    owner: { isPlayed: true },
+    owner: { age: 1, isPlayed: true },
     sprite: makeSprite(),
     width: 0,
     x: 0,

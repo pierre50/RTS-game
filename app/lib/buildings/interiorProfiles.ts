@@ -10,6 +10,7 @@ const BUILDING_INTERIOR_TYPE_ORDER = [
   BUILDING_TYPES.storagePit,
   BUILDING_TYPES.stable,
   BUILDING_TYPES.watchTower,
+  BUILDING_TYPES.cave,
 ] as const
 
 export const BUILDING_INTERIOR_TYPES = new Set<string>(BUILDING_INTERIOR_TYPE_ORDER)

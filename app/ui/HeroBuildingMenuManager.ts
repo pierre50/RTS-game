@@ -1,8 +1,8 @@
+import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
 import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import { canHeroSleepAtFireCamp, sleepHeroAtFireCamp } from '../lib/hero/heroCampfireSleep'
-import { formatTrainingEntryTimeRemaining, formatTrainingTimeRemaining } from '../lib/buildings/trainingTimeRemaining'
 import { t } from '../lib/lang'
 import { playAudibleSoundCue } from '../lib/audio/sound'
 import { playUiSound } from '../lib/audio/uiSound'
@@ -189,7 +189,6 @@ export class HeroBuildingMenuManager {
     if (!building) return ''
     const level = this.stack[this.stack.length - 1] || []
     return [
-      building.technology?.type || '',
       building.queue?.join(',') || '',
       building.trainingQueue
         ?.map(entry => `${entry.type}:${entry.trainingStartedDay ?? ''}:${entry.trainingCompleteDay ?? ''}`)
@@ -373,38 +372,7 @@ export class HeroBuildingMenuManager {
   }
 
   updateProgress(): void {
-    const building = this.building
-    if (!building) return
-    this.body.querySelectorAll<HTMLElement>('button.ui-btn').forEach(button => {
-      const id = button.dataset.actionId || button.id.replace(/^hero-/, '')
-      const status = button.querySelector<HTMLElement>('.hero-building-menu-status')
-      const text = button.querySelector<HTMLElement>('.hero-building-menu-status-text')
-      if (!status || !text) return
-      const trainingIndex = button.dataset.trainingIndex == null ? null : Number(button.dataset.trainingIndex)
-      const trainingEntry =
-        trainingIndex != null && Number.isFinite(trainingIndex) ? building.trainingQueue?.[trainingIndex] : null
-      if (trainingEntry) {
-        const progress = Math.max(0, Math.min(100, Math.floor(trainingEntry.loading ?? 0)))
-        status.classList.toggle('is-visible', true)
-        text.textContent = formatTrainingEntryTimeRemaining(building, trainingEntry) ?? `${progress}%`
-        return
-      }
-
-      const queued = building.queue?.filter(type => type === id).length ?? 0
-      const activeUnit = building.queue?.[0] === id
-      const activeTechnology = building.technology?.type === id || id === `${building.technology?.type}-cancel`
-      const active = activeUnit || activeTechnology
-      const progress = active ? Math.max(0, Math.min(100, Math.floor(building.loading ?? 0))) : 0
-
-      status.classList.toggle('is-visible', active || queued > 0)
-      text.textContent = active
-        ? activeUnit
-          ? (formatTrainingTimeRemaining(building) ?? `${progress}%`)
-          : `${progress}%`
-        : queued > 0
-          ? '...'
-          : ''
-    })
+    if (this.building) updateHeroBuildingProgress(this.body, this.building)
   }
 
   isOpen(): boolean {

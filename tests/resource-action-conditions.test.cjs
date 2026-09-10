@@ -6,16 +6,18 @@ const { FAMILY_TYPES: F, UNIT_TYPES: U, RESOURCE_TYPES: R } = constants
 const { getResourceActionConditions, isWheatMature } = loadTsModule('app/lib/combat/resourceActionConditions.ts', {
   mocks: {
     '../horses/horseTaming': { isWildHorse: horse => horse.tamingStatus !== 'tamed' },
-    '../resources/ironMining': {
-      canMineIronResource: (source, target) => target?.type !== R.iron || (source.owner?.age ?? 0) >= 2,
-    },
   },
 })
-const villager = () => ({ type: U.villager, owner: { age: 2, technologies: ['BowCrafting', 'Pickaxe'] } })
+const villager = () => ({ type: U.villager, owner: { age: 2 } })
 const available = { quantity: 5, hitPoints: 10, isDead: false }
 const allowed = (action, source, target) => Boolean(getResourceActionConditions(source, target)[action]?.())
 
-test('gathering requires the right worker, resource, stock and mining technology', () => {
+test('villagers can hunt from the first age without technologies', () => {
+  const source = { type: U.villager, owner: { age: 0 } }
+  assert.equal(allowed('hunt', source, { ...available, family: F.animal, type: 'Deer' }), true)
+})
+
+test('gathering respects worker, resource, stock and age requirements', () => {
   for (const [action, type] of [
     ['forageberry', R.berrybush],
     ['chopwood', R.tree],
@@ -29,8 +31,8 @@ test('gathering requires the right worker, resource, stock and mining technology
       assert.equal(allowed(action, villager(), { ...target, ...patch }), false, `${action}: ${JSON.stringify(patch)}`)
     }
     if (action.startsWith('mine')) {
-      assert.equal(allowed(action, { type: U.villager }, target), false)
-      assert.equal(allowed(action, { type: U.villager, owner: {} }, target), false)
+      assert.equal(allowed(action, { type: U.villager }, target), type !== R.iron && type !== R.copper)
+      assert.equal(allowed(action, { type: U.villager, owner: {} }, target), type !== R.iron && type !== R.copper)
     }
   }
   const bush = { ...available, type: R.berrybush, quantity: 0 }
@@ -38,21 +40,19 @@ test('gathering requires the right worker, resource, stock and mining technology
   assert.equal(allowed('chopwood', villager(), { ...bush, hitPoints: undefined }), false)
 })
 
-test('iron mining requires the bronze age', () => {
+test('iron mining requires the Iron Age for heroes and villagers', () => {
   const iron = { ...available, type: R.iron }
-  const stoneAgeOwner = { age: 1, technologies: ['Pickaxe'] }
-  const bronzeAgeOwner = { age: 2, technologies: ['Pickaxe'] }
-
-  assert.equal(allowed('mineiron', { type: U.villager, owner: stoneAgeOwner }, iron), false)
-  assert.equal(allowed('mineiron', { type: U.hero, owner: stoneAgeOwner }, iron), false)
-  assert.equal(allowed('mineiron', { type: U.villager, owner: bronzeAgeOwner }, iron), true)
-  assert.equal(allowed('mineiron', { type: U.hero, owner: bronzeAgeOwner }, iron), true)
+  for (const age of [0, 1, 2, 3]) {
+    for (const type of [U.villager, U.hero]) {
+      assert.equal(allowed('mineiron', { type, owner: { age } }, iron), age >= 2)
+    }
+  }
 })
 
 test('hunting, collecting meat and capturing horses follow animal state', () => {
   const animal = { ...available, family: F.animal, type: 'Horse' }
   assert.equal(allowed('hunt', villager(), animal), true)
-  assert.equal(allowed('hunt', { type: U.villager }, animal), false)
+  assert.equal(allowed('hunt', { type: U.villager }, animal), true)
   assert.equal(allowed('hunt', { type: U.hero }, animal), true)
   for (const patch of [{ quantity: undefined }, { hitPoints: undefined }, { isDead: true }, { family: F.unit }]) {
     assert.equal(allowed('hunt', villager(), { ...animal, ...patch }), false)

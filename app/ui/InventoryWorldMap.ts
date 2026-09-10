@@ -1,3 +1,4 @@
+import { renderWorldMapTerritories } from './worldMap/WorldMapTerritories'
 import { t } from '../lib/lang'
 import type { MenuHost } from './MenuHost'
 import { createWorldMapLegend, settlementPlayerColor } from './worldMap/WorldMapLegend'
@@ -237,6 +238,8 @@ function renderGlobalMap(panel: HTMLElement, menu: MenuHost, manifest: MacroWorl
   for (const entry of entries) {
     renderFlatRegion(overlay, entry, manifest, { currentId, regionsHigh, regionsWide, visited })
   }
+
+  renderWorldMapTerritories(overlay, menu, manifest)
 
   for (const settlement of manifest.settlements ?? []) {
     const position = settlementPosition(settlement, manifest)

@@ -179,6 +179,11 @@ function loadModule(relativePath, mocks) {
     return module.exports
   }
   const localRequire = request => {
+    if (request.endsWith('/playerTargetKnowledge'))
+      return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
+    if (request.endsWith('/targetPursuit'))
+      return { updateTargetPursuit: () => false, routeToRememberedTarget: () => false }
+
     request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
     if (request === '../../lib/units/autonomy/villagerExploration')
       return requireFromTsFile(
@@ -3526,7 +3531,7 @@ test('building arrival actions path through an occupied passage cell without pus
   assert.deepEqual(unit.path, [entryCell])
 })
 
-test('blocked training entry repaths while still allowing the door passage stop', () => {
+test('blocked paths preserve autonomy and training, portal or exit passage intent', () => {
   const grid = makePassageMovementGrid()
   const entryCell = grid[1][0]
   const building = {
@@ -3558,6 +3563,11 @@ test('blocked training entry repaths while still allowing the door passage stop'
   }
   const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
+    '../../lib/buildings/passageCells': requireFromTsFile(
+      path.join(__dirname, '../app/lib/buildings/passageCells.ts'),
+      __filename,
+      {}
+    ),
     '../../lib': {
       canUpdateMinimap: () => false,
       cartesianToIsometric: (i, j) => [i, j],
@@ -3589,10 +3599,33 @@ test('blocked training entry repaths while still allowing the door passage stop'
 
   new UnitMovement(unit).moveToPath()
 
-  assert.deepEqual(sent, [['barracks-1', constants.ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true }]])
+  assert.deepEqual(sent, [
+    ['barracks-1', constants.ACTION_TYPES.train, {
+      forceRepath: true, preserveAutonomy: true, allowPassageStop: true,
+    }],
+  ])
+
+  for (const mode of ['exploration', 'portal', 'interior-exit']) {
+    unit.action = null
+    unit.autonomousJob = 'food'
+    unit.work = 'forager'
+    unit.exploringForAutonomy = mode === 'exploration'
+    unit.dest = grid[2][0]
+    unit.spacePortalState = mode === 'portal' ? { sourceCell: unit.dest } : null
+    unit.interiorExitState = mode === 'interior-exit' ? { targetCell: unit.dest } : null
+    unit.sendToEvt = (target, action, options) => {
+      sent.push([target, action, options])
+    }
+    new UnitMovement(unit).moveToPath()
+    assert.deepEqual(sent.at(-1), [unit.dest, null, {
+      forceRepath: true,
+      preserveAutonomy: true,
+      allowPassageStop: mode !== 'exploration',
+    }], mode)
+  }
 })
 
-test('manual building goto paths to the building entry cell', () => {
+test('building goto preserves work on automatic repath but clears it on a manual order', () => {
   const grid = makePassageMovementGrid()
   const entryCell = grid[2][2]
   const oldResource = { family: constants.FAMILY_TYPES.resource, isUsedBy: null, label: 'berries-1' }
@@ -3667,6 +3700,22 @@ test('manual building goto paths to the building entry cell', () => {
   unit.owner = { isPlayed: true }
   unit.work = constants.WORK_TYPES.forager
 
+  const deliveryState = unit.resourceDeliveryState
+  const gatherState = unit.gatherProgressState
+  new UnitMovement(unit).sendToEvt(building, null, {
+    forceRepath: true,
+    preserveAutonomy: true,
+    allowPassageStop: true,
+  })
+  assert.equal(unit.autonomousJob, 'food')
+  assert.equal(unit.work, constants.WORK_TYPES.forager)
+  assert.equal(unit.resourceDeliveryState, deliveryState)
+  assert.equal(unit.gatherProgressState, gatherState)
+  assert.deepEqual(unit.path, [entryCell])
+  assert.deepEqual(calls, [])
+
+  // A genuinely new player order must still cancel the previous job.
+  unit.dest = oldResource
   new UnitMovement(unit).sendToEvt(building, null, { allowPassageStop: true })
 
   assert.equal(unit.dest, building)

@@ -5,7 +5,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function loadModule(relativePath, mocks) {
   return loadTsModule(relativePath, {
     mocks: {
-      '../HeroCatchingPoleThrow': { HeroCatchingPoleThrow: class {} },
+      [require.resolve('../app/classes/HeroCatchingPoleThrow.ts')]: { HeroCatchingPoleThrow: class {} },
       '../../lib/horses/horseCapture': {
         getNearestAvailableStableForUnit: () => null,
         routeCapturedHorseToStableWithOwnerContact: () => null,
@@ -137,10 +137,10 @@ test('equipment level follows role skills instead of unrelated expertise', () =>
 
 test('equipment tier follows a flat xp curve, soldier-only, capped by age', () => {
   const { getUnitEquipmentTier, XP_MAX_LEVEL } = loadExperience()
-  const infantry = makeUnit({ type: 'Fantassin', category: 'Fantassin', owner: { age: 3 } })
-  const archer = makeUnit({ type: 'Bowman', category: 'Archer', owner: { age: 3 } })
-  const priest = makeUnit({ type: 'Priest', category: 'Priest', owner: { age: 3 } })
-  const villager = makeUnit({ type: 'Villager', category: 'Villager', owner: { age: 3 } })
+  const infantry = makeUnit({ type: 'Fantassin', category: 'Fantassin', owner: { age: 2 } })
+  const archer = makeUnit({ type: 'Bowman', category: 'Archer', owner: { age: 2 } })
+  const priest = makeUnit({ type: 'Priest', category: 'Priest', owner: { age: 2 } })
+  const villager = makeUnit({ type: 'Villager', category: 'Villager', owner: { age: 2 } })
 
   assert.equal(getUnitEquipmentTier(infantry), 0)
   infantry.experience.melee = 200
@@ -166,7 +166,7 @@ test('equipment tier follows a flat xp curve, soldier-only, capped by age', () =
   infantry.owner.age = 0
   assert.equal(getUnitEquipmentTier(infantry), 5)
   infantry.owner.age = 1
-  assert.equal(getUnitEquipmentTier(infantry), 10)
+  assert.equal(getUnitEquipmentTier(infantry), 15)
 })
 
 test('earned levels above the level-1 baseline drive reflex, energy and defense multipliers', () => {
@@ -392,6 +392,7 @@ test('experience entries are sorted by xp and formatted with progress', () => {
 test('gathering grants xp for the loading type and applies the gather bonus', () => {
   const xpCalls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    './UnitCaptureHorseAction': { handleCaptureHorseAction: () => assert.fail('horse capture during gathering') },
     'pixi.js': {
       Assets: { cache: { get: () => ({}) } },
     },

@@ -103,6 +103,24 @@ function loadMapResources() {
 
 const { MapResources, getNeutralResourceGroupCount, getScatteredHerbCount, getScatteredStoneCount } = loadMapResources()
 
+test('legacy wheat respawns immature on its original cell and never relocates if occupied', () => {
+  const cell = { i: 0, j: 0, category: 'Land', type: 'Grass', has: null }
+  const map = {
+    context: {}, grid: [[cell]], size: 0, resources: new Set(),
+    randomRange() { assert.fail('wheat must never look for another location') },
+    addChild(resource) { cell.has = resource; return resource },
+  }
+  const runtime = new MapResources(map)
+  const slot = { type: 'Wheat', i: 0, j: 0, totalQuantity: 12 }
+  assert.equal(runtime.respawnNaturalResource(slot), true)
+  const [wheat] = map.resources
+  assert.deepEqual([wheat.i, wheat.j], [0, 0])
+  assert.equal(wheat.startsMature, false)
+  assert.equal(wheat.quantity, 12)
+  assert.equal(runtime.respawnNaturalResource(slot), false)
+  assert.equal(map.resources.size, 1)
+})
+
 test('neutral resource groups lean by environment without changing starting resources', () => {
   assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'berrybush', 120), 2)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'wheat', 120), 2)

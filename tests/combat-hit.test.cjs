@@ -6,9 +6,10 @@ const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const constants = {
-  FAMILY_TYPES: { unit: 'unit' },
+  FAMILY_TYPES: { unit: 'unit', animal: 'animal' },
+  PLAYER_TYPES: { gaia: 'Gaia' },
   MENU_INFO_IDS: { hitPoints: 'hitPoints' },
-  UNIT_TYPES: { villager: 'Villager' },
+  UNIT_TYPES: { villager: 'Villager', hero: 'Hero' },
 }
 
 const entityHealthDisplayMock = {
@@ -71,6 +72,23 @@ function loadCombatHit({
 function makeTarget(extra = {}) {
   return { hitPoints: 20, totalHitPoints: 20, ...extra }
 }
+
+test('hunting completes only on a fresh wild animal kill, not injury or a tamed horse', () => {
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 6 })
+  const owner = { age: 0, completedObjectives: [] }
+  const attacker = { owner, type: 'Hero' }
+  applyCombatHit({ owner, type: 'Villager' }, makeTarget({ family: 'animal', hitPoints: 1 }))
+  assert.deepEqual(owner.completedObjectives, [])
+  const animal = makeTarget({ family: 'animal', owner: { type: 'Gaia' }, hitPoints: 10 })
+  applyCombatHit(attacker, animal)
+  assert.deepEqual(owner.completedObjectives, [])
+  applyCombatHit(attacker, makeTarget({ family: 'animal', type: 'Horse', tamingStatus: 'tamed', hitPoints: 1 }))
+  assert.deepEqual(owner.completedObjectives, [])
+  applyCombatHit(attacker, animal)
+  assert.deepEqual(owner.completedObjectives, ['huntAnimal'])
+  applyCombatHit(attacker, animal)
+  assert.deepEqual(owner.completedObjectives, ['huntAnimal'])
+})
 
 test('a non-melee hit deals damage and grants the attacker xp as before', () => {
   const grantCalls = []

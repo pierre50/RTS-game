@@ -8,7 +8,11 @@ import {
   wakeUnit,
 } from './UnitRestLifecycle'
 import { setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import { shouldVillagerBeAsleep, shouldVillagerReturnHome, shouldVillagerWork } from '../../lib/units/villagerSchedule'
+import {
+  shouldVillagerBeAsleep,
+  shouldVillagerBeAwake,
+  shouldVillagerReturnHome,
+} from '../../lib/units/villagerSchedule'
 import { keepSleepingOutsideVisual, playSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
 import {
   canUseUnitRest,
@@ -73,7 +77,7 @@ export class UnitRestSystem {
   }
 
   private shouldWake(unit: UnitEntity): boolean {
-    return isVillager(unit) ? shouldVillagerWork(unit) : !isSleepTime(this.context)
+    return isVillager(unit) ? shouldVillagerBeAwake(unit) : !isSleepTime(this.context)
   }
 
   private restoreInterruptedSleep(unit: UnitEntity): boolean {
@@ -86,7 +90,8 @@ export class UnitRestSystem {
   }
 
   private updateScheduledRest(unit: UnitEntity): void {
-    if (this.shouldWake(unit)) {
+    const shouldReturnHome = this.shouldReturnHome(unit)
+    if (this.shouldWake(unit) && !shouldReturnHome) {
       unit.suspendedRestState = null
       if (unit.shelterState && unit.shelterState.status !== 'wakingUp') this.wakeRestingUnit(unit)
       else if (unit.shelterState) this.updateRestingUnit(unit)
@@ -95,7 +100,7 @@ export class UnitRestSystem {
 
     if (!unit.shelterState) {
       if (this.restoreInterruptedSleep(unit)) return
-      if (this.shouldReturnHome(unit) && shouldRest(unit) && sendUnitToRest(unit, 'sleep')) {
+      if (shouldReturnHome && shouldRest(unit) && sendUnitToRest(unit, 'sleep')) {
         this.updateRestingUnit(unit)
       }
       return
@@ -217,7 +222,7 @@ export class UnitRestSystem {
 
     for (const unit of restUnits) {
       if (isVillager(unit)) {
-        if (shouldVillagerWork(unit)) wakeRestingUnitInstant(this.context, unit)
+        if (shouldVillagerBeAwake(unit)) wakeRestingUnitInstant(this.context, unit)
         else settleUnitRestForTimeJump(unit, shouldVillagerBeAsleep(unit))
       } else if (isSleepTime(this.context)) {
         settleSleepState(unit)

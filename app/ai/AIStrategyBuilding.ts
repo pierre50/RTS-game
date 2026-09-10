@@ -1,3 +1,4 @@
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { BUILDING_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../constants'
 import { canAfford, getBuildingPlacementSearchSize, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
@@ -28,7 +29,6 @@ const MAX_AI_WHEAT_FIELDS = 4
 
 type BuildingStrategy = {
   ai: AIStrategyPlayerLike
-  getAgeUpReserve(): AIResourceAmount
   getDesiredBarracksCount(snapshot?: Partial<AIStrategySnapshot> | null): number
   canSpendWithReserve(cost: AIResourceAmount, reserve?: AIResourceAmount): boolean
 }
@@ -43,7 +43,7 @@ export function buyAIBuildingIfNeeded(
   debug: boolean = false
 ): boolean {
   const { ai } = strategy
-  const building = ai.config.buildings[buildingType]
+  const building = getPlayerBuildingConfig(ai, buildingType)
   if (!building) return false
   if (
     condition &&
@@ -69,7 +69,7 @@ export function buyAIWheatFieldIfNeeded(
   debug: boolean = false
 ): boolean {
   const { ai } = strategy
-  const field = ai.config.buildings[BUILDING_TYPES.farm]
+  const field = getPlayerBuildingConfig(ai, BUILDING_TYPES.farm)
   if (
     condition &&
     field &&
@@ -204,7 +204,7 @@ function buyCoreInfrastructure(options: {
     actions++
 
   if (
-    buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
+    buy(ai.age >= 1, BUILDING_TYPES.watchTower, () =>
       findBuildingPosition(anchor, map, [6, 15], 2, defensivePlacement())
     )
   )
@@ -257,7 +257,7 @@ export function handleAIBuildingActions(
     (...conditions: Array<(cell: AIGridPosition) => boolean>) =>
     (cell: GridCell) =>
       avoidsReservedPassages(cell) && conditions.every(condition => condition(cell as AIGridPosition))
-  const ageUpReserve = strategy.getAgeUpReserve()
+  const ageUpReserve = {}
   const buy = (
     condition: boolean,
     buildingType: string,
@@ -298,7 +298,7 @@ export function handleAIBuildingActions(
   if (
     buyAIWheatFieldIfNeeded(
       strategy,
-      ai.technologies.includes('Farming') && granarys.length > 0 && currentWheatFields < desiredWheatFields,
+      granarys.length > 0 && currentWheatFields < desiredWheatFields,
       livingWheatTiles,
       () =>
         getPositionInGridAroundInstance(

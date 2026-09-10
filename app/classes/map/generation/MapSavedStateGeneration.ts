@@ -1,4 +1,5 @@
 import { Resource } from '../../Resource'
+import { migrateSavedAge, AGE_RULES_VERSION } from '../../../lib/objectives/ageRules'
 import { Human, AI, Gaia, Player } from '../../players'
 import { getGaiaAnimals } from '../../../lib'
 import { rehydrateAIKnowledge } from '../../../services/FogOfWar'
@@ -6,6 +7,8 @@ import { FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../../../constants'
 import { Cell } from '../../cell'
 import {
   processUnit,
+  restoreCaveOccupants,
+  restorePlayerInteriors,
   restoreAIState,
   restoreBuildingAssignments,
   restorePlayerEntitiesFromSave,
@@ -19,6 +22,8 @@ import type { ResourceEntity } from '../../../types/entities'
 import type { SaveEntityState } from '../../../types/save'
 import type { GaiaRespawnSlot, MapGenerationMap, SavedGameData } from '../MapGenerationTypes'
 import type { SavedPlayer } from '../MapSaveRestoreTypes'
+import { applyOfflineWorldSimulation } from './MapOfflineWorldSimulation'
+import { isDerivedInteriorHorse, groupPlayersInteriorBuildings } from '../../../serialization/InteriorBuildingSave'
 
 function runtimeContext(map: MapGenerationMap): GameContextLike {
   const { context } = map
@@ -58,6 +63,8 @@ export function restoreSavedPlayers(
   }
   const context = runtimeContext(map)
   map.context.players = players.map((player: SavedPlayer) => {
+    player.age = migrateSavedAge(player.age, player.ageRulesVersion)
+    player.ageRulesVersion = AGE_RULES_VERSION
     const PlayerClass = classMap[player.type] ?? Player
     const restoredPlayer = new PlayerClass(
       {
@@ -94,7 +101,8 @@ export function restoreSavedEntities(
   animals: SaveEntityState[],
   context: GameContextLike
 ): void {
-  map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
+  map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index], true))
+  map.context.players.forEach(restorePlayerInteriors)
   const gaia = map.gaia instanceof Gaia ? map.gaia : null
   animals.forEach(animal => {
     if (!gaia) return
@@ -116,6 +124,7 @@ export function restoreSavedEntities(
     player.units.forEach(unit => processUnit(unit, map))
     restoreSelection(player, savedPlayer, map)
   })
+  restoreCaveOccupants(context, players)
 }
 
 export function finishSavedStateRestore(
@@ -129,6 +138,8 @@ export function finishSavedStateRestore(
 }
 
 export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): void {
+  data.players = groupPlayersInteriorBuildings(data.players)
+  data.animals = data.animals.filter(animal => !isDerivedInteriorHorse(animal, data.players))
   const { map: savedMap, players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
   const context = runtimeContext(map)
   const { menu, controls } = context
@@ -161,7 +172,8 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
   }
   map._indexFogChunkCells()
 
-  restoreSavedResources(map, resources, naturalResourceRespawnSlots)
+  applyOfflineWorldSimulation(map, data)
+  restoreSavedResources(map, resources, data.naturalResourceRespawnSlots ?? naturalResourceRespawnSlots)
 
   map.rebuildTerrainAppearance()
 
@@ -215,6 +227,8 @@ export function clearGeneratedGameplayState(map: MapGenerationMap): void {
 }
 
 export function applySavedStateToGeneratedMap(map: MapGenerationMap, data: SavedGameData): void {
+  data.players = groupPlayersInteriorBuildings(data.players)
+  data.animals = data.animals.filter(animal => !isDerivedInteriorHorse(animal, data.players))
   const { players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
   const context = runtimeContext(map)
   const { menu, controls } = context
@@ -222,7 +236,8 @@ export function applySavedStateToGeneratedMap(map: MapGenerationMap, data: Saved
   clearGeneratedGameplayState(map)
   restoreSavedPlayers(map, players, runtime)
 
-  restoreSavedResources(map, resources, naturalResourceRespawnSlots)
+  applyOfflineWorldSimulation(map, data)
+  restoreSavedResources(map, resources, data.naturalResourceRespawnSlots ?? naturalResourceRespawnSlots)
 
   controls?.setCamera?.(camera.x, camera.y, true)
   menu?.init?.()

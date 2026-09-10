@@ -80,7 +80,11 @@ export class ActionScheduler {
     const tickStartedAt = performance.now()
     this.elapsedMs += deltaMS
     this._toRemove.length = 0
+    const lastTaskId = this._nextId - 1
     for (const [id, task] of this._tasks) {
+      // Map iteration includes newly added tasks. Defer them so retries cannot
+      // repeatedly consume this frame's delta and starve rendering/input.
+      if (id > lastTaskId) break
       task.elapsed += deltaMS
       if (task.oneShot) {
         if (task.elapsed >= task.interval) {

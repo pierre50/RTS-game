@@ -4,15 +4,12 @@ import { buyAIBuildingIfNeeded, buyAIWheatFieldIfNeeded, handleAIBuildingActions
 import {
   addBuildingReserve as runAddBuildingReserve,
   canSpendWithReserve as runCanSpendWithReserve,
-  getAgeUpReserve as runGetAgeUpReserve,
   getCurrentResources as runGetCurrentResources,
   getEconomicDemand as runGetEconomicDemand,
   getViableBerryBushCount as runGetViableBerryBushCount,
   getVillagerGrowthFoodReserve as runGetVillagerGrowthFoodReserve,
 } from './AIStrategyEconomy'
 import { handleAIProductionActions } from './AIStrategyProduction'
-import { canResearchTechForAI } from './AIStrategyTech'
-import { handleAITechnologyActions } from './AIStrategyTechnologyActions'
 import {
   getDesiredBarracksCount as runGetDesiredBarracksCount,
   getTrainingLoad as runGetTrainingLoad,
@@ -20,15 +17,12 @@ import {
 } from './AIStrategyTraining'
 import {
   AI_DIFFICULTIES,
-  CHIEF_TECH_PRIORITY,
   MAX_ARCHER_BY_AGE,
   MAX_BUILDING_BY_AGE,
   MAX_BUILDING_BY_AGE_FROZEN,
   MAX_CAVALRY_BY_AGE,
   MAX_INFANTRY_BY_AGE,
   MAX_VILLAGER_PER_AGE,
-  NEXT_AGE,
-  TECH_PRIORITY_BY_BUILDING,
   VILLAGE_TARGET_PERCENTAGE_BY_AGE,
 } from './config'
 import type {
@@ -38,13 +32,12 @@ import type {
   AIEntityLike,
   AIGridPosition,
   AIResourceAmount,
+  AIResourceName,
   AIStrategyPlayerLike,
   AIStrategySnapshot,
 } from './types'
-import { ARCHER_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
 
 type AgeMap<T> = Record<AIAge, T>
-type NextAgeMap = Partial<Record<1 | 2 | 3, string>>
 type BuildingListByType = Record<string, AIBuildingLike[]>
 type MilitaryOptions = Parameters<AIMilitary['handleActions']>[0]
 type MilitaryActionsResult = ReturnType<AIMilitary['handleActions']>
@@ -53,15 +46,12 @@ export class AIStrategy {
   ai: AIStrategyPlayerLike
   difficulty: string
   difficultyConfig: AIDifficultyConfig
-  nextAge: NextAgeMap
   maxVillagerPerAge: AgeMap<number>
-  villageTargetPercentageByAge: AgeMap<Record<keyof AIResourceAmount, number>>
+  villageTargetPercentageByAge: AgeMap<Record<AIResourceName, number>>
   maxBuildingByAge: AgeMap<Record<string, number>>
   maxInfantryByAge: AgeMap<number>
   maxArcherByAge: AgeMap<number>
   maxCavalryByAge: AgeMap<number>
-  chiefTechPriority: string[]
-  techPriorityByBuilding: Record<string, string[]>
   military: AIMilitary
 
   constructor(ai: AIStrategyPlayerLike, difficulty: string = 'medium') {
@@ -69,28 +59,23 @@ export class AIStrategy {
     this.difficulty = difficulty
     this.difficultyConfig =
       (AI_DIFFICULTIES as Record<string, AIDifficultyConfig>)[difficulty] || AI_DIFFICULTIES.medium
-    this.nextAge = NEXT_AGE
     this.maxVillagerPerAge = MAX_VILLAGER_PER_AGE
     this.villageTargetPercentageByAge = VILLAGE_TARGET_PERCENTAGE_BY_AGE
     this.maxBuildingByAge = AGE_UP_ENABLED ? MAX_BUILDING_BY_AGE : MAX_BUILDING_BY_AGE_FROZEN
     this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
     this.maxArcherByAge = MAX_ARCHER_BY_AGE
     this.maxCavalryByAge = MAX_CAVALRY_BY_AGE
-    this.chiefTechPriority = CHIEF_TECH_PRIORITY
-    this.techPriorityByBuilding = TECH_PRIORITY_BY_BUILDING
     this.military = new AIMilitary(ai, this)
   }
 
   applyConfig(target: AIStrategyPlayerLike): void {
     target.difficultyConfig = this.difficultyConfig
-    target.nextAge = this.nextAge
     target.maxVillagerPerAge = this.maxVillagerPerAge
     target.villageTargetPercentageByAge = this.villageTargetPercentageByAge
     target.maxBuildingByAge = this.maxBuildingByAge
     target.maxInfantryByAge = this.maxInfantryByAge
     target.maxArcherByAge = this.maxArcherByAge
     target.maxCavalryByAge = this.maxCavalryByAge
-    target.techPriorityByBuilding = this.techPriorityByBuilding
   }
 
   // Vrai si l'IA doit être considérée comme ayant atteint `requiredAge` : soit réellement (age-up
@@ -101,16 +86,12 @@ export class AIStrategy {
     return this.ai.age >= requiredAge
   }
 
-  canResearchTech(techKey: string): boolean {
-    return canResearchTechForAI(this.ai, techKey, requiredAge => this.hasReachedAge(requiredAge))
-  }
-
   getBestInfantryUnit(): string {
     return 'Fantassin'
   }
 
   getBestArcherUnit(): string {
-    return getBestUnitFromTechs(this.ai.technologies, ARCHER_TECH_UPGRADES, 'Bowman')
+    return 'Bowman'
   }
 
   updatePhase(villagersCount: number): string {
@@ -132,10 +113,6 @@ export class AIStrategy {
 
   handleMilitaryActions(options: MilitaryOptions): MilitaryActionsResult {
     return this.military.handleActions(options)
-  }
-
-  isTechnologyInProgress(_technologyType: string, _buildingList: AIBuildingLike[] = []): boolean {
-    return false
   }
 
   getTrainingLoad(buildings: AIBuildingLike[] = []): number {
@@ -160,10 +137,6 @@ export class AIStrategy {
 
   getEconomicDemand(): AIResourceAmount {
     return runGetEconomicDemand(this)
-  }
-
-  getAgeUpReserve(): AIResourceAmount {
-    return runGetAgeUpReserve(this)
   }
 
   canSpendWithReserve(cost: AIResourceAmount, reserve: AIResourceAmount = {}): boolean {
@@ -215,7 +188,4 @@ export class AIStrategy {
     return handleAIBuildingActions(this, snapshot, debug)
   }
 
-  handleTechnologyActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
-    return handleAITechnologyActions(this, snapshot, debug)
-  }
 }

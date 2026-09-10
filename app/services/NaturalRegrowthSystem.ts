@@ -2,6 +2,7 @@ import { RESOURCE_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { getGaiaAnimals, getInstanceZIndex, isWheatMature, updateInstanceVisibility } from '../lib'
 import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
 import { resumeStrictVillagerAutonomy } from '../lib/units/villagerTaskRecovery'
+import { villagerAutonomySuspension } from '../lib/units/autonomy/villagerAutonomyAvailability'
 import type { GameContextLike } from '../types/context'
 import type { AnimalEntity, ResourceEntity, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -111,7 +112,7 @@ function resumeIdleAutonomousVillagersAfterRegrowth(context: GameContextLike): v
     for (const unit of player.units ?? []) {
       if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) continue
       if (!unit.autonomousJob || unit.dest || unit.action || unit.path?.length) continue
-      if (unit.shelterState || unit.resourceDeliveryState || unit.lookingAtHero || unit.followingHero) continue
+      if (villagerAutonomySuspension(unit)) continue
       resumeStrictVillagerAutonomy(unit, unit.autonomousJob, { exploreWhenNoTarget: false })
     }
   }

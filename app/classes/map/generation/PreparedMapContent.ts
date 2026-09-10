@@ -10,10 +10,18 @@ export type PreparedTerrainCell = {
   patches?: string[]
   ground?: PatchBorderGroundType
 }
+const caves = new WeakMap<object, NonNullable<MapBlueprint['caves']>>()
+
+export function getPreparedCaves(map: object): NonNullable<MapBlueprint['caves']> {
+  return caves.get(map) ?? []
+}
+
 const terrain = new WeakMap<object, PreparedTerrainCell[]>()
 const animals = new WeakMap<object, NonNullable<MapBlueprint['animals']>>()
 
 export function registerPreparedMapContent(map: object, blueprint: MapBlueprint): void {
+  caves.delete(map)
+  if (blueprint.caves) caves.set(map, blueprint.caves)
   terrain.delete(map)
   animals.delete(map)
   if (blueprint.terrainAppearance) terrain.set(map, blueprint.terrainAppearance)

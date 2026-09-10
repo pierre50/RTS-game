@@ -1,3 +1,5 @@
+import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import type { PlayerLike } from '../types/player'
 import { findInstancesInSight } from '../lib'
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getDefensePowerNeed, getThreatProfile } from './AIThreatProfiles'
@@ -20,7 +22,8 @@ export class AIThreatManager {
     if (!enemy?.label || !this.player.isEnemy(enemy.owner)) return
     const memoryMap =
       enemy.family === FAMILY_TYPES.building ? this.player.enemyBuildingMemory : this.player.enemyUnitMemory
-    const visible = this.player.views.isVisible(enemy.i, enemy.j)
+    const visible = playerSeesTarget(this.player as unknown as PlayerLike, enemy as RuntimeEntity)
+    if (!visible) return
     memoryMap.set(enemy.label, {
       instance: enemy,
       label: enemy.label,
@@ -42,15 +45,14 @@ export class AIThreatManager {
       const enemy = memory.instance
       if (
         !enemy ||
-        enemy.isDead ||
-        enemy.isDestroyed ||
-        (enemy.hitPoints ?? 0) <= 0 ||
+        (playerSeesTarget(this.player as unknown as PlayerLike, enemy as RuntimeEntity) &&
+          (enemy.isDead || enemy.isDestroyed || (enemy.hitPoints ?? 0) <= 0)) ||
         !this.player.isEnemy(enemy.owner)
       ) {
         memoryMap.delete(label)
         continue
       }
-      const visible = this.player.views.isVisible(enemy.i, enemy.j)
+      const visible = playerSeesTarget(this.player as unknown as PlayerLike, enemy as RuntimeEntity)
       if (visible) {
         memory.i = enemy.i
         memory.j = enemy.j
@@ -78,7 +80,7 @@ export class AIThreatManager {
   }
 
   getFreshEnemyInstances(options = {}) {
-    return this.getEnemyMemories(options).map(memory => memory.instance)
+    return this.getEnemyMemories({ ...options, visibleOnly: true }).map(memory => memory.instance)
   }
 
   reportThreat(target: RuntimeEntity, attacker: RuntimeEntity): void {

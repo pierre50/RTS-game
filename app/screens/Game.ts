@@ -1,3 +1,4 @@
+import { getCaveInteriorBlueprint } from '../lib/buildings/caveBlueprint'
 import type { Application } from 'pixi.js'
 import { Container, type ContainerChild } from 'pixi.js'
 import { t } from '../lib/lang'
@@ -270,8 +271,8 @@ export default class Game extends Container {
   _resetRuntimeState(): void {
     this._pausedByVisibility = false
     this._pausedByOrientation = false
-    this.context = {
-      ...this.context,
+    // The scheduler and runtime callbacks retain this context across world changes.
+    Object.assign(this.context, {
       player: null,
       players: [],
       map: null,
@@ -283,7 +284,7 @@ export default class Game extends Container {
       devConsoleOpen: false,
       paused: false,
       defeat: false,
-    }
+    })
   }
 
   _createRuntime(): void {
@@ -310,6 +311,16 @@ export default class Game extends Container {
     this.addChild(controls)
     this.applyZoom()
     this._attachWindowListeners()
+    const hero = controls.heroUnit
+    const caveSpace = hero && getBuildingInteriorSpaceForUnit(hero)
+    if (hero && caveSpace?.building.cave) {
+      activateBuildingInteriorSpace(this._gameContext(), caveSpace)
+      this._activeBuildingInteriorSpace = caveSpace
+      const point = getEntityMapPoint(hero)
+      controls.setCamera?.(point.x, point.y)
+      controls.updateVisibleCells?.()
+      this.context.menu?.refreshMiniMap?.()
+    }
   }
 
   _isBuildingInteriorLayerOpen(): boolean {
@@ -320,7 +331,7 @@ export default class Game extends Container {
     if (this._activeBuildingInteriorSpace) return
     const context = this._gameContext()
     const hero = this._runtimeHeroUnit()
-    const blueprint = await this._loadRequiredInteriorBlueprint({
+    const blueprint = building.type === 'Cave' ? getCaveInteriorBlueprint(building) : await this._loadRequiredInteriorBlueprint({
       buildingSize: building.size,
       buildingType: getBuildingInteriorBlueprintType(building),
       random: () => context.map.random(),

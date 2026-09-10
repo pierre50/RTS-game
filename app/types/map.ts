@@ -95,7 +95,6 @@ export interface RuntimeMap {
   showResources?: boolean
   waterOverlayPaused?: boolean
   startingAge?: number
-  allTechnologies?: boolean
   resourceDensity?: string
   difficulty?: string
   positionsCount?: number

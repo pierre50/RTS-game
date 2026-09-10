@@ -26,13 +26,9 @@ export function applyStartingBonuses(
   configuredAge: number | null = null
 ): void {
   const age = configuredAge == null ? map.startingAge : configuredAge
-  const startingAge = Math.max(0, Math.min(Number(age) || 0, 3))
+  const startingAge = Math.max(0, Math.min(Number(age) || 0, 2))
   player.age = startingAge
 
-  if (!map.allTechnologies) return
-
-  player.autoTechnologyByAge = true
-  player.applyEligibleTechnologies?.()
 }
 
 export function generatePlayers(
@@ -147,7 +143,7 @@ export function placePlayers(map: MapGenerationMap): void {
   } = map
 
   for (const player of players) {
-    if (player.type === PLAYER_TYPES.bandits) continue
+    if (player.type === PLAYER_TYPES.bandits || player.type === PLAYER_TYPES.gaia) continue
     if (player.isPlayed && map.heroOnlyStart) {
       player.createUnit?.({ i: player.i, j: player.j, type: UNIT_TYPES.hero })
       continue

@@ -32,6 +32,7 @@ const constants = {
     mineiron: 'mineiron',
     minestone: 'minestone',
     takemeat: 'takemeat',
+    hunt: 'hunt',
   },
   FAMILY_TYPES: {
     building: 'building',
@@ -57,6 +58,23 @@ function loadVillagerTaskRecovery(calls) {
     },
   })
 }
+
+test('stored food task can resume a usable animal carcass instead of rejecting all dead targets', () => {
+  const calls = []
+  const { resumeVillagerJobIntent } = loadVillagerTaskRecovery(calls)
+  const carcass = { family: 'animal', label: 'deer', isDead: true, quantity: 12 }
+  const unit = {
+    autonomousJob: 'food',
+    getActionCondition: () => true,
+    sendToTakeMeat(target) {
+      this.dest = target
+      this.action = 'takemeat'
+    },
+  }
+  assert.equal(resumeVillagerJobIntent(unit, { dest: carcass, action: 'takemeat', autonomousJob: 'food' }), true)
+  assert.equal(unit.dest, carcass)
+  assert.deepEqual(calls, [])
+})
 
 test('stored task recovery explores for the same autonomous job when the exact resource is gone', () => {
   const calls = []
@@ -177,6 +195,7 @@ for (const [action, method, family] of [
   ['forageberry', 'sendToBerrybush', 'resource'],
   ['chopwood', 'sendToTree', 'resource'],
   ['takemeat', 'sendToTakeMeat', 'resource'],
+  ['hunt', 'sendToHunt', 'animal'],
   ['minestone', 'sendToStone', 'resource'],
   ['minecopper', 'sendToCopper', 'resource'],
   ['mineiron', 'sendToIron', 'resource'],

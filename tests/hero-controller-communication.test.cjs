@@ -288,6 +288,7 @@ function createController({
     stop: () => calls.push('stop'),
   }
   const owner = {
+    age: 1,
     label: 'player',
     buildings: ownerBuildings,
   }

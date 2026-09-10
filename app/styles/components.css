@@ -27,6 +27,11 @@
   width: 100%;
 }
 
+.modal-tab-page {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .ui-tab {
   flex: 1 1 0;
   padding: 8px 12px;

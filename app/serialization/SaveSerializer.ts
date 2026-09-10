@@ -1,4 +1,10 @@
+import { exportTargetKnowledge } from '../lib/units/playerTargetKnowledge'
+import type { CaveDefinition } from '../types/cave'
 import { definedProperties } from '../lib/definedProperties'
+import { serializeTrainingExtra, serializeTrainingQueue } from './TrainingSave'
+import { groupPlayersInteriorBuildings, interiorSaveSpaceId, isDerivedInteriorHorse } from './InteriorBuildingSave'
+import type { TrainingEntry } from '../types/training'
+import type { UnitCreationExtra } from '../types/entities'
 import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from '../lib'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import type { ResourceAmount } from '../types/common'
@@ -13,7 +19,6 @@ import type {
   SavePlayerState,
   SaveRallyPoint,
   SaveReference,
-  SaveTechnologyState,
   SerializedSave,
 } from '../types/save'
 
@@ -23,6 +28,14 @@ const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'berry', 'meat', 'wheat', 'st
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
+  cave?: CaveDefinition
+  buildingAge?: number
+  interiorBuildings?: SaveEntityState[]
+  trainingTargetType?: string | null
+  trainingQueue?: TrainingEntry[]
+  buildingProduction?: { activeTrainingExtra?: UnitCreationExtra }
+  offlineWork?: SaveEntityState['offlineWork']
+  shelterState?: { previousWork?: string | null; previousAutonomousJob?: SaveEntityState['autonomousJob'] } | null
   action?: string | null
   assetAge?: AssetAge
   assetCiv?: string
@@ -75,6 +88,7 @@ type SerializableEntity = RuntimeEntityBase & {
   previousDest?: Destination | null
   previousWork?: string | null
   autonomousJob?: SaveEntityState['autonomousJob']
+  exploringForAutonomy?: boolean
   berrybushFullTextureName?: string
   queue?: string[]
   rallyPoint?: SaveRallyPoint | null
@@ -83,7 +97,6 @@ type SerializableEntity = RuntimeEntityBase & {
   isChief?: boolean
   lootEquipment?: string[]
   sprite?: SpriteState | null
-  technology?: SaveTechnologyState
   textureName?: string
   work?: string | null
 }
@@ -161,6 +174,9 @@ function getInteriorWorldSaveCell(entity: SerializableEntity): RuntimeCell | nul
 function projectInteriorEntityToWorld(entity: SerializableEntity, data: SaveEntityState): SaveEntityState {
   const cell = getInteriorWorldSaveCell(entity)
   if (!cell) return data
+  const space = getEntityMapSpace(entity) as InteriorSerializableSpace | null
+  const caveId = (space?.building as { cave?: { id: string } } | undefined)?.cave?.id
+  if (caveId) data.cavePosition = { caveId, i: entity.i, j: entity.j }
   const point = getCellMapPoint(cell, entity.context?.map)
   data.i = cell.i
   data.j = cell.j
@@ -201,6 +217,15 @@ function resourceData(resource: SerializableEntity): SaveEntityState {
 }
 
 function animalData(animal: SerializableEntity): SaveEntityState {
+  if (animal.isDestroyed) {
+    return {
+      ...filterObject(animal, ['label', 'type', 'i', 'j', 'horseColor', 'totalHitPoints', 'totalQuantity']),
+      isDead: true,
+      isDestroyed: true,
+      hitPoints: 0,
+      quantity: 0,
+    } as SaveEntityState
+  }
   const data = filterObject(animal, [
     'label',
     'name',
@@ -273,6 +298,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'work',
       'previousWork',
       'autonomousJob',
+      'exploringForAutonomy',
       'realDest',
       'degree',
       'action',
@@ -296,9 +322,13 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'campPatrolAnchor',
       'banditCampAnchor',
       'experience',
+      'offlineWork',
+      'trainingTargetType',
       'gender',
       'appearanceVariants',
     ]),
+    work: unit.shelterState?.previousWork ?? unit.work,
+    autonomousJob: unit.shelterState?.previousAutonomousJob ?? unit.autonomousJob,
     currentFrame: unit.sprite?.currentFrame,
     loop: unit.sprite?.loop,
     dest: referenceData(unit.dest),
@@ -326,8 +356,10 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'i',
       'j',
       'type',
+      'spaceId',
+      'interiorBuildings',
+      'cave',
       'queue',
-      'technology',
       'loading',
       'trainingStartedDay',
       'trainingCompleteDay',
@@ -339,6 +371,8 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'rallyPoint',
       'assetCiv',
       'assetAge',
+      'buildingAge',
+      'totalHitPoints',
       'assetType',
       'horseAmount',
       'stableHorses',
@@ -348,12 +382,15 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'indestructible',
     ] as const),
     inventory: building.inventory ? definedProperties(building.inventory) : undefined,
+    trainingQueue: serializeTrainingQueue(building.trainingQueue),
+    trainingExtra: serializeTrainingExtra(building.buildingProduction?.activeTrainingExtra),
     isUsedBy: typeof building.isUsedBy === 'string' ? building.isUsedBy : building.isUsedBy?.label,
   })
 }
 
 function playerData(player: SerializablePlayer) {
   const data: SavePlayerState = definedProperties({
+    targetKnowledge: exportTargetKnowledge(player),
     ...filterObject(player, [
       'label',
       'age',
@@ -369,18 +406,20 @@ function playerData(player: SerializablePlayer) {
       'diplomacy',
       'population',
       'populationMax',
-      'technologies',
-      'discoveredEquipment',
-      'discoveredResources',
-      'researchTechnology',
-      'researchLoading',
+      'completedObjectives',
       'cellViewed',
       'isPlayed',
       'hasBuilt',
     ]),
-    buildings: player.buildings.map(buildingData),
+    buildings: player.buildings.map(building => {
+      const saved = buildingData(building)
+      const ownerKey = player.label || player.factionId || player.name || 'owner'
+      if (building.context?.map?.spaces?.has(interiorSaveSpaceId(ownerKey, saved))) saved.interiorBuildings = []
+      return saved
+    }),
     units: player.units.map(unitData),
     corpses: player.corpses.map(unitData),
+    ageRulesVersion: 1,
     villagerAssignments: summarizeVillagerAssignments(player.units),
     views: player.views.toJSON(),
     selectedUnitLabels: !player.isPlayed
@@ -423,7 +462,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
   const sourceSize = context.map.localGridLayout
     ? context.map.worldManifest?.maps?.find(entry => entry.id === context.map.worldRegionId)?.size
     : undefined
-  const world = {
+  const world = definedProperties({
     seed: context.map.seed,
     size: context.map.size,
     mapType: context.map.mapType || DEFAULT_SERIALIZED_MAP_TYPE,
@@ -433,7 +472,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     worldRegionId: context.map.worldRegionId ?? null,
     ...(context.map.localGridLayout ? { localGridLayout: { ...context.map.localGridLayout } } : {}),
     ...(sourceSize != null ? { sourceSize } : {}),
-  }
+  })
   const data: SerializedSave = {
     version: 2,
     runtime: {
@@ -445,13 +484,12 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     },
     camera: cameraData(context.controls.camera),
     world,
-    config: {
+    config: definedProperties({
       seed: context.map.seed,
       size: sourceSize ?? context.map.size,
       mapType: context.map.mapType || DEFAULT_SERIALIZED_MAP_TYPE,
       environment: context.map.environment,
       instantMode: context.map.instantMode,
-      allTechnologies: context.map.allTechnologies,
       heroOnlyStart: context.map.heroOnlyStart,
       startingAge: context.map.startingAge,
       revealEverything: context.map.revealEverything,
@@ -462,12 +500,13 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       worldId: context.map.worldId ?? undefined,
       worldRegionId: context.map.worldRegionId ?? undefined,
       ...(context.map.localGridLayout ? { localGridLayout: { ...context.map.localGridLayout } } : {}),
-    },
-    players: (context.players ?? []).map(player => playerData(player)),
+    }),
+    players: groupPlayersInteriorBuildings((context.players ?? []).map(player => playerData(player))),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
     naturalResourceRespawnSlots: (context.map.naturalResourceRespawnSlots ?? []).map(slot => ({ ...slot })),
     animals: getGaiaAnimals(context.map.gaia)
-      .filter(animal => !animal.isDestroyed)
+      .filter(animal => !isDerivedInteriorHorse(animal, context.players))
+      .filter(animal => !animal.isDestroyed || (animal.isDead && !('trapPrey' in animal && animal.trapPrey)))
       .map(animal => animalData(animal as SerializableEntity)),
   }
 

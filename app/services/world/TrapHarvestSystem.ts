@@ -1,16 +1,17 @@
 import { BUILDING_TYPES, FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
+import { SOUND_CUES } from '../../constants/sounds'
+import { playAudibleSoundCue } from '../../lib/audio/sound'
 import { updateInstanceVisibility } from '../../lib'
 import { addHeroInventoryItem } from '../../lib/equipment/equipmentLoot'
 import { fadeOut } from '../../lib/entities/entityFade'
 import { clearEntityOverheadIndicator, setEntityOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { instanceIsInActiveOrTeamSight } from '../../lib/grid/visibility'
 import { getEntityMapSpace } from '../../lib/mapSpaces'
+import { isTrapObservedBySight, TRAP_PREY_TYPES } from '../../lib/buildings/trapRules'
 import type { AnimalEntity, BuildingEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike, VisionChangeEvent } from '../../types/context'
 import type { DailyWorldEvent, DailyWorldEventHandler } from '../DailyWorldEventTypes'
-
-const TRAP_PREY_TYPES = ['Hare', 'Fox', 'BlackGrouse'] as const
 
 type TrapPreyType = (typeof TRAP_PREY_TYPES)[number]
 
@@ -28,13 +29,6 @@ type GaiaWithAnimals = NonNullable<GameContextLike['map']['gaia']> & {
 }
 
 type RuntimeTrapBuilding = BuildingEntity & { context: GameContextLike }
-
-type TrapSightViewer = {
-  family?: string
-  isDead?: boolean
-  isDestroyed?: boolean
-  label?: string
-}
 
 function isTrapPreyType(type: string | null | undefined): type is TrapPreyType {
   return Boolean(type && (TRAP_PREY_TYPES as readonly string[]).includes(type))
@@ -60,21 +54,6 @@ function isTrapCell(building: RuntimeTrapBuilding, cell: RuntimeCell | null | un
       cell.has === building &&
       cell.solid === true
   )
-}
-
-function isTrapObservedBySight(building: RuntimeTrapBuilding, context: GameContextLike): boolean {
-  const { players } = context
-  for (const player of players) {
-    const viewers = player.views?.getViewers?.(building.i, building.j)
-    if (!viewers) continue
-    for (const viewerRef of viewers) {
-      if (typeof viewerRef === 'string') continue
-      const viewer = viewerRef as TrapSightViewer
-      if (viewer.label === building.label || viewer.isDead || viewer.isDestroyed) continue
-      if (viewer.family === 'unit' || viewer.family === 'building') return true
-    }
-  }
-  return false
 }
 
 function getTrapCell(building: RuntimeTrapBuilding): RuntimeCell | null {
@@ -134,6 +113,7 @@ export function recoverTrapBuilding(hero: GameContextLike['controls']['heroUnit'
   if (!hero || !isTrap(building)) return false
   const cell = getTrapCell(building)
   if (!isTrapCell(building, cell)) return false
+  playAudibleSoundCue(building, SOUND_CUES.building.trapRecover, { profile: 'surface' })
   addHeroInventoryItem(hero, 'trap')
   const containedAnimalType = building.containedAnimalType
   building.containedAnimalType = null

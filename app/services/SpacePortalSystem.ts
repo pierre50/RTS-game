@@ -1,4 +1,7 @@
+import { definedProperties } from '../lib/definedProperties'
 import { FAMILY_TYPES } from '../constants'
+import { SOUND_CUES } from '../constants/sounds'
+import { playAudibleSoundCue } from '../lib/audio/sound'
 import { getEntitySpaceId, getMapSpace, moveEntityToMapSpace, sameCellMapSpace } from '../lib/mapSpaces'
 import {
   createReservedPassageCellLookup,
@@ -100,7 +103,11 @@ type ForcedPortalBlocker = RuntimeEntity & {
   realDest?: RuntimeCell | RuntimeEntity | null
 }
 
-function prepareForcedPortalBlockerMove(blocker: ForcedPortalBlocker, context: GameContextLike, cell: RuntimeCell): void {
+function prepareForcedPortalBlockerMove(
+  blocker: ForcedPortalBlocker,
+  context: GameContextLike,
+  cell: RuntimeCell
+): void {
   blocker.context ??= context
   blocker.currentCell ??= cell
   blocker.stopInterval?.()
@@ -138,7 +145,11 @@ function forceMovePortalBlockerAway(context: GameContextLike, cell: RuntimeCell,
   return true
 }
 
-function forceClearPortalTargetForHero(context: GameContextLike, unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
+function forceClearPortalTargetForHero(
+  context: GameContextLike,
+  unit: UnitEntity,
+  cell: RuntimeCell | null | undefined
+): boolean {
   if (!isHeroControlled(unit) || !cell || !isPortalCell(cell)) return false
   if (canOccupyPortalCell(cell, unit)) return true
   if (clearStalePortalCellOccupancy(cell)) return true
@@ -208,6 +219,36 @@ function clearUnitSpacePortalRoute(unit: UnitEntity): void {
   unit.spacePortalState = null
 }
 
+function playPortalDoorSound(context: GameContextLike, unit: UnitEntity, portal: RuntimeMapSpacePortal): void {
+  const sourceSpace = getMapSpace(context.map, portal.sourceSpaceId)
+  const targetSpace = getMapSpace(context.map, portal.targetSpaceId)
+  if (!sourceSpace?.buildingLabel && !targetSpace?.buildingLabel) return
+
+  // Use the listener's side of the door, before the hero changes spaces.
+  const listenerSpaceId = getEntitySpaceId(context.controls?.heroUnit ?? unit)
+  const cell =
+    listenerSpaceId === portal.sourceSpaceId
+      ? portal.sourceCell
+      : listenerSpaceId === portal.targetSpaceId
+        ? portal.targetCell
+        : null
+  if (!cell) return
+  playAudibleSoundCue(
+    definedProperties({
+      context,
+      i: cell.i,
+      j: cell.j,
+      x: cell.x,
+      y: cell.y,
+      spaceId: listenerSpaceId,
+      owner: unit.owner,
+      visible: cell.visible,
+    }),
+    SOUND_CUES.building.doorOpen,
+    { profile: 'surface' }
+  )
+}
+
 export function transferUnitThroughSpacePortal(
   context: GameContextLike,
   unit: UnitEntity,
@@ -231,6 +272,7 @@ export function transferUnitThroughSpacePortal(
   const onTransferred = options.onTransferred ?? unit.spacePortalState?.onTransferred ?? null
   clearUnitSpacePortalRoute(unit)
   prepareUnitForSpaceTransfer(unit)
+  playPortalDoorSound(context, unit, portal)
   moveEntityToMapSpace(context.map, unit, targetSpace, arrivalCell)
   updateInstanceVisibility(unit)
   updateInstanceRenderVisibility(unit)

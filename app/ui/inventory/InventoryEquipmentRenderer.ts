@@ -1,3 +1,4 @@
+import { getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
 import { Assets } from 'pixi.js'
 import {
   HERO_FIBER_BANDAGE_ITEM,
@@ -8,7 +9,6 @@ import {
 } from '../../lib/hero/heroCrafting'
 import {
   equipHeroInventoryItem,
-  formatEquipmentStackLabel,
   getEquipmentSlot,
   getEquipmentStacks,
   getHeroEquipmentSlotLabelKey,
@@ -19,12 +19,11 @@ import {
 } from '../../lib/equipment/equipmentLoot'
 import { getPlaceableInventoryBuildingType } from '../../lib/hero/placeableInventoryItems'
 import { t } from '../../lib/lang'
-import { BUILDING_TYPES, RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES } from '../../constants'
-import { renderBuildingAvatar } from '../../lib/avatar'
-import { getBuildingAsset, getIconPath } from '../../lib'
-import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
-import { bindInventoryItemEvents, createInventorySection, createInventorySlot } from './InventorySlotRenderer'
-import { createEquipmentTooltip, createResourceTooltip } from './InventoryTooltips'
+import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES } from '../../constants'
+import { getBuildingAsset } from '../../lib'
+import { createInventorySection } from './InventorySlotRenderer'
+import { createInventoryBuildingIcon, createInventoryResourceIcon } from './InventoryItemIcons'
+import { createInventoryEquipmentRow, createInventoryResourceRow } from './InventoryItemRows'
 import type { MenuHost } from '../MenuHost'
 
 const BAG_ITEM_ICON_RESOURCES = {
@@ -51,26 +50,24 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
     amount: Math.max(0, Math.floor(resources[resource] ?? 0)),
     resource,
   })).filter(entry => entry.amount > 0)
+  const equipmentStacks = getEquipmentStacks(equipment)
   host.lootedEquipmentPanel.appendChild(
     createInventorySection({
       emptyText: t('inventoryEmptySlot'),
       title: t('inventoryBag'),
+      gridClassName: 'inventory-loot-list',
       renderItems: grid => {
         for (const { amount, resource } of resourceEntries) {
-          const icon = document.createElement('img')
-          icon.className = 'inventory-resource-icon'
-          icon.src = getIconPath(RESOURCE_ICON_IDS[resource].commodity)
-          icon.alt = ''
-          const slot = createInventorySlot({
-            className: 'inventory-loot-slot',
-            disabled: true,
-            icon,
-            label: `${t(resource)} x${amount}`,
-          })
-          menu.menuTooltip.bind(slot, createResourceTooltip(resource, amount))
-          grid.appendChild(slot)
+          grid.appendChild(
+            createInventoryResourceRow(menu, {
+              id: `inventory-resource-${resource}`,
+              disabled: true,
+              resource,
+              amount,
+            }).element
+          )
         }
-        for (const stack of getEquipmentStacks(equipment)) {
+        for (const stack of equipmentStacks) {
           grid.appendChild(createBagEquipmentSlot(host, stack.equipment, stack.count))
         }
       },
@@ -91,46 +88,28 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
   )
   const canPlace = Boolean(hero && placeableBuildingType)
   const iconResource = BAG_ITEM_ICON_RESOURCES[item as keyof typeof BAG_ITEM_ICON_RESOURCES]
-  let icon: HTMLCanvasElement | HTMLImageElement
-  if (iconResource) {
-    icon = document.createElement('img')
-    icon.className = 'inventory-slot-icon'
-    icon.src = getIconPath(RESOURCE_ICON_IDS[iconResource].commodity)
-    icon.alt = ''
-  } else {
-    icon = document.createElement('canvas')
-    icon.className = 'unit-avatar-frame inventory-slot-icon'
-    icon.width = 64
-    icon.height = 64
-    if (placeableBuildingType) {
-      renderBuildingAvatar(menu.context.app, placeableBuildingType, menu.context.player, icon)
-    } else {
-      renderEquipmentAvatarLazy(menu.context.app, item, icon, 'inventory', menu.context.performance)
-    }
-  }
-
-  const label = placeableBuildingType
-    ? count > 1
-      ? `${t(placeableBuildingType)} x${count}`
-      : t(placeableBuildingType)
-    : formatEquipmentStackLabel(item, count)
-
-  const slot = createInventorySlot({
-    className: 'inventory-loot-slot',
+  const icon = iconResource
+    ? createInventoryResourceIcon(iconResource)
+    : placeableBuildingType
+      ? createInventoryBuildingIcon(menu.context, placeableBuildingType)
+      : undefined
+  const { element } = createInventoryEquipmentRow(menu.context, menu, {
+    id: `inventory-equipment-${item}`,
     disabled: !canEquip && !canPlace && !canUseConsumable,
+    title: placeableBuildingType ? t(placeableBuildingType) : undefined,
+    equipment: item,
+    count,
     icon,
-    label,
     onAction: mode => {
       if (canUseConsumable) {
         if (!hero || !useHeroConsumableItem(hero, item)) return
-        menu.playUiClick()
         menu.updateHeroStatus?.(hero)
         host.close()
         return
       }
       if (canPlace) {
         if (!hero || !placeableBuildingType) return
-        const config = menu.context.player.config.buildings[placeableBuildingType]
+        const config = getPlayerBuildingConfig(menu.context.player, placeableBuildingType)
         if (!config) return
         const assets =
           placeableBuildingType === BUILDING_TYPES.farm
@@ -143,19 +122,16 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
           inventoryItem: item,
           type: placeableBuildingType,
         })
-        menu.playUiClick()
         host.close()
         return
       }
 
       const amount = mode === 'all' ? count : 1
       if (!equipHeroInventoryItem(hero, item, amount)) return
-      menu.playUiClick()
       host.renderTools()
     },
   })
-  menu.menuTooltip.bind(slot, createEquipmentTooltip(item, count))
-  return slot
+  return element
 }
 
 export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendererHost): void {
@@ -173,48 +149,36 @@ export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendere
           const equipment = hero.inventory?.equipped?.[slotId]
           const requiresHelmet = slotId === 'helmetDecor' && !hero.inventory?.equipped?.helmet
           const disabled = !equipment || requiresHelmet
-          const button = document.createElement('button')
-          button.type = 'button'
-          button.className = 'inventory-slot ui-btn inventory-equipment-slot'
-          button.classList.toggle('empty', !equipment)
-          button.disabled = disabled
-          if (equipment && !disabled) {
-            bindInventoryItemEvents(button, mode => {
-              const amount = mode === 'all' ? getHeroEquippedItemCount(hero, slotId) : 1
-              if (!unequipHeroInventorySlot(hero, slotId, amount)) return
-              menu.playUiClick()
-              host.renderTools()
-            })
-          }
-
-          const iconWrap = document.createElement('span')
-          iconWrap.className = 'inventory-equipped-icon-wrap'
-          if (equipment) {
-            const icon = document.createElement('canvas')
-            icon.className = 'unit-avatar-frame inventory-slot-icon'
-            icon.width = 64
-            icon.height = 64
-            renderEquipmentAvatarLazy(menu.context.app, equipment, icon, 'inventory', menu.context.performance)
-            iconWrap.appendChild(icon)
-          }
-
-          const slotLabel = document.createElement('div')
-          slotLabel.className = 'inventory-slot-type'
-          slotLabel.textContent = t(getHeroEquipmentSlotLabelKey(slotId))
-
-          const label = document.createElement('div')
-          label.className = 'inventory-slot-label'
-          label.textContent = equipment
-            ? formatEquipmentStackLabel(equipment, getHeroEquippedItemCount(hero, slotId))
-            : t('inventoryEmptySlot')
-
-          button.appendChild(iconWrap)
-          button.appendChild(slotLabel)
-          button.appendChild(label)
-          if (equipment) {
-            menu.menuTooltip.bind(button, createEquipmentTooltip(equipment, getHeroEquippedItemCount(hero, slotId)))
-          }
-          grid.appendChild(button)
+          const count = equipment ? getHeroEquippedItemCount(hero, slotId) : 0
+          const { element } = equipment
+            ? createInventoryEquipmentRow(menu.context, menu, {
+                id: `inventory-equipped-${slotId}`,
+                className: 'inventory-equipped-row',
+                disabled,
+                equipment,
+                count,
+                descriptionPrefix: t(getHeroEquipmentSlotLabelKey(slotId)),
+                onAction: !disabled
+                  ? mode => {
+                      const amount = mode === 'all' ? count : 1
+                      if (!unequipHeroInventorySlot(hero, slotId, amount)) return
+                      host.renderTools()
+                    }
+                  : undefined,
+              })
+            : createInventoryEquipmentRow(menu.context, menu, {
+                id: `inventory-equipped-${slotId}`,
+                className: 'inventory-equipped-row',
+                disabled,
+                equipment: '',
+                title: t(getHeroEquipmentSlotLabelKey(slotId)),
+                description: t('inventoryEmptySlot'),
+                meta: '',
+                count: 0,
+                showTooltip: false,
+              })
+          element.classList.toggle('empty', !equipment)
+          grid.appendChild(element)
         }
       },
     })

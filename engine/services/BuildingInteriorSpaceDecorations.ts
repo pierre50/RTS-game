@@ -135,7 +135,31 @@ function getInteriorRoomCenter(space: BuildingInteriorRuntimeSpace): { i: number
 
 export function ensureInteriorDefaultBuildings(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
   if (space.defaultBuildingsPlaced) return
-  if (space.building.type === BUILDING_TYPES.stable) {
+  const saved = space.building.interiorBuildings
+  if (saved) {
+    const owner = space.building.owner
+    if (!owner) throw new Error('Cannot restore building interior without an owner')
+    for (const building of saved) {
+      // Retire the old automatically generated cave props, keeping player-placed contents.
+      if (space.building.type === BUILDING_TYPES.cave && building.label?.startsWith(`${space.id}:default:`)) continue
+      if (!space.grid[building.i]?.[building.j]) {
+        throw new Error(
+          `Cannot restore interior building ${building.label ?? building.type} on missing interior cell (${building.i}, ${building.j})`
+        )
+      }
+      const contentOwner = building.interiorOwner
+        ? context.players.find(
+            player => (player.label || player.factionId || player.name || 'owner') === building.interiorOwner
+          )
+        : owner
+      if (!contentOwner) throw new Error(`Missing interior owner: ${building.interiorOwner}`)
+      contentOwner.createBuilding({ ...building, spaceId: space.id, skipBuiltEffects: true, deferTrainingResume: true })
+    }
+    delete space.building.interiorBuildings
+    space.defaultBuildingsPlaced = true
+    return
+  }
+  if (space.building.type === BUILDING_TYPES.stable || space.building.type === BUILDING_TYPES.cave) {
     space.defaultBuildingsPlaced = true
     return
   }

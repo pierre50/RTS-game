@@ -227,6 +227,7 @@ test('mount horse order sends a soldier to a matching stable', () => {
     units: ['Bowman'],
   }
   const owner = createOwner([stable])
+  owner.age = 1
   stable.owner = owner
   const bowman = {
     context: { menu: { showMessage() {} } },

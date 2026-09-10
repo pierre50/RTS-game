@@ -104,7 +104,7 @@ function loadPlayer(overrides = {}) {
         FADE_DURATION_MS: 2000,
       }
     }
-    if (request === '../../config/playerConfig') return { createPlayerData: () => ({ config: {}, techs: {} }) }
+    if (request === '../../config/playerConfig') return { createPlayerData: () => ({}) }
     if (request === '../../config/name') return { getRandomUnitName: overrides.getRandomUnitName ?? (() => 'Unit') }
     if (request === '../../lib/entities/entityFade') return { fadeIn: overrides.fadeIn ?? (() => {}) }
     if (request === '../../lib/chief') {
@@ -128,8 +128,8 @@ function loadPlayer(overrides = {}) {
     if (request === './PlayerBuildingPlacement') {
       return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerBuildingPlacement.ts'))
     }
-    if (request === './PlayerTechnologies') {
-      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerTechnologies.ts'))
+    if (request === './PlayerProgression') {
+      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerProgression.ts'))
     }
     return requireFromTsFile(request, filename, {}, moduleCache)
   }
@@ -169,53 +169,13 @@ test('unit creation passes unit gender to random civilization names', () => {
   assert.deepEqual(calls, [{ civ: 'Latium', gender: 'female', sample: 0.25 }])
 })
 
-test('age-based auto technologies stop before age 3 wall upgrades', () => {
-  const Player = loadPlayer()
-  const player = {
-    age: 2,
-    technologies: [],
-    techs: {
-      ToolAge: { key: 'age', value: 1 },
-      BronzeAge: { key: 'age', value: 2 },
-      IronAge: { key: 'age', value: 3 },
-      ResearchSmallWall: {
-        key: 'technologies',
-        conditions: [{ key: 'age', op: '>=', value: 1 }],
-      },
-      UpgradeMediumWall: {
-        key: 'technologies',
-        conditions: [
-          { key: 'age', op: '>=', value: 2 },
-          { key: 'technologies', op: 'includes', value: 'ResearchSmallWall' },
-        ],
-      },
-      UpgradeFortification: {
-        key: 'technologies',
-        conditions: [
-          { key: 'age', op: '>=', value: 3 },
-          { key: 'technologies', op: 'includes', value: 'UpgradeMediumWall' },
-        ],
-      },
-    },
-    units: [],
-    buildings: [],
-    updateConfig: () => {},
-  }
-
-  Object.setPrototypeOf(player, Player.prototype)
-
-  const unlocked = player.applyEligibleTechnologies()
-
-  assert.deepEqual(unlocked, ['ResearchSmallWall', 'UpgradeMediumWall'])
-  assert.deepEqual(player.technologies, ['ResearchSmallWall', 'UpgradeMediumWall'])
-})
-
-test('village technology unlocks when reaching 20 living villagers', () => {
+test('population objectives follow living villagers without granting technologies', () => {
   const Player = loadPlayer()
   const messages = []
   const player = {
     age: 0,
     technologies: [],
+    completedObjectives: [],
     techs: {
       Village: {
         key: 'technologies',
@@ -233,7 +193,7 @@ test('village technology unlocks when reaching 20 living villagers', () => {
         showMessage: (message, type) => messages.push([message, type]),
         updateActionTarget: () => messages.push(['action-target']),
         updateTopbar: () => messages.push(['topbar']),
-        syncTechnologyProgress: () => messages.push(['tech-progress']),
+        syncObjectiveProgress: () => messages.push(['tech-progress']),
       },
     },
     isPlayed: true,
@@ -242,48 +202,29 @@ test('village technology unlocks when reaching 20 living villagers', () => {
   Object.setPrototypeOf(player, Player.prototype)
 
   assert.equal(player.villagerPopulation, 19)
-  assert.deepEqual(player.unlockVillagerPopulationMilestoneTechnologies(), [])
+  assert.equal(player.updatePopulationObjectives(), undefined)
   player.units[3].isDead = false
 
   assert.equal(player.villagerPopulation, 20)
-  assert.deepEqual(player.unlockVillagerPopulationMilestoneTechnologies(), ['Village'])
-  assert.deepEqual(player.technologies, ['Village'])
+  assert.equal(player.updatePopulationObjectives(), undefined)
+  assert.deepEqual(player.completedObjectives, ['reachVillage'])
+  assert.deepEqual(player.technologies, [])
   assert.deepEqual(messages, [
-    ['technologyVillageUnlocked', 'success'],
+    ['Objectif accompli : Village : atteindre 20 villageois', 'success'],
     ['action-target'],
     ['topbar'],
     ['tech-progress'],
   ])
-})
-
-test('tech all ignores building prerequisites but keeps age requirements', () => {
-  const Player = loadPlayer()
-  const player = {
-    age: 1,
-    hasBuilt: [],
-    autoTechnologyByAge: true,
-    config: {
-      buildings: {
-        ArcheryRange: {
-          conditions: [
-            { key: 'age', op: '>=', value: 1 },
-            { key: 'hasBuilt', op: 'includes', value: 'Barracks' },
-          ],
-        },
-        GovernmentCenter: {
-          conditions: [
-            { key: 'age', op: '>=', value: 2 },
-            { key: 'hasBuilt', op: 'includes', value: 'Market' },
-          ],
-        },
-      },
-    },
-  }
-
-  Object.setPrototypeOf(player, Player.prototype)
-
-  assert.equal(player.isBuildingEligible('ArcheryRange'), true)
-  assert.equal(player.isBuildingEligible('GovernmentCenter'), false)
+  player.isPlayed = false
+  player.units = Array.from({ length: 49 }, () => ({ type: 'Villager' }))
+  player.updatePopulationObjectives()
+  assert.deepEqual(player.completedObjectives, ['reachVillage'])
+  player.units.push({ type: 'Villager' })
+  player.updatePopulationObjectives()
+  assert.deepEqual(player.completedObjectives, ['reachVillage', 'reachTown'])
+  player.units = Array.from({ length: 100 }, () => ({ type: 'Villager' }))
+  player.updatePopulationObjectives()
+  assert.deepEqual(player.completedObjectives, ['reachVillage', 'reachTown'])
 })
 
 test('building prerequisites still apply without tech all', () => {
@@ -309,7 +250,7 @@ test('building prerequisites still apply without tech all', () => {
   assert.equal(player.isBuildingEligible('ArcheryRange'), false)
 })
 
-test('captured buildings keep their civ but advance visual age on owner age changes', () => {
+test('existing buildings keep their construction age and HP when their owner advances', () => {
   const Player = loadPlayer()
   const calls = []
   const player = {
@@ -317,6 +258,9 @@ test('captured buildings keep their civ but advance visual age on owner age chan
     autoTechnologyByAge: false,
     buildings: [
       {
+        buildingAge: 1,
+        totalHitPoints: 125,
+        hitPoints: 70,
         assetAge: 1,
         assetCiv: 'Kemet',
         finalTexture() {
@@ -344,47 +288,16 @@ test('captured buildings keep their civ but advance visual age on owner age chan
 
   player.onAgeChange()
 
-  assert.equal(player.buildings[0].assetAge, 3)
+  assert.equal(player.buildings[0].assetAge, 1)
+  assert.equal(player.buildings[0].buildingAge, 1)
+  assert.equal(player.buildings[0].totalHitPoints, 125)
+  assert.equal(player.buildings[0].hitPoints, 70)
   assert.equal(player.buildings[0].assetCiv, 'Kemet')
   assert.equal(player.buildings[1].assetAge, undefined)
   assert.deepEqual(calls, [
-    ['captured', 'Kemet', 3],
+    ['captured', 'Kemet', 1],
     ['native', undefined, undefined],
   ])
-})
-
-test('unlocking age technology calls age change handler with player context', () => {
-  const Player = loadPlayer()
-  const calls = []
-  const player = {
-    age: 0,
-    technologies: [],
-    techs: {
-      ToolAge: { key: 'age', value: 1 },
-    },
-    buildings: [
-      {
-        finalTexture() {
-          calls.push(['building', this.assetAge])
-        },
-        isBuilt: true,
-        isDead: false,
-      },
-    ],
-    context: {
-      menu: {},
-      players: [],
-    },
-    isPlayed: false,
-  }
-  player.context.players = [player]
-  Object.setPrototypeOf(player, Player.prototype)
-
-  assert.equal(player.unlockTechnology('ToolAge'), true)
-
-  assert.equal(player.age, 1)
-  assert.equal(player.buildings[0].assetAge, undefined)
-  assert.deepEqual(calls, [['building', undefined]])
 })
 
 test('planting wheat fields refreshes each planted cell before fading resources in', () => {
@@ -433,6 +346,7 @@ test('planting wheat fields refreshes each planted cell before fading resources 
   Object.setPrototypeOf(player, Player.prototype)
 
   assert.equal(player.plantWheatField(0, 0), true)
+  assert.deepEqual(player.completedObjectives, ['createWheatField'])
   assert.deepEqual(updated, ['0,0', '0,1', '1,0', '1,1'])
   assert.deepEqual(faded, ['0,0', '0,1', '1,0', '1,1'])
   assert.deepEqual(

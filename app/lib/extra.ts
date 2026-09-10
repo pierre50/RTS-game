@@ -10,10 +10,8 @@ export {
 } from './entities/spriteTextures'
 export type { UnitTextureInstance } from './entities/spriteTextures'
 import type { GridPosition } from '../types/grid'
-import type { ConfigValue } from '../types/config'
 import type { RenderableInstance } from './grid/visibility'
 
-type MutableConfigObject = { [key: string]: ConfigValue | object }
 type TimeoutId = ReturnType<typeof window.setTimeout> | null
 type TimerArg = string | number | boolean | object | null | undefined
 type TimerThis = object | void
@@ -125,71 +123,6 @@ export function capitalizeFirstLetter(string: string): string {
     throw new TypeError('Expected a string')
   }
   return string.length > 0 ? string.charAt(0).toUpperCase() + string.slice(1) : ''
-}
-
-type NumericOperation = {
-  key: string
-  op: '*' | '+'
-  value: number
-}
-
-export const updateObject = (target: MutableConfigObject, operation: NumericOperation): void => {
-  if (typeof target !== 'object' || target === null) {
-    throw new Error('Target must be a non-null object.')
-  }
-
-  if (!operation || !operation.key || !operation.op || typeof operation.value !== 'number') {
-    throw new Error('Invalid operation: key, op, and value are required.')
-  }
-
-  function isRecord(value: object | ConfigValue): value is MutableConfigObject {
-    return typeof value === 'object' && value !== null
-  }
-
-  function setToValue(obj: MutableConfigObject, value: number, path: string): void {
-    const keys = path.split('.')
-    for (let i = 0; i < keys.length - 1; i++) {
-      const next = obj[keys[i]]
-      if (!isRecord(next)) {
-        throw new Error(`Path not found: ${keys.slice(0, i + 1).join('.')}`)
-      }
-      obj = next
-    }
-    obj[keys[keys.length - 1]] = value
-  }
-
-  const resolvedKey =
-    operation.key === 'quantityMax' && target.quantityMax === undefined && target.totalQuantity !== undefined
-      ? 'totalQuantity'
-      : operation.key
-
-  const keys = resolvedKey.split('.')
-  let result: ConfigValue | MutableConfigObject | object = target
-
-  for (const key of keys) {
-    if (!isRecord(result)) {
-      throw new Error(`Key not found: ${resolvedKey}`)
-    }
-    if (result[key] === undefined) {
-      throw new Error(`Key not found: ${resolvedKey}`)
-    }
-    result = result[key]
-  }
-
-  if (typeof result !== 'number') {
-    throw new Error(`Value is not numeric: ${resolvedKey}`)
-  }
-
-  switch (operation.op) {
-    case '*':
-      setToValue(target, result * Number(operation.value), resolvedKey)
-      break
-    case '+':
-      setToValue(target, result + Number(operation.value), resolvedKey)
-      break
-    default:
-      throw new Error(`Invalid operation: ${operation.op}`)
-  }
 }
 
 type VisibleInstance = GridPosition & {

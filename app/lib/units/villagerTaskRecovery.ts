@@ -38,7 +38,7 @@ function canUseStoredDestination(
 ): dest is RuntimeEntity | RuntimeCell {
   if (!dest) return false
   if (!isRuntimeEntity(dest)) return true
-  if (dest.isDestroyed || dest.isDead) return false
+  if (dest.isDestroyed || (dest.isDead && action !== ACTION_TYPES.takemeat)) return false
   if (action && unit.getActionCondition?.(dest, action) === false) return false
   return true
 }
@@ -51,9 +51,7 @@ function sendToDestinationCell(unit: UnitEntity, dest: RuntimeEntity, action: st
     unit,
     cell,
     action ?? null,
-    unit.sendToEvt
-      ? () => unit.sendToEvt?.(cell, action ?? null, { forceRepath: true, preserveAutonomy: true })
-      : null
+    unit.sendToEvt ? () => unit.sendToEvt?.(cell, action ?? null, { forceRepath: true, preserveAutonomy: true }) : null
   )
 }
 
@@ -101,9 +99,7 @@ function routeStoredTask(unit: UnitEntity, task: VillagerStoredTask, dest: Runti
       unit,
       dest,
       action,
-      unit.sendToEvt
-        ? () => unit.sendToEvt?.(dest, action, { forceRepath: true, preserveAutonomy: true })
-        : null
+      unit.sendToEvt ? () => unit.sendToEvt?.(dest, action, { forceRepath: true, preserveAutonomy: true }) : null
     )
   }
 
@@ -111,11 +107,18 @@ function routeStoredTask(unit: UnitEntity, task: VillagerStoredTask, dest: Runti
     case ACTION_TYPES.farm:
       return issueTaskCommand(unit, dest, action, unit.sendToFarm ? () => unit.sendToFarm?.(dest, true) : null)
     case ACTION_TYPES.forageberry:
-      return issueTaskCommand(unit, dest, action, unit.sendToBerrybush ? () => unit.sendToBerrybush?.(dest, true) : null)
+      return issueTaskCommand(
+        unit,
+        dest,
+        action,
+        unit.sendToBerrybush ? () => unit.sendToBerrybush?.(dest, true) : null
+      )
     case ACTION_TYPES.chopwood:
       return issueTaskCommand(unit, dest, action, unit.sendToTree ? () => unit.sendToTree?.(dest, true) : null)
     case ACTION_TYPES.takemeat:
       return issueTaskCommand(unit, dest, action, unit.sendToTakeMeat ? () => unit.sendToTakeMeat?.(dest, true) : null)
+    case ACTION_TYPES.hunt:
+      return issueTaskCommand(unit, dest, action, unit.sendToHunt ? () => unit.sendToHunt?.(dest, true) : null)
     case ACTION_TYPES.minestone:
     case ACTION_TYPES.minegold:
     case ACTION_TYPES.minecopper:
@@ -131,9 +134,7 @@ function routeStoredTask(unit: UnitEntity, task: VillagerStoredTask, dest: Runti
         unit,
         dest,
         action,
-        unit.sendToEvt
-          ? () => unit.sendToEvt?.(dest, action, { forceRepath: true, preserveAutonomy: true })
-          : null
+        unit.sendToEvt ? () => unit.sendToEvt?.(dest, action, { forceRepath: true, preserveAutonomy: true }) : null
       )
     }
   }

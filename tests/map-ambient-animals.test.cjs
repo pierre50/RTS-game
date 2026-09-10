@@ -13,6 +13,7 @@ function loadModule(relativePath, mocks) {
 function loadMapGeneration() {
   return loadModule('app/classes/map/MapGeneration.ts', {
     './generation/PreparedMapContent': preparedContent,
+    './MapOfflineWorldSimulation': { applyOfflineWorldSimulation: () => {} },
     'pixi.js': {
       Assets: {
         cache: {

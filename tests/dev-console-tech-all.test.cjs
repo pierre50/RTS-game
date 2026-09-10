@@ -125,52 +125,6 @@ test('listGlobalPlayers falls back to runtime players without campaign roster', 
   assert.match(result.message, /Enemy .* relation=hostile .* local/)
 })
 
-test('tech all unlocks only technologies available at the current age', () => {
-  const { applyAllTechnologies } = loadPlayerActions()
-  let editorPanelUpdates = 0
-  let topbarUpdates = 0
-  const player = {
-    age: 1,
-    technologies: [],
-    units: [],
-    buildings: [],
-    techs: {
-      ToolAge: { key: 'age', value: 1 },
-      BronzeAge: { key: 'age', value: 2 },
-      IronAge: { key: 'age', value: 3 },
-      Wheel: { key: 'technologies', conditions: [{ key: 'age', op: '>=', value: 1 }] },
-      Writing: { key: 'technologies', conditions: [{ key: 'age', op: '>=', value: 1 }] },
-      Metalworking: {
-        key: 'technologies',
-        conditions: [
-          { key: 'age', op: '>=', value: 2 },
-          { key: 'technologies', op: 'includes', value: 'Wheel' },
-        ],
-      },
-    },
-  }
-  const context = {
-    player,
-    menu: {
-      updateActionTarget: () => {
-        editorPanelUpdates++
-      },
-      updateTopbar: () => {
-        topbarUpdates++
-      },
-    },
-  }
-
-  const result = applyAllTechnologies(context)
-
-  assert.deepEqual(result, { ok: true, message: 'Unlocked 2 technologies' })
-  assert.equal(player.age, 1)
-  assert.deepEqual(player.technologies, ['Wheel', 'Writing'])
-  assert.equal(player.autoTechnologyByAge, true)
-  assert.equal(editorPanelUpdates, 2)
-  assert.equal(topbarUpdates, 2)
-})
-
 test('hero invincible command toggles the active hero dev damage immunity', () => {
   const { toggleHeroInvincible } = loadPlayerActions()
   const hero = { hitPoints: 7 }
@@ -189,52 +143,6 @@ test('hero invincible command reports when no active hero exists', () => {
     ok: false,
     message: 'No active hero found',
   })
-})
-
-test('tech all auto-unlocks the next age tier when age increases', () => {
-  const { applyAllTechnologies, setAge } = loadPlayerActions()
-  const player = {
-    age: 1,
-    technologies: [],
-    units: [],
-    buildings: [],
-    onAgeChange: () => {},
-    techs: {
-      ToolAge: { key: 'age', value: 1 },
-      BronzeAge: { key: 'age', value: 2 },
-      IronAge: { key: 'age', value: 3 },
-      Wheel: { key: 'technologies', conditions: [{ key: 'age', op: '>=', value: 1 }] },
-      Writing: { key: 'technologies', conditions: [{ key: 'age', op: '>=', value: 1 }] },
-      Metalworking: {
-        key: 'technologies',
-        conditions: [
-          { key: 'age', op: '>=', value: 2 },
-          { key: 'technologies', op: 'includes', value: 'Wheel' },
-        ],
-      },
-      Architecture: {
-        key: 'technologies',
-        conditions: [
-          { key: 'age', op: '>=', value: 2 },
-          { key: 'technologies', op: 'includes', value: 'Metalworking' },
-        ],
-      },
-    },
-  }
-  const context = {
-    player,
-    menu: {
-      updateActionTarget: () => {},
-      updateTopbar: () => {},
-    },
-  }
-
-  applyAllTechnologies(context)
-  const result = setAge(context, 2)
-
-  assert.deepEqual(result, { ok: true, message: 'Age set to 2' })
-  assert.equal(player.age, 2)
-  assert.deepEqual(player.technologies, ['Wheel', 'Writing', 'Metalworking', 'Architecture'])
 })
 
 test('setAge refreshes existing unit equipment visuals', () => {

@@ -430,11 +430,11 @@ test('villagers stay awake before 18h', () => {
   assert.equal(villager.shelterState, undefined)
 })
 
-test('awake late risers do not go back to sleep when the map starts at 8h', () => {
+test('awake late risers do not go back to sleep during the 06:00 wake window', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const villager = createUnit(owner, { label: 'villager-4' })
-  const context = createContext(8, [owner], calls)
+  const context = createContext(6, [owner], calls)
   villager.context = context
   const UnitRestSystem = loadUnitRestSystem(calls)
 
@@ -1325,7 +1325,7 @@ test('runtime interior sleepers settle at their sleep spot without re-entering s
   )
 })
 
-test('villagers wake at 8h and resume their previous autonomous job', () => {
+test('villagers wake after 6h and resume their previous autonomous job after lingering', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
@@ -1340,7 +1340,7 @@ test('villagers wake at 8h and resume their previous autonomous job', () => {
     previousAction: 'chopwood',
     previousDest: null,
   }
-  const context = createContext(9, [owner], calls)
+  const context = createContext(7, [owner], calls, { minute: 20 })
   villager.context = context
   const entry = context.map.grid[6][7]
   const UnitRestSystem = loadUnitRestSystem(calls)
@@ -1366,7 +1366,7 @@ test('villagers wake at 8h and resume their previous autonomous job', () => {
   )
 })
 
-test('villagers wake at 8h and resume their stored gathering target before generic autonomy', () => {
+test('villagers wake after 6h and resume their stored gathering target before generic autonomy', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
@@ -1393,7 +1393,7 @@ test('villagers wake at 8h and resume their stored gathering target before gener
       this.path = dest ? [{ i: dest.i, j: dest.j }] : []
     },
   })
-  const context = createContext(9, [owner], calls)
+  const context = createContext(7, [owner], calls, { minute: 20 })
   villager.context = context
   const UnitRestSystem = loadUnitRestSystem(calls)
 

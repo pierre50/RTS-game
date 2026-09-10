@@ -1,3 +1,4 @@
+import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import type { Container } from 'pixi.js'
 import { BUILDING_TYPES } from '../constants'
 import {
@@ -38,7 +39,7 @@ export class BuildingPlacementRules {
         context: { map, player },
       },
     } = this
-    if (!cell) return false
+    if (!cell || constructionTerritoryBlocker(controls.context, player)) return false
     const space = getMapSpace(map, cell.spaceId)
     const grid = space?.grid ?? map.grid
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
@@ -84,6 +85,7 @@ export class BuildingPlacementRules {
   }
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     if (
+      constructionTerritoryBlocker(this.controls.context, owner) ||
       !cell ||
       this.isHeroOnCell(cell) ||
       !cell.visible ||

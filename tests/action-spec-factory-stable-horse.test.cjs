@@ -16,6 +16,8 @@ function loadActionSpecFactory(options = {}) {
   const mocks = {
     'pixi.js': { Assets: {} },
     '../constants': {
+      PLAYER_TYPES: { human: 'Human', ai: 'AI', bandits: 'Bandits', gaia: 'Gaia' },
+      ACTION_TYPES: { flee: 'flee' },
       AGE_TECHNOLOGIES: new Set(),
       AGE_UP_ENABLED: true,
       BUILDING_TYPES: { stable: 'Stable' },
@@ -273,16 +275,21 @@ test('resource-gated building button is disabled without showing a missing resou
   assert.deepEqual(messages, [])
 })
 
-test('resource-gated technology button is disabled without showing a missing resource alert', () => {
+test('territory blocks both the construction button and its direct hotkey callback until defeat', () => {
   const messages = []
-  const { factory, player } = createFactory({ canAfford: () => false, hero: {}, messages })
-  player.techs.Farming = { cost: { food: 100 }, icon: 'farming' }
-  player.buyTechnology = () => {
-    throw new Error('buyTechnology should not run')
-  }
-
-  const button = factory.getActionTechnologyButton('Farming')
+  const { factory, player } = createFactory({ hero: {}, messages })
+  player.config.buildings.House = { cost: { wood: 30 }, size: 2 }
+  player.label = 'hero'
+  const resident = { label: 'resident', name: 'Hellas', type: 'AI', units: [{ hitPoints: 100 }], buildings: [{ hitPoints: 100 }] }
+  factory.menu.context.players = [player, resident]
+  const button = factory.getActionBuildingButton('House')
   assert.equal(button.disabled(), true)
   button.onClick()
-  assert.deepEqual(messages, [])
+  assert.equal(factory.menu.mouseBuilding, undefined)
+  assert.deepEqual(messages, [['constructionTerritoryOccupied', 'warning']])
+  resident.units = []
+  resident.buildings = []
+  assert.equal(button.disabled(), false)
+  button.onClick()
+  assert.equal(factory.menu.mouseBuilding.type, 'House')
 })

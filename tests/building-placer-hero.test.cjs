@@ -55,7 +55,7 @@ function loadBuildingPlacer() {
       payCost: () => {},
     },
     '../constants': {
-      BUILDING_TYPES: { farm: 'Farm', smallWall: 'SmallWall' },
+      BUILDING_TYPES: { farm: 'Farm', smallWall: 'SmallWall', trap: 'Trap' },
       COLOR_GREEN: 0x00ff00,
       COLOR_RED: 0xff0000,
       LABEL_TYPES: { sprite: 'sprite' },
@@ -250,3 +250,45 @@ test('interior construction exploration follows local visibility', () => {
   cell.visible = true
   assert.equal(placer.isExploredForPlacement(cell, owner), false)
 })
+
+for (const scenario of [
+  { name: 'another building sees the trap', viewers: [{ family: 'building', label: 'house' }], warning: true },
+  { name: 'only a unit sees the trap', viewers: [{ family: 'unit', label: 'hero' }], warning: false },
+  { name: 'only the trap sees itself', viewers: [{ family: 'building', label: 'trap' }], warning: false },
+  {
+    name: 'a destroyed building sees the trap',
+    viewers: [{ family: 'building', label: 'house', isDestroyed: true }],
+    warning: false,
+  },
+  { name: 'placement fails', viewers: [{ family: 'building', label: 'house' }], fails: true, warning: false },
+]) {
+  test(`trap placement warning: ${scenario.name}`, () => {
+    const BuildingPlacer = loadBuildingPlacer()
+    const cell = createGrid(3)[1][1]
+    const messages = []
+    let removed = false
+    const controls = {
+      context: {
+        map: {},
+        players: [{ views: { getViewers: () => new Set(scenario.viewers) } }],
+        player: {
+          buyBuilding: () => {
+            if (scenario.fails) return false
+            cell.has = { family: 'building', label: 'trap' }
+            return true
+          },
+        },
+        menu: { showMessage: (...args) => messages.push(args) },
+      },
+      mouseBuilding: { type: 'Trap' },
+      removeMouseBuilding: () => {
+        removed = true
+      },
+    }
+    const placer = new BuildingPlacer(controls)
+    placer.canPlaceMouseBuilding = () => true
+    placer.handleMouseUp(cell)
+    assert.deepEqual(messages, scenario.warning ? [['trapPlacementObservedWarning', 'warning']] : [])
+    assert.equal(removed, !scenario.fails)
+  })
+}

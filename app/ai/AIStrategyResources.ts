@@ -1,8 +1,8 @@
-import type { AIResourceAmount, AIResourceName } from './types'
-const RESOURCE_NAMES: AIResourceName[] = ['wood', 'food', 'gold', 'stone']
-export function resourceEntries(cost: AIResourceAmount = {}): [AIResourceName, number][] {
-  return RESOURCE_NAMES.map(resource => [resource, cost[resource]] as [AIResourceName, number | undefined]).filter(
-    (entry): entry is [AIResourceName, number] => typeof entry[1] === 'number'
+import type { AIResourceAmount, AICostResourceName } from './types'
+const RESOURCE_NAMES: AICostResourceName[] = ['wood', 'food', 'gold', 'stone', 'fiber', 'leather']
+export function resourceEntries(cost: AIResourceAmount = {}): [AICostResourceName, number][] {
+  return RESOURCE_NAMES.map(resource => [resource, cost[resource]] as [AICostResourceName, number | undefined]).filter(
+    (entry): entry is [AICostResourceName, number] => typeof entry[1] === 'number'
   )
 }
 

@@ -1,0 +1,37 @@
+{
+  "frames": {
+    "000_graphics_buildings_cave.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 176,
+        "h": 132
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 176,
+        "h": 132
+      },
+      "sourceSize": {
+        "w": 176,
+        "h": 132
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      }
+    }
+  },
+  "meta": {
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 176,
+      "h": 132
+    },
+    "scale": 1
+  }
+}

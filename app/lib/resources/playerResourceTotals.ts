@@ -7,6 +7,7 @@ type StorageResourceName = (typeof RESOURCE_STORAGE_NAMES)[number]
 type ResourceName = StorageResourceName | 'food'
 
 const FOOD_DEDUCTION_ORDER: readonly ('wheat' | 'meat' | 'berry')[] = ['wheat', 'meat', 'berry']
+const RESOURCE_STOCKPILE_BUILDING_TYPES = new Set<string>([BUILDING_TYPES.chest, BUILDING_TYPES.storagePit])
 
 export function expandLegacyFoodAmount(amount: ResourceAmount | null | undefined): ResourceAmount {
   const { food, ...rest } = amount ?? {}
@@ -62,7 +63,7 @@ function createEmptyResourceTotals(): Record<ResourceName, number> {
 }
 
 function isOwnedChest(building: BuildingEntity, player: ResourceStoreOwner): boolean {
-  if (building.type !== BUILDING_TYPES.chest) return false
+  if (!RESOURCE_STOCKPILE_BUILDING_TYPES.has(building.type)) return false
   if (building.isDead || building.isDestroyed) return false
   if (!building.owner) return true
   return building.owner === player || building.owner.label === player.label
@@ -86,6 +87,10 @@ function getPlayerStartingResourceDepots(player: ResourceStoreOwner | null | und
   return (player.buildings ?? []).filter(building => isOwnedStartingResourceDepot(building, player))
 }
 
+export function getPlayerResourceStores(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
+  return [...new Set([...getPlayerResourceChests(player), ...getPlayerStartingResourceDepots(player)])]
+}
+
 function isOwnedHero(unit: UnitEntity, player: ResourceStoreOwner): boolean {
   if (unit.type !== UNIT_TYPES.hero) return false
   if (unit.isDead || unit.isDestroyed) return false
@@ -93,7 +98,10 @@ function isOwnedHero(unit: UnitEntity, player: ResourceStoreOwner): boolean {
   return unit.owner === player || unit.owner.label === player.label
 }
 
-function getPlayerResourceHeroes(player: ResourceStoreOwner | null | undefined, extraHero?: UnitEntity | null): UnitEntity[] {
+function getPlayerResourceHeroes(
+  player: ResourceStoreOwner | null | undefined,
+  extraHero?: UnitEntity | null
+): UnitEntity[] {
   if (!player && !extraHero) return []
   const heroes = new Set<UnitEntity>()
   if (player) {
@@ -118,14 +126,14 @@ export function hasPlayerResourceChests(player: unknown): player is ResourceStor
   return Boolean(player && typeof player === 'object' && Array.isArray((player as ResourceStoreOwner).buildings))
 }
 
-function getPlayerChestResourceTotals(
+function getPlayerStoredResourceTotals(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   options: ResourceTotalOptions = {}
 ): Record<ResourceName, number> {
   const totals = createEmptyResourceTotals()
   if (!player) return totals
 
-  for (const building of getPlayerResourceChests(player)) {
+  for (const building of getPlayerResourceStores(player)) {
     if (options.visibleOnly && !isVisibleStorageBuilding(building, player)) continue
     const resources = building.inventory?.resources
     if (!resources) continue
@@ -141,17 +149,8 @@ export function getPlayerResourceTotals(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   options: ResourceTotalOptions = {}
 ): Record<ResourceName, number> {
-  const totals = getPlayerChestResourceTotals(player, options)
+  const totals = getPlayerStoredResourceTotals(player, options)
   if (!player) return totals
-
-  for (const building of getPlayerStartingResourceDepots(player)) {
-    if (options.visibleOnly && !isVisibleStorageBuilding(building, player)) continue
-    const resources = building.inventory?.resources
-    if (!resources) continue
-    for (const resource of RESOURCE_STORAGE_NAMES) {
-      totals[resource] += Math.max(0, Math.floor(resources[resource] ?? 0))
-    }
-  }
 
   if (options.includeHero !== false) {
     for (const hero of getPlayerResourceHeroes(player, options.hero)) {

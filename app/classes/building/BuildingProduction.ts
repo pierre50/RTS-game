@@ -5,18 +5,15 @@ import { hasBuildingTrainingCapacity, isTraineeTrainingType } from '../../lib/bu
 import { t } from '../../lib/lang'
 import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
 import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
+import type { TrainingTrainee } from '../../types/training'
 import { ejectTrainingVillager, placeProducedUnit } from './BuildingProductionPlacement'
-import {
-  buyBuildingTechnology,
-  cancelBuildingTechnology,
-  refreshOpenBuildingMenu,
-  upgradeBuilding,
-} from './BuildingTechnologyProduction'
+import { refreshOpenBuildingMenu } from './BuildingMenuRefresh'
 import {
   clearActiveTraining,
   failTraineeEntry,
   getTrainingBuilding,
   getTrainingDays,
+  getTrainingCost,
   isBlockedByMissingChief,
   removeTraineeForTraining as removeTrainingUnitFromMap,
   startTrainingWithUnit,
@@ -38,7 +35,7 @@ import { cancelAllUnitTraining as cancelAllBuildingUnitTraining } from './Buildi
 export class BuildingProduction {
   building: BuildingControllerHost
   activeTrainingExtra: UnitCreationExtra | undefined
-  activeTrainingTrainee: UnitEntity | null
+  activeTrainingTrainee: TrainingTrainee | null
 
   constructor(building: BuildingControllerHost) {
     this.building = building
@@ -58,7 +55,7 @@ export class BuildingProduction {
     removeTrainingUnitFromMap(trainee)
   }
 
-  clearActiveTraining(trainee?: UnitEntity | null): void {
+  clearActiveTraining(trainee?: TrainingTrainee | null): void {
     clearActiveTraining(this.building, trainee)
   }
 
@@ -114,15 +111,15 @@ export class BuildingProduction {
     return trainingWakeNextWaitingTrainee(this)
   }
 
-  finishUnitTraining(type: string, extra?: UnitCreationExtra, trainee?: UnitEntity | null): boolean {
+  finishUnitTraining(type: string, extra?: UnitCreationExtra, trainee?: TrainingTrainee | null): boolean {
     return trainingFinishUnitTraining(this, type, extra, trainee)
   }
 
-  finishTrainingEntry(trainee: UnitEntity): void {
+  finishTrainingEntry(trainee: TrainingTrainee): void {
     return trainingFinishTrainingEntry(this, trainee)
   }
 
-  finishTrainingEntryPlacementFailed(trainee: UnitEntity): void {
+  finishTrainingEntryPlacementFailed(trainee: TrainingTrainee): void {
     return trainingFinishTrainingEntryPlacementFailed(this, trainee)
   }
 
@@ -177,6 +174,7 @@ export class BuildingProduction {
       type,
       trainee,
       extra,
+      cost: { ...getTrainingCost(building, trainee, type) },
       loading: 0,
       trainingStartedDay: startDay,
       trainingCompleteDay: startDay + durationDays,
@@ -186,16 +184,7 @@ export class BuildingProduction {
     building.queue.push(type)
     this.updateTrainingEntryProgress(entry)
     this.syncPrimaryTrainingState()
-    entry.trainingDayChangeUnsubscribe =
-      building.context.dayNight?.onDayChange?.(() => {
-        this.updateTrainingEntryProgress(entry)
-        this.syncPrimaryTrainingState()
-        this.finishUnitTraining(type, extra, trainee)
-        if (building.owner.isPlayed) {
-          building.updateTrainingPreview?.()
-          refreshOpenBuildingMenu(building)
-        }
-      }) ?? null
+    this.subscribeTrainingEntry(entry)
     if (building.owner.isPlayed) {
       building.context.menu.updateButtonContent(
         type,
@@ -205,6 +194,38 @@ export class BuildingProduction {
       refreshOpenBuildingMenu(building)
     }
     this.finishUnitTraining(type, extra, trainee)
+  }
+
+  private subscribeTrainingEntry(entry: QueuedTrainingTrainee): void {
+    const building = getTrainingBuilding(this.building)
+    entry.trainingDayChangeUnsubscribe?.()
+    entry.trainingDayChangeUnsubscribe =
+      building.context.dayNight?.onDayChange?.(() => {
+        this.updateTrainingEntryProgress(entry)
+        this.syncPrimaryTrainingState()
+        this.finishUnitTraining(entry.type, entry.extra, entry.trainee)
+        if (building.owner.isPlayed) {
+          building.updateTrainingPreview?.()
+          refreshOpenBuildingMenu(building)
+        }
+      }) ?? null
+  }
+
+  resumeSavedTraining(extra?: UnitCreationExtra): void {
+    const building = getTrainingBuilding(this.building)
+    if (building.isDead || building.isDestroyed || !building.isBuilt) return
+    if (building.trainingQueue?.length) {
+      building.queue = building.trainingQueue.map(entry => entry.type)
+      this.syncPrimaryTrainingState()
+      for (const entry of [...building.trainingQueue]) {
+        this.updateTrainingEntryProgress(entry)
+        this.subscribeTrainingEntry(entry)
+        this.finishUnitTraining(entry.type, entry.extra, entry.trainee)
+      }
+      this.syncPrimaryTrainingState()
+    } else if (building.queue[0]) {
+      this.buyUnit(building.queue[0], true, true, extra)
+    }
   }
 
   failTraineeEntry(trainee: UnitEntity, message?: string, updateTopbar = false): false {
@@ -314,16 +335,4 @@ export class BuildingProduction {
     return true
   }
 
-  cancelTechnology(): boolean {
-    return cancelBuildingTechnology(this.building)
-  }
-
-  upgrade(type: string): void {
-    upgradeBuilding(this.building, type)
-  }
-
-  buyTechnology(type: string, alreadyPaid?: boolean, _force?: boolean): boolean {
-    void _force
-    return buyBuildingTechnology(this.building, type, alreadyPaid)
-  }
 }

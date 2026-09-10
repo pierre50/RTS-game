@@ -9,7 +9,6 @@ export type CombatOwnerLike = {
   age?: number
   civ?: string
   config?: unknown
-  technologies?: string[]
   isEnemy?: (other?: never) => boolean
 }
 

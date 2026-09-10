@@ -7,8 +7,9 @@
     "displayPopulation": true,
     "increasePopulation": 4,
     "cost": {
-      "wood": 45,
-      "stone": 15
+      "wood": 60,
+      "stone": 15,
+      "leather": 2
     },
     "sounds": {
       "burning": [
@@ -21,6 +22,24 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
+    },
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 60,
+          "stone": 15,
+          "leather": 2
+        },
+        "totalHitPoints": 75
+      },
+      "1": {
+        "cost": {
+          "wood": 80,
+          "stone": 40,
+          "fiber": 4
+        },
+        "totalHitPoints": 125
+      }
     }
   },
   "Barracks": {
@@ -29,8 +48,9 @@
     "totalHitPoints": 350,
     "constructionTime": 72,
     "cost": {
-      "wood": 190,
-      "stone": 75
+      "wood": 200,
+      "stone": 60,
+      "leather": 6
     },
     "units": [
       "Fantassin"
@@ -46,6 +66,24 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
+    },
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 200,
+          "stone": 60,
+          "leather": 6
+        },
+        "totalHitPoints": 350
+      },
+      "1": {
+        "cost": {
+          "wood": 240,
+          "stone": 120,
+          "fiber": 8
+        },
+        "totalHitPoints": 550
+      }
     }
   },
   "Granary": {
@@ -54,19 +92,14 @@
     "totalHitPoints": 350,
     "constructionTime": 72,
     "cost": {
-      "wood": 180,
-      "stone": 50
+      "wood": 160,
+      "stone": 40,
+      "leather": 4
     },
     "accept": [
       "berry",
       "wheat",
       "meat"
-    ],
-    "technologies": [
-      "ResearchWatchTower",
-      "ResearchSmallWall",
-      "UpgradeMediumWall",
-      "UpgradeFortification"
     ],
     "sounds": {
       "burning": [
@@ -79,6 +112,24 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
+    },
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 160,
+          "stone": 40,
+          "leather": 4
+        },
+        "totalHitPoints": 350
+      },
+      "1": {
+        "cost": {
+          "wood": 200,
+          "stone": 80,
+          "fiber": 6
+        },
+        "totalHitPoints": 500
+      }
     }
   },
   "StoragePit": {
@@ -88,7 +139,7 @@
     "constructionTime": 72,
     "cost": {
       "wood": 180,
-      "stone": 80
+      "stone": 100
     },
     "accept": [
       "wood",
@@ -96,23 +147,6 @@
       "gold",
       "copper",
       "iron"
-    ],
-    "technologies": [
-      "Toolworking",
-      "Metalworking",
-      "Metallurgy",
-      "BronzeShield",
-      "IronShield",
-      "LeatherArmorInfantry",
-      "ScaleArmorInfantry",
-      "ChainmailInfantry",
-      "LeatherArmorArchers",
-      "ScaleArmorArchers",
-      "ChainmailArchers",
-      "LeatherArmorCavalry",
-      "ScaleArmorCavalry",
-      "ChainmailCavalry",
-      "TowerShield"
     ],
     "sounds": {
       "burning": [
@@ -125,6 +159,23 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
+    },
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 180,
+          "stone": 100
+        },
+        "totalHitPoints": 350
+      },
+      "1": {
+        "cost": {
+          "wood": 220,
+          "stone": 160,
+          "fiber": 4
+        },
+        "totalHitPoints": 550
+      }
     }
   },
   "ArcheryRange": {
@@ -138,15 +189,14 @@
     },
     "conditions": [
       {
-        "key": "technologies",
-        "op": "includes",
-        "value": "BowCrafting"
+        "key": "age",
+        "op": ">=",
+        "value": 1
       }
     ],
     "units": [
       "Bowman"
     ],
-    "technologies": [],
     "sounds": {
       "burning": [
         "building-burning",
@@ -171,16 +221,15 @@
     },
     "conditions": [
       {
-        "key": "technologies",
-        "op": "includes",
-        "value": "HorseTaming"
+        "key": "age",
+        "op": ">=",
+        "value": 1
       }
     ],
     "units": [
       "Fantassin",
       "Bowman"
     ],
-    "technologies": [],
     "sounds": {
       "burning": [
         "building-burning",
@@ -199,16 +248,21 @@
     "size": 4,
     "constructionTime": 0,
     "cost": {
-      "wood": 100,
-      "stone": 10
+      "wood": 10
     },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "Farming"
+    "conditions": [],
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 10
+        }
+      },
+      "1": {
+        "cost": {
+          "wood": 10
+        }
       }
-    ]
+    }
   },
   "WatchTower": {
     "size": 2,
@@ -230,11 +284,6 @@
         "key": "age",
         "op": ">=",
         "value": 1
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchWatchTower"
       }
     ],
     "sounds": {
@@ -263,11 +312,6 @@
         "key": "age",
         "op": ">=",
         "value": 1
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchSmallWall"
       }
     ],
     "sounds": {
@@ -300,6 +344,14 @@
     },
     "cost": {}
   },
+  "Cave": {
+    "size": 3,
+    "providesVision": false,
+    "indestructible": true,
+    "totalHitPoints": 1000,
+    "constructionTime": 0,
+    "cost": {}
+  },
   "Chest": {
     "size": 1,
     "occlusionFade": false,
@@ -321,20 +373,10 @@
     "totalHitPoints": 350,
     "constructionTime": 96,
     "cost": {
-      "wood": 225,
-      "stone": 90
+      "wood": 180,
+      "stone": 50,
+      "leather": 4
     },
-    "technologies": [
-      "Woodworking",
-      "Artisanship",
-      "Craftsmanship",
-      "StoneMining",
-      "GoldMining",
-      "Domestication",
-      "Plow",
-      "Irrigation",
-      "Coinage"
-    ],
     "sounds": {
       "burning": [
         "building-burning",
@@ -346,6 +388,24 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
+    },
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 180,
+          "stone": 50,
+          "leather": 4
+        },
+        "totalHitPoints": 350
+      },
+      "1": {
+        "cost": {
+          "wood": 240,
+          "stone": 100,
+          "fiber": 10
+        },
+        "totalHitPoints": 500
+      }
     }
   },
   "Temple": {
@@ -354,16 +414,12 @@
     "totalHitPoints": 350,
     "constructionTime": 144,
     "cost": {
-      "wood": 300,
-      "stone": 150,
-      "gold": 75
+      "wood": 140,
+      "stone": 200,
+      "leather": 2
     },
     "units": [
       "Priest"
-    ],
-    "technologies": [
-      "Astrology",
-      "Monotheism"
     ],
     "sounds": {
       "burning": [
@@ -376,6 +432,24 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
+    },
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 140,
+          "stone": 200,
+          "leather": 2
+        },
+        "totalHitPoints": 350
+      },
+      "1": {
+        "cost": {
+          "wood": 180,
+          "stone": 300,
+          "fiber": 8
+        },
+        "totalHitPoints": 600
+      }
     }
   },
   "TownCenter": {
@@ -386,13 +460,9 @@
     "increasePopulation": 4,
     "cost": {
       "wood": 350,
-      "stone": 220
+      "stone": 160,
+      "leather": 8
     },
-    "technologies": [
-      "ToolAge",
-      "BronzeAge",
-      "IronAge"
-    ],
     "sounds": {
       "burning": [
         "building-burning",
@@ -404,6 +474,24 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
+    },
+    "ageStats": {
+      "0": {
+        "cost": {
+          "wood": 350,
+          "stone": 160,
+          "leather": 8
+        },
+        "totalHitPoints": 600
+      },
+      "1": {
+        "cost": {
+          "wood": 400,
+          "stone": 260,
+          "fiber": 12
+        },
+        "totalHitPoints": 950
+      }
     }
   },
   "FireCamp": {

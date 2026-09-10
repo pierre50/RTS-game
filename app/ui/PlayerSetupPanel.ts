@@ -44,7 +44,8 @@ export type PlayerSetupConfigWithAge = PlayerSetupConfig & {
 
 const AGES = [
   { label: () => t('stoneAge'), value: 0 },
-  { label: () => t('toolAge'), value: 1 },
+  { label: () => t('bronzeAge'), value: 1 },
+  { label: () => t('ironAge'), value: 2 },
 ]
 
 const GENDERS = [
@@ -81,7 +82,7 @@ export class PlayerSetupPanel {
     )
     if (this.showAge) {
       this.players.forEach(player => {
-        player.age = Math.max(0, Math.min(Number(player.age) || 0, 1))
+        player.age = Math.max(0, Math.min(Number(player.age) || 0, 2))
       })
     }
     // Simplified lobby is the adventure start: the played hero arrives alone.
@@ -151,7 +152,7 @@ export class PlayerSetupPanel {
       heroAppearance: normalizeHeroAppearance(player.heroAppearance, civ, gender),
       team: typeof player.team === 'number' ? player.team : null,
       isHuman: player.isHuman === true,
-      ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 1)) } : {}),
+      ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 2)) } : {}),
       civilizationLevel: Math.max(0, Math.min(Number(player.civilizationLevel) || 0, 3)),
     }
   }

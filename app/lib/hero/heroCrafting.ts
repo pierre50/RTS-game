@@ -3,6 +3,7 @@ import { getMissingPlayerResources, withdrawChestResources } from '../resources/
 import type { ResourceAmount } from '../../types/common'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
+import { canUseAgeEquipment } from '../objectives/ageRules'
 
 export type HeroCraftRecipe = {
   descriptionKey?: string
@@ -97,6 +98,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   {
     id: 'arrow_ceramic',
     labelKey: 'craftArrowCeramic',
+    descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_ceramic',
     outputCount: 20,
     cost: { wood: 5, feather: 2, stone: 2 },
@@ -104,6 +106,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   {
     id: 'arrow_copper',
     labelKey: 'craftArrowCopper',
+    descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_copper',
     outputCount: 20,
     cost: { wood: 5, feather: 2, copper: 2 },
@@ -111,18 +114,24 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   {
     id: 'arrow_bronze',
     labelKey: 'craftArrowBronze',
+    descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_bronze',
     outputCount: 20,
-    cost: { wood: 5, feather: 2, copper: 2, iron: 1 },
+    cost: { wood: 5, feather: 2, copper: 3 },
   },
   {
     id: 'arrow_iron',
     labelKey: 'craftArrowIron',
+    descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_iron',
     outputCount: 20,
     cost: { wood: 5, feather: 2, iron: 2 },
   },
 ]
+
+export function getAvailableHeroCraftRecipes(player: Pick<PlayerLike, 'age'>): readonly HeroCraftRecipe[] {
+  return HERO_CRAFT_RECIPES.filter(recipe => canUseAgeEquipment(player, recipe.outputEquipment))
+}
 
 export function getMissingCraftResources(
   player: PlayerLike,
@@ -133,7 +142,10 @@ export function getMissingCraftResources(
 }
 
 export function canCraftHeroRecipe(player: PlayerLike, recipe: HeroCraftRecipe, hero?: UnitEntity | null): boolean {
-  return Object.keys(getMissingCraftResources(player, recipe.cost, hero)).length === 0
+  return (
+    canUseAgeEquipment(player, recipe.outputEquipment) &&
+    Object.keys(getMissingCraftResources(player, recipe.cost, hero)).length === 0
+  )
 }
 
 export function craftHeroRecipe(

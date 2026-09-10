@@ -299,10 +299,6 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCombat.handleAffectNewDestHunter()
   }
 
-  upgrade(type: string) {
-    return this.unitActions.upgrade(type)
-  }
-
   affectNewDest() {
     return this.unitMovement.affectNewDest()
   }

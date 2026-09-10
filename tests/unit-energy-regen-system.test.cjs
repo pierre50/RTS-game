@@ -79,3 +79,19 @@ test('passive unit energy regen unregisters its scheduler task on destroy', () =
 
   assert.deepEqual(calls, [['add', 1, 500, 'unit.energyPassiveRegen'], ['remove', 1]])
 })
+
+test('scheduled passive update heals sleeping units and stops when they wake', () => {
+  const calls = []
+  const { UnitEnergyRegenSystem } = loadEnergyRegenSystem(calls)
+  const unit = {
+    type: 'Villager', label: 'sleeper', hitPoints: 5, totalHitPoints: 24,
+    shelterState: { reason: 'sleep', status: 'inside' }, sleepVisualState: 'sleeping',
+  }
+  const context = { players: [{ units: [unit] }], scheduler: createScheduler(calls) }
+  new UnitEnergyRegenSystem(context)
+  context.scheduler.callback()
+  assert.equal(unit.hitPoints, 5.025)
+  unit.sleepVisualState = null
+  context.scheduler.callback()
+  assert.equal(unit.hitPoints, 5.025)
+})

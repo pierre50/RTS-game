@@ -65,7 +65,7 @@ const ENERGY_REGEN_BONUS_PER_LEVEL = 0.02 // +2% energy regen rate per overall l
 // (Fantassin/Archer). Alimentée par le même XP de combat (melee/ranged/defense) mais avec une
 // courbe plate au lieu de la courbe accélérée du niveau — l'age du joueur plafonne la progression.
 const EQUIPMENT_TIER_XP_PER_LEVEL = 200
-const EQUIPMENT_TIER_CAP_BY_AGE: Record<number, number> = { 0: 5, 1: 10, 2: 15, 3: 20 }
+const EQUIPMENT_TIER_CAP_BY_AGE: Record<number, number> = { 0: 5, 1: 15, 2: 20 }
 
 export const WORK_XP_CATEGORY: Record<string, string> = {
   [WORK_TYPES.farmer]: XP_CATEGORIES.farming,

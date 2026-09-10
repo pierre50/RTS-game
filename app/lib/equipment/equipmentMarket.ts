@@ -1,4 +1,5 @@
 import { UNIT_TYPES, type RESOURCE_STORAGE_NAMES } from '../../constants'
+import { canUseAgeEquipment } from '../objectives/ageRules'
 import type { ResourceAmount } from '../../types/common'
 import {
   DYNAMIC_EQUIPMENT_KEYS,
@@ -144,7 +145,9 @@ function getMarketEquipmentKeys(options: MarketEquipmentOfferOptions = {}): Dyna
   }
   return [...equipment].filter(
     (item): item is DynamicEquipmentKey =>
-      DYNAMIC_EQUIPMENT_KEYS.includes(item as DynamicEquipmentKey) && isMarketPurchasableEquipment(item)
+      DYNAMIC_EQUIPMENT_KEYS.includes(item as DynamicEquipmentKey) &&
+      isMarketPurchasableEquipment(item) &&
+      canUseAgeEquipment(options, item)
   )
 }
 
@@ -156,7 +159,9 @@ export function getMarketEquipmentOffers(
     return [...new Set(stock)]
       .filter(
         (equipment): equipment is DynamicEquipmentKey =>
-          DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey) && isMarketPurchasableEquipment(equipment)
+          DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey) &&
+          isMarketPurchasableEquipment(equipment) &&
+          canUseAgeEquipment(options, equipment)
       )
       .map(equipment => ({
         count: getStockCount(stock, equipment),
@@ -212,6 +217,7 @@ export function buyMarketEquipment(
   stock?: string[]
 ): number {
   if (!hero) return 0
+  if (!canUseAgeEquipment(hero.owner, equipment)) return 0
   const goldValue = getEquipmentGoldValue(equipment)
   if (goldValue <= 0) return 0
   const inventory = getHeroInventory(hero)

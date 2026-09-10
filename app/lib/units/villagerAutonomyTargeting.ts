@@ -137,7 +137,7 @@ function getCompatibleDropoffTypes(candidate: VillagerJobCandidate): Set<string>
   if (candidate.action === ACTION_TYPES.chopwood || miningActions.has(candidate.action)) {
     return new Set([BUILDING_TYPES.storagePit, BUILDING_TYPES.townCenter])
   }
-  if (candidate.action === ACTION_TYPES.takemeat) {
+  if (candidate.action === ACTION_TYPES.takemeat || candidate.action === ACTION_TYPES.hunt) {
     return new Set([BUILDING_TYPES.granary, BUILDING_TYPES.townCenter])
   }
   return null

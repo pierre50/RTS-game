@@ -108,7 +108,7 @@ export class AnimalBehavior {
     }
 
     if (
-      threat ||
+      (threat && shouldHorseFleeFromThreat(animal)) ||
       animal.isFleeing ||
       animal.path.length ||
       animal.dest ||

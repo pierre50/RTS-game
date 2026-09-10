@@ -1,3 +1,4 @@
+import { observeTarget } from '../lib/units/playerTargetKnowledge'
 import { FAMILY_TYPES } from '../constants'
 import { isAIControlledPlayer } from '../lib/playerState'
 import { instanceIsInInsightRange } from '../lib/units/insightDetection'
@@ -196,9 +197,13 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
         withPlayerViewSpace(ownerPlayer, currentSpace, () => updateAIKnowledge(globalCell, ownerPlayer))
       }
       withPlayerViewSpace(player, currentSpace, () => syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j)))
+      if (globalCell.has) observeTarget(ownerPlayer, globalCell.has)
       globalCell.updateVisible()
 
-      if (!map.revealEverything && withPlayerViewSpace(player, currentSpace, () => player.views.hasViewer(i, j, instance))) {
+      if (
+        !map.revealEverything &&
+        withPlayerViewSpace(player, currentSpace, () => player.views.hasViewer(i, j, instance))
+      ) {
         globalCell.removeFog()
       }
 
@@ -210,6 +215,8 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
     }
   }
 
+  const entity = instance as unknown as RuntimeEntity
+  for (const observer of entity.context?.players ?? []) observeTarget(observer, entity)
   instance.visibleCells = newVisible
   instance.visibleSpaceId = currentSpace.id
   instance._visibleScratch = prevVisible

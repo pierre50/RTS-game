@@ -1,5 +1,5 @@
-import { RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES } from '../../constants'
-import { getIconPath } from '../../lib'
+import { definedProperties } from '../../lib/definedProperties'
+import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import { formatEquipmentStackLabel, getEquipmentStacks } from '../../lib/equipment/equipmentLoot'
 import {
   buyMarketEquipment,
@@ -12,14 +12,13 @@ import {
   sellHeroResource,
 } from '../../lib/equipment/equipmentMarket'
 import { t } from '../../lib/lang'
-import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
-import { createInventorySection, createInventorySlot } from '../inventory/InventorySlotRenderer'
-import { createEquipmentTooltip, createResourceTooltip } from '../inventory/InventoryTooltips'
+import { createInventoryEquipmentRow, createInventoryResourceRow } from '../inventory/InventoryItemRows'
+import { createInventorySection } from '../inventory/InventorySlotRenderer'
+import { formatGold } from '../inventory/InventoryTooltips'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
-import type { ResourceAmount } from '../../types/common'
 
 const BLOCKED_MARKET_RELATIONS = new Set(['hostile', 'wary'])
 
@@ -42,38 +41,6 @@ function canHeroTradeAtMarket(building: BuildingEntity, hero: UnitEntity | null 
   return !hasBlockedFactionRelation(marketOwner, hero.context ?? building.context)
 }
 
-function goldLabel(amount: number): string {
-  return `${amount} ${t('goldShort')}`
-}
-
-function createGoldBadge(amount: number): HTMLSpanElement {
-  const badge = document.createElement('span')
-  badge.className = 'market-gold-badge'
-  badge.textContent = goldLabel(amount)
-  return badge
-}
-
-function appendGoldBadge(slot: HTMLButtonElement, amount: number): void {
-  slot.appendChild(createGoldBadge(amount))
-}
-
-function createEquipmentIcon(hero: UnitEntity, equipment: string, menu: MenuHost): HTMLCanvasElement {
-  const icon = document.createElement('canvas')
-  icon.className = 'unit-avatar-frame inventory-slot-icon'
-  icon.width = 64
-  icon.height = 64
-  renderEquipmentAvatarLazy(menu.context.app, equipment, icon, 'market', hero.context?.performance)
-  return icon
-}
-
-function createResourceIcon(resource: keyof ResourceAmount): HTMLImageElement {
-  const icon = document.createElement('img')
-  icon.className = 'inventory-resource-icon'
-  icon.src = getIconPath(RESOURCE_ICON_IDS[resource].commodity)
-  icon.alt = ''
-  return icon
-}
-
 function handleMarketChange(menu: MenuHost, onChange: () => void): void {
   menu.playUiClick()
   menu.refreshInventory?.()
@@ -91,17 +58,23 @@ function appendBuySlots(
   const marketOwner = building.owner ?? hero.owner
   const marketStock = ensureMarketEquipmentStock(building, { age: marketOwner?.age, civilization: marketOwner?.civ })
   for (const offer of getMarketEquipmentOffers(
-    { age: marketOwner?.age, civilization: marketOwner?.civ },
+    definedProperties({ age: Math.min(marketOwner?.age ?? 0, hero.owner?.age ?? 0), civilization: marketOwner?.civ }),
     marketStock
   )) {
     const label = formatEquipmentStackLabel(offer.equipment, offer.count)
+    const totalGold = offer.goldValue * offer.count
     const disabled = heroGold < offer.goldValue
-    const slot = createInventorySlot({
-      ariaLabel: t('marketBuyItem', { item: label, gold: String(offer.goldValue * offer.count) }),
+    const { element } = createInventoryEquipmentRow(menu.context, menu, {
+      id: `market-buy-${offer.equipment}`,
       className: 'inventory-loot-slot market-slot market-buy-slot',
       disabled,
-      icon: createEquipmentIcon(hero, offer.equipment, menu),
-      label,
+      equipment: offer.equipment,
+      count: offer.count,
+      mode: 'market-buy',
+      showValue: false,
+      showTooltip: false,
+      labelContext: 'market',
+      badge: formatGold(totalGold),
       onAction: mode => {
         const amountToBuy = mode === 'one' ? 1 : offer.count
         const bought = buyMarketEquipment(hero, offer.equipment, amountToBuy, marketStock)
@@ -116,9 +89,8 @@ function appendBuySlots(
         handleMarketChange(menu, onChange)
       },
     })
-    menu.menuTooltip.bind(slot, createEquipmentTooltip(offer.equipment, offer.count, 'market-buy'))
-    appendGoldBadge(slot, offer.goldValue * offer.count)
-    grid.appendChild(slot)
+    element.setAttribute('aria-label', t('marketBuyItem', { item: label, gold: String(totalGold) }))
+    grid.appendChild(element)
   }
 }
 
@@ -130,11 +102,16 @@ function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: M
     const goldValue = getResourceGoldValue(resource)
     if (amount <= 0 || goldValue <= 0) continue
     const label = `${t(resource)} x${amount}`
-    const slot = createInventorySlot({
-      ariaLabel: t('marketSellItem', { item: label, gold: String(goldValue * amount) }),
+    const totalGold = goldValue * amount
+    const { element } = createInventoryResourceRow(menu, {
+      id: `market-sell-resource-${resource}`,
       className: 'inventory-loot-slot market-slot market-sell-slot',
-      icon: createResourceIcon(resource),
-      label,
+      resource,
+      amount,
+      mode: 'market-sell',
+      showValue: false,
+      showTooltip: false,
+      badge: formatGold(totalGold),
       onAction: mode => {
         const amountToSell = mode === 'one' ? 1 : undefined
         const sold = sellHeroResource(hero, resource, amountToSell)
@@ -146,9 +123,8 @@ function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: M
         handleMarketChange(menu, onChange)
       },
     })
-    menu.menuTooltip.bind(slot, createResourceTooltip(resource, amount, 'market-sell'))
-    appendGoldBadge(slot, goldValue * amount)
-    grid.appendChild(slot)
+    element.setAttribute('aria-label', t('marketSellItem', { item: label, gold: String(totalGold) }))
+    grid.appendChild(element)
   }
 }
 
@@ -157,11 +133,16 @@ function appendSellEquipmentSlots(grid: HTMLDivElement, hero: UnitEntity, menu: 
     const goldValue = getEquipmentResaleGoldValue(stack.equipment)
     if (goldValue <= 0) continue
     const label = formatEquipmentStackLabel(stack.equipment, stack.count)
-    const slot = createInventorySlot({
-      ariaLabel: t('marketSellItem', { item: label, gold: String(goldValue * stack.count) }),
+    const totalGold = goldValue * stack.count
+    const { element } = createInventoryEquipmentRow(menu.context, menu, {
+      id: `market-sell-equipment-${stack.equipment}`,
       className: 'inventory-loot-slot market-slot market-sell-slot',
-      icon: createEquipmentIcon(hero, stack.equipment, menu),
-      label,
+      equipment: stack.equipment,
+      count: stack.count,
+      mode: 'market-sell',
+      showTooltip: false,
+      labelContext: 'market',
+      badge: formatGold(totalGold),
       onAction: mode => {
         const amountToSell = mode === 'one' ? 1 : stack.count
         const sold = sellHeroEquipment(hero, stack.equipment, amountToSell)
@@ -176,9 +157,8 @@ function appendSellEquipmentSlots(grid: HTMLDivElement, hero: UnitEntity, menu: 
         handleMarketChange(menu, onChange)
       },
     })
-    menu.menuTooltip.bind(slot, createEquipmentTooltip(stack.equipment, stack.count, 'market-sell'))
-    appendGoldBadge(slot, goldValue * stack.count)
-    grid.appendChild(slot)
+    element.setAttribute('aria-label', t('marketSellItem', { item: label, gold: String(totalGold) }))
+    grid.appendChild(element)
   }
 }
 
@@ -202,7 +182,7 @@ export function createHeroMarketBody(
   panel.appendChild(
     createInventorySection({
       className: 'market-section',
-      gridClassName: 'inventory-loot-grid market-grid',
+      gridClassName: 'inventory-loot-list market-grid',
       title: t('marketBuyTitle'),
       titleClassName: 'market-title',
       renderItems: grid => appendBuySlots(grid, building, hero, menu, onChange),
@@ -218,7 +198,7 @@ export function createHeroMarketBody(
     createInventorySection({
       className: 'market-section',
       emptyText: t('marketSellBagEmpty'),
-      gridClassName: 'inventory-loot-grid market-grid',
+      gridClassName: 'inventory-loot-list market-grid',
       title: t('marketSellBagTitle'),
       titleClassName: 'market-title',
       renderItems: grid => {

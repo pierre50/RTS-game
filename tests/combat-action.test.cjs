@@ -711,7 +711,7 @@ test('bandit-owned priests cannot convert units into the bandit team', () => {
   assert.equal(getActionCondition(banditPriest, soldier, constants.ACTION_TYPES.convert), false)
 })
 
-test('early resource actions require only their remaining unlocking technologies', () => {
+test('early resource actions work without unlocking technologies', () => {
   const actionConstants = {
     ...constants,
     ACTION_TYPES: {
@@ -756,10 +756,10 @@ test('early resource actions require only their remaining unlocking technologies
     type: 'Wheat',
   }
 
-  assert.equal(getActionCondition(source, deer, 'hunt'), false)
+  assert.equal(getActionCondition(source, deer, 'hunt'), true)
   assert.equal(getActionCondition(source, carcass, 'takemeat'), true)
-  assert.equal(getActionCondition(source, stone, 'minestone'), false)
-  assert.equal(getActionCondition(source, gold, 'minegold'), false)
+  assert.equal(getActionCondition(source, stone, 'minestone'), true)
+  assert.equal(getActionCondition(source, gold, 'minegold'), true)
   assert.equal(getActionCondition(source, wheat, 'farm'), false)
 
   source.owner.technologies.push('Pickaxe', 'BowCrafting')

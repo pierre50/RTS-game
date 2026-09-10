@@ -42,73 +42,73 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse"
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "corpseSheet": "units/villager/greek/male/body/corpse"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "corpseSheet": "units/villager/hellas/male/body/corpse"
       },
       "hunter": {
-        "actionSheet": "units/villager/greek/male/action/shoot",
-        "harvestSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse",
-        "loadedSheet": "units/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/hellas/male/action/shoot",
+        "harvestSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse",
+        "loadedSheet": "units/villager/hellas/male/body/walking"
       },
       "farmer": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse",
-        "loadedSheet": "units/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse",
+        "loadedSheet": "units/villager/hellas/male/body/walking"
       },
       "forager": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse",
-        "loadedSheet": "units/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse",
+        "loadedSheet": "units/villager/hellas/male/body/walking"
       },
       "stoneminer": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse",
-        "loadedSheet": "units/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse",
+        "loadedSheet": "units/villager/hellas/male/body/walking"
       },
       "goldminer": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse",
-        "loadedSheet": "units/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse",
+        "loadedSheet": "units/villager/hellas/male/body/walking"
       },
       "woodcutter": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse",
-        "loadedSheet": "units/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse",
+        "loadedSheet": "units/villager/hellas/male/body/walking"
       },
       "builder": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse"
       }
     },
     "gatheringRate": {
@@ -190,65 +190,65 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse"
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "units/hero/greek/male/action/slash",
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse"
+        "actionSheet": "units/hero/hellas/male/action/slash",
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse"
       },
       "hunter": {
-        "actionSheet": "units/hero/greek/male/action/shoot",
-        "harvestSheet": "units/hero/greek/male/action/slash",
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse",
-        "loadedSheet": "units/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/hellas/male/action/shoot",
+        "harvestSheet": "units/hero/hellas/male/action/slash",
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse",
+        "loadedSheet": "units/hero/hellas/male/body/walking"
       },
       "forager": {
-        "actionSheet": "units/hero/greek/male/action/slash",
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse",
-        "loadedSheet": "units/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/hellas/male/action/slash",
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse",
+        "loadedSheet": "units/hero/hellas/male/body/walking"
       },
       "stoneminer": {
-        "actionSheet": "units/hero/greek/male/action/slash",
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse",
-        "loadedSheet": "units/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/hellas/male/action/slash",
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse",
+        "loadedSheet": "units/hero/hellas/male/body/walking"
       },
       "goldminer": {
-        "actionSheet": "units/hero/greek/male/action/slash",
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse",
-        "loadedSheet": "units/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/hellas/male/action/slash",
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse",
+        "loadedSheet": "units/hero/hellas/male/body/walking"
       },
       "woodcutter": {
-        "actionSheet": "units/hero/greek/male/action/slash",
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse",
-        "loadedSheet": "units/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/hellas/male/action/slash",
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse",
+        "loadedSheet": "units/hero/hellas/male/body/walking"
       },
       "builder": {
-        "actionSheet": "units/hero/greek/male/action/slash",
-        "standingSheet": "units/hero/greek/male/body/walking",
-        "walkingSheet": "units/hero/greek/male/body/walking",
-        "dyingSheet": "units/hero/greek/male/body/dying",
-        "corpseSheet": "units/hero/greek/male/body/corpse"
+        "actionSheet": "units/hero/hellas/male/action/slash",
+        "standingSheet": "units/hero/hellas/male/body/walking",
+        "walkingSheet": "units/hero/hellas/male/body/walking",
+        "dyingSheet": "units/hero/hellas/male/body/dying",
+        "corpseSheet": "units/hero/hellas/male/body/corpse"
       }
     },
     "gatherAmount": {
@@ -302,17 +302,17 @@
     "showLoading": false,
     "allAssets": {
       "default": {
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse"
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "units/villager/greek/male/action/slash",
-        "standingSheet": "units/villager/greek/male/body/walking",
-        "walkingSheet": "units/villager/greek/male/body/walking",
-        "dyingSheet": "units/villager/greek/male/body/dying",
-        "corpseSheet": "units/villager/greek/male/body/corpse"
+        "actionSheet": "units/villager/hellas/male/action/slash",
+        "standingSheet": "units/villager/hellas/male/body/walking",
+        "walkingSheet": "units/villager/hellas/male/body/walking",
+        "dyingSheet": "units/villager/hellas/male/body/dying",
+        "corpseSheet": "units/villager/hellas/male/body/corpse"
       }
     },
     "sounds": {
@@ -340,11 +340,11 @@
       "wood": 15
     },
     "assets": {
-      "standingSheet": "units/infantry/greek/male/walking",
-      "walkingSheet": "units/infantry/greek/male/walking",
-      "actionSheet": "units/infantry/greek/male/action",
-      "dyingSheet": "units/infantry/greek/male/dying",
-      "corpseSheet": "units/infantry/greek/male/corpse"
+      "standingSheet": "units/infantry/hellas/male/walking",
+      "walkingSheet": "units/infantry/hellas/male/walking",
+      "actionSheet": "units/infantry/hellas/male/action",
+      "dyingSheet": "units/infantry/hellas/male/dying",
+      "corpseSheet": "units/infantry/hellas/male/corpse"
     },
     "sounds": {
       "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"]
@@ -374,11 +374,11 @@
       "wood": 25
     },
     "assets": {
-      "standingSheet": "units/infantry/greek/male/walking",
-      "walkingSheet": "units/infantry/greek/male/walking",
-      "actionSheet": "units/infantry/greek/male/action",
-      "dyingSheet": "units/infantry/greek/male/dying",
-      "corpseSheet": "units/infantry/greek/male/corpse"
+      "standingSheet": "units/infantry/hellas/male/walking",
+      "walkingSheet": "units/infantry/hellas/male/walking",
+      "actionSheet": "units/infantry/hellas/male/action",
+      "dyingSheet": "units/infantry/hellas/male/dying",
+      "corpseSheet": "units/infantry/hellas/male/corpse"
     },
     "sounds": {
       "hit": ["attack-class-2", "attack-class-2-2"]
@@ -405,11 +405,11 @@
       "gold": 125
     },
     "assets": {
-      "standingSheet": "units/priest/greek/male/walking",
-      "walkingSheet": "units/priest/greek/male/walking",
-      "actionSheet": "units/priest/greek/male/action",
-      "dyingSheet": "units/priest/greek/male/dying",
-      "corpseSheet": "units/priest/greek/male/corpse"
+      "standingSheet": "units/priest/hellas/male/walking",
+      "walkingSheet": "units/priest/hellas/male/walking",
+      "actionSheet": "units/priest/hellas/male/action",
+      "dyingSheet": "units/priest/hellas/male/dying",
+      "corpseSheet": "units/priest/hellas/male/corpse"
     },
     "sounds": {
       "hit": ["attack-class-2", "attack-class-2-2"]

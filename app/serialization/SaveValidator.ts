@@ -1,4 +1,5 @@
 import { Assets } from 'pixi.js'
+import { isDerivedInteriorHorse } from './InteriorBuildingSave'
 import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../types/save'
 import { CAMPAIGN_SAVE_FORMAT, getCurrentWorldState, isCampaignSave } from './CampaignSave'
 import {
@@ -14,6 +15,7 @@ import {
   isFiniteNumber,
   isObject,
   type ObjectRecord,
+  validateArray,
   validateOptionalFiniteNumber,
 } from './SaveValidationPrimitives'
 
@@ -81,6 +83,15 @@ export function validateSaveData(data: unknown): SaveRecord {
   validatePlayers(data.players, size, config, layout ? (i, j) => containsCell(layout, i, j) : undefined)
   validateResources(data.resources, size, config)
   validateNaturalResourceRespawnSlots(data.naturalResourceRespawnSlots, size, config)
+  validateArray(data.animals, 'animals')
+  data.animals = data.animals.filter(
+    animal =>
+      !isObject(animal) ||
+      !isDerivedInteriorHorse(
+        animal as { type?: string; label?: string; tamingStatus?: string },
+        data.players as SerializedSave['players']
+      )
+  )
   validateAnimals(data.animals, size, config)
   if (layout) {
     const players = data.players as ObjectRecord[]

@@ -1,3 +1,4 @@
+import { assignAIBuildingMaterials } from './AIEconomyBuildingMaterials'
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getClosestInstance, instancesDistance, isWheatMature } from '../lib'
 import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
@@ -382,7 +383,7 @@ export class AIEconomy {
   }: AIVillagerActionOptions): number {
     if (isVillagerSleepTime(this.ai.context)) return 0
 
-    const workerSnapshot = this.getWorkerSnapshot(villagers)
+    let workerSnapshot = this.getWorkerSnapshot(villagers)
     const targets = this.getResourceTargets(villagers.length)
     const emptyFarms = farms.filter(farm => !farm.isUsedBy && isWheatMature(farm))
 
@@ -397,6 +398,14 @@ export class AIEconomy {
 
     const buildingVillagers = this.assignBuilders(villagers, notBuiltBuildings, debug)
     actions += buildingVillagers.size
+
+    const materialWorkers = assignAIBuildingMaterials(
+      this,
+      villagers.filter(unit => !buildingVillagers.has(unit))
+    )
+    actions += materialWorkers.size
+    if (materialWorkers.size)
+      workerSnapshot = this.getWorkerSnapshot(villagers.filter(unit => !materialWorkers.has(unit)))
 
     // Idle villagers not already sent to build
     const availableVillagers = workerSnapshot.inactifVillagers

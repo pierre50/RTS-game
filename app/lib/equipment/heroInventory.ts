@@ -1,5 +1,4 @@
 import type { UnitEntity } from '../../types/entities'
-import { discoverHeroEquipment } from './equipmentDiscoveries'
 
 export function getHeroInventory(hero: UnitEntity): Required<NonNullable<UnitEntity['inventory']>> {
   hero.inventory = hero.inventory ?? {}
@@ -30,7 +29,6 @@ export function addHeroInventoryItem(hero: UnitEntity | null | undefined, item: 
   if (!hero || !item || !Number.isFinite(count)) return false
   const inventory = getHeroInventory(hero)
   pushEquipmentCopies(inventory.equipment, item, Math.max(1, Math.floor(count)))
-  discoverHeroEquipment(hero, item)
   return true
 }
 

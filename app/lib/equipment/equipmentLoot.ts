@@ -1,4 +1,5 @@
 import type { ResourceAmount } from '../../types/common'
+import { canUseAgeEquipment } from '../objectives/ageRules'
 import type { UnitConfig } from '../../types/config'
 import type { HeroEquipmentSlot, UnitEntity } from '../../types/entities'
 import { RESOURCE_STORAGE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
@@ -6,7 +7,6 @@ import { applyBakedLpcUnitAssets } from '../lpc'
 import { getUnitEquipmentTier } from '../units/unitExperience'
 import { getEquipmentSlot, getWeaponSlot } from './equipmentSlots'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
-import { discoverHeroResource } from './equipmentDiscoveries'
 import { addHeroInventoryItem, getHeroInventory, pushEquipmentCopies, removeHeroInventoryItem } from './heroInventory'
 export {
   formatEquipmentLootLabel,
@@ -124,7 +124,6 @@ export function pickupCorpseResource(
 
   const heroResources = getHeroInventory(hero).resources
   heroResources[resource] = (heroResources[resource] ?? 0) + amount
-  discoverHeroResource(hero, resource, amount)
   const remaining = available - amount
   if (remaining > 0) loot[resource] = remaining
   else delete loot[resource]
@@ -159,6 +158,7 @@ export function equipHeroInventoryItem(
   requestedCount?: number
 ): boolean {
   if (!hero) return false
+  if (!canUseAgeEquipment(hero.owner, equipment)) return false
   const slot = getEquipmentSlot(equipment)
   if (!slot) return equipHeroWeaponInventoryItem(hero, equipment)
   const inventory = getHeroInventory(hero)

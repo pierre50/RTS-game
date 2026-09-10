@@ -1,5 +1,3 @@
-import { BUILDING_TYPES } from '../constants'
-
 export const AI_DIFFICULTIES = {
   easy: {
     stepDelayBase: 6000,
@@ -33,36 +31,16 @@ export const AI_DIFFICULTIES = {
   },
 }
 
-export const NEXT_AGE = {
-  1: 'ToolAge',
-  2: 'BronzeAge',
-  3: 'IronAge',
-}
-
-export const AGE_UP_COSTS = {
-  1: { food: 500 },
-  2: { food: 800 },
-  3: { food: 1000, gold: 800 },
-}
-
-export const AGE_UP_BUFFERS = {
-  1: { food: 200 },
-  2: { food: 200 },
-  3: { food: 200, gold: 200 },
-}
-
 export const MAX_VILLAGER_PER_AGE = {
   0: 16,
-  1: 24,
-  2: 40,
-  3: 50,
+  1: 40,
+  2: 50,
 }
 
 export const VILLAGE_TARGET_PERCENTAGE_BY_AGE = {
   0: { wood: 35, food: 50, gold: 0, stone: 15 },
-  1: { wood: 35, food: 45, gold: 5, stone: 15 },
-  2: { wood: 30, food: 35, gold: 15, stone: 20 },
-  3: { wood: 25, food: 30, gold: 20, stone: 25 },
+  1: { wood: 30, food: 35, gold: 15, stone: 20 },
+  2: { wood: 25, food: 30, gold: 20, stone: 25 },
 }
 
 export const MAX_BUILDING_BY_AGE = {
@@ -73,15 +51,6 @@ export const MAX_BUILDING_BY_AGE = {
     Market: 1,
   },
   1: {
-    StoragePit: 2,
-    Granary: 2,
-    Barracks: 1,
-    Market: 1,
-    ArcheryRange: 1,
-    Stable: 1,
-    WatchTower: 2,
-  },
-  2: {
     StoragePit: 3,
     Granary: 3,
     Barracks: 2,
@@ -91,7 +60,7 @@ export const MAX_BUILDING_BY_AGE = {
     Stable: 1,
     WatchTower: 3,
   },
-  3: {
+  2: {
     StoragePit: 4,
     Granary: 4,
     Barracks: 3,
@@ -122,28 +91,8 @@ export const MAX_BUILDING_BY_AGE_FROZEN = {
   0: MERGED_MAX_BUILDING_CAPS,
   1: MERGED_MAX_BUILDING_CAPS,
   2: MERGED_MAX_BUILDING_CAPS,
-  3: MERGED_MAX_BUILDING_CAPS,
 }
 
-export const MAX_INFANTRY_BY_AGE = { 0: 8, 1: 8, 2: 10, 3: 12 }
-export const MAX_ARCHER_BY_AGE = { 0: 0, 1: 4, 2: 6, 3: 8 }
-export const MAX_CAVALRY_BY_AGE = { 0: 0, 1: 3, 2: 4, 3: 5 }
-
-export const CHIEF_TECH_PRIORITY = ['Pickaxe', 'Farming', 'HorseTaming']
-
-export const TECH_PRIORITY_BY_BUILDING = {
-  [BUILDING_TYPES.barracks]: [],
-  [BUILDING_TYPES.archeryRange]: [],
-  [BUILDING_TYPES.storagePit]: [
-    'Toolworking',
-    'LeatherArmorInfantry',
-    'Metalworking',
-    'ScaleArmorInfantry',
-    'Metallurgy',
-    'ChainmailInfantry',
-    'BronzeShield',
-    'IronShield',
-  ],
-  [BUILDING_TYPES.market]: ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication'],
-  [BUILDING_TYPES.granary]: ['ResearchWatchTower'],
-}
+export const MAX_INFANTRY_BY_AGE = { 0: 8, 1: 10, 2: 12 }
+export const MAX_ARCHER_BY_AGE = { 0: 0, 1: 6, 2: 8 }
+export const MAX_CAVALRY_BY_AGE = { 0: 0, 1: 4, 2: 5 }

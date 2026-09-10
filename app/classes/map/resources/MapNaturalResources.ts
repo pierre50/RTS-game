@@ -16,7 +16,7 @@ import type { MapResources, TreeResourceGenerationOptions } from './MapResources
 import { hasSpacedResourceAround } from './MapResourceSpacing'
 import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from './ResourceQuantityRanges'
 
-const RELOCATED_RESPAWN_TYPES = new Set<string>([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.wheat])
+const RELOCATED_RESPAWN_TYPES = new Set<string>([RESOURCE_TYPES.berrybush])
 
 export function respawnNaturalResource(runtime: MapResources, slot: SaveEntityState): boolean {
   if (!Object.hasOwn(NATURAL_RESOURCE_REGROWTH_BY_TYPE, slot.type)) return false
@@ -96,7 +96,9 @@ function respawnInPlace(runtime: MapResources, slot: SaveEntityState): boolean {
   const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
   if (!config) return false
   const quantity =
-    typeof totalQuantity === 'number' ? Math.max(1, Math.ceil(totalQuantity * config.respawnQuantityRatio)) : undefined
+    typeof totalQuantity === 'number'
+      ? Math.max(1, Math.ceil(totalQuantity * (slot.type === RESOURCE_TYPES.wheat ? 1 : config.respawnQuantityRatio)))
+      : undefined
   runtime.map.resources.add(
     createResource(
       runtime.map,
@@ -107,6 +109,7 @@ function respawnInPlace(runtime: MapResources, slot: SaveEntityState): boolean {
         isNaturalResource: true,
         quantity,
         totalQuantity,
+        ...(slot.type === RESOURCE_TYPES.wheat ? { startsMature: false } : {}),
       })
     )
   )

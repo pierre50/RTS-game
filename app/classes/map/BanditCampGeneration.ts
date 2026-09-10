@@ -1,3 +1,4 @@
+import { furnishBanditCave } from './BanditCaveGeneration'
 import { AI } from '../players'
 import { canPlaceBuildingAt, getPlainCellsAroundPoint } from '../../lib'
 import { BANDIT_FACTION_COLOR, BANDIT_FACTION_NAME } from '../../lib/campaign/playerRoster'
@@ -86,7 +87,6 @@ export function ensureBanditCampOwner(
       team: null,
       diplomacy: null,
       populationMax: Number.POSITIVE_INFINITY,
-      autoTechnologyByAge: false,
     },
     context
   ) as BanditCampOwner
@@ -107,13 +107,27 @@ export function placeBanditCamps(map: MapGenerationMap, context: GameContextLike
 
   for (let index = 0; index < map.banditCampPositions.length; index++) {
     const position = map.banditCampPositions[index]
-    const anchor = findBanditCampAnchor(map, position, owner)
+    const caveId = (position as GridPosition & { caveId?: string }).caveId
+    const cave = caveId
+      ? context.players.flatMap(player => player.buildings).find(building => building.cave?.id === caveId)
+      : undefined
+    if (caveId && !cave) throw new Error(`Missing bandit cave: ${caveId}`)
+    const anchor = findBanditCampAnchor(map, position, owner, cave ? 0 : 8)
     if (!anchor) continue
     const unitTypes = getBanditCampUnitTypes(map, index, heroLevel)
-    const fireCamps = placeBanditCampFires(map, owner, anchor, getBanditCampFireCount(unitTypes.length, heroLevel))
+    const fireCamps = placeBanditCampFires(
+      map,
+      owner,
+      anchor,
+      cave ? 1 : getBanditCampFireCount(unitTypes.length, heroLevel)
+    )
     if (!fireCamps.length) continue
-    placeCampDecorations(map, owner, anchor, unitTypes.length, heroLevel)
-    placeBanditCampChest(map, owner, anchor, index, unitTypes.length, heroLevel)
+    if (cave) {
+      furnishBanditCave(context, cave, index, owner, createBanditCampChestInventory(map, unitTypes.length, heroLevel))
+    } else {
+      placeCampDecorations(map, owner, anchor, unitTypes.length, heroLevel)
+      placeBanditCampChest(map, owner, anchor, index, unitTypes.length, heroLevel)
+    }
     placeBanditCampUnits(map, owner, fireCamps, unitTypes)
   }
 }
@@ -147,8 +161,13 @@ function placeCampBuildingNear(
   return null
 }
 
-function findBanditCampAnchor(map: MapGenerationMap, position: GridPosition, owner: PlayerLike): RuntimeCell | null {
-  for (let distance = 0; distance <= 8; distance++) {
+function findBanditCampAnchor(
+  map: MapGenerationMap,
+  position: GridPosition,
+  owner: PlayerLike,
+  radius = 8
+): RuntimeCell | null {
+  for (let distance = 0; distance <= radius; distance++) {
     const cells = getPlainCellsAroundPoint(position.i, position.j, map.grid, distance, cell =>
       canPlaceCampBuildingAt(map, owner, cell.i, cell.j, BUILDING_TYPES.fireCamp)
     )

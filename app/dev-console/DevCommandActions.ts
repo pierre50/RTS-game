@@ -23,8 +23,6 @@ export {
 } from './actions/map'
 
 export {
-  applyAllTechnologies,
-  applyTechnology,
   healAll,
   killEntities,
   listGlobalPlayers,

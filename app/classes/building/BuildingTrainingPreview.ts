@@ -1,6 +1,12 @@
+import {
+  getTrainingPreviewWork,
+  getActionSheetId,
+  getLayerActionSheetId,
+  isLayerUnlockedForPreview,
+  type PreviewUnit,
+} from './BuildingTrainingPreviewAssets'
 import { AnimatedSprite, Assets, ColorMatrixFilter, Container, Graphics } from 'pixi.js'
 import {
-  ACTION_TYPES,
   BUILDING_TYPES,
   LABEL_TYPES,
   SHEET_TYPES,
@@ -8,8 +14,6 @@ import {
   TRAINING_PREVIEW_LIGHT_INTENSITY_MAX,
   TRAINING_PREVIEW_LIGHT_INTENSITY_MIN,
   TRAINING_PREVIEW_LIGHT_PULSE_MS,
-  UNIT_TYPES,
-  WORK_TYPES,
 } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
@@ -18,8 +22,6 @@ import {
   getUnitSpritesheetAnimationSpeed,
 } from '../../lib'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
-import { civilizationKey } from '../../lib/lpc/equipment'
-import { getUnitEquipmentTier } from '../../lib/units/unitExperience'
 import {
   MOUNTED_HORSE_BOB,
   MOUNTED_RIDER_CUT_Y,
@@ -31,7 +33,6 @@ import {
 import { getHorseColorFromSeed, recolorHorseTextures, type HorseColor } from '../../lib/horses/horseColors'
 import type { Texture } from 'pixi.js'
 import type { SchedulerTaskId } from '../../types/context'
-import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { SpritesheetLike } from '../../types/pixi'
 
@@ -52,42 +53,8 @@ type PreviewLayer = {
   zIndex: number
 }
 
-type PreviewUnit = Pick<UnitEntity, 'owner' | 'type' | 'label' | 'i' | 'j' | 'controlMode' | 'work'> &
-  Partial<UnitEntity>
-
-function getTrainingPreviewWork(type: string): string {
-  return type === UNIT_TYPES.priest ? WORK_TYPES.healer : WORK_TYPES.attacker
-}
-
-function getActionSheetId(unit: PreviewUnit): string | null {
-  const work = unit.work || getTrainingPreviewWork(unit.type)
-  return (
-    unit.assets?.[SHEET_TYPES.action] ??
-    unit.allAssets?.[work]?.[SHEET_TYPES.action] ??
-    unit.allAssets?.default?.[SHEET_TYPES.action] ??
-    null
-  )
-}
-
-function getLayerActionSheetId(layer: UnitAppearanceLayerConfig, work: string, mounted = false): string | null {
-  if (layer.workTypes?.length && !layer.workTypes.includes(work)) return null
-  if (layer.hideForActions?.includes(ACTION_TYPES.attack)) return null
-  if (mounted && layer.mountedSheet) return layer.mountedSheet
-  return (
-    layer.actionWorkSheetOverrides?.[`${work}:${ACTION_TYPES.attack}`]?.[SHEET_TYPES.action] ??
-    layer.actionSheet ??
-    null
-  )
-}
-
 function isHorseSheet(sheetId: string): boolean {
   return sheetId === MOUNTED_HORSE_STANDING_SHEET
-}
-
-function isLayerUnlockedForPreview(layer: UnitAppearanceLayerConfig, unit: PreviewUnit): boolean {
-  if (layer.civilizations?.length && !layer.civilizations.includes(civilizationKey(unit.owner?.civ))) return false
-  const level = getUnitEquipmentTier(unit as UnitEntity)
-  return level >= (layer.minLevel ?? 0) && level <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
 }
 
 function setDefaultAnchor(sprite: AnimatedSprite): void {

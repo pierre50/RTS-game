@@ -1,4 +1,4 @@
-import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
+import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
 import {
   canvasDrawDiamond,
   canvasDrawRectangle,
@@ -22,9 +22,22 @@ import { getMinimapElement, MINIMAP_RESOLUTION_SCALE, MinimapGeometry, type Mini
 // once CSS stretches it to the (now larger) on-screen minimap box.
 
 const MINIMAP_UNIT_AVATAR_SOURCE_SIZE = 32
+const MINIMAP_DARK_FOREST_TERRAIN_COLOR = '#3D5630'
+const MINIMAP_DARK_FOREST_TREE_COLOR = '#122A12'
+const MINIMAP_CAVE_COLOR = '#a89f91'
 
-function terrainColor(value: string | number | undefined): string {
-  return typeof value === 'string' ? value : ''
+function terrainColor(cell: RuntimeCell): string {
+  if (cell.type === 'DarkForest') return MINIMAP_DARK_FOREST_TERRAIN_COLOR
+  return typeof cell.color === 'string' ? cell.color : ''
+}
+
+function isDarkForestTree(resource: ResourceEntity): boolean {
+  return resource.type === 'Tree' && (resource.textureName?.includes('/dark-forest') || resource.currentCell?.type === 'DarkForest')
+}
+
+function resourceColor(resource: ResourceEntity): string {
+  if (isDarkForestTree(resource)) return MINIMAP_DARK_FOREST_TREE_COLOR
+  return resource.color ?? ''
 }
 
 function isResourceEntity(instance: RuntimeEntity | null | undefined): instance is ResourceEntity {
@@ -123,7 +136,7 @@ export class MinimapManager {
       transform.layout !== 'iso-diamond' ? point.y - CELL_HEIGHT / transform.factor / 2 : point.y,
       CELL_WIDTH / transform.factor + 1,
       CELL_HEIGHT / transform.factor + 1,
-      terrainColor(cell.color)
+      terrainColor(cell)
     )
   }
 
@@ -321,7 +334,7 @@ export class MinimapManager {
       position.y - squareSize / 2,
       squareSize,
       squareSize,
-      resource.color ?? ''
+      resourceColor(resource)
     )
   }
 
@@ -354,7 +367,7 @@ export class MinimapManager {
           position.y - squareSize / 2,
           squareSize,
           squareSize,
-          resource.color
+          resourceColor(resource)
         )
       }
     })
@@ -434,7 +447,7 @@ export class MinimapManager {
         position.y - finalSize / 2,
         finalSize,
         finalSize,
-        selected ? 'white' : color
+        selected ? 'white' : building.type === BUILDING_TYPES.cave ? MINIMAP_CAVE_COLOR : color
       )
     })
     if (!shouldDrawOwnerUnits) return

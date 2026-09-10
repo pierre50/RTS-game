@@ -25,8 +25,8 @@ import { definedProperties } from '../../lib/definedProperties'
 import { fadeIn } from '../../lib/entities/entityFade'
 import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
+import { updatePopulationObjectives } from '../../lib/objectives/ageObjectives'
 import { VisionGrid } from '../../services/VisionGrid'
-import type { ConfigOperation, TechnologyConfig } from '../../types/config'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
@@ -38,24 +38,8 @@ import type { UnitSpawnOptions } from '../unit/Unit'
 import { Unit } from '../unit/Unit'
 import { buyPlayerBuilding, plantPlayerWheatField } from './PlayerBuildingPlacement'
 import { initializePlayerRelations, initializePlayerResources } from './PlayerInitialization'
-import {
-  applyEligibleTechnologies,
-  buyTechnology,
-  cancelTechnology,
-  canResearchAgeTechnology,
-  isBuildingEligible,
-  isTechnologyEligible,
-  onAgeChange,
-  startResearchInterval,
-  stopResearchInterval,
-  unlockTechnology,
-  unlockVillagerPopulationMilestoneTechnologies,
-  updatePlayerConfig,
-} from './PlayerTechnologies'
+import { isBuildingEligible, onAgeChange } from './PlayerProgression'
 
-const DEBUG_STARTING_TECHNOLOGIES = ['Pickaxe', 'HorseTaming']
-
-type QueuedTechnology = { type: string; config: TechnologyConfig }
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
   difficulty?: string
   isHuman?: boolean
@@ -94,12 +78,7 @@ export class Player implements PlayerLike {
   selectedOther!: RuntimeEntity | null
   buildings: BuildingEntity[]
   population: number
-  technologies: string[]
-  discoveredEquipment: string[]
-  discoveredResources: string[]
-  researchTechnology: QueuedTechnology | null
-  researchLoading: number | null
-  researchIntervalId: number | null
+  completedObjectives: string[]
   cellViewed: number
   age: number
   lastUnderAttackAlertAt: number
@@ -109,7 +88,6 @@ export class Player implements PlayerLike {
   populationMax!: number
   colorHex: string
   config: PlayerConfigLike
-  techs: Record<string, TechnologyConfig>
   hasBuilt!: string[]
   views!: VisionGridLike
   isPlayed?: boolean
@@ -118,7 +96,6 @@ export class Player implements PlayerLike {
   gender?: 'male' | 'female'
   heroAppearance?: HeroAppearanceConfig
   name?: string
-  autoTechnologyByAge?: boolean
 
   constructor(options: PlayerOptions, context: GameContextLike) {
     this.family = FAMILY_TYPES.player
@@ -133,40 +110,18 @@ export class Player implements PlayerLike {
     this.units = []
     this.buildings = []
     this.population = 0
-    this.technologies = []
-    this.discoveredEquipment = []
-    this.discoveredResources = []
-    this.researchTechnology = null
-    this.researchLoading = null
-    this.researchIntervalId = null
+    this.completedObjectives = []
     this.cellViewed = 0
     this.age = 0
     this.lastUnderAttackAlertAt = 0
     Object.assign(this, options)
-    this.discoveredEquipment = this.discoveredEquipment || []
-    this.discoveredResources = this.discoveredResources || []
+    this.completedObjectives = this.completedObjectives || []
     initializePlayerRelations(this, options)
 
     this.populationMax = this.populationMax || (map.instantMode ? POPULATION_MAX : 0)
 
     this.colorHex = getHexColor(this.color ?? '')
-    const { config, techs } = createPlayerData(
-      Assets.cache.get('config'),
-      Assets.cache.get('technology'),
-      this.civ ?? ''
-    )
-    this.config = config
-    this.techs = techs
-    for (const technology of DEBUG_STARTING_TECHNOLOGIES) {
-      if (this.techs[technology] && !this.technologies.includes(technology)) {
-        this.technologies.push(technology)
-      }
-    }
-    const restoredResearch = options.researchTechnology
-    if (restoredResearch?.type) {
-      this.researchLoading = options.researchLoading ?? 0
-      this.buyTechnology(restoredResearch.type, true, true)
-    }
+    this.config = createPlayerData(Assets.cache.get('config'), this.civ ?? '')
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
     this.views = new VisionGrid(
       map.size,
@@ -231,44 +186,8 @@ export class Player implements PlayerLike {
     return building
   }
 
-  isTechnologyEligible(type: string) {
-    return isTechnologyEligible(this, type)
-  }
-
-  canResearchAgeTechnology(type: string): boolean {
-    return canResearchAgeTechnology(this, type)
-  }
-
-  isTechnologyInProgress(_type: string): boolean {
-    return false
-  }
-
-  startResearchInterval(config: TechnologyConfig): void {
-    startResearchInterval(this, config)
-  }
-
-  stopResearchInterval(): void {
-    stopResearchInterval(this)
-  }
-
-  buyTechnology(type: string, alreadyPaid?: boolean, force?: boolean): boolean {
-    return buyTechnology(this, type, alreadyPaid, force)
-  }
-
-  cancelTechnology(): boolean {
-    return cancelTechnology(this)
-  }
-
-  unlockTechnology(type: string) {
-    return unlockTechnology(this, type)
-  }
-
-  applyEligibleTechnologies() {
-    return applyEligibleTechnologies(this)
-  }
-
-  unlockVillagerPopulationMilestoneTechnologies() {
-    return unlockVillagerPopulationMilestoneTechnologies(this)
+  updatePopulationObjectives(): void {
+    updatePopulationObjectives(this)
   }
 
   get villagerPopulation() {
@@ -337,19 +256,15 @@ export class Player implements PlayerLike {
     this.unselectAllUnits()
   }
 
-  updateConfig(operations: ConfigOperation[]) {
-    updatePlayerConfig(this, operations)
-  }
-
   isBuildingEligible(type: string) {
     return isBuildingEligible(this, type)
   }
 
-  plantWheatField(i: number, j: number, options: { alreadyPaid?: boolean; spaceId?: string } = {}) {
+  plantWheatField(i: number, j: number, options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}) {
     return plantPlayerWheatField(this, i, j, options)
   }
 
-  buyBuilding(i: number, j: number, type: string, options: { alreadyPaid?: boolean; spaceId?: string } = {}) {
+  buyBuilding(i: number, j: number, type: string, options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}) {
     return buyPlayerBuilding(this, i, j, type, options)
   }
 
@@ -379,7 +294,7 @@ export class Player implements PlayerLike {
       updateInstanceVisibility(unit)
       fadeIn(unit, FADE_DURATION_MS)
     }
-    if (unit.type === UNIT_TYPES.villager) this.unlockVillagerPopulationMilestoneTechnologies()
+    this.updatePopulationObjectives()
     return unit
   }
 

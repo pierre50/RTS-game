@@ -12,7 +12,6 @@ export {
   applyToolAppearance,
   EQUIPPED_ITEM_WEAPON,
   getEquippedItemWeapon,
-  getHeroPowerChargeToolForEquippedItem,
   isHeroCatchingPoleEquipped,
   isHeroToolAvailable,
   type HeroEquippedItem,

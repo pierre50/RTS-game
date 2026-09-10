@@ -1,4 +1,5 @@
 import { SHEET_TYPES, WORK_TYPES } from '../constants'
+import { canUseAgeEquipment } from '../objectives/ageRules'
 import { applyBakedLpcUnitAssets } from '../lpc/baked'
 import type { DynamicEquipmentKey } from '../lpc/equipment'
 import { refreshUnitEquipmentStats } from '../equipment/equipmentStats'
@@ -29,10 +30,13 @@ function isEquipmentKey(value: string | null | undefined): value is string {
 }
 
 export function getEquippedItemWeapon(tool: HeroEquippedItem, age = 0, hero?: UnitEntity | null): string | undefined {
-  void age
-  if (tool === 'sword') return hero?.inventory?.activeWeapons?.melee
-  if (tool === 'bow') return hero?.inventory?.activeWeapons?.ranged
-  return EQUIPPED_ITEM_WEAPON[tool]
+  const item =
+    tool === 'sword'
+      ? hero?.inventory?.activeWeapons?.melee
+      : tool === 'bow'
+        ? hero?.inventory?.activeWeapons?.ranged
+        : EQUIPPED_ITEM_WEAPON[tool]
+  return item && canUseAgeEquipment(hero?.owner ?? { age }, item) ? item : undefined
 }
 
 export function isHeroToolAvailable(

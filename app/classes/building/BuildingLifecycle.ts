@@ -70,6 +70,7 @@ export class BuildingLifecycle {
 
   onBuilt(): void {
     const building = this.building
+    building.owner.updatePopulationObjectives?.()
     const {
       context: { menu },
     } = building

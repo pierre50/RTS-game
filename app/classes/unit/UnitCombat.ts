@@ -33,6 +33,7 @@ import { getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipment/eq
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
 import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
+import { canVillagerAutonomouslyHunt } from '../../lib/units/villagerHunting'
 import { canUnitEnterBuildingInteriorForAssault } from '../../lib/buildings/interiorAccess'
 import {
   ensureRuntimeBuildingInteriorSpace,
@@ -199,8 +200,12 @@ export class UnitCombat {
   tryHunterTarget(action: string): boolean {
     const unit = this.unit
     const unitAsInstance = unit
-    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
-      Boolean(unit.getActionCondition?.(instance, action)) && !isVillagerWorkTargetRejected(unit, instance)
+    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(
+      unitAsInstance,
+      instance =>
+        Boolean(unit.getActionCondition?.(instance, action)) &&
+        !isVillagerWorkTargetRejected(unit, instance) &&
+        (unit.autonomousJob !== 'food' || action !== ACTION_TYPES.hunt || canVillagerAutonomouslyHunt(unit, instance))
     )
     if (!targets.length) return false
     const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)

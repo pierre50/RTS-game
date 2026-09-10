@@ -1,7 +1,9 @@
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { Assets, Container, Sprite } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import type { ResourceLedger } from '../lib'
 import { canAfford, cartesianToIsometric, getTexture, payCost } from '../lib'
+import { isTrapObservedBySight } from '../lib/buildings/trapRules'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
 import { addHeroInventoryItem, removeHeroInventoryItem } from '../lib/equipment/equipmentLoot'
 import { t } from '../lib/lang'
@@ -115,9 +117,16 @@ export class BuildingPlacer {
         mouseBuilding.type &&
         player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type, {
           alreadyPaid: Boolean(mouseBuilding.inventoryItem),
+          buildingAge: typeof mouseBuilding.buildingAge === 'number' ? mouseBuilding.buildingAge : player.age,
           spaceId: cell.spaceId,
         })
       ) {
+        if (
+          mouseBuilding.type === BUILDING_TYPES.trap &&
+          isTrapObservedBySight({ i: cell.i, j: cell.j, label: cell.has?.label }, controls.context, true)
+        ) {
+          menu.showMessage(t('trapPlacementObservedWarning'), 'warning')
+        }
         controls.removeMouseBuilding()
         if (controls.isHeroControlActive?.()) {
           menu.setActionTarget(controls.heroUnit ?? null)
@@ -218,7 +227,14 @@ export class BuildingPlacer {
     const {
       context: { menu, player },
     } = controls
-    if (!player.buyBuilding?.(cell.i, cell.j, BUILDING_TYPES.farm, { spaceId: cell.spaceId })) return false
+    const age = (controls.mouseBuilding as MouseBuilding | null)?.buildingAge
+    if (
+      !player.buyBuilding?.(cell.i, cell.j, BUILDING_TYPES.farm, {
+        spaceId: cell.spaceId,
+        ...(typeof age === 'number' ? { buildingAge: age } : {}),
+      })
+    )
+      return false
 
     controls.removeMouseBuilding()
     if (controls.isHeroControlActive?.()) {
@@ -255,7 +271,7 @@ export class BuildingPlacer {
     const cells = path.filter(cell => !isWall(cell.has, owner) && this.canWallUseCell(cell, owner))
     if (!cells.length) return true
 
-    const config = owner.config.buildings[BUILDING_TYPES.smallWall]
+    const config = getPlayerBuildingConfig(owner, BUILDING_TYPES.smallWall)!
     const totalCost = Object.fromEntries(
       Object.entries(config.cost ?? {}).map(([resource, amount]) => [resource, (amount as number) * cells.length])
     ) as ResourceLedger

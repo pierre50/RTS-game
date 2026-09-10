@@ -1,4 +1,5 @@
-import { BUILDING_TYPES, STEP_TIME } from '../constants'
+import { BUILDING_TYPES, STEP_TIME, UNIT_TYPES } from '../constants'
+import { AGE_OBJECTIVES, completeAgeObjective } from '../objectives/ageObjectives'
 import { canStoreStableHorse, storeStableHorse } from './stableHorses'
 import { instancesDistance } from '../maths'
 import { instanceContactInstance } from '../grid/movement'
@@ -27,6 +28,7 @@ export function getNearestAvailableStableForUnit(
 ): BuildingEntity | null {
   const owner = unit.owner
   if (!owner) return null
+  if ((owner.age ?? 0) < 1) return null
   let stable: BuildingEntity | null = null
   let bestDistance = Infinity
   const maxDistance = options.maxDistance
@@ -194,6 +196,7 @@ function routeCapturedHorseWithOwnerToStable({
       taskName: `${taskName}.route`,
       isRouteValid,
       onStored: () => {
+        if (owner.type === UNIT_TYPES.hero) completeAgeObjective(owner.owner, AGE_OBJECTIVES.tameHorse)
         onStored()
         clear()
       },

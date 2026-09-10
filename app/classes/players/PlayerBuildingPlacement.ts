@@ -1,3 +1,5 @@
+import { getBuildingAge, getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
+import { constructionTerritoryBlocker } from '../../lib/campaign/mapTerritory'
 import { BUILDING_TYPES, FADE_DURATION_MS, RESOURCE_TYPES } from '../../constants'
 import {
   canAfford,
@@ -15,6 +17,7 @@ import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from '../map/resources/ResourceQuantityRanges'
 import { Resource } from '../Resource'
+import { AGE_OBJECTIVES, completeAgeObjective } from '../../lib/objectives/ageObjectives'
 
 import type { Player } from './Player'
 
@@ -27,14 +30,17 @@ export function plantPlayerWheatField(
   player: Player,
   i: number,
   j: number,
-  options: { alreadyPaid?: boolean; spaceId?: string } = {}
+  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
 ) {
+  if (constructionTerritoryBlocker(player.context, player)) return false
+  const buildingAge = getBuildingAge(options, player.age)
+  if (buildingAge > player.age) return false
   const {
     context: { menu, map },
   } = player
   const space = getMapSpace(map, options.spaceId)
   const grid = space?.grid ?? map.grid
-  const config = player.config.buildings[BUILDING_TYPES.farm]
+  const config = getPlayerBuildingConfig(player, BUILDING_TYPES.farm, buildingAge)
   if (!config) return false
   const placementConfig = { ...config, type: BUILDING_TYPES.farm }
   const passageLookup = createReservedPassageCellLookup(player.context)
@@ -74,6 +80,7 @@ export function plantPlayerWheatField(
     planted.forEach(wheat => memory.foundedResources?.[RESOURCE_TYPES.wheat]?.add(wheat))
     player.isPlayed && menu.updateTopbar()
     if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
+    if (planted.length > 0) completeAgeObjective(player, AGE_OBJECTIVES.createWheatField)
     return true
   }
   return false
@@ -84,15 +91,18 @@ export function buyPlayerBuilding(
   i: number,
   j: number,
   type: string,
-  options: { alreadyPaid?: boolean; spaceId?: string } = {}
+  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
 ) {
   if (type === BUILDING_TYPES.farm) return player.plantWheatField(i, j, options)
+  if (constructionTerritoryBlocker(player.context, player)) return false
+  const buildingAge = getBuildingAge(options, player.age)
+  if (buildingAge > player.age) return false
   const {
     context: { menu, map },
   } = player
   const space = getMapSpace(map, options.spaceId)
   const grid = space?.grid ?? map.grid
-  const config = player.config.buildings[type]
+  const config = getPlayerBuildingConfig(player, type, buildingAge)
   if (!config) return false
   const placementConfig = { ...config, type }
   const passageLookup = createReservedPassageCellLookup(player.context)
@@ -112,6 +122,7 @@ export function buyPlayerBuilding(
         j,
         spaceId: space?.id,
         type,
+        buildingAge,
         isBuilt: map.instantMode || config.instantPlacement === true,
       })
     )

@@ -7,7 +7,7 @@ import {
 } from '../../lib/horses/stableInteriorHorseIdentity'
 import { getStableHorses, type StableHorse } from '../../lib/horses/stableHorses'
 import type { GameContextLike } from '../../types/context'
-import type { RuntimeEntity } from '../../types/entities'
+import type { AnimalEntity, RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMapSpace } from '../../types/map'
 
 type StableInteriorHorseSpace = StableInteriorSpace & {
@@ -25,7 +25,7 @@ function isStableInteriorHorseSpace(space: RuntimeMapSpace): space is StableInte
 function isStableInteriorHorseForSpace(
   space: StableInteriorHorseSpace,
   entity: RuntimeEntity | null | undefined
-): boolean {
+): entity is AnimalEntity {
   return Boolean(
     entity &&
       !entity.isDestroyed &&
@@ -36,14 +36,14 @@ function isStableInteriorHorseForSpace(
   )
 }
 
-function updateStableInteriorHorse(entity: RuntimeEntity, horse: StableHorse): void {
+function updateStableInteriorHorse(entity: AnimalEntity, horse: StableHorse): void {
   Object.assign(entity, {
-    ambientMovement: false,
+    ambientMovement: true,
     horseColor: horse.horseColor,
     strategy: undefined,
     tamingStatus: HORSE_TAMING_STATUS.tamed,
   })
-  entity.animalBehavior?.stop?.()
+  entity.animalBehavior?.start?.()
   entity.updateTexture?.()
 }
 
@@ -93,7 +93,7 @@ export function syncStableInteriorHorses(context: GameContextLike, space: Runtim
       type: 'Horse',
       horseColor: horse.horseColor,
       tamingStatus: HORSE_TAMING_STATUS.tamed,
-      ambientMovement: false,
+      ambientMovement: true,
       strategy: undefined,
     })
     entity.label = label

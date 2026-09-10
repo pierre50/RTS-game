@@ -2,6 +2,8 @@ const { loadGenerationTs } = require('./load-generation-ts.cjs')
 const { PASSABLE_RESOURCE_TYPES } = loadGenerationTs('app/constants/entities.ts')
 const fs = require('node:fs')
 const path = require('node:path')
+const { connectingCells, isClearing } = require('../caves/sites.cjs')
+const { isCaveClearing } = require('../caves/placement.cjs')
 const { randomFrom } = require('./noise.cjs')
 const {
   animalGeneration,
@@ -59,6 +61,25 @@ function prepareContent(blueprint) {
       cell.solid = !PASSABLE_RESOURCE_TYPES.has(resource.type)
     }
   }
+  const cavePaths = new Set(
+    (blueprint.caves ?? [])
+      .flatMap(cave =>
+        (blueprint.banditCampPositions ?? [])
+          .filter(camp => camp.caveId === cave.id)
+          .flatMap(camp => connectingCells(cave, camp))
+      )
+      .map(cell => `${cell.i}:${cell.j}`)
+  )
+  for (const row of grid)
+    for (const cell of row) {
+      if (
+        cell &&
+        ((blueprint.caves ?? []).some(cave => isCaveClearing(cell, cave)) ||
+          (blueprint.banditCampPositions ?? []).some(camp => camp.caveId && isClearing(cell, camp)) ||
+          cavePaths.has(`${cell.i}:${cell.j}`))
+      )
+        cell.solid = true
+    }
   const random = randomFrom(`${blueprint.seed}:ambient-animals`)
   Object.assign(map, {
     random,

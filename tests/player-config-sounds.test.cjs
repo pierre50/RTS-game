@@ -36,7 +36,7 @@ function loadPlayerConfig() {
     campJarLarge: 'CampJarLarge',
   }
   const soundCues = {
-    projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
+    projectile: { arrowLaunch: ['archer-attack'] },
     unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
   }
   const mocks = {
@@ -56,13 +56,12 @@ function loadPlayerConfig() {
 
 test('BanditSword uses the sword attack sound cues for melee impacts', () => {
   const { createPlayerData, soundCues } = loadPlayerConfig()
-  const { config } = createPlayerData(
+  const config = createPlayerData(
     {
       buildings: {},
       projectiles: {},
       units: {},
     },
-    {},
     'Hellas'
   )
 
@@ -71,13 +70,12 @@ test('BanditSword uses the sword attack sound cues for melee impacts', () => {
 
 test('LPC arrows spawn lower when fired toward the left', () => {
   const { createPlayerData } = loadPlayerConfig()
-  const { config } = createPlayerData(
+  const config = createPlayerData(
     {
       buildings: {},
       projectiles: {},
       units: {},
     },
-    {},
     'Hellas'
   )
 
@@ -87,7 +85,7 @@ test('LPC arrows spawn lower when fired toward the left', () => {
 
 test('camp decoration buildings do not fade over the hero and use sprite shadows', () => {
   const { createPlayerData } = loadPlayerConfig()
-  const { config } = createPlayerData(
+  const config = createPlayerData(
     {
       buildings: {
         FireCamp: {},
@@ -98,7 +96,6 @@ test('camp decoration buildings do not fade over the hero and use sprite shadows
       projectiles: {},
       units: {},
     },
-    {},
     'Hellas'
   )
 

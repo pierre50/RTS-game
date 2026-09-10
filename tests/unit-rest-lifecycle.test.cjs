@@ -30,7 +30,7 @@ function fixture() {
       },
     },
     '../../lib/resources/resourceDelivery': { unitHasDeliverableResources: unit => Boolean(unit.carrying) },
-    '../../lib/units/villagerSchedule': { shouldVillagerBeAsleep: () => true },
+    '../../lib/units/villagerSchedule': { shouldVillagerBeAsleep: () => true, shouldVillagerWork: () => true },
     '../../lib/entities/entityFade': {
       cancelFade: () => {},
       fadeIn: () => {},

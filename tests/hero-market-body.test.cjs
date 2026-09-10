@@ -11,8 +11,11 @@ function loadHeroMarketBody() {
       },
       '../../lib': { getIconPath: value => value },
       '../../lib/equipment/equipmentLoot': {
+        formatEquipmentLootLabel: equipment => equipment,
         formatEquipmentStackLabel: equipment => equipment,
+        getEquipmentSlot: () => null,
         getEquipmentStacks: () => [],
+        getWeaponSlot: () => null,
       },
       '../../lib/equipment/equipmentMarket': {
         buyMarketEquipment: () => false,
@@ -25,14 +28,43 @@ function loadHeroMarketBody() {
         sellHeroResource: () => 0,
       },
       '../../lib/lang': { t: key => key },
-      '../equipment/EquipmentAvatar': { renderEquipmentAvatarLazy: () => {} },
+      '../inventory/InventoryActionRow': {
+        createInventoryActionRow: () => ({
+          element: { appendChild() {}, setAttribute() {} },
+          icon: { appendChild() {} },
+        }),
+      },
+      '../inventory/InventoryItemRows': {
+        createInventoryEquipmentRow: () => ({
+          element: { appendChild() {}, setAttribute() {} },
+          icon: { appendChild() {} },
+        }),
+        createInventoryResourceRow: () => ({
+          element: { appendChild() {}, setAttribute() {} },
+          icon: { appendChild() {} },
+        }),
+      },
+      '../inventory/InventoryItemIcons': {
+        createInventoryEquipmentIcon: () => ({}),
+        createInventoryResourceIcon: () => ({}),
+      },
       '../inventory/InventorySlotRenderer': {
         createInventorySection: () => ({ tagName: 'section' }),
-        createInventorySlot: () => ({ appendChild() {} }),
       },
       '../inventory/InventoryTooltips': {
-        createEquipmentTooltip: equipment => ({ title: equipment }),
-        createResourceTooltip: resource => ({ title: resource }),
+        createEquipmentRowInfo: equipment => ({
+          title: equipment,
+          description: '',
+          meta: '',
+          tooltip: { title: equipment },
+        }),
+        createResourceRowInfo: resource => ({
+          title: resource,
+          description: '',
+          meta: '',
+          tooltip: { title: resource },
+        }),
+        formatGold: value => `${value} gold`,
       },
     },
   })
@@ -71,15 +103,30 @@ test('hero market allows own, allied, neutral and friendly markets', () => {
   const menu = { context: { app: {}, controls: { heroUnit: hero } }, playUiClick() {} }
 
   try {
-    assert.notEqual(createHeroMarketBody({ owner: heroOwner }, menu, () => {}), null)
-    assert.notEqual(createHeroMarketBody({ owner: { label: 'ally', team: 1 } }, menu, () => {}), null)
-    assert.notEqual(createHeroMarketBody({ owner: { label: 'neutral', factionId: 'tribe' } }, menu, () => {}), null)
+    assert.notEqual(
+      createHeroMarketBody({ owner: heroOwner }, menu, () => {}),
+      null
+    )
+    assert.notEqual(
+      createHeroMarketBody({ owner: { label: 'ally', team: 1 } }, menu, () => {}),
+      null
+    )
+    assert.notEqual(
+      createHeroMarketBody({ owner: { label: 'neutral', factionId: 'tribe' } }, menu, () => {}),
+      null
+    )
 
     hero.context.getCampaignFactions = () => ({ tribe: { relationState: 'friendly' } })
-    assert.notEqual(createHeroMarketBody({ owner: { label: 'friendly', factionId: 'tribe' } }, menu, () => {}), null)
+    assert.notEqual(
+      createHeroMarketBody({ owner: { label: 'friendly', factionId: 'tribe' } }, menu, () => {}),
+      null
+    )
 
     hero.context.getCampaignFactions = () => ({ tribe: { relationState: 'allied' } })
-    assert.notEqual(createHeroMarketBody({ owner: { label: 'allied', factionId: 'tribe' } }, menu, () => {}), null)
+    assert.notEqual(
+      createHeroMarketBody({ owner: { label: 'allied', factionId: 'tribe' } }, menu, () => {}),
+      null
+    )
   } finally {
     restoreDocument()
   }
@@ -94,9 +141,18 @@ test('hero market blocks hostile, wary and enemy markets', () => {
   const hero = { owner: heroOwner, context: { getCampaignFactions: () => ({ tribe: { relationState: 'hostile' } }) } }
   const menu = { context: { app: {}, controls: { heroUnit: hero } }, playUiClick() {} }
 
-  assert.equal(createHeroMarketBody({ owner: { label: 'enemy', relation: 'enemy' } }, menu, () => {}), null)
-  assert.equal(createHeroMarketBody({ owner: { label: 'hostile', factionId: 'tribe' } }, menu, () => {}), null)
+  assert.equal(
+    createHeroMarketBody({ owner: { label: 'enemy', relation: 'enemy' } }, menu, () => {}),
+    null
+  )
+  assert.equal(
+    createHeroMarketBody({ owner: { label: 'hostile', factionId: 'tribe' } }, menu, () => {}),
+    null
+  )
 
   hero.context.getCampaignFactions = () => ({ tribe: { relationState: 'wary' } })
-  assert.equal(createHeroMarketBody({ owner: { label: 'wary', factionId: 'tribe' } }, menu, () => {}), null)
+  assert.equal(
+    createHeroMarketBody({ owner: { label: 'wary', factionId: 'tribe' } }, menu, () => {}),
+    null
+  )
 })

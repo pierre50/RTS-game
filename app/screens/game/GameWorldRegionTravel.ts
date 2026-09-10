@@ -16,7 +16,7 @@ import {
 } from '../../services/world/WorldRegionTravelSystem'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
-import type { CampaignSave, GameConfig, SaveRecord, SerializedSave } from '../../types/save'
+import type { CampaignSave, CampaignWorldSave, GameConfig, SaveRecord, SerializedSave } from '../../types/save'
 import { playBuildingInteriorDoorTransition } from '../../ui/BuildingInteriorTransition'
 import { applyTravelPartyToRuntime, extractTravelParty, runtimeHeroUnit, type TravelPartyGame } from './GameTravelParty'
 
@@ -75,20 +75,36 @@ function worldRegionTravelConfig(snapshot: SerializedSave, worldRegionId: string
   }
 }
 
+function savedWorldForRegion(campaign: CampaignSave | null, worldRegionId: string): CampaignWorldSave | null {
+  if (!campaign) return null
+  const matchesRegion = (world: CampaignWorldSave | undefined) =>
+    (world?.state.world?.worldRegionId ?? world?.state.config?.worldRegionId) === worldRegionId
+  const root = campaign.worlds[campaign.worldGraph.rootWorldId]
+  // The starting region uses a seed-based campaign id. Prefer its original state
+  // over a fresh duplicate created by older region-id-only lookups.
+  if (root && matchesRegion(root)) return root
+  return campaign.worlds[worldRegionId] ?? Object.values(campaign.worlds).find(matchesRegion) ?? null
+}
+
 function savedWorldStateForTravel(
   campaign: CampaignSave | null,
   worldRegionId: string,
   snapshot: SerializedSave,
   dayNightElapsedMs: number | null
 ): SerializedSave | null {
-  const state = campaign?.worlds[worldRegionId]?.state
+  const savedWorld = savedWorldForRegion(campaign, worldRegionId)
+  const state = savedWorld?.state
   if (!state) return null
   const nextState = structuredClone(state)
+  const fromElapsedMs = state.runtime?.dayNightElapsedMs ?? savedWorld?.visitedDayNightElapsedMs
   const weather = snapshot.runtime?.weather ?? null
   if (dayNightElapsedMs != null || weather) {
     nextState.runtime = {
       ...(nextState.runtime ?? {}),
       ...(dayNightElapsedMs != null ? { dayNightElapsedMs } : {}),
+      ...(fromElapsedMs != null && dayNightElapsedMs != null && dayNightElapsedMs > fromElapsedMs
+        ? { offlineFromElapsedMs: fromElapsedMs }
+        : {}),
       ...(weather ? { weather: structuredClone(weather) } : {}),
     }
   }
@@ -111,8 +127,9 @@ function finishWorldRegionArrival(
   focusTravelHero(game)
   const arrivedState = serializeGame(game._gameContext())
   const baseCampaign = previousCampaign ?? createInitialCampaignSave(departureState)
-  game._campaignSave = baseCampaign.worlds[worldRegionId]
-    ? updateCurrentWorldState(enterCampaignWorld(baseCampaign, worldRegionId), arrivedState)
+  const savedWorld = savedWorldForRegion(baseCampaign, worldRegionId)
+  game._campaignSave = savedWorld
+    ? updateCurrentWorldState(enterCampaignWorld(baseCampaign, savedWorld.id), arrivedState)
     : addChildWorldToCampaign(baseCampaign, arrivedState, {
         kind: 'world',
         name: worldRegionId,
@@ -135,8 +152,10 @@ async function bootWorldRegionForTravel(
   const savedState = savedWorldStateForTravel(game._campaignSave, worldRegionId, snapshot, dayNightElapsedMs)
   game._destroyRuntime({ preserveLoadingScreen: true })
   if (savedState) {
+    const simulatedAbsence = savedState.runtime?.offlineFromElapsedMs != null
     game.config = savedState.config ?? nextConfig
     await game._bootFromSave(savedState)
+    if (simulatedAbsence) game._gameContext().unitRest?.synchronizeAfterTimeJump?.()
     return { freshWorld: false }
   }
   game.config = nextConfig
@@ -216,9 +235,6 @@ export async function travelToWorldRegion(
   const party = extractTravelParty(snapshot)
   const previousCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, snapshot) : null
   const previousFreeCamera = context.controls?.freeCameraActive ?? false
-  const pursuers = collectWorldPursuers(context, snapshot, party)
-  const departureState = removeWorldPursuers(snapshot, pursuers)
-  const departureCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, departureState) : null
   let bootAttempted = false
   await withWorldRegionTransition(game, async () => {
     try {
@@ -236,23 +252,7 @@ export async function travelToWorldRegion(
           : previousCell
       const arrivalCell = arrivalCellForRegionEdge(arrivalMap, edge, departureCell, previousLayout)
       applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld })
-      if (pursuers.length) {
-        if (!arrivalCell) throw new Error('No arrival cell for world pursuers')
-        const pursuit = game._gameContext().worldPursuit
-        if (!pursuit) throw new Error('World pursuit runtime is unavailable')
-        pursuit.enqueue(
-          pursuers.map(pursuer => ({
-            ...pursuer,
-            targetLabel:
-              pursuer.targetLabel === party.hero?.label
-                ? (runtimeHeroUnit(game)?.label ?? pursuer.targetLabel)
-                : pursuer.targetLabel,
-            arrival: { i: arrivalCell.i, j: arrivalCell.j },
-            remainingMs: 3000,
-          }))
-        )
-      }
-      finishWorldRegionArrival(game, departureCampaign, departureState, worldRegionId)
+      finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
     } catch (error) {
       if (bootAttempted) {
         game.togglePause?.(false, { silent: true })
@@ -309,4 +309,3 @@ export async function debugTeleportWorldMap(
     finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
   })
 }
-import { collectWorldPursuers, removeWorldPursuers } from './GameWorldPursuers'

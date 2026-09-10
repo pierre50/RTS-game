@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
+import { FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import { isBanditOwner } from '../combat/bandits'
 import { getBuildingShelterCapacity } from '../buildings/buildingOccupancy'
 import { updateInstanceVisibility } from '../grid/visibility'
@@ -180,7 +180,7 @@ function transferUnitMembership(target: ConvertibleEntity, oldOwner: PlayerLike,
   addToOwnerList(newOwner, 'units', target)
   oldOwner.population = Math.max(0, oldOwner.population - 1)
   newOwner.population += 1
-  if (target.type === UNIT_TYPES.villager) newOwner.unlockVillagerPopulationMilestoneTechnologies?.()
+  newOwner.updatePopulationObjectives?.()
   target.setTextures?.(SHEET_TYPES.standing)
 }
 
@@ -200,7 +200,6 @@ function transferBuildingMembership(
   }
   target.clearRallyPoint?.()
   target.queue = []
-  target.technology = null
   target.loading = null
   target.finalTexture?.()
   refreshTransferredBuildingMenu(target, newOwner, menu)

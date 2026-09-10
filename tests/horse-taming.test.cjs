@@ -50,6 +50,7 @@ test('storing a captured horse marks the runtime horse and stable record as tame
   const { storeStableHorse } = loadHorseModules()
   const stable = {
     type: 'Stable',
+    owner: { age: 0, completedObjectives: [] },
     stableHorses: [],
   }
   const horse = {
@@ -60,6 +61,7 @@ test('storing a captured horse marks the runtime horse and stable record as tame
 
   assert.equal(storeStableHorse(stable, horse), true)
   assert.equal(horse.tamingStatus, 'tamed')
+  assert.deepEqual(stable.owner.completedObjectives, [])
   assert.deepEqual(stable.stableHorses, [{ horseColor: 'light', tamingStatus: 'tamed' }])
 })
 

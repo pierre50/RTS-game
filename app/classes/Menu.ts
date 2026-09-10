@@ -123,7 +123,7 @@ export default class Menu implements MenuLike {
   init(): void {
     this.minimapManager.initMiniMap()
     this.updateTopbar()
-    this.actionSpecs.preloadIcons(this.context.player)
+    this.actionSpecs.preloadIcons()
   }
 
   show(): void {
@@ -272,12 +272,6 @@ export default class Menu implements MenuLike {
   getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     return this.actionSpecs.getActionBuildingButton(type, ownerOverride)
   }
-  getActionTechnologyButton(type: string): MenuButtonSpec {
-    return this.actionSpecs.getActionTechnologyButton(type)
-  }
-  getHeroTechnologyButtons(): MenuButtonSpec[] {
-    return this.actionSpecs.getHeroTechnologyButtons()
-  }
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
     return this.actionSpecs.getActionMenuItems(selection)
   }
@@ -328,8 +322,8 @@ export default class Menu implements MenuLike {
   setEquippedItem(item: HeroEquippedItem | null): void {
     return this.inventoryManager.render(item)
   }
-  syncTechnologyProgress(): void {
-    return this.inventoryManager.syncTechnologyProgress()
+  syncObjectiveProgress(): void {
+    return this.inventoryManager.syncObjectiveProgress()
   }
   setEquippedTool(tool: HeroEquippedItem | null): void {
     return this.setEquippedItem(tool)

@@ -2,7 +2,7 @@ import { getCivilizationDefinition } from './civilizations'
 import { CAMP_DECORATION_BUILDING_TYPES, BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { SOUND_CUES } from '../constants/sounds'
 import { applyEquipmentStatsToUnitConfig } from '../lib/equipment/equipmentStats'
-import type { BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from '../types/config'
+import type { BuildingConfig, ProjectileConfig, UnitConfig } from '../types/config'
 import type { PlayerConfigLike } from '../types/player'
 
 function deepClone<T>(value: T): T {
@@ -152,15 +152,8 @@ function normalizeUnitSounds(unit: UnitConfig): UnitConfig {
   return unit
 }
 
-export function createPlayerData(
-  baseConfig: PlayerConfigLike,
-  baseTechs: Record<string, TechnologyConfig>,
-  civ: string
-): { config: PlayerConfigLike; techs: Record<string, TechnologyConfig> } {
+export function createPlayerData(baseConfig: PlayerConfigLike, civ: string): PlayerConfigLike {
   const config = deepClone(baseConfig)
-  const techs: Record<string, TechnologyConfig> = {
-    ...deepClone(baseTechs),
-  }
   const civilization = getCivilizationDefinition(civ)
 
   config.units = {
@@ -209,18 +202,11 @@ export function createPlayerData(
     delete config.units[unitName]
   }
 
-  for (const techName of civilization.disabledTechnologies) {
-    delete techs[techName]
-  }
-
   for (const building of Object.values(config.buildings)) {
     if (Array.isArray(building.units)) {
       building.units = building.units.filter((unitName: string) => config.units[unitName])
     }
-    if (Array.isArray(building.technologies)) {
-      building.technologies = building.technologies.filter((techName: string) => techs[techName])
-    }
   }
 
-  return { config, techs }
+  return config
 }

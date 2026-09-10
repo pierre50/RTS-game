@@ -1,3 +1,4 @@
+import { definedProperties } from '../lib/definedProperties'
 import { playClickSound } from '../lib/audio/uiSound'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
@@ -25,10 +26,9 @@ export default class MapConfig {
     this.onPlay = onPlay
     this._onKeyDown = this._handleKeyDown.bind(this)
 
-    this.config = {
+    this.config = definedProperties({
       size: 144,
       startingAge: 0,
-      allTechnologies: false,
       revealEverything: false,
       revealTerrain: false,
       instantMode: false,
@@ -36,7 +36,7 @@ export default class MapConfig {
       resourceDensity: 'moderate',
       difficulty: 'medium',
       worldId: DEFAULT_WORLD_ID,
-    }
+    })
 
     this._modal = new Modal({
       title: t('newGame'),

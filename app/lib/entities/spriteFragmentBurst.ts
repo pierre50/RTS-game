@@ -1,5 +1,6 @@
 import { definedProperties } from '../definedProperties'
-import { Rectangle, Sprite, Texture, type Container } from 'pixi.js'
+import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js'
+import { OutlineFilter } from 'pixi-filters'
 import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
 import type { GameContextLike, SchedulerLike, SchedulerTaskId } from '../../types/context'
 
@@ -19,7 +20,7 @@ export type SpriteFragmentBurstSourcePoint = {
 }
 
 type FragmentState = {
-  sprite: Sprite
+  sprite: Container
   texture: Texture
   vx: number
   vy: number
@@ -38,6 +39,8 @@ export type SpriteFragmentBurstOptions = {
   sprite: Sprite
   layer?: Container | null
   fragmentSize?: number
+  borderWidth?: number
+  borderRadius?: number
   maxFragments?: number
   durationMs?: number
   stepMs?: number
@@ -80,7 +83,8 @@ const DEFAULT_SETTLE_SPREAD = 18
 const DEFAULT_SETTLE_STRENGTH = 0.00006
 const DEFAULT_GROUND_BOUNCE = 0.16
 const DEFAULT_Z_INDEX_OFFSET = 0.35
-const OPAQUE_ALPHA_THRESHOLD = 16
+const OPAQUE_ALPHA_THRESHOLD = 128
+const MIN_OPAQUE_COVERAGE = 0.5
 const ISO_CELL_INSET = 0.86
 const ISO_CELL_DEPTH_SCALE = 1 / (CELL_HEIGHT / 2)
 const ISO_HALF_DEPTH_BIAS = 0.04
@@ -93,11 +97,12 @@ function clamp(value: number, min: number, max: number): number {
 
 function destroyFragment(fragment: FragmentState): void {
   fragment.sprite.parent?.removeChild(fragment.sprite)
+  for (const filter of fragment.sprite.filters ?? []) filter.destroy()
   fragment.sprite.destroy({ children: true, texture: false })
   fragment.texture.destroy(false)
 }
 
-function hasOpaquePixels(
+function hasEnoughOpaquePixels(
   pixels: Uint8ClampedArray | Uint8Array,
   width: number,
   x: number,
@@ -105,9 +110,12 @@ function hasOpaquePixels(
   w: number,
   h: number
 ): boolean {
+  let opaqueCount = 0
+  const requiredCount = Math.ceil(w * h * MIN_OPAQUE_COVERAGE)
   for (let py = y; py < y + h; py++) {
     for (let px = x; px < x + w; px++) {
-      if (pixels[(py * width + px) * 4 + 3] > OPAQUE_ALPHA_THRESHOLD) return true
+      if (pixels[(py * width + px) * 4 + 3] >= OPAQUE_ALPHA_THRESHOLD) opaqueCount++
+      if (opaqueCount >= requiredCount) return true
     }
   }
   return false
@@ -121,7 +129,7 @@ function findOpaqueBounds(pixels: Uint8ClampedArray | Uint8Array, width: number,
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      if (pixels[(y * width + x) * 4 + 3] <= OPAQUE_ALPHA_THRESHOLD) continue
+      if (pixels[(y * width + x) * 4 + 3] < OPAQUE_ALPHA_THRESHOLD) continue
       minX = Math.min(minX, x)
       maxX = Math.max(maxX, x)
       minY = Math.min(minY, y)
@@ -143,21 +151,38 @@ function getOpaqueTileCandidates(
   let bounds: OpaqueBounds | null = null
   let pixels: Uint8ClampedArray | Uint8Array | null = null
   let extractedWidth = frameWidth
+  let extractedHeight = frameHeight
 
   try {
     const extracted = context.app.renderer.extract.pixels(texture)
     pixels = extracted.pixels
     extractedWidth = extracted.width
-    bounds = findOpaqueBounds(extracted.pixels, extracted.width, extracted.height)
+    extractedHeight = extracted.height
+    if (extractedWidth <= 0 || extractedHeight <= 0 || pixels.length < extractedWidth * extractedHeight * 4) {
+      return { bounds: null, tiles }
+    }
+    const pixelBounds = findOpaqueBounds(pixels, extractedWidth, extractedHeight)
+    if (!pixelBounds) return { bounds: null, tiles }
+    bounds = {
+      minX: (pixelBounds.minX * frameWidth) / extractedWidth,
+      maxX: ((pixelBounds.maxX + 1) * frameWidth) / extractedWidth - 1,
+      minY: (pixelBounds.minY * frameHeight) / extractedHeight,
+      maxY: ((pixelBounds.maxY + 1) * frameHeight) / extractedHeight - 1,
+    }
   } catch {
-    pixels = null
+    // Without alpha data we cannot safely choose visible fragments.
+    return { bounds: null, tiles }
   }
 
   for (let y = 0; y < frameHeight; y += fragmentSize) {
     for (let x = 0; x < frameWidth; x += fragmentSize) {
       const w = Math.min(fragmentSize, frameWidth - x)
       const h = Math.min(fragmentSize, frameHeight - y)
-      if (!pixels || hasOpaquePixels(pixels, extractedWidth, x, y, w, h)) {
+      const pixelX = Math.floor((x * extractedWidth) / frameWidth)
+      const pixelY = Math.floor((y * extractedHeight) / frameHeight)
+      const pixelWidth = Math.ceil(((x + w) * extractedWidth) / frameWidth) - pixelX
+      const pixelHeight = Math.ceil(((y + h) * extractedHeight) / frameHeight) - pixelY
+      if (hasEnoughOpaquePixels(pixels, extractedWidth, pixelX, pixelY, pixelWidth, pixelHeight)) {
         tiles.push(new Rectangle(x, y, w, h))
       }
     }
@@ -228,6 +253,29 @@ function createFragmentTexture(texture: Texture, tile: Rectangle): Texture {
   })
 }
 
+function createFragmentVisual(texture: Texture, borderWidth: number, borderRadius: number): Container {
+  const image = new Sprite(texture)
+  image.anchor.set(0.5)
+  image.roundPixels = true
+  if (borderWidth <= 0 && borderRadius <= 0) return image
+
+  const visual = new Container()
+  const width = texture.orig.width
+  const height = texture.orig.height
+  const radius = clamp(borderRadius, 0, Math.min(width, height) / 2)
+  visual.addChild(image)
+  if (radius > 0) {
+    const mask = new Graphics().roundRect(-width / 2, -height / 2, width, height, radius).fill(0xffffff)
+    visual.addChild(mask)
+    image.mask = mask
+  }
+  if (borderWidth > 0) {
+    // Filter the masked image so the outline follows both its alpha and rounded corners.
+    visual.filters = [new OutlineFilter({ color: 0x000000, thickness: borderWidth, quality: 0.1 })]
+  }
+  return visual
+}
+
 function pickGroundTarget(
   groundTargets: SpriteFragmentBurstGroundTarget[] | undefined,
   random: () => number
@@ -287,6 +335,8 @@ function createFragmentStates({
   settleSpread,
   zIndexOffset,
   sourcePoint,
+  borderWidth,
+  borderRadius,
   random,
 }: Required<
   Pick<
@@ -302,6 +352,8 @@ function createFragmentStates({
     | 'settleSpread'
     | 'zIndexOffset'
     | 'random'
+    | 'borderWidth'
+    | 'borderRadius'
   >
 > & {
   bounds: OpaqueBounds | null
@@ -323,7 +375,7 @@ function createFragmentStates({
 
   return candidates.map(tile => {
     const fragmentTexture = createFragmentTexture(texture, tile)
-    const fragment = new Sprite(fragmentTexture)
+    const fragment = createFragmentVisual(fragmentTexture, borderWidth, borderRadius)
     const localX = originX + (tile.x + tile.width / 2) * sprite.scale.x
     const localY = originY + (tile.y + tile.height / 2) * sprite.scale.y
     const dx = tile.x + tile.width / 2 - centerX
@@ -333,14 +385,12 @@ function createFragmentStates({
     const groundTarget = settleToBottom ? pickGroundTarget(groundTargets, random) : null
     const settleTarget = groundTarget ? randomPointInIsoCell(groundTarget, random) : null
 
-    fragment.anchor.set(0.5)
     fragment.position.set(host.x + localX, host.y + localY)
     fragment.scale.set(sprite.scale.x, sprite.scale.y)
     fragment.rotation = sprite.rotation
     fragment.alpha = sprite.alpha
     fragment.tint = sprite.tint
     fragment.eventMode = 'none'
-    fragment.roundPixels = true
     fragment.zIndex = settleTarget
       ? getGroundSettleZIndex(settleTarget, fallbackZIndex, random)
       : (fallbackZIndex ?? 0) + zIndexOffset + random() * 0.08
@@ -429,6 +479,8 @@ export function spawnSpriteFragmentBurst(options: SpriteFragmentBurstOptions): v
     sprite,
     layer = host.parent,
     fragmentSize = DEFAULT_FRAGMENT_SIZE,
+    borderWidth = 1,
+    borderRadius = 2,
     maxFragments = DEFAULT_MAX_FRAGMENTS,
     durationMs = DEFAULT_DURATION_MS,
     stepMs = DEFAULT_STEP_MS,
@@ -470,6 +522,8 @@ export function spawnSpriteFragmentBurst(options: SpriteFragmentBurstOptions): v
       texture: sprite.texture,
       bounds: candidateResult.bounds,
       candidates,
+      borderWidth: Math.max(0, borderWidth),
+      borderRadius: Math.max(0, borderRadius),
       durationMs,
       minSpeed,
       maxSpeed,

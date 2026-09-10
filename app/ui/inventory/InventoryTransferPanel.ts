@@ -1,5 +1,4 @@
-import { RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES } from '../../constants'
-import { getIconPath } from '../../lib'
+import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import { formatEquipmentStackLabel, getEquipmentStacks } from '../../lib/equipment/equipmentLoot'
 import {
   moveInventoryEquipment,
@@ -7,9 +6,8 @@ import {
   type InventoryContainer,
 } from '../../lib/inventory/inventoryContainers'
 import { t } from '../../lib/lang'
-import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
-import { createInventorySection, createInventorySlot } from './InventorySlotRenderer'
-import { createEquipmentTooltip, createResourceTooltip } from './InventoryTooltips'
+import { createInventoryEquipmentRow, createInventoryResourceRow } from './InventoryItemRows'
+import { createInventorySection } from './InventorySlotRenderer'
 import type { GameContextLike } from '../../types/context'
 import type { ResourceAmount } from '../../types/common'
 
@@ -62,7 +60,7 @@ export class InventoryTransferPanel {
     return createInventorySection({
       className: 'inventory-transfer-block',
       emptyText: t('inventoryEmptySlot'),
-      gridClassName: 'inventory-loot-grid inventory-transfer-grid',
+      gridClassName: 'inventory-loot-list inventory-transfer-grid',
       title: container.label ?? t(container.labelKey),
       titleClassName: 'inventory-transfer-title',
       renderItems: grid => {
@@ -102,20 +100,14 @@ export class InventoryTransferPanel {
     amount: number
   ): HTMLButtonElement {
     const isTheftTransfer = this.isTheftTransfer?.(container, transferTarget) ?? false
-    const icon = document.createElement('img')
-    icon.className = 'inventory-resource-icon'
-    icon.src = getIconPath(RESOURCE_ICON_IDS[resource].commodity)
-    icon.alt = ''
-
-    const slot = createInventorySlot({
-      ariaLabel: t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', {
-        item: `${t(resource)} x${amount}`,
-      }),
-      className: ['inventory-loot-slot inventory-transfer-slot', isTheftTransfer ? 'is-theft' : '']
-        .filter(Boolean)
-        .join(' '),
-      icon,
-      label: `${t(resource)} x${amount}`,
+    const { element } = createInventoryResourceRow(this.context.menu, {
+      id: `transfer-resource-${container.id}-${resource}`,
+      className: ['inventory-transfer-slot', isTheftTransfer ? 'is-theft' : ''].filter(Boolean).join(' '),
+      resource,
+      amount,
+      badge: isTheftTransfer ? t('heroInteractionSteal') : undefined,
+      playClick: false,
+      showTooltip: false,
       onAction: mode => {
         const amountToMove = mode === 'one' ? 1 : undefined
         const moved = moveInventoryResource(container, transferTarget, resource, amountToMove)
@@ -129,8 +121,13 @@ export class InventoryTransferPanel {
         })
       },
     })
-    this.context.menu.menuTooltip?.bind(slot, createResourceTooltip(resource, amount))
-    return slot
+    element.setAttribute(
+      'aria-label',
+      t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', {
+        item: `${t(resource)} x${amount}`,
+      })
+    )
+    return element
   }
 
   private createEquipmentButton(
@@ -141,20 +138,15 @@ export class InventoryTransferPanel {
   ): HTMLButtonElement {
     const isTheftTransfer = this.isTheftTransfer?.(container, transferTarget) ?? false
     const labelText = formatEquipmentStackLabel(equipment, count)
-
-    const icon = document.createElement('canvas')
-    icon.className = 'unit-avatar-frame inventory-slot-icon'
-    icon.width = 64
-    icon.height = 64
-    renderEquipmentAvatarLazy(this.context.app, equipment, icon, 'inventory transfer', this.context.performance)
-
-    const slot = createInventorySlot({
-      ariaLabel: t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', { item: labelText }),
-      className: ['inventory-loot-slot inventory-transfer-slot', isTheftTransfer ? 'is-theft' : '']
-        .filter(Boolean)
-        .join(' '),
-      icon,
-      label: labelText,
+    const { element } = createInventoryEquipmentRow(this.context, this.context.menu, {
+      id: `transfer-equipment-${container.id}-${equipment}`,
+      className: ['inventory-transfer-slot', isTheftTransfer ? 'is-theft' : ''].filter(Boolean).join(' '),
+      equipment,
+      count,
+      labelContext: 'inventory transfer',
+      badge: isTheftTransfer ? t('heroInteractionSteal') : undefined,
+      playClick: false,
+      showTooltip: false,
       onAction: mode => {
         const amountToMove = mode === 'one' ? 1 : count
         let moved = 0
@@ -172,8 +164,11 @@ export class InventoryTransferPanel {
         })
       },
     })
-    this.context.menu.menuTooltip?.bind(slot, createEquipmentTooltip(equipment, count))
-    return slot
+    element.setAttribute(
+      'aria-label',
+      t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', { item: labelText })
+    )
+    return element
   }
 
   private handleTransfer(event: InventoryTransferEvent): void {

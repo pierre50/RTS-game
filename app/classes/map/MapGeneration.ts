@@ -372,6 +372,7 @@ export class MapGeneration {
     if (prepared) {
       for (let index = 0; index < prepared.length; index++) {
         const animal = prepared[index]
+        if (!animal) continue
         // Villages and camps are placed at runtime; keep occupied cells intact.
         if (this.canPlaceAmbientAnimalAt(animal.i, animal.j)) this._gaiaCreateAnimal(animal)
         if (index > 0 && index % 32 === 0) await this.yieldToBrowser()

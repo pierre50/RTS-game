@@ -21,6 +21,8 @@ export function isTraineeTrainingType(building: BuildingEntity, type: string | u
 
 export function canUnitTrainInto(building: BuildingEntity, unit: UnitEntity, type: string | undefined): boolean {
   if (!type || !building.units?.includes(type)) return false
+  if ((building.type === BUILDING_TYPES.stable || type === UNIT_TYPES.bowman) && (building.owner?.age ?? 0) < 1)
+    return false
   if (building.type === BUILDING_TYPES.stable) {
     return unit.type !== UNIT_TYPES.villager && !unit.mountedOnHorse && unit.type === type
   }

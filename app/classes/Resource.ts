@@ -1,3 +1,11 @@
+import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import { registerResourceRespawnSlot } from './resources/ResourceRespawn'
+import {
+  resourceFootprintCells,
+  resourceFragmentGroundTargets,
+  spawnResourceTreeFragments,
+  spawnDepletedResourceFragments,
+} from './resources/ResourceFragments'
 import { Assets, Polygon, AnimatedSprite, type Sprite } from 'pixi.js'
 import {
   cartesianToIsometric,
@@ -9,10 +17,8 @@ import {
   getTexture,
   getEntityMapSpace,
   getEntityCell,
-  getBuildingFootprintCells,
   isAIControlledPlayer,
   parseTextureRef,
-  spawnSpriteFragmentBurst,
   textureRefToString,
   type SpriteFragmentBurstGroundTarget,
 } from '../lib'
@@ -24,9 +30,8 @@ import {
   LABEL_TYPES,
   PASSABLE_RESOURCE_TYPES,
   RESOURCE_TYPES,
-  WILDGRASS_RESOURCE_TYPES,
 } from '../constants'
-import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../config/gameplay'
+import { resetHarvestedWheat } from '../lib/resources/wheatGrowth'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/entity/ResourceInterface'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
@@ -139,38 +144,7 @@ export class Resource extends Instance implements ResourceEntity {
         this.setDefaultInterface(element, data, options)
       },
     }
-    const initializeVisuals = () => {
-      this.deferredVisuals = undefined
-      this.deferredSpriteBounds = undefined
-      this.sprite = createResourceSprite(this, options, cell)
-
-      const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
-      interactiveSprite.updateAnchor = true
-      interactiveSprite.label = LABEL_TYPES.sprite
-      const spriteScale = this.spriteScale ?? 1
-      this.sprite.scale.set(spriteScale)
-      this.sprite.position.y = this.reliefLift ?? 0
-      if (this.sprite) {
-        interactiveSprite.eventMode = 'static'
-        interactiveSprite.roundPixels = true
-
-        this.sprite.on('pointertap', () => {
-          this.context.editor?.handleEntityInteraction(this)
-        })
-        this.sprite.on('pointerup', () => {
-          this.context.editor?.handleEntityInteraction(this)
-        })
-
-        this.shadow = this.createShadow()
-        if (this.shadow) {
-          attachEntityShadowsToMapSpace(this.context.map, this)
-          this.addChild(this.sprite)
-        } else {
-          this.addChild(this.sprite)
-        }
-        this.startWindMotion()
-      }
-    }
+    const initializeVisuals = () => this.initializeResourceVisuals(options, cell)
     if (!this.isAnimated && !context.editor && !options.isDead && !options.isDestroyed) {
       const { texture } = prepareStaticResourceTexture(this, cell)
       const scale = this.spriteScale ?? 1
@@ -194,8 +168,48 @@ export class Resource extends Instance implements ResourceEntity {
     map.addToInstanceBucket(this)
   }
 
+  private initializeResourceVisuals(options: ResourceOptions, cell: RuntimeCell): void {
+    delete this.deferredVisuals
+    delete this.deferredSpriteBounds
+    this.sprite = createResourceSprite(this, options, cell)
+
+    const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
+    interactiveSprite.updateAnchor = true
+    interactiveSprite.label = LABEL_TYPES.sprite
+    const spriteScale = this.spriteScale ?? 1
+    this.sprite.scale.set(spriteScale)
+    this.sprite.position.y = this.reliefLift ?? 0
+    if (this.sprite) {
+      interactiveSprite.eventMode = 'static'
+      interactiveSprite.roundPixels = true
+
+      this.sprite.on('pointertap', () => {
+        this.context.editor?.handleEntityInteraction(this)
+      })
+      this.sprite.on('pointerup', () => {
+        this.context.editor?.handleEntityInteraction(this)
+      })
+
+      this.shadow = this.createShadow()
+      if (this.shadow) {
+        attachEntityShadowsToMapSpace(this.context.map, this)
+        this.addChild(this.sprite)
+      } else {
+        this.addChild(this.sprite)
+      }
+      this.startWindMotion()
+    }
+  }
+
   override die(immediate?: boolean) {
     if (this.isDead) {
+      return
+    }
+    if (!immediate && resetHarvestedWheat(this)) {
+      this.stopWindMotion()
+      if (this.sprite instanceof AnimatedSprite) this.sprite.gotoAndStop(0)
+      this.syncShadow()
+      this.context.menu?.refreshInventory?.()
       return
     }
     const {
@@ -206,7 +220,7 @@ export class Resource extends Instance implements ResourceEntity {
     }
     const listName = 'founded' + this.type + 's'
     for (let i = 0; i < players.length; i++) {
-      if (isAIControlledPlayer(players[i])) {
+      if (isAIControlledPlayer(players[i]) && playerSeesTarget(players[i], this)) {
         const list = (players[i] as PlayerWithResourceMemory)[listName]
         if (list) {
           list.delete(this)
@@ -252,20 +266,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   registerNaturalRespawnSlot(): void {
-    if (!this.isNaturalResource) return
-    if (!Object.hasOwn(NATURAL_RESOURCE_REGROWTH_BY_TYPE, this.type)) return
-    const slots = this.context.map.naturalResourceRespawnSlots ?? (this.context.map.naturalResourceRespawnSlots = [])
-    slots.push({
-      depletedDay: this.context.dayNight?.state?.day ?? 1,
-      i: this.i,
-      isDestroyed: true,
-      isNaturalResource: true,
-      j: this.j,
-      label: this.label,
-      textureName: this.type === RESOURCE_TYPES.berrybush ? this.textureName : undefined,
-      totalQuantity: this.totalQuantity,
-      type: this.type,
-    })
+    registerResourceRespawnSlot(this)
   }
 
   updateTexture() {
@@ -321,13 +322,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   getFootprintCells(): RuntimeCell[] {
-    const { map } = this.context
-    const space = getEntityMapSpace(this, map)
-    const grid = space?.grid ?? map.grid
-    const cells = getBuildingFootprintCells(this.i, this.j, grid, this.size ?? 1)
-    if (cells.length) return cells
-    const cell = getEntityCell(this, map)
-    return cell ? [cell] : []
+    return resourceFootprintCells(this)
   }
 
   getSolidFootprintCells(): RuntimeCell[] {
@@ -335,84 +330,15 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   getFragmentGroundTargets(): SpriteFragmentBurstGroundTarget[] {
-    return this.getSolidFootprintCells().map(cell => ({
-      x: cell.x,
-      y: cell.y,
-      zIndex: cell.zIndex,
-    }))
+    return resourceFragmentGroundTargets(this)
   }
 
-  spawnTreeFragmentBurst() {
-    spawnSpriteFragmentBurst({
-      context: this.context,
-      host: this,
-      sprite: this.sprite,
-      layer: this.parent,
-      fragmentSize: 12,
-      maxFragments: 18,
-      durationMs: 940,
-      gravity: 0.0021,
-      minSpeed: 0.012,
-      maxSpeed: 0.07,
-      upwardVelocity: 0.035,
-      settleToBottom: true,
-      lockX: true,
-      groundTargets: this.getFragmentGroundTargets(),
-      settleSpread: 22,
-      settleStrength: 0.00007,
-      groundBounce: 0.12,
-    })
+  spawnTreeFragmentBurst(): void {
+    return spawnResourceTreeFragments(this)
   }
 
   spawnDepletedResourceFragmentBurst(): boolean {
-    const isWildgrass = WILDGRASS_RESOURCE_TYPES.has(this.type)
-    if (this.type === RESOURCE_TYPES.berrybush || this.type === RESOURCE_TYPES.wheat || isWildgrass) {
-      spawnSpriteFragmentBurst({
-        context: this.context,
-        host: this,
-        sprite: this.sprite,
-        layer: this.parent,
-        fragmentSize: isWildgrass ? 8 : 12,
-        maxFragments: isWildgrass ? 8 : 12,
-        durationMs: isWildgrass ? 620 : 760,
-        gravity: 0.0017,
-        minSpeed: 0.006,
-        maxSpeed: 0.035,
-        upwardVelocity: 0.018,
-        settleToBottom: true,
-        lockX: true,
-        groundTargets: this.getFragmentGroundTargets(),
-        groundBounce: 0.08,
-      })
-      return true
-    }
-
-    if (
-      this.type === RESOURCE_TYPES.stone ||
-      this.type === RESOURCE_TYPES.gold ||
-      this.type === RESOURCE_TYPES.copper ||
-      this.type === RESOURCE_TYPES.iron
-    ) {
-      spawnSpriteFragmentBurst({
-        context: this.context,
-        host: this,
-        sprite: this.sprite,
-        layer: this.parent,
-        fragmentSize: 12,
-        maxFragments: 14,
-        durationMs: 880,
-        gravity: 0.0025,
-        minSpeed: 0.004,
-        maxSpeed: 0.026,
-        upwardVelocity: 0.01,
-        settleToBottom: true,
-        lockX: true,
-        groundTargets: this.getFragmentGroundTargets(),
-        groundBounce: 0.05,
-      })
-      return true
-    }
-    return false
+    return spawnDepletedResourceFragments(this)
   }
 
   hideDepletedResourceSprite() {
@@ -573,7 +499,7 @@ export class Resource extends Instance implements ResourceEntity {
     this.shadow?.destroy({ children: true, texture: false })
     this.shadow = null
     if (this.deferredVisuals) {
-      this.deferredVisuals = undefined
+      delete this.deferredVisuals
       Object.defineProperty(this, 'sprite', { configurable: true, writable: true, value: undefined })
     }
     super.destroy(options)

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBlueprint, loadPregeneratedWorldMapBlueprint } = {}) {
+function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBlueprint, loadPregeneratedWorldMapBlueprint, realScheduler = false } = {}) {
   class MapBlueprintLoadError extends Error {
     constructor(reason, message) {
       super(message)
@@ -252,6 +252,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
       UNIT_TYPES: { villager: 'Villager' },
     },
   }
+  if (realScheduler) delete mocks['../lib/ActionScheduler']
   Object.assign(mocks, {
     '../../lib': mocks['../lib'],
     '../../lib/lang': mocks['../lib/lang'],
@@ -279,6 +280,39 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
   global.window.removeEventListener = global.window.removeEventListener || (() => {})
   return loadTsModule('app/screens/Game.ts', { mocks }).default
 }
+
+test('region resets keep character fades and pause state connected to the live runtime', () => {
+  const Game = loadGame({ realScheduler: true })
+  const game = new Game({ ticker: { add() {}, remove() {} } }, {}, null, null)
+  const { fadeIn } = loadTsModule('app/lib/entities/entityFade.ts')
+  game.context.performance = null
+  const scheduler = game.context.scheduler
+
+  for (let arrival = 0; arrival < 3; arrival++) {
+    game.context.paused = true
+    scheduler.clear()
+    game._resetRuntimeState()
+    game.context.paused = true
+    const party = ['hero', 'follower'].map(label => ({ label, alpha: 1, context: game.context }))
+    for (const unit of party) fadeIn(unit, 120)
+
+    scheduler._tick(120)
+    assert.deepEqual(party.map(unit => unit.alpha), [0, 0], 'arrival remains paused during the transition')
+
+    game.context.paused = false
+    scheduler._tick(120)
+    assert.deepEqual(party.map(unit => unit.alpha), [1, 1], 'hero and follower must finish appearing after arrival')
+
+    let actions = 0
+    scheduler.add(() => actions++, 40)
+    game.context.paused = true
+    scheduler._tick(40)
+    assert.equal(actions, 0, 'opening the inventory must pause the current runtime')
+    game.context.paused = false
+    scheduler._tick(40)
+    assert.equal(actions, 1)
+  }
+})
 
 test('restart ignores clicks before the initial restart snapshot exists', async () => {
   const Game = loadGame()

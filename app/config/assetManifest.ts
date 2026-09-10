@@ -30,6 +30,7 @@ function toOggSoundBundle(ids: string[]): AssetBundle {
 
 export const ASSET_BUNDLES: Record<string, AssetBundle> = {
   config: {
+    caveBlueprints: 'maps/interiors/cave/catalog.json',
     buildingsData: 'assets/data/gameplay/buildings.json',
     unitsData: 'assets/data/gameplay/units.json',
     resourcesData: 'assets/data/gameplay/resources.json',
@@ -45,7 +46,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     alba: 'assets/data/civilizations/alba.json',
     nord: 'assets/data/civilizations/nord.json',
     nobatia: 'assets/data/civilizations/nobatia.json',
-    technology: 'assets/data/technologies/technologies.json',
   },
   interface: {
     'pointers/move-target': 'assets/interface/pointers/move-target/texture.json',
@@ -98,6 +98,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/wall/level-1',
       'resources/tree/dead',
       'buildings/deco',
+      'buildings/cave',
     ]),
     ...toBuildingShadowBundle([
       'buildings/age-0',
@@ -129,7 +130,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     ]),
     ...toOggSoundFolderBundle('projectile', [
       'archer-attack',
-      'archer-attack-2',
       'arrow-shot',
       'ballista-bolt-shot',
       'ballista-bolt-shot-2',
@@ -163,7 +163,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'horse-moving',
       'horse-unit-attack',
       'horse-unit-die',
-      'unknown-sound',
       'unknown-sound-2',
     ]),
     ...toOggSoundFolderBundle('building', [
@@ -183,10 +182,13 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'weather/heavy-rain',
       'weather/light-wind',
       'weather/heavy-wind',
+      'weather/morning-ambience',
       'weather/night-ambience',
       'weather/ocean-ambience',
       'building/campfire-crackle',
+      'building/trap-recover',
       'building/chest-open',
+      'building/door-open',
       'weather/thunder-1',
       'weather/thunder-2',
       'weather/thunder-3',

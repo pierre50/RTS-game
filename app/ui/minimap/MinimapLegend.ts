@@ -1,8 +1,21 @@
+import { BUILDING_TYPES } from '../../constants'
 import { t } from '../../lib/lang'
 import type { PlayerLike } from '../../types/player'
 
 type CountableEntity = { assetType?: string; type?: string }
 type MinimapLegendCount = { count: number; constructing?: boolean; label: string; type: string }
+const MINIMAP_AGE_BUILDING_TYPES = new Set<string>([
+  BUILDING_TYPES.archeryRange,
+  BUILDING_TYPES.barracks,
+  BUILDING_TYPES.granary,
+  BUILDING_TYPES.house,
+  BUILDING_TYPES.market,
+  BUILDING_TYPES.stable,
+  BUILDING_TYPES.storagePit,
+  BUILDING_TYPES.temple,
+  BUILDING_TYPES.townCenter,
+  BUILDING_TYPES.watchTower,
+])
 
 function humanizeTypeKey(key: string): string {
   return key
@@ -36,6 +49,7 @@ function countBuildingsByType(
   for (const building of buildings) {
     const type = building.assetType ?? building.type
     if (!type) continue
+    if (!MINIMAP_AGE_BUILDING_TYPES.has(type)) continue
     const constructing = building.isBuilt !== true
     const key = `${type}:${constructing ? 'constructing' : 'built'}`
     const existing = counts.get(key)

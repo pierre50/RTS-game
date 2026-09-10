@@ -1,3 +1,4 @@
+import { definedProperties } from '../../lib/definedProperties'
 import { getInteriorExitCell } from '../../lib/buildings/interiorExits'
 import { serializeGame } from '../../serialization/SaveSerializer'
 import {
@@ -131,7 +132,7 @@ function applyInteriorExitReturnTasks(
     const task = occupant.label ? tasksByLabel.get(occupant.label) : null
     if (!task) return occupant
     const dest = returnTaskDestinationReference(task.dest)
-    return {
+    return definedProperties({
       ...occupant,
       action: task.action ?? null,
       autonomousJob: task.autonomousJob ?? occupant.autonomousJob ?? null,
@@ -139,7 +140,7 @@ function applyInteriorExitReturnTasks(
       previousDest: dest,
       previousWork: task.work ?? occupant.previousWork ?? null,
       work: task.work ?? occupant.work ?? null,
-    }
+    })
   })
 }
 

@@ -3,20 +3,25 @@ import { refundCost } from '../../lib'
 import { HORSE_TAMING_STATUS } from '../../lib/horses/horseTaming'
 import { returnStableHorse } from '../../lib/horses/stableHorses'
 import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
-import { refreshOpenBuildingMenu } from './BuildingTechnologyProduction'
-import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
+import { refreshOpenBuildingMenu } from './BuildingMenuRefresh'
+import type { UnitCreationExtra } from '../../types/entities'
 import type { BuildingControllerHost } from './BuildingTypes'
+import type { TrainingTrainee } from '../../types/training'
 
 type TrainingCancellationHost = {
-  activeTrainingTrainee: UnitEntity | null
+  activeTrainingTrainee: TrainingTrainee | null
   activeTrainingExtra: UnitCreationExtra | undefined
-  clearActiveTraining(trainee?: UnitEntity | null): void
+  clearActiveTraining(trainee?: TrainingTrainee | null): void
   placeUnit(type: string, extra?: UnitCreationExtra, options?: { consumePopulationSlot?: boolean }): boolean
   syncPrimaryTrainingState(): void
 }
 
-function createRestoredTraineeExtra(trainee: UnitEntity): UnitCreationExtra {
+function createRestoredTraineeExtra(trainee: TrainingTrainee): UnitCreationExtra {
   const extra: UnitCreationExtra = {}
+  if (trainee.label) extra.label = trainee.label
+  if (trainee.inventory) extra.inventory = structuredClone(trainee.inventory)
+  if (trainee.hitPoints != null) extra.hitPoints = trainee.hitPoints
+  if (trainee.companionHorseColor != null) extra.companionHorseColor = trainee.companionHorseColor
   if (trainee.name) extra.name = trainee.name
   if (trainee.gender) extra.gender = trainee.gender
   if (trainee.appearanceVariants) extra.appearanceVariants = { ...trainee.appearanceVariants }
@@ -27,8 +32,8 @@ function createRestoredTraineeExtra(trainee: UnitEntity): UnitCreationExtra {
   return extra
 }
 
-function restoreCancelledTrainee(host: TrainingCancellationHost, trainee: UnitEntity): void {
-  host.placeUnit(trainee.type, createRestoredTraineeExtra(trainee), { consumePopulationSlot: false })
+function restoreCancelledTrainee(host: TrainingCancellationHost, trainee: TrainingTrainee): boolean {
+  return host.placeUnit(trainee.type, createRestoredTraineeExtra(trainee), { consumePopulationSlot: false })
 }
 
 function restoreCancelledStableHorse(building: BuildingControllerHost, extra: UnitCreationExtra | undefined): void {
@@ -53,16 +58,16 @@ function cancelConcurrentTrainingEntries(
 ): { cancelled: boolean; typeCounts: Map<string, number> } {
   const typeCounts = new Map<string, number>()
   let cancelled = false
-  for (const entry of building.trainingQueue ?? []) {
+  for (const entry of [...(building.trainingQueue ?? [])]) {
+    typeCounts.set(entry.type, (typeCounts.get(entry.type) ?? 0) + 1)
+    if (!restoreCancelledTrainee(host, entry.trainee)) continue
     entry.trainingDayChangeUnsubscribe?.()
     const unit = building.owner.config.units[entry.type]
     if (unit) refundCost(building.owner, entry.cost ?? getUnitTrainingCost(building.owner, entry.type))
-    restoreCancelledTrainee(host, entry.trainee)
     restoreCancelledStableHorse(building, entry.extra)
-    typeCounts.set(entry.type, (typeCounts.get(entry.type) ?? 0) + 1)
+    building.trainingQueue?.splice(building.trainingQueue.indexOf(entry), 1)
     cancelled = true
   }
-  building.trainingQueue = []
   return { cancelled, typeCounts }
 }
 
@@ -82,10 +87,7 @@ function cancelClassicActiveTraining(building: BuildingControllerHost, host: Tra
   return true
 }
 
-function refundRemainingQueue(
-  building: BuildingControllerHost,
-  trainingEntryTypeCounts: Map<string, number>
-): boolean {
+function refundRemainingQueue(building: BuildingControllerHost, trainingEntryTypeCounts: Map<string, number>): boolean {
   let cancelled = false
   for (const type of building.queue) {
     const traineeCount = trainingEntryTypeCounts.get(type) ?? 0
@@ -104,7 +106,7 @@ function refreshCancelledTrainingUi(building: BuildingControllerHost): void {
   if (!building.owner.isPlayed) return
   building.context.menu.updateTopbar?.()
   for (const type of building.units ?? []) {
-    building.context.menu.updateButtonContent(type, '')
+    building.context.menu.updateButtonContent(type, building.queue.filter(queued => queued === type).length || '')
   }
   building.updateTrainingPreview?.()
   refreshOpenBuildingMenu(building)
@@ -114,10 +116,10 @@ export function cancelAllUnitTraining(building: BuildingControllerHost, host: Tr
   let cancelled = cancelPendingTraineeOrders(building)
   const concurrent = cancelConcurrentTrainingEntries(building, host)
   cancelled = concurrent.cancelled || cancelled
-  cancelled = cancelClassicActiveTraining(building, host) || cancelled
+  if (!concurrent.typeCounts.size) cancelled = cancelClassicActiveTraining(building, host) || cancelled
   cancelled = refundRemainingQueue(building, concurrent.typeCounts) || cancelled
 
-  building.queue = []
+  building.queue = (building.trainingQueue ?? []).map(entry => entry.type)
   host.syncPrimaryTrainingState()
   if (cancelled) refreshCancelledTrainingUi(building)
   return cancelled

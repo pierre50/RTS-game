@@ -6,6 +6,7 @@ export function validateRuntimeState(runtime: unknown, size: number, config: Loa
   if (runtime != null) {
     if (!isObject(runtime)) fail('Invalid save file: runtime is invalid.')
     validateOptionalFiniteNumber(runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
+    validateOptionalFiniteNumber(runtime.offlineFromElapsedMs, 'runtime offlineFromElapsedMs')
     validateOptionalFiniteNumber(runtime.elapsedMs, 'runtime elapsedMs')
     validateOptionalFiniteNumber(runtime.savedAt, 'runtime savedAt')
     validateWorldPursuers(runtime.worldPursuers, size, config)
@@ -14,6 +15,8 @@ export function validateRuntimeState(runtime: unknown, size: number, config: Loa
       if (runtime.weather.phase != null && typeof runtime.weather.phase !== 'string') {
         fail('Invalid save file: runtime weather phase is invalid.')
       }
+      validateOptionalFiniteNumber(runtime.weather.dailyWeatherSeed, 'runtime weather dailyWeatherSeed')
+      validateOptionalFiniteNumber(runtime.weather.forcedUntilMs, 'runtime weather forcedUntilMs')
       validateOptionalFiniteNumber(runtime.weather.elapsedMs, 'runtime weather elapsedMs')
       validateOptionalFiniteNumber(runtime.weather.flashCooldownMs, 'runtime weather flashCooldownMs')
       validateOptionalFiniteNumber(runtime.weather.lightningBursts, 'runtime weather lightningBursts')

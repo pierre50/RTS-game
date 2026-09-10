@@ -63,6 +63,18 @@ test('setTime advances to the next day when the requested hour is behind the cur
 
   assert.equal(dayNight.getDayLabel(), 'Day 2')
   assert.equal(dayNight.getTimeLabel(), '07:00')
+  assert.equal(dayNight.state.phase, 'day')
+})
+
+test('dawn is visible before villagers wake at 06:00', () => {
+  const DayNightSystem = loadDayNightSystem()
+  const dayNight = new DayNightSystem(createContext())
+
+  dayNight.setTime(5, 45)
+  assert.equal(dayNight.state.phase, 'dawn')
+  assert.ok(dayNight.state.darkness < 1)
+
+  dayNight.setTime(6)
   assert.equal(dayNight.state.phase, 'dawn')
 })
 

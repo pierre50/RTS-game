@@ -63,7 +63,7 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
     syncAppearanceLayers: sheet => calls.push(['syncAppearanceLayers', sheet]),
     type: 'BanditSword',
   }
-  const hero = {}
+  const hero = { owner: { age: 2 } }
 
   assert.deepEqual(getUnitCorpseLootEquipment(corpse), [
     'helmet_barbarian_ceramic',
@@ -190,7 +190,7 @@ test('unit corpse loot transfers pocket resources to hero inventory', () => {
     isDead: true,
     isDestroyed: false,
   }
-  const hero = { inventory: { resources: { stone: 2 } } }
+  const hero = { owner: { age: 2 }, inventory: { resources: { stone: 2 } } }
 
   assert.deepEqual(getUnitCorpseLootResources(corpse), { wood: 3, stone: 7 })
   assert.equal(pickupCorpseResource(corpse, hero, 'stone', 4), 4)
@@ -218,6 +218,7 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
     },
   })
   const hero = {
+    owner: { age: 2 },
     currentSheet: 'standingSheet',
     inventory: {
       equipment: [
@@ -345,6 +346,7 @@ test('helmet decor requires an equipped helmet and is removed with the helmet', 
     },
   })
   const hero = {
+    owner: { age: 2 },
     currentSheet: 'standingSheet',
     inventory: {
       equipment: ['plumage', 'helmet_norman_ceramic'],
@@ -388,6 +390,7 @@ test('equipping the same arrow type merges the bag stack into the equipped stack
     '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const hero = {
+    owner: { age: 2 },
     currentSheet: 'standingSheet',
     inventory: {
       equipment: ['arrow_copper', 'arrow_copper'],
@@ -418,6 +421,7 @@ test('hero arrow stacks can equip and unequip one item at a time', () => {
     '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const hero = {
+    owner: { age: 2 },
     currentSheet: 'standingSheet',
     inventory: {
       equipment: ['arrow_copper', 'arrow_copper', 'arrow_copper'],
@@ -454,7 +458,7 @@ test('helmet wings require a helmet and occupy its decoration slot without repla
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
-  const hero = { inventory: { equipment: ['helmet_wings_gold', 'helmet_iron'] } }
+  const hero = { owner: { age: 2 }, inventory: { equipment: ['helmet_wings_gold', 'helmet_iron'] } }
   assert.equal(equipHeroInventoryItem(hero, 'helmet_wings_gold'), false)
   assert.deepEqual(hero.inventory.equipment, ['helmet_wings_gold', 'helmet_iron'])
   assert.equal(equipHeroInventoryItem(hero, 'helmet_iron'), true)

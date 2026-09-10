@@ -10,7 +10,7 @@ import {
 } from '../lib/maths'
 import { moveTowardPoint } from '../lib/grid/movement'
 import { addDisplayObjectToMapSpaceContainer } from '../lib/mapSpaces'
-import { getEffectiveProjectileType, projectileTracksTarget } from '../lib/projectiles'
+import { getEffectiveProjectileType } from '../lib/projectiles'
 import { playAudibleSoundCue, type AudibleInstance } from '../lib/audio/sound'
 import { getUnitCombatRange } from '../lib/equipment/equipmentStats'
 import {
@@ -91,7 +91,6 @@ export class Projectile extends Container {
   degree?: number
   direction?: string
   weaponPower?: number
-  tracksTarget!: boolean
   isDead!: boolean
   // Grid cell the projectile landed on — only set once it sticks in the ground, see landOnGround().
   i!: number
@@ -151,7 +150,6 @@ export class Projectile extends Container {
     const player = this.owner.owner
     if (!player) throw new Error('Projectile owner must belong to a player')
     this.type = getEffectiveProjectileType(this.type, player)
-    this.tracksTarget = projectileTracksTarget(this.type, player)
     const projectileDefinition = player.config.projectiles?.[this.type] ?? player.config.projectiles?.[options.type]
     if (projectileDefinition) {
       const { scale, ...projectileConfig } = projectileDefinition
@@ -206,16 +204,6 @@ export class Projectile extends Container {
 
     this.interval = this.context.scheduler.add(
       () => {
-        if (this.tracksTarget && this.target && !this.target.isDead && !this.target.isDestroyed) {
-          targetX = this.target.x
-          targetY = this.target.y + getProjectileVisualOffset(this.target)
-          this.destinationPoint = this.getVisualDestinationPoint(targetX, targetY)
-          this.totalDistance = Math.max(
-            pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.destinationPoint.x, this.destinationPoint.y),
-            1
-          )
-          this.trajectoryState = this.createTrajectoryState()
-        }
         let currentSpeed = this.getCurrentSpeed()
         const traveledDistance = this.getTraveledDistance()
         if (this.maxDistance && traveledDistance >= this.maxDistance) {

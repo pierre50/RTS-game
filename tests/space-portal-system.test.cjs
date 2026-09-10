@@ -5,6 +5,9 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function loadSpacePortalSystem(options = {}) {
   return loadTsModule('app/services/SpacePortalSystem.ts', {
     mocks: {
+      '../lib/audio/sound': {
+        playAudibleSoundCue: options.playAudibleSoundCue ?? (() => {}),
+      },
       '../lib/grid/visibility': {
         updateInstanceRenderVisibility: options.updateInstanceRenderVisibility ?? (() => {}),
         updateInstanceVisibility: options.updateInstanceVisibility ?? (() => {}),
@@ -12,6 +15,97 @@ function loadSpacePortalSystem(options = {}) {
     },
   })
 }
+
+for (const exiting of [false, true]) {
+  for (const listener of ['hero', 'source', 'target', 'other']) {
+    test(`door sound on ${exiting ? 'exit' : 'entry'} with listener ${listener}`, () => {
+      const calls = []
+      const { transferUnitThroughSpacePortal } = loadSpacePortalSystem({
+        playAudibleSoundCue: (...args) => calls.push(args),
+      })
+      const { context, portal: entry } = createSplitPortalContext()
+      for (const space of context.map.spaces.values()) {
+        for (const row of space.grid) {
+          for (const cell of row) cell.spaceId = space.id
+        }
+      }
+      context.map.spaces.get('interior-house').buildingLabel = 'house-1'
+      const portal = exiting
+        ? {
+            ...entry,
+            sourceCell: entry.targetCell,
+            sourceSpaceId: entry.targetSpaceId,
+            targetCell: entry.sourceCell,
+            targetSpaceId: entry.sourceSpaceId,
+          }
+        : entry
+      const unit = {
+        context,
+        label: 'unit-1',
+        spaceId: portal.sourceSpaceId,
+        currentCell: portal.sourceCell,
+        i: portal.sourceCell.i,
+        j: portal.sourceCell.j,
+        owner: { isPlayed: true },
+      }
+      context.controls = {
+        heroUnit:
+          listener === 'hero'
+            ? unit
+            : {
+                spaceId:
+                  listener === 'source'
+                    ? portal.sourceSpaceId
+                    : listener === 'target'
+                      ? portal.targetSpaceId
+                      : 'unrelated-room',
+              },
+      }
+      let completed = 0
+      assert.equal(
+        transferUnitThroughSpacePortal(context, unit, portal, {
+          onTransferred: () => completed++,
+        }),
+        true
+      )
+      assert.equal(completed, 1)
+      assert.equal(calls.length, listener === 'other' ? 0 : 1)
+      if (calls.length) {
+        const cell = listener === 'target' ? portal.targetCell : portal.sourceCell
+        assert.equal(calls[0][0].i, cell.i)
+        assert.equal(calls[0][0].j, cell.j)
+        assert.equal(calls[0][0].spaceId, listener === 'target' ? portal.targetSpaceId : portal.sourceSpaceId)
+        assert.equal(calls[0][1], 'building/door-open')
+        assert.deepEqual(calls[0][2], { profile: 'surface' })
+      }
+      assert.equal(transferUnitThroughSpacePortal(context, unit, portal), false)
+      assert.equal(calls.length, listener === 'other' ? 0 : 1)
+    })
+  }
+}
+
+test('door sound waits for arrival and ignores portals without buildings', () => {
+  const calls = []
+  const { routeUnitThroughSpacePortal, transferUnitThroughSpacePortal } = loadSpacePortalSystem({
+    playAudibleSoundCue: (...args) => calls.push(args),
+  })
+  const { context, portal, sourceCell } = createPortalContext()
+  const interior = context.map.spaces.get('interior-house')
+  interior.buildingLabel = 'house-1'
+  const unit = { context, label: 'unit-1', i: 0, j: 0, currentCell: context.map.grid[0][0] }
+  assert.equal(routeUnitThroughSpacePortal(context, unit, portal), true)
+  assert.equal(calls.length, 0)
+  unit.currentCell = sourceCell
+  unit.i = sourceCell.i
+  unit.j = sourceCell.j
+  portal.targetCell.solid = true
+  assert.equal(transferUnitThroughSpacePortal(context, unit, portal), false)
+  assert.equal(calls.length, 0)
+  portal.targetCell.solid = false
+  delete interior.buildingLabel
+  assert.equal(transferUnitThroughSpacePortal(context, unit, portal), true)
+  assert.equal(calls.length, 0)
+})
 
 function createGrid(size) {
   return Array.from({ length: size }, (_, i) =>

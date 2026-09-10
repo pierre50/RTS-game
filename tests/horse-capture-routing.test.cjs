@@ -15,7 +15,13 @@ function loadHorseCapture(calls) {
   const module = { exports: {} }
   const mocks = {}
   const localRequire = request => {
-    if (request === '../constants') return { BUILDING_TYPES: { stable: 'Stable' }, STEP_TIME: 20 }
+    if (request === '../constants')
+      return { BUILDING_TYPES: { stable: 'Stable' }, UNIT_TYPES: { hero: 'Hero' }, STEP_TIME: 20 }
+    if (request === '../objectives/ageObjectives')
+      return {
+        AGE_OBJECTIVES: { tameHorse: 'tameHorse' },
+        completeAgeObjective: (player, objective) => calls.push(['objective', player, objective]),
+      }
     if (request === './stableHorses') {
       return {
         canStoreStableHorse: building => (building.stableHorses?.length ?? 0) < 5,
@@ -57,7 +63,7 @@ test('owner-contact routing waits for the owner timeout before failing', () => {
     label: 'villager-1',
     i: 0,
     j: 0,
-    owner: { buildings: [stable] },
+    owner: { age: 1, buildings: [stable] },
   }
   const horse = {
     label: 'horse-1',
@@ -101,76 +107,83 @@ test('owner-contact routing waits for the owner timeout before failing', () => {
   )
 })
 
-test('captured horses enter a stable through the stable entry cell', () => {
-  const calls = []
-  const storageCell = { i: 12, j: 10 }
-  calls.storageCell = storageCell
-  const { routeCapturedHorseToStableWithOwnerContact } = loadHorseCapture(calls)
-  const stable = {
-    type: 'Stable',
-    label: 'stable-1',
-    i: 10,
-    j: 10,
-    isBuilt: true,
-    isDead: false,
-    isDestroyed: false,
-    stableHorses: [],
-  }
-  const owner = {
-    label: 'villager-1',
-    i: 10,
-    j: 10,
-    owner: { buildings: [stable] },
-  }
-  const horse = {
-    label: 'horse-1',
-    horseColor: 'brown',
-    i: 10,
-    j: 10,
-    isDead: false,
-    isDestroyed: false,
-    clear: () => calls.push(['horse.clear']),
-    sendTo: target => calls.push(['horse.sendTo', target]),
-  }
-  const scheduler = {
-    elapsedMs: 0,
-    tasks: [],
-    add(callback) {
-      this.tasks.push(callback)
-      return this.tasks.length
-    },
-    remove: id => calls.push(['removeTask', id]),
-  }
+for (const unitType of ['Hero', 'Villager']) {
+  test(`${unitType} captured horses enter a stable, but only the hero completes an objective`, () => {
+    const calls = []
+    const storageCell = { i: 12, j: 10 }
+    calls.storageCell = storageCell
+    const { routeCapturedHorseToStableWithOwnerContact } = loadHorseCapture(calls)
+    const stable = {
+      type: 'Stable',
+      label: 'stable-1',
+      i: 10,
+      j: 10,
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      stableHorses: [],
+    }
+    const owner = {
+      type: unitType,
+      label: 'villager-1',
+      i: 10,
+      j: 10,
+      owner: { age: 1, buildings: [stable] },
+    }
+    const horse = {
+      label: 'horse-1',
+      horseColor: 'brown',
+      i: 10,
+      j: 10,
+      isDead: false,
+      isDestroyed: false,
+      clear: () => calls.push(['horse.clear']),
+      sendTo: target => calls.push(['horse.sendTo', target]),
+    }
+    const scheduler = {
+      elapsedMs: 0,
+      tasks: [],
+      add(callback) {
+        this.tasks.push(callback)
+        return this.tasks.length
+      },
+      remove: id => calls.push(['removeTask', id]),
+    }
 
-  routeCapturedHorseToStableWithOwnerContact({
-    gameContext: { map: { grid: [] }, scheduler },
-    owner,
-    horse,
-    onStored: () => calls.push(['stored']),
-    onFailure: () => calls.push(['failure']),
+    routeCapturedHorseToStableWithOwnerContact({
+      gameContext: { map: { grid: [] }, scheduler },
+      owner,
+      horse,
+      onStored: () => calls.push(['stored']),
+      onFailure: () => calls.push(['failure']),
+    })
+
+    assert.equal(
+      calls.some(call => call[0] === 'stored'),
+      false
+    )
+    assert.deepEqual(
+      calls.find(call => call[0] === 'horse.sendTo'),
+      ['horse.sendTo', storageCell]
+    )
+
+    horse.i = storageCell.i
+    horse.j = storageCell.j
+    scheduler.elapsedMs = 20
+    scheduler.tasks[1]()
+
+    assert.deepEqual(stable.stableHorses, [{ horseColor: 'brown' }])
+    assert.deepEqual(
+      calls.filter(call => call[0] === 'objective'),
+      unitType === 'Hero' ? [['objective', owner.owner, 'tameHorse']] : []
+    )
+    assert.equal(
+      calls.some(call => call[0] === 'horse.clear'),
+      true
+    )
+    assert.equal(
+      calls.some(call => call[0] === 'stored'),
+      true
+    )
   })
-
-  assert.equal(
-    calls.some(call => call[0] === 'stored'),
-    false
-  )
-  assert.deepEqual(
-    calls.find(call => call[0] === 'horse.sendTo'),
-    ['horse.sendTo', storageCell]
-  )
-
-  horse.i = storageCell.i
-  horse.j = storageCell.j
-  scheduler.elapsedMs = 20
-  scheduler.tasks[1]()
-
-  assert.deepEqual(stable.stableHorses, [{ horseColor: 'brown' }])
-  assert.equal(
-    calls.some(call => call[0] === 'horse.clear'),
-    true
-  )
-  assert.equal(
-    calls.some(call => call[0] === 'stored'),
-    true
-  )
-})
+}

@@ -6,7 +6,7 @@ function loadResourceTotals() {
   return loadTsModule('app/lib/resources/playerResourceTotals.ts', {
     mocks: {
       '../../constants': {
-        BUILDING_TYPES: { chest: 'Chest', townCenter: 'TownCenter' },
+        BUILDING_TYPES: { chest: 'Chest', storagePit: 'StoragePit', townCenter: 'TownCenter' },
         RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone'],
         UNIT_TYPES: { hero: 'Hero' },
       },
@@ -65,9 +65,10 @@ test('player resource totals include the hero bag and starting town center stock
   player.buildings = [
     { owner: player, type: 'Chest', inventory: { resources: { wood: 7 } } },
     { owner: player, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
+    { owner: player, type: 'StoragePit', inventory: { resources: { stone: 2 } } },
   ]
 
-  assert.deepEqual(getPlayerResourceTotals(player), { wood: 11, berry: 0, meat: 0, wheat: 8, stone: 1, food: 8 })
+  assert.deepEqual(getPlayerResourceTotals(player), { wood: 11, berry: 0, meat: 0, wheat: 8, stone: 3, food: 8 })
 })
 
 test('visible player resource totals hide unseen storage but keep the hero bag', () => {

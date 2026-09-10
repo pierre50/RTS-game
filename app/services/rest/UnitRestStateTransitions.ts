@@ -125,7 +125,7 @@ function updateWindingDownRestUnit(unit: UnitEntity, state: TimedUnitRestState):
 
 function updateWakingUpRestUnit(unit: UnitEntity, state: TimedUnitRestState): boolean {
   if (state.status !== 'wakingUp') return false
-  if (isSleepTime(unit.context!)) {
+  if (isVillager(unit) ? shouldVillagerBeAsleep(unit) : isSleepTime(unit.context!)) {
     sendUnitToRest(unit, 'sleep')
     return true
   }

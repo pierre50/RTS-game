@@ -44,6 +44,11 @@ function loadUnitMovement(calls) {
   }
   const mocks = {}
   const localRequire = request => {
+    if (request.endsWith('/playerTargetKnowledge'))
+      return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
+    if (request.endsWith('/targetPursuit'))
+      return { updateTargetPursuit: () => false, routeToRememberedTarget: () => false }
+
     request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
     if (request === '../../lib/units/autonomy/villagerExploration')
       return requireFromTsFile(

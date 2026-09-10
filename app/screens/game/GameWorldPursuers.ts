@@ -1,8 +1,10 @@
+import { playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
+import { definedProperties } from '../../lib/definedProperties'
 import { getGaiaAnimals } from '../../lib/playerState'
 import { isOutsideSpaceId } from '../../lib/mapSpaces'
 import { instanceIsInInsightRange } from '../../lib/units/insightDetection'
 import type { GameContextLike } from '../../types/context'
-import type { AnimalEntity, UnitEntity } from '../../types/entities'
+import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PendingWorldPursuer, SaveEntityState, SerializedSave } from '../../types/save'
 import type { TravelPartyState } from './GameTravelParty'
 
@@ -31,13 +33,19 @@ export function collectWorldPursuers(
       return
     if (!target || !('label' in target) || !target.label || !partyLabels.has(target.label)) return
     if (!isOutsideSpaceId(entity.spaceId) || !isOutsideSpaceId(target.spaceId)) return
-    if (!instanceIsInInsightRange(entity, target)) return
+    const visible = owner
+      ? playerSeesTarget(
+          context.players.find(player => player.label === owner.label),
+          target as RuntimeEntity
+        )
+      : instanceIsInInsightRange(entity, target)
+    if (!visible) return
     result.push({ entity: structuredClone(saved), owner, targetLabel: target.label })
   }
   for (const player of context.players ?? []) {
     const savedPlayer = snapshot.players.find(saved => saved.label === player.label)
     if (!savedPlayer) continue
-    const owner = {
+    const owner = definedProperties({
       label: savedPlayer.label,
       type: savedPlayer.type,
       isPlayed: savedPlayer.isPlayed,
@@ -48,11 +56,10 @@ export function collectWorldPursuers(
       gender: savedPlayer.gender,
       heroAppearance: savedPlayer.heroAppearance,
       age: savedPlayer.age,
-      technologies: savedPlayer.technologies,
       civilizationLevel: savedPlayer.civilizationLevel,
       team: savedPlayer.team,
       diplomacy: savedPlayer.diplomacy,
-    }
+    })
     for (const unit of player.units)
       collect(
         unit,

@@ -94,7 +94,7 @@ export async function loadPregeneratedWorldMapBlueprint(
           })
         })
     )
-    return {
+    return definedProperties({
       ...blueprint,
       timings: { ...timings, ...blueprint.timings },
       visualNeighbors,
@@ -102,7 +102,7 @@ export async function loadPregeneratedWorldMapBlueprint(
       worldId,
       worldRegionId: selected.id || regionIdFromEntry(selected),
       worldRegion: selected.region,
-      worldManifest: {
+      worldManifest: definedProperties({
         macroPreviewPath: manifest.macroPreviewPath,
         maps: manifest.maps.map(map => ({
           id: map.id || regionIdFromEntry(map),
@@ -113,8 +113,8 @@ export async function loadPregeneratedWorldMapBlueprint(
         regionsWide: manifest.regionsWide,
         settlements: manifest.settlements || [],
         worldSeed: manifest.worldSeed,
-      },
-    }
+      }),
+    })
   } catch (error) {
     if (error instanceof MapBlueprintLoadError) throw error
     throw new MapBlueprintLoadError('map-invalid', 'Unable to parse pregenerated world map blueprint')

@@ -1,14 +1,5 @@
 import { DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS, type EnvironmentId } from '../../constants'
-import {
-  BASE_PHASE_DURATIONS_SECONDS,
-  BASE_WEATHER_TRANSITIONS,
-  BIOME_DURATION_OVERRIDES,
-  BIOME_TRANSITION_OVERRIDES,
-  type RandomFn,
-  type WeatherColor,
-  type WeatherParticleTargets,
-  type WeatherPhase,
-} from './WeatherProfiles'
+import { type RandomFn, type WeatherColor, type WeatherParticleTargets } from './WeatherProfiles'
 
 export function randomBetween(min: number, max: number, random: RandomFn): number {
   return min + random() * (max - min)
@@ -60,25 +51,6 @@ export function biomeKeyFromEnvironment(environment?: string | null): Environmen
   return ENVIRONMENT_IDS.includes(environment as EnvironmentId)
     ? (environment as EnvironmentId)
     : DEFAULT_ENVIRONMENT_ID
-}
-
-export function nextPhase(phase: WeatherPhase, random: RandomFn, biome: EnvironmentId): WeatherPhase {
-  if (phase === 'night') return 'night'
-  const overrides = BIOME_TRANSITION_OVERRIDES[biome]
-  const environmentTransitions = { ...BASE_WEATHER_TRANSITIONS, ...(overrides ?? {}) }
-  const transitions = environmentTransitions[phase]
-  if (!transitions || transitions.length === 0) return 'sunny'
-  const roll = random()
-  for (const option of transitions) {
-    if (roll < option.chance) return option.phase
-  }
-  return transitions[transitions.length - 1].phase
-}
-
-export function phaseDuration(phase: WeatherPhase, random: RandomFn, biome: EnvironmentId): number {
-  const overrides = BIOME_DURATION_OVERRIDES[biome] ?? {}
-  const range = overrides[phase] ?? BASE_PHASE_DURATIONS_SECONDS[phase]
-  return randomDuration(range[0], range[1], random)
 }
 
 export function seconds(ms: number): number {

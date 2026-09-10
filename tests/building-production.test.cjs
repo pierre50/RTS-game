@@ -1173,8 +1173,8 @@ test('trainee training updates loading even when the building is not classically
   building.context.dayNight.callback()
   assert.deepEqual(calls, [
     ['preview', 0],
-    ['preview', null],
-    ['preview', null],
+    ['preview', 100],
+    ['preview', 100],
   ])
 })
 
@@ -1959,7 +1959,7 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
   )
 })
 
-test('failed trainee placement clears active military training state', () => {
+test('failed trainee placement retains the recruit and completed training', () => {
   const calls = []
   const owner = {
     food: 35,
@@ -2063,11 +2063,10 @@ test('failed trainee placement clears active military training state', () => {
   })
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(villager), true)
-  assert.equal(building.loading, null)
-  assert.deepEqual(building.queue, [])
-  assert.equal(building.trainingUnit, null)
-  assert.equal(building.trainingType, null)
-  assert.equal(building.isUsedBy, null)
+  assert.equal(building.loading, 100)
+  assert.deepEqual(building.queue, ['Fantassin'])
+  assert.equal(building.trainingUnit, villager)
+  assert.equal(building.trainingType, 'Fantassin')
   assert.equal(owner.food, 0)
 })
 

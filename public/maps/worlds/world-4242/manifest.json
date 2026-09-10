@@ -25,8 +25,8 @@
         "y": 3
       },
       "local": {
-        "i": 58,
-        "j": 108
+        "i": 112,
+        "j": 77
       },
       "radius": 18,
       "biome": "desert",
@@ -46,8 +46,8 @@
         "y": 2
       },
       "local": {
-        "i": 110,
-        "j": 80
+        "i": 148,
+        "j": 137
       },
       "radius": 18,
       "biome": "steppe",
@@ -67,8 +67,8 @@
         "y": 4
       },
       "local": {
-        "i": 28,
-        "j": 62
+        "i": 59,
+        "j": 70
       },
       "radius": 18,
       "biome": "desert",
@@ -88,8 +88,8 @@
         "y": 0
       },
       "local": {
-        "i": 114,
-        "j": 50
+        "i": 139,
+        "j": 162
       },
       "radius": 18,
       "biome": "blackforest",
@@ -109,8 +109,8 @@
         "y": 2
       },
       "local": {
-        "i": 28,
-        "j": 56
+        "i": 58,
+        "j": 71
       },
       "radius": 18,
       "biome": "steppe",
@@ -130,8 +130,8 @@
         "y": 1
       },
       "local": {
-        "i": 86,
-        "j": 56
+        "i": 114,
+        "j": 131
       },
       "radius": 18,
       "biome": "blackforest",
@@ -151,8 +151,8 @@
         "y": 2
       },
       "local": {
-        "i": 80,
-        "j": 114
+        "i": 137,
+        "j": 96
       },
       "radius": 18,
       "biome": "temperate",
@@ -172,8 +172,8 @@
         "y": 2
       },
       "local": {
-        "i": 102,
-        "j": 114
+        "i": 159,
+        "j": 118
       },
       "radius": 18,
       "biome": "temperate",
@@ -185,16 +185,17 @@
       "id": "bandit-camp-1",
       "kind": "banditCamp",
       "world": {
-        "i": 606,
-        "j": 196
+        "i": 630,
+        "j": 208
       },
       "region": {
         "x": 1,
         "y": 4
       },
       "local": {
-        "i": 30,
-        "j": 52
+        "i": 86,
+        "j": 95,
+        "caveId": "world-4242-r1-4-desert:cave-1"
       },
       "radius": 12,
       "biome": "desert",
@@ -204,16 +205,17 @@
       "id": "bandit-camp-2",
       "kind": "banditCamp",
       "world": {
-        "i": 74,
-        "j": 600
+        "i": 107,
+        "j": 625
       },
       "region": {
         "x": 4,
         "y": 0
       },
       "local": {
-        "i": 74,
-        "j": 24
+        "i": 132,
+        "j": 156,
+        "caveId": "world-4242-r4-0-black-forest:cave-1"
       },
       "radius": 12,
       "biome": "blackforest",
@@ -223,16 +225,17 @@
       "id": "bandit-camp-3",
       "kind": "banditCamp",
       "world": {
-        "i": 536,
-        "j": 678
+        "i": 469,
+        "j": 602
       },
       "region": {
         "x": 4,
         "y": 3
       },
       "local": {
-        "i": 104,
-        "j": 102
+        "i": 50,
+        "j": 97,
+        "caveId": "world-4242-r4-3-steppe:cave-1"
       },
       "radius": 12,
       "biome": "steppe",
@@ -242,16 +245,17 @@
       "id": "bandit-camp-4",
       "kind": "banditCamp",
       "world": {
-        "i": 202,
-        "j": 530
+        "i": 234,
+        "j": 543
       },
       "region": {
         "x": 3,
         "y": 1
       },
       "local": {
-        "i": 58,
-        "j": 98
+        "i": 146,
+        "j": 108,
+        "caveId": "world-4242-r3-1-steppe:cave-1"
       },
       "radius": 12,
       "biome": "steppe",
@@ -261,16 +265,17 @@
       "id": "bandit-camp-5",
       "kind": "banditCamp",
       "world": {
-        "i": 210,
-        "j": 70
+        "i": 227,
+        "j": 113
       },
       "region": {
         "x": 0,
         "y": 1
       },
       "local": {
-        "i": 66,
-        "j": 70
+        "i": 140,
+        "j": 100,
+        "caveId": "world-4242-r0-1-temperate:cave-1"
       },
       "radius": 12,
       "biome": "temperate",
@@ -280,16 +285,17 @@
       "id": "bandit-camp-6",
       "kind": "banditCamp",
       "world": {
-        "i": 258,
-        "j": 368
+        "i": 264,
+        "j": 407
       },
       "region": {
         "x": 2,
         "y": 1
       },
       "local": {
-        "i": 114,
-        "j": 80
+        "i": 180,
+        "j": 134,
+        "caveId": "world-4242-r2-1-black-forest:cave-1"
       },
       "radius": 12,
       "biome": "temperate",
@@ -299,16 +305,17 @@
       "id": "bandit-camp-7",
       "kind": "banditCamp",
       "world": {
-        "i": 80,
-        "j": 202
+        "i": 91,
+        "j": 196
       },
       "region": {
         "x": 1,
         "y": 0
       },
       "local": {
-        "i": 80,
-        "j": 58
+        "i": 117,
+        "j": 138,
+        "caveId": "world-4242-r1-0-black-forest:cave-1"
       },
       "radius": 12,
       "biome": "blackforest",
@@ -318,16 +325,17 @@
       "id": "bandit-camp-8",
       "kind": "banditCamp",
       "world": {
-        "i": 676,
-        "j": 372
+        "i": 662,
+        "j": 379
       },
       "region": {
         "x": 2,
         "y": 4
       },
       "local": {
-        "i": 100,
-        "j": 84
+        "i": 132,
+        "j": 114,
+        "caveId": "world-4242-r2-4-desert:cave-1"
       },
       "radius": 12,
       "biome": "desert",
@@ -367,16 +375,17 @@
           "id": "bandit-camp-7",
           "kind": "banditCamp",
           "world": {
-            "i": 80,
-            "j": 202
+            "i": 91,
+            "j": 196
           },
           "region": {
             "x": 1,
             "y": 0
           },
           "local": {
-            "i": 80,
-            "j": 58
+            "i": 117,
+            "j": 138,
+            "caveId": "world-4242-r1-0-black-forest:cave-1"
           },
           "radius": 12,
           "biome": "blackforest",
@@ -414,8 +423,8 @@
             "y": 0
           },
           "local": {
-            "i": 114,
-            "j": 50
+            "i": 139,
+            "j": 162
           },
           "radius": 18,
           "biome": "blackforest",
@@ -468,16 +477,17 @@
           "id": "bandit-camp-2",
           "kind": "banditCamp",
           "world": {
-            "i": 74,
-            "j": 600
+            "i": 107,
+            "j": 625
           },
           "region": {
             "x": 4,
             "y": 0
           },
           "local": {
-            "i": 74,
-            "j": 24
+            "i": 132,
+            "j": 156,
+            "caveId": "world-4242-r4-0-black-forest:cave-1"
           },
           "radius": 12,
           "biome": "blackforest",
@@ -508,16 +518,17 @@
           "id": "bandit-camp-5",
           "kind": "banditCamp",
           "world": {
-            "i": 210,
-            "j": 70
+            "i": 227,
+            "j": 113
           },
           "region": {
             "x": 0,
             "y": 1
           },
           "local": {
-            "i": 66,
-            "j": 70
+            "i": 140,
+            "j": 100,
+            "caveId": "world-4242-r0-1-temperate:cave-1"
           },
           "radius": 12,
           "biome": "temperate",
@@ -556,8 +567,8 @@
             "y": 1
           },
           "local": {
-            "i": 86,
-            "j": 56
+            "i": 114,
+            "j": 131
           },
           "radius": 18,
           "biome": "blackforest",
@@ -591,16 +602,17 @@
           "id": "bandit-camp-6",
           "kind": "banditCamp",
           "world": {
-            "i": 258,
-            "j": 368
+            "i": 264,
+            "j": 407
           },
           "region": {
             "x": 2,
             "y": 1
           },
           "local": {
-            "i": 114,
-            "j": 80
+            "i": 180,
+            "j": 134,
+            "caveId": "world-4242-r2-1-black-forest:cave-1"
           },
           "radius": 12,
           "biome": "temperate",
@@ -631,16 +643,17 @@
           "id": "bandit-camp-4",
           "kind": "banditCamp",
           "world": {
-            "i": 202,
-            "j": 530
+            "i": 234,
+            "j": 543
           },
           "region": {
             "x": 3,
             "y": 1
           },
           "local": {
-            "i": 58,
-            "j": 98
+            "i": 146,
+            "j": 108,
+            "caveId": "world-4242-r3-1-steppe:cave-1"
           },
           "radius": 12,
           "biome": "steppe",
@@ -698,8 +711,8 @@
             "y": 2
           },
           "local": {
-            "i": 102,
-            "j": 114
+            "i": 159,
+            "j": 118
           },
           "radius": 18,
           "biome": "temperate",
@@ -741,8 +754,8 @@
             "y": 2
           },
           "local": {
-            "i": 80,
-            "j": 114
+            "i": 137,
+            "j": 96
           },
           "radius": 18,
           "biome": "temperate",
@@ -807,8 +820,8 @@
             "y": 2
           },
           "local": {
-            "i": 110,
-            "j": 80
+            "i": 148,
+            "j": 137
           },
           "radius": 18,
           "biome": "steppe",
@@ -848,8 +861,8 @@
             "y": 2
           },
           "local": {
-            "i": 28,
-            "j": 56
+            "i": 58,
+            "j": 71
           },
           "radius": 18,
           "biome": "steppe",
@@ -931,8 +944,8 @@
             "y": 3
           },
           "local": {
-            "i": 58,
-            "j": 108
+            "i": 112,
+            "j": 77
           },
           "radius": 18,
           "biome": "desert",
@@ -986,16 +999,17 @@
           "id": "bandit-camp-3",
           "kind": "banditCamp",
           "world": {
-            "i": 536,
-            "j": 678
+            "i": 469,
+            "j": 602
           },
           "region": {
             "x": 4,
             "y": 3
           },
           "local": {
-            "i": 104,
-            "j": 102
+            "i": 50,
+            "j": 97,
+            "caveId": "world-4242-r4-3-steppe:cave-1"
           },
           "radius": 12,
           "biome": "steppe",
@@ -1045,16 +1059,17 @@
           "id": "bandit-camp-1",
           "kind": "banditCamp",
           "world": {
-            "i": 606,
-            "j": 196
+            "i": 630,
+            "j": 208
           },
           "region": {
             "x": 1,
             "y": 4
           },
           "local": {
-            "i": 30,
-            "j": 52
+            "i": 86,
+            "j": 95,
+            "caveId": "world-4242-r1-4-desert:cave-1"
           },
           "radius": 12,
           "biome": "desert",
@@ -1084,16 +1099,17 @@
           "id": "bandit-camp-8",
           "kind": "banditCamp",
           "world": {
-            "i": 676,
-            "j": 372
+            "i": 662,
+            "j": 379
           },
           "region": {
             "x": 2,
             "y": 4
           },
           "local": {
-            "i": 100,
-            "j": 84
+            "i": 132,
+            "j": 114,
+            "caveId": "world-4242-r2-4-desert:cave-1"
           },
           "radius": 12,
           "biome": "desert",
@@ -1131,8 +1147,8 @@
             "y": 4
           },
           "local": {
-            "i": 28,
-            "j": 62
+            "i": 59,
+            "j": 70
           },
           "radius": 18,
           "biome": "desert",

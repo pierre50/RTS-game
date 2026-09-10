@@ -12,7 +12,6 @@ import {
   getUnitResourceCapacityRemaining,
   unitShouldDeliverResource,
 } from '../../lib/resources/resourceDelivery'
-import { discoverHeroResource } from '../../lib/equipment/equipmentDiscoveries'
 import { getGatherXpBonus } from '../../lib/units/unitExperience'
 import { spawnWorkImpactFragments } from '../../lib/entities/workImpactFragments'
 import { t } from '../../lib/lang'
@@ -111,7 +110,6 @@ export function addGatheredResource(unit: UnitEntity, loadingType: string, amoun
   unit.inventory.resources = unit.inventory.resources ?? {}
   unit.inventory.resources[resourceKey] = (unit.inventory.resources[resourceKey] ?? 0) + gatheredAmount
   if (unit.context?.controls?.heroUnit === unit) {
-    discoverHeroResource(unit, resourceKey, gatheredAmount)
     unit.context.menu?.refreshInventory?.()
   }
   return gatheredAmount

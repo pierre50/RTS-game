@@ -1,3 +1,6 @@
+import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import type { PlayerLike } from '../types/player'
+import type { RuntimeEntity } from '../types/entities'
 import { BUILDING_TYPES } from '../constants'
 import { getClosestInstance } from '../lib/grid/queries'
 import { canStoreStableHorse, getStableHorseAmount, STABLE_HORSE_CAPACITY } from '../lib/horses/stableHorses'
@@ -26,6 +29,7 @@ export function getAvailableHorseCaptureSlots(economy: AIEconomyHorseCaptureCont
 
 export function getCapturableHorses(economy: AIEconomyHorseCaptureContext): AIEntityLike[] {
   return [...economy.ai.foundedAnimals]
+    .filter((animal: AIEntityLike) => playerSeesTarget(economy.ai as unknown as PlayerLike, animal as RuntimeEntity))
     .filter((animal: AIEntityLike) => animal.type === 'Horse' && !animal.isDead && !animal.isDestroyed)
     .filter((animal: AIEntityLike) => isWildHorse(animal))
     .filter((animal: AIEntityLike) => economy.isLocationSafe(animal))

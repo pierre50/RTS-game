@@ -11,25 +11,12 @@ import type { RecolorableSprite } from '../graphics/colors'
 
 const SHARED_WALL_SHEET = 'buildings/wall/level-1'
 
-const WALL_SHEETS = {
-  1: {
-    default: SHARED_WALL_SHEET,
-  },
-  2: {
-    default: SHARED_WALL_SHEET,
-  },
-  3: {
-    default: SHARED_WALL_SHEET,
-  },
-} as const
-
 export const WALL_CONSTRUCTION_FLAG_SHEET_ID = 'buildings/wall/construction-flag'
 
 export type WallOwner = {
   age?: number
   civ?: string
   color?: string
-  technologies?: string[]
   buildings?: Array<{ owner?: WallOwner; type?: string }>
 }
 
@@ -78,20 +65,8 @@ export function isWall(
   return instance?.type === BUILDING_TYPES.smallWall && (!owner || instance.owner === owner)
 }
 
-export function getWallLevel(owner?: WallOwner | null): 1 | 2 | 3 {
-  if (owner?.technologies?.includes('UpgradeFortification')) return 3
-  if (owner?.technologies?.includes('UpgradeMediumWall')) return 2
-  return 1
-}
-
-function getWallSheet(owner?: WallOwner | null): string {
-  const level = getWallLevel(owner)
-  const sheets = WALL_SHEETS[level] as Record<string, string>
-  return sheets[owner?.civ ?? ''] || sheets.default || WALL_SHEETS[1].default
-}
-
-export function getWallTexture(owner: WallOwner | null, frame: number, assets = Assets) {
-  return getTexture({ sheet: getWallSheet(owner), frame }, assets)
+export function getWallTexture(_owner: WallOwner | null, frame: number, assets = Assets) {
+  return getTexture({ sheet: SHARED_WALL_SHEET, frame }, assets)
 }
 
 function getWallFrameAt(grid: Grid<WallCell>, i: number, j: number, owner: WallOwner): number {
@@ -127,7 +102,7 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
   const existingFill = wall.getChildByLabel(LABEL_TYPES.deco)
   if (existingFill) existingFill.destroy()
 
-  if (getWallLevel(wall.owner) === 1 && frame === 2) {
+  if (frame === 2) {
     const frames = Array.from({ length: 6 }, (_, i) =>
       getTextureByFrame(WALL_CONSTRUCTION_FLAG_SHEET_ID, i + 12, Assets)
     )
@@ -158,8 +133,4 @@ export function updateWallAndNeighbours(wall?: WallBuilding | null): void {
   if (!isWall(wall)) return
   updateWallTexture(wall)
   getAdjacentWalls(getWallGrid(wall), wall.i, wall.j, wall.owner).forEach(updateWallTexture)
-}
-
-export function refreshOwnerWalls(owner?: WallOwner | null): void {
-  owner?.buildings?.filter((building): building is WallBuilding => isWall(building, owner)).forEach(updateWallTexture)
 }
