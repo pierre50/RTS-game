@@ -18,7 +18,7 @@ function loadPlayerState() {
   return module.exports
 }
 
-const { isPlayerEliminated, isPlayedHeroDefeated } = loadPlayerState()
+const { isNeutralPlayer, isPlayerEliminated, isPlayedHeroDefeated } = loadPlayerState()
 
 test('played player is not defeated while the hero is alive even without other units', () => {
   const hero = { hitPoints: 10, isDead: false }
@@ -66,4 +66,10 @@ test('ai player is not eliminated while at least one living unit is holding grou
   }
 
   assert.equal(isPlayerEliminated(player), false)
+})
+
+test('neutral player is an explicit Gaia owner with neutral diplomacy', () => {
+  assert.equal(isNeutralPlayer({ type: 'Gaia', diplomacy: 'neutral' }), true)
+  assert.equal(isNeutralPlayer({ type: 'Gaia', diplomacy: null }), false)
+  assert.equal(isNeutralPlayer({ type: 'AI', diplomacy: 'neutral' }), false)
 })

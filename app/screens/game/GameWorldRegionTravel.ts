@@ -124,6 +124,9 @@ function finishWorldRegionArrival(
   departureState: SerializedSave,
   worldRegionId: string
 ): void {
+  if (departureState.runtime?.heroEquippedItem !== undefined) {
+    game.context.controls?.setEquippedItem?.(departureState.runtime.heroEquippedItem)
+  }
   focusTravelHero(game)
   const arrivedState = serializeGame(game._gameContext())
   const baseCampaign = previousCampaign ?? createInitialCampaignSave(departureState)
@@ -209,11 +212,54 @@ async function withWorldRegionTransition(game: WorldRegionTravelGame, travel: ()
     })
   } finally {
     const heldMovement = releaseMovement?.()
-    game.togglePause?.(false, { silent: true })
-    game.context.controls?.setRuntimeInputEnabled?.(true)
-    if (heldMovement) game.context.controls?.restoreMovementInput?.(heldMovement)
     game._worldRegionTransitioning = false
+    if (game.context.map && game.context.map.ready !== false) {
+      game.togglePause?.(false, { silent: true })
+      game.context.controls?.setRuntimeInputEnabled?.(true)
+      if (heldMovement) game.context.controls?.restoreMovementInput?.(heldMovement)
+    }
   }
+}
+
+async function changeWorldRegion(
+  game: WorldRegionTravelGame,
+  snapshot: SerializedSave,
+  previousCampaign: CampaignSave | null,
+  worldRegionId: string,
+  dayNightElapsedMs: number | null,
+  arrive: (freshWorld: boolean) => void
+): Promise<void> {
+  const freeCamera = game.context.controls?.freeCameraActive ?? false
+  let bootAttempted = false
+  await withWorldRegionTransition(game, async () => {
+    try {
+      await preloadWorldRegion(game, worldRegionId)
+      game.togglePause?.(false, { silent: true })
+      bootAttempted = true
+      const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
+      game.togglePause?.(true, { silent: true })
+      game.context.controls?.setRuntimeInputEnabled?.(false)
+      game.context.controls?.setFreeCamera?.(freeCamera)
+      arrive(freshWorld)
+    } catch (error) {
+      if (bootAttempted) {
+        try {
+          game._destroyRuntime({ preserveLoadingScreen: true })
+          game.config = snapshot.config ?? null
+          await game._bootFromSave(snapshot)
+          game.context.controls?.setFreeCamera?.(freeCamera)
+          game._campaignSave = previousCampaign
+          game._restartSaveData = previousCampaign ? structuredClone(previousCampaign) : snapshot
+          ;(game.context.menu as { show?: () => void } | null | undefined)?.show?.()
+          game._autosaveCampaign()
+        } catch (restoreError) {
+          if (game.context.map) game.context.map.ready = false
+          throw new AggregateError([error, restoreError], 'World region load and restoration failed')
+        }
+      }
+      throw error
+    }
+  })
 }
 
 export async function travelToWorldRegion(
@@ -234,38 +280,15 @@ export async function travelToWorldRegion(
   const snapshot = serializeGame(context)
   const party = extractTravelParty(snapshot)
   const previousCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, snapshot) : null
-  const previousFreeCamera = context.controls?.freeCameraActive ?? false
-  let bootAttempted = false
-  await withWorldRegionTransition(game, async () => {
-    try {
-      await preloadWorldRegion(game, worldRegionId)
-      bootAttempted = true
-      game.togglePause?.(false, { silent: true })
-      const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
-      game.togglePause?.(true, { silent: true })
-      game.context.controls?.setRuntimeInputEnabled?.(false)
-      game.context.controls?.setFreeCamera?.(previousFreeCamera)
-      const arrivalMap = game._map()
-      const departureCell =
-        !previousLayout && arrivalMap.localGridLayout
-          ? blueprintToLocalGrid(previousCell.i, previousCell.j, arrivalMap.localGridLayout)
-          : previousCell
-      const arrivalCell = arrivalCellForRegionEdge(arrivalMap, edge, departureCell, previousLayout)
-      applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld })
-      finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
-    } catch (error) {
-      if (bootAttempted) {
-        game.togglePause?.(false, { silent: true })
-        game._destroyRuntime({ preserveLoadingScreen: true })
-        game.config = snapshot.config ?? null
-        await game._bootFromSave(snapshot)
-        game._campaignSave = previousCampaign
-        game._restartSaveData = previousCampaign ? structuredClone(previousCampaign) : snapshot
-        ;(game.context.menu as { show?: () => void } | null | undefined)?.show?.()
-        game._autosaveCampaign()
-      }
-      throw error
-    }
+  await changeWorldRegion(game, snapshot, previousCampaign, worldRegionId, dayNightElapsedMs, freshWorld => {
+    const arrivalMap = game._map()
+    const departureCell =
+      !previousLayout && arrivalMap.localGridLayout
+        ? blueprintToLocalGrid(previousCell.i, previousCell.j, arrivalMap.localGridLayout)
+        : previousCell
+    const arrivalCell = arrivalCellForRegionEdge(arrivalMap, edge, departureCell, previousLayout)
+    applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld })
+    finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
   })
 }
 
@@ -289,6 +312,9 @@ export async function debugTeleportWorldMap(
     }
     await withWorldRegionTransition(game, async () => {
       applyTravelPartyToRuntime(game, party, cell)
+      if (snapshot.runtime?.heroEquippedItem !== undefined) {
+        game.context.controls?.setEquippedItem?.(snapshot.runtime.heroEquippedItem)
+      }
       focusTravelHero(game)
       context.menu?.refreshMiniMap?.()
       if (game._campaignSave)
@@ -302,8 +328,7 @@ export async function debugTeleportWorldMap(
   const dayNightElapsedMs = context.dayNight?.getElapsedMs?.() ?? null
   const previousCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, snapshot) : null
 
-  await withWorldRegionTransition(game, async () => {
-    const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
+  await changeWorldRegion(game, snapshot, previousCampaign, worldRegionId, dayNightElapsedMs, freshWorld => {
     const cell = findDebugTeleportCell(game, worldI, worldJ)
     applyTravelPartyToRuntime(game, party, cell, { freshWorld })
     finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)

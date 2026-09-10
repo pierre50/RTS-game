@@ -9,15 +9,22 @@ type InventoryActionRowOptions = {
   id: string
   title: string
   description?: string
+  hideIcon?: boolean
   meta?: string
-  onAction?: (mode: 'one' | 'all') => void
-  onClick?: (evt: Event) => void
   playClick?: boolean
   quantity?: number
+  secondaryAction?: InventoryActionRowOptions['trailingAction']
+  trailingAction?: {
+    ariaLabel?: string
+    disabled?: boolean
+    label: string
+    onAction?: (mode: 'one' | 'all') => void
+    onClick?: (evt: Event) => void
+  }
 }
 
 export type InventoryActionRowParts = {
-  element: HTMLButtonElement
+  element: HTMLElement
   icon: HTMLSpanElement
 }
 
@@ -43,14 +50,16 @@ export function createInventoryActionRow(
   menu: InventoryActionRowHost,
   options: InventoryActionRowOptions
 ): InventoryActionRowParts {
-  const element = document.createElement('button')
-  const disabled = options.disabled ?? false
-  element.type = 'button'
+  const element = document.createElement('div')
   element.id = options.id
-  element.className = ['ui-btn ui-action-row inventory-action-row', options.className].filter(Boolean).join(' ')
-  element.setAttribute('aria-disabled', String(disabled))
+  element.className = [
+    'ui-action-row inventory-action-row',
+    options.hideIcon ? 'inventory-action-row--no-icon' : '',
+    options.className,
+  ]
+    .filter(Boolean)
+    .join(' ')
   element.setAttribute('aria-label', options.title)
-  if (options.onAction) element.dataset.inventoryTransferSlot = 'true'
 
   const icon = document.createElement('span')
   icon.className = 'inventory-action-row-icon'
@@ -68,40 +77,68 @@ export function createInventoryActionRow(
   meta.className = 'inventory-action-row-meta'
   meta.textContent = options.meta ?? ''
 
-  element.append(icon, label, description, meta)
+  if (options.hideIcon) element.append(label, description, meta)
+  else element.append(icon, label, description, meta)
   if (options.badge) {
     const badge = document.createElement('span')
     badge.className = 'inventory-action-row-badge'
     badge.textContent = options.badge
     element.appendChild(badge)
   }
-  element.addEventListener('click', evt => {
-    evt.preventDefault()
-    evt.stopPropagation()
-    if (element.getAttribute('aria-disabled') === 'true') return
-    if (options.playClick !== false) menu.playUiClick?.()
-    if (options.onAction) {
-      options.onAction(evt.shiftKey ? 'all' : 'one')
-    } else {
-      options.onClick?.(evt)
+  if (options.trailingAction || options.secondaryAction) {
+    const actions = document.createElement('div')
+    actions.className = 'inventory-row-actions'
+    for (const action of [options.secondaryAction, options.trailingAction]) {
+      if (action) appendTrailingActionButton(menu, actions, { ...options, trailingAction: action })
     }
-  })
-  if (options.onAction) {
-    element.addEventListener('contextmenu', evt => {
-      evt.preventDefault()
-      evt.stopPropagation()
-      if (element.getAttribute('aria-disabled') === 'true') return
-      if (options.playClick !== false) menu.playUiClick?.()
-      options.onAction?.('all')
-    })
-    element.addEventListener('inventorytransfergamepad', evt => {
-      evt.preventDefault()
-      evt.stopPropagation()
-      if (element.getAttribute('aria-disabled') === 'true') return
-      if (options.playClick !== false) menu.playUiClick?.()
-      options.onAction?.((evt as CustomEvent<{ mode: 'one' | 'all' }>).detail.mode)
-    })
+    element.appendChild(actions)
   }
 
   return { element, icon }
+}
+
+function appendTrailingActionButton(
+  menu: InventoryActionRowHost,
+  element: HTMLElement,
+  options: InventoryActionRowOptions
+): void {
+  const action = options.trailingAction
+  if (!action) return
+
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'ui-btn inventory-row-action-button'
+  button.textContent = action.label
+  button.disabled = action.disabled ?? options.disabled ?? false
+  button.setAttribute('aria-disabled', String(button.disabled))
+  button.setAttribute('aria-label', action.ariaLabel ?? action.label)
+  if (action.onAction) button.dataset.inventoryTransferSlot = 'true'
+  button.addEventListener('click', evt => {
+    evt.preventDefault()
+    evt.stopPropagation()
+    if (button.disabled) return
+    if (options.playClick !== false) menu.playUiClick?.()
+    if (action.onAction) {
+      action.onAction(evt.shiftKey ? 'all' : 'one')
+    } else {
+      action.onClick?.(evt)
+    }
+  })
+  if (action.onAction) {
+    button.addEventListener('contextmenu', evt => {
+      evt.preventDefault()
+      evt.stopPropagation()
+      if (button.disabled) return
+      if (options.playClick !== false) menu.playUiClick?.()
+      action.onAction?.('all')
+    })
+    button.addEventListener('inventorytransfergamepad', evt => {
+      evt.preventDefault()
+      evt.stopPropagation()
+      if (button.disabled) return
+      if (options.playClick !== false) menu.playUiClick?.()
+      action.onAction?.((evt as CustomEvent<{ mode: 'one' | 'all' }>).detail.mode)
+    })
+  }
+  element.appendChild(button)
 }

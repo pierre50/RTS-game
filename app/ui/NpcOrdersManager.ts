@@ -222,14 +222,14 @@ export class NpcOrdersManager {
     this.orderMenu.syncVisibility()
     if (this.modal) {
       setModalTitle(this.modal, title)
-      setInspectionMode(this.modal, hasInfo)
+      setInspectionMode(this.modal, true)
       return
     }
     this.modal = createInspectionModal({
       title,
       content: this.panel,
       panelClass: 'npc-orders-panel',
-      inspection: hasInfo,
+      inspection: true,
       onClose: () => this.close(),
     })
   }

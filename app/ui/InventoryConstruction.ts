@@ -86,7 +86,7 @@ function createInventoryConstructionRow(
   button: MenuButtonSpec,
   index: number,
   _hotkey: string | null
-): HTMLButtonElement {
+): HTMLElement {
   const disabled = button.disabled?.(selection) ?? false
   const tooltip = resolveTooltipContent(button.tooltip)
   const { element, icon } = createInventoryActionRow(host.menu, {
@@ -96,9 +96,13 @@ function createInventoryConstructionRow(
     title: tooltip?.title ?? t(button.id || ''),
     description: tooltip?.description,
     meta: (tooltip?.meta ?? []).filter(Boolean).join(' | '),
-    onClick: evt => {
-      if (button.disabled?.(selection)) return
-      button.onClick?.(selection, evt)
+    trailingAction: {
+      label: t('inventoryBuildAction'),
+      disabled,
+      onClick: evt => {
+        if (button.disabled?.(selection)) return
+        button.onClick?.(selection, evt)
+      },
     },
   })
   renderConstructionButtonAvatar(host.menu, icon, button)

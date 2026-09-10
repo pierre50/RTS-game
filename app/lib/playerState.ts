@@ -25,6 +25,7 @@ type BuildingState = UnitState & {
 }
 
 type PlayerState = {
+  diplomacy?: string | null
   buildings?: BuildingState[]
   type?: string
   units?: UnitState[]
@@ -32,6 +33,10 @@ type PlayerState = {
 
 export function isAIControlledPlayer(player?: PlayerState | null): boolean {
   return player?.type === PLAYER_TYPES.ai || player?.type === PLAYER_TYPES.bandits
+}
+
+export function isNeutralPlayer(player?: PlayerState | null): boolean {
+  return player?.type === PLAYER_TYPES.gaia && player?.diplomacy === 'neutral'
 }
 
 function isOperationalBuilding(building?: BuildingState | null): boolean {

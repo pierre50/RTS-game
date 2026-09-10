@@ -106,6 +106,12 @@ test('trainable non-siege units use ARPG health pacing against starting hero wea
   assert.equal(units.Hero.totalHitPoints, 45)
 })
 
+test('hero starts without equipped arrows', () => {
+  assert.deepEqual(units.Hero.inventory.equipped, {})
+  assert.deepEqual(units.Hero.inventory.equippedCounts, {})
+  assert.equal(units.Hero.inventory.equipment.some(item => item.startsWith('arrow_')), false)
+})
+
 test('animals stay quick to resolve with starting hero weapons', () => {
   const heroSword = getEquipmentStats(['sword_ceramic'])
   const heroBow = getEquipmentStats(['bow'])

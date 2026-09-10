@@ -3,16 +3,76 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const { createSquareLocalBlueprint } = loadTsModule('app/classes/map/generation/LocalMapBlueprint.ts')
-const { bootGameFromSeedSave } = loadTsModule('app/screens/game/GameWorldBoot.ts', {
+const preloadedCivilizations = new Set()
+const { bootGameFromSeedSave, bootGameFromSave } = loadTsModule('app/screens/game/GameWorldBoot.ts', {
   mocks: {
+    '../../classes/players/GaiaPlayer': { ensureNeutralPlayer() {} },
     '../../lib/lang': { t: key => key },
-    '../../lib/lpc': { preloadBakedLpcUnitsForPlayers: async () => {} },
+    '../../lib/lpc': {
+      preloadBakedLpcUnitsForPlayers: async players => {
+        for (const player of players) preloadedCivilizations.add(player.civ)
+      },
+    },
     '../../serialization/SaveSerializer': {},
     '../../serialization/CampaignSave': {},
-    './GameStateHelpers': { saveConfig: value => value ?? {}, savedRuntimeState: value => value },
+    './GameStateHelpers': {
+      saveConfig: value => value ?? {},
+      savedRuntimeState: value => value,
+      hasSerializedGrid: value => Array.isArray(value.map),
+    },
     './GameMapBlueprintRuntime': { recordLoadedMapBlueprint() {} },
     './WorldRegionPlayers': {},
   },
+})
+
+test('saved hero tool is restored after runtime initialization, including empty selection', async () => {
+  for (const item of ['interact', 'sword', 'bow', null, undefined]) {
+    let mounted = false
+    const selected = []
+    await bootGameFromSave(
+      {
+        context: {
+          players: [],
+          controls: {
+            setEquippedItem(value) {
+              assert.equal(mounted, true)
+              selected.push(value)
+            },
+          },
+        },
+        _map: () => ({ generateFromJSON() {} }),
+        _createRuntime() {},
+        _applyMapConfig() {},
+        _createUiRuntime() {},
+        _mountRuntime() {
+          mounted = true
+        },
+      },
+      { map: [[]], players: [], runtime: { heroEquippedItem: item } }
+    )
+    assert.deepEqual(selected, item === undefined ? [] : [item])
+  }
+})
+
+test('saved converted units preload their source civilization before entity construction', async () => {
+  preloadedCivilizations.clear()
+  const map = {
+    generateFromJSON() {
+      assert.ok(preloadedCivilizations.has('Kemet'))
+      assert.ok(preloadedCivilizations.has('Nord'))
+    },
+  }
+  await bootGameFromSave(
+    {
+      context: { players: [] },
+      _map: () => map,
+      _createRuntime() {},
+      _applyMapConfig() {},
+      _createUiRuntime() {},
+      _mountRuntime() {},
+    },
+    { map: [[]], players: [{ civ: 'Hellas', units: [{ assetCiv: 'Kemet' }], corpses: [{ assetCiv: 'Nord' }] }] }
+  )
 })
 
 test('seed saves regenerate the saved footprint and request the exact source blueprint size', async () => {
@@ -25,12 +85,15 @@ test('seed saves regenerate the saved footprint and request the exact source blu
       }
       const expected = sparse ? createSquareLocalBlueprint(source) : source
       const state = {
+        runtime: { heroEquippedItem: 'bow' },
         world: { size: expected.size, seed: 1, sourceSize, localGridLayout: expected.localGridLayout },
         config: { size: sourceSize },
         players: [],
       }
       let requestedSize
       let restored = false
+      let selected = null
+      let mounted = false
       const map = {
         async generateFromBlueprint(blueprint) {
           Object.assign(this, createSquareLocalBlueprint(blueprint))
@@ -46,10 +109,20 @@ test('seed saves regenerate the saved footprint and request the exact source blu
         },
       }
       const game = {
-        context: { players: [] },
+        context: {
+          players: [],
+          controls: {
+            setEquippedItem(item) {
+              assert.equal(mounted, true)
+              selected = item
+            },
+          },
+        },
         _createRuntime() {},
         _createUiRuntime() {},
-        _mountRuntime() {},
+        _mountRuntime() {
+          mounted = true
+        },
         _map: () => map,
         _applyMapConfig: (target, config) => Object.assign(target, config),
         _loadRequiredWorldMapBlueprint: async options => {
@@ -60,6 +133,7 @@ test('seed saves regenerate the saved footprint and request the exact source blu
       await bootGameFromSeedSave(game, state)
       assert.equal(requestedSize, sourceSize)
       assert.equal(restored, true)
+      assert.equal(selected, 'bow')
       assert.equal(source.preserveLegacyGrid, undefined)
     }
   }

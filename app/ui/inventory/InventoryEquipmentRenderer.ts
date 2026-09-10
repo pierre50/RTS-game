@@ -25,6 +25,8 @@ import { createInventorySection } from './InventorySlotRenderer'
 import { createInventoryBuildingIcon, createInventoryResourceIcon } from './InventoryItemIcons'
 import { createInventoryEquipmentRow, createInventoryResourceRow } from './InventoryItemRows'
 import type { MenuHost } from '../MenuHost'
+import type { HeroEquippedItem } from '../../types/heroTools'
+import type { HeroWeaponSlot } from '../../types/entities'
 
 const BAG_ITEM_ICON_RESOURCES = {
   [HERO_HEALING_POULTICE_ITEM]: 'herb',
@@ -38,6 +40,19 @@ export type InventoryEquipmentRendererHost = {
   lootedEquipmentPanel: HTMLDivElement
   menu: MenuHost
   renderTools(): void
+}
+
+function getHeroToolForWeaponSlot(slot: HeroWeaponSlot | null): HeroEquippedItem | null {
+  if (slot === 'melee') return 'sword'
+  if (slot === 'ranged') return 'bow'
+  return null
+}
+
+function selectEquippedWeaponTool(menu: MenuHost, slot: HeroWeaponSlot | null): void {
+  const tool = getHeroToolForWeaponSlot(slot)
+  if (!tool) return
+  menu.context.controls.setEquippedItem?.(tool)
+  menu.context.controls.setEquippedTool?.(tool)
 }
 
 export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererHost): void {
@@ -61,7 +76,6 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
           grid.appendChild(
             createInventoryResourceRow(menu, {
               id: `inventory-resource-${resource}`,
-              disabled: true,
               resource,
               amount,
             }).element
@@ -75,7 +89,7 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
   )
 }
 
-function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: string, count: number): HTMLButtonElement {
+function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: string, count: number): HTMLElement {
   const { menu } = host
   const hero = menu.context.controls.heroUnit
   const equipmentSlot = getEquipmentSlot(item)
@@ -83,6 +97,7 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
   const placeableBuildingType = getPlaceableInventoryBuildingType(item)
   const consumableHealing = getHeroConsumableHealing(item)
   const canUseConsumable = Boolean(hero && consumableHealing > 0)
+  const canEquipTarget = Boolean(equipmentSlot || weaponSlot)
   const canEquip = Boolean(
     (equipmentSlot && (equipmentSlot !== 'helmetDecor' || hero?.inventory?.equipped?.helmet)) || weaponSlot
   )
@@ -93,43 +108,57 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
     : placeableBuildingType
       ? createInventoryBuildingIcon(menu.context, placeableBuildingType)
       : undefined
+  const hasAction = canEquipTarget || canPlace || canUseConsumable
+  const actionLabel = canUseConsumable
+    ? t('inventoryUseAction')
+    : canPlace
+      ? t('inventoryPlaceAction')
+      : t('inventoryEquipAction')
+  const handleAction = (mode: 'one' | 'all'): void => {
+    if (canUseConsumable) {
+      if (!hero || !useHeroConsumableItem(hero, item)) return
+      menu.updateHeroStatus?.(hero)
+      host.close()
+      return
+    }
+    if (canPlace) {
+      if (!hero || !placeableBuildingType) return
+      const config = getPlayerBuildingConfig(menu.context.player, placeableBuildingType)
+      if (!config) return
+      const assets =
+        placeableBuildingType === BUILDING_TYPES.farm
+          ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
+          : getBuildingAsset(placeableBuildingType, menu.context.player, Assets)
+      menu.context.controls.removeMouseBuilding()
+      menu.context.controls.setMouseBuilding?.({
+        ...config,
+        ...assets,
+        inventoryItem: item,
+        type: placeableBuildingType,
+      })
+      host.close()
+      return
+    }
+
+    const amount = mode === 'all' ? count : 1
+    if (!equipHeroInventoryItem(hero, item, amount)) return
+    menu.updateHeroStatus?.(hero)
+    selectEquippedWeaponTool(menu, weaponSlot)
+    host.renderTools()
+  }
   const { element } = createInventoryEquipmentRow(menu.context, menu, {
     id: `inventory-equipment-${item}`,
-    disabled: !canEquip && !canPlace && !canUseConsumable,
     title: placeableBuildingType ? t(placeableBuildingType) : undefined,
     equipment: item,
     count,
     icon,
-    onAction: mode => {
-      if (canUseConsumable) {
-        if (!hero || !useHeroConsumableItem(hero, item)) return
-        menu.updateHeroStatus?.(hero)
-        host.close()
-        return
-      }
-      if (canPlace) {
-        if (!hero || !placeableBuildingType) return
-        const config = getPlayerBuildingConfig(menu.context.player, placeableBuildingType)
-        if (!config) return
-        const assets =
-          placeableBuildingType === BUILDING_TYPES.farm
-            ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
-            : getBuildingAsset(placeableBuildingType, menu.context.player, Assets)
-        menu.context.controls.removeMouseBuilding()
-        menu.context.controls.setMouseBuilding?.({
-          ...config,
-          ...assets,
-          inventoryItem: item,
-          type: placeableBuildingType,
-        })
-        host.close()
-        return
-      }
-
-      const amount = mode === 'all' ? count : 1
-      if (!equipHeroInventoryItem(hero, item, amount)) return
-      host.renderTools()
-    },
+    trailingAction: hasAction
+      ? {
+          disabled: !canUseConsumable && !canPlace && !canEquip,
+          label: actionLabel,
+          onAction: handleAction,
+        }
+      : undefined,
   })
   return element
 }
@@ -158,13 +187,15 @@ export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendere
                 equipment,
                 count,
                 descriptionPrefix: t(getHeroEquipmentSlotLabelKey(slotId)),
-                onAction: !disabled
-                  ? mode => {
-                      const amount = mode === 'all' ? count : 1
-                      if (!unequipHeroInventorySlot(hero, slotId, amount)) return
-                      host.renderTools()
-                    }
-                  : undefined,
+                trailingAction: {
+                  disabled,
+                  label: t('inventoryUnequipAction'),
+                  onAction: mode => {
+                    const amount = mode === 'all' ? count : 1
+                    if (!unequipHeroInventorySlot(hero, slotId, amount)) return
+                    host.renderTools()
+                  },
+                },
               })
             : createInventoryEquipmentRow(menu.context, menu, {
                 id: `inventory-equipped-${slotId}`,

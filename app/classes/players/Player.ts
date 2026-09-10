@@ -23,6 +23,7 @@ import { playUiSound } from '../../lib/audio/uiSound'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { definedProperties } from '../../lib/definedProperties'
 import { fadeIn } from '../../lib/entities/entityFade'
+import { isNeutralPlayer } from '../../lib/playerState'
 import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
 import { updatePopulationObjectives } from '../../lib/objectives/ageObjectives'
@@ -217,6 +218,7 @@ export class Player implements PlayerLike {
 
   isEnemy(player: PlayerLike | null | undefined) {
     if (!player || player.label === this.label) return false
+    if (isNeutralPlayer(this) || isNeutralPlayer(player)) return false
 
     const factions = this.context.getCampaignFactions?.()
     const ownFaction = this.factionId ? factions?.[this.factionId] : null
@@ -260,11 +262,20 @@ export class Player implements PlayerLike {
     return isBuildingEligible(this, type)
   }
 
-  plantWheatField(i: number, j: number, options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}) {
+  plantWheatField(
+    i: number,
+    j: number,
+    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
+  ) {
     return plantPlayerWheatField(this, i, j, options)
   }
 
-  buyBuilding(i: number, j: number, type: string, options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}) {
+  buyBuilding(
+    i: number,
+    j: number,
+    type: string,
+    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
+  ) {
     return buyPlayerBuilding(this, i, j, type, options)
   }
 
@@ -273,7 +284,8 @@ export class Player implements PlayerLike {
     const isHeroUnit = !creationOptions.preserveType && this.isPlayed && !this.units.length
     const unitGender = options.gender ?? this.gender
     const name =
-      options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, unitGender, () => context.map.random()))
+      options.name ||
+      (isHeroUnit ? this.name : getRandomUnitName(options.assetCiv || this.civ, unitGender, () => context.map.random()))
     const type = isHeroUnit ? UNIT_TYPES.hero : options.type
     let unit = new Unit(
       definedProperties({

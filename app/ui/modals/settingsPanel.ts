@@ -67,11 +67,11 @@ function createSettingsTabs({
   onZoomChange,
 }: SettingsContentOptions): ModalTabs<SettingsTab> {
   const gamePanel = document.createElement('div')
-  gamePanel.className = 'config-form settings-page'
+  gamePanel.className = 'config-form'
   const graphicsPanel = document.createElement('div')
-  graphicsPanel.className = 'config-form settings-page'
+  graphicsPanel.className = 'config-form'
   const controlsPanel = document.createElement('div')
-  controlsPanel.className = 'config-form settings-page'
+  controlsPanel.className = 'config-form'
 
   gamePanel.appendChild(
     buildSelectRow(

@@ -733,6 +733,42 @@ test('appearance layers stay frame-locked to the unit sprite', () => {
   assert.equal(hair.currentFrame, 1)
 })
 
+test('appearance layers tolerate units whose main sprite is not ready during resume', () => {
+  const destroyed = []
+  const removed = []
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+    'pixi.js': { AnimatedSprite: class {} },
+    '../../constants': constants,
+    '../../lib': {
+      bindAnimatedSpriteToTicker: () => {},
+      changeSpriteColor: () => {},
+      changeSpritePalette: () => {},
+    },
+    './appearance/UnitAppearanceRenderState': {
+      getLayerRenderState: () => {
+        throw new Error('render state should not be requested without a main sprite')
+      },
+    },
+  })
+  const layerSprite = {
+    parent: {
+      removeChild: sprite => removed.push(sprite),
+    },
+    destroy: options => destroyed.push(options),
+  }
+  const unit = {
+    appearance: { layers: [{ zIndex: 11, walkingSheet: 'hair/walking' }] },
+    appearanceLayerSprites: new Map([[0, layerSprite]]),
+    currentSheet: constants.SHEET_TYPES.walking,
+    sprite: undefined,
+  }
+
+  assert.doesNotThrow(() => syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.walking))
+  assert.deepEqual(removed, [layerSprite])
+  assert.deepEqual(destroyed, [{ children: true, texture: false }])
+  assert.equal(unit.appearanceLayerSprites.size, 0)
+})
+
 test('infantry equipment layers unlock by level and switch metal by civilization age', () => {
   const { dynamicEquipmentForUnit, dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
     '../../constants': constants,
@@ -996,6 +1032,28 @@ test('bandit units use fixed runtime equipment loadouts', () => {
   assert.equal(hood?.corpseSheet, 'equipments/sack_cloth_hood_leather/front/corpse')
   assert.equal(hood?.zIndex, 11)
   assert.equal(arrow?.hideOnOrAfterFrame, 9)
+})
+
+test('a converted villager keeps its original body and gender after save and load', () => {
+  const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
+    './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
+    './equipment': {
+      dynamicEquipmentAssets: () => [], dynamicEquipmentLayersForEquipment: () => [],
+      dynamicEquipmentLayersForUnit: () => [], dynamicEquipmentLayersForVillager: () => [],
+    },
+    '../chief': { isChiefUnit: () => false },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
+    '../../constants': constants,
+    'pixi.js': { Assets: { cache: { has: () => true }, load: async () => {} } },
+  })
+  const saved = JSON.parse(JSON.stringify({ type: 'Villager', assetCiv: 'Kemet',
+    owner: { civ: 'Hellas', label: 'player' }, appearanceVariants: { gender: 'female' },
+    label: 'converted-villager', i: 2, j: 3,
+  }))
+  assert.equal(applyBakedLpcUnitAssets(saved), true)
+  assert.equal(saved.assets.standingSheet, 'units/villager/kemet/female/body/walking')
+  assert.deepEqual(saved.appearanceVariants, { gender: 'female' })
 })
 
 test('unique bandit baked units do not include civilization in asset paths', () => {

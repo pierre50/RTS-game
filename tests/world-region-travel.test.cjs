@@ -13,11 +13,11 @@ function loadWorldRegionTravel() {
   })
 }
 
-function loadTravelParty() {
+function loadTravelParty(arrivalCell = null) {
   return loadTsModule('app/screens/game/GameTravelParty.ts', {
     mocks: {
       '../../lib': {
-        getFreeLandCellAroundInstance: () => null,
+        getFreeLandCellAroundInstance: () => arrivalCell,
         teleportRuntimeUnitToCell: () => {},
         updateInstanceVisibility: () => {},
       },
@@ -37,12 +37,40 @@ function loadWorldRegionPlayers() {
   })
 }
 
+test('converted followers retain their original civilization before their destination sprite is constructed', () => {
+  const { applyTravelPartyToRuntime, extractTravelParty } = loadTravelParty({ i: 1, j: 1 })
+  const hero = { type: 'Hero', label: 'hero' }
+  let created
+  const player = {
+    civ: 'Hellas', units: [hero], views: { removeViewerEverywhere: () => [] },
+    createUnit(options) {
+      assert.equal(options.assetCiv, 'Kemet')
+      assert.equal(options.assetAge, 1)
+      assert.deepEqual(options.appearanceVariants, { gender: 'female' })
+      created = { ...options, renderedCiv: options.assetCiv || this.civ }
+      this.units.push(created)
+      return created
+    },
+  }
+  const context = { player, controls: { heroUnit: hero }, map: { revealEverything: true } }
+  const snapshot = JSON.parse(JSON.stringify({ players: [{ isPlayed: true, units: [hero, {
+    type: 'Villager', label: 'converted', followingHero: true,
+    assetCiv: 'Kemet', assetAge: 1, appearanceVariants: { gender: 'female' },
+  }] }] }))
+  applyTravelPartyToRuntime({ _gameContext: () => context }, extractTravelParty(snapshot))
+  assert.equal(created.renderedCiv, 'Kemet')
+  assert.equal(created.followingHero, true)
+})
+
 test('travel party refreshes the restored facing before revealing the paused world', () => {
   const { applyTravelPartyToRuntime } = loadTravelParty()
   const rendered = []
   const hero = {
-    type: 'Hero', degree: 12,
-    setTextures(sheet) { rendered.push([sheet, this.degree]) },
+    type: 'Hero',
+    degree: 12,
+    setTextures(sheet) {
+      rendered.push([sheet, this.degree])
+    },
   }
   const context = {
     paused: true,
@@ -50,9 +78,13 @@ test('travel party refreshes the restored facing before revealing the paused wor
     controls: { heroUnit: hero },
     map: { revealEverything: true },
   }
-  applyTravelPartyToRuntime({ _gameContext: () => context }, {
-    hero: { type: 'Hero', degree: 270 }, followers: [],
-  })
+  applyTravelPartyToRuntime(
+    { _gameContext: () => context },
+    {
+      hero: { type: 'Hero', degree: 270 },
+      followers: [],
+    }
+  )
   assert.deepEqual(rendered, [['standingSheet', 270]])
   assert.equal(context.paused, true)
 })
@@ -393,9 +425,18 @@ test('world region travel carries living hero followers only', () => {
 test('runtime region travel ignores direct calls while the hero is inside a building space', async () => {
   const calls = { addedWorlds: [], travelPartyApplications: [] }
   const { debugTeleportWorldMap, travelToWorldRegion } = loadWorldRegionTravelRuntime(calls)
-  const snapshot = { config: { worldId: 'world-test' }, players: [{ units: [{ type: 'Hero' }] }], resources: [], animals: [] }
+  const snapshot = {
+    config: { worldId: 'world-test' },
+    players: [{ units: [{ type: 'Hero' }] }],
+    resources: [],
+    animals: [],
+  }
   const context = {
-    controls: { setRuntimeInputEnabled: enabled => { calls.input = enabled } },
+    controls: {
+      setRuntimeInputEnabled: enabled => {
+        calls.input = enabled
+      },
+    },
     hero: { i: 0, j: 6, spaceId: 'interior:house', x: 0, y: 0 },
     map: { mapType: 'world-region', size: 12, worldId: 'world-test', worldRegionId: 'region-a' },
     serialized: snapshot,
@@ -406,11 +447,19 @@ test('runtime region travel ignores direct calls while the hero is inside a buil
     _campaignSave: null,
     _gameContext: () => context,
     _map: () => context.map,
-    _loadRequiredWorldMapBlueprint: async () => { calls.preloaded = true },
-    _destroyRuntime: () => { calls.destroyed = true },
-    _bootFromConfig: async () => { calls.booted = true },
+    _loadRequiredWorldMapBlueprint: async () => {
+      calls.preloaded = true
+    },
+    _destroyRuntime: () => {
+      calls.destroyed = true
+    },
+    _bootFromConfig: async () => {
+      calls.booted = true
+    },
     _bootFromSave: async () => {},
-    _autosaveCampaign: () => { calls.autosaved = true },
+    _autosaveCampaign: () => {
+      calls.autosaved = true
+    },
     _restartSaveData: null,
     _worldRegionTransitioning: false,
     togglePause: () => {},
@@ -432,107 +481,124 @@ for (const { square, legacyRoot, duplicate, debug } of [
   { square: true, legacyRoot: true },
   { square: true, legacyRoot: true, duplicate: true },
   { square: true, legacyRoot: true, duplicate: true, debug: true },
-]) test(`world region travel restores a visited region (${JSON.stringify({ square, legacyRoot, duplicate, debug })})`, async () => {
-  const calls = { addedWorlds: [], travelPartyApplications: [] }
-  const { travelToWorldRegion, debugTeleportWorldMap } = loadWorldRegionTravelRuntime(calls)
-  const savedWorldId = legacyRoot ? 'world-4242' : 'region-b'
-  const departureState = {
-    config: { worldId: 'world-test', worldRegionId: 'region-a' },
-    players: [{ isPlayed: true, units: [{ i: 2, j: 2, label: 'hero', type: 'Hero' }] }],
-    runtime: { dayNightElapsedMs: 100, weather: { phase: 'rainHeavy', phaseEndsAt: 8000, rainIntensity: 0.9 } },
-    world: { worldId: 'world-test', worldRegionId: 'region-a' },
-  }
-  const visitedRegionState = {
-    config: { worldId: 'world-test', worldRegionId: 'region-b' },
-    players: [
-      {
-        isPlayed: true,
-        views: [[{ viewed: true, viewBy: ['woodcutter'] }]],
-        buildings: [{ type: 'TownCenter', inventory: { resources: { wood: 123 } } }],
-        units: [
-          { i: 3, j: 3, label: 'hero', type: 'Hero' },
-          { action: 'wood', i: 4, j: 4, label: 'woodcutter', type: 'Villager' },
-        ],
+])
+  test(`world region travel restores a visited region (${JSON.stringify({ square, legacyRoot, duplicate, debug })})`, async () => {
+    const calls = { addedWorlds: [], travelPartyApplications: [] }
+    const { travelToWorldRegion, debugTeleportWorldMap } = loadWorldRegionTravelRuntime(calls)
+    const savedWorldId = legacyRoot ? 'world-4242' : 'region-b'
+    const departureState = {
+      config: { worldId: 'world-test', worldRegionId: 'region-a' },
+      players: [{ isPlayed: true, units: [{ i: 2, j: 2, label: 'hero', type: 'Hero' }] }],
+      runtime: {
+        heroEquippedItem: 'bow',
+        dayNightElapsedMs: 100,
+        weather: { phase: 'rainHeavy', phaseEndsAt: 8000, rainIntensity: 0.9 },
       },
-    ],
-    runtime: { dayNightElapsedMs: 200 },
-    world: { worldId: 'world-test', worldRegionId: 'region-b' },
-  }
-  let currentContext = {
-    app: square ? { canvas: {} } : undefined,
-    controls: {
-      camera: { x: 0, y: 0 },
-      init: () => {},
-      localToScreen: (x, y) => ({ x, y }),
-      setCamera: () => {},
-      setRuntimeInputEnabled: () => {},
-      updateVisibleCells: () => {},
-      getViewportMetrics: () => ({ visibleLeft: 0, visibleTop: 100, visibleWidth: 200, visibleHeight: 100 }),
-    },
-    dayNight: { getElapsedMs: () => 555 },
-    unitRest: { synchronizeAfterTimeJump: () => { calls.restSynchronized = true } },
-    hero: { i: 2, j: 2, x: 0, y: 0 },
-    map: { size: 12, worldId: 'world-test', localGridLayout: square ? { columns: 8, rows: 29 } : undefined },
-    menu: { refreshMiniMap: () => {}, show: () => {}, updateHeroStatus: () => {} },
-    serialized: departureState,
-  }
-  const game = {
-    _campaignSave: {
-      currentWorldId: 'region-a',
-      worlds: {
-        'region-a': { id: 'region-a', state: departureState },
-        ...(duplicate ? { 'region-b': { id: 'region-b', state: { ...visitedRegionState, players: [] } } } : {}),
-        [savedWorldId]: { id: savedWorldId, state: visitedRegionState },
+      world: { worldId: 'world-test', worldRegionId: 'region-a' },
+    }
+    const visitedRegionState = {
+      config: { worldId: 'world-test', worldRegionId: 'region-b' },
+      players: [
+        {
+          isPlayed: true,
+          views: [[{ viewed: true, viewBy: ['woodcutter'] }]],
+          buildings: [{ type: 'TownCenter', inventory: { resources: { wood: 123 } } }],
+          units: [
+            { i: 3, j: 3, label: 'hero', type: 'Hero' },
+            { action: 'wood', i: 4, j: 4, label: 'woodcutter', type: 'Villager' },
+          ],
+        },
+      ],
+      runtime: { dayNightElapsedMs: 200 },
+      world: { worldId: 'world-test', worldRegionId: 'region-b' },
+    }
+    let currentContext = {
+      app: square ? { canvas: {} } : undefined,
+      controls: {
+        setEquippedItem: item => {
+          calls.equippedItem = item
+        },
+        camera: { x: 0, y: 0 },
+        init: () => {},
+        localToScreen: (x, y) => ({ x, y }),
+        setCamera: () => {},
+        setRuntimeInputEnabled: () => {},
+        updateVisibleCells: () => {},
+        getViewportMetrics: () => ({ visibleLeft: 0, visibleTop: 100, visibleWidth: 200, visibleHeight: 100 }),
       },
-      worldGraph: { rootWorldId: legacyRoot ? savedWorldId : 'region-a', nodes: {} },
-    },
-    _autosaveCampaign: () => {
-      game.autosaved = true
-    },
-    _bootFromConfig: async () => {
-      game.bootedFromConfig = true
-    },
-    _bootFromSave: async state => {
-      assert.equal(state.runtime.offlineFromElapsedMs, 200)
-      delete state.runtime.offlineFromElapsedMs
-      game.bootedFromSave = state
-      currentContext = { ...currentContext, hero: { i: 3, j: 3, x: 0, y: 0 }, serialized: state }
-    },
-    _destroyRuntime: () => {},
-    _loadRequiredWorldMapBlueprint: async () => { calls.preloaded = true },
-    togglePause: paused => { calls.paused = paused },
-    _gameContext: () => currentContext,
-    _map: () => currentContext.map,
-    _restartSaveData: null,
-    _worldRegionTransitioning: false,
-    config: departureState.config,
-    context: currentContext,
-  }
+      dayNight: { getElapsedMs: () => 555 },
+      unitRest: {
+        synchronizeAfterTimeJump: () => {
+          calls.restSynchronized = true
+        },
+      },
+      hero: { i: 2, j: 2, x: 0, y: 0 },
+      map: { size: 12, worldId: 'world-test', localGridLayout: square ? { columns: 8, rows: 29 } : undefined },
+      menu: { refreshMiniMap: () => {}, show: () => {}, updateHeroStatus: () => {} },
+      serialized: departureState,
+    }
+    const game = {
+      _campaignSave: {
+        currentWorldId: 'region-a',
+        worlds: {
+          'region-a': { id: 'region-a', state: departureState },
+          ...(duplicate ? { 'region-b': { id: 'region-b', state: { ...visitedRegionState, players: [] } } } : {}),
+          [savedWorldId]: { id: savedWorldId, state: visitedRegionState },
+        },
+        worldGraph: { rootWorldId: legacyRoot ? savedWorldId : 'region-a', nodes: {} },
+      },
+      _autosaveCampaign: () => {
+        game.autosaved = true
+      },
+      _bootFromConfig: async () => {
+        game.bootedFromConfig = true
+      },
+      _bootFromSave: async state => {
+        assert.equal(state.runtime.offlineFromElapsedMs, 200)
+        delete state.runtime.offlineFromElapsedMs
+        game.bootedFromSave = state
+        currentContext = { ...currentContext, hero: { i: 3, j: 3, x: 0, y: 0 }, serialized: state }
+      },
+      _destroyRuntime: () => {},
+      _loadRequiredWorldMapBlueprint: async () => {
+        calls.preloaded = true
+      },
+      togglePause: paused => {
+        calls.paused = paused
+      },
+      _gameContext: () => currentContext,
+      _map: () => currentContext.map,
+      _restartSaveData: null,
+      _worldRegionTransitioning: false,
+      config: departureState.config,
+      context: currentContext,
+    }
 
-  if (debug) await debugTeleportWorldMap(game, { worldRegionId: 'region-b', worldI: 9, worldJ: 9 })
-  else await travelToWorldRegion(game, 'region-b', 'east')
+    if (debug) await debugTeleportWorldMap(game, { worldRegionId: 'region-b', worldI: 9, worldJ: 9 })
+    else await travelToWorldRegion(game, 'region-b', 'east')
 
-  assert.equal(game.bootedFromConfig, undefined)
-  assert.equal(game.bootedFromSave.players[0].units[1].label, 'woodcutter')
-  assert.equal(game.bootedFromSave.runtime.dayNightElapsedMs, 555)
-  assert.equal(calls.restSynchronized, true)
-  assert.equal(visitedRegionState.runtime.dayNightElapsedMs, 200)
-  assert.equal(game.bootedFromSave.runtime.weather.phase, 'rainHeavy')
-  assert.equal(calls.travelPartyApplications[0][3].freshWorld, false)
-  assert.equal(calls.addedWorlds.length, 0)
-  assert.equal(game._campaignSave.currentWorldId, savedWorldId)
-  assert.equal(game._campaignSave.worlds[savedWorldId].state.players[0].units[1].label, 'woodcutter')
-  assert.deepEqual(game.bootedFromSave.players[0].views, visitedRegionState.players[0].views)
-  assert.deepEqual(game.bootedFromSave.players[0].buildings, visitedRegionState.players[0].buildings)
-  assert.equal(game._restartSaveData.currentWorldId, savedWorldId)
-  assert.equal(game.autosaved, true)
-  assert.equal(calls.paused, false)
-  assert.equal(game._worldRegionTransitioning, false)
-  if (!debug) assert.equal(calls.preloaded, true)
-  assert.equal(calls.concealed, true)
-  assert.equal(calls.revealed, true)
-  assert.equal(calls.fadeDestroyed, true)
-})
+    assert.equal(game.bootedFromConfig, undefined)
+    assert.equal(calls.equippedItem, 'bow')
+    assert.equal(game.bootedFromSave.players[0].units[1].label, 'woodcutter')
+    assert.equal(game.bootedFromSave.runtime.dayNightElapsedMs, 555)
+    assert.equal(calls.restSynchronized, true)
+    assert.equal(visitedRegionState.runtime.dayNightElapsedMs, 200)
+    assert.equal(game.bootedFromSave.runtime.weather.phase, 'rainHeavy')
+    assert.equal(calls.travelPartyApplications[0][3].freshWorld, false)
+    assert.equal(calls.addedWorlds.length, 0)
+    assert.equal(game._campaignSave.currentWorldId, savedWorldId)
+    assert.equal(game._campaignSave.worlds[savedWorldId].state.players[0].units[1].label, 'woodcutter')
+    assert.deepEqual(game.bootedFromSave.players[0].views, visitedRegionState.players[0].views)
+    assert.deepEqual(game.bootedFromSave.players[0].buildings, visitedRegionState.players[0].buildings)
+    assert.equal(game._restartSaveData.currentWorldId, savedWorldId)
+    assert.equal(game.autosaved, true)
+    assert.equal(calls.paused, false)
+    assert.equal(game._worldRegionTransitioning, false)
+    if (!debug) assert.equal(calls.preloaded, true)
+    assert.equal(calls.concealed, true)
+    assert.equal(calls.revealed, true)
+    assert.equal(calls.fadeDestroyed, true)
+  })
 
 test('border travel leaves hostile units and animals in their source region without scheduling pursuit', async () => {
   const calls = { addedWorlds: [], travelPartyApplications: [] }
@@ -541,20 +607,44 @@ test('border travel leaves hostile units and animals in their source region with
   const enemy = { label: 'enemy-unit', type: 'Villager', i: 2, j: 3, sight: 5, hitPoints: 12, dest: hero }
   const wolf = { label: 'wolf', type: 'Wolf', i: 2, j: 4, sight: 5, hitPoints: 12, dest: hero }
   const snapshot = {
-    config: { worldId: 'world-test' }, resources: [], animals: [wolf],
-    players: [{ label: 'human', isPlayed: true, units: [hero] }, { label: 'enemy', units: [enemy] }],
+    config: { worldId: 'world-test' },
+    resources: [],
+    animals: [wolf],
+    players: [
+      { label: 'human', isPlayed: true, units: [hero] },
+      { label: 'enemy', units: [enemy] },
+    ],
   }
   let context = {
-    hero, serialized: snapshot, players: snapshot.players,
-    controls: {}, menu: {}, map: { size: 12, worldId: 'world-test', gaia: { animals: [wolf] } },
+    hero,
+    serialized: snapshot,
+    players: snapshot.players,
+    controls: {},
+    menu: {},
+    map: { size: 12, worldId: 'world-test', gaia: { animals: [wolf] } },
   }
   const game = {
-    context, config: snapshot.config,
-    _campaignSave: { currentWorldId: 'source', worlds: { source: { id: 'source', state: snapshot } }, worldGraph: { nodes: {} } },
-    _gameContext: () => context, _map: () => context.map,
-    _destroyRuntime() {}, _loadRequiredWorldMapBlueprint: async () => {},
+    context,
+    config: snapshot.config,
+    _campaignSave: {
+      currentWorldId: 'source',
+      worlds: { source: { id: 'source', state: snapshot } },
+      worldGraph: { nodes: {} },
+    },
+    _gameContext: () => context,
+    _map: () => context.map,
+    _destroyRuntime() {},
+    _loadRequiredWorldMapBlueprint: async () => {},
     _bootFromConfig: async () => {
-      context = { ...context, hero: { ...hero, label: 'new-hero' }, worldPursuit: { enqueue: entries => { calls.pending = entries } } }
+      context = {
+        ...context,
+        hero: { ...hero, label: 'new-hero' },
+        worldPursuit: {
+          enqueue: entries => {
+            calls.pending = entries
+          },
+        },
+      }
       game.context = context
     },
     _autosaveCampaign() {},
@@ -576,21 +666,32 @@ test('world map debug teleport in the current region uses the fade transition', 
   }
   const context = {
     controls: {
-      focusHeroCamera: () => { calls.cameraFocused = true; calls.visibilityUpdated = true },
+      focusHeroCamera: () => {
+        calls.cameraFocused = true
+        calls.visibilityUpdated = true
+      },
       captureMovementInput: () => () => ({ KeyS: 'heroDown' }),
       restoreMovementInput: held => {
         assert.equal(calls.input, true)
         assert.equal(calls.paused, false)
         calls.restoredMovement = held
       },
-      setRuntimeInputEnabled: enabled => { calls.input = enabled },
-      updateVisibleCells: () => { calls.visibilityUpdated = true },
+      setRuntimeInputEnabled: enabled => {
+        calls.input = enabled
+      },
+      updateVisibleCells: () => {
+        calls.visibilityUpdated = true
+      },
     },
     hero: { i: 2, j: 2, x: 0, y: 0 },
     map: { mapType: 'world-region', size: 12, worldId: 'world-test', worldRegionId: 'region-a' },
     menu: {
-      refreshMiniMap: () => { calls.minimapRefreshed = true },
-      updateHeroStatus: () => { calls.heroStatusUpdated = true },
+      refreshMiniMap: () => {
+        calls.minimapRefreshed = true
+      },
+      updateHeroStatus: () => {
+        calls.heroStatusUpdated = true
+      },
     },
     serialized: snapshot,
   }
@@ -604,10 +705,14 @@ test('world map debug teleport in the current region uses the fade transition', 
     _destroyRuntime: () => {},
     _bootFromConfig: async () => {},
     _bootFromSave: async () => {},
-    _autosaveCampaign: () => { calls.autosaved = true },
+    _autosaveCampaign: () => {
+      calls.autosaved = true
+    },
     _restartSaveData: null,
     _worldRegionTransitioning: false,
-    togglePause: paused => { calls.paused = paused },
+    togglePause: paused => {
+      calls.paused = paused
+    },
   }
 
   await debugTeleportWorldMap(game, { worldI: 4, worldJ: 4, worldRegionId: 'region-a' })
@@ -624,35 +729,76 @@ test('world map debug teleport in the current region uses the fade transition', 
   assert.equal(calls.visibilityUpdated, true)
 })
 
-for (const failure of ['preload', 'boot']) test(`failed fade travel restores input and departure state (${failure})`, async () => {
-  const calls = { addedWorlds: [], travelPartyApplications: [] }
-  const { travelToWorldRegion } = loadWorldRegionTravelRuntime(calls)
-  const snapshot = { config: { worldId: 'world-test' }, players: [{ units: [{ type: 'Hero' }] }], resources: [], animals: [] }
-  const context = {
-    app: { canvas: {} },
-    serialized: snapshot,
-    map: { size: 12, worldId: 'world-test', localGridLayout: { columns: 8, rows: 29 } },
-    controls: { setRuntimeInputEnabled: enabled => { calls.input = enabled } },
-    menu: { show() {} },
-  }
-  const game = {
-    context, config: snapshot.config, _campaignSave: null,
-    _gameContext: () => context, _map: () => context.map,
-    _loadRequiredWorldMapBlueprint: async () => { if (failure === 'preload') throw new Error('preload failure') },
-    _destroyRuntime: () => { calls.destroyed = true },
-    _bootFromConfig: async () => { throw new Error('boot failure') },
-    _bootFromSave: async saved => { calls.restored = saved },
-    _autosaveCampaign() {},
-    togglePause: paused => { calls.paused = paused },
-  }
-  await assert.rejects(travelToWorldRegion(game, 'other', 'south'), new RegExp(`${failure} failure`))
-  assert.equal(calls.input, true)
-  assert.equal(calls.paused, false)
-  assert.equal(game._worldRegionTransitioning, false)
-  assert.equal(calls.fadeDestroyed, true)
-  if (failure === 'boot') assert.equal(calls.restored, snapshot)
-  else assert.equal(calls.destroyed, undefined)
-})
+for (const debug of [false, true])
+  for (const failure of ['preload', 'boot', 'restore'])
+    test(`failed fade travel restores input and departure state (${failure}, debug=${debug})`, async () => {
+      const calls = { addedWorlds: [], travelPartyApplications: [] }
+      const { travelToWorldRegion, debugTeleportWorldMap } = loadWorldRegionTravelRuntime(calls)
+      const snapshot = {
+        config: { worldId: 'world-test' },
+        players: [{ units: [{ type: 'Hero' }] }],
+        resources: [],
+        animals: [],
+      }
+      const context = {
+        app: { canvas: {} },
+        serialized: snapshot,
+        map: { size: 12, worldId: 'world-test', localGridLayout: { columns: 8, rows: 29 } },
+        controls: {
+          setRuntimeInputEnabled: enabled => {
+            calls.input = enabled
+          },
+        },
+        menu: { show() {} },
+      }
+      const game = {
+        context,
+        config: snapshot.config,
+        _campaignSave: null,
+        _gameContext: () => context,
+        _map: () => context.map,
+        _loadRequiredWorldMapBlueprint: async () => {
+          if (failure === 'preload') throw new Error('preload failure')
+        },
+        _destroyRuntime: () => {
+          calls.destroyed = true
+        },
+        _bootFromConfig: async () => {
+          throw new Error('boot failure')
+        },
+        _bootFromSave: async saved => {
+          calls.restored = saved
+          if (failure === 'restore') throw new Error('restore failure')
+        },
+        _autosaveCampaign() {},
+        togglePause: paused => {
+          calls.paused = paused
+        },
+      }
+      const travel = debug
+        ? debugTeleportWorldMap(game, { worldI: 2, worldJ: 2, worldRegionId: 'other' })
+        : travelToWorldRegion(game, 'other', 'south')
+      if (failure === 'restore') {
+        await assert.rejects(travel, error => {
+          assert.deepEqual(
+            error.errors.map(item => item.message),
+            ['boot failure', 'restore failure']
+          )
+          return true
+        })
+        assert.equal(calls.input, false)
+        assert.equal(context.map.ready, false)
+        assert.equal(game._worldRegionTransitioning, false)
+        return
+      }
+      await assert.rejects(travel, new RegExp(`${failure} failure`))
+      assert.equal(calls.input, true)
+      assert.equal(calls.paused, false)
+      assert.equal(game._worldRegionTransitioning, false)
+      assert.equal(calls.fadeDestroyed, true)
+      if (failure === 'boot') assert.equal(calls.restored, snapshot)
+      else assert.equal(calls.destroyed, undefined)
+    })
 
 test('world region player configs keep the human civilization even without a local village', () => {
   const { buildWorldRegionPlayerConfigs } = loadWorldRegionPlayers()

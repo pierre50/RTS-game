@@ -72,3 +72,16 @@ test('failed base variant loads propagate before equipment loading and record ti
   assert.deepEqual(state.aliases, [])
   assert.ok(state.metrics.includes('preloadUnits.loadBakedVariants'))
 })
+
+test('converted units and corpses preload their original civilization', async () => {
+  const state = setup()
+  await state.preloadBakedLpcUnitsForPlayers(
+    [{ civ: 'Hellas', units: [{ assetCiv: 'Kemet' }], corpses: [{ assetCiv: 'Nord' }] }],
+    state.monitor
+  )
+  for (const civ of ['Hellas', 'Kemet', 'Nord']) {
+    for (const gender of ['male', 'female']) {
+      assert.ok(state.variants.some(([type, variant]) => type === 'villager' && variant === `${civ}/${gender}`))
+    }
+  }
+})

@@ -1,5 +1,6 @@
 import { FACTION_SCORE } from './factions'
 import { t } from '../lang'
+import { isNeutralPlayer } from '../playerState'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -57,6 +58,7 @@ export function canTriggerDiplomaticAggression(
   const sourceOwner = source?.owner
   const targetOwner = target?.owner
   if (!sourceOwner?.isPlayed || !targetOwner || sourceOwner.label === targetOwner.label) return false
+  if (isNeutralPlayer(sourceOwner) || isNeutralPlayer(targetOwner)) return false
   if (sourceOwner.isEnemy?.(targetOwner)) return false
   if (getFactionRelationDelta(targetOwner, source?.context) != null) return true
   return (

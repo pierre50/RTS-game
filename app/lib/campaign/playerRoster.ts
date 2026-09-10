@@ -5,7 +5,7 @@ import type { CampaignSave, FactionSave } from '../../types/save'
 
 export const BANDIT_FACTION_ID = 'bandits'
 export const BANDIT_FACTION_NAME = 'Bandits'
-export const BANDIT_FACTION_COLOR = 'grey'
+export const BANDIT_FACTION_COLOR = 'black'
 
 const GLOBAL_FACTION_COLORS = [...new Set(['blue', ...playerColors])]
 

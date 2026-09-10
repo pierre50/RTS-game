@@ -21,6 +21,7 @@ export type BuildingInteriorTravelGame = {
   _restartSaveData: CampaignSave | null
   context: {
     controls?: GameContextLike['controls'] | null
+    map?: GameContextLike['map'] | null
     menu?: (GameContextLike['menu'] & { show?(): void }) | null
     player?: GameContextLike['player'] | null
     players?: GameContextLike['players']

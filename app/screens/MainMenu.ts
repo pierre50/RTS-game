@@ -178,7 +178,6 @@ export default class MainMenu {
   _openSaveList(): void {
     openSaveListModal({
       onLoad: saveData => this.onLoad(saveData),
-      onChange: () => this._refreshHome(),
     })
   }
 

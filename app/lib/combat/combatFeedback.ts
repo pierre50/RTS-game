@@ -72,6 +72,7 @@ const PLAYER_FLASH_COLORS: Record<string, string> = {
   teal: '#008279',
   violet: '#3d5083',
   grey: '#8f8f8f',
+  black: '#2d3136',
   cyan: '#008279',
 }
 

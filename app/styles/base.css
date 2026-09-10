@@ -37,7 +37,6 @@ img {
   user-drag: none;
 }
 
-.save-list-name,
 .modal-title {
   -webkit-user-select: text;
   user-select: text;

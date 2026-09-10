@@ -37,16 +37,6 @@ function canOccupyPortalCell(cell: RuntimeCell | null | undefined, unit: UnitEnt
   return !cell.solid || cell.has === unit || cell.has?.label === unit.label
 }
 
-function canUsePortalArrivalCell(
-  context: GameContextLike,
-  cell: RuntimeCell | null | undefined,
-  unit: UnitEntity
-): cell is RuntimeCell {
-  if (!isPortalCell(cell)) return false
-  if (createReservedPassageCellLookup(context).has(cell)) return false
-  return !cell.solid || cell.has === unit || cell.has?.label === unit.label || cell.has?.isDestroyed === true
-}
-
 function unitIsOnCell(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
   return Boolean(
     cell && sameCellMapSpace(unit, cell) && (sameGridPosition(unit.currentCell, cell) || sameGridPosition(unit, cell))
@@ -178,23 +168,20 @@ function getPortalArrivalCell(
   const targetSpace = getMapSpace(context.map, portal.targetSpaceId)
   const targetCell = portal.targetCell
   if (!targetSpace || !targetCell) return null
+  if (isHeroControlled(unit)) return targetCell
   const passageLookup = createReservedPassageCellLookup(context)
-  let best: { cell: RuntimeCell; score: number } | null = null
 
+  // NPCs arrive on the door, but need room to walk away afterwards.
   for (let radius = 1; radius <= Math.max(2, targetSpace.size); radius += 1) {
     const cells = getCellsAroundPoint(targetCell.i, targetCell.j, targetSpace.grid, radius, cell => {
       if (!isPortalCell(cell)) return false
       if (passageLookup.has(cell)) return false
       return !cell.solid || cell.has === unit || cell.has?.label === unit.label || cell.has?.isDestroyed === true
     })
-    for (const cell of cells) {
-      const score = Math.abs(cell.i - targetCell.i) + Math.abs(cell.j - targetCell.j)
-      if (!best || score < best.score) best = { cell, score }
-    }
-    if (best) return best.cell
+    if (cells.length) return targetCell
   }
 
-  return canUsePortalArrivalCell(context, targetCell, unit) ? targetCell : null
+  return null
 }
 
 export function prepareUnitForSpaceTransfer(unit: UnitEntity, options: { preserveVisualState?: boolean } = {}): void {
@@ -277,6 +264,9 @@ export function transferUnitThroughSpacePortal(
   updateInstanceVisibility(unit)
   updateInstanceRenderVisibility(unit)
   onTransferred?.()
+  if (unitIsOnCell(unit, arrivalCell) && !unit.dest && !unit.action && !unit.path?.length) {
+    routeUnitAwayFromPassageCell(unit, arrivalCell)
+  }
   return true
 }
 

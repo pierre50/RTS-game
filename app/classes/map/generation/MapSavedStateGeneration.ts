@@ -115,16 +115,17 @@ export function restoreSavedEntities(
     .filter(animal => !animal.isDestroyed)
     .forEach(animal => processUnit(animal, map))
 
+  restoreCaveOccupants(context, players)
   map.context.players.forEach((player, index) => {
     const savedPlayer = players[index]
     restorePlayerViewsAndFog(player, map)
     restoreBuildingAssignments(player, savedPlayer?.buildings || [], map)
     rehydrateAIKnowledge(player, map)
     restoreAIState(player, savedPlayer, map)
-    player.units.forEach(unit => processUnit(unit, map))
+    const savedUnitsByLabel = new Map(savedPlayer?.units?.map(saved => [saved.label, saved]))
+    player.units.forEach(unit => processUnit(unit, map, savedUnitsByLabel.get(unit.label)))
     restoreSelection(player, savedPlayer, map)
   })
-  restoreCaveOccupants(context, players)
 }
 
 export function finishSavedStateRestore(

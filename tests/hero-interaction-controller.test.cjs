@@ -23,6 +23,14 @@ function loadHeroInteractionController(calls) {
             : null,
         wakeOwnSleepingNpcForCommunication: (_hero, target) => calls.push(['wakeNpc', target]),
       },
+      '../lib/entities/entityOwnerTransfer': {
+        transferNeutralEntityToPlayer: (target, owner) => {
+          if (target?.owner?.type !== 'Gaia' || target.owner?.diplomacy !== 'neutral') return false
+          calls.push(['claimNeutral', target.label, owner.label])
+          target.owner = owner
+          return true
+        },
+      },
       '../lib/hero/heroTools': {
         findFacingEntity: () => null,
       },
@@ -36,15 +44,20 @@ function createController(target, calls = []) {
     isEntityInfoModalOpen: () => false,
     isHeroBuildingMenuOpen: () => false,
     isNpcOrdersOpen: () => false,
+    openHeroBuildingMenu: building => {
+      calls.push(['openHeroBuildingMenu', building])
+      return true
+    },
     openEntityInfoModal: openedTarget => {
       calls.push(['openEntityInfoModal', openedTarget])
       return true
     },
     openNpcOrders: npcs => calls.push(['openNpcOrders', npcs]),
   }
-  const hero = { family: 'unit', label: 'hero' }
+  const player = { label: 'player' }
+  const hero = { family: 'unit', label: 'hero', owner: player }
   const controller = new HeroInteractionController({
-    context: { menu, player: {} },
+    context: { menu, player },
     heroUnit: hero,
     isHeroControlActive: () => true,
   })
@@ -66,6 +79,19 @@ test('living npc direct interaction still opens communication', () => {
 
   assert.equal(controller.openHeroEntityInteraction(target), true)
   assert.deepEqual(calls, [['wakeNpc', target], ['openNpcOrders', [target]]])
+})
+
+test('neutral chest direct interaction claims it before opening', () => {
+  const neutral = { diplomacy: 'neutral', label: 'neutral', type: 'Gaia' }
+  const target = { family: 'building', isBuilt: true, isDead: false, isDestroyed: false, label: 'chest', owner: neutral }
+  const { calls, controller } = createController(target)
+
+  assert.equal(controller.openHeroEntityInteraction(target), true)
+  assert.equal(target.owner.label, 'player')
+  assert.deepEqual(calls, [
+    ['claimNeutral', 'chest', 'player'],
+    ['openHeroBuildingMenu', target],
+  ])
 })
 
 test('wildgrass direct interaction opens info instead of starting forage work', () => {

@@ -29,7 +29,8 @@ function loadMainMenu({ saveEntries }) {
     },
   }
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return { MainMenu: module.exports.default, getSaveListOptions: () => saveListOptions }
 }
@@ -87,7 +88,7 @@ function makeElement(tagName) {
   return element
 }
 
-test('main menu refreshes continue button when save list changes', () => {
+test('main menu opens the save list without mutation actions', () => {
   const previousDocument = global.document
   const previousRequestAnimationFrame = global.requestAnimationFrame
 
@@ -113,13 +114,9 @@ test('main menu refreshes continue button when save list changes', () => {
     )
 
     menu._getHomeButtons()[2].click()
-    saves.length = 0
-    getSaveListOptions().onChange()
 
-    assert.deepEqual(
-      menu._getHomeButtons().map(button => button.textContent),
-      ['newGame', 'loadGame', 'settings', 'quit']
-    )
+    assert.equal(typeof getSaveListOptions().onLoad, 'function')
+    assert.equal(getSaveListOptions().onChange, undefined)
   } finally {
     global.document = previousDocument
     global.requestAnimationFrame = previousRequestAnimationFrame

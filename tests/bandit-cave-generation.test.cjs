@@ -11,6 +11,7 @@ const types = {
   campJarLarge: 'CampJarLarge',
   campAnimalBones: 'CampAnimalBones',
 }
+const unitTypes = { villager: 'Villager' }
 
 for (const payload of catalog.blueprints) {
   test(`bandit lair ${payload.id} keeps passages open and stores its chest in the cave`, () => {
@@ -44,24 +45,56 @@ for (const payload of catalog.blueprints) {
       },
     }
     const cave = { owner: { buildings: [] }, cave: { id: payload.id } }
+    const neutralOwner = {
+      units: [],
+      population: 0,
+      createUnit(options) {
+        this.units.push(options)
+        const cell = grid[options.i][options.j]
+        cell.has = options
+        cell.solid = true
+        return options
+      },
+    }
     const { furnishBanditCave } = loadTsModule('app/classes/map/BanditCaveGeneration.ts', {
       mocks: {
         '../../../engine/services/BuildingInteriorSpaceSystemRuntime': {
           ensureRuntimeBuildingInteriorSpace: () => space,
         },
-        '../../constants': { BUILDING_TYPES: types },
+        '../../constants': { BUILDING_TYPES: types, UNIT_TYPES: unitTypes },
+        '../players': {
+          ensureNeutralPlayer: () => neutralOwner,
+        },
       },
     })
     const inventory = { resources: { gold: 9 }, equipment: ['bow'] }
-    furnishBanditCave({}, cave, 0, owner, inventory)
+    const context = { players: [owner, neutralOwner], map: { randomRange: () => 3 } }
+    owner.units = []
+    furnishBanditCave(context, cave, 0, owner, inventory)
     const chest = owner.buildings.find(item => item.type === 'Chest')
     assert.ok(chest)
     assert.equal(chest.spaceId, space.id)
     assert.deepEqual(chest.inventory, inventory)
     assert.ok(owner.buildings.length >= 3)
+    assert.ok(neutralOwner.units.length >= 1)
+    assert.ok(neutralOwner.units.length <= 3)
+    assert.ok(neutralOwner.units.every(unit => unit.type === 'Villager' && unit.spaceId === space.id))
+    assert.equal(new Set(neutralOwner.units.map(unit => unit.assetCiv)).size, neutralOwner.units.length)
+    assert.ok(neutralOwner.units.every(unit => typeof unit.assetCiv === 'string'))
     const count = owner.buildings.length
-    furnishBanditCave({}, cave, 0, owner, inventory)
+    const neutralCount = neutralOwner.units.length
+    assert.equal(neutralOwner.population, neutralCount)
+    furnishBanditCave(context, cave, 0, owner, inventory)
     assert.equal(owner.buildings.length, count)
+    assert.equal(neutralOwner.units.length, neutralCount)
     assert.ok(owner.buildings.every(item => item.spaceId === space.id))
+    for (const unit of neutralOwner.units) {
+      grid[unit.i][unit.j].has = null
+      grid[unit.i][unit.j].solid = false
+    }
+    neutralOwner.units = []
+    furnishBanditCave(context, cave, 0, owner, inventory)
+    assert.equal(neutralOwner.units.length, 0, 'recruited prisoners must not respawn')
+    assert.equal(JSON.parse(JSON.stringify(cave.cave)).neutralVillagersGenerated, true)
   })
 }

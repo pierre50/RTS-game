@@ -1,5 +1,6 @@
 import type { TargetObservation } from '../lib/units/playerTargetKnowledge'
 import type { CaveDefinition } from './cave'
+import type { HeroEquippedItem } from './heroTools'
 import type { ResourceAmount } from './common'
 import type { AnimalConfig, BuildingConfig, ConfigValue, ResourceConfig, UnitConfig } from './config'
 import type { FogSpriteMemory } from './fog'
@@ -20,6 +21,16 @@ export type SaveRallyPoint = SaveGridPoint & { direction: number }
 type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValue } } | null
 
 export type SaveEntityState = {
+  caveOrders?: Pick<SaveEntityState, 'action' | 'dest' | 'previousDest' | 'path' | 'realDest'>
+  resourceDelivery?: {
+    building?: SaveReference | null
+    returnTask?: {
+      action?: string | null
+      autonomousJob?: VillagerAutonomyJob | null
+      work?: string | null
+      dest?: SaveReference | null
+    } | null
+  }
   cavePosition?: { caveId: string; i: number; j: number }
   cave?: CaveDefinition
   buildingAge?: number
@@ -223,6 +234,7 @@ export type PendingWorldPursuer = {
 }
 
 type SaveRuntimeState = {
+  heroEquippedItem?: HeroEquippedItem | null
   offlineFromElapsedMs?: number
   worldPursuers?: PendingWorldPursuer[]
   dayNightElapsedMs?: number

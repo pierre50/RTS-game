@@ -1,7 +1,6 @@
-import { MENU_INFO_IDS, RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
+import { MENU_INFO_IDS, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { getIconPath } from '../../lib'
 import {
-  formatEquipmentLootLabel,
   formatEquipmentStackLabel,
   getEquipmentStacks,
   getUnitCorpseLootEquipment,
@@ -25,8 +24,7 @@ import {
   XP_CATEGORIES,
 } from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
-import { appendInventoryQuantityBadge } from '../inventory/InventoryActionRow'
-import { createInventoryEquipmentIcon } from '../inventory/InventoryItemIcons'
+import { createInventoryEquipmentRow, createInventoryResourceRow } from '../inventory/InventoryItemRows'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
@@ -64,38 +62,26 @@ function createCorpseEquipmentLootButton(
   equipment: string,
   count: number,
   menu: MenuLike
-): HTMLButtonElement {
-  const button = document.createElement('button')
+): HTMLElement {
   const label = formatEquipmentStackLabel(equipment, count)
-  button.type = 'button'
-  button.className = 'corpse-loot-button ui-btn'
-  button.setAttribute('aria-label', t('corpseLootTakeItem', { item: label }))
-
-  const iconWrap = document.createElement('span')
-  iconWrap.className = 'unit-avatar-frame corpse-loot-icon'
-  if (unit.context?.app) {
-    iconWrap.appendChild(createInventoryEquipmentIcon(unit.context, equipment, 'corpse loot'))
-  }
-  appendInventoryQuantityBadge(iconWrap, count)
-
-  const text = document.createElement('span')
-  text.className = 'corpse-loot-label'
-  text.textContent = formatEquipmentLootLabel(equipment)
-
-  button.appendChild(iconWrap)
-  button.appendChild(text)
-  button.addEventListener('click', evt => {
-    evt.preventDefault()
-    evt.stopPropagation()
-    const hero = unit.context?.controls?.heroUnit
-    if (!pickupCorpseEquipment(unit, hero, equipment)) return
-    menu.playUiClick?.()
-    menu.showMessage(t('corpseLootPickedItem', { item: label }), 'success')
-    menu.syncEntityInfoModal?.()
-    menu.refreshInventory?.()
-  })
-
-  return button
+  return createInventoryEquipmentRow(unit.context, menu, {
+    id: `corpse-loot-equipment-${equipment}`,
+    equipment,
+    count,
+    playClick: false,
+    trailingAction: {
+      label: t('inventoryTakeAction'),
+      ariaLabel: t('corpseLootTakeItem', { item: label }),
+      onClick: () => {
+        const hero = unit.context?.controls?.heroUnit
+        if (!pickupCorpseEquipment(unit, hero, equipment)) return
+        menu.playUiClick?.()
+        menu.showMessage(t('corpseLootPickedItem', { item: label }), 'success')
+        menu.syncEntityInfoModal?.()
+        menu.refreshInventory?.()
+      },
+    },
+  }).element
 }
 
 function formatCorpseResourceLootLabel(resource: keyof ResourceAmount, amount: number): string {
@@ -107,46 +93,36 @@ function createCorpseResourceLootButton(
   resource: keyof ResourceAmount,
   amount: number,
   menu: MenuLike
-): HTMLButtonElement {
-  const button = document.createElement('button')
+): HTMLElement {
   const label = formatCorpseResourceLootLabel(resource, amount)
-  button.type = 'button'
-  button.className = 'corpse-loot-button ui-btn'
-  button.setAttribute('aria-label', t('corpseLootTakeItem', { item: label }))
-
-  const iconWrap = document.createElement('span')
-  iconWrap.className = 'unit-avatar-frame corpse-loot-icon'
-  iconWrap.appendChild(createInfoImage('img', getIconPath(RESOURCE_ICON_IDS[resource].commodity)))
-  appendInventoryQuantityBadge(iconWrap, amount)
-
-  const text = document.createElement('span')
-  text.className = 'corpse-loot-label'
-  text.textContent = t(resource)
-
-  button.appendChild(iconWrap)
-  button.appendChild(text)
-  button.addEventListener('click', evt => {
-    evt.preventDefault()
-    evt.stopPropagation()
-    const hero = unit.context?.controls?.heroUnit
-    const pickedAmount = pickupCorpseResource(unit, hero, resource)
-    if (pickedAmount <= 0) return
-    menu.playUiClick?.()
-    menu.showMessage(
-      t('corpseLootPickedItem', { item: formatCorpseResourceLootLabel(resource, pickedAmount) }),
-      'success'
-    )
-    menu.syncEntityInfoModal?.()
-    menu.refreshInventory?.()
-  })
-
-  return button
+  return createInventoryResourceRow(menu, {
+    id: `corpse-loot-resource-${resource}`,
+    resource,
+    amount,
+    playClick: false,
+    trailingAction: {
+      label: t('inventoryTakeAction'),
+      ariaLabel: t('corpseLootTakeItem', { item: label }),
+      onClick: () => {
+        const hero = unit.context?.controls?.heroUnit
+        const pickedAmount = pickupCorpseResource(unit, hero, resource)
+        if (pickedAmount <= 0) return
+        menu.playUiClick?.()
+        menu.showMessage(
+          t('corpseLootPickedItem', { item: formatCorpseResourceLootLabel(resource, pickedAmount) }),
+          'success'
+        )
+        menu.syncEntityInfoModal?.()
+        menu.refreshInventory?.()
+      },
+    },
+  }).element
 }
 
 function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[], menu: MenuLike): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
-  button.className = 'corpse-loot-take-all ui-btn'
+  button.className = 'inventory-transfer-all-button ui-btn'
   button.textContent = t('corpseLootTakeAll')
   button.addEventListener('click', evt => {
     evt.preventDefault()
@@ -187,8 +163,10 @@ function appendCorpseEquipmentLoot(element: HTMLElement, unit: UnitEntity, menu:
   const title = document.createElement('div')
   title.className = 'corpse-loot-title'
   title.textContent = t('corpseLootInventory')
-  loot.appendChild(title)
-  loot.appendChild(createCorpseTakeAllButton(unit, equipment, menu))
+  const header = document.createElement('div')
+  header.className = 'inventory-section-header corpse-loot-header'
+  header.append(title, createCorpseTakeAllButton(unit, equipment, menu))
+  loot.appendChild(header)
 
   const grid = document.createElement('div')
   grid.className = 'corpse-loot-grid'

@@ -78,15 +78,35 @@ export class Unit extends Instance implements UnitEntity {
 
     initializeUnitServices(this)
     initializeUnitRuntimeState(this)
-    const spawnCell = applyUnitSpawnConfiguration(this, options)
-    registerInitialUnitMapPresence(this)
-    initializeUnitWorkRole(this)
-    loadConfiguredUnitSpritesheets(this)
-    setupUnitInterface(this)
-    setupUnitPrimarySprite(this, spawnCell)
-    setupUnitCommandDispatch(this)
-    setupUnitPointerInteraction(this)
-    scheduleInitialUnitVisibilityUpdate(this)
+    try {
+      const spawnCell = applyUnitSpawnConfiguration(this, options)
+      registerInitialUnitMapPresence(this)
+      initializeUnitWorkRole(this)
+      loadConfiguredUnitSpritesheets(this)
+      setupUnitInterface(this)
+      setupUnitPrimarySprite(this, spawnCell)
+      setupUnitCommandDispatch(this)
+      setupUnitPointerInteraction(this)
+      scheduleInitialUnitVisibilityUpdate(this)
+    } catch (error) {
+      this.isDestroyed = true
+      const cell = this.currentCell
+      if (cell?.has === this) {
+        cell.has = null
+        cell.solid = false
+      }
+      cell?.corpses.delete(this)
+      for (const list of [this.owner?.units, this.owner?.corpses]) {
+        const index = list?.indexOf(this) ?? -1
+        if (index >= 0) list?.splice(index, 1)
+      }
+      context.map.removeFromInstanceBucket(this)
+      this.stopInterval()
+      this.stopTimeout()
+      clearTimeout(this.visibilityTimeout)
+      this.destroy({ children: true, texture: false })
+      throw error
+    }
   }
 
   createShadow(source: AnimatedSprite = this.sprite, label: string = LABEL_TYPES.shadow) {

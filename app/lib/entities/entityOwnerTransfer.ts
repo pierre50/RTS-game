@@ -3,7 +3,7 @@ import { isBanditOwner } from '../combat/bandits'
 import { getBuildingShelterCapacity } from '../buildings/buildingOccupancy'
 import { updateInstanceVisibility } from '../grid/visibility'
 import { syncEntityHealthDisplay } from './entityHealthDisplay'
-import { isPlayerEliminated } from '../playerState'
+import { isNeutralPlayer, isPlayerEliminated } from '../playerState'
 import { t } from '../lang'
 import type { MenuLike } from '../../types/context'
 import type { GameContextLike } from '../../types/context'
@@ -145,10 +145,19 @@ export function transferEntityOwner(
   return true
 }
 
+export function transferNeutralEntityToPlayer(
+  target: RuntimeEntity | null | undefined,
+  newOwner: PlayerLike | null | undefined,
+  options: TransferOwnerOptions = {}
+): boolean {
+  if (!target || !newOwner || !isConvertibleEntity(target) || !isNeutralPlayer(target.owner)) return false
+  return transferEntityOwner(target, newOwner, options)
+}
+
 export function transferDefeatedPlayerBuildings(defeatedPlayer: PlayerLike): number {
   const context = (defeatedPlayer as PlayerWithContext).context
   const players = (context?.players ?? []).filter(
-    (player: PlayerLike) => player !== defeatedPlayer && !isPlayerEliminated(player)
+    (player: PlayerLike) => player !== defeatedPlayer && !isNeutralPlayer(player) && !isPlayerEliminated(player)
   )
   if (!players.length) return 0
 

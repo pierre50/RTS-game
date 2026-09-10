@@ -147,6 +147,18 @@ test('resuming from pause leaves a frozen sleeping sprite untouched even with a 
   assert.equal(sprite.playing, false)
 })
 
+test('resuming a standing unit without a ready sprite falls back to normal resume', () => {
+  const { resumeUnitVisuals } = loadUnitVisualState()
+  const unit = {
+    appearanceLayerSprites: new Map(),
+    currentSheet: 'standingSheet',
+    shadow: null,
+    sprite: undefined,
+  }
+
+  assert.equal(resumeUnitVisuals(unit), false)
+})
+
 test('true dying units are not treated as sleeping just because they use the dying sheet', () => {
   const { syncUnitShadow, syncUnitVisualSettings } = loadUnitVisualState()
   const unit = {

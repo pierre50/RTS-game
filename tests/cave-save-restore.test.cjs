@@ -3,6 +3,33 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const cave = { id: 'cave-1', blueprintId: 'cave-large-loop', tier: 'large', seed: 3 }
 
+test('saved entity restore places every cave occupant before resuming any unit orders', () => {
+  let placed = false
+  const processed = []
+  const record = { label: 'villager', caveOrders: { dest: 'target' } }
+  const { restoreSavedEntities } = loadTsModule('app/classes/map/generation/MapSavedStateGeneration.ts', {
+    mocks: {
+      '../../Resource': {}, '../../players': { Gaia: class {} }, '../../cell': {},
+      '../../../lib': { getGaiaAnimals: () => [] },
+      '../../../services/FogOfWar': { rehydrateAIKnowledge() {} },
+      './MapOfflineWorldSimulation': {},
+      '../MapSaveRestore': {
+        restorePlayerEntitiesFromSave() {}, restorePlayerInteriors() {}, restorePlayerViewsAndFog() {},
+        restoreBuildingAssignments() {}, restoreAIState() {}, restoreSelection() {},
+        restoreCaveOccupants() { placed = true },
+        processUnit(unit, map, saved) {
+          assert.equal(placed, true)
+          assert.equal(saved, record)
+          processed.push(unit.label)
+        },
+      },
+    },
+  })
+  const context = { players: [{ units: [{ label: 'villager' }] }] }
+  restoreSavedEntities({ context }, [{ units: [record] }], [], context)
+  assert.deepEqual(processed, ['villager'])
+})
+
 test('restores cave occupants after the neutral owner and its saved interior have been restored', () => {
   const cell = { i: 31, j: 32, category: 'Land' }
   const space = { id: 'interior:gaia:cave', grid: [] }

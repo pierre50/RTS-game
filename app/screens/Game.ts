@@ -8,7 +8,6 @@ import { adjustFactionRelation } from '../lib/combat/factions'
 import { getBuildingInteriorBlueprintType, getBuildingInteriorEntryCell } from '../lib/buildings/interiors'
 import { canUnitEnterBuildingInterior } from '../lib/buildings/interiorAccess'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
-import { getEntityMapPoint } from '../lib/mapSpaces'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
 import { createInitialCampaignSave, isCampaignSave } from '../serialization/CampaignSave'
 import {
@@ -316,8 +315,7 @@ export default class Game extends Container {
     if (hero && caveSpace?.building.cave) {
       activateBuildingInteriorSpace(this._gameContext(), caveSpace)
       this._activeBuildingInteriorSpace = caveSpace
-      const point = getEntityMapPoint(hero)
-      controls.setCamera?.(point.x, point.y)
+      controls.focusHeroCamera()
       controls.updateVisibleCells?.()
       this.context.menu?.refreshMiniMap?.()
     }
@@ -351,15 +349,14 @@ export default class Game extends Container {
       activateBuildingInteriorSpace(context, space)
       this._activeBuildingInteriorSpace = space
       if (hero) {
-        const point = getEntityMapPoint(hero)
-        context.controls?.setCamera?.(point.x, point.y)
+        context.controls?.focusHeroCamera?.()
         context.controls?.updateVisibleCells?.()
         refreshMapSpaceEntityVisibility(context)
       }
       context.menu?.refreshMiniMap?.()
       context.menu?.setHeroInteractionPrompt?.('heroInteractionExit')
       context.menu?.updateHeroStatus?.(hero)
-    })
+    }, { blockInput: true, beforeReveal: () => context.app.render() })
   }
 
   async _closeBuildingInteriorLayer(): Promise<void> {
@@ -375,15 +372,14 @@ export default class Game extends Container {
       }
       this._activeBuildingInteriorSpace = null
       if (hero) {
-        const point = getEntityMapPoint(hero)
-        context.controls?.setCamera?.(point.x, point.y)
+        context.controls?.focusHeroCamera?.()
         context.controls?.updateVisibleCells?.()
         refreshMapSpaceEntityVisibility(context)
       }
       context.menu?.refreshMiniMap?.()
       context.menu?.setHeroInteractionPrompt?.(null)
       context.menu?.updateHeroStatus?.(hero)
-    })
+    }, { blockInput: true, beforeReveal: () => context.app.render() })
   }
 
   _withBuildingInteriorLayerRuntimeRestored<T>(callback: () => T): T {

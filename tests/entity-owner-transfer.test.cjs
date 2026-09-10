@@ -26,6 +26,7 @@ function loadOwnerTransfer(calls = []) {
         syncEntityHealthDisplay: () => calls.push(['syncEntityHealthDisplay']),
       },
       '../playerState': {
+        isNeutralPlayer: player => player?.type === 'Gaia' && player?.diplomacy === 'neutral',
         isPlayerEliminated: player =>
           !player.units?.some(unit => !unit.isDead && (unit.hitPoints ?? 0) > 0) &&
           !player.buildings?.some(building => !building.isDead && (building.hitPoints ?? 0) > 0 && building.isBuilt),
@@ -48,6 +49,20 @@ function makePlayer(label, anchors = []) {
     units: anchors.filter(anchor => anchor.family === 'unit'),
   }
 }
+
+test('neutral prisoners never make their owner eligible to inherit a defeated base', () => {
+  const { transferDefeatedPlayerBuildings } = loadOwnerTransfer()
+  const defeated = makePlayer('defeated')
+  const neutral = makePlayer('neutral', [{ family: 'unit', hitPoints: 10, i: 0, j: 0 }])
+  Object.assign(neutral, { type: 'Gaia', diplomacy: 'neutral' })
+  const player = makePlayer('player', [{ family: 'unit', hitPoints: 10, i: 20, j: 20 }])
+  const building = makeBuilding('base', defeated, 0, 0)
+  defeated.buildings = [building]
+  defeated.context = { players: [defeated, neutral, player] }
+  assert.equal(transferDefeatedPlayerBuildings(defeated), 1)
+  assert.equal(building.owner, player)
+  assert.equal(neutral.buildings.length, 0)
+})
 
 function makeBuilding(label, owner, i, j) {
   const building = {
@@ -184,4 +199,40 @@ test('unsupported entities and disallowed owners leave ownership and runtime sta
   newOwner.devConsoleBanditOwner = true
   assert.equal(transferEntityOwner(target, newOwner), false)
   assert.equal(target.owner, oldOwner)
+})
+
+test('neutral entity interaction transfers ownership to the interacting player', () => {
+  const { transferNeutralEntityToPlayer } = loadOwnerTransfer()
+  const neutral = makePlayer('neutral')
+  neutral.type = 'Gaia'
+  neutral.diplomacy = 'neutral'
+  neutral.population = 1
+  const player = makePlayer('player')
+  const target = {
+    family: 'unit',
+    hitPoints: 10,
+    isDead: false,
+    isDestroyed: false,
+    label: 'neutral-villager',
+    owner: neutral,
+    setTextures() {},
+  }
+  neutral.units.push(target)
+
+  assert.equal(transferNeutralEntityToPlayer(target, player), true)
+  assert.equal(target.owner, player)
+  assert.deepEqual(neutral.units, [])
+  assert.deepEqual(player.units, [target])
+  assert.equal(neutral.population, 0)
+  assert.equal(player.population, 1)
+})
+
+test('neutral interaction ignores non-neutral owners', () => {
+  const { transferNeutralEntityToPlayer } = loadOwnerTransfer()
+  const owner = makePlayer('owner')
+  const player = makePlayer('player')
+  const target = { family: 'building', owner }
+
+  assert.equal(transferNeutralEntityToPlayer(target, player), false)
+  assert.equal(target.owner, owner)
 })

@@ -1,7 +1,7 @@
 import type { ContainerChild } from 'pixi.js'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { SaveReference } from '../../types/save'
+import type { SaveReference, SaveDestination } from '../../types/save'
 import type { MapGenerationMap } from './MapGenerationTypes'
 
 function isRuntimeEntity(value: ContainerChild | null): value is RuntimeEntity & ContainerChild {
@@ -20,22 +20,29 @@ export function isRuntimeDestination(value: RuntimeEntity | RuntimeCell | null):
 // A saved reference is either a [i, j] grid coordinate, a [i, j, label] tuple (an
 // entity currently standing on a cell), or a bare label string (entity lookup).
 export function getDest(
-  val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined,
-  map: MapGenerationMap
+  val: SaveReference | SaveDestination | RuntimeEntity | RuntimeCell | null | undefined,
+  map: MapGenerationMap,
+  grid = map.grid
 ): RuntimeEntity | RuntimeCell | null {
   if (val) {
     if (Array.isArray(val)) {
-      return val[2] ? getRuntimeEntityByLabel(map, val[2]) : (map.grid[val[0]]?.[val[1]] ?? null)
-    } else {
-      return getRuntimeEntityByLabel(map, val as string)
+      return val[2] ? getRuntimeEntityByLabel(map, val[2]) : (grid[val[0]]?.[val[1]] ?? null)
     }
+    if (typeof val === 'string') return getRuntimeEntityByLabel(map, val)
+    if ('label' in val && val.label) return getRuntimeEntityByLabel(map, val.label)
+    if (val.i != null && val.j != null) return grid[val.i]?.[val.j] ?? null
   }
   return null
 }
 
 function getRuntimeEntityByLabel(map: MapGenerationMap, label: string): RuntimeEntity | null {
-  const child = map.getChildByLabel(label)
-  return isRuntimeEntity(child) ? child : null
+  const child = map.getChildByLabel?.(label)
+  if (child && isRuntimeEntity(child)) return child
+  for (const player of map.context?.players ?? []) {
+    const entity = [...player.units, ...player.corpses, ...player.buildings].find(entity => entity.label === label)
+    if (entity) return entity
+  }
+  return null
 }
 
 // Saved references used for unit/building ownership links and AI memory always

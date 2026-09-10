@@ -177,6 +177,8 @@ export function applyTravelPartyToRuntime(
       definedProperties({
         i: cell.i,
         j: cell.j,
+        assetCiv: followerState.assetCiv,
+        assetAge: followerState.assetAge,
         appearanceVariants: followerState.appearanceVariants
           ? { ...followerState.appearanceVariants }
           : followerState.gender

@@ -41,6 +41,28 @@ function rejects(mutate, message) {
   assert.throws(() => validateSaveData(data), message)
 }
 
+test('save validation rejects malformed cave orders and delivery references', () => {
+  for (const state of [
+    { caveOrders: [] },
+    { caveOrders: { dest: [NaN, 0] } },
+    { resourceDelivery: { building: [0, 0, 42] } },
+    { resourceDelivery: { returnTask: { dest: 'tree', action: {} } } },
+  ])
+    rejects(data => {
+      data.players[0].units = [{ type: 'Hero', i: 0, j: 0, ...state }]
+    }, /caveOrders|resourceDelivery/)
+  const data = save()
+  data.players[0].units = [
+    {
+      type: 'Hero',
+      i: 0,
+      j: 0,
+      resourceDelivery: { building: 'store', returnTask: { dest: [1, 1, 'tree'], work: 'woodcutter' } },
+    },
+  ]
+  assert.doesNotThrow(() => validateSaveData(data))
+})
+
 test('save validation rejects unsupported sizes, seeds, source sizes and world descriptors', () => {
   for (const value of [null, [], 1, 'save']) assert.throws(() => validateSaveData(value), /expected an object/)
   for (const size of ['1', 0, 513, 1.5, NaN, Infinity])

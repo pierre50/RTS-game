@@ -18,6 +18,64 @@ function loadMapSaveRestore() {
 
 const { restorePlayerEntitiesFromSave } = loadMapSaveRestore()
 
+test('cave orders resolve cells and paths in the interior and can target another owner', () => {
+  const { processUnit } = loadMapSaveRestore()
+  const cell = { i: 0, j: 0 }
+  const enemy = { family: 'unit', label: 'bandit' }
+  const map = {
+    grid: [[{ outside: true }]],
+    spaces: new Map([['cave', { grid: [[cell]] }]]),
+    context: { players: [{ units: [enemy], corpses: [], buildings: [] }] },
+    getChildByLabel: () => null,
+  }
+  const unit = {
+    spaceId: 'cave',
+    setDest(dest) {
+      this.dest = dest
+    },
+    setPath(path) {
+      this.path = path
+    },
+  }
+  processUnit(unit, map, { caveOrders: { dest: [0, 0], path: [{ i: 0, j: 0 }], action: null } })
+  assert.equal(unit.dest, cell)
+  assert.deepEqual(unit.path, [cell])
+  processUnit(unit, map, { caveOrders: { dest: 'bandit', path: [{ i: 0, j: 0 }], action: 'attack' } })
+  assert.equal(unit.dest, enemy)
+  assert.equal(unit.action, 'attack')
+})
+
+test('restored delivery rebuilds its return task without reviving transient timers', () => {
+  const { processUnit } = loadMapSaveRestore()
+  const building = { family: 'building', label: 'store' }
+  const resource = { family: 'resource', label: 'tree' }
+  const map = { grid: [[{}]], context: {}, getChildByLabel: label => (label === 'store' ? building : resource) }
+  const unit = { family: 'unit', path: [], dest: null }
+  processUnit(unit, map, {
+    resourceDelivery: {
+      building: 'store',
+      returnTask: {
+        dest: 'tree',
+        action: 'chopwood',
+        work: 'woodcutter',
+        autonomousJob: 'wood',
+      },
+    },
+  })
+  assert.equal(unit.resourceDeliveryState.building, building)
+  assert.equal(unit.resourceDeliveryState.phase, 'toBuilding')
+  assert.equal(unit.resourceDeliveryState.returnTask.dest, resource)
+  assert.equal(unit.resourceDeliveryState.returnTask.work, 'woodcutter')
+  assert.equal(unit.resourceDeliveryState.taskId, undefined)
+  assert.equal(unit.dest, null)
+  const missingBuilding = { ...map, getChildByLabel: label => (label === 'tree' ? resource : null) }
+  processUnit(unit, missingBuilding, {
+    resourceDelivery: { building: 'gone', returnTask: { dest: 'tree', action: 'chopwood' } },
+  })
+  assert.equal(unit.resourceDeliveryState.building, null)
+  assert.equal(unit.resourceDeliveryState.returnTask.dest, resource)
+})
+
 test('restored exploration without a usable saved path replans without clearing the job', () => {
   const { processUnit } = loadMapSaveRestore()
   const cell = { i: 0, j: 0, has: null }

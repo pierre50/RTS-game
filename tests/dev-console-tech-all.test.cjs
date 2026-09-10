@@ -68,7 +68,7 @@ test('listGlobalPlayers prints campaign roster relations and local presence', ()
       bandits: {
         id: 'bandits',
         name: 'Bandits',
-        color: 'grey',
+        color: 'black',
         relationState: 'hostile',
         relationScore: -65,
         homeWorldId: 'root',
@@ -98,7 +98,7 @@ test('listGlobalPlayers prints campaign roster relations and local presence', ()
   assert.match(result.message, /House Latium .* civ=Latium .* color=red .* relation=neutral \(0\)/)
   assert.match(result.message, /worlds=latium-world\*/)
   assert.match(result.message, /local units=2 buildings=1/)
-  assert.match(result.message, /Bandits .* color=grey .* relation=hostile \(-65\)/)
+  assert.match(result.message, /Bandits .* color=black .* relation=hostile \(-65\)/)
   assert.match(result.message, /not local/)
 })
 

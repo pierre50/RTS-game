@@ -32,6 +32,7 @@ export default class MapConfig {
       revealEverything: false,
       revealTerrain: false,
       instantMode: false,
+      heroOnlyStart: true,
       startingResources: RESOURCES_MAP.standard,
       resourceDensity: 'moderate',
       difficulty: 'medium',
@@ -43,6 +44,7 @@ export default class MapConfig {
       content: this._buildContent(),
       onClose: () => this.destroy(),
     })
+    this._modal._panel?.classList.add('lobby-modal-panel')
 
     document.addEventListener('keydown', this._onKeyDown)
   }

@@ -164,6 +164,8 @@ export function createHeroPreview(host: HeroAppearanceHost, player: PlayerSetupC
 }
 
 function humanizeAppearanceValue(value: string): string {
+  const translated = t(`heroAppearance_${value}`)
+  if (translated !== `heroAppearance_${value}`) return translated
   return value
     .split('_')
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))

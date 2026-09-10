@@ -153,6 +153,9 @@ function loadControls(mockOverrides = {}) {
     '../lib/npc/npcInteraction': {
       isTalkableNpc: () => false,
     },
+    '../lib/entities/entityOwnerTransfer': {
+      transferNeutralEntityToPlayer: () => false,
+    },
     '../lib/npc/npcChatter': {
       pickForeignNpcChatterLine: () => '',
       pickNpcChatterLine: () => '',
@@ -378,6 +381,26 @@ test('arrival camera centers on the hero while input is disabled and the game is
     assert.equal(positions.length, 0)
     controls.focusHeroCamera()
     assert.deepEqual(positions, [[12, 34]])
+  } finally {
+    restore()
+  }
+})
+
+test('arrival camera and resumed hero tracking use the same terrain-adjusted center', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.heroController.active = true
+    controls.heroController.heroUnit = { x: 12, y: 34 }
+    controls.getHeroCameraCenter = () => ({ x: 12, y: 10 })
+    const positions = []
+    controls.cameraController.set = (x, y) => positions.push([x, y])
+
+    controls.setRuntimeInputEnabled(false)
+    controls.focusHeroCamera()
+    controls.setRuntimeInputEnabled(true)
+    controls.onTick({ deltaTime: 1 })
+
+    assert.deepEqual(positions, [[12, 10], [12, 10]])
   } finally {
     restore()
   }

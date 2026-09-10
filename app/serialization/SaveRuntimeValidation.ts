@@ -5,6 +5,12 @@ import { fail, isObject, validateOptionalFiniteNumber } from './SaveValidationPr
 export function validateRuntimeState(runtime: unknown, size: number, config: LoadedGameConfig): void {
   if (runtime != null) {
     if (!isObject(runtime)) fail('Invalid save file: runtime is invalid.')
+    if (
+      runtime.heroEquippedItem != null &&
+      (typeof runtime.heroEquippedItem !== 'string' || !['interact', 'sword', 'bow'].includes(runtime.heroEquippedItem))
+    ) {
+      fail('Invalid save file: runtime heroEquippedItem is invalid.')
+    }
     validateOptionalFiniteNumber(runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
     validateOptionalFiniteNumber(runtime.offlineFromElapsedMs, 'runtime offlineFromElapsedMs')
     validateOptionalFiniteNumber(runtime.elapsedMs, 'runtime elapsedMs')

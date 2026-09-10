@@ -639,8 +639,8 @@ test('weapon tools require assigned inventory items instead of bag-only debug it
   assert.equal(isHeroToolAvailable(hero, 'sword'), false)
   assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), false)
 
-  hero.inventory.activeWeapons.melee = 'sword_ceramic'
-  assert.equal(getEquippedItemWeapon('sword', 0, hero), 'sword_ceramic')
+  hero.inventory.activeWeapons.melee = 'sword_iron'
+  assert.equal(getEquippedItemWeapon('sword', 0, hero), 'sword_iron')
   assert.equal(isHeroToolAvailable(hero, 'sword'), true)
 })
 

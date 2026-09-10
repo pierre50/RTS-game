@@ -19,7 +19,8 @@ import {
   isHeroToolAvailable,
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
-import { AGE_PROGRESSION, getAgeObjectiveTooltip, isAgeObjectiveComplete } from '../lib/objectives/ageObjectives'
+import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
+import { AGE_PROGRESSION, isAgeObjectiveComplete, type AgeObjectiveDefinition } from '../lib/objectives/ageObjectives'
 import { ModalTabs } from './Tabs'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
@@ -65,7 +66,7 @@ export class InventoryManager {
   minimapLayout: HTMLDivElement
   minimapLegend: HTMLDivElement
   minimapResources: HTMLDivElement
-  slots: Map<HeroEquippedItem, HTMLButtonElement>
+  slots: Map<HeroEquippedItem, HTMLElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
   modal?: Modal
@@ -254,8 +255,6 @@ export class InventoryManager {
     const { app } = this.menu.context
     for (const [tool, slot] of this.slots) {
       const available = this.isActiveWeaponAvailable(tool)
-      slot.disabled = !available
-      slot.setAttribute('aria-disabled', String(!available))
       slot.classList.toggle('empty', !available && tool !== 'interact')
     }
     for (const [tool, canvas] of this.toolIcons) {
@@ -295,14 +294,25 @@ export class InventoryManager {
       const available = this.isActiveWeaponAvailable(tool)
       const equipment = this.getActiveWeaponEquipment(tool)
       const info = equipment ? createEquipmentRowInfo(equipment) : undefined
+      const weaponSlot = equipment ? getWeaponSlot(equipment) : null
       const { element, icon } = createInventoryActionRow(this.menu, {
         id: `inventory-tool-${tool}`,
         className: 'inventory-weapon-row',
-        disabled: !available,
         title: t(TOOL_LABEL_KEYS[tool]),
         description: info?.title ?? (tool === 'interact' ? '' : t('inventoryEmptySlot')),
         meta: info?.meta,
-        onClick: () => this.selectTool(tool),
+        trailingAction:
+          equipment && weaponSlot
+            ? {
+                label: t('inventoryUnequipAction'),
+                onClick: () => {
+                  const hero = this.menu.context.controls.heroUnit
+                  if (!unequipHeroActiveWeaponSlot(hero, weaponSlot)) return
+                  this.menu.updateHeroStatus?.(hero)
+                  this.renderTools()
+                },
+              }
+            : undefined,
       })
       element.classList.toggle('empty', !available && tool !== 'interact')
       if (EQUIPPED_ITEM_WEAPON[tool] && equipment) {
@@ -342,39 +352,35 @@ export class InventoryManager {
     return getInventoryConstructionButtons(this.menu)
   }
 
-  createObjectiveItem(button: MenuButtonSpec): HTMLDivElement {
-    const item = document.createElement('div')
-    const acquired = button.acquired?.() ?? false
-    const disabled = button.disabled?.() ?? false
-    item.className = 'progression-objective-row'
-    item.classList.toggle('is-acquired', acquired)
-    item.classList.toggle('is-locked', !acquired && disabled)
-    item.id = button.id ? `inventory-objective-${button.id}` : ''
-
-    const label = document.createElement('span')
-    label.className = 'progression-objective-label'
-    const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
-    label.textContent = tooltip?.title || button.id || ''
-
-    const status = document.createElement('span')
-    status.className = 'progression-objective-status'
-    status.textContent = acquired ? t('objectiveDone') : t('objectiveTodo')
-
-    item.append(label, status)
-    if (button.tooltip) this.menu.menuTooltip.bind(item, button.tooltip)
-    return item
+  createObjectiveItem(objective: AgeObjectiveDefinition): HTMLElement {
+    const acquired = isAgeObjectiveComplete(this.menu.context.player, objective.id)
+    const { element, icon } = createInventoryActionRow(this.menu, {
+      id: `inventory-objective-${objective.id}`,
+      className: 'progression-objective-row',
+      title: t(objective.labelKey),
+      description: t(objective.descriptionKey),
+    })
+    element.classList.toggle('is-acquired', acquired)
+    icon.classList.add('progression-objective-marker', acquired ? 'is-acquired' : 'is-pending')
+    icon.setAttribute('aria-hidden', 'true')
+    return element
   }
 
-  createAgeMilestone(labelKey: string, icon: string, reached: boolean): HTMLDivElement {
+  createAgeMilestone(labelKey: string, reached: boolean): HTMLElement {
     const milestone = document.createElement('div')
-    milestone.className = 'progression-age'
-    milestone.appendChild(this.menu.createActionIcon(getIconPath(icon)))
-    const name = document.createElement('strong')
-    name.textContent = t(labelKey)
+    milestone.id = `inventory-age-${labelKey}`
+    milestone.className = 'inventory-section-header progression-age'
+    milestone.classList.toggle('is-acquired', reached)
+
+    const title = document.createElement('div')
+    title.className = 'inventory-loot-title progression-age-title'
+    title.textContent = t(labelKey)
+
     const status = document.createElement('span')
-    status.className = 'progression-objective-status'
+    status.className = 'progression-age-status'
     status.textContent = t(reached ? 'progressionReached' : 'progressionUpcoming')
-    milestone.append(name, status)
+
+    milestone.append(title, status)
     return milestone
   }
 
@@ -382,7 +388,7 @@ export class InventoryManager {
     this.progressionPanel.textContent = ''
     this.menu.clearActionHotkeys()
     const player = this.menu.context.player
-    this.progressionPanel.appendChild(this.createAgeMilestone('stoneAge', '065_50729', true))
+    this.progressionPanel.appendChild(this.createAgeMilestone('stoneAge', true))
     for (const stage of AGE_PROGRESSION) {
       const step = document.createElement('section')
       step.className = 'progression-step'
@@ -396,16 +402,10 @@ export class InventoryManager {
         : t('progressionComingSoon')
       step.appendChild(heading)
       for (const objective of stage.objectives) {
-        step.appendChild(
-          this.createObjectiveItem({
-            id: objective.id,
-            tooltip: () => getAgeObjectiveTooltip(objective),
-            acquired: () => isAgeObjectiveComplete(player, objective.id),
-          })
-        )
+        step.appendChild(this.createObjectiveItem(objective))
       }
-      step.appendChild(this.createAgeMilestone(stage.labelKey, stage.icon, player.age >= stage.age))
       this.progressionPanel.appendChild(step)
+      this.progressionPanel.appendChild(this.createAgeMilestone(stage.labelKey, player.age >= stage.age))
     }
   }
 
@@ -425,7 +425,7 @@ export class InventoryManager {
     return t('needMore', { resource })
   }
 
-  createCraftButton(recipe: HeroCraftRecipe): HTMLButtonElement {
+  createCraftButton(recipe: HeroCraftRecipe): HTMLElement {
     const { app, player } = this.menu.context
     const hero = this.menu.context.controls.heroUnit
     const disabled = !hero || !canCraftHeroRecipe(player, recipe, hero)
@@ -436,20 +436,23 @@ export class InventoryManager {
       title: t(recipe.labelKey),
       description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
       meta: t('tooltipCost', { cost: this.formatResourceAmount(recipe.cost) }),
-      quantity: recipe.outputCount,
-      onClick: () => {
-        if (!hero) return
-        if (!craftHeroRecipe(player, hero, recipe)) {
-          this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
+      trailingAction: {
+        disabled,
+        label: t('inventoryTabCraft'),
+        onClick: () => {
+          if (!hero) return
+          if (!craftHeroRecipe(player, hero, recipe)) {
+            this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
+            this.renderCraft()
+            return
+          }
+          this.menu.updateTopbar?.()
+          this.menu.showMessage(
+            t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount }),
+            'success'
+          )
           this.renderCraft()
-          return
-        }
-        this.menu.updateTopbar?.()
-        this.menu.showMessage(
-          t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount }),
-          'success'
-        )
-        this.renderCraft()
+        },
       },
     })
     const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)

@@ -163,13 +163,16 @@
 }
 
 .modal-panel {
+  --modal-panel-padding-x: 32px;
+  --modal-panel-padding-y: 24px;
+
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: var(--ui-gap-12);
   width: min(560px, 100%);
-  padding: 24px 32px;
+  padding: var(--modal-panel-padding-y) var(--modal-panel-padding-x);
   background: var(--main-primary-color);
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
@@ -178,7 +181,14 @@
   overflow: auto;
 }
 
+.modal-panel.settings-panel,
+.modal-panel.lobby-modal-panel {
+  width: min(760px, 100%);
+}
+
 .modal-panel--tabbed {
+  padding: 0;
+  gap: 0;
   overflow: hidden;
 }
 
@@ -198,6 +208,8 @@
 }
 
 .modal-panel--tabbed .modal-tab-page {
+  box-sizing: border-box;
+  padding: var(--modal-panel-padding-y) var(--modal-panel-padding-x);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -208,7 +220,7 @@
   display: flex;
   align-items: stretch;
   gap: 6px;
-  margin: -24px -32px -2px;
+  margin: 0 0 -2px;
 }
 
 .modal-tabs-header .ui-tabs {
@@ -310,18 +322,17 @@
   }
 
   .modal-panel {
+    --modal-panel-padding-x: 16px;
+    --modal-panel-padding-y: 18px;
+
     min-width: 0;
     width: 100%;
     max-height: none;
     margin: auto 0;
-    padding: 18px 16px;
   }
 
   .modal-panel--tabbed {
     max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 
-  .modal-tabs-header {
-    margin: -18px -16px -2px;
-  }
 }

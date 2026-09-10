@@ -68,7 +68,15 @@ function loadPlayer(overrides = {}) {
         capitalizeFirstLetter: value => value.charAt(0).toUpperCase() + value.slice(1),
       }
     }
-    if (request === '../building/Building') return { Building: class {} }
+    if (request === '../building/Building') {
+      return {
+        Building: class {
+          constructor(options) {
+            Object.assign(this, options)
+          }
+        },
+      }
+    }
     if (request === '../Resource') {
       return {
         Resource: class {
@@ -93,13 +101,13 @@ function loadPlayer(overrides = {}) {
         AGE_GATE_MAX_UNLOCKABLE_VALUE: 1,
         AGE_UP_ENABLED: false,
         AGE_TECHNOLOGIES: new Set(['ToolAge', 'BronzeAge', 'IronAge']),
-        BUILDING_TYPES: { farm: 'Farm' },
+        BUILDING_TYPES: { farm: 'Farm', townCenter: 'TownCenter' },
         FAMILY_TYPES: { player: 'player' },
         PLAYER_TYPES: { human: 'human' },
         POPULATION_MAX: 200,
         RESOURCE_NAMES: [],
         RESOURCE_TYPES: { wheat: 'Wheat' },
-        SOUND_CUES: { player: { ageAdvance: 'ageAdvance' } },
+        SOUND_CUES: { player: { ageAdvance: 'ageAdvance' }, unit: { militaryCommand: 'militaryCommand' } },
         UNIT_TYPES: { villager: 'Villager' },
         FADE_DURATION_MS: 2000,
       }
@@ -250,6 +258,27 @@ test('building prerequisites still apply without tech all', () => {
   assert.equal(player.isBuildingEligible('ArcheryRange'), false)
 })
 
+test('neutral Gaia owner is never considered an enemy relation', () => {
+  const Player = loadPlayer()
+  const player = {
+    label: 'player',
+    team: null,
+    diplomacy: null,
+    factionId: null,
+    context: {},
+  }
+  const neutral = {
+    label: 'neutral',
+    type: 'Gaia',
+    diplomacy: 'neutral',
+    team: null,
+    factionId: null,
+  }
+  Object.setPrototypeOf(player, Player.prototype)
+
+  assert.equal(player.isEnemy(neutral), false)
+})
+
 test('existing buildings keep their construction age and HP when their owner advances', () => {
   const Player = loadPlayer()
   const calls = []
@@ -366,6 +395,49 @@ test('missing building definitions reject purchases and wheat fields before any 
   assert.equal(player.buyBuilding(0, 0, 'Unknown'), false)
   assert.equal(player.buyBuilding(0, 0, 'Farm'), false)
   assert.equal(player.plantWheatField(0, 0), false)
+})
+
+test('placing a town center waits for finished construction before completing the objective', () => {
+  const Player = loadPlayer()
+  const messages = []
+  const player = {
+    age: 0,
+    buildings: [],
+    completedObjectives: [],
+    config: { buildings: { TownCenter: { cost: {}, size: 3 } }, units: { Villager: { sounds: {} } } },
+    context: {
+      map: {
+        grid: [[{ i: 0, j: 0 }]],
+        addChild: child => child,
+      },
+      menu: {
+        showMessage: (message, type) => messages.push([message, type]),
+        updateActionTarget: () => messages.push(['action-target']),
+        updateTopbar: () => messages.push(['topbar']),
+        syncObjectiveProgress: () => messages.push(['objective-progress']),
+        isMiniMapActive: () => false,
+      },
+      player: null,
+    },
+    isPlayed: true,
+    hasBuilt: [],
+    units: [],
+    selectedUnits: [{ type: 'Hero', sendTo: target => messages.push(['hero-build-order', target.type]) }],
+    populationMax: 0,
+    isBuildingEligible: () => true,
+    updatePopulationObjectives() {},
+  }
+  player.context.player = player
+  Object.setPrototypeOf(player, Player.prototype)
+
+  assert.equal(player.buyBuilding(0, 0, 'TownCenter'), true)
+  assert.equal(player.completedObjectives.includes('buildTownCenter'), false)
+  assert.ok(messages.some(message => message[0] === 'hero-build-order' && message[1] === 'TownCenter'))
+  player.buildings[0].isBuilt = true
+  player.updatePopulationObjectives = Player.prototype.updatePopulationObjectives
+  player.updatePopulationObjectives()
+  assert.equal(player.completedObjectives.includes('buildTownCenter'), true)
+  assert.ok(messages.some(message => message[0] === 'Objectif accompli : Colonie : construire un forum'))
 })
 
 test('player initialization normalizes relations and retains restored resource overrides', () => {

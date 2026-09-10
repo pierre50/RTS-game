@@ -194,9 +194,15 @@ function buildMocks(calls, context) {
     },
     './EntityInfoModalManager': { createTitledEntityInfoContent: () => makeFakeElement() },
     './InspectionPanel': {
-      createInspectionModal: options => new FakeModal(options),
+      createInspectionModal: options => {
+        const modal = new FakeModal(options)
+        if (options.panelClass) modal._panel.classList.add(options.panelClass)
+        if (options.inspection ?? true) modal._panel.classList.add('inspection-panel')
+        return modal
+      },
       setInspectionMode: (modal, inspection) => {
         modal.inspection = inspection
+        modal._panel.classList.toggle('inspection-panel', inspection)
       },
       setModalTitle: (modal, title) => {
         modal.title = title
@@ -362,6 +368,23 @@ test('multi-selection NPC conversations hide the bag button', () => {
     manager.open([npcA, npcB])
 
     assert.equal(manager.buttons.get('bag').hidden, true)
+  })
+})
+
+test('multi-selection NPC conversations use the same inspection panel placement as direct conversations', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npcA = { type: 'Villager', label: 'villager-1', owner: context.player }
+    const npcB = { type: 'Villager', label: 'villager-2', owner: context.player }
+
+    manager.open([npcA, npcB])
+
+    assert.equal(manager.modal._panel.classList.contains('npc-orders-panel'), true)
+    assert.equal(manager.modal._panel.classList.contains('inspection-panel'), true)
   })
 })
 

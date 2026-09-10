@@ -5,6 +5,15 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+test('saving preserves the selected hero tool separately from inventory', () => {
+  const context = makeContext()
+  for (const item of ['interact', 'sword', 'bow', null]) {
+    context.controls.equippedItem = item
+    const saved = loadSaveSerializer().serializeGame(context)
+    assert.equal(JSON.parse(JSON.stringify(saved)).runtime.heroEquippedItem, item)
+  }
+})
+
 function loadSaveSerializer() {
   const filename = path.join(__dirname, '../app/serialization/SaveSerializer.ts')
   const source = fs.readFileSync(filename, 'utf8')
@@ -626,11 +635,55 @@ test('cave identity, interior chest state and occupant positions survive seriali
     building,
     { type: 'Chest', label: 'loot', spaceId, i: 30, j: 35, inventory: { equipment: [], resources: { gold: 3 } } },
   ]
-  owner.units = [{ type: 'Hero', label: 'hero', i: 25, j: 28, spaceId, context }]
+  owner.units = [
+    {
+      type: 'Hero',
+      label: 'hero',
+      i: 25,
+      j: 28,
+      spaceId,
+      context,
+      dest: { i: 26, j: 28 },
+      path: [{ i: 26, j: 28 }],
+      action: null,
+    },
+  ]
   const saved = loadSaveSerializer().serializeGame(context)
   assert.deepEqual(saved.players[0].buildings[0].cave, cave)
   assert.equal(saved.players[0].buildings[0].interiorBuildings[0].inventory.resources.gold, 3)
   assert.deepEqual(saved.players[0].units[0].cavePosition, { caveId: cave.id, i: 25, j: 28 })
   assert.equal(saved.players[0].units[0].i, 41)
   assert.equal(owner.units[0].i, 25)
+  assert.deepEqual(saved.players[0].units[0].caveOrders.path, [{ i: 26, j: 28 }])
+  assert.deepEqual(saved.players[0].units[0].caveOrders.dest.slice(0, 2), [26, 28])
+  assert.equal(saved.players[0].units[0].dest, null)
+})
+
+test('delivery saves retain job intent using references and omit runtime task ids', () => {
+  const context = makeContext()
+  const building = { i: 1, j: 2, label: 'store', context }
+  const tree = { i: 3, j: 4, label: 'tree', context }
+  context.players[0].units = [
+    {
+      type: 'Villager',
+      i: 0,
+      j: 0,
+      resourceDeliveryState: {
+        building,
+        phase: 'entering',
+        taskId: 123,
+        returnTask: { dest: tree, action: 'chopwood', work: 'woodcutter', autonomousJob: 'wood' },
+      },
+    },
+  ]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+  assert.deepEqual(saved.players[0].units[0].resourceDelivery, {
+    building: [1, 2, 'store'],
+    returnTask: {
+      dest: [3, 4, 'tree'],
+      action: 'chopwood',
+      work: 'woodcutter',
+      autonomousJob: 'wood',
+    },
+  })
 })

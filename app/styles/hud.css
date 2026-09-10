@@ -674,9 +674,6 @@
   position: relative;
   z-index: 0;
   min-height: 126px;
-  padding: 16px 14px;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
   background: var(--main-primary-color);
 }
 
@@ -726,16 +723,35 @@
 
 .inventory-action-row {
   --inventory-row-icon-size: 56px;
+  box-sizing: border-box;
   grid-template-columns: var(--inventory-row-icon-size) minmax(0, 1fr) auto;
   gap: 2px var(--ui-gap-10);
+  min-width: 0;
   min-height: 92px;
-  border: var(--ui-bar-border);
+  color: var(--ui-text-color);
+  text-shadow: var(--ui-text-shadow);
+  text-transform: none;
+  letter-spacing: 0;
+  background: rgba(0, 0, 0, 0.18);
+  border: 0;
+  border-radius: var(--main-border-radius);
   opacity: 1;
+  box-shadow: none;
 }
 
-.inventory-action-row[aria-disabled='true'] {
-  color: rgba(255, 255, 255, 0.68);
-  opacity: 1;
+.inventory-action-row--no-icon {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.inventory-action-row--no-icon .inventory-action-row-label,
+.inventory-action-row--no-icon .inventory-action-row-description,
+.inventory-action-row--no-icon .inventory-action-row-meta {
+  grid-column: 1;
+}
+
+.inventory-action-row--no-icon .inventory-row-actions,
+.inventory-action-row--no-icon .inventory-action-row-badge {
+  grid-column: 2;
 }
 
 .inventory-action-row-icon {
@@ -818,10 +834,8 @@
 .inventory-action-row-label {
   grid-column: 2;
   min-width: 0;
-  overflow: hidden;
   font-weight: bold;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .inventory-action-row-description {
@@ -862,85 +876,128 @@
   border-radius: 6px;
 }
 
+.inventory-row-actions {
+  grid-row: 1 / 4;
+  grid-column: 3;
+  justify-self: end;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+}
+
+.inventory-row-action-button {
+  width: auto;
+  min-width: 86px;
+  max-width: 136px;
+  min-height: 44px;
+  padding: 7px 9px;
+  overflow: hidden;
+  font-size: var(--font-size-xs);
+  line-height: 1.1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-menu .inventory-row-action-button,
+.modal-menu .inventory-transfer-all-button {
+  width: auto;
+}
+
+.modal-menu .inventory-row-action-button {
+  min-width: 86px;
+}
+
+.inventory-row-action-button:disabled,
+.inventory-row-action-button[aria-disabled='true'] {
+  color: rgba(255, 255, 255, 0.34);
+  background: linear-gradient(rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.38)), var(--ui-button-sheen), var(--ui-bar-bg);
+  border-color: rgba(255, 255, 255, 0.14);
+  filter: grayscale(0.65);
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.36);
+}
+
 .progression-step {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 4px 0 12px 14px;
-  border-left: 2px solid rgba(255, 255, 255, 0.16);
+  gap: var(--ui-gap-8);
   min-width: 0;
-}
-
-.progression-step.is-current {
-  border-left-color: var(--msg-success-color);
+  padding: 4px 0 12px;
 }
 
 .progression-age {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  min-height: 48px;
-  margin-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin: var(--ui-gap-4) 0 0;
 }
 
-.progression-age > :first-child {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-}
-
-.action-menu-progression-page > .progression-age {
-  margin-top: 0;
-  border-top: 0;
+.progression-objective-row.is-acquired .inventory-action-row-label {
   color: var(--msg-success-color);
 }
 
-.progression-age strong {
-  font-size: var(--font-size-sm);
-  overflow-wrap: anywhere;
+.progression-objective-row {
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 2px var(--ui-gap-10);
+  min-height: 0;
+  padding: 14px 16px;
 }
 
-.progression-step.is-complete .progression-age {
+.progression-objective-row .inventory-action-row-label,
+.progression-objective-row .inventory-action-row-description {
+  grid-column: 2;
+}
+
+.progression-objective-marker {
+  grid-row: 1;
+  align-self: center;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.progression-objective-marker::before {
+  display: block;
+  width: 10px;
+  height: 10px;
+  content: '';
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+.progression-objective-marker.is-acquired::before {
+  width: 16px;
+  height: 9px;
+  border-color: var(--msg-success-color);
+  border-top: 0;
+  border-right: 0;
+  border-radius: 0;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.progression-age-title {
+  flex: 0 1 auto;
+}
+
+.progression-age-status {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: var(--font-size-xs);
+  font-weight: bold;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.progression-age.is-acquired .progression-age-status {
   color: var(--msg-success-color);
 }
 
 .progression-section-title {
   color: rgba(255, 255, 255, 0.72);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-}
-
-.progression-objective-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ui-gap-8);
-  min-height: 30px;
-  padding: 5px 8px;
-  color: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.16);
-}
-
-.progression-objective-row.is-acquired {
-  color: var(--msg-success-color);
-  border-color: rgba(142, 231, 160, 0.28);
-  background: rgba(142, 231, 160, 0.08);
-}
-
-.progression-objective-row.is-locked {
-  color: rgba(255, 255, 255, 0.48);
-}
-
-.progression-objective-label {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.progression-objective-status {
-  color: rgba(255, 255, 255, 0.58);
   font-size: var(--font-size-xs);
   text-transform: uppercase;
 }
@@ -1396,6 +1453,13 @@
   gap: var(--ui-gap-8);
 }
 
+.inventory-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-gap-8);
+}
+
 .inventory-equipped-grid,
 .inventory-loot-grid,
 .corpse-loot-grid {
@@ -1428,8 +1492,19 @@
 }
 
 .inventory-transfer-title {
+  flex: 1 1 auto;
+  min-width: 0;
   padding-bottom: 2px;
   border-bottom: var(--ui-slot-border);
+}
+
+.inventory-transfer-all-button {
+  width: auto;
+  min-width: 112px;
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
 }
 
 .inventory-transfer-grid {
@@ -1510,36 +1585,6 @@
 .corpse-loot-grid {
   flex-direction: column;
   flex-wrap: nowrap;
-}
-
-.corpse-loot-take-all,
-.corpse-loot-button {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-gap-8);
-  width: 100%;
-  min-width: 0;
-  min-height: 64px;
-  padding: 4px 10px;
-}
-
-.corpse-loot-take-all {
-  justify-content: center;
-  min-height: 42px;
-}
-
-.corpse-loot-icon {
-  flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-}
-
-.corpse-loot-label {
-  min-width: 0;
-  overflow: hidden;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .npc-orders-panel {

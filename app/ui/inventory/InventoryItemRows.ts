@@ -17,11 +17,11 @@ type BaseInventoryItemRowOptions = {
   icon?: HTMLElement
   id: string
   labelContext?: string
-  onAction?: (mode: 'one' | 'all') => void
   playClick?: boolean
   meta?: string
   showTooltip?: boolean
   title?: string
+  trailingAction?: Parameters<typeof createInventoryActionRow>[1]['trailingAction']
 }
 
 type EquipmentItemRowOptions = BaseInventoryItemRowOptions & {
@@ -40,7 +40,7 @@ type ResourceItemRowOptions = BaseInventoryItemRowOptions & {
 
 function bindItemRowTooltip(
   menu: InventoryItemRowMenu,
-  element: HTMLButtonElement,
+  element: HTMLElement,
   parts: InventoryItemRowParts,
   show: boolean
 ): void {
@@ -56,7 +56,7 @@ export type InventoryItemRowParts = InventoryActionRowParts & {
 }
 
 export function createInventoryEquipmentRow(
-  context: GameContextLike,
+  context: GameContextLike | undefined,
   menu: InventoryItemRowMenu,
   options: EquipmentItemRowOptions
 ): InventoryItemRowParts {
@@ -72,13 +72,13 @@ export function createInventoryEquipmentRow(
     meta: options.meta ?? info.meta,
     quantity: count,
     playClick: options.playClick,
-    onAction: options.onAction,
+    trailingAction: options.trailingAction,
   }) as InventoryItemRowParts
   parts.info = info
   if (options.ariaLabel) parts.element.setAttribute('aria-label', options.ariaLabel)
   if (options.icon) {
     parts.icon.appendChild(options.icon)
-  } else if (options.equipment) {
+  } else if (options.equipment && context) {
     parts.icon.appendChild(
       createInventoryEquipmentIcon(context, options.equipment, options.labelContext ?? 'inventory')
     )
@@ -105,7 +105,7 @@ export function createInventoryResourceRow(
     meta: options.meta ?? info.meta,
     quantity: amount,
     playClick: options.playClick,
-    onAction: options.onAction,
+    trailingAction: options.trailingAction,
   }) as InventoryItemRowParts
   parts.info = info
   if (options.ariaLabel) parts.element.setAttribute('aria-label', options.ariaLabel)

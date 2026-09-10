@@ -21,6 +21,7 @@ import {
   wakeOwnSleepingNpcForCommunication,
   type HeroProximityInteraction,
 } from '../lib/hero/heroProximityInteractions'
+import { transferNeutralEntityToPlayer } from '../lib/entities/entityOwnerTransfer'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -329,7 +330,10 @@ export class HeroController {
       return true
     }
     if (interaction.action === 'communicate') {
-      if (this.heroUnit) wakeOwnSleepingNpcForCommunication(this.heroUnit, interaction.target)
+      if (this.heroUnit) {
+        transferNeutralEntityToPlayer(interaction.target, this.heroUnit.owner, { player: this.heroUnit.owner })
+        wakeOwnSleepingNpcForCommunication(this.heroUnit, interaction.target)
+      }
       this.controls.context.menu?.openNpcOrders?.([interaction.target], interaction.npcOptions)
       return true
     }

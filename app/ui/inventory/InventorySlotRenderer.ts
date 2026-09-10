@@ -1,4 +1,5 @@
 type InventorySectionOptions = {
+  action?: HTMLElement
   className?: string
   emptyText?: string
   gridClassName?: string
@@ -14,7 +15,14 @@ export function createInventorySection(options: InventorySectionOptions): HTMLEl
   const title = document.createElement('div')
   title.className = ['inventory-loot-title', options.titleClassName].filter(Boolean).join(' ')
   title.textContent = options.title
-  block.appendChild(title)
+  if (options.action) {
+    const header = document.createElement('div')
+    header.className = 'inventory-section-header'
+    header.append(title, options.action)
+    block.appendChild(header)
+  } else {
+    block.appendChild(title)
+  }
 
   const grid = document.createElement('div')
   grid.className = options.gridClassName ?? 'inventory-loot-grid'

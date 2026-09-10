@@ -113,6 +113,9 @@ function loadHeroController({
       updateHeroCursor: () => {},
     },
     '../lib/hero/heroActionRange': heroActionRange,
+    '../lib/entities/entityOwnerTransfer': {
+      transferNeutralEntityToPlayer: () => false,
+    },
     '../lib/grid/visibility': {
       instanceIsInPlayerSight: instance => instance.visible !== false && instance.inPlayerSight !== false,
     },
@@ -200,6 +203,8 @@ function createController({
   resolveCommGroup,
   resolveHeroProximityInteraction = () => null,
   timeSkipStart = () => ({ ok: false, message: 'Time skip system unavailable' }),
+  travelIntoBuildingInterior,
+  travelOutOfBuildingInterior,
   theft,
   wakeOwnSleepingNpcForCommunication = () => {},
   withScheduler = false,
@@ -380,7 +385,8 @@ function createController({
         },
       }
     : undefined
-  const controller = new HeroController({
+  let controller
+  controller = new HeroController({
     context: {
       scheduler,
       player: owner,
@@ -395,6 +401,9 @@ function createController({
         start: (hours, options) => timeSkipStart(hours, options),
       },
       autosave: () => calls.push('autosave'),
+      travelIntoBuildingInterior:
+        travelIntoBuildingInterior || (building => calls.push(['travelIntoBuildingInterior', building.label])),
+      travelOutOfBuildingInterior: travelOutOfBuildingInterior || (() => calls.push(['travelOutOfBuildingInterior'])),
     },
     getCellUnderCursor: () => null,
     getFacingEntityTarget: () => null,
@@ -406,6 +415,10 @@ function createController({
     openHeroEntityInteraction: () => {
       calls.push('openHeroEntityInteraction')
       return true
+    },
+    stopKeyboardMove: () => {
+      calls.push('stopKeyboardMove')
+      controller.stopKeyboardMove()
     },
     shiftKeyActive: false,
   })
@@ -1388,6 +1401,48 @@ test('E opens fire camp usage instead of sleeping directly', () => {
 
   assert.equal(controller.handleKeyDown('heroInteract'), true)
   assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionUseFire'], 'openHeroEntityInteraction'])
+})
+
+test('E entering a building preserves held movement for the travel capture', () => {
+  const building = { label: 'town-center-1' }
+  const { calls, controller } = createController({
+    resolveHeroProximityInteraction: () => ({
+      action: 'enter',
+      labelKey: 'heroInteractionEnter',
+      target: building,
+    }),
+  })
+  controller.keysPressed.add('heroRight')
+  controller.shiftMoveLockedDegree = 90
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+
+  assert.deepEqual([...controller.keysPressed], ['heroRight'])
+  assert.equal(controller.shiftMoveLockedDegree, 90)
+  assert.deepEqual(calls, [
+    ['setHeroInteractionPrompt', 'heroInteractionEnter'],
+    ['travelIntoBuildingInterior', 'town-center-1'],
+  ])
+})
+
+test('E exiting an interior preserves held movement for the travel capture', () => {
+  const { calls, controller } = createController({
+    resolveHeroProximityInteraction: () => ({
+      action: 'exit',
+      labelKey: 'heroInteractionExit',
+    }),
+  })
+  controller.keysPressed.add('heroDown')
+  controller.shiftMoveLockedDegree = 180
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+
+  assert.deepEqual([...controller.keysPressed], ['heroDown'])
+  assert.equal(controller.shiftMoveLockedDegree, 180)
+  assert.deepEqual(calls, [
+    ['setHeroInteractionPrompt', 'heroInteractionExit'],
+    ['travelOutOfBuildingInterior'],
+  ])
 })
 
 test('E shows communication radius even when no villagers are nearby', () => {

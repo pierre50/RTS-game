@@ -4,7 +4,7 @@ import { definedProperties } from '../lib/definedProperties'
 import { serializeTrainingExtra, serializeTrainingQueue } from './TrainingSave'
 import { groupPlayersInteriorBuildings, interiorSaveSpaceId, isDerivedInteriorHorse } from './InteriorBuildingSave'
 import type { TrainingEntry } from '../types/training'
-import type { UnitCreationExtra } from '../types/entities'
+import type { UnitCreationExtra, UnitEntity } from '../types/entities'
 import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from '../lib'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import type { ResourceAmount } from '../types/common'
@@ -28,6 +28,7 @@ const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'berry', 'meat', 'wheat', 'st
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
+  resourceDeliveryState?: UnitEntity['resourceDeliveryState']
   cave?: CaveDefinition
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
@@ -176,7 +177,16 @@ function projectInteriorEntityToWorld(entity: SerializableEntity, data: SaveEnti
   if (!cell) return data
   const space = getEntityMapSpace(entity) as InteriorSerializableSpace | null
   const caveId = (space?.building as { cave?: { id: string } } | undefined)?.cave?.id
-  if (caveId) data.cavePosition = { caveId, i: entity.i, j: entity.j }
+  if (caveId) {
+    data.cavePosition = { caveId, i: entity.i, j: entity.j }
+    data.caveOrders = {
+      action: data.action,
+      dest: data.dest,
+      previousDest: data.previousDest,
+      path: data.path,
+      realDest: data.realDest,
+    }
+  }
   const point = getCellMapPoint(cell, entity.context?.map)
   data.i = cell.i
   data.j = cell.j
@@ -276,6 +286,19 @@ function animalData(animal: SerializableEntity): SaveEntityState {
 
 function unitData(unit: SerializableEntity): SaveEntityState {
   return projectInteriorEntityToWorld(unit, {
+    resourceDelivery: unit.resourceDeliveryState
+      ? {
+          building: referenceData(unit.resourceDeliveryState.building),
+          returnTask: unit.resourceDeliveryState.returnTask
+            ? {
+                action: unit.resourceDeliveryState.returnTask.action,
+                autonomousJob: unit.resourceDeliveryState.returnTask.autonomousJob,
+                work: unit.resourceDeliveryState.returnTask.work,
+                dest: referenceData(unit.resourceDeliveryState.returnTask.dest),
+              }
+            : null,
+        }
+      : undefined,
     ...filterObject(unit, [
       'label',
       'name',
@@ -476,6 +499,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
   const data: SerializedSave = {
     version: 2,
     runtime: {
+      heroEquippedItem: context.controls.equippedItem ?? null,
       worldPursuers: context.worldPursuit?.serializeState(),
       dayNightElapsedMs: context.dayNight?.getElapsedMs?.() ?? 0,
       elapsedMs: context.scheduler?.elapsedMs ?? 0,

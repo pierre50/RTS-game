@@ -2,7 +2,7 @@ import { Texture, type Filter } from 'pixi.js'
 import { MultiColorReplaceFilter } from 'pixi-filters'
 import { LPC_RUNTIME_PALETTES, LPC_RUNTIME_SOURCE_PALETTES } from '../lpc/generatedPalettes'
 
-const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'teal', 'violet', 'grey', 'cyan'] as const
+const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'teal', 'violet', 'grey', 'black', 'cyan'] as const
 export const playerColors = ['violet', 'red', 'yellow', 'brown', 'orange', 'green', 'teal'] as const
 type PlayerColor = (typeof colors)[number]
 
@@ -27,6 +27,8 @@ const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
 
   grey: [0xebf0f6, 0xbac7db, 0xabaebe, 0x848795, 0x73737f, 0x5b5c69, 0x48474d, 0x2d3136],
 
+  black: [0x848795, 0x73737f, 0x5b5c69, 0x48474d, 0x3a3b43, 0x2d3136, 0x222323, 0x111318],
+
   teal: [0x00deda, 0x00bfa3, 0x00a087, 0x008279, 0x006b6d, 0x005162, 0x004051, 0x002e49],
 
   violet: [0x8393c3, 0x6c82c4, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450],
@@ -47,6 +49,7 @@ const HEX_COLOR_MAP: Record<PlayerColor, string> = {
   teal: '#008279',
   violet: '#3d5083',
   grey: '#8f8f8f',
+  black: '#2d3136',
   cyan: '#008279',
 }
 

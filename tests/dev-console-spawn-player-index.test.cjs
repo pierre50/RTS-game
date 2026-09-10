@@ -80,7 +80,7 @@ function loadSpawnActions(sharedOverrides = {}) {
     }
     if (request === '../../constants') {
       return {
-        BUILDING_TYPES: { farm: 'Farm' },
+        BUILDING_TYPES: { farm: 'Farm', townCenter: 'TownCenter' },
         FADE_DURATION_MS: 2000,
         PLAYER_TYPES: { ai: 'AI' },
         RESOURCE_TYPES: { gold: 'Gold', wheat: 'Wheat' },
@@ -231,6 +231,39 @@ test('building farm spawns a mature wheat field instead of a building entity', (
     spawned.map(resource => [resource.type, resource.startsMature]),
     Array.from({ length: 16 }, () => ['Wheat', true])
   )
+})
+
+test('building towncenter refreshes objectives after dev-console spawn', () => {
+  const { spawnBuilding } = loadSpawnActions()
+  const calls = []
+  const currentPlayer = {
+    config: { buildings: { TownCenter: { size: 3 } } },
+    hasBuilt: [],
+    createBuilding: building => ({
+      ...building,
+      updateTexture: () => calls.push(['updateTexture', building.type]),
+    }),
+    updatePopulationObjectives: () => calls.push(['updatePopulationObjectives']),
+  }
+  const context = {
+    player: currentPlayer,
+    players: [currentPlayer],
+    menu: {
+      updateTopbar: () => calls.push(['updateTopbar']),
+      updatePlayerMiniMapEvt: () => calls.push(['updatePlayerMiniMapEvt']),
+    },
+  }
+
+  const result = spawnBuilding(context, 'towncenter')
+
+  assert.deepEqual(result, { ok: true, message: 'Spawned TownCenter' })
+  assert.deepEqual(currentPlayer.hasBuilt, ['TownCenter'])
+  assert.deepEqual(calls, [
+    ['updateTexture', 'TownCenter'],
+    ['updatePopulationObjectives'],
+    ['updateTopbar'],
+    ['updatePlayerMiniMapEvt'],
+  ])
 })
 
 test('spawn rejects an invalid player index', () => {

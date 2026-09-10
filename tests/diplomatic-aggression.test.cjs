@@ -19,7 +19,9 @@ function loadTsModule(filename, moduleCache) {
 
   const localRequire = request => {
     if (request.startsWith('.')) {
-      return loadTsModule(path.resolve(path.dirname(resolved), request), moduleCache)
+      const base = path.resolve(path.dirname(resolved), request)
+      const target = fs.existsSync(path.join(base, 'index.ts')) ? path.join(base, 'index') : base
+      return loadTsModule(target, moduleCache)
     }
     return require(request)
   }
@@ -29,6 +31,8 @@ function loadTsModule(filename, moduleCache) {
 }
 
 function loadDiplomacy() {
+  global.window = global.window || {}
+  global.window.matchMedia = global.window.matchMedia || (() => ({ matches: false }))
   global.localStorage = {
     getItem: () => 'fr',
     setItem() {},
@@ -125,4 +129,28 @@ test('attacking an allied team only breaks the alliance on the first incident', 
   assert.equal(targetOwner.diplomacy, 'neutral')
   assert.equal(sourceOwner.isEnemy(targetOwner), false)
   assert.deepEqual(messages, [['Alliance rompue avec ally-ai. Relations neutres.', 'warning']])
+})
+
+test('neutral Gaia owner cannot be escalated into a combat relation', () => {
+  const { applyDiplomaticAggression, canTriggerDiplomaticAggression } = loadDiplomacy()
+  const messages = []
+  const source = {
+    context: { menu: { showMessage: (message, level) => messages.push([message, level]) } },
+    owner: {
+      isPlayed: true,
+      label: 'player',
+      isEnemy: targetOwner => targetOwner?.label === 'enemy',
+    },
+  }
+  const targetOwner = { type: 'Gaia', label: 'neutral', diplomacy: 'neutral' }
+  const target = { owner: targetOwner }
+
+  assert.equal(canTriggerDiplomaticAggression(source, target), false)
+  assert.deepEqual(applyDiplomaticAggression(source, target), {
+    changed: false,
+    hostileNow: false,
+    relation: 'unchanged',
+  })
+  assert.equal(targetOwner.diplomacy, 'neutral')
+  assert.deepEqual(messages, [])
 })

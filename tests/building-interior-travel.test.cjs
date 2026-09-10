@@ -310,6 +310,65 @@ test('entering a building interior through the runtime layer does not boot a sep
   assert.equal(autosaves.length, 1)
 })
 
+test('entering a building interior restores held movement after the runtime layer transition', async () => {
+  const calls = []
+  const heldMovement = { KeyW: 'heroUp' }
+  const owner = { label: 'player-1' }
+  const building = { i: 5, j: 5, isBuilt: true, label: 'tc-1', owner, type: 'TownCenter' }
+  const exteriorState = {
+    camera: { x: 0, y: 0 },
+    config: { mapType: 'world-region', size: 64 },
+    runtime: { dayNightElapsedMs: 1234 },
+    world: { mapType: 'world-region', size: 64 },
+    players: [{ buildings: [building], isPlayed: true, label: 'player-1', units: [] }],
+    resources: [],
+    animals: [],
+  }
+  const { travelIntoBuildingInterior } = loadBuildingInteriorTravel({
+    serializeGame: () => structuredClone(exteriorState),
+  })
+  const game = {
+    _campaignSave: null,
+    _isRestarting: false,
+    context: {
+      controls: {
+        heroUnit: { owner },
+        captureMovementInput: () => {
+          calls.push('capture')
+          return () => {
+            calls.push('release')
+            return heldMovement
+          }
+        },
+        restoreMovementInput: movement => calls.push(['restore', movement]),
+        setRuntimeInputEnabled: enabled => calls.push(['input', enabled]),
+      },
+      map: { grid: makeGrid(16), mapType: 'world-region', random: () => 0, ready: true, size: 15 },
+      menu: {},
+      player: { buildings: [building], units: [] },
+      players: [],
+    },
+    _autosaveCampaign() {},
+    _gameContext() {
+      return this.context
+    },
+    async _openBuildingInteriorLayer() {
+      calls.push('open')
+    },
+  }
+
+  await travelIntoBuildingInterior(game, building)
+
+  assert.deepEqual(calls, [
+    'capture',
+    ['input', false],
+    'open',
+    'release',
+    ['input', true],
+    ['restore', heldMovement],
+  ])
+})
+
 test('mounted hero cannot enter non-stable building interiors', async () => {
   const opened = []
   const messages = []
@@ -396,6 +455,66 @@ test('leaving a building interior runtime layer keeps the exterior map alive', a
   assert.equal(game._campaignSave.currentWorldId, 'root')
   assert.deepEqual(game._campaignSave.worlds.root.state, exteriorState)
   assert.equal(autosaves.length, 1)
+})
+
+test('leaving a building interior runtime layer restores held movement after the transition', async () => {
+  const calls = []
+  const heldMovement = { KeyS: 'heroDown' }
+  const exteriorState = {
+    camera: { x: 10, y: 20 },
+    config: { mapType: 'world-region', size: 64 },
+    runtime: { dayNightElapsedMs: 4321 },
+    world: { mapType: 'world-region', size: 64 },
+    players: [{ buildings: [], isPlayed: true, label: 'player-1', units: [] }],
+    resources: [],
+    animals: [],
+  }
+  const { travelOutOfBuildingInterior } = loadBuildingInteriorTravel({
+    serializeGame: () => structuredClone(exteriorState),
+  })
+  const game = {
+    _buildingInteriorSession: null,
+    _campaignSave: null,
+    _isRestarting: false,
+    context: {
+      controls: {
+        captureMovementInput: () => {
+          calls.push('capture')
+          return () => {
+            calls.push('release')
+            return heldMovement
+          }
+        },
+        restoreMovementInput: movement => calls.push(['restore', movement]),
+        setRuntimeInputEnabled: enabled => calls.push(['input', enabled]),
+      },
+      map: { grid: makeGrid(16), mapType: 'world-region', random: () => 0, ready: true, size: 15 },
+      menu: {},
+      player: { buildings: [], units: [] },
+      players: [],
+    },
+    _autosaveCampaign() {},
+    _closeBuildingInteriorLayer() {
+      calls.push('close')
+    },
+    _gameContext() {
+      return this.context
+    },
+    _isBuildingInteriorLayerOpen() {
+      return true
+    },
+  }
+
+  await travelOutOfBuildingInterior(game)
+
+  assert.deepEqual(calls, [
+    'capture',
+    ['input', false],
+    'close',
+    'release',
+    ['input', true],
+    ['restore', heldMovement],
+  ])
 })
 
 test('entering a building interior opens the runtime layer and removes stale child worlds', async () => {

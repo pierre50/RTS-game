@@ -64,6 +64,20 @@ function loadModule(relativePath, mocks) {
       applyUnitCrouchPose: () => {},
       resetUnitCrouchPose: () => {},
     },
+    '../entities/entityOwnerTransfer': {
+      transferNeutralEntityToPlayer: (target, owner) => {
+        if (target?.owner?.type !== 'Gaia' || target.owner?.diplomacy !== 'neutral') return false
+        target.context?.calls?.push(['claimNeutral', target.label, owner.label])
+        target.owner.units = target.owner.units?.filter(unit => unit !== target) ?? []
+        owner.units = owner.units ?? []
+        owner.units.push(target)
+        target.owner = owner
+        return true
+      },
+    },
+    '../playerState': {
+      isNeutralPlayer: player => player?.type === 'Gaia' && player?.diplomacy === 'neutral',
+    },
   }
   return loadTsModule(relativePath, { mocks: { ...defaultMocks, ...mocks } })
 }
@@ -128,6 +142,7 @@ const constants = {
   },
   PLAYER_TYPES: {
     ai: 'AI',
+    gaia: 'Gaia',
   },
   UNIT_TYPES: {
     bowman: 'Bowman',
@@ -338,6 +353,38 @@ test('"aller vers" on a building entry does not blink when no selected npc can e
 
   assert.deepEqual(moveCalls, [entryCell])
   assert.deepEqual(blinkCalls, [])
+})
+
+test('communication can claim a neutral villager into the hero owner', () => {
+  const calls = []
+  const player = { label: 'player', units: [] }
+  const neutral = { diplomacy: 'neutral', label: 'neutral', type: 'Gaia', units: [] }
+  const hero = { degree: 0, i: 0, j: 0, owner: player, x: 0, y: 0 }
+  const target = {
+    addChildAt: child => calls.push(['select', child.label]),
+    context: { calls },
+    family: constants.FAMILY_TYPES.unit,
+    getChildByLabel: () => null,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'neutral-villager',
+    owner: neutral,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    type: constants.UNIT_TYPES.villager,
+    x: 10,
+    y: 0,
+  }
+  neutral.units.push(target)
+  const { isTalkableNpc, resolveCommGroup } = loadNpcInteraction(target)
+
+  assert.equal(isTalkableNpc(hero, target), true)
+  assert.deepEqual(resolveCommGroup(hero, 2), [target])
+  assert.equal(target.owner, player)
+  assert.deepEqual(neutral.units, [])
+  assert.deepEqual(player.units, [target])
+  assert.ok(calls.some(call => call[0] === 'claimNeutral' && call[1] === 'neutral-villager'))
 })
 
 test('"aller vers" does not reset npc activity before knowing the cell is a building entry', () => {

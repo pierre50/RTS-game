@@ -20,6 +20,7 @@ type EquipmentPreloadOptions = {
   yieldBetweenBatches?: boolean
 }
 type BakedUnitPreloadOptions = {
+  villagerCivilizations?: readonly string[]
   preloadEquipment?: boolean
   preloadRuntimeEquipment?: boolean
   runtimeEquipmentBatchSize?: number
@@ -123,7 +124,19 @@ export async function preloadBakedLpcUnitsForPlayers(
 ): Promise<void> {
   const variants = new Set<string>()
   measurePreloadSync(performanceMonitor, 'preloadUnits.collectVariants', () => {
-    for (const player of players) {
+    for (const civ of options.villagerCivilizations ?? []) {
+      for (const gender of gendersForBakedUnit('villager')) {
+        const variant = bakedVariantKey('villager', { civ, label: '' }, `villager:${gender}`, gender)
+        variants.add(`villager:${variant}`)
+      }
+    }
+    const appearanceOwners = players.flatMap(player => [
+      player,
+      ...[...(player.units ?? []), ...(player.corpses ?? [])]
+        .filter(unit => unit.assetCiv)
+        .map(unit => ({ ...player, civ: unit.assetCiv })),
+    ])
+    for (const player of appearanceOwners) {
       for (const bakedUnit of BAKED_UNITS) {
         for (const gender of gendersForBakedUnit(bakedUnit)) {
           const variant = bakedVariantKey(bakedUnit, player, `${bakedUnit}:${gender}`, gender)

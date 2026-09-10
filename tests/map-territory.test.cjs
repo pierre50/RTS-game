@@ -52,6 +52,13 @@ test('the native resident takes priority over a visitor with captured buildings'
   assert.equal(findMapTerritoryOwner([player, owner], settlements), owner)
 })
 
+test('a matching hero-only start does not claim the settlement without a building', () => {
+  const player = { ...human(), civ: 'Hellas', factionId: 'hellas' }
+  assert.equal(findMapTerritoryOwner([player], settlements), null)
+  player.buildings.push(alive())
+  assert.equal(findMapTerritoryOwner([player], settlements), player)
+})
+
 test('a defeated native and destroyed bases do not retain ownership', () => {
   const owner = resident()
   owner.units = []

@@ -198,6 +198,14 @@ function createPortalContext() {
 function createSplitPortalContext() {
   const outsideGrid = createGrid(5)
   const interiorGrid = createGrid(5)
+  for (const [spaceId, grid] of [
+    ['outside', outsideGrid],
+    ['interior-house', interiorGrid],
+  ]) {
+    for (const row of grid) {
+      for (const cell of row) cell.spaceId = spaceId
+    }
+  }
   const sourceCell = outsideGrid[2][2]
   const targetCell = interiorGrid[2][2]
   const createContainer = label => ({
@@ -353,10 +361,10 @@ test('portal transfer refreshes visibility and sorts the target space immediatel
 
   assert.equal(routeUnitThroughSpacePortal(context, unit, portal), true)
 
-  assert.notEqual(unit.currentCell, targetCell)
+  assert.equal(unit.currentCell, targetCell)
   assert.equal(unit.currentCell.has, unit)
-  assert.equal(targetCell.has, null)
-  assert.equal(targetCell.solid, false)
+  assert.equal(targetCell.has, unit)
+  assert.equal(targetCell.solid, true)
   assert.equal(unit.spaceId, 'interior-house')
   assert.deepEqual(visibilityUpdates, ['hero-1'])
   assert.deepEqual(renderUpdates, ['hero-1'])
@@ -431,34 +439,76 @@ test('queued portal transfer preserves its completion until the unit reaches the
   assert.equal(unit.spacePortalState, null)
 })
 
-test('non-hero portal travelers arrive beside the target passage cell after transfer', () => {
-  const { routeUnitThroughSpacePortal } = loadSpacePortalSystem()
-  const { context, portal, sourceCell, targetCell } = createPortalContext()
+for (const exiting of [false, true]) {
+  test(`NPC ${exiting ? 'exit' : 'entry'} arrives on the door then walks away`, () => {
+    const { routeUnitThroughSpacePortal } = loadSpacePortalSystem()
+    const { context, portal: entry } = createSplitPortalContext()
+    const portal = exiting
+      ? {
+          ...entry,
+          sourceCell: entry.targetCell,
+          sourceSpaceId: entry.targetSpaceId,
+          targetCell: entry.sourceCell,
+          targetSpaceId: entry.sourceSpaceId,
+        }
+      : entry
+    const { sourceCell, targetCell } = portal
+    const unit = {
+      context,
+      spaceId: portal.sourceSpaceId,
+      currentCell: sourceCell,
+      dest: null,
+      i: sourceCell.i,
+      isDead: false,
+      isDestroyed: false,
+      j: sourceCell.j,
+      label: 'villager-1',
+      path: [],
+      sendToEvt(dest) {
+        this.dest = dest
+      },
+      stopInterval() {},
+      stopTimeout() {},
+    }
+    sourceCell.place(unit)
+    sourceCell.solid = true
+
+    assert.equal(routeUnitThroughSpacePortal(context, unit, portal), true)
+
+    assert.equal(unit.currentCell, targetCell)
+    assert.equal(unit.currentCell.has, unit)
+    assert.equal(targetCell.has, unit)
+    assert.equal(targetCell.solid, true)
+    assert.ok(unit.dest)
+    assert.notEqual(unit.dest, targetCell)
+    assert.notEqual(unit.dest, sourceCell)
+  })
+}
+
+test('an order resumed after portal arrival is preserved instead of replaced by passage clearing', () => {
+  const { transferUnitThroughSpacePortal } = loadSpacePortalSystem()
+  const { context, portal, sourceCell, targetCell, interiorGrid } = createSplitPortalContext()
+  const destination = interiorGrid[4][4]
   const unit = {
     context,
+    label: 'worker',
     currentCell: sourceCell,
-    dest: null,
     i: sourceCell.i,
-    isDead: false,
-    isDestroyed: false,
     j: sourceCell.j,
-    label: 'villager-1',
-    path: [],
     sendToEvt(dest) {
       this.dest = dest
     },
-    stopInterval() {},
-    stopTimeout() {},
   }
   sourceCell.place(unit)
   sourceCell.solid = true
-
-  assert.equal(routeUnitThroughSpacePortal(context, unit, portal), true)
-
-  assert.notEqual(unit.currentCell, targetCell)
-  assert.equal(unit.currentCell.has, unit)
-  assert.equal(targetCell.has, null)
-  assert.equal(targetCell.solid, false)
+  assert.equal(
+    transferUnitThroughSpacePortal(context, unit, portal, {
+      onTransferred: () => unit.sendToEvt(destination),
+    }),
+    true
+  )
+  assert.equal(unit.currentCell, targetCell)
+  assert.equal(unit.dest, destination)
 })
 
 test('blocked portal targets ask the blocking npc to clear the passage cell', () => {
@@ -547,10 +597,10 @@ test('hero portal transfer pushes a blocking animal away from the target passage
 
   assert.equal(routeUnitThroughSpacePortal(context, hero, portal), true)
 
-  assert.notEqual(hero.currentCell, targetCell)
+  assert.equal(hero.currentCell, targetCell)
   assert.equal(hero.currentCell.has, hero)
-  assert.equal(targetCell.has, null)
-  assert.equal(targetCell.solid, false)
+  assert.equal(targetCell.has, hero)
+  assert.equal(targetCell.solid, true)
   assert.notEqual(blocker.currentCell, targetCell)
   assert.equal(blocker.currentCell.solid, true)
   assert.equal(blocker.currentCell.has, blocker)
@@ -581,10 +631,10 @@ test('hero portal transfer clears stale solid passage cells without an occupant'
 
   assert.equal(routeUnitThroughSpacePortal(context, hero, portal), true)
 
-  assert.notEqual(hero.currentCell, targetCell)
+  assert.equal(hero.currentCell, targetCell)
   assert.equal(hero.currentCell.has, hero)
-  assert.equal(targetCell.has, null)
-  assert.equal(targetCell.solid, false)
+  assert.equal(targetCell.has, hero)
+  assert.equal(targetCell.solid, true)
 })
 
 test('blocked portal target makes the unit wait away from the source cell', () => {

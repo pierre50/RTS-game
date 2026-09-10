@@ -133,6 +133,8 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   assignableUnit.assignProperties(options)
   const unitConfig = unit.owner.config.units[unit.type] as (typeof unit.owner.config.units)[string] & PositionedConfig
   assignableUnit.assignProperties(unitConfig)
+  const inventory = options.inventory ?? unit.inventory
+  if (inventory) unit.inventory = structuredClone(inventory)
   unit.mountedOnHorse = options.mountedOnHorse ?? unit.mountedOnHorse
   if (unit.mountedOnHorse) {
     unit.horseColor = isHorseColor(options.horseColor)
@@ -149,7 +151,10 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
     unit.appearance = { ...unit.appearance, layers: unit.appearance.layers.map(layer => ({ ...layer })) }
     unit.appearanceVariants =
       unit.appearanceVariants ??
-      resolveLpcAppearanceVariants(unit.owner.civ, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`)
+      resolveLpcAppearanceVariants(
+        unit.assetCiv || unit.owner.civ,
+        `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`
+      )
     unit.assets = applyAppearanceVariantsToAssets(unit.assets, unit.appearanceVariants)
     unit.allAssets = applyAppearanceVariantsToAssetMap(unit.allAssets, unit.appearanceVariants)
   }
@@ -247,6 +252,11 @@ export function setupUnitPrimarySprite(unit: UnitRuntimeHost, spawnCell: Runtime
   unit.eventMode = 'static'
   applyUnitActionFrameSequence(unit, unit.work, unit.action)
   unit.actionSheet = unit.actionSheet || getUnitWorkActionSheet(unit, unit.work, unit.action)
+  if (!unit.standingSheet?.textures) {
+    throw new Error(
+      `Missing standing spritesheet for ${unit.type} (${unit.owner.civ ?? 'Hellas'}): ${unit.assets?.standingSheet ?? unit.allAssets?.default?.standingSheet}`
+    )
+  }
   unit.sprite = new AnimatedSprite(
     getAnimationFrames((unit.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
   )

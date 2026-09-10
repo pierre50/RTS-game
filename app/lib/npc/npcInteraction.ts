@@ -19,6 +19,8 @@ import { angleDelta, getInstanceDegree } from '../maths'
 import { playAudibleSoundCue, playSelectionSound } from '../audio/sound'
 import { sendNpcGroupToTarget as sendNpcGroupToTargetDispatch } from './npcGoToDispatch'
 import { getEntitySpaceMapLike } from '../mapSpaces'
+import { transferNeutralEntityToPlayer } from '../entities/entityOwnerTransfer'
+import { isNeutralPlayer } from '../playerState'
 export { updateNpcFollow } from './npcFollow'
 export {
   clearNpcCommunicationFocus,
@@ -60,7 +62,7 @@ function isFighting(target: UnitEntity): boolean {
 function isFriendlyAvailable(hero: UnitEntity, target: UnitEntity): boolean {
   if (target === hero || target.isDead || target.isDestroyed) return false
   if (target.family !== FAMILY_TYPES.unit) return false
-  if (target.owner !== hero.owner) return false
+  if (target.owner !== hero.owner && !isNeutralPlayer(target.owner)) return false
   return !isFighting(target)
 }
 
@@ -86,7 +88,13 @@ export function isTalkableNpc(hero: UnitEntity, target: RuntimeEntity): boolean 
   if (target === hero || target.family !== FAMILY_TYPES.unit) return false
   const unit = target as UnitEntity
   if (unit.isDead || unit.isDestroyed) return false
-  return unit.owner === hero.owner || isForeignTalkableNpc(hero, unit)
+  return unit.owner === hero.owner || isNeutralPlayer(unit.owner) || isForeignTalkableNpc(hero, unit)
+}
+
+function claimNeutralCommGroup(hero: UnitEntity, group: UnitEntity[]): void {
+  for (const npc of group) {
+    transferNeutralEntityToPlayer(npc, hero.owner, { player: hero.owner })
+  }
 }
 
 // Marks a frozen comm target with the same selection lozenge as a regular unit selection, kept
@@ -264,12 +272,14 @@ export function resolveCommGroup(
   if (options.precisionOnly || radius <= COMM_PRECISION_RANGE) {
     const npc = findFacingNpc(hero, COMM_PRECISION_RANGE)
     if (npc) {
+      claimNeutralCommGroup(hero, [npc])
       noticeNpc(npc, hero)
       return [npc]
     }
     if (options.precisionOnly) return []
   }
   const group = findCommGroup(hero, radius)
+  claimNeutralCommGroup(hero, group)
   let playedVoice = false
   for (const npc of group) {
     noticeNpc(npc, hero, !playedVoice)

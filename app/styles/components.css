@@ -32,6 +32,10 @@
   min-height: 0;
 }
 
+.modal-tab-page.hidden {
+  display: none;
+}
+
 .ui-tab {
   flex: 1 1 0;
   padding: 8px 12px;

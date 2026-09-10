@@ -4,6 +4,7 @@ import {
   resolveHeroNpcProximityInteraction,
   wakeOwnSleepingNpcForCommunication,
 } from '../lib/hero/heroProximityInteractions'
+import { transferNeutralEntityToPlayer } from '../lib/entities/entityOwnerTransfer'
 import { findFacingEntity } from '../lib/hero/heroTools'
 import type { GameContextLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
@@ -63,6 +64,7 @@ export class HeroInteractionController {
     const player = this.host.context.player
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
+      if (player) transferNeutralEntityToPlayer(building, player, { player })
       if (menu?.openHeroBuildingMenu?.(building)) {
         player?.unselectAll?.()
         building.select?.()
@@ -80,6 +82,7 @@ export class HeroInteractionController {
 
     const npcInteraction = resolveHeroNpcProximityInteraction(hero, target)
     if (npcInteraction) {
+      transferNeutralEntityToPlayer(npcInteraction.target, hero.owner, { player: hero.owner })
       wakeOwnSleepingNpcForCommunication(hero, npcInteraction.target)
       menu?.openNpcOrders?.([npcInteraction.target], npcInteraction.npcOptions)
       return true

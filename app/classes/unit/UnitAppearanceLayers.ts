@@ -15,8 +15,13 @@ type AppearanceSyncSprite = AnimatedSprite & {
 
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
 
+function getAppearanceSyncSprite(unit: UnitRuntimeHost): AppearanceSyncSprite | null {
+  return ((unit as UnitRuntimeHost & { sprite?: AppearanceSyncSprite }).sprite ?? null) as AppearanceSyncSprite | null
+}
+
 function getSyncedFrameIndex(unit: UnitRuntimeHost, textureCount: number): number {
-  return Math.min(Math.floor(unit.sprite.currentFrame), Math.max(textureCount - 1, 0))
+  const sprite = getAppearanceSyncSprite(unit)
+  return Math.min(Math.floor(sprite?.currentFrame ?? 0), Math.max(textureCount - 1, 0))
 }
 
 function syncLayerSpriteFrame(unit: UnitRuntimeHost, layerSprite: AnimatedSprite): number {
@@ -41,7 +46,8 @@ function clearAppearanceLayers(unit: UnitRuntimeHost): void {
     sprite.destroy({ children: true, texture: false })
   }
   unit.appearanceLayerSprites.clear()
-  ;(unit.sprite as AppearanceSyncSprite)._afterAnimationUpdate = null
+  const sprite = getAppearanceSyncSprite(unit)
+  if (sprite) sprite._afterAnimationUpdate = null
 }
 
 function syncUnitAppearanceLayerFrames(unit: UnitRuntimeHost, sheet = unit.currentSheet): void {
@@ -55,7 +61,8 @@ function syncUnitAppearanceLayerFrames(unit: UnitRuntimeHost, sheet = unit.curre
 }
 
 function bindUnitAppearanceFrameSync(unit: UnitRuntimeHost): void {
-  ;(unit.sprite as AppearanceSyncSprite)._afterAnimationUpdate = () => syncUnitAppearanceLayerFrames(unit)
+  const sprite = getAppearanceSyncSprite(unit)
+  if (sprite) sprite._afterAnimationUpdate = () => syncUnitAppearanceLayerFrames(unit)
 }
 
 function syncAppearanceLayerSprite(
@@ -132,7 +139,7 @@ function syncAppearanceLayerSprite(
 
 export function syncUnitAppearanceLayers(unit: UnitRuntimeHost, sheet: string): void {
   const layers = unit.appearance?.layers
-  if (!layers?.length) {
+  if (!getAppearanceSyncSprite(unit) || !layers?.length) {
     clearAppearanceLayers(unit)
     return
   }

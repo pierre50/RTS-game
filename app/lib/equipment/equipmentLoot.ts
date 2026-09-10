@@ -1,7 +1,6 @@
 import type { ResourceAmount } from '../../types/common'
-import { canUseAgeEquipment } from '../objectives/ageRules'
 import type { UnitConfig } from '../../types/config'
-import type { HeroEquipmentSlot, UnitEntity } from '../../types/entities'
+import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
 import { RESOURCE_STORAGE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { applyBakedLpcUnitAssets } from '../lpc'
 import { getUnitEquipmentTier } from '../units/unitExperience'
@@ -158,7 +157,6 @@ export function equipHeroInventoryItem(
   requestedCount?: number
 ): boolean {
   if (!hero) return false
-  if (!canUseAgeEquipment(hero.owner, equipment)) return false
   const slot = getEquipmentSlot(equipment)
   if (!slot) return equipHeroWeaponInventoryItem(hero, equipment)
   const inventory = getHeroInventory(hero)
@@ -229,6 +227,18 @@ export function unequipHeroInventorySlot(
     delete inventory.equippedCounts.helmetDecor
     pushEquipmentCopies(inventory.equipment, decor, decorCount)
   }
+  refreshUnitEquipmentStats(hero)
+  applyBakedLpcUnitAssets(hero)
+  hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
+  return true
+}
+
+export function unequipHeroActiveWeaponSlot(hero: UnitEntity | null | undefined, slot: HeroWeaponSlot): boolean {
+  if (!hero?.inventory?.activeWeapons?.[slot]) return false
+  const inventory = getHeroInventory(hero)
+  const equipment = inventory.activeWeapons[slot]
+  delete inventory.activeWeapons[slot]
+  if (equipment) inventory.equipment.push(equipment)
   refreshUnitEquipmentStats(hero)
   applyBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)

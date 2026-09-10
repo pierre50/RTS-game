@@ -5,6 +5,7 @@ import type { PlayerLike } from '../../types/player'
 import type { TooltipContent } from '../../types/ui'
 
 export const AGE_OBJECTIVES = {
+  buildTownCenter: 'buildTownCenter',
   createWheatField: 'createWheatField',
   huntAnimal: 'huntAnimal',
   reachVillage: 'reachVillage',
@@ -26,6 +27,13 @@ export type AgeObjectiveDefinition = {
 }
 
 const STONE_AGE_OBJECTIVES: readonly AgeObjectiveDefinition[] = [
+  {
+    id: AGE_OBJECTIVES.buildTownCenter,
+    age: 0,
+    icon: '065_50729',
+    labelKey: 'objectiveBuildTownCenter',
+    descriptionKey: 'objectiveBuildTownCenterDescription',
+  },
   {
     id: AGE_OBJECTIVES.createWheatField,
     age: 0,
@@ -161,6 +169,14 @@ function updateSettlementObjectives(player: PlayerLike): void {
     )
   ) {
     completeAgeObjective(player, AGE_OBJECTIVES.buildWatchTower)
+  }
+  if (
+    (player.buildings ?? []).some(
+      building =>
+        building.type === BUILDING_TYPES.townCenter && building.isBuilt && !building.isDead && !building.isDestroyed
+    )
+  ) {
+    completeAgeObjective(player, AGE_OBJECTIVES.buildTownCenter)
   }
   tryAutoAdvanceAge(player)
 }

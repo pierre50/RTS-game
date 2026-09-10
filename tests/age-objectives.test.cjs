@@ -22,15 +22,17 @@ function player() {
   }
 }
 
-test('three ages have four objectives per transition and advance automatically for free', () => {
+test('three ages advance automatically when their objectives are complete', () => {
   const p = player()
   assert.deepEqual(
     AGE_PROGRESSION.map(s => [s.age, s.objectives.length]),
     [
-      [1, 4],
+      [1, 5],
       [2, 4],
     ]
   )
+  p.buildings.push({ type: 'TownCenter', isBuilt: true })
+  updatePopulationObjectives(p)
   completeAgeObjective(p, 'huntAnimal')
   completeAgeObjective(p, 'createWheatField')
   p.villagerPopulation = 20
@@ -48,7 +50,7 @@ test('three ages have four objectives per transition and advance automatically f
   p.buildings.push({ type: 'WatchTower', isBuilt: false })
   updatePopulationObjectives(p)
   assert.equal(p.age, 1)
-  p.buildings[0].isBuilt = true
+  p.buildings[1].isBuilt = true
   updatePopulationObjectives(p)
   assert.equal(p.age, 2)
   assert.deepEqual(p.calls, [1, 2])
@@ -66,6 +68,27 @@ test('dead soldiers do not count and completed milestones survive losses', () =>
   p.units = []
   updatePopulationObjectives(p)
   assert.equal(p.completedObjectives.includes('trainInfantry'), true)
+})
+
+test('town center objective requires a living finished town center', () => {
+  const p = player()
+  p.buildings = [{ type: 'TownCenter', isBuilt: false }]
+  updatePopulationObjectives(p)
+  assert.equal(p.completedObjectives.includes('buildTownCenter'), false)
+  p.buildings[0].isBuilt = true
+  updatePopulationObjectives(p)
+  assert.equal(p.completedObjectives.includes('buildTownCenter'), true)
+  const destroyed = player()
+  destroyed.buildings = [{ type: 'TownCenter', isBuilt: true, isDestroyed: true }]
+  updatePopulationObjectives(destroyed)
+  assert.equal(destroyed.completedObjectives.includes('buildTownCenter'), false)
+  destroyed.buildings[0].isDestroyed = false
+  destroyed.buildings[0].isDead = true
+  updatePopulationObjectives(destroyed)
+  assert.equal(destroyed.completedObjectives.includes('buildTownCenter'), false)
+  destroyed.buildings[0].isDead = false
+  updatePopulationObjectives(destroyed)
+  assert.equal(destroyed.completedObjectives.includes('buildTownCenter'), true)
 })
 
 test('reaching 100 villagers creates no objective or age after Iron', () => {

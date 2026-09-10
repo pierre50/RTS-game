@@ -20,6 +20,7 @@ import {
   validateOptionalFiniteNumber,
   validateOptionalGridDestination,
   validateViewCell,
+  MAX_MAP_EDGE,
 } from './SaveValidationPrimitives'
 
 const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
@@ -261,9 +262,36 @@ function validatePlayerBuildings(
   })
 }
 
+function validateSavedUnitOrders(unit: Record<string, unknown>): void {
+  const reference = (value: unknown, label: string) => {
+    if (typeof value === 'string' && value.length) return
+    validateOptionalGridDestination(value, MAX_MAP_EDGE, label)
+  }
+  const task = (value: unknown, label: string) => {
+    if (!isObject(value)) fail(`Invalid save file: ${label} is invalid.`)
+    reference(value.dest, `${label}.dest`)
+    for (const key of ['action', 'work', 'autonomousJob']) {
+      if (value[key] != null && typeof value[key] !== 'string') fail(`Invalid save file: ${label}.${key} is invalid.`)
+    }
+  }
+  if (unit.caveOrders != null) {
+    task(unit.caveOrders, 'caveOrders')
+    if (!isObject(unit.caveOrders) || !unit.cavePosition) fail('Invalid save file: caveOrders has no cave position.')
+    reference(unit.caveOrders.previousDest, 'caveOrders.previousDest')
+    validateAnimalPath(unit.caveOrders.path, MAX_MAP_EDGE, 'caveOrders.path')
+    validateOptionalGridDestination(unit.caveOrders.realDest, MAX_MAP_EDGE, 'caveOrders.realDest')
+  }
+  if (unit.resourceDelivery != null) {
+    if (!isObject(unit.resourceDelivery)) fail('Invalid save file: resourceDelivery is invalid.')
+    reference(unit.resourceDelivery.building, 'resourceDelivery.building')
+    if (unit.resourceDelivery.returnTask != null) task(unit.resourceDelivery.returnTask, 'resourceDelivery.returnTask')
+  }
+}
+
 function validatePlayerUnits(units: unknown[], playerIndex: number, size: number, config: LoadedGameConfig): void {
   units.forEach((unit, unitIndex) => {
     validateEntityPosition(unit, size, `player ${playerIndex} unit ${unitIndex}`)
+    validateSavedUnitOrders(unit)
     validateOptionalBoolean(unit.exploringForAutonomy, `player ${playerIndex} unit ${unitIndex}.exploringForAutonomy`)
     if (!isSupportedSavedUnitType(unit.type, config)) {
       fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has an unsupported type.`)

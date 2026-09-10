@@ -116,7 +116,7 @@ function resolveBakedRuntimeVariant(unit: UnitEntity, bakedUnit: BakedUnitType):
     (bakedUnit === 'hero' ? unit.owner.gender : null)
   return bakedVariantKey(
     bakedUnit,
-    unit.owner,
+    { ...unit.owner, civ: unit.assetCiv || unit.owner.civ },
     `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`,
     preferredGender
   )

@@ -201,24 +201,27 @@ test('unit corpse loot transfers pocket resources to hero inventory', () => {
   assert.deepEqual(hero.inventory.resources, { stone: 9 })
 })
 
-test('hero equips bag items into gear and weapon slots with replacement swaps', () => {
+test('hero equips found bag items into gear and weapon slots with replacement swaps', () => {
   const calls = []
-  const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipment/equipmentLoot.ts', {
-    '../constants': {
-      SHEET_TYPES: { standing: 'standingSheet', corpse: 'corpseSheet' },
-      UNIT_TYPES: { villager: 'Villager' },
-    },
-    './equipmentStats': {
-      getUnitEquipment: () => [],
-      refreshUnitEquipmentStats: unit => calls.push(['refreshUnitEquipmentStats', unit.label]),
-    },
-    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-    '../lpc': {
-      applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
-    },
-  })
+  const { equipHeroInventoryItem, unequipHeroActiveWeaponSlot, unequipHeroInventorySlot } = loadModule(
+    'app/lib/equipment/equipmentLoot.ts',
+    {
+      '../constants': {
+        SHEET_TYPES: { standing: 'standingSheet', corpse: 'corpseSheet' },
+        UNIT_TYPES: { villager: 'Villager' },
+      },
+      './equipmentStats': {
+        getUnitEquipment: () => [],
+        refreshUnitEquipmentStats: unit => calls.push(['refreshUnitEquipmentStats', unit.label]),
+      },
+      '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
+      '../lpc': {
+        applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
+      },
+    }
+  )
   const hero = {
-    owner: { age: 2 },
+    owner: { age: 0 },
     currentSheet: 'standingSheet',
     inventory: {
       equipment: [
@@ -319,6 +322,9 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
   assert.equal(hero.inventory.equipment.includes('arrow_copper'), false)
   assert.ok(hero.inventory.equipment.includes('sword_ceramic'))
 
+  assert.equal(unequipHeroActiveWeaponSlot(hero, 'ranged'), true)
+  assert.equal(hero.inventory.activeWeapons.ranged, undefined)
+  assert.ok(hero.inventory.equipment.includes('bow'))
   assert.equal(unequipHeroInventorySlot(hero, 'helmetDecor'), true)
   assert.equal(hero.inventory.equipped.helmetDecor, undefined)
   assert.ok(hero.inventory.equipment.includes('upward_horns_ceramic'))

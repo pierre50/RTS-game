@@ -53,12 +53,15 @@ export function findMapTerritoryOwner<T extends TerritoryPlayer>(
       (!isPlayerEliminated(player) || (player.isPlayed && hasTerritoryBuildings(player)))
   )
   const native = residents.find(player =>
-    settlements.some(
-      settlement =>
-        (settlement.kind === 'village' || settlement.kind === 'city') &&
-        (settlement.factionId
-          ? settlement.factionId === player.factionId
-          : Boolean(settlement.civ && settlement.civ === player.civ))
+    Boolean(
+      hasTerritoryBuildings(player) &&
+        settlements.some(
+          settlement =>
+            (settlement.kind === 'village' || settlement.kind === 'city') &&
+            (settlement.factionId
+              ? settlement.factionId === player.factionId
+              : Boolean(settlement.civ && settlement.civ === player.civ))
+        )
     )
   )
   if (native) return native

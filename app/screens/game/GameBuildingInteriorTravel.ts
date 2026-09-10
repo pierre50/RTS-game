@@ -68,6 +68,23 @@ function restoreBuildingInteriorHeroProtection(protection: BuildingInteriorHeroI
   }
 }
 
+async function withBuildingInteriorMovementTransition(
+  game: BuildingInteriorTravelGame,
+  travel: () => Promise<void> | void
+): Promise<void> {
+  const releaseMovement = game.context.controls?.captureMovementInput?.()
+  try {
+    game.context.controls?.setRuntimeInputEnabled?.(false)
+    await travel()
+  } finally {
+    const heldMovement = releaseMovement?.()
+    if (game.context.map && game.context.map.ready !== false) {
+      game.context.controls?.setRuntimeInputEnabled?.(true)
+      if (heldMovement) game.context.controls?.restoreMovementInput?.(heldMovement)
+    }
+  }
+}
+
 function getInteriorWorldId(currentWorldId: string | null | undefined, building: BuildingEntity): string {
   const parentId = currentWorldId || 'world'
   const buildingId = getBuildingInteriorPortalId(building)
@@ -175,8 +192,10 @@ export async function travelIntoBuildingInterior(
       getInteriorWorldId(baseCampaign.currentWorldId, building),
       getLegacyInteriorWorldId(baseCampaign.currentWorldId, building),
     ])
-    commitBuildingInteriorCampaign(game, campaign)
-    await game._openBuildingInteriorLayer(building)
+    await withBuildingInteriorMovementTransition(game, async () => {
+      commitBuildingInteriorCampaign(game, campaign)
+      await game._openBuildingInteriorLayer?.(building)
+    })
   } finally {
     game._isRestarting = false
   }
@@ -214,22 +233,24 @@ async function travelOutOfBuildingInteriorSession(
   game._loadingScreen = transition
 
   try {
-    departureHeroProtection = protectBuildingInteriorHero(departureHero)
-    await transition.playDeparture()
-    transition.update('loadingSave', 0.72)
-    game._buildingInteriorSession = null
-    const arrival = await bootBuildingInteriorParentWorld(
-      game,
-      campaign,
-      parentState,
-      party,
-      session.entryPortalId,
-      now,
-      previousEquippedItem,
-      returningOccupants
-    )
-    arrivalHeroProtection = arrival.heroProtection
-    game.context.menu?.show?.()
+    await withBuildingInteriorMovementTransition(game, async () => {
+      departureHeroProtection = protectBuildingInteriorHero(departureHero)
+      await transition.playDeparture()
+      transition.update('loadingSave', 0.72)
+      game._buildingInteriorSession = null
+      const arrival = await bootBuildingInteriorParentWorld(
+        game,
+        campaign,
+        parentState,
+        party,
+        session.entryPortalId,
+        now,
+        previousEquippedItem,
+        returningOccupants
+      )
+      arrivalHeroProtection = arrival.heroProtection
+      game.context.menu?.show?.()
+    })
   } catch (error) {
     game._buildingInteriorSession = session
     throw error
@@ -247,12 +268,14 @@ async function travelOutOfBuildingInteriorSession(
 export async function travelOutOfBuildingInterior(game: BuildingInteriorTravelGame): Promise<void> {
   if (game._isBuildingInteriorLayerOpen?.()) {
     const now = Date.now()
-    await game._closeBuildingInteriorLayer?.()
-    const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
-    const campaign = game._campaignSave
-      ? updateCurrentWorldState(game._campaignSave, currentWorldState, now)
-      : createInitialCampaignSave(currentWorldState, { now })
-    commitBuildingInteriorCampaign(game, campaign)
+    await withBuildingInteriorMovementTransition(game, async () => {
+      await game._closeBuildingInteriorLayer?.()
+      const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
+      const campaign = game._campaignSave
+        ? updateCurrentWorldState(game._campaignSave, currentWorldState, now)
+        : createInitialCampaignSave(currentWorldState, { now })
+      commitBuildingInteriorCampaign(game, campaign)
+    })
     return
   }
   if (game._isRestarting || game._map().mapType !== 'interior') return
@@ -293,21 +316,23 @@ export async function travelOutOfBuildingInterior(game: BuildingInteriorTravelGa
   game._loadingScreen = transition
 
   try {
-    departureHeroProtection = protectBuildingInteriorHero(departureHero)
-    await transition.playDeparture()
-    transition.update('loadingSave', 0.72)
-    const arrival = await bootBuildingInteriorParentWorld(
-      game,
-      nextCampaign,
-      parentState,
-      party,
-      entryPortalId,
-      now,
-      previousEquippedItem,
-      returningOccupants
-    )
-    arrivalHeroProtection = arrival.heroProtection
-    game.context.menu?.show?.()
+    await withBuildingInteriorMovementTransition(game, async () => {
+      departureHeroProtection = protectBuildingInteriorHero(departureHero)
+      await transition.playDeparture()
+      transition.update('loadingSave', 0.72)
+      const arrival = await bootBuildingInteriorParentWorld(
+        game,
+        nextCampaign,
+        parentState,
+        party,
+        entryPortalId,
+        now,
+        previousEquippedItem,
+        returningOccupants
+      )
+      arrivalHeroProtection = arrival.heroProtection
+      game.context.menu?.show?.()
+    })
   } finally {
     const loadingScreen = game._loadingScreen
     if (loadingScreen instanceof BuildingInteriorTransition) await loadingScreen.finish()

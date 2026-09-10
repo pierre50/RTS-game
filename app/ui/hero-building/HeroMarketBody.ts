@@ -47,6 +47,18 @@ function handleMarketChange(menu: MenuHost, onChange: () => void): void {
   onChange()
 }
 
+function getMarketActionLabel(action: 'buy' | 'sell', goldValue: number, count: number): string {
+  const key =
+    action === 'buy'
+      ? count > 1
+        ? 'marketBuyActionEach'
+        : 'marketBuyAction'
+      : count > 1
+        ? 'marketSellActionEach'
+        : 'marketSellAction'
+  return t(key, { gold: formatGold(goldValue) })
+}
+
 function appendBuySlots(
   grid: HTMLDivElement,
   building: BuildingEntity,
@@ -74,19 +86,23 @@ function appendBuySlots(
       showValue: false,
       showTooltip: false,
       labelContext: 'market',
-      badge: formatGold(totalGold),
-      onAction: mode => {
-        const amountToBuy = mode === 'one' ? 1 : offer.count
-        const bought = buyMarketEquipment(hero, offer.equipment, amountToBuy, marketStock)
-        if (bought <= 0) return
-        menu.showMessage(
-          t('marketBoughtItem', {
-            item: formatEquipmentStackLabel(offer.equipment, bought),
-            gold: String(offer.goldValue * bought),
-          }),
-          'success'
-        )
-        handleMarketChange(menu, onChange)
+      trailingAction: {
+        ariaLabel: t('marketBuyItem', { item: label, gold: String(totalGold) }),
+        disabled,
+        label: getMarketActionLabel('buy', offer.goldValue, offer.count),
+        onAction: mode => {
+          const amountToBuy = mode === 'one' ? 1 : offer.count
+          const bought = buyMarketEquipment(hero, offer.equipment, amountToBuy, marketStock)
+          if (bought <= 0) return
+          menu.showMessage(
+            t('marketBoughtItem', {
+              item: formatEquipmentStackLabel(offer.equipment, bought),
+              gold: String(offer.goldValue * bought),
+            }),
+            'success'
+          )
+          handleMarketChange(menu, onChange)
+        },
       },
     })
     element.setAttribute('aria-label', t('marketBuyItem', { item: label, gold: String(totalGold) }))
@@ -111,16 +127,19 @@ function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: M
       mode: 'market-sell',
       showValue: false,
       showTooltip: false,
-      badge: formatGold(totalGold),
-      onAction: mode => {
-        const amountToSell = mode === 'one' ? 1 : undefined
-        const sold = sellHeroResource(hero, resource, amountToSell)
-        if (sold <= 0) return
-        menu.showMessage(
-          t('marketSoldItem', { item: `${t(resource)} x${sold}`, gold: String(goldValue * sold) }),
-          'success'
-        )
-        handleMarketChange(menu, onChange)
+      trailingAction: {
+        ariaLabel: t('marketSellItem', { item: label, gold: String(totalGold) }),
+        label: getMarketActionLabel('sell', goldValue, amount),
+        onAction: mode => {
+          const amountToSell = mode === 'one' ? 1 : undefined
+          const sold = sellHeroResource(hero, resource, amountToSell)
+          if (sold <= 0) return
+          menu.showMessage(
+            t('marketSoldItem', { item: `${t(resource)} x${sold}`, gold: String(goldValue * sold) }),
+            'success'
+          )
+          handleMarketChange(menu, onChange)
+        },
       },
     })
     element.setAttribute('aria-label', t('marketSellItem', { item: label, gold: String(totalGold) }))
@@ -142,19 +161,22 @@ function appendSellEquipmentSlots(grid: HTMLDivElement, hero: UnitEntity, menu: 
       mode: 'market-sell',
       showTooltip: false,
       labelContext: 'market',
-      badge: formatGold(totalGold),
-      onAction: mode => {
-        const amountToSell = mode === 'one' ? 1 : stack.count
-        const sold = sellHeroEquipment(hero, stack.equipment, amountToSell)
-        if (sold <= 0) return
-        menu.showMessage(
-          t('marketSoldItem', {
-            item: formatEquipmentStackLabel(stack.equipment, sold),
-            gold: String(goldValue * sold),
-          }),
-          'success'
-        )
-        handleMarketChange(menu, onChange)
+      trailingAction: {
+        ariaLabel: t('marketSellItem', { item: label, gold: String(totalGold) }),
+        label: getMarketActionLabel('sell', goldValue, stack.count),
+        onAction: mode => {
+          const amountToSell = mode === 'one' ? 1 : stack.count
+          const sold = sellHeroEquipment(hero, stack.equipment, amountToSell)
+          if (sold <= 0) return
+          menu.showMessage(
+            t('marketSoldItem', {
+              item: formatEquipmentStackLabel(stack.equipment, sold),
+              gold: String(goldValue * sold),
+            }),
+            'success'
+          )
+          handleMarketChange(menu, onChange)
+        },
       },
     })
     element.setAttribute('aria-label', t('marketSellItem', { item: label, gold: String(totalGold) }))

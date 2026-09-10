@@ -5,6 +5,7 @@ import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
 import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
 import { isHeroOnInteriorExitCell } from '../buildings/interiorExits'
 import { heroCanCommand } from '../chief'
+import { isNeutralPlayer } from '../playerState'
 import { getCellsInCellRadius } from '../grid/cells'
 import { instanceIsInActiveOrTeamSight } from '../grid/visibility'
 import { isTamedHorse } from '../horses/horseTaming'
@@ -158,7 +159,7 @@ function resolveFacingOpenableBuilding(
 
 function isCommandableNpc(hero: UnitEntity, target: UnitEntity): boolean {
   if (!heroCanCommand(hero)) return false
-  if (target.owner !== hero.owner) return false
+  if (target.owner !== hero.owner && !isNeutralPlayer(target.owner)) return false
   return target.action !== ACTION_TYPES.attack
 }
 

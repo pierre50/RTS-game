@@ -2,9 +2,11 @@ import { definedProperties } from '../../lib/definedProperties'
 import { t } from '../../lib/lang'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import { DEFAULT_WORLD_ID } from '../../config/worlds'
+import { CIVILIZATIONS } from '../../config/civilizations'
 import { serializeGame } from '../../serialization/SaveSerializer'
 import { createInitialCampaignSave } from '../../serialization/CampaignSave'
 import { PLAYER_TYPES } from '../../constants'
+import { ensureNeutralPlayer } from '../../classes/players/GaiaPlayer'
 import type { GameContextLike } from '../../types/context'
 import type { MapBlueprint } from '../../classes/map/MapGenerationTypes'
 import type { RuntimeMap } from '../../types/map'
@@ -37,7 +39,7 @@ type RuntimeMapInstance = BlueprintRuntimeMap & {
 export type GameWorldBootHost = {
   _campaignSave: ReturnType<typeof createInitialCampaignSave> | null
   context: {
-    controls?: { init?: () => void } | null
+    controls?: { init?: () => void; setEquippedItem?: GameContextLike['controls']['setEquippedItem'] } | null
     menu?: { init?: () => void } | null
     performance?: { record?: (name: string, duration: number) => void; setPhase?: (phase: string) => void } | null
     player: PlayerLike | null
@@ -121,9 +123,11 @@ export async function bootGameFromConfig(
     map.generatePlayers(buildWorldRegionPlayerConfigs(config, blueprint, game._campaignSave?.factions))
   )
   game.context.player = selectActivePlayer(game.context.players)
+  ensureNeutralPlayer(game._gameContext())
   measure(game, 'boot.menuInit', () => game.context.menu?.init?.())
   await measureAsync(game, 'boot.preloadUnits', () =>
     preloadBakedLpcUnitsForPlayers(game.context.players, game.context.performance, {
+      villagerCivilizations: CIVILIZATIONS.map(civilization => civilization.value),
       preloadEquipment: true,
     })
   )
@@ -196,6 +200,9 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   )
   measure(game, 'seedSave.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'seedSave.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
+  if (json.runtime?.heroEquippedItem !== undefined) {
+    game.context.controls?.setEquippedItem?.(json.runtime.heroEquippedItem)
+  }
   game.context.worldPursuit?.restore(json.runtime?.worldPursuers)
   game.context.weather?.applyState?.(json.runtime?.weather)
   game.context.performance?.setPhase?.('runtime')
@@ -206,14 +213,21 @@ async function preloadSavedPlayerAssets(game: GameWorldBootHost, json: Serialize
   const players = [
     ...json.players,
     ...(json.runtime?.worldPursuers ?? []).flatMap(entry => (entry.owner ? [entry.owner] : [])),
-  ].map(player =>
-    definedProperties({
-      civ: player.civ,
-      gender: player.gender,
-      label: player.label ?? '',
-      heroAppearance: player.heroAppearance,
-    })
-  )
+  ]
+    .flatMap(player => [
+      player,
+      ...[...(player.units ?? []), ...(player.corpses ?? [])]
+        .filter(unit => unit.assetCiv)
+        .map(unit => ({ ...player, civ: unit.assetCiv })),
+    ])
+    .map(player =>
+      definedProperties({
+        civ: player.civ,
+        gender: player.gender,
+        label: player.label ?? '',
+        heroAppearance: player.heroAppearance,
+      })
+    )
   await measureAsync(game, 'save.preloadPlayerAssets', () =>
     preloadBakedLpcUnitsForPlayers(players, game.context.performance, { preloadEquipment: true })
   )
@@ -240,6 +254,9 @@ export async function bootGameFromSave(game: GameWorldBootHost, json: Serialized
   )
   measure(game, 'save.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'save.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
+  if (json.runtime?.heroEquippedItem !== undefined) {
+    game.context.controls?.setEquippedItem?.(json.runtime.heroEquippedItem)
+  }
   game.context.worldPursuit?.restore(json.runtime?.worldPursuers)
   game.context.weather?.applyState?.(json.runtime?.weather)
   game.context.performance?.setPhase?.('runtime')

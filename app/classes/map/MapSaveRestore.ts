@@ -1,4 +1,5 @@
 import { restoreLegacyStaticKnowledge, restoreTargetKnowledge } from '../../lib/units/playerTargetKnowledge'
+import { getEntitySpaceGrid } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
 import { restoreCaveOccupants as restoreSavedCaveOccupants } from './generation/CaveSaveRestore'
 import { expandLegacyFoodAmount, syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
@@ -30,23 +31,42 @@ type RestoringMobileEntity = (UnitEntity | AnimalEntity) & {
   work?: string | null
 }
 
-export function processUnit(unit: RestoringMobileEntity, context: MapGenerationMap): void {
+export function processUnit(unit: RestoringMobileEntity, context: MapGenerationMap, saved?: SaveEntityState): void {
   const restoringUnit = unit as RestoringMobileEntity
-  const savedPath: RuntimeCell[] = Array.isArray(unit.path) ? unit.path : []
-  const savedAction = unit.action
+  const grid = getEntitySpaceGrid(unit, context) ?? context.grid
+  const orders = saved?.caveOrders ?? unit
+  const savedPath = Array.isArray(orders.path) ? orders.path : []
+  const savedAction = orders.action
   const savedBuildQueue = Array.isArray(restoringUnit.buildQueue) ? restoringUnit.buildQueue : []
-  if (unit.previousDest) {
-    unit.previousDest = getDest(unit.previousDest, context)
+  let restoredDelivery = false
+  if (orders.previousDest) {
+    unit.previousDest = getDest(orders.previousDest, context, grid)
   }
-  if (unit.dest && !unit.isDead) {
-    const dest = getDest(unit.dest, context)
+  if (saved?.resourceDelivery && !unit.isDead && unit.family === 'unit') {
+    const building = getDestEntity(saved.resourceDelivery.building, context)
+    const task = saved.resourceDelivery.returnTask
+    ;(unit as UnitEntity).resourceDeliveryState = {
+      building:
+        building?.family === 'building' && !building.isDead && !building.isDestroyed
+          ? (building as BuildingEntity)
+          : null,
+      phase: 'toBuilding',
+      returnTask: task ? { ...task, dest: getDest(task.dest, context, grid) } : null,
+    }
+    unit.dest = null
+    unit.path = []
+    unit.action = null
+    restoredDelivery = true
+  }
+  if (!restoredDelivery && orders.dest && !unit.isDead) {
+    const dest = getDest(orders.dest, context, grid)
     if (dest) {
       unit.dest = null
       unit.path = []
       unit.setDest?.(dest)
       unit.action = savedAction
       if (savedAction === 'train' && !context.context.dayNight) return
-      const restoredPath = savedPath.map((cell: RuntimeCell) => context.grid[cell.i]?.[cell.j]).filter(Boolean)
+      const restoredPath = savedPath.map(cell => grid[cell.i]?.[cell.j]).filter(Boolean)
       if (restoredPath.length) {
         unit.setPath?.(restoredPath)
       } else if (savedAction && unit.getAction) {

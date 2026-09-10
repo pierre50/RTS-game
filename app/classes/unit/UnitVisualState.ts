@@ -119,12 +119,13 @@ export function resumeUnitVisuals(unit: UnitRuntimeHost): boolean {
   // stale loop state behind.
   if (isSleepingFinalVisual(unit)) return true
   if (unit.currentSheet !== SHEET_TYPES.standing) return false
+  if (!unit.sprite?.gotoAndStop) return false
   unit.sprite.gotoAndStop(unit.sprite.currentFrame)
-  unit.shadow?.gotoAndStop(unit.shadow.currentFrame)
+  unit.shadow?.gotoAndStop?.(unit.shadow.currentFrame)
   unit.horseSprite?.play()
-  unit.horseShadow?.gotoAndStop(unit.horseShadow.currentFrame)
+  unit.horseShadow?.gotoAndStop?.(unit.horseShadow.currentFrame)
   for (const sprite of unit.appearanceLayerSprites.values()) {
-    sprite.gotoAndStop(sprite.currentFrame)
+    sprite.gotoAndStop?.(sprite.currentFrame)
   }
   return true
 }
