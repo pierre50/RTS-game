@@ -37,6 +37,7 @@ import type { Modal } from '../lib'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
+import { getVolume } from '../lib/audio/settings'
 
 type NpcOrderId = 'stay' | 'follow' | 'goto' | 'cancel' | 'mountHorse' | VillagerAutonomyJob | `train-${string}`
 type NpcOrderMenuId = NpcOrderId | 'resources' | 'training' | 'bag'
@@ -75,6 +76,9 @@ const NPC_TRAINING_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 
     labelKey: type,
     trainingType: type,
   }))
+const NPC_ORDERS_CHATTTER_BLEEP_SOUND_MALE = 'assets/sounds/source/ogg/bleep017.ogg'
+const NPC_ORDERS_CHATTTER_BLEEP_SOUND_FEMALE = 'assets/sounds/source/ogg/bleep009.ogg'
+const NPC_ORDERS_CHATTTER_WORD_DELAY_MS = 72
 
 function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
   return npc?.shelterState?.reason === 'sleep' && npc.sleepVisualState === 'sleeping'
@@ -100,6 +104,8 @@ export class NpcOrdersManager {
   buttonsContainer: HTMLDivElement
   bagContainer: HTMLDivElement
   transferPanel: InventoryTransferPanel | null
+  chatterRevealTimeout: number | null
+  chatterRevealAudio: { male: HTMLAudioElement; female: HTMLAudioElement }
   modal?: Modal
   orderMenu: NestedButtonMenu<NpcOrderMenuId>
   buttons: NestedButtonMenu<NpcOrderMenuId>['buttons']
@@ -113,6 +119,11 @@ export class NpcOrdersManager {
     this.npcs = []
     this.ordersEnabled = false
     this.transferPanel = null
+    this.chatterRevealTimeout = null
+    this.chatterRevealAudio = {
+      male: new Audio(NPC_ORDERS_CHATTTER_BLEEP_SOUND_MALE),
+      female: new Audio(NPC_ORDERS_CHATTTER_BLEEP_SOUND_FEMALE),
+    }
 
     this.panel = document.createElement('div')
     this.panel.className = 'npc-orders-panel-content'
@@ -194,6 +205,7 @@ export class NpcOrdersManager {
 
     // A commandable single target gets a short in-character greeting addressed to the player
     // instead of idle chatter — callers can still override with an explicit chatterLine.
+    this.stopChatterReveal()
     this.chatterContainer.replaceChildren()
     const rescuedNpcs = npcs.filter(npc => npc.owner?.isPlayed && npc.pendingRescueThanks)
     const chatterLine =
@@ -211,10 +223,8 @@ export class NpcOrdersManager {
             : pickForeignNpcChatterLine(soloTarget)
         : null)
     if (chatterLine) {
-      const line = document.createElement('p')
-      line.className = 'npc-orders-chatter-line'
-      line.textContent = chatterLine
-      this.chatterContainer.appendChild(line)
+      const chatterSourceNpc = soloTarget ?? rescuedNpcs[0] ?? npcs[0] ?? null
+      this.showChatterLine(chatterLine, chatterSourceNpc)
       for (const npc of rescuedNpcs) npc.pendingRescueThanks = false
     }
 
@@ -274,8 +284,58 @@ export class NpcOrdersManager {
     this.orderMenu.reset()
     const npcs = this.npcs
     this.npcs = []
+    this.stopChatterReveal()
     if (!keepFrozen) releaseIfStillLooking(npcs)
     modal?.close()
+  }
+
+  private isFemaleNpcChatterVoice(npc?: UnitEntity | null): boolean {
+    const gender = npc?.gender ?? npc?.appearanceVariants?.gender
+    return gender === 'female'
+  }
+
+  private showChatterLine(line: string, speaker: UnitEntity | null): void {
+    this.chatterContainer.replaceChildren()
+    const renderedLine = document.createElement('p')
+    renderedLine.className = 'npc-orders-chatter-line is-typing'
+    this.chatterContainer.appendChild(renderedLine)
+    const words = line.split(' ')
+    if (words.length <= 1) {
+      renderedLine.textContent = line
+      renderedLine.classList.remove('is-typing')
+      return
+    }
+
+    let index = 0
+    const revealNextWord = () => {
+      if (index >= words.length) {
+        renderedLine.classList.remove('is-typing')
+        this.chatterRevealTimeout = null
+        return
+      }
+
+      const nextWord = words[index]
+      renderedLine.textContent = renderedLine.textContent ? `${renderedLine.textContent} ${nextWord}` : nextWord
+      const bleep = this.isFemaleNpcChatterVoice(speaker) ? this.chatterRevealAudio.female : this.chatterRevealAudio.male
+      bleep.currentTime = 0
+      bleep.volume = getVolume()
+      bleep.play().catch(() => {})
+      index += 1
+      this.chatterRevealTimeout = window.setTimeout(revealNextWord, NPC_ORDERS_CHATTTER_WORD_DELAY_MS)
+    }
+
+    revealNextWord()
+  }
+
+  private stopChatterReveal(): void {
+    if (this.chatterRevealTimeout !== null) {
+      clearTimeout(this.chatterRevealTimeout)
+      this.chatterRevealTimeout = null
+    }
+    this.chatterRevealAudio.male.pause()
+    this.chatterRevealAudio.male.currentTime = 0
+    this.chatterRevealAudio.female.pause()
+    this.chatterRevealAudio.female.currentTime = 0
   }
 
   toggle(npcs: UnitEntity[]): void {

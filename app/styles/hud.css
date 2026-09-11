@@ -1641,6 +1641,33 @@
   opacity: 0.85;
 }
 
+.npc-orders-chatter-line.is-typing {
+  position: relative;
+  padding-right: 0.7ch;
+}
+
+.npc-orders-chatter-line.is-typing::after {
+  content: '▌';
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-left: 4px;
+  opacity: 0.55;
+  transform: translateX(100%);
+  animation: npc-orders-chatter-cursor 0.8s steps(2, jump-none) infinite;
+}
+
+@keyframes npc-orders-chatter-cursor {
+  0%,
+  50% {
+    opacity: 0;
+  }
+  51%,
+  100% {
+    opacity: 0.55;
+  }
+}
+
 .npc-orders-options {
   display: flex;
   flex-direction: column;

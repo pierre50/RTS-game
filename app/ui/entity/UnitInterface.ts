@@ -190,7 +190,7 @@ export class UnitInterface {
   setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
-    const showExperience = unitSupportsExperience(unit)
+    const showExperience = unitSupportsExperience(unit) && unit.owner === this.unit.context.player
     appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints, {
       hideType: Boolean(options?.hideIdentity && !unit.name),
     })
