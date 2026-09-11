@@ -103,7 +103,7 @@ function loadPlayer(overrides = {}) {
         AGE_TECHNOLOGIES: new Set(['ToolAge', 'BronzeAge', 'IronAge']),
         BUILDING_TYPES: { farm: 'Farm', townCenter: 'TownCenter' },
         FAMILY_TYPES: { player: 'player' },
-        PLAYER_TYPES: { human: 'human' },
+        PLAYER_TYPES: { human: 'human', ai: 'ai', gaia: 'gaia', bandits: 'bandits' },
         POPULATION_MAX: 200,
         RESOURCE_NAMES: [],
         RESOURCE_TYPES: { wheat: 'Wheat' },
@@ -471,4 +471,23 @@ test('player initialization normalizes relations and retains restored resource o
   )
   assert.equal(player.diplomacy, null)
   assert.equal(player.factionId, null)
+})
+
+test('restored AI uses campaign faction color while human, neutral and bandit colors remain their own', () => {
+  const Player = loadPlayer()
+  const context = {
+    map: { startingResources: {}, size: 1 },
+    menu: {},
+    getCampaignFactions: () => ({ 'civ-hellas': { id: 'civ-hellas', color: 'green' } }),
+  }
+  for (const [type, color, expected] of [
+    ['ai', 'grey', 'green'],
+    ['ai', 'red', 'green'],
+    ['human', 'red', 'red'],
+    ['gaia', 'grey', 'grey'],
+    ['bandits', 'black', 'black'],
+  ]) {
+    const player = new Player({ type, civ: 'Hellas', color }, context)
+    assert.equal(player.color, expected)
+  }
 })

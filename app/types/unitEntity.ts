@@ -109,6 +109,9 @@ type UnitInteriorExitState = {
 }
 
 type UnitSpacePortalState = {
+  combatTarget?: UnitEntity | undefined
+  shouldContinue?: (() => boolean) | undefined
+  canTransfer?: (() => boolean) | undefined
   onTransferred?: (() => void) | null
   portalId: string
   sourceCell?: RuntimeCell | null
@@ -231,6 +234,7 @@ export interface UnitEntity extends EnergyEntity {
   visibleCells?: Set<number>
   lookingAtHero?: boolean
   followingHero?: boolean
+  pendingRescueThanks?: boolean
   isCrouching?: boolean
   followAssist?: UnitFollowAssistState | null
   followAssistIntent?: UnitFollowAssistState | null

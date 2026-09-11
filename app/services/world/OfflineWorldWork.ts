@@ -21,6 +21,10 @@ import { savedBuildingsOwnedBy } from '../../serialization/InteriorBuildingSave'
 import { resetHarvestedWheat } from '../../lib/resources/wheatGrowth'
 
 export type OfflineWorkRules = {
+  abstractVillages?: boolean
+  abstractPotential?: ResourceAmount
+  planBuildings?: boolean
+  dailyFactors?(playerIndex: number, day: number): { workEfficiency: number; arrivalsAllowed: boolean }
   animalConfig?(type: string): AnimalConfig
   unitConfig(playerIndex: number, type: string): UnitConfig
   buildingConfig(playerIndex: number, type: string): BuildingConfig
@@ -94,6 +98,21 @@ function targetMatches(unit: SaveEntityState, resource: SaveEntityState): boolea
     return stored === mineral
   }
   return unit.work === RESOURCE_WORK[stored]
+}
+
+export function offlineResourceWork(
+  player: SavePlayerState,
+  unit: SaveEntityState,
+  resource: SaveEntityState,
+  wheatMatureFrame: number
+): string | undefined {
+  if (
+    resource.isDestroyed || (resource.quantity ?? 0) <= 0 ||
+    (!isLiving(resource) && resource.type !== RESOURCE_TYPES.tree) ||
+    !targetMatches(unit, resource) || !canOwnerMineMineral(player, resource.type) ||
+    (resource.type === RESOURCE_TYPES.wheat && (resource.currentFrame ?? wheatMatureFrame) < wheatMatureFrame)
+  ) return undefined
+  return RESOURCE_WORK[RESOURCE_STOCKPILE_TYPES[resource.type]]
 }
 
 function destinationLabel(unit: SaveEntityState): string | undefined {
@@ -198,14 +217,8 @@ export function advanceOfflineWorker(
         !resource.isBuilt &&
         (player.buildings ?? []).includes(resource) &&
         (!unit.buildQueue?.length || unit.buildQueue.includes(resource.label ?? ''))
-      : !resource.isDestroyed &&
-        (resource.quantity ?? 0) > 0 &&
-        (isLiving(resource) || resource.type === RESOURCE_TYPES.tree) &&
-        targetMatches(unit, resource) &&
-        canOwnerMineMineral(player, resource.type ?? '') &&
-        (rules.isKnown?.(playerIndex, resource) ?? true) &&
-        (resource.type !== RESOURCE_TYPES.wheat ||
-          (resource.currentFrame ?? rules.wheatMatureFrame) >= rules.wheatMatureFrame)
+      : Boolean(offlineResourceWork(player, unit, resource, rules.wheatMatureFrame)) &&
+        (rules.isKnown?.(playerIndex, resource) ?? true)
   const previousTarget = destinationLabel(unit)
   const candidates = () =>
     (buildingTask ? (player.buildings ?? []) : state.resources).filter(validTarget).sort((a, b) => {
@@ -274,6 +287,8 @@ export function advanceOfflineWorker(
       budget -= impacts * cycle
       if (target.hitPoints >= total) {
         target.isBuilt = true
+        player.hasBuilt ??= []
+        if (!player.hasBuilt.includes(target.type)) player.hasBuilt.push(target.type)
         player.populationMax = (player.populationMax ?? 0) + rules.buildingCapacity(playerIndex, target.type)
         report.buildingsCompleted++
         if (unit.buildQueue) unit.buildQueue = unit.buildQueue.filter(label => label !== target.label)

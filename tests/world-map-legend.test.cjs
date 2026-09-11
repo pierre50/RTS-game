@@ -5,7 +5,10 @@ const { createWorldMapLegend, settlementPlayerColor } = loadTsModule('app/ui/wor
   mocks: {
     '../../lib/lang': { t: key => key },
     '../../lib/campaign/playerRoster': { factionIdForCivilization: civ => `faction-${civ}` },
-    '../../lib/graphics/colors': { getHexColor: color => ({ red: '#ff0000', grey: '#888888' })[color] },
+    '../../lib/graphics/colors': {
+      getHexColor: color =>
+        ({ red: '#ff0000', grey: '#888888', black: '#2d3136', green: '#4b6b2b', violet: '#3d5083' })[color],
+    },
   },
 })
 function element() {
@@ -84,7 +87,7 @@ test('world legend puts the player first, deduplicates factions and shows diplom
     ['', 'worldMapRelationHostile', 'worldMapRelationHostile']
   )
   assert.equal(rows[0].children[0].style.backgroundColor, '#00ff00')
-  assert.equal(rows[2].children[0].style.backgroundColor, '#888888')
+  assert.equal(rows[2].children[0].style.backgroundColor, '#2d3136')
 })
 test('empty legends are omitted and unknown settlements retain neutral fallback', t => {
   const original = globalThis.document
@@ -97,4 +100,23 @@ test('empty legends are omitted and unknown settlements retain neutral fallback'
   const legend = createWorldMapLegend(host(), { settlements: [{ kind: 'city', id: 'unknown' }] })
   assert.equal(legend.children[1].children[0].style.backgroundColor, '#6ee37a')
   assert.equal(legend.children[1].children[2].textContent, 'worldMapRelationNeutral')
+})
+
+test('neutral owners sharing a civilization cannot supply the faction color or identity', () => {
+  const menu = host(
+    [
+      { type: 'Gaia', civ: 'B', color: 'grey', colorHex: '#888888', diplomacy: 'neutral' },
+      { type: 'Bandits', civ: 'B', color: 'black' },
+    ],
+    { 'faction-B': { id: 'faction-B', civilization: 'B', color: 'green' } }
+  )
+  assert.equal(settlementPlayerColor(menu, { kind: 'city', civ: 'B', playerIndex: 0 }), '#4b6b2b')
+  assert.equal(settlementPlayerColor(menu, { kind: 'city', playerIndex: 0 }), null)
+})
+
+test('campaign color overrides stale regional colors and cached hex colors', () => {
+  const menu = host([{ type: 'AI', civ: 'B', color: 'grey', colorHex: '#888888' }], {
+    'faction-B': { id: 'faction-B', civilization: 'B', color: 'green' },
+  })
+  assert.equal(settlementPlayerColor(menu, { kind: 'city', civ: 'B' }), '#4b6b2b')
 })

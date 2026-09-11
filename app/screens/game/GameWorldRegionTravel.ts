@@ -1,3 +1,7 @@
+import { isChiefUnit } from '../../lib/chief'
+import { advanceCampaignEconomy } from '../../services/world/WorldEconomy'
+import { economyRulesFor } from '../../services/world/WorldEconomyRuntime'
+import { t } from '../../lib/lang'
 import type { Container } from 'pixi.js'
 import { isOutsideSpaceId } from '../../lib/mapSpaces'
 import { blueprintToLocalGrid } from '../../lib/localMapLayout'
@@ -139,6 +143,7 @@ function finishWorldRegionArrival(
         parentWorldId: baseCampaign.currentWorldId,
         worldId: worldRegionId,
       })
+  game._gameContext().updateWorldEconomy?.()
   game._restartSaveData = structuredClone(game._campaignSave)
   ;(game.context.menu as { show?: () => void } | null | undefined)?.show?.()
   game.context.menu?.refreshMiniMap?.()
@@ -152,6 +157,8 @@ async function bootWorldRegionForTravel(
   dayNightElapsedMs: number | null
 ): Promise<{ freshWorld: boolean }> {
   const nextConfig = worldRegionTravelConfig(snapshot, worldRegionId, worldRegionSourceSize(game._map()))
+  if (game._campaignSave?.economy && dayNightElapsedMs != null)
+    advanceCampaignEconomy(game._campaignSave, dayNightElapsedMs, game.context.map?.worldRegionId ?? undefined, economyRulesFor)
   const savedState = savedWorldStateForTravel(game._campaignSave, worldRegionId, snapshot, dayNightElapsedMs)
   game._destroyRuntime({ preserveLoadingScreen: true })
   if (savedState) {
@@ -271,6 +278,10 @@ export async function travelToWorldRegion(
   const context = game._gameContext()
   const hero = runtimeHeroUnit(game)
   if (hero && !isOutsideSpaceId(hero.spaceId)) return
+  if (!isChiefUnit(hero)) {
+    context.menu?.showMessage?.(t('heroCannotLeaveMapYet'), 'warning')
+    return
+  }
   const previousCell = {
     i: hero?.i ?? Math.floor(context.map.size / 2),
     j: hero?.j ?? Math.floor(context.map.size / 2),

@@ -4,14 +4,11 @@ import { getPlayerResourceTotals, hasPlayerResourceChests } from '../lib/resourc
 import type { AIStrategy } from './AIStrategy'
 import { resourceEntries } from './AIStrategyResources'
 import type { AIBuildingLike, AIEntityLike, AIResourceAmount } from './types'
-
-function getExpectedVillagerArrivalWave(population: number): number {
-  if (population <= 0) return 0
-  return Math.min(
-    Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate)),
-    VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay
-  )
-}
+import {
+  expectedVillageArrivals as getExpectedVillagerArrivalWave,
+  villageBuildingNeeds,
+  villageConstructionReserve,
+} from './AIDevelopmentPolicy'
 
 function livingBuildings(buildings: AIBuildingLike[] = [], type: string): AIBuildingLike[] {
   return buildings.filter(building => building.type === type && !building.isDead && !building.isDestroyed)
@@ -61,24 +58,23 @@ export function getEconomicDemand(strategy: AIStrategy): AIResourceAmount {
   const growthReserveFood = strategy.getVillagerGrowthFoodReserve()
   if (growthReserveFood > 0) demand.food = (demand.food ?? 0) + Math.max(0, growthReserveFood - (resources.food ?? 0))
 
-  const expectedArrivals = getExpectedVillagerArrivalWave(ai.population)
-  if (ai.population + expectedArrivals + 2 > ai.populationMax) {
-    strategy.addBuildingReserve(demand, BUILDING_TYPES.house)
-  }
-  if (!livingBuildings(ai.buildings, BUILDING_TYPES.storagePit).length) {
-    strategy.addBuildingReserve(demand, BUILDING_TYPES.storagePit)
-  }
-  if (!livingBuildings(ai.buildings, BUILDING_TYPES.granary).length) {
-    strategy.addBuildingReserve(demand, BUILDING_TYPES.granary)
-  }
-
+  const needs = villageBuildingNeeds({
+    population: ai.population,
+    populationMax: ai.populationMax,
+    age: ai.age,
+    phase: ai.phase,
+    desiredBarracks: strategy.getDesiredBarracksCount(),
+    buildings: ai.buildings,
+  })
   const currentBarracks = livingBuildings(ai.buildings, BUILDING_TYPES.barracks).length
   const desiredBarracks = strategy.getDesiredBarracksCount()
-  if (ai.phase !== 'economy' && currentBarracks < desiredBarracks) {
-    strategy.addBuildingReserve(demand, BUILDING_TYPES.barracks, desiredBarracks - currentBarracks)
-  }
-  if (!livingBuildings(ai.buildings, BUILDING_TYPES.market).length) {
-    strategy.addBuildingReserve(demand, BUILDING_TYPES.market)
+  const reserve = villageConstructionReserve(
+    needs,
+    type => getPlayerBuildingConfig(ai, type)?.cost ?? {},
+    desiredBarracks - currentBarracks
+  )
+  for (const [resource, amount] of resourceEntries(reserve)) {
+    demand[resource] = (demand[resource] ?? 0) + amount
   }
 
   return demand

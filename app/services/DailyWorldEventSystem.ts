@@ -38,6 +38,7 @@ export class DailyWorldEventSystem {
     const report = new DailyWorldReport(this.context, event.day)
     const eventWithReport = { ...event, report }
     for (const handler of this.handlers) handler.handleDailyWorldEvent(eventWithReport)
+    this.context.updateWorldEconomy?.()
     report.flush()
   }
 

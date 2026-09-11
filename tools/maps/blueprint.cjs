@@ -1,19 +1,12 @@
-const {
-  TERRAIN_INDEX,
-  DEFAULT_ENVIRONMENT_ID,
-  BLUEPRINT_MAP_SPAWN_RANGE,
-  createSeededRandom,
-  ENVIRONMENT_TERRAIN_PARAMS,
-} = require('./config.cjs')
+const { TERRAIN_INDEX, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_TERRAIN_PARAMS } = require('./config.cjs')
 const {
   withResolvedSettlementLocals,
-  applyMacroTerrainRows,
-  removeBorderConnectedWater,
+  createMacroTerrain,
   resolveProtectedPosition,
   createMacroTreeOptions,
 } = require('./macro.cjs')
 const { compactPositions } = require('./grid.cjs')
-const { runtimeTerrain, runtimeSpawns, runtimeNeutralResources, runtimeBiomeTrees } = require('./headless-loader.cjs')
+const { runtimeNeutralResources, runtimeBiomeTrees } = require('./headless-loader.cjs')
 const { buildHeadlessMap, createResourceScope } = require('./headless-map.cjs')
 const { finalizeRelief } = require('./relief.cjs')
 const { finalizeBlueprintPayload } = require('./local-blueprint.cjs')
@@ -38,7 +31,7 @@ function encodeBlueprint(map, size, seed, environmentId, options, spawns, bandit
     version: 1,
     size,
     seed,
-    ...(options.worldRegion ? { mapType: 'world-region' } : {}),
+    mapType: 'world-region',
     environment: environmentId,
     encoding: 'base64',
     cellCount: flatTerrain.length,
@@ -54,19 +47,11 @@ function encodeBlueprint(map, size, seed, environmentId, options, spawns, bandit
 }
 
 async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, options = {}) {
-  const [minSpawns, maxSpawns] = BLUEPRINT_MAP_SPAWN_RANGE
   const requestedSpawns = compactPositions(options.spawns)
   const requestedBanditCampPositions = compactPositions(options.banditCampPositions)
   const spawnCount = requestedSpawns.length
-    ? requestedSpawns.length
-    : options.worldRegion
-      ? 0
-      : Math.floor(createSeededRandom(`${seed}:ideal-spawns`)() * (maxSpawns - minSpawns + 1) + minSpawns)
   const params = ENVIRONMENT_TERRAIN_PARAMS[environmentId] ?? ENVIRONMENT_TERRAIN_PARAMS[DEFAULT_ENVIRONMENT_ID]
-  const context = { map: { seed, positionsCount: spawnCount } }
-  const terrain = runtimeTerrain.call(context, size + 1, seed, params)
-  const hasMacroTerrain = applyMacroTerrainRows(terrain, options.macroTerrainRows)
-  if (options.worldRegion && !hasMacroTerrain) removeBorderConnectedWater(terrain, params)
+  const terrain = createMacroTerrain(size + 1, options.macroTerrainRows)
   const spawnMap = buildHeadlessMap(terrain, size, seed, [], spawnCount, environmentId)
   const forcedSpawns = requestedSpawns
     .map(position => resolveProtectedPosition(spawnMap, position, 5, 24, 28))
@@ -75,7 +60,7 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
     .map(position => resolveProtectedPosition(spawnMap, position, 3, 24, 18))
     .filter(Boolean)
   const protectedPositions = [...forcedSpawns, ...banditCampPositions]
-  const spawns = forcedSpawns.length ? forcedSpawns : runtimeSpawns.call({ map: spawnMap })
+  const spawns = forcedSpawns
   if (spawns.length !== spawnCount) return null
   const map = buildHeadlessMap(
     terrain,
@@ -88,9 +73,7 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
   )
   finalizeRelief(map, size, seed, protectedPositions.length ? protectedPositions : spawns)
   const resourcesScope = createResourceScope(map)
-  const resourceOptions = hasMacroTerrain
-    ? createMacroTreeOptions(options.macroTerrainRows, params.treeTextureFamily, seed)
-    : { treeTextureFamily: params.treeTextureFamily }
+  const resourceOptions = createMacroTreeOptions(options.macroTerrainRows, params.treeTextureFamily, seed)
   await runtimeNeutralResources.call(
     resourcesScope,
     protectedPositions.length ? protectedPositions : spawns,
@@ -104,7 +87,9 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
     )
   }
   try {
-    return finalizeBlueprintPayload(encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions))
+    return finalizeBlueprintPayload(
+      encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions)
+    )
   } catch (error) {
     if (error.code === 'CAVE_PLACEMENT_FAILED') return null
     throw error

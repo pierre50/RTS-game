@@ -43,11 +43,19 @@ import {
 } from './DevCommandActions'
 import { toggleHeroCollisionDebug, toggleUnitMovementDebug } from './actions/debug'
 import { getAllHeroInventoryItems } from './actions/heroInventory'
+import { economyReport } from './actions/economy'
 import type { DevEntity, DevPlayer } from './types'
 
 const RESOURCE_NAMES = ['all', 'food', ...RESOURCE_STORAGE_NAMES]
 
 function registerCoreCommands(registry: DevCommandRegistry): void {
+  registry.register({
+    name: 'economy',
+    usage: 'economy [all|civilization|player|region] [--json]',
+    describe: 'Inspect live and offscreen economies without advancing time',
+    complete: (_args, context) => ['all', '--json', ...Object.keys(context.getCampaignFactions?.() ?? {})],
+    run: economyReport,
+  })
   registry.register({
     name: 'help',
     aliases: ['?'],
@@ -124,13 +132,17 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     name: 'faction-raid',
     aliases: ['frraid', 'envoy'],
     usage: 'faction-raid',
-    describe: 'Trigger a hostile known faction tribute raid near the target',
+    describe: 'Send an available hostile faction army (keeps a garrison and respects cooldown)',
     run: async (_args, context) => {
       const started =
         (await context.tributeRaids?.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true })) ?? false
       return started
         ? { ok: true, message: 'Faction raid triggered' }
-        : { ok: false, message: 'Unable to trigger faction raid' }
+        : {
+            ok: false,
+            message:
+              'No faction raid available: check hostility, soldiers/garrison, 3-day cooldown, 09:00-17:00 window and active raid.',
+          }
     },
   })
 
@@ -275,7 +287,6 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleResourcesVisibility(context, value),
   })
-
 }
 
 function registerDebugOverlayCommands(registry: DevCommandRegistry): void {

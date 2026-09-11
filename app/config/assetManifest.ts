@@ -101,6 +101,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/cave',
     ]),
     ...toBuildingShadowBundle([
+      'buildings/cave',
       'buildings/age-0',
       'buildings/age-1',
       'buildings/wall/dithered',

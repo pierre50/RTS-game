@@ -7,59 +7,20 @@ const {
 const { macroForestNoise, macroForestClearingNoise, applyMacroClearingChance } = require('./noise.cjs')
 const { getZoneInGridWithCondition } = require('./grid.cjs')
 
-function removeBorderConnectedWater(terrain, params) {
-  const gridSize = terrain.length
-  const terrainValueByType = {
-    Grass: 0,
-    Desert: 1,
-    Jungle: 3,
-    DarkForest: 4,
-    Dirt: 5,
-    Snow: 7,
+function createMacroTerrain(gridSize, rows) {
+  if (!Array.isArray(rows) || rows.length !== gridSize) {
+    throw new Error(`World region requires ${gridSize} macro terrain rows`)
   }
-  const groundTypeValue = terrainValueByType[params.groundType ?? 'Grass'] ?? 0
-  const visited = new Uint8Array(gridSize * gridSize)
-  const queue = []
-  const enqueue = (i, j) => {
-    if (i < 0 || j < 0 || i >= gridSize || j >= gridSize) return
-    const index = i * gridSize + j
-    if (visited[index] || terrain[i]?.[j] !== 2) return
-    visited[index] = 1
-    queue.push(index)
-  }
-
-  for (let index = 0; index < gridSize; index++) {
-    enqueue(0, index)
-    enqueue(gridSize - 1, index)
-    enqueue(index, 0)
-    enqueue(index, gridSize - 1)
-  }
-
-  for (let cursor = 0; cursor < queue.length; cursor++) {
-    const index = queue[cursor]
-    const i = Math.floor(index / gridSize)
-    const j = index % gridSize
-    terrain[i][j] = groundTypeValue
-    enqueue(i - 1, j)
-    enqueue(i + 1, j)
-    enqueue(i, j - 1)
-    enqueue(i, j + 1)
-  }
-}
-
-function applyMacroTerrainRows(terrain, rows) {
-  if (!Array.isArray(rows) || !rows.length) return false
-  const height = Math.min(terrain.length, rows.length)
-  for (let i = 0; i < height; i++) {
-    const row = String(rows[i] || '')
-    const width = Math.min(terrain[i]?.length || 0, row.length)
-    for (let j = 0; j < width; j++) {
-      const terrainType = MACRO_TERRAIN_CODE_TO_TYPE[row[j]]
-      const terrainIndex = TERRAIN_INDEX.get(terrainType)
-      if (terrainIndex !== undefined) terrain[i][j] = terrainIndex
+  return rows.map((row, i) => {
+    if (typeof row !== 'string' || row.length !== gridSize) {
+      throw new Error(`Invalid macro terrain row ${i}: expected ${gridSize} cells`)
     }
-  }
-  return true
+    return Array.from(row, (code, j) => {
+      const terrainIndex = TERRAIN_INDEX.get(MACRO_TERRAIN_CODE_TO_TYPE[code])
+      if (terrainIndex === undefined) throw new Error(`Unknown macro terrain code at ${i},${j}: ${code}`)
+      return terrainIndex
+    })
+  })
 }
 
 function createMacroTreeOptions(rows, fallbackFamily = null, seed = 0) {
@@ -119,8 +80,7 @@ function withResolvedSettlementLocals(settlements = [], spawns = [], banditCampP
 
 module.exports = {
   withResolvedSettlementLocals,
-  applyMacroTerrainRows,
-  removeBorderConnectedWater,
+  createMacroTerrain,
   resolveProtectedPosition,
   createMacroTreeOptions,
 }

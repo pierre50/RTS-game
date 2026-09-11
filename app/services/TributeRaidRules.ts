@@ -3,7 +3,7 @@ import type { ResourceAmount } from '../types/common'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { FactionSave } from '../types/save'
+import type { FactionSave, FactionExpeditionSave } from '../types/save'
 import type { Modal } from '../lib'
 import type { SchedulerTaskId } from '../types/context'
 
@@ -28,6 +28,7 @@ export type TributeRaidKind = 'bandit' | 'faction'
 type TributeRaidPhase = 'approaching' | 'parley' | 'hostile' | 'leaving'
 
 export type TributeRaidUnit = UnitEntity & {
+  factionExpedition?: FactionExpeditionSave
   tributeRaidId?: string
 }
 

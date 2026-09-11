@@ -89,7 +89,7 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
         Boolean(options.passageLookup?.has?.(cell) ?? cell?.reservedPassage),
     },
     '../../lib/combat/combatFeedback': {
-      showAggressionFeedback: () => {},
+      cancelPendingAggression: () => {},
       showAlertFeedback: () => {},
       showAlertThenAggressionFeedback: () => {},
     },

@@ -1,19 +1,9 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadCampaignSave() {
-  const filename = path.join(__dirname, '../app/serialization/CampaignSave.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  new Function('module', 'exports', 'require', code)(module, module.exports, require)
-  return module.exports
+  return loadTsModule('app/serialization/CampaignSave.ts')
 }
 
 function worldSave(seed = 42) {

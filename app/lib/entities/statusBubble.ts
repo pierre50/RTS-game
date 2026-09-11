@@ -10,11 +10,8 @@ const STATUS_EXPRESSION_SCALE = 1.6
 const STATUS_EXPRESSION_MIN_FONT_SIZE = 18
 const STATUS_EXPRESSION_COLORS: Record<string, number> = {
   '!': 0xffd747,
-  '!!': 0xff9f1c,
-  '...': 0xc7f0ff,
   zzz: 0x69b7ff,
   '?': 0xc891ff,
-  X: 0xff5f57,
   '♥': 0xff6fae,
 }
 const STATUS_EXPRESSION_STROKE = 0x20140b

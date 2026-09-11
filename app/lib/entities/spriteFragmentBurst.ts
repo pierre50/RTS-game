@@ -33,6 +33,8 @@ type FragmentState = {
   groundY?: number
 }
 
+type SourceVisibilityPredicate = () => boolean
+
 export type SpriteFragmentBurstOptions = {
   context: Pick<GameContextLike, 'app' | 'scheduler'>
   host: { x: number; y: number; zIndex?: number; parent?: Container | null }
@@ -57,6 +59,7 @@ export type SpriteFragmentBurstOptions = {
   groundBounce?: number
   zIndexOffset?: number
   random?: () => number
+  sourceVisibility?: SourceVisibilityPredicate
 }
 
 type OpaqueBounds = {
@@ -422,14 +425,17 @@ function animateFragments(
   stepMs: number,
   gravity: number,
   settleStrength: number,
-  groundBounce: number
+  groundBounce: number,
+  isSourceVisible: SourceVisibilityPredicate
 ): SchedulerTaskId {
   let taskId: SchedulerTaskId | null = null
   taskId = scheduler.add(
     () => {
       let aliveCount = 0
+      const visibleNow = isSourceVisible()
       for (const fragment of fragments) {
         if (fragment.sprite.destroyed) continue
+        fragment.sprite.visible = visibleNow
         fragment.ageMs += stepMs
         if (fragment.ageMs >= fragment.durationMs) {
           destroyFragment(fragment)
@@ -497,6 +503,7 @@ export function spawnSpriteFragmentBurst(options: SpriteFragmentBurstOptions): v
     groundBounce = DEFAULT_GROUND_BOUNCE,
     zIndexOffset = DEFAULT_Z_INDEX_OFFSET,
     random = Math.random,
+    sourceVisibility = () => true,
   } = options
 
   if (!layer || sprite.destroyed || !sprite.texture?.source) return
@@ -538,5 +545,13 @@ export function spawnSpriteFragmentBurst(options: SpriteFragmentBurstOptions): v
     })
   )
   for (const fragment of fragments) layer.addChild(fragment.sprite)
-  animateFragments(fragments, context.scheduler, Math.max(8, stepMs), gravity, settleStrength, groundBounce)
+  animateFragments(
+    fragments,
+    context.scheduler,
+    Math.max(8, stepMs),
+    gravity,
+    settleStrength,
+    groundBounce,
+    sourceVisibility
+  )
 }

@@ -72,6 +72,7 @@ const constants = {
 function loadVillagerAutonomy() {
   return loadModule('app/lib/units/villagerAutonomy.ts', {
     '../playerTargetKnowledge': {
+      knowsEconomicTarget: () => false,
       rememberedStaticTargets: () => [],
       playerSeesTarget: (owner, target) => owner.views.isViewed(target.i, target.j),
       knownTarget: (owner, target) =>

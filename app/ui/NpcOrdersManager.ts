@@ -27,6 +27,7 @@ import {
   pickForeignNpcChatterLine,
   pickForeignNpcSleepingChatterLine,
   pickNpcGreetingLine,
+  pickNpcRescueThanksLine,
   pickNpcRestingChatterLine,
   pickNpcSleepingChatterLine,
 } from '../lib/npc/npcChatter'
@@ -194,7 +195,9 @@ export class NpcOrdersManager {
     // A commandable single target gets a short in-character greeting addressed to the player
     // instead of idle chatter — callers can still override with an explicit chatterLine.
     this.chatterContainer.replaceChildren()
+    const rescuedNpcs = npcs.filter(npc => npc.owner?.isPlayed && npc.pendingRescueThanks)
     const chatterLine =
+      (rescuedNpcs.length ? pickNpcRescueThanksLine(rescuedNpcs) : null) ??
       options.chatterLine ??
       (soloTarget
         ? sleepingSoloTarget
@@ -212,6 +215,7 @@ export class NpcOrdersManager {
       line.className = 'npc-orders-chatter-line'
       line.textContent = chatterLine
       this.chatterContainer.appendChild(line)
+      for (const npc of rescuedNpcs) npc.pendingRescueThanks = false
     }
 
     this.updateDebugControls(soloTarget)

@@ -248,18 +248,18 @@
     "size": 4,
     "constructionTime": 0,
     "cost": {
-      "wood": 10
+      "wheat": 20
     },
     "conditions": [],
     "ageStats": {
       "0": {
         "cost": {
-          "wood": 10
+          "wheat": 20
         }
       },
       "1": {
         "cost": {
-          "wood": 10
+          "wheat": 20
         }
       }
     }

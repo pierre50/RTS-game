@@ -1,4 +1,4 @@
-import { knownTarget, playerSeesTarget, rememberedStaticTargets } from '../playerTargetKnowledge'
+import { knownTarget, knowsEconomicTarget, playerSeesTarget, rememberedStaticTargets } from '../playerTargetKnowledge'
 import { sameMapSpace } from '../../mapSpaces'
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, WORK_TYPES } from '../../constants'
 import { getGaiaAnimals } from '../../playerState'
@@ -60,7 +60,7 @@ export function knownResources(unit: UnitEntity, type: string): RuntimeEntity[] 
   const owner = unit.owner
   const resources = new Set([...(unit.context?.map?.resources ?? []), ...rememberedStaticTargets(unit.owner)])
   const founded = owner?.foundedResources?.[type]
-  const source = founded?.size ? [...founded] : [...resources].filter(resource => isKnownToUnit(unit, resource))
+  const source = [...new Set([...(founded ?? []), ...resources])]
   return source.filter(
     resource => resource.type === type && isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
   )
@@ -69,19 +69,21 @@ export function knownResources(unit: UnitEntity, type: string): RuntimeEntity[] 
 export function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
   const resources = new Set([...(unit.context?.map?.resources ?? []), ...rememberedStaticTargets(unit.owner)])
   const foundedBerries = unit.owner?.foundedResources?.[RESOURCE_TYPES.berrybush] ?? unit.owner?.foundedBerrybushs
-  const berries = foundedBerries?.size
-    ? [...foundedBerries]
-    : [...resources].filter(resource => isKnownToUnit(unit, resource) && resource.type === RESOURCE_TYPES.berrybush)
+  const berries = [...new Set([...(foundedBerries ?? []), ...resources])].filter(
+    resource => resource.type === RESOURCE_TYPES.berrybush
+  )
   const foundedWheat = unit.owner?.foundedResources?.[RESOURCE_TYPES.wheat] ?? unit.owner?.foundedWheats
-  const wheat = foundedWheat?.size
-    ? [...foundedWheat]
-    : [...resources].filter(resource => isKnownToUnit(unit, resource) && resource.type === RESOURCE_TYPES.wheat)
+  const wheat = [...new Set([...(foundedWheat ?? []), ...resources])].filter(
+    resource => resource.type === RESOURCE_TYPES.wheat
+  )
   const foundedCarcasses = unit.owner?.foundedDeadAnimals
-  const carcasses = foundedCarcasses?.size
-    ? [...foundedCarcasses]
-    : [...getGaiaAnimals(unit.context?.map?.gaia), ...rememberedStaticTargets(unit.owner)].filter(animal =>
-        isKnownToUnit(unit, animal)
-      )
+  const carcasses = [
+    ...new Set([
+      ...(foundedCarcasses ?? []),
+      ...getGaiaAnimals(unit.context?.map?.gaia),
+      ...rememberedStaticTargets(unit.owner),
+    ]),
+  ].filter(animal => isKnownToUnit(unit, animal))
   const prey = [
     ...new Set([
       ...(unit.owner?.foundedAnimals ?? []),
@@ -89,7 +91,9 @@ export function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
     ]),
   ].filter(
     animal =>
-      sameMapSpace(unit, animal) && playerSeesTarget(unit.owner, animal) && canVillagerAutonomouslyHunt(unit, animal)
+      sameMapSpace(unit, animal) &&
+      (knowsEconomicTarget(unit.owner, animal) || playerSeesTarget(unit.owner, animal)) &&
+      canVillagerAutonomouslyHunt(unit, animal)
   )
   return [
     ...berries.filter(target => isKnownToUnit(unit, target) && isUsableResource(knownState(unit, target))),
@@ -111,11 +115,12 @@ export function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
 
 export function knownCapturableHorses(unit: UnitEntity): RuntimeEntity[] {
   const foundedHorses = unit.owner?.foundedAnimals
-  const source = foundedHorses?.size
-    ? [...foundedHorses]
-    : [...getGaiaAnimals(unit.context?.map?.gaia)].filter(animal => isKnownToUnit(unit, animal))
+  const source = [...new Set([...(foundedHorses ?? []), ...getGaiaAnimals(unit.context?.map?.gaia)])]
 
   return source.filter(
-    target => sameMapSpace(unit, target) && playerSeesTarget(unit.owner, target) && isCapturableHorse(target)
+    target =>
+      sameMapSpace(unit, target) &&
+      (knowsEconomicTarget(unit.owner, target) || playerSeesTarget(unit.owner, target)) &&
+      isCapturableHorse(target)
   )
 }

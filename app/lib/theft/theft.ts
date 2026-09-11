@@ -1,3 +1,4 @@
+import { reportInteriorTheft } from '../../ai/AITheftDefense'
 import { applyDiplomaticAggression, type DiplomaticAggressionResult } from '../combat/diplomaticAggression'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
@@ -10,7 +11,7 @@ export const THEFT_SUBJECT_TYPES = {
 
 type TheftSubjectType = (typeof THEFT_SUBJECT_TYPES)[keyof typeof THEFT_SUBJECT_TYPES]
 
-type TheftActor = Pick<UnitEntity, 'context' | 'owner'> | null | undefined
+type TheftActor = (Pick<UnitEntity, 'context' | 'owner'> & Partial<UnitEntity>) | null | undefined
 
 type TheftOwnedTarget = Pick<RuntimeEntity, 'owner'> & Partial<RuntimeEntity>
 
@@ -62,6 +63,7 @@ export function applyTheftConsequences(event: TheftEvent): TheftResult {
         { reason: THEFT_REASONS[event.subject] }
       )
     : NO_THEFT_DIPLOMATIC_CHANGE
+  if (stolen && owner && event.actor?.family === 'unit') reportInteriorTheft(owner, event.actor as UnitEntity)
   return {
     diplomatic,
     stolen,

@@ -185,7 +185,7 @@ test('npc waits for full energy before resuming an action', () => {
 
   assert.equal(waitForEnergy(unit, 'chopwood', target), false)
   assert.equal(unit.waitingForEnergyAction, 'chopwood')
-  assert.deepEqual(__fatigueFeedbackCalls, [unit])
+  assert.deepEqual(__fatigueFeedbackCalls, [])
   assert.deepEqual(calls.slice(0, 4), [
     ['stopInterval'],
     ['setTextures', 'standingSheet'],
@@ -293,7 +293,7 @@ test('npc attack fatigue resumes after retreat movement stops the unit interval'
 
   assert.equal(waitForEnergy(unit, 'attack', target), false)
   assert.equal(unit.waitingForEnergyAction, 'attack')
-  assert.deepEqual(__fatigueFeedbackCalls, [unit])
+  assert.deepEqual(__fatigueFeedbackCalls, [])
   assert.equal(schedulerTasks.size, 1)
   assert.deepEqual(calls, [['stopInterval'], ['scheduler.add', 'unit.energyWait']])
   assert.deepEqual(__combatBehaviorCalls[0], ['enter', unit, target])
@@ -381,7 +381,7 @@ test('hero shows fatigue feedback but does not auto-resume when energy is missin
   assert.equal(waitForEnergy(unit, 'attack'), false)
   assert.equal(unit.waitingForEnergyAction, undefined)
   assert.deepEqual(calls, [])
-  assert.deepEqual(__fatigueFeedbackCalls, [unit])
+  assert.deepEqual(__fatigueFeedbackCalls, [])
   assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
 })
 

@@ -25,7 +25,7 @@ test('the agreed age 0 and age 1 costs and HP are applied exactly', () => {
     assert.equal(zero.constructionTime, one.constructionTime, 'work duration is not changed by this balance pass')
   }
   for (const age of [0, 1, 2]) {
-    assert.deepEqual(getBuildingConfigForAge(definitions.Farm, age).cost, { wood: 10 })
+    assert.deepEqual(getBuildingConfigForAge(definitions.Farm, age).cost, { wheat: 20 })
   }
 })
 

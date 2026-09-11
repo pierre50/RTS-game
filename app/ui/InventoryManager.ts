@@ -22,6 +22,8 @@ import {
 import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
 import { AGE_PROGRESSION, isAgeObjectiveComplete, type AgeObjectiveDefinition } from '../lib/objectives/ageObjectives'
 import { ModalTabs } from './Tabs'
+import { capitalizeFirstLetter } from '../lib/extra'
+import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
@@ -35,6 +37,7 @@ import { createInventoryEquipmentIcon } from './inventory/InventoryItemIcons'
 import { createEquipmentRowInfo } from './inventory/InventoryTooltips'
 import { renderEquipmentAvatarLazy } from './equipment/EquipmentAvatar'
 import { renderBuildingAvatar } from '../lib/avatar'
+import type { UnitEntity } from '../types/entities'
 import type { ResourceAmount } from '../types/common'
 import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'
@@ -409,10 +412,23 @@ export class InventoryManager {
     }
   }
 
-  formatResourceAmount(cost: ResourceAmount): string {
-    return Object.entries(cost)
-      .map(([resource, amount]) => `${amount} ${t(resource)}`)
-      .join(', ')
+  getCraftCostMetaParts(cost: ResourceAmount, hero: UnitEntity | null | undefined): Array<{ text: string; className: string }> {
+    const { player } = this.menu.context
+    const totals = getPlayerResourceTotals(player, { hero, includeHero: Boolean(hero) })
+    const formatResourceLabel = (resource: string): string => capitalizeFirstLetter(t(resource))
+    const parts = Object.entries(cost)
+      .map(([resource, amount]) => {
+        const needed = Math.max(0, Math.floor(amount ?? 0))
+        if (needed <= 0) return null
+        const available = Math.max(0, Math.floor((totals[resource as keyof ResourceAmount] ?? 0)))
+        const hasEnough = available >= needed
+        return {
+          text: `${formatResourceLabel(resource)} ${available}/${needed}`,
+          className: hasEnough ? 'inventory-cost-is-available' : 'inventory-cost-is-missing',
+        }
+      })
+      .filter((part): part is { text: string; className: string } => Boolean(part))
+    return parts
   }
 
   getCraftMissingResourceMessage(cost: ResourceAmount): string {
@@ -435,7 +451,8 @@ export class InventoryManager {
       disabled,
       title: t(recipe.labelKey),
       description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
-      meta: t('tooltipCost', { cost: this.formatResourceAmount(recipe.cost) }),
+      meta: '',
+      metaParts: this.getCraftCostMetaParts(recipe.cost, hero),
       trailingAction: {
         disabled,
         label: t('inventoryTabCraft'),

@@ -1,5 +1,6 @@
 import { AGE_GATE_MAX_UNLOCKABLE_VALUE, AGE_UP_ENABLED } from '../constants'
 import { AIMilitary } from './AIMilitary'
+import { villagePhase } from './AIDevelopmentPolicy'
 import { buyAIBuildingIfNeeded, buyAIWheatFieldIfNeeded, handleAIBuildingActions } from './AIStrategyBuilding'
 import {
   addBuildingReserve as runAddBuildingReserve,
@@ -96,18 +97,7 @@ export class AIStrategy {
 
   updatePhase(villagersCount: number): string {
     const { ai, difficultyConfig } = this
-    if (ai.phase === 'economy' && villagersCount >= difficultyConfig.econToMilVillagers) {
-      ai.phase = 'military_build'
-      return 'military_build'
-    }
-    if (ai.phase === 'military_build' && villagersCount < Math.floor(difficultyConfig.econToMilVillagers * 0.6)) {
-      ai.phase = 'economy'
-      return 'economy'
-    }
-    if ((ai.phase as string) === 'attack') {
-      ai.phase = 'military_build'
-      return 'military_build'
-    }
+    ai.phase = villagePhase(ai.phase, villagersCount, difficultyConfig.econToMilVillagers) as typeof ai.phase
     return ai.phase
   }
 
@@ -187,5 +177,4 @@ export class AIStrategy {
   handleBuildingActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
     return handleAIBuildingActions(this, snapshot, debug)
   }
-
 }

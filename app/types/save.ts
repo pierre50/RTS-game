@@ -21,6 +21,8 @@ export type SaveRallyPoint = SaveGridPoint & { direction: number }
 type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValue } } | null
 
 export type SaveEntityState = {
+  offlineBuilderJob?: VillagerAutonomyJob
+  factionExpedition?: FactionExpeditionSave
   caveOrders?: Pick<SaveEntityState, 'action' | 'dest' | 'previousDest' | 'path' | 'realDest'>
   resourceDelivery?: {
     building?: SaveReference | null
@@ -88,6 +90,7 @@ export type SaveEntityState = {
   }
   indestructible?: boolean
   followingHero?: boolean
+  pendingRescueThanks?: boolean
   isFleeing?: boolean
   isUsedBy?: string | null
   j: number
@@ -160,6 +163,9 @@ export type SavedAIState = {
 }
 
 export type SavePlayerState = PlayerSetupConfig & {
+  abstractProductionRemainder?: Record<string, number>
+  offlineBuildingDecision?: string
+  offlineBuildingPlanDay?: number
   targetKnowledge?: TargetObservation[]
   age?: number
   ageRulesVersion?: number
@@ -321,10 +327,47 @@ export type CampaignSave = {
   clock?: CampaignClockSave
   currentWorldId: string
   factions?: Record<string, FactionSave>
+  economy?: CampaignEconomySave
   heroParty: HeroPartySave
   sharedResources?: ResourceAmount
   worlds: Record<string, CampaignWorldSave>
   worldGraph: WorldGraphSave
+}
+
+export type RegionEconomySave = {
+  regionId: string
+  worldId?: string
+  // Only unvisited regions own a snapshot here; visited regions use campaign.worlds.
+  initialState?: SerializedSave
+  terrain: string[]
+  simulatedUntilMs: number
+  summaries: Record<string, {
+    population: number
+    populationMax: number
+    stocks: ResourceAmount
+    military: Record<string, number>
+    buildings: Record<string, number>
+    constructionProjects: number
+    constructionDecision?: string
+    trainingProjects: number
+  }>
+}
+
+export type CampaignEconomySave = {
+  lastFactionRaidDays?: Record<string, number>
+  version: 1
+  initialized?: boolean
+  regions: Record<string, RegionEconomySave>
+}
+
+export type FactionExpeditionSave = {
+  raidId: string
+  factionId: string
+  regionId: string
+  playerLabel: string
+  original: SaveEntityState
+  phase: 'approaching' | 'parley' | 'hostile' | 'leaving'
+  tribute: ResourceAmount
 }
 
 export type GameConfig = {

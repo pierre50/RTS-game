@@ -1,3 +1,4 @@
+import { economyAfterWorldSave } from '../services/world/WorldEconomy'
 import type {
   CampaignSave,
   CampaignWorldSave,
@@ -197,6 +198,7 @@ export function updateCurrentWorldState(campaign: CampaignSave, state: Serialize
   return {
     ...campaign,
     clock: campaignClockFromWorld(state, now),
+    economy: economyAfterWorldSave(campaign, campaign.currentWorldId, state),
     heroParty: {
       ...campaign.heroParty,
       playerLabel: state.players.find(player => player.isPlayed)?.label ?? campaign.heroParty.playerLabel,
@@ -255,6 +257,7 @@ export function addChildWorldToCampaign(
   return {
     ...campaign,
     clock: campaignClockFromWorld(childState, now),
+    economy: economyAfterWorldSave(campaign, id, childState),
     factions: {
       ...(campaign.factions ?? {}),
       ...factions,

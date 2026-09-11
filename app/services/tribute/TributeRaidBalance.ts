@@ -2,8 +2,9 @@ import { UNIT_TYPES } from '../../constants'
 import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { ResourceAmount } from '../../types/common'
 import type { FactionSave } from '../../types/save'
-import { FACTION_RAID_MIN_HATE, roundTributeCost } from '../TributeRaidRules'
+import { FACTION_RAID_MIN_HATE, FACTION_RAID_INTERVAL_DAYS, roundTributeCost } from '../TributeRaidRules'
 import type { TributeRaidSystem } from '../TributeRaidSystem'
+import { selectFactionRaidArmy } from './FactionRaidEconomy'
 
 export function isBaseWorld(runtime: TributeRaidSystem): boolean {
   const graph = runtime.context.getWorldGraph?.()
@@ -19,6 +20,11 @@ export function findAngryKnownFaction(
   const factions = Object.values(runtime.context.getCampaignFactions?.() ?? {})
   const angry = factions
     .filter(faction => faction.id !== BANDIT_FACTION_ID && faction.relationScore <= FACTION_RAID_MIN_HATE)
+    .filter(faction => selectFactionRaidArmy(runtime.context, faction.id) !== null)
+    .filter(faction => {
+      const last = runtime.context.getCampaignEconomy?.()?.lastFactionRaidDays?.[faction.id]
+      return last == null || (runtime.context.dayNight?.state?.day ?? 1) - last >= FACTION_RAID_INTERVAL_DAYS
+    })
     .sort((a, b) => a.relationScore - b.relationScore)
   const worst = angry[0]
   if (!worst) return null

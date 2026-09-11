@@ -1,4 +1,5 @@
 import { assignAIBuildingMaterials } from './AIEconomyBuildingMaterials'
+import { knowsNativeResources } from '../lib/campaign/nativeEconomy'
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getClosestInstance, instancesDistance, isWheatMature } from '../lib'
 import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
@@ -152,6 +153,7 @@ export class AIEconomy {
   }
 
   hasUnexploredCells(): boolean {
+    if (knowsNativeResources(this.ai)) return false
     if (this._exploredAll) return false
     const { views } = this.ai
     if (!views) return false

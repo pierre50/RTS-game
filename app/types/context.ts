@@ -10,7 +10,7 @@ import type {
 } from './entities'
 import type { MenuButtonSpec, MinimapPlayerCanvas, TooltipContent, TooltipSource } from './ui'
 import type { HeroEquippedItem } from './heroTools'
-import type { FactionSave, SaveWeatherState, SerializedSave, WorldGraphSave } from './save'
+import type { CampaignEconomySave, FactionSave, SaveWeatherState, SerializedSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
 
 export interface DayNightStateLike {
@@ -312,6 +312,8 @@ export interface GameContextLike {
   getWorldGraph?: () => WorldGraphSave | null
   getCampaignWorldState?: (worldId: string) => SerializedSave | null
   getCampaignFactions?: () => Record<string, FactionSave> | null
+  updateWorldEconomy?: () => void
+  getCampaignEconomy?: () => CampaignEconomySave | null
   changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void
   debugTeleportWorldMap?: (target: { worldI: number; worldJ: number; worldRegionId: string }) => void
   getCurrentWorldId?: () => string | null

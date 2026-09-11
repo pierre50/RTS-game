@@ -63,6 +63,7 @@ export function applyPortableUnitState(
     energy: source.energy,
     experience: cloneRecord(source.experience),
     followingHero: source.followingHero,
+    pendingRescueThanks: source.pendingRescueThanks,
     gender: (source as { gender?: unknown }).gender,
     healthRegenDelay: source.healthRegenDelay,
     healthRegenMultiplier: source.healthRegenMultiplier,

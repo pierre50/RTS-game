@@ -23,7 +23,7 @@ import {
   shouldSuppressAggroDuringCombatRecovery,
 } from '../../lib/combat/combatBehavior'
 import {
-  showAggressionFeedback,
+  cancelPendingAggression,
   showAlertFeedback,
   showAlertThenAggressionFeedback,
 } from '../../lib/combat/combatFeedback'
@@ -77,7 +77,7 @@ export class AnimalCombat {
         animal.runaway(instance, hitDirection)
         return
       }
-      showAggressionFeedback(animal)
+      cancelPendingAggression(animal)
       animal.sendTo(instance, ACTION_TYPES.attack, { movementSheet: this.getAttackMovementSheet() })
     }
   }

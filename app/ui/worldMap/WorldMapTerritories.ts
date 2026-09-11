@@ -1,17 +1,17 @@
 import { findMapTerritoryOwner, territoryPlayerKey, type TerritoryPlayer } from '../../lib/campaign/mapTerritory'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
-import { getHexColor } from '../../lib/graphics/colors'
+import { worldMapPlayerColor } from './WorldMapPlayerColor'
 import type { MenuHost } from '../MenuHost'
 import type { MacroWorldManifest, MacroWorldRegion, MacroWorldSettlement } from './WorldMapTypes'
 import { settlementPlayerColor } from './WorldMapLegend'
 
 type Territory = { key: string; color: string; region: MacroWorldRegion }
 
-function ownerTerritory(owner: TerritoryPlayer | null, region: MacroWorldRegion): Territory | null {
+function ownerTerritory(menu: MenuHost, owner: TerritoryPlayer | null, region: MacroWorldRegion): Territory | null {
   if (!owner) return null
   const key = owner.factionId || (owner.civ ? factionIdForCivilization(owner.civ) : territoryPlayerKey(owner))
-  const color = owner.colorHex || owner.color
-  return key && color ? { key, color: color.startsWith('#') ? color : getHexColor(color), region } : null
+  const color = worldMapPlayerColor(menu, owner)
+  return key && color ? { key, color, region } : null
 }
 
 function settlementsInRegion(manifest: MacroWorldManifest, region: MacroWorldRegion): MacroWorldSettlement[] {
@@ -46,7 +46,7 @@ export function resolveWorldMapTerritories(menu: MenuHost, manifest: MacroWorldM
       (context.map.worldRegion?.x === region.x && context.map.worldRegion?.y === region.y)
     const players = current ? context.players : (savedRegions.get(id) ?? savedRegions.get(`r${region.x}-${region.y}`))
     if (players) {
-      const territory = ownerTerritory(findMapTerritoryOwner<TerritoryPlayer>(players, settlements), region)
+      const territory = ownerTerritory(menu, findMapTerritoryOwner<TerritoryPlayer>(players, settlements), region)
       if (territory) territories.push(territory)
       continue
     }

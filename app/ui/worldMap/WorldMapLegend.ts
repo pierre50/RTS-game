@@ -1,4 +1,6 @@
 import { t } from '../../lib/lang'
+import { PLAYER_TYPES } from '../../constants'
+import { worldMapPlayerColor } from './WorldMapPlayerColor'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import { getHexColor } from '../../lib/graphics/colors'
 import type { MenuHost } from '../MenuHost'
@@ -14,11 +16,6 @@ type WorldMapLegendEntry = {
   variant?: 'bandits'
 }
 
-function cssColor(color: string | null | undefined): string | null {
-  if (!color) return null
-  return color.startsWith('#') ? color : getHexColor(color)
-}
-
 function factionForSettlement(menu: MenuHost, settlement: MacroWorldSettlement): FactionSave | null {
   const factions = menu.context.getCampaignFactions?.()
   return (
@@ -30,24 +27,33 @@ function factionForSettlement(menu: MenuHost, settlement: MacroWorldSettlement):
 }
 
 function playerForSettlement(menu: MenuHost, settlement: MacroWorldSettlement) {
-  const players = menu.context.players ?? []
+  const eligible = (player: (typeof menu.context.players)[number]) =>
+    player.type !== PLAYER_TYPES.gaia && player.type !== PLAYER_TYPES.bandits
+  const players = (menu.context.players ?? []).filter(eligible)
+  const factionPlayer = settlement.factionId ? players.find(player => player.factionId === settlement.factionId) : null
   const civilizationPlayer = settlement.civ ? players.find(player => player.civ === settlement.civ) : null
   const indexedPlayer =
-    typeof settlement.playerIndex === 'number' && settlement.playerIndex >= 0 ? players[settlement.playerIndex] : null
+    typeof settlement.playerIndex === 'number' && settlement.playerIndex >= 0
+      ? menu.context.players?.[settlement.playerIndex]
+      : null
   const matchingIndexedPlayer =
-    indexedPlayer && (!settlement.civ || indexedPlayer.civ === settlement.civ) ? indexedPlayer : null
-  return civilizationPlayer ?? matchingIndexedPlayer ?? null
+    indexedPlayer && eligible(indexedPlayer) && (!settlement.civ || indexedPlayer.civ === settlement.civ)
+      ? indexedPlayer
+      : null
+  return factionPlayer ?? civilizationPlayer ?? matchingIndexedPlayer ?? null
 }
 
 export function settlementPlayerColor(menu: MenuHost, settlement: MacroWorldSettlement): string | null {
   if (settlement.kind !== 'village' && settlement.kind !== 'city') return null
 
   const player = playerForSettlement(menu, settlement)
-  const playerColor = cssColor(player?.colorHex ?? player?.color)
-  if (playerColor) return playerColor
-
   const faction = factionForSettlement(menu, settlement)
-  return cssColor(faction?.color)
+  return worldMapPlayerColor(menu, {
+    ...player,
+    civ: settlement.civ ?? player?.civ,
+    factionId: faction?.id ?? player?.factionId,
+    color: player?.color ?? faction?.color,
+  })
 }
 
 function relationLabel(relation: FactionRelationState): string {
@@ -64,7 +70,7 @@ function relationLabel(relation: FactionRelationState): string {
 function legendEntryForSettlement(menu: MenuHost, settlement: MacroWorldSettlement): WorldMapLegendEntry | null {
   if (settlement.kind === 'banditCamp') {
     return {
-      color: getHexColor('grey'),
+      color: getHexColor('black'),
       key: 'bandits',
       name: t('worldMapBandits'),
       relation: 'hostile',

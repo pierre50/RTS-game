@@ -9,7 +9,6 @@ import {
   getInstanceDegree,
   getInstancePath,
   markVillagerAutonomyTargetRejected,
-  showBlockedFeedback,
 } from '../../../lib'
 import { debugCombatMove } from './UnitMovementDebug'
 import {
@@ -194,7 +193,6 @@ export class UnitMovementRouting {
     if (resumeAutonomyBeforeStopping(unit)) {
       return
     } else {
-      showBlockedFeedback(unit)
       unit.affectNewDest?.()
     }
   }
@@ -211,7 +209,6 @@ export class UnitMovementRouting {
     ) {
       return
     }
-    showBlockedFeedback(unit)
     if (action) unit.affectNewDest?.()
     else if (!resumeAutonomyBeforeStopping(unit)) unit.stop?.()
   }

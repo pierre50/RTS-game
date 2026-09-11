@@ -1,4 +1,5 @@
 import { Assets } from 'pixi.js'
+import { validateWorldEconomy } from './WorldEconomyValidation'
 import { isDerivedInteriorHorse } from './InteriorBuildingSave'
 import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../types/save'
 import { CAMPAIGN_SAVE_FORMAT, getCurrentWorldState, isCampaignSave } from './CampaignSave'
@@ -57,6 +58,7 @@ export function validateSaveData(data: unknown): SaveRecord {
     if (!isObject(world)) fail('Invalid save file: current campaign world is missing.')
     if (world.id !== data.currentWorldId) fail('Invalid save file: current campaign world id is invalid.')
     validateSaveData(getCurrentWorldState(data))
+    if (data.economy) validateWorldEconomy(data, getLoadedConfig())
     return data
   }
 

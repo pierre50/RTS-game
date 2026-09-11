@@ -18,7 +18,6 @@
     "dist": "pnpm build && electron-builder",
     "compile": "pnpm dist",
     "deploy": "pnpm build && gh-pages -d build",
-    "maps:generate": "node tools/generate-maps.cjs",
     "world:macro": "python3 tools/generate-macro-world.py",
     "world:generate": "node tools/generate-world-maps.cjs",
     "caves:generate": "node tools/generate-cave-maps.cjs",

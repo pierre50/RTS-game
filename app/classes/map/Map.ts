@@ -2,14 +2,12 @@ import { Container, type ContainerChild, type Graphics, type Texture, type Ticke
 import { updateNeighborSceneryVisibility } from './NeighborScenery'
 import type { LocalMapLayout } from '../../lib/localMapLayout'
 import { CELL_WIDTH } from '../../constants'
-import type { EnvironmentTerrainParams } from '../../constants'
 import {
   MapGeneration,
   type GenerateMapOptions,
   type MapBlueprint,
   type MapSettlement,
   type SavedGameData,
-  type TerrainGrid,
 } from './MapGeneration'
 import { MapResources, type ResourceDensity } from './resources/MapResources'
 import { MapTerrain, type ReliefLevelBounds } from './terrain/MapTerrain'
@@ -331,14 +329,6 @@ export default class Map extends Container {
     return this.mapGeneration.generateFromJSON(data)
   }
 
-  generateMapAsync(
-    positionsCountOverride: number | null = null,
-    repeat: number = 0,
-    options?: GenerateMapOptions
-  ): Promise<void> {
-    return this.mapGeneration.generateMapAsync(positionsCountOverride, repeat, options)
-  }
-
   generateFromBlueprint(blueprint: MapBlueprint, options?: GenerateMapOptions): Promise<void> {
     return this.mapGeneration.generateFromBlueprint(blueprint, options)
   }
@@ -365,18 +355,6 @@ export default class Map extends Container {
 
   placePlayers(): void {
     return this.mapGeneration.placePlayers()
-  }
-
-  generateCells(): void {
-    return this.mapGeneration.generateCells()
-  }
-
-  generateCellsAsync(options?: GenerateMapOptions): Promise<void> {
-    return this.mapGeneration.generateCellsAsync(options)
-  }
-
-  generateTerrain(gridSize: number = 120, seed?: number, params?: Partial<EnvironmentTerrainParams>): TerrainGrid {
-    return this.mapGeneration.generateTerrain(gridSize, seed, params)
   }
 
   generateSets(): void {

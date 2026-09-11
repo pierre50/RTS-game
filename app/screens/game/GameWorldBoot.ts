@@ -1,4 +1,7 @@
 import { definedProperties } from '../../lib/definedProperties'
+import { economyRulesFor, initializeCampaignEconomy } from '../../services/world/WorldEconomyRuntime'
+import { placeInitialVillageUnits } from '../../services/world/InitialVillagePlacement'
+import { materializeInitialEconomy } from '../../services/world/WorldEconomy'
 import { t } from '../../lib/lang'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import { DEFAULT_WORLD_ID } from '../../config/worlds'
@@ -132,12 +135,32 @@ export async function bootGameFromConfig(
     })
   )
   await measureAsync(game, 'boot.stylishMap', () => map.stylishMap({ onProgress: reportProgress(game) }))
+  const previousCampaign = game._campaignSave
+  if (previousCampaign?.economy && map.worldRegionId) {
+    const economy = previousCampaign.economy.regions[map.worldRegionId]?.initialState
+    if (economy) {
+      const generated = materializeInitialEconomy(serializeGame(game._gameContext()), economy, options.dayNightElapsedMs ?? 0)
+      placeInitialVillageUnits(generated, new Set(economy.players.flatMap(p => p.factionId ? [p.factionId] : [])),
+        map.grid, economyRulesFor(generated))
+      await preloadSavedPlayerAssets(game, generated)
+      map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(generated))
+    }
+  }
+  if (!previousCampaign) {
+    game._campaignSave = ensureCampaignPlayerRoster(createInitialCampaignSave(serializeGame(game._gameContext())))
+    await initializeCampaignEconomy(game._campaignSave, game._gameContext(), (worldRegionId, size) =>
+      game._loadRequiredWorldMapBlueprint({ worldId, worldRegionId, size, playerCiv: human.civ })
+    )
+  }
   await game._updateLoading('finalizingWorld', 0.96)
   measure(game, 'boot.controlsInit', () => game.context.controls?.init?.())
 
   measure(game, 'boot.mountRuntime', () => game._mountRuntime(options.dayNightElapsedMs))
+  if (previousCampaign) game._gameContext().unitRest?.synchronizeAfterTimeJump?.()
   game.context.performance?.setPhase?.('runtime')
-  game._campaignSave = ensureCampaignPlayerRoster(createInitialCampaignSave(serializeGame(game._gameContext())))
+  if (!previousCampaign) {
+    game._campaignSave!.worlds[game._campaignSave!.currentWorldId]!.state = serializeGame(game._gameContext())
+  }
   game._autosaveCampaign()
 }
 
@@ -201,6 +224,12 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   measure(game, 'seedSave.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'seedSave.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
   restoreSavedRuntimeState(game, json)
+  if (game._campaignSave && !game._campaignSave.economy?.initialized && !isInteriorWorld) {
+    await initializeCampaignEconomy(game._campaignSave, game._gameContext(), (worldRegionId, size) =>
+      game._loadRequiredWorldMapBlueprint({ worldId: seedConfig.worldId ?? DEFAULT_WORLD_ID, worldRegionId, size,
+        playerCiv: game.context.player?.civ })
+    )
+  }
 }
 
 async function preloadSavedPlayerAssets(game: GameWorldBootHost, json: SerializedSave): Promise<void> {

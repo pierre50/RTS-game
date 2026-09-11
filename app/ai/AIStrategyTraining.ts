@@ -3,7 +3,8 @@ import type { AIStrategy } from './AIStrategy'
 import { addResourceAmounts } from './AIStrategyResources'
 import type { AIBuildingLike, AIEntityLike, AIResourceAmount, AIStrategySnapshot } from './types'
 
-const AI_BUILDING_TRAINING_CAPACITY = 5
+import { AI_BUILDING_TRAINING_CAPACITY } from './config'
+import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
 function hasAiBuildingTrainingCapacity(building: AIBuildingLike): boolean {
   const active = building.loading != null || building.trainingUnit ? 1 : 0
   const queued = Math.max(0, (building.queue?.length ?? 0) - active)
@@ -65,7 +66,7 @@ export function trainUnits(
   const unitsNeeded = maxCount - currentCount
   let trainingOrders = 0
   if (unitsNeeded <= 0) return 0
-  const unitCost = strategy.ai.config.units[unitType]?.cost || {}
+  const unitCost = getUnitTrainingCost(strategy.ai, unitType)
   let reservedForOrders = reserve
   const candidates = villagers.filter(
     villager =>

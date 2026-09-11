@@ -220,6 +220,10 @@ test('neutral entity interaction transfers ownership to the interacting player',
   neutral.units.push(target)
 
   assert.equal(transferNeutralEntityToPlayer(target, player), true)
+  assert.equal(target.pendingRescueThanks, true)
+  target.pendingRescueThanks = false
+  assert.equal(transferNeutralEntityToPlayer(target, player), false)
+  assert.equal(target.pendingRescueThanks, false)
   assert.equal(target.owner, player)
   assert.deepEqual(neutral.units, [])
   assert.deepEqual(player.units, [target])

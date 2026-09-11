@@ -724,3 +724,30 @@ test('full portal destination makes a source-cell traveler wait away from the pa
   assert.deepEqual(sent[0][1], null)
   assert.deepEqual(sent[0][2], { forceRepath: true, preserveAutonomy: true })
 })
+
+test('portal capacity and pursuit guards are checked before transfer', () => {
+  const { transferUnitThroughSpacePortal } = loadSpacePortalSystem()
+  const { context, portal } = createSplitPortalContext()
+  const unit = {
+    context,
+    label: 'guard',
+    spaceId: portal.sourceSpaceId,
+    currentCell: portal.sourceCell,
+    i: portal.sourceCell.i,
+    j: portal.sourceCell.j,
+  }
+  let transferred = false
+  for (const guards of [{ canTransfer: () => false }, { shouldContinue: () => false }]) {
+    assert.equal(
+      transferUnitThroughSpacePortal(context, unit, portal, {
+        ...guards,
+        onTransferred: () => {
+          transferred = true
+        },
+      }),
+      false
+    )
+    assert.equal(unit.spaceId, portal.sourceSpaceId)
+    assert.equal(transferred, false)
+  }
+})

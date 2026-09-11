@@ -5,6 +5,19 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+test('pending and consumed rescue thanks survive save and travel state copying', () => {
+  const { applyPortableUnitState } = loadTsModule('app/screens/game/GameStateHelpers.ts')
+  for (const pending of [true, false]) {
+    const context = makeContext()
+    context.players[0].units = [{ type: 'Villager', i: 1, j: 1, pendingRescueThanks: pending }]
+    const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
+    assert.equal(saved.pendingRescueThanks, pending)
+    const target = {}
+    applyPortableUnitState(target, saved)
+    assert.equal(target.pendingRescueThanks, pending)
+  }
+})
+
 test('saving preserves the selected hero tool separately from inventory', () => {
   const context = makeContext()
   for (const item of ['interact', 'sword', 'bow', null]) {
@@ -168,6 +181,24 @@ function makeContext(mapOverrides = {}) {
     },
   }
 }
+
+test('faction expedition origin and phase survive serialization without shared live references', () => {
+  const context = makeContext()
+  const expedition = {
+    raidId: 'raid-1',
+    factionId: 'civ-hellas',
+    regionId: 'home',
+    playerLabel: 'ai',
+    original: { type: 'Fantassin', label: 'soldier', i: 3, j: 4, hitPoints: 20 },
+    phase: 'hostile',
+    tribute: { gold: 50 },
+  }
+  context.players[0].units.push({ type: 'Fantassin', label: 'soldier', i: 0, j: 0, factionExpedition: expedition })
+  const saved = serializeGame(context)
+  assert.deepEqual(saved.players[0].units[0].factionExpedition, expedition)
+  expedition.phase = 'leaving'
+  assert.equal(saved.players[0].units[0].factionExpedition.phase, 'hostile')
+})
 
 test('building saves include concurrent recruits and pending unit training orders without live references', () => {
   const { serializeGame } = loadSaveSerializer()

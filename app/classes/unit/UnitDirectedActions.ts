@@ -111,6 +111,7 @@ export class UnitDirectedActions {
       return
     }
     unit.setTextures?.(SHEET_TYPES.action)
+    let feedbackTarget: RuntimeEntity | null = null
     sprite.onLoop = () => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
@@ -131,7 +132,10 @@ export class UnitDirectedActions {
           dest.totalHitPoints ?? 0
         )
         const healedAmount = (dest.hitPoints ?? 0) - beforeHitPoints
-        if (healedAmount > 0) showHealingFeedback(dest)
+        if (healedAmount > 0 && feedbackTarget !== dest) {
+          showHealingFeedback(dest)
+          feedbackTarget = dest
+        }
         grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
         if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
           syncEntityHealthDisplay(dest, { menu, player })

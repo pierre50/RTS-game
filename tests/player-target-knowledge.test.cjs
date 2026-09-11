@@ -12,6 +12,30 @@ function scene() {
   owner.views.addViewer(9, 0, archer)
   return { owner, chief, archer, hero }
 }
+
+test('native AI knows resources without revealing foreign units or buildings of any relation', () => {
+  const { owner, hero } = scene()
+  Object.assign(owner, { type: 'AI', civ: 'Hellas', context: {
+    map: { mapType: 'world-region', settlements: [{ kind: 'village', civ: 'Hellas' }] },
+  } })
+  owner.buildings.push({ type: 'TownCenter', isBuilt: true, i: 0, j: 0, sight: 3 })
+  const tree = { label: 'remote-tree', type: 'Tree', family: 'resource', i: 25, j: 25, quantity: 100 }
+  assert.equal(knowledge.playerSeesTarget(owner, tree), false)
+  assert.equal(knowledge.knownTarget(owner, tree).quantity, 100)
+  tree.quantity = 20
+  assert.equal(knowledge.knownTarget(owner, tree).quantity, 20)
+  assert.equal(owner.views.isViewed(25, 25), false)
+  for (const relation of ['ally', 'neutral', 'enemy']) {
+    for (const family of ['unit', 'building', 'animal']) {
+      const target = { ...hero, label: `${relation}-${family}`, family, i: 25, j: 25, owner: { relation } }
+      assert.equal(knowledge.playerSeesTarget(owner, target), false)
+      assert.equal(knowledge.knownTarget(owner, target), undefined)
+    }
+  }
+  assert.equal(knowledge.knownTarget(owner, { ...tree, label: 'interior-tree', spaceId: 'interior:cave' }), undefined)
+  owner.context.map.settlements = [{ kind: 'village', civ: 'Kemet' }]
+  assert.equal(knowledge.knownTarget(owner, { ...tree, label: 'foreign-tree' }), undefined)
+})
 test('another unit shares detection; camera visibility and explored terrain never grant knowledge', () => {
   const { owner, hero } = scene()
   assert.equal(knowledge.playerSeesTarget(owner, hero), true)
@@ -35,7 +59,7 @@ test('interior and exterior sightings are separate, and stealth applies to every
   archer.i = 5
   assert.equal(knowledge.playerSeesTarget(owner, hero), false)
 })
-test('resource changes stay unknown until the player sees the resource again', () => {
+test('resource changes remain unknown on unexplored terrain', () => {
   const { owner, archer, hero } = scene()
   const tree = { ...hero, type: 'Tree', family: 'resource', quantity: 10 }
   knowledge.observeTarget(owner, tree)
@@ -45,6 +69,46 @@ test('resource changes stay unknown until the player sees the resource again', (
   assert.equal(knowledge.knownTarget(owner, tree).quantity, 10)
   owner.views.addViewer(9, 0, archer)
   assert.equal(knowledge.knownTarget(owner, tree).quantity, 0)
+})
+
+test('explored fog refreshes regrowth and new wildlife without revealing other players', () => {
+  for (const type of ['Human', 'AI']) {
+    const { owner } = scene()
+    owner.type = type
+    owner.views.setViewed(25, 25)
+    const tree = { label: 'new-tree', type: 'Tree', family: 'resource', i: 25, j: 25, quantity: 0, isDestroyed: true }
+    assert.equal(knowledge.knownTarget(owner, tree).quantity, 0)
+    tree.quantity = 100
+    tree.isDestroyed = false
+    assert.equal(knowledge.knownTarget(owner, tree).quantity, 100)
+    const animal = { ...tree, label: 'new-deer', family: 'animal', type: 'Deer', owner: { type: 'Gaia' } }
+    assert.ok(knowledge.knownTarget(owner, animal))
+    assert.equal(knowledge.playerSeesTarget(owner, animal), false)
+    for (const family of ['unit', 'building', 'animal', 'resource']) {
+      const foreign = { ...animal, family, label: `foreign-${family}`, owner: { type: 'Human' } }
+      assert.equal(knowledge.knownTarget(owner, foreign), undefined)
+    }
+    assert.equal(knowledge.knownTarget(owner, { ...animal, label: 'tamed', tamingStatus: 'tamed' }), undefined)
+    assert.equal(knowledge.knownTarget(owner, { ...tree, label: 'interior', spaceId: 'interior:cave' }), undefined)
+    assert.equal(knowledge.knownTarget(owner, { ...tree, label: 'unexplored', i: 26 }), undefined)
+    const snapshot = knowledge.exportTargetKnowledge(owner)
+    knowledge.restoreTargetKnowledge(owner, snapshot)
+    tree.quantity = 50
+    assert.equal(knowledge.knownTarget(owner, tree).quantity, 50)
+  }
+})
+
+test('a nonempty resource cache does not hide a new regrowth in explored fog', () => {
+  const { owner } = scene()
+  owner.views.setViewed(25, 25)
+  const old = { label: 'old', family: 'resource', type: 'Tree', i: 25, j: 25, quantity: 0 }
+  const fresh = { ...old, label: 'fresh', quantity: 100 }
+  owner.foundedResources = { Tree: new Set([old]) }
+  const { knownResources } = loadTsModule('app/lib/units/autonomy/villagerKnownTargets.ts', {
+    mocks: { '../playerTargetKnowledge': knowledge },
+  })
+  const unit = { owner, i: 0, j: 0, context: { map: { resources: new Set([fresh]) } } }
+  assert.deepEqual(knownResources(unit, 'Tree'), [fresh])
 })
 test('lost targets route to the remembered cell and resume only after shared detection', () => {
   const { owner, chief, hero } = scene()

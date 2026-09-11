@@ -5,6 +5,22 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
+test('an obsolete AI cannot remove a restored player and death is idempotent', () => {
+  const AI = loadAI()
+  const removed = []
+  const restored = { label: 'restored' }
+  const players = [restored]
+  const ai = Object.create(AI.prototype)
+  Object.assign(ai, { _stepTaskId: 42, context: { players, scheduler: { remove: id => removed.push(id) } } })
+  ai.die()
+  ai.die()
+  assert.deepEqual(players, [restored])
+  assert.deepEqual(removed, [42])
+  players.unshift(ai)
+  ai.die()
+  assert.deepEqual(players, [restored])
+})
+
 function loadAI() {
   const filename = path.join(__dirname, '../app/classes/players/AIPlayer.ts')
   const source = fs.readFileSync(filename, 'utf8')
@@ -30,7 +46,9 @@ function loadAI() {
     new Function('module', 'exports', 'require', moduleCode)(tsModule, tsModule.exports, localRequire)
     return tsModule.exports
   }
+  const defenseMocks = { '../../ai/AITheftDefense': { handleInteriorTheftDefense: () => false, isInteriorTheftDefender: () => false } }
   const localRequire = request => {
+    if (defenseMocks[request]) return defenseMocks[request]
     if (request.endsWith('/playerTargetKnowledge'))
       return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
     if (request.endsWith('/targetPursuit'))
@@ -60,7 +78,7 @@ function loadAI() {
     }
     if (request === '../../ai/AIStrategy') return { AIStrategy: class {} }
     if (request === '../../ai/AIEconomy') return { AIEconomy: class {} }
-    if (request === './AIPlayerBehavior') return requireFromTsFile(request, filename, {})
+    if (request === './AIPlayerBehavior') return requireFromTsFile(request, filename, defenseMocks)
     if (request === '../../ai/AIThreatManager') {
       return loadAiTsModule('AIThreatManager')
     }
@@ -77,7 +95,7 @@ function loadAI() {
       }
     }
     if (request === '../../lib/lpc') return { refreshBakedLpcUnitAssets: () => {} }
-    return requireFromTsFile(request, filename, mocks)
+    return requireFromTsFile(request, filename, defenseMocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.AI

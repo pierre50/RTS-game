@@ -1,5 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, instancesDistance, scheduleUnitWalkAround } from '../../lib'
+import { showAlertFeedback } from '../../lib/combat/combatFeedback'
 import { isUnitRestWakeLocked } from '../rest/UnitRestRules'
 import type { SchedulerTaskId, GameContextLike } from '../../types/context'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -78,7 +79,10 @@ export class CampPatrolSystem {
         if (unit.action === ACTION_TYPES.attack && unit.dest) continue
 
         const target = this.findAggroTarget(unit)
-        if (target) unit.sendToAttack?.(target)
+        if (target) {
+          showAlertFeedback(unit)
+          unit.sendToAttack?.(target)
+        }
       }
     }
   }

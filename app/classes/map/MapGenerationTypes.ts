@@ -2,7 +2,7 @@ import type { PlacedCave } from '../../types/cave'
 import type { PreparedTerrainCell } from './generation/PreparedMapContent'
 import type { ContainerChild } from 'pixi.js'
 import type { LocalMapLayout } from '../../lib/localMapLayout'
-import type { EnvironmentTerrainParams, FAMILY_TYPES } from '../../constants'
+import type { FAMILY_TYPES } from '../../constants'
 import type { GameContextLike, MapRuntimeContext } from '../../types/context'
 import type { RuntimeEntity } from '../../types/entities'
 import type { GridPosition } from '../../types/grid'
@@ -15,7 +15,6 @@ import type { SavedPlayer } from './MapSaveRestoreTypes'
 
 export type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5 | 7
 type BlueprintTerrainValue = TerrainValue | string
-export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
 export type GaiaRespawnSlot = SaveEntityState & {
   context: GameContextLike
@@ -58,8 +57,6 @@ export type MapGenerationMap = RuntimeMap & {
   clearRenderChunks(): void
   resetRandom(stream?: number | string): void
   findPlayerPlaces(): GeneratedPosition[]
-  generateCells(): void
-  generateTerrain(gridSize?: number, seed?: number, params?: Partial<EnvironmentTerrainParams>): TerrainGrid
   fillWaterGaps(level?: number | null): Set<RuntimeCell>
   normalizeWaterTopology(
     level?: number | null,
@@ -111,7 +108,6 @@ export type CellDefinition = {
 
 export type GenerateMapOptions = {
   onProgress?: ProgressCallback
-  terrain?: TerrainGrid | null
 }
 
 type BlueprintResource = {

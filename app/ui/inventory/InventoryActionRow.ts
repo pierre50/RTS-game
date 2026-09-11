@@ -2,8 +2,15 @@ type InventoryActionRowHost = {
   playUiClick?(): void
 }
 
+type InventoryActionMetaPart = {
+  text: string
+  className?: string
+}
+
 type InventoryActionRowOptions = {
   badge?: string
+  metaClassName?: string
+  metaParts?: InventoryActionMetaPart[]
   className?: string
   disabled?: boolean
   id: string
@@ -75,7 +82,32 @@ export function createInventoryActionRow(
 
   const meta = document.createElement('span')
   meta.className = 'inventory-action-row-meta'
-  meta.textContent = options.meta ?? ''
+  if (options.metaClassName) meta.classList.add(options.metaClassName)
+  if (options.metaParts?.length) {
+    options.metaParts.forEach((part, index) => {
+      if (index > 0) {
+        const separator = document.createElement('span')
+        separator.textContent = ' | '
+        meta.appendChild(separator)
+      }
+      const text = document.createElement('span')
+      text.className = 'inventory-action-row-meta-part'
+      if (part.className) text.classList.add(part.className)
+      text.textContent = part.text
+      meta.appendChild(text)
+    })
+    if (options.meta) {
+      const separator = document.createElement('span')
+      separator.textContent = ' | '
+      meta.appendChild(separator)
+      const text = document.createElement('span')
+      text.className = 'inventory-action-row-meta-part'
+      text.textContent = options.meta
+      meta.appendChild(text)
+    }
+  } else {
+    meta.textContent = options.meta ?? ''
+  }
 
   if (options.hideIcon) element.append(label, description, meta)
   else element.append(icon, label, description, meta)

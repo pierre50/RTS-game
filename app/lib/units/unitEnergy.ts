@@ -6,7 +6,6 @@ import {
   isCombatRecoveryReadyToReengage,
   updateCombatRecoveryMovement,
 } from '../combat/combatBehavior'
-import { showFatigueFeedback } from '../combat/combatFeedback'
 import { t } from '../lang'
 import { getMiningActions } from './miningActions'
 import { isHeroControlled } from './unitControl'
@@ -253,7 +252,6 @@ export function waitForEnergy(
   ensureUnitEnergy(unit)
   const heroControlled = isHeroControlled(unit as UnitEntity)
   if (heroControlled) {
-    showFatigueFeedback(unit as UnitEntity)
     unit.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
     unit.actionLocked = false
     return false
@@ -261,7 +259,6 @@ export function waitForEnergy(
   unit.waitingForEnergyAction = action ?? null
   unit.waitingForEnergyTarget = target ?? (unit.dest && 'family' in unit.dest ? unit.dest : null)
   clearEnergyWaitTask(unit)
-  showFatigueFeedback(unit as UnitEntity)
   unit.stopInterval?.()
   unit.actionLocked = false
   if (!heroControlled && action === ACTION_TYPES.attack && unit.waitingForEnergyTarget) {

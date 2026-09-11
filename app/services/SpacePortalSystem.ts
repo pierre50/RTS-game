@@ -18,6 +18,9 @@ import type { RuntimeCell, RuntimeMapSpacePortal } from '../types/map'
 const SPACE_PORTAL_CHECK_INTERVAL_MS = 250
 
 export type SpacePortalRouteOptions = {
+  combatTarget?: UnitEntity | undefined
+  shouldContinue?: (() => boolean) | undefined
+  canTransfer?: (() => boolean) | undefined
   onTransferred?: (() => void) | null
 }
 
@@ -200,7 +203,7 @@ export function prepareUnitForSpaceTransfer(unit: UnitEntity, options: { preserv
   }
 }
 
-function clearUnitSpacePortalRoute(unit: UnitEntity): void {
+export function clearUnitSpacePortalRoute(unit: UnitEntity): void {
   const taskId = unit.spacePortalState?.taskId
   if (taskId != null) unit.context?.scheduler?.remove(taskId)
   unit.spacePortalState = null
@@ -243,6 +246,8 @@ export function transferUnitThroughSpacePortal(
   options: SpacePortalRouteOptions = {}
 ): boolean {
   if (unit.isDead || unit.isDestroyed) return false
+  const guards = unit.spacePortalState ?? options
+  if (guards.shouldContinue?.() === false || guards.canTransfer?.() === false) return false
   if (!unitIsOnCell(unit, portal.sourceCell)) return false
   if (!canOccupyPortalCell(portal.targetCell, unit)) {
     if (!forceClearPortalTargetForHero(context, unit, portal.targetCell)) {
@@ -274,11 +279,13 @@ function updateUnitSpacePortalRoute(context: GameContextLike, unit: UnitEntity, 
   const state = unit.spacePortalState
   if (
     !state ||
+    state.shouldContinue?.() === false ||
     state.portalId !== portal.id ||
     unit.isDead ||
     unit.isDestroyed ||
     getEntitySpaceId(unit) !== portal.sourceSpaceId
   ) {
+    if (state?.shouldContinue?.() === false) unit.stop?.()
     clearUnitSpacePortalRoute(unit)
     return
   }
@@ -293,7 +300,11 @@ function updateUnitSpacePortalRoute(context: GameContextLike, unit: UnitEntity, 
     return
   }
 
-  if (targetPortalCellIsBlocked(portal, unit) || !getPortalArrivalCell(context, unit, portal)) {
+  if (
+    state.canTransfer?.() === false ||
+    targetPortalCellIsBlocked(portal, unit) ||
+    !getPortalArrivalCell(context, unit, portal)
+  ) {
     if (unitIsOnCell(unit, portal.sourceCell)) routeUnitToPortalWaitingCell(unit, portal)
     return
   }
@@ -329,7 +340,12 @@ export function routeUnitThroughSpacePortal(
 
   if (transferUnitThroughSpacePortal(context, unit, portal, options)) return true
 
+  if (unit.spacePortalState?.portalId === portal.id) return true
+  clearUnitSpacePortalRoute(unit)
   unit.spacePortalState = {
+    combatTarget: options.combatTarget,
+    shouldContinue: options.shouldContinue,
+    canTransfer: options.canTransfer,
     onTransferred: options.onTransferred ?? null,
     portalId: portal.id,
     sourceCell: portal.sourceCell,

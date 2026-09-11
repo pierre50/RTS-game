@@ -81,6 +81,7 @@ export const FR_TRANSLATIONS = {
   dailyReportMarketsRestocked: 'de nouveaux articles sont disponibles dans {count} marchés',
   dailyReportFoodConsumed: '{count} nourriture consommée',
   heroCannotGatherMounted: 'Impossible d’exploiter cette ressource à cheval',
+  heroCannotLeaveMapYet: 'Vous ne pouvez pas encore sortir.',
   heroCannotEnterMounted: 'Descends de cheval pour entrer ici',
   heroEnemyBuildingInteriorDefended: 'Le bâtiment est encore défendu. Affaiblis-le pour pouvoir entrer.',
   companionHorseComing: 'Ton cheval arrive',

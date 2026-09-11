@@ -24,6 +24,8 @@ import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { definedProperties } from '../../lib/definedProperties'
 import { fadeIn } from '../../lib/entities/entityFade'
 import { isNeutralPlayer } from '../../lib/playerState'
+import { playableColor } from '../../lib/graphics/playableColor'
+import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
 import { updatePopulationObjectives } from '../../lib/objectives/ageObjectives'
@@ -121,6 +123,13 @@ export class Player implements PlayerLike {
 
     this.populationMax = this.populationMax || (map.instantMode ? POPULATION_MAX : 0)
 
+    if (this.type === PLAYER_TYPES.ai || this.type === PLAYER_TYPES.human) {
+      const factions = context.getCampaignFactions?.()
+      const faction =
+        (this.factionId ? factions?.[this.factionId] : null) ??
+        (this.civ ? factions?.[factionIdForCivilization(this.civ)] : null)
+      this.color = playableColor(this.type === PLAYER_TYPES.ai ? (faction?.color ?? this.color) : this.color)
+    }
     this.colorHex = getHexColor(this.color ?? '')
     this.config = createPlayerData(Assets.cache.get('config'), this.civ ?? '')
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])

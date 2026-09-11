@@ -248,7 +248,7 @@ test('sparse region arrivals use opposite display edges and stay outside the cro
     [5, 1],
     [5, 43],
   ]) {
-    context.controls.heroUnit = localToGrid(column, row, map.localGridLayout)
+    context.controls.heroUnit = { ...localToGrid(column, row, map.localGridLayout), isChief: true }
     system.update(160)
   }
   assert.equal(crossings.length, 0, 'penultimate display tiles must not trigger travel')
@@ -259,7 +259,7 @@ test('sparse region arrivals use opposite display edges and stay outside the cro
     ['south', 5, 44, { column: 5, row: 4 }],
   ]) {
     const previous = localToGrid(column, row, map.localGridLayout)
-    context.controls.heroUnit = previous
+    context.controls.heroUnit = { ...previous, isChief: true }
     system._travelling = false
     system.update(160)
     assert.deepEqual(crossings.at(-1), [edge, edge])
@@ -291,7 +291,7 @@ test('world region travel stays disabled while the hero is inside a building spa
   }
   const context = {
     app: { ticker: { add: () => {}, remove: () => {} } },
-    controls: { heroUnit: { i: 0, j: 6, spaceId: 'interior:house', x: 0, y: 0 }, setCamera: () => {} },
+    controls: { heroUnit: { isChief: true, i: 0, j: 6, spaceId: 'interior:house', x: 0, y: 0 }, setCamera: () => {} },
     map,
     menu: { showMessage: () => {} },
   }
@@ -352,7 +352,7 @@ test('world region travel maps isometric edges to the matching macro-world neigh
   }
   const context = {
     app: { ticker: { add: () => {}, remove: () => {} } },
-    controls: { heroUnit: { i: 0, j: 6, x: 0, y: 0 }, setCamera: () => {} },
+    controls: { heroUnit: { isChief: true, i: 0, j: 6, x: 0, y: 0 }, setCamera: () => {} },
     map,
     menu: { showMessage: () => {} },
   }
@@ -362,13 +362,13 @@ test('world region travel maps isometric edges to the matching macro-world neigh
   })
 
   system.crossToNeighbor('west')
-  context.controls.heroUnit = { i: 12, j: 6, x: 0, y: 0 }
+  context.controls.heroUnit = { isChief: true, i: 12, j: 6, x: 0, y: 0 }
   system._travelling = false
   system.crossToNeighbor('east')
-  context.controls.heroUnit = { i: 6, j: 0, x: 0, y: 0 }
+  context.controls.heroUnit = { isChief: true, i: 6, j: 0, x: 0, y: 0 }
   system._travelling = false
   system.crossToNeighbor('north')
-  context.controls.heroUnit = { i: 6, j: 12, x: 0, y: 0 }
+  context.controls.heroUnit = { isChief: true, i: 6, j: 12, x: 0, y: 0 }
   system._travelling = false
   system.crossToNeighbor('south')
 
@@ -437,7 +437,7 @@ test('runtime region travel ignores direct calls while the hero is inside a buil
         calls.input = enabled
       },
     },
-    hero: { i: 0, j: 6, spaceId: 'interior:house', x: 0, y: 0 },
+    hero: { isChief: true, i: 0, j: 6, spaceId: 'interior:house', x: 0, y: 0 },
     map: { mapType: 'world-region', size: 12, worldId: 'world-test', worldRegionId: 'region-a' },
     serialized: snapshot,
   }
@@ -532,7 +532,7 @@ for (const { square, legacyRoot, duplicate, debug } of [
           calls.restSynchronized = true
         },
       },
-      hero: { i: 2, j: 2, x: 0, y: 0 },
+      hero: { isChief: true, i: 2, j: 2, x: 0, y: 0 },
       map: { size: 12, worldId: 'world-test', localGridLayout: square ? { columns: 8, rows: 29 } : undefined },
       menu: { refreshMiniMap: () => {}, show: () => {}, updateHeroStatus: () => {} },
       serialized: departureState,
@@ -557,7 +557,7 @@ for (const { square, legacyRoot, duplicate, debug } of [
         assert.equal(state.runtime.offlineFromElapsedMs, 200)
         delete state.runtime.offlineFromElapsedMs
         game.bootedFromSave = state
-        currentContext = { ...currentContext, hero: { i: 3, j: 3, x: 0, y: 0 }, serialized: state }
+        currentContext = { ...currentContext, hero: { isChief: true, i: 3, j: 3, x: 0, y: 0 }, serialized: state }
       },
       _destroyRuntime: () => {},
       _loadRequiredWorldMapBlueprint: async () => {
@@ -603,7 +603,7 @@ for (const { square, legacyRoot, duplicate, debug } of [
 test('border travel leaves hostile units and animals in their source region without scheduling pursuit', async () => {
   const calls = { addedWorlds: [], travelPartyApplications: [] }
   const { travelToWorldRegion } = loadWorldRegionTravelRuntime(calls)
-  const hero = { label: 'old-hero', type: 'Hero', i: 2, j: 2 }
+  const hero = { isChief: true, label: 'old-hero', type: 'Hero', i: 2, j: 2 }
   const enemy = { label: 'enemy-unit', type: 'Villager', i: 2, j: 3, sight: 5, hitPoints: 12, dest: hero }
   const wolf = { label: 'wolf', type: 'Wolf', i: 2, j: 4, sight: 5, hitPoints: 12, dest: hero }
   const snapshot = {
@@ -683,7 +683,7 @@ test('world map debug teleport in the current region uses the fade transition', 
         calls.visibilityUpdated = true
       },
     },
-    hero: { i: 2, j: 2, x: 0, y: 0 },
+    hero: { isChief: true, i: 2, j: 2, x: 0, y: 0 },
     map: { mapType: 'world-region', size: 12, worldId: 'world-test', worldRegionId: 'region-a' },
     menu: {
       refreshMiniMap: () => {
@@ -743,6 +743,7 @@ for (const debug of [false, true])
       const context = {
         app: { canvas: {} },
         serialized: snapshot,
+        hero: { isChief: true },
         map: { size: 12, worldId: 'world-test', localGridLayout: { columns: 8, rows: 29 } },
         controls: {
           setRuntimeInputEnabled: enabled => {
@@ -866,4 +867,60 @@ test('hero-only world starts avoid occupying another civilization settlement', (
       { civ: 'Norse', i: 2, j: 2 },
     ]
   )
+})
+
+for (const [edge, i, j] of [['west', 0, 6], ['east', 12, 6], ['north', 6, 0], ['south', 6, 12]]) {
+  test(`non-chief hero cannot cross the ${edge} border until promoted`, () => {
+    const { WorldRegionTravelSystem } = loadWorldRegionTravel()
+    const alerts = []
+    const travelled = []
+    const preloaded = []
+    const hero = { type: 'Hero', isChief: false, i, j }
+    const context = {
+      app: { ticker: { add() {}, remove() {} } },
+      controls: { heroUnit: hero },
+      menu: { showMessage: (...args) => alerts.push(args) },
+      map: {
+        size: 12, worldId: 'world', worldRegion: { x: 2, y: 2 },
+        worldManifest: { maps: [
+          { id: 'west', region: { x: 1, y: 2 }, size: 12 },
+          { id: 'east', region: { x: 3, y: 2 }, size: 12 },
+          { id: 'north', region: { x: 2, y: 1 }, size: 12 },
+          { id: 'south', region: { x: 2, y: 3 }, size: 12 },
+        ] },
+      },
+    }
+    const system = new WorldRegionTravelSystem(context, {
+      preloadWorldRegion: async id => preloaded.push(id),
+      travelToWorldRegion: async (...args) => travelled.push(args),
+    })
+    for (let tick = 0; tick < 10; tick++) system.update(160)
+    assert.deepEqual(travelled, [])
+    assert.deepEqual(preloaded, [])
+    assert.equal(system._travelling, false)
+    assert.equal(alerts.length, 1, 'staying at the border must not repeat the alert')
+    assert.equal(alerts[0][1], 'warning')
+    Object.assign(hero, { i: 6, j: 6 })
+    system.update(160)
+    Object.assign(hero, { i, j })
+    system.update(160)
+    assert.equal(alerts.length, 2, 'returning to the border shows the alert again')
+    hero.isChief = true
+    system.update(160)
+    assert.deepEqual(travelled, [[edge, edge]])
+    assert.equal(alerts.length, 2)
+  })
+}
+
+test('direct region travel rejects a non-chief hero before saving or starting a transition', async () => {
+  const { travelToWorldRegion } = loadWorldRegionTravelRuntime({})
+  const alerts = []
+  const context = {
+    hero: { type: 'Hero', isChief: false },
+    menu: { showMessage: (...args) => alerts.push(args) },
+    get serialized() { throw new Error('Blocked travel must not serialize the world') },
+  }
+  await travelToWorldRegion({ _gameContext: () => context }, 'other', 'east')
+  assert.equal(alerts.length, 1)
+  assert.equal(alerts[0][1], 'warning')
 })

@@ -403,10 +403,7 @@ export class MapTerrain {
     rebuildTerrainAppearance(this.map, protectedReliefCells)
   }
 
-  // Also covers Dirt/Snow (the water-patch ground for Temperate/BlackForest/Jungle, see
-  // EnvironmentTerrainParams.patchwork) — passes the triggering cell's own type through so
-  // Desert patches get the desert relief sheet and Dirt/Snow patches get their own relief sheet,
-  // regardless of which environment/map they're on.
+  // Select border sheets from the cell terrain, including Dirt and Snow.
   formatCellsPatchBorders(): void {
     formatTerrainPatchBorders(this.map)
   }

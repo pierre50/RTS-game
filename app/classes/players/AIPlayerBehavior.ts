@@ -1,3 +1,5 @@
+import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
+import { isInteriorTheftDefender } from '../../ai/AITheftDefense'
 import { getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
 import { canAfford } from '../../lib/accounting'
 import { getPositionInGridAroundInstance } from '../../lib/grid/placement'
@@ -166,7 +168,7 @@ function getPrimaryVillageDefenseTarget(ai: AIPlayerBehaviorHost, anchor: AIBuil
 }
 
 function sendUnitToDefend(unit: AIEntityLike, target: AIEntityLike): boolean {
-  if (!isAliveCombatUnit(unit) || unit.controlMode === 'hero') return false
+  if (!isAliveCombatUnit(unit) || unit.controlMode === 'hero' || isInteriorTheftDefender(unit) || hasInteriorCombatRoute(unit)) return false
   if (unit.dest === target && unit.action === ACTION_TYPES.attack) return false
   if (unit.type === UNIT_TYPES.villager) {
     unit.sendToAttack?.(target, { keepPrevious: true })
@@ -212,7 +214,7 @@ export function handleAIChiefGuard(ai: AIPlayerBehaviorHost, towncenters: AIBuil
   const now = ai.getNow()
   const hero = getApproachableHeroNearChiefAnchor(ai, anchor)
   for (const chief of ai.getLivingChiefs()) {
-    if (chief.controlMode === 'hero') continue
+    if (chief.controlMode === 'hero' || isInteriorTheftDefender(chief) || hasInteriorCombatRoute(chief)) continue
     const hostiles = ai.getVisibleHostilesNear(anchor, 12)
     const target = hostiles[0]
     if (target && chief.action !== ACTION_TYPES.attack) {

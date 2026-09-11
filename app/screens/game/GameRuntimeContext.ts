@@ -12,6 +12,7 @@ import type { PlayerLike } from '../../types/player'
 import type { CampaignSave, SaveRecord } from '../../types/save'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { getRealWorldGraph } from '../../serialization/CampaignSave'
+import { updateWorldEconomy } from '../../services/world/WorldEconomyRuntime'
 
 type DestroyableRuntimeMap = RuntimeMap & {
   destroy(options?: unknown): void
@@ -93,6 +94,11 @@ export function createGameRuntimeContext(
     getWorldGraph: () => (host._campaignSave ? getRealWorldGraph(host._campaignSave) : null),
     getCampaignWorldState: worldId => host._campaignSave?.worlds?.[worldId]?.state ?? null,
     getCampaignFactions: () => host._campaignSave?.factions ?? null,
+    getCampaignEconomy: () => host._campaignSave?.economy ?? null,
+    updateWorldEconomy: () => {
+      if (host._campaignSave?.economy && context.map && context.scheduler)
+        updateWorldEconomy(host._campaignSave, context as GameContextLike)
+    },
     changeFactionRelation: (factionId: string, delta: number) => host._changeFactionRelation(factionId, delta),
     debugTeleportWorldMap: target => {
       host.debugTeleportWorldMap(target).catch(error => {

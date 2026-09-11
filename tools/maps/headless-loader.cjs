@@ -21,11 +21,7 @@ const {
 
 const RUNTIME_FILENAMES = new Set([
   'AmbientAnimalGeneration.ts',
-  'MapGeneration.ts',
-  'MapCellGeneration.ts',
   'MapSavedStateGeneration.ts',
-  'MapSpawnPlacement.ts',
-  'MapTerrainGeneration.ts',
   'MapTerrainAppearance.ts',
   'MapTerrainReliefAppearance.ts',
   'MapTerrainReliefContinuity.ts',
@@ -41,9 +37,7 @@ const RUNTIME_FILENAMES = new Set([
   'MapNaturalResources.ts',
   'definedProperties.ts',
 ])
-const isMapRuntime = filename =>
-  RUNTIME_FILENAMES.has(path.basename(filename)) ||
-  /\/Terrain(?:Noise|Topology|Features|GenerationStages|GenerationOperations)\.ts$/.test(filename)
+const isMapRuntime = filename => RUNTIME_FILENAMES.has(path.basename(filename))
 
 class HeadlessContainer {
   constructor() {
@@ -118,7 +112,7 @@ const constants = {
     'Tree',
   ],
   // Kept in sync with app/constants/ambient.ts: DarkForest/Jungle have no entry since
-  // EnvironmentTerrainParams.groundTreeChance/patchwork.treeChance/lakes.shoreTreeChance
+  // EnvironmentTerrainParams.groundTreeChance and macro terrain tree profiles
   // always override them.
   BIOME_TREE_CHANCE: {
     Grass: 0,
@@ -137,11 +131,7 @@ const RUNTIME_IMPORTS = new Map([
   ['./MapResourcePlacement', 'app/classes/map/resources/MapResourcePlacement.ts'],
   ['./MapNaturalResources', 'app/classes/map/resources/MapNaturalResources.ts'],
   ['../../lib/definedProperties', 'app/lib/definedProperties.ts'],
-  ['./terrain/MapTerrainGeneration', 'app/classes/map/terrain/MapTerrainGeneration.ts'],
-  ['../terrain/MapTerrainGeneration', 'app/classes/map/terrain/MapTerrainGeneration.ts'],
-  ['./generation/MapCellGeneration', 'app/classes/map/generation/MapCellGeneration.ts'],
   ['./generation/MapSavedStateGeneration', 'app/classes/map/generation/MapSavedStateGeneration.ts'],
-  ['./MapSpawnPlacement', 'app/classes/map/MapSpawnPlacement.ts'],
   ['./MapTerrainAppearance', 'app/classes/map/terrain/MapTerrainAppearance.ts'],
   ['./terrain/MapTerrainAppearance', 'app/classes/map/terrain/MapTerrainAppearance.ts'],
   ['./MapTerrainReliefAppearance', 'app/classes/map/terrain/MapTerrainReliefAppearance.ts'],
@@ -155,9 +145,6 @@ const RUNTIME_IMPORTS = new Map([
 
 function loadHeadlessImport(request, parent, isMain, originalLoad) {
   if (parent && isMapRuntime(parent.filename)) {
-    if (/^\.\/Terrain(?:Noise|Topology|Features|GenerationStages|GenerationOperations)$/.test(request)) {
-      return originalLoad(path.resolve(path.dirname(parent.filename), request + '.ts'), parent, isMain)
-    }
     request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
     const filename = RUNTIME_IMPORTS.get(request)
     if (filename) return originalLoad(path.join(ROOT, filename), parent, isMain)
@@ -210,20 +197,17 @@ function loadRuntimeGenerators() {
     originalExtension(module, filename)
   }
   try {
-    const { MapGeneration } = require(path.join(ROOT, 'app/classes/map/MapGeneration.ts'))
     const { MapTerrain } = require(path.join(ROOT, 'app/classes/map/terrain/MapTerrain.ts'))
     const { MapResources } = require(path.join(ROOT, 'app/classes/map/resources/MapResources.ts'))
     const animalGeneration = require(path.join(ROOT, 'app/classes/map/generation/AmbientAnimalGeneration.ts'))
-    return { MapGeneration, MapTerrain, MapResources, animalGeneration }
+    return { MapTerrain, MapResources, animalGeneration }
   } finally {
     Module._load = originalLoad
     require.extensions['.ts'] = originalExtension
   }
 }
 
-const { MapGeneration, MapTerrain, MapResources, animalGeneration } = loadRuntimeGenerators()
-
-const runtimeTerrain = MapGeneration.prototype.generateTerrain
+const { MapTerrain, MapResources, animalGeneration } = loadRuntimeGenerators()
 
 const runtimeRelief = MapTerrain.prototype.generateMapRelief
 
@@ -234,8 +218,6 @@ const runtimeEnforceReliefStepContinuity = MapTerrain.prototype.enforceReliefSte
 const runtimeFormatCellsWaterBorder = MapTerrain.prototype.formatCellsWaterBorder
 
 const runtimeFormatCellsRelief = MapTerrain.prototype.formatCellsRelief
-
-const runtimeSpawns = MapGeneration.prototype.findPlayerPlaces
 
 const runtimeNeutralResources = MapResources.prototype.generateNeutralResourceGroupsAsync
 
@@ -273,8 +255,6 @@ module.exports = {
   runtimeFindNeutralResourceCenter,
   runtimePlaceResourceGroupAt,
   runtimeRelief,
-  runtimeTerrain,
-  runtimeSpawns,
   runtimeNeutralResources,
   runtimeBiomeTrees,
 }

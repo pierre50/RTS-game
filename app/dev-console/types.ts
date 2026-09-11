@@ -5,7 +5,7 @@ import type { RuntimeMap } from '../types/map'
 import type { PlayerLike, PlayerUnitCreationOptions } from '../types/player'
 import type { UnitConfig, BuildingConfig } from '../types/config'
 import type { DayNightColorAdjustment, DayNightStateLike } from '../types/context'
-import type { FactionSave } from '../types/save'
+import type { CampaignEconomySave, FactionSave } from '../types/save'
 
 export type DevWeatherPhase =
   | 'sunny'
@@ -251,6 +251,7 @@ export type DevPerformanceSnapshot = {
 }
 
 export type DevConsoleContext = {
+  getCampaignEconomy?: () => CampaignEconomySave | null
   commands: {
     get(name: string): Command | undefined
     all(): Command[]

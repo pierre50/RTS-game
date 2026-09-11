@@ -1,4 +1,5 @@
 import { isWheatMature } from '../combat/resourceActionConditions'
+import { knowsNativeResources } from '../campaign/nativeEconomy'
 import { getEntitySpaceId, sameMapSpace } from '../mapSpaces'
 import { instanceIsInInsightRange } from './insightDetection'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -11,6 +12,18 @@ export type TargetObservation = Pick<
 const memories = new WeakMap<object, Map<string, TargetObservation>>()
 const knownEntities = new WeakMap<object, Map<string, RuntimeEntity>>()
 const key = (target: { label: string; spaceId?: string | null }) => target.label
+
+/** Economic updates are shared on explored terrain, without granting actual vision. */
+export function knowsEconomicTarget(owner: PlayerLike | undefined, target: RuntimeEntity): boolean {
+  if (!owner || !['resource', 'animal'].includes(target.family) || getEntitySpaceId(target) !== 'outside') return false
+  if (target.owner && target.owner !== owner && target.owner.type !== 'Gaia') return false
+  const animal = target as RuntimeEntity & { tamingStatus?: string; companionOwner?: unknown }
+  if (target.family === 'animal' && (animal.companionOwner || (animal.tamingStatus && animal.tamingStatus !== 'wild')))
+    return false
+  if (target.family === 'resource' && knowsNativeResources(owner)) return true
+  const explored = () => owner.views?.isViewed(target.i, target.j) ?? false
+  return owner.views?.withSpace?.('outside', explored) ?? explored()
+}
 
 /** Gameplay perception: never use renderer visibility or the active camera's space. */
 export function playerSeesTarget(owner: PlayerLike | undefined, target: RuntimeEntity): boolean {
@@ -75,6 +88,7 @@ function rememberTarget(owner: PlayerLike, target: RuntimeEntity): TargetObserva
 }
 
 export function knownTarget(owner: PlayerLike | undefined, target: RuntimeEntity): TargetObservation | undefined {
+  if (owner && knowsEconomicTarget(owner, target)) return rememberTarget(owner, target)
   return observeTarget(owner, target) ?? (owner && memories.get(owner)?.get(key(target)))
 }
 

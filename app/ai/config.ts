@@ -31,6 +31,9 @@ export const AI_DIFFICULTIES = {
   },
 }
 
+export const AI_BUILDING_TRAINING_CAPACITY = 5
+export const AI_ABSTRACT_DAILY_RECRUITS = 2
+
 export const MAX_VILLAGER_PER_AGE = {
   0: 16,
   1: 40,

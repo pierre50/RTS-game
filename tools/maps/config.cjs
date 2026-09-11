@@ -2,13 +2,9 @@ const path = require('node:path')
 
 const ROOT = path.resolve(__dirname, '../..')
 
-const OUTPUT = path.join(ROOT, 'public', 'maps')
-
 const BLUEPRINT_MAP_SIZE = 144
 
-const BLUEPRINT_MAP_SPAWN_RANGE = [2, 4]
-
-// Index must match MapGeneration#generateTerrain's raw output.
+// Indices match the persisted blueprint terrain encoding.
 const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
@@ -66,13 +62,10 @@ const { ENVIRONMENT_TERRAIN_PARAMS, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = 
 
 const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
 
-const { createSeededRandom } = loadPlainTsModule('app/lib/random.ts')
-
 module.exports = {
   BLUEPRINT_MAP_SIZE,
   ENVIRONMENT_IDS,
   DEFAULT_ENVIRONMENT_ID,
-  OUTPUT,
   ROOT,
   ENVIRONMENT_TERRAIN_PARAMS,
   MACRO_TERRAIN_CODE_TO_TYPE,
@@ -81,6 +74,4 @@ module.exports = {
   MACRO_FOREST_PROFILE_BY_CODE,
   TERRAIN,
   RELIEF_WATER_BUFFER_RADIUS,
-  BLUEPRINT_MAP_SPAWN_RANGE,
-  createSeededRandom,
 }

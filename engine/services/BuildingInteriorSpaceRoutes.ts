@@ -1,3 +1,4 @@
+import { hasInteriorCombatCapacity } from '../../app/lib/buildings/interiorCombatCapacity'
 import { ACTION_TYPES } from '../../app/constants'
 import { canUnitEnterBuildingInterior } from '../../app/lib/buildings/interiorAccess'
 import { createReservedPassageCellLookup } from '../../app/lib/buildings/passageCells'
@@ -106,28 +107,29 @@ function getUnitsFollowingInSameSpace(hero: UnitEntity): UnitEntity[] {
   )
 }
 
-function getCavePursuers(
+function getBuildingPursuers(
   context: GameContextLike,
   hero: UnitEntity,
-  space: BuildingInteriorRuntimeSpace
+  space: BuildingInteriorRuntimeSpace,
+  entering: boolean
 ): UnitEntity[] {
-  if (space.building.type !== 'Cave') return []
   return (context.players ?? [])
     .flatMap(player => player.units ?? [])
     .filter(
       unit =>
         unit !== hero &&
+        unit.controlMode !== 'hero' &&
         !unit.isDead &&
         !unit.isDestroyed &&
         sameMapSpace(hero, unit) &&
         Boolean(unit.owner?.isEnemy?.(hero.owner) || hero.owner?.isEnemy?.(unit.owner)) &&
-        (unit.dest === hero || unit.realDest === hero) &&
-        unit.action === ACTION_TYPES.attack &&
-        canUnitEnterBuildingInterior(unit, space.building)
+        (((unit.dest === hero || unit.realDest === hero) && unit.action === ACTION_TYPES.attack) ||
+          unit.spacePortalState?.combatTarget === hero) &&
+        (!entering || canUnitEnterBuildingInterior(unit, space.building))
     )
 }
 
-function routeCavePursuers(
+function routeBuildingPursuers(
   context: GameContextLike,
   hero: UnitEntity,
   space: BuildingInteriorRuntimeSpace,
@@ -136,6 +138,16 @@ function routeCavePursuers(
 ): void {
   for (const unit of pursuers) {
     routeUnitThroughSpacePortal(context, unit, entering ? space.entryPortal : space.exitPortal, {
+      combatTarget: hero,
+      shouldContinue: () =>
+        !hero.isDead &&
+        !hero.isDestroyed &&
+        !space.building.isDead &&
+        !space.building.isDestroyed &&
+        Boolean(unit.owner?.isEnemy?.(hero.owner) || hero.owner?.isEnemy?.(unit.owner)) &&
+        getEntitySpaceId(hero) === (entering ? space.id : space.exitPortal.targetSpaceId) &&
+        (!entering || canUnitEnterBuildingInterior(unit, space.building)),
+      canTransfer: entering ? () => hasInteriorCombatCapacity(context, space, unit) : undefined,
       onTransferred: () => {
         if (!hero.isDead && !hero.isDestroyed && sameMapSpace(unit, hero)) {
           unit.sendToEvt?.(hero, ACTION_TYPES.attack, { forceRepath: true })
@@ -151,10 +163,10 @@ export function moveHeroPartyIntoBuildingInteriorSpace(
   space: BuildingInteriorRuntimeSpace
 ): boolean {
   const followers = getUnitsFollowingInSameSpace(hero)
-  const pursuers = getCavePursuers(context, hero, space)
+  const pursuers = getBuildingPursuers(context, hero, space, true)
   if (!moveUnitIntoBuildingInteriorSpace(context, hero, space)) return false
   for (const follower of followers) routeUnitIntoBuildingInteriorSpace(context, follower, space)
-  routeCavePursuers(context, hero, space, pursuers, true)
+  routeBuildingPursuers(context, hero, space, pursuers, true)
   return true
 }
 
@@ -164,10 +176,10 @@ export function moveHeroPartyOutOfBuildingInteriorSpace(
   space: BuildingInteriorRuntimeSpace
 ): boolean {
   const followers = getUnitsFollowingInSameSpace(hero)
-  const pursuers = getCavePursuers(context, hero, space)
+  const pursuers = getBuildingPursuers(context, hero, space, false)
   if (!moveUnitOutOfBuildingInteriorSpace(context, hero, space)) return false
   for (const follower of followers) routeUnitOutOfBuildingInteriorSpace(context, follower, space)
-  routeCavePursuers(context, hero, space, pursuers, false)
+  routeBuildingPursuers(context, hero, space, pursuers, false)
   deactivateBuildingInteriorSpace(context, space)
   context.controls?.updateVisibleCells?.()
   return true

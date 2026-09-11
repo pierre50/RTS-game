@@ -106,6 +106,42 @@ export function pickNpcGreetingLine(name: string): string {
   return pickRandomItem(lines).replace('{name}', name)
 }
 
+export function pickNpcRescueThanksLine(npcs: UnitEntity[]): string {
+  if (npcs.length > 1) {
+    return pickRandomItem(
+      getLang() === 'en'
+        ? [
+            'Thank you for setting us free! We are with you now.',
+            'We thought we would never get out of here. Thank you! We will join your people.',
+            'You gave us our freedom back. From now on, you can count on us.',
+            'Thank you for rescuing us. We will stand by your side!',
+          ]
+        : [
+            'Merci de nous avoir rendu notre liberté ! Nous sommes avec vous, maintenant.',
+            'Nous pensions ne jamais sortir d’ici. Merci ! Nous allons rejoindre votre peuple.',
+            'Vous nous avez rendu notre liberté. Désormais, vous pouvez compter sur nous.',
+            'Merci pour votre aide. Nous resterons à vos côtés !',
+          ]
+    )
+  }
+  const rescued = getNpcGender(npcs[0]) === 'female' ? 'sauvée' : 'sauvé'
+  return pickRandomItem(
+    getLang() === 'en'
+      ? [
+          'Thank you for saving me! I am with you now.',
+          'I thought I would never get out of here. Thank you! I will join your people.',
+          'You gave me my freedom back. From now on, you can count on me.',
+          'Thank you for rescuing me. I will stand by your side!',
+        ]
+      : [
+          `Merci de m'avoir ${rescued} ! Je suis avec vous, maintenant.`,
+          'Je pensais ne jamais sortir d’ici. Merci ! Je vais rejoindre votre peuple.',
+          'Vous m’avez rendu ma liberté. Désormais, vous pouvez compter sur moi.',
+          'Merci pour votre aide. Je resterai à vos côtés !',
+        ]
+  )
+}
+
 type NpcGender = 'male' | 'female'
 type GenderedNpcLines = {
   shared: string[]

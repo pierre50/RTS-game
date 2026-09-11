@@ -856,6 +856,26 @@
   overflow-wrap: anywhere;
 }
 
+.inventory-action-row-meta-part {
+  display: inline;
+}
+
+.inventory-action-row-meta-part.inventory-cost-is-available {
+  color: var(--msg-success-color);
+}
+
+.inventory-action-row-meta-part.inventory-cost-is-missing {
+  color: var(--text-color-danger);
+}
+
+.inventory-action-row-meta.inventory-cost-is-available {
+  color: var(--msg-success-color);
+}
+
+.inventory-action-row-meta.inventory-cost-is-missing {
+  color: var(--text-color-danger);
+}
+
 .inventory-action-row-badge {
   grid-row: 1 / 4;
   grid-column: 3;
@@ -1273,7 +1293,7 @@
 }
 
 .worldmap-global-marker.bandits {
-  fill: #8f8f8f;
+  fill: #2d3136;
 }
 
 .worldmap-global.flat {
@@ -1329,7 +1349,7 @@
   width: 9px;
   height: 9px;
   border-radius: 2px;
-  background: #8f8f8f;
+  background: #2d3136;
   transform: translate(-50%, -50%) rotate(45deg);
 }
 

@@ -28,6 +28,7 @@ const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'berry', 'meat', 'wheat', 'st
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
+  offlineBuilderJob?: SaveEntityState['offlineBuilderJob']
   resourceDeliveryState?: UnitEntity['resourceDeliveryState']
   cave?: CaveDefinition
   buildingAge?: number
@@ -77,6 +78,7 @@ type SerializableEntity = RuntimeEntityBase & {
   marketStock?: string[]
   indestructible?: boolean
   followingHero?: boolean
+  pendingRescueThanks?: boolean
   inactif?: boolean
   isBuilt?: boolean
   isUsedBy?: string | { label?: string } | null
@@ -102,6 +104,9 @@ type SerializableEntity = RuntimeEntityBase & {
   work?: string | null
 }
 type SerializablePlayer = PlayerLike & {
+  abstractProductionRemainder?: Record<string, number>
+  offlineBuildingDecision?: string
+  offlineBuildingPlanDay?: number
   aiState?: SavedAIState
   enemyBuildingMemory?: Map<string, ThreatMemory>
   enemyUnitMemory?: Map<string, ThreatMemory>
@@ -286,6 +291,9 @@ function animalData(animal: SerializableEntity): SaveEntityState {
 
 function unitData(unit: SerializableEntity): SaveEntityState {
   return projectInteriorEntityToWorld(unit, {
+    factionExpedition: structuredClone(
+      (unit as SerializableEntity & { factionExpedition?: SaveEntityState['factionExpedition'] }).factionExpedition
+    ),
     resourceDelivery: unit.resourceDeliveryState
       ? {
           building: referenceData(unit.resourceDeliveryState.building),
@@ -321,6 +329,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'work',
       'previousWork',
       'autonomousJob',
+      'offlineBuilderJob',
       'exploringForAutonomy',
       'realDest',
       'degree',
@@ -336,6 +345,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'inventory',
       'lootEquipment',
       'followingHero',
+      'pendingRescueThanks',
       'assetCiv',
       'assetAge',
       'assetType',
@@ -429,6 +439,9 @@ function playerData(player: SerializablePlayer) {
       'diplomacy',
       'population',
       'populationMax',
+      'offlineBuildingPlanDay',
+      'abstractProductionRemainder',
+      'offlineBuildingDecision',
       'completedObjectives',
       'cellViewed',
       'isPlayed',

@@ -80,7 +80,7 @@ function createMockStatusBubble(options) {
 
 const spriteTransientEffects = loadModule('app/lib/entities/spriteTransientEffects.ts', {})
 
-test('alert-then-aggression feedback sequences emotes instead of stacking them', () => {
+test('alert signals detection once and preserves the delayed aggression callback', () => {
   const scheduled = []
   const addedTexts = []
   const scheduler = {
@@ -135,7 +135,7 @@ test('alert-then-aggression feedback sequences emotes instead of stacking them',
   scheduler.elapsedMs += scheduled[0].delay
   scheduled[0].callback()
 
-  assert.deepEqual(addedTexts, ['!', '!!'])
+  assert.deepEqual(addedTexts, ['!'])
   assert.equal(aggressionCallbacks, 1)
 })
 
@@ -160,7 +160,7 @@ test('status bubble feedback fades in place and lasts longer than damage text', 
     addChild: display => addedDisplays.push(display),
   }
 
-  const { showFatigueFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
+  const { showHealingFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       Text: MockText,
     },
@@ -171,12 +171,12 @@ test('status bubble feedback fades in place and lasts longer than damage text', 
     '../entities/spriteTransientEffects': spriteTransientEffects,
   })
 
-  showFatigueFeedback(target)
+  showHealingFeedback(target)
 
   const display = addedDisplays[0]
   const initialY = display.y
-  assert.equal(getAddedFeedbackText(display), '...')
-  assert.equal(scheduled[0].name, 'unit.fatigueText')
+  assert.equal(getAddedFeedbackText(display), '♥')
+  assert.equal(scheduled[0].name, 'unit.healingText')
 
   for (let index = 0; index < 15; index++) scheduled[0].callback()
 
@@ -515,11 +515,7 @@ test('conversion waves preserve replacement effects and clean up on completion a
 test('status feedback cooldowns expire and direct aggression cancels a pending sequence', () => {
   const f = feedbackFixture()
   for (const name of [
-    'showFatigueFeedback',
     'showHealingFeedback',
-    'showConfusionFeedback',
-    'showBlockedFeedback',
-    'showAggressionFeedback',
     'showAlertFeedback',
   ]) {
     const before = f.target.children.length
@@ -536,7 +532,7 @@ test('status feedback cooldowns expire and direct aggression cancels a pending s
   f.api.showAlertThenAggressionFeedback(f.target, () => aggression++)
   assert.ok(f.task('unit.alertAggressionText'))
   f.api.showAlertThenAggressionFeedback(f.target)
-  f.api.showAggressionFeedback(f.target)
+  f.api.cancelPendingAggression(f.target)
   assert.equal(f.task('unit.alertAggressionText'), undefined)
   assert.equal(aggression, 0)
   f.api.clearAllCombatFeedback()

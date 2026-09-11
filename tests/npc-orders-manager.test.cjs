@@ -211,6 +211,7 @@ function buildMocks(calls, context) {
     '../lib/npc/npcChatter': {
       pickForeignNpcChatterLine: () => 'foreign hi',
       pickNpcGreetingLine: () => 'hi',
+      pickNpcRescueThanksLine: npcs => (npcs.length > 1 ? 'thanks from everyone' : 'thanks for saving me'),
       pickNpcRestingChatterLine: () => 'resting chatter',
       pickNpcSleepingChatterLine: () => 'sleepy chatter',
       pickForeignNpcSleepingChatterLine: () => 'foreign sleepy chatter',
@@ -261,6 +262,40 @@ test('opening the communication panel does not pause the game', () => {
     assert.equal(context.paused, false)
     assert.deepEqual(calls, [])
   })
+})
+
+test('newly rescued villagers thank the hero once, including group communication', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager({ context })
+    const first = { type: 'Villager', label: 'rescued-1', owner: context.player, pendingRescueThanks: true }
+    manager.open([first])
+    assert.equal(manager.chatterContainer.children[0].textContent, 'thanks for saving me')
+    assert.equal(first.pendingRescueThanks, false)
+    manager.open([first])
+    assert.equal(manager.chatterContainer.children[0].textContent, 'hi')
+    const group = [2, 3].map(index => ({ ...first, label: `rescued-${index}`, pendingRescueThanks: true }))
+    manager.open([first, ...group])
+    assert.equal(manager.chatterContainer.children[0].textContent, 'thanks from everyone')
+    assert.ok(group.every(npc => npc.pendingRescueThanks === false))
+    manager.open([group[0]])
+    assert.equal(manager.chatterContainer.children[0].textContent, 'hi')
+  })
+})
+
+test('rescue thanks are localized and use the saved appearance gender', () => {
+  for (const [language, expected] of [
+    ['fr', "Merci de m'avoir sauvée ! Je suis avec vous, maintenant."],
+    ['en', 'Thank you for saving me! I am with you now.'],
+  ]) {
+    const { pickNpcRescueThanksLine } = loadModule('app/lib/npc/npcChatter.ts', {
+      '../lang': { getLang: () => language },
+      '../random': { pickRandomItem: values => values[0] },
+    })
+    assert.equal(pickNpcRescueThanksLine([{ appearanceVariants: { gender: 'female' } }]), expected)
+  }
 })
 
 test('foreign AI units never expose direct order buttons', () => {

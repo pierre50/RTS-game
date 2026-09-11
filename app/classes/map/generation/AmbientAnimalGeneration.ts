@@ -2,8 +2,7 @@ import { hasWaterBorderWithin } from '../../../lib'
 import { AMBIENT_ANIMAL_CHANCE, ANIMAL_PLAYER_SAFE_DIST, WATER_BORDER_PLACEMENT_CLEARANCE } from '../../../constants'
 import type { AnimalOptions } from '../../animal/Animal'
 import type { GridPosition } from '../../../types/grid'
-import type { RuntimeCell, RuntimeMap } from '../../../types/map'
-import type { RuntimeEntity } from '../../../types/entities'
+import type { RuntimeMap } from '../../../types/map'
 
 export type AmbientAnimalProfile = {
   weight: number
@@ -22,11 +21,11 @@ const DEFAULT_AMBIENT_ANIMAL_PROFILE: AmbientAnimalProfile = {
   radius: 2,
 }
 const AMBIENT_ANIMAL_PROFILES: Record<string, AmbientAnimalProfile> = {
-  Deer: { weight: 4, groupChance: 0.9, groupSize: [3, 6], radius: 3 },
-  Hare: { weight: 3, groupChance: 0.55, groupSize: [1, 4], radius: 2 },
-  BlackGrouse: { weight: 3, groupChance: 0.75, groupSize: [2, 5], radius: 2 },
-  Fox: { weight: 1, groupChance: 0.2, groupSize: [1, 2], radius: 3 },
-  Boar: { weight: 0.7, groupChance: 0.15, groupSize: [1, 2], radius: 2 },
+  Deer: { weight: 4.4, groupChance: 0.96, groupSize: [3, 7], radius: 3 },
+  Hare: { weight: 3.3, groupChance: 0.7, groupSize: [1, 5], radius: 2 },
+  BlackGrouse: { weight: 3.4, groupChance: 0.82, groupSize: [2, 6], radius: 2 },
+  Fox: { weight: 1.2, groupChance: 0.3, groupSize: [1, 3], radius: 3 },
+  Boar: { weight: 0.85, groupChance: 0.2, groupSize: [1, 3], radius: 2 },
   Horse: { weight: 1.4, groupChance: 0.65, groupSize: [2, 4], radius: 3 },
 }
 const ANIMAL_HABITAT_WEIGHTS: Record<string, Record<string, number>> = {
@@ -192,35 +191,4 @@ function shouldSpawnAmbientAnimal(
     cell.category !== 'Water' &&
     map.random() < AMBIENT_ANIMAL_CHANCE
   )
-}
-
-export function createSpawnSearchCell(
-  i: number,
-  j: number,
-  terrainType: 0 | 1 | 2 | 3 | 4 | 5 | 7
-): RuntimeCell {
-  return {
-    i,
-    j,
-    x: 0,
-    y: 0,
-    z: 0,
-    type: terrainType === 2 ? 'Water' : 'Land',
-    category: terrainType === 2 ? 'Water' : 'Land',
-    border: false,
-    waterBorder: false,
-    solid: false,
-    visible: false,
-    inclined: false,
-    has: null,
-    corpses: new Set(),
-    fogSprites: [],
-    viewBy: new Set(),
-    updateVisible() {},
-    place(entity: RuntimeEntity) {
-      this.has = entity
-    },
-    setFog() {},
-    removeFog() {},
-  }
 }

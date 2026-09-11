@@ -151,7 +151,9 @@ export function transferNeutralEntityToPlayer(
   options: TransferOwnerOptions = {}
 ): boolean {
   if (!target || !newOwner || !isConvertibleEntity(target) || !isNeutralPlayer(target.owner)) return false
-  return transferEntityOwner(target, newOwner, options)
+  const transferred = transferEntityOwner(target, newOwner, options)
+  if (transferred && target.family === FAMILY_TYPES.unit) target.pendingRescueThanks = true
+  return transferred
 }
 
 export function transferDefeatedPlayerBuildings(defeatedPlayer: PlayerLike): number {

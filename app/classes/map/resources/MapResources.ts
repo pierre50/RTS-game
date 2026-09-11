@@ -147,26 +147,26 @@ const RESOURCE_DENSITY_PROFILES = {
   low: {
     // Gold is intentionally near-absent at low density: it's a rare find, not a resource
     // a game is expected to always provide.
-    neutralGroups: { berrybush: 1, wheat: 1, stone: 2, copper: 1, iron: 1, gold: 0, tree: 3 },
+    neutralGroups: { berrybush: 2, wheat: 1, stone: 3, copper: 1, iron: 1, gold: 0, tree: 3 },
     minNeutralDistance: 34,
     playerSafeDistance: PLAYER_START_RESOURCE_CLEARANCE,
   },
   moderate: {
-    neutralGroups: { berrybush: 2, wheat: 2, stone: 3, copper: 2, iron: 1, gold: 1, tree: 4 },
+    neutralGroups: { berrybush: 3, wheat: 2, stone: 4, copper: 2, iron: 1, gold: 1, tree: 4 },
     minNeutralDistance: 32,
     playerSafeDistance: PLAYER_START_RESOURCE_CLEARANCE,
   },
   high: {
-    neutralGroups: { berrybush: 4, wheat: 4, stone: 5, copper: 4, iron: 3, gold: 1, tree: 7 },
+    neutralGroups: { berrybush: 5, wheat: 4, stone: 6, copper: 4, iron: 3, gold: 1, tree: 7 },
     minNeutralDistance: 26,
     playerSafeDistance: PLAYER_START_RESOURCE_CLEARANCE,
   },
 }
 
 const SCATTERED_STONE_PROFILES: Record<ResourceDensity, number> = {
-  low: 4,
-  moderate: 8,
-  high: 14,
+  low: 6,
+  moderate: 12,
+  high: 18,
 }
 
 const SCATTERED_STONE_ENVIRONMENT_MULTIPLIERS: Record<string, number> = {

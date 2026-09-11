@@ -2,6 +2,7 @@ import { Player } from '../../classes/players/Player'
 import { PLAYER_TYPES } from '../../constants'
 import { getHexColor } from '../../lib'
 import { definedProperties } from '../../lib/definedProperties'
+import { playableColor } from '../../lib/graphics/playableColor'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import type { FactionSave } from '../../types/save'
 import { BANDIT_OWNER_NAME, isRaidBanditOwner, isRaidFactionOwner, type TributeRaidOwner } from '../TributeRaidRules'
@@ -27,7 +28,7 @@ export function getOrCreateFactionRaidOwner(runtime: TributeRaidSystem, faction:
   if (existing) {
     existing.diplomacy = 'neutral'
     existing.factionId = null
-    existing.color = faction.color ?? existing.color ?? 'red'
+    existing.color = playableColor(faction.color ?? existing.color, 'red')
     existing.colorHex = getHexColor(existing.color)
     existing.civ = faction.civilization ?? existing.civ ?? runtime.context.player?.civ ?? 'Hellas'
     return existing
@@ -35,7 +36,7 @@ export function getOrCreateFactionRaidOwner(runtime: TributeRaidSystem, faction:
 
   const owner = runtime.createTemporaryRaidOwner({
     civ: faction.civilization ?? runtime.context.player?.civ ?? 'Hellas',
-    color: faction.color ?? 'red',
+    color: playableColor(faction.color, 'red'),
     factionId: null,
     name: faction.name,
   })

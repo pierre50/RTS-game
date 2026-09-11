@@ -58,7 +58,7 @@ function loadAIEconomy() {
   }
   const localRequire = request => {
     if (request.endsWith('/playerTargetKnowledge'))
-      return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
+      return { knowsEconomicTarget: () => false, playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
     if (request.endsWith('/targetPursuit'))
       return { updateTargetPursuit: () => false, routeToRememberedTarget: () => false }
 

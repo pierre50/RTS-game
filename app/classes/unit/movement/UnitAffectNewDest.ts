@@ -8,7 +8,6 @@ import {
   getInstanceDegree,
   instanceContactInstance,
   resumeVillagerAutonomy,
-  showConfusionFeedback,
 } from '../../../lib'
 import { isHeroControlled } from '../../../lib/units/unitControl'
 import { isRecoveringAttack, isRuntimeEntity, pauseCombatRecoveryMove } from './UnitMovementHelpers'
@@ -88,7 +87,6 @@ function handleReplacementDestination(unit: UnitEntity, dest: RuntimeEntity | nu
     } else if (resumeVillagerAutonomy?.(unit)) {
       return
     } else {
-      showConfusionFeedback(unit)
       unit.stop?.()
     }
   }
@@ -122,7 +120,6 @@ function handleHeroDestination(unit: UnitEntity): void {
     unit.stop?.()
     return
   }
-  showConfusionFeedback(unit)
   unit.previousDest = null
   unit.previousWork = null
   unit.stop?.()

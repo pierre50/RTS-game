@@ -115,6 +115,12 @@ function loadTributeRaidText() {
 function loadTributeRaidSystem(overrides = {}) {
   return loadTsModule('app/services/TributeRaidSystem.ts', {
     mocks: {
+      './tribute/FactionRaidEconomy': {
+        selectFactionRaidArmy: () => ({ units: [{ type: 'Fantassin' }, { type: 'Bowman' }] }),
+        commitFactionRaidArmy: () => true,
+        returnFactionRaidUnit: () => true,
+      },
+      './FactionRaidEconomy': { selectFactionRaidArmy: () => ({ units: [{}, {}] }) },
       '../classes/players/Player': {
         Player: class Player {
           constructor(options) {
@@ -175,6 +181,94 @@ test('tribute demands are rounded to clean resource amounts', () => {
   assert.equal(roundTributeValue(54), 50)
   assert.equal(roundTributeValue(61), 60)
   assert.deepEqual(roundTributeCost({ food: 61, gold: 196 }), { food: 60, gold: 200 })
+})
+
+test('faction spawning preserves recruited types and only commits a complete group', async () => {
+  let committed = 0
+  const removed = []
+  const target = { i: 10, j: 10, owner: {} }
+  const { TributeRaidSystem } = loadTributeRaidSystem({
+    './tribute/FactionRaidEconomy': {
+      commitFactionRaidArmy: () => {
+        committed++
+        return true
+      },
+      expeditionState: (_army, original, raidId, factionId, tribute) => ({ original, raidId, factionId, tribute }),
+    },
+    './TributeRaidTargeting': { findRaidTarget: () => target },
+  })
+  const context = {
+    players: [],
+    player: {},
+    map: { random: () => 0 },
+    scheduler: { add: () => 1 },
+    menu: { showMessage: () => {}, isMiniMapActive: () => false },
+  }
+  const system = new TributeRaidSystem(context)
+  system.findSpawnCells = () => [
+    { i: 0, j: 0 },
+    { i: 0, j: 1 },
+  ]
+  system.preloadRaidOwnerAssets = async () => {}
+  system.removeUnitFromRuntime = unit => removed.push(unit)
+  let fail = true
+  const created = []
+  const owner = {
+    createUnit: options => {
+      if (fail && options.type === 'Bowman') return undefined
+      const unit = { ...options, owner }
+      created.push(unit)
+      return unit
+    },
+  }
+  const army = {
+    regionId: 'home',
+    playerLabel: 'ai',
+    units: [
+      { type: 'Fantassin', label: 'a', hitPoints: 8 },
+      { type: 'Bowman', label: 'b', hitPoints: 11 },
+    ],
+  }
+  const options = { kind: 'faction', army, faction: { id: 'civ-hellas' }, owner, size: 2, tribute: { gold: 10 } }
+  assert.equal(await system.createRaid(options), false)
+  assert.equal(committed, 0)
+  assert.equal(removed.length, 1)
+  fail = false
+  assert.equal(await system.createRaid(options), true)
+  assert.equal(committed, 1)
+  assert.deepEqual(
+    system.raids[0].units.map(unit => unit.type),
+    ['Fantassin', 'Bowman']
+  )
+  assert.equal(system.raids[0].chief.type, 'Fantassin')
+  assert.equal(system.raids[0].units[0].hitPoints, 8)
+})
+
+test('restoring a saved expedition restores its phase and blocks another raid', () => {
+  const target = { i: 10, j: 10, owner: {} }
+  const { TributeRaidSystem } = loadTributeRaidSystem({
+    './TributeRaidTargeting': { findRaidTarget: () => target },
+  })
+  const orders = []
+  const owner = { units: [] }
+  const unit = {
+    owner,
+    type: 'Bowman',
+    hitPoints: 10,
+    sendToEvt: (...args) => orders.push(args),
+    factionExpedition: { raidId: 'saved-raid', factionId: 'civ-hellas', phase: 'hostile', tribute: { gold: 10 } },
+  }
+  owner.units.push(unit)
+  const system = new TributeRaidSystem({
+    players: [owner],
+    scheduler: { add: () => 1 },
+    getCampaignFactions: () => ({ 'civ-hellas': { id: 'civ-hellas' } }),
+  })
+  assert.equal(system.raids[0].id, 'saved-raid')
+  assert.equal(system.raids[0].phase, 'hostile')
+  assert.equal(system.canStartRaid(), false)
+  assert.equal(owner.factionId, 'civ-hellas')
+  assert.equal(orders[0][1], 'attack')
 })
 
 test('faction raids are allowed from 09:00 until before 17:00', () => {

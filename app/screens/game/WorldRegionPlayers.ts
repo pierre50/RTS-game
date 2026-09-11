@@ -1,5 +1,6 @@
 import { CIVILIZATIONS } from '../../config/civilizations'
 import { playerColors } from '../../lib/graphics/colors'
+import { playableColor } from '../../lib/graphics/playableColor'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import type { MapBlueprint } from '../../classes/map/MapGenerationTypes'
 import type { PlayerLike } from '../../types/player'
@@ -11,9 +12,16 @@ export function humanPlayerConfig(config: GameConfig): PlayerSetupConfig {
   return config.players?.find(player => player.isHuman) ?? config.players?.[0] ?? { civ: 'Hellas', isHuman: true }
 }
 
-function factionForCivilization(factions: Record<string, FactionSave> | undefined, civilization: string): FactionSave | null {
+function factionForCivilization(
+  factions: Record<string, FactionSave> | undefined,
+  civilization: string
+): FactionSave | null {
   const expectedId = factionIdForCivilization(civilization)
-  return factions?.[expectedId] ?? Object.values(factions ?? {}).find(faction => faction.civilization === civilization) ?? null
+  return (
+    factions?.[expectedId] ??
+    Object.values(factions ?? {}).find(faction => faction.civilization === civilization) ??
+    null
+  )
 }
 
 function configForCivilization(options: {
@@ -28,9 +36,10 @@ function configForCivilization(options: {
   return {
     ...(isHuman ? human : {}),
     civ,
-    color: isHuman
-      ? (human.color ?? faction?.color ?? playerColors[index % playerColors.length])
-      : (faction?.color ?? playerColors[index % playerColors.length]),
+    color: playableColor(
+      isHuman ? (human.color ?? faction?.color) : faction?.color,
+      playerColors[index % playerColors.length]
+    ),
     factionId: isHuman ? (human.factionId ?? faction?.id ?? fallbackFactionId) : (faction?.id ?? fallbackFactionId),
     gender: isHuman ? human.gender : 'male',
     isHuman,

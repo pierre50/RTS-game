@@ -1,4 +1,6 @@
 import { regrowOfflineResources } from './OfflineWorldResources'
+import { produceAbstractVillage, planAbstractTraining } from './AbstractVillageEconomy'
+import { planOfflineBuildings, restoreOfflineBuilders } from './OfflineWorldBuildingPlanner'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants/entities'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants/consumption'
@@ -74,6 +76,7 @@ function dailyPopulation(
       building => building.type === BUILDING_TYPES.townCenter && building.isBuilt && isLiving(building)
     )
     if (!centers.length) return
+    if (options.dailyFactors?.(playerIndex, day).arrivalsAllowed === false) return
     const count = calculateVillagerArrivals({
       foodAvailable: getPlayerResourceTotals(owner, { includeHero: false }).food,
       population: Math.max(
@@ -161,15 +164,28 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
   }
   let cursor = DAY_NIGHT_CONFIG.startHour * 60 + fromElapsedMs / MINUTE_MS
   const end = DAY_NIGHT_CONFIG.startHour * 60 + toElapsedMs / MINUTE_MS
+  if (options.planBuildings && fromElapsedMs === 0)
+    planOfflineBuildings(state, dayAt(cursor), options.terrain, options, spatial)
   completeOfflineTraining(state, dayAt(cursor), spatial, options, report)
   while (cursor < end) {
+    if (options.planBuildings) restoreOfflineBuilders(state)
     const boundary = (Math.floor((cursor - NEW_DAY_MINUTE) / DAY_MINUTES) + 1) * DAY_MINUTES + NEW_DAY_MINUTE
     const next = Math.min(end, cursor + 15, boundary)
     state.players.forEach((player, playerIndex) => {
       for (const unit of player.units ?? []) {
         restoreOfflineUnitSleepHealth(unit, cursor, next)
         if (!isOfflineWorker(unit)) continue
-        const milliseconds = workingMs(unit, cursor, next)
+        const efficiency = options.dailyFactors?.(playerIndex, dayAt(cursor)).workEfficiency ?? 1
+        const milliseconds = workingMs(unit, cursor, next) * efficiency
+        if (
+          options.abstractVillages &&
+          player.type === PLAYER_TYPES.ai &&
+          unit.autonomousJob !== 'construction' &&
+          unit.work !== 'builder'
+        ) {
+          produceAbstractVillage(state, player, unit, milliseconds, report, options.abstractPotential)
+          continue
+        }
         if (milliseconds > 0)
           advanceOfflineWorker(state, player, playerIndex, unit, milliseconds, dayAt(cursor), spatial, options, report)
         else
@@ -189,9 +205,12 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
       regrowOfflineResources(state, dayAt(cursor), spatial, options.wheatMatureFrame, report)
       applyOfflineDailyEvents(state, dayAt(cursor), spatial, options, report)
       dailyPopulation(state, dayAt(cursor), spatial, options, report)
+      if (options.planBuildings) planOfflineBuildings(state, dayAt(cursor), options.terrain, options, spatial)
+      if (options.abstractVillages) planAbstractTraining(state, dayAt(cursor), options, spatial)
     }
   }
   const minute = end % DAY_MINUTES
+  if (options.planBuildings) restoreOfflineBuilders(state)
   for (const player of state.players) {
     for (const unit of player.units ?? []) {
       if (!isOfflineWorker(unit)) continue

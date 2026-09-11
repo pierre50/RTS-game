@@ -139,7 +139,7 @@ test('seed saves regenerate the saved footprint and request the exact source blu
   }
 })
 
-function savedGeneration() {
+function savedGeneration(AI = class {}) {
   class Gaia {
     constructor() {
       this.animals = []
@@ -148,7 +148,7 @@ function savedGeneration() {
   return loadTsModule('app/classes/map/generation/MapSavedStateGeneration.ts', {
     mocks: {
       '../../Resource': { Resource: class {} },
-      '../../players': { Gaia },
+      '../../players': { Gaia, AI },
       '../../../lib': { getGaiaAnimals: gaia => gaia.animals },
       '../../../services/FogOfWar': {},
       '../../cell': {
@@ -206,4 +206,23 @@ test('full-grid restoration keeps every sparse row and clears cells from previou
   clearGeneratedGameplayState(map)
   assert.equal(map.grid[1][1].has, null)
   assert.equal(map.grid[1][1].solid, false)
+})
+
+test('replacing generated entities stops every provisional AI before replacing the roster', () => {
+  const stopped = []
+  class AI {
+    die() {
+      stopped.push(this)
+      map.context.players.splice(map.context.players.indexOf(this), 1)
+    }
+  }
+  const players = [new AI(), new AI()]
+  const map = {
+    grid: [], children: [],
+    context: { app: {}, gamebox: {}, scheduler: {}, players: [...players] },
+  }
+  map.context.map = map
+  savedGeneration(AI).clearGeneratedGameplayState(map)
+  assert.deepEqual(stopped, players)
+  assert.deepEqual(map.context.players, [])
 })

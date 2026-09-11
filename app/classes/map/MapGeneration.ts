@@ -34,18 +34,9 @@ import {
   type MapGenerationMap,
   type ProgressCallback,
   type SavedGameData,
-  type TerrainGrid,
 } from './MapGenerationTypes'
-import type { EnvironmentTerrainParams } from '../../constants'
 import type { SavedPlayer } from './MapSaveRestoreTypes'
 import { findPlayerPlaces } from './MapSpawnPlacement'
-import {
-  generateCells,
-  generateCellsAsync,
-  generateTerrain,
-  generateTerrainDataAsync,
-  generateTerrainInWorker,
-} from './generation/MapCellGeneration'
 import {
   generateStylishMap,
   prepareBaseTerrain as prepareMapBaseTerrain,
@@ -61,7 +52,6 @@ import {
   restoreSavedPlayers,
   restoreSavedResources,
 } from './generation/MapSavedStateGeneration'
-import { generateMapAsync as generateMapAsyncWithSpawnSearch } from './generation/MapAsyncGeneration'
 export type {
   GenerateMapOptions,
   MapBlueprint,
@@ -69,7 +59,6 @@ export type {
   MapSettlement,
   ProgressCallback,
   SavedGameData,
-  TerrainGrid,
 } from './MapGenerationTypes'
 
 function gameContext(context: MapGenerationContext): GameContextLike {
@@ -128,14 +117,6 @@ export class MapGeneration {
 
   yieldToBrowser(): Promise<void> {
     return new Promise(resolve => requestAnimationFrame(() => resolve()))
-  }
-
-  generateTerrainInWorker(
-    gridSize: number,
-    seed: number,
-    params: Partial<EnvironmentTerrainParams> = {}
-  ): Promise<TerrainGrid> {
-    return generateTerrainInWorker(this.map, gridSize, seed, params)
   }
 
   isInPlayerStartSafeZone(i: number, j: number, radius: number = 20): boolean {
@@ -208,14 +189,6 @@ export class MapGeneration {
     applySavedStateToGeneratedMap(this.map, data)
   }
 
-  async generateMapAsync(
-    positionsCountOverride: number | null = null,
-    repeat: number = 0,
-    options: GenerateMapOptions = {}
-  ): Promise<void> {
-    await generateMapAsyncWithSpawnSearch(this.map, this, positionsCountOverride, repeat, options)
-  }
-
   async stylishMap({
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
@@ -277,28 +250,6 @@ export class MapGeneration {
     applyPlayerCivilizationLevelStartingKit(this.map, player, level, townCenter)
   }
 
-  generateCells(): void {
-    generateCells(this.map)
-  }
-
-  async generateTerrainDataAsync(): Promise<TerrainGrid> {
-    return generateTerrainDataAsync(this.map, (gridSize, seed, params) =>
-      this.generateTerrainInWorker(gridSize, seed, params)
-    )
-  }
-
-  async generateCellsAsync({
-    onProgress = async (_stage: string, _progress: number) => {},
-    terrain: preparedTerrain = null,
-  }: GenerateMapOptions = {}): Promise<void> {
-    await generateCellsAsync(
-      this.map,
-      () => this.yieldToBrowser(),
-      () => this.generateTerrainDataAsync(),
-      { onProgress, terrain: preparedTerrain }
-    )
-  }
-
   async generateFromBlueprint(
     blueprintData: MapBlueprint,
     options: { onProgress?: ProgressCallback } = {}
@@ -308,10 +259,6 @@ export class MapGeneration {
 
   generateEditableFromBlueprint(blueprintData: MapBlueprint): void {
     return this.mapBlueprintGeneration.generateEditableFromBlueprint(blueprintData)
-  }
-
-  generateTerrain(gridSize: number = 120, seed?: number, params: Partial<EnvironmentTerrainParams> = {}): TerrainGrid {
-    return generateTerrain(this.map, gridSize, seed, params)
   }
 
   _hasSolidNeighbor(i: number, j: number): boolean {

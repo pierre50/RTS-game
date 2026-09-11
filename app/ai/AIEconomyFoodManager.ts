@@ -1,4 +1,4 @@
-import { knownTarget, playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import { knownTarget, knowsEconomicTarget, playerSeesTarget } from '../lib/units/playerTargetKnowledge'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeEntity } from '../types/entities'
 import { ACTION_TYPES, BUILDING_TYPES } from '../constants'
@@ -122,7 +122,8 @@ export class AIEconomyFoodManager {
   getViableHuntAnimals(hasKnownBerryFood: boolean, dropSites: AIBuildingLike[] = []): AIEntityLike[] {
     return [...this.ai.foundedAnimals].filter(
       (animal: AIEntityLike) =>
-        playerSeesTarget(this.ai as unknown as PlayerLike, animal as RuntimeEntity) &&
+        (knowsEconomicTarget(this.ai as unknown as PlayerLike, animal as RuntimeEntity) ||
+          playerSeesTarget(this.ai as unknown as PlayerLike, animal as RuntimeEntity)) &&
         animal.type !== 'Horse' &&
         this.isViableLiveHunt(animal, hasKnownBerryFood, dropSites)
     )

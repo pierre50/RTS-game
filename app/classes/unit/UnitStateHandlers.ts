@@ -2,7 +2,7 @@ import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../const
 import {
   evaluateCombatMorale,
   resumeVillagerAutonomy,
-  showAggressionFeedback,
+  cancelPendingAggression,
   updateInstanceRenderVisibility,
 } from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
@@ -49,7 +49,7 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
   const moraleDecision = evaluateCombatMorale(unit, instance)
   if (moraleDecision === 'surrender') {
     if (instance.family === FAMILY_TYPES.unit) {
-      showAggressionFeedback(unit)
+      cancelPendingAggression(unit)
       if (new UnitActions(instance as UnitEntity).convertTarget(unit, { grantXp: false, stopConverter: false })) return
     }
     unit.runaway(instance)
@@ -65,7 +65,7 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
   if (unit.dest === instance) return
 
   const currentDest = unit.dest
-  showAggressionFeedback(unit)
+  cancelPendingAggression(unit)
   if (unit.context.unitRest?.handleUnitDanger(unit, instance)) {
     unit.previousDest = currentDest
     return

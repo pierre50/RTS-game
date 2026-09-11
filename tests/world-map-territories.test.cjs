@@ -133,3 +133,13 @@ test('a saved human base keeps its territory while the hero travels elsewhere', 
   })
   assert.equal(resolveWorldMapTerritories(menu, manifest)[0].key, 'self')
 })
+
+test('saved territory borders use the current faction color rather than stale saved colors', () => {
+  const { manifest, menu, owner } = setup()
+  owner.color = 'grey'
+  owner.colorHex = '#8f8f8f'
+  menu.context.getWorldGraph = () => ({ nodes: { saved: { id: 'saved' } } })
+  menu.context.getCampaignWorldState = () => ({ config: { worldRegionId: 'r0-0' }, players: [owner] })
+  menu.context.getCampaignFactions = () => ({ 'civ-hellas': { id: 'civ-hellas', color: '#4b6b2b' } })
+  assert.equal(resolveWorldMapTerritories(menu, manifest)[0].color, '#4b6b2b')
+})

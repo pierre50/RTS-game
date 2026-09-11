@@ -38,7 +38,6 @@ const FLOAT_RISE = 18
 const STATUS_BUBBLE_STEPS = 46
 const STATUS_BUBBLE_RISE = 0
 const STATUS_BUBBLE_Y_OFFSET = 8
-const FATIGUE_FEEDBACK_COOLDOWN_MS = 1200
 const ALERT_FEEDBACK_COOLDOWN_MS = 1200
 const STATUS_FEEDBACK_COOLDOWN_MS = 1200
 const ALERT_TO_AGGRESSION_DELAY_MS = 350
@@ -53,13 +52,9 @@ type ConversionFlashState = {
 }
 const conversionFlashStates = new WeakMap<DamageSprite, ConversionFlashState>()
 const conversionFlashSprites = new Set<DamageSprite>()
-const fatigueFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const alertFeedbackTimes = new WeakMap<RuntimeEntity, number>()
-const aggressionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const sequencedAggressionTaskIds = new WeakMap<RuntimeEntity, SchedulerTaskId>()
 const healingFeedbackTimes = new WeakMap<RuntimeEntity, number>()
-const confusionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
-const blockedFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const floatingTexts = new WeakMap<RuntimeEntity, Set<FloatingTextRecord>>()
 const floatingTextTargets = new Set<RuntimeEntity>()
 const PLAYER_FLASH_COLORS: Record<string, string> = {
@@ -414,23 +409,6 @@ function showCooldownStatusFeedback(
   showFloatingText(target, options)
 }
 
-export function showFatigueFeedback(target: RuntimeEntity): void {
-  const scheduler = target.context?.scheduler
-  const now = scheduler?.elapsedMs ?? performance.now()
-  const previous = fatigueFeedbackTimes.get(target) ?? -Infinity
-  if (now - previous < FATIGUE_FEEDBACK_COOLDOWN_MS) return
-  fatigueFeedbackTimes.set(target, now)
-  showFloatingText(
-    target,
-    statusBubbleFeedback({
-      text: '...',
-      fontSize: 13,
-      yOffset: STATUS_BUBBLE_Y_OFFSET,
-      taskLabel: 'unit.fatigueText',
-    })
-  )
-}
-
 function showAlertFeedbackNow(target: RuntimeEntity): boolean {
   const scheduler = target.context?.scheduler
   const now = scheduler?.elapsedMs ?? performance.now()
@@ -453,22 +431,12 @@ export function showAlertFeedback(target: RuntimeEntity): void {
   showAlertFeedbackNow(target)
 }
 
-export function showAggressionFeedback(target: RuntimeEntity): void {
+export function cancelPendingAggression(target: RuntimeEntity): void {
   const pendingTaskId = sequencedAggressionTaskIds.get(target)
   if (pendingTaskId != null) {
     target.context?.scheduler?.remove(pendingTaskId)
     sequencedAggressionTaskIds.delete(target)
   }
-  showCooldownStatusFeedback(
-    target,
-    aggressionFeedbackTimes,
-    statusBubbleFeedback({
-      text: '!!',
-      fontSize: 14,
-      yOffset: STATUS_BUBBLE_Y_OFFSET,
-      taskLabel: 'unit.aggressionText',
-    })
-  )
 }
 
 export function showAlertThenAggressionFeedback(target: RuntimeEntity, onAggression?: AlertAggressionCallback): void {
@@ -476,7 +444,6 @@ export function showAlertThenAggressionFeedback(target: RuntimeEntity, onAggress
   const alertShown = showAlertFeedbackNow(target)
   if (!alertShown || sequencedAggressionTaskIds.has(target)) return
   if (!scheduler) {
-    showAggressionFeedback(target)
     onAggression?.()
     return
   }
@@ -485,7 +452,6 @@ export function showAlertThenAggressionFeedback(target: RuntimeEntity, onAggress
     () => {
       sequencedAggressionTaskIds.delete(target)
       if (target.isDestroyed || target.isDead) return
-      showAggressionFeedback(target)
       onAggression?.()
     },
     ALERT_TO_AGGRESSION_DELAY_MS,
@@ -503,32 +469,6 @@ export function showHealingFeedback(target: RuntimeEntity): void {
       fontSize: 12,
       yOffset: 16,
       taskLabel: 'unit.healingText',
-    })
-  )
-}
-
-export function showConfusionFeedback(target: RuntimeEntity): void {
-  showCooldownStatusFeedback(
-    target,
-    confusionFeedbackTimes,
-    statusBubbleFeedback({
-      text: '?',
-      fontSize: 13,
-      yOffset: 20,
-      taskLabel: 'unit.confusionText',
-    })
-  )
-}
-
-export function showBlockedFeedback(target: RuntimeEntity): void {
-  showCooldownStatusFeedback(
-    target,
-    blockedFeedbackTimes,
-    statusBubbleFeedback({
-      text: 'X',
-      fontSize: 12,
-      yOffset: 20,
-      taskLabel: 'unit.blockedText',
     })
   )
 }

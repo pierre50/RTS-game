@@ -1,3 +1,5 @@
+import { isChiefUnit } from '../../lib/chief'
+import { t } from '../../lib/lang'
 import { getEntityMapPoint, isOutsideSpaceId } from '../../lib/mapSpaces'
 import { gridToLocal, localToGrid, type LocalMapLayout } from '../../lib/localMapLayout'
 import type { GameContextLike } from '../../types/context'
@@ -157,6 +159,7 @@ export class WorldRegionTravelSystem {
   _elapsedMs: number
   _preloadingRegionId: string | null
   _travelling: boolean
+  _exitBlocked: boolean
 
   constructor(context: GameContextLike, host: RegionTravelHost) {
     this.context = context
@@ -164,6 +167,7 @@ export class WorldRegionTravelSystem {
     this._elapsedMs = 0
     this._preloadingRegionId = null
     this._travelling = false
+    this._exitBlocked = false
     this._onTick = ticker => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? 16)
     context.app.ticker.add(this._onTick)
   }
@@ -191,8 +195,9 @@ export class WorldRegionTravelSystem {
       return
     }
     const edgeToPreload = nearestEdge(hero, map, PRELOAD_MARGIN_CELLS)
-    if (edgeToPreload) this.preloadNeighbor(edgeToPreload)
+    if (edgeToPreload && isChiefUnit(hero)) this.preloadNeighbor(edgeToPreload)
     const edgeToCross = nearestEdge(hero, map, CROSS_MARGIN_CELLS, true)
+    if (!edgeToCross) this._exitBlocked = false
     if (edgeToCross) this.crossToNeighbor(edgeToCross)
   }
 
@@ -214,6 +219,12 @@ export class WorldRegionTravelSystem {
     if (!map?.worldRegion || !hero || !isOutsideSpaceId(hero.spaceId)) return
     const regionId = regionIdFor(map, neighborRegionForEdge(map.worldRegion, edge))
     if (!regionId) return
+    if (!isChiefUnit(hero)) {
+      if (!this._exitBlocked) this.context.menu?.showMessage?.(t('heroCannotLeaveMapYet'), 'warning')
+      this._exitBlocked = true
+      return
+    }
+    this._exitBlocked = false
     this._travelling = true
     const point = getEntityMapPoint(hero)
     this.context.controls?.setCamera?.(point.x, point.y)

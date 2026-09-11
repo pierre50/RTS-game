@@ -85,20 +85,22 @@ export function validatePlayers(
   players: unknown,
   size: number,
   config: LoadedGameConfig,
-  containsCell?: (i: number, j: number) => boolean
+  containsCell?: (i: number, j: number) => boolean,
+  options: { abstractEconomy?: boolean } = {}
 ): void {
   validateArray(players, 'players')
   if (!players.length) fail('Invalid save file: players list is empty.')
 
   let playedPlayers = 0
   for (let index = 0; index < players.length; index++) {
-    if (validatePlayerRecord(players[index], index, size, config, containsCell)) playedPlayers++
+    if (validatePlayerRecord(players[index], index, size, config, containsCell, options.abstractEconomy))
+      playedPlayers++
   }
 
   const normalized = groupPlayersInteriorBuildings(players as { label?: string; buildings?: SaveEntityState[] }[])
   normalized.forEach((player, index) => Object.assign(players[index] as object, player))
   validateCaveOccupantReferences(players)
-  if (playedPlayers !== 1) {
+  if (playedPlayers !== (options.abstractEconomy ? 0 : 1)) {
     fail('Invalid save file: exactly one played player is required.')
   }
 }
@@ -143,7 +145,8 @@ function validatePlayerRecord(
   index: number,
   size: number,
   config: LoadedGameConfig,
-  containsCell?: (i: number, j: number) => boolean
+  containsCell?: (i: number, j: number) => boolean,
+  abstractEconomy = false
 ): boolean {
   if (!isObject(player)) fail(`Invalid save file: player ${index} is invalid.`)
   if (
@@ -171,7 +174,7 @@ function validatePlayerRecord(
   const normalizedBuildings = player.buildings as SaveEntityState[]
   validateArray(units, `player ${index} units`)
   validateArray(corpses, `player ${index} corpses`)
-  validatePlayerViews(views, index, size, containsCell)
+  if (!abstractEconomy || player.views != null) validatePlayerViews(views, index, size, containsCell)
   validatePlayerBuildings(normalizedBuildings, index, size, config)
   validatePlayerUnits(units, index, size, config)
   validatePlayerCorpses(corpses, index, size, config)
@@ -292,7 +295,28 @@ function validatePlayerUnits(units: unknown[], playerIndex: number, size: number
   units.forEach((unit, unitIndex) => {
     validateEntityPosition(unit, size, `player ${playerIndex} unit ${unitIndex}`)
     validateSavedUnitOrders(unit)
+    if (unit.factionExpedition != null) {
+      const expedition = unit.factionExpedition
+      if (
+        !isObject(expedition) ||
+        !['raidId', 'factionId', 'regionId', 'playerLabel'].every(
+          key => typeof expedition[key] === 'string' && expedition[key].length > 0
+        ) ||
+        !['approaching', 'parley', 'hostile', 'leaving'].includes(String(expedition.phase)) ||
+        !isObject(expedition.original) ||
+        expedition.original.factionExpedition != null ||
+        expedition.original.label !== unit.label ||
+        expedition.original.type !== unit.type ||
+        !isObject(expedition.tribute) ||
+        Object.values(expedition.tribute).some(
+          value => typeof value !== 'number' || !Number.isFinite(value) || value < 0
+        )
+      )
+        fail('Invalid save file: faction expedition is invalid.')
+      validateEntityPosition(expedition.original, MAX_MAP_EDGE, 'faction expedition origin')
+    }
     validateOptionalBoolean(unit.exploringForAutonomy, `player ${playerIndex} unit ${unitIndex}.exploringForAutonomy`)
+    validateOptionalBoolean(unit.pendingRescueThanks, `player ${playerIndex} unit ${unitIndex}.pendingRescueThanks`)
     if (!isSupportedSavedUnitType(unit.type, config)) {
       fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has an unsupported type.`)
     }

@@ -1,4 +1,5 @@
 import type { AIBuildingLike, AIResourceAmount, AIStrategyPlayerLike, AIStrategySnapshot } from './types'
+import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
 
 type ProductionStrategy = {
   ai: AIStrategyPlayerLike
@@ -39,7 +40,7 @@ export function handleAIProductionActions(
 
   const infantryOrders = strategy.trainUnits(infantry.length, maxInfantry, barracks, infantryUnit, villagers, reserve, debug)
   actions += infantryOrders
-  reserve = addReservedTrainingCost(reserve, strategy.ai.config.units[infantryUnit]?.cost, infantryOrders)
+  reserve = addReservedTrainingCost(reserve, getUnitTrainingCost(strategy.ai, infantryUnit), infantryOrders)
 
   const archerOrders = strategy.trainUnits(archers.length, maxArcher, archeryRanges, archerUnit, villagers, reserve, debug)
   actions += archerOrders

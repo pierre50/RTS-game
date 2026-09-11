@@ -1,5 +1,6 @@
 import { CIVILIZATIONS } from '../../config/civilizations'
 import { playerColors } from '../graphics/colors'
+import { playableColor } from '../graphics/playableColor'
 import { createFactionSave, FACTION_SCORE } from '../combat/factions'
 import type { CampaignSave, FactionSave } from '../../types/save'
 
@@ -112,8 +113,17 @@ export function ensureCampaignPlayerRoster(campaign: CampaignSave, now: number =
       changed = true
       continue
     }
-    if (!nextFactions[id].color) {
-      nextFactions[id] = { ...nextFactions[id], color: faction.color }
+    const color = id === BANDIT_FACTION_ID ? BANDIT_FACTION_COLOR : playableColor(nextFactions[id].color, faction.color)
+    if (color !== nextFactions[id].color) {
+      nextFactions[id] = { ...nextFactions[id], color }
+      changed = true
+    }
+  }
+  for (const [id, faction] of Object.entries(nextFactions)) {
+    if (id === BANDIT_FACTION_ID) continue
+    const color = playableColor(faction.color, GLOBAL_FACTION_COLORS[stableHash(id) % GLOBAL_FACTION_COLORS.length])
+    if (color !== faction.color) {
+      nextFactions[id] = { ...faction, color }
       changed = true
     }
   }

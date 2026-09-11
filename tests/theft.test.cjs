@@ -2,9 +2,10 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadTheft() {
+function loadTheft(reports = []) {
   return loadTsModule('app/lib/theft/theft.ts', {
     mocks: {
+      '../../ai/AITheftDefense': { reportInteriorTheft: (...args) => reports.push(args) },
       '../combat/diplomaticAggression': {
         applyDiplomaticAggression: (source, target, options) => ({
           changed: Boolean(source?.owner && target?.owner),
@@ -71,4 +72,16 @@ test('foreign chest transfers apply chest theft consequences', () => {
       subject: 'chest',
     }
   )
+})
+
+
+test('foreign theft reports the actual actor after applying diplomatic consequences', () => {
+  const reports = []
+  const { applyTheftConsequences } = loadTheft(reports)
+  const owner = { label: 'ai' }
+  const actor = { family: 'unit', owner: { label: 'hero', isPlayed: true } }
+  applyTheftConsequences({ actor, owner, subject: 'chest' })
+  assert.deepEqual(reports, [[owner, actor]])
+  applyTheftConsequences({ actor, owner: actor.owner, subject: 'chest' })
+  assert.equal(reports.length, 1)
 })

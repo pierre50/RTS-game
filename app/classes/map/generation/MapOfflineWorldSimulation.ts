@@ -23,7 +23,7 @@ const WORK_ACTION: Record<string, string> = {
   hunter: 'takemeat',
 }
 
-function workCycleMs(config: UnitConfig, work: string): number {
+export function offlineWorkCycleMs(config: UnitConfig, work: string): number {
   const action = WORK_ACTION[work]
   const allAssets = config.allAssets as Record<string, { actionSheet?: string }> | undefined
   const sheetName = allAssets?.[work]?.actionSheet
@@ -74,7 +74,7 @@ export function applyOfflineWorldSimulation(map: MapGenerationMap, data: SavedGa
       const key = `${index}:${work}`
       const cached = cycles.get(key)
       if (cached !== undefined) return cached
-      const cycle = workCycleMs(unitConfig(index, 'Villager'), work)
+      const cycle = offlineWorkCycleMs(unitConfig(index, 'Villager'), work)
       cycles.set(key, cycle)
       return cycle
     },

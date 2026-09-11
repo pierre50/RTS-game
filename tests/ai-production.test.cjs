@@ -99,6 +99,7 @@ function loadAIStrategy(options = {}) {
       return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyTechnologyActions.ts'))
     if (request === './config') {
       return {
+        AI_BUILDING_TRAINING_CAPACITY: 5,
         AGE_UP_BUFFERS: {},
         AGE_UP_COSTS: {},
         AI_DIFFICULTIES: { medium: {} },
@@ -345,7 +346,8 @@ test('ai economic demand includes stone-heavy core infrastructure', () => {
   }
   const strategy = new AIStrategy(ai)
 
-  assert.deepEqual(strategy.getEconomicDemand(), { food: 0, gold: 0, stone: 220, wood: 585 })
+  // A market is not reserved before its storage and granary prerequisites exist.
+  assert.deepEqual(strategy.getEconomicDemand(), { food: 0, gold: 0, stone: 130, wood: 360 })
 })
 
 test('ai building strategy anticipates automatic villager waves before adding houses', () => {

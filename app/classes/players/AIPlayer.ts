@@ -1,7 +1,10 @@
+import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
+import { handleInteriorTheftDefense, isInteriorTheftDefender } from '../../ai/AITheftDefense'
 import { Player } from './Player'
+import { knowsEconomicTarget, knownTarget } from '../../lib/units/playerTargetKnowledge'
 import type { PlayerOptions } from './Player'
 
-import { isPlayerEliminated, transferDefeatedPlayerBuildings } from '../../lib'
+import { getGaiaAnimals, isPlayerEliminated, transferDefeatedPlayerBuildings } from '../../lib'
 import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, RESOURCE_TYPES } from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
@@ -301,7 +304,14 @@ export class AI extends Player {
 
   step() {
     const { map, paused } = this.context
-    if (paused) return 0
+    if (paused || map.ready === false) return 0
+    for (const resource of [...map.resources, ...getGaiaAnimals(map.gaia)]) {
+      if (resource.isDestroyed || !knowsEconomicTarget(this, resource)) continue
+      knownTarget(this, resource)
+      if (resource.family === 'resource') this.foundedResources[resource.type]?.add(resource)
+      else if (resource.isDead) this.foundedDeadAnimals.add(resource)
+      else this.foundedAnimals.add(resource)
+    }
 
     let actions = 0
 
@@ -319,9 +329,10 @@ export class AI extends Player {
       )
     }
 
+    const interiorTheftDefenseActive = handleInteriorTheftDefense(this)
     const allVillagers = this.getLivingUnitsByType(UNIT_TYPES.villager)
     actions += this.refreshChiefSuccession(allVillagers)
-    const villagers = allVillagers.filter(villager => !isChiefUnit(villager))
+    const villagers = allVillagers.filter(villager => !isChiefUnit(villager) && !isInteriorTheftDefender(villager) && !hasInteriorCombatRoute(villager))
     const { infantry, archers, cavalry } = classifyMilitaryUnits(this.units as AIEntityLike[])
     const military = [...infantry, ...archers, ...cavalry]
     const militaryPower = this.strategy.military.getGroupCombatPower(military)
@@ -357,6 +368,7 @@ export class AI extends Player {
     const waitingMilitary = military.filter(
       c =>
         c.inactif &&
+        !hasInteriorCombatRoute(c) &&
         c.action !== ACTION_TYPES.attack &&
         (c.hitPoints ?? 0) >= (c.totalHitPoints ?? 1) * RETREAT_HP_RATIO
     )
@@ -375,11 +387,9 @@ export class AI extends Player {
     this.cleanupSets()
     this.cleanupThreats()
 
-    const visibleEnemyDefense = this.handleVisibleEnemyDefense({
-      villagers,
-      military,
-      towncenters,
-    })
+    const visibleEnemyDefense = interiorTheftDefenseActive
+      ? { active: false, actions: 0 }
+      : this.handleVisibleEnemyDefense({ villagers, military, towncenters })
     actions += visibleEnemyDefense.actions
     if (visibleEnemyDefense.active) return actions
 
@@ -435,6 +445,7 @@ export class AI extends Player {
     } = this
     if (this._stepTaskId != null) this.context.scheduler.remove(this._stepTaskId)
     this._stepTaskId = null
-    players.splice(players.indexOf(this), 1)
+    const index = players.indexOf(this)
+    if (index !== -1) players.splice(index, 1)
   }
 }

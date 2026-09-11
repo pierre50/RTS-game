@@ -6,13 +6,14 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
 
-const {
-  BLUEPRINT_MAP_SIZE,
-  DEFAULT_ENVIRONMENT_ID,
-  ENVIRONMENT_IDS,
-  blueprint,
-  randomFrom,
-} = require('./generate-maps.cjs')
+const { BLUEPRINT_MAP_SIZE, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = require('./maps/config.cjs')
+const { blueprint } = require('./maps/blueprint.cjs')
+const { randomFrom } = require('./maps/noise.cjs')
+
+// Resource placement yields between batches in the browser.
+if (typeof globalThis.requestAnimationFrame !== 'function') {
+  globalThis.requestAnimationFrame = callback => setImmediate(() => callback(0))
+}
 
 const ROOT = path.resolve(__dirname, '..')
 const DEFAULT_OUTPUT = path.join(ROOT, 'public', 'maps', 'worlds')
@@ -207,7 +208,6 @@ async function generateRegionMap(region, worldSeed, mapsDirectory) {
       banditCampPositions,
       macroTerrainRows: region.terrainRows,
       settlements,
-      worldRegion: true,
     })
     if (!map) continue
     const id = `world-${worldSeed}-${regionId(region)}-${slug(environment)}`

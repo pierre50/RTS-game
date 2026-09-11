@@ -1,5 +1,6 @@
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
-import { BUILDING_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../constants'
+import { BUILDING_TYPES } from '../constants'
+import { villageBuildingNeeds } from './AIDevelopmentPolicy'
 import { canAfford, getBuildingPlacementSearchSize, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import type {
@@ -137,17 +138,18 @@ function buyCoreInfrastructure(options: {
     otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
   const defensivePlacement = () => placementCondition(isEnemyFacing(anchor))
   let actions = 0
-  const expectedArrivalWave =
-    ai.population > 0
-      ? Math.min(
-          VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay,
-          Math.max(1, Math.floor(ai.population * VILLAGER_ARRIVAL_CONFIG.growthRate))
-        )
-      : 0
+  const needs = villageBuildingNeeds({
+    population: ai.population,
+    populationMax: ai.populationMax,
+    age: ai.age,
+    phase: ai.phase,
+    desiredBarracks,
+    buildings: [...barracks, ...granarys, ...markets, ...storagepits, ...notBuiltHouses],
+  })
 
   if (
     buy(
-      ai.population + expectedArrivalWave + 2 > ai.populationMax && !notBuiltHouses.length,
+      needs[BUILDING_TYPES.house],
       BUILDING_TYPES.house,
       () => findBuildingPosition(anchor, map, [6, 10], 0, placementCondition()),
       false
@@ -157,7 +159,7 @@ function buyCoreInfrastructure(options: {
 
   if (
     buy(
-      storagepits.length === 0,
+      needs[BUILDING_TYPES.storagePit],
       BUILDING_TYPES.storagePit,
       () => findBuildingPosition(anchor, map, [4, 12], 1, placementCondition()),
       false
@@ -167,7 +169,7 @@ function buyCoreInfrastructure(options: {
 
   if (
     buy(
-      granarys.length === 0,
+      needs[BUILDING_TYPES.granary],
       BUILDING_TYPES.granary,
       () => findBuildingPosition(anchor, map, [4, 12], 1, placementCondition()),
       false
@@ -176,35 +178,35 @@ function buyCoreInfrastructure(options: {
     actions++
 
   if (
-    buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
+    buy(needs[BUILDING_TYPES.barracks], BUILDING_TYPES.barracks, () =>
       findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
     )
   )
     actions++
 
   if (
-    buy(storagepits.length > 0 && granarys.length > 0 && markets.length === 0, BUILDING_TYPES.market, () =>
+    buy(needs[BUILDING_TYPES.market], BUILDING_TYPES.market, () =>
       findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
     )
   )
     actions++
 
   if (
-    buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
+    buy(needs[BUILDING_TYPES.archeryRange], BUILDING_TYPES.archeryRange, () =>
       findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
     )
   )
     actions++
 
   if (
-    buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
+    buy(needs[BUILDING_TYPES.stable], BUILDING_TYPES.stable, () =>
       findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
     )
   )
     actions++
 
   if (
-    buy(ai.age >= 1, BUILDING_TYPES.watchTower, () =>
+    buy(needs[BUILDING_TYPES.watchTower], BUILDING_TYPES.watchTower, () =>
       findBuildingPosition(anchor, map, [6, 15], 2, defensivePlacement())
     )
   )
