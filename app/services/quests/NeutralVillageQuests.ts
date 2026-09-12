@@ -1,3 +1,5 @@
+import { VILLAGE_QUEST_CONFIG } from '../../config/gameplay'
+import { t } from '../../lib/lang'
 import { grantQuestRelationReward } from './QuestRelationReward'
 import { RESOURCE_TYPES, RESOURCE_STORAGE_NAMES } from '../../constants'
 import { isLivingChief } from '../../lib/chief'
@@ -21,12 +23,16 @@ const GATHERABLE = [
 export class NeutralVillageQuests {
   readonly system: QuestSystem
   private taskId: number | null = null
+  private initialized = false
+  private unsubscribeDayChange: (() => void) | null = null
   private marked = new Map<UnitEntity, 'exclamation' | 'question'>()
 
   constructor(private readonly context: GameContextLike) {
     this.system = new QuestSystem(() => context.getQuestJournal?.() ?? null)
-    if (!context.editor)
-      this.taskId = context.scheduler?.add(() => this.update(), 500, 'quests.neutralVillages') ?? null
+    if (!context.editor) {
+      this.taskId = context.scheduler?.add(() => this.update(!this.initialized), 500, 'quests.neutralVillages') ?? null
+      this.unsubscribeDayChange = context.dayNight?.onDayChange?.(() => this.update()) ?? null
+    }
   }
 
   private regionId(): string {
@@ -58,17 +64,31 @@ export class NeutralVillageQuests {
   }
 
   getQuest(npc: UnitEntity): QuestInstance | undefined {
-    return this.system.state?.quests.find(
+    const quests = this.system.state?.quests.filter(
       quest =>
         quest.definitionId === resourceRequestQuest.id &&
         quest.owner.entityLabel === npc.label &&
         quest.owner.playerLabel === npc.owner?.label &&
         quest.regionId === this.regionId()
-    )
+    ) ?? []
+    const quest = quests.find(quest => quest.status === 'available' || quest.status === 'active') ?? quests[quests.length - 1]
+    if (quest) quest.parameters.rewardGold ??= Number(quest.parameters.quantity) * VILLAGE_QUEST_CONFIG.goldPerResource
+    return quest
   }
 
-  private ensureOffer(npc: UnitEntity): void {
-    if (!this.eligible(npc) || this.getQuest(npc) || !this.system.state || !this.regionId()) return
+  private day(): number {
+    return this.context.dayNight?.state.day ?? 1
+  }
+
+  private ensureOffer(npc: UnitEntity, refreshOffers = true): void {
+    if (!this.eligible(npc) || !this.system.state || !this.regionId()) return
+    const previous = this.getQuest(npc)
+    if (previous) {
+      if (previous.status !== 'completed' || !refreshOffers) return
+      // Legacy completions have no date: start their cooldown on first encounter.
+      previous.nextOfferDay ??= (previous.completedDay ?? this.day()) + VILLAGE_QUEST_CONFIG.repeatDelayDays
+      if (this.day() < previous.nextOfferDay) return
+    }
     const map = this.context.map
     const owner = npc.owner
     if (!map || !owner) return
@@ -84,16 +104,25 @@ export class NeutralVillageQuests {
       ),
     })).filter(choice => choice.available >= 5)
     if (!choices.length) return
-    const choice = choices[map.randomRange(0, choices.length - 1)]
-    const quantity = map.randomRange(5, Math.min(15, Math.floor(choice.available)))
-    const id = JSON.stringify([resourceRequestQuest.id, this.regionId(), owner.label, npc.label])
+    const requests = choices.flatMap(choice =>
+      Array.from({ length: Math.min(15, Math.floor(choice.available)) - 4 }, (_, index) => ({
+        resource: choice.resource, quantity: index + 5,
+      }))
+    )
+    const alternatives = requests.filter(request =>
+      request.resource !== previous?.parameters.resource || request.quantity !== previous?.parameters.quantity
+    )
+    const pool = alternatives.length ? alternatives : requests
+    const choice = pool[map.randomRange(0, pool.length - 1)]
+    const quantity = choice.quantity
+    const id = JSON.stringify([resourceRequestQuest.id, this.regionId(), owner.label, npc.label, this.system.state.quests.length])
     this.system.offer({
       id,
       definitionId: resourceRequestQuest.id,
       regionId: this.regionId(),
       owner: { entityLabel: npc.label, playerLabel: owner.label, name: npc.name || owner.name || '' },
       assigneeId: null,
-      parameters: { resource: choice.resource, quantity },
+      parameters: { resource: choice.resource, quantity, rewardGold: quantity * VILLAGE_QUEST_CONFIG.goldPerResource },
       bindings: { recipient: npc.label },
       status: 'available',
       stageId: 'delivery',
@@ -116,13 +145,17 @@ export class NeutralVillageQuests {
         const to = { ...npc.inventory?.resources }
         for (const effect of effects) {
           if (
-            effect.type !== 'take-resource' ||
+            !['take-resource', 'give-resource'].includes(effect.type) ||
             !STORED_RESOURCES.has(effect.resource) ||
             !Number.isSafeInteger(effect.quantity) ||
             effect.quantity <= 0
           )
             return false
           const resource = effect.resource as keyof ResourceAmount
+          if (effect.type === 'give-resource') {
+            from[resource] = (from[resource] ?? 0) + effect.quantity
+            continue
+          }
           if ((from[resource] ?? 0) < effect.quantity) return false
           from[resource] = (from[resource] ?? 0) - effect.quantity
           to[resource] = (to[resource] ?? 0) + effect.quantity
@@ -157,19 +190,22 @@ export class NeutralVillageQuests {
     const playerId = this.context.player?.label
     if (!quest || !playerId || !this.system.interact(quest.id, 'deliver', playerId, npc.label, this.environment(npc)))
       return false
+    quest.completedDay = this.day()
+    quest.nextOfferDay = this.day() + VILLAGE_QUEST_CONFIG.repeatDelayDays
     const message = grantQuestRelationReward(this.context, quest, npc, resourceRequestQuest.relationReward ?? 0)
     this.context.menu?.refreshInventory?.()
     this.update()
-    this.context.menu?.showMessage?.(message, 'success')
+    this.context.menu?.showMessage?.(`${message} ${t('questGoldReceived').replace('{quantity}', String(quest.parameters.rewardGold))}`, 'success')
     return true
   }
 
-  update(): void {
+  update(refreshOffers = true): void {
+    this.initialized = true
     const wanted = new Map<UnitEntity, 'exclamation' | 'question'>()
     for (const player of this.context.players ?? [])
       for (const npc of player.units ?? []) {
         if (!this.eligible(npc)) continue
-        this.ensureOffer(npc)
+        this.ensureOffer(npc, refreshOffers)
         const quest = this.getQuest(npc)
         if (!quest || !this.canTalk(npc)) continue
         if (quest.status === 'available') wanted.set(npc, 'exclamation')
@@ -189,6 +225,7 @@ export class NeutralVillageQuests {
   }
 
   destroy(): void {
+    this.unsubscribeDayChange?.()
     if (this.taskId !== null) this.context.scheduler?.remove(this.taskId)
     for (const npc of this.marked.keys()) clearEntityOverheadIndicator(npc, { fade: false, label: INDICATOR_LABEL })
     this.marked.clear()

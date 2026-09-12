@@ -12,7 +12,6 @@ textarea {
 .modal,
 .game-overlay,
 .orientation-guard,
-.menu-tooltip,
 #dev-console {
   cursor: default;
 }
@@ -31,11 +30,11 @@ button,
 .ui-select {
   box-sizing: border-box;
   min-height: var(--ui-control-height);
-  padding: 10px var(--ui-control-padding-x);
+  padding: var(--ui-gap-10) var(--ui-control-padding-x);
   color: var(--main-text-color);
-  font-size: var(--ui-control-font-size);
+  font-size: var(--font-size-base);
   font-weight: 500;
-  text-shadow: var(--text-shadow-light-ui);
+  text-shadow: var(--text-shadow-ui);
   background-color: var(--form-surface-color);
   border-radius: var(--main-border-radius);
   border: var(--border-btn);
@@ -119,7 +118,7 @@ button,
 
 .ui-select {
   appearance: none;
-  padding-right: calc(var(--ui-control-padding-x) + 24px);
+  padding-right: calc(var(--ui-control-padding-x) + var(--ui-gap-24));
   background-image:
     linear-gradient(45deg, transparent 50%, var(--main-accent-color) 50%),
     linear-gradient(135deg, var(--main-accent-color) 50%, transparent 50%);
@@ -152,7 +151,7 @@ button,
 .ui-tab {
   color: var(--ui-text-color);
   text-shadow: var(--ui-text-shadow);
-  background: var(--ui-button-sheen), var(--ui-bar-bg);
+  background: var(--ui-bar-bg);
   border: var(--ui-bar-border);
   box-shadow: var(--ui-button-shadow-raised);
   border-radius: var(--main-border-radius);
@@ -177,25 +176,16 @@ button,
   pointer-events: none;
 }
 
-.menu-tooltip-hitbox {
-  display: inline-flex;
-  width: fit-content;
-}
-
-.menu-tooltip-hitbox > .ui-btn {
-  width: 100%;
-}
-
 .home-btn {
   min-height: var(--ui-control-height);
-  padding: 10px 24px;
+  padding: var(--ui-gap-10) var(--ui-gap-24);
   font-size: var(--font-size-home-button);
 }
 
 .ui-btn {
   width: fit-content;
   min-height: var(--ui-control-height-compact);
-  padding: 8px 16px;
+  padding: var(--ui-gap-8) var(--ui-gap-16);
   font-size: var(--font-size-base);
 }
 
@@ -241,7 +231,7 @@ button,
   grid-template-rows: auto auto auto;
   align-items: center;
   min-height: 76px;
-  padding: 8px;
+  padding: var(--ui-gap-8);
   text-align: left;
 }
 

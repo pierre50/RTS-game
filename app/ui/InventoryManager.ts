@@ -1,3 +1,5 @@
+import { createInventoryEquipmentRow } from './inventory/InventoryItemRows'
+import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
 import { Modal } from '../lib'
 import { getIconPath } from '../lib/graphics/assets'
 import {
@@ -11,7 +13,7 @@ import { getPlaceableInventoryBuildingType } from '../lib/hero/placeableInventor
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/audio/uiSound'
 import { RESOURCE_ICON_IDS, SOUND_CUES } from '../constants'
-import { createEntityInfoContent } from './EntityInfoModalManager'
+import { createEntityInfoContent } from './EntityInfoContent'
 import {
   EQUIPPED_ITEM_WEAPON,
   getEquippedItemWeapon,
@@ -22,7 +24,6 @@ import {
 import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
 import { AGE_PROGRESSION, isAgeObjectiveComplete, type AgeObjectiveDefinition } from '../lib/objectives/ageObjectives'
 import { ModalTabs } from './Tabs'
-import { capitalizeFirstLetter } from '../lib/extra'
 import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
@@ -34,7 +35,7 @@ import {
 } from './inventory/InventoryEquipmentRenderer'
 import { appendInventoryEmptyIcon, createInventoryActionRow } from './inventory/InventoryActionRow'
 import { createInventoryEquipmentIcon } from './inventory/InventoryItemIcons'
-import { createEquipmentRowInfo } from './inventory/InventoryTooltips'
+import { createEquipmentRowInfo, formatGold } from './inventory/InventoryDetails'
 import { renderEquipmentAvatarLazy } from './equipment/EquipmentAvatar'
 import { renderBuildingAvatar } from '../lib/avatar'
 import type { UnitEntity } from '../types/entities'
@@ -177,7 +178,6 @@ export class InventoryManager {
     this.modal = undefined
     modal?.close()
     this.showTab('tools')
-    this.menu.menuTooltip.hide()
     if (!this.menu.context.controls.mouseBuilding) this.menu.updateActionTarget()
     if (this.pausedByMenu) {
       this.pausedByMenu = false
@@ -264,12 +264,14 @@ export class InventoryManager {
       const equipment = this.getActiveWeaponEquipment(tool)
       canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
       if (equipment) renderEquipmentAvatarLazy(app, equipment, canvas, 'inventory', this.menu.context.performance)
-      const info = equipment ? createEquipmentRowInfo(equipment) : undefined
+      const info = equipment ? createEquipmentRowInfo(equipment, 1, undefined, { showValue: false }) : undefined
 
       const description = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-description')
       if (description) description.textContent = info?.title ?? ''
       const meta = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-meta')
       if (meta) meta.textContent = info?.meta ?? ''
+      const value = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-value')
+      if (value) value.textContent = info && info.goldValue > 0 ? formatGold(info.goldValue) : ''
     }
   }
 
@@ -296,14 +298,17 @@ export class InventoryManager {
     for (const tool of HERO_TOOL_ORDER) {
       const available = this.isActiveWeaponAvailable(tool)
       const equipment = this.getActiveWeaponEquipment(tool)
-      const info = equipment ? createEquipmentRowInfo(equipment) : undefined
+      const info = equipment ? createEquipmentRowInfo(equipment, 1, undefined, { showValue: false }) : undefined
       const weaponSlot = equipment ? getWeaponSlot(equipment) : null
-      const { element, icon } = createInventoryActionRow(this.menu, {
+      const { element, icon } = createInventoryEquipmentRow(this.menu.context, this.menu, {
+        equipment: equipment ?? '',
+        count: equipment ? 1 : 0,
+        icon: document.createElement('span'),
         id: `inventory-tool-${tool}`,
         className: 'inventory-weapon-row',
         title: t(TOOL_LABEL_KEYS[tool]),
         description: info?.title ?? (tool === 'interact' ? '' : t('inventoryEmptySlot')),
-        meta: info?.meta,
+        meta: equipment ? undefined : '',
         trailingAction:
           equipment && weaponSlot
             ? {
@@ -415,20 +420,7 @@ export class InventoryManager {
   getCraftCostMetaParts(cost: ResourceAmount, hero: UnitEntity | null | undefined): Array<{ text: string; className: string }> {
     const { player } = this.menu.context
     const totals = getPlayerResourceTotals(player, { hero, includeHero: Boolean(hero) })
-    const formatResourceLabel = (resource: string): string => capitalizeFirstLetter(t(resource))
-    const parts = Object.entries(cost)
-      .map(([resource, amount]) => {
-        const needed = Math.max(0, Math.floor(amount ?? 0))
-        if (needed <= 0) return null
-        const available = Math.max(0, Math.floor((totals[resource as keyof ResourceAmount] ?? 0)))
-        const hasEnough = available >= needed
-        return {
-          text: `${formatResourceLabel(resource)} ${available}/${needed}`,
-          className: hasEnough ? 'inventory-cost-is-available' : 'inventory-cost-is-missing',
-        }
-      })
-      .filter((part): part is { text: string; className: string } => Boolean(part))
-    return parts
+    return inventoryCostMetaParts(cost, totals)
   }
 
   getCraftMissingResourceMessage(cost: ResourceAmount): string {

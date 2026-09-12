@@ -18,6 +18,8 @@ import {
 import { getEntityHudTopY } from '../lib/entities/entityHudPosition'
 import { HUD_FADE_MS, HUD_FADE_STEP_MS } from '../lib/entities/hudFade'
 import type { SchedulerTaskId } from '../types/context'
+import { heroCanCommand } from '../lib/chief'
+import type { UnitEntity } from '../types/entities'
 
 let healthBarTrackGradient: FillGradient | null = null
 let healthBarFillGradient: FillGradient | null = null
@@ -25,7 +27,11 @@ let energyBarTrackGradient: FillGradient | null = null
 let energyBarFillGradient: FillGradient | null = null
 
 type HudBarHost = {
-  context?: { scheduler?: { add(callback: () => void, time: number, name?: string): SchedulerTaskId; remove(id: SchedulerTaskId): void } }
+  label?: string
+  context?: {
+    controls?: { heroUnit?: UnitEntity | null }
+    scheduler?: { add(callback: () => void, time: number, name?: string): SchedulerTaskId; remove(id: SchedulerTaskId): void }
+  }
   addChild: Container['addChild']
   removeChild: Container['removeChild']
 }
@@ -37,7 +43,7 @@ export type InstanceHudHost = HudBarHost & {
   hitPoints: number
   isDead: boolean
   isDestroyed: boolean
-  owner?: { isPlayed?: boolean } | null
+  owner?: { isPlayed?: boolean; label?: string; team?: number | null } | null
   reliefLift?: number
   selected: boolean
   sprite?: { height: number; anchor: { y: number }; scale?: { y: number } }
@@ -60,6 +66,10 @@ const hudBarFadeStates = new WeakMap<Container, HudBarFadeState>()
 
 export function drawInstanceHealthBar(host: InstanceHudHost): void {
   const existing = host.getChildByLabel(LABEL_TYPES.healthBar)
+  if (isControlledHero(host) || isTeamHealthBarRestricted(host)) {
+    if (existing) removeHudBarNow(host, existing)
+    return
+  }
   if (!host.totalHitPoints) {
     if (existing) fadeOutHudBar(host, existing)
     return
@@ -87,6 +97,23 @@ export function drawInstanceHealthBar(host: InstanceHudHost): void {
     bar.fill(getHealthBarFillGradient())
   }
   replaceHudBar(host, bar, existing)
+}
+
+export function isHeroTeamUnit(host: Pick<InstanceHudHost, 'family' | 'owner' | 'context'>): boolean {
+  const owner = host.owner
+  const heroOwner = host.context?.controls?.heroUnit?.owner
+  if (host.family !== FAMILY_TYPES.unit || !owner || !heroOwner) return false
+  return Boolean(
+    owner === heroOwner ||
+    (owner.label && owner.label === heroOwner.label) ||
+    (owner.team != null && owner.team === heroOwner.team)
+  )
+}
+
+/** Team unit health is information reserved for the player's chief. */
+export function isTeamHealthBarRestricted(host: Pick<InstanceHudHost, 'family' | 'owner' | 'context'>): boolean {
+  const hero = host.context?.controls?.heroUnit
+  return Boolean(isHeroTeamUnit(host) && !heroCanCommand(hero))
 }
 
 function supportsEntityHudBars(family: string): boolean {
@@ -143,7 +170,13 @@ export function drawInstanceHeroPowerBar(host: InstanceHudHost, ratio: number): 
 
 export function removeInstanceHudBar(host: HudBarHost & { getChildByLabel(label: string): Container | null }, label: string): void {
   const bar = host.getChildByLabel(label)
-  if (bar) fadeOutHudBar(host, bar)
+  if (!bar) return
+  if (label === LABEL_TYPES.healthBar && isControlledHero(host)) removeHudBarNow(host, bar)
+  else fadeOutHudBar(host, bar)
+}
+
+function isControlledHero(host: HudBarHost): boolean {
+  return Boolean(host.label && host.context?.controls?.heroUnit?.label === host.label)
 }
 
 function createHudBar(

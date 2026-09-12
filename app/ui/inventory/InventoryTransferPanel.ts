@@ -1,5 +1,5 @@
 import { RESOURCE_STORAGE_NAMES } from '../../constants'
-import { formatEquipmentStackLabel, getEquipmentStacks } from '../../lib/equipment/equipmentLoot'
+import { formatEquipmentStackLabel } from '../../lib/equipment/equipmentLoot'
 import {
   moveInventoryEquipment,
   moveInventoryResource,
@@ -7,7 +7,7 @@ import {
 } from '../../lib/inventory/inventoryContainers'
 import { t } from '../../lib/lang'
 import { createInventoryEquipmentRow, createInventoryResourceRow } from './InventoryItemRows'
-import { createInventorySection } from './InventorySlotRenderer'
+import { createInventoryContents } from './InventoryContents'
 import type { GameContextLike } from '../../types/context'
 import type { ResourceAmount } from '../../types/common'
 
@@ -26,6 +26,9 @@ export type InventoryTransferPanelOptions = {
   onChange?: () => void
   onTransfer?: (event: InventoryTransferEvent) => void
   source: InventoryContainer
+  canTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
+  moveEquipment?: typeof moveInventoryEquipment
+  moveResource?: typeof moveInventoryResource
 }
 
 export class InventoryTransferPanel {
@@ -36,6 +39,9 @@ export class InventoryTransferPanel {
   onChange?: () => void
   onTransfer?: (event: InventoryTransferEvent) => void
   source: InventoryContainer
+  canTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
+  moveEquipment: typeof moveInventoryEquipment
+  moveResource: typeof moveInventoryResource
 
   constructor(options: InventoryTransferPanelOptions) {
     this.context = options.context
@@ -44,6 +50,9 @@ export class InventoryTransferPanel {
     this.onChange = options.onChange
     this.onTransfer = options.onTransfer
     this.source = options.source
+    this.canTransfer = options.canTransfer
+    this.moveEquipment = options.moveEquipment ?? moveInventoryEquipment
+    this.moveResource = options.moveResource ?? moveInventoryResource
     this.element = document.createElement('div')
     this.element.className = 'inventory-transfer-panel'
     this.render()
@@ -58,17 +67,13 @@ export class InventoryTransferPanel {
 
   private createContainerBlock(container: InventoryContainer, transferTarget: InventoryContainer): HTMLElement {
     const action = this.createTransferAllButton(container, transferTarget)
-    return createInventorySection({
+    return createInventoryContents({
       action,
-      className: 'inventory-transfer-block',
+      inventory: container.inventory,
       emptyText: t('inventoryEmptySlot'),
-      gridClassName: 'inventory-loot-list inventory-transfer-grid',
       title: container.label ?? t(container.labelKey),
-      titleClassName: 'inventory-transfer-title',
-      renderItems: grid => {
-        this.appendResourceButtons(grid, container, transferTarget)
-        this.appendEquipmentButtons(grid, container, transferTarget)
-      },
+      renderResource: (resource, amount) => this.createResourceButton(container, transferTarget, resource, amount),
+      renderEquipment: (equipment, count) => this.createEquipmentButton(container, transferTarget, equipment, count),
     })
   }
 
@@ -112,7 +117,8 @@ export class InventoryTransferPanel {
     container: InventoryContainer,
     transferTarget: InventoryContainer
   ): HTMLButtonElement | undefined {
-    if (!this.hasTransferableItems(container)) return undefined
+    if (this.canTransfer?.(container, transferTarget) === false || !this.hasTransferableItems(container))
+      return undefined
     const action = this.getTransferAction(container, transferTarget)
     const button = document.createElement('button')
     button.type = 'button'
@@ -121,12 +127,13 @@ export class InventoryTransferPanel {
     button.addEventListener('click', evt => {
       evt.preventDefault()
       evt.stopPropagation()
+      if (this.canTransfer?.(container, transferTarget) === false) return
       let movedCount = 0
       for (const resource of RESOURCE_STORAGE_NAMES) {
-        if (moveInventoryResource(container, transferTarget, resource) > 0) movedCount += 1
+        if (this.moveResource(container, transferTarget, resource) > 0) movedCount += 1
       }
       for (const equipment of [...(container.inventory.equipment ?? [])]) {
-        if (moveInventoryEquipment(container, transferTarget, equipment)) movedCount += 1
+        if (this.moveEquipment(container, transferTarget, equipment)) movedCount += 1
       }
       if (movedCount <= 0) return
       this.handleTransfer({
@@ -140,29 +147,6 @@ export class InventoryTransferPanel {
     return button
   }
 
-  private appendResourceButtons(
-    grid: HTMLDivElement,
-    container: InventoryContainer,
-    transferTarget: InventoryContainer
-  ): void {
-    const resources = container.inventory.resources ?? {}
-    for (const resource of RESOURCE_STORAGE_NAMES) {
-      const amount = Math.max(0, Math.floor(resources[resource] ?? 0))
-      if (amount <= 0) continue
-      grid.appendChild(this.createResourceButton(container, transferTarget, resource, amount))
-    }
-  }
-
-  private appendEquipmentButtons(
-    grid: HTMLDivElement,
-    container: InventoryContainer,
-    transferTarget: InventoryContainer
-  ): void {
-    for (const stack of getEquipmentStacks(container.inventory.equipment ?? [])) {
-      grid.appendChild(this.createEquipmentButton(container, transferTarget, stack.equipment, stack.count))
-    }
-  }
-
   private createResourceButton(
     container: InventoryContainer,
     transferTarget: InventoryContainer,
@@ -171,8 +155,9 @@ export class InventoryTransferPanel {
   ): HTMLElement {
     const action = this.getTransferAction(container, transferTarget)
     const handleAction = (mode: 'one' | 'all'): void => {
-      const amountToMove = mode === 'one' ? 1 : undefined
-      const moved = moveInventoryResource(container, transferTarget, resource, amountToMove)
+      if (this.canTransfer?.(container, transferTarget) === false) return
+      const amountToMove = mode === 'one' ? 1 : amount
+      const moved = this.moveResource(container, transferTarget, resource, amountToMove)
       if (moved <= 0) return
       this.handleTransfer({
         amount: moved,
@@ -188,12 +173,15 @@ export class InventoryTransferPanel {
       resource,
       amount,
       playClick: false,
-      showTooltip: false,
-      trailingAction: {
-        ariaLabel: t(action.ariaKey, { item: `${t(resource)} x${amount}` }),
-        label: action.label,
-        onAction: handleAction,
-      },
+
+      trailingAction:
+        this.canTransfer?.(container, transferTarget) === false
+          ? undefined
+          : {
+              ariaLabel: t(action.ariaKey, { item: `${t(resource)} x${amount}` }),
+              label: action.label,
+              onAction: handleAction,
+            },
     })
     element.setAttribute('aria-label', t(action.ariaKey, { item: `${t(resource)} x${amount}` }))
     return element
@@ -208,10 +196,11 @@ export class InventoryTransferPanel {
     const action = this.getTransferAction(container, transferTarget)
     const labelText = formatEquipmentStackLabel(equipment, count)
     const handleAction = (mode: 'one' | 'all'): void => {
+      if (this.canTransfer?.(container, transferTarget) === false) return
       const amountToMove = mode === 'one' ? 1 : count
       let moved = 0
       for (let index = 0; index < amountToMove; index++) {
-        if (!moveInventoryEquipment(container, transferTarget, equipment)) break
+        if (!this.moveEquipment(container, transferTarget, equipment)) break
         moved++
       }
       if (moved <= 0) return
@@ -230,12 +219,15 @@ export class InventoryTransferPanel {
       count,
       labelContext: 'inventory transfer',
       playClick: false,
-      showTooltip: false,
-      trailingAction: {
-        ariaLabel: t(action.ariaKey, { item: labelText }),
-        label: action.label,
-        onAction: handleAction,
-      },
+
+      trailingAction:
+        this.canTransfer?.(container, transferTarget) === false
+          ? undefined
+          : {
+              ariaLabel: t(action.ariaKey, { item: labelText }),
+              label: action.label,
+              onAction: handleAction,
+            },
     })
     element.setAttribute('aria-label', t(action.ariaKey, { item: labelText }))
     return element

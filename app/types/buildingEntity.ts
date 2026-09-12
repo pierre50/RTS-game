@@ -2,7 +2,6 @@ import type { CaveDefinition } from './cave'
 import type { Container } from 'pixi.js'
 import type { ConfigValue } from './config'
 import type { ResourceAmount } from './common'
-import type { RuntimeCell } from './map'
 import type { AssetAge } from './pixi'
 import type { RuntimeEntityBase } from './entityBase'
 import type { RuntimeEntity } from './entityRuntime'
@@ -29,8 +28,6 @@ export interface BuildingEntity extends RuntimeEntityBase {
   trainingStartedDay?: number | null
   trainingCompleteDay?: number | null
   addChild?: Container['addChild']
-  setRallyPoint?: (cell: RuntimeCell, direction: number) => void
-  clearRallyPoint?: () => void
   displayPopulation?: boolean
   loading?: number | null
   buyUnit?: (

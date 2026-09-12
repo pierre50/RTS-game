@@ -28,7 +28,6 @@ import { t } from '../../lib/lang'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
-import { ensureUnitHealthRegen } from '../../lib/units/unitHealth'
 import { applyUnitActionFrameSequence, getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
 import { applyUnitActivitySpritesheets } from '../../lib/units/unitSpriteAssets'
 import { UnitInterface } from '../../ui/entity/UnitInterface'
@@ -175,7 +174,6 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   unit.quantity = unit.quantity ?? unit.totalQuantity
   unit.hitPoints = unit.hitPoints ?? unit.totalHitPoints
   ensureUnitEnergy(unit)
-  ensureUnitHealthRegen(unit)
   return spawnCell
 }
 
@@ -228,7 +226,7 @@ export function setupUnitInterface(unit: UnitRuntimeHost): void {
                   {
                     id: 'build',
                     icon: getIconPath('002_50721'),
-                    tooltip: () => ({
+                    details: () => ({
                       title: t('buildMenu'),
                       description: t('buildMenuDescription'),
                       meta: heroCanCommand(unit.context.controls.heroUnit) ? [] : [t('requiresChief')],
@@ -301,13 +299,9 @@ export function setupUnitCommandDispatch(unit: UnitRuntimeHost): void {
 export function setupUnitPointerInteraction(unit: UnitRuntimeHost): void {
   unit.on('pointerup', () => {
     const {
-      context: { controls, editor },
+      context: { editor },
     } = unit
     if (editor?.handleEntityInteraction?.(unit)) return
-    if (controls.rallyPointController?.active) {
-      controls.mouse.prevent = true
-      controls.rallyPointController.handleMouseUpOnEntity(unit)
-    }
   })
 }
 

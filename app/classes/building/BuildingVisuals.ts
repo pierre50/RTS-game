@@ -1,23 +1,18 @@
-import { AnimatedSprite, Assets, Graphics, Rectangle, Sprite, Texture, type Filter } from 'pixi.js'
+import { Assets, Graphics, Rectangle, Sprite, Texture, type Filter } from 'pixi.js'
 import { ColorOverlayFilter, OutlineFilter } from 'pixi-filters'
 import { FADE_DURATION_MS, LABEL_TYPES } from '../../constants'
 import {
-  bindAnimatedSpriteToTicker,
   attachEntityShadowsToMapSpace,
   changeSpriteColorDirectly,
-  getRallyPointFrames,
   getEntityMapPoint,
   getHexColor,
   getTextureByFrame,
   getTextureSheet,
-  getEntityMapSpace,
   isEntityInActiveMapSpace,
   parseTextureRef,
-  RALLY_POINT_SHEET_ID,
 } from '../../lib'
 import { getShadowsEnabled } from '../../lib/audio/settings'
 import { fadeIn } from '../../lib/entities/entityFade'
-import type { RuntimeCell } from '../../types/map'
 import type { BuildingControllerHost } from './BuildingTypes'
 
 export type BuildingShadow = Sprite
@@ -211,38 +206,6 @@ function fadeInBuildingShadow(building: BuildingControllerHost): void {
   )
 }
 
-export function setBuildingRallyPoint(
-  building: BuildingControllerHost,
-  cell: RuntimeCell | undefined,
-  direction: number = building.context.map.randomRange(0, 1)
-): boolean {
-  if (!cell) return false
-  clearBuildingRallyPoint(building)
-  building.rallyPoint = { i: cell.i, j: cell.j, direction }
-  const sheet = Assets.cache.get(RALLY_POINT_SHEET_ID)
-  const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, direction) as Texture[])
-  bindAnimatedSpriteToTicker(flag, building.context.app)
-  flag.animationSpeed = sheet.data.animationSpeed ?? 0.3
-  flag.anchor.set(flag.texture.defaultAnchor!.x, flag.texture.defaultAnchor!.y)
-  flag.x = cell.x
-  flag.y = cell.y
-  flag.zIndex = cell.i + cell.j
-  flag.visible = Boolean(building.selected)
-  flag.eventMode = 'none'
-  flag.roundPixels = true
-  flag.play()
-  const space = getEntityMapSpace(building, building.context.map)
-  ;(space?.container ?? building.context.map).addChild(flag)
-  building.rallyPointFlag = flag
-  return true
-}
-
-export function clearBuildingRallyPoint(building: BuildingControllerHost): void {
-  building.rallyPointFlag?.destroy()
-  building.rallyPointFlag = null
-  building.rallyPoint = null
-}
-
 export function getBuildingShadowTexture(building: BuildingControllerHost): Texture | null {
   if (!building.textureName) return null
   const sheet = getTextureSheet(building.textureName)
@@ -373,7 +336,6 @@ export function syncBuildingVisualSettings(building: BuildingControllerHost): vo
 }
 
 export function destroyBuildingVisuals(building: BuildingControllerHost): void {
-  clearBuildingRallyPoint(building)
   clearBuildingConstructionReveal(building)
   building.visualSettingsCleanup?.()
   building.visualSettingsCleanup = null

@@ -1,17 +1,11 @@
-import { FAMILY_TYPES } from '../constants'
-import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '../lib/avatar'
+import { InteractionPanel } from './InteractionPanel'
+import { createTitledEntityInfoContent, TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
+import { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
+import { BUILDING_TYPES, FAMILY_TYPES } from '../constants'
 import { createInspectionModal } from './InspectionPanel'
 import { getEntityDisplayName } from './utils/entityDisplayName'
-import type { Application } from 'pixi.js'
 import type { Modal } from '../lib'
-import type {
-  AnimalEntity,
-  BuildingEntity,
-  EntityInfoRenderOptions,
-  ResourceEntity,
-  RuntimeEntity,
-  UnitEntity,
-} from '../types/entities'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
 function getEntityTitle(entity: RuntimeEntity): string {
@@ -26,69 +20,12 @@ function isUnitEntity(entity: RuntimeEntity): entity is UnitEntity {
   return entity.family === FAMILY_TYPES.unit
 }
 
-function isAnimalEntity(entity: RuntimeEntity): entity is AnimalEntity {
-  return entity.family === FAMILY_TYPES.animal
-}
-
-function isResourceEntity(entity: RuntimeEntity): entity is ResourceEntity {
-  return entity.family === FAMILY_TYPES.resource
-}
-
-function createEntityAvatar(app: Application, entity: RuntimeEntity): HTMLDivElement | null {
-  const canvas = document.createElement('canvas')
-  canvas.width = 120
-  canvas.height = 120
-
-  const rendered = isUnitEntity(entity)
-    ? renderUnitHeadAvatar(app, entity, canvas)
-    : isAnimalEntity(entity)
-      ? renderAnimalAvatar(app, entity, canvas)
-      : isResourceEntity(entity)
-        ? renderResourceAvatar(app, entity, canvas)
-        : false
-  if (!rendered) return null
-
-  const wrap = document.createElement('div')
-  wrap.className = 'unit-avatar-frame'
-  wrap.appendChild(canvas)
-  return wrap
-}
-
-export const TITLED_ENTITY_INFO_OPTIONS: EntityInfoRenderOptions = { hideIdentity: true }
-
-// Shared with NpcOrdersManager, which embeds this same stats+avatar block above its order
-// buttons when the order panel targets a single unit.
-export function createEntityInfoContent(
-  app: Application,
-  entity: RuntimeEntity,
-  options?: EntityInfoRenderOptions
-): HTMLElement {
-  const content = document.createElement('div')
-  content.className = 'entity-info-modal selection-info active'
-  entity.interface?.info?.(content, options)
-
-  const avatar = createEntityAvatar(app, entity)
-  if (!avatar) return content
-
-  const wrapper = document.createElement('div')
-  wrapper.className = 'entity-info-wrapper'
-  wrapper.appendChild(avatar)
-  wrapper.appendChild(content)
-  return wrapper
-}
-
-export function createTitledEntityInfoContent(
-  app: Application,
-  entity: RuntimeEntity,
-  options?: EntityInfoRenderOptions
-): HTMLElement {
-  return createEntityInfoContent(app, entity, { ...options, ...TITLED_ENTITY_INFO_OPTIONS })
-}
-
 export class EntityInfoModalManager {
   menu: MenuHost
   modal?: Modal
   entity: RuntimeEntity | null
+  inventoryScreen?: UnitInventoryScreen
+  layout?: InteractionPanel
   infoPanel: HTMLElement | null
 
   constructor(menu: MenuHost) {
@@ -98,6 +35,7 @@ export class EntityInfoModalManager {
   }
 
   open(entity: RuntimeEntity): boolean {
+    if (isBuildingEntity(entity) && entity.type === BUILDING_TYPES.trap) return false
     if (entity === this.menu.context.controls?.heroUnit) return false
     if (!entity.interface?.info || entity.isDestroyed) return false
     if (this.modal && this.entity === entity) return true
@@ -115,15 +53,31 @@ export class EntityInfoModalManager {
       player.selectedOther = entity
     }
 
-    const modalContent = createTitledEntityInfoContent(this.menu.context.app, entity)
+    this.inventoryScreen =
+      isUnitEntity(entity) && entity.isDead ? new UnitInventoryScreen(this.menu, entity) : undefined
+    this.layout = this.inventoryScreen ? undefined : new InteractionPanel()
+    const infoContent =
+      this.inventoryScreen?.element ??
+      createTitledEntityInfoContent(this.menu.context.app, entity, {
+        actionsContainer: this.layout?.secondaryActions,
+      })
+    if (this.layout) {
+      this.layout.information.appendChild(infoContent)
+      this.layout.actions.appendChild(this.layout.secondaryActions)
+    }
+    const modalContent = this.layout?.element ?? infoContent
 
     this.entity = entity
-    this.infoPanel = this.getInfoPanel(modalContent)
-    this.modal = createInspectionModal({
-      title: getEntityTitle(entity),
-      content: modalContent,
-      onClose: () => this.close(),
-    })
+    this.infoPanel = this.getInfoPanel(infoContent)
+    this.modal =
+      this.inventoryScreen?.open(() => this.close()) ??
+      createInspectionModal({
+        proximity: { context: this.menu.context, targets: () => [entity] },
+        title: getEntityTitle(entity),
+        interaction: true,
+        content: modalContent,
+        onClose: () => this.close(),
+      })
     return true
   }
 
@@ -134,6 +88,8 @@ export class EntityInfoModalManager {
     this.modal = undefined
     this.entity = null
     this.infoPanel = null
+    this.inventoryScreen = undefined
+    this.layout = undefined
     modal?.close()
 
     const player = this.menu.context.player
@@ -151,10 +107,18 @@ export class EntityInfoModalManager {
 
   syncLiveState(): void {
     const entity = this.entity
+    if (this.inventoryScreen) {
+      this.inventoryScreen.render()
+      return
+    }
     const infoPanel = this.infoPanel
     if (!this.modal || !entity || !infoPanel || entity.isDestroyed) return
     infoPanel.replaceChildren()
-    entity.interface?.info?.(infoPanel, TITLED_ENTITY_INFO_OPTIONS)
+    this.layout?.secondaryActions.replaceChildren()
+    entity.interface?.info?.(infoPanel, {
+      ...TITLED_ENTITY_INFO_OPTIONS,
+      actionsContainer: this.layout?.secondaryActions,
+    })
   }
 
   getInfoPanel(content: HTMLElement): HTMLElement | null {

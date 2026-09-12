@@ -112,7 +112,7 @@ test('villager lamps fade out when villagers sleep outside', () => {
   const activeIntensity = system.lights[0].intensity
 
   villager.shelterState = { status: 'outside', reason: 'sleep', location: 'outside' }
-  system.updateLights(350)
+  system.updateLights(20)
 
   assert.equal(system.lights.length, 1)
   assert.ok(system.lights[0].intensity > 0)
@@ -148,7 +148,7 @@ test('villager lamps fade out when villagers die', () => {
   const activeIntensity = system.lights[0].intensity
 
   villager.isDead = true
-  system.updateLights(350)
+  system.updateLights(20)
 
   assert.equal(system.lights.length, 1)
   assert.ok(system.lights[0].intensity > 0)
@@ -170,7 +170,7 @@ test('villager lamps do not fade out after villagers enter shelter', () => {
   villager.shelterState = { status: 'inside', reason: 'sleep', location: 'shelter' }
   villager.visible = false
   setVisibleInstances(system, [])
-  system.updateLights(350)
+  system.updateLights(20)
 
   assert.equal(system.lights.length, 0)
   assert.equal(system.fadingLights.size, 0)

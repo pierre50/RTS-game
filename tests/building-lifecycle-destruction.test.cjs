@@ -107,7 +107,6 @@ test('destroyed buildings burst into fragments and immediately drop sprite, cons
     constructionRevealMask,
     getChildByLabel: () => null,
     stopInterval: () => calls.push(['stopInterval']),
-    clearRallyPoint: () => calls.push(['clearRallyPoint']),
     stopTimeout: () => calls.push(['stopTimeout']),
     cancelAllUnitTraining: () => calls.push(['cancelAllUnitTraining', building.isDead]),
     startTimeout(callback, time) {

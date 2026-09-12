@@ -3,7 +3,7 @@ import { UNIT_TYPES } from '../../constants/entities'
 import { isLiving, OfflineWorldSpatial } from '../world/OfflineWorldSpatial'
 import type { GameContextLike } from '../../types/context'
 import type { FactionExpeditionSave, SaveEntityState } from '../../types/save'
-import type { TributeRaidUnit } from '../TributeRaidRules'
+import type { TributeRaidUnit } from './TributeRaidRules'
 import { depositChestResources } from '../../lib/resources/playerResourceTotals'
 import { savedResourceOwner } from '../world/OfflineWorldWork'
 
@@ -14,7 +14,7 @@ export function creditFactionRaidTribute(context: GameContextLike, expedition: F
   summarizeEconomy(source.region, source.state)
 }
 
-export function factionArmySource(context: GameContextLike, regionId: string, playerLabel: string) {
+function factionArmySource(context: GameContextLike, regionId: string, playerLabel: string) {
   const region = context.getCampaignEconomy?.()?.regions[regionId]
   if (!region || (region.worldId && region.worldId === context.getCurrentWorldId?.())) return null
   const state = region.worldId ? context.getCampaignWorldState?.(region.worldId) : region.initialState

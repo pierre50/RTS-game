@@ -23,11 +23,6 @@ type PointerControlsHost = {
     handleSecondaryPointerDown(): void
     cycleTool(delta: number): boolean
   }
-  rallyPointController: {
-    active?: boolean
-    handleMouseMove?: () => void
-    handleMouseUp?: (cell: RuntimeCell) => void
-  }
   buildingPlacer: {
     handleMouseMove(): void
     handleMouseUp(cell: RuntimeCell): void
@@ -59,7 +54,7 @@ export class PointerInputController {
     setVirtualCursorVisible(false)
     if (!this.isMouseInApp(evt)) return
 
-    if (host.mouseBuilding || host.rallyPointController.active) {
+    if (host.mouseBuilding) {
       host.mouse.prevent = false
       this.updatePlacementPreview()
       return
@@ -86,7 +81,7 @@ export class PointerInputController {
     setVirtualCursorVisible(false)
 
     if (host.isInteractionBlocked()) return
-    if (host.mouseBuilding || host.rallyPointController.active) this.updatePlacementPreview()
+    if (host.mouseBuilding) this.updatePlacementPreview()
   }
 
   onWheel(evt: WheelEvent): void {
@@ -138,16 +133,12 @@ export class PointerInputController {
       host.mouse.prevent = false
       return
     }
-    if (!host.rallyPointController.active) {
-      !host.isHeroControlActive() && host.context.player?.selectedBuilding && host.context.player.unselectAll()
-    }
+    !host.isHeroControlActive() && host.context.player?.selectedBuilding && host.context.player.unselectAll()
 
     const cell = this.getCellUnderPointer()
     if (!cell) return
     if (host.mouseBuilding) {
       host.buildingPlacer.handleMouseUp(cell)
-    } else if (host.rallyPointController.active) {
-      host.rallyPointController.handleMouseUp?.(cell)
     }
   }
 
@@ -189,7 +180,7 @@ export class PointerInputController {
 
   private updatePlacementPreview(): void {
     const { host } = this
-    host.mouseBuilding ? host.buildingPlacer.handleMouseMove() : host.rallyPointController.handleMouseMove?.()
+    if (host.mouseBuilding) host.buildingPlacer.handleMouseMove()
   }
 
   private getCellUnderPointer(): RuntimeCell | null {

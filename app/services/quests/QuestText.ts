@@ -1,4 +1,5 @@
 import { t } from '../../lib/lang'
+import { VILLAGE_QUEST_CONFIG } from '../../config/gameplay'
 import type { QuestInstance, QuestText } from '../../types/quest'
 import type { ResourceAmount } from '../../types/common'
 
@@ -8,6 +9,7 @@ export function formatQuestText(text: QuestText, quest: QuestInstance, resources
   const count =
     quest.status === 'completed' ? quantity : Math.min(quantity, resources?.[resource as keyof ResourceAmount] ?? 0)
   const vars = {
+    rewardGold: quantity * VILLAGE_QUEST_CONFIG.goldPerResource,
     ...quest.parameters,
     resourceLabel: t(resource),
     giver: quest.owner.name,

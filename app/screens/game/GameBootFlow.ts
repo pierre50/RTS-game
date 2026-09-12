@@ -32,6 +32,7 @@ export type GameBootFlowHost = {
   context: BootFlowContext
   _prepareIntroduction?(): Promise<void>
   _showIntroduction?(): void
+  _startIntroduction?(): void
   _acquireWakeLock(): Promise<void>
   _bootFromConfig(config: GameConfig): Promise<void>
   _bootFromSave(json: SerializedSave): Promise<void>
@@ -103,6 +104,7 @@ async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero =
   } finally {
     if (hero) restoreHeroInvincibility(hero, previousDevInvincible)
   }
+  if (booted) game._startIntroduction?.()
 }
 
 export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {

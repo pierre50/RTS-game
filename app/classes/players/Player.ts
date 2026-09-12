@@ -12,7 +12,6 @@ import {
 } from '../../constants'
 import {
   canUpdateMinimap,
-  drawInstanceBlinkingSelection,
   getActionCondition,
   getHexColor,
   playSoundCue,
@@ -180,9 +179,6 @@ export class Player implements PlayerLike {
           unit.sendTo(building)
           hasSentOther = true
         }
-      }
-      if (hasSentWorker) {
-        drawInstanceBlinkingSelection(building)
       }
       if (hasSentOther) {
         playSoundCue(SOUND_CUES.unit.militaryCommand)

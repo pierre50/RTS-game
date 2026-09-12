@@ -24,7 +24,8 @@ function darknessForHour(hour: number): number {
   if (hour >= 20) return 0.72 + smoothstep(20, 22, hour) * 0.28
   if (hour >= 18) return smoothstep(18, 20, hour) * 0.72
   if (hour >= 7) return 0
-  return 1 - smoothstep(5.5, 7, hour)
+  if (hour >= 6) return 0.18 * (1 - smoothstep(6, 7, hour))
+  return 1 - smoothstep(5.5, 6, hour) * 0.82
 }
 
 function phaseForHour(hour: number): DayNightPhase {

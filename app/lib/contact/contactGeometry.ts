@@ -1,6 +1,6 @@
 import type { RuntimeEntity } from '../../types/entities'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../constants'
-import { getRoundedIsoFootprintPoints } from '../graphics/selection'
+import { getRoundedIsoFootprintPoints } from '../graphics/isoFootprint'
 import { getEntitySpaceGrid, sameMapSpace } from '../mapSpaces'
 import { closestPointOnSegment, pointIsInsidePolygon, type PolygonPoint } from '../geometry/polygon'
 import { getContactScale, resolveContactActionProfile, resolveContactBodyProfile } from './contactProfiles'

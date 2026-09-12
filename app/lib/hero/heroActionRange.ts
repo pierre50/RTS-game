@@ -1,8 +1,10 @@
 import { canReachActionTarget, usesUnitContactAction } from '../actions/contactActions'
 import { CELL_HEIGHT, FAMILY_TYPES } from '../constants'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
+import { getBuildingContactDistance } from '../grid/cells'
+import { instancesDistance } from '../maths'
 import { instanceContactInstance } from '../grid/movement'
-import { getRoundedIsoShapePoints } from '../graphics/selection'
+import { getRoundedIsoShapePoints } from '../graphics/isoFootprint'
 import { closestPointOnSegment, distanceToPolygon, pointIsInsidePolygon } from '../geometry/polygon'
 import { isHeroControlled } from '../units/unitControl'
 
@@ -13,12 +15,12 @@ type Point = { x: number; y: number }
 
 function getTargetFootprintPoints(target: RuntimeEntity): Point[] | null {
   if (![FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '')) return null
-  const factor = target.selectionFactor ?? target.size ?? 1
+  const factor = target.interactionFootprintFactor ?? target.size ?? 1
   return getRoundedIsoShapePoints({ x: target.x, y: target.y, factor: Math.max(1, factor) })
 }
 
 function getTargetFootprintInteractionMargin(target: RuntimeEntity): number {
-  const factor = Math.max(1, target.selectionFactor ?? target.size ?? 1)
+  const factor = Math.max(1, target.interactionFootprintFactor ?? target.size ?? 1)
   return Math.min(HERO_FOOTPRINT_INTERACTION_MAX_MARGIN, HERO_FOOTPRINT_INTERACTION_BASE_MARGIN + (factor - 1) * 8)
 }
 
@@ -65,4 +67,16 @@ export function isHeroInteractionTargetReachable(
   if (usesUnitContactAction(unit, action)) return canReachActionTarget(unit, target, action)
   if (isHeroActionInRange(unit, action, target)) return true
   return instanceContactInstance(unit, target)
+}
+
+/** Keep an open interaction within half a tile beyond its normal opening range. */
+export function isHeroInteractionSessionInRange(hero: UnitEntity | null | undefined, target: RuntimeEntity): boolean {
+  if (!hero || hero.isDead || hero.isDestroyed || target.isDestroyed) return false
+  if (target === hero) return true
+  if (isHeroInteractionTargetReachable(hero, null, target)) return true
+  const points = getTargetFootprintPoints(target)
+  if (points && distanceToPolygon(points, hero) <= getTargetFootprintInteractionMargin(target) + CELL_HEIGHT / 2) {
+    return true
+  }
+  return instancesDistance(hero, target) < getBuildingContactDistance(target.size ?? 1) + 1.5
 }

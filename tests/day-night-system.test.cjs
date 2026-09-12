@@ -82,10 +82,10 @@ test('setTime advances a full day when the requested time matches the current cl
   const DayNightSystem = loadDayNightSystem()
   const dayNight = new DayNightSystem(createContext())
 
-  dayNight.setTime(8)
+  dayNight.setTime(6)
 
   assert.equal(dayNight.getDayLabel(), 'Day 2')
-  assert.equal(dayNight.getTimeLabel(), '08:00')
+  assert.equal(dayNight.getTimeLabel(), '06:00')
 })
 
 test('update uses the default frame cap outside time skip', () => {

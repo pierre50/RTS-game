@@ -3,7 +3,6 @@ import { getEnvironmentForCiv } from '../../config/environments'
 import { DEFAULT_WORLD_ID } from '../../config/worlds'
 import { CELL_HEIGHT, CELL_WIDTH, type EnvironmentId } from '../../constants'
 import type { GameConfig, SaveEntityState, SerializedSave } from '../../types/save'
-import type { UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
 import type { Application, Container } from 'pixi.js'
 
@@ -65,16 +64,12 @@ export function applyPortableUnitState(
     followingHero: source.followingHero,
     pendingRescueThanks: source.pendingRescueThanks,
     gender: (source as { gender?: unknown }).gender,
-    healthRegenDelay: source.healthRegenDelay,
-    healthRegenMultiplier: source.healthRegenMultiplier,
-    healthRegenRate: source.healthRegenRate,
     hitPoints: source.hitPoints,
     horseColor: source.horseColor,
     companionHorseColor: source.companionHorseColor,
     inventory: cloneHeroInventory(source.inventory),
     isChief: source.isChief,
     lastEnergySpentAt: source.lastEnergySpentAt,
-    lastHealthDamagedAt: source.lastHealthDamagedAt,
     lootEquipment: source.lootEquipment ? [...source.lootEquipment] : source.lootEquipment,
     mountedOnHorse: source.mountedOnHorse,
     name: source.name,
@@ -89,14 +84,6 @@ export function applyPortableUnitState(
     ;(target as SaveEntityState).hitPoints = Number.isFinite(hitPoints)
       ? Math.max(minimumHitPoints, Math.min(totalHitPoints, hitPoints))
       : totalHitPoints
-  }
-  const schedulerNow = (target as UnitEntity).context?.scheduler?.elapsedMs
-  if (
-    Number.isFinite(schedulerNow) &&
-    Number.isFinite((target as SaveEntityState).lastHealthDamagedAt) &&
-    ((target as SaveEntityState).lastHealthDamagedAt ?? 0) > (schedulerNow ?? 0)
-  ) {
-    ;(target as SaveEntityState).lastHealthDamagedAt = schedulerNow
   }
 }
 

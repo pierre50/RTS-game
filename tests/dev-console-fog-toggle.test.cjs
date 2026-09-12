@@ -16,14 +16,12 @@ function loadMapActions() {
   const module = { exports: {} }
   const mocks = {
     '../../lib': {
-      drawInstanceBlinkingSelection: () => {},
       getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
     },
     '../../lib/buildings/passageCells': {
       createNonReservedPassageCellCondition: () => () => true,
     },
     './shared': {
-      getInstancesByCategory: () => [],
       normalize: value => String(value).trim().toLowerCase(),
       normalizeToggle: value => value === 'on',
     },

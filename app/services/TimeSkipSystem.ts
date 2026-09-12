@@ -32,8 +32,8 @@ export type TimeSkipStartResult = {
 
 export function getHoursUntilNextMorning(hour: number, minute = 0, targetHour = 6): number {
   const currentHour = hour + minute / 60
-  const normalizedTargetHour = ((targetHour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) %
-    DAY_NIGHT_CONFIG.hoursPerDay
+  const normalizedTargetHour =
+    ((targetHour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) % DAY_NIGHT_CONFIG.hoursPerDay
   const hoursUntilTarget =
     currentHour < normalizedTargetHour
       ? normalizedTargetHour - currentHour
@@ -168,7 +168,8 @@ export class TimeSkipSystem {
     if (options.silent) return
     if (reason === 'completed') {
       onComplete?.()
-      const label = `${this.context.dayNight?.getDayLabel?.() ?? 'Day'} ${this.context.dayNight?.getTimeLabel?.() ?? ''}`.trim()
+      const label =
+        `${this.context.dayNight?.getDayLabel?.() ?? 'Day'} ${this.context.dayNight?.getTimeLabel?.() ?? ''}`.trim()
       this.context.menu?.showMessage?.(completedMessage ?? `Time advanced to ${label}`, 'success')
     } else {
       onCancel?.()
@@ -195,35 +196,19 @@ export class TimeSkipSystem {
     if (typeof document === 'undefined') return null
     const overlay = document.createElement('div')
     overlay.className = 'time-skip-overlay'
-    overlay.style.position = 'fixed'
-    overlay.style.inset = '0'
-    overlay.style.zIndex = '9999'
-    overlay.style.display = 'flex'
-    overlay.style.alignItems = 'center'
-    overlay.style.justifyContent = 'center'
-    overlay.style.background = 'rgba(8, 10, 18, 0.78)'
-    overlay.style.color = '#f1f5ff'
-    overlay.style.font = '600 18px system-ui, sans-serif'
-    overlay.style.letterSpacing = '0'
-    overlay.style.pointerEvents = 'none'
 
     const panel = document.createElement('div')
-    panel.style.width = 'min(520px, calc(100vw - 48px))'
+    panel.className = 'time-skip-overlay__panel'
 
     const label = document.createElement('div')
-    label.style.marginBottom = '14px'
-    label.style.textAlign = 'center'
+    label.className = 'time-skip-overlay__label'
 
     const track = document.createElement('div')
-    track.style.height = '10px'
-    track.style.overflow = 'hidden'
-    track.style.background = 'rgba(255, 255, 255, 0.18)'
-    track.style.border = '1px solid rgba(255, 255, 255, 0.28)'
+    track.className = 'time-skip-overlay__track'
 
     const fill = document.createElement('div')
+    fill.className = 'time-skip-overlay__fill'
     fill.style.width = '0%'
-    fill.style.height = '100%'
-    fill.style.background = '#f1f5ff'
 
     track.appendChild(fill)
     panel.appendChild(label)

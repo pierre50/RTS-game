@@ -10,7 +10,7 @@ import type {
   BuildingEntity,
   UnitResourceDeliveryReturnTask,
 } from './entities'
-import type { MenuButtonSpec, MinimapPlayerCanvas, TooltipContent, TooltipSource } from './ui'
+import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 import type { HeroEquippedItem } from './heroTools'
 import type { CampaignEconomySave, FactionSave, SaveWeatherState, SerializedSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
@@ -56,7 +56,10 @@ interface WeatherSystemLike {
 
 interface TributeRaidSystemLike {
   triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
-  triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
+  triggerFactionRaid(options?: {
+    ignoreBaseWorld?: boolean
+    source?: 'schedule' | 'dev-console'
+  }): boolean | Promise<boolean>
 }
 
 interface UnitRestSystemLike {
@@ -121,12 +124,10 @@ export type VisionChangeEvent = {
 }
 
 export interface MenuLike {
+  setHudSuppressed?(suppressed: boolean): void
   selection?: RuntimeEntity | null
   icons?: Record<string, string>
   infoIcons?: Record<string, string>
-  menuTooltip?: {
-    bind(element: HTMLElement, content: TooltipContent | TooltipSource): void
-  }
   handleHotkey?(key: string): void
   playUiClick?(): void
   showMessage(message: string, type?: string): void
@@ -145,7 +146,6 @@ export interface MenuLike {
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
-  getActionRallyPointButton(): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   init?(): void
   destroy?(): void
@@ -211,16 +211,6 @@ export interface MinimapHostLike {
   toggled: boolean
 }
 
-interface RallyPointControllerLike {
-  active: boolean
-  building: RuntimeEntity | null
-  start(building: RuntimeEntity): void
-  cancel(options?: { clear?: boolean }): void
-  handleMouseMove(): void
-  handleMouseUp(cell: RuntimeCell): boolean
-  handleMouseUpOnEntity(entity: RuntimeEntity): boolean
-}
-
 export interface ControlsLike extends Container {
   context: GameContextLike
   camera: { x: number; y: number }
@@ -228,7 +218,6 @@ export interface ControlsLike extends Container {
   mouse: { x: number; y: number; prevent?: boolean }
   mouseBuilding?: (Container & { type?: string; isFree?: boolean }) | null
   entityPreview?: EntityPreviewLike | null
-  rallyPointController?: RallyPointControllerLike
   screenToLocal(x: number, y: number): { x: number; y: number }
   localToScreen(x: number, y: number): { x: number; y: number }
   getViewportMetrics(): { visibleHeight: number; visibleWidth: number; visibleLeft: number; visibleTop: number }

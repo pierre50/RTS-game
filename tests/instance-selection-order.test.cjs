@@ -55,10 +55,9 @@ function loadInstance() {
       COLOR_RED: 0xff0000,
       COLOR_GOLD: 0xffcc33,
       FAMILY_TYPES: { building: 'building', unit: 'unit' },
+      UNIT_TYPES: { chief: 'Chief' },
       LABEL_TYPES: {
         shadow: 'shadow',
-        selection: 'selection',
-        commSelection: 'commSelection',
         healthBar: 'healthBar',
         energyBar: 'energyBar',
         powerBar: 'powerBar',
@@ -76,9 +75,7 @@ function loadInstance() {
       STEP_TIME: 20,
     },
     '../lib': {
-      createIsoSelectionMarker: () => ({ label: 'selection', position: { y: 0 } }),
       getActionCondition: () => false,
-      getSelectionMarkerOffset: () => ({ x: 0, y: 0 }),
       setUnitTexture: () => {},
       uuidv4: () => 'instance-1',
     },
@@ -88,57 +85,28 @@ function loadInstance() {
   return module.exports
 }
 
-test('selection is inserted above building shadows', () => {
+test('selection preserves state and hud updates without adding a ground marker', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
-  const inserted = []
+  const calls = []
   instance.selected = false
-  instance.size = 2
-  instance.addChildAt = (child, index) => {
-    inserted.push(index)
-    child.label = child.label || 'selection'
-  }
-  instance.drawHealthBar = () => {}
-  instance.getChildByLabel = label => (label === 'shadow' ? { label: 'shadow' } : null)
-
-  Instance.prototype.select.call(instance)
-
-  assert.equal(inserted[0], 1)
-})
-
-test('selection marker tracks visual relief lift', () => {
-  const { Instance } = loadInstance()
-  const instance = Object.create(Instance.prototype)
-  const children = []
-  instance.selected = false
-  instance.size = 1
-  instance.reliefLift = -24
-  instance.children = children
-  instance.addChildAt = (child, index) => {
-    children.splice(index, 0, child)
-  }
-  instance.drawHealthBar = () => {}
-  instance.getChildByLabel = label => children.find(child => child.label === label) || null
-
-  Instance.prototype.select.call(instance)
-
-  const selection = instance.getChildByLabel('selection')
-  assert.equal(selection.position.y, -24)
-
-  instance.reliefLift = -12
-  Instance.prototype.syncSelectionMarkersToRelief.call(instance)
-
-  assert.equal(selection.position.y, -12)
+  instance.addChildAt = () => assert.fail('Selection must not add ground graphics')
+  instance.drawHealthBar = () => calls.push('health')
+  instance.drawEnergyBar = () => calls.push('energy')
+  instance.select()
+  instance.select()
+  assert.equal(instance.selected, true)
+  assert.deepEqual(calls, ['health', 'energy'])
 })
 
 test('unselect keeps played unit health bars visible in hero gameplay', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
-  const children = [{ label: 'selection' }, { label: 'healthBar' }]
+  const children = [{ label: 'healthBar' }]
   instance.label = 'unit-1'
-  instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
+  instance.context = { map: {}, controls: { heroUnit: { label: 'hero', isChief: true, hitPoints: 45, owner: { team: 1 } } } }
   instance.family = 'unit'
-  instance.owner = { isPlayed: true }
+  instance.owner = { isPlayed: true, team: 1 }
   instance.selected = true
   instance.isDead = false
   instance.isDestroyed = false
@@ -163,7 +131,7 @@ test('unselect keeps played unit health bars visible in hero gameplay', () => {
 test('buildings do not keep world health bars visible in hero gameplay', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
-  const children = [{ label: 'selection' }, { label: 'healthBar' }]
+  const children = [{ label: 'healthBar' }]
   instance.label = 'building-1'
   instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
   instance.family = 'building'
@@ -188,7 +156,7 @@ test('buildings do not keep world health bars visible in hero gameplay', () => {
 test('unselect removes the active hero world health bar in hero gameplay', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
-  const children = [{ label: 'selection' }, { label: 'healthBar' }]
+  const children = [{ label: 'healthBar' }]
   instance.label = 'hero-1'
   instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
   instance.family = 'unit'
@@ -210,13 +178,13 @@ test('unselect removes the active hero world health bar in hero gameplay', () =>
   assert.equal(children.some(child => child.label === 'healthBar'), false)
 })
 
-test('hero player units keep world health bars visible', () => {
+test('chief hero sees health bars of units in the same team', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
   instance.label = 'hero-player-unit-1'
   instance.context = {
     map: {},
-    controls: { heroUnit: { label: 'hero-1', owner: { label: 'player-1' } } },
+    controls: { heroUnit: { label: 'hero-1', isChief: true, hitPoints: 45, owner: { label: 'player-1', team: 2 } } },
     player: { label: 'player-1', team: 2 },
   }
   instance.family = 'unit'
@@ -225,15 +193,19 @@ test('hero player units keep world health bars visible', () => {
   instance.isDestroyed = false
 
   assert.equal(Instance.prototype.shouldKeepHealthBarVisible.call(instance), true)
+  instance.context.controls.heroUnit.isChief = false
+  instance.selected = true
+  instance.context.map.debugEntityBarsVisible = true
+  assert.equal(Instance.prototype.shouldKeepHealthBarVisible.call(instance), false)
 })
 
-test('same-team AI units do not keep world health bars visible', () => {
+test('same-team AI units keep world health bars visible for the chief', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
   instance.label = 'ai-ally-1'
   instance.context = {
     map: {},
-    controls: { heroUnit: { label: 'hero-1', owner: { label: 'player-1' } } },
+    controls: { heroUnit: { label: 'hero-1', isChief: true, hitPoints: 45, owner: { label: 'player-1', team: 2 } } },
     player: { label: 'player-1', team: 2 },
   }
   instance.family = 'unit'
@@ -241,6 +213,8 @@ test('same-team AI units do not keep world health bars visible', () => {
   instance.isDead = false
   instance.isDestroyed = false
 
+  assert.equal(Instance.prototype.shouldKeepHealthBarVisible.call(instance), true)
+  instance.owner.team = 3
   assert.equal(Instance.prototype.shouldKeepHealthBarVisible.call(instance), false)
 })
 
@@ -251,7 +225,7 @@ test('selected hero player units do not draw energy bars', () => {
   instance.label = 'hero-player-unit-1'
   instance.context = {
     map: {},
-    controls: { heroUnit: { label: 'hero-1', owner: { label: 'player-1' } } },
+    controls: { heroUnit: { label: 'hero-1', isChief: true, hitPoints: 45, owner: { label: 'player-1', team: 2 } } },
     player: { label: 'player-1' },
   }
   instance.family = 'unit'
@@ -282,7 +256,7 @@ test('hero units never draw energy bars', () => {
   instance.label = 'hero-1'
   instance.context = {
     map: {},
-    controls: { heroUnit: { label: 'hero-1', owner: { label: 'player-1' } } },
+    controls: { heroUnit: { label: 'hero-1', isChief: true, hitPoints: 45, owner: { label: 'player-1', team: 2 } } },
   }
   instance.family = 'unit'
   instance.owner = { label: 'player-1', isPlayed: true }

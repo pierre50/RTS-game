@@ -2,7 +2,7 @@ import { UNIT_TYPES } from '../../constants'
 import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { ResourceAmount } from '../../types/common'
 import type { FactionSave } from '../../types/save'
-import { FACTION_RAID_MIN_HATE, FACTION_RAID_INTERVAL_DAYS, roundTributeCost } from '../TributeRaidRules'
+import { FACTION_RAID_MIN_HATE, FACTION_RAID_INTERVAL_DAYS, roundTributeCost } from './TributeRaidRules'
 import type { TributeRaidSystem } from '../TributeRaidSystem'
 import { selectFactionRaidArmy } from './FactionRaidEconomy'
 

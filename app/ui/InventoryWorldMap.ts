@@ -198,7 +198,10 @@ function renderFlatRegion(
   cell.style.width = `${100 / state.regionsWide}%`
   cell.style.height = `${100 / state.regionsHigh}%`
   const biome = entry.environment ? worldEnvironmentLabel(entry.environment) : entry.dominantBiome
-  cell.title = [biome, id === state.currentId ? t('worldMapCurrentWorld') : ''].filter(Boolean).join(' | ')
+  cell.setAttribute(
+    'aria-label',
+    [biome, id === state.currentId ? t('worldMapCurrentWorld') : ''].filter(Boolean).join(' | ')
+  )
   overlay.appendChild(cell)
 }
 
@@ -252,7 +255,7 @@ function renderGlobalMap(panel: HTMLElement, menu: MenuHost, manifest: MacroWorl
     marker.style.top = `${position.y}%`
     const playerColor = settlementPlayerColor(menu, settlement)
     if (playerColor) marker.style.backgroundColor = playerColor
-    marker.title = settlementLabel(settlement)
+    marker.setAttribute('aria-label', settlementLabel(settlement))
     overlay.appendChild(marker)
   }
 

@@ -3,6 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function fixture() {
+  const dayListeners = new Set()
   const indicators = new Map()
   const { NeutralVillageQuests } = loadTsModule('app/services/quests/NeutralVillageQuests.ts', {
     mocks: {
@@ -26,6 +27,7 @@ function fixture() {
   const player = { label: 'human', isPlayed: true, isEnemy: () => false, units: [] }
   const hero = { label: 'hero', owner: player, inventory: { resources: { wood: 20 } } }
   const context = {
+    dayNight: { state: { day: 1 }, onDayChange(callback) { dayListeners.add(callback); return () => dayListeners.delete(callback) } },
     player,
     players: [player, village],
     controls: { heroUnit: hero },
@@ -47,6 +49,11 @@ function fixture() {
     hero,
     village,
     indicators,
+    nextDay(day) {
+      const previous = context.dayNight.state.day
+      context.dayNight.state.day = day
+      for (const callback of dayListeners) callback(day, previous)
+    },
     reload: () => {
       state = JSON.parse(JSON.stringify(state))
     },
@@ -75,12 +82,14 @@ test('delivery moves exact resources from hero to chief once and persists comple
   runtime.accept(chief)
   assert.equal(runtime.deliver(chief), true)
   assert.equal(hero.inventory.resources.wood, 5)
+  assert.equal(hero.inventory.resources.gold, 15)
   assert.equal(chief.inventory.resources.wood, 17)
   assert.equal(runtime.getQuest(chief).status, 'completed')
   assert.equal(indicators.has(chief), false)
   reload()
   runtime.update()
   assert.equal(runtime.deliver(chief), false)
+  assert.equal(hero.inventory.resources.gold, 15)
   assert.equal(runtime.system.state.quests.length, 1)
 })
 
@@ -147,7 +156,7 @@ test('only neutral chiefs with locally available resources receive an offer', ()
   assert.equal(f.indicators.size, 0)
 })
 
-test('quest buttons work without orders, keep a declined offer, and refresh bag progress', t => {
+test('quest buttons work without orders, keep an unaccepted offer, and refresh bag progress', t => {
   const previous = global.document
   global.document = {
     createElement: () => ({
@@ -182,9 +191,9 @@ test('quest buttons work without orders, keep a declined offer, and refresh bag 
   }
   const panel = new NpcQuestPanel(menu, () => {})
   assert.match(panel.update(f.chief), /15/)
-  assert.equal(panel.root.children.length, 2)
-  panel.root.children[1].click()
-  assert.equal(closed, 1)
+  assert.equal(panel.root.children.length, 1)
+  panel.clear()
+  assert.equal(closed, 0)
   assert.equal(f.runtime.getQuest(f.chief).status, 'available')
   panel.update(f.chief, true)
   panel.root.children[0].click()
@@ -261,4 +270,67 @@ test('maximum reputation completion does not announce a fictitious increase', ()
   assert.equal(f.runtime.deliver(f.chief), true)
   assert.match(messages[0], /déjà au maximum/)
   assert.equal(messages[0].includes('+10'), false)
+})
+
+test('next day renews a completed request after three days with a new id and new parameters', () => {
+  const f = fixture()
+  f.runtime.update()
+  f.runtime.accept(f.chief)
+  f.runtime.deliver(f.chief)
+  const previous = structuredClone(f.runtime.getQuest(f.chief))
+  assert.equal(previous.completedDay, 1)
+  assert.equal(previous.nextOfferDay, 4)
+  f.nextDay(3)
+  assert.equal(f.runtime.getQuest(f.chief).id, previous.id)
+  f.reload()
+  f.nextDay(4)
+  const next = f.runtime.getQuest(f.chief)
+  assert.notEqual(next.id, previous.id)
+  assert.notDeepEqual(next.parameters, previous.parameters)
+  assert.equal(next.status, 'available')
+  assert.equal(f.indicators.get(f.chief), 'exclamation')
+  assert.deepEqual(f.runtime.system.state.quests[0], previous)
+  f.nextDay(20)
+  assert.equal(f.runtime.system.state.quests.length, 2)
+  assert.equal(f.runtime.getQuest(f.chief).id, next.id)
+  f.runtime.accept(f.chief)
+  f.nextDay(50)
+  assert.equal(f.runtime.getQuest(f.chief).id, next.id)
+  assert.equal(f.hero.inventory.resources.gold, 15)
+})
+
+test('entering a map after a long absence creates only one offer and keeps completion history', () => {
+  const f = fixture()
+  f.runtime.update()
+  f.runtime.accept(f.chief)
+  f.runtime.deliver(f.chief)
+  f.runtime.destroy()
+  f.reload()
+  f.context.dayNight.state.day = 30
+  const runtime = new f.runtime.constructor(f.context)
+  runtime.update()
+  runtime.update()
+  assert.equal(runtime.system.state.quests.length, 2)
+  assert.equal(runtime.getQuest(f.chief).status, 'available')
+  assert.equal(f.hero.inventory.resources.gold, 15)
+  runtime.destroy()
+})
+
+test('legacy active quests gain their gold reward, legacy completed quests only start a cooldown', () => {
+  const f = fixture()
+  f.runtime.update()
+  f.runtime.accept(f.chief)
+  delete f.runtime.getQuest(f.chief).parameters.rewardGold
+  f.reload()
+  assert.equal(f.runtime.deliver(f.chief), true)
+  assert.equal(f.hero.inventory.resources.gold, 15)
+  const quest = f.runtime.getQuest(f.chief)
+  delete quest.completedDay
+  delete quest.nextOfferDay
+  f.context.dayNight.state.day = 10
+  f.reload()
+  f.runtime.update()
+  assert.equal(f.runtime.getQuest(f.chief).nextOfferDay, 13)
+  assert.equal(f.runtime.system.state.quests.length, 1)
+  assert.equal(f.hero.inventory.resources.gold, 15)
 })

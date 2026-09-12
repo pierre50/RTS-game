@@ -1,7 +1,11 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+const gameplay = loadTsModule('app/config/gameplay.ts')
+// These clock-boundary scenarios begin at 08:00 independently of the new-game start time.
+const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts', {
+  mocks: { '../../config/gameplay': { ...gameplay, DAY_NIGHT_CONFIG: { ...gameplay.DAY_NIGHT_CONFIG, startHour: 8 } } },
+})
 
 const HOUR = 60000
 const DAY = 24 * HOUR
@@ -536,4 +540,21 @@ test('returning to a map restores only night sleep health for villagers and sold
   const health = restored.players[0].units.map(unit => unit.hitPoints)
   simulateOfflineWorld(restored, { ...options, fromElapsedMs: DAY, toElapsedMs: DAY })
   assert.deepEqual(restored.players[0].units.map(unit => unit.hitPoints), health)
+})
+
+test('the configured world clock charges upkeep once at its actual next dawn', () => {
+  const liveSimulation = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+  const { state, options, player } = fixture()
+  const config = gameplay.DAY_NIGHT_CONFIG
+  const hourMs = config.dayLengthMs / config.hoursPerDay
+  const untilDawn = ((config.newDayHour - config.startHour + config.hoursPerDay) % config.hoursPerDay || config.hoursPerDay) * hourMs
+  const report = liveSimulation.simulateOfflineWorld(state, {
+    ...options, fromElapsedMs: untilDawn - hourMs, toElapsedMs: untilDawn,
+  })
+  assert.equal(report.foodConsumed, 4)
+  assert.equal(player.buildings[0].inventory.resources.wheat, 96)
+  const repeated = liveSimulation.simulateOfflineWorld(state, {
+    ...options, fromElapsedMs: untilDawn, toElapsedMs: untilDawn,
+  })
+  assert.equal(repeated.foodConsumed, 0)
 })

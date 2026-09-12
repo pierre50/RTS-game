@@ -26,13 +26,13 @@ import {
 import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
 import {
   formatActionCost,
-  getBuildingTooltip as buildBuildingTooltip,
+  getBuildingDetails as buildBuildingDetails,
   getMissingResourceMessage,
-  getUnitTooltip as buildUnitTooltip,
-} from './ActionTooltipFactory'
+  getUnitDetails as buildUnitDetails,
+} from './ActionDetailsFactory'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
-import type { MenuButtonSpec, TooltipContent } from '../types/ui'
+import type { MenuButtonSpec, MenuDetails } from '../types/ui'
 import type { BuildingConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
 import type { MenuHost } from './MenuHost'
@@ -92,8 +92,8 @@ export class ActionSpecFactory {
     return formatActionCost(cost)
   }
 
-  getBuildingTooltip(type: string, owner: PlayerLike, config: BuildingConfig): TooltipContent {
-    return buildBuildingTooltip({
+  getBuildingDetails(type: string, owner: PlayerLike, config: BuildingConfig): MenuDetails {
+    return buildBuildingDetails({
       commandBlocked: this.isChiefCommandBlocked(),
       config,
       isLimitReached: isBuildingLimitReached(owner, type),
@@ -101,9 +101,9 @@ export class ActionSpecFactory {
     })
   }
 
-  getUnitTooltip(type: string, config: UnitConfig, building?: BuildingEntity): TooltipContent {
+  getUnitDetails(type: string, config: UnitConfig, building?: BuildingEntity): MenuDetails {
     const cost = getUnitTrainingCost(this.menu.context.player, type)
-    return buildUnitTooltip(type, config, cost, this.isChiefCommandBlocked(), building)
+    return buildUnitDetails(type, config, cost, this.isChiefCommandBlocked(), building)
   }
 
   isChiefCommandBlocked(): boolean {
@@ -120,7 +120,6 @@ export class ActionSpecFactory {
     preload(getIconPath('001_50721'))
     preload(getIconPath('003_50721'))
     preload(getIconPath('002_50721'))
-    preload(getIconPath('006_50721'))
     ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
       preload(getIconPath(icon))
     )
@@ -133,7 +132,7 @@ export class ActionSpecFactory {
     } = menu
     return {
       id: type,
-      tooltip: () => ({
+      details: () => ({
         title: t(type),
       }),
       hide: () => !hasQueuedTrainingType(building, type),
@@ -162,7 +161,7 @@ export class ActionSpecFactory {
     return {
       id: 'cancelUnitTraining',
       icon: getIconPath('003_50721'),
-      tooltip: () => ({
+      details: () => ({
         title: t('cancelUnitTraining'),
         description: t('cancelUnitTrainingDescription'),
       }),
@@ -174,26 +173,11 @@ export class ActionSpecFactory {
     }
   }
 
-  getActionRallyPointButton(): MenuButtonSpec {
-    return {
-      id: 'rallyPoint',
-      icon: getIconPath('006_50721'),
-      tooltip: () => ({
-        title: t('rallyPoint'),
-        description: t('rallyPointDescription'),
-      }),
-      onClick: (selection: RuntimeEntity) => {
-        this.menu.closeHeroBuildingMenu()
-        this.menu.context.controls.rallyPointController?.start(selection)
-      },
-    }
-  }
-
   getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec {
     return {
       id: 'unitTraining',
       icon: getIconPath('010_50721'),
-      tooltip: () => ({
+      details: () => ({
         title: t('unitTrainingMenu'),
         description: t('unitTrainingMenuDescription'),
       }),
@@ -206,7 +190,7 @@ export class ActionSpecFactory {
     const unitConfig = this.menu.context.player.config.units[type]
     return {
       id: `train-${type}`,
-      tooltip: () => this.getUnitTooltip(type, unitConfig),
+      details: () => this.getUnitDetails(type, unitConfig),
       disabled: selection => !isUnitEntity(selection) || !findBestTrainingBuildingForUnit(selection, type),
       onClick: selection => {
         if (!isUnitEntity(selection)) return
@@ -239,7 +223,7 @@ export class ActionSpecFactory {
     return {
       id: 'mountHorse',
       icon: getIconPath('001_50721'),
-      tooltip: () => ({
+      details: () => ({
         title: t('mountHorseTraining'),
         description: t('mountHorseTrainingDescription'),
       }),
@@ -258,7 +242,7 @@ export class ActionSpecFactory {
     const isFull = () => getStableHorseAmount(building) >= STABLE_HORSE_CAPACITY
     return {
       id: 'stableDebugAddHorse',
-      tooltip: () => ({
+      details: () => ({
         title: t('stableDebugAddHorse'),
         description: t('stableDebugAddHorseDescription'),
         meta: [isFull() ? t('stableFull') : null],
@@ -285,7 +269,7 @@ export class ActionSpecFactory {
     const config = getPlayerBuildingConfig(owner, type, buildingAge)!
     return {
       id: type,
-      tooltip: () => this.getBuildingTooltip(type, owner, config),
+      details: () => this.getBuildingDetails(type, owner, config),
       hide: () => !owner.isBuildingEligible?.(type),
       disabled: () =>
         Boolean(constructionTerritoryBlocker(menu.context, owner)) ||

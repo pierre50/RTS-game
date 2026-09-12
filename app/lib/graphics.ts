@@ -1,7 +1,7 @@
 export * from './graphics/assets'
 export * from './graphics/colors'
 export * from './graphics/canvas'
-export * from './graphics/selection'
+export * from './graphics/isoFootprint'
 export * from './graphics/textures'
 
 type FrameChangeSprite = {

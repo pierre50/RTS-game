@@ -10,15 +10,15 @@ export type QuestCondition =
     }
   | { type: 'fact'; key: string; value: boolean }
   | { type: 'target'; binding: string; state: 'discovered' | 'spoken-to' | 'defeated' | 'reached' }
-export type QuestEffect =
+type QuestEffect =
   | {
       type: 'give-resource' | 'take-resource' | 'top-up-resource'
       resource: string | QuestParameter
       quantity: number | QuestParameter
     }
   | { type: 'set-fact'; key: string; value: boolean }
-export type QuestObjective = { id: string; text: QuestText; conditions: QuestCondition[] }
-export type QuestMarker = {
+type QuestObjective = { id: string; text: QuestText; conditions: QuestCondition[] }
+type QuestMarker = {
   id: string
   spaceId: string
   position: { i: number; j: number }
@@ -37,7 +37,7 @@ export type QuestInteraction = {
   /** Omitted for help interactions; null completes the quest. */
   nextStageId?: string | null
 }
-export type QuestStage = {
+type QuestStage = {
   id: string
   objectives: QuestObjective[]
   interactions: QuestInteraction[]
@@ -50,6 +50,8 @@ export type QuestDefinition = {
   stages: QuestStage[]
 }
 export type QuestInstance = {
+  completedDay?: number
+  nextOfferDay?: number
   id: string
   definitionId: string
   regionId: string

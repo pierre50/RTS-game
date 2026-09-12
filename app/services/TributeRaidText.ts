@@ -1,7 +1,7 @@
 import { t } from '../lib/lang'
 import type { ResourceAmount } from '../types/common'
 import type { FactionSave } from '../types/save'
-import type { TributeRaid } from './TributeRaidRules'
+import type { TributeRaid } from './tribute/TributeRaidRules'
 
 function formatCost(cost: ResourceAmount): string {
   return Object.entries(cost)

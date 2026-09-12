@@ -1,3 +1,6 @@
+import { createNpcGroupSummary } from './NpcGroupSummary'
+import { InteractionPanel } from './InteractionPanel'
+import type { Modal } from '../lib'
 import { NpcQuestPanel } from './NpcQuestPanel'
 import { canShowNpcJobOrder } from './menu/NpcOrderEligibility'
 import { npcTrainingDetail } from './menu/NpcTrainingDetails'
@@ -14,7 +17,6 @@ import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { getUnitGender } from '../lib/units/unitIdentity'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
-import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
 import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
 import {
   keepNpcHere,
@@ -23,7 +25,7 @@ import {
   playNpcOrderSound,
   clearNpcCommunicationFocus,
 } from '../lib/npc/npcInteraction'
-import { createTitledEntityInfoContent } from './EntityInfoModalManager'
+import { createTitledEntityInfoContent } from './EntityInfoContent'
 import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
 import {
   pickForeignNpcChatterLine,
@@ -34,8 +36,7 @@ import {
   pickNpcSleepingChatterLine,
 } from '../lib/npc/npcChatter'
 import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
-import { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
-import type { Modal } from '../lib'
+import { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
@@ -98,17 +99,19 @@ function isRestingBeforeBedNpc(npc: UnitEntity | null | undefined): boolean {
 export class NpcOrdersManager {
   menu: MenuHost
   panel: HTMLDivElement
+  speakerContainer: HTMLDivElement
+  choicesContainer: HTMLDivElement
   infoContainer: HTMLDivElement
   chatterContainer: HTMLDivElement
   debugContainer: HTMLDivElement
   debugLevelButton: HTMLButtonElement
   buttonsContainer: HTMLDivElement
   exitButton: HTMLButtonElement
-  bagContainer: HTMLDivElement
-  transferPanel: InventoryTransferPanel | null
+  bagScreen: UnitInventoryScreen | null
   chatterRevealTimeout: number | null
   chatterRevealAudio: { male: HTMLAudioElement; female: HTMLAudioElement }
   modal?: Modal
+  bagModal?: Modal
   orderMenu: NestedButtonMenu<NpcOrderMenuId>
   buttons: NestedButtonMenu<NpcOrderMenuId>['buttons']
   opened: boolean
@@ -123,34 +126,36 @@ export class NpcOrdersManager {
     this.opened = false
     this.npcs = []
     this.ordersEnabled = false
-    this.transferPanel = null
+    this.bagScreen = null
     this.chatterRevealTimeout = null
     this.chatterRevealAudio = {
       male: new Audio(NPC_ORDERS_CHATTTER_BLEEP_SOUND_MALE),
       female: new Audio(NPC_ORDERS_CHATTTER_BLEEP_SOUND_FEMALE),
     }
 
-    this.panel = document.createElement('div')
-    this.panel.className = 'npc-orders-panel-content'
+    const layout = new InteractionPanel()
+    this.panel = layout.element
+    this.speakerContainer = layout.information
+    this.choicesContainer = layout.actions
 
     this.infoContainer = document.createElement('div')
     this.infoContainer.className = 'npc-orders-info'
-    this.panel.appendChild(this.infoContainer)
+    this.speakerContainer.appendChild(this.infoContainer)
 
     this.chatterContainer = document.createElement('div')
     this.chatterContainer.className = 'npc-orders-chatter'
-    this.panel.appendChild(this.chatterContainer)
+    this.speakerContainer.appendChild(this.chatterContainer)
     this.questPanel = new NpcQuestPanel(menu, (line, npc) => {
       this.stopChatterReveal()
       this.showChatterLine(line, npc)
     })
-    this.panel.appendChild(this.questPanel.root)
+    this.choicesContainer.appendChild(this.questPanel.root)
     this.scriptedReplyPanel.className = 'npc-quest-options'
-    this.panel.appendChild(this.scriptedReplyPanel)
+    this.choicesContainer.appendChild(this.scriptedReplyPanel)
 
     this.debugContainer = document.createElement('div')
     this.debugContainer.className = 'npc-orders-debug'
-    this.panel.appendChild(this.debugContainer)
+    this.speakerContainer.appendChild(this.debugContainer)
 
     this.debugLevelButton = document.createElement('button')
     this.debugLevelButton.type = 'button'
@@ -165,12 +170,7 @@ export class NpcOrdersManager {
 
     this.buttonsContainer = document.createElement('div')
     this.buttonsContainer.className = 'npc-orders-options'
-    this.panel.appendChild(this.buttonsContainer)
-
-    this.bagContainer = document.createElement('div')
-    this.bagContainer.className = 'npc-orders-bag'
-    this.bagContainer.hidden = true
-    this.panel.appendChild(this.bagContainer)
+    this.choicesContainer.appendChild(this.buttonsContainer)
 
     this.orderMenu = new NestedButtonMenu<NpcOrderMenuId>({
       container: this.buttonsContainer,
@@ -192,7 +192,7 @@ export class NpcOrdersManager {
       playUiSound(SOUND_CUES.ui.menuClick)
       this.close()
     })
-    this.panel.appendChild(this.exitButton)
+    this.choicesContainer.appendChild(this.exitButton)
   }
 
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
@@ -220,8 +220,7 @@ export class NpcOrdersManager {
     const title =
       npcs.length > 1 ? t('npcOrdersTitleCount', { count: npcs.length }) : npcs[0]?.name || t('npcOrdersTitle')
 
-    // A single target gets its stats/avatar shown above the order buttons, in the same panel —
-    // a group order doesn't have one set of stats to show, so it stays buttons-only.
+    // Individual information and group composition occupy the same information area.
     this.infoContainer.replaceChildren()
     const soloTarget = npcs.length === 1 ? npcs[0] : null
     const sleepingSoloTarget = isSleepingNpc(soloTarget)
@@ -232,6 +231,8 @@ export class NpcOrdersManager {
       this.infoContainer.appendChild(
         createTitledEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true })
       )
+    } else if (npcs.length > 1) {
+      this.infoContainer.appendChild(createNpcGroupSummary(this.menu.context.app, npcs))
     }
 
     // Just chatting (no order possible right now — non-chief hero, or the ally isn't
@@ -282,9 +283,11 @@ export class NpcOrdersManager {
       return
     }
     this.modal = createInspectionModal({
+      proximity: { context: this.menu.context, targets: () => this.npcs.filter(npc => !npc.isDead), enabled: () => !this.scriptedReplyActive },
       title,
       content: this.panel,
       panelClass: 'npc-orders-panel',
+      interaction: true,
       showCloseButton: false,
       dismissible: !options.scriptedReply,
       onClose: () => this.close(),
@@ -518,8 +521,8 @@ export class NpcOrdersManager {
 
   refreshInventory(): void {
     this.syncQuest()
-    if (!this.opened || this.bagContainer.hidden) return
-    this.renderBag()
+    if (!this.opened) return
+    this.bagScreen?.render()
   }
 
   private canShowBagButton(): boolean {
@@ -527,45 +530,22 @@ export class NpcOrdersManager {
   }
 
   private openBag(): void {
-    if (!this.canShowBagButton()) return
+    if (this.bagModal || !this.canShowBagButton()) return
     playUiSound(SOUND_CUES.ui.menuClick)
     this.orderMenu.reset()
     this.buttonsContainer.hidden = true
-    this.bagContainer.hidden = false
-    this.renderBag()
+    this.bagScreen = new UnitInventoryScreen(this.menu, this.npcs[0])
+    this.bagModal = this.bagScreen.open(() => this.close())
+    if (this.modal?._backdrop) this.modal._backdrop.hidden = true
   }
 
   private closeBag(): void {
-    this.transferPanel = null
-    this.bagContainer.hidden = true
-    this.bagContainer.replaceChildren()
+    const bagModal = this.bagModal
+    this.bagModal = undefined
+    bagModal?.close()
+    if (this.modal?._backdrop) this.modal._backdrop.hidden = false
+    this.bagScreen = null
     this.buttonsContainer.hidden = !this.ordersEnabled
-  }
-
-  private renderBag(): void {
-    const npc = this.npcs.length === 1 ? this.npcs[0] : null
-    const hero = this.menu.context.controls.heroUnit
-    if (!npc || !hero) {
-      this.closeBag()
-      return
-    }
-
-    const npcContainer = createInventoryContainer(npc, {
-      id: npc.label,
-      label: t('inventoryNpcBag', { name: npc.name || t('npcOrdersTitle') }),
-      labelKey: 'inventoryBag',
-    })
-    const heroContainer = createInventoryContainer(hero, {
-      id: hero.label,
-      labelKey: 'inventoryYourBag',
-    })
-    this.transferPanel = new InventoryTransferPanel({
-      context: this.menu.context,
-      destination: npcContainer,
-      source: heroContainer,
-      onChange: () => this.menu.updateHeroStatus?.(hero),
-    })
-    this.bagContainer.replaceChildren(this.transferPanel.element)
   }
 
   private runOrder(spec: NpcOrderSpec): void {

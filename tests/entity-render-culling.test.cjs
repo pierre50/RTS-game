@@ -260,5 +260,5 @@ test('culls a sprite-based entity by its full bounding box, not just its anchor 
 
   assert.equal(updateInstanceRenderVisibility(building), true)
   assert.equal(building.visible, true)
-  assert.deepEqual(receivedBounds, { minX: 60, minY: 80, width: 80, height: 120 })
+  assert.deepEqual(receivedBounds, { minX: 60, minY: 80, width: 80, height: 196 })
 })

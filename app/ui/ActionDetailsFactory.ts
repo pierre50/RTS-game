@@ -5,7 +5,7 @@ import type { ResourceAmount } from '../types/common'
 import type { BuildingConfig, UnitConfig } from '../types/config'
 import type { BuildingEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
-import type { TooltipContent } from '../types/ui'
+import type { MenuDetails } from '../types/ui'
 
 export function formatActionCost(cost?: ResourceAmount): string {
   return Object.entries(cost || {})
@@ -20,39 +20,39 @@ export function getMissingResourceMessage(player: PlayerLike, cost: ResourceAmou
   return t('needMore', { resource })
 }
 
-export function getBuildingTooltip(options: {
+export function getBuildingDetails(options: {
   commandBlocked: boolean
   config: BuildingConfig
   isLimitReached: boolean
   type: string
-}): TooltipContent {
+}): MenuDetails {
   return {
     title: t(options.type),
     description: t(`${options.type}Description`),
     meta: [
-      t('tooltipCost', { cost: formatActionCost(options.config.cost) }),
-      options.config.totalHitPoints != null ? t('tooltipBuildingHP', { value: options.config.totalHitPoints }) : null,
+      t('detailsCost', { cost: formatActionCost(options.config.cost) }),
+      options.config.totalHitPoints != null ? t('detailsBuildingHP', { value: options.config.totalHitPoints }) : null,
       options.commandBlocked ? t('requiresChief') : null,
       options.isLimitReached ? t('buildingLimitReached') : null,
     ],
   }
 }
 
-export function getUnitTooltip(
+export function getUnitDetails(
   type: string,
   config: UnitConfig,
   cost: ResourceAmount,
   commandBlocked: boolean,
   building?: BuildingEntity
-): TooltipContent {
+): MenuDetails {
   const chiefBlocked =
     commandBlocked && (type === 'Villager' || Boolean(building && isTraineeTrainingType(building, type)))
   return {
     title: t(type),
     description: t(`${type}Description`),
     meta: [
-      t('tooltipCost', { cost: formatActionCost(cost) }),
-      t('tooltipTrainTime', { time: formatUnitTrainingDuration(getUnitTrainingDurationDays(config)) }),
+      t('detailsCost', { cost: formatActionCost(cost) }),
+      t('detailsTrainTime', { time: formatUnitTrainingDuration(getUnitTrainingDurationDays(config)) }),
       chiefBlocked ? t('requiresChief') : null,
     ],
   }

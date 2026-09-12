@@ -81,7 +81,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'units/rider-legs',
       'effects/fire',
       'effects/smoke',
-      'ui/rally-point-flag',
       'resources/wheat',
       'resources/tree/palm',
       'animals/boar',

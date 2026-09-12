@@ -4,7 +4,6 @@ import { canUpdateMinimap } from '../../lib'
 import { Instance } from '../Instance'
 import './UnitRuntimeShape'
 import { resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/units/unitEnergy'
-import { updateUnitHealthRegen } from '../../lib/units/unitHealth'
 import { watchBanditStep } from './UnitBanditDebug'
 import { syncUnitAppearanceLayers } from './UnitAppearanceLayers'
 import { handleUnitIsAttacked, stopUnit } from './UnitStateHandlers'
@@ -74,7 +73,6 @@ export class Unit extends Instance implements UnitEntity {
   constructor(options: UnitSpawnOptions, context: GameContextLike) {
     super(context)
     this.sortableChildren = true
-    this.selectionFactor = 0.5
 
     initializeUnitServices(this)
     initializeUnitRuntimeState(this)
@@ -341,7 +339,6 @@ export class Unit extends Instance implements UnitEntity {
     const beforeX = this.x
     const beforeY = this.y
     updateUnitEnergy(this)
-    updateUnitHealthRegen(this)
     try {
       if (resumeEnergyWaitIfReady(this)) {
         watchBanditStep(this, beforeX, beforeY)

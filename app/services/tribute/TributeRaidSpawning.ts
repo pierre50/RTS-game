@@ -18,7 +18,7 @@ import {
   getRaidCellDistance,
   isOpenRaidLandCell,
   type TributeRaidUnit,
-} from '../TributeRaidRules'
+} from './TributeRaidRules'
 
 type SpawnDirection = {
   horizontal: 'east' | 'west' | null

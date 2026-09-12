@@ -18,7 +18,6 @@ export {
 export {
   toggleFog,
   toggleResourcesVisibility,
-  highlightInstances,
   killResources,
 } from './actions/map'
 

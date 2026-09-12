@@ -15,7 +15,7 @@ function loadBuildingInterface() {
   const module = { exports: {} }
   const mocks = {
     '../../constants': {
-      BUILDING_TYPES: { chest: 'Chest', stable: 'Stable', trap: 'Trap' },
+      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', stable: 'Stable', trap: 'Trap' },
       MENU_INFO_IDS: {
         civ: 'civ',
         hitPoints: 'hit-points',
@@ -81,7 +81,7 @@ class MockElement {
     this.children = []
     this.textContent = ''
     this.className = ''
-    this.title = ''
+    this.attributes = new Map()
     this.type = ''
     this.listeners = new Map()
     this.styles = new Map()
@@ -94,6 +94,10 @@ class MockElement {
       },
       contains: name => this.className.split(/\s+/).includes(name),
     }
+  }
+
+  setAttribute(name, value) {
+    this.attributes.set(name, value)
   }
 
   appendChild(child) {
@@ -158,6 +162,8 @@ test('stable info displays horse amount and stored horse color avatars', () => {
     assert.equal(element.querySelector('.stable-horses-count').textContent, 'stableHorses 2/5')
     assert.equal(element.querySelectorAll('.stable-horse-avatar').length, 5)
     assert.equal(element.querySelectorAll('.filled').length, 2)
+    assert.equal(element.querySelectorAll('.filled')[0].attributes.get('aria-label'), 'horseColor_dark')
+    assert.equal(element.querySelectorAll('.filled')[0].attributes.has('title'), false)
     assert.equal(element.querySelectorAll('.filled')[0].styles.get('--stable-horse-color'), '#73737f')
   })
 })
@@ -202,7 +208,7 @@ test('building info does not render the legacy loading row', () => {
   })
 })
 
-test('hero team building info renders a red delete button that destroys the building', () => {
+test('hero team building info renders a demolish button that destroys the building', () => {
   withMockDocument(() => {
     const { BuildingInterface } = loadBuildingInterface()
     const element = document.createElement('div')
@@ -237,11 +243,13 @@ test('hero team building info renders a red delete button that destroys the buil
       },
     }
 
-    new BuildingInterface(building).renderInfo(element, {})
+    const actions = document.createElement('div')
+    new BuildingInterface(building).renderInfo(element, {}, { actionsContainer: actions })
 
-    const button = element.querySelector('.entity-delete-building-button')
+    assert.equal(element.querySelector('.entity-delete-building-button'), null)
+    const button = actions.querySelector('.entity-delete-building-button')
     assert.ok(button)
-    assert.equal(button.textContent, 'deleteEntity')
+    assert.equal(button.textContent, 'demolishBuilding')
     assert.ok(button.classList.contains('ui-btn'))
 
     button.dispatch('click')

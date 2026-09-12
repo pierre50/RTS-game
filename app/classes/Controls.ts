@@ -5,7 +5,6 @@ import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
 import { HeroController } from '../controllers/HeroController'
 import { HeroInteractionController } from '../controllers/HeroInteractionController'
 import { PointerInputController, type PointerPageEvent } from '../controllers/PointerInputController'
-import { RallyPointController } from '../controllers/RallyPointController'
 import { TouchInputController, type TouchInteraction } from '../controllers/TouchInputController'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import type { HeroEquippedItem } from '../lib/hero/heroTools'
@@ -64,7 +63,6 @@ export default class Controls extends Container implements ControlsLike {
   suppressContextMenuUntil: number
   minimapRectangle: Graphics
   buildingPlacer: BuildingPlacer
-  rallyPointController: RallyPointController
   runtimeInputEnabled: boolean
   _onDocMouseMove: (evt: MouseEvent) => void
   _onDocMouseOut: () => void
@@ -124,7 +122,6 @@ export default class Controls extends Container implements ControlsLike {
     this.addChild(this.minimapRectangle)
 
     this.buildingPlacer = new BuildingPlacer(this)
-    this.rallyPointController = new RallyPointController(this)
     this.runtimeInputEnabled = true
 
     this._onDocMouseMove = (evt: MouseEvent) => this.moveCameraWithMouse(evt)
@@ -457,7 +454,6 @@ export default class Controls extends Container implements ControlsLike {
     this.touchInputController.cancel()
     this.heroController.cancelActiveInteraction()
     this.mouse.prevent = false
-    this.rallyPointController.cancel()
   }
 
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean {

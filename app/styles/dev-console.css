@@ -9,12 +9,12 @@
   position: fixed;
   z-index: 9999;
   max-width: min(520px, calc(100vw - 20px));
-  padding: 8px 10px;
+  padding: var(--ui-gap-8) var(--ui-gap-10);
   color: var(--text-color-white);
   font: bold 12px monospace;
   line-height: 1.35;
   white-space: pre-wrap;
-  text-shadow: var(--text-shadow-none);
+  text-shadow: none;
   pointer-events: none;
   background: var(--debug-overlay-bg);
   border: 1px solid var(--debug-overlay-border);
@@ -49,7 +49,7 @@
 .debug-player-stats-unit {
   font-size: 11px;
   opacity: 0.9;
-  margin-left: 8px;
+  margin-left: var(--ui-gap-8);
   white-space: pre;
 }
 
@@ -63,15 +63,15 @@
   width: min(420px, calc(100vw - 28px));
   margin: 0;
   padding: var(--ui-gap-8);
-  background: var(--ui-panel-sheen), var(--main-primary-color);
+  background: var(--main-primary-color);
   border: var(--panel-border);
-  border-radius: var(--main-border-radius-lg);
+  border-radius: var(--main-border-radius);
 }
 
 .dev-console-log {
   max-width: 100%;
   max-height: min(48vh, 360px);
-  padding: 4px 7px;
+  padding: var(--ui-gap-4) 7px;
   overflow: auto;
   box-sizing: border-box;
   word-break: break-word;
@@ -82,7 +82,7 @@
   font-size: 11px;
   font-weight: bold;
   line-height: 14px;
-  text-shadow: var(--text-shadow-none);
+  text-shadow: none;
   background: var(--surface-dark-strong);
   border: var(--border-slot);
   border-radius: var(--main-border-radius);

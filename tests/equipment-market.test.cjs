@@ -36,7 +36,10 @@ function loadEquipmentMarket() {
         DYNAMIC_EQUIPMENT_KEYS: [
           'axe_ceramic',
           'axe_iron',
+          'arrow_ceramic',
           'arrow_copper',
+          'arrow_bronze',
+          'arrow_iron',
           'bow',
           'quiver',
           'bow_recurve',
@@ -121,6 +124,37 @@ test('market equipment catalog follows market civilization and age without tools
   )
 })
 
+test('arrow material increases unit prices, stock offers and resale proceeds', () => {
+  const {
+    getEquipmentGoldValue,
+    getEquipmentResaleGoldValue,
+    getMarketEquipmentOffers,
+    buyMarketEquipment,
+    sellHeroEquipment,
+  } = loadEquipmentMarket()
+  const arrows = ['arrow_ceramic', 'arrow_copper', 'arrow_bronze', 'arrow_iron']
+  const prices = [4, 6, 9, 12]
+  const resalePrices = [1, 2, 3, 4]
+
+  assert.deepEqual(arrows.map(getEquipmentGoldValue), prices)
+  assert.deepEqual(arrows.map(getEquipmentResaleGoldValue), resalePrices)
+  assert.deepEqual(
+    getMarketEquipmentOffers({ age: 2 }, arrows).map(offer => offer.goldValue),
+    prices
+  )
+
+  for (const [index, arrow] of arrows.entries()) {
+    const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 100 } } }
+    const stock = [arrow, arrow]
+    assert.equal(buyMarketEquipment(hero, arrow, 2, stock), 2)
+    assert.equal(hero.inventory.resources.gold, 100 - prices[index] * 2)
+    assert.deepEqual(stock, [])
+    assert.equal(sellHeroEquipment(hero, arrow, 2), 2)
+    assert.equal(hero.inventory.resources.gold, 100 - prices[index] * 2 + resalePrices[index] * 2)
+    assert.deepEqual(hero.inventory.equipment, [])
+  }
+})
+
 test('market offers arrow stacks but buys one or all like chest transfers', () => {
   const { buyMarketEquipment, getMarketEquipmentOffers } = loadEquipmentMarket()
   const arrowOffer = getMarketEquipmentOffers({ age: 2, civilization: 'Hellas' }).find(
@@ -128,12 +162,12 @@ test('market offers arrow stacks but buys one or all like chest transfers', () =
   )
   assert.equal(arrowOffer.count, 20)
 
-  const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 100 } } }
+  const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 150 } } }
   assert.equal(buyMarketEquipment(hero, 'arrow_copper'), 1)
   assert.equal(buyMarketEquipment(hero, 'arrow_copper', arrowOffer.count), 20)
 
   assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 21)
-  assert.equal(hero.inventory.resources.gold, 16)
+  assert.equal(hero.inventory.resources.gold, 24)
 })
 
 test('market purchase consumes stock quantities', () => {
@@ -158,7 +192,7 @@ test('market purchase consumes stock quantities', () => {
 
 test('market stack purchase is capped by available gold', () => {
   const { buyMarketEquipment } = loadEquipmentMarket()
-  const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 5 } } }
+  const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 7 } } }
 
   assert.equal(buyMarketEquipment(hero, 'arrow_copper', 20), 1)
 

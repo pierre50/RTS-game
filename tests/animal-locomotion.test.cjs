@@ -28,7 +28,7 @@ const constants = {
     flying: 'flyingSheet',
     standing: 'standingSheet',
   },
-  STEP_TIME: 100,
+  STEP_TIME: 20,
 }
 
 const locomotion = loadModule('app/classes/animal/locomotion.ts', { '../../constants': constants })
@@ -62,7 +62,7 @@ test('an airborne animal without a flying sheet falls back to the requested shee
   assert.equal(locomotion.resolveMovementSheet({ altitude: 5, currentSheet: 'walkingSheet' }), 'walkingSheet')
 })
 
-function createMovement(animalOverrides = {}, libOverrides = {}) {
+function createMovement(animalOverrides = {}, libOverrides = {}, energyOverrides = {}) {
   const calls = []
   const grid = []
   for (let i = 0; i < 12; i++) {
@@ -156,6 +156,7 @@ function createMovement(animalOverrides = {}, libOverrides = {}) {
       getActionEnergyCost: () => 0,
       getEnergyMoveSpeedMultiplier: () => 1,
       updateUnitEnergy: () => {},
+      ...energyOverrides,
     },
     './locomotion': locomotion,
   })
@@ -285,6 +286,41 @@ test('a running animal uses runningSpeed for path movement', () => {
 
   assert.deepEqual(speeds, [1.75])
 })
+
+for (const sheet of ['runningSheet', 'flyingSheet']) {
+  test(`a fleeing animal on ${sheet} sustains its speed over several seconds`, () => {
+    const energy = loadModule('app/lib/units/unitEnergy.ts', {
+      '../constants': constants,
+      '../combat/combatBehavior': {},
+      '../lang': { t: key => key },
+      './miningActions': { getMiningActions: () => [] },
+      './unitControl': { isHeroControlled: () => false },
+    })
+    const speeds = []
+    const { movement, animal, grid } = createMovement(
+      {
+        isFleeing: true,
+        speed: 2,
+        runningSpeed: 2.5,
+        flyingSpeed: 2.5,
+        movementSheet: sheet,
+        currentSheet: sheet,
+      },
+      {
+        instancesDistance: () => 1000,
+        moveTowardPoint: (_animal, _x, _y, speed) => speeds.push(speed),
+      },
+      energy
+    )
+    animal.path = [grid[5][6]]
+    animal.dest = grid[9][9]
+
+    for (let elapsed = 0; elapsed < 3000; elapsed += constants.STEP_TIME) movement.moveToPath()
+
+    assert.ok(Math.abs(animal.energy - 9.25) < 1e-8)
+    assert.ok(speeds.every(speed => speed === 2.5), 'fleeing must sustain its full speed')
+  })
+}
 
 test('a repath while flying keeps the flying sheet instead of walking', () => {
   const { movement, animal, grid, calls } = createMovement({

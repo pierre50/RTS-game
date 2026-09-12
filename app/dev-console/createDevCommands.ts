@@ -9,7 +9,6 @@ import {
   advanceTime,
   forceNextDay,
   healAll,
-  highlightInstances,
   killEntities,
   killResources,
   listGlobalPlayers,
@@ -431,14 +430,6 @@ function registerDebugInfoCommands(registry: DevCommandRegistry): void {
     describe: 'Show the terrain sprite sheet/frame under the cursor',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleTerrainFrameDebug(context, value),
-  })
-
-  registry.register({
-    name: 'highlight',
-    usage: 'highlight <units|buildings|resources|enemies> [type]',
-    describe: 'Blink matching instances',
-    complete: () => ['units', 'buildings', 'resources', 'enemies'],
-    run: ([category, type], context) => highlightInstances(context, category, type),
   })
 
   registry.register({

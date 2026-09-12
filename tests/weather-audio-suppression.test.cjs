@@ -408,7 +408,8 @@ test('daily weather survives saving and follows world time while cosmetics are s
   const weather = new WeatherSystem(context, map, () => ({ height: 600, width: 800, x: 0, y: 0 }))
   weather.applyState({ dailyWeatherSeed: 3 })
   assert.equal(weather.phase, 'clouding')
-  worldMs = 2 * 60000 // 10:00, during the day's single shower.
+  const { DAY_NIGHT_CONFIG } = loadTsModule('app/config/gameplay.ts')
+  worldMs = (10 - DAY_NIGHT_CONFIG.startHour) * DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay // 10:00.
   weather.update(1000)
   assert.equal(weather.elapsedMs, worldMs)
   assert.equal(weather.phase, 'rainLight')

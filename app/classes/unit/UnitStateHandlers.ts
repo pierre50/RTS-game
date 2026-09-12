@@ -7,7 +7,7 @@ import {
 } from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import { applyToolAppearance } from '../../lib/hero/heroTools'
-import { markUnitHealthDamaged } from '../../lib/units/unitHealth'
+import { notifyHeroHealthChanged } from '../../lib/units/unitHealth'
 import { shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/units/unitControl'
 import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '../../lib/buildings/passageCells'
@@ -34,7 +34,7 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
   if (unit.context.editor) return
   if (!instance || unit.isDead) return
 
-  markUnitHealthDamaged(unit)
+  notifyHeroHealthChanged(unit)
   if (!canAutoReactToAttack(unit)) return
 
   unit.owner.reportThreat?.(unit, instance)

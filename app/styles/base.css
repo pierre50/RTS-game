@@ -29,7 +29,7 @@ body {
   user-select: none;
   background-color: var(--surface-black-solid);
   color: var(--main-text-color);
-  text-shadow: var(--text-shadow-light-ui);
+  text-shadow: var(--text-shadow-ui);
 }
 
 img {

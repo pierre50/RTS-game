@@ -1318,7 +1318,6 @@ test('converted buildings keep their source civilization and age assets', () => 
     populationMax: 0,
   }
   const target = {
-    clearRallyPoint: () => calls.push(['clearRallyPoint']),
     family: constants.FAMILY_TYPES.building,
     finalTexture: () => calls.push(['finalTexture', target.assetCiv, target.assetAge, target.assetType]),
     isBuilt: true,
@@ -1335,7 +1334,6 @@ test('converted buildings keep their source civilization and age assets', () => 
   const priest = {
     context: {
       menu: {
-        getActionRallyPointButton: () => ({}),
         updatePlayerMiniMapEvt: () => {},
         updateTopbar: () => calls.push(['updateTopbar']),
       },

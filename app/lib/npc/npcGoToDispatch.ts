@@ -3,10 +3,8 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/enti
 import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import { applyDiplomaticAggression } from '../combat/diplomaticAggression'
-import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, TYPE_ACTION, UNIT_TYPES } from '../constants'
+import { ACTION_TYPES, FAMILY_TYPES, TYPE_ACTION, UNIT_TYPES } from '../constants'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../entities/overheadIndicator'
-import type { SelectableInstance } from '../graphics/selection'
-import { drawCellBlinkingSelection, drawInstanceBlinkingSelection } from '../graphics/selection'
 import { getFreeLandCellAroundInstance } from '../grid/movement'
 import { getMapSpace } from '../mapSpaces'
 import { resolveClickTarget } from './npcTargetResolution'
@@ -57,10 +55,6 @@ type NightWorkRefusalOptions = {
   moveToFallback?: boolean
 }
 
-type NpcGoToDispatchResult = {
-  blinkTarget: boolean
-}
-
 function refuseNightWorkIfNeeded(
   npc: UnitEntity,
   cell: RuntimeCell,
@@ -90,8 +84,6 @@ function resetNpcDirectives(target: UnitEntity): void {
   target.lookingAtHero = false
   target.followingHero = false
   target.followAssist = null
-  const marker = target.getChildByLabel?.(LABEL_TYPES.commSelection)
-  if (marker) target.removeChild?.(marker)
 }
 
 export function clearNpcCommunicationFocus(target: UnitEntity): void {
@@ -130,7 +122,7 @@ function hasSameOwner(source: UnitEntity, target: RuntimeEntity): boolean {
   )
 }
 
-function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): NpcGoToDispatchResult {
+function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): void {
   resetNpcDirectives(npc)
   delayUnitRestAfterActivity(npc)
   if (target) {
@@ -138,61 +130,61 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     const resourceAction = kind ? TYPE_ACTION[kind as keyof typeof TYPE_ACTION] : undefined
     const resourceSend = resourceAction ? RESOURCE_SEND_TO_BY_ACTION[resourceAction] : undefined
     if (resourceSend && resourceAction && npc.getActionCondition?.(target, resourceAction)) {
-      if (refuseNightWorkIfNeeded(npc, cell, target, { moveToFallback: false })) return { blinkTarget: false }
+      if (refuseNightWorkIfNeeded(npc, cell, target, { moveToFallback: false })) return
       resourceSend(npc, target)
-      return { blinkTarget: true }
+      return
     }
     if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.build)) {
-      if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
+      if (refuseNightWorkIfNeeded(npc, cell, target)) return
       npc.sendToBuilding?.(target as BuildingEntity)
-      return { blinkTarget: true }
+      return
     }
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
       if (hasSameOwner(npc, building) && building.isBuilt) {
         npc.sendToEvt?.(building, null, { allowPassageStop: true })
-        return { blinkTarget: false }
+        return
       }
     }
     if (target.family === FAMILY_TYPES.animal) {
       if (target.type === 'Horse' && npc.type === UNIT_TYPES.villager) {
-        if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
-        const captureAttemptResult = npc.sendToCaptureHorse?.(target)
-        return { blinkTarget: captureAttemptResult !== false }
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return
+        npc.sendToCaptureHorse?.(target)
+        return
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.hunt)) {
-        if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return
         npc.sendToHunt?.(target)
-        return { blinkTarget: true }
+        return
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.takemeat)) {
-        if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return
         npc.sendToTakeMeat?.(target)
-        return { blinkTarget: true }
+        return
       }
     }
     if (npc.type === UNIT_TYPES.priest) {
       if (npc.getActionCondition?.(target, ACTION_TYPES.heal)) {
         npc.sendTo?.(target, ACTION_TYPES.heal)
-        return { blinkTarget: true }
+        return
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.convert)) {
         npc.sendToConvert?.(target)
-        return { blinkTarget: true }
+        return
       }
       if (applyDiplomaticAggression(npc, target).changed && npc.getActionCondition?.(target, ACTION_TYPES.convert)) {
         npc.sendToConvert?.(target)
-        return { blinkTarget: true }
+        return
       }
     }
     const attackableFamilies = [FAMILY_TYPES.unit, FAMILY_TYPES.building, FAMILY_TYPES.animal]
     if (attackableFamilies.includes(target.family) && npc.getActionCondition?.(target, ACTION_TYPES.attack)) {
       npc.sendToAttack?.(target)
-      return { blinkTarget: true }
+      return
     }
   }
   npc.sendTo?.(cell)
-  return { blinkTarget: false }
+  return
 }
 
 function routeNpcGroupThroughBuildingInteriorEntry(npcs: UnitEntity[], cell: RuntimeCell): boolean {
@@ -201,17 +193,13 @@ function routeNpcGroupThroughBuildingInteriorEntry(npcs: UnitEntity[], cell: Run
   const route = context?.routeUnitIntoBuildingInterior
   if (!building || !route) return false
 
-  let routedAnyNpc = false
   for (const npc of npcs) {
     resetNpcDirectives(npc)
     delayUnitRestAfterActivity(npc)
-    if (route(npc, building)) {
-      routedAnyNpc = true
-    } else {
+    if (!route(npc, building)) {
       npc.sendTo?.(cell)
     }
   }
-  if (routedAnyNpc) drawCellBlinkingSelection(cell)
 
   return true
 }
@@ -227,11 +215,9 @@ export function sendNpcGroupToTarget(
   if (routeNpcGroupThroughBuildingInteriorEntry(npcs, cell)) return
   const target = resolveClickTarget(npcs[0], worldPoint, cell)
   if (target) {
-    let shouldBlinkTarget = false
     for (const npc of npcs) {
-      if (sendNpcToCell(npc, cell, target).blinkTarget) shouldBlinkTarget = true
+      sendNpcToCell(npc, cell, target)
     }
-    if (shouldBlinkTarget) drawInstanceBlinkingSelection(target as SelectableInstance)
     return
   }
   const map = npcs[0].context?.map

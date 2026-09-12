@@ -14,7 +14,6 @@ test('loading a hero preserves the entire saved inventory without sharing config
       '../../lib/lpc': { applyBakedLpcUnitAssets() {} },
       '../../lib/audio/settings': {},
       '../../lib/units/unitEnergy': { ensureUnitEnergy() {} },
-      '../../lib/units/unitHealth': { ensureUnitHealthRegen() {} },
       '../../lib/units/unitWorkAppearance': {},
       '../../ui/entity/UnitInterface': {},
       './UnitActions': {},

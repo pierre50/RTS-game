@@ -88,10 +88,8 @@ const buildingTrainingMock = {
   isTraineeTrainingType: (_building, type) => type !== 'Villager',
 }
 
-test('rally point on a resource just moves the spawned unit to the cell', () => {
+test('produced units remain at their spawn cell without movement orders', () => {
   const spawnCell = { i: 1, j: 1, category: 'Land', solid: false }
-  const tree = { family: 'resource', category: 'Tree', type: 'Tree', isDestroyed: false }
-  const rallyCell = { i: 2, j: 2, category: 'Land', solid: false, has: tree }
   const calls = []
   const unit = {
     sendToTree() {
@@ -105,13 +103,12 @@ test('rally point on a resource just moves the spawned unit to the cell', () => 
     i: 0,
     j: 0,
     size: 1,
-    rallyPoint: { i: 2, j: 2, direction: 0 },
     context: {
       map: {
         grid: [
           [null, null, null],
           [null, spawnCell, null],
-          [null, null, rallyCell],
+          [null, null, null],
         ],
         randomItem: items => items[0],
       },
@@ -169,7 +166,7 @@ test('rally point on a resource just moves the spawned unit to the cell', () => 
 
   assert.equal(calls[0][0], 'created')
   assert.deepEqual(calls[0][1], { i: 1, j: 1, type: 'Villager' })
-  assert.deepEqual(calls[1], [unit, rallyCell])
+  assert.equal(calls.length, 1)
 })
 
 test('produced units do not spawn on reserved passage cells', () => {
@@ -180,7 +177,6 @@ test('produced units do not spawn on reserved passage cells', () => {
     i: 0,
     j: 0,
     size: 1,
-    rallyPoint: null,
     context: {
       map: {
         grid: [

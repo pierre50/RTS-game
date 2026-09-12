@@ -4,13 +4,16 @@ import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { GridPosition } from '../../types/grid'
 
 /** Search connected land, not just nearby coordinates across water or blocked terrain. */
-function reachable(map: RuntimeMap, start: GridPosition, blocked = new Set<RuntimeCell>()): RuntimeCell[] {
+function reachable(map: RuntimeMap, start: GridPosition, blocked = new Set<RuntimeCell>(), maxSteps = Infinity): RuntimeCell[] {
   const origin = map.grid[start.i]?.[start.j]
   if (!origin) return []
   const queue = [origin]
   const seen = new Set([origin])
+  const distances = new Map([[origin, 0]])
   for (let index = 0; index < queue.length; index++) {
     const cell = queue[index]
+    const distance = distances.get(cell) ?? 0
+    if (distance >= maxSteps) continue
     for (const [di, dj] of [
       [1, 0],
       [-1, 0],
@@ -32,6 +35,7 @@ function reachable(map: RuntimeMap, start: GridPosition, blocked = new Set<Runti
       )
         continue
       seen.add(next)
+      distances.set(next, distance + 1)
       queue.push(next)
     }
   }
@@ -42,18 +46,45 @@ export function findIntroductionPlacement(
   map: RuntimeMap,
   hero: GridPosition,
   size: number
-): { camp: RuntimeCell; companion: RuntimeCell } | null {
+): { camp: RuntimeCell; companion: RuntimeCell; arrival: RuntimeCell } | null {
   const nearby = reachable(map, hero)
   for (const camp of nearby) {
     if (!canPlaceBuildingAt(map.grid, camp.i, camp.j, { size })) continue
     const footprint = new Set(getBuildingFootprintCells(camp.i, camp.j, map.grid, size))
-    if ([...footprint].some(cell => cell.has || (cell.i === hero.i && cell.j === hero.j))) continue
-    const companion = reachable(map, hero, footprint).find(
+    // Leave one tile between the hero and the edge of the starting fire.
+    if ([...footprint].some(cell =>
+      cell.has || Math.max(Math.abs(cell.i - hero.i), Math.abs(cell.j - hero.j)) < 2
+    )) continue
+    const connected = reachable(map, hero, footprint)
+    const available = new Set(connected)
+    // Place both ends on the same clear ray, preferably away from the fire.
+    const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(
+      ([ai, aj], [bi, bj]) => (ai - bi) * (camp.i - hero.i) + (aj - bj) * (camp.j - hero.j)
+    )
+    for (const [di, dj] of directions) {
+      const corridor = [1, 2, 3].map(step => map.grid[hero.i + di * step]?.[hero.j + dj * step])
+      if (corridor.every((cell, index) => cell && available.has(cell) &&
+        Math.abs((cell.z ?? 0) - (index ? corridor[index - 1]?.z ?? 0 : map.grid[hero.i]?.[hero.j]?.z ?? 0)) <= 1)) {
+        return { camp, arrival: corridor[0], companion: corridor[2] }
+      }
+    }
+    const arrivals = connected.filter(
       cell =>
         Math.max(Math.abs(cell.i - hero.i), Math.abs(cell.j - hero.j)) <= 2 &&
         Math.max(Math.abs(cell.i - camp.i), Math.abs(cell.j - camp.j)) <= 3
     )
-    if (companion) return { camp, companion }
+    const blocked = new Set(footprint)
+    const heroCell = map.grid[hero.i]?.[hero.j]
+    if (heroCell) blocked.add(heroCell)
+    for (const arrival of arrivals) {
+      // On cramped terrain, allow a short approach but never a long detour around the fire.
+      const companion = reachable(map, arrival, blocked, 3).find(cell => {
+        const distance = Math.max(Math.abs(cell.i - hero.i), Math.abs(cell.j - hero.j))
+        return distance >= 3 && distance <= 4
+      })
+      if (companion) return { camp, companion, arrival }
+    }
+    if (arrivals[0]) return { camp, companion: arrivals[0], arrival: arrivals[0] }
   }
   return null
 }

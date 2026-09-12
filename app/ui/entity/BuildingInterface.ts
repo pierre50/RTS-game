@@ -50,7 +50,7 @@ export class BuildingInterface {
       element.appendChild(this.getStableHorseElement())
     }
     if (canHeroDeleteBuildingInfoTarget(building)) {
-      element.appendChild(this.getDeleteBuildingButton())
+      ;(options?.actionsContainer ?? element).appendChild(this.getDeleteBuildingButton())
     }
   }
 
@@ -85,10 +85,16 @@ export class BuildingInterface {
       const color = isHorseColor(horse?.horseColor) ? horse.horseColor : null
       const avatar = document.createElement('div')
       avatar.className = `stable-horse-avatar${color ? ' filled' : ''}`
-      avatar.title = color ? t(`horseColor_${color}`) : ''
+      avatar.setAttribute('aria-label', color ? t(`horseColor_${color}`) : '')
       if (color) {
-        avatar.style.setProperty('--stable-horse-color', `#${HORSE_COLOR_PALETTES[color][1].toString(16).padStart(6, '0')}`)
-        avatar.style.setProperty('--stable-horse-shadow', `#${HORSE_COLOR_PALETTES[color][4].toString(16).padStart(6, '0')}`)
+        avatar.style.setProperty(
+          '--stable-horse-color',
+          `#${HORSE_COLOR_PALETTES[color][1].toString(16).padStart(6, '0')}`
+        )
+        avatar.style.setProperty(
+          '--stable-horse-shadow',
+          `#${HORSE_COLOR_PALETTES[color][4].toString(16).padStart(6, '0')}`
+        )
       }
       avatars.appendChild(avatar)
     }
@@ -101,7 +107,13 @@ export class BuildingInterface {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'entity-delete-building-button ui-btn'
-    button.textContent = t('deleteEntity')
+    button.textContent = t(
+      !building.isBuilt
+        ? 'cancelBuildingConstruction'
+        : building.type === BUILDING_TYPES.fireCamp || building.type === BUILDING_TYPES.chest
+          ? 'removeBuildingObject'
+          : 'demolishBuilding'
+    )
     button.addEventListener('click', () => {
       if (building.isDead || building.isDestroyed) return
       const menu = building.context?.menu

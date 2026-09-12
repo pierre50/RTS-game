@@ -38,7 +38,7 @@
 
 .ui-tab {
   flex: 1 1 0;
-  padding: 8px 12px;
+  padding: var(--ui-gap-8) var(--ui-gap-12);
   overflow: hidden;
   font-size: var(--font-size-base);
   font-weight: bold;
@@ -58,5 +58,5 @@
   background: var(--main-primary-color);
   border-bottom: none;
   box-shadow: none;
-  padding-bottom: 10px;
+  padding-bottom: var(--ui-gap-10);
 }

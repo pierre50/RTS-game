@@ -16,7 +16,6 @@ import type { SavedTrainingEntry, SavedTrainingExtra } from './training'
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
 export type SaveDestination = Partial<SaveGridPoint & { x: number; y: number; label: string }>
-export type SaveRallyPoint = SaveGridPoint & { direction: number }
 
 // Read-only compatibility for saves created before objective-based progression.
 type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValue } } | null
@@ -70,10 +69,6 @@ export type SaveEntityState = {
   campPatrolAnchor?: SaveGridPoint | null
   banditCampAnchor?: SaveGridPoint | null
   containedAnimalType?: string | null
-  healthRegenRate?: number
-  healthRegenDelay?: number
-  healthRegenMultiplier?: number
-  lastHealthDamagedAt?: number
   i: number
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
@@ -113,7 +108,6 @@ export type SaveEntityState = {
   previousWork?: string | null
   quantity?: number
   queue?: string[]
-  rallyPoint?: SaveRallyPoint | null
   realDest?: SaveDestination | null
   size?: number
   spaceId?: string
@@ -324,7 +318,14 @@ type CampaignClockSave = {
 }
 
 export type CampaignSave = {
-  introduction?: { status: 'prepared' | 'completed'; worldId: string; companionLabel: string; campfireLabel: string }
+  introduction?: {
+    status: 'prepared' | 'completed'
+    phase?: 'approaching' | 'waking' | 'dialogue'
+    arrival?: { i: number; j: number }
+    worldId: string
+    companionLabel: string
+    campfireLabel: string
+  }
   quests?: QuestJournalState
   format: 'campaign-v1'
   version: number
@@ -345,16 +346,19 @@ export type RegionEconomySave = {
   initialState?: SerializedSave
   terrain: string[]
   simulatedUntilMs: number
-  summaries: Record<string, {
-    population: number
-    populationMax: number
-    stocks: ResourceAmount
-    military: Record<string, number>
-    buildings: Record<string, number>
-    constructionProjects: number
-    constructionDecision?: string
-    trainingProjects: number
-  }>
+  summaries: Record<
+    string,
+    {
+      population: number
+      populationMax: number
+      stocks: ResourceAmount
+      military: Record<string, number>
+      buildings: Record<string, number>
+      constructionProjects: number
+      constructionDecision?: string
+      trainingProjects: number
+    }
+  >
 }
 
 export type CampaignEconomySave = {

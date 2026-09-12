@@ -1,22 +1,21 @@
-import { UNIT_TYPES } from '../constants'
-import type { ResourceAmount } from '../types/common'
-import type { RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
-import type { PlayerLike } from '../types/player'
-import type { FactionSave, FactionExpeditionSave } from '../types/save'
-import type { Modal } from '../lib'
-import type { SchedulerTaskId } from '../types/context'
+import { UNIT_TYPES } from '../../constants'
+import type { ResourceAmount } from '../../types/common'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
+import type { PlayerLike } from '../../types/player'
+import type { FactionSave, FactionExpeditionSave } from '../../types/save'
+import type { Modal } from '../../lib'
+import type { SchedulerTaskId } from '../../types/context'
 
 export const BANDIT_OWNER_NAME = 'Bandits'
 export const FACTION_RAID_FIRST_DAY = 3
 export const FACTION_RAID_INTERVAL_DAYS = 3
 export const FACTION_RAID_MIN_HATE = -10
 export const FACTION_RAID_START_HOUR = 9
-export const FACTION_RAID_END_HOUR = 17
+const FACTION_RAID_END_HOUR = 17
 export const BANDIT_RAID_FIRST_DAY = 4
 export const BANDIT_RAID_INTERVAL_DAYS = 4
 export const RAID_APPROACH_RANGE = 2.2
-export const RAID_RETURN_RANGE = 3
 export const RAID_UPDATE_MS = 350
 export const RAID_SPAWN_MIN_RADIUS = 4
 export const RAID_SPAWN_MAX_RADIUS = 9
@@ -72,7 +71,7 @@ export function livingRaidUnits(raid: TributeRaid): TributeRaidUnit[] {
   return raid.units.filter(unit => !unit.isDead && !unit.isDestroyed)
 }
 
-export function roundTributeValue(value: number): number {
+function roundTributeValue(value: number): number {
   if (value <= 0) return 0
   return Math.max(TRIBUTE_ROUNDING_STEP, Math.round(value / TRIBUTE_ROUNDING_STEP) * TRIBUTE_ROUNDING_STEP)
 }

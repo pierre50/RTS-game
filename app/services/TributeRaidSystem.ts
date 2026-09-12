@@ -1,4 +1,4 @@
-import { createTitledEntityInfoContent } from '../ui/EntityInfoModalManager'
+import { createTitledEntityInfoContent } from '../ui/EntityInfoContent'
 import { createInspectionModal } from '../ui/InspectionPanel'
 import { DAY_NIGHT_CONFIG } from '../config/gameplay'
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
@@ -26,7 +26,7 @@ import {
   type TributeRaidKind,
   type TributeRaidOwner,
   type TributeRaidUnit,
-} from './TributeRaidRules'
+} from './tribute/TributeRaidRules'
 import { findRaidTarget, hasActiveBanditCampPresence } from './TributeRaidTargeting'
 import { getHostileRaidMessage, getIncomingRaidMessage, getTributePaidMessage } from './TributeRaidText'
 import {

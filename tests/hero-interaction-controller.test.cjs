@@ -6,7 +6,8 @@ function loadHeroInteractionController(calls) {
   return loadTsModule('app/controllers/HeroInteractionController.ts', {
     mocks: {
       '../constants': {
-        FAMILY_TYPES: { building: 'building', resource: 'resource', unit: 'unit' },
+        BUILDING_TYPES: { trap: 'Trap' },
+        FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
       '../lib/hero/heroActionRange': {
@@ -14,7 +15,7 @@ function loadHeroInteractionController(calls) {
       },
       '../lib/hero/heroProximityInteractions': {
         resolveHeroNpcProximityInteraction: (_hero, target) =>
-          target.family === 'unit'
+          target.family === 'unit' && !target.hostile && target.action !== 'attack'
             ? {
                 action: 'communicate',
                 labelKey: 'heroInteractionCommunicate',
@@ -100,4 +101,37 @@ test('wildgrass direct interaction opens info instead of starting forage work', 
 
   assert.equal(controller.openHeroEntityInteraction(target), true)
   assert.deepEqual(calls, [['openEntityInfoModal', target]])
+})
+
+for (const target of [
+  { family: 'unit', hostile: true, label: 'enemy' },
+  { family: 'unit', action: 'attack', label: 'fighting-ally' },
+  { family: 'animal', label: 'idle-deer' },
+  { family: 'animal', action: 'flee', label: 'fleeing-deer' },
+]) {
+  test(`direct interaction does not inspect ${target.label}`, () => {
+    const { calls, controller } = createController(target)
+
+    assert.equal(controller.openHeroEntityInteraction(target), false)
+    assert.deepEqual(calls, [])
+  })
+}
+
+test('dead animal remains inspectable', () => {
+  const target = { family: 'animal', isDead: true, label: 'dead-deer' }
+  const { calls, controller } = createController(target)
+
+  assert.equal(controller.openHeroEntityInteraction(target), true)
+  assert.deepEqual(calls, [['openEntityInfoModal', target]])
+})
+
+test('direct inspection never opens or claims a trap', () => {
+  for (const isBuilt of [false, true]) {
+    const owner = { diplomacy: 'neutral', label: 'neutral', type: 'Gaia' }
+    const target = { family: 'building', type: 'Trap', label: 'trap', owner, isBuilt }
+    const { calls, controller } = createController(target)
+    assert.equal(controller.openHeroEntityInteraction(target), false)
+    assert.deepEqual(calls, [])
+    assert.equal(target.owner, owner)
+  }
 })

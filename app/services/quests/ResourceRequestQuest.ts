@@ -25,6 +25,7 @@ export const resourceRequestQuest: QuestDefinition = {
           requireObjectives: true,
           effects: [
             { type: 'take-resource', resource: { parameter: 'resource' }, quantity: { parameter: 'quantity' } },
+            { type: 'give-resource', resource: 'gold', quantity: { parameter: 'rewardGold' } },
           ],
           nextStageId: null,
         },

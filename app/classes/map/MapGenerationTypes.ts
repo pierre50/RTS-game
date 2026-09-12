@@ -13,7 +13,7 @@ import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types
 import type { TextureRef } from '../../lib'
 import type { SavedPlayer } from './MapSaveRestoreTypes'
 
-export type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5 | 7
+type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5 | 7
 type BlueprintTerrainValue = TerrainValue | string
 type GeneratedPosition = GridPosition | null
 export type GaiaRespawnSlot = SaveEntityState & {

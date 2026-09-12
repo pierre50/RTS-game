@@ -110,10 +110,10 @@
       "range": 6
     }
   },
-  "arrow_ceramic": {},
-  "arrow_copper": {},
-  "arrow_bronze": {},
-  "arrow_iron": {},
+  "arrow_ceramic": { "weapon": { "power": 1 } },
+  "arrow_copper": { "weapon": { "power": 2 } },
+  "arrow_bronze": { "weapon": { "power": 3 } },
+  "arrow_iron": { "weapon": { "power": 4 } },
   "longsword": {
     "weapon": {
       "power": 11

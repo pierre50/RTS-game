@@ -5,7 +5,7 @@ import { definedProperties } from '../../lib/definedProperties'
 import { playableColor } from '../../lib/graphics/playableColor'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import type { FactionSave } from '../../types/save'
-import { BANDIT_OWNER_NAME, isRaidBanditOwner, isRaidFactionOwner, type TributeRaidOwner } from '../TributeRaidRules'
+import { BANDIT_OWNER_NAME, isRaidBanditOwner, isRaidFactionOwner, type TributeRaidOwner } from './TributeRaidRules'
 import type { TributeRaidSystem } from '../TributeRaidSystem'
 
 export function getOrCreateBanditOwner(runtime: TributeRaidSystem): TributeRaidOwner {

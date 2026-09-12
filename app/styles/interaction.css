@@ -1,0 +1,248 @@
+/* Shared presentation for world interactions; inventory screens remain separate. */
+.modal.inspection-panel-backdrop:has(.interaction-panel) {
+  align-items: flex-end;
+  justify-content: center;
+  padding: max(var(--ui-gap-12), env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+    max(var(--ui-gap-24), env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: transparent;
+}
+
+.modal-panel.interaction-panel {
+  position: relative;
+  isolation: isolate;
+  flex-shrink: 0;
+  gap: 0;
+  width: min(1080px, 100%);
+  min-width: 0;
+  max-height: min(520px, 65dvh);
+  padding: var(--ui-gap-24);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: var(--panel-border);
+  border-radius: var(--main-border-radius);
+  box-shadow: var(--ui-outset-shadow);
+  background: var(--main-primary-color);
+}
+
+.interaction-panel > .modal-header {
+  margin: 0 0 var(--ui-gap-12);
+  padding: 0;
+  border: 0;
+}
+
+.interaction-panel .modal-title {
+  color: var(--main-accent-hover);
+}
+
+.interaction-panel .interaction-panel-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.interaction-information,
+.interaction-actions {
+  --interaction-divider-color: rgba(179, 188, 239, 0.3);
+  min-width: 0;
+}
+
+.interaction-actions {
+  padding-left: var(--ui-gap-24);
+  border-left: 1px solid var(--interaction-divider-color);
+}
+
+.interaction-panel .entity-info-modal {
+  padding: 0;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.interaction-panel .entity-info-wrapper {
+  align-items: flex-start;
+  gap: var(--ui-gap-16);
+}
+
+.interaction-panel .entity-info-wrapper > .unit-avatar-frame {
+  flex: 0 0 80px;
+  width: 80px;
+  height: 80px;
+}
+
+.npc-orders-info .infos {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-10);
+  margin-top: var(--ui-gap-8);
+}
+
+.npc-orders-chatter:not(:empty) {
+  margin-top: var(--ui-gap-16);
+}
+
+.npc-orders-panel .npc-orders-chatter-line {
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  opacity: 1;
+}
+
+.interaction-actions > .npc-orders-exit {
+  margin-top: var(--ui-gap-8);
+}
+
+.npc-orders-debug:not([hidden]) {
+  margin-top: var(--ui-gap-12);
+}
+
+@media (max-width: 640px) and (min-height: 501px) {
+  .modal-panel.interaction-panel {
+    padding: var(--ui-gap-24) var(--ui-gap-12) var(--ui-gap-16);
+    max-height: 72dvh;
+  }
+
+  .interaction-panel .interaction-panel-content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ui-gap-16);
+  }
+
+  .interaction-actions {
+    border-left: 0;
+    border-top: 1px solid var(--interaction-divider-color);
+    padding: var(--ui-gap-12) 0 0;
+  }
+}
+
+@media (max-height: 500px) {
+  .modal-panel.interaction-panel {
+    max-height: calc(100dvh - 48px);
+    padding: 20px var(--ui-gap-12) var(--ui-gap-16);
+  }
+
+  .interaction-panel .interaction-panel-content {
+    gap: var(--ui-gap-16);
+  }
+
+  .interaction-actions {
+    padding-left: var(--ui-gap-12);
+  }
+
+  .interaction-panel .entity-info-wrapper > .unit-avatar-frame {
+    flex-basis: 56px;
+    width: 56px;
+    height: 56px;
+  }
+}
+
+.bandit-tribute-modal-content > :first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.bandit-tribute-modal-content > .bandit-tribute-text {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+}
+
+.bandit-tribute-modal-content > .bandit-tribute-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+@media (max-width: 640px) and (min-height: 501px) {
+  .bandit-tribute-modal-content > .bandit-tribute-actions {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-panel.inventory-transfer-modal {
+  width: min(1100px, 100%);
+}
+
+/* An inspection with no available actions uses a compact single column. */
+.interaction-panel:not(:has(.interaction-actions button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))) {
+  width: min(620px, 100%);
+}
+
+.interaction-panel-content:not(
+  :has(.interaction-actions button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))
+) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.interaction-actions:not(:has(button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))) {
+  display: none;
+}
+
+.interaction-secondary-actions:not(:empty) {
+  margin-top: var(--ui-gap-16);
+  padding-top: var(--ui-gap-12);
+  border-top: 1px solid var(--border-divider-subtle);
+}
+
+.inventory-transfer-modal .interaction-actions {
+  border: 0;
+  padding: 0;
+}
+
+.interaction-panel .hero-building-menu-meta,
+.interaction-panel .hero-building-menu-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+.npc-group-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-12);
+}
+
+.npc-group-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(128px, 100%), 1fr));
+  gap: var(--ui-gap-12);
+}
+
+.npc-group-type {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  align-content: start;
+  gap: var(--ui-gap-6) var(--ui-gap-8);
+  min-width: 0;
+}
+
+.npc-group-type > .unit-avatar-frame {
+  width: 56px;
+  height: 56px;
+  min-height: 0;
+}
+
+.npc-group-count {
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.npc-group-type-name {
+  grid-column: 1 / -1;
+  color: var(--main-text-color);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.npc-group-wounded {
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-sm);
+}

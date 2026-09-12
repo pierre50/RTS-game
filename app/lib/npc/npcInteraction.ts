@@ -1,19 +1,13 @@
 import {
   ACTION_TYPES,
   CELL_WIDTH,
-  COLOR_WHITE,
   FAMILY_TYPES,
-  LABEL_TYPES,
   PLAYER_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
   UNIT_TYPES,
 } from '../constants'
 import { findInstancesInSight } from '../grid/visibility'
-import {
-  createIsoSelectionMarker,
-  getSelectionMarkerOffset,
-} from '../graphics/selection'
 import { getCellsInCellRadius } from '../grid/cells'
 import { angleDelta, getInstanceDegree } from '../maths'
 import { playAudibleSoundCue, playSelectionSound } from '../audio/sound'
@@ -67,6 +61,7 @@ function isFriendlyAvailable(hero: UnitEntity, target: UnitEntity): boolean {
 }
 
 function isCommEligible(hero: UnitEntity, target: UnitEntity): boolean {
+  if (target.isDead || target.isDestroyed || isFighting(target)) return false
   if (target.lookingAtHero) return true
   return isFriendlyAvailable(hero, target)
 }
@@ -81,13 +76,11 @@ function isForeignTalkableNpc(hero: UnitEntity, target: UnitEntity): boolean {
   return true
 }
 
-// Any living unit on the hero's own side, regardless of what it's currently doing (fighting,
-// working...) or a non-hostile foreign AI unit. The bar for a flavor chatter line is much
-// lower than for a giveable order.
+// Friendly and non-hostile living characters can talk while working, but never during combat.
 export function isTalkableNpc(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (target === hero || target.family !== FAMILY_TYPES.unit) return false
   const unit = target as UnitEntity
-  if (unit.isDead || unit.isDestroyed) return false
+  if (unit.isDead || unit.isDestroyed || isFighting(unit)) return false
   return unit.owner === hero.owner || isNeutralPlayer(unit.owner) || isForeignTalkableNpc(hero, unit)
 }
 
@@ -95,30 +88,6 @@ function claimNeutralCommGroup(hero: UnitEntity, group: UnitEntity[]): void {
   for (const npc of group) {
     transferNeutralEntityToPlayer(npc, hero.owner, { player: hero.owner })
   }
-}
-
-// Marks a frozen comm target with the same selection lozenge as a regular unit selection, kept
-// on its own label so it never collides with (or gets cleared by) the player's actual drag-select
-// state — a comm target that also happens to be selected must stay selected once released.
-function setCommSelected(target: UnitEntity, selected: boolean): void {
-  if (!selected) {
-    const marker = target.getChildByLabel?.(LABEL_TYPES.commSelection)
-    if (marker) target.removeChild(marker)
-    return
-  }
-  if (target.getChildByLabel?.(LABEL_TYPES.commSelection)) return
-  const factor = target.selectionFactor ?? target.size ?? 1
-  const markerOffset = getSelectionMarkerOffset(target)
-  const marker = createIsoSelectionMarker({
-    color: COLOR_WHITE,
-    factor,
-    label: LABEL_TYPES.commSelection,
-    zIndex: -1,
-  })
-  marker.position.x = markerOffset.x
-  marker.position.y = markerOffset.y + (target.reliefLift ?? 0)
-  const shadowIndex = target.getChildByLabel?.(LABEL_TYPES.shadow) ? 1 : 0
-  target.addChildAt(marker, shadowIndex)
 }
 
 function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true): void {
@@ -145,7 +114,6 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true)
   } else {
     target.setTextures?.(SHEET_TYPES.standing)
   }
-  setCommSelected(target, true)
   if (shouldPlayVoice) playSelectionSound(target)
 }
 
@@ -173,7 +141,6 @@ export function playNpcOrderSound(npcs: UnitEntity[]): void {
 function releaseNpc(target: UnitEntity): void {
   if (!target.lookingAtHero) return
   target.lookingAtHero = false
-  setCommSelected(target, false)
   if (target.shelterState?.reason === 'sleep') {
     target.context?.unitRest?.restoreSleepingUnitVisual(target)
     return

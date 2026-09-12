@@ -122,22 +122,22 @@ test('legacy wheat respawns immature on its original cell and never relocates if
 })
 
 test('neutral resource groups lean by environment without changing starting resources', () => {
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'berrybush', 120), 2)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'berrybush', 120), 3)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'wheat', 120), 2)
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'stone', 120), 3)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'stone', 120), 4)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'gold', 120), 1)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'tree', 120), 1)
 
   assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'berrybush', 120), 1)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'wheat', 120), 0)
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'stone', 120), 2)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'stone', 120), 3)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'copper', 120), 2)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'gold', 120), 1)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'tree', 120), 0)
 
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'berrybush', 120), 2)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'berrybush', 120), 3)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'wheat', 120), 1)
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'stone', 120), 2)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'stone', 120), 3)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'tree', 120), 1)
 
   assert.equal(getNeutralResourceGroupCount('moderate', 'BlackForest', 'berrybush', 120), 2)
@@ -147,21 +147,21 @@ test('neutral resource groups lean by environment without changing starting reso
 
   assert.equal(getNeutralResourceGroupCount('moderate', 'Steppe', 'berrybush', 120), 2)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Steppe', 'wheat', 120), 2)
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Steppe', 'stone', 120), 3)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Steppe', 'stone', 120), 4)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Steppe', 'tree', 120), 16)
 })
 
 test('neutral resource group counts still scale with map area', () => {
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'stone', 240), 8)
-  assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'berrybush', 240), 8)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'stone', 240), 12)
+  assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'berrybush', 240), 12)
 })
 
 test('scattered stone density varies by environment and map area', () => {
-  assert.equal(getScatteredStoneCount('moderate', 'Temperate', 120), 8)
-  assert.equal(getScatteredStoneCount('moderate', 'Desert', 120), 8)
-  assert.equal(getScatteredStoneCount('moderate', 'Jungle', 120), 5)
-  assert.equal(getScatteredStoneCount('moderate', 'Steppe', 120), 7)
-  assert.equal(getScatteredStoneCount('moderate', 'Desert', 240), 32)
+  assert.equal(getScatteredStoneCount('moderate', 'Temperate', 120), 12)
+  assert.equal(getScatteredStoneCount('moderate', 'Desert', 120), 12)
+  assert.equal(getScatteredStoneCount('moderate', 'Jungle', 120), 7)
+  assert.equal(getScatteredStoneCount('moderate', 'Steppe', 120), 11)
+  assert.equal(getScatteredStoneCount('moderate', 'Desert', 240), 48)
 })
 
 test('scattered herb density varies by environment and map area', () => {
@@ -547,7 +547,7 @@ test('scattered stones are isolated and use smaller deposits', async () => {
   await mapResources.generateScatteredStoneAsync([{ i: 60, j: 60 }])
 
   const stones = [...map.resources]
-  assert.equal(stones.length, 8)
+  assert.equal(stones.length, 12)
   assert(stones.every(stone => stone.type === 'Stone'))
   // map.random() always returns 0, so the rolled quantity lands on the range's minimum (15).
   assert(stones.every(stone => stone.quantity === 15))

@@ -129,7 +129,8 @@ function moveTowardNextCell(
 ): void {
   const oldDeg = animal.degree
   const isFastFlee = animal.isFleeing && [SHEET_TYPES.running, SHEET_TYPES.flying].includes(animal.movementSheet ?? '')
-  if (isFastFlee) drainEnergyAmount(animal, getActionEnergyCost(animal, ACTION_TYPES.flee))
+  // Fleeing is continuous: its energy cost is per second, not per movement tick.
+  if (isFastFlee) drainEnergyAmount(animal, getActionEnergyCost(animal, ACTION_TYPES.flee) * (STEP_TIME / 1000))
   let speed = moveSpeed * getEnergyMoveSpeedMultiplier(animal)
   const next = animal.path[animal.path.length - 1]
   const nextCell = grid[next.i][next.j]

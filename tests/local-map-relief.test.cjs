@@ -109,9 +109,11 @@ function assertFlatCoast(blueprint) {
 }
 
 test('region (2, 0) keeps its seven affected shore cells flat after conversion', () => {
-  const source = decodeWorldBlueprint(
-    path.join(__dirname, '../public/maps/worlds/world-4242/maps/144/world-4242-r2-0-black-forest.map')
-  )
+  const root = path.join(__dirname, '../public/maps/worlds/world-4242')
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')))
+  const entry = manifest.maps.find(entry => entry.region.x === 2 && entry.region.y === 0)
+  assert.ok(entry, 'region (2, 0) must exist')
+  const source = decodeWorldBlueprint(path.join(root, 'maps', entry.path))
   const converted = createSquareLocalBlueprint(source)
   assert.equal(converted, source, 'loading final maps must not transform them')
   for (const [i, j] of [

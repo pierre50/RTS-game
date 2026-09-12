@@ -120,13 +120,9 @@ export class BuildingDestruction {
     const adjacentWalls = isWall(building) ? getAdjacentWalls(grid, building.i, building.j, building.owner) : []
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
-    building.clearRallyPoint()
     const ruinsChestInventory = extractBuildingInteriorChestInventory(building.context, building)
     building.cancelAllUnitTraining?.()
     expelBuildingInteriorOccupants(building.context, building)
-    if (building.context.controls.rallyPointController?.building === building) {
-      building.context.controls.rallyPointController.cancel()
-    }
     building.isDead = true
     building.hasActiveBurningSound = false
     stopFlameAmbientSound(building)
@@ -210,7 +206,6 @@ export class BuildingDestruction {
     if (building.isDestroyed) return
     clearTimeout(building.visibilityTimeout)
     stopFlameAmbientSound(building)
-    building.clearRallyPoint()
     const {
       context: { map },
     } = building

@@ -13,14 +13,7 @@ import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { AssetAge } from '../types/pixi'
 import type { RuntimeEntityBase, UnitControlMode } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
-import type {
-  SavedAIState,
-  SaveEntityState,
-  SavePlayerState,
-  SaveRallyPoint,
-  SaveReference,
-  SerializedSave,
-} from '../types/save'
+import type { SavedAIState, SaveEntityState, SavePlayerState, SaveReference, SerializedSave } from '../types/save'
 
 type GridPoint = { i: number; j: number }
 const DEFAULT_SERIALIZED_MAP_TYPE = 'world-region'
@@ -56,10 +49,6 @@ type SerializableEntity = RuntimeEntityBase & {
   energy?: number
   totalEnergy?: number
   lastEnergySpentAt?: number
-  healthRegenRate?: number
-  healthRegenDelay?: number
-  healthRegenMultiplier?: number
-  lastHealthDamagedAt?: number
   horseColor?: string
   trapPrey?: boolean
   tamingStatus?: SaveEntityState['tamingStatus']
@@ -95,7 +84,6 @@ type SerializableEntity = RuntimeEntityBase & {
   exploringForAutonomy?: boolean
   berrybushFullTextureName?: string
   queue?: string[]
-  rallyPoint?: SaveRallyPoint | null
   realDest?: Destination | null
   isFleeing?: boolean
   isChief?: boolean
@@ -256,10 +244,6 @@ function animalData(animal: SerializableEntity): SaveEntityState {
     'energy',
     'totalEnergy',
     'lastEnergySpentAt',
-    'healthRegenRate',
-    'healthRegenDelay',
-    'healthRegenMultiplier',
-    'lastHealthDamagedAt',
     'horseColor',
     'trapPrey',
     'tamingStatus',
@@ -319,10 +303,6 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'z',
       'hitPoints',
       'totalHitPoints',
-      'healthRegenRate',
-      'healthRegenDelay',
-      'healthRegenMultiplier',
-      'lastHealthDamagedAt',
       'energy',
       'totalEnergy',
       'lastEnergySpentAt',
@@ -403,7 +383,6 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'isBuilt',
       'hitPoints',
       'quantity',
-      'rallyPoint',
       'assetCiv',
       'assetAge',
       'buildingAge',

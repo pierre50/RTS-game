@@ -17,7 +17,6 @@ export class PauseMenu {
     button.type = 'button'
     button.className = 'topbar-options-menu ui-btn'
     button.setAttribute('aria-label', t('menuBtn'))
-    button.title = t('menuBtn')
 
     const icon = document.createElement('span')
     icon.className = 'topbar-options-menu-icon'

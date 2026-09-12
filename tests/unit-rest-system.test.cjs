@@ -1330,7 +1330,7 @@ test('villagers wake after 6h and resume their previous autonomous job after lin
   const owner = { units: [], buildings: [] }
   const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
   owner.buildings.push(house)
-  const villager = createUnit(owner, { autonomousJob: 'wood' })
+  const villager = createUnit(owner, { autonomousJob: 'wood', sleepVisualState: 'sleeping' })
   villager.shelterState = {
     status: 'inside',
     location: 'shelter',
@@ -1373,6 +1373,7 @@ test('villagers wake after 6h and resume their stored gathering target before ge
   owner.buildings.push(house)
   const stone = { label: 'stone-pile', i: 9, j: 9, isDestroyed: false }
   const villager = createUnit(owner, {
+    sleepVisualState: 'sleeping',
     autonomousJob: 'stone',
     shelterState: {
       status: 'inside',
@@ -1421,6 +1422,7 @@ test('rest wake transitions delay stored work until the morning linger finishes'
   owner.buildings.push(house)
   const stone = { label: 'stone-pile', i: 9, j: 9, isDestroyed: false }
   const villager = createUnit(owner, {
+    sleepVisualState: 'sleeping',
     autonomousJob: 'stone',
     shelterState: {
       status: 'inside',
@@ -1478,6 +1480,7 @@ test('villagers waking from delivery resume the delivery return task', () => {
   const chest = { label: 'storage-chest', i: 6, j: 6, isDestroyed: false }
   const stone = { label: 'stone-pile', i: 9, j: 9, isDestroyed: false }
   const villager = createUnit(owner, {
+    sleepVisualState: 'sleeping',
     autonomousJob: 'stone',
     resourceDeliveryState: {
       target: house,
@@ -1532,6 +1535,7 @@ test('interior sleepers route to the exit after waking instead of resuming old w
   const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
   owner.buildings.push(house)
   const villager = createUnit(owner, {
+    sleepVisualState: 'sleeping',
     autonomousJob: 'wood',
     shelterState: {
       status: 'inside',
@@ -1586,6 +1590,7 @@ test('runtime interior sleepers wake in place before routing through the space e
   const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
   owner.buildings.push(house)
   const villager = createUnit(owner, {
+    sleepVisualState: 'sleeping',
     shelterState: {
       status: 'inside',
       reason: 'sleep',

@@ -109,13 +109,11 @@ function loadBuildingVisuals() {
             return { x: origin.x + building.x, y: origin.y + building.y }
           },
           getHexColor: color => (color === 'red' ? '#e30b00' : '#ffffff'),
-          getRallyPointFrames: () => [],
           getTextureByFrame: () => null,
           getTextureSheet: textureName => textureName,
           isEntityInActiveMapSpace: building =>
             (building.context?.map?.activeSpaceId ?? 'outside') === (building.spaceId ?? 'outside'),
           parseTextureRef: () => ({ frame: 0 }),
-          RALLY_POINT_SHEET_ID: 'rally-point',
         },
         '../../lib/audio/settings': { getShadowsEnabled: () => true },
       },

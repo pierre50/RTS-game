@@ -347,7 +347,7 @@
   "maps": [
     {
       "id": "world-12345-r0-0-temperate",
-      "sceneryPath": "144/world-12345-r0-0-temperate.scenery.json",
+      "sceneryPath": "world-12345-r0-0-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "water",
@@ -358,13 +358,13 @@
         "x": 0,
         "y": 0
       },
-      "path": "144/world-12345-r0-0-temperate.map",
+      "path": "world-12345-r0-0-temperate.map",
       "seed": 1908983221,
       "spawns": 0
     },
     {
       "id": "world-12345-r1-0-black-forest",
-      "sceneryPath": "144/world-12345-r1-0-black-forest.scenery.json",
+      "sceneryPath": "world-12345-r1-0-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
@@ -398,13 +398,13 @@
         "x": 1,
         "y": 0
       },
-      "path": "144/world-12345-r1-0-black-forest.map",
+      "path": "world-12345-r1-0-black-forest.map",
       "seed": 933926572,
       "spawns": 0
     },
     {
       "id": "world-12345-r2-0-black-forest",
-      "sceneryPath": "144/world-12345-r2-0-black-forest.scenery.json",
+      "sceneryPath": "world-12345-r2-0-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
@@ -439,13 +439,13 @@
         "x": 2,
         "y": 0
       },
-      "path": "144/world-12345-r2-0-black-forest.map",
+      "path": "world-12345-r2-0-black-forest.map",
       "seed": 1924164935,
       "spawns": 1
     },
     {
       "id": "world-12345-r3-0-black-forest",
-      "sceneryPath": "144/world-12345-r3-0-black-forest.scenery.json",
+      "sceneryPath": "world-12345-r3-0-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
@@ -459,13 +459,13 @@
         "x": 3,
         "y": 0
       },
-      "path": "144/world-12345-r3-0-black-forest.map",
+      "path": "world-12345-r3-0-black-forest.map",
       "seed": 571058585,
       "spawns": 0
     },
     {
       "id": "world-12345-r4-0-steppe",
-      "sceneryPath": "144/world-12345-r4-0-steppe.scenery.json",
+      "sceneryPath": "world-12345-r4-0-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
@@ -500,13 +500,13 @@
         "x": 4,
         "y": 0
       },
-      "path": "144/world-12345-r4-0-steppe.map",
+      "path": "world-12345-r4-0-steppe.map",
       "seed": 48616040,
       "spawns": 0
     },
     {
       "id": "world-12345-r0-1-temperate",
-      "sceneryPath": "144/world-12345-r0-1-temperate.scenery.json",
+      "sceneryPath": "world-12345-r0-1-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
@@ -541,13 +541,13 @@
         "x": 0,
         "y": 1
       },
-      "path": "144/world-12345-r0-1-temperate.map",
+      "path": "world-12345-r0-1-temperate.map",
       "seed": 2075733727,
       "spawns": 0
     },
     {
       "id": "world-12345-r1-1-black-forest",
-      "sceneryPath": "144/world-12345-r1-1-black-forest.scenery.json",
+      "sceneryPath": "world-12345-r1-1-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
@@ -583,13 +583,13 @@
         "x": 1,
         "y": 1
       },
-      "path": "144/world-12345-r1-1-black-forest.map",
+      "path": "world-12345-r1-1-black-forest.map",
       "seed": 1919611318,
       "spawns": 1
     },
     {
       "id": "world-12345-r2-1-black-forest",
-      "sceneryPath": "144/world-12345-r2-1-black-forest.scenery.json",
+      "sceneryPath": "world-12345-r2-1-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
@@ -604,13 +604,13 @@
         "x": 2,
         "y": 1
       },
-      "path": "144/world-12345-r2-1-black-forest.map",
+      "path": "world-12345-r2-1-black-forest.map",
       "seed": 634428513,
       "spawns": 0
     },
     {
       "id": "world-12345-r3-1-steppe",
-      "sceneryPath": "144/world-12345-r3-1-steppe.scenery.json",
+      "sceneryPath": "world-12345-r3-1-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
@@ -645,13 +645,13 @@
         "x": 3,
         "y": 1
       },
-      "path": "144/world-12345-r3-1-steppe.map",
+      "path": "world-12345-r3-1-steppe.map",
       "seed": 175001971,
       "spawns": 0
     },
     {
       "id": "world-12345-r4-1-steppe",
-      "sceneryPath": "144/world-12345-r4-1-steppe.scenery.json",
+      "sceneryPath": "world-12345-r4-1-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
@@ -664,13 +664,13 @@
         "x": 4,
         "y": 1
       },
-      "path": "144/world-12345-r4-1-steppe.map",
+      "path": "world-12345-r4-1-steppe.map",
       "seed": 300480882,
       "spawns": 0
     },
     {
       "id": "world-12345-r0-2-temperate",
-      "sceneryPath": "144/world-12345-r0-2-temperate.scenery.json",
+      "sceneryPath": "world-12345-r0-2-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
@@ -683,13 +683,13 @@
         "x": 0,
         "y": 2
       },
-      "path": "144/world-12345-r0-2-temperate.map",
+      "path": "world-12345-r0-2-temperate.map",
       "seed": 795111254,
       "spawns": 0
     },
     {
       "id": "world-12345-r1-2-temperate",
-      "sceneryPath": "144/world-12345-r1-2-temperate.scenery.json",
+      "sceneryPath": "world-12345-r1-2-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
@@ -726,13 +726,13 @@
         "x": 1,
         "y": 2
       },
-      "path": "144/world-12345-r1-2-temperate.map",
+      "path": "world-12345-r1-2-temperate.map",
       "seed": 1041803203,
       "spawns": 1
     },
     {
       "id": "world-12345-r2-2-temperate",
-      "sceneryPath": "144/world-12345-r2-2-temperate.scenery.json",
+      "sceneryPath": "world-12345-r2-2-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
@@ -770,13 +770,13 @@
         "x": 2,
         "y": 2
       },
-      "path": "144/world-12345-r2-2-temperate.map",
+      "path": "world-12345-r2-2-temperate.map",
       "seed": 2085258815,
       "spawns": 1
     },
     {
       "id": "world-12345-r3-2-steppe",
-      "sceneryPath": "144/world-12345-r3-2-steppe.scenery.json",
+      "sceneryPath": "world-12345-r3-2-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
@@ -814,13 +814,13 @@
         "x": 3,
         "y": 2
       },
-      "path": "144/world-12345-r3-2-steppe.map",
+      "path": "world-12345-r3-2-steppe.map",
       "seed": 570342675,
       "spawns": 1
     },
     {
       "id": "world-12345-r4-2-steppe",
-      "sceneryPath": "144/world-12345-r4-2-steppe.scenery.json",
+      "sceneryPath": "world-12345-r4-2-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
@@ -855,13 +855,13 @@
         "x": 4,
         "y": 2
       },
-      "path": "144/world-12345-r4-2-steppe.map",
+      "path": "world-12345-r4-2-steppe.map",
       "seed": 2095405095,
       "spawns": 1
     },
     {
       "id": "world-12345-r0-3-temperate",
-      "sceneryPath": "144/world-12345-r0-3-temperate.scenery.json",
+      "sceneryPath": "world-12345-r0-3-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
@@ -896,13 +896,13 @@
         "x": 0,
         "y": 3
       },
-      "path": "144/world-12345-r0-3-temperate.map",
+      "path": "world-12345-r0-3-temperate.map",
       "seed": 943948758,
       "spawns": 0
     },
     {
       "id": "world-12345-r1-3-desert",
-      "sceneryPath": "144/world-12345-r1-3-desert.scenery.json",
+      "sceneryPath": "world-12345-r1-3-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -937,13 +937,13 @@
         "x": 1,
         "y": 3
       },
-      "path": "144/world-12345-r1-3-desert.map",
+      "path": "world-12345-r1-3-desert.map",
       "seed": 89237547,
       "spawns": 0
     },
     {
       "id": "world-12345-r2-3-desert",
-      "sceneryPath": "144/world-12345-r2-3-desert.scenery.json",
+      "sceneryPath": "world-12345-r2-3-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -980,13 +980,13 @@
         "x": 2,
         "y": 3
       },
-      "path": "144/world-12345-r2-3-desert.map",
+      "path": "world-12345-r2-3-desert.map",
       "seed": 926403929,
       "spawns": 1
     },
     {
       "id": "world-12345-r3-3-desert",
-      "sceneryPath": "144/world-12345-r3-3-desert.scenery.json",
+      "sceneryPath": "world-12345-r3-3-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1001,13 +1001,13 @@
         "x": 3,
         "y": 3
       },
-      "path": "144/world-12345-r3-3-desert.map",
+      "path": "world-12345-r3-3-desert.map",
       "seed": 1860267567,
       "spawns": 0
     },
     {
       "id": "world-12345-r4-3-steppe",
-      "sceneryPath": "144/world-12345-r4-3-steppe.scenery.json",
+      "sceneryPath": "world-12345-r4-3-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
@@ -1042,13 +1042,13 @@
         "x": 4,
         "y": 3
       },
-      "path": "144/world-12345-r4-3-steppe.map",
+      "path": "world-12345-r4-3-steppe.map",
       "seed": 1039381677,
       "spawns": 0
     },
     {
       "id": "world-12345-r0-4-desert",
-      "sceneryPath": "144/world-12345-r0-4-desert.scenery.json",
+      "sceneryPath": "world-12345-r0-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1062,13 +1062,13 @@
         "x": 0,
         "y": 4
       },
-      "path": "144/world-12345-r0-4-desert.map",
+      "path": "world-12345-r0-4-desert.map",
       "seed": 1237275302,
       "spawns": 0
     },
     {
       "id": "world-12345-r1-4-desert",
-      "sceneryPath": "144/world-12345-r1-4-desert.scenery.json",
+      "sceneryPath": "world-12345-r1-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1103,13 +1103,13 @@
         "x": 1,
         "y": 4
       },
-      "path": "144/world-12345-r1-4-desert.map",
+      "path": "world-12345-r1-4-desert.map",
       "seed": 208606101,
       "spawns": 0
     },
     {
       "id": "world-12345-r2-4-desert",
-      "sceneryPath": "144/world-12345-r2-4-desert.scenery.json",
+      "sceneryPath": "world-12345-r2-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1122,13 +1122,13 @@
         "x": 2,
         "y": 4
       },
-      "path": "144/world-12345-r2-4-desert.map",
+      "path": "world-12345-r2-4-desert.map",
       "seed": 733466373,
       "spawns": 0
     },
     {
       "id": "world-12345-r3-4-desert",
-      "sceneryPath": "144/world-12345-r3-4-desert.scenery.json",
+      "sceneryPath": "world-12345-r3-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1163,13 +1163,13 @@
         "x": 3,
         "y": 4
       },
-      "path": "144/world-12345-r3-4-desert.map",
+      "path": "world-12345-r3-4-desert.map",
       "seed": 1007890813,
       "spawns": 1
     },
     {
       "id": "world-12345-r4-4-desert",
-      "sceneryPath": "144/world-12345-r4-4-desert.scenery.json",
+      "sceneryPath": "world-12345-r4-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1182,7 +1182,7 @@
         "x": 4,
         "y": 4
       },
-      "path": "144/world-12345-r4-4-desert.map",
+      "path": "world-12345-r4-4-desert.map",
       "seed": 539703361,
       "spawns": 0
     }

@@ -27,7 +27,6 @@ type AnimalVisualHost = {
   visible: boolean
   x: number
   y: number
-  syncSelectionMarkersToRelief(): void
   getChildByLabel(label: string): { position: { y: number } } | null
 }
 
@@ -92,7 +91,6 @@ export class AnimalVisuals {
     animal.reliefLift = immediate ? target : animal.reliefLift + (target - animal.reliefLift) * RELIEF_LIFT_SMOOTHING
     animal.sprite.position.y = -animal.altitude + animal.reliefLift
     this.syncShadow()
-    animal.syncSelectionMarkersToRelief()
     const healthBar = animal.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) healthBar.position.y = animal.reliefLift
     const energyBar = animal.getChildByLabel(LABEL_TYPES.energyBar)

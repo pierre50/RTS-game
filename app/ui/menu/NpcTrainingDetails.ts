@@ -1,7 +1,7 @@
 import { UNIT_TYPES } from '../../constants'
 import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
 import { formatUnitTrainingDuration, getUnitTrainingDurationDays } from '../../lib/training/unitTrainingDuration'
-import { formatActionCost } from '../ActionTooltipFactory'
+import { formatActionCost } from '../ActionDetailsFactory'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 

@@ -7,7 +7,6 @@
   --form-surface-color: var(--color-blue-control);
 
   --main-border-radius: 0px;
-  --main-border-radius-lg: 0px;
 
   --main-text-color: #f5f1dc;
   --main-accent-color: #e7c66a;
@@ -17,44 +16,28 @@
   --color-black-deep: #050716;
   --color-black-blue: #0c1028;
 
-  --color-blue-deep: #111735;
-  --color-blue-mid: #202a55;
   --color-blue-control: #283568;
   --color-blue-bright: #5366a8;
-  --color-cyan: #9aa7d9;
 
-  --color-orange-dark: #806039;
-  --color-orange: #b89048;
-  --color-orange-bright: #e7c66a;
-
-  --color-magenta: #8f5ba8;
   --color-stone-muted: #6d7190;
-  --color-moss-dark: #253858;
-  --color-moss: #4f7d79;
-  --color-parchment: #f5f1dc;
-  --color-bronze: #b89048;
-  --color-gold-aged: #e7c66a;
 
   /* Bordures très contrastées */
   --border-light-color: #cfd8ff;
-  --border-top-color: #ffffff;
   --border-side-color: #8d9be0;
   --border-bottom-color: #31385f;
-  --border-dark-color: #050716;
 
   --border-btn: 2px solid var(--border-light-color);
-  --border-slot: 2px solid #31385f;
-  --panel-border: 2px solid #cfd8ff;
+  --border-slot: 2px solid var(--border-bottom-color);
+  --panel-border: 2px solid var(--border-light-color);
 
-  --main-box-shadow:
-    4px 4px 0 #050716;
+  --main-box-shadow: 4px 4px 0 var(--color-black-deep);
 
   /* =========================================================
      CONSOLE
      ========================================================= */
 
   --dev-console-ok-color: #9bdca8;
-  --dev-console-error-color: #ff8a72;
+  --dev-console-error-color: var(--text-color-danger);
   --dev-console-log-color: #d8def8;
 
   /* =========================================================
@@ -74,19 +57,14 @@
   --msg-warning-border: rgba(214, 169, 74, 0.8);
 
   --msg-padding: 8px 20px;
-  --msg-font-size: var(--font-size-base);
-  --msg-border-radius: var(--main-border-radius);
 
-  --msg-sheen: none;
-
-  --msg-inset-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -1px 0 rgba(49, 56, 95, 0.9);
+  --msg-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -1px 0 rgba(49, 56, 95, 0.9);
 
   /* =========================================================
      TYPOGRAPHIE
      ========================================================= */
 
+  --font-size-xs: 18px;
   --font-size-sm: 20px;
   --font-size-base: 22px;
   --font-size-lg: 24px;
@@ -94,51 +72,33 @@
   --font-size-display: 36px;
   --font-size-hero: 50px;
   --font-size-home-button: var(--font-size-lg);
-  --font-size-section-title: var(--font-size-base);
 
-  --font-family-ui:
-    'm6x11',
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  --font-family-ui: 'm6x11', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  --font-family-display:
-    'marcellus-sc',
-    var(--font-family-ui);
+  --font-family-display: 'marcellus-sc', var(--font-family-ui);
 
-  --font-family-logo:
-    'marcellus-sc',
-    var(--font-family-ui);
+  --font-family-logo: var(--font-family-display);
 
-  --text-color-inverse: #f5f1dc;
+  --text-color-inverse: var(--main-text-color);
   --text-color-white: #ffffff;
   --text-color-danger: #ff8a72;
+  --text-color-secondary: rgba(255, 255, 255, 0.72);
 
-  --text-shadow-light-ui:
-    2px 2px 0 #000000;
-
-  --text-shadow-dark-ui:
-    2px 2px 0 #000000;
-
-  --text-shadow-none: none;
-  --checkbox-check-shadow: none;
+  --text-shadow-ui: 2px 2px 0 #000000;
 
   /* =========================================================
      SURFACES
      ========================================================= */
 
-  --surface-dark-weak: rgba(17, 23, 53, 0.42);
   --surface-dark-soft: rgba(12, 16, 40, 0.66);
   --surface-dark-medium: rgba(9, 12, 31, 0.76);
   --surface-dark-strong: rgba(7, 10, 24, 0.86);
   --surface-dark-heavy: rgba(5, 7, 18, 0.94);
 
-  --surface-dark-solid: #111735;
+  --surface-dark-solid: var(--main-primary-color);
 
   --surface-black-soft: rgba(5, 7, 18, 0.62);
-  --surface-black-solid: #050716;
+  --surface-black-solid: var(--color-black-deep);
   --surface-black-light: rgba(5, 7, 18, 0.76);
 
   --surface-white-faint: rgba(255, 255, 255, 0.055);
@@ -147,11 +107,9 @@
   --surface-accent-medium: rgba(231, 198, 106, 0.12);
 
   --surface-row-subtle: rgba(154, 167, 217, 0.1);
-  --surface-row-dark: rgba(5, 7, 18, 0.46);
 
   --border-accent-faint: rgba(231, 198, 106, 0.08);
   --border-accent-soft: rgba(231, 198, 106, 0.15);
-  --border-row-subtle: rgba(207, 216, 255, 0.2);
   --border-divider-subtle: rgba(207, 216, 255, 0.16);
   --border-accent-subtle: rgba(231, 198, 106, 0.35);
 
@@ -161,30 +119,13 @@
 
   --menu-backdrop-start: rgba(17, 23, 53, 0.82);
   --menu-backdrop-end: rgba(5, 7, 18, 0.98);
-  --menu-backdrop-glow: rgba(154, 167, 217, 0.16);
 
   --menu-backdrop:
-    radial-gradient(
-      circle at 50% 25%,
-      rgba(154, 167, 217, 0.12),
-      transparent 45%
-    ),
-    radial-gradient(
-      circle at 50% 90%,
-      rgba(231, 198, 106, 0.08),
-      transparent 40%
-    ),
-    linear-gradient(
-      180deg,
-      var(--menu-backdrop-start) 0%,
-      var(--menu-backdrop-end) 100%
-    );
+    radial-gradient(circle at 50% 25%, rgba(154, 167, 217, 0.12), transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(231, 198, 106, 0.08), transparent 40%),
+    linear-gradient(180deg, var(--menu-backdrop-start) 0%, var(--menu-backdrop-end) 100%);
 
-  --menu-title-shadow: rgba(0, 0, 0, 0.92);
-
-  --home-button-bg: var(--ui-bar-bg);
-  --home-button-focus-color: #fff0a8;
-  --home-button-focus-scale: 1;
+  --home-button-focus-color: var(--main-accent-hover);
   --home-button-focus-ring: rgba(231, 198, 106, 0.42);
 
   /* =========================================================
@@ -198,6 +139,9 @@
      STATUS
      ========================================================= */
 
+  --status-energy-color: #2f8cff;
+  --status-energy-text-color: #dbe7ff;
+
   --status-health-border: #190712;
   --status-health-top: #d85e62;
   --status-health-bottom: #84263e;
@@ -209,33 +153,24 @@
   --status-progress-highlight: rgba(178, 255, 229, 0.18);
   --status-progress-shadow: rgba(0, 0, 0, 0.62);
 
-  --status-health-background:
-    linear-gradient(
-      180deg,
-      var(--status-health-top) 0%,
-      var(--status-health-bottom) 100%
-    );
-
-  --status-progress-background:
-    linear-gradient(
-      180deg,
-      var(--status-progress-top) 0%,
-      var(--status-progress-bottom) 100%
-    );
+  --status-progress-background: linear-gradient(
+    180deg,
+    var(--status-progress-top) 0%,
+    var(--status-progress-bottom) 100%
+  );
 
   --status-health-inset-shadow:
-    inset 1px 1px 0 var(--status-health-highlight),
-    inset -1px -1px 0 var(--status-health-shadow);
+    inset 1px 1px 0 var(--status-health-highlight), inset -1px -1px 0 var(--status-health-shadow);
 
   --status-progress-inset-shadow:
-    inset 1px 1px 0 var(--status-progress-highlight),
-    inset -1px -1px 0 var(--status-progress-shadow);
+    inset 1px 1px 0 var(--status-progress-highlight), inset -1px -1px 0 var(--status-progress-shadow);
 
   /* =========================================================
-     ESPACEMENTS — INCHANGÉS
+     ESPACEMENTS
      ========================================================= */
 
   --ui-gap-1: 1px;
+  --ui-gap-4: 4px;
   --ui-gap-5: 5px;
   --ui-gap-6: 6px;
   --ui-gap-8: 8px;
@@ -244,10 +179,9 @@
   --ui-gap-16: 16px;
   --ui-gap-18: 18px;
   --ui-gap-24: 24px;
-  --ui-gap-40: 40px;
 
   /* =========================================================
-     DIMENSIONS — INCHANGÉES
+     DIMENSIONS
      ========================================================= */
 
   --ui-slot-size: 120px;
@@ -263,7 +197,6 @@
   --ui-control-height: 46px;
   --ui-control-height-compact: 42px;
   --ui-control-padding-x: 12px;
-  --ui-control-font-size: var(--font-size-base);
 
   --ui-range-thumb-size: 24px;
   --ui-range-track-height: 10px;
@@ -271,7 +204,7 @@
   --ui-checkbox-size: 24px;
 
   /* =========================================================
-     TRANSITIONS — INCHANGÉES
+     TRANSITIONS
      ========================================================= */
 
   --ui-transition-fast: 100ms steps(2, end);
@@ -280,50 +213,34 @@
 
   --ui-hover-brightness: 1.16;
   --ui-press-offset: 2px;
-  --ui-hover-scale: 1;
 
   /* =========================================================
      RENDU UI
      ========================================================= */
 
-  --ui-control-sheen: none;
-  --ui-panel-sheen: none;
-  --ui-button-sheen: none;
-
   --ui-inset-shadow:
-    inset 0 2px 0 #050716,
-    inset 2px 0 0 #0c1028,
-    inset -2px 0 0 #31385f,
-    inset 0 -2px 0 #5366a8;
+    inset 0 2px 0 var(--color-black-deep), inset 2px 0 0 var(--color-black-blue),
+    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--color-blue-bright);
 
   /*
    * Liseré clair façon fenêtre JRPG, sombre en bas pour le relief.
    * Le contraste est volontairement dur.
    */
   --ui-outset-shadow:
-    inset 0 2px 0 #ffffff,
-    inset 2px 0 0 #8d9be0,
-    inset -2px 0 0 #31385f,
-    inset 0 -2px 0 #050716;
+    inset 0 2px 0 var(--text-color-white), inset 2px 0 0 var(--border-side-color),
+    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--color-black-deep);
 
   --ui-button-shadow-raised:
-    inset 0 2px 0 #ffffff,
-    inset 2px 0 0 #8d9be0,
-    inset -2px 0 0 #31385f,
-    inset 0 -2px 0 #050716,
-    4px 4px 0 #050716;
+    inset 0 2px 0 var(--text-color-white), inset 2px 0 0 var(--border-side-color),
+    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--color-black-deep), 4px 4px 0 var(--color-black-deep);
 
   --ui-button-shadow-pressed:
-    inset 0 2px 0 #050716,
-    inset 2px 0 0 #050716,
-    inset -2px 0 0 #31385f,
-    inset 0 -2px 0 #cfd8ff;
+    inset 0 2px 0 var(--color-black-deep), inset 2px 0 0 var(--color-black-deep),
+    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--border-light-color);
 
   --ui-scrollbar-active-shadow:
-    inset 0 2px 0 #050716,
-    inset 2px 0 0 #050716,
-    inset -1px 0 0 #31385f,
-    inset 0 -1px 0 #cfd8ff;
+    inset 0 2px 0 var(--color-black-deep), inset 2px 0 0 var(--color-black-deep),
+    inset -1px 0 0 var(--border-bottom-color), inset 0 -1px 0 var(--border-light-color);
   --ui-scrollbar-thumb-hover-bg: rgba(231, 198, 106, 0.5);
 
   --ui-control-focus-ring: rgba(231, 198, 106, 0.34);
@@ -334,29 +251,23 @@
 
   --ui-bar-bg: var(--color-blue-control);
 
-  --ui-bar-border:
-    2px solid #cfd8ff;
+  --ui-bar-border: var(--panel-border);
 
-  --ui-slot-border:
-    2px solid #31385f;
+  --ui-slot-border: var(--border-slot);
 
-  --ui-text-color: #f5f1dc;
+  --ui-text-color: var(--main-text-color);
 
-  --ui-text-shadow:
-    2px 2px 0 #000000;
+  --ui-text-shadow: var(--text-shadow-ui);
 
-  --ui-plain-text-shadow:
-    2px 2px 0 #000000;
+  --ui-plain-text-shadow: var(--text-shadow-ui);
 
-  --ui-map-shadow-dark: #050716;
+  --world-map-player-color: #6ee37a;
+  --world-map-unexplored-color: #2d3136;
+
+  --ui-map-shadow-dark: var(--color-black-deep);
   --ui-map-shadow-light: rgba(207, 216, 255, 0.18);
-  --ui-map-border:
-    drop-shadow(-2px 0 0 var(--ui-map-shadow-dark))
-    drop-shadow(0 -2px 0 var(--ui-map-shadow-dark))
-    drop-shadow(2px 0 0 var(--ui-map-shadow-light))
-    drop-shadow(0 2px 0 var(--ui-map-shadow-light));
-
-  --focus-outline-color: rgba(255, 240, 168, 0.95);
+  --ui-map-border: drop-shadow(-2px 0 0 var(--ui-map-shadow-dark)) drop-shadow(0 -2px 0 var(--ui-map-shadow-dark))
+    drop-shadow(2px 0 0 var(--ui-map-shadow-light)) drop-shadow(0 2px 0 var(--ui-map-shadow-light));
 
   /* =========================================================
      DEBUG
@@ -365,6 +276,5 @@
   --debug-overlay-bg: rgba(5, 7, 18, 0.97);
   --debug-overlay-border: rgba(207, 216, 255, 0.28);
 
-  --debug-overlay-shadow:
-    4px 4px 0 #000000;
+  --debug-overlay-shadow: 4px 4px 0 #000000;
 }

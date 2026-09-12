@@ -1,10 +1,7 @@
-import {
-  drawInstanceBlinkingSelection,
-  getGaiaAnimals,
-} from '../../lib'
+import { getGaiaAnimals } from '../../lib'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
-import { getInstancesByCategory, normalize, normalizeToggle } from './shared'
+import { normalize, normalizeToggle } from './shared'
 
 function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
   const { map, player, controls } = context
@@ -78,14 +75,6 @@ export function toggleResourcesVisibility(context: DevConsoleContext, value: str
   if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMapEvt?.()
 
   return { ok: true, message: `Resources: ${showResources ? 'on' : 'off'}` }
-}
-
-export function highlightInstances(context: DevConsoleContext, category: string, typeName = ''): CommandResult {
-  if (!category) return { ok: false, message: 'Usage: highlight <units|buildings|resources|enemies> [type]' }
-  const instances = getInstancesByCategory(context, normalize(category), typeName)
-  if (!instances) return { ok: false, message: 'Usage: highlight <units|buildings|resources|enemies> [type]' }
-  instances.forEach(instance => drawInstanceBlinkingSelection(instance))
-  return { ok: true, message: `Highlighted ${instances.length} ${category}${typeName ? ` ${typeName}` : ''}` }
 }
 
 export function killResources(context: DevConsoleContext, typeName = 'all'): CommandResult {

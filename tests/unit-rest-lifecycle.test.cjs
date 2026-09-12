@@ -2,9 +2,10 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function fixture() {
+function fixture({ deferWake = false } = {}) {
   const calls = []
   const fades = []
+  const wakeCallbacks = []
   const mocks = {
     '../../constants': {
       ACTION_TYPES: { delivery: 'delivery' },
@@ -30,7 +31,11 @@ function fixture() {
       },
     },
     '../../lib/resources/resourceDelivery': { unitHasDeliverableResources: unit => Boolean(unit.carrying) },
-    '../../lib/units/villagerSchedule': { shouldVillagerBeAsleep: () => true, shouldVillagerWork: () => true },
+    '../../lib/units/villagerSchedule': {
+      shouldVillagerBeAsleep: () => true,
+      shouldVillagerWork: () => true,
+      getMinutesUntilVillagerWorkStarts: () => 0,
+    },
     '../../lib/entities/entityFade': {
       cancelFade: () => {},
       fadeIn: () => {},
@@ -60,11 +65,12 @@ function fixture() {
       cancelSleepingWakeVisual: () => {},
       clearSleepingVisualState: () => {},
       playSleepingOutsideVisual: () => {},
-      setSleepingOutsideFinalVisual: () => {},
+      setSleepingOutsideFinalVisual: () => calls.push(['lieDown']),
       setDetachedShadowsVisible: () => {},
       playSleepingWakeVisual: (_unit, done) => {
         calls.push(['wake'])
-        done?.()
+        if (deferWake) wakeCallbacks.push(done)
+        else done?.()
       },
     },
   }
@@ -82,7 +88,7 @@ function fixture() {
     shelterState: null,
     sendToEvt: (cell, action, options) => calls.push(['send', cell, action, options]),
   }
-  return { lifecycle, stateHelpers, unit, calls, fades }
+  return { lifecycle, stateHelpers, unit, calls, fades, wakeCallbacks }
 }
 
 function sleepingState(patch = {}) {
@@ -144,22 +150,68 @@ test('wake return tasks prefer a delivery return task and normalize an absent de
 })
 
 test('an explicit wake order preserves the suspended task without resuming it', () => {
-  const { lifecycle, unit, calls } = fixture()
+  const { lifecycle, unit, calls, wakeCallbacks } = fixture({ deferWake: true })
   const state = sleepingState({ previousAction: 'farm' })
   unit.shelterState = state
+  unit.sleepVisualState = 'sleeping'
   lifecycle.wakeUnit(unit, { mode: 'order', onComplete: () => calls.push(['complete']) })
   assert.equal(unit.suspendedRestState, state)
   assert.equal(unit.shelterState, null)
   assert.equal(unit.actionLocked, false)
+  assert.deepEqual(calls, [['wake']])
+  wakeCallbacks[0]()
   assert.deepEqual(calls, [['wake'], ['complete']])
   lifecycle.wakeUnit(unit)
   assert.equal(calls.length, 2)
 })
 
+for (const status of ['inside', 'outside']) {
+  test(`standing ${status} evening occupants react immediately without lying down or waking`, () => {
+    const { lifecycle, unit, calls } = fixture({ deferWake: true })
+    const state = sleepingState({ status, shelter: {}, previousAction: 'farm' })
+    unit.spaceId = 'interior'
+    unit.shelterState = state
+    unit.sleepVisualState = null
+    unit.actionLocked = true
+    unit.setTextures = sheet => calls.push(['sheet', sheet])
+
+    lifecycle.wakeUnit(unit, { mode: 'order', onComplete: () => calls.push(['react']) })
+
+    assert.deepEqual(calls, [['sheet', 'standing'], ['react']])
+    assert.equal(unit.suspendedRestState, state)
+    assert.equal(unit.shelterState, null)
+    assert.equal(unit.actionLocked, false)
+    assert.equal(unit.visible, true)
+  })
+}
+
+for (const restTransitionsEnabled of [false, true]) {
+  test(`standing occupants resume without a wake animation with transitions ${restTransitionsEnabled}`, () => {
+    const { lifecycle, unit, calls } = fixture({ deferWake: true })
+    unit.context.restTransitionsEnabled = restTransitionsEnabled
+    unit.shelterState = sleepingState({ previousAction: 'farm' })
+    lifecycle.wakeUnit(unit)
+
+    assert.equal(
+      calls.some(call => call[0] === 'wake' || call[0] === 'lieDown'),
+      false
+    )
+    if (restTransitionsEnabled) {
+      assert.equal(unit.shelterState.status, 'wakingUp')
+      assert.equal(calls.length, 0)
+    } else {
+      assert.equal(unit.shelterState, null)
+      assert.equal(calls[0][0], 'resume')
+      assert.equal(calls[0][1].action, 'farm')
+    }
+  })
+}
+
 test('blocked shelter exits defer waking unless forced or already inside an interior for an order', () => {
   const { lifecycle, unit, calls } = fixture()
   const state = sleepingState({ status: 'inside', shelter: {} })
   unit.shelterState = state
+  unit.sleepVisualState = 'sleeping'
   lifecycle.wakeUnit(unit)
   assert.equal(unit.shelterState, state)
   assert.deepEqual(calls, [])

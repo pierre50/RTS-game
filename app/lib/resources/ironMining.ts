@@ -38,7 +38,7 @@ export function showIronMiningBlockedMessage(unit: UnitEntity, target: RuntimeEn
   if (canOwnerMineMineral(unit.owner, target.type ?? '')) return
   if (target && !(unit.context?.controls?.instanceInCamera?.(target) ?? true)) return
   unit.context?.menu?.showMessage(
-    t('tooltipRequiresAge', { age: t(AGE_LABEL_KEYS[getResourceRequiredAge(target.type ?? '')] ?? 'stoneAge') }),
+    t('detailsRequiresAge', { age: t(AGE_LABEL_KEYS[getResourceRequiredAge(target.type ?? '')] ?? 'stoneAge') }),
     'warning'
   )
 }

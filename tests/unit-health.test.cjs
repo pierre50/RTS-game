@@ -1,74 +1,15 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
-const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const { notifyHeroHealthChanged } = loadTsModule('app/lib/units/unitHealth.ts')
 
-function loadUnitHealth() {
-  const filename = path.join(__dirname, '../app/lib/units/unitHealth.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  const healingFeedbackCalls = []
-  const mocks = {
-    '../constants': { STEP_TIME: 100 },
-    './combat/combatFeedback': { showHealingFeedback: unit => healingFeedbackCalls.push(unit) },
-    './units/unitControl': { isHeroControlled: unit => unit.controlMode === 'hero' },
-  }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  module.exports.__healingFeedbackCalls = healingFeedbackCalls
-  return module.exports
-}
-
-test('hero health regen respects delay and refreshes the HUD progressively', () => {
-  const { __healingFeedbackCalls, markUnitHealthDamaged, updateUnitHealthRegen } = loadUnitHealth()
+test('health changes refresh only the active hero HUD without changing health', () => {
   const calls = []
-  const unit = {
-    controlMode: 'hero',
-    hitPoints: 7,
-    totalHitPoints: 10,
-    healthRegenRate: 2,
-    healthRegenDelay: 500,
-    context: {
-      controls: {},
-      menu: { updateHeroStatus: hero => calls.push(hero.hitPoints) },
-      scheduler: { elapsedMs: 1000 },
-    },
-  }
-  unit.context.controls.heroUnit = unit
-
-  markUnitHealthDamaged(unit)
+  const context = { controls: {}, menu: { updateHeroStatus: unit => calls.push(unit.hitPoints) } }
+  const hero = { hitPoints: 7, context }
+  context.controls.heroUnit = hero
+  notifyHeroHealthChanged(hero)
+  notifyHeroHealthChanged({ hitPoints: 5, context })
   assert.deepEqual(calls, [7])
-
-  unit.context.scheduler.elapsedMs = 1200
-  updateUnitHealthRegen(unit, 1000)
-  assert.equal(unit.hitPoints, 7)
-  assert.deepEqual(calls, [7])
-  assert.deepEqual(__healingFeedbackCalls, [])
-
-  unit.context.scheduler.elapsedMs = 1600
-  updateUnitHealthRegen(unit, 100)
-  assert.equal(unit.hitPoints, 7.2)
-  assert.deepEqual(calls, [7, 7.2])
-  assert.deepEqual(__healingFeedbackCalls, [])
-})
-
-test('non hero units do not receive passive health regen by default', () => {
-  const { updateUnitHealthRegen } = loadUnitHealth()
-  const unit = {
-    controlMode: 'standard',
-    hitPoints: 7,
-    totalHitPoints: 10,
-    context: { scheduler: { elapsedMs: 1000 } },
-  }
-
-  updateUnitHealthRegen(unit, 1000)
-
-  assert.equal(unit.hitPoints, 7)
-  assert.equal(unit.healthRegenRate, undefined)
+  assert.equal(hero.hitPoints, 7)
 })

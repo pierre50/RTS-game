@@ -1,21 +1,11 @@
 import { Container } from 'pixi.js'
 import type { AnimatedSprite, Sprite } from 'pixi.js'
-import {
-  COLOR_WHITE,
-  FAMILY_TYPES,
-  LABEL_TYPES,
-} from '../constants'
-import {
-  createIsoSelectionMarker,
-  getActionCondition,
-  getSelectionMarkerOffset,
-  setUnitTexture,
-  uuidv4,
-} from '../lib'
+import { FAMILY_TYPES, LABEL_TYPES } from '../constants'
+import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { PlayerLike } from '../types/player'
 import type { CombatEntity, UnitTextureInstance } from '../lib'
-import { drawInstanceEnergyBar, drawInstanceHealthBar, drawInstanceHeroPowerBar, removeInstanceHudBar } from './InstanceHudBars'
+import { drawInstanceEnergyBar, drawInstanceHealthBar, drawInstanceHeroPowerBar, removeInstanceHudBar, isTeamHealthBarRestricted, isHeroTeamUnit } from './InstanceHudBars'
 
 export class Instance extends Container {
   context: GameContextLike
@@ -31,7 +21,6 @@ export class Instance extends Container {
   z!: number | null
   size!: number
   degree!: number
-  selectionFactor?: number
   owner!: PlayerLike
   hitPoints!: number
   totalHitPoints!: number
@@ -45,21 +34,16 @@ export class Instance extends Container {
   moveToPath?(): void
 
   shouldKeepHealthBarVisible(): boolean {
+    if (isTeamHealthBarRestricted(this)) return false
     const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
     const showForFamily =
       this.family === FAMILY_TYPES.unit ||
       this.family === FAMILY_TYPES.animal
-    const heroOwner = this.context?.controls?.heroUnit?.owner
-    const showForHeroPlayer =
-      this.family === FAMILY_TYPES.unit &&
-      this.owner &&
-      (this.owner.isPlayed ||
-        this.owner.label === this.context?.player?.label ||
-        this.owner.label === heroOwner?.label)
+    const showForHeroTeam = isHeroTeamUnit(this)
     const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
     return Boolean(
       showForFamily &&
-        (showEntityBars || showForHeroPlayer) &&
+        (showEntityBars || showForHeroTeam) &&
         !isHeroUnit &&
         !this.isDead &&
         !this.isDestroyed
@@ -115,21 +99,6 @@ export class Instance extends Container {
     }
   }
 
-  syncSelectionMarkersToRelief(): void {
-    const markerOffset = getSelectionMarkerOffset(this)
-    const y = markerOffset.y + (this.reliefLift ?? 0)
-    const selection = this.getChildByLabel(LABEL_TYPES.selection)
-    if (selection) {
-      selection.position.x = markerOffset.x
-      selection.position.y = y
-    }
-    const commSelection = this.getChildByLabel(LABEL_TYPES.commSelection)
-    if (commSelection) {
-      commSelection.position.x = markerOffset.x
-      commSelection.position.y = y
-    }
-  }
-
   startInterval(
     callback: () => void,
     time: number,
@@ -170,13 +139,6 @@ export class Instance extends Container {
   select(): void {
     if (this.selected) return
     this.selected = true
-    const f = this.selectionFactor ?? this.size
-    const selection = createIsoSelectionMarker({ color: COLOR_WHITE, factor: f, zIndex: -1 })
-    const markerOffset = getSelectionMarkerOffset(this)
-    selection.position.x = markerOffset.x
-    selection.position.y = markerOffset.y + (this.reliefLift ?? 0)
-    const shadowIndex = this.getChildByLabel(LABEL_TYPES.shadow) ? 1 : 0
-    this.addChildAt(selection, shadowIndex)
     this.drawHealthBar()
     this.drawEnergyBar()
   }
@@ -184,8 +146,6 @@ export class Instance extends Container {
   unselect(): void {
     if (!this.selected) return
     this.selected = false
-    const selection = this.getChildByLabel(LABEL_TYPES.selection)
-    if (selection) this.removeChild(selection)
     if (this.shouldKeepHealthBarVisible()) {
       this.drawHealthBar()
       this.drawEnergyBar()

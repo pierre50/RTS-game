@@ -1,7 +1,7 @@
 import { PLAYER_TYPES, UNIT_TYPES } from '../constants'
 import { hasLivingChief, isLivingChief } from '../lib/chief'
 import type { GameContextLike } from '../types/context'
-import type { TributeRaidKind, TributeRaidOwner, TributeRaidUnit } from './TributeRaidRules'
+import type { TributeRaidKind, TributeRaidOwner, TributeRaidUnit } from './tribute/TributeRaidRules'
 
 export function hasActiveBanditCampPresence(context: GameContextLike): boolean {
   return context.players.some(player => {

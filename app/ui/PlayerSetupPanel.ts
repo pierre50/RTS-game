@@ -423,7 +423,7 @@ export class PlayerSetupPanel {
       teamBtn.className = 'team-cycle ui-btn'
       teamBtn.type = 'button'
       teamBtn.textContent = player.team == null ? '-' : String(player.team)
-      teamBtn.title = t('teamInput')
+      teamBtn.setAttribute('aria-label', t('teamInput'))
       teamBtn.addEventListener('pointerdown', playClickSound)
       teamBtn.addEventListener('click', () => this._cycleTeam(index))
       teamCell.appendChild(teamBtn)
@@ -436,7 +436,6 @@ export class PlayerSetupPanel {
       swatch.className = 'color-swatch ui-btn'
       swatch.type = 'button'
       swatch.style.backgroundColor = colorData ? colorData.hex : '#fff'
-      swatch.title = t('colorSwatch', { color: player.color })
       swatch.setAttribute('aria-label', t('colorSwatch', { color: player.color }))
       swatch.addEventListener('pointerdown', playClickSound)
       swatch.addEventListener('click', () => this._cycleColor(index))
@@ -522,7 +521,6 @@ export class PlayerSetupPanel {
     swatch.className = 'color-swatch ui-btn'
     swatch.type = 'button'
     swatch.style.backgroundColor = colorData ? colorData.hex : '#fff'
-    swatch.title = t('colorSwatch', { color: human.color })
     swatch.setAttribute('aria-label', t('colorSwatch', { color: human.color }))
     swatch.addEventListener('pointerdown', playClickSound)
     swatch.addEventListener('click', () => this._cycleColor(0))

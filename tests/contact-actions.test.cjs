@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const frames = loadTsModule('app/lib/graphics.ts', {
   mocks: Object.fromEntries(
-    ['assets', 'colors', 'canvas', 'selection', 'textures'].map(name => [`./graphics/${name}`, {}])
+    ['assets', 'colors', 'canvas', 'isoFootprint', 'textures'].map(name => [`./graphics/${name}`, {}])
   ),
 })
 const attackLoop = loadTsModule('app/lib/combat/combatAttackLoop.ts', {

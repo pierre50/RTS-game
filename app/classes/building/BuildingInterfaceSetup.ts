@@ -29,7 +29,7 @@ export function createBuildingEntityInterface(building: BuildingInterfaceHost): 
     },
     menu:
       building.owner.isPlayed || map.instantMode
-        ? [...units, ...(units.length ? [menu.getCancelUnitTrainingButton(building), menu.getActionRallyPointButton()] : [])]
+        ? [...units, ...(units.length ? [menu.getCancelUnitTrainingButton(building)] : [])]
         : [],
   }
 }

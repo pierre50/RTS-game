@@ -62,7 +62,7 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
     '../grid/movement': {
       instanceContactInstance: contact,
     },
-    '../graphics/selection': {
+    '../graphics/isoFootprint': {
       getRoundedIsoShapePoints: ({ x = 0, y = 0, factor = 1 } = {}) => [
         { x, y: y - 16 * factor },
         { x: x + 32 * factor, y },
@@ -128,7 +128,7 @@ test('hero interaction keeps a forgiving band around large building-like resourc
     i: 0,
     isDestroyed: false,
     j: 0,
-    selectionFactor: 3,
+    interactionFootprintFactor: 3,
     size: 3,
     type: 'Stone',
     x: 0,
@@ -138,7 +138,7 @@ test('hero interaction keeps a forgiving band around large building-like resourc
   assert.equal(isHeroInteractionTargetReachable(hero, null, stoneDeposit), true)
 })
 
-test('selection footprint can be widened without granting work contact', () => {
+test('interaction footprint can be widened without granting work contact', () => {
   const { getHeroInteractionTargetPoint, isHeroInteractionTargetReachable } = loadHeroActionRange()
   const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: -64 }
   const tree = {
@@ -146,7 +146,7 @@ test('selection footprint can be widened without granting work contact', () => {
     i: 0,
     isDestroyed: false,
     j: 0,
-    selectionFactor: 2,
+    interactionFootprintFactor: 2,
     size: 1,
     type: 'Tree',
     x: 0,
@@ -170,4 +170,24 @@ test('hero interaction range still falls back to strict contact for regular targ
   }
 
   assert.equal(isHeroInteractionTargetReachable(hero, null, unit), true)
+})
+
+test('open interactions tolerate a small step but close farther away, including corpse loot', () => {
+  const { isHeroInteractionSessionInRange: inRange } = loadHeroActionRange()
+  const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: 0 }
+  const corpse = { family: 'unit', i: 2.25, j: 0, x: 108, y: 0, isDead: true }
+  assert.equal(inRange(hero, corpse), true)
+  assert.equal(inRange(hero, { ...corpse, i: 3 }), false)
+  assert.equal(inRange(hero, { ...corpse, isDestroyed: true }), false)
+  assert.equal(inRange({ ...hero, isDead: true }, corpse), false)
+  assert.equal(inRange(null, corpse), false)
+})
+
+test('open building interactions keep their footprint margin without extending opening range', () => {
+  const { isHeroInteractionSessionInRange: inRange, isHeroInteractionTargetReachable: reachable } = loadHeroActionRange()
+  const building = { family: 'building', size: 1, x: 0, y: 0, i: 0, j: 0 }
+  const hero = { controlMode: 'hero', x: 90, y: 0, i: 5, j: 0 }
+  assert.equal(reachable(hero, null, building), false)
+  assert.equal(inRange(hero, building), true)
+  assert.equal(inRange({ ...hero, x: 110 }, building), false)
 })

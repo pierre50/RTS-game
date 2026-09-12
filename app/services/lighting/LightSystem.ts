@@ -127,7 +127,7 @@ export class LightSystem {
     this.getScreenRect = getScreenRect
     this.getDarknessLevel = getDarknessLevel
     this.screenRect = this.getScreenRect()
-    this.currentDarkness = 0
+    this.currentDarkness = clamp(this.getDarknessLevel(), 0, 1)
     this.fadingLights = new Map()
     this.lightFadeRatios = new Map()
     this.lights = []
@@ -147,6 +147,12 @@ export class LightSystem {
     this.layer.eventMode = 'none'
     this.layer.label = 'light-layer'
     this.layer.addChild(this.sprite)
+    this.layer.position.set(this.screenRect.x, this.screenRect.y)
+    this.layer.visible = this.getEffectiveDarkness() >= 0.01
+    if (this.layer.visible) {
+      this.updateLights(0)
+      this.draw()
+    }
 
     this._onTick = ticker => {
       const update = () => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)

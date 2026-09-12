@@ -51,18 +51,16 @@ function loadHeroMarketBody() {
       '../inventory/InventorySlotRenderer': {
         createInventorySection: () => ({ tagName: 'section' }),
       },
-      '../inventory/InventoryTooltips': {
+      '../inventory/InventoryDetails': {
         createEquipmentRowInfo: equipment => ({
           title: equipment,
           description: '',
           meta: '',
-          tooltip: { title: equipment },
         }),
         createResourceRowInfo: resource => ({
           title: resource,
           description: '',
           meta: '',
-          tooltip: { title: resource },
         }),
         formatGold: value => `${value} gold`,
       },

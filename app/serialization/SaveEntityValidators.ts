@@ -1,7 +1,9 @@
+import { validatePlayerViews } from './SaveViewValidation'
+import { validatePlayerUnits, validatePlayerCorpses } from './SaveUnitValidators'
+import { validateAnimalState, validateSavedHorseTamingStatus } from './SaveAnimalState'
 import { validateTargetKnowledge } from '../lib/units/playerTargetKnowledge'
 import { validateCaveDefinition, validateCaveOccupantReferences } from './CaveSave'
-import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
-import { isHorseTamingStatus } from '../lib/horses/horseTaming'
+import { PLAYER_TYPES } from '../constants'
 import type { LoadedGameConfig } from '../types/save'
 import { validatePlayerTraining } from './TrainingSaveValidation'
 import {
@@ -13,27 +15,10 @@ import type { SaveEntityState } from '../types/save'
 import {
   fail,
   isObject,
-  validateAnimalPath,
   validateArray,
   validateEntityPosition,
-  validateOptionalBoolean,
   validateOptionalFiniteNumber,
-  validateOptionalGridDestination,
-  validateViewCell,
-  MAX_MAP_EDGE,
 } from './SaveValidationPrimitives'
-
-const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
-const ANIMAL_SHEETS = new Set<string>(Object.values(SHEET_TYPES))
-const RUNTIME_SAVE_UNIT_TYPES = new Set<string>([
-  UNIT_TYPES.banditChief,
-  UNIT_TYPES.banditSword,
-  UNIT_TYPES.banditArcher,
-])
-
-function isSupportedSavedUnitType(type: unknown, config: LoadedGameConfig): type is string {
-  return typeof type === 'string' && (Boolean(config.units?.[type]) || RUNTIME_SAVE_UNIT_TYPES.has(type))
-}
 
 export function validateWorldPursuers(value: unknown, size: number, config: LoadedGameConfig): void {
   if (value == null) return
@@ -191,30 +176,6 @@ function validatePlayerRecord(
   return player.isPlayed
 }
 
-function validatePlayerViews(
-  views: unknown,
-  playerIndex: number,
-  size: number,
-  containsCell?: (i: number, j: number) => boolean
-): void {
-  validateArray(views, `player ${playerIndex} views`)
-  if (views.length !== size) {
-    fail(`Invalid save file: player ${playerIndex} views have an invalid size.`)
-  }
-
-  for (let i = 0; i < size; i++) {
-    const viewRow = views[i]
-    validateArray(viewRow, `player ${playerIndex} view row ${i}`)
-    if (containsCell ? viewRow.length > size : viewRow.length !== size) {
-      fail(`Invalid save file: player ${playerIndex} views must match the map size.`)
-    }
-    for (let j = 0; j < size; j++) {
-      if (containsCell && !containsCell(i, j) && viewRow[j] == null) continue
-      validateViewCell(viewRow[j], i, j)
-    }
-  }
-}
-
 function validatePlayerBuildings(
   buildings: unknown[],
   playerIndex: number,
@@ -263,130 +224,4 @@ function validatePlayerBuildings(
       `player ${playerIndex} building ${buildingIndex}.trainingCompleteDay`
     )
   })
-}
-
-function validateSavedUnitOrders(unit: Record<string, unknown>): void {
-  const reference = (value: unknown, label: string) => {
-    if (typeof value === 'string' && value.length) return
-    validateOptionalGridDestination(value, MAX_MAP_EDGE, label)
-  }
-  const task = (value: unknown, label: string) => {
-    if (!isObject(value)) fail(`Invalid save file: ${label} is invalid.`)
-    reference(value.dest, `${label}.dest`)
-    for (const key of ['action', 'work', 'autonomousJob']) {
-      if (value[key] != null && typeof value[key] !== 'string') fail(`Invalid save file: ${label}.${key} is invalid.`)
-    }
-  }
-  if (unit.caveOrders != null) {
-    task(unit.caveOrders, 'caveOrders')
-    if (!isObject(unit.caveOrders) || !unit.cavePosition) fail('Invalid save file: caveOrders has no cave position.')
-    reference(unit.caveOrders.previousDest, 'caveOrders.previousDest')
-    validateAnimalPath(unit.caveOrders.path, MAX_MAP_EDGE, 'caveOrders.path')
-    validateOptionalGridDestination(unit.caveOrders.realDest, MAX_MAP_EDGE, 'caveOrders.realDest')
-  }
-  if (unit.resourceDelivery != null) {
-    if (!isObject(unit.resourceDelivery)) fail('Invalid save file: resourceDelivery is invalid.')
-    reference(unit.resourceDelivery.building, 'resourceDelivery.building')
-    if (unit.resourceDelivery.returnTask != null) task(unit.resourceDelivery.returnTask, 'resourceDelivery.returnTask')
-  }
-}
-
-function validatePlayerUnits(units: unknown[], playerIndex: number, size: number, config: LoadedGameConfig): void {
-  units.forEach((unit, unitIndex) => {
-    validateEntityPosition(unit, size, `player ${playerIndex} unit ${unitIndex}`)
-    validateSavedUnitOrders(unit)
-    if (unit.factionExpedition != null) {
-      const expedition = unit.factionExpedition
-      if (
-        !isObject(expedition) ||
-        !['raidId', 'factionId', 'regionId', 'playerLabel'].every(
-          key => typeof expedition[key] === 'string' && expedition[key].length > 0
-        ) ||
-        !['approaching', 'parley', 'hostile', 'leaving'].includes(String(expedition.phase)) ||
-        !isObject(expedition.original) ||
-        expedition.original.factionExpedition != null ||
-        expedition.original.label !== unit.label ||
-        expedition.original.type !== unit.type ||
-        !isObject(expedition.tribute) ||
-        Object.values(expedition.tribute).some(
-          value => typeof value !== 'number' || !Number.isFinite(value) || value < 0
-        )
-      )
-        fail('Invalid save file: faction expedition is invalid.')
-      validateEntityPosition(expedition.original, MAX_MAP_EDGE, 'faction expedition origin')
-    }
-    validateOptionalBoolean(unit.exploringForAutonomy, `player ${playerIndex} unit ${unitIndex}.exploringForAutonomy`)
-    validateOptionalBoolean(unit.pendingRescueThanks, `player ${playerIndex} unit ${unitIndex}.pendingRescueThanks`)
-    if (!isSupportedSavedUnitType(unit.type, config)) {
-      fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has an unsupported type.`)
-    }
-    if (unit.trainingTargetType != null && !isSupportedSavedUnitType(unit.trainingTargetType, config)) {
-      fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has an unsupported training target.`)
-    }
-    if (unit.offlineWork != null) {
-      const progress = unit.offlineWork
-      if (
-        !isObject(progress) ||
-        typeof progress.target !== 'string' ||
-        typeof progress.milliseconds !== 'number' ||
-        !Number.isFinite(progress.milliseconds) ||
-        progress.milliseconds < 0
-      ) {
-        fail(`Invalid save file: player ${playerIndex} unit ${unitIndex} has invalid offline work progress.`)
-      }
-    }
-  })
-}
-
-function validatePlayerCorpses(corpses: unknown[], playerIndex: number, size: number, config: LoadedGameConfig): void {
-  corpses.forEach((corpse, corpseIndex) => {
-    validateEntityPosition(corpse, size, `player ${playerIndex} corpse ${corpseIndex}`)
-    if (!isSupportedSavedUnitType(corpse.type, config)) {
-      fail(`Invalid save file: player ${playerIndex} corpse ${corpseIndex} has an unsupported type.`)
-    }
-  })
-}
-
-function validateAnimalState(
-  animal: Record<string, unknown>,
-  definition: Record<string, unknown>,
-  size: number,
-  label: string
-): void {
-  validateOptionalFiniteNumber(animal.quantity, `${label}.quantity`)
-  validateOptionalBoundedNumber(animal.quantity, definition.totalQuantity, `${label}.quantity`)
-  validateOptionalFiniteNumber(animal.hitPoints, `${label}.hitPoints`)
-  validateOptionalBoundedNumber(animal.hitPoints, definition.totalHitPoints, `${label}.hitPoints`)
-  validateOptionalBoolean(animal.isDead, `${label}.isDead`)
-  validateOptionalBoolean(animal.isDestroyed, `${label}.isDestroyed`)
-  validateSavedHorseTamingStatus(animal, label)
-  if (animal.isDestroyed === true && animal.isDead !== true) {
-    fail(`Invalid save file: ${label} is destroyed but not dead.`)
-  }
-  if (animal.action != null && (typeof animal.action !== 'string' || !ANIMAL_ACTIONS.has(animal.action))) {
-    fail(`Invalid save file: ${label}.action is invalid.`)
-  }
-  if (
-    animal.currentSheet != null &&
-    (typeof animal.currentSheet !== 'string' || !ANIMAL_SHEETS.has(animal.currentSheet))
-  ) {
-    fail(`Invalid save file: ${label}.currentSheet is invalid.`)
-  }
-  validateAnimalPath(animal.path, size, `${label}.path`)
-  validateOptionalGridDestination(animal.dest, size, `${label}.dest`)
-  validateOptionalGridDestination(animal.previousDest, size, `${label}.previousDest`)
-  validateOptionalGridDestination(animal.realDest, size, `${label}.realDest`)
-}
-
-function validateSavedHorseTamingStatus(record: unknown, label: string): void {
-  if (!isObject(record) || record.tamingStatus == null) return
-  if (!isHorseTamingStatus(record.tamingStatus)) {
-    fail(`Invalid save file: ${label}.tamingStatus is invalid.`)
-  }
-}
-
-function validateOptionalBoundedNumber(value: unknown, max: unknown, label: string): void {
-  if (typeof value === 'number' && typeof max === 'number' && (value < 0 || value > max)) {
-    fail(`Invalid save file: ${label} is out of range.`)
-  }
 }

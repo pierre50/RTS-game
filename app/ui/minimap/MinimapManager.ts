@@ -1,3 +1,4 @@
+import { terrainColor, resourceColor } from './MinimapColors'
 import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
 import {
   canvasDrawDiamond,
@@ -22,23 +23,7 @@ import { getMinimapElement, MINIMAP_RESOLUTION_SCALE, MinimapGeometry, type Mini
 // once CSS stretches it to the (now larger) on-screen minimap box.
 
 const MINIMAP_UNIT_AVATAR_SOURCE_SIZE = 32
-const MINIMAP_DARK_FOREST_TERRAIN_COLOR = '#3D5630'
-const MINIMAP_DARK_FOREST_TREE_COLOR = '#122A12'
 const MINIMAP_CAVE_COLOR = '#a89f91'
-
-function terrainColor(cell: RuntimeCell): string {
-  if (cell.type === 'DarkForest') return MINIMAP_DARK_FOREST_TERRAIN_COLOR
-  return typeof cell.color === 'string' ? cell.color : ''
-}
-
-function isDarkForestTree(resource: ResourceEntity): boolean {
-  return resource.type === 'Tree' && (resource.textureName?.includes('/dark-forest') || resource.currentCell?.type === 'DarkForest')
-}
-
-function resourceColor(resource: ResourceEntity): string {
-  if (isDarkForestTree(resource)) return MINIMAP_DARK_FOREST_TREE_COLOR
-  return resource.color ?? ''
-}
 
 function isResourceEntity(instance: RuntimeEntity | null | undefined): instance is ResourceEntity {
   return instance?.family === FAMILY_TYPES.resource

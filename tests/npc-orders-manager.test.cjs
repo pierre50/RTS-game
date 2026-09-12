@@ -143,7 +143,7 @@ function buildMocks(calls, context) {
       formatUnitTrainingDuration: days => (days === 1 ? '1 day' : `${days} days`),
       getUnitTrainingDurationDays: unitConfig => unitConfig?.trainingDays ?? unitConfig?.trainingTime ?? 1,
     },
-    './ActionTooltipFactory': {
+    './ActionDetailsFactory': {
       formatActionCost: cost =>
         Object.entries(cost || {})
           .map(([resource, amount]) => `${amount} ${resource}`)
@@ -194,7 +194,13 @@ function buildMocks(calls, context) {
         return hour >= 18 && hour < 22
       },
     },
-    './EntityInfoModalManager': { createTitledEntityInfoContent: () => makeFakeElement() },
+    './NpcGroupSummary': { createNpcGroupSummary: (_app, npcs) => {
+      const summary = makeFakeElement()
+      summary.className = 'npc-group-summary'
+      summary.npcs = npcs
+      return summary
+    } },
+    './EntityInfoContent': { createTitledEntityInfoContent: () => makeFakeElement() },
     './InspectionPanel': {
       createInspectionModal: options => {
         const modal = new FakeModal(options)
@@ -218,16 +224,21 @@ function buildMocks(calls, context) {
       pickNpcSleepingChatterLine: () => 'sleepy chatter',
       pickForeignNpcSleepingChatterLine: () => 'foreign sleepy chatter',
     },
-    './inventory/InventoryTransferPanel': {
-      InventoryTransferPanel: class InventoryTransferPanel {
-        constructor(options) {
-          this.options = options
-          this.element = global.document.createElement('div')
-          this.element.className = 'inventory-transfer-panel'
+    './inventory/UnitInventoryScreen': {
+      UnitInventoryScreen: class {
+        constructor(menu, unit) {
+          this.menu = menu
+          this.unit = unit
+          this.element = makeFakeElement()
+          this.element.appendChild(makeFakeElement())
           transferPanels.push(this)
         }
+        render() {}
+        open(onClose) {
+          return new FakeModal({ title: this.unit.name, content: this.element, onClose })
+        }
       },
-      __transferPanels: transferPanels,
+      __screens: transferPanels,
     },
     './menu/NestedButtonMenu': loadModule('app/ui/menu/NestedButtonMenu.ts', {}),
   }
@@ -385,15 +396,12 @@ test('single commandable NPC exposes a bag transfer panel', () => {
 
     bagButton.click()
 
-    const panel = mocks['./inventory/InventoryTransferPanel'].__transferPanels.at(-1)
+    const screen = mocks['./inventory/UnitInventoryScreen'].__screens.at(-1)
     assert.equal(manager.buttonsContainer.hidden, true)
-    assert.equal(manager.bagContainer.hidden, false)
-    assert.equal(panel.options.destination.id, 'villager-1')
-    assert.equal(panel.options.destination.label, 'inventoryNpcBag')
-    assert.equal(panel.options.destination.inventory, npc.inventory)
-    assert.equal(panel.options.source.id, 'hero')
-    assert.equal(panel.options.source.labelKey, 'inventoryYourBag')
-    assert.equal(panel.options.source.inventory, context.controls.heroUnit.inventory)
+    assert.equal(manager.bagScreen, screen)
+    assert.equal(screen.unit, npc)
+    assert.equal(screen.menu, menu)
+    assert.equal(manager.bagModal.content, screen.element)
   })
 })
 
@@ -411,6 +419,10 @@ test('multi-selection NPC conversations hide the bag button', () => {
     manager.open([npcA, npcB])
 
     assert.equal(manager.buttons.get('bag').hidden, true)
+    assert.equal(manager.infoContainer.children[0].className, 'npc-group-summary')
+    assert.deepEqual(manager.infoContainer.children[0].npcs, [npcA, npcB])
+    manager.open([npcA])
+    assert.equal(manager.infoContainer.children.length, 0)
   })
 })
 
@@ -843,7 +855,7 @@ test('every conversation keeps a working exit outside conditional menus', () => 
       manager.open(scenario.npcs, scenario.options)
       if (scenario.submenu) manager.buttons.get(scenario.submenu).click()
       assert.equal(manager.modal.showCloseButton, false)
-      assert.equal(manager.panel.children.at(-1), manager.exitButton)
+      assert.equal(manager.choicesContainer.children.at(-1), manager.exitButton)
       assert.equal(manager.exitButton.hidden, false)
       assert.equal(manager.exitButton.disabled, false)
       const before = calls.length
@@ -873,5 +885,32 @@ test('scripted introduction requires its reply and cannot be replaced or dismiss
     manager.scriptedReplyPanel.children[0].click()
     assert.equal(answered, 1)
     assert.equal(manager.opened, false)
+  })
+})
+
+test('closing the bag ends communication and releases the NPC exactly once', () => {
+  withFakeDocument(() => {
+    for (const closeWithKeyboard of [false, true]) {
+      const calls = []
+      const context = makeContext(calls)
+      context.controls.heroUnit = { label: 'hero', inventory: { equipment: [], resources: {} } }
+      const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+      const manager = new NpcOrdersManager({ context })
+      const npc = { type: 'Villager', label: 'villager', owner: context.player }
+      manager.open([npc])
+      manager.modal._backdrop = { hidden: false }
+      manager.buttons.get('bag').click()
+      const bag = manager.bagModal
+      assert.equal(manager.modal._backdrop.hidden, true)
+      assert.equal(bag.content.children.length, 1)
+      if (closeWithKeyboard) manager.close()
+      else bag.onClose()
+      assert.equal(manager.bagModal, undefined)
+      assert.equal(manager.modal, undefined)
+      assert.equal(manager.isOpen(), false)
+      assert.deepEqual(manager.getTarget(), [])
+      manager.close()
+      assert.deepEqual(calls, [['releaseIfStillLooking', 'paused=false']])
+    }
   })
 })

@@ -17,12 +17,13 @@ function loadModule(filename, mocks = {}) {
 }
 
 function loadTranslations() {
-  const tooltipFilename = path.join(__dirname, '../app/lib/i18n/entityTooltips.ts')
-  const tooltipModule = loadModule(tooltipFilename)
+  const detailsFilename = path.join(__dirname, '../app/lib/i18n/entityDetails.ts')
+  const detailsModule = loadModule(detailsFilename)
+  const namesModule = loadModule(path.join(__dirname, '../app/lib/i18n/entityNames.ts'))
   const frFilename = path.join(__dirname, '../app/lib/i18n/fr.ts')
   const enFilename = path.join(__dirname, '../app/lib/i18n/en.ts')
-  const frModule = loadModule(frFilename, { './entityTooltips': tooltipModule })
-  const enModule = loadModule(enFilename, { './entityTooltips': tooltipModule })
+  const frModule = loadModule(frFilename, { './entityDetails': detailsModule, './entityNames': namesModule })
+  const enModule = loadModule(enFilename, { './entityDetails': detailsModule, './entityNames': namesModule })
   const translationsFilename = path.join(__dirname, '../app/lib/i18n/translations.ts')
   return loadModule(translationsFilename, { './fr': frModule, './en': enModule }).TRANSLATIONS
 }
@@ -34,14 +35,14 @@ const resources = require('../public/assets/data/gameplay/resources.json')
 const units = require('../public/assets/data/gameplay/units.json')
 
 for (const lang of ['fr', 'en']) {
-  test(`${lang} has names and descriptions for every building tooltip`, () => {
+  test(`${lang} has names and descriptions for every building`, () => {
     for (const type of Object.keys(buildings)) {
       assert.ok(translations[lang][type], `Missing ${lang} building name: ${type}`)
       assert.ok(translations[lang][`${type}Description`], `Missing ${lang} building description: ${type}`)
     }
   })
 
-  test(`${lang} has names and descriptions for every unit tooltip`, () => {
+  test(`${lang} has names and descriptions for every unit`, () => {
     for (const type of Object.keys(units)) {
       assert.ok(translations[lang][type], `Missing ${lang} unit name: ${type}`)
       assert.ok(translations[lang][`${type}Description`], `Missing ${lang} unit description: ${type}`)

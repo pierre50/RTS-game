@@ -2,7 +2,7 @@ import { Container, Graphics } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
 import { addEntityToMapSpaceContainer, canPlaceBuildingAt, getMapSpace, hasBuildingPlacementClearance } from '../../lib'
 import type { PlaceableBuildingConfig } from '../../types/entities'
-import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevEntity, DevMapLike } from '../types'
+import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevMapLike } from '../types'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeMap, RuntimeMapSpace } from '../../types/map'
 
@@ -286,34 +286,4 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
   document.getElementById('debug-ai-info')?.remove()
   document.getElementById('debug-hero-collision')?.remove()
   document.getElementById('debug-player-stats')?.remove()
-}
-
-export function getInstancesByCategory(
-  context: DevConsoleContext,
-  category: string,
-  typeName: string
-): DevEntity[] | null {
-  const { map, player, players } = context
-  const wantedType = normalize(typeName)
-  const matchesType = (instance: DevEntity) => !wantedType || normalize(instance.type) === wantedType
-
-  switch (category) {
-    case 'unit':
-    case 'units':
-      return player.units.filter(matchesType)
-    case 'building':
-    case 'buildings':
-      return player.buildings.filter(matchesType)
-    case 'resource':
-    case 'resources':
-      return [...map.resources].filter(matchesType)
-    case 'enemy':
-    case 'enemies':
-      return players
-        .filter(p => player.isEnemy?.(p))
-        .flatMap(p => [...p.units, ...p.buildings])
-        .filter(matchesType)
-    default:
-      return null
-  }
 }

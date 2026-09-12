@@ -7,7 +7,7 @@ function loadHeroProximityInteractions(overrides = {}) {
     mocks: {
       '../../constants': {
         ACTION_TYPES: { attack: 'attack' },
-        FAMILY_TYPES: { resource: 'resource' },
+        FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
         BUILDING_TYPES: {
           chest: 'Chest',
           fireCamp: 'FireCamp',
@@ -218,6 +218,20 @@ test('hero proximity interaction can recover a visible foreign trap', () => {
   })
 })
 
+test('unavailable traps never fall back to a generic menu prompt', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  for (const state of [
+    { isBuilt: false },
+    { reachable: false },
+    { requiresActiveSightInteraction: true, visibleToHero: false },
+    { isDead: true },
+    { isDestroyed: true },
+  ]) {
+    const target = { family: 'building', type: 'Trap', isBuilt: true, interface: { info() {} }, ...state }
+    assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), null)
+  }
+})
+
 test('hero proximity interaction ignores a visible trap that is not the facing target', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const building = {
@@ -293,7 +307,7 @@ test('hero proximity interaction opens any reachable fire camp as fire usage', (
 
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: fireCamp }), {
     action: 'open',
-    labelKey: 'heroInteractionUseFire',
+    labelKey: 'heroInteractionOpenMenu',
     target: fireCamp,
   })
 })
@@ -322,7 +336,7 @@ test('hero proximity interaction still opens fire camp usage when a hostile is i
     }),
     {
       action: 'open',
-      labelKey: 'heroInteractionUseFire',
+      labelKey: 'heroInteractionOpenMenu',
       target: fireCamp,
     }
   )
@@ -475,13 +489,15 @@ test('mounted hero ignores a tamed horse inside a stable interior', () => {
   assert.equal(resolveHeroProximityInteraction({ hero }), null)
 })
 
-test('hero proximity interaction never offers to open resources during depletion', () => {
+test('hero proximity interaction examines resources only while available', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const hero = makeHero()
 
   for (const type of ['MedicinalHerb', 'Berrybush', 'Wheat', 'Tree']) {
-    const resource = { family: 'resource', type, isDead: false, isDestroyed: false, x: 100, y: 248 }
-    assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: resource }), null)
+    const resource = { family: 'resource', type, interface: { info() {} }, isDead: false, isDestroyed: false, x: 100, y: 248 }
+    assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: resource }), {
+      action: 'open', labelKey: 'heroInteractionExamine', target: resource,
+    })
 
     resource.isDead = true
     assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: resource }), null)
@@ -503,6 +519,46 @@ test('hero proximity interaction resolves a facing openable corpse as open', () 
     labelKey: 'heroInteractionOpen',
     target: nearCorpse,
   })
+})
+
+test('facing buildings offer their menu including construction sites', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  for (const isBuilt of [false, true]) {
+    const target = { family: 'building', type: 'Barracks', isBuilt }
+    assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), {
+      action: 'open',
+      labelKey: 'heroInteractionOpenMenu',
+      target,
+    })
+  }
+})
+
+test('inspection prompts require a reachable available target and resource information', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  for (const family of ['resource', 'building']) {
+    for (const unavailable of [{ reachable: false }, { isDead: true }, { isDestroyed: true }]) {
+      const target = { family, interface: { info() {} }, ...unavailable }
+      assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), null)
+    }
+  }
+  assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: { family: 'resource' } }), null)
+})
+
+test('living enemies and animals never get a generic inspection prompt', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  for (const family of ['unit', 'animal']) {
+    const target = { family, interface: { info() {} }, openable: true, action: 'attack' }
+    assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), null)
+  }
+})
+
+test('entering takes priority over the generic building menu', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const building = { family: 'building', i: 5, j: 5, isBuilt: true, type: 'TownCenter' }
+  assert.equal(
+    resolveHeroProximityInteraction({ buildings: [building], hero: makeHero(), openEntityTarget: building }).action,
+    'enter'
+  )
 })
 
 test('hero proximity interaction ignores a nearby corpse that is not the facing target', () => {

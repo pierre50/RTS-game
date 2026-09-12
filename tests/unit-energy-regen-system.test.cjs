@@ -45,10 +45,13 @@ test('passive unit energy regen updates idle and working units without active pa
 
   system.update(500)
 
-  assert.deepEqual(calls.filter(call => call[0] === 'regen'), [
-    ['regen', 'idle', 500],
-    ['regen', 'builder', 500],
-  ])
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'regen'),
+    [
+      ['regen', 'idle', 500],
+      ['regen', 'builder', 500],
+    ]
+  )
 })
 
 test('passive unit energy regen skips the actively controlled hero', () => {
@@ -65,7 +68,10 @@ test('passive unit energy regen skips the actively controlled hero', () => {
 
   system.update(500)
 
-  assert.deepEqual(calls.filter(call => call[0] === 'regen'), [['regen', 'idle', 500]])
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'regen'),
+    [['regen', 'idle', 500]]
+  )
 })
 
 test('passive unit energy regen unregisters its scheduler task on destroy', () => {
@@ -77,15 +83,22 @@ test('passive unit energy regen unregisters its scheduler task on destroy', () =
   system.destroy()
   system.destroy()
 
-  assert.deepEqual(calls, [['add', 1, 500, 'unit.energyPassiveRegen'], ['remove', 1]])
+  assert.deepEqual(calls, [
+    ['add', 1, 500, 'unit.energyPassiveRegen'],
+    ['remove', 1],
+  ])
 })
 
 test('scheduled passive update heals sleeping units and stops when they wake', () => {
   const calls = []
   const { UnitEnergyRegenSystem } = loadEnergyRegenSystem(calls)
   const unit = {
-    type: 'Villager', label: 'sleeper', hitPoints: 5, totalHitPoints: 24,
-    shelterState: { reason: 'sleep', status: 'inside' }, sleepVisualState: 'sleeping',
+    type: 'Villager',
+    label: 'sleeper',
+    hitPoints: 5,
+    totalHitPoints: 24,
+    shelterState: { reason: 'sleep', status: 'inside' },
+    sleepVisualState: 'sleeping',
   }
   const context = { players: [{ units: [unit] }], scheduler: createScheduler(calls) }
   new UnitEnergyRegenSystem(context)
@@ -94,4 +107,24 @@ test('scheduled passive update heals sleeping units and stops when they wake', (
   unit.sleepVisualState = null
   context.scheduler.callback()
   assert.equal(unit.hitPoints, 5.025)
+})
+
+test('scheduled sleep healing includes the hero and never heals an awake unit', () => {
+  const calls = []
+  const { UnitEnergyRegenSystem } = loadEnergyRegenSystem(calls)
+  const hero = { type: 'Hero', hitPoints: 5, totalHitPoints: 24, sleepVisualState: 'sleeping' }
+  const awake = { type: 'Villager', hitPoints: 5, totalHitPoints: 24 }
+  const context = {
+    controls: { heroUnit: hero },
+    players: [{ units: [hero, awake] }],
+    scheduler: createScheduler(calls),
+  }
+  hero.context = context
+  new UnitEnergyRegenSystem(context)
+  context.scheduler.callback()
+  assert.equal(hero.hitPoints, 5.025)
+  assert.equal(awake.hitPoints, 5)
+  hero.sleepVisualState = 'wakingUp'
+  context.scheduler.callback()
+  assert.equal(hero.hitPoints, 5.025)
 })

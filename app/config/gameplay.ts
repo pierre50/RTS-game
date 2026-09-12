@@ -5,8 +5,13 @@ export const DAY_NIGHT_CONFIG = {
   dayLengthMs: 24 * 60 * 1000,
   hoursPerDay: 24,
   newDayHour: 6,
-  startHour: 8,
+  startHour: 6,
   topbarUpdateMinuteStep: 1,
+}
+
+export const VILLAGE_QUEST_CONFIG = {
+  repeatDelayDays: 3,
+  goldPerResource: 1,
 }
 
 export const DAY_NIGHT_COLOR_TIMELINE: Array<{ hour: number; color: DayNightColorAdjustment }> = [
@@ -21,6 +26,10 @@ export const DAY_NIGHT_COLOR_TIMELINE: Array<{ hour: number; color: DayNightColo
   {
     hour: 5.5,
     color: { gamma: 0.99, contrast: 1.02, saturation: 0.82, brightness: 0.93, red: 0.94, green: 0.94, blue: 1.04 },
+  },
+  {
+    hour: 6,
+    color: { gamma: 1, contrast: 1.02, saturation: 1.02, brightness: 1, red: 1.08, green: 1.02, blue: 0.94 },
   },
   {
     hour: 7,

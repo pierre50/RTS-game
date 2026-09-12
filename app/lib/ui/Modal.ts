@@ -105,7 +105,7 @@ export class Modal {
   }
 
   _handleKeyDown(evt: KeyboardEvent): void {
-    if (!this._isTopmost()) return
+    if (evt.defaultPrevented || !this._isTopmost()) return
 
     if (evt.key === 'Escape') {
       evt.preventDefault()

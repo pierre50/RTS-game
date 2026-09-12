@@ -14,7 +14,7 @@ import {
 import { t } from '../../lib/lang'
 import { createInventoryEquipmentRow, createInventoryResourceRow } from '../inventory/InventoryItemRows'
 import { createInventorySection } from '../inventory/InventorySlotRenderer'
-import { formatGold } from '../inventory/InventoryTooltips'
+import { formatGold } from '../inventory/InventoryDetails'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
 import type { GameContextLike } from '../../types/context'
@@ -84,7 +84,7 @@ function appendBuySlots(
       count: offer.count,
       mode: 'market-buy',
       showValue: false,
-      showTooltip: false,
+
       labelContext: 'market',
       trailingAction: {
         ariaLabel: t('marketBuyItem', { item: label, gold: String(totalGold) }),
@@ -126,7 +126,7 @@ function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: M
       amount,
       mode: 'market-sell',
       showValue: false,
-      showTooltip: false,
+
       trailingAction: {
         ariaLabel: t('marketSellItem', { item: label, gold: String(totalGold) }),
         label: getMarketActionLabel('sell', goldValue, amount),
@@ -159,7 +159,7 @@ function appendSellEquipmentSlots(grid: HTMLDivElement, hero: UnitEntity, menu: 
       equipment: stack.equipment,
       count: stack.count,
       mode: 'market-sell',
-      showTooltip: false,
+
       labelContext: 'market',
       trailingAction: {
         ariaLabel: t('marketSellItem', { item: label, gold: String(totalGold) }),

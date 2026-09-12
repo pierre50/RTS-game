@@ -1,10 +1,10 @@
-export interface TooltipContent {
+export interface MenuDetails {
   title: string
   description?: string
   meta?: (string | null | undefined)[]
 }
 
-export type TooltipSource = TooltipContent | (() => TooltipContent)
+export type MenuDetailsSource = MenuDetails | (() => MenuDetails)
 
 type MenuSelectionLike = {
   label?: string
@@ -20,7 +20,7 @@ type MenuSelectionHandler<TArgs extends unknown[] = []> = {
 export interface MenuButtonSpec {
   id?: string
   icon?: string | (() => string)
-  tooltip?: TooltipSource
+  details?: MenuDetailsSource
   acquired?: () => boolean
   hide?: () => boolean
   disabled?: (selection?: MenuSelectionLike) => boolean

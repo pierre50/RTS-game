@@ -47,7 +47,6 @@ const LPC_ARROW_PROJECTILE_CONFIG: Partial<ProjectileConfig> = {
 const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   [UNIT_TYPES.banditChief]: {
     category: 'Bandit',
-    selectionFactor: 0.75,
     totalHitPoints: 36,
     sight: 7,
     speed: 1.2,
@@ -66,7 +65,6 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   },
   [UNIT_TYPES.banditSword]: {
     category: 'Bandit',
-    selectionFactor: 0.65,
     totalHitPoints: 20,
     sight: 7,
     speed: 1.3,
@@ -81,7 +79,6 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   },
   [UNIT_TYPES.banditArcher]: {
     category: 'Bandit',
-    selectionFactor: 0.6,
     totalHitPoints: 16,
     sight: 8,
     speed: 1.3,

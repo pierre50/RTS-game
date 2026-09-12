@@ -28,7 +28,6 @@ type TouchControlsHost = {
   touchInteraction: TouchInteraction | null
   touchPanActive: boolean
   ignoreMouseEventsUntil: number
-  rallyPointController: { active?: boolean; handleMouseMove?: () => void }
   buildingPlacer: { handleMouseMove: () => void }
   isInteractionBlocked(): boolean
   isMouseInApp(evt: PointerPageEvent): boolean
@@ -66,12 +65,9 @@ export class TouchInputController {
     if (!host.isMouseInApp(touch)) return
 
     host.mouseDrag = false
-    host.touchInteraction = createTouchInteraction(
-      host.mouseBuilding || host.rallyPointController.active || !IS_MOBILE ? 'tap' : 'select',
-      touch
-    )
+    host.touchInteraction = createTouchInteraction(host.mouseBuilding || !IS_MOBILE ? 'tap' : 'select', touch)
 
-    if (host.mouseBuilding || host.rallyPointController.active) {
+    if (host.mouseBuilding) {
       this.updatePlacementPreview()
       return
     }
@@ -93,7 +89,7 @@ export class TouchInputController {
       return
     }
 
-    if (host.mouseBuilding || host.rallyPointController.active) {
+    if (host.mouseBuilding) {
       const interaction = host.touchInteraction
       const hasMoved =
         interaction &&
@@ -150,7 +146,7 @@ export class TouchInputController {
 
   private updatePlacementPreview(): void {
     const { host } = this
-    host.mouseBuilding ? host.buildingPlacer.handleMouseMove() : host.rallyPointController.handleMouseMove?.()
+    if (host.mouseBuilding) host.buildingPlacer.handleMouseMove()
   }
 
   private panFromPreviousTouch(): void {
@@ -207,7 +203,7 @@ export class TouchInputController {
     const mode = host.touchInteraction?.mode
     const moved = host.touchInteraction?.moved
 
-    if (host.mouseBuilding || host.rallyPointController.active) {
+    if (host.mouseBuilding) {
       if (!moved) host.onMouseUp(touch)
     } else if (mode === 'select') {
       host.onMouseUp(touch)
@@ -217,7 +213,11 @@ export class TouchInputController {
   }
 }
 
-function createTouchInteraction(mode: TouchInteraction['mode'], touch: PointerPageEvent, moved = false): TouchInteraction {
+function createTouchInteraction(
+  mode: TouchInteraction['mode'],
+  touch: PointerPageEvent,
+  moved = false
+): TouchInteraction {
   return {
     mode,
     startX: touch.pageX,

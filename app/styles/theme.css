@@ -6,8 +6,8 @@
   --ui-bar-border: var(--panel-border);
   --ui-slot-border: var(--border-slot);
   --ui-text-color: var(--main-text-color);
-  --ui-text-shadow: var(--text-shadow-light-ui);
-  --ui-plain-text-shadow: var(--text-shadow-light-ui);
+  --ui-text-shadow: var(--text-shadow-ui);
+  --ui-plain-text-shadow: var(--text-shadow-ui);
   --ui-map-shadow-dark: #120e0c;
   --ui-map-shadow-light: rgba(223, 177, 91, 0.15);
 }

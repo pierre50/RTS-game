@@ -1,16 +1,14 @@
+import { findNearestMountableHorse } from './heroMountTargets'
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
-import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
 import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
 import { isHeroOnInteriorExitCell } from '../buildings/interiorExits'
 import { heroCanCommand } from '../chief'
 import { isNeutralPlayer } from '../playerState'
-import { getCellsInCellRadius } from '../grid/cells'
 import { instanceIsInActiveOrTeamSight } from '../grid/visibility'
-import { isTamedHorse } from '../horses/horseTaming'
 import { isStoredForeignStableHorse } from '../horses/stableHorseInteraction'
-import { getEntitySpaceMapLike } from '../mapSpaces'
 import { pickForeignNpcChatterLine, pickNpcChatterLine, pickNpcRestingChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
 import { shouldVillagerRestBeforeBed } from '../units/villagerSchedule'
@@ -42,7 +40,7 @@ export type HeroProximityInteraction =
     }
   | {
       action: 'open'
-      labelKey: 'heroInteractionOpen' | 'heroInteractionUseFire'
+      labelKey: 'heroInteractionOpen' | 'heroInteractionOpenMenu' | 'heroInteractionExamine'
       target: RuntimeEntity
     }
   | {
@@ -58,64 +56,26 @@ export type HeroProximityInteractionOptions = {
   openEntityTarget?: RuntimeEntity | null
 }
 
-const MOUNTABLE_HORSE_CELL_RADIUS = 2
-
 function isOpenableEntity(target: RuntimeEntity | null | undefined): target is RuntimeEntity {
-  if (!target || target.isDestroyed || target.family === FAMILY_TYPES.resource || target.family === FAMILY_TYPES.animal)
+  if (
+    !target ||
+    target.isDestroyed ||
+    target.family === FAMILY_TYPES.resource ||
+    target.family === FAMILY_TYPES.animal ||
+    target.family === FAMILY_TYPES.building
+  )
+    return false
+  if (target.family === FAMILY_TYPES.unit && !target.isDead && (target as UnitEntity).currentSheet !== SHEET_TYPES.corpse)
     return false
   const openable = target as RuntimeEntity & { openable?: boolean; interactionAction?: HeroProximityInteractionAction }
   if (openable.openable || openable.interactionAction === 'open') return true
   return Boolean(target.isDead || (target as UnitEntity).currentSheet === SHEET_TYPES.corpse)
 }
 
-function getEntityDistance(hero: UnitEntity, target: RuntimeEntity): number {
-  return Math.hypot((target.x ?? 0) - hero.x, (target.y ?? 0) - hero.y)
-}
-
 function resolveFacingOpenableEntity(hero: UnitEntity, openEntityTarget?: RuntimeEntity | null): RuntimeEntity | null {
   if (!isOpenableEntity(openEntityTarget)) return null
   if (!isHeroInteractionTargetReachable(hero, null, openEntityTarget)) return null
   return openEntityTarget
-}
-
-function isMountableTamedHorse(
-  hero: UnitEntity,
-  target: RuntimeEntity | null | undefined,
-  allowLegacyCompanionHorse = false
-): target is AnimalEntity {
-  if ((hero.owner?.age ?? 0) < 1) return false
-  if (hero.mountedOnHorse) return false
-  if (!target || target.isDead || target.isDestroyed) return false
-  if (target.family !== 'animal' || target.type !== 'Horse') return false
-  if (!allowLegacyCompanionHorse && !isTamedHorse(target as AnimalEntity)) return false
-  return isHeroInteractionTargetReachable(hero, null, target)
-}
-
-function findNearestMountableHorse(
-  hero: UnitEntity,
-  companionHorse?: RuntimeEntity | null,
-  openEntityTarget?: RuntimeEntity | null
-): RuntimeEntity | null {
-  const candidates: RuntimeEntity[] = []
-  const seen = new Set<RuntimeEntity>()
-
-  const addCandidate = (target: RuntimeEntity | null | undefined, allowLegacyCompanionHorse = false) => {
-    if (!target || seen.has(target) || !isMountableTamedHorse(hero, target, allowLegacyCompanionHorse)) return
-    seen.add(target)
-    candidates.push(target)
-  }
-
-  addCandidate(openEntityTarget)
-  addCandidate(companionHorse, true)
-
-  const grid = getEntitySpaceMapLike(hero, hero.context?.map)?.grid
-  if (grid) {
-    for (const cell of getCellsInCellRadius(hero.i ?? 0, hero.j ?? 0, grid, MOUNTABLE_HORSE_CELL_RADIUS)) {
-      addCandidate(cell.has as RuntimeEntity | null | undefined)
-    }
-  }
-
-  return candidates.sort((a, b) => getEntityDistance(hero, a) - getEntityDistance(hero, b))[0] ?? null
 }
 
 function isRecoverableTrap(hero: UnitEntity, building: BuildingEntity | null | undefined): building is BuildingEntity {
@@ -228,7 +188,7 @@ export function resolveHeroProximityInteraction({
   if (openableBuilding) return { action: 'open', labelKey: 'heroInteractionOpen', target: openableBuilding }
 
   const fireCamp = openEntityTarget as BuildingEntity | null | undefined
-  if (isUsableFireCamp(hero, fireCamp)) return { action: 'open', labelKey: 'heroInteractionUseFire', target: fireCamp }
+  if (isUsableFireCamp(hero, fireCamp)) return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: fireCamp }
 
   const building = findBuildingInteriorEntryTarget(hero, buildings)
   if (building) {
@@ -253,6 +213,21 @@ export function resolveHeroProximityInteraction({
 
   const npcInteraction = resolveHeroNpcProximityInteraction(hero, openEntityTarget)
   if (npcInteraction) return npcInteraction
+
+  if (
+    openEntityTarget &&
+    !openEntityTarget.isDead &&
+    !openEntityTarget.isDestroyed &&
+    isHeroInteractionTargetReachable(hero, null, openEntityTarget)
+  ) {
+    if (openEntityTarget.family === FAMILY_TYPES.building) {
+      if (openEntityTarget.type === BUILDING_TYPES.trap) return null
+      return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: openEntityTarget }
+    }
+    if (openEntityTarget.family === FAMILY_TYPES.resource && openEntityTarget.interface?.info) {
+      return { action: 'open', labelKey: 'heroInteractionExamine', target: openEntityTarget }
+    }
+  }
 
   return null
 }

@@ -76,6 +76,10 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   bow: { weapon: { power: 5, range: 4 } },
   bow_great: { weapon: { power: 7, range: 5 } },
   bow_recurve: { weapon: { power: 9, range: 6 } },
+  arrow_ceramic: { weapon: { power: 1 } },
+  arrow_copper: { weapon: { power: 2 } },
+  arrow_bronze: { weapon: { power: 3 } },
+  arrow_iron: { weapon: { power: 4 } },
   halberd: { weapon: { power: 17 } },
   sword_copper: { weapon: { power: 8 } },
   sword_ceramic: { weapon: { power: 6 } },
@@ -191,6 +195,7 @@ function getHeroInventoryActiveWeaponEquipment(entity: EquipmentEntityLike): str
     return [activeWeapons.melee, activeWeapons.offhand].filter((item): item is string => typeof item === 'string')
   }
   if (entity.work === WORK_TYPES.hunter) {
+    if (!activeWeapons.ranged) return []
     return [activeWeapons.ranged, activeWeapons.quiver, entity.inventory?.equipped?.arrow].filter(
       (item): item is string => typeof item === 'string'
     )
@@ -417,6 +422,7 @@ function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
 export function getEntityMeleeWeapon(entity: EquipmentEntityLike): string | undefined {
   const definitions = loadedEquipmentStats()
   return getConfiguredEntityEquipment(entity).find(key => {
+    if (key.startsWith('arrow_')) return false
     const weapon = definitions[key]?.weapon
     return Boolean(weapon && !weapon.range)
   })

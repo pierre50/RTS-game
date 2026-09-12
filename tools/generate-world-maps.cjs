@@ -211,7 +211,7 @@ async function generateRegionMap(region, worldSeed, mapsDirectory) {
     })
     if (!map) continue
     const id = `world-${worldSeed}-${regionId(region)}-${slug(environment)}`
-    const relativePath = `${BLUEPRINT_MAP_SIZE}/${id}.map`
+    const relativePath = `${id}.map`
     fs.writeFileSync(path.join(mapsDirectory, relativePath), `${JSON.stringify({ ...map, id, macroRegion: region })}\n`)
     writeScenery({ ...map, id }, path.join(mapsDirectory, relativePath.replace(/\.map$/, '.scenery.json')))
     return {
@@ -246,7 +246,7 @@ async function main() {
   const { worldDirectory, previewPath, planPath, plan } = createMacroPlan(options)
   const mapsDirectory = path.join(worldDirectory, 'maps')
   fs.rmSync(mapsDirectory, { recursive: true, force: true })
-  fs.mkdirSync(path.join(mapsDirectory, String(BLUEPRINT_MAP_SIZE)), { recursive: true })
+  fs.mkdirSync(mapsDirectory, { recursive: true })
 
   const manifest = {
     format: 'macro-world-map-manifest',

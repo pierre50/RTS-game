@@ -37,11 +37,6 @@ function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
           unit.energyUpdated = true
         },
       },
-      '../lib/units/unitHealth': {
-        updateUnitHealthRegen: unit => {
-          unit.healthUpdated = true
-        },
-      },
       '../lib/units/unitLocomotion': {
         composeMoveSpeedFactor: (...factors) => factors.reduce((value, factor) => value * factor, 1),
         getUnitWalkSpeedFactor: () => 1,
@@ -136,7 +131,6 @@ test('dead hero runtime update does not restart movement or action visuals', () 
   assert.deepEqual(textureCalls, [])
   assert.deepEqual(calls, [])
   assert.equal(hero.energyUpdated, undefined)
-  assert.equal(hero.healthUpdated, undefined)
   assert.equal(hero.isDirectMoving, false)
   assert.equal(hero.syncMountedHorseSpriteCalls, 1)
   assert.equal(controller.wasMoving, false)
@@ -309,4 +303,29 @@ test('newly started held defense keeps the block visual instead of immediately s
   assert.equal(hero.currentSheet, 'actionSheet')
   assert.equal(hero.walkAnimationUpdated, undefined)
   assert.equal(controller.wasMoving, false)
+})
+
+test('awake hero stays injured after time passes, even with legacy saved regen settings', () => {
+  const { updateHeroControllerRuntime } = loadHeroControllerUpdate()
+  const hero = {
+    controlMode: 'hero',
+    hitPoints: 7,
+    totalHitPoints: 10,
+    healthRegenRate: 2,
+    healthRegenDelay: 0,
+    healthRegenMultiplier: 1,
+    speed: 10,
+    currentSheet: 'standingSheet',
+    sprite: { stop() {} },
+    setTextures() {},
+  }
+  const { controller } = createController(hero)
+  hero.context = controller.controls.context
+  hero.context.controls = { heroUnit: hero }
+  hero.context.scheduler = { elapsedMs: 60000 }
+  controller.keysPressed.clear()
+  controller.mouseHeld = false
+  updateHeroControllerRuntime(controller, 60)
+  assert.equal(hero.hitPoints, 7)
+  assert.equal(hero.energyUpdated, true)
 })

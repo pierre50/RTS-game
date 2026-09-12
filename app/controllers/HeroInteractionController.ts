@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, SHEET_TYPES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import {
   resolveHeroNpcProximityInteraction,
@@ -64,6 +64,7 @@ export class HeroInteractionController {
     const player = this.host.context.player
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
+      if (building.type === BUILDING_TYPES.trap) return false
       if (player) transferNeutralEntityToPlayer(building, player, { player })
       if (menu?.openHeroBuildingMenu?.(building)) {
         player?.unselectAll?.()
@@ -87,6 +88,10 @@ export class HeroInteractionController {
       menu?.openNpcOrders?.([npcInteraction.target], npcInteraction.npcOptions)
       return true
     }
+
+    // Living characters only support communication; living animals use their dedicated interactions.
+    if (target.family === FAMILY_TYPES.unit || (target.family === FAMILY_TYPES.animal && !target.isDead))
+      return false
 
     return Boolean(menu?.openEntityInfoModal?.(target))
   }

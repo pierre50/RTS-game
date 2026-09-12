@@ -13,12 +13,7 @@ import {
   isUsableShelter,
 } from './UnitRestRules'
 import { placeUnitAtCell } from './UnitRestState'
-import {
-  clearSleepingVisualState,
-  playSleepingWakeVisual,
-  setDetachedShadowsVisible,
-  setSleepingOutsideFinalVisual,
-} from './UnitSleepVisuals'
+import { clearSleepingVisualState, playSleepingWakeVisual, setDetachedShadowsVisible } from './UnitSleepVisuals'
 
 type UnitWakeMode = 'resume' | 'order'
 
@@ -115,8 +110,7 @@ export function startUnitWakeTransitionFromTask(unit: UnitEntity, task: ReturnTy
 function resumePreviousActivity(unit: UnitEntity, state: UnitRestState): void {
   const useWakeTransition = unit.context?.restTransitionsEnabled === true
   restoreAwakeState(unit, { clearShelterState: !useWakeTransition })
-  fadeIn(unit, FADE_DURATION_MS)
-  playSleepingWakeVisual(unit, () => {
+  finishWakeVisual(unit, () => {
     if (useWakeTransition) startUnitWakeTransition(unit, state)
     else finishUnitWakeTransition(unit, state)
   })
@@ -125,19 +119,27 @@ function resumePreviousActivity(unit: UnitEntity, state: UnitRestState): void {
 function wakeWithoutPreviousActivity(unit: UnitEntity, state: UnitRestState, onComplete?: () => void): void {
   unit.suspendedRestState = state
   restoreAwakeState(unit)
-  fadeIn(unit, FADE_DURATION_MS)
-  playSleepingWakeVisual(unit, onComplete)
+  finishWakeVisual(unit, onComplete)
 }
 
-function restoreVisibleAwakeState(unit: UnitEntity): void {
-  restoreAwakeState(unit)
+function restoreAwakeVisual(unit: UnitEntity): void {
   clearSleepingVisualState(unit)
   cancelFade(unit)
   unit.setTextures?.(SHEET_TYPES.standing)
   unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
   unit.sprite?.stop?.()
   unit.syncShadow?.()
-  unit.inactif = true
+}
+
+function finishWakeVisual(unit: UnitEntity, onComplete?: () => void): void {
+  // Evening rest also uses reason 'sleep' while the villager is still standing.
+  if (unit.sleepVisualState === 'sleeping') {
+    fadeIn(unit, FADE_DURATION_MS)
+    playSleepingWakeVisual(unit, onComplete)
+    return
+  }
+  restoreAwakeVisual(unit)
+  onComplete?.()
 }
 
 function shouldWakeInsideInteriorSpace(unit: UnitEntity, mode: UnitWakeMode): boolean {
@@ -174,9 +176,6 @@ export function wakeUnit(
   if (!state) return
   const mode = options.mode ?? 'resume'
   if (!prepareInsideWakePlacement(unit, state, mode, options.force)) return
-  if (unit.sleepVisualState !== 'sleeping') {
-    setSleepingOutsideFinalVisual(unit)
-  }
   if (mode === 'order') {
     wakeWithoutPreviousActivity(unit, state, options.onComplete)
     return
@@ -190,7 +189,8 @@ export function wakeUnitInstant(unit: UnitEntity, options: { force?: boolean; mo
   const mode = options.mode ?? 'resume'
   if (!prepareInsideWakePlacement(unit, state, mode, options.force)) return
 
-  restoreVisibleAwakeState(unit)
+  restoreAwakeState(unit)
+  restoreAwakeVisual(unit)
   if (mode === 'order') return
   finishUnitWakeTransition(unit, state)
 }

@@ -30,7 +30,6 @@ test('a missing spritesheet during construction leaves no registered unit or blo
       '../../lib/lpc': {},
       '../../lib/audio/settings': {},
       '../../lib/units/unitEnergy': {},
-      '../../lib/units/unitHealth': {},
       '../../lib/units/unitWorkAppearance': {
         applyUnitActionFrameSequence() {},
         getUnitWorkActionSheet: () => 'actionSheet',
@@ -60,7 +59,6 @@ test('a missing spritesheet during construction leaves no registered unit or blo
       '../../lib': {},
       './UnitRuntimeShape': {},
       '../../lib/units/unitEnergy': {},
-      '../../lib/units/unitHealth': {},
       './UnitBanditDebug': {},
       './UnitAppearanceLayers': {},
       './UnitStateHandlers': {},

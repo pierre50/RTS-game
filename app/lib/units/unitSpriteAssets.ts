@@ -3,7 +3,7 @@ import { SHEET_TYPES } from '../../constants'
 import { getActionVisualSheetKey, SHOOTING_SHEET_KEY } from './actionVisualSheet'
 import type { UnitEntity } from '../../types/entities'
 
-export function getUnitActivityAssets(unit: UnitEntity, work = unit.work) {
+function getUnitActivityAssets(unit: UnitEntity, work = unit.work) {
   return (work ? unit.allAssets?.[work] : undefined) ?? unit.allAssets?.default ?? unit.assets
 }
 

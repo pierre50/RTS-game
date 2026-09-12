@@ -35,7 +35,6 @@ function loadPlayer(overrides = {}) {
     if (request === '../../lib') {
       return {
         canAfford: () => true,
-        drawInstanceBlinkingSelection: () => {},
         payCost: () => {},
         uuidv4: () => 'player-1',
         getHexColor: () => '#fff',

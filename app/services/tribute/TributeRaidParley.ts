@@ -1,7 +1,7 @@
 import type { Modal } from '../../lib'
-import type { TributeRaidUnit } from '../TributeRaidRules'
+import type { TributeRaidUnit } from './TributeRaidRules'
 import { canAfford, payCost } from '../../lib'
-import { livingRaidUnits, type TributeRaid } from '../TributeRaidRules'
+import { livingRaidUnits, type TributeRaid } from './TributeRaidRules'
 import type { TributeRaidSystem } from '../TributeRaidSystem'
 import {
   getLocalTributeRefusedMessage,
@@ -31,7 +31,7 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
 
   let resolved = false
   const content = document.createElement('div')
-  content.className = 'bandit-tribute-modal-content'
+  content.className = 'interaction-panel-content bandit-tribute-modal-content'
   content.appendChild(view.createChiefContent(raid.chief))
 
   const speech = document.createElement('p')
@@ -40,7 +40,7 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
   content.appendChild(speech)
 
   const actions = document.createElement('div')
-  actions.className = 'npc-orders-options bandit-tribute-actions'
+  actions.className = 'interaction-actions npc-orders-options bandit-tribute-actions'
 
   const canPayTribute = canAfford(runtime.context.player, raid.tribute)
   const payButton = document.createElement('button')
@@ -48,7 +48,11 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
   payButton.className = 'ui-btn'
   payButton.textContent = getTributePayLabel(raid)
   payButton.disabled = !canPayTribute
-  if (!canPayTribute) payButton.title = getTributeCannotPayLabel(raid)
+  if (!canPayTribute) {
+    const reason = document.createElement('p')
+    reason.textContent = getTributeCannotPayLabel(raid)
+    content.appendChild(reason)
+  }
   payButton.addEventListener('click', () => {
     if (resolved || raid.phase !== 'parley') return
     if (!canAfford(runtime.context.player, raid.tribute)) {
@@ -81,7 +85,7 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
   raid.modal = view.createModal({
     title: getTributeTitle(raid),
     content,
-    panelClass: 'bandit-tribute-modal',
+    panelClass: 'bandit-tribute-modal npc-orders-panel interaction-panel',
     showCloseButton: false,
     onClose: () => {
       raid.modal = null

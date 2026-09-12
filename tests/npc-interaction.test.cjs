@@ -4,12 +4,6 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const defaultMocks = {
-    './graphics/selection': {
-      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
-      drawCellBlinkingSelection: () => {},
-      drawInstanceBlinkingSelection: () => {},
-      getSelectionMarkerOffset: () => 0,
-    },
     './audio/sound': {
       playAudibleSoundCue: () => {},
       playSelectionSound: () => {},
@@ -130,7 +124,6 @@ const constants = {
   COLOR_WHITE: 0xffffff,
   CELL_WIDTH: 64,
   LABEL_TYPES: {
-    commSelection: 'commSelection',
     shadow: 'shadow',
   },
   SHEET_TYPES: {
@@ -293,40 +286,9 @@ test('"aller vers" on a building entry routes the npc inside instead of stopping
   ])
 })
 
-test('"aller vers" on a building entry blinks the entry cell', () => {
+test('"aller vers" falls back to movement when no selected npc can enter', () => {
   const grid = createNpcTestGrid(6)
   const entryCell = grid[4][4]
-  const blinkCalls = []
-  const npc = {
-    context: {
-      map: { grid },
-      getBuildingInteriorEntryTargetForCell: () => ({ label: 'house-1' }),
-      routeUnitIntoBuildingInterior: () => true,
-    },
-    i: 2,
-    j: 2,
-    label: 'npc-1',
-    owner: {},
-    sendTo: () => {},
-  }
-  const { sendNpcGroupToTarget } = loadNpcInteraction(null, {
-    './graphics/selection': {
-      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
-      drawCellBlinkingSelection: cell => blinkCalls.push(cell),
-      drawInstanceBlinkingSelection: () => {},
-      getSelectionMarkerOffset: () => 0,
-    },
-  })
-
-  sendNpcGroupToTarget([npc], entryCell, { x: 4, y: 4 })
-
-  assert.deepEqual(blinkCalls, [entryCell])
-})
-
-test('"aller vers" on a building entry does not blink when no selected npc can enter', () => {
-  const grid = createNpcTestGrid(6)
-  const entryCell = grid[4][4]
-  const blinkCalls = []
   const moveCalls = []
   const npc = {
     context: {
@@ -340,19 +302,11 @@ test('"aller vers" on a building entry does not blink when no selected npc can e
     owner: {},
     sendTo: cell => moveCalls.push(cell),
   }
-  const { sendNpcGroupToTarget } = loadNpcInteraction(null, {
-    './graphics/selection': {
-      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
-      drawCellBlinkingSelection: cell => blinkCalls.push(cell),
-      drawInstanceBlinkingSelection: () => {},
-      getSelectionMarkerOffset: () => 0,
-    },
-  })
+  const { sendNpcGroupToTarget } = loadNpcInteraction(null)
 
   sendNpcGroupToTarget([npc], entryCell, { x: 4, y: 4 })
 
   assert.deepEqual(moveCalls, [entryCell])
-  assert.deepEqual(blinkCalls, [])
 })
 
 test('communication can claim a neutral villager into the hero owner', () => {
@@ -361,7 +315,7 @@ test('communication can claim a neutral villager into the hero owner', () => {
   const neutral = { diplomacy: 'neutral', label: 'neutral', type: 'Gaia', units: [] }
   const hero = { degree: 0, i: 0, j: 0, owner: player, x: 0, y: 0 }
   const target = {
-    addChildAt: child => calls.push(['select', child.label]),
+    addChildAt: () => assert.fail('Communication must not add ground selection graphics'),
     context: { calls },
     family: constants.FAMILY_TYPES.unit,
     getChildByLabel: () => null,
@@ -446,7 +400,7 @@ test('"aller vers" delays night rest after an empty go-to order', () => {
   assert.equal(npc.restWakeLockUntilMs, 14000)
 })
 
-test('"aller vers" blinks the target once when any communicated NPC has a targeted action', () => {
+test('"aller vers" dispatches targeted actions and movement to the same group', () => {
   const enemyOwner = { label: 'enemy' }
   const target = {
     family: constants.FAMILY_TYPES.unit,
@@ -459,13 +413,7 @@ test('"aller vers" blinks the target once when any communicated NPC has a target
     x: 100,
     y: 100,
   }
-  const blinkCalls = []
-  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './graphics/selection': {
-      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
-      drawInstanceBlinkingSelection: instance => blinkCalls.push(instance),
-    },
-  })
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const calls = []
   const owner = { isEnemy: owner => owner === enemyOwner }
   const attacker = {
@@ -491,10 +439,9 @@ test('"aller vers" blinks the target once when any communicated NPC has a target
     ['attack', target],
     ['move', { i: 5, j: 5, has: target }],
   ])
-  assert.deepEqual(blinkCalls, [target])
 })
 
-test('"aller vers" does not blink a target when selected npcs only move toward it', () => {
+test('"aller vers" moves toward a resource when selected npcs cannot gather it', () => {
   const grid = createNpcTestGrid(6)
   const targetCell = grid[4][4]
   const target = {
@@ -508,16 +455,8 @@ test('"aller vers" does not blink a target when selected npcs only move toward i
     y: 100,
   }
   targetCell.has = target
-  const blinkCalls = []
   const moveCalls = []
-  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './graphics/selection': {
-      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
-      drawCellBlinkingSelection: () => {},
-      drawInstanceBlinkingSelection: instance => blinkCalls.push(instance),
-      getSelectionMarkerOffset: () => 0,
-    },
-  })
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const infantry = {
     context: { map: { grid } },
     getActionCondition: () => false,
@@ -531,7 +470,6 @@ test('"aller vers" does not blink a target when selected npcs only move toward i
   sendNpcGroupToTarget([infantry], targetCell, { x: 100, y: 100 })
 
   assert.deepEqual(moveCalls, [targetCell])
-  assert.deepEqual(blinkCalls, [])
 })
 
 test('"aller vers" sends villagers to hunt a live animal under the cursor', () => {
@@ -1400,6 +1338,44 @@ test('hero cannot talk to a hostile AI unit', () => {
   const { isTalkableNpc } = loadNpcInteraction(null)
 
   assert.equal(isTalkableNpc(hero, soldier), false)
+})
+
+test('combat blocks chatter for owned, neutral and non-hostile foreign units', () => {
+  const player = { label: 'player', isEnemy: () => false }
+  const hero = { owner: player }
+  const { isTalkableNpc } = loadNpcInteraction(null)
+  const owners = [
+    player,
+    { type: constants.PLAYER_TYPES.gaia, diplomacy: 'neutral' },
+    { type: constants.PLAYER_TYPES.ai },
+  ]
+
+  for (const owner of owners) {
+    const target = makeCommAlly({ owner, action: constants.ACTION_TYPES.attack })
+    assert.equal(isTalkableNpc(hero, target), false)
+    target.action = constants.ACTION_TYPES.chopwood
+    assert.equal(isTalkableNpc(hero, target), true)
+  }
+})
+
+test('tap and held communication exclude fighting allies even if already looking at the hero', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  for (const lookingAtHero of [false, true]) {
+    const target = makeCommAlly({
+      owner,
+      action: constants.ACTION_TYPES.attack,
+      lookingAtHero,
+      i: 1,
+      j: 0,
+      x: 10,
+      y: 0,
+      setTextures: () => assert.fail('combat must not be interrupted'),
+    })
+    const { resolveCommGroup } = loadCommModule([target], () => 0)
+    assert.deepEqual(resolveCommGroup(hero, 0, { precisionOnly: true }), [])
+    assert.deepEqual(resolveCommGroup(hero, 7), [])
+  }
 })
 
 test('communication radius still ignores non-owned neutral AI units', () => {

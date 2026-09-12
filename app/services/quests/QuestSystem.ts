@@ -28,7 +28,7 @@ export function createQuestJournal(): QuestJournalState {
 }
 
 // Register authored definitions here when introducing missions. No generated offers at UI construction time.
-export const questDefinitions = new Map<string, QuestDefinition>([[resourceRequestQuest.id, resourceRequestQuest]])
+const questDefinitions = new Map<string, QuestDefinition>([[resourceRequestQuest.id, resourceRequestQuest]])
 
 export class QuestSystem {
   constructor(

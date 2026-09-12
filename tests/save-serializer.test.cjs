@@ -605,7 +605,7 @@ test('serializes unit work orders, equipment state and build queues', () => {
   assert.deepEqual(save.players[0].units[0].lootEquipment, ['helmet_barbarian_ceramic'])
 })
 
-test('serializes production and rally points without obsolete research', () => {
+test('serializes production without obsolete research', () => {
   const context = makeContext()
   context.players[0].buildings = [
     {
@@ -626,7 +626,6 @@ test('serializes production and rally points without obsolete research', () => {
         { horseColor: 'dark', tamingStatus: 'tamed' },
         { horseColor: 'light', tamingStatus: 'tamed' },
       ],
-      rallyPoint: { i: 22, j: 23, direction: 1 },
       assetCiv: 'hellas',
       assetAge: 1,
       buildingAge: 0,
@@ -656,7 +655,6 @@ test('serializes production and rally points without obsolete research', () => {
       { horseColor: 'dark', tamingStatus: 'tamed' },
       { horseColor: 'light', tamingStatus: 'tamed' },
     ],
-    rallyPoint: { i: 22, j: 23, direction: 1 },
     assetCiv: 'hellas',
     assetAge: 1,
     buildingAge: 0,

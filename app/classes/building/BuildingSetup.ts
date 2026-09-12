@@ -141,11 +141,3 @@ export function activateBuiltBuilding(building: Building): void {
   building.finalTexture()
   building.onBuilt()
 }
-
-export function restoreBuildingRallyPoint(building: Building, options: BuildingOptions): void {
-  const rallyPoint = options.rallyPoint as { i: number; j: number; direction: number } | undefined
-  if (!rallyPoint) return
-  const space = getEntityMapSpace(building, building.context.map)
-  const grid = space?.grid ?? building.context.map.grid
-  building.setRallyPoint(grid[rallyPoint.i]?.[rallyPoint.j], rallyPoint.direction)
-}

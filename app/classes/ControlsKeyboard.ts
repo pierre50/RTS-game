@@ -25,7 +25,6 @@ type ControlsKeyboardHost = {
   keySpeed: number
   keysPressed: Partial<Record<ControlBindingAction, boolean>>
   mouseBuilding: unknown
-  rallyPointController: { active: boolean; cancel(): void }
   shiftKeyActive: boolean
   closeAnyHeroPanel(): boolean
   handleEscapeKey(evt: KeyboardEvent): boolean
@@ -111,11 +110,6 @@ export function handleControlsEscapeKey(controls: ControlsKeyboardHost, evt: Key
     evt.preventDefault()
     controls.removeMouseBuilding()
     controls.context.menu?.updateActionTarget?.()
-    return true
-  }
-  if (controls.rallyPointController.active) {
-    evt.preventDefault()
-    controls.rallyPointController.cancel()
     return true
   }
   if (controls.isHeroControlActive() && controls.heroController.pendingGoToNpcs) {

@@ -28,6 +28,8 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
   }
 
   const mocks = {
+    '../../services/world/WorldEconomy': { materializeInitialEconomy: initial => initial },
+    '../../services/world/WorldEconomyRuntime': { economyRulesFor: () => ({}), initializeCampaignEconomy: async () => {} },
     '../../classes/players/GaiaPlayer': { ensureNeutralPlayer() {} },
     'pixi.js': { Container },
     '@pixi/sound': { sound: { stopAll() {} } },

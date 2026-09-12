@@ -2,7 +2,7 @@ import type { CaveDefinition } from '../../types/cave'
 import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import type { AnimatedSprite, Graphics, Sprite, Texture } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
-import { drawInstanceBlinkingSelection, canUpdateMinimap } from '../../lib'
+import { canUpdateMinimap } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
 import { stopFlameAmbientSound } from './BuildingFire'
@@ -18,17 +18,14 @@ import {
   attachInitialBuildingVisuals,
   createInitialBuildingSprite,
   occupyBuildingFootprint,
-  restoreBuildingRallyPoint,
   resumeInitialBuildingWork,
   setupBuildingTransform,
   stableHorsesFromOptions,
 } from './BuildingSetup'
 import {
-  clearBuildingRallyPoint,
   createBuildingShadow,
   destroyBuildingVisuals,
   getBuildingShadowTexture,
-  setBuildingRallyPoint,
   syncBuildingVisualSettings,
   updateBuildingShadow,
   type BuildingShadow,
@@ -44,7 +41,6 @@ import type {
   UnitEntity,
   UnitSounds,
 } from '../../types/entities'
-import type { RuntimeCell } from '../../types/map'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingConfig } from '../../types/config'
 import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
@@ -89,8 +85,6 @@ export class Building extends Instance implements BuildingEntity {
   trainingStartedDay: number | null
   trainingCompleteDay: number | null
   trainingDayChangeUnsubscribe: (() => void) | null
-  rallyPoint: { i: number; j: number; direction: number } | null
-  rallyPointFlag: AnimatedSprite | null
   shadow: BuildingShadow | null
   shadowWasVisible: boolean
   constructionRevealSprite: Sprite | null
@@ -162,8 +156,6 @@ export class Building extends Instance implements BuildingEntity {
     this.trainingDayChangeUnsubscribe = null
     this.stableHorses = []
     this.horseAmount = 0
-    this.rallyPoint = null
-    this.rallyPointFlag = null
     this.shadow = null
     this.shadowWasVisible = false
     this.constructionRevealSprite = null
@@ -204,7 +196,6 @@ export class Building extends Instance implements BuildingEntity {
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
 
     activateBuiltBuilding(this)
-    restoreBuildingRallyPoint(this, options)
     map.addToInstanceBucket(this)
   }
 
@@ -225,20 +216,9 @@ export class Building extends Instance implements BuildingEntity {
     const sprite = this.sprite
     sprite.on('pointertap', () => {
       const {
-        context: { controls, editor },
+        context: { editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
-      if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
-        controls.mouse.prevent = true
-        drawInstanceBlinkingSelection(this)
-        controls.rallyPointController.cancel({ clear: true })
-        return
-      }
-      if (controls.rallyPointController?.active) {
-        controls.mouse.prevent = true
-        controls.rallyPointController.handleMouseUpOnEntity(this)
-        return
-      }
     })
   }
 
@@ -296,7 +276,6 @@ export class Building extends Instance implements BuildingEntity {
       context: { menu, player },
     } = this
     super.select()
-    if (this.rallyPointFlag) this.rallyPointFlag.visible = true
     if (this.loading !== null && this.owner.isPlayed) this.updateTrainingPreview()
     canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt(this.owner)
   }
@@ -304,19 +283,10 @@ export class Building extends Instance implements BuildingEntity {
   override unselect(): void {
     if (!this.selected) return
     super.unselect()
-    if (this.rallyPointFlag) this.rallyPointFlag.visible = false
     const {
       context: { menu, player },
     } = this
     canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt(this.owner)
-  }
-
-  setRallyPoint(cell: RuntimeCell | undefined, direction: number = this.context.map.randomRange(0, 1)): boolean {
-    return setBuildingRallyPoint(this, cell, direction)
-  }
-
-  clearRallyPoint(): void {
-    clearBuildingRallyPoint(this)
   }
 
   getShadowTexture(): Texture | null {

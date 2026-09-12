@@ -3,7 +3,6 @@ import { MinimapManager } from '../ui/minimap/MinimapManager'
 import { TopbarView } from '../ui/TopbarView'
 import { PauseMenu } from '../ui/PauseMenu'
 import { MinimapInputController } from '../ui/minimap/MinimapInputController'
-import { MenuTooltip } from '../ui/MenuTooltip'
 import { InventoryManager } from '../ui/InventoryManager'
 import { NpcOrdersManager } from '../ui/NpcOrdersManager'
 import { HeroBuildingMenuManager } from '../ui/HeroBuildingMenuManager'
@@ -45,7 +44,6 @@ export default class Menu implements MenuLike {
   pauseMenu: PauseMenu
   topbarView: TopbarView
   minimapInputController: MinimapInputController
-  menuTooltip: MenuTooltip
   inventoryManager: InventoryManager
   npcOrdersManager: NpcOrdersManager
   heroBuildingMenuManager: HeroBuildingMenuManager
@@ -86,7 +84,6 @@ export default class Menu implements MenuLike {
     this.pauseMenu = new PauseMenu(this)
     this.topbarView = new TopbarView(this)
     this.minimapInputController = new MinimapInputController(this)
-    this.menuTooltip = new MenuTooltip()
     this.inventoryManager = new InventoryManager(this)
     this.npcOrdersManager = new NpcOrdersManager(this)
     this.heroBuildingMenuManager = new HeroBuildingMenuManager(this)
@@ -110,7 +107,6 @@ export default class Menu implements MenuLike {
 
   destroy(): void {
     this.questJournal.destroy()
-    this.menuTooltip.destroy()
     this.minimapInputController.destroy()
     this.inventoryManager.destroy()
     this.npcOrdersManager.destroy()
@@ -132,6 +128,10 @@ export default class Menu implements MenuLike {
 
   show(): void {
     this.gameHud.classList.remove('hidden')
+  }
+
+  setHudSuppressed(suppressed: boolean): void {
+    this.gameHud.classList.toggle('hud-suppressed', suppressed)
   }
 
   updateTopbar(): void {
@@ -265,9 +265,6 @@ export default class Menu implements MenuLike {
   }
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec {
     return this.actionSpecs.getCancelUnitTrainingButton(building)
-  }
-  getActionRallyPointButton(): MenuButtonSpec {
-    return this.actionSpecs.getActionRallyPointButton()
   }
   getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec {
     return this.actionSpecs.getUnitTrainingMenuButton(unit)

@@ -22,7 +22,6 @@ import { resolveNpcGoToCursorState } from '../lib/npc/npcGoToCursor'
 import { resolveHoverTarget, updateNpcFollow } from '../lib/npc/npcInteraction'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/units/unitEnergy'
-import { updateUnitHealthRegen } from '../lib/units/unitHealth'
 import { composeMoveSpeedFactor, getUnitWalkSpeedFactor, isUnitWalkSpeedFactor } from '../lib/units/unitLocomotion'
 import { applyUnitWalkingAnimationSpeed } from '../lib/units/unitWalkingAnimation'
 import type { ControlsLike } from '../types/context'
@@ -100,7 +99,6 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     return
   }
   updateUnitEnergy(unit, TARGET_FRAME_MS * frameScale)
-  updateUnitHealthRegen(unit, TARGET_FRAME_MS * frameScale)
   controller.updateCriticalHealthEffects(TARGET_FRAME_MS * frameScale, !controller.controls.context.paused)
   controller.updateOcclusionFade(TARGET_FRAME_MS * frameScale, !controller.controls.context.paused)
   controller.controls.context.menu?.updateHeroStatus?.(unit)

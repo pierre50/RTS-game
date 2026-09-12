@@ -77,6 +77,7 @@ function loadHeroController({
       },
     },
     '../constants': {
+      FADE_DURATION_MS: 120,
       COLOR_GOLD: 0xf8d878,
       HERO_ACTION_MOVE_SPEED_FACTOR: 0,
       HERO_MELEE_CHARGE_MOVE_SPEED_FACTOR: 0.55,
@@ -141,9 +142,6 @@ function loadHeroController({
     },
     '../lib/units/unitWalkingAnimation': {
       applyUnitWalkingAnimationSpeed: () => {},
-    },
-    '../lib/units/unitHealth': {
-      updateUnitHealthRegen: () => {},
     },
     '../lib/units/unitControl': {
       setUnitControlMode: () => {},
@@ -1394,13 +1392,13 @@ test('E opens fire camp usage instead of sleeping directly', () => {
   const { calls, controller } = createController({
     resolveHeroProximityInteraction: () => ({
       action: 'open',
-      labelKey: 'heroInteractionUseFire',
+      labelKey: 'heroInteractionOpenMenu',
       target: fireCamp,
     }),
   })
 
   assert.equal(controller.handleKeyDown('heroInteract'), true)
-  assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionUseFire'], 'openHeroEntityInteraction'])
+  assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionOpenMenu'], 'openHeroEntityInteraction'])
 })
 
 test('E entering a building preserves held movement for the travel capture', () => {

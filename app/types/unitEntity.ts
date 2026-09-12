@@ -292,10 +292,6 @@ export interface UnitEntity extends EnergyEntity {
   range?: number
   projectile?: string
   healing?: number
-  healthRegenRate?: number
-  healthRegenDelay?: number
-  healthRegenMultiplier?: number
-  lastHealthDamagedAt?: number
   conversionChants?: number
   experience?: Record<string, number>
   gatheringRate?: Record<string, number>

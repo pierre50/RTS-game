@@ -1,3 +1,4 @@
+import { createInventoryContents } from './InventoryContents'
 import { getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
 import { Assets } from 'pixi.js'
 import {
@@ -10,7 +11,6 @@ import {
 import {
   equipHeroInventoryItem,
   getEquipmentSlot,
-  getEquipmentStacks,
   getHeroEquipmentSlotLabelKey,
   getHeroEquippedItemCount,
   getWeaponSlot,
@@ -19,7 +19,7 @@ import {
 } from '../../lib/equipment/equipmentLoot'
 import { getPlaceableInventoryBuildingType } from '../../lib/hero/placeableInventoryItems'
 import { t } from '../../lib/lang'
-import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES } from '../../constants'
+import { BUILDING_TYPES } from '../../constants'
 import { getBuildingAsset } from '../../lib'
 import { createInventorySection } from './InventorySlotRenderer'
 import { createInventoryBuildingIcon, createInventoryResourceIcon } from './InventoryItemIcons'
@@ -59,32 +59,18 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
   const { menu } = host
   host.lootedEquipmentPanel.replaceChildren()
   const hero = menu.context.controls.heroUnit
-  const equipment = hero?.inventory?.equipment ?? []
-  const resources = hero?.inventory?.resources ?? {}
-  const resourceEntries = RESOURCE_STORAGE_NAMES.map(resource => ({
-    amount: Math.max(0, Math.floor(resources[resource] ?? 0)),
-    resource,
-  })).filter(entry => entry.amount > 0)
-  const equipmentStacks = getEquipmentStacks(equipment)
   host.lootedEquipmentPanel.appendChild(
-    createInventorySection({
+    createInventoryContents({
+      inventory: hero?.inventory ?? {},
       emptyText: t('inventoryEmptySlot'),
       title: t('inventoryBag'),
-      gridClassName: 'inventory-loot-list',
-      renderItems: grid => {
-        for (const { amount, resource } of resourceEntries) {
-          grid.appendChild(
-            createInventoryResourceRow(menu, {
-              id: `inventory-resource-${resource}`,
-              resource,
-              amount,
-            }).element
-          )
-        }
-        for (const stack of equipmentStacks) {
-          grid.appendChild(createBagEquipmentSlot(host, stack.equipment, stack.count))
-        }
-      },
+      renderResource: (resource, amount) =>
+        createInventoryResourceRow(menu, {
+          id: `inventory-resource-${resource}`,
+          resource,
+          amount,
+        }).element,
+      renderEquipment: (equipment, count) => createBagEquipmentSlot(host, equipment, count),
     })
   )
 }
@@ -206,7 +192,6 @@ export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendere
                 description: t('inventoryEmptySlot'),
                 meta: '',
                 count: 0,
-                showTooltip: false,
               })
           element.classList.toggle('empty', !equipment)
           grid.appendChild(element)

@@ -20,7 +20,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const mocks = {
     '../constants': {
       FAMILY_TYPES: { building: 'building' },
-      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', market: 'Market' },
+      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', market: 'Market', trap: 'Trap' },
       SOUND_CUES: { building: { chestOpen: 'building/chest-open' }, ui: { menuClick: 'menuClick' } },
     },
     '../lib/avatar': {
@@ -55,7 +55,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     './InspectionPanel': {
       createInspectionModal: () => ({ close() {} }),
     },
-    './EntityInfoModalManager': {
+    './EntityInfoContent': {
       TITLED_ENTITY_INFO_OPTIONS: {},
     },
     './inventory/InventoryTransferPanel': {
@@ -158,7 +158,6 @@ function createManager({ reachable = true } = {}) {
       player,
     },
     getActionMenuItems: building => (building.isBuilt ? [{ id: 'train' }] : []),
-    menuTooltip: { bind() {}, hide() {} },
   })
   return { manager, player, restoreDocument }
 }
@@ -175,6 +174,19 @@ test('hero building menu can open own unfinished buildings for inspection', () =
     }
 
     assert.equal(manager.canOpenFor(building), true)
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('trap menus cannot open even through a direct request', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    for (const isBuilt of [false, true]) {
+      const building = { family: 'building', type: 'Trap', owner: player, isBuilt }
+      assert.equal(manager.canOpenFor(building), false)
+      assert.equal(manager.open(building), false)
+    }
   } finally {
     restoreDocument()
   }
@@ -223,7 +235,7 @@ test('hero building menu renders one row per concurrent training entry', () => {
     manager.menu.getActionMenuItems = () => [
       {
         id: 'Fantassin',
-        tooltip: () => ({ title: 'Fantassin', meta: ['cost'] }),
+        details: () => ({ title: 'Fantassin', meta: ['cost'] }),
       },
     ]
     const building = {
@@ -382,21 +394,21 @@ test('hero building menu disables campfire sleep while blocked', () => {
   }
 })
 
-test('campfire tooltip reports the actual reason sleep is unavailable', () => {
+test('campfire details report the actual reason sleep is unavailable', () => {
   const { manager, restoreDocument } = createManager()
   try {
     const hero = { canSleepAtCampfire: false, sleepBlockedReason: 'heroCampfireSleepTooFar' }
     manager.menu.context.controls.heroUnit = hero
     const button = manager.getCampfireSleepButton({ type: 'FireCamp', isBuilt: true })
-    assert.equal(button.tooltip().description, 'heroCampfireSleepTooFar')
+    assert.equal(button.details().description, 'heroCampfireSleepTooFar')
     hero.sleepBlockedReason = 'heroCampfireSleepNotBuilt'
-    assert.equal(button.tooltip().description, 'heroCampfireSleepNotBuilt')
+    assert.equal(button.details().description, 'heroCampfireSleepNotBuilt')
     hero.sleepBlockedReason = null
-    assert.equal(button.tooltip().description, 'heroCampfireSleepBlockedDescription')
+    assert.equal(button.details().description, 'heroCampfireSleepBlockedDescription')
     hero.hostile = { type: 'Cave', owner: { name: 'Neutral' } }
-    assert.equal(button.tooltip().description, 'heroCampfireSleepBlockedBy:Cave:Neutral')
+    assert.equal(button.details().description, 'heroCampfireSleepBlockedBy:Cave:Neutral')
     hero.canSleepAtCampfire = true
-    assert.equal(button.tooltip().description, 'heroCampfireSleepDescription')
+    assert.equal(button.details().description, 'heroCampfireSleepDescription')
   } finally {
     restoreDocument()
   }
@@ -484,6 +496,24 @@ test('hero building menu marks and reports foreign chest theft only when taking 
     assert.equal(manager.constructor.__theftConsequences[0].owner, foreignOwner)
     assert.equal(manager.constructor.__theftConsequences[0].subject, 'chest')
     assert.equal(manager.constructor.__theftConsequences[0].target, building)
+  } finally {
+    restoreDocument()
+  }
+})
+
+
+test('disabled building actions display their explanation directly and only listen for clicks', () => {
+  const { manager, restoreDocument } = createManager()
+  try {
+    const row = manager.createButton({}, {
+      id: 'heroCampfireSleep',
+      disabled: () => true,
+      details: () => ({ title: 'Dormir', description: 'Un ennemi est proche.' }),
+    })
+    assert.equal(row.disabled, true)
+    assert.equal(row.children[0].textContent, 'Dormir')
+    assert.equal(row.children[1].textContent, 'Un ennemi est proche.')
+    assert.deepEqual([...row.listeners.keys()], ['click'])
   } finally {
     restoreDocument()
   }

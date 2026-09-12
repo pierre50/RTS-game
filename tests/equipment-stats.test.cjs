@@ -23,10 +23,6 @@ const constants = {
 }
 
 const VISUAL_ONLY_EQUIPMENT = [
-  'arrow_ceramic',
-  'arrow_copper',
-  'arrow_bronze',
-  'arrow_iron',
   'cape_solid',
   'centurion_crest',
   'centurion_plumage',
@@ -125,7 +121,7 @@ test('combat equipment data declares weapon and armor stats by role', () => {
   ])
 
   for (const key of Object.keys(equipment)) {
-    if (explicitWeapons.has(key) || /^(axe|hammer|pickaxe|scythe|sword)_/.test(key)) {
+    if (explicitWeapons.has(key) || /^(arrow|axe|hammer|pickaxe|scythe|sword)_/.test(key)) {
       assert.ok((equipment[key].weapon?.power ?? 0) > 0, `${key} should declare weapon.power`)
     }
     if (!visualOnly.has(key) && /^(armor_|bracers_|helmet_|leg_armor_|round_shield_|shoulder_)/.test(key)) {
@@ -367,6 +363,48 @@ test('hero inventory equipment drives runtime attack armor and range', () => {
   delete hero.inventory.activeWeapons.ranged
   assert.equal(getUnitRuntimeCombatStats(hero, heroConfig).weaponPower, UNARMED_UNIT_WEAPON_POWER)
   assert.equal(getUnitCombatRange(hero), undefined)
+})
+
+test('arrow materials add ranged damage without affecting melee damage or bow range', () => {
+  const {
+    getEquipmentCombatStats,
+    getEntityWeaponPower,
+    getEntityMeleeWeapon,
+    getHeroInventoryWeaponCombatStats,
+    getUnitCombatRange,
+    getUnitRuntimeCombatStats,
+    UNARMED_UNIT_WEAPON_POWER,
+  } = loadEquipmentStats()
+  for (const definitions of [undefined, loadGameplayEquipmentJson()]) {
+    const hero = {
+      type: 'Hero',
+      work: 'hunter',
+      owner: { config: { equipment: definitions, units: { Hero: {} } } },
+      inventory: {
+        equipped: {},
+        activeWeapons: { ranged: 'bow', melee: 'sword_ceramic' },
+      },
+    }
+    for (const [index, material] of ['ceramic', 'copper', 'bronze', 'iron'].entries()) {
+      const arrow = `arrow_${material}`
+      hero.inventory.equipped.arrow = arrow
+      assert.equal(getEquipmentCombatStats([arrow], definitions).weaponPower, index + 1)
+      assert.equal(getEntityWeaponPower(hero), 6 + index)
+      assert.equal(getUnitRuntimeCombatStats(hero, {}).weaponPower, 6 + index)
+      assert.deepEqual(getHeroInventoryWeaponCombatStats(hero), {
+        meleeWeaponPower: 6,
+        rangedWeaponPower: 6 + index,
+      })
+      assert.equal(getUnitCombatRange(hero), 4)
+      assert.equal(getEntityMeleeWeapon({ equipment: ['bow', arrow] }), undefined)
+      hero.work = 'heroSword'
+      assert.equal(getEntityWeaponPower(hero), 6)
+      hero.work = 'hunter'
+    }
+    delete hero.inventory.activeWeapons.ranged
+    assert.equal(getHeroInventoryWeaponCombatStats(hero).rangedWeaponPower, 0)
+    assert.equal(getUnitRuntimeCombatStats(hero, {}).weaponPower, UNARMED_UNIT_WEAPON_POWER)
+  }
 })
 
 test('melee collision weapon follows equipment and ignores shields and bows', () => {

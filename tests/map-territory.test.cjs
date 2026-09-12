@@ -104,6 +104,7 @@ test('construction tab names the occupying player and clears the warning after e
   const { renderInventoryConstruction } = loadTsModule('app/ui/InventoryConstruction.ts', {
     mocks: {
       '../lib/avatar': {},
+      '../lib/extra': { capitalizeFirstLetter: text => text.charAt(0).toUpperCase() + text.slice(1) },
       '../lib/audio/settings': { getReservedGameplayHotkeys: () => [] },
       '../lib/lang': { t: (key, vars) => `${key}:${vars.player}` },
     },

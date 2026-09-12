@@ -71,8 +71,8 @@ test('status expression colors fatigue as bright blue', () => {
     'pixi.js': { Container: MockContainer, Text: MockText },
   })
 
-  const expression = createStatusBubble({ text: '...', fontSize: 13 })
+  const expression = createStatusBubble({ text: 'zzz', fontSize: 13 })
   const [text] = expression.children
 
-  assert.equal(text.style.fill, 0xc7f0ff)
+  assert.equal(text.style.fill, 0x69b7ff)
 })

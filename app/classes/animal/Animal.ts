@@ -118,7 +118,6 @@ export class Animal extends Instance implements AnimalEntity {
 
   constructor(options: AnimalOptions, context: GameContextLike) {
     super(context)
-    this.selectionFactor = 0.5
 
     const {
       context: { map },
@@ -213,13 +212,9 @@ export class Animal extends Instance implements AnimalEntity {
 
     this.on('pointerup', () => {
       const {
-        context: { controls, editor },
+        context: { editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
-      if (controls.rallyPointController?.active) {
-        controls.mouse.prevent = true
-        controls.rallyPointController.handleMouseUpOnEntity(this)
-      }
     })
 
     this.sprite.updateAnchor = true

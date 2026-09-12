@@ -1,4 +1,4 @@
-export const WORLD_ECONOMY_BALANCE = {
+const WORLD_ECONOMY_BALANCE = {
   easy: { workEfficiency: 0.8, arrivalChance: 0.65 },
   medium: { workEfficiency: 1, arrivalChance: 0.85 },
   hard: { workEfficiency: 1.2, arrivalChance: 1 },

@@ -49,14 +49,6 @@ function loadControls(mockOverrides = {}) {
         removeMouseBuilding() {}
       },
     },
-    '../controllers/RallyPointController': {
-      RallyPointController: class {
-        constructor() {
-          this.active = false
-        }
-        cancel() {}
-      },
-    },
     '../controllers/HeroController': {
       HeroController: class {
         constructor() {
@@ -161,6 +153,7 @@ function loadControls(mockOverrides = {}) {
       pickNpcChatterLine: () => '',
     },
     '../constants': {
+      BUILDING_TYPES: { trap: 'Trap' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal' },
@@ -400,7 +393,10 @@ test('arrival camera and resumed hero tracking use the same terrain-adjusted cen
     controls.setRuntimeInputEnabled(true)
     controls.onTick({ deltaTime: 1 })
 
-    assert.deepEqual(positions, [[12, 10], [12, 10]])
+    assert.deepEqual(positions, [
+      [12, 10],
+      [12, 10],
+    ])
   } finally {
     restore()
   }
@@ -748,11 +744,11 @@ test('Shift dismount action is handled without enabling slow walk', () => {
   }
 })
 
-test('hero entity interaction opens info modal for units', () => {
+test('hero entity interaction opens info modal for corpses', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
-    const unit = { family: 'unit' }
+    const unit = { family: 'unit', isDead: true }
     controls.heroController.active = true
     controls.heroController.heroUnit = { family: 'unit' }
     controls.context.map.grid[0][0] = { has: unit }
@@ -911,19 +907,6 @@ test('inactive hero updates camera and health visuals but disabled input stops f
   controls.onTick({ deltaTime: 1 })
   assert.deepEqual(calls, [])
   assert.equal(cursor.at(-1), false)
-})
-
-test('rally previews refresh while the hero camera moves', t => {
-  const { controls, restore } = createControls()
-  t.after(restore)
-  controls.heroController.active = true
-  controls.heroController.heroUnit = { x: 50, y: 60 }
-  controls.rallyPointController.active = true
-  const calls = []
-  controls.rallyPointController.handleMouseMove = () => calls.push('rally')
-  controls.cameraController.set = (...args) => calls.push(args)
-  controls.onTick({ deltaTime: 1 })
-  assert.deepEqual(calls, [[50, 60, false, false], 'rally'])
 })
 
 test('audibility requires the camera and either player ownership, visibility or a revealed map', t => {

@@ -13,13 +13,13 @@
   min-height: 240px;
   max-height: 65vh;
   overflow: auto;
-  gap: 24px;
-  padding: 16px;
+  gap: var(--ui-gap-24);
+  padding: var(--ui-gap-16);
 }
 .quest-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ui-gap-8);
 }
 .quest-list h3,
 .quest-details h2 {
@@ -52,7 +52,7 @@
   top: calc(var(--topbar-edge-top) + var(--topbar-menu-height) + 12px);
   right: var(--topbar-edge-right);
   max-width: min(320px, 70vw);
-  padding: 10px 14px;
+  padding: var(--ui-gap-10) 14px;
   pointer-events: none;
 }
 .quest-tracker[hidden] {
@@ -61,7 +61,7 @@
 @media (max-width: 560px) {
   .quest-journal {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--ui-gap-16);
   }
 }
 .npc-quest-options {

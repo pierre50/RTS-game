@@ -32,11 +32,7 @@ export function onTick(controls: Controls, ticker: TickerLike): void {
       const cameraCenter = controls.getHeroCameraCenter()
       if (cameraCenter) controls.cameraController.set(cameraCenter.x, cameraCenter.y, false, false)
     }
-    if (controls.mouseBuilding || controls.rallyPointController.active) {
-      controls.mouseBuilding
-        ? controls.buildingPlacer.handleMouseMove()
-        : controls.rallyPointController.handleMouseMove()
-    }
+    if (controls.mouseBuilding) controls.buildingPlacer.handleMouseMove()
     return
   }
 

@@ -73,6 +73,7 @@ import type { RuntimeCell } from '../types/map'
 export type { ResourceOptions } from './ResourceTexture'
 
 export class Resource extends Instance implements ResourceEntity {
+  declare spaceId?: string
   deferredSpriteBounds?: { width: number; height: number; anchor: { x: number; y: number } }
   private deferredVisuals?: () => void
   resourceInterface: ResourceInterface

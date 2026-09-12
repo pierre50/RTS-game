@@ -136,7 +136,9 @@ test('starting bandits remain dangerous without deleting the hero instantly', ()
 
   assert.equal(hitsToKill(banditChief, hero), 9)
   assert.equal(hitsToKill(banditSword, hero), 8)
-  assert.equal(hitsToKill(banditArcher, hero, 'pierce'), 12)
+  // Ceramic arrows add one damage to the bow's four damage per hit.
+  assert.equal(damagePerHit(banditArcher, hero, 'pierce'), 5)
+  assert.equal(hitsToKill(banditArcher, hero, 'pierce'), 9)
 })
 
 test('non-siege enemies and aggressive animals have ARPG attack recovery', () => {

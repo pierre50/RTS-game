@@ -35,7 +35,7 @@ function loadTributeRaidTargeting() {
 }
 
 function loadTributeRaidRules() {
-  return loadTsModule('app/services/TributeRaidRules.ts', {
+  return loadTsModule('app/services/tribute/TributeRaidRules.ts', {
     mocks: {
       '../constants': constants,
     },
@@ -82,7 +82,7 @@ function loadTributeRaidSpawning() {
       '../Pathfinding': {
         findInstancePath: () => [{ i: 1, j: 1 }],
       },
-      '../TributeRaidRules': loadTributeRaidRules(),
+      './tribute/TributeRaidRules': loadTributeRaidRules(),
     },
   })
 }
@@ -157,10 +157,10 @@ function loadTributeRaidSystem(overrides = {}) {
       '../ui/InspectionPanel': {
         createInspectionModal: () => ({ close: () => {} }),
       },
-      '../ui/EntityInfoModalManager': {
+      '../ui/EntityInfoContent': {
         createTitledEntityInfoContent: () => ({ appendChild: () => {} }),
       },
-      './TributeRaidRules': loadTributeRaidRules(),
+      './tribute/TributeRaidRules': loadTributeRaidRules(),
       './TributeRaidText': loadTributeRaidText(),
       './TributeRaidTargeting': {
         findRaidTarget: () => null,
@@ -176,10 +176,10 @@ function loadTributeRaidSystem(overrides = {}) {
 }
 
 test('tribute demands are rounded to clean resource amounts', () => {
-  const { roundTributeCost, roundTributeValue } = loadTributeRaidRules()
+  const { roundTributeCost } = loadTributeRaidRules()
 
-  assert.equal(roundTributeValue(54), 50)
-  assert.equal(roundTributeValue(61), 60)
+  assert.deepEqual(roundTributeCost({ wood: 54 }), { wood: 50 })
+  assert.deepEqual(roundTributeCost({ wood: 61 }), { wood: 60 })
   assert.deepEqual(roundTributeCost({ food: 61, gold: 196 }), { food: 60, gold: 200 })
 })
 
@@ -641,7 +641,7 @@ function negotiationHarness(t, { affordable = true, local = false } = {}) {
       canPay = value
     },
     modal: () => modalOptions,
-    buttons: () => modalOptions.content.children[2].children,
+    buttons: () => modalOptions.content.children.find(child => child.className?.includes('bandit-tribute-actions')).children,
   }
 }
 
@@ -668,7 +668,8 @@ test('refusing or closing an unresolved tribute dialog makes the raid hostile on
   const h = negotiationHarness(t, { affordable: false })
   h.system.openTributeModal(h.raid)
   assert.equal(h.buttons()[0].disabled, true)
-  assert.ok(h.buttons()[0].title)
+  assert.equal(h.buttons()[0].title, undefined)
+  assert.ok(h.modal().content.children.some(child => child.tag === 'p' && child.textContent === 'banditTributeCannotPay'))
   const modal = h.raid.modal
   h.system.openTributeModal(h.raid)
   assert.equal(h.raid.modal, modal)

@@ -1,26 +1,11 @@
-import { Graphics } from 'pixi.js'
-import { COLOR_GREEN, LABEL_TYPES } from '../../constants'
 import { cartesianToIsometric } from '../maths'
 import { getBuildingFootprintCells } from '../grid/cells'
 import type { Grid, GridCell } from '../../types/grid'
-import type { RuntimeCell } from '../../types/map'
 
 const ISO_FOOTPRINT_HALF_WIDTH = 32
 const ISO_FOOTPRINT_HALF_HEIGHT = 16
 const ISO_FOOTPRINT_CORNER_RATIO = 0.22
 const ISO_FOOTPRINT_CURVE_STEPS = 6
-
-export type SelectableInstance = {
-  addChildAt: (child: Graphics, index: number) => void
-  removeChild: (child: Graphics) => void
-  reliefLift?: number
-  x?: number
-  y?: number
-  i?: number
-  j?: number
-  selectionFactor?: number
-  size?: number
-}
 
 export type IsoShapePoint = { x: number; y: number }
 
@@ -28,13 +13,6 @@ export type IsoShapeOptions = {
   x?: number
   y?: number
   factor?: number
-}
-
-export type IsoSelectionOptions = IsoShapeOptions & {
-  color?: number
-  label?: string
-  zIndex?: number
-  width?: number
 }
 
 export type RoundedIsoFootprintSource = {
@@ -84,23 +62,6 @@ export function getRoundedIsoShapePoints({ x = 0, y = 0, factor = 1 }: IsoShapeO
   return points
 }
 
-function getSelectionOffsetForEvenFootprint({ i, j, x = 0, y = 0, size = 1 }: RoundedIsoFootprintSource): { x: number; y: number } {
-  const footprintSize = Math.max(1, size)
-  if (!Number.isFinite(i ?? NaN) || !Number.isFinite(j ?? NaN) || footprintSize % 2 !== 0) {
-    return { x: 0, y: 0 }
-  }
-  const safeI = Number(i)
-  const safeJ = Number(j)
-
-  const offset = (footprintSize - 1) / 2
-  const [centerX, centerY] = cartesianToIsometric(safeI + offset, safeJ + offset)
-  return { x: centerX - x, y: centerY - y }
-}
-
-export function getSelectionMarkerOffset(instance: RoundedIsoFootprintSource): { x: number; y: number } {
-  return getSelectionOffsetForEvenFootprint(instance)
-}
-
 export function getRoundedIsoFootprintPoints<TCell extends GridCell = GridCell>(
   entity: RoundedIsoFootprintSource,
   grid?: Grid<TCell> | null
@@ -134,58 +95,4 @@ export function drawRoundedIsoShape(
     else layer.lineTo(point.x, point.y)
   })
   layer.closePath()
-}
-
-export function createIsoSelectionMarker({
-  color = COLOR_GREEN,
-  factor = 1,
-  label = LABEL_TYPES.selection,
-  width = 1,
-  zIndex = 3,
-}: IsoSelectionOptions = {}): Graphics {
-  const marker = new Graphics()
-  marker.label = label
-  marker.zIndex = zIndex
-  drawRoundedIsoShape(marker, getRoundedIsoShapePoints({ factor }))
-  marker.stroke({ color, width })
-  return marker
-}
-
-export function drawInstanceBlinkingSelection(instance: SelectableInstance): void {
-  const selectionFactor = instance.selectionFactor ?? instance.size ?? 1
-  const selection = createIsoSelectionMarker({ factor: selectionFactor })
-  const markerOffset = getSelectionMarkerOffset(instance)
-  selection.position.x = markerOffset.x
-  selection.position.y = markerOffset.y + (instance.reliefLift ?? 0)
-  instance.addChildAt(selection, 0)
-
-  blinkSelection(selection, () => instance.removeChild(selection))
-}
-
-export function drawCellBlinkingSelection(cell: RuntimeCell): void {
-  if (!cell.addChild) return
-  const selection = createIsoSelectionMarker({ factor: 1 })
-  const removableCell = cell as RuntimeCell & { removeChild?: (child: Graphics) => void }
-  cell.addChild(selection)
-
-  blinkSelection(selection, () => removableCell.removeChild?.(selection))
-}
-
-function blinkSelection(selection: Graphics, remove: () => void): void {
-  const blink = (alpha: number, duration: number): Promise<void> =>
-    new Promise(resolve => {
-      selection.alpha = alpha
-      setTimeout(resolve, duration)
-    })
-
-  const blinkSequence = async () => {
-    await blink(1, 500)
-    await blink(0, 300)
-    await blink(1, 300)
-    await blink(0, 300)
-    await blink(1, 300)
-    remove()
-  }
-
-  blinkSequence()
 }

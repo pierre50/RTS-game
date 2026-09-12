@@ -33,7 +33,6 @@ export class ActionMenuRenderer {
 
   makePressable(element: HTMLButtonElement, action: (evt: Event) => void): void {
     element.addEventListener('click', evt => {
-      this.menu.menuTooltip.hide()
       action(evt)
     })
   }
@@ -62,9 +61,8 @@ export class ActionMenuRenderer {
       box.appendChild(this.menu.createActionIcon(typeof btn.icon === 'function' ? btn.icon() : (btn.icon ?? '')))
     }
 
-    if (btn.tooltip) {
-      this.menu.menuTooltip.bind(box, btn.tooltip)
-    }
+    const details = typeof btn.details === 'function' ? btn.details() : btn.details
+    if (details?.title) box.setAttribute('aria-label', details.title)
 
     if (!btn.onCreate) {
       const children = btn.children

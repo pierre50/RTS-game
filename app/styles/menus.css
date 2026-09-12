@@ -1,7 +1,7 @@
 #main-menu {
   --menu-page-padding: 0;
   --menu-page-align: center;
-  --menu-page-overflow: visible;
+  --menu-page-overflow: hidden;
   --menu-panel-width: min(100%, 960px);
   --menu-panel-max-width: calc(100vw - 32px);
   --menu-panel-min-height: auto;
@@ -26,7 +26,7 @@
   align-items: var(--menu-page-align);
   justify-content: center;
   padding: var(--menu-page-padding);
-  overflow: hidden;
+  overflow: var(--menu-page-overflow);
   background: transparent;
 }
 
@@ -55,7 +55,7 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 32%),
     linear-gradient(135deg, rgba(32, 42, 85, 0.96) 0%, rgba(12, 16, 40, 0.98) 100%);
   border: var(--panel-border);
-  border-radius: var(--main-border-radius-lg);
+  border-radius: var(--main-border-radius);
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.55),
     inset 2px 0 0 rgba(141, 155, 224, 0.5),
@@ -300,11 +300,11 @@
 }
 
 .settings-controls-group h3 {
-  margin: 4px 0 0;
+  margin: var(--ui-gap-4) 0 0;
   color: var(--main-accent-color);
-  font-size: var(--font-size-section-title);
+  font-size: var(--font-size-base);
   font-weight: bold;
-  text-shadow: var(--text-shadow-dark-ui);
+  text-shadow: var(--text-shadow-ui);
 }
 
 .settings-key-row label {
@@ -314,7 +314,7 @@
 .settings-key-button,
 .settings-reset-button {
   min-width: 112px;
-  padding: 8px 12px;
+  padding: var(--ui-gap-8) var(--ui-gap-12);
   font-size: var(--font-size-base);
 }
 
@@ -323,12 +323,12 @@
 }
 
 .settings-key-button.is-conflict {
-  color: var(--status-danger-color, #ffb09b);
+  color: var(--text-color-danger);
 }
 
 .settings-controls-conflict {
   min-height: 18px;
-  color: var(--status-danger-color, #ffb09b);
+  color: var(--text-color-danger);
   font-size: var(--font-size-sm);
 }
 
@@ -371,7 +371,7 @@
   grid-template-columns: minmax(96px, 1fr) 120px 100px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--ui-gap-8) var(--ui-gap-12);
   font-size: var(--font-size-sm);
   font-weight: 700;
   text-transform: uppercase;
@@ -386,7 +386,7 @@
   grid-template-columns: minmax(96px, 1fr) 120px 100px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--ui-gap-8) var(--ui-gap-12);
   align-items: center;
   border-bottom: 1px solid var(--border-accent-faint);
   transition: background-color var(--ui-transition-fast);
@@ -478,7 +478,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 var(--ui-control-padding-x);
-  font-size: var(--ui-control-font-size);
+  font-size: var(--font-size-base);
   background: var(--form-surface-color);
   color: var(--main-accent-color);
   font-weight: bold;
@@ -503,7 +503,7 @@
 }
 
 .player-count-row {
-  margin-top: 4px;
+  margin-top: var(--ui-gap-4);
 }
 
 .player-count-row .ui-select {
@@ -528,7 +528,7 @@
 }
 
 .save-list-empty {
-  padding: 24px 0;
+  padding: var(--ui-gap-24) 0;
   text-align: center;
   color: var(--main-accent-color);
   opacity: 0.65;
@@ -592,7 +592,7 @@
   .menu-copyright {
     position: static;
     transform: none;
-    margin-top: 24px;
+    margin-top: var(--ui-gap-24);
     text-align: center;
     white-space: normal;
   }
@@ -669,7 +669,7 @@
   }
 
   .menu-copyright {
-    margin-top: 16px;
+    margin-top: var(--ui-gap-16);
     font-size: var(--font-size-sm);
   }
 }
@@ -707,7 +707,7 @@
     position: static;
     transform: none;
     width: 100%;
-    margin-top: 16px;
+    margin-top: var(--ui-gap-16);
     text-align: center;
     white-space: normal;
   }
@@ -731,7 +731,7 @@
     display: grid;
     grid-template-columns: minmax(280px, 1.2fr) minmax(240px, 0.8fr);
     align-items: center;
-    column-gap: 24px;
+    column-gap: var(--ui-gap-24);
     row-gap: 0;
     padding: var(--menu-home-padding);
   }

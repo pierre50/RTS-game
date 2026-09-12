@@ -108,7 +108,7 @@ test('an approach sample builds the footprint once; a strike shares its shape bu
   const geometry = loadTsModule('app/lib/contact/contactGeometry.ts', {
     mocks: {
       '../mapSpaces': { sameMapSpace: () => true, getEntitySpaceGrid: () => undefined },
-      '../graphics/selection': {
+      '../graphics/isoFootprint': {
         getRoundedIsoFootprintPoints: target => {
           footprints++
           return [

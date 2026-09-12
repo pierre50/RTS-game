@@ -1,14 +1,8 @@
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { GameContextLike, NpcOrdersOpenOptions } from '../types/context'
-import type { MenuButtonSpec, MinimapPlayerCanvas, TooltipContent } from '../types/ui'
+import type { MenuButtonSpec, MinimapPlayerCanvas } from '../types/ui'
 import type { PlayerLike } from '../types/player'
 import type { ResourceAmount } from '../types/common'
-
-interface MenuTooltipHost {
-  bind(element: HTMLElement, content: TooltipContent | (() => TooltipContent)): void
-  hide(): void
-  destroy?(): void
-}
 
 interface MenuPauseHost {
   createOpenButton(): HTMLButtonElement
@@ -22,7 +16,6 @@ export interface MenuHost {
   playersMinimap: MinimapPlayerCanvas[]
   resourcesMinimap?: HTMLCanvasElement
   cameraMinimap?: HTMLCanvasElement
-  menuTooltip: MenuTooltipHost
   pauseMenu: MenuPauseHost
   questJournal: MenuPauseHost
   icons: Record<string, string>
@@ -39,7 +32,6 @@ export interface MenuHost {
   getMessage(cost: ResourceAmount): string
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
-  getActionRallyPointButton(): MenuButtonSpec
   getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec
   getMountHorseButton(unit: UnitEntity): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec

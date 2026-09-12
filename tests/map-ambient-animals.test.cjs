@@ -138,7 +138,7 @@ function createGenerator({ random = () => 0, randomRange, environment, terrainTy
 test('ambient deer spawn as a nearby group', () => {
   const { generation, placed } = createGenerator({
     random: () => 0,
-    randomRange: (min, max) => (min === 3 && max === 6 ? 4 : min),
+    randomRange: (min, max) => (min === 3 && max === 7 ? 4 : min),
   })
 
   generation.placeAmbientAnimalGroup(10, 10, 'Deer')

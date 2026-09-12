@@ -8,11 +8,9 @@ function loadNpcGoToDispatch(isSleepTime = false) {
       '../constants': {
         ACTION_TYPES: { attack: 'attack' },
         FAMILY_TYPES: { building: 'building', resource: 'resource', unit: 'unit' },
-        LABEL_TYPES: { commSelection: 'commSelection' },
         UNIT_TYPES: { villager: 'Villager' },
       },
       '../combat/diplomaticAggression': { applyDiplomaticAggression: () => false },
-      '../graphics/selection': { drawInstanceBlinkingSelection: () => {} },
       '../grid/visibility': { findInstancesInSight: () => [] },
       '../units/villagerSchedule': { isVillagerSleepTime: () => isSleepTime },
       '../../services/rest/UnitRestRules': {

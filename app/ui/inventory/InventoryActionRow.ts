@@ -15,6 +15,7 @@ type InventoryActionRowOptions = {
   disabled?: boolean
   id: string
   title: string
+  value?: string
   description?: string
   hideIcon?: boolean
   meta?: string
@@ -62,6 +63,7 @@ export function createInventoryActionRow(
   element.className = [
     'ui-action-row inventory-action-row',
     options.hideIcon ? 'inventory-action-row--no-icon' : '',
+    options.value ? 'inventory-action-row--with-value' : '',
     options.className,
   ]
     .filter(Boolean)
@@ -111,6 +113,12 @@ export function createInventoryActionRow(
 
   if (options.hideIcon) element.append(label, description, meta)
   else element.append(icon, label, description, meta)
+  if (options.value) {
+    const value = document.createElement('span')
+    value.className = 'inventory-action-row-value'
+    value.textContent = options.value
+    element.appendChild(value)
+  }
   if (options.badge) {
     const badge = document.createElement('span')
     badge.className = 'inventory-action-row-badge'

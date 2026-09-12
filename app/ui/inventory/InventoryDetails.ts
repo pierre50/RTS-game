@@ -8,16 +8,16 @@ import { getEquipmentGoldValue, getResourceGoldValue } from '../../lib/equipment
 import { getEquipmentCombatStats } from '../../lib/equipment/equipmentStats'
 import { t } from '../../lib/lang'
 import type { ResourceAmount } from '../../types/common'
-import type { TooltipContent } from '../../types/ui'
+import type { MenuDetails } from '../../types/ui'
 
-type EquipmentTooltipMode = 'inventory' | 'market-buy' | 'market-sell'
-type ResourceTooltipMode = 'inventory' | 'market-sell'
+type EquipmentDetailsMode = 'inventory' | 'market-buy' | 'market-sell'
+type ResourceDetailsMode = 'inventory' | 'market-sell'
 
 type InventoryRowInfo = {
+  goldValue: number
   description: string
   meta: string
   title: string
-  tooltip: TooltipContent
 }
 
 export function formatGold(amount: number): string {
@@ -25,29 +25,29 @@ export function formatGold(amount: number): string {
 }
 
 function getEquipmentKindLabel(equipment: string): string {
-  if (getWeaponSlot(equipment)) return t('tooltipEquipmentWeapon')
-  if (getEquipmentSlot(equipment)) return t('tooltipEquipmentArmor')
-  return t('tooltipEquipmentItem')
+  if (getWeaponSlot(equipment)) return t('detailsEquipmentWeapon')
+  if (getEquipmentSlot(equipment)) return t('detailsEquipmentArmor')
+  return t('detailsEquipmentItem')
 }
 
 function getResourceDescription(resource: keyof ResourceAmount): string {
   return t(`resourceDescription_${resource}`)
 }
 
-function createResourceTooltip(
+function createResourceDetails(
   resource: keyof ResourceAmount,
   amount = 1,
-  mode: ResourceTooltipMode = 'inventory'
-): TooltipContent {
+  mode: ResourceDetailsMode = 'inventory'
+): MenuDetails {
   const goldValue = getResourceGoldValue(resource)
   const totalValue = goldValue * Math.max(1, Math.floor(amount))
   return {
     title: amount > 1 ? `${t(resource)} x${amount}` : t(resource),
     description: getResourceDescription(resource),
     meta: [
-      t('tooltipResourceIngredient'),
+      t('detailsResourceIngredient'),
       goldValue > 0
-        ? t(mode === 'market-sell' ? 'tooltipSellValue' : 'tooltipValue', { gold: formatGold(totalValue) })
+        ? t(mode === 'market-sell' ? 'detailsSellValue' : 'detailsValue', { gold: formatGold(totalValue) })
         : null,
     ],
   }
@@ -56,29 +56,29 @@ function createResourceTooltip(
 export function createResourceRowInfo(
   resource: keyof ResourceAmount,
   amount = 1,
-  mode: ResourceTooltipMode = 'inventory',
+  mode: ResourceDetailsMode = 'inventory',
   options: { showValue?: boolean } = {}
 ): InventoryRowInfo {
-  const tooltip = createResourceTooltip(resource, amount, mode)
+  const details = createResourceDetails(resource, amount, mode)
   const showValue = options.showValue ?? true
   const totalValue = getResourceGoldValue(resource) * Math.max(1, Math.floor(amount))
   const hiddenMeta = new Set<string>()
   if (!showValue && totalValue > 0) {
-    hiddenMeta.add(t(mode === 'market-sell' ? 'tooltipSellValue' : 'tooltipValue', { gold: formatGold(totalValue) }))
+    hiddenMeta.add(t(mode === 'market-sell' ? 'detailsSellValue' : 'detailsValue', { gold: formatGold(totalValue) }))
   }
   return {
+    goldValue: totalValue,
     title: t(resource),
-    description: tooltip.description ?? '',
-    meta: tooltip.meta?.filter(item => item && !hiddenMeta.has(item)).join(' | ') ?? '',
-    tooltip,
+    description: details.description ?? '',
+    meta: details.meta?.filter(item => item && !hiddenMeta.has(item)).join(' | ') ?? '',
   }
 }
 
-function createEquipmentTooltip(
+function createEquipmentDetails(
   equipment: string,
   count = 1,
-  mode: EquipmentTooltipMode = 'inventory'
-): TooltipContent {
+  mode: EquipmentDetailsMode = 'inventory'
+): MenuDetails {
   const stats = getEquipmentCombatStats([equipment])
   const value = getEquipmentGoldValue(equipment)
   const amount = Math.max(1, Math.floor(count))
@@ -86,12 +86,12 @@ function createEquipmentTooltip(
     title: formatEquipmentStackLabel(equipment, amount),
     description: getEquipmentKindLabel(equipment),
     meta: [
-      stats.weaponPower > 0 ? t('tooltipDamage', { value: stats.weaponPower }) : null,
-      stats.weaponPower > 0 && stats.weaponPower < 2 ? t('tooltipLowDamageNote') : null,
-      stats.meleeArmor > 0 ? t('tooltipMeleeDefense', { value: stats.meleeArmor }) : null,
-      stats.pierceArmor > 0 ? t('tooltipPierceDefense', { value: stats.pierceArmor }) : null,
+      stats.weaponPower > 0 ? t('detailsDamage', { value: stats.weaponPower }) : null,
+      stats.weaponPower > 0 && stats.weaponPower < 2 ? t('detailsLowDamageNote') : null,
+      stats.meleeArmor > 0 ? t('detailsMeleeDefense', { value: stats.meleeArmor }) : null,
+      stats.pierceArmor > 0 ? t('detailsPierceDefense', { value: stats.pierceArmor }) : null,
       value > 0 && mode !== 'market-sell'
-        ? t(mode === 'market-buy' ? 'tooltipBuyValue' : 'tooltipValue', { gold: formatGold(value * amount) })
+        ? t(mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', { gold: formatGold(value * amount) })
         : null,
     ],
   }
@@ -100,21 +100,21 @@ function createEquipmentTooltip(
 export function createEquipmentRowInfo(
   equipment: string,
   count = 1,
-  mode: EquipmentTooltipMode = 'inventory',
+  mode: EquipmentDetailsMode = 'inventory',
   options: { showValue?: boolean } = {}
 ): InventoryRowInfo {
-  const tooltip = createEquipmentTooltip(equipment, count, mode)
+  const details = createEquipmentDetails(equipment, count, mode)
   const showValue = options.showValue ?? true
   const value = getEquipmentGoldValue(equipment)
   const amount = Math.max(1, Math.floor(count))
   const hiddenMeta = new Set<string>()
   if (!showValue && value > 0) {
-    hiddenMeta.add(t(mode === 'market-buy' ? 'tooltipBuyValue' : 'tooltipValue', { gold: formatGold(value * amount) }))
+    hiddenMeta.add(t(mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', { gold: formatGold(value * amount) }))
   }
   return {
+    goldValue: value * amount,
     title: formatEquipmentLootLabel(equipment),
-    description: tooltip.description ?? '',
-    meta: tooltip.meta?.filter(item => item && !hiddenMeta.has(item)).join(' | ') ?? '',
-    tooltip,
+    description: details.description ?? '',
+    meta: details.meta?.filter(item => item && !hiddenMeta.has(item)).join(' | ') ?? '',
   }
 }

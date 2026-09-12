@@ -73,7 +73,6 @@ function loadBuilding() {
         attachInitialBuildingVisuals: noop,
         createInitialBuildingSprite: noop,
         occupyBuildingFootprint: noop,
-        restoreBuildingRallyPoint: noop,
         resumeInitialBuildingWork: noop,
         setupBuildingTransform: noop,
         stableHorsesFromOptions: () => [],

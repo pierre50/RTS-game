@@ -65,6 +65,13 @@ export function validateSaveData(data: unknown): SaveRecord {
         !(['worldId', 'companionLabel', 'campfireLabel'] as const).every(key => typeof intro[key] === 'string' && intro[key])) {
         fail('Invalid save file: introduction is invalid.')
       }
+      if (intro.phase !== undefined && !['approaching', 'waking', 'dialogue'].includes(String(intro.phase))) {
+        fail('Invalid save file: introduction phase is invalid.')
+      }
+      if (intro.arrival !== undefined && (!isObject(intro.arrival) ||
+        !Number.isInteger(intro.arrival.i) || !Number.isInteger(intro.arrival.j))) {
+        fail('Invalid save file: introduction arrival is invalid.')
+      }
     }
     validateQuestJournal(data.quests)
     if (data.economy) validateWorldEconomy(data, getLoadedConfig())

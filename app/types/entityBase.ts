@@ -24,6 +24,7 @@ export type EntityInfoRenderOptions = {
   // Modal windows already carry the entity identity in their title; hide duplicate identity labels
   // inside the stat panel while keeping useful metadata such as civ/level/hit points.
   hideIdentity?: boolean
+  actionsContainer?: HTMLElement
 }
 
 export interface EntityInterfaceLike {
@@ -45,7 +46,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   z?: number | null
   zIndex?: number
   size?: number
-  selectionFactor?: number
+  interactionFootprintFactor?: number
   width: number
   height: number
   visible?: boolean

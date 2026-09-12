@@ -79,7 +79,6 @@ export function applyUnitReliefLift(unit: UnitRuntimeHost, level: number, immedi
   if (unit.horseSprite) unit.horseSprite.position.y = unit.reliefLift
   unit.syncShadow()
   unit.syncShadow(unit.horseShadow, unit.horseSprite)
-  unit.syncSelectionMarkersToRelief()
   const healthBar = unit.getChildByLabel(LABEL_TYPES.healthBar)
   if (healthBar) healthBar.position.y = unit.getMountedRiderY()
   const powerBar = unit.getChildByLabel(LABEL_TYPES.powerBar)

@@ -1,18 +1,14 @@
+import { InteractionPanel } from './InteractionPanel'
+import { heroCampfireSleepButton } from './hero-building/HeroCampfireSleepButton'
 import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
 import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
-import {
-  canHeroSleepAtFireCamp,
-  getHeroCampfireSleepBlockedReason,
-  getHostileInHeroSight,
-  sleepHeroAtFireCamp,
-} from '../lib/hero/heroCampfireSleep'
 import { t } from '../lib/lang'
 import { playAudibleSoundCue } from '../lib/audio/sound'
 import { playUiSound } from '../lib/audio/uiSound'
 import { createInspectionModal } from './InspectionPanel'
-import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
+import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
 import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
 import { getHeroBuildingInteractiveInventorySignature } from './hero-building/HeroBuildingInventorySignature'
@@ -28,14 +24,14 @@ function isBuildingEntity(value: unknown): value is BuildingEntity {
 }
 
 function buttonTitle(button: MenuButtonSpec): string {
-  const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
-  return tooltip?.title || (button.id ? t(button.id) : '')
+  const details = typeof button.details === 'function' ? button.details() : button.details
+  return details?.title || (button.id ? t(button.id) : '')
 }
 
 function buttonMeta(button: MenuButtonSpec, options: { hideMeta?: boolean } = {}): string {
   if (options.hideMeta) return ''
-  const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
-  return tooltip?.meta?.filter(Boolean).join(' | ') || tooltip?.description || ''
+  const details = typeof button.details === 'function' ? button.details() : button.details
+  return details?.meta?.filter(Boolean).join(' | ') || details?.description || ''
 }
 
 function isFireCamp(building: BuildingEntity): boolean {
@@ -44,6 +40,7 @@ function isFireCamp(building: BuildingEntity): boolean {
 
 export class HeroBuildingMenuManager {
   menu: MenuHost
+  layout: InteractionPanel
   panel: HTMLDivElement
   header: HTMLDivElement
   infoAvatarWrap: HTMLDivElement
@@ -66,8 +63,8 @@ export class HeroBuildingMenuManager {
     this.structureSignature = ''
     this.transferPanel = null
 
-    this.panel = document.createElement('div')
-    this.panel.className = 'hero-building-menu'
+    this.layout = new InteractionPanel()
+    this.panel = this.layout.element
 
     this.backButton = document.createElement('button')
     this.backButton.type = 'button'
@@ -93,14 +90,16 @@ export class HeroBuildingMenuManager {
     this.header.appendChild(this.infoAvatarWrap)
     this.header.appendChild(this.info)
 
-    this.panel.appendChild(this.backButton)
-    this.panel.appendChild(this.header)
-    this.panel.appendChild(this.body)
+    this.layout.information.appendChild(this.header)
+    this.layout.actions.appendChild(this.backButton)
+    this.layout.actions.appendChild(this.body)
+    this.layout.actions.appendChild(this.layout.secondaryActions)
   }
 
   canOpenFor(building: BuildingEntity | null | undefined): building is BuildingEntity {
     const hero = this.menu.context.controls.heroUnit
     if (!hero || !building || building.isDestroyed || building.isDead) return false
+    if (building.type === BUILDING_TYPES.trap) return false
     return isHeroInteractionTargetReachable(hero, null, building)
   }
 
@@ -117,7 +116,11 @@ export class HeroBuildingMenuManager {
     this.opened = true
     this.structureSignature = this.getStructureSignature()
     this.modal = createInspectionModal({
+      proximity: { context: this.menu.context, targets: () => building.isDead ? [] : [building] },
       title: getBuildingDisplayName(building),
+      inspection: building.type !== BUILDING_TYPES.chest,
+      interaction: building.type !== BUILDING_TYPES.chest,
+      panelClass: building.type === BUILDING_TYPES.chest ? 'inventory-transfer-modal' : undefined,
       content: this.panel,
       onClose: () => this.close(),
     })
@@ -130,7 +133,6 @@ export class HeroBuildingMenuManager {
 
   close(): void {
     if (!this.opened && !this.modal) return
-    this.menu.menuTooltip.hide()
     const modal = this.modal
     this.modal = undefined
     const building = this.building
@@ -211,27 +213,7 @@ export class HeroBuildingMenuManager {
   }
 
   getCampfireSleepButton(building: BuildingEntity): MenuButtonSpec {
-    return {
-      id: 'heroCampfireSleep',
-      disabled: () => !canHeroSleepAtFireCamp(this.menu.context.controls.heroUnit, building),
-      tooltip: () => {
-        const hero = this.menu.context.controls.heroUnit
-        const reason = getHeroCampfireSleepBlockedReason(hero, building)
-        const hostile = hero && reason === 'heroCampfireSleepBlockedDescription' ? getHostileInHeroSight(hero) : null
-        return {
-          title: t('heroCampfireSleep'),
-          description: hostile
-            ? t('heroCampfireSleepBlockedBy', {
-                target: t(hostile.type ?? hostile.label),
-                owner: hostile.owner?.name ?? hostile.owner?.label ?? '',
-              })
-            : t(reason ?? 'heroCampfireSleepDescription'),
-        }
-      },
-      onClick: () => {
-        if (sleepHeroAtFireCamp(this.menu.context.controls.heroUnit, building)) this.close()
-      },
-    }
+    return heroCampfireSleepButton(this.menu, building, () => this.close())
   }
 
   render(): void {
@@ -299,8 +281,12 @@ export class HeroBuildingMenuManager {
   renderInfo(): void {
     const building = this.building
     this.info.textContent = ''
+    this.layout.secondaryActions.replaceChildren()
     if (typeof building?.interface?.info === 'function') {
-      building.interface.info(this.info, TITLED_ENTITY_INFO_OPTIONS)
+      building.interface.info(this.info, {
+        ...TITLED_ENTITY_INFO_OPTIONS,
+        actionsContainer: this.layout.secondaryActions,
+      })
     }
   }
 
@@ -358,7 +344,6 @@ export class HeroBuildingMenuManager {
     element.appendChild(meta)
     element.appendChild(status)
 
-    if (button.tooltip) this.menu.menuTooltip.bind(element, button.tooltip)
     element.addEventListener('click', evt => {
       if (button.disabled?.()) return
       if (button.onCreate) {

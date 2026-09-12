@@ -8,7 +8,6 @@ import type {
   UnitSounds,
 } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
-import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { FireAnimation } from './BuildingFire'
 import type { TrainingEntry, TrainingTrainee } from '../../types/training'
@@ -28,7 +27,6 @@ export type BuildingControllerHost = Omit<
   | 'queue'
   | 'loading'
   | 'addChild'
-  | 'setRallyPoint'
   | 'buyUnit'
   | 'cancelUnits'
   | 'updateHitPoints'
@@ -53,8 +51,6 @@ export type BuildingControllerHost = Omit<
     trainingCompleteDay?: number | null
     trainingDayChangeUnsubscribe?: (() => void) | null
     isUsedBy?: RuntimeEntity | null
-    rallyPoint?: { i: number; j: number; direction: number } | null
-    rallyPointFlag?: AnimatedSprite | null
     shadow?: Sprite | null
     shadowWasVisible?: boolean
     constructionRevealSprite?: Sprite | null
@@ -91,7 +87,6 @@ export type BuildingControllerHost = Omit<
     onBuilt(): void
     die(): void
     clear(): void
-    clearRallyPoint(): void
     buyUnit(
       type: string,
       alreadyPaid?: boolean,
@@ -101,7 +96,6 @@ export type BuildingControllerHost = Omit<
     ): boolean | undefined | void
     cancelAllUnitTraining?(): boolean
     destroy(options?: { children?: boolean; texture?: boolean }): void
-    setRallyPoint?(cell?: RuntimeCell, direction?: number): boolean
   }
 
 export type TrainingBuilding = BuildingControllerHost & {

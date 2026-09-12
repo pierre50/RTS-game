@@ -51,7 +51,10 @@ const RESOURCE_GOLD_VALUES: Record<ResourceStorageName, number> = {
 }
 
 const EQUIPMENT_BASE_GOLD_VALUES: Record<string, number> = {
-  arrow: 4,
+  arrow_ceramic: 4,
+  arrow_copper: 6,
+  arrow_bronze: 9,
+  arrow_iron: 12,
   bow: 180,
   bow_great: 280,
   bow_recurve: 420,
@@ -105,6 +108,7 @@ function removeFromMarketStock(stock: string[], equipment: string, count: number
 }
 
 function metalTierValue(equipment: string): number {
+  // Arrows use per-material unit prices instead of the full equipment surcharge.
   if (equipment.startsWith('arrow_')) return 0
   const tier = Object.keys(METAL_TIER_GOLD_VALUES).find(key => equipment.includes(`_${key}`))
   return tier ? METAL_TIER_GOLD_VALUES[tier] : 0

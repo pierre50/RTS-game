@@ -63,7 +63,6 @@ export type UnitRuntimeHost = Omit<
     getMountedRiderX(): number
     getMountedRiderY(): number
     syncMountedRiderPosition(): void
-    syncSelectionMarkersToRelief(): void
     syncShadow(shadow?: AnimatedSprite | null, source?: AnimatedSprite | null): void
     getChildByLabel(label: string): Container | AnimatedSprite | null
     death?(): void

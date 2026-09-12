@@ -67,7 +67,6 @@ test('neutral prisoners never make their owner eligible to inherit a defeated ba
 
 function makeBuilding(label, owner, i, j) {
   const building = {
-    clearRallyPoint() {},
     family: 'building',
     finalTexture() {},
     hitPoints: 100,

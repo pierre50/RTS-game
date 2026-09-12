@@ -1,13 +1,5 @@
-import { MENU_INFO_IDS, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
+import { MENU_INFO_IDS, UNIT_TYPES } from '../../constants'
 import { getIconPath } from '../../lib'
-import {
-  formatEquipmentStackLabel,
-  getEquipmentStacks,
-  getUnitCorpseLootEquipment,
-  getUnitCorpseLootResources,
-  pickupCorpseEquipment,
-  pickupCorpseResource,
-} from '../../lib/equipment/equipmentLoot'
 import {
   getHeroInventoryWeaponCombatStats,
   getUnitCombatRange,
@@ -24,12 +16,9 @@ import {
   XP_CATEGORIES,
 } from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
-import { createInventoryEquipmentRow, createInventoryResourceRow } from '../inventory/InventoryItemRows'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
-import type { MenuLike } from '../../types/context'
-import type { ResourceAmount } from '../../types/common'
 
 const ARCHER_XP_CATEGORIES = [XP_CATEGORIES.ranged, XP_CATEGORIES.defense]
 const INFANTRY_XP_CATEGORIES = [XP_CATEGORIES.melee, XP_CATEGORIES.defense]
@@ -57,129 +46,6 @@ function shouldShowGenericXpCategory(unit: UnitEntity, category: string): boolea
   return unit.type !== UNIT_TYPES.villager || !VILLAGER_HIDDEN_XP_CATEGORIES.has(category)
 }
 
-function createCorpseEquipmentLootButton(
-  unit: UnitEntity,
-  equipment: string,
-  count: number,
-  menu: MenuLike
-): HTMLElement {
-  const label = formatEquipmentStackLabel(equipment, count)
-  return createInventoryEquipmentRow(unit.context, menu, {
-    id: `corpse-loot-equipment-${equipment}`,
-    equipment,
-    count,
-    playClick: false,
-    trailingAction: {
-      label: t('inventoryTakeAction'),
-      ariaLabel: t('corpseLootTakeItem', { item: label }),
-      onClick: () => {
-        const hero = unit.context?.controls?.heroUnit
-        if (!pickupCorpseEquipment(unit, hero, equipment)) return
-        menu.playUiClick?.()
-        menu.showMessage(t('corpseLootPickedItem', { item: label }), 'success')
-        menu.syncEntityInfoModal?.()
-        menu.refreshInventory?.()
-      },
-    },
-  }).element
-}
-
-function formatCorpseResourceLootLabel(resource: keyof ResourceAmount, amount: number): string {
-  return `${t(resource)} x${amount}`
-}
-
-function createCorpseResourceLootButton(
-  unit: UnitEntity,
-  resource: keyof ResourceAmount,
-  amount: number,
-  menu: MenuLike
-): HTMLElement {
-  const label = formatCorpseResourceLootLabel(resource, amount)
-  return createInventoryResourceRow(menu, {
-    id: `corpse-loot-resource-${resource}`,
-    resource,
-    amount,
-    playClick: false,
-    trailingAction: {
-      label: t('inventoryTakeAction'),
-      ariaLabel: t('corpseLootTakeItem', { item: label }),
-      onClick: () => {
-        const hero = unit.context?.controls?.heroUnit
-        const pickedAmount = pickupCorpseResource(unit, hero, resource)
-        if (pickedAmount <= 0) return
-        menu.playUiClick?.()
-        menu.showMessage(
-          t('corpseLootPickedItem', { item: formatCorpseResourceLootLabel(resource, pickedAmount) }),
-          'success'
-        )
-        menu.syncEntityInfoModal?.()
-        menu.refreshInventory?.()
-      },
-    },
-  }).element
-}
-
-function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[], menu: MenuLike): HTMLButtonElement {
-  const button = document.createElement('button')
-  button.type = 'button'
-  button.className = 'inventory-transfer-all-button ui-btn'
-  button.textContent = t('corpseLootTakeAll')
-  button.addEventListener('click', evt => {
-    evt.preventDefault()
-    evt.stopPropagation()
-    const hero = unit.context?.controls?.heroUnit
-    if (!hero) return
-
-    let pickedCount = 0
-    for (const resource of RESOURCE_STORAGE_NAMES) {
-      if (pickupCorpseResource(unit, hero, resource) > 0) pickedCount += 1
-    }
-    for (const item of [...equipment]) {
-      if (pickupCorpseEquipment(unit, hero, item)) pickedCount += 1
-    }
-    if (!pickedCount) return
-
-    menu.playUiClick?.()
-    menu.showMessage(t('corpseLootPickedAll', { count: pickedCount }), 'success')
-    menu.syncEntityInfoModal?.()
-    menu.refreshInventory?.()
-  })
-  return button
-}
-
-function appendCorpseEquipmentLoot(element: HTMLElement, unit: UnitEntity, menu: MenuLike): void {
-  const equipment = getUnitCorpseLootEquipment(unit)
-  const resources = getUnitCorpseLootResources(unit)
-  const resourceEntries = RESOURCE_STORAGE_NAMES.map(resource => ({
-    amount: Math.max(0, Math.floor(resources[resource] ?? 0)),
-    resource,
-  })).filter(entry => entry.amount > 0)
-  if (!equipment.length && !resourceEntries.length) return
-  const stacks = getEquipmentStacks(equipment)
-
-  const loot = document.createElement('div')
-  loot.className = 'corpse-loot'
-
-  const title = document.createElement('div')
-  title.className = 'corpse-loot-title'
-  title.textContent = t('corpseLootInventory')
-  const header = document.createElement('div')
-  header.className = 'inventory-section-header corpse-loot-header'
-  header.append(title, createCorpseTakeAllButton(unit, equipment, menu))
-  loot.appendChild(header)
-
-  const grid = document.createElement('div')
-  grid.className = 'corpse-loot-grid'
-  for (const { amount, resource } of resourceEntries) {
-    grid.appendChild(createCorpseResourceLootButton(unit, resource, amount, menu))
-  }
-  for (const stack of stacks) {
-    grid.appendChild(createCorpseEquipmentLootButton(unit, stack.equipment, stack.count, menu))
-  }
-  loot.appendChild(grid)
-  element.appendChild(loot)
-}
-
 export class UnitInterface {
   unit: UnitEntity
 
@@ -190,7 +56,7 @@ export class UnitInterface {
   setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
-    const showExperience = unitSupportsExperience(unit) && unit.owner === this.unit.context.player
+    const showExperience = unitSupportsExperience(unit) && unit.owner === unit.context?.player
     appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints, {
       hideType: Boolean(options?.hideIdentity && !unit.name),
     })
@@ -260,7 +126,7 @@ export class UnitInterface {
       const info = infos[i]
       const infoDiv = document.createElement('div')
       infoDiv.classList.add('info')
-      infoDiv.title = t(info.title)
+      infoDiv.setAttribute('aria-label', t(info.title))
 
       infoDiv.appendChild(createInfoImage('', getIconPath(info.icon)))
       infoDiv.appendChild(createInfoText(String(info.key), info.value))
@@ -294,6 +160,5 @@ export class UnitInterface {
       element.appendChild(xpDiv)
     }
 
-    if (unit.isDead) appendCorpseEquipmentLoot(element, unit, (unit.context as { menu: MenuLike }).menu)
   }
 }
