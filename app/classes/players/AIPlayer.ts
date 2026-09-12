@@ -1,6 +1,7 @@
 import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
 import { handleInteriorTheftDefense, isInteriorTheftDefender } from '../../ai/AITheftDefense'
 import { Player } from './Player'
+import { shouldRefreshEconomicKnowledge } from '../../services/world/EconomicKnowledgeUpdates'
 import { knowsEconomicTarget, knownTarget } from '../../lib/units/playerTargetKnowledge'
 import type { PlayerOptions } from './Player'
 
@@ -305,7 +306,7 @@ export class AI extends Player {
   step() {
     const { map, paused } = this.context
     if (paused || map.ready === false) return 0
-    for (const resource of [...map.resources, ...getGaiaAnimals(map.gaia)]) {
+    if (shouldRefreshEconomicKnowledge(this, map, this.getNow(), this.cellViewed)) for (const resource of [...map.resources, ...getGaiaAnimals(map.gaia)]) {
       if (resource.isDestroyed || !knowsEconomicTarget(this, resource)) continue
       knownTarget(this, resource)
       if (resource.family === 'resource') this.foundedResources[resource.type]?.add(resource)

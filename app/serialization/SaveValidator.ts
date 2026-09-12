@@ -1,3 +1,4 @@
+import { validateQuestJournal } from './QuestSave'
 import { Assets } from 'pixi.js'
 import { validateWorldEconomy } from './WorldEconomyValidation'
 import { isDerivedInteriorHorse } from './InteriorBuildingSave'
@@ -58,6 +59,14 @@ export function validateSaveData(data: unknown): SaveRecord {
     if (!isObject(world)) fail('Invalid save file: current campaign world is missing.')
     if (world.id !== data.currentWorldId) fail('Invalid save file: current campaign world id is invalid.')
     validateSaveData(getCurrentWorldState(data))
+    if (data.introduction !== undefined) {
+      const intro = data.introduction
+      if (!isObject(intro) || !['prepared', 'completed'].includes(String(intro.status)) ||
+        !(['worldId', 'companionLabel', 'campfireLabel'] as const).every(key => typeof intro[key] === 'string' && intro[key])) {
+        fail('Invalid save file: introduction is invalid.')
+      }
+    }
+    validateQuestJournal(data.quests)
     if (data.economy) validateWorldEconomy(data, getLoadedConfig())
     return data
   }

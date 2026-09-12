@@ -467,6 +467,35 @@ test('serializer nests interior buildings under the exterior parent and preserve
   assert.equal(owner.buildings[1].spaceId, 'interior:player-1:center')
 })
 
+test('captured interiors retain their identity and contents across a save round trip', () => {
+  const context = makeContext()
+  const owner = context.players[0]
+  const oldOwner = 'economy:world-4242-r1-2-temperate:civ-hellas'
+  const label = `${oldOwner}:center`
+  const interiorPortalId = `${oldOwner}:${label}`
+  owner.buildings = [
+    { type: 'TownCenter', label, interiorPortalId, i: 40, j: 40 },
+    {
+      type: 'Chest',
+      label: 'captured-chest',
+      spaceId: `interior:${interiorPortalId}`,
+      i: 11,
+      j: 11,
+      inventory: { resources: { gold: 42 } },
+    },
+  ]
+  const saved = JSON.parse(JSON.stringify(serializeGame(context)))
+  const parent = saved.players[0].buildings[0]
+  assert.equal(saved.players[0].buildings.length, 1)
+  assert.equal(parent.interiorPortalId, interiorPortalId)
+  assert.equal(parent.interiorBuildings[0].inventory.resources.gold, 42)
+  const { getBuildingInteriorPortalId } = loadTsModule('app/lib/buildings/interiors.ts')
+  assert.equal(getBuildingInteriorPortalId({ ...parent, owner }), interiorPortalId)
+  const { normalizeSavedInteriorBuildings } = loadTsModule('app/serialization/InteriorBuildingSave.ts')
+  normalizeSavedInteriorBuildings(saved.players[0])
+  assert.equal(saved.players[0].buildings[0].interiorBuildings.length, 1)
+})
+
 test('stable display horses are saved only as stable stock, not duplicated as outdoor animals', () => {
   const context = makeContext({
     gaia: {

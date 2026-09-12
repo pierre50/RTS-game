@@ -1,0 +1,84 @@
+# Quêtes et journal
+
+Le bouton **Journal**, à côté du menu, et le raccourci configurable **J** ouvrent le même panneau. Une seule mission peut être suivie. Le journal affiche les missions acceptées, leur donneur, leurs objectifs, et leur historique. Les offres non acceptées restent réservées aux conversations.
+
+## Stockage et identité
+
+`QuestDefinition` décrit une mission et ses étapes, objectifs et interactions. Les définitions sont enregistrées dans `questDefinitions` avant de proposer des missions. Le registre est du code livré avec le jeu ; il n'est pas sauvegardé. Garder ses identifiants stables et migrer les instances si une définition change de structure.
+
+`QuestInstance` est sauvegardé dans `CampaignSave.quests`. Il contient le donneur (`owner`), le bénéficiaire (`assigneeId`), la région extérieure, les rôles associés à des labels d'entités, les paramètres tirés une seule fois, l'étape, les interactions déjà consommées et les marqueurs. Les identifiants utilisent les labels persistants du jeu, jamais des références d'objets. Le journal appartient à la campagne pour survivre aux voyages et aux intérieurs. Le moteur relit la campagne actuelle à chaque opération, même lorsqu'une sauvegarde remplace son objet.
+
+Les anciennes campagnes sans journal restent valides. Le journal est créé au premier accès. Les données présentes sont validées au chargement. Une définition manquante affiche une mission indisponible sans supprimer son historique.
+
+## Définir une demande de ressources
+
+Exemple de définition (les clés de texte doivent être ajoutées aux traductions) :
+
+```ts
+const request: QuestDefinition = {
+  id: 'resource-request',
+  title: { key: 'resourceRequestTitle' },
+  description: { key: 'resourceRequestDescription' },
+  stages: [{
+    id: 'delivery',
+    objectives: [{
+      id: 'deliver',
+      text: { key: 'resourceRequestObjective' },
+      conditions: [{
+        type: 'resource',
+        resource: { parameter: 'resource' },
+        quantity: { parameter: 'quantity' },
+      }],
+    }],
+    interactions: [{
+      id: 'give',
+      actor: 'recipient',
+      text: { key: 'resourceRequestGive' },
+      visibleWhen: [],
+      enabledWhen: [],
+      requireObjectives: true,
+      effects: [{
+        type: 'take-resource',
+        resource: { parameter: 'resource' },
+        quantity: { parameter: 'quantity' },
+      }],
+      nextStageId: null,
+    }],
+  }],
+}
+questDefinitions.set(request.id, request)
+```
+
+Le producteur d'offres vérifie la présence d'un chef neutre et de ressources accessibles, choisit la ressource et la quantité, puis appelle `offer` avec une instance `available`. Ses `parameters` contiennent par exemple `{ resource: 'wood', quantity: 12 }`, et ses `bindings` associent `recipient` au label du chef. Il doit éviter de créer une seconde offre pour le même chef. `offer` refuse les identifiants de quête dupliqués et copie l'instance.
+
+`accept` affecte la quête au joueur, la rend non lue et la suit si aucune autre quête n'est suivie. Le panneau n'accepte aucune mission à la place du dialogue.
+
+## Conditions, aide et transactions
+
+Les conditions d'une liste sont combinées avec ET. Les conditions disponibles portent sur une quantité (`at-least` ou `below`), un fait sauvegardé ou l'état d'une cible liée. Les conditions sont recalculées au clic : posséder la quantité requise ne termine pas automatiquement une livraison.
+
+Une interaction d'aide utilise `repeatable: true` et omet `nextStageId`. Elle ne change pas d'étape. Une réserve peut être complétée jusqu'à un plafond via `top-up-resource`, sous une condition `below`. Le test de réapprovisionnement illustre ce contrat avec une réserve abstraite de flèches. Le futur adaptateur d'équipement devra compter le sac **et** les flèches équipées et utiliser les fonctions d'inventaire existantes.
+
+`QuestEnvironment` fournit la région extérieure actuelle, les lectures d'inventaire, les états des cibles et un engagement atomique des effets de ressources. `commitResources` doit soit appliquer tout le lot, soit ne rien changer et retourner `false`. Il doit rester synchrone, sans réentrer dans le moteur de quêtes. Cette frontière permet de brancher les règles réelles de stockage/transfert sans les introduire dans le journal. Les effets internes et le changement d'étape ne sont appliqués qu'après réussite du lot.
+
+Une interaction ordinaire n'est utilisable qu'une fois par étape. `nextStageId: null` termine la mission et supprime son suivi ; une chaîne mène à l'étape suivante. Les étapes ne progressent pas automatiquement : une future mission de découverte nécessitera un branchement explicite sur les événements du monde.
+
+## Recherche et camps
+
+Les conditions de cible utilisent un rôle (`missingPerson`, `targetCamp`) associé à un label persistant et un état (`discovered`, `spoken-to`, `defeated`, `reached`). Le système qui connaît le monde décide de cet état. Un cercle de recherche ne constitue jamais une preuve de découverte.
+
+Les marqueurs sont instanciés par étape : position en cellules `i/j`, `spaceId`, rayon optionnel en cellules. `getTrackedMarkers` filtre par quête suivie, étape, région et espace intérieur. Leur rendu sur la minimap n'est pas encore branché.
+
+## Demandes des chefs neutres
+
+Le service `NeutralVillageQuests` est monté et détruit avec les services de la carte. Toutes les 500 ms, il propose une demande unique aux chefs vivants des villages neutres (faction de relation neutre, amicale ou alliée, ou propriétaire explicitement neutre sans faction). Il exclut le joueur et les ennemis. Les offres sont également disponibles sur les parties existantes.
+
+Une demande porte sur 5 à 15 unités de bois, pierre ou baies, parmi les ressources présentes dans l’espace extérieur de la région. Le tirage est conservé dans la campagne. La vérification porte sur la présence et la quantité, pas sur un calcul de chemin jusqu’à chaque gisement. Une demande terminée n’est pas renouvelée automatiquement.
+
+Le chef affiche `!` pour une offre et `?` lorsque le héros peut livrer une quête acceptée. Le marqueur utilise son propre label d’affichage : il n’efface pas les indicateurs de sommeil ou de raid. Il disparaît pendant le sommeil ou le combat. Les dialogues ajoutent Accepter / Pas maintenant, puis une remise conditionnelle, indépendamment des permissions d’ordres. La progression compte uniquement le sac du héros, jamais les stocks de son village. La remise transfère exactement la quantité demandée dans le sac du chef, une seule fois, avec une récompense de +10 de relation définie par `QuestDefinition.relationReward`. Le score de faction est plafonné à 100 et le message de fin indique le gain réel ainsi que le nouveau statut lorsqu’un palier est franchi. Les villages indépendants conservent leur réputation dans `QuestJournalState.villageRelations` (clé région/propriétaire), sans créer de faction artificielle. Cette réputation locale ne modifie pas les règles de combat des propriétaires sans faction. Une quête déjà terminée ne redonne jamais sa récompense, même après rechargement.
+
+Le raccordement initial concerne les cartes extérieures et leurs espaces intégrés. Les anciennes cartes intérieures chargées comme mondes séparés ne génèrent pas d’offres. Une quête dont le donneur disparaît ou devient hostile reste dans le journal : les règles d’échec et de succession sont à définir pour les futures missions.
+
+Le journal et le rappel d’objectif affichent le compteur courant, actualisé depuis l’inventaire. Les paramètres de ressources sont traduits à l’affichage, sans sauvegarder de texte dépendant de la langue.
+
+L’escorte, les attaques scénarisées et le rendu des marqueurs sur la minimap restent des extensions de gameplay.

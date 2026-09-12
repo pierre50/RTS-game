@@ -5,11 +5,9 @@ import { MapBlueprintGeneration } from './generation/MapBlueprintGeneration'
 import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/Player'
 import type { AnimalOptions } from '../animal/Animal'
-import type { BuildingEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import { placeBanditCamps } from './BanditCampGeneration'
 import {
-  applyCivilizationLevelStartingKit as applyPlayerCivilizationLevelStartingKit,
   applyStartingBonuses as applyPlayerStartingBonuses,
   generatePlayers as generateMapPlayers,
   placePlayers as placeMapPlayers,
@@ -190,11 +188,12 @@ export class MapGeneration {
   }
 
   async stylishMap({
+    deferPlayerPlacement = false,
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
     const context = gameContext(this.map.context)
     const timer = createGenerationTimer(this.map.generationTimings || {}, this.map.context.performance)
-    await generateStylishMap(this.map, context, timer, this.pipelineCallbacks(), { onProgress })
+    await generateStylishMap(this.map, context, timer, this.pipelineCallbacks(), { onProgress, deferPlayerPlacement })
   }
 
   async prepareTerrainForSavedState({
@@ -240,14 +239,6 @@ export class MapGeneration {
 
   placeBanditCamps(): void {
     placeBanditCamps(this.map, runtimeContext(this.map.context))
-  }
-
-  // Spawns a player already at an advanced stage: extra economy/military buildings, a static wall
-  // perimeter, consistent technologies, a resource cushion and a few soldiers stationed near home.
-  // Building/unit counts are read straight from the AI's own long-term per-age targets
-  // (MAX_BUILDING_BY_AGE, MAX_*_BY_AGE) so no new tuning numbers are invented here.
-  applyCivilizationLevelStartingKit(player: PlayerLike, level: number, townCenter: BuildingEntity): void {
-    applyPlayerCivilizationLevelStartingKit(this.map, player, level, townCenter)
   }
 
   async generateFromBlueprint(

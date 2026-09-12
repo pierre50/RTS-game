@@ -35,11 +35,12 @@ test('a non-Hellas region preloads both neutral villager variants before placing
   })
   const { bootGameFromConfig } = loadTsModule('app/screens/game/GameWorldBoot.ts', {
     mocks: {
+      '../../services/world/WorldEconomyRuntime': { initializeCampaignEconomy: async () => {} },
       '../../classes/players/GaiaPlayer': { ensureNeutralPlayer },
       '../../lib/lang': {},
       '../../lib/lpc': { preloadBakedLpcUnitsForPlayers },
       '../../serialization/SaveSerializer': { serializeGame: () => ({}) },
-      '../../serialization/CampaignSave': { createInitialCampaignSave: () => ({}) },
+      '../../serialization/CampaignSave': { createInitialCampaignSave: () => ({ currentWorldId: 'root', worlds: { root: {} } }) },
       './GameStateHelpers': { ensureCampaignPlayerRoster: value => value },
       './GameMapBlueprintRuntime': { recordLoadedMapBlueprint() {} },
       './WorldRegionPlayers': {

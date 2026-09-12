@@ -55,6 +55,7 @@ function loadResourceVisuals() {
         },
       }
       this.skew = { x: 0 }
+      this.visible = true
       this.destroyed = false
     }
 
@@ -151,6 +152,7 @@ test('resource texture shadows use the matching spritesheet frame when metadata 
     reliefLift: 0,
     shadow: null,
     sprite: {
+      visible: true,
       texture: new Texture(),
       anchor: { x: 0.5, y: 0.65 },
       scale: { x: 1, y: 1 },
@@ -297,4 +299,85 @@ test('hidden resources do not register wind updates and stop when leaving the ac
   resource.context.map.activeSpaceId = 'room'
   syncVisualSettings(resource)
   assert.equal(callbacks.size, 0)
+})
+
+for (const useTextureShadow of [false, true]) {
+  test(`hidden resource sprites keep shadows hidden through refreshes (texture shadow: ${useTextureShadow})`, () => {
+    const { Assets, Sprite, Texture, createShadow, syncShadow, syncVisualSettings } = loadResourceVisuals()
+    if (useTextureShadow) {
+      Assets.cache = {
+        has: () => true,
+        get: () => ({ textures: { 0: new Texture() } }),
+      }
+    }
+    for (const type of ['MedicinalHerb', 'ToxicHerb', 'FiberPlant', 'Berrybush', 'Stone', 'Wheat']) {
+      const resource = {
+        context: {
+          app: { ticker: { add() {}, remove() {} } },
+          map: { activeSpaceId: 'outside' },
+        },
+        type,
+        textureName: '000_resources/wildgrass',
+        sprite: new Sprite(),
+        visible: true,
+        isDead: false,
+        isDestroyed: false,
+        i: 0,
+        j: 0,
+        x: 0,
+        y: 0,
+        windTick: null,
+      }
+      resource.shadow = createShadow(resource)
+      assert.equal(resource.shadow.visible, true)
+      assert.equal(resource.usesTextureShadow, useTextureShadow)
+
+      // Depletion hides the sprite before the delayed clear removes the resource.
+      resource.isDead = true
+      resource.sprite.visible = false
+      resource.shadow.visible = false
+      for (const activeSpaceId of ['outside', 'room', 'outside']) {
+        resource.context.map.activeSpaceId = activeSpaceId
+        syncShadow(resource)
+        assert.equal(resource.shadow.visible, false, `${type}: visibility refresh`)
+        syncVisualSettings(resource)
+        assert.equal(resource.shadow.visible, false, `${type}: settings refresh`)
+      }
+    }
+  })
+}
+
+test('visible fallen trees retain shadows until their sprite is hidden or destroyed', () => {
+  const { Sprite, createShadow, syncShadow, syncVisualSettings } = loadResourceVisuals()
+  const resource = {
+    context: { app: { ticker: { add() {}, remove() {} } } },
+    type: 'Tree',
+    isDead: true,
+    visible: true,
+    sprite: new Sprite(),
+    x: 0,
+    y: 0,
+    windTick: null,
+  }
+  resource.shadow = createShadow(resource)
+  for (const refresh of [syncShadow, syncVisualSettings]) {
+    refresh(resource)
+    assert.equal(resource.shadow.visible, true)
+    resource.sprite.visible = false
+    refresh(resource)
+    assert.equal(resource.shadow.visible, false)
+    resource.sprite.visible = true
+    refresh(resource)
+    assert.equal(resource.shadow.visible, true)
+    for (const target of [resource, resource.sprite]) {
+      target.destroyed = true
+      refresh(resource)
+      assert.equal(resource.shadow.visible, false)
+      target.destroyed = false
+    }
+    resource.isDestroyed = true
+    refresh(resource)
+    assert.equal(resource.shadow.visible, false)
+    resource.isDestroyed = false
+  }
 })

@@ -1,10 +1,11 @@
-import { Assets } from 'pixi.js'
 import { SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import { isChiefUnit } from '../chief'
 import { getUnitEquipmentTier } from '../units/unitExperience'
+import { resolveUnitIdentity } from '../units/unitIdentity'
+import { applyUnitActivitySpritesheets } from '../units/unitSpriteAssets'
 import { isAssetCached, loadBakedUnitVariant } from './bakedAliasCache'
 import {
   bakedUnitActionAlias,
@@ -110,15 +111,12 @@ function resolveBakedUnitForRuntime(unit: UnitEntity): BakedUnitType | undefined
 
 function resolveBakedRuntimeVariant(unit: UnitEntity, bakedUnit: BakedUnitType): string | null {
   if (!unit.owner) return null
-  const preferredGender =
-    unit.appearanceVariants?.gender ??
-    forcedGenderForBakedUnit(bakedUnit) ??
-    (bakedUnit === 'hero' ? unit.owner.gender : null)
+  const identity = resolveUnitIdentity(unit)
   return bakedVariantKey(
     bakedUnit,
-    { ...unit.owner, civ: unit.assetCiv || unit.owner.civ },
-    `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`,
-    preferredGender
+    { ...unit.owner, civ: identity.civ },
+    unit.label,
+    identity.gender
   )
 }
 
@@ -138,7 +136,9 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   if (!isAssetCached(walking)) return false
 
   delete unit.appearance
-  unit.appearanceVariants = { gender }
+  unit.gender = gender
+  unit.assetCiv = resolveUnitIdentity(unit).civ
+  unit.appearanceVariants = { ...unit.appearanceVariants, gender }
   unit.sheetDirectionCounts = {
     standingSheet: 3,
     walkingSheet: 3,
@@ -152,7 +152,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
 
   if (!isVillagerLike) {
     const actionSheet =
-      unit.type === UNIT_TYPES.bowman
+      resolvedBakedUnit !== 'chief' && unit.type === UNIT_TYPES.bowman
         ? bakedUnitActionAlias(resolvedBakedUnit, variant, 'shoot')
         : bakedUnitAlias(resolvedBakedUnit, variant, 'action')
     unit.assets = {
@@ -162,6 +162,8 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
       dyingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'dying'),
       corpseSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'corpse'),
     }
+    // Every fixed-role unit replaces inherited activity assets after a role change.
+    unit.allAssets = { default: unit.assets, [WORK_TYPES.attacker]: unit.assets }
     return true
   }
 
@@ -171,10 +173,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
 
 export function refreshBakedLpcUnitAssets(unit: UnitEntity): boolean {
   if (!applyBakedLpcUnitAssets(unit)) return false
-  Object.assign(
-    unit,
-    Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
-  )
+  applyUnitActivitySpritesheets(unit)
   unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
   return true
 }

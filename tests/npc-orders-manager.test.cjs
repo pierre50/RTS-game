@@ -72,7 +72,8 @@ function makeFakeElement() {
 }
 
 class FakeModal {
-  constructor({ title, content, onClose }) {
+  constructor({ title, content, onClose, showCloseButton }) {
+    this.showCloseButton = showCloseButton
     this.title = title
     this.content = content
     this.onClose = onClose
@@ -119,6 +120,7 @@ function buildMocks(calls, context) {
       Modal: FakeModal,
     },
     '../lib/lang': { t: key => key },
+    '../lib/audio/settings': { getVolume: () => 1 },
     '../lib/audio/uiSound': { playUiSound: () => {} },
     '../lib/inventory/inventoryContainers': {
       createInventoryContainer: (target, options) => {
@@ -232,18 +234,24 @@ function buildMocks(calls, context) {
 }
 
 function withFakeDocument(fn) {
+  const previousAudio = global.Audio
+  const previousTimeout = global.window?.setTimeout
+  global.Audio = class { play() { return Promise.resolve() } pause() {} }
+  global.window = global.window || {}
+  global.window.setTimeout = callback => { callback(); return 1 }
+  const restore = () => { global.Audio = previousAudio; global.window.setTimeout = previousTimeout; delete global.document }
   global.document = { createElement: () => makeFakeElement() }
   try {
     const result = fn()
     if (result && typeof result.then === 'function') {
       return result.finally(() => {
-        delete global.document
+        restore()
       })
     }
-    delete global.document
+    restore()
     return result
   } catch (error) {
-    delete global.document
+    restore()
     throw error
   }
 }
@@ -486,7 +494,7 @@ test('sleeping villagers keep movement orders visible and hide night work', () =
     assert.equal(manager.chatterContainer.children[0].textContent, 'sleepy chatter')
     assert.equal(manager.buttons.get('goto').hidden, false)
     assert.equal(manager.buttons.get('follow').hidden, false)
-    assert.equal(manager.buttons.get('cancel').hidden, false)
+    assert.equal(manager.exitButton.hidden, false)
     assert.equal(manager.buttons.get('resources').hidden, true)
     assert.equal(manager.buttons.get('food').hidden, true)
     manager.buttons.get('resources').click()
@@ -789,5 +797,81 @@ test('debug level button stops at the max level instead of resetting', () => {
     assert.equal(manager.debugLevelButton.textContent, 'Debug niveau max')
     assert.equal(npc.debugLevel, 20)
     assert.deepEqual(calls, [])
+  })
+})
+
+test('neutral chief quest choices remain visible when the hero cannot issue orders', () => {
+  withFakeDocument(() => {
+    const context = makeContext([])
+    context.neutralQuests = { dialogue: () => ({ id: 'quest', status: 'available', parameters: { resource: 'wood', quantity: 10 }, owner: { name: 'Chief' } }) }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
+    const manager = new NpcOrdersManager({ context })
+    const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' } }
+    manager.open([npc], { ordersEnabled: false, chatterLine: 'ordinary greeting' })
+    assert.equal(manager.buttonsContainer.hidden, true)
+    assert.equal(manager.questPanel.root.hidden, false)
+    assert.equal(manager.questPanel.root.children.length, 1)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'questResourceOffer')
+    manager.close()
+    assert.equal(manager.questPanel.root.hidden, true)
+  })
+})
+
+
+test('every conversation keeps a working exit outside conditional menus', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.controls.heroUnit = { label: 'hero', inventory: { equipment: [], resources: {} } }
+    const mocks = buildMocks(calls, context)
+    mocks['../lib/units/unitTrainingOrders'].findBestTrainingBuildingForUnit = () => ({ type: 'Barracks' })
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
+    const manager = new NpcOrdersManager({ context })
+    const own = { type: 'Villager', label: 'own', owner: context.player }
+    const foreign = { ...own, label: 'foreign', owner: {} }
+    const scenarios = [
+      { npcs: [own] },
+      { npcs: [own, { ...own, label: 'second' }] },
+      { npcs: [foreign] },
+      { npcs: [own], options: { ordersEnabled: false } },
+      { npcs: [{ ...foreign, shelterState: { reason: 'sleep' }, sleepVisualState: 'sleeping' }] },
+      { npcs: [own], submenu: 'resources' },
+      { npcs: [own], submenu: 'training' },
+      { npcs: [own], submenu: 'bag' },
+    ]
+    for (const scenario of scenarios) {
+      manager.open(scenario.npcs, scenario.options)
+      if (scenario.submenu) manager.buttons.get(scenario.submenu).click()
+      assert.equal(manager.modal.showCloseButton, false)
+      assert.equal(manager.panel.children.at(-1), manager.exitButton)
+      assert.equal(manager.exitButton.hidden, false)
+      assert.equal(manager.exitButton.disabled, false)
+      const before = calls.length
+      manager.exitButton.click()
+      assert.equal(manager.isOpen(), false)
+      assert.equal(manager.modal, undefined)
+      assert.deepEqual(calls.slice(before), [['releaseIfStillLooking', 'paused=false']])
+    }
+  })
+})
+
+test('scripted introduction requires its reply and cannot be replaced or dismissed by normal controls', () => {
+  withFakeDocument(() => {
+    const context = makeContext([])
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
+    const manager = new NpcOrdersManager({ context })
+    const npc = { type: 'Villager', label: 'companion', owner: context.player }
+    let answered = 0
+    manager.open([npc], { ordersEnabled: false, chatterLine: 'Welcome', scriptedReply: { label: 'Ready', onSelect() { answered++; manager.close() } } })
+    assert.equal(manager.modal._panel.classList.contains('npc-orders-panel'), true)
+    assert.equal(manager.modal._panel.classList.contains('inspection-panel'), true)
+    assert.equal(manager.modal.showCloseButton, false)
+    manager.close()
+    assert.equal(manager.opened, true)
+    manager.open([npc], { chatterLine: 'Other' })
+    assert.equal(manager.chatterContainer.children[0].textContent, 'Welcome')
+    manager.scriptedReplyPanel.children[0].click()
+    assert.equal(answered, 1)
+    assert.equal(manager.opened, false)
   })
 })

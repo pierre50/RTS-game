@@ -10,14 +10,14 @@ function loadHeroToolEquipment() {
         WORK_TYPES: { attacker: 'attacker', hunter: 'hunter' },
       },
       '../lpc/baked': {
-        applyBakedLpcUnitAssets: () => {},
+        refreshBakedLpcUnitAssets: () => {},
       },
       '../equipment/equipmentStats': {
         getUnitWorkEquipment: work => (work === 'attacker' ? ['axe_iron'] : []),
         refreshUnitEquipmentStats: () => {},
       },
       '../units/unitWorkAppearance': {
-        applyUnitWorkAssets: () => {},
+        applyUnitActionFrameSequence: () => {},
       },
     },
   })

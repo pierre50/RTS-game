@@ -1,3 +1,4 @@
+import { QuestJournalManager } from '../ui/QuestJournalManager'
 import { MinimapManager } from '../ui/minimap/MinimapManager'
 import { TopbarView } from '../ui/TopbarView'
 import { PauseMenu } from '../ui/PauseMenu'
@@ -40,6 +41,7 @@ export default class Menu implements MenuLike {
   minimapManager: MinimapManager
   actionSpecs: ActionSpecFactory
   actionRenderer: ActionMenuRenderer
+  questJournal: QuestJournalManager
   pauseMenu: PauseMenu
   topbarView: TopbarView
   minimapInputController: MinimapInputController
@@ -93,6 +95,7 @@ export default class Menu implements MenuLike {
     this.heroInteractionPrompt = new HeroInteractionPrompt(this.gameHud)
     this.toggled = false
 
+    this.questJournal = new QuestJournalManager(this)
     this.topbarView.build()
 
     // Expose throttled minimap updaters as top-level properties for external callers
@@ -106,6 +109,7 @@ export default class Menu implements MenuLike {
   }
 
   destroy(): void {
+    this.questJournal.destroy()
     this.menuTooltip.destroy()
     this.minimapInputController.destroy()
     this.inventoryManager.destroy()
@@ -132,6 +136,8 @@ export default class Menu implements MenuLike {
 
   updateTopbar(): void {
     this.topbarView.update()
+    this.questJournal.sync()
+    this.npcOrdersManager.syncQuest()
     if (this.syncingLivePanelsFromTopbar) return
     this.syncingLivePanelsFromTopbar = true
     try {
@@ -301,6 +307,16 @@ export default class Menu implements MenuLike {
   }
   handleHotkey(key: string): void {
     return this.actionRenderer.handleHotkey(key)
+  }
+
+  toggleQuests(): void {
+    this.questJournal.toggle()
+  }
+  closeQuests(): void {
+    this.questJournal.close()
+  }
+  isQuestJournalOpen(): boolean {
+    return this.questJournal.isOpen()
   }
 
   // Inventory delegates

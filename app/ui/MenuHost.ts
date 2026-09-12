@@ -24,6 +24,7 @@ export interface MenuHost {
   cameraMinimap?: HTMLCanvasElement
   menuTooltip: MenuTooltipHost
   pauseMenu: MenuPauseHost
+  questJournal: MenuPauseHost
   icons: Record<string, string>
   infoIcons: Record<string, string>
   topbar?: HTMLDivElement
@@ -47,6 +48,7 @@ export interface MenuHost {
   playUiClick(): void
   refreshInventory?(): void
   closeInventory?(): void
+  closeNpcOrders?(): void
   clearActionHotkeys(): void
   assignActionHotkey(id: string, usedKeys: Set<string>): string | null
   createActionMenuButton(

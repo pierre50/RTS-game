@@ -1,4 +1,3 @@
-import { Assets } from 'pixi.js'
 import type { Graphics } from 'pixi.js'
 import { cartesianToIsometric, drawRoundedIsoShape, getRoundedIsoShapePoints } from '../lib'
 import {
@@ -8,10 +7,9 @@ import {
   COMM_INDICATOR_STROKE_WIDTH,
   HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR,
   FADE_DURATION_MS,
-  SHEET_TYPES,
 } from '../constants'
 import { getCommCellsInRadius } from '../lib/npc/npcInteraction'
-import { applyBakedLpcUnitAssets } from '../lib/lpc'
+import { refreshBakedLpcUnitAssets } from '../lib/lpc'
 import { getEntitySpaceGrid } from '../lib/mapSpaces'
 import { ENTITY_TRANSITION_HIDDEN_ALPHA } from '../lib/entities/entityFade'
 import { UNIT_WALK_SPEED_FACTOR } from '../lib/units/unitLocomotion'
@@ -151,12 +149,7 @@ export function getLockedMoveSpeedFactor(move: MoveVector, facing: MoveVector): 
 }
 
 export function refreshBakedAppearance(unit: UnitEntity): void {
-  applyBakedLpcUnitAssets(unit)
-  Object.assign(
-    unit,
-    Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
-  )
-  unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
+  refreshBakedLpcUnitAssets(unit)
 }
 
 export function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, radius: number): void {

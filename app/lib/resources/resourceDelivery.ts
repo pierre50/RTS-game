@@ -1,6 +1,7 @@
-import { BUILDING_TYPES, LOADING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
+import { RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { getClosestInstanceWithPath } from '../grid/queries'
 import { isHeroControlled } from '../units/unitControl'
+import { storageAcceptsResource } from './storagePolicy'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 
@@ -8,21 +9,8 @@ const UNIT_RESOURCE_DELIVERY_BATCH_SIZE = 10
 
 type ResourceKey = keyof ResourceAmount
 
-const LOADING_TYPE_VALUES = LOADING_TYPES ?? {
-  berry: 'berry',
-  meat: 'meat',
-  wheat: 'wheat',
-}
-const BUILDING_TYPE_VALUES = BUILDING_TYPES ?? {
-  granary: 'Granary',
-  storagePit: 'StoragePit',
-  townCenter: 'TownCenter',
-}
 const RESOURCE_KEYS = RESOURCE_STORAGE_NAMES ?? ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron']
 
-const FOOD_LOADING_TYPES = new Set([LOADING_TYPE_VALUES.berry, LOADING_TYPE_VALUES.wheat, LOADING_TYPE_VALUES.meat])
-const FOOD_DROPOFF_TYPES = new Set([BUILDING_TYPE_VALUES.townCenter, BUILDING_TYPE_VALUES.granary])
-const MATERIAL_DROPOFF_TYPES = new Set([BUILDING_TYPE_VALUES.townCenter, BUILDING_TYPE_VALUES.storagePit])
 
 export function getResourceKeyForLoadingType(loadingType: string | null | undefined): ResourceKey | null {
   if (!loadingType) return null
@@ -48,9 +36,7 @@ export function buildingAcceptsInventoryResource(
   resource: ResourceKey
 ): boolean {
   if (!building || building.family !== 'building') return false
-  if (building.type === BUILDING_TYPE_VALUES.townCenter) return true
-  if (FOOD_LOADING_TYPES.has(resource)) return FOOD_DROPOFF_TYPES.has(building.type)
-  return MATERIAL_DROPOFF_TYPES.has(building.type)
+  return storageAcceptsResource(building.type, resource)
 }
 
 export function unitHasDeliverableResourcesForBuilding(unit: UnitEntity, building: BuildingEntity): boolean {

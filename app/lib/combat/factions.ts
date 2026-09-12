@@ -56,7 +56,7 @@ function pickStable<T>(items: T[], seed: string, salt: string): T {
   return items[hashString(`${seed}:${salt}`) % items.length]
 }
 
-function getFactionRelationState(score: number): FactionRelationState {
+export function getFactionRelationState(score: number): FactionRelationState {
   if (score <= -50) return 'hostile'
   if (score < -10) return 'wary'
   if (score < 25) return 'neutral'

@@ -3,12 +3,13 @@ import { RESOURCE_STOCKPILE_TYPES } from '../../constants/entities'
 import { worldEconomyFactors } from '../../config/worldEconomyBalance'
 import { createPlayerData } from '../../config/playerConfig'
 import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
-import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
+import { populateVillageBase } from './VillageBaseState'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import { createSquareLocalBlueprint } from '../../classes/map/generation/LocalMapBlueprint'
 import { offlineWorkCycleMs } from '../../classes/map/generation/MapOfflineWorldSimulation'
 import { serializeGame } from '../../serialization/SaveSerializer'
 import { OfflineWorldSpatial } from './OfflineWorldSpatial'
+import { applyVillageStartingState } from './VillageStartingState'
 import {
   advanceCampaignEconomy,
   captureEconomyRegion,
@@ -19,32 +20,9 @@ import {
 import type { MapBlueprint, MapSettlement } from '../../classes/map/MapGenerationTypes'
 import type { PlayerConfigLike } from '../../types/player'
 import type { GameContextLike } from '../../types/context'
-import type { CampaignSave, RegionEconomySave, SaveEntityState, SerializedSave } from '../../types/save'
+import type { CampaignSave, RegionEconomySave, SerializedSave, VillageStartProfile } from '../../types/save'
 import type { ResourceConfig } from '../../types/config'
-import type { ResourceAmount } from '../../types/common'
 import type { OfflineWorkRules } from './OfflineWorldWork'
-
-function findEconomyCenter(spatial: OfflineWorldSpatial, anchor: { i: number; j: number }, radius: number) {
-  for (let ring = 0; ring <= 30; ring++) {
-    for (let di = -ring; di <= ring; di++) {
-      for (let dj = -ring; dj <= ring; dj++) {
-        if (Math.max(Math.abs(di), Math.abs(dj)) !== ring) continue
-        const point = { i: anchor.i + di, j: anchor.j + dj }
-        let available = true
-        for (let i = point.i - radius; i <= point.i + radius && available; i++) {
-          for (let j = point.j - radius; j <= point.j + radius; j++) {
-            if (!spatial.available({ i, j })) {
-              available = false
-              break
-            }
-          }
-        }
-        if (available) return point
-      }
-    }
-  }
-  return null
-}
 
 export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
   const base = Assets.cache.get('config') as PlayerConfigLike & { resources: Record<string, ResourceConfig> }
@@ -95,7 +73,8 @@ export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
   }
 }
 
-function seedRegion(source: MapBlueprint, regionId: string, campaign: CampaignSave, context: GameContextLike) {
+function seedRegion(source: MapBlueprint, regionId: string, campaign: CampaignSave, context: GameContextLike,
+  profiles: Record<string, VillageStartProfile> = {}) {
   const blueprint = createSquareLocalBlueprint(source)
   const base = Assets.cache.get('config') as PlayerConfigLike & { resources: Record<string, ResourceConfig> }
   const state: SerializedSave = {
@@ -148,49 +127,7 @@ function seedRegion(source: MapBlueprint, regionId: string, campaign: CampaignSa
     const factionId = factionIdForCivilization(settlement.civ)
     const faction = campaign.factions?.[factionId]
     const config = createPlayerData(base, settlement.civ)
-    const centerConfig = config.buildings.TownCenter
-    const footprint = Math.ceil((Number(centerConfig?.size) || 2) / 2)
-    const anchor = findEconomyCenter(spatial, settlement.local, footprint)
-    if (!anchor) throw new Error(`No settlement position for ${regionId}:${factionId}`)
     const label = `economy:${regionId}:${factionId}`
-    const center: SaveEntityState = {
-      ...anchor,
-      label: `${label}:center`,
-      type: 'TownCenter',
-      isBuilt: true,
-      totalHitPoints: Number(centerConfig?.totalHitPoints) || 100,
-      hitPoints: Number(centerConfig?.totalHitPoints) || 100,
-      inventory: {
-        resources: expandLegacyFoodAmount(
-          (context.map as { startingResources?: ResourceAmount }).startingResources ?? {
-            wood: 200,
-            food: 200,
-            stone: 150,
-          }
-        ),
-      },
-    }
-    for (let i = center.i - footprint; i <= center.i + footprint; i++) {
-      for (let j = center.j - footprint; j <= center.j + footprint; j++) spatial.reserve(center, { i, j })
-    }
-    const units: SaveEntityState[] = []
-    for (let n = 0; n < 5; n++) {
-      const point = spatial.findNear(center, 12)
-      if (!point) throw new Error(`No starting unit position for ${label}`)
-      const type = n === 0 ? 'Chief' : 'Villager'
-      const hp = Number(config.units[type]?.totalHitPoints) || 18
-      const unit: SaveEntityState = {
-        ...point,
-        label: `${label}:unit:${n}`,
-        type,
-        hitPoints: hp,
-        totalHitPoints: hp,
-        inactif: true,
-        gender: n % 2 ? 'female' : 'male',
-      }
-      units.push(unit)
-      spatial.reserve(unit)
-    }
     state.players.push({
       label,
       civ: settlement.civ,
@@ -200,32 +137,34 @@ function seedRegion(source: MapBlueprint, regionId: string, campaign: CampaignSa
       type: 'AI',
       isPlayed: false,
       age: 0,
-      units,
-      buildings: [center],
-      population: units.length,
-      populationMax: Math.max(
-        units.length,
-        getBuildingShelterCapacity({ type: 'TownCenter', shelterCapacity: centerConfig?.shelterCapacity ?? 0 }) ||
-          Number(centerConfig?.increasePopulation) ||
-          10
-      ),
+      units: [],
+      buildings: [],
     })
+    const index = state.players.length - 1
+    populateVillageBase(state.players[index], index, settlement.local, spatial, {
+      buildingConfig: (_i, type) => config.buildings[type] ?? {},
+      unitConfig: (_i, type) => config.units[type] ?? {},
+      buildingCapacity: (_i, type) => getBuildingShelterCapacity({ type, shelterCapacity: config.buildings[type]?.shelterCapacity ?? 0 }) ||
+        Number(config.buildings[type]?.increasePopulation) || 0,
+    }, context.map.startingResources ?? { wood: 200, food: 200, stone: 150 })
   }
+  const initialState = applyVillageStartingState(state, profiles, terrain, economyRulesFor(state))
   const region: RegionEconomySave = {
     regionId,
-    initialState: state,
+    initialState,
     terrain: encodeEconomyTerrain(terrain),
     simulatedUntilMs: 0,
     summaries: {},
   }
-  summarizeEconomy(region, state)
+  summarizeEconomy(region, initialState)
   return region
 }
 
 export async function initializeCampaignEconomy(
   campaign: CampaignSave,
   context: GameContextLike,
-  load: (regionId: string, size: number) => Promise<MapBlueprint>
+  load: (regionId: string, size: number) => Promise<MapBlueprint>,
+  profiles: Record<string, VillageStartProfile> = {}
 ): Promise<void> {
   campaign.economy ??= { version: 1, regions: {} }
   const manifest = context.map.worldManifest
@@ -254,7 +193,8 @@ export async function initializeCampaignEconomy(
         : blueprint,
       entry.id,
       campaign,
-      context
+      context,
+      world ? {} : profiles
     )
     if (world) {
       delete seeded.initialState

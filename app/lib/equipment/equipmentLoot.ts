@@ -2,7 +2,7 @@ import type { ResourceAmount } from '../../types/common'
 import type { UnitConfig } from '../../types/config'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
 import { RESOURCE_STORAGE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
-import { applyBakedLpcUnitAssets } from '../lpc'
+import { refreshBakedLpcUnitAssets } from '../lpc'
 import { getUnitEquipmentTier } from '../units/unitExperience'
 import { getEquipmentSlot, getWeaponSlot } from './equipmentSlots'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
@@ -146,7 +146,7 @@ export function pickupCorpseEquipment(
   }
 
   addHeroInventoryItem(hero, equipment)
-  applyBakedLpcUnitAssets(corpse)
+  refreshBakedLpcUnitAssets(corpse)
   corpse.syncAppearanceLayers?.(corpse.currentSheet ?? SHEET_TYPES.corpse)
   return true
 }
@@ -179,7 +179,7 @@ export function equipHeroInventoryItem(
   inventory.equipped[slot] = equipment
   inventory.equippedCounts[slot] = nextEquippedCount
   refreshUnitEquipmentStats(hero)
-  applyBakedLpcUnitAssets(hero)
+  refreshBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
   return true
 }
@@ -198,7 +198,7 @@ function equipHeroWeaponInventoryItem(hero: UnitEntity | null | undefined, equip
   if (previous) bag.push(previous)
   inventory.activeWeapons[slot] = equipment
   refreshUnitEquipmentStats(hero)
-  applyBakedLpcUnitAssets(hero)
+  refreshBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
   return true
 }
@@ -228,7 +228,7 @@ export function unequipHeroInventorySlot(
     pushEquipmentCopies(inventory.equipment, decor, decorCount)
   }
   refreshUnitEquipmentStats(hero)
-  applyBakedLpcUnitAssets(hero)
+  refreshBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
   return true
 }
@@ -240,7 +240,7 @@ export function unequipHeroActiveWeaponSlot(hero: UnitEntity | null | undefined,
   delete inventory.activeWeapons[slot]
   if (equipment) inventory.equipment.push(equipment)
   refreshUnitEquipmentStats(hero)
-  applyBakedLpcUnitAssets(hero)
+  refreshBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
   return true
 }
@@ -261,6 +261,6 @@ export function consumeHeroEquippedItem(
     delete inventory.equippedCounts[slot]
   }
   refreshUnitEquipmentStats(hero)
-  applyBakedLpcUnitAssets(hero)
+  refreshBakedLpcUnitAssets(hero)
   return true
 }

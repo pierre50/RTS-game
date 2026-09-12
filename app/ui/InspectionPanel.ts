@@ -5,6 +5,8 @@ type InspectionModalOptions = {
   content: HTMLElement
   panelClass?: string
   inspection?: boolean
+  showCloseButton?: boolean
+  dismissible?: boolean
   onClose: () => void
 }
 
@@ -23,9 +25,11 @@ export function createInspectionModal({
   content,
   panelClass,
   inspection = true,
+  showCloseButton = true,
+  dismissible = true,
   onClose,
 }: InspectionModalOptions): Modal {
-  const modal = new Modal({ title, content, onClose })
+  const modal = new Modal({ title, content, onClose, dismissible, showCloseButton })
   if (panelClass) modal._panel?.classList.add(panelClass)
   setInspectionMode(modal, inspection)
   return modal

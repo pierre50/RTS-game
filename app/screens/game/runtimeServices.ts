@@ -1,3 +1,4 @@
+import { NeutralVillageQuests } from '../../services/quests/NeutralVillageQuests'
 import type { ContainerChild } from 'pixi.js'
 import { BuildingInteriorEntryMarkerSystem } from '../../services/buildingInterior/BuildingInteriorEntryMarkerSystem'
 import { CampPatrolSystem } from '../../services/patrol/CampPatrolSystem'
@@ -23,13 +24,14 @@ type ScreenRect = { height: number; width: number; x: number; y: number }
 type LayerHost = { addChild(child: ContainerChild): unknown }
 type RuntimeServiceContext = Pick<
   GameContextLike,
-  'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather' | 'worldPursuit'
+  'neutralQuests' | 'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather' | 'worldPursuit'
 >
 
 const WEATHER_LAYER_Z_INDEX = 10
 const LIGHT_LAYER_Z_INDEX = 20
 
 export type RuntimeServices = {
+  neutralQuests: NeutralVillageQuests | null
   worldPursuit: WorldPursuitSystem | null
   buildingInteriorEntryMarker: BuildingInteriorEntryMarkerSystem | null
   campPatrols: CampPatrolSystem | null
@@ -52,6 +54,7 @@ export type RuntimeServices = {
 
 export function createEmptyRuntimeServices(): RuntimeServices {
   return {
+    neutralQuests: null,
     worldPursuit: null,
     buildingInteriorEntryMarker: null,
     campPatrols: null,
@@ -105,6 +108,8 @@ export function createRuntimeServices(
   context.tributeRaids = tributeRaids
   dailyWorldEvents.register(tributeRaids)
 
+  const neutralQuests = new NeutralVillageQuests(context)
+  context.neutralQuests = neutralQuests
   const campPatrols = new CampPatrolSystem(context)
   const heroFollowerPatrols = new HeroFollowerPatrolSystem(context)
   const idleUnitPatrols = new IdleUnitPatrolSystem(context)
@@ -121,6 +126,7 @@ export function createRuntimeServices(
 
   const lights = new LightSystem(context, getScreenRect, () => dayNight.getDarknessLevel())
   const services = {
+    neutralQuests,
     worldPursuit: null,
     buildingInteriorEntryMarker,
     campPatrols,
@@ -157,6 +163,8 @@ export function addRuntimeServiceLayers(host: LayerHost, services: RuntimeServic
 }
 
 export function destroyRuntimeServices(services: RuntimeServices, context: RuntimeServiceContext): RuntimeServices {
+  services.neutralQuests?.destroy()
+  context.neutralQuests = null
   services.worldPursuit?.destroy()
   context.worldPursuit = null
   services.buildingInteriorEntryMarker?.destroy()

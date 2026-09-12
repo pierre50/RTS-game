@@ -21,7 +21,7 @@ test('a missing spritesheet during construction leaves no registered unit or blo
   }
   const initialization = loadTsModule('app/classes/unit/UnitInitialization.ts', {
     mocks: {
-      'pixi.js': { Assets: { cache: { has: () => false } } },
+      'pixi.js': { Assets: { cache: { has: () => false, get: () => undefined } } },
       '../../lib': { getEntityCell: () => cell },
       '../../lib/chief': {},
       '../../lib/equipment/equipmentStats': {},

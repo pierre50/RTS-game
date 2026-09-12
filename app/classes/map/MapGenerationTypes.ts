@@ -107,6 +107,7 @@ export type CellDefinition = {
 }
 
 export type GenerateMapOptions = {
+  deferPlayerPlacement?: boolean
   onProgress?: ProgressCallback
 }
 

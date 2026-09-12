@@ -6,6 +6,7 @@ function loadOwnerTransfer(calls = []) {
   return loadTsModule('app/lib/entities/entityOwnerTransfer.ts', {
     mocks: {
       '../../constants': {
+        ...loadTsModule('app/constants/index.ts'),
         FAMILY_TYPES: { building: 'building', unit: 'unit' },
         SHEET_TYPES: { standing: 'standing' },
         UNIT_TYPES: { villager: 'Villager' },
@@ -117,6 +118,26 @@ test('defeated player buildings transfer to the only remaining player', () => {
     calls.filter(([name]) => name === 'showMessage'),
     [['showMessage', 'enemyBaseCaptured', 'success']]
   )
+})
+
+test('capturing an AI camp preserves the existing interior through repeated ownership changes', () => {
+  const { transferDefeatedPlayerBuildings, transferEntityOwner } = loadOwnerTransfer()
+  const { getBuildingInteriorSpaceForBuilding } = loadTsModule('engine/services/BuildingInteriorSpaceLookup.ts')
+  const { getBuildingInteriorPortalId } = loadTsModule('app/lib/buildings/interiors.ts')
+  const defeated = makePlayer('economy:world-4242-r1-2-temperate:civ-hellas')
+  const winner = makePlayer('winner', [{ family: 'unit', hitPoints: 10, i: 1, j: 1 }])
+  const building = makeBuilding(`${defeated.label}:center`, defeated, 8, 8)
+  building.type = 'TownCenter'
+  const portalId = getBuildingInteriorPortalId(building)
+  const space = { id: `interior:${portalId}`, kind: 'interior', building, renderer: {} }
+  const context = { players: [defeated, winner], map: { spaces: new Map([[space.id, space]]) } }
+  defeated.context = context
+  assert.equal(transferDefeatedPlayerBuildings(defeated), 1)
+  assert.equal(building.owner, winner)
+  assert.equal(getBuildingInteriorSpaceForBuilding(context, building), space)
+  assert.equal(transferEntityOwner(building, defeated), true)
+  assert.equal(getBuildingInteriorPortalId(building), portalId)
+  assert.equal(getBuildingInteriorSpaceForBuilding(context, building), space)
 })
 
 test('defeated player buildings transfer to the nearest remaining player', () => {

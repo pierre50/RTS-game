@@ -1,3 +1,4 @@
+import { createQuestJournal } from '../../services/quests/QuestSystem'
 import type { Application } from 'pixi.js'
 import Controls from '../../classes/Controls'
 import Menu from '../../classes/Menu'
@@ -94,6 +95,7 @@ export function createGameRuntimeContext(
     getWorldGraph: () => (host._campaignSave ? getRealWorldGraph(host._campaignSave) : null),
     getCampaignWorldState: worldId => host._campaignSave?.worlds?.[worldId]?.state ?? null,
     getCampaignFactions: () => host._campaignSave?.factions ?? null,
+    getQuestJournal: () => (host._campaignSave ? (host._campaignSave.quests ??= createQuestJournal()) : null),
     getCampaignEconomy: () => host._campaignSave?.economy ?? null,
     updateWorldEconomy: () => {
       if (host._campaignSave?.economy && context.map && context.scheduler)

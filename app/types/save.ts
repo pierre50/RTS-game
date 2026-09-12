@@ -1,3 +1,4 @@
+import type { QuestJournalState } from './quest'
 import type { TargetObservation } from '../lib/units/playerTargetKnowledge'
 import type { CaveDefinition } from './cave'
 import type { HeroEquippedItem } from './heroTools'
@@ -37,6 +38,7 @@ export type SaveEntityState = {
   cave?: CaveDefinition
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
+  interiorPortalId?: string
   interiorOwner?: string
   offlineWork?: { target: string; milliseconds: number }
   action?: string | null
@@ -322,6 +324,8 @@ type CampaignClockSave = {
 }
 
 export type CampaignSave = {
+  introduction?: { status: 'prepared' | 'completed'; worldId: string; companionLabel: string; campfireLabel: string }
+  quests?: QuestJournalState
   format: 'campaign-v1'
   version: number
   clock?: CampaignClockSave
@@ -371,6 +375,8 @@ export type FactionExpeditionSave = {
 }
 
 export type GameConfig = {
+  villageStarts?: Record<string, VillageStartProfile>
+  heroStartVillage?: string
   localGridLayout?: { columns: number; rows: number }
   allTechnologies?: boolean
   bots?: number
@@ -392,6 +398,14 @@ export type GameConfig = {
   startingResources?: ResourceAmount
   worldId?: string | null
   worldRegionId?: string | null
+}
+
+export type VillageStartProfile = {
+  age: number
+  buildings: Record<string, number>
+  units: Record<string, number>
+  resourceBonus?: ResourceAmount
+  wallRadius?: number
 }
 
 export type PlayerSetupConfig = {

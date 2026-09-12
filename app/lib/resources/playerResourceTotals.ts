@@ -2,12 +2,17 @@ import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../consta
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
+import { storageResourcePriority } from './storagePolicy'
 
 type StorageResourceName = (typeof RESOURCE_STORAGE_NAMES)[number]
 type ResourceName = StorageResourceName | 'food'
 
 const FOOD_DEDUCTION_ORDER: readonly ('wheat' | 'meat' | 'berry')[] = ['wheat', 'meat', 'berry']
-const RESOURCE_STOCKPILE_BUILDING_TYPES = new Set<string>([BUILDING_TYPES.chest, BUILDING_TYPES.storagePit])
+const RESOURCE_STOCKPILE_BUILDING_TYPES = new Set<string>([
+  BUILDING_TYPES.chest,
+  BUILDING_TYPES.storagePit,
+  BUILDING_TYPES.granary,
+])
 
 export function expandLegacyFoodAmount(amount: ResourceAmount | null | undefined): ResourceAmount {
   const { food, ...rest } = amount ?? {}
@@ -256,16 +261,44 @@ export function depositChestResources(
   resourcesToDeposit: ResourceAmount | null | undefined
 ): boolean {
   if (!player || !resourcesToDeposit) return false
-  const chest = getPlayerResourceChests(player)[0]
-  const destination = chest ?? getPlayerStartingResourceDepots(player)[0]
-  if (!destination) return false
-
-  destination.inventory = destination.inventory ?? {}
-  destination.inventory.resources = destination.inventory.resources ?? {}
+  const stores = getPlayerResourceStores(player).filter(store => store.isBuilt !== false)
+  if (!stores.length) return false
+  const buildings = player.buildings ?? []
+  const parentOf = (store: BuildingEntity) =>
+    store.type !== BUILDING_TYPES.chest
+      ? store
+      : buildings.find(
+          parent =>
+            (parent as BuildingEntity & { interiorBuildings?: BuildingEntity[] }).interiorBuildings?.includes(store) ||
+            (store.spaceId && store.spaceId === `interior:${player.label}:${parent.label}`)
+        )
+  const candidates = stores.map(store => ({ store, parent: parentOf(store) }))
   const expandedDeposit = expandFoodDeposit(resourcesToDeposit)
+  const deposits: Array<{ destination: BuildingEntity; resource: keyof ResourceAmount; amount: number }> = []
   for (const [resource, rawAmount] of Object.entries(expandedDeposit) as [keyof ResourceAmount, number][]) {
     const amount = Math.max(0, Math.floor(rawAmount ?? 0))
     if (amount <= 0) continue
+    const eligible = candidates.filter(
+      ({ parent }) =>
+        parent?.isBuilt !== false &&
+        !parent?.isDead &&
+        !parent?.isDestroyed &&
+        Number.isFinite(storageResourcePriority(parent?.type ?? 'Chest', resource))
+    )
+    eligible.sort(
+      (a, b) =>
+        storageResourcePriority(a.parent?.type ?? 'Chest', resource) -
+          storageResourcePriority(b.parent?.type ?? 'Chest', resource) ||
+        Number(b.store.type === 'Chest') - Number(a.store.type === 'Chest') ||
+        (a.store.inventory?.resources?.[resource] ?? 0) - (b.store.inventory?.resources?.[resource] ?? 0)
+    )
+    const destination = eligible[0]?.store
+    if (!destination) return false
+    deposits.push({ destination, resource, amount })
+  }
+  for (const { destination, resource, amount } of deposits) {
+    destination.inventory ??= {}
+    destination.inventory.resources ??= {}
     destination.inventory.resources[resource] = (destination.inventory.resources[resource] ?? 0) + amount
   }
   syncPlayerResourceFieldsFromChests(player)

@@ -27,6 +27,7 @@ export class TopbarView {
     const options = document.createElement('div')
     options.className = 'topbar-options'
     menu.dayTime.className = 'topbar-daytime hud-info-panel'
+    options.appendChild(menu.questJournal.createOpenButton())
     options.appendChild(menu.pauseMenu.createOpenButton())
     this.optionsEl = options
     menu.gameHud.appendChild(menu.dayTime)

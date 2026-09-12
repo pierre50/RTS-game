@@ -1,4 +1,5 @@
 import { DailyWorldReport } from './DailyWorldReport'
+import { invalidateEconomicKnowledge } from './world/EconomicKnowledgeUpdates'
 import { NaturalRegrowthSystem } from './NaturalRegrowthSystem'
 import { MarketRestockSystem } from './world/MarketRestockSystem'
 import { TrapHarvestSystem } from './world/TrapHarvestSystem'
@@ -38,6 +39,7 @@ export class DailyWorldEventSystem {
     const report = new DailyWorldReport(this.context, event.day)
     const eventWithReport = { ...event, report }
     for (const handler of this.handlers) handler.handleDailyWorldEvent(eventWithReport)
+    invalidateEconomicKnowledge(this.context.map)
     this.context.updateWorldEconomy?.()
     report.flush()
   }

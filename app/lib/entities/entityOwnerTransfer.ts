@@ -1,6 +1,7 @@
 import { FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import { isBanditOwner } from '../combat/bandits'
 import { getBuildingShelterCapacity } from '../buildings/buildingOccupancy'
+import { getBuildingInteriorPortalId } from '../buildings/interiors'
 import { updateInstanceVisibility } from '../grid/visibility'
 import { syncEntityHealthDisplay } from './entityHealthDisplay'
 import { isNeutralPlayer, isPlayerEliminated } from '../playerState'
@@ -137,6 +138,9 @@ export function transferEntityOwner(
   clearConvertedEntityRuntimeState(target)
   target.assetCiv = target.assetCiv || oldOwner.civ
   target.assetAge = target.assetAge ?? oldOwner.age
+  // Interior locations must survive ownership changes, including subsequent captures.
+  if (target.family === FAMILY_TYPES.building)
+    target.interiorPortalId = getBuildingInteriorPortalId(target as BuildingEntity)
   target.owner = newOwner
   if (target.family === FAMILY_TYPES.unit) transferUnitMembership(target, oldOwner, newOwner)
   else transferBuildingMembership(target, oldOwner, newOwner, menu)

@@ -61,7 +61,8 @@ export type HeroProximityInteractionOptions = {
 const MOUNTABLE_HORSE_CELL_RADIUS = 2
 
 function isOpenableEntity(target: RuntimeEntity | null | undefined): target is RuntimeEntity {
-  if (!target || target.isDestroyed || target.family === FAMILY_TYPES.resource) return false
+  if (!target || target.isDestroyed || target.family === FAMILY_TYPES.resource || target.family === FAMILY_TYPES.animal)
+    return false
   const openable = target as RuntimeEntity & { openable?: boolean; interactionAction?: HeroProximityInteractionAction }
   if (openable.openable || openable.interactionAction === 'open') return true
   return Boolean(target.isDead || (target as UnitEntity).currentSheet === SHEET_TYPES.corpse)

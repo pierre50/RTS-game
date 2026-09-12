@@ -146,7 +146,7 @@ test('hero start ignores a settlement hole and finds land on the outer row', () 
       '../../lib': { playerColors: ['blue'] },
       '../../lib/resources/playerResourceTotals': {},
       '../players': { Human: class { constructor(options) { Object.assign(this, options) } } },
-      './BanditCampGeneration': {}, './CivilizationStartingKit': {},
+      './BanditCampGeneration': {},
     },
   })
   const grid = Array.from({ length: 5 }, () => [])

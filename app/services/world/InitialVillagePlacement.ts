@@ -10,7 +10,8 @@ export function placeInitialVillageUnits(
   state: SerializedSave,
   factions: Set<string>,
   terrain: (OfflineTerrainCell | null | undefined)[][],
-  rules: OfflineWorkRules
+  rules: OfflineWorkRules,
+  options: { includePlayed?: boolean } = {}
 ): void {
   const spatial = new OfflineWorldSpatial(
     terrain,
@@ -23,13 +24,14 @@ export function placeInitialVillageUnits(
     1440
   const assigned = new Map<SaveEntityState, number>()
   for (const player of state.players) {
-    if (player.type !== 'AI' || player.isPlayed || !player.factionId || !factions.has(player.factionId)) continue
+    if ((!options.includePlayed && (player.type !== 'AI' || player.isPlayed)) || !player.factionId || !factions.has(player.factionId)) continue
     const buildings = (player.buildings ?? []).filter(b => isLiving(b) && (!b.spaceId || b.spaceId === 'outside'))
     const center = buildings.find(b => b.type === 'TownCenter' && b.isBuilt)
     if (!center) continue
     for (const unit of player.units ?? []) {
       if (
         !isLiving(unit) ||
+        unit.type === 'Hero' ||
         unit.followingHero ||
         unit.controlMode === 'hero' ||
         unit.trainingTargetType ||

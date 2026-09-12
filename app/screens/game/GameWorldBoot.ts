@@ -1,6 +1,9 @@
 import { definedProperties } from '../../lib/definedProperties'
 import { economyRulesFor, initializeCampaignEconomy } from '../../services/world/WorldEconomyRuntime'
 import { placeInitialVillageUnits } from '../../services/world/InitialVillagePlacement'
+import { populateVillageBase } from '../../services/world/VillageBaseState'
+import { OfflineWorldSpatial } from '../../services/world/OfflineWorldSpatial'
+import { applyVillageStartingState, placeStartingHeroInVillage, villageStartProfiles } from '../../services/world/VillageStartingState'
 import { materializeInitialEconomy } from '../../services/world/WorldEconomy'
 import { t } from '../../lib/lang'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
@@ -25,6 +28,7 @@ type LoadedMapBlueprint = MapBlueprint & {
 }
 
 type RuntimeMapInstance = BlueprintRuntimeMap & {
+  startingUnits?: number
   destroy(options?: unknown): void
   generateFromBlueprint(
     blueprint: LoadedMapBlueprint,
@@ -36,7 +40,7 @@ type RuntimeMapInstance = BlueprintRuntimeMap & {
     applySavedStateToGeneratedMap(state: ReturnType<typeof savedRuntimeState>): void
   }
   prepareTerrainForSavedState(options?: { onProgress?: (messageKey: string, progress: number) => void }): Promise<void>
-  stylishMap(options?: { onProgress?: (messageKey: string, progress: number) => void }): Promise<void>
+  stylishMap(options?: { onProgress?: (messageKey: string, progress: number) => void; deferPlayerPlacement?: boolean }): Promise<void>
 }
 
 export type GameWorldBootHost = {
@@ -102,7 +106,7 @@ export async function bootGameFromConfig(
   game.context.performance?.setPhase?.('load')
   measure(game, 'boot.createRuntime', () => game._createRuntime())
   const map = game._map()
-  measure(game, 'boot.applyMapConfig', () => game._applyMapConfig(map, config))
+  measure(game, 'boot.applyMapConfig', () => game._applyMapConfig(map, config.heroStartVillage ? { ...config, heroOnlyStart: true } : config))
   measure(game, 'boot.createUiRuntime', () => game._createUiRuntime())
 
   const mapGenerationStartedAt = performance.now()
@@ -111,7 +115,7 @@ export async function bootGameFromConfig(
   const blueprint = await measureAsync(game, 'boot.loadMapBlueprint', () =>
     game._loadRequiredWorldMapBlueprint({
       size: map.size,
-      playerCiv: human.civ,
+      playerCiv: config.heroStartVillage ?? human.civ,
       worldId,
       worldRegionId: config.worldRegionId ?? undefined,
     })
@@ -134,12 +138,43 @@ export async function bootGameFromConfig(
       preloadEquipment: true,
     })
   )
-  await measureAsync(game, 'boot.stylishMap', () => map.stylishMap({ onProgress: reportProgress(game) }))
   const previousCampaign = game._campaignSave
+  const profiles = villageStartProfiles(config)
+  const economy = map.worldRegionId ? previousCampaign?.economy?.regions[map.worldRegionId]?.initialState : undefined
+  const deferred = Boolean(economy || (!previousCampaign && (Object.keys(profiles).length || config.heroStartVillage)))
+  await measureAsync(game, 'boot.stylishMap', () => map.stylishMap({ onProgress: reportProgress(game), deferPlayerPlacement: deferred }))
+  if (deferred) map.ready = false
+  const initialVillageState = () => {
+    const initial = serializeGame(game._gameContext())
+    const rules = economyRulesFor(initial)
+    const spatial = new OfflineWorldSpatial(map.grid, initial, (b, i) => Number(rules.buildingConfig(i, b.type).size) || 2)
+    initial.players.forEach((player, index) => {
+      if (player.type !== 'AI' && !player.isPlayed) return
+      if (player.units?.length || player.buildings?.length) return
+      if (economy?.players.some(p => p.factionId && p.factionId === player.factionId)) return
+      const runtime = game.context.players.find(p => p.label === player.label)
+      if (!runtime) throw new Error('Missing starting player anchor')
+      populateVillageBase(player, index, runtime, spatial, rules, map.startingResources, {
+        heroOnly: player.isPlayed && map.heroOnlyStart, workers: map.startingUnits,
+      })
+    })
+    return initial
+  }
+  if (!previousCampaign && (Object.keys(profiles).length || config.heroStartVillage)) {
+    const initial = initialVillageState()
+    const rules = economyRulesFor(initial)
+    const generated = applyVillageStartingState(initial, profiles, map.grid, rules)
+    placeInitialVillageUnits(generated, new Set(generated.players.flatMap(p => p.factionId ? [p.factionId] : [])), map.grid, rules, { includePlayed: true })
+    if (config.heroStartVillage) {
+      placeStartingHeroInVillage(generated, config.heroStartVillage, map.grid, rules)
+    }
+    await preloadSavedPlayerAssets(game, generated)
+    map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(generated))
+  }
   if (previousCampaign?.economy && map.worldRegionId) {
     const economy = previousCampaign.economy.regions[map.worldRegionId]?.initialState
     if (economy) {
-      const generated = materializeInitialEconomy(serializeGame(game._gameContext()), economy, options.dayNightElapsedMs ?? 0)
+      const generated = materializeInitialEconomy(initialVillageState(), economy, options.dayNightElapsedMs ?? 0)
       placeInitialVillageUnits(generated, new Set(economy.players.flatMap(p => p.factionId ? [p.factionId] : [])),
         map.grid, economyRulesFor(generated))
       await preloadSavedPlayerAssets(game, generated)
@@ -149,7 +184,8 @@ export async function bootGameFromConfig(
   if (!previousCampaign) {
     game._campaignSave = ensureCampaignPlayerRoster(createInitialCampaignSave(serializeGame(game._gameContext())))
     await initializeCampaignEconomy(game._campaignSave, game._gameContext(), (worldRegionId, size) =>
-      game._loadRequiredWorldMapBlueprint({ worldId, worldRegionId, size, playerCiv: human.civ })
+      game._loadRequiredWorldMapBlueprint({ worldId, worldRegionId, size, playerCiv: human.civ }),
+      profiles
     )
   }
   await game._updateLoading('finalizingWorld', 0.96)

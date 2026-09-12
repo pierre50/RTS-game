@@ -33,6 +33,7 @@ type SerializableEntity = RuntimeEntityBase & {
   cave?: CaveDefinition
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
+  interiorPortalId?: string
   trainingTargetType?: string | null
   trainingQueue?: TrainingEntry[]
   buildingProduction?: { activeTrainingExtra?: UnitCreationExtra }
@@ -391,6 +392,7 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'type',
       'spaceId',
       'interiorBuildings',
+      'interiorPortalId',
       'cave',
       'queue',
       'loading',

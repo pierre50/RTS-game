@@ -185,7 +185,6 @@ function loadMapPlayerGeneration() {
       },
       '../players': { AI: TestAI, Human: TestHuman },
       './BanditCampGeneration': { ensureBanditCampOwner: () => null },
-      './CivilizationStartingKit': { applyCivilizationLevelStartingKit: () => {} },
     },
   })
 }

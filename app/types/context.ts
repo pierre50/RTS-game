@@ -1,3 +1,5 @@
+import type { NeutralVillageQuests } from '../services/quests/NeutralVillageQuests'
+import type { QuestJournalState } from './quest'
 import type { Application, Container } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
@@ -86,7 +88,11 @@ interface TimeSkipSystemLike {
 
 export type SchedulerTaskId = number
 
-export type NpcOrdersOpenOptions = { chatterLine?: string; ordersEnabled?: boolean }
+export type NpcOrdersOpenOptions = {
+  chatterLine?: string
+  ordersEnabled?: boolean
+  scriptedReply?: { label: string; onSelect(): void }
+}
 
 export interface SchedulerLike {
   elapsedMs: number
@@ -143,6 +149,9 @@ export interface MenuLike {
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   init?(): void
   destroy?(): void
+  toggleQuests?(): void
+  isQuestJournalOpen?(): boolean
+  closeQuests?(): void
   toggleInventory?(): void
   closeInventory?(): void
   isInventoryOpen?(): boolean
@@ -278,6 +287,7 @@ interface EditorInteractionTarget {
 }
 
 export interface GameContextLike {
+  neutralQuests?: NeutralVillageQuests | null
   app: Application
   gamebox: HTMLElement
   map: RuntimeMap
@@ -313,6 +323,7 @@ export interface GameContextLike {
   getCampaignWorldState?: (worldId: string) => SerializedSave | null
   getCampaignFactions?: () => Record<string, FactionSave> | null
   updateWorldEconomy?: () => void
+  getQuestJournal?: () => QuestJournalState | null
   getCampaignEconomy?: () => CampaignEconomySave | null
   changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void
   debugTeleportWorldMap?: (target: { worldI: number; worldJ: number; worldRegionId: string }) => void

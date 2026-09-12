@@ -175,6 +175,16 @@ test('unit creation passes unit gender to random civilization names', () => {
 
   assert.equal(unit.name, 'Latium-female-unit')
   assert.deepEqual(calls, [{ civ: 'Latium', gender: 'female', sample: 0.25 }])
+  assert.equal(unit.gender, 'female')
+  assert.equal(unit.appearanceVariants.gender, 'female')
+  assert.equal(unit.assetCiv, 'Latium')
+
+  const legacy = player.createUnit({
+    type: 'Villager', gender: 'male', appearanceVariants: { gender: 'female' }, assetCiv: 'Kemet',
+  })
+  assert.equal(legacy.name, 'Kemet-female-unit')
+  assert.equal(legacy.gender, 'female')
+  assert.equal(legacy.appearanceVariants.gender, 'female')
 })
 
 test('population objectives follow living villagers without granting technologies', () => {

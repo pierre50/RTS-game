@@ -1,3 +1,4 @@
+import { prepareGameIntroduction, showGameIntroduction } from '../services/introduction/GameIntroduction'
 import { getCaveInteriorBlueprint } from '../lib/buildings/caveBlueprint'
 import type { Application } from 'pixi.js'
 import { Container, type ContainerChild } from 'pixi.js'
@@ -156,6 +157,9 @@ export default class Game extends Container {
       })
     }
   }
+
+  _prepareIntroduction(): Promise<void> { return prepareGameIntroduction(this) }
+  _showIntroduction(): void { showGameIntroduction(this) }
 
   async start(): Promise<void> {
     await startGameRuntime(this)

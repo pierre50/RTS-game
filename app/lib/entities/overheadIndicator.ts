@@ -77,8 +77,11 @@ function syncIndicatorPositionWhileVisible(entity: RuntimeEntity, indicator: Ove
   )
 }
 
-export function clearEntityOverheadIndicator(entity: RuntimeEntity, options: { fade?: boolean } = {}): void {
-  const existing = entity.getChildByLabel?.(LABEL_TYPES.overheadIndicator)
+export function clearEntityOverheadIndicator(
+  entity: RuntimeEntity,
+  options: { fade?: boolean; label?: string } = {}
+): void {
+  const existing = entity.getChildByLabel?.(options.label ?? LABEL_TYPES.overheadIndicator)
   if (!existing) return
   const indicator = existing as OverheadIndicatorDisplay
   if (options.fade === false || !entity.context?.scheduler) {
@@ -105,15 +108,19 @@ export function clearEntityOverheadIndicator(entity: RuntimeEntity, options: { f
   )
 }
 
-export function setEntityOverheadIndicator(entity: RuntimeEntity, type: OverheadIndicatorType | null): void {
-  clearEntityOverheadIndicator(entity, { fade: !type })
+export function setEntityOverheadIndicator(
+  entity: RuntimeEntity,
+  type: OverheadIndicatorType | null,
+  options: { label?: string } = {}
+): void {
+  clearEntityOverheadIndicator(entity, { fade: !type, label: options.label })
   if (!type) return
 
   const indicator = createStatusBubble({
     text: INDICATOR_TEXT[type],
     fontSize: INDICATOR_FONT_SIZE[type],
   })
-  indicator.label = LABEL_TYPES.overheadIndicator
+  indicator.label = options.label ?? LABEL_TYPES.overheadIndicator
   updateIndicatorPosition(entity, indicator)
   indicator.zIndex = 120
   entity.addChild?.(indicator)

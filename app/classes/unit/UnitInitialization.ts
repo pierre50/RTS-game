@@ -30,6 +30,7 @@ import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
 import { ensureUnitHealthRegen } from '../../lib/units/unitHealth'
 import { applyUnitActionFrameSequence, getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
+import { applyUnitActivitySpritesheets } from '../../lib/units/unitSpriteAssets'
 import { UnitInterface } from '../../ui/entity/UnitInterface'
 import { UnitActions } from './UnitActions'
 import { UnitCombat } from './UnitCombat'
@@ -209,11 +210,7 @@ export function initializeUnitWorkRole(unit: UnitRuntimeHost): void {
 }
 
 export function loadConfiguredUnitSpritesheets(unit: UnitRuntimeHost): void {
-  const assets = unit.assets ?? unit.allAssets?.default
-  if (!assets) return
-  for (const [key, value] of Object.entries(assets)) {
-    Object.assign(unit, { [key]: getCachedUnitSpritesheet(value) })
-  }
+  applyUnitActivitySpritesheets(unit)
 }
 
 export function setupUnitInterface(unit: UnitRuntimeHost): void {

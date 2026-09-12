@@ -56,7 +56,7 @@ export async function generateStylishMap(
   context: GameContextLike,
   timer: GenerationTimer,
   callbacks: PipelineCallbacks,
-  { onProgress = async (_stage: string, _progress: number) => {} }: GenerateMapOptions = {}
+  { onProgress = async (_stage: string, _progress: number) => {}, deferPlayerPlacement = false }: GenerateMapOptions = {}
 ): Promise<void> {
   const { menu, player } = context
   const { timings, measure, measureAsync } = timer
@@ -64,7 +64,7 @@ export async function generateStylishMap(
   await callbacks.prepareBaseTerrain(context, { timings, measure }, onProgress)
   await onProgress('generatingPlayers', 0.48)
   measure('cavePlacement', () => placeCave(map, context))
-  measure('playerPlacement', () => map.placePlayers())
+  if (!deferPlayerPlacement) measure('playerPlacement', () => map.placePlayers())
   await onProgress('generatingResources', 0.58)
   if (map.pregeneratedResourcesLoaded) {
     timings.neutralResources = 0

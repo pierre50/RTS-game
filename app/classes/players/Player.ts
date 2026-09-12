@@ -22,6 +22,7 @@ import {
 import { playUiSound } from '../../lib/audio/uiSound'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { definedProperties } from '../../lib/definedProperties'
+import { resolveUnitIdentity } from '../../lib/units/unitIdentity'
 import { fadeIn } from '../../lib/entities/entityFade'
 import { isNeutralPlayer } from '../../lib/playerState'
 import { playableColor } from '../../lib/graphics/playableColor'
@@ -291,14 +292,19 @@ export class Player implements PlayerLike {
   createUnit(options: UnitSpawnOptions, creationOptions: { preserveType?: boolean } = {}) {
     const { context } = this
     const isHeroUnit = !creationOptions.preserveType && this.isPlayed && !this.units.length
-    const unitGender = options.gender ?? this.gender
+    const type = isHeroUnit ? UNIT_TYPES.hero : options.type
+    const label = options.label ?? uuidv4()
+    const identity = resolveUnitIdentity({ ...options, type, label, owner: this })
     const name =
       options.name ||
-      (isHeroUnit ? this.name : getRandomUnitName(options.assetCiv || this.civ, unitGender, () => context.map.random()))
-    const type = isHeroUnit ? UNIT_TYPES.hero : options.type
+      (isHeroUnit ? this.name : getRandomUnitName(identity.civ, identity.gender, () => context.map.random()))
     let unit = new Unit(
       definedProperties({
         ...options,
+        label,
+        gender: identity.gender,
+        assetCiv: identity.civ,
+        appearanceVariants: { ...options.appearanceVariants, gender: identity.gender },
         type,
         name,
         controlMode: isHeroUnit ? 'hero' : options.controlMode,

@@ -26,7 +26,7 @@ function buildingLocalKey(building: BuildingEntity): string {
 }
 
 export function getBuildingInteriorPortalId(building: BuildingEntity): string {
-  return `${buildingOwnerKey(building)}:${buildingLocalKey(building)}`
+  return building.interiorPortalId || `${buildingOwnerKey(building)}:${buildingLocalKey(building)}`
 }
 
 export function isBuildingInteriorSupported(building: Pick<BuildingEntity, 'isBuilt' | 'type'> | null | undefined): boolean {

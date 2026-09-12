@@ -1,4 +1,5 @@
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import { invalidateEconomicKnowledge } from '../services/world/EconomicKnowledgeUpdates'
 import { registerResourceRespawnSlot } from './resources/ResourceRespawn'
 import {
   resourceFootprintCells,
@@ -123,6 +124,7 @@ export class Resource extends Instance implements ResourceEntity {
     if (!cell) throw new Error(`Cannot spawn resource on missing cell (${this.i}, ${this.j})`)
 
     this.quantity = this.quantity ?? this.totalQuantity
+    invalidateEconomicKnowledge(map)
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
     this.x = flatX
@@ -492,6 +494,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+    if (this.context?.map) invalidateEconomicKnowledge(this.context.map)
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
     this.stopWindMotion()

@@ -149,10 +149,15 @@ export function canApplyWindMotion(displayObject: ResourceShadow | null | undefi
 }
 
 function shouldShowResourceShadow(resource: ResourceVisualOwner): boolean {
+  // Shadows live outside the resource container, so sprite visibility must be checked explicitly.
+  // Dead resources can still have a visible sprite (for example, a fallen tree).
   return (
     getShadowsEnabled() &&
     resource.visible &&
     !resource.isDestroyed &&
+    !resource.destroyed &&
+    resource.sprite.visible &&
+    !resource.sprite.destroyed &&
     isEntityInActiveMapSpace(resource) &&
     !(
       resource.type === RESOURCE_TYPES.wheat &&

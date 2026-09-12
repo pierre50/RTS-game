@@ -1,8 +1,8 @@
 import { SHEET_TYPES, WORK_TYPES } from '../constants'
-import { applyBakedLpcUnitAssets } from '../lpc/baked'
+import { refreshBakedLpcUnitAssets } from '../lpc/baked'
 import type { DynamicEquipmentKey } from '../lpc/equipment'
 import { refreshUnitEquipmentStats } from '../equipment/equipmentStats'
-import { applyUnitWorkAssets } from '../units/unitWorkAppearance'
+import { applyUnitActionFrameSequence } from '../units/unitWorkAppearance'
 import type { UnitEntity } from '../../types/entities'
 import type { HeroEquippedItem } from '../../types/heroTools'
 
@@ -76,14 +76,15 @@ export function isHeroCatchingPoleEquipped(
 function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {
   const work = EQUIPPED_ITEM_WORK[tool]
   if (hero.work === work) {
-    applyBakedLpcUnitAssets(hero)
+    refreshBakedLpcUnitAssets(hero)
     refreshUnitEquipmentStats(hero)
     hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
     return
   }
   hero.work = work
-  applyBakedLpcUnitAssets(hero)
-  applyUnitWorkAssets(hero, work, { refreshEquipmentStats: true })
+  applyUnitActionFrameSequence(hero, work)
+  refreshUnitEquipmentStats(hero)
+  refreshBakedLpcUnitAssets(hero)
   hero.setTextures?.(hero.sprite?.playing ? SHEET_TYPES.walking : SHEET_TYPES.standing)
 }
 

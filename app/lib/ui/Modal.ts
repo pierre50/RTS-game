@@ -3,6 +3,7 @@ import { uuidv4 } from '../maths'
 import { playClickSound } from '../audio/uiSound'
 
 export class Modal {
+  private dismissible: boolean
   _backdrop?: HTMLDivElement
   _closed?: boolean
   _id: string
@@ -11,15 +12,22 @@ export class Modal {
   _panel?: HTMLDivElement
   _previousActiveElement: Element | null
 
-  constructor({ title, content, onClose }: { title?: string; content?: Node; onClose?: () => void } = {}) {
+  constructor({
+    title,
+    content,
+    onClose,
+    dismissible = true,
+    showCloseButton = true,
+  }: { title?: string; content?: Node; onClose?: () => void; dismissible?: boolean; showCloseButton?: boolean } = {}) {
+    this.dismissible = dismissible
     this._id = uuidv4()
     this._onClose = onClose
     this._previousActiveElement = document.activeElement
     this._onKeyDown = this._handleKeyDown.bind(this)
-    this._build(title, content)
+    this._build(title, content, showCloseButton)
   }
 
-  _build(title?: string, content?: Node): void {
+  _build(title?: string, content?: Node, showCloseButton = true): void {
     const backdrop = document.createElement('div')
     this._backdrop = backdrop
     backdrop.id = this._id
@@ -51,14 +59,16 @@ export class Modal {
       panel.setAttribute('aria-label', t('dialog'))
     }
 
-    const closeBtn = document.createElement('button')
-    closeBtn.type = 'button'
-    closeBtn.className = 'modal-close ui-btn'
-    closeBtn.textContent = '✕'
-    closeBtn.setAttribute('aria-label', t('close'))
-    closeBtn.addEventListener('pointerdown', playClickSound)
-    closeBtn.addEventListener('click', () => this._dismiss())
-    header.appendChild(closeBtn)
+    if (showCloseButton) {
+      const closeBtn = document.createElement('button')
+      closeBtn.type = 'button'
+      closeBtn.className = 'modal-close ui-btn'
+      closeBtn.textContent = '✕'
+      closeBtn.setAttribute('aria-label', t('close'))
+      closeBtn.addEventListener('pointerdown', playClickSound)
+      closeBtn.addEventListener('click', () => this._dismiss())
+      if (this.dismissible) header.appendChild(closeBtn)
+    }
 
     panel.appendChild(header)
     if (content) panel.appendChild(content)
@@ -123,7 +133,7 @@ export class Modal {
   }
 
   _dismiss(): void {
-    if (!this._backdrop?.isConnected) return
+    if (!this.dismissible || !this._backdrop?.isConnected) return
     this._removeEl()
     this._onClose?.()
   }

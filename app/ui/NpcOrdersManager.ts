@@ -1,3 +1,4 @@
+import { NpcQuestPanel } from './NpcQuestPanel'
 import { canShowNpcJobOrder } from './menu/NpcOrderEligibility'
 import { npcTrainingDetail } from './menu/NpcTrainingDetails'
 import { assignVillagerAutonomy } from '../lib'
@@ -11,6 +12,7 @@ import {
 import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/units/unitExperience'
 import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
+import { getUnitGender } from '../lib/units/unitIdentity'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
 import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
@@ -39,7 +41,7 @@ import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 import { getVolume } from '../lib/audio/settings'
 
-type NpcOrderId = 'stay' | 'follow' | 'goto' | 'cancel' | 'mountHorse' | VillagerAutonomyJob | `train-${string}`
+type NpcOrderId = 'stay' | 'follow' | 'goto' | 'mountHorse' | VillagerAutonomyJob | `train-${string}`
 type NpcOrderMenuId = NpcOrderId | 'resources' | 'training' | 'bag'
 
 type NpcOrderSpec = {
@@ -58,7 +60,6 @@ const NPC_ORDER_SPECS: NpcOrderSpec[] = [
   { id: 'horseCapture', labelKey: 'npcOrderHorseCapture', villagerJob: 'horseCapture' },
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
   { id: 'stay', labelKey: 'npcOrderStay', run: keepNpcHere },
-  { id: 'cancel', labelKey: 'npcOrderCancelSleep' },
 ]
 
 const NPC_RESOURCE_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 'villagerJob'>>[] = [
@@ -102,6 +103,7 @@ export class NpcOrdersManager {
   debugContainer: HTMLDivElement
   debugLevelButton: HTMLButtonElement
   buttonsContainer: HTMLDivElement
+  exitButton: HTMLButtonElement
   bagContainer: HTMLDivElement
   transferPanel: InventoryTransferPanel | null
   chatterRevealTimeout: number | null
@@ -111,6 +113,9 @@ export class NpcOrdersManager {
   buttons: NestedButtonMenu<NpcOrderMenuId>['buttons']
   opened: boolean
   npcs: UnitEntity[]
+  private scriptedReplyActive = false
+  private scriptedReplyPanel = document.createElement('div')
+  questPanel: NpcQuestPanel
   ordersEnabled: boolean
 
   constructor(menu: MenuHost) {
@@ -135,6 +140,13 @@ export class NpcOrdersManager {
     this.chatterContainer = document.createElement('div')
     this.chatterContainer.className = 'npc-orders-chatter'
     this.panel.appendChild(this.chatterContainer)
+    this.questPanel = new NpcQuestPanel(menu, (line, npc) => {
+      this.stopChatterReveal()
+      this.showChatterLine(line, npc)
+    })
+    this.panel.appendChild(this.questPanel.root)
+    this.scriptedReplyPanel.className = 'npc-quest-options'
+    this.panel.appendChild(this.scriptedReplyPanel)
 
     this.debugContainer = document.createElement('div')
     this.debugContainer.className = 'npc-orders-debug'
@@ -170,9 +182,37 @@ export class NpcOrdersManager {
       onBack: () => playUiSound(SOUND_CUES.ui.menuClick),
     })
     this.buttons = this.orderMenu.buttons
+
+    // Keep the exit outside conditional choices, submenus and inventory content.
+    this.exitButton = document.createElement('button')
+    this.exitButton.type = 'button'
+    this.exitButton.className = 'ui-btn npc-orders-exit'
+    this.exitButton.textContent = t('npcOrderCancelSleep')
+    this.exitButton.addEventListener('click', () => {
+      playUiSound(SOUND_CUES.ui.menuClick)
+      this.close()
+    })
+    this.panel.appendChild(this.exitButton)
   }
 
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
+    if (this.scriptedReplyActive) return
+    this.scriptedReplyActive = Boolean(options.scriptedReply)
+    this.exitButton.hidden = Boolean(options.scriptedReply)
+    this.scriptedReplyPanel.hidden = !options.scriptedReply
+    this.scriptedReplyPanel.replaceChildren()
+    if (options.scriptedReply) {
+      const reply = document.createElement('button')
+      reply.type = 'button'
+      reply.className = 'ui-btn'
+      reply.textContent = options.scriptedReply.label
+      reply.addEventListener('click', () => {
+        reply.disabled = true
+        this.scriptedReplyActive = false
+        options.scriptedReply?.onSelect()
+      })
+      this.scriptedReplyPanel.appendChild(reply)
+    }
     this.npcs = npcs
     this.opened = true
     this.orderMenu.reset()
@@ -209,6 +249,7 @@ export class NpcOrdersManager {
     this.chatterContainer.replaceChildren()
     const rescuedNpcs = npcs.filter(npc => npc.owner?.isPlayed && npc.pendingRescueThanks)
     const chatterLine =
+      this.questPanel.update(soloTarget, true) ??
       (rescuedNpcs.length ? pickNpcRescueThanksLine(rescuedNpcs) : null) ??
       options.chatterLine ??
       (soloTarget
@@ -229,6 +270,7 @@ export class NpcOrdersManager {
     }
 
     this.updateDebugControls(soloTarget)
+    if (options.scriptedReply) this.debugContainer.hidden = true
 
     for (const [id, button] of this.buttons) {
       if (id !== 'back') button.disabled = false
@@ -243,7 +285,8 @@ export class NpcOrdersManager {
       title,
       content: this.panel,
       panelClass: 'npc-orders-panel',
-      inspection: true,
+      showCloseButton: false,
+      dismissible: !options.scriptedReply,
       onClose: () => this.close(),
     })
   }
@@ -275,11 +318,15 @@ export class NpcOrdersManager {
   }
 
   close(keepFrozen = false): void {
+    if (this.scriptedReplyActive) return
     if (!this.opened && !this.modal) return
     const modal = this.modal
     this.modal = undefined
     this.opened = false
     this.ordersEnabled = false
+    this.questPanel.clear()
+    this.scriptedReplyPanel.hidden = true
+    this.scriptedReplyPanel.replaceChildren()
     this.closeBag()
     this.orderMenu.reset()
     const npcs = this.npcs
@@ -290,8 +337,7 @@ export class NpcOrdersManager {
   }
 
   private isFemaleNpcChatterVoice(npc?: UnitEntity | null): boolean {
-    const gender = npc?.gender ?? npc?.appearanceVariants?.gender
-    return gender === 'female'
+    return getUnitGender(npc) === 'female'
   }
 
   private showChatterLine(line: string, speaker: UnitEntity | null): void {
@@ -316,7 +362,9 @@ export class NpcOrdersManager {
 
       const nextWord = words[index]
       renderedLine.textContent = renderedLine.textContent ? `${renderedLine.textContent} ${nextWord}` : nextWord
-      const bleep = this.isFemaleNpcChatterVoice(speaker) ? this.chatterRevealAudio.female : this.chatterRevealAudio.male
+      const bleep = this.isFemaleNpcChatterVoice(speaker)
+        ? this.chatterRevealAudio.female
+        : this.chatterRevealAudio.male
       bleep.currentTime = 0
       bleep.volume = getVolume()
       bleep.play().catch(() => {})
@@ -355,6 +403,8 @@ export class NpcOrdersManager {
   }
 
   destroy(): void {
+    this.stopChatterReveal()
+    this.scriptedReplyActive = false
     this.modal?.close()
     this.modal = undefined
   }
@@ -462,7 +512,12 @@ export class NpcOrdersManager {
     return canShowNpcJobOrder(this.npcs, this.menu.context, job)
   }
 
+  syncQuest(): void {
+    if (this.opened) this.questPanel.update(this.npcs.length === 1 ? this.npcs[0] : null)
+  }
+
   refreshInventory(): void {
+    this.syncQuest()
     if (!this.opened || this.bagContainer.hidden) return
     this.renderBag()
   }
@@ -517,10 +572,6 @@ export class NpcOrdersManager {
     if (!this.npcs.length) return
     playUiSound(SOUND_CUES.ui.menuClick)
     const npcs = this.npcs
-    if (spec.id === 'cancel') {
-      this.close()
-      return
-    }
     if (spec.startsPicking) {
       // Still committed to an order (waiting on the world click) — don't resume old tasks yet.
       this.close(true)

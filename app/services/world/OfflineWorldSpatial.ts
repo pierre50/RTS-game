@@ -27,6 +27,8 @@ export class OfflineWorldSpatial {
   private regions = new Map<string, number>()
   private nextRegion = 0
   private entities = new Map<string, SaveEntityState>()
+  private passages = new Set<string>()
+  private mobile = new Set<SaveEntityState>()
 
   constructor(
     private terrain: (OfflineTerrainCell | null | undefined)[][],
@@ -37,7 +39,11 @@ export class OfflineWorldSpatial {
       if (!entity.isDestroyed) this.reserve(entity)
     }
     state.players.forEach((player, index) => {
-      for (const unit of player.units ?? []) if (isLiving(unit)) this.reserve(unit)
+      for (const unit of player.units ?? [])
+        if (isLiving(unit)) {
+          this.mobile.add(unit)
+          this.reserve(unit)
+        }
       for (const building of player.buildings ?? []) {
         if (!isLiving(building)) continue
         const radius = Math.ceil((building.size ?? buildingSize(building, index)) / 2)
@@ -46,6 +52,64 @@ export class OfflineWorldSpatial {
         }
       }
     })
+    for (const player of state.players) {
+      const center = player.buildings?.find(b => b.type === 'TownCenter' && isLiving(b))
+      if (center) this.protectVillageAccess(center, player.buildings ?? [])
+    }
+  }
+
+  /** Preserve real walkable routes, not just terrain connectivity through occupied cells. */
+  protectVillageAccess(center: SaveGridPoint, buildings: SaveEntityState[]): void {
+    const walkable = (point: SaveGridPoint) =>
+      this.land(point) && [...(this.occupied.get(this.key(point)) ?? [])].every(entity => this.mobile.has(entity))
+    let start: SaveGridPoint | undefined
+    for (let radius = 1; radius <= 6 && !start; radius++)
+      for (let di = -radius; di <= radius && !start; di++)
+        for (let dj = -radius; dj <= radius; dj++) {
+          const point = { i: center.i + di, j: center.j + dj }
+          if (walkable(point)) {
+            start = point
+            break
+          }
+        }
+    if (!start) return
+    const previous = new Map<string, SaveGridPoint | null>([[this.key(start), null]])
+    const queue = [start]
+    const extremes = [start, start, start, start]
+    for (const point of queue) {
+      if (point.i < extremes[0].i) extremes[0] = point
+      if (point.i > extremes[1].i) extremes[1] = point
+      if (point.j < extremes[2].j) extremes[2] = point
+      if (point.j > extremes[3].j) extremes[3] = point
+      for (const [di, dj] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]) {
+        const next = { i: point.i + di, j: point.j + dj }
+        if (!previous.has(this.key(next)) && walkable(next)) {
+          previous.set(this.key(next), point)
+          queue.push(next)
+        }
+      }
+    }
+    const protect = (target: SaveGridPoint) => {
+      let point: SaveGridPoint | null | undefined = target
+      while (point) {
+        const key = this.key(point)
+        this.passages.add(key)
+        point = previous.get(key)
+      }
+    }
+    extremes.forEach(protect)
+    for (const building of buildings.filter(isLiving)) {
+      const target = queue.reduce(
+        (best, point) => (distance(point, building) < distance(best, building) ? point : best),
+        start
+      )
+      protect(target)
+    }
   }
 
   private key(point: SaveGridPoint): string {
@@ -139,7 +203,7 @@ export class OfflineWorldSpatial {
   }
 
   naturalCell(point: SaveGridPoint): boolean {
-    if (!this.available(point)) return false
+    if (!this.available(point) || this.passages.has(this.key(point))) return false
     const cell = this.terrain[point.i]?.[point.j]
     return !cell?.waterBorder && !cell?.inclined
   }

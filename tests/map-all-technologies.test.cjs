@@ -6,7 +6,6 @@ const { applyStartingBonuses } = loadTsModule('app/classes/map/MapPlayerGenerati
     '../../lib': {},
     '../players': {},
     './BanditCampGeneration': {},
-    './CivilizationStartingKit': {},
     '../../lib/resources/playerResourceTotals': {},
   },
 })

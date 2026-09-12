@@ -1,5 +1,6 @@
 import { getLang } from '../lang'
 import { pickRandomItem } from '../random'
+import { getUnitGender } from '../units/unitIdentity'
 import type { UnitEntity } from '../../types/entities'
 
 // Flavor-only lines shown in the npc orders panel when the hero talks to one of their own
@@ -179,8 +180,7 @@ const NPC_RESTING_CHATTER_LINES: Record<string, GenderedNpcLines> = {
 }
 
 function getNpcGender(unit?: UnitEntity | null): NpcGender | null {
-  const gender = unit?.gender ?? unit?.appearanceVariants?.gender
-  return gender === 'male' || gender === 'female' ? gender : null
+  return getUnitGender(unit)
 }
 
 export function pickNpcRestingChatterLine(unit?: UnitEntity | null): string {

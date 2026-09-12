@@ -1,0 +1,69 @@
+.quest-journal-open {
+  min-height: var(--topbar-menu-height);
+  padding: 0 14px;
+  border: var(--panel-border);
+}
+.quest-journal-panel {
+  width: min(820px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+}
+.quest-journal {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(0, 2fr);
+  min-height: 240px;
+  max-height: 65vh;
+  overflow: auto;
+  gap: 24px;
+  padding: 16px;
+}
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.quest-list h3,
+.quest-details h2 {
+  margin-top: 0;
+}
+.quest-list-item {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.quest-list-item[aria-current='true'] {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+.quest-details {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.quest-giver {
+  opacity: 0.75;
+}
+.quest-empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  text-align: center;
+  opacity: 0.8;
+}
+.quest-tracker {
+  position: fixed;
+  top: calc(var(--topbar-edge-top) + var(--topbar-menu-height) + 12px);
+  right: var(--topbar-edge-right);
+  max-width: min(320px, 70vw);
+  padding: 10px 14px;
+  pointer-events: none;
+}
+.quest-tracker[hidden] {
+  display: none;
+}
+@media (max-width: 560px) {
+  .quest-journal {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+.npc-quest-options {
+  margin-bottom: var(--ui-gap-8);
+}

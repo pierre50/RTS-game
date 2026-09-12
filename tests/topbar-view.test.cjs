@@ -84,6 +84,7 @@ test('topbar displays and themes all civilization ages', () => {
         },
       },
       gameHud: makeElement(),
+      questJournal: { createOpenButton: () => makeElement() },
       pauseMenu: { createOpenButton: () => makeElement() },
     }
     const topbar = new TopbarView(menu)
@@ -101,7 +102,7 @@ test('topbar displays and themes all civilization ages', () => {
     assert.equal(menu.icons.wood, 'wood.png')
     assert.equal(menu.gameHud.children.length, 2)
     assert.equal(menu.gameHud.children[1].className, 'topbar-options')
-    assert.equal(menu.gameHud.children[1].children.length, 1)
+    assert.equal(menu.gameHud.children[1].children.length, 2)
     assert.equal(menu.gameHud.children[0].className, 'topbar-daytime hud-info-panel')
     assert.equal(menu.gameHud.children[0].textContent, 'Jour 3 - 06:15')
     assert.equal(menu.topbar, undefined)

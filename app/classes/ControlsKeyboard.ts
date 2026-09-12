@@ -4,6 +4,9 @@ type ControlsKeyboardHost = {
   buildingPlacer: { cancelWallDraft(): boolean }
   context: {
     menu?: {
+      toggleQuests?: () => void
+      closeQuests?: () => void
+      isQuestJournalOpen?: () => boolean
       closeInventory?: () => void
       handleHotkey?: (key: string) => void
       isInventoryOpen?: () => boolean
@@ -95,6 +98,11 @@ const KEYBOARD_CAMERA_MAX_SPEED = 14
 const KEYBOARD_CAMERA_ACCELERATION = 0.24
 
 export function handleControlsEscapeKey(controls: ControlsKeyboardHost, evt: KeyboardEvent): boolean {
+  if (controls.context.menu?.isQuestJournalOpen?.()) {
+    evt.preventDefault()
+    controls.context.menu.closeQuests?.()
+    return true
+  }
   if (controls.buildingPlacer.cancelWallDraft()) {
     evt.preventDefault()
     return true
@@ -152,12 +160,25 @@ export function handleControlsKeyDown(controls: ControlsKeyboardHost, evt: Keybo
     evt.preventDefault()
     return
   }
+  if (action === 'quests' && !evt.repeat && controls.context.menu?.isQuestJournalOpen?.()) {
+    evt.preventDefault()
+    controls.context.menu.closeQuests?.()
+    return
+  }
   if (action === 'inventory' && controls.isHeroControlActive() && controls.context.menu?.isInventoryOpen?.()) {
     evt.preventDefault()
     controls.context.menu.closeInventory?.()
     return
   }
   if (controls.isInteractionBlocked()) return
+  if (action === 'quests') {
+    if (!evt.repeat) {
+      evt.preventDefault()
+      controls.context.menu?.toggleQuests?.()
+    }
+    return
+  }
+  if (controls.context.menu?.isQuestJournalOpen?.()) return
   const isCameraAction = Boolean(action && CAMERA_ACTIONS.has(action))
   if (evt.repeat && !isCameraAction) return
 

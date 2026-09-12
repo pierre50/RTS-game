@@ -195,6 +195,10 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
 }
 
 export function clearGeneratedGameplayState(map: MapGenerationMap): void {
+  // Stop provisional AI tasks before swapping in the saved village roster.
+  for (const player of [...map.context.players]) {
+    if (player instanceof AI) player.die()
+  }
   const dynamicFamilies = new Set([
     FAMILY_TYPES.animal,
     FAMILY_TYPES.building,

@@ -1618,6 +1618,10 @@
   flex-direction: column;
 }
 
+.npc-orders-exit {
+  margin-top: var(--ui-gap-8);
+}
+
 .npc-orders-info:not(:empty) {
   margin-bottom: var(--ui-gap-10);
 }
@@ -1668,18 +1672,23 @@
   }
 }
 
-.npc-orders-options {
+.npc-orders-options,
+.npc-quest-options {
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-8);
 }
 
-.npc-orders-options[hidden] {
+.npc-orders-options[hidden],
+.npc-quest-options[hidden] {
   display: none;
 }
 
-.npc-orders-options .ui-btn {
+.npc-orders-options .ui-btn,
+.npc-quest-options .ui-btn,
+.ui-btn.npc-orders-exit {
   width: 100%;
+  white-space: normal;
 }
 
 .npc-orders-options .nested-button-menu-label,

@@ -42,7 +42,7 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
       },
     },
     '../lpc': {
-      applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
+      refreshBakedLpcUnitAssets: unit => calls.push(['refreshBakedLpcUnitAssets', unit.label]),
     },
   })
   const corpse = {
@@ -74,7 +74,7 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
 
   assert.deepEqual(corpse.lootEquipment, ['helmet_barbarian_ceramic', 'helmet_barbarian_ceramic'])
   assert.deepEqual(hero.inventory.equipment, ['round_shield_ceramic_slash'])
-  assert.ok(calls.some(call => call[0] === 'applyBakedLpcUnitAssets' && call[1] === 'bandit-1'))
+  assert.ok(calls.some(call => call[0] === 'refreshBakedLpcUnitAssets' && call[1] === 'bandit-1'))
   assert.ok(calls.some(call => call[0] === 'syncAppearanceLayers' && call[1] === 'corpseSheet'))
 })
 
@@ -89,7 +89,7 @@ test('unit corpse loot can be frozen at death even after an empty transient cach
       getUnitEquipment: () => ['sword_ceramic', 'helmet_barbarian_nasal_ceramic'],
     },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const corpse = {
     isDead: true,
@@ -122,7 +122,7 @@ test('archer corpses loot a random carried arrow stack', () => {
       getUnitEquipment: () => ['quiver', 'bow', 'arrow_copper'],
     },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const corpse = {
     context: { map: { randomRange: (min, max) => Math.min(max, min + 2) } },
@@ -161,7 +161,7 @@ test('equipment loot labels humanize runtime ids', () => {
       },
       './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
       '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-      '../lpc': { applyBakedLpcUnitAssets: () => {} },
+      '../lpc': { refreshBakedLpcUnitAssets: () => {} },
     }
   )
 
@@ -183,7 +183,7 @@ test('unit corpse loot transfers pocket resources to hero inventory', () => {
     },
     './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const corpse = {
     inventory: { resources: { wood: 3, stone: 7, gold: 0 } },
@@ -218,7 +218,7 @@ test('hero equips found bag items into gear and weapon slots with replacement sw
       },
       '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
       '../lpc': {
-        applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
+        refreshBakedLpcUnitAssets: unit => calls.push(['refreshBakedLpcUnitAssets', unit.label]),
       },
     }
   )
@@ -350,7 +350,7 @@ test('helmet decor requires an equipped helmet and is removed with the helmet', 
     },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': {
-      applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
+      refreshBakedLpcUnitAssets: unit => calls.push(['refreshBakedLpcUnitAssets', unit.label]),
     },
   })
   const hero = {
@@ -395,7 +395,7 @@ test('equipping the same arrow type merges the bag stack into the equipped stack
       refreshUnitEquipmentStats: () => {},
     },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const hero = {
     owner: { age: 2 },
@@ -426,7 +426,7 @@ test('hero arrow stacks can equip and unequip one item at a time', () => {
       refreshUnitEquipmentStats: () => {},
     },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const hero = {
     owner: { age: 2 },
@@ -464,7 +464,7 @@ test('helmet wings require a helmet and occupy its decoration slot without repla
   const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipment/equipmentLoot.ts', {
     './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
-    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const hero = { owner: { age: 2 }, inventory: { equipment: ['helmet_wings_gold', 'helmet_iron'] } }
   assert.equal(equipHeroInventoryItem(hero, 'helmet_wings_gold'), false)

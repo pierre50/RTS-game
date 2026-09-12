@@ -168,3 +168,15 @@ test('filters building interiors out of the world graph shown in inventory', () 
   assert.deepEqual(Object.keys(graph.nodes).sort(), ['child-red', 'root'])
   assert.deepEqual(graph.nodes.root.children, ['child-red'])
 })
+
+test('quest journal and tracking survive world saves, interior travel and JSON reload', () => {
+  const { createQuestJournal } = loadTsModule('app/services/quests/QuestSystem.ts')
+  const campaign = createInitialCampaignSave(worldSave(), { worldId: 'root' })
+  campaign.quests = createQuestJournal()
+  campaign.quests.quests.push({ id: 'delivery', status: 'active', parameters: { resource: 'wood', quantity: 12 } })
+  campaign.quests.trackedQuestId = 'delivery'
+  const updated = updateCurrentWorldState(campaign, worldSave())
+  const interior = addChildWorldToCampaign(updated, worldSave(99), { worldId: 'house', kind: 'interior' })
+  const returned = returnToParentWorld(interior)
+  assert.deepEqual(JSON.parse(JSON.stringify(returned)).quests, campaign.quests)
+})

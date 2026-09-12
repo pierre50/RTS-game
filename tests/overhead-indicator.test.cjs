@@ -259,3 +259,18 @@ test('clearing an overhead indicator fades it out before destroying it', () => {
   assert.equal(unit.children.length, 0)
   assert.equal(indicator.destroyed, true)
 })
+
+test('quest indicator cleanup preserves the independently owned sleep indicator', () => {
+  const { setEntityOverheadIndicator, clearEntityOverheadIndicator } = loadModule('app/lib/entities/overheadIndicator.ts', {
+    '../constants': { FAMILY_TYPES: { animal: 'animal', unit: 'unit' }, LABEL_TYPES: { overheadIndicator: 'overheadIndicator' } },
+    '../maths': { getReliefOffset: () => 0 },
+    './statusBubble': { createStatusBubble: () => new MockContainer() },
+  })
+  const npc = createUnit({ sprite: { anchor: { y: 0.5 }, height: 96, scale: { y: 1 } } })
+  setEntityOverheadIndicator(npc, 'sleep')
+  setEntityOverheadIndicator(npc, 'exclamation', { label: 'quest-offer-indicator' })
+  assert.equal(npc.children.length, 2)
+  clearEntityOverheadIndicator(npc, { fade: false, label: 'quest-offer-indicator' })
+  assert.equal(npc.children.length, 1)
+  assert.equal(npc.children[0].label, 'overheadIndicator')
+})

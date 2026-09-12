@@ -1056,6 +1056,77 @@ test('a converted villager keeps its original body and gender after save and loa
   assert.deepEqual(saved.appearanceVariants, { gender: 'female' })
 })
 
+test('chiefs keep their civilization and gender when switching to combat and back to idle', () => {
+  const mocks = {
+    './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
+    './equipment': {
+      dynamicEquipmentLayersForEquipment: () => [],
+      dynamicEquipmentLayersForUnit: () => [],
+      dynamicEquipmentLayersForVillager: () => [],
+    },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
+    '../../constants': constants,
+    '../constants': constants,
+    '../equipment/equipmentStats': { refreshUnitEquipmentStats: () => {} },
+    '../animations/actionFrameSequences': { getConfiguredActionFrameSequence: () => null },
+    'pixi.js': { Assets: { cache: { has: () => true, get: id => ({ id }) } } },
+  }
+  const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/bakedUnitAssets.ts', mocks)
+  const { applyUnitWorkAssets } = loadModule('app/lib/units/unitWorkAppearance.ts', mocks)
+  const configs = require('../public/assets/data/gameplay/units.json')
+
+  for (const civ of ['Hellas', 'Latium', 'Kemet', 'Sumeria', 'Xia', 'Alba', 'Nord', 'Nobatia']) {
+    for (const gender of ['male', 'female']) {
+      for (const type of ['Chief', 'Villager']) {
+        const unit = {
+          ...structuredClone(configs[type]), type, isChief: true,
+          owner: { civ, label: 'neutral-owner' },
+          appearanceVariants: { gender }, label: 'defender', i: 1, j: 2,
+        }
+        assert.equal(applyBakedLpcUnitAssets(unit), true)
+        for (const work of ['attacker', 'default']) {
+          applyUnitWorkAssets(unit, work, { action: work === 'attacker' ? 'attack' : null })
+          const root = `units/chief/${civ.toLowerCase()}/${gender}`
+          assert.equal(unit.walkingSheet.id, `${root}/walking`)
+          assert.equal(unit.standingSheet.id, `${root}/walking`)
+          assert.equal(unit.actionSheet.id, `${root}/action`)
+          assert.equal(unit.dyingSheet.id, `${root}/dying`)
+          assert.equal(unit.corpseSheet.id, `${root}/corpse`)
+        }
+      }
+    }
+  }
+})
+
+test('baked sprites honor saved unit gender when appearance variants are absent', () => {
+  const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/bakedUnitAssets.ts', {
+    './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
+    './equipment': {
+      dynamicEquipmentLayersForEquipment: () => [],
+      dynamicEquipmentLayersForUnit: () => [],
+      dynamicEquipmentLayersForVillager: () => [],
+    },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
+    '../../constants': constants,
+    'pixi.js': { Assets: { cache: { has: () => true } } },
+  })
+  const unit = {
+    type: 'Chief', gender: 'female', owner: { civ: 'Kemet', label: 'neutral-owner' },
+    label: 'defender', i: 1, j: 2,
+  }
+  assert.equal(applyBakedLpcUnitAssets(unit), true)
+  assert.equal(unit.assets.walkingSheet, 'units/chief/kemet/female/walking')
+  unit.i = 20
+  assert.equal(applyBakedLpcUnitAssets(unit), true)
+  assert.equal(unit.assets.walkingSheet, 'units/chief/kemet/female/walking')
+  // An existing visual identity remains authoritative for older saves.
+  unit.gender = 'male'
+  assert.equal(applyBakedLpcUnitAssets(unit), true)
+  assert.equal(unit.assets.walkingSheet, 'units/chief/kemet/female/walking')
+})
+
 test('unique bandit baked units do not include civilization in asset paths', () => {
   const cachedAliases = new Set(['units/bandit_archer/male/walking'])
   const { applyBakedLpcUnitAssets, getBakedUnitStandingSheetAlias } = loadModule('app/lib/lpc/baked.ts', {

@@ -4,7 +4,6 @@ import { BUILDING_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../
 import { expandLegacyFoodAmount, syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import { AI, Human } from '../players'
 import { ensureBanditCampOwner } from './BanditCampGeneration'
-import { applyCivilizationLevelStartingKit as applyCivilizationLevelStartingKitToMap } from './CivilizationStartingKit'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -161,17 +160,7 @@ export function placePlayers(map: MapGenerationMap): void {
     syncPlayerResourceFieldsFromChests(player)
 
     placeStartingUnits(map, player, towncenter)
-    if (player.civilizationLevel) applyCivilizationLevelStartingKit(map, player, player.civilizationLevel, towncenter)
   }
-}
-
-export function applyCivilizationLevelStartingKit(
-  map: MapGenerationMap,
-  player: PlayerLike,
-  level: number,
-  townCenter: BuildingEntity
-): void {
-  applyCivilizationLevelStartingKitToMap(map, player, level, townCenter)
 }
 
 function shuffleSpawnIndexes(map: MapGenerationMap): number[] {
@@ -269,7 +258,7 @@ function applyAllStartingBonuses(
       applyStartingBonuses(
         map,
         player,
-        playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null
+        playersConfig?.[index]?.age ?? null
       )
     )
 }

@@ -27,7 +27,7 @@ export function restoreOfflineBuilders(state: SerializedSave): void {
   }
 }
 
-function findSite(anchor: SaveEntityState, size: number, spatial: OfflineWorldSpatial, worker: SaveEntityState) {
+export function findVillageBuildingSite(anchor: SaveEntityState, size: number, spatial: OfflineWorldSpatial, worker: SaveEntityState) {
   // Keep a free ring around the full footprint for entrances and walking space.
   const radius = Math.ceil(size / 2) + 1
   for (let ring = 4; ring <= 20; ring++) {
@@ -133,7 +133,7 @@ export function planOfflineBuildings(
           continue
         }
         const size = Number(config.size) || 0
-        const position = findSite(center, size, spatial, workers[0])
+        const position = findVillageBuildingSite(center, size, spatial, workers[0])
         if (!position) {
           player.offlineBuildingDecision = `Day ${day}: no safe space for ${type}`
           continue
@@ -158,6 +158,7 @@ export function planOfflineBuildings(
         const radius = Math.ceil(size / 2)
         for (let i = position.i - radius; i <= position.i + radius; i++)
           for (let j = position.j - radius; j <= position.j + radius; j++) spatial.reserve(project, { i, j })
+        spatial.protectVillageAccess(center, player.buildings)
         break
       }
     }

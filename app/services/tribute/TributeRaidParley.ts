@@ -15,7 +15,13 @@ import {
 
 type TributeModalView = {
   createChiefContent: (chief: TributeRaidUnit) => HTMLElement
-  createModal: (options: { title: string; content: HTMLElement; panelClass: string; onClose: () => void }) => Modal
+  createModal: (options: {
+    title: string
+    content: HTMLElement
+    panelClass: string
+    showCloseButton?: boolean
+    onClose: () => void
+  }) => Modal
 }
 
 export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, view: TributeModalView): void {
@@ -76,6 +82,7 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
     title: getTributeTitle(raid),
     content,
     panelClass: 'bandit-tribute-modal',
+    showCloseButton: false,
     onClose: () => {
       raid.modal = null
       if (!resolved && raid.phase === 'parley') runtime.makeRaidHostile(raid)

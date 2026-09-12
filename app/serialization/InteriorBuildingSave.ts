@@ -7,15 +7,15 @@ type InteriorSaveOwner = {
   name?: string
   buildings?: Pick<
     SaveEntityState,
-    'i' | 'j' | 'label' | 'type' | 'isDead' | 'isDestroyed' | 'stableHorses' | 'horseAmount'
+    'i' | 'j' | 'label' | 'type' | 'isDead' | 'isDestroyed' | 'stableHorses' | 'horseAmount' | 'interiorPortalId'
   >[]
 }
 
 export function interiorSaveSpaceId(
   owner: string,
-  building: Pick<SaveEntityState, 'i' | 'j' | 'label' | 'type'>
+  building: Pick<SaveEntityState, 'i' | 'j' | 'label' | 'type' | 'interiorPortalId'>
 ): string {
-  return `interior:${owner}:${building.label || `${building.i},${building.j},${building.type}`}`
+  return `interior:${building.interiorPortalId || `${owner}:${building.label || `${building.i},${building.j},${building.type}`}`}`
 }
 
 /** Also migrates old default decorations whose space id was omitted from the save. */

@@ -30,6 +30,8 @@ export type GameBootFlowHost = {
   _restartSaveData: SaveRecord | null
   config: GameConfig | null
   context: BootFlowContext
+  _prepareIntroduction?(): Promise<void>
+  _showIntroduction?(): void
   _acquireWakeLock(): Promise<void>
   _bootFromConfig(config: GameConfig): Promise<void>
   _bootFromSave(json: SerializedSave): Promise<void>
@@ -82,6 +84,7 @@ async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero =
   const hero = booted && protectHero ? game._runtimeHeroUnit() : null
   const previousDevInvincible = hero?.devInvincible
   if (hero) hero.devInvincible = true
+  if (booted) game._showIntroduction?.()
   const showGame = (): void => {
     game._measure('loading.destroy', () => game._loadingScreen?.destroy())
     game._loadingScreen = null
@@ -110,6 +113,7 @@ export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
   try {
     if (!game.config) throw new Error(t('corruptSave'))
     await game._bootFromConfig(game.config)
+    await game._prepareIntroduction?.()
     booted = true
   } finally {
     await finishBoot(game, booted, true)
