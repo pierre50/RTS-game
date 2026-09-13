@@ -1,5 +1,6 @@
-import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex, updateInstanceVisibility } from '../../lib'
-import { getMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
+import { cartesianToIsometric, getInstanceZIndex, updateInstanceVisibility } from '../../lib'
+import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
+import { getEntitySpaceMapLike, getMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import type { RuntimeEntity, UnitEntity, UnitRestState } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
@@ -69,6 +70,6 @@ export function placeUnitAtCell(unit: UnitEntity, cell: RuntimeCell): void {
   map?.addChild?.(unit)
   map?.addToInstanceBucket?.(unit)
   map?.updateInstanceBucket?.(unit, oldI, oldJ)
-  unit.applyReliefLift?.(getGroundReliefLevel(cell), true)
+  syncEntityRelief(getEntitySpaceMapLike(unit, map), unit, cell)
   updateInstanceVisibility(unit)
 }

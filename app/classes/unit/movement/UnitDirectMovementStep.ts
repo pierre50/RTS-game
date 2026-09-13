@@ -1,8 +1,6 @@
-import { RELIEF_CLIMB_SPEED_MULTIPLIER, RELIEF_LIFT_SMOOTHING } from '../../../constants'
-import { isometricToCartesian } from '../../../lib'
 import { getEntitySpaceMapLike } from '../../../lib/mapSpaces'
 import { isHeroControlled } from '../../../lib/units/unitControl'
-import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
+import { getDirectMoveCandidate } from './UnitDirectMovementCandidate'
 import {
   createHeroTerrainCollisionBlocker,
   getHeroDirectMoveBlockerAtPoint,
@@ -27,21 +25,12 @@ function prepareDirectMove(
   const map = getEntitySpaceMapLike(unit, contextMap)
   if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return null
 
-  const targetClimbFactor = unit.currentCell?.inclined ? RELIEF_CLIMB_SPEED_MULTIPLIER : 1
-  state.directMoveClimbFactor += (targetClimbFactor - state.directMoveClimbFactor) * RELIEF_LIFT_SMOOTHING
-  const effectiveDistance = distance * state.directMoveClimbFactor * getEnergyMoveSpeedMultiplier(unit)
-
-  const candidateX = unit.x + dirX * effectiveDistance
-  const candidateY = unit.y + dirY * effectiveDistance
-  const [rawI, rawJ] = isometricToCartesian(candidateX, candidateY)
+  const candidate = getDirectMoveCandidate(unit, map, dirX, dirY, distance)
+  const { rawI, rawJ } = candidate
   if (rawI < 0 || rawJ < 0 || rawI > map.size || rawJ > map.size) {
     debugBlockedDirectMove(unit, 'target-out-of-map', { rawI, rawJ, mapSize: map.size }, dirX, dirY)
     return null
   }
-  const newI = Math.min(Math.max(rawI, 0), map.size)
-  const newJ = Math.min(Math.max(rawJ, 0), map.size)
-  const crossingCell = newI !== unit.i || newJ !== unit.j
-  const targetCell = crossingCell ? map.grid[newI]?.[newJ] : unit.currentCell
   const heroControlled = isHeroControlled(unit)
 
   return {
@@ -50,16 +39,8 @@ function prepareDirectMove(
     map,
     dirX,
     dirY,
-    candidateX,
-    candidateY,
-    rawI,
-    rawJ,
-    newI,
-    newJ,
-    crossingCell,
-    targetCell,
+    ...candidate,
     heroControlled,
-    effectiveDistance,
   }
 }
 

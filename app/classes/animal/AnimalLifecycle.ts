@@ -1,7 +1,7 @@
+import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
-  getGroundReliefLevel,
   getInstanceZIndex,
   getPercentage,
   isometricToCartesian,
@@ -69,7 +69,7 @@ export class AnimalLifecycle {
       cell.solid = true
     }
     animal.context.map.updateInstanceBucket(animal, oldI, oldJ)
-    animal.applyReliefLift(getGroundReliefLevel(cell), true)
+    syncEntityRelief(getEntitySpaceMapLike(animal, animal.context.map), animal, cell)
   }
 
   settleCorpseCell(): void {
@@ -101,7 +101,7 @@ export class AnimalLifecycle {
     targetCell.place(animal)
     targetCell.solid = true
     map.updateInstanceBucket(animal, oldI, oldJ)
-    animal.applyReliefLift(getGroundReliefLevel(targetCell), true)
+    syncEntityRelief(spaceMap, animal, targetCell)
   }
 
   die(): void {

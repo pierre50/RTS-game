@@ -27,12 +27,14 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
   },
   '../../lib': {
     cartesianToIsometric: (i, j) => [i * 10, j * 10],
-    getGroundReliefLevel: cell => cell.z ?? 0,
     getInstanceZIndex: instance => instance.i + instance.j,
     getPercentage: (quantity, totalQuantity) => (quantity / totalQuantity) * 100,
     isometricToCartesian: (x, y) => [Math.round(x / 10), Math.round(y / 10)],
     playAudibleSoundCue: () => {},
     updateInstanceVisibility: () => {},
+  },
+  '../../lib/terrain/reliefSurface': {
+    syncEntityRelief: (_map, entity, cell) => entity.applyReliefLift(cell.z ?? 0),
   },
   '../../lib/entities/deathFlash': {
     startDeathFlash: () => () => {},
@@ -216,7 +218,7 @@ test('animal death settles a moving corpse onto its visual cell', () => {
     x: 9,
     y: 0,
     zIndex: 0,
-    applyReliefLift: (level, immediate) => calls.push(['applyReliefLift', level, immediate]),
+    applyReliefLift: level => calls.push(['applyReliefLift', level]),
   }
   oldCell.has = animal
   const lifecycle = new AnimalLifecycle(animal)
@@ -237,7 +239,7 @@ test('animal death settles a moving corpse onto its visual cell', () => {
     ['stopInterval'],
     ['stopTimeout'],
     ['behavior.stop'],
-    ['applyReliefLift', 2, true],
+    ['applyReliefLift', 2],
     ['setTextures', 'dyingSheet'],
     ['syncShadow'],
   ])
@@ -297,7 +299,7 @@ test('animal die clears pending combat recovery before playing dying animation',
     x: 0,
     y: 0,
     zIndex: 4,
-    applyReliefLift: (level, immediate) => calls.push(['applyReliefLift', level, immediate]),
+    applyReliefLift: level => calls.push(['applyReliefLift', level]),
   }
   cell.has = animal
   const lifecycle = new AnimalLifecycle(animal)
@@ -316,7 +318,7 @@ test('animal die clears pending combat recovery before playing dying animation',
     ['stopTimeout'],
     ['behavior.stop'],
     ['bucket', 0, 0, 0, 0],
-    ['applyReliefLift', 0, true],
+    ['applyReliefLift', 0],
   ])
   assert.ok(calls.some(call => call[0] === 'setTextures' && call[1] === 'dyingSheet'))
   assert.ok(calls.some(call => call[0] === 'gotoAndPlay' && call[1] === 0))

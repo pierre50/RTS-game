@@ -222,7 +222,7 @@ export interface UnitEntity extends EnergyEntity {
     distance: number,
     options?: { facingDirX?: number; facingDirY?: number }
   ) => boolean
-  applyReliefLift?: (level: number, immediate?: boolean) => void
+  applyReliefLift?: (level: number) => void
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null
   gatherProgressState?: UnitGatherProgressState | null

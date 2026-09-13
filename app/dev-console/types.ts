@@ -316,7 +316,7 @@ export type DevEntity = RuntimeEntity & {
   renderable?: boolean
   totalHitPoints?: number
   path?: RuntimeCell[]
-  applyReliefLift?: (level: number, immediate?: boolean) => void
+  applyReliefLift?: (level: number) => void
   die?: (immediate?: boolean) => void
 }
 

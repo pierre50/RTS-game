@@ -417,7 +417,14 @@ function loadModule(relativePath, mocks) {
     if (request === './UnitDirectedActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectedActions.ts'))
     }
-    if (/^\.\/UnitDirectMovement(?:Step|Commit|Diagnostics)$/.test(request)) {
+    if (request.endsWith('/terrain/reliefSurface') || request.endsWith('/terrain/reliefMovement')) {
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/terrain', request.split('/').at(-1) + '.ts'),
+        filename,
+        {}
+      )
+    }
+    if (/^\.\/UnitDirectMovement(?:Step|Commit|Diagnostics|Candidate)$/.test(request)) {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement', request.slice(2) + '.ts'))
     }
     if (request === './movement/UnitDirectMovement' || request === './UnitDirectMovement') {
@@ -497,8 +504,6 @@ const constants = {
     standing: 'standingSheet',
     walking: 'walking',
   },
-  RELIEF_CLIMB_SPEED_MULTIPLIER: 0.7,
-  RELIEF_LIFT_SMOOTHING: 1,
   RESOURCE_TYPES: {
     fiberPlant: 'FiberPlant',
     medicinalHerb: 'MedicinalHerb',
@@ -937,6 +942,8 @@ for (const [mountedOnHorse, expectedSpeed] of [
       },
       currentCell: { has: null, i: 0, j: 0, solid: false, z: 0 },
       currentSheet: constants.SHEET_TYPES.walking,
+      x: 0,
+      y: 0,
       dest: { i: 1, isDestroyed: false, j: 0, x: 10, y: 0 },
       i: 0,
       j: 0,
@@ -984,6 +991,8 @@ for (const [mountedOnHorse, expectedSpeed] of [
       },
       currentCell: { has: null, i: 0, j: 0, solid: false, z: 0 },
       currentSheet: constants.SHEET_TYPES.walking,
+      x: 0,
+      y: 0,
       dest: { i: 1, isDestroyed: false, j: 0, x: 10, y: 0 },
       energy: 2,
       i: 0,
@@ -1031,6 +1040,8 @@ for (const action of [constants.ACTION_TYPES.hunt, constants.ACTION_TYPES.captur
       },
       currentCell: { has: null, i: 0, j: 0, solid: false, z: 0 },
       currentSheet: constants.SHEET_TYPES.walking,
+      x: 0,
+      y: 0,
       dest: { family: constants.FAMILY_TYPES.animal, i: 1, isDestroyed: false, j: 0, x: 10, y: 0 },
       i: 0,
       j: 0,
@@ -1440,6 +1451,7 @@ test('combat recovery idles when its reposition path finishes without an action'
       },
     },
     currentCell: cell0,
+    currentSheet: constants.SHEET_TYPES.walking,
     dest: cell1,
     destHasMoved: () => false,
     i: 0,

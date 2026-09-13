@@ -1,5 +1,5 @@
 import { AnimatedSprite } from 'pixi.js'
-import { LABEL_TYPES, RELIEF_LIFT_SMOOTHING } from '../../constants'
+import { LABEL_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
   getEntityMapPoint,
@@ -85,10 +85,9 @@ export class AnimalVisuals {
     this.syncShadow()
   }
 
-  applyReliefLift(level: number, immediate = false): void {
+  applyReliefLift(level: number): void {
     const animal = this.animal
-    const target = -getReliefLiftPixels(level)
-    animal.reliefLift = immediate ? target : animal.reliefLift + (target - animal.reliefLift) * RELIEF_LIFT_SMOOTHING
+    animal.reliefLift = -getReliefLiftPixels(level)
     animal.sprite.position.y = -animal.altitude + animal.reliefLift
     this.syncShadow()
     const healthBar = animal.getChildByLabel(LABEL_TYPES.healthBar)

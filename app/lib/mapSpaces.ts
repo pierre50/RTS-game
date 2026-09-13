@@ -1,7 +1,8 @@
+import { syncEntityRelief } from './terrain/reliefSurface'
 import type { Container, ContainerChild } from 'pixi.js'
 import { detachStableInteriorHorse } from './horses/stableHorses'
 import { BUCKET_SIZE } from '../constants'
-import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex } from './maths'
+import { cartesianToIsometric, getInstanceZIndex } from './maths'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { GridPosition, Point } from '../types/grid'
@@ -344,10 +345,7 @@ export function moveEntityToMapSpace(
   addEntityToRuntimeMapSpaceBucket(space, entity)
   if (space.id === OUTSIDE_SPACE_ID) map.updateInstanceBucket?.(entity, oldI, oldJ)
   attachEntityShadowsToMapSpace(map, entity)
-  ;(entity as RuntimeEntity & { applyReliefLift?: (level: number, immediate?: boolean) => void }).applyReliefLift?.(
-    getGroundReliefLevel(cell),
-    true
-  )
+  syncEntityRelief(getEntitySpaceMapLike(entity, map), entity, cell)
   ;(entity as RuntimeEntity & { syncShadow?: () => void }).syncShadow?.()
   sortMapSpaceContainer(space)
 }

@@ -19,7 +19,11 @@ function fixture({ deferWake = false } = {}) {
       getInstanceZIndex: unit => unit.i + unit.j,
       updateInstanceVisibility: () => {},
     },
-    '../../lib/mapSpaces': { getMapSpace: () => null, moveEntityToMapSpace: () => {} },
+    '../../lib/mapSpaces': {
+      getMapSpace: () => null,
+      getEntitySpaceMapLike: (_unit, map) => map,
+      moveEntityToMapSpace: () => {},
+    },
     '../../lib/units/villagerTaskRecovery': {
       resumeVillagerStoredTask: (_unit, task) => {
         calls.push(['resume', task])

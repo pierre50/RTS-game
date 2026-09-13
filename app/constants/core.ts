@@ -1,16 +1,5 @@
 export { CELL_WIDTH, CELL_HEIGHT } from './gridGeometry'
-export const CELL_DEPTH = 16
-
-// CELL_DEPTH is also the sole visual elevation offset per relief step. Entity x/y are always flat
-// (relief never affects pathing/collision/zIndex); this is where relief becomes visible, applied
-// to sprite/shadow/equipment layers only.
-export const RELIEF_CLIMB_SPEED_MULTIPLIER = 0.8
-// Per-update easing toward the target lift (and the hero's slope slowdown). Path movement
-// feeds a continuous target (blended along the walk), so easing there only filters jitter.
-// The hero's target moves in half-steps as they cross cells — this rate is tuned slow enough
-// (time constant ≈ one tile of travel) that those half-steps merge into one continuous slope
-// instead of reading as two distinct bumps.
-export const RELIEF_LIFT_SMOOTHING = 0.03
+export { CELL_DEPTH } from './relief'
 
 export const STEP_TIME = 20
 export const BUCKET_SIZE = 8

@@ -1,6 +1,5 @@
-import { isometricToCartesian } from '../../../lib'
 import { getEntitySpaceMapLike } from '../../../lib/mapSpaces'
-import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
+import { getDirectMoveCandidate } from './UnitDirectMovementCandidate'
 import type { UnitEntity } from '../../../types/entities'
 import { attemptDirectMove } from './UnitDirectMovementStep'
 import {
@@ -16,13 +15,11 @@ export class UnitDirectMovement {
   unit: UnitEntity
   slideBias: number
   directMoveBlocker: HeroDirectMoveBlocker | null
-  directMoveClimbFactor: number
 
   constructor(unit: UnitEntity) {
     this.unit = unit
     this.slideBias = 0
     this.directMoveBlocker = null
-    this.directMoveClimbFactor = 1
   }
 
   moveDirect(dirX: number, dirY: number, distance: number, options: DirectMoveOptions = {}): boolean {
@@ -146,13 +143,14 @@ export class UnitDirectMovement {
     const unit = this.unit
     const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (!map) return null
-    const effectiveDistance = distance * this.directMoveClimbFactor * getEnergyMoveSpeedMultiplier(unit)
-    const candidateX = unit.x + dirX * effectiveDistance
-    const candidateY = unit.y + dirY * effectiveDistance
-    const [rawI, rawJ] = isometricToCartesian(candidateX, candidateY)
-    const newI = Math.min(Math.max(rawI, 0), map.size)
-    const newJ = Math.min(Math.max(rawJ, 0), map.size)
-    const cell = map.grid[newI]?.[newJ] ?? null
+    const { candidateX, candidateY, rawI, rawJ, newI, newJ, crossingCell, targetCell } = getDirectMoveCandidate(
+      unit,
+      map,
+      dirX,
+      dirY,
+      distance
+    )
+    const cell = targetCell ?? null
     return {
       candidateX: Math.round(candidateX * 100) / 100,
       candidateY: Math.round(candidateY * 100) / 100,
@@ -160,7 +158,7 @@ export class UnitDirectMovement {
       rawJ,
       newI,
       newJ,
-      crossingCell: newI !== unit.i || newJ !== unit.j,
+      crossingCell,
       cell: cell
         ? {
             i: cell.i,

@@ -1,7 +1,6 @@
 import { SHEET_TYPES } from '../../../constants'
 import {
   degreeToDirection,
-  getGroundReliefLevel,
   getInstanceDegree,
   getInstanceZIndex,
   playMovementSurfaceAudio,
@@ -9,6 +8,7 @@ import {
   updateInstanceVisibility,
 } from '../../../lib'
 import { clearCellForUnit, placeUnitOnCell } from './UnitMovementHelpers'
+import { syncEntityRelief } from '../../../lib/terrain/reliefSurface'
 
 import type { DirectMoveAttempt } from './UnitDirectMovementTypes'
 
@@ -52,7 +52,7 @@ export function commitDirectMove(attempt: DirectMoveAttempt, facingDirX: number,
     contextMap?.updateInstanceBucket(unit, oldI, oldJ)
   }
   updateInstanceVisibility(unit)
-  unit.applyReliefLift?.(getGroundReliefLevel(unit.currentCell))
+  syncEntityRelief(attempt.map, unit)
   playMovementSurfaceAudio(unit, effectiveDistance, { previousX: beforeX, previousY: beforeY })
   if (!unit.actionLocked) {
     if (!unit.sprite.playing) unit.sprite.play()

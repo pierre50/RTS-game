@@ -5,7 +5,6 @@ import {
   canUpdateMinimap,
   cartesianToIsometric,
   degreeToDirection,
-  getGroundReliefLevel,
   getInstanceDegree,
   getInstanceZIndex,
   instancesDistance,
@@ -34,6 +33,8 @@ import { applyUnitCrouchPose, resetUnitCrouchPose } from '../../../lib/units/uni
 import { isUnitWalkSpeedFactor } from '../../../lib/units/unitLocomotion'
 import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '../../../lib/buildings/passageCells'
 import { getEntitySpaceMapLike, isOutsideSpaceId } from '../../../lib/mapSpaces'
+import { syncEntityRelief } from '../../../lib/terrain/reliefSurface'
+import { getReliefMovementDistance } from '../../../lib/terrain/reliefMovement'
 import type { UnitEntity } from '../../../types/entities'
 
 export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
@@ -56,7 +57,6 @@ export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () 
   const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
   const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
 
-  applyPathReliefLift(unit, nextCell, nextFlatPoint)
   const dest = unit.dest
   if (!dest || isDestroyedEntity(dest)) {
     unit.affectNewDest?.()
@@ -72,25 +72,19 @@ export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () 
   if (!sprite) return
   if (!sprite.playing) sprite.play()
 
-  const moveSpeed = getPathMoveSpeed(unit, nextCell)
-  if (instancesDistance(unit, nextFlatPoint, false) <= moveSpeed) {
+  const moveSpeed = getReliefMovementDistance(map, unit, nextFlatPoint, getPathMoveSpeed(unit), unit.currentCell)
+  const remaining = Math.hypot(nextFlatX - unit.x, nextFlatY - unit.y)
+  if (remaining <= moveSpeed + 1e-6) {
+    if (remaining > 0) advanceTowardPathCell(unit, nextCell, nextFlatX, nextFlatY, remaining, false)
     finishPathCellStep(unit, nextCell, dest, retryBlockedGatherApproach)
   } else {
     advanceTowardPathCell(unit, nextCell, nextFlatX, nextFlatY, moveSpeed)
   }
 }
 
-function applyPathReliefLift(
-  unit: UnitEntity,
-  nextCell: NonNullable<UnitEntity['currentCell']>,
-  nextFlatPoint: { i: number; j: number; x: number; y: number }
-): void {
-  if (!unit.currentCell) return
-  const from = getGroundReliefLevel(unit.currentCell)
-  const to = getGroundReliefLevel(nextCell)
-  const total = instancesDistance(unit.currentCell, nextCell, false) || 1
-  const remaining = Math.min(instancesDistance(unit, nextFlatPoint, false), total)
-  unit.applyReliefLift?.(to + (from - to) * (remaining / total))
+function applyPathReliefLift(unit: UnitEntity): void {
+  const map = getEntitySpaceMapLike(unit, unit.context?.map)
+  syncEntityRelief(map, unit)
 }
 
 function shouldWaitForMovingBlocker(unit: UnitEntity, nextCell: NonNullable<UnitEntity['currentCell']>): boolean {
@@ -168,6 +162,7 @@ function finishPathCellStep(
   clearCellForUnit(unit, unit.currentCell)
   unit.currentCell = nextCell
   placeUnitOnCell(unit, unit.currentCell)
+  applyPathReliefLift(unit)
   contextMap?.updateInstanceBucket(unit, oldI, oldJ)
   updateInstanceVisibility(unit)
   unit.path?.pop()
@@ -216,7 +211,8 @@ function advanceTowardPathCell(
   nextCell: NonNullable<UnitEntity['currentCell']>,
   nextFlatX: number,
   nextFlatY: number,
-  moveSpeed: number
+  moveSpeed: number,
+  syncRelief = true
 ): void {
   const menu = unit.context?.menu
   const player = unit.owner
@@ -225,6 +221,7 @@ function advanceTowardPathCell(
   const beforeX = unit.x
   const beforeY = unit.y
   moveTowardPoint(unit, nextFlatX, nextFlatY, moveSpeed)
+  if (syncRelief) applyPathReliefLift(unit)
   unit.zIndex = getInstanceZIndex(unit)
   if (unit.x === beforeX && unit.y === beforeY) {
     debugCombatMove(unit, 'no-position-progress', nextCell, {

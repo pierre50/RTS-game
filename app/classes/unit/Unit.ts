@@ -177,11 +177,9 @@ export class Unit extends Instance implements UnitEntity {
 
   // Render-only: this is the SOLE source of visual relief for the unit — this.x/y stay flat
   // (pathing/collision/zIndex), so this offsets the sprite, shadow and equipment layers to
-  // represent the ground relief level (fractional on slopes — see getGroundReliefLevel).
-  // Eased toward the target unless immediate, since the underfoot sampling can step at tile
-  // boundaries. Never touches this.x/y or zIndex.
-  applyReliefLift(level: number, immediate = false): void {
-    applyUnitReliefLift(this, level, immediate)
+  // represent the sampled ground height immediately. Never touches this.x/y or zIndex.
+  applyReliefLift(level: number): void {
+    applyUnitReliefLift(this, level)
   }
 
   syncAppearanceLayers(sheet: string) {

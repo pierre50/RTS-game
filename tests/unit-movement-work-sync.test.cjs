@@ -23,8 +23,6 @@ function loadUnitMovement(calls) {
     BUILDING_TYPES: {},
     FAMILY_TYPES: { animal: 'animal', building: 'building' },
     MINING_RESOURCE_CONFIG: {},
-    RELIEF_CLIMB_SPEED_MULTIPLIER: 1,
-    RELIEF_LIFT_SMOOTHING: 0.2,
     SHEET_TYPES: { walking: 'walking' },
     UNIT_TYPES: { villager: 'Villager' },
     WORK_TYPES: { horseCapture: 'horseCapture', hunter: 'hunter' },
@@ -151,6 +149,13 @@ function loadUnitMovement(calls) {
       }
     }
     if (request === '../../lib/units/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
+    if (request.endsWith('/terrain/reliefSurface') || request.endsWith('/terrain/reliefMovement')) {
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/terrain', request.split('/').at(-1) + '.ts'),
+        filename,
+        {}
+      )
+    }
     if (request === '../../services/rest/UnitSleepVisuals') return { keepSleepingOutsideVisual: () => {} }
     if (request === '../../lib/equipment/equipmentStats') return { getUnitCombatRange: () => 4 }
     if (
@@ -174,7 +179,7 @@ function loadUnitMovement(calls) {
         },
       }
     }
-    if (/^\.\/UnitDirectMovement(?:Step|Commit|Diagnostics)$/.test(request)) {
+    if (/^\.\/UnitDirectMovement(?:Step|Commit|Diagnostics|Candidate)$/.test(request)) {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement', request.slice(2) + '.ts'))
     }
     if (request === './movement/UnitDirectMovement' || request === './UnitDirectMovement') {

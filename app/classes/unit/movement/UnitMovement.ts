@@ -53,14 +53,6 @@ export class UnitMovement {
     this.directMovement.directMoveBlocker = value
   }
 
-  get directMoveClimbFactor(): number {
-    return this.directMovement.directMoveClimbFactor
-  }
-
-  set directMoveClimbFactor(value: number) {
-    this.directMovement.directMoveClimbFactor = value
-  }
-
   findClosestReachableCellNearTarget(
     target: RuntimeEntity | RuntimeCell,
     minDistance = 2,

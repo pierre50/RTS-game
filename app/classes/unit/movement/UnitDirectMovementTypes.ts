@@ -5,7 +5,6 @@ import type { HeroDirectMoveBlocker } from './UnitHeroDirectMovementCollision'
 export type DirectMoveState = {
   unit: UnitEntity
   directMoveBlocker: HeroDirectMoveBlocker | null
-  directMoveClimbFactor: number
 }
 export type DirectMoveAttempt = {
   unit: UnitEntity

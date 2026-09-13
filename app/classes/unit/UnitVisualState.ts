@@ -1,5 +1,5 @@
 import { AnimatedSprite } from 'pixi.js'
-import { LABEL_TYPES, RELIEF_LIFT_SMOOTHING, SHEET_TYPES } from '../../constants'
+import { LABEL_TYPES, SHEET_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
   changeSpriteTexturesColorDirectly,
@@ -72,9 +72,8 @@ export function syncUnitVisualSettings(unit: UnitRuntimeHost): void {
   }
 }
 
-export function applyUnitReliefLift(unit: UnitRuntimeHost, level: number, immediate = false): void {
-  const target = -getReliefLiftPixels(level)
-  unit.reliefLift = immediate ? target : unit.reliefLift + (target - unit.reliefLift) * RELIEF_LIFT_SMOOTHING
+export function applyUnitReliefLift(unit: UnitRuntimeHost, level: number): void {
+  unit.reliefLift = -getReliefLiftPixels(level)
   unit.syncMountedRiderPosition()
   if (unit.horseSprite) unit.horseSprite.position.y = unit.reliefLift
   unit.syncShadow()

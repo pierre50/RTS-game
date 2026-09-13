@@ -1,10 +1,9 @@
 import { canReachContact } from '../../lib/contact/contactGeometry'
 import { tryStartAnimalContactApproach } from './AnimalContactApproach'
-import { ACTION_TYPES, FAMILY_TYPES, RELIEF_CLIMB_SPEED_MULTIPLIER, SHEET_TYPES, STEP_TIME } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import {
   cartesianToIsometric,
   degreeToDirection,
-  getGroundReliefLevel,
   getInstanceDegree,
   getInstanceZIndex,
   instanceContactInstance,
@@ -19,6 +18,8 @@ import {
   getEnergyMoveSpeedMultiplier,
   updateUnitEnergy,
 } from '../../lib/units/unitEnergy'
+import { getReliefMovementDistance } from '../../lib/terrain/reliefMovement'
+import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { isAirborne } from './locomotion'
 import type { AnimalControllerHost } from './AnimalTypes'
 
@@ -27,20 +28,6 @@ function getMovementSpeed(animal: AnimalControllerHost): number {
   if (animal.movementSheet === SHEET_TYPES.running && typeof animal.runningSpeed === 'number')
     return animal.runningSpeed
   return animal.speed
-}
-
-function syncReliefLiftTowardNextCell(
-  animal: AnimalControllerHost,
-  grid: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>['grid'],
-  nextFlatPoint: { i: number; j: number; x: number; y: number }
-): void {
-  if (!animal.currentCell) return
-  const nextCell = grid[nextFlatPoint.i][nextFlatPoint.j]
-  const from = getGroundReliefLevel(animal.currentCell)
-  const to = getGroundReliefLevel(nextCell)
-  const total = instancesDistance(animal.currentCell, nextCell, false) || 1
-  const remaining = Math.min(instancesDistance(animal, nextFlatPoint, false), total)
-  animal.applyReliefLift(to + (from - to) * (remaining / total))
 }
 
 function isBlockedByMovingAnimal(animal: AnimalControllerHost, nextCell: AnimalControllerHost['currentCell']): boolean {
@@ -122,20 +109,12 @@ function resolveArrivalAfterStep(animal: AnimalControllerHost): boolean {
 
 function moveTowardNextCell(
   animal: AnimalControllerHost,
-  grid: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>['grid'],
   nextFlatX: number,
   nextFlatY: number,
   moveSpeed: number
 ): void {
   const oldDeg = animal.degree
-  const isFastFlee = animal.isFleeing && [SHEET_TYPES.running, SHEET_TYPES.flying].includes(animal.movementSheet ?? '')
-  // Fleeing is continuous: its energy cost is per second, not per movement tick.
-  if (isFastFlee) drainEnergyAmount(animal, getActionEnergyCost(animal, ACTION_TYPES.flee) * (STEP_TIME / 1000))
-  let speed = moveSpeed * getEnergyMoveSpeedMultiplier(animal)
-  const next = animal.path[animal.path.length - 1]
-  const nextCell = grid[next.i][next.j]
-  if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
-  moveTowardPoint(animal, nextFlatX, nextFlatY, speed)
+  moveTowardPoint(animal, nextFlatX, nextFlatY, moveSpeed)
   animal.zIndex = getInstanceZIndex(animal)
   const movementSheet = animal.movementSheet ?? SHEET_TYPES.walking
   if (animal.currentSheet !== movementSheet || degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
@@ -158,18 +137,23 @@ export function moveAnimalToPath(animal: AnimalControllerHost): void {
   }
   const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
   const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
-  syncReliefLiftTowardNextCell(animal, map.grid, nextFlatPoint)
 
   if (!canContinueAnimalStep(animal, nextCell)) return
   if (!animal.sprite.playing) animal.sprite.play()
 
-  const moveSpeed = getMovementSpeed(animal)
-  if (instancesDistance(animal, nextFlatPoint, false) < moveSpeed) {
-    settleOnNextCell(animal, nextCell)
-    resolveArrivalAfterStep(animal)
-    return
-  }
-  moveTowardNextCell(animal, map.grid, nextFlatX, nextFlatY, moveSpeed)
+  const isFastFlee = animal.isFleeing && [SHEET_TYPES.running, SHEET_TYPES.flying].includes(animal.movementSheet ?? '')
+  // Fleeing energy is charged once per tick, including the final partial step.
+  if (isFastFlee) drainEnergyAmount(animal, getActionEnergyCost(animal, ACTION_TYPES.flee) * (STEP_TIME / 1000))
+  const budget = getMovementSpeed(animal) * getEnergyMoveSpeedMultiplier(animal)
+  const remaining = Math.hypot(nextFlatX - animal.x, nextFlatY - animal.y)
+  const moveSpeed = isAirborne(animal)
+    ? Math.min(remaining, budget)
+    : getReliefMovementDistance(map, animal, nextFlatPoint, budget, animal.currentCell)
+  if (remaining > 0) moveTowardNextCell(animal, nextFlatX, nextFlatY, moveSpeed)
+  const arrived = remaining <= moveSpeed + 1e-6
+  if (arrived) settleOnNextCell(animal, nextCell)
+  syncEntityRelief(map, animal)
+  if (arrived) resolveArrivalAfterStep(animal)
 }
 
 function canContinueAnimalStep(animal: AnimalControllerHost, nextCell: AnimalControllerHost['currentCell']): boolean {

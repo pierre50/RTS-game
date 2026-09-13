@@ -52,7 +52,7 @@ export type AnimalControllerHost = AnimalEntity & {
   timeoutId?: SchedulerTaskId | null
   totalQuantity: number
   zIndex: number
-  applyReliefLift(level: number, immediate?: boolean): void
+  applyReliefLift(level: number): void
   affectNewDest(): void
   clear(): void
   death(): void

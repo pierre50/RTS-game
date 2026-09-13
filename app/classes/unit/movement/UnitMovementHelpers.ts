@@ -2,17 +2,11 @@ import {
   ACTION_TYPES,
   FAMILY_TYPES,
   MINING_RESOURCE_CONFIG,
-  RELIEF_CLIMB_SPEED_MULTIPLIER,
   SHEET_TYPES,
   UNIT_TYPES,
   WORK_TYPES,
 } from '../../../constants'
-import {
-  getInstanceDegree,
-  getMiningActions,
-  instancesDistance,
-  resumeVillagerAutonomy,
-} from '../../../lib'
+import { getInstanceDegree, getMiningActions, instancesDistance, resumeVillagerAutonomy } from '../../../lib'
 import { isHeroControlled } from '../../../lib/units/unitControl'
 import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
 import {
@@ -80,10 +74,8 @@ export function isMovingUnitEntity(entity: RuntimeEntity | null): entity is Unit
   return Boolean(entity && entity.family === FAMILY_TYPES.unit && 'hasPath' in entity)
 }
 
-export function getPathMoveSpeed(unit: UnitEntity, nextCell: RuntimeCell): number {
-  let speed = (unit.speed ?? 0) * getEnergyMoveSpeedMultiplier(unit) * getRequestedMoveSpeedFactor(unit)
-  if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
-  return speed
+export function getPathMoveSpeed(unit: UnitEntity): number {
+  return (unit.speed ?? 0) * getEnergyMoveSpeedMultiplier(unit) * getRequestedMoveSpeedFactor(unit)
 }
 
 export function updateCautiousAnimalApproachSpeed(unit: UnitEntity): void {

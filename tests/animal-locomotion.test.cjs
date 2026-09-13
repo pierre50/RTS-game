@@ -117,6 +117,7 @@ function createMovement(animalOverrides = {}, libOverrides = {}, energyOverrides
     stopInterval: () => {},
     setDest: dest => calls.push(['setDest', dest.i, dest.j]),
     setPath: (path, sheet) => calls.push(['setPath', sheet]),
+    setTextures: () => {},
     getAction: name => calls.push(['getAction', name]),
     affectNewDest: () => calls.push(['affectNewDest']),
     sendTo: (dest, action, options) => calls.push(['sendTo', dest, action, options]),
@@ -138,6 +139,11 @@ function createMovement(animalOverrides = {}, libOverrides = {}, energyOverrides
   }
   const { AnimalMovement } = loadModule('app/classes/animal/AnimalMovement.ts', {
     '../../constants': constants,
+    // These locomotion scenarios use a synthetic square grid with flat ground.
+    [path.join(__dirname, '../app/lib/terrain/reliefSurface.ts')]: {
+      getReliefLevelAtPoint: () => 0,
+      syncEntityRelief: (_map, entity) => entity.applyReliefLift(0),
+    },
     '../../lib': lib,
     '../../lib/buildings/passageCells': {
       createReservedPassageCellLookup: () => ({

@@ -1,17 +1,16 @@
 {
-  "generatedAt": "2026-09-12T23:12:12.885Z",
+  "generatedAt": "2026-09-12T23:16:25.898Z",
   "score": 90,
   "grade": "A",
   "qualityGateScore": 80,
   "targetScore": 90,
-  "qualityGate": "incomplete",
+  "qualityGate": "fail",
   "gateReasons": [
-    "Source consistency: error",
     "Quality regressions: fail",
     "328 new or worsened debt finding(s)"
   ],
   "schemaVersion": 2,
-  "sourceHash": "19263aad80f97e877cda97f91f45d72d9936e7ff56e651e5d479cfff4f947009",
+  "sourceHash": "9308f5c7672066d9cafe651379d1b9cb22564ab8f542a0453f5a53c37988151e",
   "baselineUpdated": false,
   "findings": [
     {
@@ -4411,7 +4410,7 @@
     {
       "rule": "strict-types",
       "file": "app/classes/animal/AnimalMovementStep.ts",
-      "line": 135,
+      "line": 136,
       "identity": "2532:Object is possibly 'undefined'.:const nextCell = grid[next.i][next.j]",
       "value": 1,
       "limit": 0,
@@ -4420,16 +4419,7 @@
     {
       "rule": "strict-types",
       "file": "app/classes/animal/AnimalMovementStep.ts",
-      "line": 135,
-      "identity": "18048:'next' is possibly 'undefined'.:const nextCell = grid[next.i][next.j]",
-      "value": 1,
-      "limit": 0,
-      "message": "'next' is possibly 'undefined'."
-    },
-    {
-      "rule": "strict-types",
-      "file": "app/classes/animal/AnimalMovementStep.ts",
-      "line": 135,
+      "line": 136,
       "identity": "18048:'next' is possibly 'undefined'.:const nextCell = grid[next.i][next.j]",
       "value": 1,
       "limit": 0,
@@ -4439,6 +4429,15 @@
       "rule": "strict-types",
       "file": "app/classes/animal/AnimalMovementStep.ts",
       "line": 136,
+      "identity": "18048:'next' is possibly 'undefined'.:const nextCell = grid[next.i][next.j]",
+      "value": 1,
+      "limit": 0,
+      "message": "'next' is possibly 'undefined'."
+    },
+    {
+      "rule": "strict-types",
+      "file": "app/classes/animal/AnimalMovementStep.ts",
+      "line": 137,
       "identity": "18048:'nextCell' is possibly 'undefined'.:if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER",
       "value": 1,
       "limit": 0,
@@ -4447,7 +4446,7 @@
     {
       "rule": "strict-types",
       "file": "app/classes/animal/AnimalMovementStep.ts",
-      "line": 136,
+      "line": 137,
       "identity": "18048:'nextCell' is possibly 'undefined'.:if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER",
       "value": 1,
       "limit": 0,
@@ -22994,7 +22993,7 @@
   ],
   "totals": {
     "files": 747,
-    "loc": 105977,
+    "loc": 105978,
     "codeLines": 97417,
     "branches": 20089,
     "functions": 8256
@@ -23006,7 +23005,7 @@
       "command": "pnpm lint",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 9383,
+      "durationMs": 8964,
       "status": "pass"
     },
     {
@@ -23015,7 +23014,7 @@
       "command": "pnpm typecheck",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 5319,
+      "durationMs": 5481,
       "status": "pass"
     },
     {
@@ -23024,7 +23023,7 @@
       "command": "pnpm duplication",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 392,
+      "durationMs": 436,
       "status": "pass",
       "duplication": {
         "clones": 0,
@@ -23038,7 +23037,7 @@
       "command": "pnpm deadcode",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 1396,
+      "durationMs": 1501,
       "status": "pass"
     },
     {
@@ -23047,7 +23046,7 @@
       "command": "pnpm exec madge app engine --extensions ts --ts-config tsconfig.json --circular --json",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 3154,
+      "durationMs": 3033,
       "status": "pass",
       "architecture": {
         "cycles": 0,
@@ -23062,7 +23061,7 @@
       "command": "pnpm exec eslint \"app/**/*.ts\" \"engine/**/*.ts\" --format json",
       "ok": true,
       "exitCode": 1,
-      "durationMs": 16214,
+      "durationMs": 11330,
       "status": "pass"
     },
     {
@@ -23071,7 +23070,7 @@
       "command": "node --require ./tools/health/coverage-hook.cjs --test --test-timeout=300000 --test-reporter=tap tests/*.test.cjs",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 187503,
+      "durationMs": 192283,
       "status": "pass",
       "tests": {
         "total": 2111,
@@ -23091,9 +23090,8 @@
     {
       "id": "snapshot",
       "label": "Source consistency",
-      "ok": false,
-      "status": "error",
-      "error": "Source files changed during the audit; rerun on a stable checkout"
+      "ok": true,
+      "status": "pass"
     },
     {
       "id": "regressions",

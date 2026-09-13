@@ -1,10 +1,11 @@
+import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
+import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import { FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
   attachEntityShadowsToMapSpace,
   getInstanceZIndex,
-  getGroundReliefLevel,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
@@ -208,7 +209,7 @@ export class Animal extends Instance implements AnimalEntity {
       this.setTextures(this.currentSheet)
     }
     this.sprite.currentFrame = this.currentFrame
-    this.applyReliefLift(getGroundReliefLevel(spawnCell), true)
+    syncEntityRelief(getEntitySpaceMapLike(this, this.context.map), this, spawnCell)
 
     this.on('pointerup', () => {
       const {
@@ -295,13 +296,13 @@ export class Animal extends Instance implements AnimalEntity {
 
   // Render-only: this is the SOLE source of visual relief for the animal — this.x/y stay flat
   // (pathing/collision/zIndex), so this offsets the sprite (on top of the flying altitude, if
-  // any) to represent the ground relief level (fractional on slopes — see getGroundReliefLevel).
-  // Eased toward the target unless immediate, since the underfoot sampling can step at tile
-  // boundaries. Never touches this.x/y or zIndex. Sign matches Unit.reliefLift: negative when
+  // any) to represent the ground relief level (sampled at the actual ground position).
+  // The sampled ground height is applied immediately.
+  // Never touches this.x/y or zIndex. Sign matches Unit.reliefLift: negative when
   // raised, directly usable as a Pixi position.y offset — see getReliefOffset for the shared
   // "instance.y + offset = visual y" accessor.
-  applyReliefLift(level: number, immediate = false): void {
-    this.animalVisuals.applyReliefLift(level, immediate)
+  applyReliefLift(level: number): void {
+    this.animalVisuals.applyReliefLift(level)
   }
 
   syncVisualSettings(): void {

@@ -1,3 +1,6 @@
+import { getReliefMovementDistance } from '../../lib/terrain/reliefMovement'
+import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
+import { isAirborne } from './locomotion'
 import { ACTION_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import { CONTACT_APPROACH } from '../../config/contactProfiles'
 import { startContactApproach } from '../../lib/contact/contactApproach'
@@ -5,7 +8,7 @@ import { sampleContactApproach, getContactTargetShape } from '../../lib/contact/
 import type { ContactApproachSample } from '../../lib/contact/contactTypes'
 import { pointIsInsidePolygon } from '../../lib/geometry/polygon'
 import { getEntitySpaceMapLike, sameMapSpace } from '../../lib/mapSpaces'
-import { degreeToDirection, getGroundReliefLevel, getInstanceZIndex, isometricToCartesian } from '../../lib/maths'
+import { degreeToDirection, getInstanceZIndex, isometricToCartesian } from '../../lib/maths'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
 import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../../lib/units/unitEnergy'
 import type { RuntimeEntity } from '../../types/entities'
@@ -20,7 +23,8 @@ function moveCloser(animal: AnimalControllerHost, target: RuntimeEntity, sample:
   const distance = Math.hypot(dx, dy)
   if (!distance) return false
   const speed = animal.movementSheet === SHEET_TYPES.running ? (animal.runningSpeed ?? animal.speed) : animal.speed
-  const step = Math.min(CONTACT_APPROACH.maxStep, speed * getEnergyMoveSpeedMultiplier(animal), distance)
+  const budget = Math.min(CONTACT_APPROACH.maxStep, speed * getEnergyMoveSpeedMultiplier(animal), distance)
+  const step = isAirborne(animal) ? budget : getReliefMovementDistance(map, animal, aim, budget, animal.currentCell)
   if (step <= 0) return false
   const point = { x: animal.x + (dx / distance) * step, y: animal.y + (dy / distance) * step }
   const [i, j] = isometricToCartesian(point.x, point.y)
@@ -78,7 +82,7 @@ function commitContactStep(
   const oldDegree = animal.degree
   animal.degree = sample.degree
   animal.zIndex = getInstanceZIndex(animal)
-  animal.applyReliefLift(getGroundReliefLevel(cell))
+  syncEntityRelief(getEntitySpaceMapLike(animal, animal.context.map), animal, cell)
   const sheet = animal.movementSheet ?? SHEET_TYPES.walking
   if (animal.currentSheet !== sheet || degreeToDirection(oldDegree) !== degreeToDirection(animal.degree)) {
     animal.setTextures(sheet)

@@ -1,4 +1,5 @@
-import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex } from '../maths'
+import { cartesianToIsometric, getInstanceZIndex } from '../maths'
+import { syncEntityRelief } from '../terrain/reliefSurface'
 
 type TeleportableCell<TUnit extends TeleportableUnit = TeleportableUnit> = {
   has?: unknown
@@ -11,7 +12,7 @@ type TeleportableCell<TUnit extends TeleportableUnit = TeleportableUnit> = {
 
 type TeleportableUnit = {
   action?: string | null
-  applyReliefLift?: (level: number, immediate?: boolean) => void
+  applyReliefLift?: (level: number) => void
   currentCell?: TeleportableCell | null
   i: number
   j: number
@@ -57,5 +58,5 @@ export function teleportRuntimeUnitToCell<TUnit extends TeleportableUnit>(
   if (typeof map.addToInstanceBucket === 'function') {
     ;(map.addToInstanceBucket as (unit: TUnit) => void)(unit)
   }
-  unit.applyReliefLift?.(getGroundReliefLevel(cell), true)
+  syncEntityRelief(map, unit, cell)
 }

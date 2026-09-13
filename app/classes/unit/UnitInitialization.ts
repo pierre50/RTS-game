@@ -15,13 +15,14 @@ import {
   getAnimationFrames,
   getIconPath,
   getInstanceZIndex,
-  getGroundReliefLevel,
   getEntityMapSpace,
   getEntityCell,
   throttle,
   updateInstanceVisibility,
 } from '../../lib'
 import { heroCanCommand } from '../../lib/chief'
+import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
+import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { getHorseColorFromSeed, isHorseColor } from '../../lib/horses/horseColors'
 import { t } from '../../lib/lang'
@@ -274,7 +275,7 @@ export function setupUnitPrimarySprite(unit: UnitRuntimeHost, spawnCell: Runtime
   unit.sprite.currentFrame = Math.min(unit.currentFrame, unit.sprite.textures.length - 1)
   unit.syncShadow?.()
   unit.syncAppearanceLayers?.(unit.currentSheet)
-  unit.applyReliefLift?.(getGroundReliefLevel(spawnCell), true)
+  syncEntityRelief(getEntitySpaceMapLike(unit, unit.context.map), unit, spawnCell)
   unit.sprite.updateAnchor = true
   if (unit.shouldKeepHealthBarVisible?.()) {
     unit.drawHealthBar?.()

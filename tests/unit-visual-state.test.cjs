@@ -10,7 +10,6 @@ function loadUnitVisualState({ shadowsEnabled = true, activeMapSpace = true } = 
       },
       '../../constants': {
         LABEL_TYPES: { healthBar: 'healthBar', powerBar: 'powerBar', shadow: 'shadow' },
-        RELIEF_LIFT_SMOOTHING: 1,
         SHEET_TYPES: { dying: 'dyingSheet', standing: 'standingSheet' },
       },
       '../../lib': {

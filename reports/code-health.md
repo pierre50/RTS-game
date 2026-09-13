@@ -1,12 +1,12 @@
 # Code Health Report
 
-Generated: 2026-09-12T23:12:12.885Z
+Generated: 2026-09-12T23:16:25.898Z
 
 ## Global Score
 
 **90/100 (A)**
 
-Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **INCOMPLETE**.
+Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **FAIL**.
 
 | Component | Score |
 | --- | --- |
@@ -30,7 +30,7 @@ Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **IN
 | Hotspots | 7/10 | 3 |
 | Tests and critical coverage | 9/10 | 1 |
 
-Largest score loss: **Structure (6 points)**. Gate blockers: Source consistency: error; Quality regressions: fail; 328 new or worsened debt finding(s).
+Largest score loss: **Structure (6 points)**. Gate blockers: Quality regressions: fail; 328 new or worsened debt finding(s).
 
 | Target Score | Max Risky Hotspots | Hotspots To Clear |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ Largest score loss: **Structure (6 points)**. Gate blockers: Source consistency:
 ## Summary
 
 - Files analyzed: 747
-- Total lines: 105977
+- Total lines: 105978
 - Code lines: 97417
 - AST branch decisions: 20089
 - AST functions/methods: 8256
@@ -60,7 +60,7 @@ Largest score loss: **Structure (6 points)**. Gate blockers: Source consistency:
 | Typed async rules | PASS |  |
 | Behavior tests | PASS | 2111/2111 passed |
 | Critical branch coverage | PASS |  |
-| Source consistency | ERROR | Source files changed during the audit; rerun on a stable checkout |
+| Source consistency | PASS |  |
 | Quality regressions | FAIL |  |
 
 ## Regression Control
