@@ -12,7 +12,7 @@ export function onTick(controls: Controls, ticker: TickerLike): void {
   setHeroGameCursorEnabled(controls.isHeroControlActive() && !controls.isInGameMenuOpen())
   const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
   if (controls.isInteractionBlocked()) {
-    controls.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
+    controls.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, Boolean(controls.context.defeat))
     controls.heroController.updateOcclusionFade(TARGET_FRAME_MS * gameFrameScale, false)
     controls.cancelActiveInteraction()
     return

@@ -112,3 +112,28 @@ test('missing chest resources compares costs against stored chest totals', () =>
     stone: 2,
   })
 })
+
+test('a non-chief player spends only the active hero bag while village upkeep keeps its stores', () => {
+  const { getPlayerResourceTotals, getMissingPlayerResources, withdrawChestResources } = loadResourceTotals()
+  const player = { label: 'human', isPlayed: true, buildings: [], units: [] }
+  const hero = { type: 'Hero', isChief: false, owner: player, inventory: { resources: { wood: 3, berry: 2 } } }
+  const chest = { type: 'Chest', owner: player, inventory: { resources: { wood: 100, berry: 50 } } }
+  player.units.push(hero)
+  player.buildings.push(chest)
+  assert.equal(getPlayerResourceTotals(player).wood, 3)
+  assert.deepEqual(getMissingPlayerResources(player, { wood: 5 }, { hero }), { wood: 2 })
+  assert.equal(withdrawChestResources(player, { wood: 5 }, { hero }), false)
+  assert.equal(chest.inventory.resources.wood, 100)
+  assert.equal(hero.inventory.resources.wood, 3)
+  assert.equal(withdrawChestResources(player, { wood: 2, food: 1 }, { hero }), true)
+  assert.equal(hero.inventory.resources.wood, 1)
+  assert.equal(hero.inventory.resources.berry, 1)
+  assert.equal(chest.inventory.resources.berry, 50)
+  assert.equal(getPlayerResourceTotals(player, { includeHero: false }).wood, 100)
+  assert.equal(withdrawChestResources(player, { berry: 2 }, { includeHero: false }), true)
+  assert.equal(chest.inventory.resources.berry, 48)
+  hero.isChief = true
+  assert.equal(getPlayerResourceTotals(player).wood, 101)
+  assert.equal(withdrawChestResources(player, { wood: 5 }), true)
+  assert.equal(chest.inventory.resources.wood, 95)
+})

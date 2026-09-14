@@ -33,6 +33,7 @@ function loadCellFog() {
       },
     },
     '../../constants': {
+      UNIT_TYPES: { hero: 'Hero', chief: 'Chief' },
       COLOR_WHITE: 0xffffff,
       FAMILY_TYPES: { building: 'building' },
       LABEL_TYPES: { buildingFog: 'buildingFog' },
@@ -84,4 +85,15 @@ test('fogged enemy buildings remember the last visible construction texture', ()
 
   assert.deepEqual(calls, [['001_buildings/construction/size-2', 'red']])
   assert.equal(building.visible, false)
+  calls.length = 0
+  building.owner.isPlayed = true
+  building.context = { controls: { heroUnit: { type: 'Hero', isChief: false } } }
+  building.visible = true
+  new CellFog(cell).setFogChildren(building, false)
+  assert.equal(building.visible, false)
+  assert.deepEqual(calls, [['001_buildings/construction/size-2', 'red']])
+  calls.length = 0
+  building.visible = true
+  new CellFog(cell).setFogChildren(building, true)
+  assert.deepEqual(calls, [], 'an unseen building does not acquire a memory during fog initialization')
 })

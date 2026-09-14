@@ -3,7 +3,7 @@ export type QuestText = { key: string; vars?: Record<string, string | number> }
 export type QuestParameter = { parameter: string }
 export type QuestCondition =
   | {
-      type: 'resource'
+      type: 'resource' | 'item'
       comparison?: 'at-least' | 'below'
       resource: string | QuestParameter
       quantity: number | QuestParameter
@@ -12,9 +12,10 @@ export type QuestCondition =
   | { type: 'target'; binding: string; state: 'discovered' | 'spoken-to' | 'defeated' | 'reached' }
 type QuestEffect =
   | {
-      type: 'give-resource' | 'take-resource' | 'top-up-resource'
+      type: 'give-resource' | 'take-resource' | 'top-up-resource' | 'give-item'
       resource: string | QuestParameter
       quantity: number | QuestParameter
+      equip?: boolean
     }
   | { type: 'set-fact'; key: string; value: boolean }
 type QuestObjective = { id: string; text: QuestText; conditions: QuestCondition[] }
@@ -31,6 +32,7 @@ export type QuestInteraction = {
   actor: string
   visibleWhen: QuestCondition[]
   enabledWhen: QuestCondition[]
+  closeDialogue?: boolean
   requireObjectives?: boolean
   repeatable?: boolean
   effects: QuestEffect[]
@@ -39,10 +41,12 @@ export type QuestInteraction = {
 }
 type QuestStage = {
   id: string
+  dialogue?: QuestText
   objectives: QuestObjective[]
   interactions: QuestInteraction[]
 }
 export type QuestDefinition = {
+  completedDialogue?: QuestText
   relationReward?: number
   id: string
   title: QuestText
@@ -50,6 +54,9 @@ export type QuestDefinition = {
   stages: QuestStage[]
 }
 export type QuestInstance = {
+  reservation?: { entityLabels: string[]; stageIds: string[] }
+  /** Authored assignments can opt out of recurring village offers. */
+  repeatable?: boolean
   completedDay?: number
   nextOfferDay?: number
   id: string

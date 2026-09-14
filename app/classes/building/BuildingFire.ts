@@ -137,17 +137,18 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
   const fireTextures = getBuildingFireFrames('light', 'fire')
   const smokeTextures = getBuildingFireFrames('light', 'smoke')
   if (!fireTextures.length || !smokeTextures.length) return
+  const reliefLift = building.reliefLift ?? 0
 
   if (existing instanceof AnimatedSprite) {
     existing.textures = fireTextures
     attachFireLight(existing as LightedAnimatedSprite, CAMPFIRE_DECORATION_LIGHT)
-    existing.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y)
+    existing.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y + reliefLift)
     existing.gotoAndPlay(0)
   }
 
   if (existingSmoke instanceof AnimatedSprite) {
     existingSmoke.textures = smokeTextures
-    existingSmoke.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_SMOKE_DECORATION_Y)
+    existingSmoke.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_SMOKE_DECORATION_Y + reliefLift)
     existingSmoke.gotoAndPlay(0)
   }
 
@@ -156,7 +157,7 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
     smoke.label = CAMPFIRE_SMOKE_DECORATION_LABEL
     smoke.eventMode = 'none'
     smoke.roundPixels = true
-    smoke.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_SMOKE_DECORATION_Y)
+    smoke.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_SMOKE_DECORATION_Y + reliefLift)
     smoke.animationSpeed = 0.3
     smoke.gotoAndPlay(0)
     building.addChild(smoke)
@@ -169,7 +170,7 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
     attachFireLight(fire, CAMPFIRE_DECORATION_LIGHT)
     fire.eventMode = 'none'
     fire.roundPixels = true
-    fire.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y)
+    fire.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y + reliefLift)
     fire.animationSpeed = 0.3
     fire.gotoAndPlay(0)
     building.addChild(fire)

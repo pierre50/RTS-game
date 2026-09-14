@@ -26,6 +26,7 @@ type LifecycleContext = {
 }
 
 export type GameRuntimeLifecycleHost = Container & {
+  _handleDefeat?(): void
   _loadingScreen?: { destroy(): void } | null
   _onDocumentVisibilityChange?: () => void
   _onKeydown?: (evt: KeyboardEvent) => void
@@ -145,13 +146,15 @@ export function checkGameDefeat(game: GameRuntimeLifecycleHost): boolean {
 
   if (!isPlayedHeroDefeated(player, game.context.controls?.heroUnit)) return false
 
-  game.context.defeat = true
+  const context = game.context
+  const hero = context.controls?.heroUnit
+  // Lock defeat immediately, but let the death animation finish before changing scenes.
+  context.defeat = true
   clearAllCombatFeedback()
-  const div = document.createElement('div')
-  div.id = 'defeat'
-  div.className = 'game-overlay'
-  div.innerText = t('defeat')
-  document.body.appendChild(div)
+  void Promise.resolve(hero?.deathAnimationComplete).then(() => {
+    if (game.context !== context || !context.defeat || hero?.isDestroyed) return
+    game._handleDefeat?.()
+  })
   return true
 }
 

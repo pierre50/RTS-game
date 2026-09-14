@@ -108,25 +108,27 @@ function getEdgeSpawnCandidates(
 }
 
 function getApproachCells(
-  grid: RuntimeMap['grid'],
+  map: RuntimeMap,
   target: UnitEntity,
   nonPassageCell: (cell: RuntimeCell) => boolean
 ): RuntimeCell[] {
   const approachCells: RuntimeCell[] = []
   for (let distance = 1; distance <= RAID_SPAWN_MIN_RADIUS; distance++) {
     approachCells.push(
-      ...getCellsAroundPoint(target.i, target.j, grid, distance, cell => isOpenRaidLandCell(cell) && nonPassageCell(cell))
+      ...getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
+        if (!isOpenRaidLandCell(cell) || !nonPassageCell(cell)) return false
+        // Nearby land may be on another bank: the target must be able to reach it too.
+        return (
+          (cell.i === target.i && cell.j === target.j) || Boolean(findInstancePath(target, cell.i, cell.j, map).length)
+        )
+      })
     )
     if (approachCells.length) return approachCells
   }
   return approachCells
 }
 
-function hasPathToTarget(
-  context: GameContextLike,
-  start: RuntimeCell,
-  approachCells: RuntimeCell[]
-): boolean {
+function hasPathToTarget(context: GameContextLike, start: RuntimeCell, approachCells: RuntimeCell[]): boolean {
   return approachCells.some(cell => {
     if (cell === start) return true
     return findInstancePath({ i: start.i, j: start.j, label: 'tribute-raid-spawn-probe' }, cell.i, cell.j, context.map)
@@ -207,10 +209,11 @@ export function findTributeRaidSpawnCells(
   const grid = context.map?.grid
   if (!grid) return []
   const nonPassageCell = createNonReservedPassageCellCondition(context)
-  const protectedBuildings = target.owner?.buildings ?? []
+  const protectedBuildings = (context.players ?? (target.owner ? [target.owner] : []))
+    .flatMap(owner => owner.buildings ?? [])
   const canSpawnOnCell = (cell: RuntimeCell) =>
     isOpenRaidLandCell(cell) && nonPassageCell(cell) && isAwayFromOwnedBuildings(cell, protectedBuildings)
-  const approachCells = getApproachCells(grid, target, nonPassageCell)
+  const approachCells = getApproachCells(context.map, target, nonPassageCell)
   if (!approachCells.length) return []
 
   const direction = factionSpawnDirection(context, options.faction)

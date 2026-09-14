@@ -1,5 +1,6 @@
 import { AGE_UP_ENABLED, UNIT_TYPES, BUILDING_TYPES } from '../../constants'
 import { t } from '../lang'
+import { heroCanCommand } from '../chief'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 
@@ -122,7 +123,8 @@ function ensureCompletedObjectives(player: PlayerLike): string[] {
 function notifyObjectiveCompletion(player: PlayerLike, objective: AgeObjectiveDefinition): void {
   if (!player.isPlayed) return
   const context = (player as PlayerLike & { context?: GameContextLike }).context
-  context?.menu?.showMessage?.(t('objectiveCompleted', { objective: t(objective.labelKey) }), 'success')
+  if (heroCanCommand(context?.controls?.heroUnit))
+    context?.menu?.showMessage?.(t('objectiveCompleted', { objective: t(objective.labelKey) }), 'success')
   context?.menu?.updateActionTarget?.()
   context?.menu?.updateTopbar?.()
   context?.menu?.syncObjectiveProgress?.()
@@ -141,7 +143,8 @@ function tryAutoAdvanceAge(player: PlayerLike): void {
     player.onAgeChange?.()
     if (player.isPlayed) {
       const context = (player as PlayerLike & { context?: GameContextLike }).context
-      context?.menu?.showMessage?.(t('progressionAgeReached', { age: t(stage.labelKey) }), 'success')
+      if (heroCanCommand(context?.controls?.heroUnit))
+        context?.menu?.showMessage?.(t('progressionAgeReached', { age: t(stage.labelKey) }), 'success')
       context?.menu?.updateActionTarget?.()
       context?.menu?.updateTopbar?.()
       context?.menu?.syncObjectiveProgress?.()

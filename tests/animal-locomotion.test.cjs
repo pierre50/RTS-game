@@ -314,7 +314,11 @@ for (const sheet of ['runningSheet', 'flyingSheet']) {
       },
       {
         instancesDistance: () => 1000,
-        moveTowardPoint: (_animal, _x, _y, speed) => speeds.push(speed),
+        cartesianToIsometric: () => [10000, 50],
+        moveTowardPoint: (actor, _x, _y, speed) => {
+          speeds.push(speed)
+          actor.x += speed
+        },
       },
       energy
     )

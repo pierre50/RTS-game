@@ -2,6 +2,33 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+test('tutorial suppresses daily raids and cancels an already deferred faction raid', () => {
+  const { TributeRaidSystem } = loadTributeRaidSystem()
+  let deferred
+  const runtime = {
+    context: {
+      isTutorialActive: () => true,
+      scheduler: {
+        addOneShot: callback => {
+          deferred = callback
+          return 1
+        },
+      },
+    },
+    deferredFactionRaidTaskId: null,
+    triggerRaid: () => assert.fail('Unexpected bandit raid'),
+    triggerScheduledFactionRaid: () => assert.fail('Unexpected faction raid'),
+    triggerFactionRaid: () => assert.fail('Unexpected deferred faction raid'),
+  }
+  for (let day = 1; day <= 30; day++) {
+    TributeRaidSystem.prototype.handleDailyWorldEvent.call(runtime, { day })
+    TributeRaidSystem.prototype.triggerScheduledFactionRaid.call(runtime, day)
+  }
+  TributeRaidSystem.prototype.scheduleFactionRaidAtWindow.call(runtime, 10, 1000)
+  deferred()
+  assert.equal(runtime.deferredFactionRaidTaskId, null)
+})
+
 const constants = {
   ACTION_TYPES: { attack: 'attack' },
   FADE_DURATION_MS: 200,
@@ -46,27 +73,7 @@ function loadTributeRaidSpawning() {
   return loadTsModule('app/services/tribute/TributeRaidSpawning.ts', {
     mocks: {
       '../../constants': { FADE_DURATION_MS: 200 },
-      '../../lib': {
-        getCellsAroundPoint: (startI, startJ, grid, distance, callback) => {
-          const cells = []
-          for (const row of grid) {
-            for (const cell of row) {
-              if (Math.hypot(cell.i - startI, cell.j - startJ) <= distance && (!callback || callback(cell))) {
-                cells.push(cell)
-              }
-            }
-          }
-          return cells
-        },
-        getFreeLandCellAroundInstance: (_target, grid, _pickRandomItem, extraCondition) => {
-          for (const row of grid) {
-            for (const cell of row) {
-              if (!cell.solid && cell.category !== 'Water' && (!extraCondition || extraCondition(cell))) return cell
-            }
-          }
-          return null
-        },
-      },
+      '../../lib': loadTsModule('app/lib/grid/cells.ts'),
       '../../lib/buildings/passageCells': {
         createNonReservedPassageCellCondition: () => () => true,
       },
@@ -79,9 +86,7 @@ function loadTributeRaidSpawning() {
       '../../lib/grid/cells': {
         getBuildingContactDistance: size => Math.floor((size - 1) / 2) + 1,
       },
-      '../Pathfinding': {
-        findInstancePath: () => [{ i: 1, j: 1 }],
-      },
+      '../Pathfinding': loadTsModule('app/services/Pathfinding.ts'),
       './tribute/TributeRaidRules': loadTributeRaidRules(),
     },
   })
@@ -115,6 +120,7 @@ function loadTributeRaidText() {
 function loadTributeRaidSystem(overrides = {}) {
   return loadTsModule('app/services/TributeRaidSystem.ts', {
     mocks: {
+      '../lib/units/playerTargetKnowledge': { playerSeesTarget: () => true },
       './tribute/FactionRaidEconomy': {
         selectFactionRaidArmy: () => ({ units: [{ type: 'Fantassin' }, { type: 'Bowman' }] }),
         commitFactionRaidArmy: () => true,
@@ -415,6 +421,53 @@ test('faction raid spawn prefers the map edge facing the faction home region', (
   assert.equal(cells[0].j <= 3, true)
 })
 
+for (const bridge of [false, true]) {
+  test(`raid spawns remain reachable across a river (bridge: ${bridge})`, () => {
+    const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
+    const { findInstancePath } = loadTsModule('app/services/Pathfinding.ts')
+    const grid = Array.from({ length: 24 }, (_, i) =>
+      Array.from({ length: 24 }, (_, j) => ({
+        i,
+        j,
+        solid: false,
+        has: null,
+        category: j === 10 && !(bridge && i === 6) ? 'Water' : 'Grass',
+      }))
+    )
+    const target = { i: 12, j: 16, owner: { buildings: [] } }
+    const map = {
+      grid,
+      random: () => 0.5,
+      worldRegion: { x: 2, y: 2 },
+      worldManifest: { settlements: [{ factionId: 'enemy', region: { x: 0, y: 0 } }] },
+    }
+    const cells = findTributeRaidSpawnCells({ map }, target, 24, { faction: { id: 'enemy' } })
+    assert.equal(cells.length, 24)
+    for (const cell of cells) {
+      assert.ok(findInstancePath(cell, target.i, target.j, map).length, `Unreachable spawn ${cell.i},${cell.j}`)
+      if (!bridge) assert.ok(cell.j > 10)
+    }
+    if (bridge) assert.ok(cells[0].j < 10, 'The bridge should allow the preferred entry bank')
+  })
+}
+
+test('raid cannot use nearby land across water when the target is isolated', () => {
+  const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
+  const grid = Array.from({ length: 18 }, (_, i) =>
+    Array.from({ length: 18 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      has: null,
+      category: Math.max(Math.abs(i - 9), Math.abs(j - 9)) === 1 ? 'Water' : 'Grass',
+    }))
+  )
+  const target = { i: 9, j: 9, label: 'hero', owner: { buildings: [] } }
+  grid[9][9].has = target
+  grid[9][9].solid = true
+  assert.deepEqual(findTributeRaidSpawnCells({ map: { grid, random: () => 0.5 } }, target, 6), [])
+})
+
 test('faction raid text ignores stale bandit faction names', () => {
   const { getIncomingRaidMessage, getTributeTitle } = loadTributeRaidText()
   const raid = {
@@ -641,7 +694,8 @@ function negotiationHarness(t, { affordable = true, local = false } = {}) {
       canPay = value
     },
     modal: () => modalOptions,
-    buttons: () => modalOptions.content.children.find(child => child.className?.includes('bandit-tribute-actions')).children,
+    buttons: () =>
+      modalOptions.content.children.find(child => child.className?.includes('bandit-tribute-actions')).children,
   }
 }
 
@@ -669,7 +723,9 @@ test('refusing or closing an unresolved tribute dialog makes the raid hostile on
   h.system.openTributeModal(h.raid)
   assert.equal(h.buttons()[0].disabled, true)
   assert.equal(h.buttons()[0].title, undefined)
-  assert.ok(h.modal().content.children.some(child => child.tag === 'p' && child.textContent === 'banditTributeCannotPay'))
+  assert.ok(
+    h.modal().content.children.some(child => child.tag === 'p' && child.textContent === 'banditTributeCannotPay')
+  )
   const modal = h.raid.modal
   h.system.openTributeModal(h.raid)
   assert.equal(h.raid.modal, modal)
@@ -803,4 +859,90 @@ test('temporary raid owners retain their identities and use civilization fallbac
   })
   await new failing.TributeRaidSystem(system.context).preloadRaidOwnerAssets(owner)
   assert.equal(messages.length, 1)
+})
+
+test('tutorial faction raid starts at night without an economic army and attacks without parley', async () => {
+  const target = { label: 'hero', i: 10, j: 10, owner: {} }
+  const { TributeRaidSystem } = loadTributeRaidSystem({
+    './TributeRaidTargeting': { findRaidTarget: () => target },
+    './tribute/FactionRaidEconomy': {
+      commitFactionRaidArmy: () => assert.fail('Scripted army must not drain world economy'),
+    },
+  })
+  const context = {
+    players: [],
+    player: { civ: 'Hellas' },
+    map: { random: () => 0 },
+    isTutorialActive: () => true,
+    dayNight: { state: { day: 1, hour: 23 } },
+    scheduler: { add: () => 1 },
+    menu: { showMessage() {}, isMiniMapActive: () => false },
+  }
+  const system = new TributeRaidSystem(context)
+  system.isFactionRaidWindowOpen = () => false
+  system.findSpawnCells = (_target, count) => Array.from({ length: count }, (_, i) => ({ i, j: 0 }))
+  system.preloadRaidOwnerAssets = async () => {}
+  system.startRaidUpdates = () => {}
+  system.sendRaidToTarget = () => assert.fail('No tribute approach during tutorial')
+  const attacks = []
+  const owner = {
+    units: [],
+    createUnit(options) {
+      const unit = {
+        ...options,
+        label: `raider-${this.units.length}`,
+        owner: this,
+        hitPoints: 50,
+        sendToEvt: (dest, action) => attacks.push([dest, action]),
+      }
+      this.units.push(unit)
+      return unit
+    },
+  }
+  system.createTemporaryRaidOwner = () => owner
+  assert.equal(await system.triggerTutorialRaid(), true)
+  assert.equal(system.raids[0].kind, 'faction')
+  assert.equal(system.raids[0].phase, 'hostile')
+  assert.equal(system.raids[0].units.length, 24)
+  assert.equal(attacks.length, 24)
+  assert.ok(attacks.every(([dest, action]) => dest === target && action === 'attack'))
+  assert.equal(await system.triggerTutorialRaid(), false)
+  assert.equal(system.factionRaidPending, false)
+})
+
+test('scripted tutorial raid is unavailable outside the tutorial', async () => {
+  const { TributeRaidSystem } = loadTributeRaidSystem()
+  const runtime = {
+    context: { isTutorialActive: () => false },
+    createTemporaryRaidOwner: () => assert.fail('Unexpected army'),
+  }
+  assert.equal(await TributeRaidSystem.prototype.triggerTutorialRaid.call(runtime), false)
+})
+
+test('hostile raiders approach the raid location before seeing the hero, then attack on sight', () => {
+  let visible = false
+  const { TributeRaidSystem } = loadTributeRaidSystem({
+    '../lib/units/playerTargetKnowledge': { playerSeesTarget: () => visible },
+    '../lib/mapSpaces': { getEntitySpaceMapLike: (_unit, map) => map },
+  })
+  const cell = { i: 10, j: 10 }
+  const orders = []
+  const unit = { i: 0, j: 0, owner: {}, sendToEvt: (...args) => orders.push(args) }
+  const target = { i: 10, j: 10 }
+  const raid = { units: [unit], chief: unit, target, phase: 'hostile' }
+  const runtime = new TributeRaidSystem({ map: { grid: { 10: { 10: cell } } }, players: [] })
+  runtime.updateRaid(raid)
+  assert.equal(orders[0][0], cell)
+  assert.equal(orders[0][1], null)
+  unit.path = [cell]
+  target.i = 15
+  runtime.updateRaid(raid)
+  assert.equal(orders.length, 1, 'hidden hero movement must not keep changing the rally order')
+  visible = true
+  runtime.updateRaid(raid)
+  assert.equal(orders[1][0], target)
+  assert.equal(orders[1][1], 'attack')
+  unit.action = 'attack'
+  runtime.updateRaid(raid)
+  assert.equal(orders.length, 2, 'ongoing combat is not restarted')
 })

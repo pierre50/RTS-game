@@ -53,7 +53,12 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
       THEFT_SUBJECT_TYPES: { chest: 'chest' },
     },
     './InspectionPanel': {
-      createInspectionModal: () => ({ close() {} }),
+      createInspectionModal: () => ({
+        _panel: global.document.createElement('div'),
+        _backdrop: global.document.createElement('div'),
+        close() {},
+      }),
+      setInspectionMode: (modal, enabled) => modal._panel.classList.toggle('inspection-panel', enabled),
     },
     './EntityInfoContent': {
       TITLED_ENTITY_INFO_OPTIONS: {},
@@ -69,6 +74,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
       },
     },
     './hero-building/HeroMarketBody': {
+      canHeroTradeAtMarket: building => building.isBuilt && !building.tradeBlocked,
       createHeroMarketBody: (building, _menu, onChange) => {
         const element = global.document.createElement('div')
         element.className = 'hero-market-panel'
@@ -114,7 +120,12 @@ function installMockDocument() {
         childElementCount: 0,
         listeners: new Map(),
         style: { setProperty() {} },
-        classList: { add() {}, toggle() {} },
+        classList: {
+          values: new Set(),
+          add(value) { this.values.add(value) },
+          toggle(value, enabled) { if (enabled) this.values.add(value); else this.values.delete(value) },
+          contains(value) { return this.values.has(value) },
+        },
         appendChild(child) {
           this.children.push(child)
           this.childElementCount = this.children.length
@@ -307,7 +318,7 @@ test('hero building menu renders a reusable inventory transfer panel for chests'
   }
 })
 
-test('hero building menu renders market body for markets', () => {
+test('market trade opens on request, refreshes in place and returns to the building sheet', () => {
   const { manager, player, restoreDocument } = createManager()
   try {
     const building = {
@@ -328,9 +339,32 @@ test('hero building menu renders market body for markets', () => {
 
     assert.equal(manager.open(building), true)
 
+    const modal = manager.modal
+    assert.equal(manager.marketOpen, false)
+    assert.equal(manager.body.children.some(child => child.className === 'hero-market-panel'), false)
+    manager.body.children.find(child => child.dataset.actionId === 'marketTrade').dispatch('click')
+    assert.equal(manager.modal, modal)
+    assert.equal(manager.marketOpen, true)
+    assert.equal(modal._panel.classList.contains('inventory-transfer-modal'), true)
+    assert.equal(modal._panel.classList.contains('interaction-panel'), false)
     assert.equal(manager.transferPanel, null)
     assert.equal(manager.body.children.at(-1).className, 'hero-market-panel')
     assert.equal(manager.body.children.at(-1).dataset.marketBuilding, 'market-1')
+    manager.menu.context.controls.heroUnit.inventory.resources.gold = 5
+    manager.refreshInventory()
+    assert.equal(manager.marketOpen, true)
+    assert.equal(manager.body.children.at(-1).className, 'hero-market-panel')
+    manager.backButton.dispatch('click')
+    assert.equal(manager.modal, modal)
+    assert.equal(manager.marketOpen, false)
+    assert.equal(modal._panel.classList.contains('inventory-transfer-modal'), false)
+    assert.equal(modal._panel.classList.contains('interaction-panel'), true)
+    assert.ok(manager.body.children.find(child => child.dataset.actionId === 'marketTrade'))
+    manager.body.children.find(child => child.dataset.actionId === 'marketTrade').dispatch('click')
+    building.tradeBlocked = true
+    manager.syncLiveState()
+    assert.equal(manager.marketOpen, false)
+    assert.equal(manager.body.children.some(child => child.dataset.actionId === 'marketTrade'), false)
   } finally {
     restoreDocument()
   }

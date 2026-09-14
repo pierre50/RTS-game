@@ -5,6 +5,25 @@ const { advanceCampaignEconomy, captureEconomyRegion, encodeEconomyTerrain, econ
   'app/services/world/WorldEconomy.ts'
 )
 const DAY = 1440000
+test('tutorial days freeze remote economies without catching up after completion or reload', () => {
+  const { campaign, region, state } = fixture()
+  campaign.tutorial = { stage: 'wood-requested' }
+  const original = structuredClone(state)
+  advanceCampaignEconomy(campaign, 5 * DAY, 'home', () => { throw new Error('Tutorial must not simulate') })
+  assert.deepEqual(state.players, original.players)
+  assert.deepEqual(state.resources, original.resources)
+  assert.equal(region.simulatedUntilMs, 5 * DAY)
+  assert.equal(state.runtime.dayNightElapsedMs, 5 * DAY)
+  const restored = JSON.parse(JSON.stringify(campaign))
+  restored.introduction = { status: 'completed' }
+  advanceCampaignEconomy(restored, 5 * DAY, 'home', () => { throw new Error('No tutorial catch-up') })
+  const normal = structuredClone(restored)
+  delete normal.tutorial
+  advanceCampaignEconomy(restored, 6 * DAY, 'home', rules)
+  advanceCampaignEconomy(normal, 6 * DAY, 'home', rules)
+  assert.deepEqual(restored.economy, normal.economy)
+  assert.notDeepEqual(restored.economy.regions.remote.initialState.resources, original.resources)
+})
 const { materializeInitialEconomy } = loadTsModule('app/services/world/WorldEconomy.ts')
 const { validateWorldEconomy } = loadTsModule('app/serialization/WorldEconomyValidation.ts')
 const { worldEconomyFactors } = loadTsModule('app/config/worldEconomyBalance.ts')

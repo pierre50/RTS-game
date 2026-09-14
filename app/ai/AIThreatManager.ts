@@ -1,3 +1,4 @@
+import { heroCanCommand } from '../lib/chief'
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
 import type { PlayerLike } from '../types/player'
 import { findInstancesInSight } from '../lib'
@@ -84,8 +85,16 @@ export class AIThreatManager {
   }
 
   reportThreat(target: RuntimeEntity, attacker: RuntimeEntity): void {
-    if (!target || target.owner?.label !== this.player.label || !attacker || attacker.isDead || attacker.isDestroyed) {
-      return
+    if (!target || !attacker || attacker.isDead || attacker.isDestroyed) return
+    if (target.owner?.label !== this.player.label) {
+      const hero = this.player.context.controls?.heroUnit
+      const anchor = this.getHomeAnchor()
+      if (target !== hero || heroCanCommand(hero) || !this.player.factionId ||
+        target.owner?.factionId !== this.player.factionId || !anchor ||
+        (target.spaceId ?? 'outside') !== (anchor.spaceId ?? 'outside') ||
+        Math.abs(target.i - anchor.i) + Math.abs(target.j - anchor.j) > (this.player.difficultyConfig.homeThreatRadius ?? 18) ||
+        !this.player.isEnemy(attacker.owner) ||
+        !playerSeesTarget(this.player as unknown as PlayerLike, attacker)) return
     }
 
     const now = this.player.getNow()

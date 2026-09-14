@@ -1,48 +1,11 @@
-import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { ENTITY_DETAILS_TRANSLATIONS } from './entityDetails'
-
+import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
+import { EN_QUEST_TRANSLATIONS } from './questTranslations'
 export const EN_TRANSLATIONS = {
-  introductionCampDialogue:
-    'You’re finally awake! I found you unconscious and brought you to the fire. Take a breath. We’ll need to help each other from here on.',
-  introductionCampReply: 'Thank you. I’m ready.',
-
-  questCompletedRelation: 'Quest completed — Relationship with {name}: +{gain}.',
-  questCompletedRelationMax: 'Quest completed — Your relationship with {name} is already at its maximum.',
-  questRelationChanged: 'New relationship: {status}.',
-  questRelation_hostile: 'Hostile',
-  questRelation_wary: 'Wary',
-  questRelation_neutral: 'Neutral',
-  questRelation_friendly: 'Friendly',
-  questRelation_allied: 'Allied',
-
-  questGoldReceived: '+{quantity} gold received in your bag.',
-  questResourceTitle: 'Supplies for {giver}',
-  questResourceDescription: '{giver} needs {quantity} {resourceLabel} for the village. Bring them in your bag. Reward: {rewardGold} gold and +10 relationship.',
-  questResourceObjective: 'Deliver {quantity} {resourceLabel} to {giver} ({count}/{quantity})',
-  questResourceOffer: 'I need {quantity} {resourceLabel} for the village. I will give you {rewardGold} gold in return.',
-  questResourceReminder: 'I still need {quantity} {resourceLabel}. Come back when you have them in your bag.',
-  questResourceThanks: 'Thank you for the supplies! Here is your {rewardGold} gold. The village will put them to good use.',
-  questResourceGive: 'Give {quantity} {resourceLabel}',
-  questResourceProgress: 'In your bag: {count}/{quantity} {resourceLabel}',
-  questAccept: 'I’ll take care of it',
-  questNotNow: 'Not now',
-  questAccepted: 'New quest added to the journal.',
-  questCompleted: 'Quest completed.',
-
-  questJournal: 'Journal',
-  questJournalUnread: 'Journal — new quests',
-  questJournalEmpty: 'No quests yet. Talk to the villagers to discover their requests.',
-  questStatus_active: 'Active',
-  questStatus_completed: 'Completed',
-  questStatus_failed: 'Failed',
-  questStatus_cancelled: 'Cancelled',
-  questUnavailable: 'Mission unavailable',
-  questGiver: 'Given by {name}',
-  questObjectives: 'Objectives',
-  questTrack: 'Track quest',
-  questUntrack: 'Stop tracking',
+  ...EN_QUEST_TRANSLATIONS,
+  npcQuestSleeping: 'Zzzz… Let’s see this tomorrow. Let me sleep.',
+  arrow_ceramic: 'Ceramic arrow',
   controlAction_quests: 'Quest journal',
-
   detailsBuildingHP: 'Hit points: {value}',
   constructionTerritoryOccupied:
     'Construction unavailable: this map belongs to {player}, whether allied or hostile. Construction unlocks once this player is eliminated.',
@@ -569,6 +532,8 @@ export const EN_TRANSLATIONS = {
   controlsReset: 'Reset keys',
   controlsConflict: 'Several actions use the same key.',
   goldShort: 'gold',
+  marketTrade: 'Trade',
+  marketStockTitle: 'Merchant stock',
   marketBuyTitle: 'Buy',
   marketSellBagTitle: 'Sell bag',
   marketSellBagDescription: 'The counter takes spare goods at a fair weight, no haggling required.',

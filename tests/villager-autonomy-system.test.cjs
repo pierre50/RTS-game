@@ -7,6 +7,7 @@ function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
   let paused = false
   const calls = []
   const rejected = []
+  const stalledLogs = []
   const scheduler = new ActionScheduler({ ticker: { add() {}, remove() {} } }, () => paused)
   const context = { scheduler, editor, dayNight: { state: { hour: 12, minute: 0 } }, players: [] }
   const units = Array.from({ length: count }, (_, index) => ({
@@ -29,6 +30,7 @@ function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
   const exploration = loadTsModule('app/lib/units/autonomy/villagerExploration.ts')
   const { VillagerAutonomySystem } = loadTsModule('app/services/VillagerAutonomySystem.ts', {
     mocks: {
+      '../lib/units/autonomy/villagerJobDiagnostics': { logStationaryVillager: unit => stalledLogs.push(unit.label) },
       '../lib/units/autonomy/villagerExploration': exploration,
       '../lib/units/villagerTaskRecovery': {
         resumeVillagerJobIntent(unit) {
@@ -54,6 +56,7 @@ function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
     scheduler,
     calls,
     rejected,
+    stalledLogs,
     units,
     unit: units[0],
     target,
@@ -293,4 +296,17 @@ test('the editor never starts autonomous work', () => {
   h.tick()
   assert.equal(h.calls.length, 0)
   assert.equal(h.scheduler._tasks.size, 0)
+})
+
+
+test('stationary walking reports once even during rest, then resets after movement', () => {
+  const { SHEET_TYPES } = loadTsModule('app/constants/index.ts')
+  const h = harness({ extra: { currentSheet: SHEET_TYPES.walking, shelterState: { reason: 'sleep' } } })
+  for (let n = 0; n < 12; n++) h.tick()
+  assert.deepEqual(h.stalledLogs, ['worker-0'])
+  assert.equal(h.calls.length, 0)
+  h.unit.x += 1
+  h.tick()
+  for (let n = 0; n < 6; n++) h.tick()
+  assert.deepEqual(h.stalledLogs, ['worker-0', 'worker-0'])
 })

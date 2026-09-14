@@ -22,6 +22,8 @@ export type EnemyMemoryOptions = {
 }
 
 export type AIEntityLike = {
+  spaceId?: string
+  lookingAtHero?: boolean
   label: string
   name?: string
   family?: string

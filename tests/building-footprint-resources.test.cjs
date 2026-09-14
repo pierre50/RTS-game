@@ -16,6 +16,25 @@ const { occupyBuildingFootprint } = loadTsModule('app/classes/building/BuildingS
   },
 })
 
+test('player building footprints do not discover terrain before the hero exists or before promotion', () => {
+  const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+  for (const isChief of [undefined, false, true]) {
+    const views = new VisionGrid(4)
+    const player = { isPlayed: true, units: [], views, cellViewed: 0 }
+    if (isChief !== undefined) player.units.push({ type: 'Hero', isChief })
+    const grid = Array.from({ length: 5 }, (_, i) => Array.from({ length: 5 }, (_, j) => ({
+      i, j, corpses: new Set(), removeFog() {}, updateVisible() {},
+    })))
+    const building = { i: 2, j: 2, size: 2, owner: player, context: { player, map: { grid } } }
+    occupyBuildingFootprint(building)
+    for (const cell of getBuildingFootprintCells(2, 2, grid, 2)) {
+      assert.equal(views.isViewed(cell.i, cell.j), isChief === true)
+      assert.equal(views.isVisible(cell.i, cell.j), isChief === true)
+      assert.equal(cell.has, building)
+    }
+  }
+})
+
 test('building footprint destroys wheat and every wildgrass type before occupying their cells', () => {
   const grid = Array.from({ length: 5 }, (_, i) =>
     Array.from({ length: 5 }, (_, j) => ({ i, j, has: null, solid: false, corpses: new Set() }))

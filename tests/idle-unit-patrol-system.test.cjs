@@ -3,8 +3,11 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const constants = {
+  BUILDING_TYPES: { townCenter: 'TownCenter' },
+  WORK_TYPES: { attacker: 'attacker' },
   UNIT_TYPES: {
     hero: 'Hero',
+    chief: 'Chief',
     infantry: 'Fantassin',
     villager: 'Villager',
   },
@@ -14,6 +17,7 @@ function loadSystem(scheduleCalls) {
   return loadTsModule('app/services/IdleUnitPatrolSystem.ts', {
     mocks: {
       '../constants': constants,
+      '../lib/mapSpaces': { sameMapSpace: (a, b) => (a.spaceId ?? 'outside') === (b.spaceId ?? 'outside') },
       '../lib/units/walkAround': {
         scheduleUnitWalkAround: (unit, options) => {
           scheduleCalls.push([unit.label, options])
@@ -24,6 +28,32 @@ function loadSystem(scheduleCalls) {
     },
   }).IdleUnitPatrolSystem
 }
+
+test('player chief patrols around the TownCenter and yields to dialogue and scripted actions', () => {
+  const scheduleCalls = []
+  const center = { type: 'TownCenter', i: 10, j: 10, isBuilt: true }
+  const chief = createUnit('chief', { type: 'Chief', isChief: true, work: 'attacker' })
+  const owner = { isPlayed: true, buildings: [center], units: [chief] }
+  chief.owner = owner
+  const System = loadSystem(scheduleCalls)
+  new System({ players: [owner], scheduler: createScheduler([]) })
+  const options = scheduleCalls[0][1]
+  assert.equal(options.anchor(chief), center)
+  assert.equal(options.range(chief), 6)
+  assert.equal(options.delayMinMs(chief), 6000)
+  assert.equal(options.delayMaxMs(chief), 12000)
+  chief.lookingAtHero = true
+  assert.equal(options.canMove(chief), false)
+  chief.lookingAtHero = false
+  chief.actionLocked = true
+  assert.equal(options.canMove(chief), false)
+  chief.actionLocked = false
+  chief.spaceId = 'house'
+  assert.equal(options.anchor(chief), chief, 'outside coordinates are never used inside a house')
+  delete chief.spaceId
+  center.isDestroyed = true
+  assert.equal(options.anchor(chief), chief)
+})
 
 function createScheduler(calls) {
   return {

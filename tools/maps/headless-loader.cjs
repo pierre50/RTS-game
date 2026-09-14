@@ -163,6 +163,7 @@ function loadHeadlessImport(request, parent, isMain, originalLoad) {
         hasWaterBorderWithin,
       }
     }
+    if (request === '../../lib/grid/queries') return { hasWaterBorderWithin }
     if (request === '../../constants') return constants
     if (request === '../../lib/terrain/topology') {
       return {

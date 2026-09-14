@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadLifecycle({ calls, soundSuppressed }) {
+function loadLifecycle({ calls, soundSuppressed, defeated = false }) {
   return loadTsModule('app/screens/game/GameRuntimeLifecycle.ts', {
     mocks: {
       '@pixi/sound': {
@@ -16,7 +16,7 @@ function loadLifecycle({ calls, soundSuppressed }) {
       '../../lib': {
         debounce: fn => fn,
         getGaiaAnimals: gaia => gaia?.units ?? [],
-        isPlayedHeroDefeated: () => false,
+        isPlayedHeroDefeated: () => defeated,
       },
       '../../lib/audio/settings': {
         getCameraZoom: () => 1,
@@ -91,3 +91,33 @@ test('toggleGamePause restores a previously suppressed audio state', () => {
   assert.equal(soundSuppressed.value, true)
   assert.deepEqual(calls, [['suppressed', true], ['pauseAll'], ['suppressed', true], ['resumeAll']])
 })
+
+for (const scripted of [false, true]) {
+  test(`defeat waits for the death animation without an overlay (tutorial=${scripted})`, async () => {
+    const { checkGameDefeat } = loadLifecycle({ calls: [], soundSuppressed: { value: false }, defeated: true })
+    const previousDocument = global.document
+    const overlays = []
+    let transitions = 0
+    global.document = { createElement: () => ({}), body: { appendChild: element => overlays.push(element) } }
+    let finishDeath
+    const deathAnimationComplete = new Promise(resolve => { finishDeath = resolve })
+    const game = {
+      context: { player: {}, defeat: false, controls: { heroUnit: { deathAnimationComplete } } },
+      _handleDefeat() {
+        transitions++
+        this.context.defeat = true
+        return true
+      },
+    }
+    try {
+      assert.equal(checkGameDefeat(game), true)
+      assert.equal(checkGameDefeat(game), false)
+      assert.equal(transitions, 0, 'no transition while the hurt animation is playing')
+      finishDeath()
+      await deathAnimationComplete
+      await Promise.resolve()
+      assert.equal(overlays.length, 0)
+      assert.equal(transitions, 1)
+    } finally { global.document = previousDocument }
+  })
+}

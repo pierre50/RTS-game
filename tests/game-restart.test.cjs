@@ -257,6 +257,8 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
   }
   if (realScheduler) delete mocks['../lib/ActionScheduler']
   Object.assign(mocks, {
+    './GameBuildingInteriorTravel': mocks['./game/GameBuildingInteriorTravel'],
+    '../../serialization/SaveStorage': mocks['../serialization/SaveStorage'],
     '../../lib': mocks['../lib'],
     '../../lib/lang': mocks['../lib/lang'],
     '../../lib/equipment/equipmentStats': mocks['../lib/equipment/equipmentStats'],

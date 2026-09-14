@@ -1,3 +1,4 @@
+import { VILLAGE_WAKE_COMPLETE_HOUR } from '../units/villagerSchedule'
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { getHoursUntilNextMorning } from '../../services/TimeSkipSystem'
 import { playSleepingOutsideVisual, playSleepingWakeVisual } from '../../services/rest/UnitSleepVisuals'
@@ -75,11 +76,12 @@ export function sleepHeroAtFireCamp(hero: UnitEntity | null | undefined, buildin
   setUnitOverheadIndicator(hero, 'sleep')
   playSleepingOutsideVisual(hero, () => {
     const dayNightState = context?.dayNight?.state
-    const hours = getHoursUntilNextMorning(dayNightState?.hour ?? 7, dayNightState?.minute ?? 0)
+    const hours = getHoursUntilNextMorning(dayNightState?.hour ?? 7, dayNightState?.minute ?? 0, VILLAGE_WAKE_COMPLETE_HOUR)
     const result = context?.timeSkip?.start?.(hours, {
       completedMessage: t('heroSleepComplete'),
       onCancel: () => wakeHeroFromFireCamp(hero),
       onComplete: () => {
+        context.unitRest?.synchronizeAfterTimeJump?.()
         context.autosave?.()
         wakeHeroFromFireCamp(hero)
       },

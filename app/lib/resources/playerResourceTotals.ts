@@ -2,6 +2,8 @@ import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../consta
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
+import { heroCanCommand } from '../chief'
+import type { GameContextLike } from '../../types/context'
 import { storageResourcePriority } from './storagePolicy'
 
 type StorageResourceName = (typeof RESOURCE_STORAGE_NAMES)[number]
@@ -50,6 +52,8 @@ function expandFoodDeposit(resources: ResourceAmount): ResourceAmount {
   return expanded
 }
 export type ResourceStoreOwner = {
+  isPlayed?: boolean
+  context?: GameContextLike
   buildings?: BuildingEntity[]
   label?: string
   units?: UnitEntity[]
@@ -118,6 +122,17 @@ function getPlayerResourceHeroes(
   return [...heroes]
 }
 
+/** Personal spending uses the active hero's bag until they can command the village.
+ * Explicit village-only queries remain available to upkeep and offline simulation. */
+function getPersonalResourceHero(
+  player: ResourceStoreOwner | null | undefined,
+  options: ResourceTotalOptions = {}
+): UnitEntity | null {
+  if (!player?.isPlayed || options.includeHero === false) return null
+  const hero = options.hero ?? player.context?.controls?.heroUnit ?? getPlayerResourceHeroes(player)[0]
+  return hero && isOwnedHero(hero, player) && !heroCanCommand(hero) ? hero : null
+}
+
 function isVisibleStorageBuilding(building: BuildingEntity, player: ResourceStoreOwner | PlayerLike): boolean {
   const map = building.context?.map
   if (map?.revealEverything) return true
@@ -154,11 +169,12 @@ export function getPlayerResourceTotals(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   options: ResourceTotalOptions = {}
 ): Record<ResourceName, number> {
-  const totals = getPlayerStoredResourceTotals(player, options)
+  const personalHero = getPersonalResourceHero(player, options)
+  const totals = personalHero ? createEmptyResourceTotals() : getPlayerStoredResourceTotals(player, options)
   if (!player) return totals
 
   if (options.includeHero !== false) {
-    for (const hero of getPlayerResourceHeroes(player, options.hero)) {
+    for (const hero of personalHero ? [personalHero] : getPlayerResourceHeroes(player, options.hero)) {
       const resources = hero.inventory?.resources
       if (!resources) continue
       for (const resource of RESOURCE_STORAGE_NAMES) {
@@ -205,12 +221,13 @@ export function withdrawChestResources(
 
   const totals = getPlayerResourceTotals(player, options)
   const expandedCost = expandFoodCost(cost, totals)
+  const personalHero = getPersonalResourceHero(player, options)
 
   for (const [resource, rawAmount] of Object.entries(expandedCost) as [keyof ResourceAmount, number][]) {
     let remaining = Math.max(0, Math.floor(rawAmount ?? 0))
     if (remaining <= 0) continue
 
-    for (const chest of getPlayerResourceChests(player)) {
+    for (const chest of personalHero ? [] : getPlayerResourceChests(player)) {
       const resources = chest.inventory?.resources
       if (!resources) continue
       const available = Math.max(0, Math.floor(resources[resource] ?? 0))
@@ -223,7 +240,7 @@ export function withdrawChestResources(
       if (remaining <= 0) break
     }
 
-    for (const depot of getPlayerStartingResourceDepots(player)) {
+    for (const depot of personalHero ? [] : getPlayerStartingResourceDepots(player)) {
       if (remaining <= 0) break
       const resources = depot.inventory?.resources
       if (!resources) continue
@@ -237,7 +254,7 @@ export function withdrawChestResources(
     }
 
     if (options.includeHero !== false) {
-      for (const hero of getPlayerResourceHeroes(player, options.hero)) {
+      for (const hero of personalHero ? [personalHero] : getPlayerResourceHeroes(player, options.hero)) {
         if (remaining <= 0) break
         const resources = hero.inventory?.resources
         if (!resources) continue

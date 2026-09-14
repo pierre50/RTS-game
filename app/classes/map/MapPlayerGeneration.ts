@@ -49,9 +49,10 @@ export function generatePlayers(
     if (!map.noAI) {
       const humanCiv = humanConfig?.civ
       for (const settlement of settlementStarts) {
-        if (humanCiv && settlement.civ === humanCiv) continue
+        const villageConfig = playersConfig?.find(player => player.civ === settlement.civ && player.isHuman === false)
+        if (humanCiv && settlement.civ === humanCiv && !villageConfig) continue
         const position = settlement.local
-        const config = playersConfig?.find(player => player.civ === settlement.civ)
+        const config = villageConfig ?? playersConfig?.find(player => player.civ === settlement.civ)
         if (!position) continue
         players.push(createAIPlayer(map, context, position.i, position.j, players.length, config))
       }

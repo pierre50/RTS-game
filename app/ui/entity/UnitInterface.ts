@@ -56,8 +56,9 @@ export class UnitInterface {
   setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
+    const showStats = !options?.hideStats
     const showExperience = unitSupportsExperience(unit) && unit.owner === unit.context?.player
-    appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints, {
+    appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, showStats ? unit.hitPoints : undefined, showStats ? unit.totalHitPoints : undefined, {
       hideType: Boolean(options?.hideIdentity && !unit.name),
     })
     if (unit.name && !options?.hideIdentity) {
@@ -65,6 +66,8 @@ export class UnitInterface {
       const header = element.querySelector('.entity-info-header')
       header?.prepend(nameElement)
     }
+
+    if (!showStats) return
 
     if (showExperience) {
       // A single glanceable global level, then per-category rows that explain where

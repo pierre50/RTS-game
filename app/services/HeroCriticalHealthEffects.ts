@@ -32,7 +32,8 @@ function getFilters(filters: Filter | readonly Filter[] | null | undefined): rea
 }
 
 function getHealthRatio(hero: UnitEntity | null): number {
-  if (!hero || hero.isDead || hero.isDestroyed) return 1
+  if (!hero || hero.isDestroyed) return 1
+  if (hero.isDead) return 0
   const totalHitPoints = Math.max(0, hero.totalHitPoints ?? 0)
   if (totalHitPoints <= 0) return 1
   return clamp((hero.hitPoints ?? totalHitPoints) / totalHitPoints, 0, 1)

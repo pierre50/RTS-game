@@ -46,6 +46,7 @@ type RuntimeMapInstance = BlueprintRuntimeMap & {
 export type GameWorldBootHost = {
   _campaignSave: ReturnType<typeof createInitialCampaignSave> | null
   context: {
+    paused?: boolean
     controls?: { init?: () => void; setEquippedItem?: GameContextLike['controls']['setEquippedItem'] } | null
     menu?: { init?: () => void } | null
     performance?: { record?: (name: string, duration: number) => void; setPhase?: (phase: string) => void } | null
@@ -98,13 +99,21 @@ function measure<T>(game: GameWorldBootHost, name: string, callback: () => T): T
   }
 }
 
+export type NewGameBootOptions = {
+  /** Keep simulation suspended until the opening has been revealed. */
+  startPaused?: boolean
+  dayNightElapsedMs?: number | null
+  startingSetup?: Promise<Pick<GameConfig, 'heroOnlyStart' | 'heroStartVillage' | 'villageStarts'>>
+}
+
 export async function bootGameFromConfig(
   game: GameWorldBootHost,
   config: GameConfig,
-  options: { dayNightElapsedMs?: number | null } = {}
+  options: NewGameBootOptions = {}
 ): Promise<void> {
   game.context.performance?.setPhase?.('load')
   measure(game, 'boot.createRuntime', () => game._createRuntime())
+  if (options.startPaused) game.context.paused = true
   const map = game._map()
   measure(game, 'boot.applyMapConfig', () => game._applyMapConfig(map, config.heroStartVillage ? { ...config, heroOnlyStart: true } : config))
   measure(game, 'boot.createUiRuntime', () => game._createUiRuntime())
@@ -125,6 +134,20 @@ export async function bootGameFromConfig(
     map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
   )
   recordLoadedMapBlueprint(map, blueprint, 'pregenerated-blueprint', mapGenerationStartedAt)
+  await measureAsync(game, 'boot.preloadUnits', () =>
+    preloadBakedLpcUnitsForPlayers(
+      buildWorldRegionPlayerConfigs(config, blueprint, game._campaignSave?.factions).map(player => ({
+        civ: player.civ ?? human.civ ?? 'Hellas', label: player.factionId ?? player.civ ?? 'preload',
+        gender: player.gender, heroAppearance: player.heroAppearance,
+      })), game.context.performance, {
+      villagerCivilizations: CIVILIZATIONS.map(civilization => civilization.value),
+      preloadEquipment: true,
+    })
+  )
+  if (options.startingSetup) {
+    config = { ...config, ...await options.startingSetup }
+    map.heroOnlyStart = Boolean(config.heroOnlyStart)
+  }
   await game._updateLoading('generatingPlayers', 0.2)
   game.context.players = measure(game, 'boot.generatePlayers', () =>
     map.generatePlayers(buildWorldRegionPlayerConfigs(config, blueprint, game._campaignSave?.factions))
@@ -132,12 +155,6 @@ export async function bootGameFromConfig(
   game.context.player = selectActivePlayer(game.context.players)
   ensureNeutralPlayer(game._gameContext())
   measure(game, 'boot.menuInit', () => game.context.menu?.init?.())
-  await measureAsync(game, 'boot.preloadUnits', () =>
-    preloadBakedLpcUnitsForPlayers(game.context.players, game.context.performance, {
-      villagerCivilizations: CIVILIZATIONS.map(civilization => civilization.value),
-      preloadEquipment: true,
-    })
-  )
   const previousCampaign = game._campaignSave
   const profiles = villageStartProfiles(config)
   const economy = map.worldRegionId ? previousCampaign?.economy?.regions[map.worldRegionId]?.initialState : undefined
@@ -163,7 +180,7 @@ export async function bootGameFromConfig(
   if (!previousCampaign && (Object.keys(profiles).length || config.heroStartVillage)) {
     const initial = initialVillageState()
     const rules = economyRulesFor(initial)
-    const generated = applyVillageStartingState(initial, profiles, map.grid, rules)
+    const generated = applyVillageStartingState(initial, profiles, map.grid, rules, { skipPlayed: Boolean(config.heroStartVillage) })
     placeInitialVillageUnits(generated, new Set(generated.players.flatMap(p => p.factionId ? [p.factionId] : [])), map.grid, rules, { includePlayed: true })
     if (config.heroStartVillage) {
       placeStartingHeroInVillage(generated, config.heroStartVillage, map.grid, rules)

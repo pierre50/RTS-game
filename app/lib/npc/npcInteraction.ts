@@ -1,3 +1,4 @@
+import { heroCanCommand } from '../chief'
 import {
   ACTION_TYPES,
   CELL_WIDTH,
@@ -106,7 +107,7 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true)
     target.path = []
   }
   target.degree = getInstanceDegree(target, hero.x, hero.y)
-  if (sleeping && target.owner === hero.owner) {
+  if (sleeping && target.owner === hero.owner && heroCanCommand(hero)) {
     // Their chief talking to them is a real wake, not a peek — foreign sleepers stay asleep.
     target.context?.unitRest?.wakeSleepingUnitForOrder(target)
   } else if (sleeping) {

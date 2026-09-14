@@ -1,3 +1,4 @@
+import { runPathStep } from '../../lib/units/pathProgress'
 import { canReachContact } from '../../lib/contact/contactGeometry'
 import { tryStartAnimalContactApproach } from './AnimalContactApproach'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
@@ -123,6 +124,15 @@ function moveTowardNextCell(
 }
 
 export function moveAnimalToPath(animal: AnimalControllerHost): void {
+  runPathStep(animal, () => stepAnimalPath(animal), () => {
+    if (animal.dest) animal.sendTo(animal.dest, animal.action, {
+      forceRepath: true,
+      ...(animal.movementSheet ? { movementSheet: animal.movementSheet } : {}),
+    })
+  }, () => animal.stop(), isAirborne(animal))
+}
+
+function stepAnimalPath(animal: AnimalControllerHost): void {
   if (animal.isDead || animal.isDestroyed) return
   updateUnitEnergy(animal, STEP_TIME)
   const runtimeMap = animal.context.map

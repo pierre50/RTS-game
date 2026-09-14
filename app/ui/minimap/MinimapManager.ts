@@ -1,20 +1,25 @@
-import { terrainColor, resourceColor } from './MinimapColors'
-import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
+import { BUILDING_TYPES,CELL_HEIGHT,CELL_WIDTH } from '../../constants'
 import {
-  canvasDrawDiamond,
-  canvasDrawRectangle,
-  canvasDrawStrokeRectangle,
-  playerCanSeeInstance,
-  throttle,
-  throttleByKey,
+canvasDrawDiamond,
+canvasDrawRectangle,
+canvasDrawStrokeRectangle,
+playerCanSeeInstance,
+throttle,
+throttleByKey,
 } from '../../lib'
-import { renderUnitHeadAvatar } from '../../lib/avatar'
+import { instanceIsInPlayerSight } from '../../lib/grid/visibility'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
+import { usesPersonalVision } from '../../lib/units/playerVisionAccess'
 import type { MinimapHostLike } from '../../types/context'
-import type { ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { ResourceEntity,RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
-import { getMinimapElement, MINIMAP_RESOLUTION_SCALE, MinimapGeometry, type MinimapTransform } from './MinimapGeometry'
+import { resourceColor,terrainColor } from './MinimapColors'
+import { isMinimapUnitMarker,isResourceEntity } from './MinimapEntityKinds'
+import { getMinimapElement,MINIMAP_RESOLUTION_SCALE,MinimapGeometry,type MinimapTransform } from './MinimapGeometry'
+import { drawMinimapQuestMarkers } from './MinimapQuestMarkers'
+import { getMinimapUnitAvatar } from './MinimapUnitAvatar'
+import { withMinimapPlayerVision } from './MinimapVisibility'
 
 // Canvases default to the HTML intrinsic 300x150 raster; the world->pixel math below
 // (miniMapAlpha, the /234 reference in getMinimapFactor) is tuned to fill that box
@@ -22,16 +27,11 @@ import { getMinimapElement, MINIMAP_RESOLUTION_SCALE, MinimapGeometry, type Mini
 // size so the diamond still fills the canvas exactly, just at a crisper resolution
 // once CSS stretches it to the (now larger) on-screen minimap box.
 
-const MINIMAP_UNIT_AVATAR_SOURCE_SIZE = 32
 const MINIMAP_CAVE_COLOR = '#a89f91'
 
-function isResourceEntity(instance: RuntimeEntity | null | undefined): instance is ResourceEntity {
-  return instance?.family === FAMILY_TYPES.resource
-}
 
-function isMinimapUnitMarker(instance: RuntimeEntity | null | undefined): boolean {
-  return Boolean(instance && instance.family !== FAMILY_TYPES.animal)
-}
+
+
 
 export class MinimapManager {
   private readonly geometry: MinimapGeometry
@@ -130,17 +130,7 @@ export class MinimapManager {
   }
 
   private getUnitAvatar(unit: RuntimeEntity): HTMLCanvasElement | null {
-    const cached = this.unitAvatarCache.get(unit)
-    if (cached) return cached
-
-    const canvas = document.createElement('canvas')
-    canvas.width = MINIMAP_UNIT_AVATAR_SOURCE_SIZE
-    canvas.height = MINIMAP_UNIT_AVATAR_SOURCE_SIZE
-
-    if (!renderUnitHeadAvatar(this.menu.context.app, unit as UnitEntity, canvas)) return null
-
-    this.unitAvatarCache.set(unit, canvas)
-    return canvas
+    return getMinimapUnitAvatar(this.menu, this.unitAvatarCache, unit)
   }
 
   private drawUnitAvatarMarker(
@@ -164,7 +154,7 @@ export class MinimapManager {
 
   private withMinimapViewSpace<T>(player: PlayerLike | null | undefined, callback: () => T): T {
     const space = this.geometry.getMinimapSpace()
-    return player?.views?.withSpace?.(space.id, callback) ?? callback()
+    return withMinimapPlayerVision(player, space.id, callback)
   }
 
   private isInMinimapSpace(instance: RuntimeEntity | null | undefined): instance is RuntimeEntity {
@@ -378,6 +368,7 @@ export class MinimapManager {
       visibleHeight / factor,
       'white'
     )
+    drawMinimapQuestMarkers(context, menu, this.geometry, transform)
   }
 
   updatePlayerMiniMapEvt(owner: PlayerLike): void {
@@ -416,8 +407,40 @@ export class MinimapManager {
     this.clearCanvas(context, canvas, transform)
     if (!shouldDrawOwner) return
 
+    const personalVision = usesPersonalVision(menu.context)
     const isVisible = (instance: RuntimeEntity) =>
-      map.revealEverything || this.withMinimapViewSpace(player, () => playerCanSeeInstance(instance, player))
+      map.revealEverything ||
+      this.withMinimapViewSpace(player, () =>
+        personalVision ? instanceIsInPlayerSight(instance, player) : playerCanSeeInstance(instance, player)
+      )
+
+    if (personalVision && !map.revealEverything) {
+      // Read the saved fog image, never the current building, which may have changed unseen.
+      for (const row of this.geometry.getMinimapSpace().grid) {
+        for (const cell of row ?? []) {
+          if (!cell?.fogSprites?.some(memory => memory.colorName === owner.color)) continue
+          if (
+            !this.withMinimapViewSpace(
+              player,
+              () => player?.views.isViewed(cell.i, cell.j) && !player.views.isVisible(cell.i, cell.j)
+            )
+          )
+            continue
+          const position = this.geometry.cellToMinimapPoint(cell, transform)
+          context.save()
+          context.globalAlpha = 0.45
+          canvasDrawRectangle(
+            context,
+            position.x - squareSize / 2,
+            position.y - squareSize / 2,
+            squareSize,
+            squareSize,
+            color
+          )
+          context.restore()
+        }
+      }
+    }
 
     owner.buildings.forEach(building => {
       if (!this.isInMinimapSpace(building)) return

@@ -1,3 +1,4 @@
+import { logStationaryVillager } from '../lib/units/autonomy/villagerJobDiagnostics'
 import { ACTION_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { cancelVillagerExplorationResume } from '../lib/units/autonomy/villagerExploration'
 import { villagerAutonomySuspension } from '../lib/units/autonomy/villagerAutonomyAvailability'
@@ -71,6 +72,7 @@ function hasInvalidTarget(unit: UnitEntity): boolean {
 }
 
 export class VillagerAutonomySystem {
+  private walkingObservations = new WeakMap<UnitEntity, { x: number; y: number; space: UnitEntity['spaceId']; since: number; logged: boolean }>()
   private observations = new WeakMap<UnitEntity, Observation>()
   private taskId: number | null = null
   private cursor = 0
@@ -101,7 +103,24 @@ export class VillagerAutonomySystem {
     this.cursor %= Math.max(1, units.length)
   }
 
+  private observeWalking(unit: UnitEntity, now: number): void {
+    if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed || unit.currentSheet !== SHEET_TYPES.walking) {
+      this.walkingObservations.delete(unit)
+      return
+    }
+    let state = this.walkingObservations.get(unit)
+    if (!state || state.x !== unit.x || state.y !== unit.y || state.space !== unit.spaceId) {
+      state = { x: unit.x, y: unit.y, space: unit.spaceId, since: now, logged: false }
+      this.walkingObservations.set(unit, state)
+    }
+    if (!state.logged && now - state.since >= 5000) {
+      state.logged = true
+      logStationaryVillager(unit)
+    }
+  }
+
   private check(unit: UnitEntity, now: number, canRecover: boolean): boolean {
+    this.observeWalking(unit, now)
     const job = unit.autonomousJob
     if (
       unit.type !== UNIT_TYPES.villager ||
@@ -176,5 +195,6 @@ export class VillagerAutonomySystem {
     if (this.taskId != null) this.context.scheduler.remove(this.taskId)
     this.taskId = null
     this.observations = new WeakMap()
+    this.walkingObservations = new WeakMap()
   }
 }

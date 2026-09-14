@@ -43,6 +43,7 @@ export type TributeRaid = {
   faction?: FactionSave | null
   chief: TributeRaidUnit
   target: TributeRaidUnit
+  rallyPoint?: { i: number; j: number; spaceId?: string }
   units: TributeRaidUnit[]
   phase: TributeRaidPhase
   tribute: ResourceAmount

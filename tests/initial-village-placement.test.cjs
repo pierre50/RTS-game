@@ -7,7 +7,7 @@ const { DAY_NIGHT_CONFIG } = loadTsModule('app/config/gameplay.ts')
 function fixture(hour = 12) {
   const unit = (label, type, job, i = 10, j = 12) => ({ label, type, autonomousJob: job, i, j })
   const state = {
-    runtime: { dayNightElapsedMs: (((hour - 8 + 24) % 24) / 24) * DAY_NIGHT_CONFIG.dayLengthMs },
+    runtime: { dayNightElapsedMs: (((hour - DAY_NIGHT_CONFIG.startHour + 24) % 24) / 24) * DAY_NIGHT_CONFIG.dayLengthMs },
     players: [
       {
         type: 'AI',
@@ -71,4 +71,11 @@ test('unreachable resources and occupied cells are not used; other factions are 
   placeInitialVillageUnits(state, new Set(['test']), terrain, rules)
   assert.ok(state.players[0].units.every(u => u.j < 16))
   assert.ok(state.players[0].units.every(u => !u.action))
+})
+
+
+test('new-game workers already have harvest tasks at the 07:30 start', () => {
+  const { state, terrain, rules } = fixture(DAY_NIGHT_CONFIG.startHour)
+  placeInitialVillageUnits(state, new Set(['test']), terrain, rules)
+  assert.ok(state.players[0].units.filter(unit => unit.type === 'Villager').every(unit => unit.action && unit.dest))
 })

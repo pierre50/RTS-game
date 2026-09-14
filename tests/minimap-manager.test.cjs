@@ -24,6 +24,7 @@ function loadMinimapManager({ renderUnitHeadAvatar = () => false } = {}) {
   const module = { exports: {} }
   const mocks = {
     '../constants': {
+      UNIT_TYPES: { hero: 'Hero', chief: 'Chief' },
       BUILDING_TYPES: { cave: 'Cave' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
@@ -60,6 +61,13 @@ function createCanvas() {
     rectangles: [],
     strokes: [],
     images: [],
+    ellipses: [],
+    beginPath() {},
+    ellipse(...args) { this.ellipses.push(args) },
+    fill() {},
+    stroke() {},
+    save() {},
+    restore() {},
     clears: 0,
     translate() {},
     drawImage(...args) {
@@ -120,6 +128,45 @@ function createStyleDeclaration() {
     setProperty: (name, value) => properties.set(name, value),
   }
 }
+
+test('non-chief minimap hides live fogged entities and keeps remembered buildings even after unseen removal', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu()
+  const owner = menu.context.player
+  owner.color = 'blue'
+  menu.context.controls.heroUnit = { type: 'Hero', isChief: false }
+  owner.views = { isViewed: () => true, isVisible: i => i === 0 }
+  const instance = (label, i, family) => ({ label, i, j: 0, family, position: { x: i * 10, y: 0 }, owner, context: menu.context })
+  owner.units = [instance('visible', 0, 'unit'), instance('hidden', 2, 'unit')]
+  owner.buildings = [instance('hidden-building', 2, 'building')]
+  menu.context.map.grid[1][1].fogSprites = [{ colorName: 'blue', textureSheet: 'old-building' }]
+  const manager = new MinimapManager(menu)
+  manager.activate()
+  const layer = menu.playersMinimap.find(layer => layer.id === 'minimap-player').context
+  assert.equal(layer.rectangles.length, 2, 'one visible NPC and one remembered building')
+  owner.buildings = []
+  layer.rectangles.length = 0
+  manager.updatePlayerMiniMapEvt(owner)
+  assert.equal(layer.rectangles.length, 2, 'unseen demolition does not erase the remembered marker')
+})
+
+test('tracked quest areas draw on the minimap without revealing terrain', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu()
+  menu.context.map.worldRegionId = 'region'
+  const { QuestSystem } = require('./helpers/loadTsModule.cjs').loadTsModule('app/services/quests/QuestSystem.ts')
+  const journal = { trackedQuestId: 'hunt', quests: [{ id: 'hunt', status: 'active', regionId: 'region', stageId: 'hunt',
+    markers: { hunt: [{ spaceId: 'outside', position: { i: 1, j: 1 }, radius: 8 }] } }] }
+  menu.context.neutralQuests = { system: new QuestSystem(() => journal) }
+  const manager = new MinimapManager(menu)
+  manager.activate()
+  assert.equal(menu.cameraMinimap.context.ellipses.length, 1)
+  assert.ok(menu.cameraMinimap.context.ellipses[0][2] > 0)
+  assert.equal(menu.terrainMinimap.context.diamonds.length, 0)
+  journal.quests[0].status = 'completed'
+  manager.updateCameraMiniMapEvt()
+  assert.equal(menu.cameraMinimap.context.ellipses.length, 1, 'completed quests do not redraw markers')
+})
 
 test('minimap does not create player layers for other owners', () => {
   const MinimapManager = loadMinimapManager()

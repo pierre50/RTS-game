@@ -1,3 +1,4 @@
+import type { AnimalConfig } from './config'
 import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid, GridPosition } from './grid'
 import type { ResourceEntity, RuntimeEntity } from './entities'
@@ -62,6 +63,7 @@ export interface RenderChunk {
 }
 
 type GaiaPlayerLike = {
+  config?: { animals?: Record<string, AnimalConfig> }
   animals?: RuntimeEntity[]
   units?: RuntimeEntity[]
   createAnimal?: (options: {

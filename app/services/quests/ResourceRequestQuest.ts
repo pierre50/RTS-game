@@ -1,3 +1,4 @@
+import { resourceDeliveryObjective } from './ResourceDeliveryObjective'
 import type { QuestDefinition } from '../../types/quest'
 
 export const resourceRequestQuest: QuestDefinition = {
@@ -9,11 +10,7 @@ export const resourceRequestQuest: QuestDefinition = {
     {
       id: 'delivery',
       objectives: [
-        {
-          id: 'deliver',
-          text: { key: 'questResourceObjective' },
-          conditions: [{ type: 'resource', resource: { parameter: 'resource' }, quantity: { parameter: 'quantity' } }],
-        },
+        resourceDeliveryObjective('deliver'),
       ],
       interactions: [
         {

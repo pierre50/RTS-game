@@ -1011,7 +1011,7 @@ test('closing communication resumes a pending training order', () => {
   assert.deepEqual(calls, [['sendTo', barracks, constants.ACTION_TYPES.train]])
 })
 
-test('talking to your own sleeping unit wakes it for real, like their chief would', () => {
+for (const isChief of [true, false]) test(`talking to a teammate only wakes them for real when the hero is chief (${isChief})`, () => {
   const calls = []
   const owner = {}
   const target = {
@@ -1020,6 +1020,7 @@ test('talking to your own sleeping unit wakes it for real, like their chief woul
     addChildAt: () => {},
     context: {
       unitRest: {
+        previewSleepingUnitWake: unit => calls.push(['previewWake', unit.label]),
         wakeSleepingUnitForOrder: unit => {
           calls.push(['wakeForOrder', unit.label])
           return true
@@ -1038,6 +1039,8 @@ test('talking to your own sleeping unit wakes it for real, like their chief woul
     y: 0,
   }
   const hero = {
+    type: 'Hero',
+    isChief,
     degree: 0,
     i: 0,
     j: 0,
@@ -1051,7 +1054,7 @@ test('talking to your own sleeping unit wakes it for real, like their chief woul
 
   assert.deepEqual(group, [target])
   assert.equal(target.lookingAtHero, true)
-  assert.deepEqual(calls, [['wakeForOrder', 'sleepy-villager']])
+  assert.deepEqual(calls, [[isChief ? 'wakeForOrder' : 'previewWake', 'sleepy-villager']])
 })
 
 test('closing without an order after a real wake does not resume the old day job', () => {

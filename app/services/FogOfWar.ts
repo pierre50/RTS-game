@@ -1,13 +1,16 @@
-import { observeTarget } from '../lib/units/playerTargetKnowledge'
 import { FAMILY_TYPES } from '../constants'
+import { heroCanCommand } from '../lib/chief'
+import { OUTSIDE_SPACE_ID,getMapSpace } from '../lib/mapSpaces'
 import { isAIControlledPlayer } from '../lib/playerState'
 import { instanceIsInInsightRange } from '../lib/units/insightDetection'
-import { OUTSIDE_SPACE_ID, getMapSpace } from '../lib/mapSpaces'
+import { observeTarget } from '../lib/units/playerTargetKnowledge'
+import { ownerSharesVision } from '../lib/units/playerVisionAccess'
 import type { PerformanceMonitorLike } from '../types/context'
-import type { RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeCell, RuntimeMap, RuntimeMapSpace } from '../types/map'
+import type { RuntimeEntity,UnitEntity } from '../types/entities'
+import type { RuntimeCell,RuntimeMap,RuntimeMapSpace } from '../types/map'
 import type { PlayerLike } from '../types/player'
 import type { VisionViewerRef } from '../types/vision'
+import { updateAIKnowledge } from './visibility/AIVisibilityKnowledge'
 
 type ViewerSet = Set<VisionViewerRef>
 
@@ -33,6 +36,7 @@ export type VisibilityEntity = {
   i: number
   j: number
   label: string
+  type?: string
   visible?: boolean
   context?: VisibilityContext
   owner?: VisibilityOwner | null
@@ -72,34 +76,6 @@ function syncVisibleSet(target: ViewerSet, source: ReadonlySet<VisionViewerRef>)
   }
 }
 
-function updateAIKnowledge(globalCell: RuntimeCell, viewer: PlayerLike, { staticOnly = false } = {}): void {
-  const owner = viewer
-  const known = viewer.views.getKnownOccupant(globalCell.i, globalCell.j)
-
-  if (globalCell.has && (!known || known.label !== globalCell.has.label)) {
-    viewer.views.setKnownOccupant(globalCell.i, globalCell.j, globalCell.has)
-    const { has } = globalCell
-
-    if ((has.quantity ?? 0) > 0) {
-      owner.foundedResources?.[has.type]?.add(has)
-    }
-
-    if (!staticOnly && has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {
-      owner.foundedAnimals.add(has)
-    }
-
-    if (!staticOnly && has.family === FAMILY_TYPES.building && (has.hitPoints ?? 0) > 0 && owner.isEnemy?.(has.owner)) {
-      owner.foundedEnemyBuildings?.add(has)
-      owner.rememberEnemy?.(has)
-    }
-
-    if (!staticOnly && has.family === FAMILY_TYPES.unit && (has.hitPoints ?? 0) > 0 && owner.isEnemy?.(has.owner)) {
-      owner.foundedEnemyUnits?.add(has)
-      owner.rememberEnemy?.(has)
-    }
-  }
-}
-
 export function rehydrateAIKnowledge(viewer: PlayerLike, map: RuntimeMap): void {
   if (!isAIControlledPlayer(viewer)) return
 
@@ -136,6 +112,13 @@ export function updateVisibility(instance: VisibilityEntity): void {
   return updateVisibilityNow(instance)
 }
 
+/** Refresh stationary viewers too when the hero gains or loses command. */
+export function refreshPlayerVisibility(context: VisibilityContext): void {
+  for (const entity of [...(context.player?.units ?? []), ...(context.player?.buildings ?? [])]) {
+    updateVisibility(entity)
+  }
+}
+
 function updateVisibilityNow(instance: VisibilityEntity): void {
   const { i: cx, j: cy, sight = 0, owner, context, isDead } = instance
   const map = context?.map
@@ -153,7 +136,13 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   const newVisible = instance._visibleScratch ?? new Set()
   newVisible.clear()
 
-  if (!isDead && instance.providesVision !== false) {
+  const hero = context?.controls?.heroUnit ?? player.units?.find(unit => unit.type === 'Hero')
+  const sharesPlayerVision =
+    owner !== player ||
+    instance === hero ||
+    (!hero && instance.type === 'Hero' && owner.isPlayed) ||
+    (hero ? heroCanCommand(hero) : ownerSharesVision(owner, context))
+  if (!isDead && instance.providesVision !== false && sharesPlayerVision) {
     const minI = Math.max(cx - sight, 0)
     const maxI = Math.min(cx + sight, currentSpace.size ?? owner.views.size)
     const minJ = Math.max(cy - sight, 0)

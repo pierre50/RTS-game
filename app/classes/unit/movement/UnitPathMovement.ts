@@ -1,3 +1,4 @@
+import { runPathStep } from '../../../lib/units/pathProgress'
 import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { tryStartUnitContactApproach } from './UnitContactApproach'
 import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
@@ -38,6 +39,16 @@ import { getReliefMovementDistance } from '../../../lib/terrain/reliefMovement'
 import type { UnitEntity } from '../../../types/entities'
 
 export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
+  runPathStep(unit, () => stepUnitPath(unit, retryBlockedGatherApproach), () => {
+    if (unit.dest) unit.sendToEvt?.(unit.dest, unit.action ?? null, {
+      forceRepath: true,
+      preserveAutonomy: true,
+      allowPassageStop: unit.action === ACTION_TYPES.train || unitHasActivePassageStopIntent(unit, 'has' in unit.dest ? unit.dest : null),
+    })
+  }, () => unit.stop?.())
+}
+
+function stepUnitPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
   if (updateTargetPursuit(unit)) return
   const contextMap = unit.context?.map
   const map = getEntitySpaceMapLike(unit, contextMap)

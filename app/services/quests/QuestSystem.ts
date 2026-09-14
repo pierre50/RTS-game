@@ -1,4 +1,5 @@
 import { resourceRequestQuest } from './ResourceRequestQuest'
+import { tutorialHuntQuest } from './TutorialHuntQuest'
 import type {
   QuestCondition,
   QuestDefinition,
@@ -9,15 +10,17 @@ import type {
 } from '../../types/quest'
 
 /** Gameplay adapters must count the relevant inventory and identify targets by saved label. */
-type ResourceEffect = {
-  type: 'give-resource' | 'take-resource' | 'top-up-resource'
+export type ResourceEffect = {
+  type: 'give-resource' | 'take-resource' | 'top-up-resource' | 'give-item'
   resource: string
   quantity: number
+  equip?: boolean
 }
 
 export type QuestEnvironment = {
   regionId: string
   resourceCount(resource: string): number
+  itemCount?(item: string): number
   targetMatches(label: string, state: 'discovered' | 'spoken-to' | 'defeated' | 'reached'): boolean
   /** Revalidate and commit the entire inventory batch, or return false without changing anything. */
   commitResources(effects: ResourceEffect[]): boolean
@@ -28,7 +31,9 @@ export function createQuestJournal(): QuestJournalState {
 }
 
 // Register authored definitions here when introducing missions. No generated offers at UI construction time.
-const questDefinitions = new Map<string, QuestDefinition>([[resourceRequestQuest.id, resourceRequestQuest]])
+const questDefinitions = new Map<string, QuestDefinition>([
+  [resourceRequestQuest.id, resourceRequestQuest], [tutorialHuntQuest.id, tutorialHuntQuest],
+])
 
 export class QuestSystem {
   constructor(
@@ -77,17 +82,20 @@ export class QuestSystem {
   matches(quest: QuestInstance, conditions: QuestCondition[], env: QuestEnvironment): boolean {
     return conditions.every(condition => {
       switch (condition.type) {
-        case 'resource': {
+        case 'resource':
+        case 'item': {
           const resource = this.resolve(quest, condition.resource)
           const quantity = this.resolve(quest, condition.quantity)
+          const count = typeof resource === 'string' ? (condition.type === 'item'
+            ? env.itemCount?.(resource) ?? 0 : env.resourceCount(resource)) : 0
           return (
             typeof resource === 'string' &&
             typeof quantity === 'number' &&
             Number.isFinite(quantity) &&
             quantity >= 0 &&
             (condition.comparison === 'below'
-              ? env.resourceCount(resource) < quantity
-              : env.resourceCount(resource) >= quantity)
+              ? count < quantity
+              : count >= quantity)
           )
         }
         case 'fact':
@@ -148,7 +156,7 @@ export class QuestSystem {
         quantity < 0
       )
         return false
-      resources.push({ type: effect.type, resource, quantity })
+      resources.push({ type: effect.type, resource, quantity, ...(effect.equip ? { equip: true } : {}) })
     }
     if (resources.length && !env.commitResources(resources)) return false
     for (const effect of interaction.effects) {

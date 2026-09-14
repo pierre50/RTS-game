@@ -75,3 +75,44 @@ test('aggressive or attacking wildlife blocks sleep, but dead animals do not', (
     assert.equal(canHeroSleepAtFireCamp(hero, camp), true)
   }
 })
+
+test('hero sleeps through the shared NPC wake window and synchronizes sleepers before waking', () => {
+  const { VILLAGE_WAKE_COMPLETE_HOUR, getVillagerSchedule } = loadTsModule('app/lib/units/villagerSchedule.ts')
+  let options
+  let targetHour
+  const calls = []
+  const { sleepHeroAtFireCamp } = loadTsModule('app/lib/hero/heroCampfireSleep.ts', {
+    mocks: {
+      '../../services/TimeSkipSystem': { getHoursUntilNextMorning: (_hour, _minute, target) => {
+        targetHour = target
+        return target + 1
+      } },
+      '../../services/rest/UnitSleepVisuals': {
+        playSleepingOutsideVisual: (_hero, complete) => complete(),
+        playSleepingWakeVisual: (_hero, complete) => { calls.push('wake-hero'); complete() },
+      },
+      '../entities/overheadIndicator': { setUnitOverheadIndicator() {}, clearUnitOverheadIndicator() {} },
+      '../lang': { t: key => key },
+      '../grid/visibility': { findInstancesInSight: () => [] },
+      './heroActionRange': { isHeroInteractionTargetReachable: () => true },
+    },
+  })
+  const hero = { context: {
+    dayNight: { state: { hour: 23, minute: 0 } },
+    timeSkip: { start: (_hours, callbacks) => { options = callbacks; return { ok: true } } },
+    unitRest: { synchronizeAfterTimeJump: () => calls.push('wake-npcs') },
+    autosave: () => calls.push('save'),
+  } }
+  assert.equal(sleepHeroAtFireCamp(hero, { type: 'FireCamp', isBuilt: true }), true)
+  assert.equal(targetHour, VILLAGE_WAKE_COMPLETE_HOUR)
+  assert.equal(Math.round(targetHour * 60), 380)
+  for (let index = 0; index < 500; index++) {
+    assert.ok(getVillagerSchedule({ label: `npc-${index}` }).wakeMinute <= targetHour * 60)
+  }
+  options.onComplete()
+  assert.deepEqual(calls, ['wake-npcs', 'save', 'wake-hero'])
+  assert.equal(hero.actionLocked, false)
+  calls.length = 0
+  options.onCancel()
+  assert.deepEqual(calls, ['wake-hero'], 'an interrupted sleep must not force the village awake')
+})

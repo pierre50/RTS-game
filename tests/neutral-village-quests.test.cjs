@@ -5,8 +5,12 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function fixture() {
   const dayListeners = new Set()
   const indicators = new Map()
+  const sounds = []
   const { NeutralVillageQuests } = loadTsModule('app/services/quests/NeutralVillageQuests.ts', {
     mocks: {
+      '../../lib/audio/sound': { playSoundCue: cue => sounds.push(cue) },
+      '../../lib/equipment/equipmentStats': { refreshUnitEquipmentStats() {} },
+      '../../lib/lpc': { refreshBakedLpcUnitAssets() {} },
       '../../lib/entities/overheadIndicator': {
         setEntityOverheadIndicator: (npc, type) => indicators.set(npc, type),
         clearEntityOverheadIndicator: npc => indicators.delete(npc),
@@ -49,6 +53,7 @@ function fixture() {
     hero,
     village,
     indicators,
+    sounds,
     nextDay(day) {
       const previous = context.dayNight.state.day
       context.dayNight.state.day = day
@@ -59,6 +64,69 @@ function fixture() {
     },
   }
 }
+
+test('tutorial wood leads to a saved wildlife choice, equipped rewards and conditional ammunition help without gold', () => {
+  const { runtime, chief, hero, context, village, reload } = fixture()
+  village.isPlayed = true
+  chief.i = 1; chief.j = 1
+  context.map.grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => ({ category: 'Land' })))
+  context.map.gaia = { animals: [
+    { type: 'Deer', i: 2, j: 2, quantity: 20 },
+    { type: 'BlackGrouse', i: 3, j: 3, quantity: 100 },
+  ] }
+  assert.equal(runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks'), true)
+  assert.equal(runtime.deliver(chief), true)
+  assert.equal(hero.inventory.resources.wood, 10)
+  assert.equal(hero.inventory.resources.gold ?? 0, 0)
+  assert.equal(hero.inventory.activeWeapons.ranged, 'bow')
+  assert.equal(hero.inventory.equipped.arrow, 'arrow_ceramic')
+  assert.equal(hero.inventory.equippedCounts.arrow, 20)
+  const quest = structuredClone(runtime.getQuest(chief))
+  assert.equal(quest.stageId, 'hunt')
+  assert.equal(quest.parameters.resource, 'feather')
+  assert.equal(quest.parameters.quantity, 3)
+  assert.equal(quest.markers.hunt.length, 1)
+  assert.equal(runtime.deliver(chief), false)
+  assert.equal(runtime.interact(chief, 'arrows'), false)
+  reload()
+  context.map.gaia.animals = []
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
+  assert.deepEqual(runtime.getQuest(chief), quest)
+  delete hero.inventory.equipped.arrow
+  delete hero.inventory.equippedCounts.arrow
+  hero.inventory.equipment.push('arrow_iron')
+  assert.equal(runtime.interact(chief, 'arrows'), false)
+  hero.inventory.equipment = []
+  assert.equal(runtime.interact(chief, 'arrows'), true)
+  assert.equal(runtime.interact(chief, 'arrows'), false)
+  assert.equal(hero.inventory.equippedCounts.arrow, 20)
+  hero.inventory.resources.feather = 3
+  assert.equal(runtime.deliver(chief), true)
+  assert.equal(runtime.getQuest(chief).status, 'active')
+  assert.equal(runtime.getQuest(chief).stageId, 'alarm')
+  assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
+  assert.equal(hero.inventory.resources.feather, 0)
+  assert.equal(hero.inventory.resources.gold ?? 0, 0)
+  assert.equal(runtime.interact(chief, 'arrows'), false)
+})
+
+test('old completed tutorial wood can continue without another payment', () => {
+  const { runtime, chief, hero, context, village } = fixture()
+  village.isPlayed = true
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10)
+  assert.equal(runtime.deliver(chief), true)
+  hero.inventory.resources.wood = 0
+  const gold = hero.inventory.resources.gold
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
+  chief.i = 0; chief.j = 0
+  context.map.grid = [[{ category: 'Land' }]]
+  context.map.gaia = { animals: [{ type: 'Deer', i: 0, j: 0, quantity: 100 }] }
+  assert.equal(runtime.interact(chief, 'continue'), true)
+  assert.equal(hero.inventory.resources.gold, gold)
+  assert.equal(hero.inventory.resources.wood, 0)
+  assert.equal(runtime.getQuest(chief).parameters.resource, 'leather')
+  assert.equal(runtime.interact(chief, 'continue'), false)
+})
 
 test('neutral chief offers once, saves its random request and advertises acceptance and turn-in', () => {
   const { runtime, chief, indicators, reload } = fixture()
@@ -333,4 +401,134 @@ test('legacy active quests gain their gold reward, legacy completed quests only 
   assert.equal(f.runtime.getQuest(f.chief).nextOfferDay, 13)
   assert.equal(f.runtime.system.state.quests.length, 1)
   assert.equal(f.hero.inventory.resources.gold, 15)
+})
+
+
+test('fixed tutorial assignment works for an own chief, delivers once and never respawns', () => {
+  const f = fixture()
+  f.chief.owner = f.context.player
+  f.context.player.units.push(f.chief)
+  f.village.units = []
+  assert.equal(f.runtime.dialogue(f.chief), undefined)
+  assert.equal(f.runtime.assignResourceRequest('tutorial-wood', f.chief, 'wood', 10), true)
+  const quest = f.runtime.dialogue(f.chief)
+  assert.equal(quest.status, 'active')
+  assert.equal(f.runtime.system.state.trackedQuestId, quest.id)
+  f.hero.inventory.resources.wood = 9
+  assert.equal(f.runtime.deliver(f.chief), false)
+  f.hero.inventory.resources.wood = 10
+  f.runtime.update()
+  assert.equal(f.indicators.get(f.chief), 'question')
+  assert.equal(f.runtime.deliver(f.chief), true)
+  assert.equal(f.hero.inventory.resources.wood, 0)
+  assert.equal(f.hero.inventory.resources.gold, 10)
+  assert.equal(f.runtime.deliver(f.chief), false)
+  f.reload()
+  f.nextDay(100)
+  assert.equal(f.runtime.assignResourceRequest('tutorial-wood', f.chief, 'wood', 10), true)
+  assert.equal(f.runtime.system.state.quests.length, 1)
+  assert.equal(f.runtime.dialogue(f.chief).status, 'completed')
+  assert.equal(f.runtime.system.state.villageRelations, undefined)
+})
+
+
+test('tutorial raid waits for dialogue closure and cannot duplicate its army or sword', async () => {
+  const { runtime, chief, hero, village, context, sounds } = fixture()
+  village.isPlayed = true
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
+  const quest = runtime.getQuest(chief)
+  quest.stageId = 'hunt'
+  quest.parameters.resource = 'leather'
+  quest.parameters.quantity = 2
+  hero.inventory.resources.leather = 2
+  let starts = 0
+  let resolveRaid
+  context.tributeRaids = { triggerTutorialRaid: () => { starts++; return new Promise(resolve => { resolveRaid = resolve }) } }
+  assert.equal(runtime.deliver(chief), true)
+  assert.deepEqual(sounds, ['attack-warning'])
+  assert.equal(starts, 0)
+  assert.equal(quest.stageId, 'alarm')
+  assert.equal(runtime.deliver(chief), false)
+  runtime.dialogueClosed(chief)
+  runtime.dialogueClosed(chief)
+  assert.equal(starts, 1)
+  assert.equal(quest.stageId, 'raid')
+  resolveRaid(true)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(quest.facts.raidStarted, true)
+  runtime.dialogueClosed(chief)
+  assert.equal(starts, 1)
+  assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
+  assert.equal(hero.inventory.equipment.includes('sword_ceramic'), false)
+})
+
+test('failed tutorial raid can retry on the next dialogue close', async () => {
+  const { runtime, chief, village, context } = fixture()
+  village.isPlayed = true
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
+  runtime.getQuest(chief).stageId = 'raid'
+  let starts = 0
+  context.tributeRaids = { triggerTutorialRaid: async () => ++starts > 1 }
+  runtime.dialogueClosed(chief)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(runtime.getQuest(chief).facts.raidStarted, undefined)
+  runtime.dialogueClosed(chief)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(starts, 2)
+  assert.equal(runtime.getQuest(chief).facts.raidStarted, true)
+})
+
+test('a previously completed hunt continues without paying its resources twice', () => {
+  const { runtime, chief, hero, village } = fixture()
+  village.isPlayed = true
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
+  const quest = runtime.getQuest(chief)
+  quest.stageId = 'hunt'
+  quest.status = 'completed'
+  quest.completedDay = 1
+  assert.equal(runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks'), true)
+  assert.equal(quest.stageId, 'legacy-hunt')
+  assert.equal(runtime.interact(chief, 'continue'), true)
+  assert.equal(quest.stageId, 'alarm')
+  assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
+  assert.equal(runtime.interact(chief, 'continue'), false)
+})
+
+test('sleep sessions block quests through preview and waking until the real wake completes', () => {
+  for (const visual of ['sleeping', 'waking', null]) {
+    const { runtime, chief, hero } = fixture()
+    runtime.update()
+    chief.shelterState = { reason: 'sleep', status: 'outside', location: 'outside' }
+    chief.sleepVisualState = visual
+    assert.equal(runtime.accept(chief), false)
+    chief.shelterState = null
+    chief.sleepVisualState = null
+    assert.equal(runtime.accept(chief), true)
+    chief.shelterState = { reason: 'sleep', status: 'outside', location: 'outside' }
+    chief.sleepVisualState = visual
+    const before = structuredClone(hero.inventory)
+    assert.equal(runtime.deliver(chief), false)
+    assert.deepEqual(hero.inventory, before)
+    chief.shelterState = null
+    chief.sleepVisualState = 'waking'
+    assert.equal(runtime.deliver(chief), false)
+    chief.sleepVisualState = null
+    assert.equal(runtime.deliver(chief), true)
+  }
+})
+
+test('a sleeping tutorial chief cannot give ammunition or launch the raid on dialogue close', () => {
+  const { runtime, chief, village, context, hero } = fixture()
+  village.isPlayed = true
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
+  const quest = runtime.getQuest(chief)
+  quest.stageId = 'hunt'
+  chief.shelterState = { reason: 'sleep' }
+  chief.sleepVisualState = null
+  assert.equal(runtime.interact(chief, 'arrows'), false)
+  assert.equal(hero.inventory.equipped?.arrow, undefined)
+  quest.stageId = 'raid'
+  context.tributeRaids = { triggerTutorialRaid: () => assert.fail('Sleeping conversation must not start a raid') }
+  runtime.dialogueClosed(chief)
+  assert.equal(quest.facts.raidStarted, undefined)
 })

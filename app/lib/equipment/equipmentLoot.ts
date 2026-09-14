@@ -1,12 +1,12 @@
+import { equipHeroInventoryItemData } from './heroEquipmentData'
 import type { ResourceAmount } from '../../types/common'
 import type { UnitConfig } from '../../types/config'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
 import { RESOURCE_STORAGE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { refreshBakedLpcUnitAssets } from '../lpc'
 import { getUnitEquipmentTier } from '../units/unitExperience'
-import { getEquipmentSlot, getWeaponSlot } from './equipmentSlots'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
-import { addHeroInventoryItem, getHeroInventory, pushEquipmentCopies, removeHeroInventoryItem } from './heroInventory'
+import { addHeroInventoryItem, getHeroInventory, pushEquipmentCopies } from './heroInventory'
 export {
   formatEquipmentLootLabel,
   formatEquipmentStackLabel,
@@ -58,10 +58,6 @@ export function getEquipmentStacks(items: readonly string[]): EquipmentStack[] {
 export function getHeroEquippedItemCount(hero: UnitEntity | null | undefined, slot: HeroEquipmentSlot): number {
   if (!hero?.inventory?.equipped?.[slot]) return 0
   return Math.max(1, Math.floor(hero.inventory.equippedCounts?.[slot] ?? 1))
-}
-
-function countBagEquipment(bag: readonly string[], equipment: string): number {
-  return bag.reduce((count, item) => count + (item === equipment ? 1 : 0), 0)
 }
 
 function cleanResourceAmount(resources: ResourceAmount | null | undefined): ResourceAmount {
@@ -151,52 +147,8 @@ export function pickupCorpseEquipment(
   return true
 }
 
-export function equipHeroInventoryItem(
-  hero: UnitEntity | null | undefined,
-  equipment: string,
-  requestedCount?: number
-): boolean {
-  if (!hero) return false
-  const slot = getEquipmentSlot(equipment)
-  if (!slot) return equipHeroWeaponInventoryItem(hero, equipment)
-  const inventory = getHeroInventory(hero)
-  if (slot === 'helmetDecor' && !inventory.equipped.helmet) return false
-  const bag = inventory.equipment
-  const bagIndex = bag.indexOf(equipment)
-  if (bagIndex < 0) return false
-
-  const availableCount = countBagEquipment(bag, equipment)
-  const defaultCount = slot === 'arrow' ? availableCount : 1
-  const equipCount = Math.min(availableCount, Math.max(1, Math.floor(requestedCount ?? defaultCount)))
-  if (!removeHeroInventoryItem(hero, equipment, equipCount)) return false
-  const previous = inventory.equipped[slot]
-  let nextEquippedCount = equipCount
-  if (previous === equipment) {
-    nextEquippedCount += getHeroEquippedItemCount(hero, slot)
-  } else if (previous) {
-    pushEquipmentCopies(bag, previous, getHeroEquippedItemCount(hero, slot))
-  }
-  inventory.equipped[slot] = equipment
-  inventory.equippedCounts[slot] = nextEquippedCount
-  refreshUnitEquipmentStats(hero)
-  refreshBakedLpcUnitAssets(hero)
-  hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
-  return true
-}
-
-function equipHeroWeaponInventoryItem(hero: UnitEntity | null | undefined, equipment: string): boolean {
-  if (!hero) return false
-  const slot = getWeaponSlot(equipment)
-  if (!slot) return false
-  const inventory = getHeroInventory(hero)
-  const bag = inventory.equipment
-  const bagIndex = bag.indexOf(equipment)
-  if (bagIndex < 0) return false
-
-  bag.splice(bagIndex, 1)
-  const previous = inventory.activeWeapons[slot]
-  if (previous) bag.push(previous)
-  inventory.activeWeapons[slot] = equipment
+export function equipHeroInventoryItem(hero: UnitEntity | null | undefined, equipment: string, requestedCount?: number): boolean {
+  if (!hero || !equipHeroInventoryItemData(hero, equipment, requestedCount)) return false
   refreshUnitEquipmentStats(hero)
   refreshBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)

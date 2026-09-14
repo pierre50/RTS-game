@@ -1,4 +1,5 @@
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
+import { usesPersonalVision } from '../units/playerVisionAccess'
 import type { VisibilityEntity } from '../../services/FogOfWar'
 import { updateVisibility } from '../../services/FogOfWar'
 import type { Bounds } from '../../types/geometry'
@@ -128,7 +129,7 @@ function instancePassesFog(instance: RenderableInstance): boolean {
   }
 
   return (
-    instance.owner?.isPlayed ||
+    (instance.owner?.isPlayed && !usesPersonalVision(instance.context)) ||
     inPlayerSight ||
     instance.family === FAMILY_TYPES.resource ||
     (!map.revealTerrain && !instance.owner)

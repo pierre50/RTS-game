@@ -1,3 +1,5 @@
+import type { DialogueSequence } from '../types/dialogue'
+import { heroCanCommand } from '../lib/chief'
 import { createNpcGroupSummary } from './NpcGroupSummary'
 import { InteractionPanel } from './InteractionPanel'
 import type { Modal } from '../lib'
@@ -40,7 +42,7 @@ import { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
-import { getVolume } from '../lib/audio/settings'
+import { SpokenTextReveal } from './SpokenTextReveal'
 
 type NpcOrderId = 'stay' | 'follow' | 'goto' | 'mountHorse' | VillagerAutonomyJob | `train-${string}`
 type NpcOrderMenuId = NpcOrderId | 'resources' | 'training' | 'bag'
@@ -78,9 +80,6 @@ const NPC_TRAINING_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 
     labelKey: type,
     trainingType: type,
   }))
-const NPC_ORDERS_CHATTTER_BLEEP_SOUND_MALE = 'assets/sounds/source/ogg/bleep017.ogg'
-const NPC_ORDERS_CHATTTER_BLEEP_SOUND_FEMALE = 'assets/sounds/source/ogg/bleep009.ogg'
-const NPC_ORDERS_CHATTTER_WORD_DELAY_MS = 72
 
 function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
   return npc?.shelterState?.reason === 'sleep' && npc.sleepVisualState === 'sleeping'
@@ -108,8 +107,7 @@ export class NpcOrdersManager {
   buttonsContainer: HTMLDivElement
   exitButton: HTMLButtonElement
   bagScreen: UnitInventoryScreen | null
-  chatterRevealTimeout: number | null
-  chatterRevealAudio: { male: HTMLAudioElement; female: HTMLAudioElement }
+  private readonly chatterReveal = new SpokenTextReveal()
   modal?: Modal
   bagModal?: Modal
   orderMenu: NestedButtonMenu<NpcOrderMenuId>
@@ -117,6 +115,7 @@ export class NpcOrdersManager {
   opened: boolean
   npcs: UnitEntity[]
   private scriptedReplyActive = false
+  private dialogueRevision = 0
   private scriptedReplyPanel = document.createElement('div')
   questPanel: NpcQuestPanel
   ordersEnabled: boolean
@@ -127,11 +126,7 @@ export class NpcOrdersManager {
     this.npcs = []
     this.ordersEnabled = false
     this.bagScreen = null
-    this.chatterRevealTimeout = null
-    this.chatterRevealAudio = {
-      male: new Audio(NPC_ORDERS_CHATTTER_BLEEP_SOUND_MALE),
-      female: new Audio(NPC_ORDERS_CHATTTER_BLEEP_SOUND_FEMALE),
-    }
+
 
     const layout = new InteractionPanel()
     this.panel = layout.element
@@ -197,22 +192,23 @@ export class NpcOrdersManager {
 
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
     if (this.scriptedReplyActive) return
-    this.scriptedReplyActive = Boolean(options.scriptedReply)
-    this.exitButton.hidden = Boolean(options.scriptedReply)
-    this.scriptedReplyPanel.hidden = !options.scriptedReply
-    this.scriptedReplyPanel.replaceChildren()
-    if (options.scriptedReply) {
-      const reply = document.createElement('button')
-      reply.type = 'button'
-      reply.className = 'ui-btn'
-      reply.textContent = options.scriptedReply.label
-      reply.addEventListener('click', () => {
-        reply.disabled = true
-        this.scriptedReplyActive = false
-        options.scriptedReply?.onSelect()
-      })
-      this.scriptedReplyPanel.appendChild(reply)
+    const dialogue = options.dialogue ?? (options.scriptedReply ? {
+      startId: 'reply',
+      nodes: [{ id: 'reply', line: options.chatterLine ?? '', choices: [{ id: 'reply', label: options.scriptedReply.label }] }],
+      onComplete: options.scriptedReply.onSelect,
+    } : undefined)
+    if (dialogue) {
+      const ids = new Set(dialogue.nodes.map(node => node.id))
+      if (ids.size !== dialogue.nodes.length || !ids.has(dialogue.startId) || dialogue.nodes.some(node =>
+        !node.choices.length || new Set(node.choices.map(choice => choice.id)).size !== node.choices.length ||
+        node.choices.some(choice => choice.nextId !== undefined && !ids.has(choice.nextId))))
+        throw new Error('Invalid dialogue sequence')
     }
+    this.scriptedReplyActive = Boolean(dialogue)
+    this.exitButton.hidden = Boolean(dialogue)
+    this.scriptedReplyPanel.hidden = !dialogue
+    this.scriptedReplyPanel.replaceChildren()
+    if (dialogue) this.showDialogueChoices(dialogue, dialogue.startId)
     this.npcs = npcs
     this.opened = true
     this.orderMenu.reset()
@@ -229,7 +225,7 @@ export class NpcOrdersManager {
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
       this.infoContainer.appendChild(
-        createTitledEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true })
+        createTitledEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true, hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit) })
       )
     } else if (npcs.length > 1) {
       this.infoContainer.appendChild(createNpcGroupSummary(this.menu.context.app, npcs))
@@ -249,7 +245,9 @@ export class NpcOrdersManager {
     this.stopChatterReveal()
     this.chatterContainer.replaceChildren()
     const rescuedNpcs = npcs.filter(npc => npc.owner?.isPlayed && npc.pendingRescueThanks)
+    if (dialogue) this.questPanel.clear()
     const chatterLine =
+      dialogue?.nodes.find(node => node.id === dialogue.startId)?.line ??
       this.questPanel.update(soloTarget, true) ??
       (rescuedNpcs.length ? pickNpcRescueThanksLine(rescuedNpcs) : null) ??
       options.chatterLine ??
@@ -271,7 +269,7 @@ export class NpcOrdersManager {
     }
 
     this.updateDebugControls(soloTarget)
-    if (options.scriptedReply) this.debugContainer.hidden = true
+    if (dialogue) this.debugContainer.hidden = true
 
     for (const [id, button] of this.buttons) {
       if (id !== 'back') button.disabled = false
@@ -289,9 +287,37 @@ export class NpcOrdersManager {
       panelClass: 'npc-orders-panel',
       interaction: true,
       showCloseButton: false,
-      dismissible: !options.scriptedReply,
+      dismissible: !dialogue,
       onClose: () => this.close(),
     })
+  }
+
+  private showDialogueChoices(sequence: DialogueSequence, nodeId: string): void {
+    const node = sequence.nodes.find(node => node.id === nodeId)!
+    const revision = ++this.dialogueRevision
+    this.scriptedReplyPanel.replaceChildren()
+    for (const choice of node.choices) {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'ui-btn'
+      button.textContent = choice.label
+      button.addEventListener('click', () => {
+        if (!this.scriptedReplyActive || revision !== this.dialogueRevision) return
+        ++this.dialogueRevision
+        button.disabled = true
+        this.menu.playUiClick?.()
+        if (choice.nextId !== undefined) {
+          sequence.onNodeChanged?.(choice.nextId)
+          const next = sequence.nodes.find(entry => entry.id === choice.nextId)!
+          this.showChatterLine(next.line, this.npcs[0] ?? null)
+          this.showDialogueChoices(sequence, next.id)
+        } else {
+          this.scriptedReplyActive = false
+          sequence.onComplete()
+        }
+      })
+      this.scriptedReplyPanel.appendChild(button)
+    }
   }
 
   private async cycleDebugLevel(target: UnitEntity): Promise<void> {
@@ -302,14 +328,14 @@ export class NpcOrdersManager {
     await ensureAndRefreshBakedLpcUnitAssets(target)
     this.infoContainer.replaceChildren()
     if (target.interface?.info) {
-      this.infoContainer.appendChild(createTitledEntityInfoContent(this.menu.context.app, target, { showAllXp: true }))
+      this.infoContainer.appendChild(createTitledEntityInfoContent(this.menu.context.app, target, { showAllXp: true, hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit) }))
     }
     this.updateDebugControls(target)
     this.menu.updateHeroStatus?.(target)
   }
 
   private updateDebugControls(target: UnitEntity | null): void {
-    const showDebug = Boolean(target && target.type !== UNIT_TYPES.villager)
+    const showDebug = Boolean(heroCanCommand(this.menu.context.controls?.heroUnit) && target && target.type !== UNIT_TYPES.villager)
     this.debugContainer.hidden = !showDebug
     if (!target) return
     if (!showDebug) return
@@ -337,56 +363,19 @@ export class NpcOrdersManager {
     this.stopChatterReveal()
     if (!keepFrozen) releaseIfStillLooking(npcs)
     modal?.close()
-  }
-
-  private isFemaleNpcChatterVoice(npc?: UnitEntity | null): boolean {
-    return getUnitGender(npc) === 'female'
+    for (const npc of npcs) this.menu.context.neutralQuests?.dialogueClosed?.(npc)
   }
 
   private showChatterLine(line: string, speaker: UnitEntity | null): void {
     this.chatterContainer.replaceChildren()
     const renderedLine = document.createElement('p')
-    renderedLine.className = 'npc-orders-chatter-line is-typing'
+    renderedLine.className = 'npc-orders-chatter-line'
     this.chatterContainer.appendChild(renderedLine)
-    const words = line.split(' ')
-    if (words.length <= 1) {
-      renderedLine.textContent = line
-      renderedLine.classList.remove('is-typing')
-      return
-    }
-
-    let index = 0
-    const revealNextWord = () => {
-      if (index >= words.length) {
-        renderedLine.classList.remove('is-typing')
-        this.chatterRevealTimeout = null
-        return
-      }
-
-      const nextWord = words[index]
-      renderedLine.textContent = renderedLine.textContent ? `${renderedLine.textContent} ${nextWord}` : nextWord
-      const bleep = this.isFemaleNpcChatterVoice(speaker)
-        ? this.chatterRevealAudio.female
-        : this.chatterRevealAudio.male
-      bleep.currentTime = 0
-      bleep.volume = getVolume()
-      bleep.play().catch(() => {})
-      index += 1
-      this.chatterRevealTimeout = window.setTimeout(revealNextWord, NPC_ORDERS_CHATTTER_WORD_DELAY_MS)
-    }
-
-    revealNextWord()
+    this.chatterReveal.show([{ element: renderedLine, text: line }], getUnitGender(speaker) === 'female' ? 'female' : 'male')
   }
 
   private stopChatterReveal(): void {
-    if (this.chatterRevealTimeout !== null) {
-      clearTimeout(this.chatterRevealTimeout)
-      this.chatterRevealTimeout = null
-    }
-    this.chatterRevealAudio.male.pause()
-    this.chatterRevealAudio.male.currentTime = 0
-    this.chatterRevealAudio.female.pause()
-    this.chatterRevealAudio.female.currentTime = 0
+    this.chatterReveal.stop()
   }
 
   toggle(npcs: UnitEntity[]): void {
@@ -406,6 +395,7 @@ export class NpcOrdersManager {
   }
 
   destroy(): void {
+    ++this.dialogueRevision
     this.stopChatterReveal()
     this.scriptedReplyActive = false
     this.modal?.close()
@@ -516,7 +506,7 @@ export class NpcOrdersManager {
   }
 
   syncQuest(): void {
-    if (this.opened) this.questPanel.update(this.npcs.length === 1 ? this.npcs[0] : null)
+    if (this.opened && !this.scriptedReplyActive) this.questPanel.update(this.npcs.length === 1 ? this.npcs[0] : null)
   }
 
   refreshInventory(): void {

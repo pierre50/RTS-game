@@ -58,3 +58,30 @@ test('reported visible attacker remains an active threat even away from the hit 
   assert.equal(activeThreats.length, 1)
   assert.deepEqual(activeThreats[0].hostiles, [attacker])
 })
+
+test('AI protects a non-chief guest of its faction only near home and against a seen enemy', () => {
+  let visible = true
+  const { AIThreatManager } = loadTsModule('app/ai/AIThreatManager.ts', { mocks: {
+    '../lib/units/playerTargetKnowledge': { playerSeesTarget: () => visible },
+    '../lib': { findInstancesInSight: () => [] },
+  } })
+  const hero = { type: 'Hero', isChief: false, label: 'hero', i: 6, j: 6, owner: { label: 'guest', factionId: 'host' } }
+  const enemy = { label: 'enemy', family: 'unit', owner: { label: 'invaders' } }
+  const threats = new Map()
+  const manager = new AIThreatManager({ label: 'village', factionId: 'host',
+    context: { controls: { heroUnit: hero } }, difficultyConfig: {},
+    buildingsByTypes: () => [{ i: 5, j: 5 }], getNow: () => 0,
+    threatenedTargets: threats, enemyUnitMemory: new Map(), isEnemy: owner => owner === enemy.owner,
+  })
+  manager.reportThreat(hero, enemy)
+  assert.equal(threats.size, 1)
+  for (const scenario of ['chief', 'far', 'hidden', 'other-faction']) {
+    threats.clear()
+    hero.isChief = scenario === 'chief'
+    hero.i = scenario === 'far' ? 80 : 6
+    visible = scenario !== 'hidden'
+    hero.owner.factionId = scenario === 'other-faction' ? 'other' : 'host'
+    manager.reportThreat(hero, enemy)
+    assert.equal(threats.size, 0, scenario)
+  }
+})

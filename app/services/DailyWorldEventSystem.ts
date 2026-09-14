@@ -36,6 +36,11 @@ export class DailyWorldEventSystem {
   }
 
   handleDayChange(event: DailyWorldEvent): void {
+    if (this.context.isTutorialActive?.()) {
+      // Advance the remote clocks without simulating the skipped tutorial days.
+      this.context.updateWorldEconomy?.()
+      return
+    }
     const report = new DailyWorldReport(this.context, event.day)
     const eventWithReport = { ...event, report }
     for (const handler of this.handlers) handler.handleDailyWorldEvent(eventWithReport)

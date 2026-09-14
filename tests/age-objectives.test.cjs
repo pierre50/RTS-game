@@ -101,3 +101,17 @@ test('reaching 100 villagers creates no objective or age after Iron', () => {
   assert.deepEqual(p.calls, [])
   assert.equal(completeAgeObjective(p, 'reachCity'), false)
 })
+
+
+for (const isChief of [false, true]) {
+  test(`progression notifications require a chief hero (chief=${isChief})`, () => {
+    const p = player()
+    const messages = []
+    p.isPlayed = true
+    p.context = { controls: { heroUnit: { type: 'Hero', isChief } }, menu: { showMessage: text => messages.push(text) } }
+    for (const objective of AGE_PROGRESSION[0].objectives) completeAgeObjective(p, objective.id)
+    assert.equal(p.age, 1)
+    assert.equal(p.completedObjectives.length, AGE_PROGRESSION[0].objectives.length)
+    assert.equal(messages.length, isChief ? AGE_PROGRESSION[0].objectives.length + 1 : 0)
+  })
+}

@@ -32,8 +32,8 @@ function hasBlockedFactionRelation(
   return BLOCKED_MARKET_RELATIONS.has(relation ?? '')
 }
 
-function canHeroTradeAtMarket(building: BuildingEntity, hero: UnitEntity | null | undefined): boolean {
-  if (!hero) return false
+export function canHeroTradeAtMarket(building: BuildingEntity, hero: UnitEntity | null | undefined): boolean {
+  if (!hero || building.isBuilt === false || building.isDead || building.isDestroyed) return false
   const heroOwner = hero.owner
   const marketOwner = building.owner
   if (!heroOwner || !marketOwner || heroOwner.label === marketOwner.label) return true
@@ -193,7 +193,7 @@ export function createHeroMarketBody(
   if (!hero || !canHeroTradeAtMarket(building, hero)) return null
 
   const panel = document.createElement('div')
-  panel.className = 'hero-market-panel'
+  panel.className = 'hero-market-panel inventory-transfer-panel'
   panel.dataset.marketBuilding = building.label ?? building.type
 
   const wallet = document.createElement('div')
@@ -205,7 +205,7 @@ export function createHeroMarketBody(
     createInventorySection({
       className: 'market-section',
       gridClassName: 'inventory-loot-list market-grid',
-      title: t('marketBuyTitle'),
+      title: t('marketStockTitle'),
       titleClassName: 'market-title',
       renderItems: grid => appendBuySlots(grid, building, hero, menu, onChange),
     })
@@ -221,7 +221,7 @@ export function createHeroMarketBody(
       className: 'market-section',
       emptyText: t('marketSellBagEmpty'),
       gridClassName: 'inventory-loot-list market-grid',
-      title: t('marketSellBagTitle'),
+      title: t('inventoryYourBag'),
       titleClassName: 'market-title',
       renderItems: grid => {
         appendSellResourceSlots(grid, hero, menu, onChange)

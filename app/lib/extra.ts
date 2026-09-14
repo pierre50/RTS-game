@@ -1,4 +1,6 @@
 import { instanceIsInPlayerSight } from './grid'
+import { usesPersonalVision } from './units/playerVisionAccess'
+import type { UnitEntity } from '../types/entities'
 import { getEntitySpaceId } from './mapSpaces'
 export { Modal } from './ui/Modal'
 export {
@@ -127,6 +129,7 @@ export function capitalizeFirstLetter(string: string): string {
 
 type VisibleInstance = GridPosition & {
   context?: {
+    controls?: { heroUnit?: UnitEntity | null } | null
     map?: {
       activeSpaceId?: string | null
       revealEverything?: boolean
@@ -164,5 +167,5 @@ export const canUpdateMinimap = (instance: VisibleInstance, player?: PlayerLike 
 }
 
 export const playerCanSeeInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
-  return playerOwnsInstance(instance, player) || playerHasVisionOfInstance(instance, player)
+  return (playerOwnsInstance(instance, player) && !usesPersonalVision(instance?.context)) || playerHasVisionOfInstance(instance, player)
 }

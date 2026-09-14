@@ -1,3 +1,4 @@
+import { ownerSharesVision } from '../../lib/units/playerVisionAccess'
 import { Assets, Polygon, Sprite } from 'pixi.js'
 import { FAMILY_TYPES, LABEL_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
 import {
@@ -91,7 +92,8 @@ export function occupyBuildingFootprint(building: Building): void {
   const space = getEntityMapSpace(building, map)
   const grid = space?.grid ?? map.grid
   const updatesOutsideWorldVision = space?.kind !== 'interior'
-  const providesOutsideWorldVision = updatesOutsideWorldVision && building.providesVision !== false
+  const providesOutsideWorldVision = updatesOutsideWorldVision && building.providesVision !== false &&
+    ownerSharesVision(building.owner, building.context)
   getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
     if (cell.has?.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(cell.has.type)) {
       cell.has.die?.(true)

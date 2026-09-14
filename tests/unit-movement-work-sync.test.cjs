@@ -37,16 +37,17 @@ function loadUnitMovement(calls) {
       ],
     })
     const tsModule = { exports: {} }
-    new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
+    new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, request => localRequire(request, tsFilename))
     return tsModule.exports
   }
   const mocks = {}
-  const localRequire = request => {
+  const localRequire = (request, parentFilename = filename) => {
     if (request.endsWith('/playerTargetKnowledge'))
       return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
     if (request.endsWith('/targetPursuit'))
       return { updateTargetPursuit: () => false, routeToRememberedTarget: () => false }
 
+    const originalRequest = request
     request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
     if (request === '../../lib/units/autonomy/villagerExploration')
       return requireFromTsFile(
@@ -222,7 +223,7 @@ function loadUnitMovement(calls) {
     if (request.endsWith('/units/villagerAutonomyTargeting')) {
       return requireFromTsFile(path.join(__dirname, '../app/lib/units/villagerAutonomyTargeting.ts'), filename, mocks)
     }
-    return requireFromTsFile(request, filename, mocks)
+    return requireFromTsFile(originalRequest, parentFilename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return { UnitMovement: module.exports.UnitMovement, constants }

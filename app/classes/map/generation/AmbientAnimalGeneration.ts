@@ -1,4 +1,4 @@
-import { hasWaterBorderWithin } from '../../../lib'
+import { hasWaterBorderWithin } from '../../../lib/grid/queries'
 import { AMBIENT_ANIMAL_CHANCE, ANIMAL_PLAYER_SAFE_DIST, WATER_BORDER_PLACEMENT_CLEARANCE } from '../../../constants'
 import type { AnimalOptions } from '../../animal/Animal'
 import type { GridPosition } from '../../../types/grid'

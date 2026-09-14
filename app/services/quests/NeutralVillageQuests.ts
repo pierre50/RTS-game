@@ -1,3 +1,7 @@
+import { formatEquipmentStackLabel } from '../../lib/equipment/equipmentSlots'
+import { isNpcStillSleeping } from '../../lib/npc/npcSleep'
+import { playSoundCue } from '../../lib/audio/sound'
+import { SOUND_CUES } from '../../constants'
 import { VILLAGE_QUEST_CONFIG } from '../../config/gameplay'
 import { t } from '../../lib/lang'
 import { grantQuestRelationReward } from './QuestRelationReward'
@@ -7,6 +11,11 @@ import { isNeutralPlayer } from '../../lib/playerState'
 import { clearEntityOverheadIndicator, setEntityOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { QuestSystem, type QuestEnvironment } from './QuestSystem'
 import { resourceRequestQuest } from './ResourceRequestQuest'
+import { tutorialHuntQuest } from './TutorialHuntQuest'
+import { selectTutorialHunt } from './TutorialHuntSelection'
+import { commitQuestInventory, questItemCount } from './QuestInventory'
+import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
+import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 import type { ResourceAmount } from '../../types/common'
@@ -24,6 +33,7 @@ export class NeutralVillageQuests {
   readonly system: QuestSystem
   private taskId: number | null = null
   private initialized = false
+  private huntChecks = new Map<string, number>()
   private unsubscribeDayChange: (() => void) | null = null
   private marked = new Map<UnitEntity, 'exclamation' | 'question'>()
 
@@ -41,7 +51,9 @@ export class NeutralVillageQuests {
 
   private eligible(npc: UnitEntity): boolean {
     const owner = npc.owner
-    if (!owner || owner.isPlayed || !isLivingChief(npc) || this.context.map?.mapType === 'interior') return false
+    if (!owner || !isLivingChief(npc) || this.context.map?.mapType === 'interior') return false
+    if (this.getQuest(npc)?.repeatable === false) return this.context.player?.isEnemy?.(owner) !== true
+    if (owner.isPlayed) return false
     const faction = owner.factionId ? this.context.getCampaignFactions?.()?.[owner.factionId] : null
     return (
       (faction
@@ -57,7 +69,7 @@ export class NeutralVillageQuests {
         !hero.isDead &&
         !hero.isDestroyed &&
         this.eligible(npc) &&
-        npc.sleepVisualState !== 'sleeping' &&
+        !isNpcStillSleeping(npc) &&
         npc.action !== 'attack' &&
         (hero.spaceId ?? 'outside') === (npc.spaceId ?? 'outside')
     )
@@ -66,14 +78,53 @@ export class NeutralVillageQuests {
   getQuest(npc: UnitEntity): QuestInstance | undefined {
     const quests = this.system.state?.quests.filter(
       quest =>
-        quest.definitionId === resourceRequestQuest.id &&
+        this.system.definitions.has(quest.definitionId) &&
         quest.owner.entityLabel === npc.label &&
         quest.owner.playerLabel === npc.owner?.label &&
         quest.regionId === this.regionId()
     ) ?? []
     const quest = quests.find(quest => quest.status === 'available' || quest.status === 'active') ?? quests[quests.length - 1]
-    if (quest) quest.parameters.rewardGold ??= Number(quest.parameters.quantity) * VILLAGE_QUEST_CONFIG.goldPerResource
+    if (quest?.definitionId === resourceRequestQuest.id) quest.parameters.rewardGold ??= Number(quest.parameters.quantity) * VILLAGE_QUEST_CONFIG.goldPerResource
     return quest
+  }
+
+  /** Assign a fixed, one-time resource mission through the normal journal and dialogue. */
+  assignResourceRequest(id: string, npc: UnitEntity, resource: string, quantity: number, definitionId = resourceRequestQuest.id): boolean {
+    const playerId = this.context.player?.label
+    const owner = npc.owner
+    if (!playerId || !owner || !this.regionId() || !STORED_RESOURCES.has(resource) ||
+        !Number.isSafeInteger(quantity) || quantity <= 0) return false
+    const existing = this.system.state?.quests.find(quest => quest.id === id)
+    if (existing && definitionId === tutorialHuntQuest.id && existing.definitionId === resourceRequestQuest.id) {
+      existing.definitionId = definitionId
+      existing.stageId = 'wood'
+      existing.parameters.rewardGold = 0
+      if (existing.status === 'completed') {
+        existing.status = 'active'
+        existing.facts.legacyWoodDelivered = true
+        delete existing.completedDay
+        this.system.track(existing.id)
+      }
+      existing.unread = true
+    }
+    if (existing?.definitionId === tutorialHuntQuest.id && existing.status === 'completed' && existing.stageId === 'hunt') {
+      existing.stageId = 'legacy-hunt'
+      existing.status = 'active'
+      delete existing.completedDay
+      existing.unread = true
+      this.system.track(existing.id)
+    }
+    if (existing) return existing.status === 'active' || existing.status === 'completed'
+    if (!this.system.offer({
+      id, definitionId, regionId: this.regionId(), repeatable: false,
+      owner: { entityLabel: npc.label, playerLabel: owner.label, name: npc.name || owner.name || '' },
+      assigneeId: null, parameters: { resource, quantity, rewardGold: definitionId === tutorialHuntQuest.id ? 0 : quantity * VILLAGE_QUEST_CONFIG.goldPerResource },
+      bindings: { recipient: npc.label }, status: 'available', stageId: this.system.definitions.get(definitionId)?.stages[0]?.id ?? '',
+      facts: {}, usedInteractions: [], markers: {}, unread: false,
+    }) || !this.system.accept(id, playerId)) return false
+    this.system.track(id)
+    this.update(false)
+    return true
   }
 
   private day(): number {
@@ -84,7 +135,7 @@ export class NeutralVillageQuests {
     if (!this.eligible(npc) || !this.system.state || !this.regionId()) return
     const previous = this.getQuest(npc)
     if (previous) {
-      if (previous.status !== 'completed' || !refreshOffers) return
+      if (previous.repeatable === false || previous.status !== 'completed' || !refreshOffers) return
       // Legacy completions have no date: start their cooldown on first encounter.
       previous.nextOfferDay ??= (previous.completedDay ?? this.day()) + VILLAGE_QUEST_CONFIG.repeatDelayDays
       if (this.day() < previous.nextOfferDay) return
@@ -139,33 +190,8 @@ export class NeutralVillageQuests {
       regionId: this.regionId(),
       resourceCount: resource => hero?.inventory?.resources?.[resource as keyof ResourceAmount] ?? 0,
       targetMatches: () => false,
-      commitResources: effects => {
-        if (!hero || !npc || !this.canTalk(npc)) return false
-        const from = { ...hero.inventory?.resources }
-        const to = { ...npc.inventory?.resources }
-        for (const effect of effects) {
-          if (
-            !['take-resource', 'give-resource'].includes(effect.type) ||
-            !STORED_RESOURCES.has(effect.resource) ||
-            !Number.isSafeInteger(effect.quantity) ||
-            effect.quantity <= 0
-          )
-            return false
-          const resource = effect.resource as keyof ResourceAmount
-          if (effect.type === 'give-resource') {
-            from[resource] = (from[resource] ?? 0) + effect.quantity
-            continue
-          }
-          if ((from[resource] ?? 0) < effect.quantity) return false
-          from[resource] = (from[resource] ?? 0) - effect.quantity
-          to[resource] = (to[resource] ?? 0) + effect.quantity
-        }
-        hero.inventory ??= {}
-        npc.inventory ??= {}
-        hero.inventory.resources = from
-        npc.inventory.resources = to
-        return true
-      },
+      itemCount: item => questItemCount(hero, item),
+      commitResources: effects => Boolean(hero && npc && this.canTalk(npc) && commitQuestInventory(hero, npc, effects)),
     }
   }
 
@@ -186,17 +212,96 @@ export class NeutralVillageQuests {
   }
 
   deliver(npc: UnitEntity): boolean {
+    return this.interact(npc, 'deliver')
+  }
+
+  interact(npc: UnitEntity, interactionId: string): boolean {
     const quest = this.dialogue(npc)
     const playerId = this.context.player?.label
-    if (!quest || !playerId || !this.system.interact(quest.id, 'deliver', playerId, npc.label, this.environment(npc)))
+    const definition = quest && this.system.definitions.get(quest.definitionId)
+    const interaction = definition?.stages.find(stage => stage.id === quest?.stageId)?.interactions.find(item => item.id === interactionId)
+    if (!quest || !playerId || !interaction || !this.system.canInteract(quest, interaction, this.environment(npc))) return false
+    const startingHunt = quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'wood'
+    const hunt = startingHunt ? selectTutorialHunt(this.context, npc, { ensurePopulation: true }) : null
+    if (startingHunt && !hunt) {
+      this.context.menu?.showMessage?.(t('tutorialNoHuntAvailable'), 'warning')
       return false
-    quest.completedDay = this.day()
-    quest.nextOfferDay = this.day() + VILLAGE_QUEST_CONFIG.repeatDelayDays
-    const message = grantQuestRelationReward(this.context, quest, npc, resourceRequestQuest.relationReward ?? 0)
+    }
+    if (!this.system.interact(quest.id, interactionId, playerId, npc.label, this.environment(npc)))
+      return false
+    if (quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'alarm') {
+      quest.markers = {}
+      playSoundCue(SOUND_CUES.ui.underAttack)
+    }
+    if (hunt) {
+      Object.assign(quest.parameters, hunt.parameters)
+      quest.markers = hunt.markers
+      quest.reservation = hunt.reservation
+      this.system.track(quest.id)
+    }
+    if (interaction.effects.some(effect => effect.type === 'give-item')) {
+      const hero = this.context.controls?.heroUnit
+      if (hero) {
+        refreshUnitEquipmentStats(hero)
+        refreshBakedLpcUnitAssets(hero)
+        hero.syncAppearanceLayers?.(hero.currentSheet ?? 'standing')
+      }
+      for (const effect of interaction.effects) {
+        if (effect.type !== 'give-item') continue
+        const item = typeof effect.resource === 'string' ? effect.resource : String(quest.parameters[effect.resource.parameter])
+        const quantity = typeof effect.quantity === 'number' ? effect.quantity : Number(quest.parameters[effect.quantity.parameter])
+        this.context.menu?.showMessage?.(t(effect.equip ? 'questItemEquipped' : 'questItemReceived', { item: formatEquipmentStackLabel(item, quantity) }), 'success')
+      }
+    }
+    if (quest.status === 'completed') quest.completedDay = this.day()
+    if (quest.status === 'completed' && quest.repeatable !== false) quest.nextOfferDay = this.day() + VILLAGE_QUEST_CONFIG.repeatDelayDays
+    const message = grantQuestRelationReward(this.context, quest, npc, npc.owner?.isPlayed ? 0 : definition?.relationReward ?? 0)
     this.context.menu?.refreshInventory?.()
     this.update()
-    this.context.menu?.showMessage?.(`${message} ${t('questGoldReceived').replace('{quantity}', String(quest.parameters.rewardGold))}`, 'success')
+    if (quest.status === 'completed') this.context.menu?.showMessage?.(Number(quest.parameters.rewardGold) > 0
+      ? `${message} ${t('questGoldReceived').replace('{quantity}', String(quest.parameters.rewardGold))}` : message, 'success')
+    this.context.autosave?.()
     return true
+  }
+
+  private raidPending = false
+
+  dialogueClosed(npc: UnitEntity): void {
+    if (!this.canTalk(npc)) return
+    const quest = this.getQuest(npc)
+    if (!quest || quest.definitionId !== tutorialHuntQuest.id || quest.status !== 'active') return
+    if (quest.stageId === 'alarm' && !this.interact(npc, 'defend')) return
+    if (quest.stageId !== 'raid' || quest.facts.raidStarted || this.raidPending) return
+    const raids = this.context.tributeRaids
+    if (!raids?.triggerTutorialRaid) return
+    this.raidPending = true
+    void raids.triggerTutorialRaid().then(started => {
+      if (started) {
+        quest.facts.raidStarted = true
+        this.context.autosave?.()
+      } else this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
+    }).catch(error => {
+      console.error('Unable to start tutorial raid', error)
+      this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
+    }).finally(() => { this.raidPending = false })
+  }
+
+  private maintainTutorialHunt(quest: QuestInstance, npc: UnitEntity): void {
+    if (quest.definitionId !== tutorialHuntQuest.id || quest.status !== 'active' ||
+      !['wood', 'hunt'].includes(quest.stageId) || (npc.spaceId ?? 'outside') !== 'outside') return
+    const now = this.context.scheduler?.elapsedMs ?? Date.now()
+    if (now < (this.huntChecks.get(quest.id) ?? -Infinity)) return
+    this.huntChecks.set(quest.id, now + 5000)
+    const resource = quest.stageId === 'hunt' ? String(quest.parameters.resource) : undefined
+    const required = quest.stageId === 'hunt' ? Number(quest.parameters.quantity) : 3
+    const remaining = resource ? Math.max(0, required - this.environment(npc).resourceCount(resource)) : required
+    if (!remaining) return
+    const hunt = selectTutorialHunt(this.context, npc, { ensurePopulation: true, resource, quantity: remaining })
+    if (!hunt) return
+    const changed = JSON.stringify(quest.reservation) !== JSON.stringify(hunt.reservation)
+    quest.reservation = hunt.reservation
+    if (quest.stageId === 'hunt' && changed) quest.markers = hunt.markers
+    if (changed) this.context.autosave?.()
   }
 
   update(refreshOffers = true): void {
@@ -207,12 +312,14 @@ export class NeutralVillageQuests {
         if (!this.eligible(npc)) continue
         this.ensureOffer(npc, refreshOffers)
         const quest = this.getQuest(npc)
+        if (quest) this.maintainTutorialHunt(quest, npc)
         if (!quest || !this.canTalk(npc)) continue
         if (quest.status === 'available') wanted.set(npc, 'exclamation')
         else if (
           quest.status === 'active' &&
           quest.assigneeId === this.context.player?.label &&
-          this.system.canInteract(quest, resourceRequestQuest.stages[0].interactions[0], this.environment(npc))
+          this.system.definitions.get(quest.definitionId)?.stages.find(stage => stage.id === quest.stageId)?.interactions
+            .some(interaction => interaction.nextStageId !== undefined && this.system.canInteract(quest, interaction, this.environment(npc)))
         )
           wanted.set(npc, 'question')
       }

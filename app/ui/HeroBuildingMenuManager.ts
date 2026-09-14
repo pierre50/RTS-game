@@ -1,37 +1,27 @@
-import { InteractionPanel } from './InteractionPanel'
-import { heroCampfireSleepButton } from './hero-building/HeroCampfireSleepButton'
-import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
-import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { BUILDING_TYPES,FAMILY_TYPES,SOUND_CUES } from '../constants'
+import type { Modal } from '../lib'
+import { playAudibleSoundCue } from '../lib/audio/sound'
+import { playUiSound } from '../lib/audio/uiSound'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import { t } from '../lib/lang'
-import { playAudibleSoundCue } from '../lib/audio/sound'
-import { playUiSound } from '../lib/audio/uiSound'
-import { createInspectionModal } from './InspectionPanel'
-import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
-import { getBuildingDisplayName } from './utils/entityDisplayName'
-import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
-import { getHeroBuildingInteractiveInventorySignature } from './hero-building/HeroBuildingInventorySignature'
-import { createHeroMarketBody } from './hero-building/HeroMarketBody'
-import type { Modal } from '../lib'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
+import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
+import { createInspectionModal,setInspectionMode } from './InspectionPanel'
+import { InteractionPanel } from './InteractionPanel'
 import type { MenuHost } from './MenuHost'
+import { buttonMeta,buttonTitle } from './hero-building/HeroBuildingButtonText'
+import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
+import { getHeroBuildingInteractiveInventorySignature } from './hero-building/HeroBuildingInventorySignature'
+import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
+import { heroCampfireSleepButton } from './hero-building/HeroCampfireSleepButton'
+import { canHeroTradeAtMarket,createHeroMarketBody } from './hero-building/HeroMarketBody'
 import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
+import { getBuildingDisplayName } from './utils/entityDisplayName'
 
 function isBuildingEntity(value: unknown): value is BuildingEntity {
   return Boolean(value && (value as BuildingEntity).family === FAMILY_TYPES.building)
-}
-
-function buttonTitle(button: MenuButtonSpec): string {
-  const details = typeof button.details === 'function' ? button.details() : button.details
-  return details?.title || (button.id ? t(button.id) : '')
-}
-
-function buttonMeta(button: MenuButtonSpec, options: { hideMeta?: boolean } = {}): string {
-  if (options.hideMeta) return ''
-  const details = typeof button.details === 'function' ? button.details() : button.details
-  return details?.meta?.filter(Boolean).join(' | ') || details?.description || ''
 }
 
 function isFireCamp(building: BuildingEntity): boolean {
@@ -49,6 +39,7 @@ export class HeroBuildingMenuManager {
   body: HTMLDivElement
   backButton: HTMLButtonElement
   modal?: Modal
+  marketOpen = false
   building: BuildingEntity | null
   stack: MenuButtonSpec[][]
   opened: boolean
@@ -58,6 +49,7 @@ export class HeroBuildingMenuManager {
   constructor(menu: MenuHost) {
     this.menu = menu
     this.building = null
+    this.marketOpen = false
     this.stack = []
     this.opened = false
     this.structureSignature = ''
@@ -116,7 +108,7 @@ export class HeroBuildingMenuManager {
     this.opened = true
     this.structureSignature = this.getStructureSignature()
     this.modal = createInspectionModal({
-      proximity: { context: this.menu.context, targets: () => building.isDead ? [] : [building] },
+      proximity: { context: this.menu.context, targets: () => (building.isDead ? [] : [building]) },
       title: getBuildingDisplayName(building),
       inspection: building.type !== BUILDING_TYPES.chest,
       interaction: building.type !== BUILDING_TYPES.chest,
@@ -137,6 +129,7 @@ export class HeroBuildingMenuManager {
     this.modal = undefined
     const building = this.building
     this.building = null
+    this.marketOpen = false
     this.stack = []
     this.opened = false
     this.structureSignature = ''
@@ -152,6 +145,11 @@ export class HeroBuildingMenuManager {
   }
 
   back(): void {
+    if (this.marketOpen) {
+      this.marketOpen = false
+      this.refresh()
+      return
+    }
     if (this.stack.length <= 1) {
       this.close()
       return
@@ -196,6 +194,9 @@ export class HeroBuildingMenuManager {
     if (!building) return ''
     const level = this.stack[this.stack.length - 1] || []
     return [
+      building.type === BUILDING_TYPES.market
+        ? String(canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit))
+        : '',
       building.queue?.join(',') || '',
       building.trainingQueue
         ?.map(entry => `${entry.type}:${entry.trainingStartedDay ?? ''}:${entry.trainingCompleteDay ?? ''}`)
@@ -208,6 +209,18 @@ export class HeroBuildingMenuManager {
 
   getBuildingActionMenuItems(building: BuildingEntity): MenuButtonSpec[] {
     const items = this.menu.getActionMenuItems(building)
+    if (building.type === BUILDING_TYPES.market) {
+      return [
+        {
+          id: 'marketTrade',
+          hide: () => !canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit),
+          onClick: () => {
+            this.marketOpen = true
+          },
+        },
+        ...items,
+      ]
+    }
     if (!isFireCamp(building)) return items
     return [this.getCampfireSleepButton(building), ...items]
   }
@@ -219,6 +232,14 @@ export class HeroBuildingMenuManager {
   render(): void {
     const building = this.building
     if (!building) return
+    if (this.marketOpen && !canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit)) {
+      this.marketOpen = false
+    }
+    const inventoryMode = this.marketOpen || building.type === BUILDING_TYPES.chest
+    setInspectionMode(this.modal, !inventoryMode)
+    this.modal?._panel?.classList.toggle('interaction-panel', !inventoryMode)
+    this.modal?._panel?.classList.toggle('inventory-transfer-modal', inventoryMode)
+    this.panel.classList.toggle('market-trade-screen', this.marketOpen)
     // Only re-extracted on open/refresh (structure changes), not on every
     // syncLiveState() tick — renderInfo() alone runs far more often (e.g. on
     // every training-progress update) and re-cropping the avatar each time
@@ -232,8 +253,9 @@ export class HeroBuildingMenuManager {
     this.infoAvatarWrap.classList.toggle('hidden', !rendered)
     const items = this.stack[this.stack.length - 1] || []
     this.renderInfo()
-    this.body.textContent = ''
-    this.backButton.classList.toggle('is-visible', this.stack.length > 1)
+    this.body.replaceChildren()
+    this.backButton.textContent = this.marketOpen ? t('back') : '<'
+    this.backButton.classList.toggle('is-visible', this.marketOpen || this.stack.length > 1)
     if (this.renderContainerBody(building)) {
       this.body.classList.toggle('is-empty', false)
       this.updateProgress()
@@ -259,6 +281,7 @@ export class HeroBuildingMenuManager {
 
   renderContainerBody(building: BuildingEntity): boolean {
     if (building.type === BUILDING_TYPES.market) {
+      if (!this.marketOpen) return false
       const marketBody = createHeroMarketBody(building, this.menu, () => {
         this.structureSignature = this.getStructureSignature()
         this.renderInfo()

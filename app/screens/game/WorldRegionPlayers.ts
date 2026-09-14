@@ -67,9 +67,20 @@ export function buildWorldRegionPlayerConfigs(
       faction: factionForCivilization(factions, civ),
       human,
       index,
-      isHuman: civ === humanCiv,
+      isHuman: civ === humanCiv && !config.heroStartVillage,
     })
   })
+
+  if (config.heroStartVillage) {
+    // A guest hero is a separate owner, even when sharing the host's civilization.
+    const host = players.find(player => player.civ === config.heroStartVillage)
+    if (!host) throw new Error(`Missing host village ${config.heroStartVillage}`)
+    for (const player of players) player.isHuman = false
+    return [configForCivilization({
+      civ: humanCiv, faction: factionForCivilization(factions, humanCiv), human,
+      index: players.length, isHuman: true,
+    }), ...players]
+  }
 
   if (players.some(player => player.isHuman)) return players
 

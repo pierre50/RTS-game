@@ -18,6 +18,11 @@ export function validateQuestJournal(value: unknown): void {
   const ids = new Set<string>()
   for (const quest of value.quests) {
     if (!isObject(quest)) return invalid()
+    const reservation = quest.reservation
+    if (reservation !== undefined && (!isObject(reservation) ||
+      !['entityLabels', 'stageIds'].every(key => Array.isArray(reservation[key]) &&
+        (reservation[key] as unknown[]).every(value => typeof value === 'string')))) return invalid()
+    if (quest.repeatable !== undefined && typeof quest.repeatable !== 'boolean') return invalid()
     for (const key of ['completedDay', 'nextOfferDay']) {
       if (quest[key] !== undefined && (typeof quest[key] !== 'number' || !Number.isSafeInteger(quest[key]) || quest[key] < 1))
         return invalid()

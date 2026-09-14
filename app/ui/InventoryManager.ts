@@ -1,49 +1,52 @@
-import { createInventoryEquipmentRow } from './inventory/InventoryItemRows'
-import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
+import { RESOURCE_ICON_IDS,SOUND_CUES } from '../constants'
 import { Modal } from '../lib'
+import { playUiSound } from '../lib/audio/uiSound'
+import { renderBuildingAvatar } from '../lib/avatar'
+import { heroCanCommand } from '../lib/chief'
+import { getWeaponSlot,unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
 import { getIconPath } from '../lib/graphics/assets'
 import {
-  getAvailableHeroCraftRecipes,
-  canCraftHeroRecipe,
-  craftHeroRecipe,
-  getMissingCraftResources,
-  type HeroCraftRecipe,
+canCraftHeroRecipe,
+craftHeroRecipe,
+getAvailableHeroCraftRecipes,
+getMissingCraftResources,
+type HeroCraftRecipe,
 } from '../lib/hero/heroCrafting'
+import {
+EQUIPPED_ITEM_WEAPON,
+getEquippedItemWeapon,
+HERO_TOOL_ORDER,
+isHeroToolAvailable,
+type HeroEquippedItem,
+} from '../lib/hero/heroTools'
 import { getPlaceableInventoryBuildingType } from '../lib/hero/placeableInventoryItems'
 import { t } from '../lib/lang'
-import { playUiSound } from '../lib/audio/uiSound'
-import { RESOURCE_ICON_IDS, SOUND_CUES } from '../constants'
-import { createEntityInfoContent } from './EntityInfoContent'
-import {
-  EQUIPPED_ITEM_WEAPON,
-  getEquippedItemWeapon,
-  HERO_TOOL_ORDER,
-  isHeroToolAvailable,
-  type HeroEquippedItem,
-} from '../lib/hero/heroTools'
-import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
-import { AGE_PROGRESSION, isAgeObjectiveComplete, type AgeObjectiveDefinition } from '../lib/objectives/ageObjectives'
-import { ModalTabs } from './Tabs'
+import { AGE_PROGRESSION,isAgeObjectiveComplete,type AgeObjectiveDefinition } from '../lib/objectives/ageObjectives'
 import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
+import type { ResourceAmount } from '../types/common'
+import type { UnitEntity } from '../types/entities'
+import type { MenuButtonSpec } from '../types/ui'
+import { createEntityInfoContent } from './EntityInfoContent'
+import { appendInventoryEmptyIcon,createInventoryActionRow } from './inventory/InventoryActionRow'
+import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
+import { createEquipmentRowInfo } from './inventory/InventoryDetails'
+import {
+renderInventoryEquippedEquipment,
+renderInventoryLootedEquipment,
+} from './inventory/InventoryEquipmentRenderer'
+import { createInventoryEquipmentIcon } from './inventory/InventoryItemIcons'
+import { createInventoryEquipmentRow } from './inventory/InventoryItemRows'
+import { renderInventoryToolIcons } from './inventory/InventoryToolIcons'
+import { getInventoryConstructionButtons,renderInventoryConstruction } from './InventoryConstruction'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
-import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
+import type { MenuHost } from './MenuHost'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
 import { renderMinimapResourcePanel } from './minimap/MinimapResourcePanel'
-import {
-  renderInventoryEquippedEquipment,
-  renderInventoryLootedEquipment,
-} from './inventory/InventoryEquipmentRenderer'
-import { appendInventoryEmptyIcon, createInventoryActionRow } from './inventory/InventoryActionRow'
-import { createInventoryEquipmentIcon } from './inventory/InventoryItemIcons'
-import { createEquipmentRowInfo, formatGold } from './inventory/InventoryDetails'
-import { renderEquipmentAvatarLazy } from './equipment/EquipmentAvatar'
-import { renderBuildingAvatar } from '../lib/avatar'
-import type { UnitEntity } from '../types/entities'
-import type { ResourceAmount } from '../types/common'
-import type { MenuButtonSpec } from '../types/ui'
-import type { MenuHost } from './MenuHost'
+import { ModalTabs } from './Tabs'
 
 type ActionMenuTab = 'info' | 'tools' | 'craft' | 'progression' | 'minimap' | 'worldmap' | 'construction'
+
+const CHIEF_TABS = new Set<ActionMenuTab>(['construction', 'worldmap', 'progression'])
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -189,7 +192,21 @@ export class InventoryManager {
     return this.opened
   }
 
+  private syncTabAvailability(): boolean {
+    const isChief = heroCanCommand(this.menu.context.controls.heroUnit)
+    for (const id of CHIEF_TABS) {
+      const button = this.modalTabs.tabs.buttons.get(id)
+      if (!button) continue
+      button.hidden = !isChief
+      button.disabled = !isChief
+      button.classList.toggle('hidden', !isChief)
+    }
+    return isChief
+  }
+
   showTab(tab: ActionMenuTab): void {
+    const isChief = this.syncTabAvailability()
+    if (!isChief && CHIEF_TABS.has(tab)) tab = 'tools'
     this.activeTab = tab
     this.modalTabs.setActive(tab, { emit: false })
 
@@ -255,24 +272,7 @@ export class InventoryManager {
   }
 
   renderToolIcons(): void {
-    const { app } = this.menu.context
-    for (const [tool, slot] of this.slots) {
-      const available = this.isActiveWeaponAvailable(tool)
-      slot.classList.toggle('empty', !available && tool !== 'interact')
-    }
-    for (const [tool, canvas] of this.toolIcons) {
-      const equipment = this.getActiveWeaponEquipment(tool)
-      canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
-      if (equipment) renderEquipmentAvatarLazy(app, equipment, canvas, 'inventory', this.menu.context.performance)
-      const info = equipment ? createEquipmentRowInfo(equipment, 1, undefined, { showValue: false }) : undefined
-
-      const description = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-description')
-      if (description) description.textContent = info?.title ?? ''
-      const meta = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-meta')
-      if (meta) meta.textContent = info?.meta ?? ''
-      const value = this.slots.get(tool)?.querySelector<HTMLSpanElement>('.inventory-action-row-value')
-      if (value) value.textContent = info && info.goldValue > 0 ? formatGold(info.goldValue) : ''
-    }
+    return renderInventoryToolIcons.call(this)
   }
 
   renderLootedEquipment(): void {
@@ -417,7 +417,10 @@ export class InventoryManager {
     }
   }
 
-  getCraftCostMetaParts(cost: ResourceAmount, hero: UnitEntity | null | undefined): Array<{ text: string; className: string }> {
+  getCraftCostMetaParts(
+    cost: ResourceAmount,
+    hero: UnitEntity | null | undefined
+  ): Array<{ text: string; className: string }> {
     const { player } = this.menu.context
     const totals = getPlayerResourceTotals(player, { hero, includeHero: Boolean(hero) })
     return inventoryCostMetaParts(cost, totals)
@@ -515,6 +518,7 @@ export class InventoryManager {
   }
 
   render(equippedTool: HeroEquippedItem | null): void {
+    if (!this.syncTabAvailability() && CHIEF_TABS.has(this.activeTab)) this.showTab('tools')
     for (const [tool, slot] of this.slots) {
       slot.classList.toggle('active', tool === equippedTool)
     }

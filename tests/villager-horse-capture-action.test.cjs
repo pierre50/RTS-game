@@ -198,6 +198,7 @@ function loadUnitActions(calls, captureHorse) {
     if (request === './UnitPreviousWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
     }
+    if (request === '../../config/animalGatherLoot') return loadTsFile(path.join(__dirname, '../app/config/animalGatherLoot.ts'))
     return require(request)
   }
 

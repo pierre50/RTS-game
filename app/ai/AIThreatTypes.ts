@@ -48,6 +48,7 @@ export type ActiveThreat = StoredThreat & {
 }
 
 export type ThreatManagerPlayer = {
+  factionId?: string | null
   label: string
   context: GameContextLike
   views: { isVisible(i: number, j: number): boolean }

@@ -3,6 +3,7 @@ const path = require('node:path')
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(filename, mocks = {}) {
   const source = fs.readFileSync(filename, 'utf8')
@@ -11,7 +12,7 @@ function loadModule(filename, mocks = {}) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => mocks[request] || require(request)
+  const localRequire = request => mocks[request] || requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

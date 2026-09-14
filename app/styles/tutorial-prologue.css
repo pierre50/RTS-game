@@ -1,0 +1,43 @@
+.tutorial-prologue {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: #e6dcc4;
+  opacity: 1;
+  transition: opacity 650ms ease;
+}
+.tutorial-prologue__text {
+  max-width: 42rem;
+  max-height: calc(100dvh - 10rem);
+  overflow-y: auto;
+  padding: 3rem 2rem;
+  text-align: center;
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  line-height: 1.8;
+  animation: tutorial-prologue-appear 1.2s ease both;
+  transition: opacity 650ms ease;
+}
+.tutorial-prologue__text p + p { margin-top: 1.5rem; }
+.tutorial-prologue__skip {
+  position: absolute;
+  top: max(1.5rem, env(safe-area-inset-top));
+  right: max(1.5rem, env(safe-area-inset-right));
+  transition: opacity 650ms ease;
+}
+.tutorial-prologue--read .tutorial-prologue__text {
+  animation: none;
+  opacity: 0;
+}
+.tutorial-prologue.tutorial-prologue--waiting .tutorial-prologue__skip {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tutorial-prologue--reveal { opacity: 0; }
+@keyframes tutorial-prologue-appear { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-prologue, .tutorial-prologue__text, .tutorial-prologue__skip { animation: none; transition: none; }
+}

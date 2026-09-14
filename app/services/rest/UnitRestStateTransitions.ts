@@ -1,47 +1,38 @@
 import { UNIT_TYPES } from '../../constants'
-import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity, UnitEntity } from '../../types/entities'
-import {
-  expelBuildingInteriorOccupants,
-  getBuildingInteriorSpaceForUnit,
-  settleUnitAtBuildingInteriorSleepCell,
-} from '../BuildingInteriorSpaceSystem'
-import {
-  enterShelter,
-  enterShelterInstant,
-  finishUnitWakeTransition,
-  retryShelterPath,
-  rerouteRestUnit,
-  sendUnitToRest,
-  sleepOutside,
-  sleepOutsideAtCellInstant,
-  waitOutsideForSleep,
-  wakeUnit,
-  wakeUnitInstant,
-  getRestReturnTask,
-} from './UnitRestLifecycle'
 import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { shouldVillagerBeAsleep } from '../../lib/units/villagerSchedule'
-import type { TimedUnitRestState } from './UnitRestLifecycle'
-import { keepSleepingOutsideVisual } from './UnitSleepVisuals'
+import type { GameContextLike } from '../../types/context'
+import type { BuildingEntity,UnitEntity } from '../../types/entities'
 import {
-  canUseUnitRest,
-  getRestTransitionCell,
-  getRestTransitionDurationMs,
-  isShelterUnsafe,
-  isSleepTime,
-  isUsableShelter,
-  REST_MAX_RETRIES,
-  REST_ORDER_GRACE_MS,
-  shouldRest,
+expelBuildingInteriorOccupants,
+getBuildingInteriorSpaceForUnit,
+settleUnitAtBuildingInteriorSleepCell,
+} from '../BuildingInteriorSpaceSystem'
+import type { TimedUnitRestState } from './UnitRestLifecycle'
+import {
+enterShelter,
+enterShelterInstant,
+finishUnitWakeTransition,
+getRestReturnTask,
+rerouteRestUnit,
+retryShelterPath,
+sendUnitToRest,
+sleepOutside,
+sleepOutsideAtCellInstant,
+waitOutsideForSleep,
+wakeUnit,
+wakeUnitInstant,
+} from './UnitRestLifecycle'
+import {
+isShelterUnsafe,
+isSleepTime,
+isUsableShelter,
+REST_MAX_RETRIES,
+REST_ORDER_GRACE_MS,
+shouldRest,
 } from './UnitRestRules'
-
-function hasPendingRestOrder(unit: UnitEntity, targetCell: UnitEntity['currentCell'] | null | undefined): boolean {
-  const pending = unit.pendingOrder
-  if (!pending || !targetCell) return false
-  if (pending.execute) return true
-  return pending.dest === targetCell || (pending.dest?.i === targetCell.i && pending.dest?.j === targetCell.j)
-}
+import { hasFailedTransitionPath,hasPendingRestOrder,updateWindingDownRestUnit } from './UnitRestWindDown'
+import { keepSleepingOutsideVisual } from './UnitSleepVisuals'
 
 function retrySleepSpotPath(unit: UnitEntity, state: TimedUnitRestState): boolean {
   const targetCell = state.targetCell
@@ -55,71 +46,6 @@ function retrySleepSpotPath(unit: UnitEntity, state: TimedUnitRestState): boolea
     preserveAutonomy: true,
     allowPassageStop: state.location === 'shelter',
   })
-  return true
-}
-
-function moveUnitToRestSite(unit: UnitEntity, state: TimedUnitRestState): void {
-  state.status = 'movingToRest'
-  state.transitionTargetCell = null
-  state.transitionUntilMs = undefined
-  state.startedAtMs = unit.context?.scheduler?.elapsedMs ?? state.startedAtMs ?? 0
-  state.retryCount = 0
-  unit.sendToEvt?.(state.targetCell ?? null, null, {
-    forceRepath: true,
-    preserveAutonomy: true,
-    allowPassageStop: state.location === 'shelter',
-  })
-}
-
-function hasFailedTransitionPath(
-  unit: UnitEntity,
-  transitionCell: UnitEntity['currentCell'] | null | undefined,
-  arrived: boolean,
-  startedAtMs: number | null | undefined
-): boolean {
-  const elapsed = (unit.context?.scheduler?.elapsedMs ?? 0) - (startedAtMs ?? 0)
-  return Boolean(
-    !arrived &&
-      !hasPendingRestOrder(unit, transitionCell) &&
-      elapsed >= REST_ORDER_GRACE_MS &&
-      !unit.path?.length &&
-      unit.dest !== transitionCell
-  )
-}
-
-function updateWindingDownRestUnit(unit: UnitEntity, state: TimedUnitRestState): boolean {
-  if (state.status !== 'windingDown') return false
-  if (!isSleepTime(unit.context!) || !canUseUnitRest(unit)) {
-    unit.shelterState = null
-    return true
-  }
-
-  const now = unit.context?.scheduler?.elapsedMs ?? 0
-  const transitionCell = state.transitionTargetCell
-  const arrived = Boolean(transitionCell && unit.i === transitionCell.i && unit.j === transitionCell.j)
-  const failedPath = hasFailedTransitionPath(unit, transitionCell, arrived, state.startedAtMs)
-
-  if (now < (state.transitionUntilMs ?? now) && !failedPath) return true
-
-  const step = state.transitionStep ?? 0
-  if (step < 1 && !failedPath) {
-    const restSite = {
-      location: state.location,
-      shelter: state.shelter ?? null,
-      targetCell: state.targetCell!,
-    }
-    const nextCell = getRestTransitionCell(unit, restSite)
-    if (nextCell && nextCell !== transitionCell && !arrived) {
-      state.transitionStep = step + 1
-      state.transitionTargetCell = nextCell
-      state.transitionUntilMs = now + Math.floor(getRestTransitionDurationMs(unit, 'windingDown') / 2)
-      state.startedAtMs = now
-      unit.sendToEvt?.(nextCell, null, { forceRepath: true, preserveAutonomy: true })
-      return true
-    }
-  }
-
-  moveUnitToRestSite(unit, state)
   return true
 }
 
@@ -242,8 +168,7 @@ export function updateMovingRestUnit(unit: UnitEntity): void {
       return
     }
     enterShelter(unit, state.shelter)
-  }
-  else if (failedPath) {
+  } else if (failedPath) {
     if (retryShelterPath(unit, state)) return
     if (isVillager(unit) && !shouldVillagerBeAsleep(unit)) waitOutsideForSleep(unit)
     else sleepOutside(unit, state.reason)

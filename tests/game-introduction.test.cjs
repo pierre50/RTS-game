@@ -61,7 +61,7 @@ test('blocked approach still wakes the hero and releases controls after the repl
   for (let i = 0; i < 14; i++) f.tick()
   assert.equal(f.context.controls.heroUnit.sleepVisualState, 'waking')
   f.finishWake()
-  f.getDialogue().scriptedReply.onSelect()
+  f.getDialogue().dialogue.onComplete()
   assert.equal(f.context.controls.inputEnabled, true)
   assert.equal(f.context.paused, false)
 })
@@ -98,7 +98,7 @@ test('legacy saves and travel never open an introduction; a prepared reload resu
   assert.equal(f.player.units.length, 2)
   // Saving may replace the campaign while the response callback remains open.
   f.host._campaignSave = structuredClone(f.host._campaignSave)
-  f.getDialogue().scriptedReply.onSelect()
+  f.getDialogue().dialogue.onComplete()
   assert.equal(f.host._campaignSave.introduction.status, 'completed')
   assert.equal(f.context.controls.heroUnit.isChief, true)
   assert.equal(f.getSaved().campaign.introduction.status, 'completed')
@@ -159,5 +159,42 @@ test('companion approaches along a clear straight corridor after the hero spawn 
       assert.equal(cell.solid, false)
     }
     assert.ok(di * (camp.i - i) + dj * (camp.j - j) <= 0)
+  }
+})
+
+test('camp questions loop without promoting the hero and persist the current topic', async () => {
+  const f = fixture()
+  await f.prepareGameIntroduction(f.host)
+  f.host._campaignSave.introduction.phase = 'dialogue'
+  f.showGameIntroduction(f.host)
+  f.startGameIntroduction(f.host)
+  const sequence = f.getDialogue().dialogue
+  assert.equal(sequence.startId, 'wake')
+  assert.equal(sequence.nodes.find(node => node.id === 'wake').choices.length, 5)
+  f.host._campaignSave = structuredClone(f.host._campaignSave)
+  for (const topic of ['attack', 'rescue', 'next', 'lead']) {
+    const answer = sequence.nodes.find(node => node.id === topic)
+    assert.equal(answer.choices.find(choice => choice.id === 'questions').nextId, 'questions')
+    sequence.onNodeChanged(topic)
+    assert.equal(f.getSaved().campaign.introduction.dialogueNodeId, topic)
+    assert.equal(f.context.controls.heroUnit.isChief, false)
+    assert.equal(f.context.menu.hudSuppressed, true)
+    assert.equal(f.host._campaignSave.introduction.status, 'prepared')
+    sequence.onNodeChanged('questions')
+  }
+  sequence.onComplete()
+  assert.equal(f.context.controls.heroUnit.isChief, true)
+  assert.equal(f.context.menu.hudSuppressed, false)
+  assert.equal(f.host._campaignSave.introduction.status, 'completed')
+})
+
+test('camp dialogue resumes a saved answer and gracefully handles older saves', () => {
+  const { createCampIntroductionDialogue } = loadTsModule('app/services/introduction/CampIntroductionDialogue.ts')
+  for (const nodeId of ['attack', 'rescue', 'next', 'lead', 'questions', undefined, 'obsolete']) {
+    const sequence = createCampIntroductionDialogue({ nodeId, onNodeChanged() {}, onComplete() {} })
+    assert.equal(sequence.startId, !nodeId || nodeId === 'obsolete' ? 'wake' : nodeId)
+    for (const node of sequence.nodes) for (const choice of node.choices) {
+      if (choice.nextId) assert.ok(sequence.nodes.some(next => next.id === choice.nextId))
+    }
   }
 })

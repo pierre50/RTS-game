@@ -1,8 +1,9 @@
+import { createCampIntroductionDialogue } from './CampIntroductionDialogue'
+import { refreshPlayerVisibility } from '../FogOfWar'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
 import { BUILDING_TYPES, UNIT_TYPES, SHEET_TYPES } from '../../constants'
 import { getInstanceDegree } from '../../lib/maths'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../../lib/lpc'
-import { t } from '../../lib/lang'
 import { setSleepingOutsideFinalVisual, playSleepingWakeVisual } from '../rest/UnitSleepVisuals'
 import { setUnitOverheadIndicator, clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { findIntroductionPlacement } from './IntroductionPlacement'
@@ -34,6 +35,7 @@ export async function prepareGameIntroduction(host: IntroductionHost): Promise<v
   if (!placement) throw new Error('No accessible space for the starting camp.')
   host.togglePause(true, { silent: true })
   hero.isChief = false
+  refreshPlayerVisibility(context)
   const camp = player.createBuilding({
     type: BUILDING_TYPES.fireCamp,
     i: placement.camp.i,
@@ -92,6 +94,7 @@ export function showGameIntroduction(host: IntroductionHost): void {
   if (!hero || !companion || !context.menu?.openNpcOrders) return
   if (pendingStarts.has(host)) return
   hero.isChief = false
+  refreshPlayerVisibility(context)
   for (const player of context.players ?? [context.player]) {
     for (const unit of player?.units ?? []) unit.drawHealthBar?.()
   }
@@ -122,15 +125,22 @@ export function showGameIntroduction(host: IntroductionHost): void {
     host.togglePause(false, { silent: true })
     context.menu?.closeNpcOrders?.()
     context.menu?.openNpcOrders?.([companion], {
-      chatterLine: t('introductionCampDialogue'),
       ordersEnabled: false,
-      scriptedReply: {
-        label: t('introductionCampReply'),
-        onSelect: () => {
+      dialogue: createCampIntroductionDialogue({
+        nodeId: state.dialogueNodeId,
+        onNodeChanged: nodeId => {
+          if (!isCurrent()) return
+          host._campaignSave!.introduction!.dialogueNodeId = nodeId
+          host.autosave()
+        },
+        onComplete: () => {
           if (!isCurrent()) return
           const current = host._campaignSave!.introduction!
+          // Discard even the partial final tutorial day before enabling world simulation.
+          if (context.isTutorialActive?.()) context.updateWorldEconomy?.()
           current.status = 'completed'
           hero.isChief = true
+          refreshPlayerVisibility(context)
           for (const player of context.players ?? [context.player]) {
             for (const unit of player?.units ?? []) unit.drawHealthBar?.()
           }
@@ -142,7 +152,7 @@ export function showGameIntroduction(host: IntroductionHost): void {
           host.togglePause(false, { silent: true })
           host.autosave()
         },
-      },
+      }),
     })
   }
   if (!state.phase || state.phase === 'dialogue') {

@@ -59,6 +59,8 @@ export class UnitLifecycle {
       play: 'play',
     })
     unit.zIndex = (unit.zIndex ?? 0) - 1
+    let finishDeath!: () => void
+    unit.deathAnimationComplete = new Promise<void>(resolve => { finishDeath = resolve })
     sprite.onComplete = runAfterDeathFlash(sprite, () => {
       if (!isUnitVisualAnimationCurrent(unit, token)) return
       updateInstanceVisibility(unit)
@@ -67,6 +69,7 @@ export class UnitLifecycle {
       if (index < 0) {
         corpses?.push(unit)
       }
+      finishDeath()
       this.decompose()
     })
   }

@@ -1,47 +1,45 @@
 import { Assets } from 'pixi.js'
-import { getRandomUnitName } from '../../config/name'
 import { createPlayerData } from '../../config/playerConfig'
 import {
-  ACTION_TYPES,
-  FADE_DURATION_MS,
-  FAMILY_TYPES,
-  PLAYER_TYPES,
-  POPULATION_MAX,
-  SOUND_CUES,
-  UNIT_TYPES,
+ACTION_TYPES,
+FADE_DURATION_MS,
+FAMILY_TYPES,
+PLAYER_TYPES,
+POPULATION_MAX,
+SOUND_CUES,
+UNIT_TYPES,
 } from '../../constants'
 import {
-  canUpdateMinimap,
-  getActionCondition,
-  getHexColor,
-  playSoundCue,
-  updateInstanceVisibility,
-  uuidv4,
+canUpdateMinimap,
+getActionCondition,
+getHexColor,
+playSoundCue,
+updateInstanceVisibility,
+uuidv4,
 } from '../../lib'
 import { playUiSound } from '../../lib/audio/uiSound'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
-import { definedProperties } from '../../lib/definedProperties'
-import { resolveUnitIdentity } from '../../lib/units/unitIdentity'
-import { fadeIn } from '../../lib/entities/entityFade'
-import { isNeutralPlayer } from '../../lib/playerState'
-import { playableColor } from '../../lib/graphics/playableColor'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
+import { heroCanCommand } from '../../lib/chief'
+import { fadeIn } from '../../lib/entities/entityFade'
+import { playableColor } from '../../lib/graphics/playableColor'
 import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
 import { updatePopulationObjectives } from '../../lib/objectives/ageObjectives'
+import { isNeutralPlayer } from '../../lib/playerState'
 import { VisionGrid } from '../../services/VisionGrid'
 import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity,RuntimeEntity,UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
-import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
+import type { PlayerConfigLike,PlayerLike,VisionGridLike } from '../../types/player'
 import type { SerializedVisionGrid } from '../../types/vision'
 import type { BuildingOptions } from '../building/Building'
 import { Building } from '../building/Building'
 import type { UnitSpawnOptions } from '../unit/Unit'
-import { Unit } from '../unit/Unit'
-import { buyPlayerBuilding, plantPlayerWheatField } from './PlayerBuildingPlacement'
-import { initializePlayerRelations, initializePlayerResources } from './PlayerInitialization'
-import { isBuildingEligible, onAgeChange } from './PlayerProgression'
+import { buyPlayerBuilding,plantPlayerWheatField } from './PlayerBuildingPlacement'
+import { initializePlayerRelations,initializePlayerResources } from './PlayerInitialization'
+import { isBuildingEligible,onAgeChange } from './PlayerProgression'
+import { createPlayerUnit } from './PlayerUnitCreation'
 
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
   difficulty?: string
@@ -149,6 +147,15 @@ export class Player implements PlayerLike {
   reportThreat(target: RuntimeEntity, attacker: RuntimeEntity) {
     if (!target || target.owner?.label !== this.label || !attacker || attacker.isDead || attacker.isDestroyed) return
     if (!this.isPlayed || this.type !== PLAYER_TYPES.human) return
+    if (!heroCanCommand(this.context.controls?.heroUnit)) {
+      if (target === this.context.controls?.heroUnit) {
+        for (const owner of this.context.players) {
+          if (owner.type === PLAYER_TYPES.ai && owner.factionId && owner.factionId === this.factionId)
+            owner.reportThreat?.(target, attacker)
+        }
+      }
+      return
+    }
 
     const isWindowFocused = document.visibilityState === 'visible' && document.hasFocus()
     const isTargetInCamera = this.context.controls?.instanceInCamera(target) ?? true
@@ -286,39 +293,7 @@ export class Player implements PlayerLike {
   }
 
   createUnit(options: UnitSpawnOptions, creationOptions: { preserveType?: boolean } = {}) {
-    const { context } = this
-    const isHeroUnit = !creationOptions.preserveType && this.isPlayed && !this.units.length
-    const type = isHeroUnit ? UNIT_TYPES.hero : options.type
-    const label = options.label ?? uuidv4()
-    const identity = resolveUnitIdentity({ ...options, type, label, owner: this })
-    const name =
-      options.name ||
-      (isHeroUnit ? this.name : getRandomUnitName(identity.civ, identity.gender, () => context.map.random()))
-    let unit = new Unit(
-      definedProperties({
-        ...options,
-        label,
-        gender: identity.gender,
-        assetCiv: identity.civ,
-        appearanceVariants: { ...options.appearanceVariants, gender: identity.gender },
-        type,
-        name,
-        controlMode: isHeroUnit ? 'hero' : options.controlMode,
-        isChief: options.isChief ?? isHeroUnit,
-        owner: this,
-      }),
-      context
-    )
-    addEntityToMapSpaceContainer(context.map, unit)
-    canUpdateMinimap(unit, context.player) &&
-      context.menu.isMiniMapActive?.() !== false &&
-      context.menu.updatePlayerMiniMapEvt(this)
-    if (!options.suppressCreateSound) {
-      updateInstanceVisibility(unit)
-      fadeIn(unit, FADE_DURATION_MS)
-    }
-    this.updatePopulationObjectives()
-    return unit
+    return createPlayerUnit.call(this, options, creationOptions)
   }
 
   createBuilding(options: BuildingOptions) {

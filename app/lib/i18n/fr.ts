@@ -1,50 +1,11 @@
-import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { ENTITY_DETAILS_TRANSLATIONS } from './entityDetails'
-
+import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
+import { FR_QUEST_TRANSLATIONS } from './questTranslations'
 export const FR_TRANSLATIONS = {
-  introductionCampDialogue:
-    'Enfin réveillé ! Je t’ai trouvé sans connaissance et je t’ai ramené près du feu. Reprends ton souffle. Nous allons devoir nous entraider pour la suite.',
-  introductionCampReply: 'Merci. Je suis prêt.',
-
-  questCompletedRelation: 'Quête terminée — Relation avec {name} : +{gain}.',
-  questCompletedRelationMax: 'Quête terminée — Votre relation avec {name} est déjà au maximum.',
-  questRelationChanged: 'Nouvelle relation : {status}.',
-  questRelation_hostile: 'Hostile',
-  questRelation_wary: 'Méfiant',
-  questRelation_neutral: 'Neutre',
-  questRelation_friendly: 'Amical',
-  questRelation_allied: 'Allié',
-
-  questGoldReceived: '+{quantity} or reçu dans votre sac.',
-  questResourceTitle: 'Des ressources pour {giver}',
-  questResourceDescription:
-    '{giver} a besoin de {quantity} {resourceLabel} pour son village. Apportez-les-lui dans votre sac. Récompense : {rewardGold} or et +10 de relation.',
-  questResourceObjective: 'Livrer {quantity} {resourceLabel} à {giver} ({count}/{quantity})',
-  questResourceOffer: 'J’ai besoin de {quantity} {resourceLabel} pour le village. Je te donnerai {rewardGold} or en échange.',
-  questResourceReminder:
-    'Il me faut toujours {quantity} {resourceLabel}. Reviens me voir quand tu les auras dans ton sac.',
-  questResourceThanks: 'Merci pour les ressources ! Voici tes {rewardGold} or. Elles seront utiles au village.',
-  questResourceGive: 'Donner {quantity} {resourceLabel}',
-  questResourceProgress: 'Dans votre sac : {count}/{quantity} {resourceLabel}',
-  questAccept: 'Je m’en occupe',
-  questNotNow: 'Pas maintenant',
-  questAccepted: 'Nouvelle quête ajoutée au journal.',
-  questCompleted: 'Quête terminée.',
-
-  questJournal: 'Journal',
-  questJournalUnread: 'Journal — nouvelles quêtes',
-  questJournalEmpty: 'Aucune quête pour le moment. Parlez aux habitants pour découvrir leurs demandes.',
-  questStatus_active: 'En cours',
-  questStatus_completed: 'Terminées',
-  questStatus_failed: 'Échouées',
-  questStatus_cancelled: 'Abandonnées',
-  questUnavailable: 'Mission indisponible',
-  questGiver: 'Mission confiée par {name}',
-  questObjectives: 'Objectifs',
-  questTrack: 'Suivre cette quête',
-  questUntrack: 'Ne plus suivre',
+  ...FR_QUEST_TRANSLATIONS,
+  npcQuestSleeping: 'Zzzz… On verra ça demain. Laisse-moi dormir.',
+  arrow_ceramic: 'Flèche en céramique',
   controlAction_quests: 'Journal des quêtes',
-
   detailsBuildingHP: 'Points de vie : {value}',
   constructionTerritoryOccupied:
     'Construction impossible : cette carte appartient à {player}, allié ou ennemi. La construction sera débloquée lorsque ce joueur sera éliminé.',
@@ -573,6 +534,8 @@ export const FR_TRANSLATIONS = {
   controlsReset: 'Réinitialiser les touches',
   controlsConflict: 'Plusieurs actions utilisent la même touche.',
   goldShort: 'or',
+  marketTrade: 'Commercer',
+  marketStockTitle: 'Stock du marchand',
   marketBuyTitle: 'Acheter',
   marketSellBagTitle: 'Vendre le sac',
   marketSellBagDescription: 'Le comptoir reprend ton surplus au poids juste, sans discuter trop fort.',

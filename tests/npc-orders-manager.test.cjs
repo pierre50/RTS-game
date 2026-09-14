@@ -762,6 +762,7 @@ test('debug level button cycles a solo unit level without closing communication'
   await withFakeDocument(async () => {
     const calls = []
     const context = makeContext(calls)
+    context.controls.heroUnit = { isChief: true }
     const menu = { context, updateHeroStatus: npc => calls.push(['updateHeroStatus', npc.label]) }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const manager = new NpcOrdersManager(menu)
@@ -791,6 +792,7 @@ test('debug level button stops at the max level instead of resetting', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
+    context.controls.heroUnit = { isChief: true }
     const menu = { context, updateHeroStatus: npc => calls.push(['updateHeroStatus', npc.label]) }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const npc = {
@@ -815,7 +817,8 @@ test('debug level button stops at the max level instead of resetting', () => {
 test('neutral chief quest choices remain visible when the hero cannot issue orders', () => {
   withFakeDocument(() => {
     const context = makeContext([])
-    context.neutralQuests = { dialogue: () => ({ id: 'quest', status: 'available', parameters: { resource: 'wood', quantity: 10 }, owner: { name: 'Chief' } }) }
+    const closed = []
+    context.neutralQuests = { system: { definitions: new Map() }, dialogueClosed: npc => closed.push(npc), dialogue: () => ({ id: 'quest', status: 'available', parameters: { resource: 'wood', quantity: 10 }, owner: { name: 'Chief' } }) }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
     const manager = new NpcOrdersManager({ context })
     const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' } }
@@ -826,6 +829,9 @@ test('neutral chief quest choices remain visible when the hero cannot issue orde
     assert.equal(manager.chatterContainer.children[0].textContent, 'questResourceOffer')
     manager.close()
     assert.equal(manager.questPanel.root.hidden, true)
+    assert.deepEqual(closed, [npc])
+    manager.close()
+    assert.equal(closed.length, 1)
   })
 })
 
@@ -914,3 +920,72 @@ test('closing the bag ends communication and releases the NPC exactly once', () 
     }
   })
 })
+
+test('sleeping chief shows sleep dialogue without quest choices until the actual wake', () => {
+  withFakeDocument(() => {
+    const context = makeContext([])
+    const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' },
+      shelterState: { reason: 'sleep' }, sleepVisualState: null }
+    const quest = { id: 'quest', status: 'available', parameters: {}, owner: { name: 'Chief' } }
+    context.neutralQuests = { getQuest: () => quest, system: { definitions: new Map() }, dialogue: () => quest }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
+    const manager = new NpcOrdersManager({ context })
+    manager.open([npc], { ordersEnabled: false, chatterLine: 'quest greeting' })
+    assert.equal(manager.questPanel.root.hidden, true)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'npcQuestSleeping')
+    npc.sleepVisualState = 'waking'
+    npc.shelterState = null
+    manager.syncQuest()
+    assert.equal(manager.questPanel.root.hidden, true)
+    npc.sleepVisualState = null
+    manager.syncQuest()
+    assert.equal(manager.questPanel.root.hidden, false)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'questResourceOffer')
+    manager.close()
+  })
+})
+
+for (const branch of ['polite', 'rebel']) {
+  test(`scripted dialogue branches to ${branch} without reopening or accepting stale choices`, () => {
+    withFakeDocument(() => {
+      const context = makeContext([])
+      const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
+      const manager = new NpcOrdersManager({ context })
+      const npc = { type: 'Chief', label: 'chief', owner: context.player }
+      const visited = []
+      let completed = 0
+      manager.open([npc], { ordersEnabled: false, dialogue: {
+        startId: 'wake',
+        nodes: [
+          { id: 'wake', line: 'Wake up!', choices: [
+            { id: 'polite', label: 'Good morning', nextId: 'polite' },
+            { id: 'rebel', label: 'Let me sleep', nextId: 'rebel' },
+          ] },
+          { id: 'polite', line: 'Please gather wood.', choices: [{ id: 'accept', label: 'All right' }] },
+          { id: 'rebel', line: 'Get to work!', choices: [{ id: 'accept', label: 'Fine' }] },
+        ],
+        onNodeChanged: id => visited.push(id),
+        onComplete() { completed++; manager.close() },
+      } })
+      const modal = manager.modal
+      manager.questPanel.update = () => assert.fail('Quest refresh must not replace a scripted dialogue')
+      manager.syncQuest()
+      const oldButtons = [...manager.scriptedReplyPanel.children]
+      oldButtons[branch === 'polite' ? 0 : 1].click()
+      assert.equal(manager.modal, modal)
+      assert.equal(manager.chatterContainer.children[0].textContent, branch === 'polite' ? 'Please gather wood.' : 'Get to work!')
+      assert.deepEqual(visited, [branch])
+      assert.equal(completed, 0)
+      oldButtons[0].click()
+      oldButtons[1].click()
+      assert.deepEqual(visited, [branch])
+      manager.close()
+      assert.equal(manager.opened, true)
+      const accept = manager.scriptedReplyPanel.children[0]
+      accept.click()
+      accept.click()
+      assert.equal(completed, 1)
+      assert.equal(manager.opened, false)
+    })
+  })
+}

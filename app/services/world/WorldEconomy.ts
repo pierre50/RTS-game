@@ -1,3 +1,4 @@
+import { isTutorialActive } from '../tutorial/TutorialState'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
 import { simulateOfflineWorld } from './OfflineWorldSimulation'
@@ -140,6 +141,12 @@ export function advanceCampaignEconomy(
     if (region.regionId === activeRegionId || toElapsedMs <= region.simulatedUntilMs) continue
     const source = region.worldId ? campaign.worlds[region.worldId]?.state : region.initialState
     if (!source) continue
+    if (isTutorialActive(campaign)) {
+      region.simulatedUntilMs = toElapsedMs
+      source.runtime = { ...source.runtime, dayNightElapsedMs: toElapsedMs }
+      delete source.runtime.offlineFromElapsedMs
+      continue
+    }
     // Commit only after a successful simulation; retries cannot spend or produce twice.
     const state = structuredClone(source)
     state.config = {

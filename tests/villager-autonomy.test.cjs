@@ -22,6 +22,7 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
+  SHEET_TYPES: { walking: 'walking' },
   ACTION_TYPES: {
     chopwood: 'chopwood',
     forageberry: 'forageberry',

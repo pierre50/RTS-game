@@ -82,10 +82,10 @@ test('setTime advances a full day when the requested time matches the current cl
   const DayNightSystem = loadDayNightSystem()
   const dayNight = new DayNightSystem(createContext())
 
-  dayNight.setTime(6)
+  dayNight.setTime(7, 30)
 
   assert.equal(dayNight.getDayLabel(), 'Day 2')
-  assert.equal(dayNight.getTimeLabel(), '06:00')
+  assert.equal(dayNight.getTimeLabel(), '07:30')
 })
 
 test('update uses the default frame cap outside time skip', () => {
@@ -106,4 +106,11 @@ test('update uses the time skip frame cap while fast-forwarding', () => {
   dayNight.update(1200)
 
   assert.equal(dayNight.getElapsedMs(), 1000)
+})
+
+test('new games start at 07:30 on day one', () => {
+  const DayNightSystem = loadDayNightSystem()
+  const clock = new DayNightSystem(createContext())
+  assert.equal(clock.getTimeLabel(), '07:30')
+  assert.equal(clock.state.day, 1)
 })

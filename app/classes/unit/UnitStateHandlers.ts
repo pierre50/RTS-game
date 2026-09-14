@@ -35,9 +35,8 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
   if (!instance || unit.isDead) return
 
   notifyHeroHealthChanged(unit)
-  if (!canAutoReactToAttack(unit)) return
-
   unit.owner.reportThreat?.(unit, instance)
+  if (!canAutoReactToAttack(unit)) return
   if (unit.shelterState?.reason === 'sleep' && unit.context.unitRest?.handleUnitDanger(unit, instance)) return
   if (unit.sleepVisualState) {
     clearSleepingVisualState(unit)

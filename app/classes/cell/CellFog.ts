@@ -1,4 +1,5 @@
 import { Sprite, Texture } from 'pixi.js'
+import { usesPersonalVision } from '../../lib/units/playerVisionAccess'
 import { Assets } from 'pixi.js'
 import {
   getBuildingAsset,
@@ -133,7 +134,7 @@ export class CellFog {
       return
     }
     if (!playerCanSeeInstance(instance, player)) {
-      if (instance.owner && !instance.owner.isPlayed) {
+      if (instance.owner && (!instance.owner.isPlayed || usesPersonalVision(instance.context))) {
         if (!init && instance.family === FAMILY_TYPES.building) {
           if (!map.revealTerrain) {
             const assets = getBuildingAsset(

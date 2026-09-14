@@ -27,7 +27,7 @@ export function restoreOfflineBuilders(state: SerializedSave): void {
   }
 }
 
-export function findVillageBuildingSite(anchor: SaveEntityState, size: number, spatial: OfflineWorldSpatial, worker: SaveEntityState) {
+function findVillageBuildingSite(anchor: SaveEntityState, size: number, spatial: OfflineWorldSpatial, worker: SaveEntityState) {
   // Keep a free ring around the full footprint for entrances and walking space.
   const radius = Math.ceil(size / 2) + 1
   for (let ring = 4; ring <= 20; ring++) {

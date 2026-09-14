@@ -1,3 +1,4 @@
+import type { DialogueSequence } from './dialogue'
 import type { NeutralVillageQuests } from '../services/quests/NeutralVillageQuests'
 import type { QuestJournalState } from './quest'
 import type { Application, Container } from 'pixi.js'
@@ -55,6 +56,7 @@ interface WeatherSystemLike {
 }
 
 interface TributeRaidSystemLike {
+  triggerTutorialRaid?(): Promise<boolean>
   triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
   triggerFactionRaid(options?: {
     ignoreBaseWorld?: boolean
@@ -92,6 +94,7 @@ interface TimeSkipSystemLike {
 export type SchedulerTaskId = number
 
 export type NpcOrdersOpenOptions = {
+  dialogue?: DialogueSequence
   chatterLine?: string
   ordersEnabled?: boolean
   scriptedReply?: { label: string; onSelect(): void }
@@ -312,6 +315,7 @@ export interface GameContextLike {
   getCampaignWorldState?: (worldId: string) => SerializedSave | null
   getCampaignFactions?: () => Record<string, FactionSave> | null
   updateWorldEconomy?: () => void
+  isTutorialActive?: () => boolean
   getQuestJournal?: () => QuestJournalState | null
   getCampaignEconomy?: () => CampaignEconomySave | null
   changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void

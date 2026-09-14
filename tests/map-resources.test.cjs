@@ -14,6 +14,7 @@ function loadMapResources() {
   })
   const module = { exports: {} }
   const mocks = {
+    '../../../lib/buildings/passageCells': { createNonReservedPassageCellCondition: () => cell => !cell.reservedPassage },
     '../Resource': {
       Resource: class {
         constructor(options) {
@@ -592,13 +593,13 @@ test('mineral respawn restores the original deposit with partial quantity', () =
 
   const [gold] = [...map.resources]
   assert.equal(gold.type, 'Gold')
-  assert.equal(gold.i, 6)
-  assert.equal(gold.j, 7)
+  assert.ok(grid[gold.i][gold.j].has === gold)
+  assert.deepEqual([gold.i, gold.j], [6, 7])
   assert.equal(gold.quantity, 1)
   assert.equal(gold.totalQuantity, 4)
 })
 
-test('wild herb respawn restores the original plant with partial quantity', () => {
+test('wild herb respawn keeps its type and partial quantity in a natural location', () => {
   const size = 20
   const grid = Array.from({ length: size + 1 }, (_, i) =>
     Array.from({ length: size + 1 }, (_, j) => ({
@@ -632,8 +633,41 @@ test('wild herb respawn restores the original plant with partial quantity', () =
 
   const [herb] = [...map.resources]
   assert.equal(herb.type, 'MedicinalHerb')
-  assert.equal(herb.i, 5)
-  assert.equal(herb.j, 6)
+  assert.ok(grid[herb.i][herb.j].has === herb)
+  assert.deepEqual([herb.i, herb.j], [5, 6])
   assert.equal(herb.quantity, 3)
   assert.equal(herb.totalQuantity, 5)
+})
+
+test('daily respawns avoid buildings, passages, shorelines and other landmasses while preserving spacing', () => {
+  const size = 40
+  const grid = Array.from({ length: size + 1 }, (_, i) => Array.from({ length: size + 1 }, (_, j) => ({
+    i, j, type: 'Grass', category: i === 30 ? 'Water' : 'Land', has: null,
+    reservedPassage: j === 20,
+  })))
+  grid[10][10].has = { family: 'building' }
+  const map = {
+    context: { dayNight: { state: { day: 10 } } }, grid, size, resources: new Set(),
+    random: () => 0.5, randomItem: items => items[0],
+    addChild(child) { grid[child.i][child.j].has = child; grid[child.i][child.j].solid = true; return child },
+  }
+  const runtime = new MapResources(map)
+  for (let index = 0; index < 8; index++) {
+    assert.equal(runtime.respawnNaturalResource({ i: 10, j: 10, type: 'Gold', totalQuantity: 100 }), true)
+  }
+  const spawned = [...map.resources]
+  assert.equal(spawned.length, 8)
+  for (const node of spawned) {
+    assert.ok(node.i < 28, 'must stay away from the shore on the source landmass')
+    assert.notEqual(node.j, 20, 'must not occupy a reserved passage')
+    assert.ok(Math.max(Math.abs(node.i - 10), Math.abs(node.j - 10)) > 2)
+    assert.equal(node.quantity, 15)
+    assert.equal(node.totalQuantity, 100)
+    for (const other of spawned) if (other !== node) {
+      assert.ok(Math.max(Math.abs(node.i - other.i), Math.abs(node.j - other.j)) > 3)
+    }
+  }
+  for (const row of grid) for (const cell of row) cell.solid = true
+  assert.equal(runtime.respawnNaturalResource({ i: 10, j: 10, type: 'Gold', totalQuantity: 100 }), false)
+  assert.equal(map.resources.size, 8)
 })

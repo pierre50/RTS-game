@@ -5,7 +5,7 @@ export const DAY_NIGHT_CONFIG = {
   dayLengthMs: 24 * 60 * 1000,
   hoursPerDay: 24,
   newDayHour: 6,
-  startHour: 6,
+  startHour: 7.5,
   topbarUpdateMinuteStep: 1,
 }
 

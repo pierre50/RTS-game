@@ -1,4 +1,5 @@
 import { Resource } from '../../Resource'
+import { logStartingWheat } from '../../../lib/resources/startingWheatDiagnostics'
 import { migrateSavedAge, AGE_RULES_VERSION } from '../../../lib/objectives/ageRules'
 import { Human, AI, Gaia, Player } from '../../players'
 import { getGaiaAnimals } from '../../../lib'
@@ -92,6 +93,7 @@ export function restoreSavedResources(
   naturalResourceRespawnSlots?: SaveEntityState[]
 ): void {
   map.resources = new Set(resources.map(resource => createResourceFromState(resource, map)))
+  logStartingWheat(map.resources)
   map.naturalResourceRespawnSlots = [...(naturalResourceRespawnSlots ?? [])]
 }
 

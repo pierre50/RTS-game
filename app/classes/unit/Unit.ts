@@ -206,12 +206,14 @@ export class Unit extends Instance implements UnitEntity {
 
   override resume() {
     if (resumeUnitVisuals(this)) {
+      this.playingBeforePause = undefined
       return
     }
     super.resume()
-    this.shadow?.play()
-    this.horseSprite?.play()
-    this.horseShadow?.play()
+    for (const sprite of [this.shadow, this.horseSprite, this.horseShadow]) {
+      if (this.sprite.playing) sprite?.play()
+      else sprite?.stop()
+    }
     this.syncAppearanceLayers(this.currentSheet)
   }
 

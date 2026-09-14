@@ -1,3 +1,5 @@
+import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import { getEntitySpaceMapLike } from '../lib/mapSpaces'
 import { createTitledEntityInfoContent } from '../ui/EntityInfoContent'
 import { createInspectionModal } from '../ui/InspectionPanel'
 import { DAY_NIGHT_CONFIG } from '../config/gameplay'
@@ -76,6 +78,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   handleDailyWorldEvent({ day }: DailyWorldEvent): void {
+    if (this.context.isTutorialActive?.()) return
     const shouldTryFactionRaid =
       day >= FACTION_RAID_FIRST_DAY &&
       (day - FACTION_RAID_FIRST_DAY) % FACTION_RAID_INTERVAL_DAYS === 0 &&
@@ -94,6 +97,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   triggerScheduledFactionRaid(day: number): void {
+    if (this.context.isTutorialActive?.()) return
     const delayMs = this.getDelayUntilFactionRaidWindowMs()
     if (delayMs == null) return
     if (delayMs > 0) {
@@ -110,6 +114,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     this.deferredFactionRaidTaskId = this.context.scheduler.addOneShot(
       () => {
         this.deferredFactionRaidTaskId = null
+        if (this.context.isTutorialActive?.()) return
         if (this.lastScheduledDay === day) return
         if (!this.isFactionRaidWindowOpen()) return
         void this.triggerFactionRaid({ source: 'schedule' }).then(started => {
@@ -182,7 +187,26 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     }
   }
 
+  async triggerTutorialRaid(): Promise<boolean> {
+    if (!this.context.isTutorialActive?.() || this.destroyed || this.factionRaidPending || !this.canStartRaid()) return false
+    this.factionRaidPending = true
+    try {
+      const owner = this.createTemporaryRaidOwner({
+        civ: this.context.player?.civ ?? 'Hellas', name: 'Raiders', color: 'red',
+      })
+      const started = await this.createRaid({ kind: 'faction', owner, size: 24, tribute: {}, scripted: true })
+      if (!started && !owner.units?.length) {
+        const index = this.context.players.indexOf(owner)
+        if (index >= 0) this.context.players.splice(index, 1)
+      }
+      return started
+    } finally {
+      this.factionRaidPending = false
+    }
+  }
+
   async createRaid(options: {
+    scripted?: boolean
     army?: FactionRaidArmy
     faction?: FactionSave | null
     kind: TributeRaidKind
@@ -190,8 +214,8 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     size: number
     tribute: ResourceAmount
   }): Promise<boolean> {
-    if (options.kind === 'faction' && !options.army) return false
-    if (options.kind === 'faction' && !this.isFactionRaidWindowOpen()) return false
+    if (options.kind === 'faction' && !options.army && !options.scripted) return false
+    if (options.kind === 'faction' && !options.scripted && !this.isFactionRaidWindowOpen()) return false
     if (!this.canStartRaid()) return false
     const target = findRaidTarget(this.context, options.kind)
     if (!target) return false
@@ -201,7 +225,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     const owner = options.owner
     await this.preloadRaidOwnerAssets(owner)
     if (this.destroyed) return false
-    if (options.kind === 'faction' && !this.isFactionRaidWindowOpen()) return false
+    if (options.kind === 'faction' && !options.scripted && !this.isFactionRaidWindowOpen()) return false
     if (!this.canStartRaid()) return false
     const raid: TributeRaid = {
       id: `${options.kind}-raid-${Date.now()}-${Math.round((this.context.map.random?.() ?? Math.random()) * 100000)}`,
@@ -227,11 +251,14 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       for (const unit of raid.units) this.removeUnitFromRuntime(unit)
       return false
     }
-    setUnitOverheadIndicator(raid.chief, 'exclamation')
+    if (!options.scripted) setUnitOverheadIndicator(raid.chief, 'exclamation')
     this.raids.push(raid)
-    this.sendRaidToTarget(raid, { forceRepath: true })
+    if (options.scripted) this.makeRaidHostile(raid)
+    else {
+      this.sendRaidToTarget(raid, { forceRepath: true })
+      this.context.menu?.showMessage(getIncomingRaidMessage(raid), 'warning')
+    }
     this.startRaidUpdates(raid)
-    this.context.menu?.showMessage(getIncomingRaidMessage(raid), 'warning')
     if (this.context.menu?.isMiniMapActive?.() !== false) {
       this.context.menu?.updatePlayerMiniMapEvt?.(owner)
     }
@@ -394,8 +421,31 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       return
     }
 
+    if (raid.phase === 'hostile') this.sendHostileRaidOrders(raid)
+
     if (raid.phase === 'leaving') {
       this.despawnRaid(raid)
+    }
+  }
+
+  sendHostileRaidOrders(raid: TributeRaid): void {
+    const target = raid.target
+    if (!target || target.isDead || target.isDestroyed) return
+    raid.rallyPoint ??= { i: target.i, j: target.j, spaceId: target.spaceId }
+    for (const unit of livingRaidUnits(raid)) {
+      // Let an ongoing fight finish; only resume idle soldiers or their approach.
+      if (unit.action || unit.combatMode === 'attack' || unit.combatMode === 'recover' || unit.combatMode === 'flee') continue
+      if (playerSeesTarget(unit.owner, target)) {
+        unit.sendToEvt?.(target, ACTION_TYPES.attack, { forceRepath: true })
+        continue
+      }
+      if (unit.path?.length) continue
+      if ((unit.spaceId ?? 'outside') !== (raid.rallyPoint.spaceId ?? 'outside')) continue
+      const map = getEntitySpaceMapLike(unit, this.context.map)
+      const cell = map?.grid[raid.rallyPoint.i]?.[raid.rallyPoint.j]
+      if (cell && getRaidCellDistance(unit, cell) > 2) {
+        unit.sendToEvt?.(cell, null, { forceRepath: true })
+      }
     }
   }
 
@@ -450,12 +500,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       owner.diplomacy = null
       if (raid.kind === 'faction' && raid.faction) owner.factionId = raid.faction.id
     }
-    const target = raid.target
-    if (target) {
-      for (const unit of livingRaidUnits(raid)) {
-        unit.sendToEvt?.(target, ACTION_TYPES.attack, { forceRepath: true })
-      }
-    }
+    this.sendHostileRaidOrders(raid)
     this.context.menu?.showMessage(getHostileRaidMessage(raid), 'warning')
   }
 
@@ -513,8 +558,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       this.raids.push(raid)
       this.startRaidUpdates(raid)
       if (raid.phase === 'approaching') this.sendRaidToTarget(raid, { forceRepath: true })
-      if (raid.phase === 'hostile' && target)
-        for (const unit of units) unit.sendToEvt?.(target, ACTION_TYPES.attack, { forceRepath: true })
+      if (raid.phase === 'hostile' && target) this.sendHostileRaidOrders(raid)
     }
   }
 

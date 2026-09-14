@@ -59,11 +59,21 @@ export function validateSaveData(data: unknown): SaveRecord {
     if (!isObject(world)) fail('Invalid save file: current campaign world is missing.')
     if (world.id !== data.currentWorldId) fail('Invalid save file: current campaign world id is invalid.')
     validateSaveData(getCurrentWorldState(data))
+    if (data.tutorial !== undefined) {
+      const tutorial = data.tutorial
+      if (!isObject(tutorial) || (tutorial.dialogueNodeId !== undefined && typeof tutorial.dialogueNodeId !== 'string') || !['sleeping', 'dialogue', 'wood-requested'].includes(String(tutorial.stage)) ||
+        !(['worldId', 'houseLabel', 'chiefLabel'] as const).every(key => typeof tutorial[key] === 'string' && tutorial[key])) {
+        fail('Invalid save file: tutorial is invalid.')
+      }
+    }
     if (data.introduction !== undefined) {
       const intro = data.introduction
       if (!isObject(intro) || !['prepared', 'completed'].includes(String(intro.status)) ||
         !(['worldId', 'companionLabel', 'campfireLabel'] as const).every(key => typeof intro[key] === 'string' && intro[key])) {
         fail('Invalid save file: introduction is invalid.')
+      }
+      if (intro.dialogueNodeId !== undefined && typeof intro.dialogueNodeId !== 'string') {
+        fail('Invalid save file: introduction dialogue is invalid.')
       }
       if (intro.phase !== undefined && !['approaching', 'waking', 'dialogue'].includes(String(intro.phase))) {
         fail('Invalid save file: introduction phase is invalid.')

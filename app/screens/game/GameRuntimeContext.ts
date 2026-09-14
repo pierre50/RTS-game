@@ -1,3 +1,4 @@
+import { isTutorialActive } from '../../services/tutorial/TutorialState'
 import { createQuestJournal } from '../../services/quests/QuestSystem'
 import type { Application } from 'pixi.js'
 import Controls from '../../classes/Controls'
@@ -97,6 +98,7 @@ export function createGameRuntimeContext(
     getCampaignFactions: () => host._campaignSave?.factions ?? null,
     getQuestJournal: () => (host._campaignSave ? (host._campaignSave.quests ??= createQuestJournal()) : null),
     getCampaignEconomy: () => host._campaignSave?.economy ?? null,
+    isTutorialActive: () => isTutorialActive(host._campaignSave),
     updateWorldEconomy: () => {
       if (host._campaignSave?.economy && context.map && context.scheduler)
         updateWorldEconomy(host._campaignSave, context as GameContextLike)

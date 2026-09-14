@@ -70,16 +70,23 @@ test('a non-Hellas region preloads both neutral villager variants before placing
   }
   const game = {
     context,
-    _gameContext: () => context,
+    _gameContext: () => {
+      assert.ok(context.player, 'full game context is unavailable before player initialization')
+      return context
+    },
     _map: () => map,
     _createRuntime() {},
     _applyMapConfig() {},
     _createUiRuntime() {},
-    _loadRequiredWorldMapBlueprint: async () => ({}),
+    _loadRequiredWorldMapBlueprint: async () => {
+      assert.equal(context.paused, true, 'simulation is paused before the first asynchronous load')
+      return {}
+    },
     _updateLoading: async () => {},
     _mountRuntime() {},
     _autosaveCampaign() {},
   }
-  await bootGameFromConfig(game, {})
+  await bootGameFromConfig(game, {}, { startPaused: true })
+  assert.equal(context.paused, true, 'loading must not resume the simulation')
   assert.equal(placed, true)
 })

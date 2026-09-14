@@ -246,3 +246,9 @@
   color: var(--main-accent-hover);
   font-size: var(--font-size-sm);
 }
+
+/* Trading replaces the building sheet inside the same inventory-sized modal. */
+.market-trade-screen > .interaction-information,
+.market-trade-screen .interaction-secondary-actions {
+  display: none;
+}

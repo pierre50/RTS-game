@@ -1,3 +1,4 @@
+import { naturalRespawnPlacement } from './NaturalRespawnPlacement'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../../config/gameplay'
 import {
   BIOME_TREE_CHANCE,
@@ -13,49 +14,36 @@ import type { RuntimeCell } from '../../../types/map'
 import type { SaveEntityState } from '../../../types/save'
 import { createResource } from './MapResourceCreation'
 import type { MapResources, TreeResourceGenerationOptions } from './MapResources'
-import { hasSpacedResourceAround } from './MapResourceSpacing'
 import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from './ResourceQuantityRanges'
-
-const RELOCATED_RESPAWN_TYPES = new Set<string>([RESOURCE_TYPES.berrybush])
 
 export function respawnNaturalResource(runtime: MapResources, slot: SaveEntityState): boolean {
   if (!Object.hasOwn(NATURAL_RESOURCE_REGROWTH_BY_TYPE, slot.type)) return false
-  if (!RELOCATED_RESPAWN_TYPES.has(slot.type)) return respawnInPlace(runtime, slot)
-  const border = 10
-  const attempts = Math.max(120, runtime.map.size * 2)
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    const i = runtime.map.randomRange(border, runtime.map.size - border)
-    const j = runtime.map.randomRange(border, runtime.map.size - border)
-    const cell = runtime.map.grid[i]?.[j]
-    if (!isAvailableNaturalResourceCell(cell)) continue
-    if (hasWaterBorderWithin(runtime.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
-    if (hasSpacedResourceAround(runtime.map.grid, i, j)) continue
-
-    const rolledQuantity = rollResourceQuantity(() => runtime.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[slot.type])
-    const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
-    if (!config) return false
-    const quantity =
-      typeof rolledQuantity === 'number'
-        ? Math.max(1, Math.ceil(rolledQuantity * config.respawnQuantityRatio))
-        : undefined
-    runtime.map.resources.add(
-      createResource(
-        runtime.map,
-        i,
-        j,
-        slot.type,
-        definedProperties({
-          isNaturalResource: true,
-          textureName: slot.type === RESOURCE_TYPES.berrybush ? slot.textureName : undefined,
-          quantity,
-          totalQuantity: rolledQuantity,
-          startsMature: slot.type === RESOURCE_TYPES.wheat ? true : undefined,
-        })
-      )
-    )
-    return true
+  const wheat = slot.type === RESOURCE_TYPES.wheat
+  const session = wheat ? null : naturalRespawnPlacement(runtime)
+  let destination: GridPosition | null = slot
+  if (wheat) {
+    if (!isAvailableNaturalResourceCell(runtime.map.grid[slot.i]?.[slot.j])) return false
+  } else if (session && !session.placement.canPlace(slot, slot, 0)) {
+    // Keep the original natural patch when its cell is still suitable. Only a
+    // displaced respawn needs new spacing and a ranked replacement location.
+    const { placement, regions, anchors } = session
+    let anchor = anchors.find(point => regions.reachable(slot, point))
+    if (!anchor) { anchor = { i: slot.i, j: slot.j }; anchors.push(anchor) }
+    destination = placement.find(slot, anchor, () => false, { spacing: [3], clearances: [0] })
   }
-  return false
+  if (!destination) return false
+  const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
+  const totalQuantity = slot.type === RESOURCE_TYPES.berrybush || typeof slot.totalQuantity !== 'number'
+    ? rollResourceQuantity(() => runtime.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[slot.type])
+    : slot.totalQuantity
+  const quantity = typeof totalQuantity === 'number'
+    ? Math.max(1, Math.ceil(totalQuantity * (wheat ? 1 : config.respawnQuantityRatio))) : undefined
+  runtime.map.resources.add(createResource(runtime.map, destination.i, destination.j, slot.type,
+    definedProperties({ isNaturalResource: true, textureName: slot.textureName, quantity, totalQuantity,
+      ...(wheat ? { startsMature: false } : {}),
+    })))
+  session?.placement.record({ ...slot, ...destination })
+  return true
 }
 
 export async function generateBiomeTreesAsync(
@@ -75,36 +63,6 @@ export async function generateBiomeTreesAsync(
     }
     if (i % 8 === 0) await yieldFrame()
   }
-}
-
-function respawnInPlace(runtime: MapResources, slot: SaveEntityState): boolean {
-  const cell = runtime.map.grid[slot.i]?.[slot.j]
-  if (!isAvailableNaturalResourceCell(cell)) return false
-  const totalQuantity =
-    typeof slot.totalQuantity === 'number'
-      ? slot.totalQuantity
-      : rollResourceQuantity(() => runtime.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[slot.type])
-  const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
-  if (!config) return false
-  const quantity =
-    typeof totalQuantity === 'number'
-      ? Math.max(1, Math.ceil(totalQuantity * (slot.type === RESOURCE_TYPES.wheat ? 1 : config.respawnQuantityRatio)))
-      : undefined
-  runtime.map.resources.add(
-    createResource(
-      runtime.map,
-      slot.i,
-      slot.j,
-      slot.type,
-      definedProperties({
-        isNaturalResource: true,
-        quantity,
-        totalQuantity,
-        ...(slot.type === RESOURCE_TYPES.wheat ? { startsMature: false } : {}),
-      })
-    )
-  )
-  return true
 }
 
 function placeBiomeTree(

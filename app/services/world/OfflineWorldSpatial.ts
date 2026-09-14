@@ -1,6 +1,7 @@
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../types/save'
 
 export type OfflineTerrainCell = {
+  type?: string
   category?: string
   border?: boolean
   waterBorder?: boolean
@@ -33,7 +34,8 @@ export class OfflineWorldSpatial {
   constructor(
     private terrain: (OfflineTerrainCell | null | undefined)[][],
     state: SerializedSave,
-    buildingSize: (entity: SaveEntityState, playerIndex: number) => number
+    buildingSize: (entity: SaveEntityState, playerIndex: number) => number,
+    options: { protectVillageAccess?: boolean; exactBuildingFootprints?: boolean } = {}
   ) {
     for (const entity of [...state.resources, ...state.animals]) {
       if (!entity.isDestroyed) this.reserve(entity)
@@ -46,13 +48,15 @@ export class OfflineWorldSpatial {
         }
       for (const building of player.buildings ?? []) {
         if (!isLiving(building)) continue
-        const radius = Math.ceil((building.size ?? buildingSize(building, index)) / 2)
-        for (let i = building.i - radius; i <= building.i + radius; i++) {
-          for (let j = building.j - radius; j <= building.j + radius; j++) this.reserve(building, { i, j })
+        const size = Math.max(1, Math.floor(building.size ?? buildingSize(building, index)))
+        const before = options.exactBuildingFootprints ? Math.floor((size - 1) / 2) : Math.ceil(size / 2)
+        const after = options.exactBuildingFootprints ? size - before - 1 : before
+        for (let i = building.i - before; i <= building.i + after; i++) {
+          for (let j = building.j - before; j <= building.j + after; j++) this.reserve(building, { i, j })
         }
       }
     })
-    for (const player of state.players) {
+    if (options.protectVillageAccess !== false) for (const player of state.players) {
       const center = player.buildings?.find(b => b.type === 'TownCenter' && isLiving(b))
       if (center) this.protectVillageAccess(center, player.buildings ?? [])
     }
@@ -202,8 +206,10 @@ export class OfflineWorldSpatial {
     this.reserve(entity)
   }
 
-  naturalCell(point: SaveGridPoint): boolean {
-    if (!this.available(point) || this.passages.has(this.key(point))) return false
+  naturalCell(point: SaveGridPoint, clearableTypes: ReadonlySet<string> = new Set()): boolean {
+    if (!this.land(point) || this.passages.has(this.key(point))) return false
+    const occupants = this.occupied.get(this.key(point))
+    if (occupants && [...occupants].some(entity => !clearableTypes.has(entity.type))) return false
     const cell = this.terrain[point.i]?.[point.j]
     return !cell?.waterBorder && !cell?.inclined
   }

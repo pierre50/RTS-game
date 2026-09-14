@@ -7,6 +7,7 @@ function loadFogOfWar() {
     '../constants': {
       FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
       PLAYER_TYPES: { ai: 'ai' },
+      UNIT_TYPES: { chief: 'Chief', hero: 'Hero' },
     },
   }
   return loadTsModule('app/services/FogOfWar.ts', { mocks })
@@ -104,6 +105,59 @@ function createCell(i, j) {
     updateVisible() {},
   }
 }
+
+test('non-chief hero sees through himself only and promotion refreshes stationary units and buildings', () => {
+  const { updateVisibility, refreshPlayerVisibility } = loadFogOfWar()
+  const player = { label: 'human', cellViewed: 0, views: createViews(), units: [], buildings: [] }
+  const grid = Array.from({ length: 3 }, (_, i) => Array.from({ length: 3 }, (_, j) => createCell(i, j)))
+  const context = { player, map: { grid }, controls: {} }
+  const hero = { type: 'Hero', label: 'hero', i: 0, j: 0, sight: 0, isChief: false, owner: player, context }
+  const villager = { type: 'Villager', label: 'villager', i: 2, j: 2, sight: 0, owner: player, context }
+  const building = { type: 'TownCenter', label: 'center', i: 1, j: 1, sight: 0, owner: player, context }
+  context.controls.heroUnit = hero
+  player.units = [hero, villager]
+  player.buildings = [building]
+  refreshPlayerVisibility(context)
+  assert.equal(player.views.isVisible(0, 0), true)
+  assert.equal(player.views.isViewed(2, 2), false)
+  assert.equal(player.views.isVisible(1, 1), false)
+  hero.isChief = true
+  refreshPlayerVisibility(context)
+  assert.equal(player.views.isVisible(2, 2), true)
+  assert.equal(player.views.isVisible(1, 1), true)
+  hero.isChief = false
+  refreshPlayerVisibility(context)
+  assert.equal(player.views.isVisible(2, 2), false)
+  assert.equal(player.views.isVisible(1, 1), false)
+  assert.equal(player.views.isVisible(0, 0), true)
+  const ai = { label: 'other', cellViewed: 0, views: createViews() }
+  const scout = { ...villager, label: 'scout', owner: ai, visibleCells: undefined }
+  updateVisibility(scout)
+  assert.equal(ai.views.isVisible(2, 2), true)
+  assert.equal(player.views.isVisible(2, 2), false)
+})
+
+test('initial NPC visibility does not explore the map before the non-chief hero is created', () => {
+  const { updateVisibility, refreshPlayerVisibility } = loadFogOfWar()
+  const player = { isPlayed: true, label: 'player', views: createViews(), cellViewed: 0, units: [], buildings: [] }
+  const grid = Array.from({ length: 3 }, (_, i) => Array.from({ length: 3 }, (_, j) => createCell(i, j)))
+  const context = { player, map: { grid } }
+  const npc = { type: 'Chief', label: 'chief', i: 2, j: 2, sight: 0, owner: player, context }
+  player.units.push(npc)
+  updateVisibility(npc)
+  assert.equal(player.views.isViewed(2, 2), false)
+  const initialHero = require('../public/assets/data/gameplay/units.json').Hero
+  assert.equal(initialHero.isChief, false)
+  const hero = { ...initialHero, type: 'Hero', label: 'hero', i: 0, j: 0, sight: 0, owner: player, context }
+  updateVisibility(hero)
+  player.units.push(hero)
+  refreshPlayerVisibility(context)
+  assert.equal(player.views.isViewed(0, 0), true)
+  assert.equal(player.views.isViewed(2, 2), false)
+  hero.isChief = true
+  refreshPlayerVisibility(context)
+  assert.equal(player.views.isViewed(2, 2), true)
+})
 
 test('unit vision updates only its owner, not allied players', () => {
   const { updateVisibility } = loadFogOfWar()

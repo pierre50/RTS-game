@@ -21,6 +21,8 @@ export type EntityInfoRenderOptions = {
   // Character-sheet views (the hero's inventory "Infos" tab) want every XP category listed even
   // at level 1; the compact side-HUD/modal/NPC-orders views stay filtered to earned categories only.
   showAllXp?: boolean
+  // Conversations hide numerical information until the hero becomes chief.
+  hideStats?: boolean
   // Modal windows already carry the entity identity in their title; hide duplicate identity labels
   // inside the stat panel while keeping useful metadata such as civ/level/hit points.
   hideIdentity?: boolean
@@ -67,6 +69,8 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   sight?: number
   quantity?: number
   totalQuantity?: number
+  /** Resolves when the death pose has finished, before corpse decomposition. */
+  deathAnimationComplete?: Promise<void>
   isDead?: boolean
   isDestroyed?: boolean
   isNaturalResource?: boolean

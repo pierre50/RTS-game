@@ -5,6 +5,30 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
+test('offscreen attack warnings only play for a chief hero and retain their cooldown', () => {
+  const sounds = []
+  const Player = loadPlayer({ playUiSound: cue => sounds.push(cue) })
+  const previousDocument = global.document
+  global.document = { visibilityState: 'hidden', hasFocus: () => false }
+  try {
+    const hero = { isChief: false }
+    const player = { label: 'player', isPlayed: true, type: 'human', lastUnderAttackAlertAt: 0,
+      context: { controls: { heroUnit: hero, instanceInCamera: () => false } } }
+    const target = { owner: player }
+    Player.prototype.reportThreat.call(player, target, {})
+    assert.deepEqual(sounds, [])
+    assert.equal(player.lastUnderAttackAlertAt, 0)
+    hero.isChief = true
+    Player.prototype.reportThreat.call(player, target, {})
+    assert.deepEqual(sounds, ['attack-warning'])
+    Player.prototype.reportThreat.call(player, target, {})
+    assert.equal(sounds.length, 1)
+  } finally {
+    if (previousDocument === undefined) delete global.document
+    else global.document = previousDocument
+  }
+})
+
 function loadPlayer(overrides = {}) {
   const filename = path.join(__dirname, '../app/classes/players/Player.ts')
   const compileTs = tsFilename => {
@@ -106,7 +130,7 @@ function loadPlayer(overrides = {}) {
         POPULATION_MAX: 200,
         RESOURCE_NAMES: [],
         RESOURCE_TYPES: { wheat: 'Wheat' },
-        SOUND_CUES: { player: { ageAdvance: 'ageAdvance' }, unit: { militaryCommand: 'militaryCommand' } },
+        SOUND_CUES: { ui: { underAttack: 'attack-warning' }, player: { ageAdvance: 'ageAdvance' }, unit: { militaryCommand: 'militaryCommand' } },
         UNIT_TYPES: { villager: 'Villager' },
         FADE_DURATION_MS: 2000,
       }
@@ -116,11 +140,12 @@ function loadPlayer(overrides = {}) {
     if (request === '../../lib/entities/entityFade') return { fadeIn: overrides.fadeIn ?? (() => {}) }
     if (request === '../../lib/chief') {
       return {
+        heroCanCommand: hero => Boolean(hero?.isChief),
         hasLivingChief: () => true,
         playerNeedsChiefForCommand: () => false,
       }
     }
-    if (request === '../../lib/audio/uiSound') return { playUiSound: () => {} }
+    if (request === '../../lib/audio/uiSound') return { playUiSound: overrides.playUiSound ?? (() => {}) }
     if (request === '../../lib/lang') return { t: key => key }
     if (request === '../../services/VisionGrid') return { VisionGrid: class {} }
     if (request === '../../lib/buildings/walls') {
@@ -129,6 +154,7 @@ function loadPlayer(overrides = {}) {
         updateWallAndNeighbours: () => {},
       }
     }
+    if (request === './PlayerUnitCreation') return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerUnitCreation.ts'))
     if (request === './PlayerInitialization') {
       return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerInitialization.ts'))
     }
@@ -206,6 +232,7 @@ test('population objectives follow living villagers without granting technologie
     })),
     buildings: [],
     context: {
+      controls: { heroUnit: { type: 'Hero', isChief: true } },
       menu: {
         showMessage: (message, type) => messages.push([message, type]),
         updateActionTarget: () => messages.push(['action-target']),
@@ -415,6 +442,7 @@ test('placing a town center waits for finished construction before completing th
     completedObjectives: [],
     config: { buildings: { TownCenter: { cost: {}, size: 3 } }, units: { Villager: { sounds: {} } } },
     context: {
+      controls: { heroUnit: { type: 'Hero', isChief: true } },
       map: {
         grid: [[{ i: 0, j: 0 }]],
         addChild: child => child,

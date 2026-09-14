@@ -923,3 +923,23 @@ test('direct region travel rejects a non-chief hero before saving or starting a 
   assert.equal(alerts.length, 1)
   assert.equal(alerts[0][1], 'warning')
 })
+
+test('guest start creates a real AI village of the same civilization beside the human owner', () => {
+  const { buildWorldRegionPlayerConfigs } = loadWorldRegionPlayers()
+  const { generatePlayers } = loadMapPlayerGeneration()
+  const settlements = [{ civ: 'Hellas', kind: 'village', local: { i: 2, j: 2 } }]
+  const configs = buildWorldRegionPlayerConfigs({ heroStartVillage: 'Hellas', players: [{ civ: 'Hellas', isHuman: true }] }, { settlements })
+  assert.equal(configs.length, 2)
+  assert.deepEqual(configs.map(p => p.isHuman), [true, false])
+  const map = createMap(12)
+  Object.assign(map, { banditCampPositions: [], context: { app: {}, gamebox: {}, scheduler: {} },
+    heroOnlyStart: true, noAI: false, playersPos: [], settlements, startingResources: {}, startingAge: 0 })
+  map.context.map = map
+  const owners = generatePlayers(map, configs)
+  assert.equal(owners.length, 2)
+  assert.equal(owners[0].isPlayed, true)
+  assert.notEqual(owners[1].isPlayed, true)
+  assert.equal(owners[0].factionId, owners[1].factionId)
+  assert.equal(owners[1].i, 2)
+  assert.equal(owners[1].j, 2)
+})

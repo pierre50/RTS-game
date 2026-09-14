@@ -1,3 +1,4 @@
+import { isReservedQuestTarget } from '../quests/questReservations'
 import type { ActionProps, CombatEntity } from '../../types/combat'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import { shouldAttackBuildingForInteriorAccess } from '../buildings/interiorAccess'
@@ -35,7 +36,8 @@ export const getActionCondition = (
   action: string | undefined,
   props?: ActionProps
 ): boolean => {
-  if (!action) return false
+  if (!action || !source || !target) return false
+  if (['hunt', 'takemeat', 'attack', 'captureHorse'].includes(action) && isReservedQuestTarget(source, target)) return false
 
   const conditions: Record<string, (props?: ActionProps) => boolean> = {
     ...getResourceActionConditions(source, target),

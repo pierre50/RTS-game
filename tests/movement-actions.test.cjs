@@ -179,6 +179,9 @@ function loadModule(relativePath, mocks) {
     return module.exports
   }
   const localRequire = request => {
+    if (request.endsWith('/units/pathProgress')) {
+      return requireFromTsFile(path.join(__dirname, '../app/lib/units/pathProgress.ts'), filename, {}, dependencyModules)
+    }
     if (request.endsWith('/playerTargetKnowledge'))
       return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
     if (request.endsWith('/targetPursuit'))

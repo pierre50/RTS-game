@@ -318,7 +318,15 @@ type CampaignClockSave = {
 }
 
 export type CampaignSave = {
+  tutorial?: {
+    dialogueNodeId?: string
+    stage: 'sleeping' | 'dialogue' | 'wood-requested'
+    worldId: string
+    houseLabel: string
+    chiefLabel: string
+  }
   introduction?: {
+    dialogueNodeId?: string
     status: 'prepared' | 'completed'
     phase?: 'approaching' | 'waking' | 'dialogue'
     arrival?: { i: number; j: number }
@@ -405,6 +413,7 @@ export type GameConfig = {
 }
 
 export type VillageStartProfile = {
+  wheatFields?: number
   age: number
   buildings: Record<string, number>
   units: Record<string, number>

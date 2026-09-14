@@ -1,12 +1,25 @@
 import { MAX_ARCHER_BY_AGE, MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE } from '../../ai/config'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
+import { PLAYER_TYPES } from '../../constants'
 import { AGE_RULES_VERSION } from '../../lib/objectives/ageRules'
 import { getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import { depositChestResources } from '../../lib/resources/playerResourceTotals'
-import { findVillageBuildingSite } from './OfflineWorldBuildingPlanner'
+import { StartingVillageLayout } from './StartingVillageLayout'
 import { OfflineWorldSpatial, isLiving, type OfflineTerrainCell } from './OfflineWorldSpatial'
 import { savedResourceOwner, type OfflineWorkRules } from './OfflineWorldWork'
 import type { GameConfig, SaveEntityState, SerializedSave, VillageStartProfile } from '../../types/save'
+
+const DISTRICT_BUILDING_ORDER = [
+  'Granary',
+  'StoragePit',
+  'Market',
+  'Barracks',
+  'ArcheryRange',
+  'Stable',
+  'House',
+  'WatchTower',
+]
+const buildingPlacementOrder = (type: string) => DISTRICT_BUILDING_ORDER.indexOf(type) + 1 || 99
 
 /** Legacy levels remain inputs only; all new villages use the same serialized state. */
 export function villageStartProfiles(config: GameConfig): Record<string, VillageStartProfile> {
@@ -31,15 +44,16 @@ export function applyVillageStartingState(
   source: SerializedSave,
   profiles: Record<string, VillageStartProfile>,
   terrain: (OfflineTerrainCell | null | undefined)[][],
-  rules: OfflineWorkRules
+  rules: OfflineWorkRules,
+  options: { skipPlayed?: boolean } = {}
 ): SerializedSave {
   const state = structuredClone(source)
-  const spatial = new OfflineWorldSpatial(
-    terrain,
-    state,
-    (building, index) => Number(rules.buildingConfig(index, building.type).size) || 2
-  )
+  const layout = new StartingVillageLayout(state, terrain, rules)
+  const spatial = layout.spatial
   state.players.forEach((player, index) => {
+    if (options.skipPlayed && player.isPlayed) return
+    // Neutral and bandit owners also have a civilization for their assets, not a village to upgrade.
+    if (player.type !== PLAYER_TYPES.human && player.type !== PLAYER_TYPES.ai) return
     const profile = profiles[player.civ ?? '']
     if (!profile) return
     if (!Number.isInteger(profile.age) || profile.age < 0 || profile.age > 2)
@@ -57,11 +71,13 @@ export function applyVillageStartingState(
         ...player.buildings!.filter(b => b.isBuilt && isLiving(b)).map(b => b.type),
       ]),
     ]
+    const findStartingSite = (anchor: SaveEntityState, size: number, type: string) =>
+      layout.findSite(center, anchor, size, player.civ ?? '', type)
     const addBuilding = (type: string, fixedPoint?: { i: number; j: number }) => {
       const config = getBuildingConfigForAge(rules.buildingConfig(index, type), profile.age)
       if (!(Number(config.totalHitPoints) > 0)) throw new Error(`Unknown starting building ${type}`)
       const size = Number(config.size) || 0
-      const point = fixedPoint ?? findVillageBuildingSite(center, size, spatial, center)
+      const point = fixedPoint ?? findStartingSite(center, size, type)
       if (!point) throw new Error(`No space for required ${type} in ${player.civ}`)
       const building: SaveEntityState = {
         ...point,
@@ -75,12 +91,47 @@ export function applyVillageStartingState(
       }
       player.buildings!.push(building)
       if (!player.hasBuilt!.includes(type)) player.hasBuilt!.push(type)
-      const radius = Math.ceil(size / 2)
-      for (let i = point.i - radius; i <= point.i + radius; i++)
-        for (let j = point.j - radius; j <= point.j + radius; j++) spatial.reserve(building, { i, j })
-      if (!fixedPoint) spatial.protectVillageAccess(center, player.buildings!)
+      layout.reserveBuilding(building)
+      layout.recordSite(center, type, building, size)
     }
-    for (const [type, count] of Object.entries(profile.buildings)) {
+    if (
+      (profile.wheatFields ?? 0) > 0 &&
+      (profile.buildings.Granary ?? 0) > 0 &&
+      !player.buildings!.some(building => building.type === 'Granary' && isLiving(building))
+    )
+      addBuilding('Granary')
+    // Reserve agriculture before buildings, decorations and newly spawned units
+    // fragment the remaining free terrain.
+    const fields = profile.wheatFields ?? 0
+    if (!Number.isInteger(fields) || fields < 0 || fields > 20) throw new Error('Invalid starting wheat field count')
+    const fieldSize = Number(rules.buildingConfig(index, 'Farm').size) || 4
+    const before = Math.floor((fieldSize - 1) / 2)
+    const after = fieldSize - before - 1
+    const granary = player.buildings!.find(building => building.type === 'Granary' && isLiving(building)) ?? center
+    for (let field = 0; field < fields; field++) {
+      const point = findStartingSite(granary, fieldSize, 'Farm')
+      if (!point) throw new Error(`No space for starting wheat field in ${player.civ}`)
+      layout.recordSite(center, 'Farm', point, fieldSize)
+      for (let i = point.i - before; i <= point.i + after; i++) {
+        for (let j = point.j - before; j <= point.j + after; j++) {
+          const wheat: SaveEntityState = {
+            i,
+            j,
+            type: 'Wheat',
+            label: `start:${player.label ?? index}:wheat:${field}:${i}:${j}`,
+            // An unspecified saved growth frame restores as mature using the loaded sprite.
+            // Asset caches may not yet know the final frame during village generation.
+            quantity: 10,
+            totalQuantity: 10,
+          }
+          state.resources.push(wheat)
+          spatial.reserve(wheat)
+        }
+      }
+    }
+    for (const [type, count] of Object.entries(profile.buildings).sort(
+      ([a], [b]) => buildingPlacementOrder(a) - buildingPlacementOrder(b)
+    )) {
       const existing = player.buildings!.filter(b => b.type === type && isLiving(b)).length
       for (let n = existing; n < count; n++) addBuilding(type)
     }
@@ -129,6 +180,8 @@ export function applyVillageStartingState(
       for (let di = -radius; di <= radius; di++) {
         const dj = radius - Math.abs(di)
         for (const offset of dj ? [-dj, dj] : [0]) {
+          // Leave cardinal entrances wider than the wall footprint for village access.
+          if (Math.abs(di) <= footprint + 1 || Math.abs(offset) <= footprint + 1) continue
           const point = { i: center.i + di, j: center.j + offset }
           let free = true
           for (let i = point.i - footprint; i <= point.i + footprint; i++)
@@ -155,7 +208,7 @@ export function placeStartingHeroInVillage(
   terrain: (OfflineTerrainCell | null | undefined)[][],
   rules: OfflineWorkRules
 ): void {
-  const host = state.players.find(p => p.civ === civilization)
+  const host = state.players.find(p => !p.isPlayed && p.civ === civilization)
   const center = host?.buildings?.find(b => b.type === 'TownCenter' && b.isBuilt && isLiving(b))
   const hero = state.players.find(p => p.isPlayed)?.units?.find(u => u.type === 'Hero' && isLiving(u))
   if (!center || !hero) throw new Error('Tutorial hero requires a host village and a hero')

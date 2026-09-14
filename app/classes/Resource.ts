@@ -1,74 +1,76 @@
+import { AnimatedSprite,Assets,Polygon,type Sprite } from 'pixi.js'
+import {
+CELL_HEIGHT,
+CELL_WIDTH,
+FADE_DURATION_MS,
+FAMILY_TYPES,
+LABEL_TYPES,
+PASSABLE_RESOURCE_TYPES,
+RESOURCE_TYPES,
+} from '../constants'
+import {
+attachEntityShadowsToMapSpace,
+cartesianToIsometric,
+getDeterministicCellVariant,
+getEntityCell,
+getEntityMapSpace,
+getGroundReliefLevel,
+getInstanceZIndex,
+getReliefLiftPixels,
+getTexture,
+isAIControlledPlayer,
+parseTextureRef,
+textureRefToString,
+type SpriteFragmentBurstGroundTarget,
+} from '../lib'
+import { onVisualSettingsChange } from '../lib/audio/settings'
+import { fadeOutThenClear } from '../lib/entities/entityFade'
+import { logStartingWheatHarvest } from '../lib/resources/startingWheatDiagnostics'
+import { resetHarvestedWheat } from '../lib/resources/wheatGrowth'
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
 import { invalidateEconomicKnowledge } from '../services/world/EconomicKnowledgeUpdates'
-import { registerResourceRespawnSlot } from './resources/ResourceRespawn'
-import {
-  resourceFootprintCells,
-  resourceFragmentGroundTargets,
-  spawnResourceTreeFragments,
-  spawnDepletedResourceFragments,
-} from './resources/ResourceFragments'
-import { Assets, Polygon, AnimatedSprite, type Sprite } from 'pixi.js'
-import {
-  cartesianToIsometric,
-  attachEntityShadowsToMapSpace,
-  getGroundReliefLevel,
-  getInstanceZIndex,
-  getReliefLiftPixels,
-  getDeterministicCellVariant,
-  getTexture,
-  getEntityMapSpace,
-  getEntityCell,
-  isAIControlledPlayer,
-  parseTextureRef,
-  textureRefToString,
-  type SpriteFragmentBurstGroundTarget,
-} from '../lib'
-import {
-  CELL_WIDTH,
-  CELL_HEIGHT,
-  FADE_DURATION_MS,
-  FAMILY_TYPES,
-  LABEL_TYPES,
-  PASSABLE_RESOURCE_TYPES,
-  RESOURCE_TYPES,
-} from '../constants'
-import { resetHarvestedWheat } from '../lib/resources/wheatGrowth'
-import { Instance } from './Instance'
+import type { ResourceConfig } from '../types/config'
+import type { GameContextLike } from '../types/context'
+import type { EntityInfoRenderOptions,EntityInterfaceLike,ResourceEntity,UnitSounds } from '../types/entities'
+import type { RuntimeCell } from '../types/map'
 import { ResourceInterface } from '../ui/entity/ResourceInterface'
-import { fadeOutThenClear } from '../lib/entities/entityFade'
-import { onVisualSettingsChange } from '../lib/audio/settings'
-import { createResourceSprite, prepareStaticResourceTexture } from './ResourceSpriteFactory'
+import { Instance } from './Instance'
+import { advanceResourceWheatGrowth } from './resource/ResourceWheatGrowth'
 import {
-  BERRYBUSH_SHEET_ID,
-  EMPTY_BERRYBUSH_FRAME,
-  getResourceConfig,
-  getTerrainAssets,
-  pickLifecycleTextureRef,
-  type PlayerWithResourceMemory,
-  type ResourceAssets,
-  type ResourceDefinition,
-  type ResourceOptions,
+resourceFootprintCells,
+resourceFragmentGroundTargets,
+spawnDepletedResourceFragments,
+spawnResourceTreeFragments,
+} from './resources/ResourceFragments'
+import { registerResourceRespawnSlot } from './resources/ResourceRespawn'
+import { createResourceSprite,prepareStaticResourceTexture } from './ResourceSpriteFactory'
+import {
+BERRYBUSH_SHEET_ID,
+EMPTY_BERRYBUSH_FRAME,
+getResourceConfig,
+getTerrainAssets,
+pickLifecycleTextureRef,
+type PlayerWithResourceMemory,
+type ResourceAssets,
+type ResourceDefinition,
+type ResourceOptions,
 } from './ResourceTexture'
 import {
-  canApplyWindMotion,
-  createShadow,
-  isCutOrFallenTree,
-  isWindAnimatedWheat,
-  isWindMotionEligible,
-  resetWindMotion,
-  shouldUseWindMotion,
-  startWindMotion,
-  stopWindMotion,
-  syncShadow,
-  syncVisualSettings,
-  updateWindMotion,
-  type ResourceShadow,
-  type WindTick,
+canApplyWindMotion,
+createShadow,
+isCutOrFallenTree,
+isWindAnimatedWheat,
+isWindMotionEligible,
+resetWindMotion,
+shouldUseWindMotion,
+startWindMotion,
+stopWindMotion,
+syncShadow,
+syncVisualSettings,
+updateWindMotion,
+type ResourceShadow,
+type WindTick,
 } from './ResourceVisuals'
-import type { GameContextLike } from '../types/context'
-import type { ResourceConfig } from '../types/config'
-import type { EntityInfoRenderOptions, EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
 
 export type { ResourceOptions } from './ResourceTexture'
 
@@ -208,6 +210,9 @@ export class Resource extends Instance implements ResourceEntity {
     if (this.isDead) {
       return
     }
+    if (!immediate && this.type === RESOURCE_TYPES.wheat && this.quantity <= 0) {
+      logStartingWheatHarvest(this, this.context)
+    }
     if (!immediate && resetHarvestedWheat(this)) {
       this.stopWindMotion()
       if (this.sprite instanceof AnimatedSprite) this.sprite.gotoAndStop(0)
@@ -299,16 +304,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   advanceWheatGrowth(frames = 1): boolean {
-    if (this.type !== RESOURCE_TYPES.wheat || !(this.sprite instanceof AnimatedSprite)) return false
-    if (this.isDead || this.isDestroyed) return false
-    const lastFrame = Math.max(0, this.sprite.textures.length - 1)
-    const currentFrame = Math.max(0, Math.min(lastFrame, this.sprite.currentFrame ?? 0))
-    const nextFrame = Math.min(lastFrame, currentFrame + Math.max(1, Math.floor(frames)))
-    if (nextFrame === currentFrame) return false
-    this.sprite.gotoAndStop(nextFrame)
-    this.syncShadow()
-    if (this.isWindAnimatedWheat()) this.startWindMotion()
-    return true
+    return advanceResourceWheatGrowth.call(this, frames)
   }
 
   onTreeDie() {

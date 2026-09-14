@@ -442,6 +442,7 @@ test('pause and resume ignore static sprites but control animated sprites', () =
   const calls = []
   const animatedInstance = Object.create(Instance.prototype)
   animatedInstance.sprite = {
+    playing: true,
     stop: () => calls.push('stop'),
     play: () => calls.push('play'),
   }
@@ -450,4 +451,21 @@ test('pause and resume ignore static sprites but control animated sprites', () =
   Instance.prototype.resume.call(animatedInstance)
 
   assert.deepEqual(calls, ['stop', 'play'])
+})
+
+
+test('pause preserves a blocked animation, including repeated pause calls', () => {
+  const { Instance } = loadInstance()
+  for (const playing of [false, true]) {
+    const instance = Object.create(Instance.prototype)
+    instance.sprite = {
+      playing,
+      stop() { this.playing = false },
+      play() { this.playing = true },
+    }
+    instance.pause()
+    instance.pause()
+    instance.resume()
+    assert.equal(instance.sprite.playing, playing)
+  }
 })

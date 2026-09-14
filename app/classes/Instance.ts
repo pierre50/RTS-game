@@ -124,7 +124,10 @@ export class Instance extends Container {
     }
   }
 
+  protected playingBeforePause?: boolean
+
   pause(): void {
+    this.playingBeforePause ??= Boolean((this.sprite as AnimatedSprite | undefined)?.playing)
     if (typeof (this.sprite as AnimatedSprite | undefined)?.stop === 'function') {
       ;(this.sprite as AnimatedSprite).stop()
     }
@@ -132,8 +135,10 @@ export class Instance extends Container {
 
   resume(): void {
     if (typeof (this.sprite as AnimatedSprite | undefined)?.play === 'function') {
-      ;(this.sprite as AnimatedSprite).play()
+      if (this.playingBeforePause !== false) (this.sprite as AnimatedSprite).play()
+      else (this.sprite as AnimatedSprite).stop()
     }
+    this.playingBeforePause = undefined
   }
 
   select(): void {
