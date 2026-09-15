@@ -6,6 +6,7 @@ import {
 } from '../buildings/passageCells'
 import { getInstanceClosestFreeCellPath } from '../grid/movement'
 import { logGoldMinerFlow } from './autonomy/villagerJobDiagnostics'
+import { isPursuingRememberedTarget } from './targetPursuit'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -209,6 +210,7 @@ function rankVillagerJobCandidates(
 }
 
 function wasAutonomyOrderAccepted(unit: UnitEntity, candidate: VillagerJobCandidate, result: unknown): boolean {
+  if (result !== false && isPursuingRememberedTarget(unit, candidate.target, candidate.action)) return true
   const dest = unit.dest as RuntimeEntity | null | undefined
   if (sameTarget(dest, candidate.target) && unit.action === candidate.action) return true
   if (

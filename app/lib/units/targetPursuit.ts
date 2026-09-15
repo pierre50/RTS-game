@@ -20,6 +20,14 @@ const targetActions = new Set([
   'takemeat',
 ])
 
+/** A remembered target is still the order's target while movement uses its last known cell. */
+export function isPursuingRememberedTarget(unit: UnitEntity, target: RuntimeEntity, action: string | null): boolean {
+  const search = searches.get(unit)
+  return Boolean(
+    search && search.target === target && search.action === action && unit.dest === search.cell && !unit.action
+  )
+}
+
 /** Route to remembered terrain, never to a hidden entity's live coordinates. */
 export function routeToRememberedTarget(unit: UnitEntity, target: RuntimeEntity, action: string | null): boolean {
   if (!action || !targetActions.has(action)) return false
@@ -33,11 +41,13 @@ export function routeToRememberedTarget(unit: UnitEntity, target: RuntimeEntity,
   const map = getEntitySpaceMapLike(unit, unit.context?.map)
   const cell = last && map?.grid[last.i]?.[last.j]
   if (!cell || (known && known.spaceId !== (unit.spaceId || 'outside'))) {
+    searches.delete(unit)
     unit.stop?.()
     return true
   }
-  unit.sendToEvt?.(cell, null, { forceRepath: true, preserveAutonomy: true })
-  searches.set(unit, { target, action, cell })
+  searches.delete(unit)
+  const result: unknown = unit.sendToEvt?.(cell, null, { forceRepath: true, preserveAutonomy: true })
+  if (result !== false && unit.dest === cell && !unit.action) searches.set(unit, { target, action, cell })
   return true
 }
 

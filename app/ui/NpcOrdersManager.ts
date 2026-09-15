@@ -21,6 +21,7 @@ import { getUnitGender } from '../lib/units/unitIdentity'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
 import {
+  noticeNpc,
   keepNpcHere,
   startFollowingHero,
   releaseIfStillLooking,
@@ -209,6 +210,8 @@ export class NpcOrdersManager {
     this.scriptedReplyPanel.hidden = !dialogue
     this.scriptedReplyPanel.replaceChildren()
     if (dialogue) this.showDialogueChoices(dialogue, dialogue.startId)
+    const hero = this.menu.context.controls?.heroUnit
+    if (hero) for (const npc of npcs) noticeNpc(npc, hero, false)
     this.npcs = npcs
     this.opened = true
     this.orderMenu.reset()

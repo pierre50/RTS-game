@@ -171,10 +171,12 @@ function updateRuntimeInteriorExit(game: BuildingInteriorTravelGame, unit: UnitE
     resumeInteriorExitReturnTask(unit, context.scheduler)
     return
   }
-  if (shouldUnitRemainAtRest(context, unit) || unit.isDead || unit.isDestroyed) {
+  if (unit.isDead || unit.isDestroyed) {
     clearInteriorExitState(unit, context.scheduler)
     return
   }
+  // Waking precedes work by an hour. Keep the exit request until work starts.
+  if (shouldUnitRemainAtRest(context, unit)) return
   const elapsed = (context.scheduler?.elapsedMs ?? 0) - (state.startedAtMs ?? 0)
   if (unit.spacePortalState || unit.path?.length || elapsed < INTERIOR_OCCUPANT_EXIT_ORDER_GRACE_MS) return
   const retryCount = state.retryCount ?? 0
@@ -271,23 +273,16 @@ export function routeInteriorUnitToExit(
   const context = game._gameContext()
   const space = getBuildingInteriorSpaceForUnit(unit)
   if (space) {
-    if (
-      shouldUnitRemainAtRest(context, unit) ||
-      unit.isDead ||
-      unit.isDestroyed ||
-      unit.followingHero ||
-      unit.controlMode === 'hero' ||
-      unit.type === 'Hero'
-    ) {
+    if (unit.isDead || unit.isDestroyed || unit.followingHero || unit.controlMode === 'hero' || unit.type === 'Hero') {
       return
     }
-    unit.interiorExitState = {
+    unit.interiorExitState = unit.interiorExitState ?? {
       returnTask,
       retryCount: 0,
       startedAtMs: context.scheduler?.elapsedMs ?? 0,
       targetCell: space.exitCell,
     }
-    routeRuntimeInteriorExit(game, unit, space)
+    if (!shouldUnitRemainAtRest(context, unit)) routeRuntimeInteriorExit(game, unit, space)
     if (!unit.interiorExitState) return
     scheduleInteriorOccupantExitCheck(game, unit)
     return

@@ -17,7 +17,7 @@ import {
   findRestCellAroundPoint,
   getCurrentOutsideRestSite,
   getNearestShelter,
-  isVisibleFireCampInSight,
+  isUsableFireCampForRest,
   type UnitRestSite,
 } from './UnitRestShelter'
 
@@ -46,10 +46,6 @@ function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' 
 
 export function isSleepTime(context: GameContextLike): boolean {
   return isVillagerSleepTime(context)
-}
-
-function isVillager(unit: UnitEntity): boolean {
-  return unit.type === UNIT_TYPES.villager
 }
 
 function isHeroUnit(unit: UnitEntity): boolean {
@@ -203,8 +199,8 @@ export function getRestTransitionCell(unit: UnitEntity, restSite?: UnitRestSite 
 function getNearestFireCampRestSite(unit: UnitEntity): UnitRestSite | null {
   let best: { site: UnitRestSite; score: number } | null = null
   for (const building of unit.owner?.buildings ?? []) {
-    if (!isVisibleFireCampInSight(unit, building)) continue
-    const targetCell = findRestCellAroundPoint(unit, building)
+    if (!isUsableFireCampForRest(unit, building)) continue
+    const targetCell = findRestCellAroundPoint(unit, building, undefined, 2)
     if (!targetCell) continue
     const score = distance(unit, building)
     if (!best || score < best.score) best = { site: { location: 'outside', shelter: null, targetCell }, score }
@@ -212,21 +208,8 @@ function getNearestFireCampRestSite(unit: UnitEntity): UnitRestSite | null {
   return best?.site ?? null
 }
 
-function getCampAnchorRestSite(unit: UnitEntity): UnitRestSite | null {
-  const anchor = getBanditHomeAnchor(unit)
-  if (!anchor) return null
-  const targetCell = findRestCellAroundPoint(unit, anchor)
-  return targetCell ? { location: 'outside', shelter: null, targetCell } : null
-}
-
 export function getNearestRestSite(unit: UnitEntity): UnitRestSite | null {
-  if (isBanditUnit(unit)) return isBanditAtHome(unit) ? getCampAnchorRestSite(unit) : null
-  const fireCamp = getNearestFireCampRestSite(unit)
   const shelter = getNearestShelter(unit)
-  if (isVillager(unit) && shelter) {
-    return { location: 'shelter', shelter: shelter.shelter, targetCell: shelter.targetCell }
-  }
-  if (fireCamp) return fireCamp
   if (shelter) return { location: 'shelter', shelter: shelter.shelter, targetCell: shelter.targetCell }
-  return getCampAnchorRestSite(unit) ?? getCurrentOutsideRestSite(unit)
+  return getNearestFireCampRestSite(unit) ?? getCurrentOutsideRestSite(unit)
 }

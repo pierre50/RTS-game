@@ -11,7 +11,6 @@ import { hitPointRatio, restDistance } from './UnitRestMath'
 
 const CRITICAL_SHELTER_HITPOINT_RATIO = 0.25
 const REST_OUTSIDE_SEARCH_RADIUS = 4
-const DEFAULT_UNIT_SIGHT = 7
 
 export type UnitRestSite = {
   location: 'shelter' | 'outside'
@@ -85,7 +84,8 @@ export function getNearestShelter(unit: UnitEntity): { shelter: BuildingEntity; 
 export function findRestCellAroundPoint(
   unit: UnitEntity,
   anchor: Pick<RuntimeEntity, 'i' | 'j'>,
-  maxRadius = REST_OUTSIDE_SEARCH_RADIUS
+  maxRadius = REST_OUTSIDE_SEARCH_RADIUS,
+  minRadius = 0
 ): RuntimeCell | null {
   const map = unit.context?.map
   if (!map) return null
@@ -94,13 +94,16 @@ export function findRestCellAroundPoint(
 
   let best: { cell: RuntimeCell; score: number } | null = null
   const passageLookup = createReservedPassageCellLookup(unit.context)
-  for (let radius = 0; radius <= maxRadius; radius++) {
+  for (let radius = minRadius; radius <= maxRadius; radius++) {
     const cells = getCellsAroundPoint(
       anchor.i,
       anchor.j,
       grid,
       radius,
-      cell => canUnitUseCellAsIdleDestination(unit, cell, { passageLookup })
+      cell =>
+        !passageLookup.has(cell) &&
+        Math.max(Math.abs(cell.i - anchor.i), Math.abs(cell.j - anchor.j)) >= minRadius &&
+        canUnitUseCellAsIdleDestination(unit, cell, { passageLookup })
     )
     for (const cell of cells) {
       const score = restDistance(unit, cell) + restDistance(anchor, cell) * 0.35
@@ -112,12 +115,11 @@ export function findRestCellAroundPoint(
   return best?.cell ?? null
 }
 
-export function isVisibleFireCampInSight(unit: UnitEntity, building: BuildingEntity): boolean {
+export function isUsableFireCampForRest(unit: UnitEntity, building: BuildingEntity): boolean {
   if (!BUILDING_TYPES.fireCamp || building.type !== BUILDING_TYPES.fireCamp) return false
   if (building.isBuilt === false || building.isDead || building.isDestroyed) return false
   if (!sameMapSpace(unit, building)) return false
-  if (!isVisibleToUnit(unit, building)) return false
-  return restDistance(unit, building) <= (unit.sight ?? DEFAULT_UNIT_SIGHT)
+  return building.owner === unit.owner
 }
 
 export function getCurrentOutsideRestSite(unit: UnitEntity): UnitRestSite | null {

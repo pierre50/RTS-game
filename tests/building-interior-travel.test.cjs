@@ -359,14 +359,7 @@ test('entering a building interior restores held movement after the runtime laye
 
   await travelIntoBuildingInterior(game, building)
 
-  assert.deepEqual(calls, [
-    'capture',
-    ['input', false],
-    'open',
-    'release',
-    ['input', true],
-    ['restore', heldMovement],
-  ])
+  assert.deepEqual(calls, ['capture', ['input', false], 'open', 'release', ['input', true], ['restore', heldMovement]])
 })
 
 test('mounted hero cannot enter non-stable building interiors', async () => {
@@ -507,14 +500,7 @@ test('leaving a building interior runtime layer restores held movement after the
 
   await travelOutOfBuildingInterior(game)
 
-  assert.deepEqual(calls, [
-    'capture',
-    ['input', false],
-    'close',
-    'release',
-    ['input', true],
-    ['restore', heldMovement],
-  ])
+  assert.deepEqual(calls, ['capture', ['input', false], 'close', 'release', ['input', true], ['restore', heldMovement]])
 })
 
 test('entering a building interior opens the runtime layer and removes stale child worlds', async () => {
@@ -1587,84 +1573,99 @@ test('runtime occupants route out through their local interior space even while 
   assert.equal(sleeper.interiorExitState, null)
 })
 
-test('runtime sleepers resume stored work from the local exit transfer completion', () => {
-  const routed = []
-  const sent = []
-  const scheduler = {
-    elapsedMs: 0,
-    nextId: 1,
-    tasks: new Map(),
-    add(callback, interval, name) {
-      const id = this.nextId++
-      this.tasks.set(id, { callback, interval, name })
-      return id
-    },
-    remove(id) {
-      this.tasks.delete(id)
-    },
-  }
-  const space = { id: 'building-space', exitCell: { i: 2, j: 2 } }
-  const stone = { label: 'stone-pile', i: 8, j: 9, isDestroyed: false }
-  const sleeper = {
-    action: null,
-    controlMode: 'standard',
-    followingHero: false,
-    getActionCondition: (target, action) => target === stone && action === 'minestone',
-    isDead: false,
-    isDestroyed: false,
-    label: 'sleeper',
-    path: [],
-    sendToEvt(target, action, options) {
-      sent.push([target.label, action, options])
-      this.dest = target
-      this.action = action
-    },
-    shelterState: null,
-    spaceId: 'building-space',
-    type: 'Villager',
-  }
-  const context = {
-    dayNight: { state: { hour: 10 } },
-    map: { grid: makeGrid(16), mapType: 'world-region', size: 15 },
-    scheduler,
-  }
-  const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
-    getBuildingInteriorSpaceForUnit: unit => (unit === sleeper && unit.spaceId === 'building-space' ? space : null),
-    routeUnitOutOfBuildingInteriorSpace: (ctx, unit, targetSpace, options) => {
-      routed.push([ctx, unit.label, targetSpace.id])
-      unit.spaceId = 'outside'
-      options?.onTransferred?.()
-      return true
-    },
-  })
-  const game = {
-    _campaignSave: null,
-    _isBuildingInteriorLayerOpen: () => false,
-    _isRestarting: false,
-    _restartSaveData: null,
-    context,
-    _gameContext() {
-      return context
-    },
-    _map() {
-      return context.map
-    },
-  }
+for (const wakeHour of [6, 10]) {
+  test(`runtime sleepers waking at ${wakeHour} retain their exit request and resume stored work`, () => {
+    const routed = []
+    const sent = []
+    const scheduler = {
+      elapsedMs: 0,
+      nextId: 1,
+      tasks: new Map(),
+      add(callback, interval, name) {
+        const id = this.nextId++
+        this.tasks.set(id, { callback, interval, name })
+        return id
+      },
+      remove(id) {
+        this.tasks.delete(id)
+      },
+    }
+    const space = { id: 'building-space', exitCell: { i: 2, j: 2 } }
+    const stone = { label: 'stone-pile', i: 8, j: 9, isDestroyed: false }
+    const sleeper = {
+      action: null,
+      controlMode: 'standard',
+      followingHero: false,
+      getActionCondition: (target, action) => target === stone && action === 'minestone',
+      isDead: false,
+      isDestroyed: false,
+      label: 'sleeper',
+      path: [],
+      sendToEvt(target, action, options) {
+        sent.push([target.label, action, options])
+        this.dest = target
+        this.action = action
+      },
+      shelterState: null,
+      spaceId: 'building-space',
+      type: 'Villager',
+    }
+    const context = {
+      dayNight: { state: { hour: wakeHour } },
+      map: { grid: makeGrid(16), mapType: 'world-region', size: 15 },
+      scheduler,
+    }
+    sleeper.context = context
+    const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
+      getBuildingInteriorSpaceForUnit: unit => (unit === sleeper && unit.spaceId === 'building-space' ? space : null),
+      routeUnitOutOfBuildingInteriorSpace: (ctx, unit, targetSpace, options) => {
+        routed.push([ctx, unit.label, targetSpace.id])
+        unit.spaceId = 'outside'
+        options?.onTransferred?.()
+        return true
+      },
+    })
+    const game = {
+      _campaignSave: null,
+      _isBuildingInteriorLayerOpen: () => false,
+      _isRestarting: false,
+      _restartSaveData: null,
+      context,
+      _gameContext() {
+        return context
+      },
+      _map() {
+        return context.map
+      },
+    }
 
-  routeInteriorUnitToExit(game, sleeper, {
-    action: 'minestone',
-    autonomousJob: 'stone',
-    dest: stone,
-    work: 'stonecutter',
-  })
+    routeInteriorUnitToExit(game, sleeper, {
+      action: 'minestone',
+      autonomousJob: 'stone',
+      dest: stone,
+      work: 'stonecutter',
+    })
 
-  assert.deepEqual(routed, [[context, 'sleeper', 'building-space']])
-  assert.deepEqual(sent, [['stone-pile', 'minestone', { forceRepath: true, preserveAutonomy: true }]])
-  assert.equal(sleeper.interiorExitState, null)
-  assert.equal(sleeper.work, 'stonecutter')
-  assert.equal(sleeper.autonomousJob, 'stone')
-  assert.equal(scheduler.tasks.size, 0)
-})
+    if (wakeHour === 6) {
+      assert.deepEqual(routed, [])
+      assert.equal(scheduler.tasks.size, 1)
+      for (const { callback } of scheduler.tasks.values()) callback()
+      assert.deepEqual(routed, [])
+      assert.equal(sleeper.interiorExitState.returnTask.dest, stone)
+      assert.equal(sleeper.interiorExitState.retryCount, 0)
+      context.dayNight.state.hour = 8
+      scheduler.elapsedMs = 10000
+      for (const { callback } of [...scheduler.tasks.values()]) callback()
+    }
+
+    assert.deepEqual(routed, [[context, 'sleeper', 'building-space']])
+    assert.deepEqual(sent, [['stone-pile', 'minestone', { forceRepath: true, preserveAutonomy: true }]])
+    assert.equal(sleeper.interiorExitState, null)
+    assert.equal(sleeper.work, 'stonecutter')
+    assert.equal(sleeper.autonomousJob, 'stone')
+    assert.equal(scheduler.tasks.size, 0)
+  })
+}
 
 test('daytime time jump wakes local interior occupants while the interior layer is closed', () => {
   const calls = []

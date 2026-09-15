@@ -40,6 +40,21 @@ test('gold miner diagnostics require a browser and an active or remembered gold 
   assert.equal(value.returnTask, null)
 })
 
+test('stone diagnostics trace knowledge, route rejection and exploration with a distinct prefix', t => {
+  const info = t.mock.method(console, 'info', () => {})
+  const log = load({}, {})
+  log({ autonomousJob: 'stone' }, 'autonomy.stone-knowledge', { knownUsableStones: 1 })
+  log({ work: 'stoneminer' }, 'autonomy.candidate-skipped', { reason: 'no-contact-path', target: 'stone-1' })
+  log({}, 'autonomy.exploration-started', { job: 'stone' })
+  log({}, 'job.resume.requested', {}, { action: 'minestone' })
+  assert.equal(info.mock.callCount(), 4)
+  for (const call of info.mock.calls) assert.equal(call.arguments[0], '[stone-miner]')
+  assert.equal(info.mock.calls[0].arguments[1].knownUsableStones, 1)
+  assert.equal(info.mock.calls[1].arguments[1].reason, 'no-contact-path')
+  assert.equal(info.mock.calls[1].arguments[1].target, 'stone-1')
+  assert.equal(info.mock.calls[2].arguments[1].event, 'autonomy.exploration-started')
+})
+
 test('gold miner diagnostics record target, blocked approach, delivery and return-task state', t => {
   const info = t.mock.method(console, 'info', () => {})
   const log = load({}, {})

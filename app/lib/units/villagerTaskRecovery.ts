@@ -4,6 +4,7 @@ import { assignVillagerAutonomy } from './villagerAutonomy'
 import { getAutonomyJobForWork } from './villagerAutonomyTargeting'
 import { logGoldMinerFlow } from './autonomy/villagerJobDiagnostics'
 import { sendUnitToMiningAction } from './miningActions'
+import { isPursuingRememberedTarget } from './targetPursuit'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -71,6 +72,7 @@ function taskCommandWasAccepted(
   result: unknown
 ): boolean {
   if (result === false) return false
+  if (isRuntimeEntity(dest) && isPursuingRememberedTarget(unit, dest, action)) return true
   if (sameDestination(unit.dest, dest) && (!action || unit.action === action)) return true
   if (
     isRuntimeEntity(dest) &&

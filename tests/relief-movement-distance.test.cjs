@@ -35,7 +35,8 @@ for (const axis of ['i', 'j'])
       const step = distance(map, p, { x: 0, y: 130 + direction * 10 }, 0.5)
       const next = { x: 0, y: 130 + direction * step }
       const visible = Math.abs(next.y - 16 * height(map, next) - (p.y - 16 * height(map, p)))
-      assert.ok(visible > 0.295 && visible <= 0.301)
+      // Steep slopes retain 85% of the normal projected walking speed.
+      assert.ok(visible > 0.42 && visible <= 0.426)
     }
   })
 

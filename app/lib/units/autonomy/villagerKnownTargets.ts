@@ -5,6 +5,7 @@ import { getGaiaAnimals } from '../../playerState'
 import { isWildHorse } from '../../horses/horseTaming'
 import { canVillagerAutonomouslyHunt } from '../villagerHunting'
 import { targetWorkerLoad } from '../villagerAutonomyTargeting'
+import { logGoldMinerFlow } from './villagerJobDiagnostics'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../../types/entities'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
@@ -12,7 +13,15 @@ function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is Runt
 }
 
 function isUsableResource(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
-  return Boolean(isAliveEntity(entity) && entity.family === FAMILY_TYPES.resource && (entity.quantity ?? 1) > 0)
+  // A felled tree has no hit points but remains harvestable until its wood is depleted.
+  return Boolean(
+    entity &&
+      !entity.isDead &&
+      !entity.isDestroyed &&
+      (entity.type === RESOURCE_TYPES.tree || (entity.hitPoints ?? 1) > 0) &&
+      entity.family === FAMILY_TYPES.resource &&
+      (entity.quantity ?? 1) > 0
+  )
 }
 
 function isUsableAnimalCarcass(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
@@ -56,14 +65,53 @@ function knownState(unit: UnitEntity, entity: RuntimeEntity): RuntimeEntity {
   return (knownTarget(unit.owner, entity) ?? {}) as RuntimeEntity
 }
 
-export function knownResources(unit: UnitEntity, type: string): RuntimeEntity[] {
+export function knownResources(unit: UnitEntity, type: string, diagnose = false): RuntimeEntity[] {
   const owner = unit.owner
   const resources = new Set([...(unit.context?.map?.resources ?? []), ...rememberedStaticTargets(unit.owner)])
   const founded = owner?.foundedResources?.[type]
   const source = [...new Set([...(founded ?? []), ...resources])]
-  return source.filter(
+  const targets = source.filter(
     resource => resource.type === type && isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
   )
+  if (diagnose && type === RESOURCE_TYPES.stone) {
+    const hero = unit.context?.controls?.heroUnit
+    const stones = source.filter(resource => resource.type === type)
+    logGoldMinerFlow(unit, 'autonomy.stone-knowledge', {
+      job: 'stone',
+      sameOwnerAsHero: hero ? hero.owner === owner : null,
+      totalStones: stones.length,
+      knownUsableStones: targets.length,
+      nearestStones: stones
+        .sort(
+          (a, b) => Math.abs(unit.i - a.i) + Math.abs(unit.j - a.j) - Math.abs(unit.i - b.i) - Math.abs(unit.j - b.j)
+        )
+        .slice(0, 10)
+        .map(resource => {
+          const sameSpace = sameMapSpace(unit, resource)
+          const observation = sameSpace ? knownTarget(owner, resource) : undefined
+          return {
+            label: resource.label,
+            i: resource.i,
+            j: resource.j,
+            space: resource.spaceId ?? 'outside',
+            knownToVillager: Boolean(observation),
+            economicallyKnownToHero: hero ? knowsEconomicTarget(hero.owner, resource) : null,
+            observedHitPoints: observation?.hitPoints ?? null,
+            observedQuantity: observation?.quantity ?? null,
+            observedDead: observation?.isDead ?? null,
+            observedDestroyed: observation?.isDestroyed ?? null,
+            reason: !sameSpace
+              ? 'different-space'
+              : !observation
+                ? 'unknown'
+                : !targets.includes(resource)
+                  ? 'unusable-resource'
+                  : 'candidate',
+          }
+        }),
+    })
+  }
+  return targets
 }
 
 export function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {

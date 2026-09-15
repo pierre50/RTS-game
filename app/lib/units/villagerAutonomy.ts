@@ -193,7 +193,7 @@ function assignResourceAutonomy(
 ): boolean {
   const resourceJob = job
   const resourceConfig = RESOURCE_AUTONOMY_CONFIG[resourceJob]
-  const targets = knownResources(unit, resourceConfig.resourceType)
+  const targets = knownResources(unit, resourceConfig.resourceType, true)
   if (!targets.length) {
     logGoldMinerFlow(unit, 'autonomy.no-known-target', { job })
     return noStrictTargetForAutonomy(unit, job, options)

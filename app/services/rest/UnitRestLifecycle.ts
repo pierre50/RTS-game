@@ -14,10 +14,14 @@ import {
   type UnitRestSite,
 } from './UnitRestRules'
 import { enterShelterInstant, putRestingUnitToSleep, sleepOutside, waitOutsideForSleep } from './UnitRestSleep'
-import { rememberRestState } from './UnitRestState'
+import { placeUnitAtCell, rememberRestState } from './UnitRestState'
 
 type RestTransitionOptions = {
   transition?: boolean
+}
+
+function isCurrentOutsideRestSite(unit: UnitEntity, site: UnitRestSite): boolean {
+  return site.location === 'outside' && site.targetCell.i === unit.i && site.targetCell.j === unit.j
 }
 
 function sendUnitToRestSite(
@@ -76,7 +80,7 @@ export function sendUnitToRest(unit: UnitEntity, reason: UnitRestReason, options
     }
     return false
   }
-  if (unit.type === UNIT_TYPES.villager && restSite.location === 'outside') {
+  if (unit.type === UNIT_TYPES.villager && isCurrentOutsideRestSite(unit, restSite)) {
     waitOutsideForSleep(unit)
     if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
     return true
@@ -91,7 +95,7 @@ export function continueRestAfterDelivery(unit: UnitEntity): boolean {
   if (unit.shelterState?.reason !== 'sleep' || unit.shelterState.status !== 'delivering') return false
   const state = unit.shelterState
   const restSite = getNearestRestSite(unit)
-  if (!restSite || restSite.location === 'outside') {
+  if (!restSite || isCurrentOutsideRestSite(unit, restSite)) {
     waitOutsideForSleep(unit)
     if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
     return true
@@ -104,7 +108,7 @@ export function rerouteRestUnit(unit: UnitEntity): boolean {
   const state = unit.shelterState
   if (!state?.reason) return false
   const restSite = getNearestRestSite(unit)
-  if (!restSite || restSite.location === 'outside') {
+  if (!restSite || isCurrentOutsideRestSite(unit, restSite)) {
     waitOutsideForSleep(unit)
     if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
     return true
@@ -120,6 +124,7 @@ export function settleUnitRestForTimeJump(unit: UnitEntity, sleep: boolean): boo
   if (state.status === 'movingToRest' && isUsableShelter(state.shelter, unit.owner)) {
     enterShelterInstant(unit, state.shelter)
   } else if (state.status === 'movingToRest') {
+    if (state.location === 'outside' && state.targetCell) placeUnitAtCell(unit, state.targetCell)
     waitOutsideForSleep(unit)
   }
   if (sleep) putRestingUnitToSleep(unit, { instant: true })

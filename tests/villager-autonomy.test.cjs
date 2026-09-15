@@ -197,6 +197,38 @@ function createVillager(owner, extra = {}) {
   return villager
 }
 
+test('wood autonomy resumes harvesting a nearby felled tree before choosing a farther standing tree', () => {
+  const { resumeVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const felledTree = {
+    type: 'Tree',
+    family: 'resource',
+    label: 'felled-tree',
+    i: 1,
+    j: 0,
+    hitPoints: 0,
+    quantity: 25,
+    isDead: false,
+    isDestroyed: false,
+  }
+  const standingTree = { ...felledTree, label: 'standing-tree', i: 10, hitPoints: 10 }
+  const owner = createOwner()
+  const unit = createVillager(owner, {
+    autonomousJob: 'wood',
+    context: { map: { resources: [felledTree, standingTree] } },
+  })
+
+  assert.equal(resumeVillagerAutonomy(unit), true)
+  assert.equal(unit.dest, felledTree)
+  assert.equal(unit.action, constants.ACTION_TYPES.chopwood)
+
+  unit.context.map.resources = [felledTree]
+  assert.equal(hasVillagerAutonomyTarget(unit, 'wood'), true)
+  for (const patch of [{ quantity: 0 }, { isDead: true }, { isDestroyed: true }]) {
+    unit.context.map.resources = [{ ...felledTree, ...patch }]
+    assert.equal(hasVillagerAutonomyTarget(unit, 'wood'), false)
+  }
+})
+
 test('food hunts known living game immediately and switches to meat after the kill', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const deer = { type: 'Deer', family: 'animal', label: 'deer', i: 3, j: 3, hitPoints: 12, quantity: 20 }

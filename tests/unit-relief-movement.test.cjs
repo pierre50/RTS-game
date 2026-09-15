@@ -2,6 +2,9 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const maths = loadTsModule('app/lib/maths.ts')
+const { moveTowardPoint } = loadTsModule('app/lib/grid/movement.ts', {
+  mocks: { '../../services/Pathfinding': {}, './cells': {}, '../mapSpaces': {} },
+})
 const noop = () => {}
 
 function fixture() {
@@ -22,11 +25,7 @@ function fixture() {
       playMovementSurfaceAudio: noop,
       updateInstanceVisibility: noop,
       updateInstanceRenderVisibility: noop,
-      moveTowardPoint: (unit, x, y, speed) => {
-        const distance = Math.hypot(x - unit.x, y - unit.y)
-        unit.x += ((x - unit.x) / distance) * speed
-        unit.y += ((y - unit.y) / distance) * speed
-      },
+      moveTowardPoint,
     },
     '../../../lib/units/targetPursuit': { updateTargetPursuit: () => false },
     '../../../lib/units/unitControl': { isHeroControlled: () => false },

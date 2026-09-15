@@ -1,4 +1,7 @@
 import { FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
+import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
+import { getEntityCell } from '../../lib/mapSpaces'
+import { findRestCellAroundPoint } from './UnitRestShelter'
 import { isBuildingInteriorSupported } from '../../lib/buildings/interiors'
 import { cancelFade, fadeOut } from '../../lib/entities/entityFade'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
@@ -59,7 +62,40 @@ function prepareUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): vo
   clearUnitOverheadIndicator(unit)
 }
 
+function leavePassageBeforeRest(unit: UnitEntity, reason: UnitRestReason, instant = false): boolean {
+  const passages = createReservedPassageCellLookup(unit.context)
+  if (!passages.has(getEntityCell(unit, unit.context?.map))) return false
+  const targetCell = findRestCellAroundPoint(unit, unit, 5)
+  cancelSleepingWakeVisual(unit)
+  cancelFade(unit)
+  unit.alpha = 1
+  unit.visible = true
+  setDetachedShadowsVisible(unit, true)
+  clearSleepingVisualState(unit)
+  clearUnitOverheadIndicator(unit)
+  stopUnitForRest(unit)
+  unit.actionLocked = false
+  unit.dest = null
+  unit.action = null
+  if (instant && targetCell) {
+    placeUnitAtCell(unit, targetCell)
+    return false
+  }
+  rememberRestState(unit, {
+    status: 'movingToRest',
+    reason,
+    location: 'outside',
+    shelter: null,
+    targetCell,
+    startedAtMs: unit.context?.scheduler?.elapsedMs ?? 0,
+    retryCount: 0,
+  })
+  if (targetCell) unit.sendToEvt?.(targetCell, null, { forceRepath: true, preserveAutonomy: true })
+  return true
+}
+
 export function waitOutsideForSleep(unit: UnitEntity): void {
+  if (leavePassageBeforeRest(unit, 'sleep')) return
   cancelSleepingWakeVisual(unit)
   rememberRestState(unit, { status: 'outside', reason: 'sleep', location: 'outside', shelter: null, targetCell: null })
   stopUnitForRest(unit)
@@ -78,6 +114,7 @@ export function sleepOutside(
   reason: UnitRestReason = unit.shelterState?.reason ?? 'sleep',
   options: { visual?: SleepOutsideVisualMode } = {}
 ): void {
+  if (leavePassageBeforeRest(unit, reason, options.visual === 'finalFrame')) return
   cancelSleepingWakeVisual(unit)
   rememberRestState(unit, { status: 'outside', reason, location: 'outside', shelter: null, targetCell: null })
   cancelFade(unit)
@@ -118,6 +155,7 @@ export function putRestingUnitToSleep(unit: UnitEntity, options: { instant?: boo
   const state = unit.shelterState
   if (!state || state.reason !== 'sleep') return false
   if (state.status === 'inside') {
+    if (createReservedPassageCellLookup(unit.context).has(getEntityCell(unit, unit.context?.map))) return false
     unit.actionLocked = true
     if (options.instant) setSleepingOutsideFinalVisual(unit)
     else playSleepingOutsideVisual(unit)

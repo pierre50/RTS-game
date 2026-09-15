@@ -2093,3 +2093,31 @@ test('assisted hunters stop when their hunted animal dies instead of switching t
   assert.deepEqual(calls, [['stop']])
   assert.equal(unit.followAssist, null)
 })
+
+
+test('direct conversation focus stops a chief and closing restores their previous walk', () => {
+  const { noticeNpc, releaseIfStillLooking } = loadNpcInteraction(null)
+  const destination = { i: 4, j: 5, has: null, corpses: new Set() }
+  let stopped = 0
+  let resumed
+  const npc = { x: 0, y: 0, dest: destination, path: [destination],
+    stopInterval() { stopped++ }, setTextures() {}, sendTo(dest) { resumed = dest } }
+  noticeNpc(npc, { x: 1, y: 1 }, false)
+  assert.equal(npc.lookingAtHero, true)
+  assert.equal(stopped, 1)
+  assert.deepEqual(npc.path, [])
+  noticeNpc(npc, { x: 1, y: 1 }, false)
+  assert.equal(npc.previousDest, destination)
+  releaseIfStillLooking([npc])
+  assert.equal(resumed, destination)
+})
+
+test('closing a conversation never replaces an attack with the previous job', () => {
+  const { releaseIfStillLooking } = loadNpcInteraction(null)
+  const enemy = { label: 'enemy' }
+  const npc = { lookingAtHero: true, action: constants.ACTION_TYPES.attack, dest: enemy,
+    previousDest: { i: 2, j: 2 }, goBackToPrevious() { assert.fail('Combat was interrupted') } }
+  releaseIfStillLooking([npc])
+  assert.equal(npc.dest, enemy)
+  assert.equal(npc.previousDest, null)
+})

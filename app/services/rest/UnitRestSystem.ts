@@ -1,9 +1,12 @@
+import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
+import { getEntityCell } from '../../lib/mapSpaces'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import {
   getRestReturnTask,
   putRestingUnitToSleep,
   sendUnitToRest,
+  sleepOutside,
   settleUnitRestForTimeJump,
   wakeUnit,
 } from './UnitRestLifecycle'
@@ -254,9 +257,14 @@ export class UnitRestSystem {
   }
 
   updateSleepingOutsideVisuals(units = this.collectUnits().restUnits): void {
+    const passages = createReservedPassageCellLookup(this.context)
     for (const unit of units) {
       if (unit.shelterState?.status !== 'outside') continue
       if (unit.sleepVisualState !== 'sleeping') continue
+      if (passages.has(getEntityCell(unit, this.context.map))) {
+        sleepOutside(unit)
+        continue
+      }
       keepSleepingOutsideVisual(unit)
       setUnitOverheadIndicator(unit, 'sleep')
     }

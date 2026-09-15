@@ -177,6 +177,7 @@ function buildMocks(calls, context) {
       },
     },
     '../lib/npc/npcInteraction': {
+      noticeNpc: npc => { npc.lookingAtHero = true },
       sendNpcToStockpile: () => calls.push(['sendNpcToStockpile', `paused=${context.paused}`]),
       keepNpcHere: () => calls.push(['keepNpcHere', `paused=${context.paused}`]),
       startFollowingHero: () => calls.push(['startFollowingHero', `paused=${context.paused}`]),
@@ -321,6 +322,7 @@ test('foreign AI units never expose direct order buttons', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
+    context.controls.heroUnit = { owner: context.player }
     const menu = { context }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const manager = new NpcOrdersManager(menu)
@@ -329,6 +331,7 @@ test('foreign AI units never expose direct order buttons', () => {
     manager.open([npc])
 
     assert.equal(manager.buttonsContainer.hidden, true)
+    assert.equal(npc.lookingAtHero, true)
     assert.equal(manager.chatterContainer.children[0].textContent, 'foreign hi')
   })
 })

@@ -621,11 +621,150 @@ test('military units prefer a visible fire camp before sleeping outside', () => 
   assert.equal(soldier.shelterState.status, 'movingToRest')
   assert.equal(soldier.shelterState.location, 'outside')
   assert.equal(soldier.shelterState.shelter, null)
-  assert.ok(
-    Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) +
-      Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <=
-      1
+  assert.equal(
+    Math.max(
+      Math.abs(soldier.shelterState.targetCell.i - fireCamp.i),
+      Math.abs(soldier.shelterState.targetCell.j - fireCamp.j)
+    ),
+    2
   )
+})
+
+test('villagers walk to a visible fire camp and sleep upon arrival', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createUnit(owner, { label: 'villager', type: constants.UNIT_TYPES.villager, sight: 12 })
+  const context = createContext(23, [owner], calls)
+  const fireCamp = {
+    label: 'fire',
+    type: constants.BUILDING_TYPES.fireCamp,
+    owner,
+    isBuilt: true,
+    i: 5,
+    j: 5,
+    visible: true,
+  }
+  context.map.grid[5][5].has = fireCamp
+  context.map.grid[5][5].solid = true
+  owner.buildings.push(fireCamp)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  const system = new UnitRestSystem(context)
+
+  assert.equal(villager.shelterState.status, 'movingToRest')
+  assert.equal(villager.shelterState.location, 'outside')
+  assert.equal(villager.shelterState.shelter, null)
+  assert.equal(
+    Math.max(
+      Math.abs(villager.shelterState.targetCell.i - fireCamp.i),
+      Math.abs(villager.shelterState.targetCell.j - fireCamp.j)
+    ),
+    2
+  )
+  const target = villager.shelterState.targetCell
+  assert.equal(villager.dest, target)
+  assert.notEqual(villager.sleepVisualState, 'sleeping')
+  villager.i = target.i
+  villager.j = target.j
+  villager.currentCell = target
+  villager.path = []
+  system.updateRestingUnit(villager)
+  assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.sleepVisualState, 'sleeping')
+})
+
+test('villagers reach their fire outside sight and current fog visibility', () => {
+  const calls = []
+  const owner = { units: [], buildings: [], views: { isVisible: () => false } }
+  const villager = createUnit(owner, { label: 'villager', type: constants.UNIT_TYPES.villager, sight: 1 })
+  const context = createContext(23, [owner], calls)
+  const fireCamp = {
+    label: 'fire',
+    type: constants.BUILDING_TYPES.fireCamp,
+    owner,
+    isBuilt: true,
+    i: 5,
+    j: 5,
+    visible: false,
+  }
+  context.map.grid[5][5].has = fireCamp
+  context.map.grid[5][5].solid = true
+  owner.buildings.push(fireCamp)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  const system = new UnitRestSystem(context)
+
+  assert.equal(villager.shelterState.status, 'movingToRest')
+  assert.equal(villager.shelterState.location, 'outside')
+  assert.equal(villager.shelterState.shelter, null)
+  assert.equal(
+    Math.max(
+      Math.abs(villager.shelterState.targetCell.i - fireCamp.i),
+      Math.abs(villager.shelterState.targetCell.j - fireCamp.j)
+    ),
+    2
+  )
+  const target = villager.shelterState.targetCell
+  assert.equal(villager.dest, target)
+  assert.notEqual(villager.sleepVisualState, 'sleeping')
+  villager.i = target.i
+  villager.j = target.j
+  villager.currentCell = target
+  villager.path = []
+  system.updateRestingUnit(villager)
+  assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.sleepVisualState, 'sleeping')
+})
+
+test('camp bandits use a real fire rather than their patrol anchor', () => {
+  const calls = []
+  const owner = { units: [], buildings: [], type: constants.PLAYER_TYPES.bandits }
+  const bandit = createUnit(owner, {
+    label: 'bandit',
+    type: constants.UNIT_TYPES.banditSword,
+    sight: 12,
+    campPatrolAnchor: { i: 0, j: 1 },
+  })
+  const context = createContext(23, [owner], calls)
+  const fireCamp = {
+    label: 'fire',
+    type: constants.BUILDING_TYPES.fireCamp,
+    owner,
+    isBuilt: true,
+    i: 5,
+    j: 5,
+    visible: true,
+  }
+  context.map.grid[5][5].has = fireCamp
+  context.map.grid[5][5].solid = true
+  owner.buildings.push(fireCamp)
+  bandit.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  const system = new UnitRestSystem(context)
+
+  assert.equal(bandit.shelterState.status, 'movingToRest')
+  assert.equal(bandit.shelterState.location, 'outside')
+  assert.equal(bandit.shelterState.shelter, null)
+  assert.equal(
+    Math.max(
+      Math.abs(bandit.shelterState.targetCell.i - fireCamp.i),
+      Math.abs(bandit.shelterState.targetCell.j - fireCamp.j)
+    ),
+    2
+  )
+  const target = bandit.shelterState.targetCell
+  assert.equal(bandit.dest, target)
+  assert.notEqual(bandit.sleepVisualState, 'sleeping')
+  bandit.i = target.i
+  bandit.j = target.j
+  bandit.currentCell = target
+  bandit.path = []
+  system.updateRestingUnit(bandit)
+  assert.equal(bandit.shelterState.status, 'outside')
+  assert.equal(bandit.sleepVisualState, 'sleeping')
 })
 
 test('military units use building shelters when no visible fire camp is available', () => {
@@ -647,7 +786,7 @@ test('military units use building shelters when no visible fire camp is availabl
   assert.equal(soldier.dest, entry)
 })
 
-test('military units prefer visible fire camps over building shelters', () => {
+test('military units prefer building shelters over visible fire camps', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 1, j: 1 }
@@ -671,13 +810,8 @@ test('military units prefer visible fire camps over building shelters', () => {
   new UnitRestSystem(context)
 
   assert.equal(soldier.shelterState.status, 'movingToRest')
-  assert.equal(soldier.shelterState.location, 'outside')
-  assert.equal(soldier.shelterState.shelter, null)
-  assert.ok(
-    Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) +
-      Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <=
-      1
-  )
+  assert.equal(soldier.shelterState.location, 'shelter')
+  assert.equal(soldier.shelterState.shelter, house)
 })
 
 test('time jump to night settles military sleepers around a visible fire camp instantly', () => {
@@ -706,7 +840,7 @@ test('time jump to night settles military sleepers around a visible fire camp in
 
   assert.equal(soldier.shelterState.status, 'outside')
   assert.equal(soldier.currentSheet, constants.SHEET_TYPES.dying)
-  assert.ok(Math.abs(soldier.i - fireCamp.i) + Math.abs(soldier.j - fireCamp.j) <= 1)
+  assert.equal(Math.max(Math.abs(soldier.i - fireCamp.i), Math.abs(soldier.j - fireCamp.j)), 2)
   assert.equal(soldier.sprite.loop, false)
 })
 
@@ -766,7 +900,7 @@ test('time jump to night keeps hostile military attackers awake during an extern
   assert.equal(soldier.action, constants.ACTION_TYPES.attack)
 })
 
-test('time jump to night lets camp bandits sleep near their camp anchor', () => {
+test('time jump to night lets camp bandits sleep in place without a fire', () => {
   const calls = []
   const owner = { units: [], buildings: [], name: 'Bandits', type: constants.PLAYER_TYPES.bandits }
   const anchor = { i: 5, j: 5 }
@@ -790,7 +924,8 @@ test('time jump to night lets camp bandits sleep near their camp anchor', () => 
 
   assert.equal(bandit.shelterState.reason, 'sleep')
   assert.equal(bandit.shelterState.status, 'outside')
-  assert.ok(Math.abs(bandit.i - anchor.i) + Math.abs(bandit.j - anchor.j) <= 4)
+  assert.equal(bandit.i, 6)
+  assert.equal(bandit.j, 5)
 })
 
 test('sleeping military wake on hero insight and do not immediately sleep again', () => {
@@ -2155,3 +2290,85 @@ test('critical shelters eject hidden villagers', () => {
   assert.equal(villager.i, entry.i)
   assert.equal(villager.j, entry.j)
 })
+
+for (const type of [constants.UNIT_TYPES.villager, constants.UNIT_TYPES.infantry, constants.UNIT_TYPES.banditSword]) {
+  test(`${type} leaves the door instead of sleeping there when interior entry fails`, () => {
+    const calls = []
+    const owner = { units: [], buildings: [] }
+    const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+    owner.buildings.push(house)
+    const unit = createUnit(owner, { type, i: 6, j: 7, campPatrolAnchor: { i: 5, j: 5 } })
+    const context = createContext(23, [owner], calls)
+    unit.context = context
+    const entry = context.map.grid[6][7]
+    unit.currentCell = entry
+    entry.place(unit)
+    const UnitRestSystem = loadUnitRestSystem(calls, {}, {
+      '../BuildingInteriorSpaceSystem': { moveUnitToBuildingInteriorSleep: () => false },
+    })
+    const system = new UnitRestSystem(context)
+    assert.equal(unit.shelterState.status, 'movingToRest')
+    assert.notEqual(unit.sleepVisualState, 'sleeping')
+    const target = unit.shelterState.targetCell
+    assert.ok(target)
+    assert.notEqual(target, entry)
+    assert.equal(unit.dest, target)
+    unit.i = target.i
+    unit.j = target.j
+    unit.currentCell = target
+    system.updateRestingUnit(unit)
+    assert.equal(unit.sleepVisualState, 'sleeping')
+  })
+}
+
+test('an existing outside sleeper on a door wakes and moves off it', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  const unit = createUnit(owner, {
+    i: 6, j: 7, sleepVisualState: 'sleeping',
+    shelterState: { status: 'outside', reason: 'sleep', location: 'outside', shelter: null },
+  })
+  const context = createContext(23, [owner], calls)
+  unit.context = context
+  unit.currentCell = context.map.grid[6][7]
+  unit.currentCell.place(unit)
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  new UnitRestSystem(context)
+  assert.equal(unit.shelterState.status, 'movingToRest')
+  assert.notEqual(unit.sleepVisualState, 'sleeping')
+  assert.notEqual(unit.dest, unit.currentCell)
+})
+
+for (const blocked of [false, true]) {
+  test(`a time jump never settles a sleeper on a door, with surrounding cells blocked: ${blocked}`, () => {
+    const calls = []
+    const owner = { units: [], buildings: [] }
+    const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+    owner.buildings.push(house)
+    const context = createContext(23, [owner], calls)
+    const UnitRestSystem = loadUnitRestSystem(calls)
+    const system = new UnitRestSystem(context)
+    const unit = createUnit(owner, {
+      i: 6, j: 7, sleepVisualState: 'sleeping',
+      shelterState: { status: 'outside', reason: 'sleep', location: 'outside', shelter: null },
+    })
+    unit.context = context
+    const entry = context.map.grid[6][7]
+    unit.currentCell = entry
+    entry.place(unit)
+    if (blocked) {
+      for (const row of context.map.grid) for (const cell of row) cell.solid = true
+    }
+    system.synchronizeAfterTimeJump()
+    if (blocked) {
+      assert.notEqual(unit.sleepVisualState, 'sleeping')
+      assert.equal(unit.shelterState.status, 'movingToRest')
+      assert.equal(unit.shelterState.targetCell, null)
+    } else {
+      assert.notEqual(unit.currentCell, entry)
+      assert.equal(unit.sleepVisualState, 'sleeping')
+    }
+  })
+}

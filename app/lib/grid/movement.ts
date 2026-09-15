@@ -1,5 +1,5 @@
 import { findInstancePath, type PathfindingOptions } from '../../services/Pathfinding'
-import { randomItem, instancesDistance, pointsDistance, getInstanceDegree } from '../maths'
+import { randomItem, instancesDistance, getInstanceDegree } from '../maths'
 import { getCellsAroundPoint, getBuildingContactDistance } from './cells'
 import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../mapSpaces'
 import type { Grid, GridCell, GridInstanceLike, GridPosition, InstanceLike, Point } from '../../types/grid'
@@ -30,15 +30,21 @@ export function instanceContactInstance(a: InstanceLike, b: InstanceLike): boole
 type MovableInstance = Point & { degree?: number }
 
 export function moveTowardPoint(instance: MovableInstance, x: number, y: number, speed: number): void {
-  const dist = pointsDistance(x, y, instance.x, instance.y)
-  if (dist === 0) return
-
   const tX = x - instance.x
   const tY = y - instance.y
+  // Preserve fractional distances so the final step cannot stall near a cell centre.
+  const dist = Math.hypot(tX, tY)
+  if (dist === 0 || speed <= 0) return
+
+  instance.degree = getInstanceDegree(instance, x, y)
+  if (speed >= dist) {
+    instance.x = x
+    instance.y = y
+    return
+  }
   const velX = (tX / dist) * speed
   const velY = (tY / dist) * speed
 
-  instance.degree = getInstanceDegree(instance, x, y)
   instance.x += velX
   instance.y += velY
 }

@@ -91,8 +91,8 @@ function claimNeutralCommGroup(hero: UnitEntity, group: UnitEntity[]): void {
   }
 }
 
-function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true): void {
-  if (target.lookingAtHero) return
+export function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true): void {
+  if (target.lookingAtHero || target.isDead || target.isDestroyed || isFighting(target)) return
   const sleeping = target.shelterState?.reason === 'sleep' && target.sleepVisualState === 'sleeping'
   const sprite = target.sprite
   if (sprite && !sleeping) {
@@ -103,6 +103,7 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true)
   target.previousDest = target.dest ?? null
   target.lookingAtHero = true
   if (!sleeping) {
+    target.stopInterval?.()
     target.dest = null
     target.path = []
   }
@@ -142,6 +143,10 @@ export function playNpcOrderSound(npcs: UnitEntity[]): void {
 function releaseNpc(target: UnitEntity): void {
   if (!target.lookingAtHero) return
   target.lookingAtHero = false
+  if (isFighting(target)) {
+    target.previousDest = null
+    return
+  }
   if (target.shelterState?.reason === 'sleep') {
     target.context?.unitRest?.restoreSleepingUnitVisual(target)
     return

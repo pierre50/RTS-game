@@ -34,10 +34,18 @@ export function logGoldMinerFlow(
   details: Record<string, unknown> = {},
   task: UnitResourceDeliveryReturnTask | null | undefined = unit.resourceDeliveryState?.returnTask
 ): void {
-  if (!GOLD_MINER_FLOW_DEBUG || !isGoldMinerFlow(unit, task)) return
+  const stone =
+    details.job === 'stone' ||
+    unit.autonomousJob === 'stone' ||
+    unit.work === 'stoneminer' ||
+    unit.action === 'minestone' ||
+    task?.autonomousJob === 'stone' ||
+    task?.work === 'stoneminer' ||
+    task?.action === 'minestone'
+  if (!GOLD_MINER_FLOW_DEBUG || (!stone && !isGoldMinerFlow(unit, task))) return
   const clock = unit.context?.dayNight?.state
   const delivery = unit.resourceDeliveryState
-  console.info('[gold-miner]', {
+  console.info(stone ? '[stone-miner]' : '[gold-miner]', {
     event,
     unit: unit.label ?? null,
     time: clock ? `${String(clock.hour).padStart(2, '0')}:${String(clock.minute).padStart(2, '0')}` : null,
@@ -68,10 +76,10 @@ export function logGoldMinerFlow(
         }
       : null,
     gold: unit.inventory?.resources?.gold ?? 0,
+    stone: unit.inventory?.resources?.stone ?? 0,
     ...details,
   })
 }
-
 
 /** One snapshot per stationary-walking episode, called by the runtime monitor. */
 export function logStationaryVillager(unit: UnitEntity): void {
