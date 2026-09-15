@@ -1,10 +1,10 @@
 # Code Health Report
 
-Generated: 2026-09-14T12:37:55.963Z
+Generated: 2026-09-15T09:25:10.134Z
 
 ## Global Score
 
-**90/100 (A)**
+**87/100 (B)**
 
 Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **FAIL**.
 
@@ -14,7 +14,7 @@ Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **FA
 | Duplication | 20/20 |
 | Structure | 13/20 |
 | Architecture | 15/15 |
-| Hotspots | 8/10 |
+| Hotspots | 5/10 |
 | Tests and critical coverage | 9/10 |
 
 > The score is an indicator, not a certification. Every required check must pass, no cycle or duplication is allowed, and quality debt must not regress. Missing measurements make the audit INCOMPLETE.
@@ -27,24 +27,24 @@ Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **FA
 | Duplication | 20/20 | 0 |
 | Structure | 13/20 | 7 |
 | Architecture | 15/15 | 0 |
-| Hotspots | 8/10 | 2 |
+| Hotspots | 5/10 | 5 |
 | Tests and critical coverage | 9/10 | 1 |
 
-Largest score loss: **Structure (7 points)**. Gate blockers: Quality regressions: fail; 425 new or worsened debt finding(s).
+Largest score loss: **Structure (7 points)**. Gate blockers: Quality regressions: fail; 428 new or worsened debt finding(s).
 
 | Target Score | Max Risky Hotspots | Hotspots To Clear |
 | --- | --- | --- |
-| 91+ | 1 | 2 |
+| 91+ | 1 | 5 |
 | 95+ | 0 | Not reachable through hotspots alone |
 | 100+ | 0 | Not reachable through hotspots alone |
 
 ## Summary
 
 - Files analyzed: 788
-- Total lines: 108544
-- Code lines: 99803
-- AST branch decisions: 20857
-- AST functions/methods: 8508
+- Total lines: 108739
+- Code lines: 99969
+- AST branch decisions: 20932
+- AST functions/methods: 8516
 - Duplication: 0 clones, 0%
 - Import cycles: 0 cycles / baseline 0
 
@@ -58,14 +58,14 @@ Largest score loss: **Structure (7 points)**. Gate blockers: Quality regressions
 | Dead code | PASS |  |
 | Import cycles | PASS | 0 cycles / baseline gate 0 |
 | Typed async rules | PASS |  |
-| Behavior tests | PASS | 2220/2220 passed |
+| Behavior tests | PASS | 2273/2273 passed |
 | Critical branch coverage | PASS |  |
 | Source consistency | PASS |  |
 | Quality regressions | FAIL |  |
 
 ## Regression Control
 
-Baseline: loaded. Existing debt: **1493**. New or worsened findings: **425**.
+Baseline: loaded. Existing debt: **1493**. New or worsened findings: **428**.
 
 | Rule | File | Value | Limit |
 | --- | --- | --- | --- |
@@ -84,7 +84,7 @@ Baseline: loaded. Existing debt: **1493**. New or worsened findings: **425**.
 
 ## Critical Test Coverage
 
-Branch coverage: **80.08%** (4251/5308). All files in the configured critical domains are included, including files never loaded by tests. Existing per-file coverage cannot decrease; new files require 80% branch coverage.
+Branch coverage: **80.29%** (4336/5400). All files in the configured critical domains are included, including files never loaded by tests. Existing per-file coverage cannot decrease; new files require 80% branch coverage.
 
 | File | Branches covered | Percent |
 | --- | --- | --- |
@@ -122,15 +122,15 @@ Branch coverage: **80.08%** (4251/5308). All files in the configured critical do
 
 | File | Kind | Risk | LOC | Branches | Max Block | Churn 90d | Why |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| app/services/TributeRaidSystem.ts | runtime | 297.7 | 591 | 159 | 61 | 14 | complexite elevee, souvent modifie |
-| app/ui/NpcOrdersManager.ts | ui | 289.9 | 579 | 108 | 101 | 29 | complexite elevee, souvent modifie, beaucoup de dependances |
+| app/services/TributeRaidSystem.ts | runtime | 300.7 | 591 | 159 | 61 | 15 | complexite elevee, souvent modifie |
+| app/ui/NpcOrdersManager.ts | ui | 300.6 | 582 | 110 | 103 | 31 | complexite elevee, souvent modifie, beaucoup de dependances |
 | app/services/world/OfflineWorldWork.ts | runtime | 273.4 | 370 | 123 | 172 | 2 | complexite elevee |
-| app/services/quests/NeutralVillageQuests.ts | runtime | 252.4 | 341 | 157 | 52 | 2 | complexite elevee |
+| app/services/quests/NeutralVillageQuests.ts | runtime | 255.4 | 341 | 157 | 52 | 3 | complexite elevee |
 | app/serialization/SaveSerializer.ts | app | 242.7 | 533 | 74 | 88 | 56 | souvent modifie |
-| app/lib/resources/playerResourceTotals.ts | library | 231.6 | 324 | 135 | 62 | 7 | complexite elevee |
-| app/screens/Game.ts | ui | 222.2 | 599 | 48 | 39 | 58 | souvent modifie, beaucoup de dependances |
+| app/lib/resources/playerResourceTotals.ts | library | 234.6 | 324 | 135 | 62 | 8 | complexite elevee, souvent modifie |
+| app/screens/Game.ts | ui | 224.2 | 599 | 48 | 39 | 59 | souvent modifie, beaucoup de dependances |
+| app/services/world/VillageStartingState.ts | runtime | 215.8 | 220 | 93 | 161 | 2 | score de risque relatif eleve |
 | app/controllers/HeroController.ts | runtime | 214.3 | 494 | 65 | 59 | 51 | souvent modifie |
-| app/services/world/VillageStartingState.ts | runtime | 212.8 | 220 | 93 | 161 | 1 | score de risque relatif eleve |
 | app/controllers/HeroCompanionHorseController.ts | runtime | 210.3 | 432 | 119 | 57 | 7 | complexite elevee |
 | app/services/SpacePortalSystem.ts | runtime | 210.3 | 370 | 124 | 43 | 5 | complexite elevee |
 | app/classes/unit/UnitCaptureHorseAction.ts | runtime | 205.7 | 355 | 90 | 131 | 7 | score de risque relatif eleve |
@@ -141,9 +141,12 @@ These files currently count against the hotspot score. Clear a hotspot by reduci
 
 | File | Kind | Risk | Why | Exit Target |
 | --- | --- | --- | --- | --- |
-| app/services/TributeRaidSystem.ts | runtime | 297.7 | branches >= 80, churn >= 8 | branches < 80 |
-| app/ui/NpcOrdersManager.ts | ui | 289.9 | branches >= 80, churn >= 8 | branches < 80 |
+| app/services/TributeRaidSystem.ts | runtime | 300.7 | branches >= 80, churn >= 8 | branches < 80 |
+| app/ui/NpcOrdersManager.ts | ui | 300.6 | branches >= 80, churn >= 8 | branches < 80 |
+| app/lib/resources/playerResourceTotals.ts | library | 234.6 | branches >= 80, churn >= 8 | branches < 80 |
 | app/lib/combat/combatFeedback.ts | library | 184.4 | branches >= 80, churn >= 8 | branches < 80 |
+| app/lib/npc/npcInteraction.ts | library | 153.7 | branches >= 80, churn >= 8 | branches < 80 |
+| app/lib/units/villagerAutonomyTargeting.ts | library | 153.6 | branches >= 80, churn >= 8 | branches < 80 |
 
 ## Largest Files
 
@@ -153,7 +156,7 @@ These files currently count against the hotspot score. Clear a hotspot by reduci
 | app/services/weather/WeatherSystem.ts | runtime | 701 | 90 | 16 |
 | app/screens/Game.ts | ui | 599 | 48 | 36 |
 | app/services/TributeRaidSystem.ts | runtime | 591 | 159 | 22 |
-| app/ui/NpcOrdersManager.ts | ui | 579 | 108 | 28 |
+| app/ui/NpcOrdersManager.ts | ui | 582 | 110 | 28 |
 | app/ui/PlayerSetupPanel.ts | ui | 569 | 66 | 8 |
 | app/lib/i18n/fr.ts | data/config | 559 | 0 | 3 |
 | app/lib/entities/spriteFragmentBurst.ts | library | 558 | 68 | 5 |
@@ -174,7 +177,7 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | app/constants/entities.ts | data/config | 274 | 0 |
 | app/config/assetManifest.ts | data/config | 219 | 0 |
 | app/config/playerConfig.ts | data/config | 210 | 15 |
-| app/lib/i18n/questTranslations.ts | data/config | 179 | 0 |
+| app/lib/i18n/questTranslations.ts | data/config | 177 | 0 |
 | app/lib/i18n/entityDetails.ts | data/config | 139 | 0 |
 | app/lib/i18n/entityNames.ts | data/config | 137 | 0 |
 | app/config/name/hellas.ts | data/config | 108 | 0 |
@@ -191,11 +194,11 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | app/services/SpacePortalSystem.ts | 124 | 43 | 370 |
 | app/services/world/OfflineWorldWork.ts | 123 | 172 | 370 |
 | app/controllers/HeroCompanionHorseController.ts | 119 | 57 | 432 |
+| app/screens/game/BuildingInteriorExitRouting.ts | 117 | 53 | 344 |
 | app/dev-console/actions/PerformanceDebug.ts | 116 | 65 | 418 |
-| app/screens/game/BuildingInteriorExitRouting.ts | 116 | 60 | 349 |
 | app/dev-console/actions/DebugMapRenderers.ts | 112 | 92 | 461 |
 | app/classes/unit/movement/UnitMovementRoutingRuntime.ts | 110 | 51 | 451 |
-| app/ui/NpcOrdersManager.ts | 108 | 101 | 579 |
+| app/ui/NpcOrdersManager.ts | 110 | 103 | 582 |
 | tools/health/analyze.cjs | 103 | 115 | 290 |
 
 ## Git Hotspots
@@ -203,12 +206,12 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | File | Churn 90d | Risk | LOC |
 | --- | --- | --- | --- |
 | app/types/entities.ts | 69 | 28.2 | 24 |
-| app/screens/Game.ts | 58 | 222.2 | 599 |
+| app/screens/Game.ts | 59 | 224.2 | 599 |
 | app/config/assetManifest.ts | 58 | 28.7 | 219 |
 | app/serialization/SaveSerializer.ts | 56 | 242.7 | 533 |
+| app/types/context.ts | 55 | 119 | 359 |
 | app/classes/map/MapGeneration.ts | 54 | 186.8 | 333 |
-| app/types/context.ts | 54 | 117 | 359 |
-| app/types/save.ts | 52 | 115.6 | 464 |
+| app/types/save.ts | 53 | 117.6 | 464 |
 | app/controllers/HeroController.ts | 51 | 214.3 | 494 |
 | app/lib/i18n/translations.ts | 49 | 19.8 | 8 |
 | app/classes/unit/UnitActions.ts | 48 | 75.8 | 174 |
@@ -248,17 +251,17 @@ These signals now reduce the Structure score. This makes the report stricter: a 
 
 | Folder | Risk | Files | LOC | Branches | Why | Suggested Split |
 | --- | --- | --- | --- | --- | --- | --- |
-| app/lib/units | 16 | 32 | 2880 | 718 | file count > 24 | Split files by feature/domain until the folder has a clear single responsibility. |
-| app/ui | 10 | 29 | 5034 | 714 | file count > 24 | Group related UI panels and overlays into feature folders. |
-| app/types | 6 | 27 | 2402 | 0 | file count > 24 | Split files by feature/domain until the folder has a clear single responsibility. |
+| app/lib/units | 16 | 32 | 2952 | 742 | file count > 24 | Split files by feature/domain until the folder has a clear single responsibility. |
+| app/ui | 10 | 29 | 5028 | 715 | file count > 24 | Group related UI panels and overlays into feature folders. |
+| app/types | 6 | 27 | 2404 | 0 | file count > 24 | Split files by feature/domain until the folder has a clear single responsibility. |
 
 ### Crowded Folders
 
 | Folder | Files | LOC | Branches |
 | --- | --- | --- | --- |
-| app/lib/units | 32 | 2880 | 718 |
-| app/ui | 29 | 5034 | 714 |
-| app/types | 27 | 2402 | 0 |
+| app/lib/units | 32 | 2952 | 742 |
+| app/ui | 29 | 5028 | 715 |
+| app/types | 27 | 2404 | 0 |
 
 ### Naming Styles
 

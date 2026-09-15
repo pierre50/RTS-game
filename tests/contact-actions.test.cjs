@@ -500,6 +500,51 @@ function attachAnimalCombat(h) {
   return () => hits
 }
 
+test('boar attacks use the five-frame attack sheet after walking, running or idle, then pursue an escaped target', () => {
+  for (const previousFrameCount of [6, 5, 4]) {
+    const h = animalApproachHarness()
+    const hits = attachAnimalCombat(h)
+    h.target.x = 30
+    h.animal.sprite.textures = Array(previousFrameCount).fill('previous')
+    h.animal.setTextures = sheet => {
+      if (sheet === 'actionSheet') h.animal.sprite.textures = Array(5).fill('attack')
+    }
+    let pursuits = 0
+    h.animal.sendTo = (target, action, options) => {
+      assert.equal(target, h.target)
+      assert.equal(action, 'attack')
+      assert.equal(options.forceRepath, true)
+      pursuits++
+    }
+    assert.equal(h.start(), true)
+    assert.equal(h.animal.sprite.textures.length, 5)
+    for (let cycle = 0; cycle < 3; cycle++) {
+      for (let frame = 0; frame < 4; frame++) h.animal.sprite.onFrameChange(frame)
+      assert.equal(hits(), cycle)
+      h.animal.sprite.onFrameChange(4)
+      assert.equal(hits(), cycle + 1)
+    }
+    h.target.x += 200
+    for (let frame = 0; frame < 5; frame++) h.animal.sprite.onFrameChange(frame)
+    assert.equal(hits(), 3)
+    assert.equal(pursuits, 1)
+  }
+})
+
+test('short work animations still reach their impact and repeat gathering', () => {
+  const target = resource(40)
+  const h = workHarness('forageberry', target)
+  h.unit.setTextures = () => {
+    h.unit.sprite.textures = Array(4).fill('work')
+  }
+  h.actions.startGathering('berry', null)
+  for (let cycle = 0; cycle < 3; cycle++) {
+    for (let frame = 0; frame < 4; frame++) h.unit.sprite.onFrameChange(frame)
+  }
+  assert.equal(h.counts().gained, 3)
+  assert.equal(target.quantity, 17)
+})
+
 test('animal approach, real animation loop and impact obey obstacles, target movement and cancellation', () => {
   for (const scenario of ['hit', 'blocked', 'escaped', 'behind', 'order', 'death']) {
     const h = animalApproachHarness(scenario === 'blocked')

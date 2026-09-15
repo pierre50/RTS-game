@@ -35,13 +35,9 @@ import { isAirborne, resolveMovementSheet } from './locomotion'
 
 function getAnimalAttackImpactFrame(animal: AnimalControllerHost): number {
   const configuredFrame = animal.attackImpactFrame
-  const fallbackFrame =
-    typeof configuredFrame === 'number' && Number.isFinite(configuredFrame) && configuredFrame >= 0
-      ? configuredFrame
-      : SLASH_IMPACT_FRAME
-  const frameCount = animal.sprite?.textures?.length ?? 0
-  if (frameCount <= 0) return fallbackFrame
-  return Math.min(fallbackFrame, frameCount - 1)
+  return typeof configuredFrame === 'number' && Number.isFinite(configuredFrame) && configuredFrame >= 0
+    ? configuredFrame
+    : SLASH_IMPACT_FRAME
 }
 
 export class AnimalCombat {

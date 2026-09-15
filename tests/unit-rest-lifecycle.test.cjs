@@ -2,6 +2,12 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+// Real building types: pulled in (not hand-duplicated) so building-interior code paths reached
+// transitively through the real (unmocked) passageCells/interiors/buildingOccupancy chain — via
+// createReservedPassageCellLookup and isBuildingInteriorSupported below — see real building types
+// instead of crashing on a stripped-down '../../constants' stub built for UnitRestLifecycle itself.
+const { BUILDING_TYPES } = loadTsModule('app/constants/entities.ts')
+
 function fixture({ deferWake = false } = {}) {
   const calls = []
   const fades = []
@@ -12,6 +18,7 @@ function fixture({ deferWake = false } = {}) {
       UNIT_TYPES: { villager: 'Villager' },
       SHEET_TYPES: { standing: 'standing' },
       FADE_DURATION_MS: 200,
+      BUILDING_TYPES,
     },
     '../../lib': {
       cartesianToIsometric: (i, j) => [i * 10, j * 10],
@@ -21,6 +28,7 @@ function fixture({ deferWake = false } = {}) {
     },
     '../../lib/mapSpaces': {
       getMapSpace: () => null,
+      getEntityCell: () => null,
       getEntitySpaceMapLike: (_unit, map) => map,
       moveEntityToMapSpace: () => {},
     },
@@ -50,6 +58,9 @@ function fixture({ deferWake = false } = {}) {
       setUnitOverheadIndicator: () => {},
     },
     '../../lib/buildings/interiors': { isBuildingInteriorSupported: building => Boolean(building.supported) },
+    '../../lib/buildings/passageCells': {
+      createReservedPassageCellLookup: () => ({ has: () => false, size: 0 }),
+    },
     '../BuildingInteriorSpaceSystem': {
       ensureRuntimeBuildingInteriorSpace: () => null,
       moveUnitToBuildingInteriorSleep: () => false,

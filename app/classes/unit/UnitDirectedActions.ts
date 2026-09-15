@@ -3,6 +3,7 @@ import { ACTION_TYPES, FAMILY_TYPES, LOADING_TYPES, SHEET_TYPES, SOUND_CUES } fr
 import {
   BOW_SHOOT_RELEASE_FRAME,
   HUNTING_PROJECTILE,
+  getHuntingAimPoint,
   onSpriteLoopAtFrame,
   playerCanSeeInstance,
   showHealingFeedback,
@@ -183,7 +184,7 @@ export class UnitDirectedActions {
           owner: unit,
           target: dest,
           type: HUNTING_PROJECTILE,
-          destination: unit.realDest,
+          destination: getHuntingAimPoint(unit, dest),
         },
         unit.context!
       )

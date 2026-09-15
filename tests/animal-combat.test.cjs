@@ -13,7 +13,8 @@ function loadModule(relativePath, mocks) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -245,7 +246,7 @@ test('animal attacks fall back to the shared slash impact frame', () => {
   assert.equal(attackLoopCalls[0][1].releaseFrame, 5)
 })
 
-test('animal attacks clamp impact to short action animations', () => {
+test('animal attack timing does not use the previous animation length', () => {
   const target = { family: 'unit', hitPoints: 20, i: 5, j: 6, label: 'hero' }
   const { combat, attackLoopCalls } = createAnimalCombat({
     animalOverrides: {
@@ -261,7 +262,7 @@ test('animal attacks clamp impact to short action animations', () => {
   combat.getAction('attack')
 
   assert.equal(attackLoopCalls.length, 1)
-  assert.equal(attackLoopCalls[0][1].releaseFrame, 2)
+  assert.equal(attackLoopCalls[0][1].releaseFrame, 5)
 })
 
 test('runaway flees along the projectile direction instead of away from the shooter position', () => {

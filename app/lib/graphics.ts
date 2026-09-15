@@ -6,6 +6,7 @@ export * from './graphics/textures'
 
 type FrameChangeSprite = {
   onFrameChange?: (currentFrame: number) => void
+  textures?: readonly unknown[]
 }
 
 // Fires `cb` once per animation loop, on the first frame-change where
@@ -20,9 +21,11 @@ type FrameChangeSprite = {
 // between those restarts (see setUnitTexture in app/lib/extra.ts) — composing
 // would otherwise stack stale handlers indefinitely.
 export function onSpriteLoopAtFrame(sprite: FrameChangeSprite, frame: number, cb: () => void): void {
+  // Bind after selecting the action sheet: walking/idle can have more frames.
+  const impactFrame = sprite.textures?.length ? Math.min(frame, sprite.textures.length - 1) : frame
   let firedThisLoop = false
   sprite.onFrameChange = currentFrame => {
-    if (currentFrame < frame) {
+    if (currentFrame < impactFrame) {
       firedThisLoop = false
       return
     }

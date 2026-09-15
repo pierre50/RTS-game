@@ -133,11 +133,17 @@ function resolveHeroMeleeImpact(
   hero: UnitEntity,
   tool: HeroEquippedItem,
   options: HeroMeleeAttackOptions,
-  degree: number
+  degree: number,
+  lockedTarget?: RuntimeEntity | null
 ): void {
   if (hero.isDead || hero.isDestroyed) return
-  // Re-query at release: an escaped target misses; a newcomer can receive the blow.
-  const target = findHeroMeleeTargetInAim(hero, tool, degree, true)
+  const weapon = tool === 'sword' ? hero.inventory?.activeWeapons?.melee : undefined
+  // Keep the target locked in at windup: only fall back to the nearest-in-arc candidate
+  // (which could be an unrelated, diplomatically-sensitive bystander) if it escaped.
+  const target =
+    lockedTarget && !lockedTarget.isDead && !lockedTarget.isDestroyed && isContactTouching(hero, lockedTarget, weapon)
+      ? lockedTarget
+      : findHeroMeleeTargetInAim(hero, tool, degree, true)
   if (!target) {
     playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' })
     return
@@ -186,7 +192,7 @@ function strikeHeroMeleeTarget(
   const degree = hero.degree ?? 0
   playHeroToolAnimation(
     hero,
-    () => resolveHeroMeleeImpact(hero, tool, options, degree),
+    () => resolveHeroMeleeImpact(hero, tool, options, degree, resolvedTarget),
     options.impactFrame ?? SLASH_IMPACT_FRAME,
     { recoveryAnimation: 'reverseSlash', swordChargePower: options.swordChargePower }
   )

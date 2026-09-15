@@ -1,21 +1,6 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
-
-function loadTsModule(relativePath) {
-  const filename = path.join(__dirname, '..', relativePath)
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-
-  const module = { exports: {} }
-  new Function('module', 'exports', 'require', code)(module, module.exports, require)
-  return module.exports
-}
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 test('villager hunting uses the age-scaled arrow projectile family', () => {
   const { HUNTING_PROJECTILE } = loadTsModule('app/lib/units/hunting.ts')

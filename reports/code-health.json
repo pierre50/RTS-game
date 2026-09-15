@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-09-14T12:37:55.963Z",
-  "score": 90,
-  "grade": "A",
+  "generatedAt": "2026-09-15T09:25:10.134Z",
+  "score": 87,
+  "grade": "B",
   "qualityGateScore": 80,
   "targetScore": 90,
   "qualityGate": "fail",
   "gateReasons": [
     "Quality regressions: fail",
-    "425 new or worsened debt finding(s)"
+    "428 new or worsened debt finding(s)"
   ],
   "schemaVersion": 2,
-  "sourceHash": "16c92631fe20755dd2f3abe7153dd4d91864f9de53ab7e1a51ac6c33ea589be2",
+  "sourceHash": "0bdf110c3ec35b441d0b66dc340c9f9ab4c12db76eb8abdd5235190f5144aed8",
   "baselineUpdated": false,
   "findings": [
     {
@@ -1029,11 +1029,11 @@
       "rule": "function-complexity",
       "file": "app/classes/players/AIPlayerBehavior.ts",
       "name": "handleAIChiefGuard",
-      "line": 210,
-      "value": 17,
+      "line": 211,
+      "value": 18,
       "limit": 15,
       "identity": "app/classes/players/AIPlayerBehavior.ts:handleAIChiefGuard",
-      "fingerprint": "de9388ccd4a7b743"
+      "fingerprint": "b1c1c856d6c2fdbf"
     },
     {
       "rule": "double-assertion",
@@ -1045,7 +1045,7 @@
     },
     {
       "rule": "double-assertion",
-      "line": 259,
+      "line": 263,
       "identity": "b3a2127d47836ad4",
       "file": "app/classes/players/AIPlayerBehavior.ts",
       "value": 1,
@@ -1153,7 +1153,7 @@
       "rule": "function-complexity",
       "file": "app/classes/unit/UnitDirectedActions.ts",
       "name": "UnitDirectedActions.handleHealAction",
-      "line": 86,
+      "line": 87,
       "value": 18,
       "limit": 15,
       "identity": "app/classes/unit/UnitDirectedActions.ts:UnitDirectedActions.handleHealAction",
@@ -1161,8 +1161,8 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 188,
-      "identity": "c30028fb1dcd09e4",
+      "line": 189,
+      "identity": "f7235e1f1aaa0dbf",
       "file": "app/classes/unit/UnitDirectedActions.ts",
       "value": 1,
       "limit": 0
@@ -1937,7 +1937,7 @@
       "rule": "function-complexity",
       "file": "app/lib/grid/movement.ts",
       "name": "getInstanceClosestFreeCellPath",
-      "line": 106,
+      "line": 112,
       "value": 22,
       "limit": 15,
       "identity": "app/lib/grid/movement.ts:getInstanceClosestFreeCellPath",
@@ -1945,7 +1945,7 @@
     },
     {
       "rule": "double-assertion",
-      "line": 153,
+      "line": 159,
       "identity": "1eaa7062f2217f09",
       "file": "app/lib/grid/movement.ts",
       "value": 1,
@@ -2120,10 +2120,10 @@
       "file": "app/lib/units/autonomy/villagerJobDiagnostics.ts",
       "name": "logGoldMinerFlow",
       "line": 31,
-      "value": 19,
+      "value": 28,
       "limit": 15,
       "identity": "app/lib/units/autonomy/villagerJobDiagnostics.ts:logGoldMinerFlow",
-      "fingerprint": "aaec68a649427357"
+      "fingerprint": "dbe0359868892183"
     },
     {
       "rule": "function-complexity",
@@ -2149,7 +2149,7 @@
       "rule": "function-complexity",
       "file": "app/lib/units/villagerTaskRecovery.ts",
       "name": "routeStoredTask",
-      "line": 95,
+      "line": 97,
       "value": 22,
       "limit": 15,
       "identity": "app/lib/units/villagerTaskRecovery.ts:routeStoredTask",
@@ -2167,7 +2167,7 @@
       "rule": "function-complexity",
       "file": "app/screens/game/BuildingInteriorExitRouting.ts",
       "name": "updateInteriorOccupantExit",
-      "line": 206,
+      "line": 208,
       "value": 19,
       "limit": 15,
       "identity": "app/screens/game/BuildingInteriorExitRouting.ts:updateInteriorOccupantExit",
@@ -2177,11 +2177,11 @@
       "rule": "function-complexity",
       "file": "app/screens/game/BuildingInteriorExitRouting.ts",
       "name": "routeInteriorUnitToExit",
-      "line": 266,
-      "value": 21,
+      "line": 268,
+      "value": 22,
       "limit": 15,
       "identity": "app/screens/game/BuildingInteriorExitRouting.ts:routeInteriorUnitToExit",
-      "fingerprint": "3511046335f3f20c"
+      "fingerprint": "1dcd7a58285027c9"
     },
     {
       "rule": "function-complexity",
@@ -3033,11 +3033,11 @@
       "rule": "function-complexity",
       "file": "app/services/rest/UnitRestLifecycle.ts",
       "name": "sendUnitToRest",
-      "line": 52,
+      "line": 56,
       "value": 16,
       "limit": 15,
       "identity": "app/services/rest/UnitRestLifecycle.ts:sendUnitToRest",
-      "fingerprint": "ce3ca388df67b780"
+      "fingerprint": "7d9ec5ca8ab88eee"
     },
     {
       "rule": "function-complexity",
@@ -3079,7 +3079,7 @@
       "rule": "function-complexity",
       "file": "app/services/rest/UnitRestSystem.ts",
       "name": "UnitRestSystem.updateScheduledRest",
-      "line": 92,
+      "line": 95,
       "value": 18,
       "limit": 15,
       "identity": "app/services/rest/UnitRestSystem.ts:UnitRestSystem.updateScheduledRest",
@@ -3133,7 +3133,7 @@
       "rule": "function-lines",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "name": "showTutorialOpening",
-      "line": 108,
+      "line": 112,
       "value": 114,
       "limit": 80,
       "identity": "app/services/tutorial/TutorialOpening.ts:showTutorialOpening",
@@ -3141,7 +3141,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 150,
+      "line": 154,
       "identity": "bffe4bf87277e83f",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -3149,7 +3149,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 150,
+      "line": 154,
       "identity": "78dd2d7e781718f4",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -3157,7 +3157,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 157,
+      "line": 161,
       "identity": "d452a5c97f326877",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -3165,7 +3165,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 168,
+      "line": 172,
       "identity": "6c5c6bfbe78f5433",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -3173,7 +3173,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 168,
+      "line": 172,
       "identity": "78dd2d7e781718f4",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -3781,27 +3781,27 @@
       "rule": "function-complexity",
       "file": "app/ui/NpcOrdersManager.ts",
       "name": "NpcOrdersManager.open",
-      "line": 193,
-      "value": 40,
+      "line": 194,
+      "value": 42,
       "limit": 15,
       "identity": "app/ui/NpcOrdersManager.ts:NpcOrdersManager.open",
-      "fingerprint": "5bca704d0eb4a1c8"
+      "fingerprint": "4332d8dd1b05442b"
     },
     {
       "rule": "function-lines",
       "file": "app/ui/NpcOrdersManager.ts",
       "name": "NpcOrdersManager.open",
-      "line": 193,
-      "value": 101,
+      "line": 194,
+      "value": 103,
       "limit": 80,
       "identity": "app/ui/NpcOrdersManager.ts:NpcOrdersManager.open",
-      "fingerprint": "5bca704d0eb4a1c8"
+      "fingerprint": "4332d8dd1b05442b"
     },
     {
       "rule": "function-nesting",
       "file": "app/ui/NpcOrdersManager.ts",
       "name": "NpcOrdersManager.runOrder",
-      "line": 541,
+      "line": 544,
       "value": 5,
       "limit": 4,
       "identity": "app/ui/NpcOrdersManager.ts:NpcOrdersManager.runOrder",
@@ -3809,7 +3809,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 296,
+      "line": 299,
       "identity": "c7fb3bb5c1b82e85",
       "file": "app/ui/NpcOrdersManager.ts",
       "value": 1,
@@ -3817,7 +3817,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 311,
+      "line": 314,
       "identity": "8d82d0ca1b8ea82c",
       "file": "app/ui/NpcOrdersManager.ts",
       "value": 1,
@@ -3825,7 +3825,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 443,
+      "line": 446,
       "identity": "d64190d8ad60a3fd",
       "file": "app/ui/NpcOrdersManager.ts",
       "value": 1,
@@ -7177,7 +7177,7 @@
     {
       "rule": "strict-types",
       "file": "app/classes/unit/UnitDirectedActions.ts",
-      "line": 112,
+      "line": 113,
       "identity": "2379:Argument of type '{ menu: MenuLike | undefined; player: PlayerLike | undefined; }' is not assignable to parameter of type 'EntityHealthDisplayOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'menu' are incompatible.     Type 'MenuLike | undefined' is not assignable to type 'MenuLike | null'.       Type 'undefined' is not assignable to type 'MenuLike | null'.:syncEntityHealthDisplay(dest, { menu, player })",
       "value": 1,
       "limit": 0,
@@ -9643,7 +9643,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/hero/heroMeleeTools.ts",
-      "line": 191,
+      "line": 197,
       "identity": "2379:Argument of type '{ recoveryAnimation: \"reverseSlash\"; swordChargePower: number | undefined; }' is not assignable to parameter of type 'HeroToolAnimationOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'swordChargePower' are incompatible.     Type 'number | undefined' is not assignable to type 'number'.       Type 'undefined' is not assignable to type 'number'.:{ recoveryAnimation: 'reverseSlash', swordChargePower: options.swordChargePower }",
       "value": 1,
       "limit": 0,
@@ -10138,7 +10138,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/npc/npcInteraction.ts",
-      "line": 125,
+      "line": 126,
       "identity": "2532:Object is possibly 'undefined'.:const commandSound = npcs[0].sounds?.command",
       "value": 1,
       "limit": 0,
@@ -10147,7 +10147,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/npc/npcInteraction.ts",
-      "line": 129,
+      "line": 130,
       "identity": "2345:Argument of type 'UnitEntity | undefined' is not assignable to parameter of type 'AudibleInstance'.   Type 'undefined' is not assignable to type 'AudibleInstance'.     Type 'undefined' is not assignable to type '{ context?: { controls?: { heroUnit?: AudibleInstanceLike | null; instanceIsAudible?: (instance: AudibleInstanceLike) => boolean; }; }; sounds?: { ...; }; }'.:playAudibleSoundCue(npcs[0], commandSound, { profile: 'voice' })",
       "value": 1,
       "limit": 0,
@@ -10156,7 +10156,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/npc/npcInteraction.ts",
-      "line": 133,
+      "line": 134,
       "identity": "2345:Argument of type 'UnitEntity | undefined' is not assignable to parameter of type 'AudibleInstance'.   Type 'undefined' is not assignable to type 'AudibleInstance'.     Type 'undefined' is not assignable to type '{ context?: { controls?: { heroUnit?: AudibleInstanceLike | null; instanceIsAudible?: (instance: AudibleInstanceLike) => boolean; }; }; sounds?: { ...; }; }'.:playAudibleSoundCue(npcs.find(npc => npc.type !== UNIT_TYPES.villager) ?? npcs[0], SOUND_CUES.unit.militaryCommand, {",
       "value": 1,
       "limit": 0,
@@ -10165,7 +10165,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/npc/npcInteraction.ts",
-      "line": 139,
+      "line": 140,
       "identity": "2345:Argument of type 'UnitEntity | undefined' is not assignable to parameter of type 'AudibleInstance'.   Type 'undefined' is not assignable to type 'AudibleInstance'.     Type 'undefined' is not assignable to type '{ context?: { controls?: { heroUnit?: AudibleInstanceLike | null; instanceIsAudible?: (instance: AudibleInstanceLike) => boolean; }; }; sounds?: { ...; }; }'.:playAudibleSoundCue(villager, villager.sounds?.command ?? SOUND_CUES.villager.command, { profile: 'voice' })",
       "value": 1,
       "limit": 0,
@@ -10174,7 +10174,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/npc/npcInteraction.ts",
-      "line": 139,
+      "line": 140,
       "identity": "18048:'villager' is possibly 'undefined'.:playAudibleSoundCue(villager, villager.sounds?.command ?? SOUND_CUES.villager.command, { profile: 'voice' })",
       "value": 1,
       "limit": 0,
@@ -10435,7 +10435,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/units/villagerTaskRecovery.ts",
-      "line": 173,
+      "line": 175,
       "identity": "2412:Type 'VillagerAutonomyJob | null | undefined' is not assignable to type 'VillagerAutonomyJob | null' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.   Type 'undefined' is not assignable to type 'VillagerAutonomyJob | null'.:if (options.preserveAutonomy !== false) unit.autonomousJob = autonomousJob",
       "value": 1,
       "limit": 0,
@@ -10444,7 +10444,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/units/villagerTaskRecovery.ts",
-      "line": 197,
+      "line": 199,
       "identity": "2412:Type 'VillagerAutonomyJob | null | undefined' is not assignable to type 'VillagerAutonomyJob | null' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.   Type 'undefined' is not assignable to type 'VillagerAutonomyJob | null'.:if (options.preserveAutonomy !== false) unit.autonomousJob = autonomousJob",
       "value": 1,
       "limit": 0,
@@ -10453,7 +10453,7 @@
     {
       "rule": "strict-types",
       "file": "app/lib/units/villagerTaskRecovery.ts",
-      "line": 200,
+      "line": 202,
       "identity": "2379:Argument of type '{ exploreWhenNoTarget: boolean | undefined; }' is not assignable to parameter of type '{ exploreWhenNoTarget?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'exploreWhenNoTarget' are incompatible.     Type 'boolean | undefined' is not assignable to type 'boolean'.       Type 'undefined' is not assignable to type 'boolean'.:return resumeStrictVillagerAutonomy(unit, autonomousJob, { exploreWhenNoTarget: options.exploreWhenNoTarget })",
       "value": 1,
       "limit": 0,
@@ -10498,11 +10498,11 @@
     {
       "rule": "strict-types",
       "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-      "line": 284,
-      "identity": "2375:Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'targetCell' are incompatible.     Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.       Type 'undefined' is not assignable to type 'RuntimeCell | null'.:unit.interiorExitState = {",
+      "line": 279,
+      "identity": "2322:Type 'UnitInteriorExitState | { returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | ... 1 more ... | undefined; }' is not assignable to type 'UnitInteriorExitState | null'.   Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.     Types of property 'targetCell' are incompatible.       Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.         Type 'undefined' is not assignable to type 'RuntimeCell | null'.:unit.interiorExitState = unit.interiorExitState ?? {",
       "value": 1,
       "limit": 0,
-      "message": "Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'targetCell' are incompatible.     Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.       Type 'undefined' is not assignable to type 'RuntimeCell | null'."
+      "message": "Type 'UnitInteriorExitState | { returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | ... 1 more ... | undefined; }' is not assignable to type 'UnitInteriorExitState | null'.   Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.     Types of property 'targetCell' are incompatible.       Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.         Type 'undefined' is not assignable to type 'RuntimeCell | null'."
     },
     {
       "rule": "strict-types",
@@ -11371,7 +11371,7 @@
     {
       "rule": "strict-types",
       "file": "app/services/rest/UnitRestLifecycle.ts",
-      "line": 84,
+      "line": 88,
       "identity": "2379:Argument of type '{ transition: boolean | undefined; }' is not assignable to parameter of type 'RestTransitionOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'transition' are incompatible.     Type 'boolean | undefined' is not assignable to type 'boolean'.       Type 'undefined' is not assignable to type 'boolean'.:return sendUnitToRestSite(unit, reason, restSite, {",
       "value": 1,
       "limit": 0,
@@ -11380,7 +11380,7 @@
     {
       "rule": "strict-types",
       "file": "app/services/rest/UnitRestRules.ts",
-      "line": 121,
+      "line": 117,
       "identity": "2379:Argument of type '{ durationMs: number; target: RuntimeEntity | null | undefined; }' is not assignable to parameter of type 'UnitRestDelayOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'target' are incompatible.     Type 'RuntimeEntity | null | undefined' is not assignable to type 'RuntimeEntity | null'.       Type 'undefined' is not assignable to type 'RuntimeEntity | null'.:keepUnitAwakeForRestDelay(unit, { durationMs, target })",
       "value": 1,
       "limit": 0,
@@ -11389,7 +11389,7 @@
     {
       "rule": "strict-types",
       "file": "app/services/rest/UnitRestSystem.ts",
-      "line": 203,
+      "line": 206,
       "identity": "2379:Argument of type '{ force: true; mode: \"order\"; onComplete: (() => void) | undefined; }' is not assignable to parameter of type '{ force?: boolean; mode?: UnitWakeMode; onComplete?: () => void; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'onComplete' are incompatible.     Type '(() => void) | undefined' is not assignable to type '() => void'.       Type 'undefined' is not assignable to type '() => void'.:wakeUnit(unit, { force: true, mode: 'order', onComplete })",
       "value": 1,
       "limit": 0,
@@ -12937,7 +12937,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 251,
+      "line": 254,
       "identity": "2345:Argument of type 'UnitEntity | null | undefined' is not assignable to parameter of type 'UnitEntity | null'.   Type 'undefined' is not assignable to type 'UnitEntity | null'.:this.questPanel.update(soloTarget, true) ??",
       "value": 1,
       "limit": 0,
@@ -12946,7 +12946,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 271,
+      "line": 274,
       "identity": "2345:Argument of type 'UnitEntity | null | undefined' is not assignable to parameter of type 'UnitEntity | null'.   Type 'undefined' is not assignable to type 'UnitEntity | null'.:this.updateDebugControls(soloTarget)",
       "value": 1,
       "limit": 0,
@@ -12955,7 +12955,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 353,
+      "line": 356,
       "identity": "2412:Type 'undefined' is not assignable to type 'Modal' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.:this.modal = undefined",
       "value": 1,
       "limit": 0,
@@ -12964,7 +12964,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 402,
+      "line": 405,
       "identity": "2412:Type 'undefined' is not assignable to type 'Modal' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.:this.modal = undefined",
       "value": 1,
       "limit": 0,
@@ -12973,7 +12973,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 440,
+      "line": 443,
       "identity": "2375:Type '{ id: NpcOrderId; label: string; detail: (() => string) | undefined; hidden: () => boolean; onClick: () => void; }' is not assignable to type 'NestedButtonMenuItem<NpcOrderMenuId>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'detail' are incompatible.     Type '(() => string) | undefined' is not assignable to type 'string | (() => string)'.       Type 'undefined' is not assignable to type 'string | (() => string)'.:return {",
       "value": 1,
       "limit": 0,
@@ -12982,7 +12982,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 509,
+      "line": 512,
       "identity": "2345:Argument of type 'UnitEntity | null | undefined' is not assignable to parameter of type 'UnitEntity | null'.   Type 'undefined' is not assignable to type 'UnitEntity | null'.:if (this.opened && !this.scriptedReplyActive) this.questPanel.update(this.npcs.length === 1 ? this.npcs[0] : null)",
       "value": 1,
       "limit": 0,
@@ -12991,7 +12991,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 527,
+      "line": 530,
       "identity": "2345:Argument of type 'UnitEntity | undefined' is not assignable to parameter of type 'UnitEntity'.   Type 'undefined' is not assignable to type 'UnitEntity'.:this.bagScreen = new UnitInventoryScreen(this.menu, this.npcs[0])",
       "value": 1,
       "limit": 0,
@@ -13000,7 +13000,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 534,
+      "line": 537,
       "identity": "2412:Type 'undefined' is not assignable to type 'Modal' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.:this.bagModal = undefined",
       "value": 1,
       "limit": 0,
@@ -13793,11 +13793,11 @@
       "rule": "function-complexity",
       "file": "app/classes/players/AIPlayerBehavior.ts",
       "name": "handleAIChiefGuard",
-      "line": 210,
-      "value": 17,
+      "line": 211,
+      "value": 18,
       "limit": 15,
       "identity": "app/classes/players/AIPlayerBehavior.ts:handleAIChiefGuard",
-      "fingerprint": "de9388ccd4a7b743"
+      "fingerprint": "b1c1c856d6c2fdbf"
     },
     {
       "rule": "function-complexity",
@@ -13853,11 +13853,19 @@
       "rule": "function-complexity",
       "file": "app/classes/unit/UnitDirectedActions.ts",
       "name": "UnitDirectedActions.handleHealAction",
-      "line": 86,
+      "line": 87,
       "value": 18,
       "limit": 15,
       "identity": "app/classes/unit/UnitDirectedActions.ts:UnitDirectedActions.handleHealAction",
       "fingerprint": "27ff2803a5445307"
+    },
+    {
+      "rule": "non-null-assertion",
+      "line": 189,
+      "identity": "f7235e1f1aaa0dbf",
+      "file": "app/classes/unit/UnitDirectedActions.ts",
+      "value": 1,
+      "limit": 0
     },
     {
       "rule": "function-complexity",
@@ -14005,6 +14013,16 @@
     },
     {
       "rule": "function-complexity",
+      "file": "app/lib/units/autonomy/villagerJobDiagnostics.ts",
+      "name": "logGoldMinerFlow",
+      "line": 31,
+      "value": 28,
+      "limit": 15,
+      "identity": "app/lib/units/autonomy/villagerJobDiagnostics.ts:logGoldMinerFlow",
+      "fingerprint": "dbe0359868892183"
+    },
+    {
+      "rule": "function-complexity",
       "file": "app/lib/units/pathProgress.ts",
       "name": "runPathStep",
       "line": 44,
@@ -14027,11 +14045,21 @@
       "rule": "function-complexity",
       "file": "app/lib/units/villagerTaskRecovery.ts",
       "name": "routeStoredTask",
-      "line": 95,
+      "line": 97,
       "value": 22,
       "limit": 15,
       "identity": "app/lib/units/villagerTaskRecovery.ts:routeStoredTask",
       "fingerprint": "de957bbfcefbfd56"
+    },
+    {
+      "rule": "function-complexity",
+      "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+      "name": "routeInteriorUnitToExit",
+      "line": 268,
+      "value": 22,
+      "limit": 15,
+      "identity": "app/screens/game/BuildingInteriorExitRouting.ts:routeInteriorUnitToExit",
+      "fingerprint": "1dcd7a58285027c9"
     },
     {
       "rule": "non-null-assertion",
@@ -14669,7 +14697,7 @@
       "rule": "function-complexity",
       "file": "app/services/rest/UnitRestSystem.ts",
       "name": "UnitRestSystem.updateScheduledRest",
-      "line": 92,
+      "line": 95,
       "value": 18,
       "limit": 15,
       "identity": "app/services/rest/UnitRestSystem.ts:UnitRestSystem.updateScheduledRest",
@@ -14713,7 +14741,7 @@
       "rule": "function-lines",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "name": "showTutorialOpening",
-      "line": 108,
+      "line": 112,
       "value": 114,
       "limit": 80,
       "identity": "app/services/tutorial/TutorialOpening.ts:showTutorialOpening",
@@ -14721,7 +14749,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 150,
+      "line": 154,
       "identity": "bffe4bf87277e83f",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -14729,7 +14757,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 150,
+      "line": 154,
       "identity": "78dd2d7e781718f4",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -14737,7 +14765,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 157,
+      "line": 161,
       "identity": "d452a5c97f326877",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -14745,7 +14773,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 168,
+      "line": 172,
       "identity": "6c5c6bfbe78f5433",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -14753,7 +14781,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 168,
+      "line": 172,
       "identity": "78dd2d7e781718f4",
       "file": "app/services/tutorial/TutorialOpening.ts",
       "value": 1,
@@ -15309,25 +15337,25 @@
       "rule": "function-complexity",
       "file": "app/ui/NpcOrdersManager.ts",
       "name": "NpcOrdersManager.open",
-      "line": 193,
-      "value": 40,
+      "line": 194,
+      "value": 42,
       "limit": 15,
       "identity": "app/ui/NpcOrdersManager.ts:NpcOrdersManager.open",
-      "fingerprint": "5bca704d0eb4a1c8"
+      "fingerprint": "4332d8dd1b05442b"
     },
     {
       "rule": "function-lines",
       "file": "app/ui/NpcOrdersManager.ts",
       "name": "NpcOrdersManager.open",
-      "line": 193,
-      "value": 101,
+      "line": 194,
+      "value": 103,
       "limit": 80,
       "identity": "app/ui/NpcOrdersManager.ts:NpcOrdersManager.open",
-      "fingerprint": "5bca704d0eb4a1c8"
+      "fingerprint": "4332d8dd1b05442b"
     },
     {
       "rule": "non-null-assertion",
-      "line": 296,
+      "line": 299,
       "identity": "c7fb3bb5c1b82e85",
       "file": "app/ui/NpcOrdersManager.ts",
       "value": 1,
@@ -15335,7 +15363,7 @@
     },
     {
       "rule": "non-null-assertion",
-      "line": 311,
+      "line": 314,
       "identity": "8d82d0ca1b8ea82c",
       "file": "app/ui/NpcOrdersManager.ts",
       "value": 1,
@@ -16134,6 +16162,15 @@
       "value": 1,
       "limit": 0,
       "message": "Argument of type '{ buildingSize: number | undefined; buildingType: string; random: () => number; }' is not assignable to parameter of type 'LoadInteriorBlueprintOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'buildingSize' are incompatible.     Type 'number | undefined' is not assignable to type 'number'.       Type 'undefined' is not assignable to type 'number'."
+    },
+    {
+      "rule": "strict-types",
+      "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+      "line": 279,
+      "identity": "2322:Type 'UnitInteriorExitState | { returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | ... 1 more ... | undefined; }' is not assignable to type 'UnitInteriorExitState | null'.   Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.     Types of property 'targetCell' are incompatible.       Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.         Type 'undefined' is not assignable to type 'RuntimeCell | null'.:unit.interiorExitState = unit.interiorExitState ?? {",
+      "value": 1,
+      "limit": 0,
+      "message": "Type 'UnitInteriorExitState | { returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | ... 1 more ... | undefined; }' is not assignable to type 'UnitInteriorExitState | null'.   Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.     Types of property 'targetCell' are incompatible.       Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.         Type 'undefined' is not assignable to type 'RuntimeCell | null'."
     },
     {
       "rule": "strict-types",
@@ -17155,7 +17192,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 251,
+      "line": 254,
       "identity": "2345:Argument of type 'UnitEntity | null | undefined' is not assignable to parameter of type 'UnitEntity | null'.   Type 'undefined' is not assignable to type 'UnitEntity | null'.:this.questPanel.update(soloTarget, true) ??",
       "value": 1,
       "limit": 0,
@@ -17164,7 +17201,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 509,
+      "line": 512,
       "identity": "2345:Argument of type 'UnitEntity | null | undefined' is not assignable to parameter of type 'UnitEntity | null'.   Type 'undefined' is not assignable to type 'UnitEntity | null'.:if (this.opened && !this.scriptedReplyActive) this.questPanel.update(this.npcs.length === 1 ? this.npcs[0] : null)",
       "value": 1,
       "limit": 0,
@@ -17173,7 +17210,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 527,
+      "line": 530,
       "identity": "2345:Argument of type 'UnitEntity | undefined' is not assignable to parameter of type 'UnitEntity'.   Type 'undefined' is not assignable to type 'UnitEntity'.:this.bagScreen = new UnitInventoryScreen(this.menu, this.npcs[0])",
       "value": 1,
       "limit": 0,
@@ -17182,7 +17219,7 @@
     {
       "rule": "strict-types",
       "file": "app/ui/NpcOrdersManager.ts",
-      "line": 534,
+      "line": 537,
       "identity": "2412:Type 'undefined' is not assignable to type 'Modal' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.:this.bagModal = undefined",
       "value": 1,
       "limit": 0,
@@ -17345,12 +17382,6 @@
       "rule": "branch-coverage",
       "file": "app/lib/units/playerTargetKnowledge.ts",
       "value": 77.27,
-      "limit": 80
-    },
-    {
-      "rule": "branch-coverage",
-      "file": "app/lib/units/targetPursuit.ts",
-      "value": 76.47,
       "limit": 80
     },
     {
@@ -17884,6 +17915,14 @@
       "limit": 15,
       "identity": "app/classes/unit/UnitDirectedActions.ts:UnitDirectedActions.handleHealAction",
       "fingerprint": "a7458f5e677962a4"
+    },
+    {
+      "rule": "non-null-assertion",
+      "line": 233,
+      "identity": "c30028fb1dcd09e4",
+      "file": "app/classes/unit/UnitDirectedActions.ts",
+      "value": 1,
+      "limit": 0
     },
     {
       "rule": "function-complexity",
@@ -18517,6 +18556,16 @@
     },
     {
       "rule": "function-complexity",
+      "file": "app/lib/units/villagerJobDiagnostics.ts",
+      "name": "logGoldMinerFlow",
+      "line": 31,
+      "value": 19,
+      "limit": 15,
+      "identity": "app/lib/units/villagerJobDiagnostics.ts:logGoldMinerFlow",
+      "fingerprint": "aaec68a649427357"
+    },
+    {
+      "rule": "function-complexity",
       "file": "app/lib/units/villagerTaskRecovery.ts",
       "name": "routeStoredTask",
       "line": 97,
@@ -18524,6 +18573,16 @@
       "limit": 15,
       "identity": "app/lib/units/villagerTaskRecovery.ts:routeStoredTask",
       "fingerprint": "a406810a4c70f208"
+    },
+    {
+      "rule": "function-complexity",
+      "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+      "name": "routeInteriorUnitToExit",
+      "line": 265,
+      "value": 21,
+      "limit": 15,
+      "identity": "app/screens/game/BuildingInteriorExitRouting.ts:routeInteriorUnitToExit",
+      "fingerprint": "3511046335f3f20c"
     },
     {
       "rule": "function-lines",
@@ -21487,6 +21546,15 @@
     },
     {
       "rule": "strict-types",
+      "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+      "line": 283,
+      "identity": "2375:Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'targetCell' are incompatible.     Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.       Type 'undefined' is not assignable to type 'RuntimeCell | null'.:unit.interiorExitState = {",
+      "value": 1,
+      "limit": 0,
+      "message": "Type '{ returnTask: UnitResourceDeliveryReturnTask | null; retryCount: number; startedAtMs: number; targetCell: RuntimeCell | null | undefined; }' is not assignable to type 'UnitInteriorExitState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.   Types of property 'targetCell' are incompatible.     Type 'RuntimeCell | null | undefined' is not assignable to type 'RuntimeCell | null'.       Type 'undefined' is not assignable to type 'RuntimeCell | null'."
+    },
+    {
+      "rule": "strict-types",
       "file": "app/screens/game/BuildingInteriorOccupants.ts",
       "line": 136,
       "identity": "2322:Type '(SavePlayerState | { selectedUnitLabel: string | undefined; selectedUnitLabels: string[] | undefined; units: SaveEntityState[]; civ?: string; civilizationLevel?: number; ... 36 more ...; aiState?: SavedAIState; })[]' is not assignable to type 'SavePlayerState[]'.   Type 'SavePlayerState | { selectedUnitLabel: string | undefined; selectedUnitLabels: string[] | undefined; units: SaveEntityState[]; civ?: string; civilizationLevel?: number; ... 36 more ...; aiState?: SavedAIState; }' is not assignable to type 'SavePlayerState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.     Type '{ selectedUnitLabel: string | undefined; selectedUnitLabels: string[] | undefined; units: SaveEntityState[]; civ?: string; civilizationLevel?: number; color?: string; ... 35 more ...; aiState?: SavedAIState; }' is not assignable to type 'SavePlayerState' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.       Type '{ selectedUnitLabel: string | undefined; selectedUnitLabels: string[] | undefined; units: SaveEntityState[]; civ?: string; civilizationLevel?: number; color?: string; ... 35 more ...; aiState?: SavedAIState; }' is not assignable to type '{ age?: number; buildings?: SaveEntityState[]; cellViewed?: number; colorHex?: string; corpses?: SaveEntityState[]; copper?: number; food?: number; berry?: number; meat?: number; ... 22 more ...; aiState?: SavedAIState; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.         Types of property 'selectedUnitLabel' are incompatible.           Type 'string | undefined' is not assignable to type 'string'.             Type 'undefined' is not assignable to type 'string'.:players: state.players.map(player => {",
@@ -22213,31 +22281,31 @@
       "app/classes/unit/movement/",
       "app/serialization/"
     ],
-    "workers": 139,
+    "workers": 143,
     "summary": {
       "lines": {
-        "total": 4181,
-        "covered": 3799,
+        "total": 4229,
+        "covered": 3845,
         "skipped": 0,
-        "pct": 90.86
+        "pct": 90.91
       },
       "statements": {
-        "total": 4906,
-        "covered": 4303,
+        "total": 4965,
+        "covered": 4360,
         "skipped": 0,
-        "pct": 87.7
+        "pct": 87.81
       },
       "functions": {
-        "total": 908,
-        "covered": 841,
+        "total": 914,
+        "covered": 846,
         "skipped": 0,
-        "pct": 92.62
+        "pct": 92.56
       },
       "branches": {
-        "total": 5308,
-        "covered": 4251,
+        "total": 5400,
+        "covered": 4336,
         "skipped": 0,
-        "pct": 80.08
+        "pct": 80.29
       },
       "branchesTrue": {
         "total": 0,
@@ -22898,8 +22966,8 @@
       {
         "file": "app/lib/combat/combatRelations.ts",
         "lines": {
-          "total": 3,
-          "covered": 3,
+          "total": 5,
+          "covered": 5,
           "skipped": 0,
           "pct": 100
         },
@@ -22910,14 +22978,14 @@
           "pct": 100
         },
         "statements": {
-          "total": 5,
-          "covered": 5,
+          "total": 7,
+          "covered": 7,
           "skipped": 0,
           "pct": 100
         },
         "branches": {
-          "total": 6,
-          "covered": 6,
+          "total": 11,
+          "covered": 11,
           "skipped": 0,
           "pct": 100
         }
@@ -23276,10 +23344,10 @@
       {
         "file": "app/lib/units/autonomy/villagerJobDiagnostics.ts",
         "lines": {
-          "total": 11,
-          "covered": 8,
+          "total": 12,
+          "covered": 9,
           "skipped": 0,
-          "pct": 72.72
+          "pct": 75
         },
         "functions": {
           "total": 4,
@@ -23288,68 +23356,68 @@
           "pct": 75
         },
         "statements": {
-          "total": 14,
-          "covered": 10,
+          "total": 15,
+          "covered": 11,
           "skipped": 0,
-          "pct": 71.42
+          "pct": 73.33
         },
         "branches": {
-          "total": 74,
-          "covered": 68,
+          "total": 86,
+          "covered": 80,
           "skipped": 0,
-          "pct": 91.89
+          "pct": 93.02
         }
       },
       {
         "file": "app/lib/units/autonomy/villagerKnownTargets.ts",
         "lines": {
-          "total": 39,
-          "covered": 39,
+          "total": 48,
+          "covered": 47,
           "skipped": 0,
-          "pct": 100
+          "pct": 97.91
         },
         "functions": {
-          "total": 23,
-          "covered": 23,
+          "total": 26,
+          "covered": 25,
           "skipped": 0,
-          "pct": 100
+          "pct": 96.15
         },
         "statements": {
-          "total": 39,
-          "covered": 39,
+          "total": 49,
+          "covered": 48,
           "skipped": 0,
-          "pct": 100
+          "pct": 97.95
         },
         "branches": {
-          "total": 84,
-          "covered": 76,
+          "total": 117,
+          "covered": 100,
           "skipped": 0,
-          "pct": 90.47
+          "pct": 85.47
         }
       },
       {
         "file": "app/lib/units/hunting.ts",
         "lines": {
-          "total": 1,
-          "covered": 1,
+          "total": 31,
+          "covered": 31,
           "skipped": 0,
           "pct": 100
         },
         "functions": {
-          "total": 0,
-          "covered": 0,
+          "total": 2,
+          "covered": 2,
           "skipped": 0,
           "pct": 100
         },
         "statements": {
-          "total": 1,
-          "covered": 1,
+          "total": 38,
+          "covered": 38,
           "skipped": 0,
           "pct": 100
         },
         "branches": {
-          "total": 0,
-          "covered": 0,
+          "total": 24,
+          "covered": 24,
           "skipped": 0,
           "pct": 100
         }
@@ -23519,28 +23587,28 @@
       {
         "file": "app/lib/units/targetPursuit.ts",
         "lines": {
-          "total": 29,
-          "covered": 26,
+          "total": 33,
+          "covered": 29,
           "skipped": 0,
-          "pct": 89.65
+          "pct": 87.87
         },
         "functions": {
-          "total": 2,
-          "covered": 2,
+          "total": 3,
+          "covered": 3,
           "skipped": 0,
           "pct": 100
         },
         "statements": {
-          "total": 30,
-          "covered": 26,
+          "total": 35,
+          "covered": 30,
           "skipped": 0,
-          "pct": 86.66
+          "pct": 85.71
         },
         "branches": {
-          "total": 34,
-          "covered": 26,
+          "total": 44,
+          "covered": 37,
           "skipped": 0,
-          "pct": 76.47
+          "pct": 84.09
         }
       },
       {
@@ -24005,10 +24073,10 @@
       {
         "file": "app/lib/units/villagerAutonomyTargeting.ts",
         "lines": {
-          "total": 115,
-          "covered": 102,
+          "total": 116,
+          "covered": 103,
           "skipped": 0,
-          "pct": 88.69
+          "pct": 88.79
         },
         "functions": {
           "total": 25,
@@ -24017,16 +24085,16 @@
           "pct": 92
         },
         "statements": {
-          "total": 145,
-          "covered": 119,
+          "total": 147,
+          "covered": 121,
           "skipped": 0,
-          "pct": 82.06
+          "pct": 82.31
         },
         "branches": {
-          "total": 145,
-          "covered": 103,
+          "total": 149,
+          "covered": 108,
           "skipped": 0,
-          "pct": 71.03
+          "pct": 72.48
         }
       },
       {
@@ -24086,8 +24154,8 @@
       {
         "file": "app/lib/units/villagerTaskRecovery.ts",
         "lines": {
-          "total": 70,
-          "covered": 70,
+          "total": 71,
+          "covered": 71,
           "skipped": 0,
           "pct": 100
         },
@@ -24098,16 +24166,16 @@
           "pct": 100
         },
         "statements": {
-          "total": 96,
-          "covered": 96,
+          "total": 98,
+          "covered": 98,
           "skipped": 0,
           "pct": 100
         },
         "branches": {
-          "total": 137,
-          "covered": 132,
+          "total": 141,
+          "covered": 136,
           "skipped": 0,
-          "pct": 96.35
+          "pct": 96.45
         }
       },
       {
@@ -24796,10 +24864,10 @@
   ],
   "totals": {
     "files": 788,
-    "loc": 108544,
-    "codeLines": 99803,
-    "branches": 20857,
-    "functions": 8508
+    "loc": 108739,
+    "codeLines": 99969,
+    "branches": 20932,
+    "functions": 8516
   },
   "checks": [
     {
@@ -24808,7 +24876,7 @@
       "command": "pnpm lint",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 10124,
+      "durationMs": 7934,
       "status": "pass"
     },
     {
@@ -24817,7 +24885,7 @@
       "command": "pnpm typecheck",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 4589,
+      "durationMs": 4606,
       "status": "pass"
     },
     {
@@ -24826,12 +24894,12 @@
       "command": "pnpm duplication",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 391,
+      "durationMs": 407,
       "status": "pass",
       "duplication": {
         "clones": 0,
         "percent": 0,
-        "sources": 691
+        "sources": 693
       }
     },
     {
@@ -24840,7 +24908,7 @@
       "command": "pnpm deadcode",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 1319,
+      "durationMs": 1361,
       "status": "pass"
     },
     {
@@ -24849,7 +24917,7 @@
       "command": "pnpm exec madge app engine --extensions ts --ts-config tsconfig.json --circular --json",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 2613,
+      "durationMs": 3243,
       "status": "pass",
       "architecture": {
         "cycles": 0,
@@ -24864,7 +24932,7 @@
       "command": "pnpm exec eslint \"app/**/*.ts\" \"engine/**/*.ts\" --format json",
       "ok": true,
       "exitCode": 1,
-      "durationMs": 9585,
+      "durationMs": 11047,
       "status": "pass"
     },
     {
@@ -24873,11 +24941,11 @@
       "command": "node --require ./tools/health/coverage-hook.cjs --test --test-timeout=300000 --test-reporter=tap tests/*.test.cjs",
       "ok": true,
       "exitCode": 0,
-      "durationMs": 149733,
+      "durationMs": 202125,
       "status": "pass",
       "tests": {
-        "total": 2220,
-        "passed": 2220,
+        "total": 2273,
+        "passed": 2273,
         "failed": 0,
         "skipped": 0,
         "todo": 0,
@@ -24908,7 +24976,7 @@
     "duplication": 20,
     "structure": 13,
     "architecture": 15,
-    "hotspots": 8,
+    "hotspots": 5,
     "tests": 9
   },
   "scoreLosses": [
@@ -24938,9 +25006,9 @@
     },
     {
       "component": "Hotspots",
-      "score": 8,
+      "score": 5,
       "max": 10,
-      "lost": 2
+      "lost": 5
     },
     {
       "component": "Tests and critical coverage",
@@ -24952,7 +25020,7 @@
   "duplication": {
     "clones": 0,
     "percent": 0,
-    "sources": 691
+    "sources": 693
   },
   "architecture": {
     "cycles": 0,
@@ -25459,9 +25527,9 @@
       "codeLines": 577,
       "parseErrors": [],
       "loc": 591,
-      "churn90d": 14,
+      "churn90d": 15,
       "category": "runtime",
-      "risk": 297.7
+      "risk": 300.7
     },
     {
       "file": "app/ui/NpcOrdersManager.ts",
@@ -25469,7 +25537,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NPC_TRAINING_ORDER_SPECS",
-          "line": 78,
+          "line": 79,
           "lines": 5,
           "complexity": 1,
           "nesting": 0,
@@ -25478,7 +25546,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isSleepingNpc",
-          "line": 84,
+          "line": 85,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -25487,7 +25555,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isRestingBeforeBedNpc",
-          "line": 88,
+          "line": 89,
           "lines": 9,
           "complexity": 5,
           "nesting": 0,
@@ -25496,7 +25564,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 123,
+          "line": 124,
           "lines": 69,
           "complexity": 1,
           "nesting": 0,
@@ -25505,7 +25573,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 143,
+          "line": 144,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -25514,7 +25582,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 158,
+          "line": 159,
           "lines": 6,
           "complexity": 4,
           "nesting": 1,
@@ -25523,15 +25591,6 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.onNavigate",
-          "line": 176,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "2e9af1cbf500bf9b"
-        },
-        {
-          "file": "app/ui/NpcOrdersManager.ts",
-          "name": "NpcOrdersManager.onBack",
           "line": 177,
           "lines": 1,
           "complexity": 1,
@@ -25540,8 +25599,17 @@
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
+          "name": "NpcOrdersManager.onBack",
+          "line": 178,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "2e9af1cbf500bf9b"
+        },
+        {
+          "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 186,
+          "line": 187,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -25550,16 +25618,16 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 193,
-          "lines": 101,
-          "complexity": 40,
+          "line": 194,
+          "lines": 103,
+          "complexity": 42,
           "nesting": 4,
-          "fingerprint": "5bca704d0eb4a1c8"
+          "fingerprint": "4332d8dd1b05442b"
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.ids",
-          "line": 201,
+          "line": 202,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25568,7 +25636,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 202,
+          "line": 203,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -25577,7 +25645,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.size",
-          "line": 203,
+          "line": 204,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25586,7 +25654,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 204,
+          "line": 205,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -25595,7 +25663,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.isOwnGroup",
-          "line": 237,
+          "line": 240,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25604,7 +25672,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.rescuedNpcs",
-          "line": 247,
+          "line": 250,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -25613,7 +25681,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.chatterLine.line",
-          "line": 250,
+          "line": 253,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25622,7 +25690,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25631,7 +25699,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25640,7 +25708,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.enabled",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25649,7 +25717,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.onClose",
-          "line": 291,
+          "line": 294,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25658,7 +25726,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 295,
+          "line": 298,
           "lines": 27,
           "complexity": 2,
           "nesting": 1,
@@ -25667,7 +25735,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.node",
-          "line": 296,
+          "line": 299,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25676,7 +25744,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 304,
+          "line": 307,
           "lines": 15,
           "complexity": 5,
           "nesting": 1,
@@ -25685,7 +25753,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.next",
-          "line": 311,
+          "line": 314,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25694,7 +25762,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.cycleDebugLevel",
-          "line": 323,
+          "line": 326,
           "lines": 13,
           "complexity": 2,
           "nesting": 1,
@@ -25703,7 +25771,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.updateDebugControls",
-          "line": 337,
+          "line": 340,
           "lines": 11,
           "complexity": 6,
           "nesting": 1,
@@ -25712,7 +25780,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.close",
-          "line": 349,
+          "line": 352,
           "lines": 19,
           "complexity": 6,
           "nesting": 1,
@@ -25721,7 +25789,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showChatterLine",
-          "line": 369,
+          "line": 372,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -25730,7 +25798,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.stopChatterReveal",
-          "line": 377,
+          "line": 380,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -25739,7 +25807,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.toggle",
-          "line": 381,
+          "line": 384,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -25748,7 +25816,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.isOpen",
-          "line": 389,
+          "line": 392,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -25757,7 +25825,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTarget",
-          "line": 393,
+          "line": 396,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -25766,7 +25834,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.destroy",
-          "line": 397,
+          "line": 400,
           "lines": 7,
           "complexity": 1,
           "nesting": 0,
@@ -25775,7 +25843,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 405,
+          "line": 408,
           "lines": 33,
           "complexity": 1,
           "nesting": 0,
@@ -25784,7 +25852,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 406,
+          "line": 409,
           "lines": 31,
           "complexity": 2,
           "nesting": 1,
@@ -25793,7 +25861,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 414,
+          "line": 417,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25802,7 +25870,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 415,
+          "line": 418,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25811,7 +25879,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 420,
+          "line": 423,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25820,7 +25888,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 421,
+          "line": 424,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25829,7 +25897,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 426,
+          "line": 429,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25838,7 +25906,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 427,
+          "line": 430,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25847,7 +25915,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 432,
+          "line": 435,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25856,7 +25924,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 433,
+          "line": 436,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25865,7 +25933,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem",
-          "line": 439,
+          "line": 442,
           "lines": 9,
           "complexity": 2,
           "nesting": 1,
@@ -25874,7 +25942,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.detail",
-          "line": 443,
+          "line": 446,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25883,7 +25951,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.hidden",
-          "line": 444,
+          "line": 447,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25892,7 +25960,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.onClick",
-          "line": 445,
+          "line": 448,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25901,7 +25969,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTrainingOrderDetail",
-          "line": 449,
+          "line": 452,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -25910,7 +25978,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 453,
+          "line": 456,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -25919,7 +25987,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 454,
+          "line": 457,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25928,7 +25996,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasNightWorkBlock",
-          "line": 457,
+          "line": 460,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -25937,7 +26005,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 461,
+          "line": 464,
           "lines": 8,
           "complexity": 6,
           "nesting": 1,
@@ -25946,7 +26014,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 462,
+          "line": 465,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25955,7 +26023,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 463,
+          "line": 466,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -25964,7 +26032,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowResourcesButton",
-          "line": 470,
+          "line": 473,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -25973,7 +26041,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 474,
+          "line": 477,
           "lines": 11,
           "complexity": 3,
           "nesting": 0,
@@ -25982,7 +26050,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 479,
+          "line": 482,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -25991,7 +26059,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 481,
+          "line": 484,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -26000,7 +26068,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 486,
+          "line": 489,
           "lines": 8,
           "complexity": 2,
           "nesting": 0,
@@ -26009,7 +26077,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 490,
+          "line": 493,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -26018,7 +26086,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 495,
+          "line": 498,
           "lines": 8,
           "complexity": 1,
           "nesting": 0,
@@ -26027,7 +26095,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 497,
+          "line": 500,
           "lines": 4,
           "complexity": 3,
           "nesting": 0,
@@ -26036,7 +26104,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowVillagerJobOrder",
-          "line": 504,
+          "line": 507,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -26045,7 +26113,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.syncQuest",
-          "line": 508,
+          "line": 511,
           "lines": 3,
           "complexity": 4,
           "nesting": 2,
@@ -26054,7 +26122,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.refreshInventory",
-          "line": 512,
+          "line": 515,
           "lines": 5,
           "complexity": 2,
           "nesting": 1,
@@ -26063,7 +26131,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowBagButton",
-          "line": 518,
+          "line": 521,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -26072,7 +26140,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 522,
+          "line": 525,
           "lines": 9,
           "complexity": 4,
           "nesting": 1,
@@ -26081,7 +26149,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 528,
+          "line": 531,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -26090,7 +26158,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.closeBag",
-          "line": 532,
+          "line": 535,
           "lines": 8,
           "complexity": 2,
           "nesting": 1,
@@ -26099,7 +26167,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.runOrder",
-          "line": 541,
+          "line": 544,
           "lines": 37,
           "complexity": 14,
           "nesting": 5,
@@ -26139,31 +26207,327 @@
       "safety": [
         {
           "rule": "non-null-assertion",
-          "line": 296,
+          "line": 299,
           "identity": "c7fb3bb5c1b82e85"
         },
         {
           "rule": "non-null-assertion",
-          "line": 311,
+          "line": 314,
           "identity": "8d82d0ca1b8ea82c"
         },
         {
           "rule": "non-null-assertion",
-          "line": 443,
+          "line": 446,
           "identity": "d64190d8ad60a3fd"
         }
       ],
-      "branchCount": 108,
+      "branchCount": 110,
       "functionCount": 71,
       "importCount": 28,
       "exportCount": 1,
-      "maxBlockLines": 101,
-      "codeLines": 578,
+      "maxBlockLines": 103,
+      "codeLines": 581,
       "parseErrors": [],
-      "loc": 579,
-      "churn90d": 29,
+      "loc": 582,
+      "churn90d": 31,
       "category": "ui",
-      "risk": 289.9
+      "risk": 300.6
+    },
+    {
+      "file": "app/lib/resources/playerResourceTotals.ts",
+      "functions": [
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "expandLegacyFoodAmount",
+          "line": 19,
+          "lines": 12,
+          "complexity": 7,
+          "nesting": 1,
+          "fingerprint": "5491e6b2f75be771"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "expandFoodCost",
+          "line": 32,
+          "lines": 14,
+          "complexity": 8,
+          "nesting": 2,
+          "fingerprint": "c148515b06ac77d2"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "expandFoodDeposit",
+          "line": 47,
+          "lines": 7,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "fc6b0e5c7e0e6b7f"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "createEmptyResourceTotals",
+          "line": 67,
+          "lines": 6,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "fd7a6875d52025ab"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "createEmptyResourceTotals",
+          "line": 68,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "bfb70f58686948e6"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "isOwnedChest",
+          "line": 74,
+          "lines": 6,
+          "complexity": 6,
+          "nesting": 1,
+          "fingerprint": "c7f1c0b4b4850984"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerResourceChests",
+          "line": 81,
+          "lines": 4,
+          "complexity": 3,
+          "nesting": 1,
+          "fingerprint": "00c7cb837ba55df0"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerResourceChests",
+          "line": 83,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "90ea9a3a09f5b612"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "isOwnedStartingResourceDepot",
+          "line": 86,
+          "lines": 7,
+          "complexity": 7,
+          "nesting": 1,
+          "fingerprint": "1afeb26dd62fefb5"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerStartingResourceDepots",
+          "line": 94,
+          "lines": 4,
+          "complexity": 3,
+          "nesting": 1,
+          "fingerprint": "daffd75534415c81"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerStartingResourceDepots",
+          "line": 96,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "30e535a18db74263"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerResourceStores",
+          "line": 99,
+          "lines": 3,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "af7679e4cd0791c7"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "isOwnedHero",
+          "line": 103,
+          "lines": 6,
+          "complexity": 6,
+          "nesting": 1,
+          "fingerprint": "0f7628a51298b21e"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerResourceHeroes",
+          "line": 110,
+          "lines": 14,
+          "complexity": 10,
+          "nesting": 3,
+          "fingerprint": "485d0b9180622bdd"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPersonalResourceHero",
+          "line": 127,
+          "lines": 8,
+          "complexity": 8,
+          "nesting": 1,
+          "fingerprint": "1cab66dab48b6055"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "isVisibleStorageBuilding",
+          "line": 136,
+          "lines": 8,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "097269cdb98e7ce4"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "isVisibleStorageBuilding.checkVisible",
+          "line": 141,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "d5eb08434b7ffe0b"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "hasPlayerResourceChests",
+          "line": 145,
+          "lines": 3,
+          "complexity": 3,
+          "nesting": 0,
+          "fingerprint": "f17efdea950cbe61"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerStoredResourceTotals",
+          "line": 149,
+          "lines": 18,
+          "complexity": 8,
+          "nesting": 2,
+          "fingerprint": "f82f4e2b89410de8"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getPlayerResourceTotals",
+          "line": 168,
+          "lines": 22,
+          "complexity": 9,
+          "nesting": 3,
+          "fingerprint": "b0b03171fdd48b5f"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "getMissingPlayerResources",
+          "line": 191,
+          "lines": 13,
+          "complexity": 7,
+          "nesting": 2,
+          "fingerprint": "168832a78a313ba0"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "syncPlayerResourceFieldsFromChests",
+          "line": 205,
+          "lines": 7,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "d5531cb732bbd5b4"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "withdrawChestResources",
+          "line": 213,
+          "lines": 62,
+          "complexity": 32,
+          "nesting": 4,
+          "fingerprint": "6a29a34b86d6a24b"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "depositChestResources",
+          "line": 276,
+          "lines": 48,
+          "complexity": 11,
+          "nesting": 2,
+          "fingerprint": "cc17819e136367d0"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "depositChestResources.stores",
+          "line": 281,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "151ec770d70e7e06"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "depositChestResources.parentOf",
+          "line": 284,
+          "lines": 8,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "70280eee365d0c4c"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "depositChestResources.parentOf",
+          "line": 288,
+          "lines": 3,
+          "complexity": 3,
+          "nesting": 0,
+          "fingerprint": "901528d9441c2462"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "depositChestResources.candidates",
+          "line": 292,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "200bf79daa069c8f"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "depositChestResources.eligible",
+          "line": 299,
+          "lines": 5,
+          "complexity": 5,
+          "nesting": 0,
+          "fingerprint": "145d4f103d4239fb"
+        },
+        {
+          "file": "app/lib/resources/playerResourceTotals.ts",
+          "name": "depositChestResources",
+          "line": 306,
+          "lines": 5,
+          "complexity": 7,
+          "nesting": 0,
+          "fingerprint": "02288300368f9d9d"
+        }
+      ],
+      "imports": [
+        "../../constants",
+        "../../types/common",
+        "../../types/entities",
+        "../../types/player",
+        "../chief",
+        "../../types/context",
+        "./storagePolicy"
+      ],
+      "safety": [],
+      "branchCount": 135,
+      "functionCount": 30,
+      "importCount": 7,
+      "exportCount": 9,
+      "maxBlockLines": 62,
+      "codeLines": 286,
+      "parseErrors": [],
+      "loc": 324,
+      "churn90d": 8,
+      "category": "library",
+      "risk": 234.6
     },
     {
       "file": "app/lib/combat/combatFeedback.ts",
@@ -26495,25 +26859,526 @@
       "churn90d": 9,
       "category": "library",
       "risk": 184.4
+    },
+    {
+      "file": "app/lib/npc/npcInteraction.ts",
+      "functions": [
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "worldDistance",
+          "line": 43,
+          "lines": 3,
+          "complexity": 5,
+          "nesting": 0,
+          "fingerprint": "9bfac6818eda9595"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "isRuntimeEntityDest",
+          "line": 47,
+          "lines": 3,
+          "complexity": 3,
+          "nesting": 0,
+          "fingerprint": "a5d96dd81f40bad7"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "isFighting",
+          "line": 53,
+          "lines": 3,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "bbbffe67009202d5"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "isFriendlyAvailable",
+          "line": 57,
+          "lines": 6,
+          "complexity": 7,
+          "nesting": 1,
+          "fingerprint": "541f4e2eb8c30d67"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "isCommEligible",
+          "line": 64,
+          "lines": 5,
+          "complexity": 5,
+          "nesting": 1,
+          "fingerprint": "49d5b4c186181abc"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "isForeignTalkableNpc",
+          "line": 70,
+          "lines": 9,
+          "complexity": 7,
+          "nesting": 1,
+          "fingerprint": "3560654c5a01cbc3"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "isTalkableNpc",
+          "line": 81,
+          "lines": 6,
+          "complexity": 8,
+          "nesting": 1,
+          "fingerprint": "904f56d80e9e25db"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "claimNeutralCommGroup",
+          "line": 88,
+          "lines": 5,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "52c7d375d7ac55f6"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "noticeNpc",
+          "line": 94,
+          "lines": 27,
+          "complexity": 15,
+          "nesting": 2,
+          "fingerprint": "57a4757a9cea4c61"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "playNpcOrderSound",
+          "line": 124,
+          "lines": 18,
+          "complexity": 8,
+          "nesting": 1,
+          "fingerprint": "6454741a005ef38b"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "playNpcOrderSound.sameCommandSound",
+          "line": 128,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "4b89f9c7c4402bea"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "playNpcOrderSound",
+          "line": 133,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "0fe246f1dc60c64a"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "playNpcOrderSound",
+          "line": 134,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "0fe246f1dc60c64a"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "playNpcOrderSound.villager",
+          "line": 139,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "c39a794c8b6965e4"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "releaseNpc",
+          "line": 143,
+          "lines": 39,
+          "complexity": 11,
+          "nesting": 1,
+          "fingerprint": "6b733e133ff626dd"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "releaseIfStillLooking",
+          "line": 189,
+          "lines": 3,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "462afa7899888f83"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "findCommGroup",
+          "line": 195,
+          "lines": 9,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "e89a8f581d4ff8b7"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "findCommGroup.candidates",
+          "line": 196,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "65b2b31522d40ef3"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "findCommGroup",
+          "line": 198,
+          "lines": 5,
+          "complexity": 5,
+          "nesting": 0,
+          "fingerprint": "0a858a921b2429d7"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "getCommCellsInRadius",
+          "line": 205,
+          "lines": 5,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "356b357b00c3378b"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "getCommRadiusForHold",
+          "line": 211,
+          "lines": 8,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "28cca8ef63a9f330"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "findFacingNpc",
+          "line": 222,
+          "lines": 13,
+          "complexity": 5,
+          "nesting": 2,
+          "fingerprint": "fc2f5ddc86f6ca94"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "resolveCommGroup",
+          "line": 240,
+          "lines": 23,
+          "complexity": 7,
+          "nesting": 2,
+          "fingerprint": "c531fca447aa16ec"
+        },
+        {
+          "file": "app/lib/npc/npcInteraction.ts",
+          "name": "sendNpcGroupToTarget",
+          "line": 264,
+          "lines": 3,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "8d3060baa5454212"
+        }
+      ],
+      "imports": [
+        "../chief",
+        "../constants",
+        "../grid/visibility",
+        "../grid/cells",
+        "../maths",
+        "../audio/sound",
+        "./npcGoToDispatch",
+        "../mapSpaces",
+        "../entities/entityOwnerTransfer",
+        "../playerState",
+        "./npcFollow",
+        "./npcGoToDispatch",
+        "../../types/entities",
+        "../../types/map",
+        "../../types/grid"
+      ],
+      "safety": [],
+      "branchCount": 80,
+      "functionCount": 24,
+      "importCount": 15,
+      "exportCount": 9,
+      "maxBlockLines": 39,
+      "codeLines": 218,
+      "parseErrors": [],
+      "loc": 267,
+      "churn90d": 9,
+      "category": "library",
+      "risk": 153.7
+    },
+    {
+      "file": "app/lib/units/villagerAutonomyTargeting.ts",
+      "functions": [
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "distance",
+          "line": 38,
+          "lines": 3,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "8350409ded5aa009"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "sameTarget",
+          "line": 42,
+          "lines": 5,
+          "complexity": 6,
+          "nesting": 1,
+          "fingerprint": "2e878bd15ff30965"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "targetKey",
+          "line": 48,
+          "lines": 3,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "2a9677065fcb2714"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "nowMs",
+          "line": 52,
+          "lines": 3,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "062984348ec0cac2"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "getRejectedTargets",
+          "line": 56,
+          "lines": 3,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "56d2b72752b16b07"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "clearEmptyRejectedTargets",
+          "line": 60,
+          "lines": 7,
+          "complexity": 5,
+          "nesting": 1,
+          "fingerprint": "472a6d9e6b756321"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "clearVillagerAutonomyTargetRejections",
+          "line": 68,
+          "lines": 5,
+          "complexity": 3,
+          "nesting": 1,
+          "fingerprint": "740a33391b494268"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "getAutonomyJobForWork",
+          "line": 74,
+          "lines": 11,
+          "complexity": 9,
+          "nesting": 1,
+          "fingerprint": "e6a571bc527562a1"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "markVillagerAutonomyTargetRejected",
+          "line": 86,
+          "lines": 17,
+          "complexity": 8,
+          "nesting": 1,
+          "fingerprint": "36649d08202af5d5"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "targetWorkerLoad",
+          "line": 104,
+          "lines": 10,
+          "complexity": 10,
+          "nesting": 2,
+          "fingerprint": "f173803d8974b30f"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "isVillagerWorkTargetRejected",
+          "line": 115,
+          "lines": 5,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "953c76af7012f491"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "isRejectedTarget",
+          "line": 121,
+          "lines": 11,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "a808e2029911498f"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "getCompatibleDropoffTypes",
+          "line": 133,
+          "lines": 13,
+          "complexity": 8,
+          "nesting": 1,
+          "fingerprint": "a26c52357d4fc386"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "getCompatibleDropoffTypes.miningActions",
+          "line": 137,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "1d8e8513de563fcd"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "nearestDropoffDistance",
+          "line": 147,
+          "lines": 11,
+          "complexity": 9,
+          "nesting": 2,
+          "fingerprint": "fb3811e74adacc0a"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "getCandidatePathLength",
+          "line": 159,
+          "lines": 13,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "906a776965a584f4"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "getCandidatePathLength.path.isCellAllowed",
+          "line": 165,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "0943d700aaafab79"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "getCandidatePathLength.path.pathfinding.canPassThroughSolidCell",
+          "line": 167,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "918bfea403bb0763"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "evaluateCandidate",
+          "line": 173,
+          "lines": 25,
+          "complexity": 7,
+          "nesting": 3,
+          "fingerprint": "97ea70b1b87649fa"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "rankVillagerJobCandidates",
+          "line": 199,
+          "lines": 12,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "647b2ffbf7706bf8"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "rankVillagerJobCandidates.sort.map.slice",
+          "line": 206,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "af1c771dc37dcaa3"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "rankVillagerJobCandidates.sort",
+          "line": 208,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "ab2c8babc771ec69"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "rankVillagerJobCandidates",
+          "line": 209,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "e3c6660eee80ba9f"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "wasAutonomyOrderAccepted",
+          "line": 212,
+          "lines": 14,
+          "complexity": 12,
+          "nesting": 1,
+          "fingerprint": "d0d8f095b8bbe89a"
+        },
+        {
+          "file": "app/lib/units/villagerAutonomyTargeting.ts",
+          "name": "tryVillagerJobCandidates",
+          "line": 227,
+          "lines": 37,
+          "complexity": 4,
+          "nesting": 2,
+          "fingerprint": "59c3603bfa661f5b"
+        }
+      ],
+      "imports": [
+        "../../constants",
+        "../buildings/passageCells",
+        "../grid/movement",
+        "./autonomy/villagerJobDiagnostics",
+        "./targetPursuit",
+        "../../types/entities",
+        "../../types/map"
+      ],
+      "safety": [],
+      "branchCount": 82,
+      "functionCount": 25,
+      "importCount": 7,
+      "exportCount": 8,
+      "maxBlockLines": 37,
+      "codeLines": 257,
+      "parseErrors": [],
+      "loc": 264,
+      "churn90d": 8,
+      "category": "library",
+      "risk": 153.6
     }
   ],
   "hotspotPlan": [
     {
       "target": 91,
       "maxHotspots": 1,
-      "toClear": 2,
+      "toClear": 5,
       "reachableByHotspotsOnly": true
     },
     {
       "target": 95,
       "maxHotspots": 0,
-      "toClear": 7,
+      "toClear": 10,
       "reachableByHotspotsOnly": false
     },
     {
       "target": 100,
       "maxHotspots": 0,
-      "toClear": 13,
+      "toClear": 16,
       "reachableByHotspotsOnly": false
     }
   ],
@@ -26593,9 +27458,9 @@
       "codeLines": 558,
       "parseErrors": [],
       "loc": 559,
-      "churn90d": 25,
+      "churn90d": 26,
       "category": "data/config",
-      "risk": 64
+      "risk": 66
     },
     {
       "file": "app/lib/i18n/en.ts",
@@ -26614,9 +27479,9 @@
       "codeLines": 556,
       "parseErrors": [],
       "loc": 557,
-      "churn90d": 26,
+      "churn90d": 27,
       "category": "data/config",
-      "risk": 65.9
+      "risk": 67.9
     },
     {
       "file": "app/constants/entities.ts",
@@ -26814,12 +27679,12 @@
       "importCount": 0,
       "exportCount": 2,
       "maxBlockLines": 0,
-      "codeLines": 177,
+      "codeLines": 175,
       "parseErrors": [],
-      "loc": 179,
-      "churn90d": 0,
+      "loc": 177,
+      "churn90d": 1,
       "category": "data/config",
-      "risk": 4.5
+      "risk": 4.8
     },
     {
       "file": "app/lib/i18n/entityDetails.ts",
@@ -26888,9 +27753,9 @@
       "codeLines": 98,
       "parseErrors": [],
       "loc": 104,
-      "churn90d": 6,
+      "churn90d": 7,
       "category": "data/config",
-      "risk": 5
+      "risk": 5.4
     },
     {
       "file": "app/config/name/latium.ts",
@@ -26915,28 +27780,28 @@
       {
         "folder": "app/lib/units",
         "files": 32,
-        "loc": 2880,
-        "branches": 718,
+        "loc": 2952,
+        "branches": 742,
         "depth": 3
       },
       {
         "folder": "app/ui",
         "files": 29,
-        "loc": 5034,
-        "branches": 714,
+        "loc": 5028,
+        "branches": 715,
         "depth": 2
       },
       {
         "folder": "app/types",
         "files": 27,
-        "loc": 2402,
+        "loc": 2404,
         "branches": 0,
         "depth": 2
       },
       {
         "folder": "app/classes/unit",
         "files": 24,
-        "loc": 4602,
+        "loc": 4603,
         "branches": 945,
         "depth": 3
       },
@@ -26978,15 +27843,15 @@
       {
         "folder": "app/lib",
         "files": 21,
-        "loc": 1858,
-        "branches": 327,
+        "loc": 1861,
+        "branches": 328,
         "depth": 2
       },
       {
         "folder": "app/screens/game",
         "files": 20,
-        "loc": 3962,
-        "branches": 826,
+        "loc": 3957,
+        "branches": 827,
         "depth": 3
       },
       {
@@ -27001,21 +27866,21 @@
       {
         "folder": "app/lib/units",
         "files": 32,
-        "loc": 2880,
-        "branches": 718,
+        "loc": 2952,
+        "branches": 742,
         "depth": 3
       },
       {
         "folder": "app/ui",
         "files": 29,
-        "loc": 5034,
-        "branches": 714,
+        "loc": 5028,
+        "branches": 715,
         "depth": 2
       },
       {
         "folder": "app/types",
         "files": 27,
-        "loc": 2402,
+        "loc": 2404,
         "branches": 0,
         "depth": 2
       }
@@ -27024,8 +27889,8 @@
       {
         "folder": "app/lib/units",
         "files": 32,
-        "loc": 2880,
-        "branches": 718,
+        "loc": 2952,
+        "branches": 742,
         "depth": 3,
         "risk": 16,
         "why": "file count > 24",
@@ -27034,8 +27899,8 @@
       {
         "folder": "app/ui",
         "files": 29,
-        "loc": 5034,
-        "branches": 714,
+        "loc": 5028,
+        "branches": 715,
         "depth": 2,
         "risk": 10,
         "why": "file count > 24",
@@ -27044,7 +27909,7 @@
       {
         "folder": "app/types",
         "files": 27,
-        "loc": 2402,
+        "loc": 2404,
         "branches": 0,
         "depth": 2,
         "risk": 6,
@@ -27683,9 +28548,9 @@
       "codeLines": 577,
       "parseErrors": [],
       "loc": 591,
-      "churn90d": 14,
+      "churn90d": 15,
       "category": "runtime",
-      "risk": 297.7
+      "risk": 300.7
     },
     {
       "file": "app/ui/NpcOrdersManager.ts",
@@ -27693,7 +28558,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NPC_TRAINING_ORDER_SPECS",
-          "line": 78,
+          "line": 79,
           "lines": 5,
           "complexity": 1,
           "nesting": 0,
@@ -27702,7 +28567,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isSleepingNpc",
-          "line": 84,
+          "line": 85,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -27711,7 +28576,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isRestingBeforeBedNpc",
-          "line": 88,
+          "line": 89,
           "lines": 9,
           "complexity": 5,
           "nesting": 0,
@@ -27720,7 +28585,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 123,
+          "line": 124,
           "lines": 69,
           "complexity": 1,
           "nesting": 0,
@@ -27729,7 +28594,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 143,
+          "line": 144,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -27738,7 +28603,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 158,
+          "line": 159,
           "lines": 6,
           "complexity": 4,
           "nesting": 1,
@@ -27747,15 +28612,6 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.onNavigate",
-          "line": 176,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "2e9af1cbf500bf9b"
-        },
-        {
-          "file": "app/ui/NpcOrdersManager.ts",
-          "name": "NpcOrdersManager.onBack",
           "line": 177,
           "lines": 1,
           "complexity": 1,
@@ -27764,8 +28620,17 @@
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
+          "name": "NpcOrdersManager.onBack",
+          "line": 178,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "2e9af1cbf500bf9b"
+        },
+        {
+          "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 186,
+          "line": 187,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -27774,16 +28639,16 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 193,
-          "lines": 101,
-          "complexity": 40,
+          "line": 194,
+          "lines": 103,
+          "complexity": 42,
           "nesting": 4,
-          "fingerprint": "5bca704d0eb4a1c8"
+          "fingerprint": "4332d8dd1b05442b"
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.ids",
-          "line": 201,
+          "line": 202,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27792,7 +28657,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 202,
+          "line": 203,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -27801,7 +28666,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.size",
-          "line": 203,
+          "line": 204,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27810,7 +28675,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 204,
+          "line": 205,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -27819,7 +28684,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.isOwnGroup",
-          "line": 237,
+          "line": 240,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27828,7 +28693,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.rescuedNpcs",
-          "line": 247,
+          "line": 250,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -27837,7 +28702,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.chatterLine.line",
-          "line": 250,
+          "line": 253,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27846,7 +28711,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27855,7 +28720,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27864,7 +28729,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.enabled",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27873,7 +28738,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.onClose",
-          "line": 291,
+          "line": 294,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27882,7 +28747,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 295,
+          "line": 298,
           "lines": 27,
           "complexity": 2,
           "nesting": 1,
@@ -27891,7 +28756,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.node",
-          "line": 296,
+          "line": 299,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27900,7 +28765,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 304,
+          "line": 307,
           "lines": 15,
           "complexity": 5,
           "nesting": 1,
@@ -27909,7 +28774,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.next",
-          "line": 311,
+          "line": 314,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -27918,7 +28783,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.cycleDebugLevel",
-          "line": 323,
+          "line": 326,
           "lines": 13,
           "complexity": 2,
           "nesting": 1,
@@ -27927,7 +28792,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.updateDebugControls",
-          "line": 337,
+          "line": 340,
           "lines": 11,
           "complexity": 6,
           "nesting": 1,
@@ -27936,7 +28801,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.close",
-          "line": 349,
+          "line": 352,
           "lines": 19,
           "complexity": 6,
           "nesting": 1,
@@ -27945,7 +28810,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showChatterLine",
-          "line": 369,
+          "line": 372,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -27954,7 +28819,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.stopChatterReveal",
-          "line": 377,
+          "line": 380,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -27963,7 +28828,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.toggle",
-          "line": 381,
+          "line": 384,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -27972,7 +28837,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.isOpen",
-          "line": 389,
+          "line": 392,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -27981,7 +28846,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTarget",
-          "line": 393,
+          "line": 396,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -27990,7 +28855,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.destroy",
-          "line": 397,
+          "line": 400,
           "lines": 7,
           "complexity": 1,
           "nesting": 0,
@@ -27999,7 +28864,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 405,
+          "line": 408,
           "lines": 33,
           "complexity": 1,
           "nesting": 0,
@@ -28008,7 +28873,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 406,
+          "line": 409,
           "lines": 31,
           "complexity": 2,
           "nesting": 1,
@@ -28017,7 +28882,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 414,
+          "line": 417,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28026,7 +28891,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 415,
+          "line": 418,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28035,7 +28900,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 420,
+          "line": 423,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28044,7 +28909,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 421,
+          "line": 424,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28053,7 +28918,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 426,
+          "line": 429,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28062,7 +28927,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 427,
+          "line": 430,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28071,7 +28936,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 432,
+          "line": 435,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28080,7 +28945,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 433,
+          "line": 436,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28089,7 +28954,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem",
-          "line": 439,
+          "line": 442,
           "lines": 9,
           "complexity": 2,
           "nesting": 1,
@@ -28098,7 +28963,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.detail",
-          "line": 443,
+          "line": 446,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28107,7 +28972,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.hidden",
-          "line": 444,
+          "line": 447,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28116,7 +28981,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.onClick",
-          "line": 445,
+          "line": 448,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28125,7 +28990,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTrainingOrderDetail",
-          "line": 449,
+          "line": 452,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -28134,7 +28999,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 453,
+          "line": 456,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -28143,7 +29008,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 454,
+          "line": 457,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28152,7 +29017,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasNightWorkBlock",
-          "line": 457,
+          "line": 460,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -28161,7 +29026,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 461,
+          "line": 464,
           "lines": 8,
           "complexity": 6,
           "nesting": 1,
@@ -28170,7 +29035,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 462,
+          "line": 465,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28179,7 +29044,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 463,
+          "line": 466,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28188,7 +29053,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowResourcesButton",
-          "line": 470,
+          "line": 473,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -28197,7 +29062,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 474,
+          "line": 477,
           "lines": 11,
           "complexity": 3,
           "nesting": 0,
@@ -28206,7 +29071,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 479,
+          "line": 482,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -28215,7 +29080,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 481,
+          "line": 484,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28224,7 +29089,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 486,
+          "line": 489,
           "lines": 8,
           "complexity": 2,
           "nesting": 0,
@@ -28233,7 +29098,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 490,
+          "line": 493,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -28242,7 +29107,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 495,
+          "line": 498,
           "lines": 8,
           "complexity": 1,
           "nesting": 0,
@@ -28251,7 +29116,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 497,
+          "line": 500,
           "lines": 4,
           "complexity": 3,
           "nesting": 0,
@@ -28260,7 +29125,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowVillagerJobOrder",
-          "line": 504,
+          "line": 507,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -28269,7 +29134,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.syncQuest",
-          "line": 508,
+          "line": 511,
           "lines": 3,
           "complexity": 4,
           "nesting": 2,
@@ -28278,7 +29143,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.refreshInventory",
-          "line": 512,
+          "line": 515,
           "lines": 5,
           "complexity": 2,
           "nesting": 1,
@@ -28287,7 +29152,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowBagButton",
-          "line": 518,
+          "line": 521,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -28296,7 +29161,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 522,
+          "line": 525,
           "lines": 9,
           "complexity": 4,
           "nesting": 1,
@@ -28305,7 +29170,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 528,
+          "line": 531,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -28314,7 +29179,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.closeBag",
-          "line": 532,
+          "line": 535,
           "lines": 8,
           "complexity": 2,
           "nesting": 1,
@@ -28323,7 +29188,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.runOrder",
-          "line": 541,
+          "line": 544,
           "lines": 37,
           "complexity": 14,
           "nesting": 5,
@@ -28363,31 +29228,31 @@
       "safety": [
         {
           "rule": "non-null-assertion",
-          "line": 296,
+          "line": 299,
           "identity": "c7fb3bb5c1b82e85"
         },
         {
           "rule": "non-null-assertion",
-          "line": 311,
+          "line": 314,
           "identity": "8d82d0ca1b8ea82c"
         },
         {
           "rule": "non-null-assertion",
-          "line": 443,
+          "line": 446,
           "identity": "d64190d8ad60a3fd"
         }
       ],
-      "branchCount": 108,
+      "branchCount": 110,
       "functionCount": 71,
       "importCount": 28,
       "exportCount": 1,
-      "maxBlockLines": 101,
-      "codeLines": 578,
+      "maxBlockLines": 103,
+      "codeLines": 581,
       "parseErrors": [],
-      "loc": 579,
-      "churn90d": 29,
+      "loc": 582,
+      "churn90d": 31,
       "category": "ui",
-      "risk": 289.9
+      "risk": 300.6
     },
     {
       "file": "app/services/world/OfflineWorldWork.ts",
@@ -29012,9 +29877,9 @@
       "codeLines": 324,
       "parseErrors": [],
       "loc": 341,
-      "churn90d": 2,
+      "churn90d": 3,
       "category": "runtime",
-      "risk": 252.4
+      "risk": 255.4
     },
     {
       "file": "app/serialization/SaveSerializer.ts",
@@ -29577,9 +30442,9 @@
       "codeLines": 286,
       "parseErrors": [],
       "loc": 324,
-      "churn90d": 7,
+      "churn90d": 8,
       "category": "library",
-      "risk": 231.6
+      "risk": 234.6
     },
     {
       "file": "app/screens/Game.ts",
@@ -30304,9 +31169,337 @@
       "codeLines": 586,
       "parseErrors": [],
       "loc": 599,
-      "churn90d": 58,
+      "churn90d": 59,
       "category": "ui",
-      "risk": 222.2
+      "risk": 224.2
+    },
+    {
+      "file": "app/services/world/VillageStartingState.ts",
+      "functions": [
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "buildingPlacementOrder",
+          "line": 22,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "6d2243341ae3a519"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "villageStartProfiles",
+          "line": 25,
+          "lines": 16,
+          "complexity": 6,
+          "nesting": 2,
+          "fingerprint": "5cc1fbfdf8aa59fd"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState",
+          "line": 43,
+          "lines": 161,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "ab1be7bfe7a00f34"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState",
+          "line": 53,
+          "lines": 149,
+          "complexity": 62,
+          "nesting": 6,
+          "fingerprint": "d51144a8f61f7328"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.center",
+          "line": 64,
+          "lines": 1,
+          "complexity": 3,
+          "nesting": 0,
+          "fingerprint": "2ad65d20c891f174"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.map",
+          "line": 71,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "9f961b9149c37961"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState",
+          "line": 71,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "424c49dc07cbcde0"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.findStartingSite",
+          "line": 74,
+          "lines": 2,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "7ed67cd2303e33a1"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.addBuilding",
+          "line": 76,
+          "lines": 21,
+          "complexity": 7,
+          "nesting": 1,
+          "fingerprint": "5be17cf86bd1cd82"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState",
+          "line": 100,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "7a96b90075c160e2"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.granary",
+          "line": 110,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "7a96b90075c160e2"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState",
+          "line": 133,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "a9eefb6a471f2d4d"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.existing.length",
+          "line": 135,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "74aa29aa15dc9277"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.queued.length",
+          "line": 139,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "d9cf64a446dd2d8b"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.additions",
+          "line": 141,
+          "lines": 2,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "895c23e14604f46c"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.additions.length",
+          "line": 142,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "b92ffab8a0c99abf"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.capacity",
+          "line": 146,
+          "lines": 4,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "36d0ffee8e94d327"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.capacity.reduce",
+          "line": 148,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "9f961b9149c37961"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.capacity",
+          "line": 149,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "9245e77ea6de9c9d"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState.existing.length",
+          "line": 154,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "b92ffab8a0c99abf"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "applyVillageStartingState",
+          "line": 196,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "b732dea9763fbcba"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "placeStartingHeroInVillage",
+          "line": 205,
+          "lines": 15,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "cd6cc45b11ce1560"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "placeStartingHeroInVillage.host",
+          "line": 211,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "c97b078edbaaa9f2"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "placeStartingHeroInVillage.center",
+          "line": 212,
+          "lines": 1,
+          "complexity": 3,
+          "nesting": 0,
+          "fingerprint": "2ad65d20c891f174"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "placeStartingHeroInVillage.hero.find.units",
+          "line": 213,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "0964c0bca2abec54"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "placeStartingHeroInVillage.hero",
+          "line": 213,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "cad8c351ce612139"
+        },
+        {
+          "file": "app/services/world/VillageStartingState.ts",
+          "name": "placeStartingHeroInVillage.spatial",
+          "line": 215,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "a4502d9e8c58f961"
+        }
+      ],
+      "imports": [
+        "../../ai/config",
+        "../../config/resourcePresets",
+        "../../constants",
+        "../../lib/objectives/ageRules",
+        "../../lib/buildings/buildingAge",
+        "../../lib/resources/playerResourceTotals",
+        "./StartingVillageLayout",
+        "./OfflineWorldSpatial",
+        "./OfflineWorldWork",
+        "../../types/save"
+      ],
+      "safety": [
+        {
+          "rule": "non-null-assertion",
+          "line": 71,
+          "identity": "f7114a5e972ae597"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 86,
+          "identity": "0cff7f0e534c4316"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 92,
+          "identity": "3416afd5b506c7d1"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 93,
+          "identity": "d11921f5f5f74719"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 93,
+          "identity": "595a5b5e06045b3a"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 100,
+          "identity": "a2ffcaa52f39e601"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 110,
+          "identity": "d1145c855c4ae724"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 135,
+          "identity": "f7114a5e972ae597"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 139,
+          "identity": "771a5ca7ff01965a"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 142,
+          "identity": "c0e5cd3e96094336"
+        },
+        {
+          "rule": "non-null-assertion",
+          "line": 147,
+          "identity": "631fde053d0140a8"
+        }
+      ],
+      "branchCount": 93,
+      "functionCount": 27,
+      "importCount": 10,
+      "exportCount": 3,
+      "maxBlockLines": 161,
+      "codeLines": 214,
+      "parseErrors": [],
+      "loc": 220,
+      "churn90d": 2,
+      "category": "runtime",
+      "risk": 215.8
     },
     {
       "file": "app/controllers/HeroController.ts",
@@ -30852,334 +32045,6 @@
       "churn90d": 51,
       "category": "runtime",
       "risk": 214.3
-    },
-    {
-      "file": "app/services/world/VillageStartingState.ts",
-      "functions": [
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "buildingPlacementOrder",
-          "line": 22,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "6d2243341ae3a519"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "villageStartProfiles",
-          "line": 25,
-          "lines": 16,
-          "complexity": 6,
-          "nesting": 2,
-          "fingerprint": "5cc1fbfdf8aa59fd"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState",
-          "line": 43,
-          "lines": 161,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "ab1be7bfe7a00f34"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState",
-          "line": 53,
-          "lines": 149,
-          "complexity": 62,
-          "nesting": 6,
-          "fingerprint": "d51144a8f61f7328"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.center",
-          "line": 64,
-          "lines": 1,
-          "complexity": 3,
-          "nesting": 0,
-          "fingerprint": "2ad65d20c891f174"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.map",
-          "line": 71,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "9f961b9149c37961"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState",
-          "line": 71,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "424c49dc07cbcde0"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.findStartingSite",
-          "line": 74,
-          "lines": 2,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "7ed67cd2303e33a1"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.addBuilding",
-          "line": 76,
-          "lines": 21,
-          "complexity": 7,
-          "nesting": 1,
-          "fingerprint": "5be17cf86bd1cd82"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState",
-          "line": 100,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "7a96b90075c160e2"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.granary",
-          "line": 110,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "7a96b90075c160e2"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState",
-          "line": 133,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "a9eefb6a471f2d4d"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.existing.length",
-          "line": 135,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "74aa29aa15dc9277"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.queued.length",
-          "line": 139,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "d9cf64a446dd2d8b"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.additions",
-          "line": 141,
-          "lines": 2,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "895c23e14604f46c"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.additions.length",
-          "line": 142,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "b92ffab8a0c99abf"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.capacity",
-          "line": 146,
-          "lines": 4,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "36d0ffee8e94d327"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.capacity.reduce",
-          "line": 148,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "9f961b9149c37961"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.capacity",
-          "line": 149,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "9245e77ea6de9c9d"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState.existing.length",
-          "line": 154,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "b92ffab8a0c99abf"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "applyVillageStartingState",
-          "line": 196,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "b732dea9763fbcba"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "placeStartingHeroInVillage",
-          "line": 205,
-          "lines": 15,
-          "complexity": 4,
-          "nesting": 1,
-          "fingerprint": "cd6cc45b11ce1560"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "placeStartingHeroInVillage.host",
-          "line": 211,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "c97b078edbaaa9f2"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "placeStartingHeroInVillage.center",
-          "line": 212,
-          "lines": 1,
-          "complexity": 3,
-          "nesting": 0,
-          "fingerprint": "2ad65d20c891f174"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "placeStartingHeroInVillage.hero.find.units",
-          "line": 213,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "0964c0bca2abec54"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "placeStartingHeroInVillage.hero",
-          "line": 213,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "cad8c351ce612139"
-        },
-        {
-          "file": "app/services/world/VillageStartingState.ts",
-          "name": "placeStartingHeroInVillage.spatial",
-          "line": 215,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "a4502d9e8c58f961"
-        }
-      ],
-      "imports": [
-        "../../ai/config",
-        "../../config/resourcePresets",
-        "../../constants",
-        "../../lib/objectives/ageRules",
-        "../../lib/buildings/buildingAge",
-        "../../lib/resources/playerResourceTotals",
-        "./StartingVillageLayout",
-        "./OfflineWorldSpatial",
-        "./OfflineWorldWork",
-        "../../types/save"
-      ],
-      "safety": [
-        {
-          "rule": "non-null-assertion",
-          "line": 71,
-          "identity": "f7114a5e972ae597"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 86,
-          "identity": "0cff7f0e534c4316"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 92,
-          "identity": "3416afd5b506c7d1"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 93,
-          "identity": "d11921f5f5f74719"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 93,
-          "identity": "595a5b5e06045b3a"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 100,
-          "identity": "a2ffcaa52f39e601"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 110,
-          "identity": "d1145c855c4ae724"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 135,
-          "identity": "f7114a5e972ae597"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 139,
-          "identity": "771a5ca7ff01965a"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 142,
-          "identity": "c0e5cd3e96094336"
-        },
-        {
-          "rule": "non-null-assertion",
-          "line": 147,
-          "identity": "631fde053d0140a8"
-        }
-      ],
-      "branchCount": 93,
-      "functionCount": 27,
-      "importCount": 10,
-      "exportCount": 3,
-      "maxBlockLines": 161,
-      "codeLines": 214,
-      "parseErrors": [],
-      "loc": 220,
-      "churn90d": 1,
-      "category": "runtime",
-      "risk": 212.8
     },
     {
       "file": "app/controllers/HeroCompanionHorseController.ts",
@@ -33121,9 +33986,9 @@
       "codeLines": 586,
       "parseErrors": [],
       "loc": 599,
-      "churn90d": 58,
+      "churn90d": 59,
       "category": "ui",
-      "risk": 222.2
+      "risk": 224.2
     },
     {
       "file": "app/services/TributeRaidSystem.ts",
@@ -33623,9 +34488,9 @@
       "codeLines": 577,
       "parseErrors": [],
       "loc": 591,
-      "churn90d": 14,
+      "churn90d": 15,
       "category": "runtime",
-      "risk": 297.7
+      "risk": 300.7
     },
     {
       "file": "app/ui/NpcOrdersManager.ts",
@@ -33633,7 +34498,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NPC_TRAINING_ORDER_SPECS",
-          "line": 78,
+          "line": 79,
           "lines": 5,
           "complexity": 1,
           "nesting": 0,
@@ -33642,7 +34507,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isSleepingNpc",
-          "line": 84,
+          "line": 85,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -33651,7 +34516,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isRestingBeforeBedNpc",
-          "line": 88,
+          "line": 89,
           "lines": 9,
           "complexity": 5,
           "nesting": 0,
@@ -33660,7 +34525,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 123,
+          "line": 124,
           "lines": 69,
           "complexity": 1,
           "nesting": 0,
@@ -33669,7 +34534,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 143,
+          "line": 144,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -33678,7 +34543,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 158,
+          "line": 159,
           "lines": 6,
           "complexity": 4,
           "nesting": 1,
@@ -33687,15 +34552,6 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.onNavigate",
-          "line": 176,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "2e9af1cbf500bf9b"
-        },
-        {
-          "file": "app/ui/NpcOrdersManager.ts",
-          "name": "NpcOrdersManager.onBack",
           "line": 177,
           "lines": 1,
           "complexity": 1,
@@ -33704,8 +34560,17 @@
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
+          "name": "NpcOrdersManager.onBack",
+          "line": 178,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "2e9af1cbf500bf9b"
+        },
+        {
+          "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 186,
+          "line": 187,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -33714,16 +34579,16 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 193,
-          "lines": 101,
-          "complexity": 40,
+          "line": 194,
+          "lines": 103,
+          "complexity": 42,
           "nesting": 4,
-          "fingerprint": "5bca704d0eb4a1c8"
+          "fingerprint": "4332d8dd1b05442b"
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.ids",
-          "line": 201,
+          "line": 202,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33732,7 +34597,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 202,
+          "line": 203,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -33741,7 +34606,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.size",
-          "line": 203,
+          "line": 204,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33750,7 +34615,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 204,
+          "line": 205,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -33759,7 +34624,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.isOwnGroup",
-          "line": 237,
+          "line": 240,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33768,7 +34633,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.rescuedNpcs",
-          "line": 247,
+          "line": 250,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -33777,7 +34642,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.chatterLine.line",
-          "line": 250,
+          "line": 253,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33786,7 +34651,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33795,7 +34660,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33804,7 +34669,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.enabled",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33813,7 +34678,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.onClose",
-          "line": 291,
+          "line": 294,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33822,7 +34687,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 295,
+          "line": 298,
           "lines": 27,
           "complexity": 2,
           "nesting": 1,
@@ -33831,7 +34696,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.node",
-          "line": 296,
+          "line": 299,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33840,7 +34705,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 304,
+          "line": 307,
           "lines": 15,
           "complexity": 5,
           "nesting": 1,
@@ -33849,7 +34714,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.next",
-          "line": 311,
+          "line": 314,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33858,7 +34723,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.cycleDebugLevel",
-          "line": 323,
+          "line": 326,
           "lines": 13,
           "complexity": 2,
           "nesting": 1,
@@ -33867,7 +34732,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.updateDebugControls",
-          "line": 337,
+          "line": 340,
           "lines": 11,
           "complexity": 6,
           "nesting": 1,
@@ -33876,7 +34741,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.close",
-          "line": 349,
+          "line": 352,
           "lines": 19,
           "complexity": 6,
           "nesting": 1,
@@ -33885,7 +34750,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showChatterLine",
-          "line": 369,
+          "line": 372,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -33894,7 +34759,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.stopChatterReveal",
-          "line": 377,
+          "line": 380,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -33903,7 +34768,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.toggle",
-          "line": 381,
+          "line": 384,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -33912,7 +34777,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.isOpen",
-          "line": 389,
+          "line": 392,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -33921,7 +34786,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTarget",
-          "line": 393,
+          "line": 396,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -33930,7 +34795,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.destroy",
-          "line": 397,
+          "line": 400,
           "lines": 7,
           "complexity": 1,
           "nesting": 0,
@@ -33939,7 +34804,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 405,
+          "line": 408,
           "lines": 33,
           "complexity": 1,
           "nesting": 0,
@@ -33948,7 +34813,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 406,
+          "line": 409,
           "lines": 31,
           "complexity": 2,
           "nesting": 1,
@@ -33957,7 +34822,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 414,
+          "line": 417,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33966,7 +34831,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 415,
+          "line": 418,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33975,7 +34840,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 420,
+          "line": 423,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33984,7 +34849,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 421,
+          "line": 424,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -33993,7 +34858,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 426,
+          "line": 429,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34002,7 +34867,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 427,
+          "line": 430,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34011,7 +34876,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 432,
+          "line": 435,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34020,7 +34885,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 433,
+          "line": 436,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34029,7 +34894,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem",
-          "line": 439,
+          "line": 442,
           "lines": 9,
           "complexity": 2,
           "nesting": 1,
@@ -34038,7 +34903,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.detail",
-          "line": 443,
+          "line": 446,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34047,7 +34912,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.hidden",
-          "line": 444,
+          "line": 447,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34056,7 +34921,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.onClick",
-          "line": 445,
+          "line": 448,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34065,7 +34930,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTrainingOrderDetail",
-          "line": 449,
+          "line": 452,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -34074,7 +34939,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 453,
+          "line": 456,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -34083,7 +34948,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 454,
+          "line": 457,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34092,7 +34957,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasNightWorkBlock",
-          "line": 457,
+          "line": 460,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -34101,7 +34966,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 461,
+          "line": 464,
           "lines": 8,
           "complexity": 6,
           "nesting": 1,
@@ -34110,7 +34975,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 462,
+          "line": 465,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34119,7 +34984,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 463,
+          "line": 466,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34128,7 +34993,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowResourcesButton",
-          "line": 470,
+          "line": 473,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -34137,7 +35002,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 474,
+          "line": 477,
           "lines": 11,
           "complexity": 3,
           "nesting": 0,
@@ -34146,7 +35011,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 479,
+          "line": 482,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -34155,7 +35020,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 481,
+          "line": 484,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34164,7 +35029,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 486,
+          "line": 489,
           "lines": 8,
           "complexity": 2,
           "nesting": 0,
@@ -34173,7 +35038,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 490,
+          "line": 493,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -34182,7 +35047,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 495,
+          "line": 498,
           "lines": 8,
           "complexity": 1,
           "nesting": 0,
@@ -34191,7 +35056,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 497,
+          "line": 500,
           "lines": 4,
           "complexity": 3,
           "nesting": 0,
@@ -34200,7 +35065,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowVillagerJobOrder",
-          "line": 504,
+          "line": 507,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -34209,7 +35074,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.syncQuest",
-          "line": 508,
+          "line": 511,
           "lines": 3,
           "complexity": 4,
           "nesting": 2,
@@ -34218,7 +35083,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.refreshInventory",
-          "line": 512,
+          "line": 515,
           "lines": 5,
           "complexity": 2,
           "nesting": 1,
@@ -34227,7 +35092,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowBagButton",
-          "line": 518,
+          "line": 521,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -34236,7 +35101,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 522,
+          "line": 525,
           "lines": 9,
           "complexity": 4,
           "nesting": 1,
@@ -34245,7 +35110,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 528,
+          "line": 531,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -34254,7 +35119,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.closeBag",
-          "line": 532,
+          "line": 535,
           "lines": 8,
           "complexity": 2,
           "nesting": 1,
@@ -34263,7 +35128,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.runOrder",
-          "line": 541,
+          "line": 544,
           "lines": 37,
           "complexity": 14,
           "nesting": 5,
@@ -34303,31 +35168,31 @@
       "safety": [
         {
           "rule": "non-null-assertion",
-          "line": 296,
+          "line": 299,
           "identity": "c7fb3bb5c1b82e85"
         },
         {
           "rule": "non-null-assertion",
-          "line": 311,
+          "line": 314,
           "identity": "8d82d0ca1b8ea82c"
         },
         {
           "rule": "non-null-assertion",
-          "line": 443,
+          "line": 446,
           "identity": "d64190d8ad60a3fd"
         }
       ],
-      "branchCount": 108,
+      "branchCount": 110,
       "functionCount": 71,
       "importCount": 28,
       "exportCount": 1,
-      "maxBlockLines": 101,
-      "codeLines": 578,
+      "maxBlockLines": 103,
+      "codeLines": 581,
       "parseErrors": [],
-      "loc": 579,
-      "churn90d": 29,
+      "loc": 582,
+      "churn90d": 31,
       "category": "ui",
-      "risk": 289.9
+      "risk": 300.6
     },
     {
       "file": "app/ui/PlayerSetupPanel.ts",
@@ -34985,9 +35850,9 @@
       "codeLines": 558,
       "parseErrors": [],
       "loc": 559,
-      "churn90d": 25,
+      "churn90d": 26,
       "category": "data/config",
-      "risk": 64
+      "risk": 66
     },
     {
       "file": "app/lib/entities/spriteFragmentBurst.ts",
@@ -35246,9 +36111,9 @@
       "codeLines": 556,
       "parseErrors": [],
       "loc": 557,
-      "churn90d": 26,
+      "churn90d": 27,
       "category": "data/config",
-      "risk": 65.9
+      "risk": 67.9
     },
     {
       "file": "app/classes/map/Map.ts",
@@ -37046,9 +37911,9 @@
       "codeLines": 577,
       "parseErrors": [],
       "loc": 591,
-      "churn90d": 14,
+      "churn90d": 15,
       "category": "runtime",
-      "risk": 297.7
+      "risk": 300.7
     },
     {
       "file": "app/services/quests/NeutralVillageQuests.ts",
@@ -37456,9 +38321,9 @@
       "codeLines": 324,
       "parseErrors": [],
       "loc": 341,
-      "churn90d": 2,
+      "churn90d": 3,
       "category": "runtime",
-      "risk": 252.4
+      "risk": 255.4
     },
     {
       "file": "app/lib/resources/playerResourceTotals.ts",
@@ -37752,9 +38617,9 @@
       "codeLines": 286,
       "parseErrors": [],
       "loc": 324,
-      "churn90d": 7,
+      "churn90d": 8,
       "category": "library",
-      "risk": 231.6
+      "risk": 234.6
     },
     {
       "file": "app/services/SpacePortalSystem.ts",
@@ -38503,6 +39368,285 @@
       "risk": 210.3
     },
     {
+      "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+      "functions": [
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "shouldUnitRemainAtRest",
+          "line": 32,
+          "lines": 3,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "ebf7b898fa93df61"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "stateLabels",
+          "line": 36,
+          "lines": 5,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "a164cee3a6423721"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "stateLabels.filter",
+          "line": 38,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "bf2cfd69c438c63a"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "stateLabels",
+          "line": 38,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "74aa410bdb8b2c7b"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "removeRuntimeUnitsByLabels",
+          "line": 42,
+          "lines": 33,
+          "complexity": 12,
+          "nesting": 2,
+          "fingerprint": "b9a3d6f4ff0442af"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "removeRuntimeUnitsByLabels.removedUnits",
+          "line": 45,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "0cb4f61e72462450"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "removeRuntimeUnitsByLabels",
+          "line": 69,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "62d74f370fe3e5b9"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "removeRuntimeUnitsByLabels",
+          "line": 70,
+          "lines": 1,
+          "complexity": 2,
+          "nesting": 0,
+          "fingerprint": "62d74f370fe3e5b9"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "removeRuntimeInteriorOccupants",
+          "line": 76,
+          "lines": 6,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "dc5a3089fc4be432"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "hasPendingInteriorExitOrder",
+          "line": 83,
+          "lines": 6,
+          "complexity": 4,
+          "nesting": 1,
+          "fingerprint": "37699cdeba35effe"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "canRouteInteriorOccupantToExit",
+          "line": 90,
+          "lines": 13,
+          "complexity": 12,
+          "nesting": 2,
+          "fingerprint": "819988749b65aa52"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "clearInteriorExitState",
+          "line": 104,
+          "lines": 5,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "44d159395901931b"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "returnTaskDestinationReference",
+          "line": 110,
+          "lines": 6,
+          "complexity": 5,
+          "nesting": 1,
+          "fingerprint": "c56e55c95f61121f"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "applyInteriorExitReturnTasks",
+          "line": 117,
+          "lines": 29,
+          "complexity": 2,
+          "nesting": 1,
+          "fingerprint": "0046b6c7ea8d6d87"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "applyInteriorExitReturnTasks.tasksByLabel.filter",
+          "line": 123,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "80f5e353f25f5327"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "applyInteriorExitReturnTasks.tasksByLabel",
+          "line": 125,
+          "lines": 2,
+          "complexity": 3,
+          "nesting": 0,
+          "fingerprint": "b0c227a9a37408c3"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "applyInteriorExitReturnTasks",
+          "line": 131,
+          "lines": 14,
+          "complexity": 10,
+          "nesting": 1,
+          "fingerprint": "9a079cfb91456fba"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "resumeInteriorExitReturnTask",
+          "line": 147,
+          "lines": 6,
+          "complexity": 3,
+          "nesting": 1,
+          "fingerprint": "91f8204e26b7926b"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "routeRuntimeInteriorExit",
+          "line": 154,
+          "lines": 10,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "7c647af56b64c9b8"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "routeRuntimeInteriorExit.onTransferred",
+          "line": 161,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "5ce5a4e8913e3f6b"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "updateRuntimeInteriorExit",
+          "line": 165,
+          "lines": 23,
+          "complexity": 15,
+          "nesting": 1,
+          "fingerprint": "956a6cd26ac49ebf"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "completeInteriorOccupantExit",
+          "line": 189,
+          "lines": 18,
+          "complexity": 5,
+          "nesting": 1,
+          "fingerprint": "4cc5be571c513ddb"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "updateInteriorOccupantExit",
+          "line": 208,
+          "lines": 47,
+          "complexity": 19,
+          "nesting": 1,
+          "fingerprint": "68afbb420a8ccd17"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "scheduleInteriorOccupantExitCheck",
+          "line": 256,
+          "lines": 11,
+          "complexity": 5,
+          "nesting": 1,
+          "fingerprint": "9c722e88344e442a"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "scheduleInteriorOccupantExitCheck.taskId",
+          "line": 261,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "ae0fa0e3a137439d"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "routeInteriorUnitToExit",
+          "line": 268,
+          "lines": 53,
+          "complexity": 22,
+          "nesting": 2,
+          "fingerprint": "1dcd7a58285027c9"
+        },
+        {
+          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
+          "name": "synchronizeInteriorOccupantsAfterTimeJump",
+          "line": 322,
+          "lines": 22,
+          "complexity": 8,
+          "nesting": 1,
+          "fingerprint": "554fb2c932c980ba"
+        }
+      ],
+      "imports": [
+        "../../lib/definedProperties",
+        "../../lib/buildings/interiorExits",
+        "../../serialization/SaveSerializer",
+        "../../services/BuildingInteriorSpaceSystem",
+        "../../services/rest/UnitRestLifecycle",
+        "../../services/rest/UnitRestRules",
+        "../../lib/units/villagerSchedule",
+        "../../constants",
+        "../../types/context",
+        "../../types/entities",
+        "../../types/map",
+        "../../types/save",
+        "./GameStateHelpers",
+        "./GameTravelParty",
+        "./BuildingInteriorReturnState",
+        "./BuildingInteriorOccupants",
+        "./BuildingInteriorTravelTypes"
+      ],
+      "safety": [],
+      "branchCount": 117,
+      "functionCount": 27,
+      "importCount": 17,
+      "exportCount": 2,
+      "maxBlockLines": 53,
+      "codeLines": 313,
+      "parseErrors": [],
+      "loc": 344,
+      "churn90d": 6,
+      "category": "ui",
+      "risk": 202.1
+    },
+    {
       "file": "app/dev-console/actions/PerformanceDebug.ts",
       "functions": [
         {
@@ -38809,285 +39953,6 @@
       "churn90d": 1,
       "category": "tooling",
       "risk": 187.5
-    },
-    {
-      "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-      "functions": [
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "shouldUnitRemainAtRest",
-          "line": 32,
-          "lines": 3,
-          "complexity": 2,
-          "nesting": 1,
-          "fingerprint": "ebf7b898fa93df61"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "stateLabels",
-          "line": 36,
-          "lines": 5,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "a164cee3a6423721"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "stateLabels.filter",
-          "line": 38,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "bf2cfd69c438c63a"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "stateLabels",
-          "line": 38,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "74aa410bdb8b2c7b"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "removeRuntimeUnitsByLabels",
-          "line": 42,
-          "lines": 33,
-          "complexity": 12,
-          "nesting": 2,
-          "fingerprint": "b9a3d6f4ff0442af"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "removeRuntimeUnitsByLabels.removedUnits",
-          "line": 45,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "0cb4f61e72462450"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "removeRuntimeUnitsByLabels",
-          "line": 69,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "62d74f370fe3e5b9"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "removeRuntimeUnitsByLabels",
-          "line": 70,
-          "lines": 1,
-          "complexity": 2,
-          "nesting": 0,
-          "fingerprint": "62d74f370fe3e5b9"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "removeRuntimeInteriorOccupants",
-          "line": 76,
-          "lines": 6,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "dc5a3089fc4be432"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "hasPendingInteriorExitOrder",
-          "line": 83,
-          "lines": 6,
-          "complexity": 4,
-          "nesting": 1,
-          "fingerprint": "37699cdeba35effe"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "canRouteInteriorOccupantToExit",
-          "line": 90,
-          "lines": 13,
-          "complexity": 12,
-          "nesting": 2,
-          "fingerprint": "819988749b65aa52"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "clearInteriorExitState",
-          "line": 104,
-          "lines": 5,
-          "complexity": 2,
-          "nesting": 1,
-          "fingerprint": "44d159395901931b"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "returnTaskDestinationReference",
-          "line": 110,
-          "lines": 6,
-          "complexity": 5,
-          "nesting": 1,
-          "fingerprint": "c56e55c95f61121f"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "applyInteriorExitReturnTasks",
-          "line": 117,
-          "lines": 29,
-          "complexity": 2,
-          "nesting": 1,
-          "fingerprint": "0046b6c7ea8d6d87"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "applyInteriorExitReturnTasks.tasksByLabel.filter",
-          "line": 123,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "80f5e353f25f5327"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "applyInteriorExitReturnTasks.tasksByLabel",
-          "line": 125,
-          "lines": 2,
-          "complexity": 3,
-          "nesting": 0,
-          "fingerprint": "b0c227a9a37408c3"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "applyInteriorExitReturnTasks",
-          "line": 131,
-          "lines": 14,
-          "complexity": 10,
-          "nesting": 1,
-          "fingerprint": "9a079cfb91456fba"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "resumeInteriorExitReturnTask",
-          "line": 147,
-          "lines": 6,
-          "complexity": 3,
-          "nesting": 1,
-          "fingerprint": "91f8204e26b7926b"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "routeRuntimeInteriorExit",
-          "line": 154,
-          "lines": 10,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "7c647af56b64c9b8"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "routeRuntimeInteriorExit.onTransferred",
-          "line": 161,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "5ce5a4e8913e3f6b"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "updateRuntimeInteriorExit",
-          "line": 165,
-          "lines": 21,
-          "complexity": 15,
-          "nesting": 1,
-          "fingerprint": "f3ebec09a59b1996"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "completeInteriorOccupantExit",
-          "line": 187,
-          "lines": 18,
-          "complexity": 5,
-          "nesting": 1,
-          "fingerprint": "4cc5be571c513ddb"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "updateInteriorOccupantExit",
-          "line": 206,
-          "lines": 47,
-          "complexity": 19,
-          "nesting": 1,
-          "fingerprint": "68afbb420a8ccd17"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "scheduleInteriorOccupantExitCheck",
-          "line": 254,
-          "lines": 11,
-          "complexity": 5,
-          "nesting": 1,
-          "fingerprint": "9c722e88344e442a"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "scheduleInteriorOccupantExitCheck.taskId",
-          "line": 259,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "ae0fa0e3a137439d"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "routeInteriorUnitToExit",
-          "line": 266,
-          "lines": 60,
-          "complexity": 21,
-          "nesting": 2,
-          "fingerprint": "3511046335f3f20c"
-        },
-        {
-          "file": "app/screens/game/BuildingInteriorExitRouting.ts",
-          "name": "synchronizeInteriorOccupantsAfterTimeJump",
-          "line": 327,
-          "lines": 22,
-          "complexity": 8,
-          "nesting": 1,
-          "fingerprint": "554fb2c932c980ba"
-        }
-      ],
-      "imports": [
-        "../../lib/definedProperties",
-        "../../lib/buildings/interiorExits",
-        "../../serialization/SaveSerializer",
-        "../../services/BuildingInteriorSpaceSystem",
-        "../../services/rest/UnitRestLifecycle",
-        "../../services/rest/UnitRestRules",
-        "../../lib/units/villagerSchedule",
-        "../../constants",
-        "../../types/context",
-        "../../types/entities",
-        "../../types/map",
-        "../../types/save",
-        "./GameStateHelpers",
-        "./GameTravelParty",
-        "./BuildingInteriorReturnState",
-        "./BuildingInteriorOccupants",
-        "./BuildingInteriorTravelTypes"
-      ],
-      "safety": [],
-      "branchCount": 116,
-      "functionCount": 27,
-      "importCount": 17,
-      "exportCount": 2,
-      "maxBlockLines": 60,
-      "codeLines": 319,
-      "parseErrors": [],
-      "loc": 349,
-      "churn90d": 5,
-      "category": "ui",
-      "risk": 197.7
     },
     {
       "file": "app/dev-console/actions/DebugMapRenderers.ts",
@@ -39655,7 +40520,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NPC_TRAINING_ORDER_SPECS",
-          "line": 78,
+          "line": 79,
           "lines": 5,
           "complexity": 1,
           "nesting": 0,
@@ -39664,7 +40529,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isSleepingNpc",
-          "line": 84,
+          "line": 85,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -39673,7 +40538,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "isRestingBeforeBedNpc",
-          "line": 88,
+          "line": 89,
           "lines": 9,
           "complexity": 5,
           "nesting": 0,
@@ -39682,7 +40547,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 123,
+          "line": 124,
           "lines": 69,
           "complexity": 1,
           "nesting": 0,
@@ -39691,7 +40556,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 143,
+          "line": 144,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -39700,7 +40565,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 158,
+          "line": 159,
           "lines": 6,
           "complexity": 4,
           "nesting": 1,
@@ -39709,15 +40574,6 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.onNavigate",
-          "line": 176,
-          "lines": 1,
-          "complexity": 1,
-          "nesting": 0,
-          "fingerprint": "2e9af1cbf500bf9b"
-        },
-        {
-          "file": "app/ui/NpcOrdersManager.ts",
-          "name": "NpcOrdersManager.onBack",
           "line": 177,
           "lines": 1,
           "complexity": 1,
@@ -39726,8 +40582,17 @@
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
+          "name": "NpcOrdersManager.onBack",
+          "line": 178,
+          "lines": 1,
+          "complexity": 1,
+          "nesting": 0,
+          "fingerprint": "2e9af1cbf500bf9b"
+        },
+        {
+          "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager",
-          "line": 186,
+          "line": 187,
           "lines": 4,
           "complexity": 1,
           "nesting": 0,
@@ -39736,16 +40601,16 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 193,
-          "lines": 101,
-          "complexity": 40,
+          "line": 194,
+          "lines": 103,
+          "complexity": 42,
           "nesting": 4,
-          "fingerprint": "5bca704d0eb4a1c8"
+          "fingerprint": "4332d8dd1b05442b"
         },
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.ids",
-          "line": 201,
+          "line": 202,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39754,7 +40619,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 202,
+          "line": 203,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -39763,7 +40628,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.size",
-          "line": 203,
+          "line": 204,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39772,7 +40637,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open",
-          "line": 204,
+          "line": 205,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -39781,7 +40646,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.isOwnGroup",
-          "line": 237,
+          "line": 240,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39790,7 +40655,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.rescuedNpcs",
-          "line": 247,
+          "line": 250,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -39799,7 +40664,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.chatterLine.line",
-          "line": 250,
+          "line": 253,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39808,7 +40673,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39817,7 +40682,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.targets",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39826,7 +40691,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.proximity.enabled",
-          "line": 284,
+          "line": 287,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39835,7 +40700,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.open.onClose",
-          "line": 291,
+          "line": 294,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39844,7 +40709,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 295,
+          "line": 298,
           "lines": 27,
           "complexity": 2,
           "nesting": 1,
@@ -39853,7 +40718,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.node",
-          "line": 296,
+          "line": 299,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39862,7 +40727,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices",
-          "line": 304,
+          "line": 307,
           "lines": 15,
           "complexity": 5,
           "nesting": 1,
@@ -39871,7 +40736,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showDialogueChoices.next",
-          "line": 311,
+          "line": 314,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39880,7 +40745,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.cycleDebugLevel",
-          "line": 323,
+          "line": 326,
           "lines": 13,
           "complexity": 2,
           "nesting": 1,
@@ -39889,7 +40754,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.updateDebugControls",
-          "line": 337,
+          "line": 340,
           "lines": 11,
           "complexity": 6,
           "nesting": 1,
@@ -39898,7 +40763,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.close",
-          "line": 349,
+          "line": 352,
           "lines": 19,
           "complexity": 6,
           "nesting": 1,
@@ -39907,7 +40772,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.showChatterLine",
-          "line": 369,
+          "line": 372,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -39916,7 +40781,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.stopChatterReveal",
-          "line": 377,
+          "line": 380,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -39925,7 +40790,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.toggle",
-          "line": 381,
+          "line": 384,
           "lines": 7,
           "complexity": 2,
           "nesting": 1,
@@ -39934,7 +40799,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.isOpen",
-          "line": 389,
+          "line": 392,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -39943,7 +40808,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTarget",
-          "line": 393,
+          "line": 396,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -39952,7 +40817,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.destroy",
-          "line": 397,
+          "line": 400,
           "lines": 7,
           "complexity": 1,
           "nesting": 0,
@@ -39961,7 +40826,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 405,
+          "line": 408,
           "lines": 33,
           "complexity": 1,
           "nesting": 0,
@@ -39970,7 +40835,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems",
-          "line": 406,
+          "line": 409,
           "lines": 31,
           "complexity": 2,
           "nesting": 1,
@@ -39979,7 +40844,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 414,
+          "line": 417,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39988,7 +40853,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 415,
+          "line": 418,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -39997,7 +40862,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 420,
+          "line": 423,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40006,7 +40871,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 421,
+          "line": 424,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40015,7 +40880,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 426,
+          "line": 429,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40024,7 +40889,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.children",
-          "line": 427,
+          "line": 430,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40033,7 +40898,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.hidden",
-          "line": 432,
+          "line": 435,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40042,7 +40907,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItems.onClick",
-          "line": 433,
+          "line": 436,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40051,7 +40916,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem",
-          "line": 439,
+          "line": 442,
           "lines": 9,
           "complexity": 2,
           "nesting": 1,
@@ -40060,7 +40925,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.detail",
-          "line": 443,
+          "line": 446,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40069,7 +40934,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.hidden",
-          "line": 444,
+          "line": 447,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40078,7 +40943,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.createOrderMenuItem.onClick",
-          "line": 445,
+          "line": 448,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40087,7 +40952,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.getTrainingOrderDetail",
-          "line": 449,
+          "line": 452,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -40096,7 +40961,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 453,
+          "line": 456,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -40105,7 +40970,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasVillager",
-          "line": 454,
+          "line": 457,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40114,7 +40979,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.hasNightWorkBlock",
-          "line": 457,
+          "line": 460,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -40123,7 +40988,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 461,
+          "line": 464,
           "lines": 8,
           "complexity": 6,
           "nesting": 1,
@@ -40132,7 +40997,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 462,
+          "line": 465,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40141,7 +41006,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowOrder",
-          "line": 463,
+          "line": 466,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40150,7 +41015,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowResourcesButton",
-          "line": 470,
+          "line": 473,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -40159,7 +41024,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 474,
+          "line": 477,
           "lines": 11,
           "complexity": 3,
           "nesting": 0,
@@ -40168,7 +41033,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 479,
+          "line": 482,
           "lines": 3,
           "complexity": 2,
           "nesting": 0,
@@ -40177,7 +41042,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingButton",
-          "line": 481,
+          "line": 484,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40186,7 +41051,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 486,
+          "line": 489,
           "lines": 8,
           "complexity": 2,
           "nesting": 0,
@@ -40195,7 +41060,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowTrainingOrder",
-          "line": 490,
+          "line": 493,
           "lines": 1,
           "complexity": 2,
           "nesting": 0,
@@ -40204,7 +41069,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 495,
+          "line": 498,
           "lines": 8,
           "complexity": 1,
           "nesting": 0,
@@ -40213,7 +41078,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowMountHorseButton",
-          "line": 497,
+          "line": 500,
           "lines": 4,
           "complexity": 3,
           "nesting": 0,
@@ -40222,7 +41087,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowVillagerJobOrder",
-          "line": 504,
+          "line": 507,
           "lines": 3,
           "complexity": 1,
           "nesting": 0,
@@ -40231,7 +41096,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.syncQuest",
-          "line": 508,
+          "line": 511,
           "lines": 3,
           "complexity": 4,
           "nesting": 2,
@@ -40240,7 +41105,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.refreshInventory",
-          "line": 512,
+          "line": 515,
           "lines": 5,
           "complexity": 2,
           "nesting": 1,
@@ -40249,7 +41114,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.canShowBagButton",
-          "line": 518,
+          "line": 521,
           "lines": 3,
           "complexity": 3,
           "nesting": 0,
@@ -40258,7 +41123,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 522,
+          "line": 525,
           "lines": 9,
           "complexity": 4,
           "nesting": 1,
@@ -40267,7 +41132,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.openBag",
-          "line": 528,
+          "line": 531,
           "lines": 1,
           "complexity": 1,
           "nesting": 0,
@@ -40276,7 +41141,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.closeBag",
-          "line": 532,
+          "line": 535,
           "lines": 8,
           "complexity": 2,
           "nesting": 1,
@@ -40285,7 +41150,7 @@
         {
           "file": "app/ui/NpcOrdersManager.ts",
           "name": "NpcOrdersManager.runOrder",
-          "line": 541,
+          "line": 544,
           "lines": 37,
           "complexity": 14,
           "nesting": 5,
@@ -40325,31 +41190,31 @@
       "safety": [
         {
           "rule": "non-null-assertion",
-          "line": 296,
+          "line": 299,
           "identity": "c7fb3bb5c1b82e85"
         },
         {
           "rule": "non-null-assertion",
-          "line": 311,
+          "line": 314,
           "identity": "8d82d0ca1b8ea82c"
         },
         {
           "rule": "non-null-assertion",
-          "line": 443,
+          "line": 446,
           "identity": "d64190d8ad60a3fd"
         }
       ],
-      "branchCount": 108,
+      "branchCount": 110,
       "functionCount": 71,
       "importCount": 28,
       "exportCount": 1,
-      "maxBlockLines": 101,
-      "codeLines": 578,
+      "maxBlockLines": 103,
+      "codeLines": 581,
       "parseErrors": [],
-      "loc": 579,
-      "churn90d": 29,
+      "loc": 582,
+      "churn90d": 31,
       "category": "ui",
-      "risk": 289.9
+      "risk": 300.6
     },
     {
       "file": "tools/health/analyze.cjs",
@@ -41367,9 +42232,9 @@
       "codeLines": 586,
       "parseErrors": [],
       "loc": 599,
-      "churn90d": 58,
+      "churn90d": 59,
       "category": "ui",
-      "risk": 222.2
+      "risk": 224.2
     },
     {
       "file": "app/config/assetManifest.ts",
@@ -41729,6 +42594,37 @@
       "churn90d": 56,
       "category": "app",
       "risk": 242.7
+    },
+    {
+      "file": "app/types/context.ts",
+      "functions": [],
+      "imports": [
+        "./dialogue",
+        "../services/quests/NeutralVillageQuests",
+        "./quest",
+        "pixi.js",
+        "./map",
+        "./player",
+        "./entities",
+        "./ui",
+        "./heroTools",
+        "./save",
+        "./geometry",
+        "../classes/ControlsKeyboard",
+        "../services/world/WorldPursuitSystem"
+      ],
+      "safety": [],
+      "branchCount": 0,
+      "functionCount": 0,
+      "importCount": 13,
+      "exportCount": 14,
+      "maxBlockLines": 0,
+      "codeLines": 336,
+      "parseErrors": [],
+      "loc": 359,
+      "churn90d": 55,
+      "category": "types",
+      "risk": 119
     },
     {
       "file": "app/classes/map/MapGeneration.ts",
@@ -42353,37 +43249,6 @@
       "risk": 186.8
     },
     {
-      "file": "app/types/context.ts",
-      "functions": [],
-      "imports": [
-        "./dialogue",
-        "../services/quests/NeutralVillageQuests",
-        "./quest",
-        "pixi.js",
-        "./map",
-        "./player",
-        "./entities",
-        "./ui",
-        "./heroTools",
-        "./save",
-        "./geometry",
-        "../classes/ControlsKeyboard",
-        "../services/world/WorldPursuitSystem"
-      ],
-      "safety": [],
-      "branchCount": 0,
-      "functionCount": 0,
-      "importCount": 13,
-      "exportCount": 14,
-      "maxBlockLines": 0,
-      "codeLines": 336,
-      "parseErrors": [],
-      "loc": 359,
-      "churn90d": 54,
-      "category": "types",
-      "risk": 117
-    },
-    {
       "file": "app/types/save.ts",
       "functions": [],
       "imports": [
@@ -42411,9 +43276,9 @@
       "codeLines": 429,
       "parseErrors": [],
       "loc": 464,
-      "churn90d": 52,
+      "churn90d": 53,
       "category": "types",
-      "risk": 115.6
+      "risk": 117.6
     },
     {
       "file": "app/controllers/HeroController.ts",
