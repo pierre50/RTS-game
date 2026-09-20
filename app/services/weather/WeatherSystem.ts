@@ -400,6 +400,22 @@ export class WeatherSystem {
     this.drawFlash()
   }
 
+  // Prepare the arrival frame while simulation remains paused behind the transition.
+  refresh(): void {
+    this.screenRect = this.getScreenRect()
+    this.layer.position.set(this.screenRect.x, this.screenRect.y)
+    this.lastMapX = this.map.x
+    this.lastMapY = this.map.y
+    const shouldRender = this.colorGrading.shouldRender()
+    this.colorGrading.sync(shouldRender)
+    this.updateColor(0)
+    this.layer.visible = shouldRender && !this.context.timeSkip?.suppressCosmetics
+    if (!this.layer.visible) return
+    this.drawRainVeil()
+    this.updatePrecipitation(0)
+    this.drawFlash()
+  }
+
   updateAmbientSound(elapsedSeconds: number): void {
     if (
       this.context.paused ||

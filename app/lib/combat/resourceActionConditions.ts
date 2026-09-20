@@ -1,3 +1,4 @@
+import { canGatherCaveMineral } from '../resources/caveMinerals'
 import type { CombatEntity } from '../../types/combat'
 import {
   ACTION_TYPES,
@@ -100,6 +101,7 @@ export function getResourceActionConditions(source: CombatEntity, target: Combat
         config.action,
         () =>
           isVillagerOrHero(source) &&
+          canGatherCaveMineral(source, target) &&
           canMineIronResource(source, target) &&
           target.type === resourceType &&
           (target.quantity ?? 0) > 0 &&

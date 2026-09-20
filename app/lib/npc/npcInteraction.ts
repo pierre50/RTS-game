@@ -159,12 +159,6 @@ function releaseNpc(target: UnitEntity): void {
     return
   }
   const dest = target.previousDest
-  if (target.autonomousJob) {
-    target.previousDest = null
-    target.action = null
-    target.affectNewDest?.()
-    return
-  }
   if (target.trainingTargetType && dest && isRuntimeEntityDest(dest)) {
     target.previousDest = null
     target.sendTo?.(dest, ACTION_TYPES.train)

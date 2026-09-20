@@ -49,6 +49,7 @@ export function economyReport(args: string[], context: DevConsoleContext): Comma
       buildings: counts(buildings.filter(building => building.isBuilt)),
       constructionProjects: buildings.filter(building => !building.isBuilt).length,
       trainingProjects: buildings.reduce((total, building) => total + (building.trainingQueue?.length ?? 0), 0),
+      idleWorkers: units.filter(unit => unit.type === 'Villager' && unit.inactif).length,
     }
   })
   for (const region of regions) {

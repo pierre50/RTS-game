@@ -8,9 +8,9 @@ import type { RuntimeEntity } from '../../../types/entities'
 import { stopManualHeroAction } from '../UnitManualHeroWork'
 import {
   addGatheredResource,
-  getCarriedResourceAmountForLoadingType,
   getGatherAmount,
   isFarmHarvestTarget,
+  notifyIfHeroResourceCarryFull,
   sendVillagerToDeliveryIfFull,
   shouldReleaseGatheredResource,
 } from '../UnitResourceGathering'
@@ -80,11 +80,12 @@ function harvestFarm(
     finishWorkSwing(unit, SLASH_IMPACT_FRAME)
     return
   }
-  const previousAmount = getCarriedResourceAmountForLoadingType(unit, LOADING_TYPES.wheat)
   const gain = addGatheredResource(unit, LOADING_TYPES.wheat, requestedGain)
   if (gain <= 0) {
-    if (isHeroControlled(unit)) stopManualHeroAction(unit)
-    else unit.sendToDelivery?.()
+    if (isHeroControlled(unit)) {
+      notifyIfHeroResourceCarryFull(unit)
+      stopManualHeroAction(unit)
+    } else unit.sendToDelivery?.()
     return
   }
   grantUnitXp(unit, XP_CATEGORIES.farming, gain)
@@ -96,7 +97,7 @@ function harvestFarm(
   if ((d.quantity ?? 0) <= 0) {
     d.die?.()
     unit.affectNewDest?.()
-  } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat, previousAmount)) {
+  } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat)) {
     unit.gatherProgressState = null
   }
   finishWorkSwing(unit, workTickFrame, workTickFrame)

@@ -1,5 +1,8 @@
+import { getReliefAppearance } from '../../../lib/terrain/reliefAppearance'
 import { Assets, Container, Sprite } from 'pixi.js'
-import { cartesianToIsometric, getDeterministicCellVariant, getTexture } from '../../../lib'
+import { cartesianToIsometric } from '../../../lib/maths'
+import { getDeterministicCellVariant } from '../../../lib/random'
+import { getTexture } from '../../../lib/graphics/textures'
 import { CELL_DEPTH } from '../../../constants'
 import { getNeighborFlags } from '../../../lib/terrain/topology'
 import { debugLog } from '../../../lib/debug'
@@ -56,7 +59,10 @@ export function rebuildTerrainBackfill(map: TerrainMap): void {
         sprite.x = x
         sprite.y = y - level * CELL_DEPTH
         sprite.zIndex = i + j + level / 10
-        sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
+        sprite.anchor.set(
+          Math.floor(texture.width / 2) / texture.width,
+          Math.floor(texture.height / 2) / texture.height
+        )
         sprite.roundPixels = true
         sprite.eventMode = 'none'
         layer.addChild(sprite)
@@ -73,7 +79,10 @@ export function rebuildTerrainBackfill(map: TerrainMap): void {
 
 export function formatTerrainRelief(map: TerrainMap, backfill = true): void {
   if (backfill) rebuildTerrainBackfill(map)
+  formatTerrainReliefCells(map)
+}
 
+export function formatTerrainReliefCells(map: Pick<TerrainMap, 'size' | 'grid'>): void {
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
@@ -87,46 +96,9 @@ export function formatTerrainRelief(map: TerrainMap, backfill = true): void {
         (neighbor: TerrainCell | undefined) => (neighbor?.z ?? cell.z) > cell.z
       )
 
-      if (n && !s && !w && !e) {
-        cell.setReliefBorder?.('014', CELL_DEPTH / 2)
-      } else if (s && !n && !w && !e) {
-        cell.setReliefBorder?.('015', CELL_DEPTH / 2)
-      } else if (w && !n && !s && !e) {
-        cell.setReliefBorder?.('016', CELL_DEPTH / 2)
-      } else if (e && !n && !s && !w) {
-        cell.setReliefBorder?.('013', CELL_DEPTH / 2)
-      } else if (nw && !n && !w) {
-        cell.setReliefBorder?.('010', CELL_DEPTH / 2)
-      } else if (sw && !s && !w) {
-        cell.setReliefBorder?.('012')
-      } else if (ne && !n && !e) {
-        cell.setReliefBorder?.('011')
-      } else if (se && !s && !e) {
-        cell.setReliefBorder?.('009', CELL_DEPTH / 2)
-      } else if (w && n && !s && !e) {
-        cell.setReliefBorder?.('022', CELL_DEPTH / 2)
-      } else if (e && s && !n && !w) {
-        cell.setReliefBorder?.('021', CELL_DEPTH / 2)
-      } else if (w && s && !n && !e) {
-        cell.setReliefBorder?.('023', CELL_DEPTH)
-      } else if (e && n && !s && !w) {
-        cell.setReliefBorder?.('024', CELL_DEPTH)
-      } else if (n && s && !w && !e) {
-        cell.setReliefBorder?.('017', CELL_DEPTH / 2)
-      } else if (w && e && !n && !s) {
-        cell.setReliefBorder?.('018', CELL_DEPTH / 2)
-      } else if (n && w) {
-        cell.setReliefBorder?.('022', CELL_DEPTH / 2)
-      } else if (s && e) {
-        cell.setReliefBorder?.('021', CELL_DEPTH / 2)
-      } else if (w && s) {
-        cell.setReliefBorder?.('023', CELL_DEPTH)
-      } else if (e && n) {
-        cell.setReliefBorder?.('024', CELL_DEPTH)
-      } else if (n || s) {
-        cell.setReliefBorder?.('017', CELL_DEPTH / 2)
-      } else if (w || e) {
-        cell.setReliefBorder?.('018', CELL_DEPTH / 2)
+      const appearance = getReliefAppearance({ n, s, w, e, nw, ne, sw, se })
+      if (appearance) {
+        cell.setReliefBorder?.(String(appearance.index).padStart(3, '0'), appearance.elevation)
       } else if (nw || ne || sw || se) {
         debugLog(
           TERRAIN_RELIEF_DEBUG,

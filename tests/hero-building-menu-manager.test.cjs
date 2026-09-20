@@ -114,6 +114,8 @@ function installMockDocument() {
         children: [],
         className: '',
         dataset: {},
+        attributes: new Map(),
+        setAttribute(name, value) { this.attributes.set(name, String(value)) },
         id: '',
         disabled: false,
         textContent: '',

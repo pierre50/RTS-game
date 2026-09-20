@@ -1,3 +1,4 @@
+import { getVillagerSchedule } from '../../lib/units/villagerSchedule'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import type { Texture } from 'pixi.js'
 import {
@@ -134,6 +135,12 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   assignableUnit.assignProperties(options)
   const unitConfig = unit.owner.config.units[unit.type] as (typeof unit.owner.config.units)[string] & PositionedConfig
   assignableUnit.assignProperties(unitConfig)
+  // Saved promotions take precedence over the unit type's default role.
+  unit.isChief = options.isChief ?? unit.isChief
+  if (unit.type === UNIT_TYPES.villager) {
+    unit.dailySchedule = options.dailySchedule ? { ...options.dailySchedule } : undefined
+    getVillagerSchedule(unit)
+  }
   const inventory = options.inventory ?? unit.inventory
   if (inventory) unit.inventory = structuredClone(inventory)
   unit.mountedOnHorse = options.mountedOnHorse ?? unit.mountedOnHorse

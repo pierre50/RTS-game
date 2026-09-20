@@ -1,8 +1,8 @@
 {
   "format": "macro-world-map-manifest",
   "version": 1,
-  "generatedAt": "2026-09-11T22:31:59.171Z",
-  "worldSeed": 12345,
+  "generatedAt": "2026-09-16T20:58:21.573Z",
+  "worldSeed": 4242,
   "regionMapSize": 144,
   "regionsWide": 5,
   "regionsHigh": 5,
@@ -17,245 +17,245 @@
       "id": "player-3-village",
       "kind": "village",
       "world": {
-        "i": 484,
-        "j": 398
+        "i": 490,
+        "j": 396
       },
       "region": {
         "x": 2,
         "y": 3
       },
       "local": {
-        "i": 107,
-        "j": 70
+        "i": 112,
+        "j": 77
       },
       "radius": 18,
       "biome": "desert",
       "civ": "Kemet",
       "playerIndex": 2,
-      "importance": 1.093
+      "importance": 1.121
     },
     {
       "id": "player-4-village",
       "kind": "village",
       "world": {
         "i": 398,
-        "j": 516
+        "j": 512
       },
       "region": {
         "x": 3,
         "y": 2
       },
       "local": {
-        "i": 152,
-        "j": 141
+        "i": 148,
+        "j": 137
       },
       "radius": 18,
       "biome": "steppe",
       "civ": "Sumeria",
       "playerIndex": 3,
-      "importance": 1.028
+      "importance": 1.114
     },
     {
       "id": "player-8-village",
       "kind": "village",
       "world": {
         "i": 604,
-        "j": 480
+        "j": 494
       },
       "region": {
         "x": 3,
         "y": 4
-      },
-      "local": {
-        "i": 52,
-        "j": 77
-      },
-      "radius": 18,
-      "biome": "desert",
-      "civ": "Nobatia",
-      "playerIndex": 7,
-      "importance": 1.137
-    },
-    {
-      "id": "player-7-village",
-      "kind": "village",
-      "world": {
-        "i": 114,
-        "j": 350
-      },
-      "region": {
-        "x": 2,
-        "y": 0
-      },
-      "local": {
-        "i": 145,
-        "j": 156
-      },
-      "radius": 18,
-      "biome": "blackforest",
-      "civ": "Nord",
-      "playerIndex": 6,
-      "importance": 1.071
-    },
-    {
-      "id": "player-5-village",
-      "kind": "village",
-      "world": {
-        "i": 316,
-        "j": 638
-      },
-      "region": {
-        "x": 4,
-        "y": 2
       },
       "local": {
         "i": 59,
         "j": 70
       },
       "radius": 18,
+      "biome": "desert",
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "importance": 1.311
+    },
+    {
+      "id": "player-7-village",
+      "kind": "village",
+      "world": {
+        "i": 114,
+        "j": 338
+      },
+      "region": {
+        "x": 2,
+        "y": 0
+      },
+      "local": {
+        "i": 139,
+        "j": 162
+      },
+      "radius": 18,
+      "biome": "blackforest",
+      "civ": "Nord",
+      "playerIndex": 6,
+      "importance": 1.065
+    },
+    {
+      "id": "player-5-village",
+      "kind": "village",
+      "world": {
+        "i": 316,
+        "j": 632
+      },
+      "region": {
+        "x": 4,
+        "y": 2
+      },
+      "local": {
+        "i": 58,
+        "j": 71
+      },
+      "radius": 18,
       "biome": "steppe",
       "civ": "Xia",
       "playerIndex": 4,
-      "importance": 1.282
+      "importance": 1.307
     },
     {
       "id": "player-6-village",
       "kind": "village",
       "world": {
-        "i": 226,
-        "j": 204
+        "i": 230,
+        "j": 200
       },
       "region": {
         "x": 1,
         "y": 1
       },
       "local": {
-        "i": 112,
-        "j": 125
+        "i": 114,
+        "j": 131
       },
       "radius": 18,
       "biome": "blackforest",
       "civ": "Alba",
       "playerIndex": 5,
-      "importance": 1.039
+      "importance": 1.254
     },
     {
       "id": "player-1-village",
       "kind": "village",
       "world": {
-        "i": 348,
-        "j": 324
-      },
-      "region": {
-        "x": 2,
-        "y": 2
-      },
-      "local": {
-        "i": 78,
-        "j": 115
-      },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Hellas",
-      "playerIndex": 0,
-      "importance": 1.101
-    },
-    {
-      "id": "player-2-village",
-      "kind": "village",
-      "world": {
-        "i": 378,
-        "j": 182
+        "i": 368,
+        "j": 258
       },
       "region": {
         "x": 1,
         "y": 2
       },
       "local": {
-        "i": 109,
-        "j": 144
+        "i": 137,
+        "j": 96
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "importance": 1.081
+    },
+    {
+      "id": "player-2-village",
+      "kind": "village",
+      "world": {
+        "i": 390,
+        "j": 114
+      },
+      "region": {
+        "x": 0,
+        "y": 2
+      },
+      "local": {
+        "i": 159,
+        "j": 118
       },
       "radius": 18,
       "biome": "temperate",
       "civ": "Latium",
       "playerIndex": 1,
-      "importance": 1.034
+      "importance": 1.088
     },
     {
       "id": "bandit-camp-1",
       "kind": "banditCamp",
       "world": {
-        "i": 451,
-        "j": 53
-      },
-      "region": {
-        "x": 0,
-        "y": 3
-      },
-      "local": {
-        "i": 46,
-        "j": 66,
-        "caveId": "943948758:cave-1"
-      },
-      "radius": 12,
-      "biome": "temperate",
-      "strength": 1
-    },
-    {
-      "id": "bandit-camp-2",
-      "kind": "banditCamp",
-      "world": {
-        "i": 633,
-        "j": 219
+        "i": 630,
+        "j": 208
       },
       "region": {
         "x": 1,
         "y": 4
       },
       "local": {
-        "i": 95,
-        "j": 93,
-        "caveId": "208606101:cave-1"
+        "i": 86,
+        "j": 95,
+        "caveId": "1424790105:cave-1"
       },
       "radius": 12,
       "biome": "desert",
-      "strength": 3
+      "strength": 2
     },
     {
-      "id": "bandit-camp-3",
+      "id": "bandit-camp-2",
       "kind": "banditCamp",
       "world": {
-        "i": 111,
-        "j": 609
+        "i": 107,
+        "j": 625
       },
       "region": {
         "x": 4,
         "y": 0
       },
       "local": {
-        "i": 128,
-        "j": 168,
-        "caveId": "48616040:cave-1"
+        "i": 132,
+        "j": 156,
+        "caveId": "1880172478:cave-1"
       },
       "radius": 12,
       "biome": "blackforest",
       "strength": 2
     },
     {
+      "id": "bandit-camp-3",
+      "kind": "banditCamp",
+      "world": {
+        "i": 469,
+        "j": 602
+      },
+      "region": {
+        "x": 4,
+        "y": 3
+      },
+      "local": {
+        "i": 50,
+        "j": 97,
+        "caveId": "309299946:cave-1"
+      },
+      "radius": 12,
+      "biome": "steppe",
+      "strength": 1
+    },
+    {
       "id": "bandit-camp-4",
       "kind": "banditCamp",
       "world": {
-        "i": 195,
-        "j": 484
+        "i": 234,
+        "j": 543
       },
       "region": {
         "x": 3,
         "y": 1
       },
       "local": {
-        "i": 77,
-        "j": 98,
-        "caveId": "175001971:cave-1"
+        "i": 146,
+        "j": 108,
+        "caveId": "1996533365:cave-1"
       },
       "radius": 12,
       "biome": "steppe",
@@ -265,89 +265,89 @@
       "id": "bandit-camp-5",
       "kind": "banditCamp",
       "world": {
-        "i": 509,
-        "j": 646
-      },
-      "region": {
-        "x": 4,
-        "y": 3
-      },
-      "local": {
-        "i": 112,
-        "j": 115,
-        "caveId": "1039381677:cave-1"
-      },
-      "radius": 12,
-      "biome": "desert",
-      "strength": 1
-    },
-    {
-      "id": "bandit-camp-6",
-      "kind": "banditCamp",
-      "world": {
-        "i": 94,
-        "j": 175
-      },
-      "region": {
-        "x": 1,
-        "y": 0
-      },
-      "local": {
-        "i": 110,
-        "j": 152,
-        "caveId": "933926572:cave-1"
-      },
-      "radius": 12,
-      "biome": "blackforest",
-      "strength": 1
-    },
-    {
-      "id": "bandit-camp-7",
-      "kind": "banditCamp",
-      "world": {
-        "i": 515,
-        "j": 245
-      },
-      "region": {
-        "x": 1,
-        "y": 3
-      },
-      "local": {
-        "i": 134,
-        "j": 106,
-        "caveId": "89237547:cave-1"
-      },
-      "radius": 12,
-      "biome": "desert",
-      "strength": 1
-    },
-    {
-      "id": "bandit-camp-8",
-      "kind": "banditCamp",
-      "world": {
-        "i": 215,
-        "j": 87
+        "i": 227,
+        "j": 113
       },
       "region": {
         "x": 0,
         "y": 1
       },
       "local": {
-        "i": 115,
-        "j": 101,
-        "caveId": "2075733727:cave-1"
+        "i": 140,
+        "j": 100,
+        "caveId": "10675297:cave-1"
+      },
+      "radius": 12,
+      "biome": "temperate",
+      "strength": 3
+    },
+    {
+      "id": "bandit-camp-6",
+      "kind": "banditCamp",
+      "world": {
+        "i": 264,
+        "j": 407
+      },
+      "region": {
+        "x": 2,
+        "y": 1
+      },
+      "local": {
+        "i": 180,
+        "j": 134,
+        "caveId": "1077309608:cave-1"
       },
       "radius": 12,
       "biome": "temperate",
       "strength": 2
+    },
+    {
+      "id": "bandit-camp-7",
+      "kind": "banditCamp",
+      "world": {
+        "i": 91,
+        "j": 196
+      },
+      "region": {
+        "x": 1,
+        "y": 0
+      },
+      "local": {
+        "i": 117,
+        "j": 138,
+        "caveId": "1213662491:cave-1"
+      },
+      "radius": 12,
+      "biome": "blackforest",
+      "strength": 3
+    },
+    {
+      "id": "bandit-camp-8",
+      "kind": "banditCamp",
+      "world": {
+        "i": 662,
+        "j": 379
+      },
+      "region": {
+        "x": 2,
+        "y": 4
+      },
+      "local": {
+        "i": 132,
+        "j": 114,
+        "caveId": "1051346913:cave-1"
+      },
+      "radius": 12,
+      "biome": "desert",
+      "strength": 1
     }
   ],
   "macroPreviewPath": "macro-world-preview.png",
   "macroRegionsPath": "macro-world-regions.json",
   "maps": [
     {
-      "id": "world-12345-r0-0-temperate",
-      "sceneryPath": "world-12345-r0-0-temperate.scenery.json",
+      "id": "world-4242-r0-0-temperate",
+      "sceneryPath": "world-4242-r0-0-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "water",
@@ -358,13 +358,13 @@
         "x": 0,
         "y": 0
       },
-      "path": "world-12345-r0-0-temperate.map",
-      "seed": 1908983221,
+      "path": "world-4242-r0-0-temperate.map",
+      "seed": 675777642,
       "spawns": 0
     },
     {
-      "id": "world-12345-r1-0-black-forest",
-      "sceneryPath": "world-12345-r1-0-black-forest.scenery.json",
+      "id": "world-4242-r1-0-black-forest",
+      "sceneryPath": "world-4242-r1-0-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
@@ -373,24 +373,24 @@
       },
       "settlements": [
         {
-          "id": "bandit-camp-6",
+          "id": "bandit-camp-7",
           "kind": "banditCamp",
           "world": {
-            "i": 94,
-            "j": 175
+            "i": 91,
+            "j": 196
           },
           "region": {
             "x": 1,
             "y": 0
           },
           "local": {
-            "i": 110,
-            "j": 152,
-            "caveId": "933926572:cave-1"
+            "i": 117,
+            "j": 138,
+            "caveId": "1213662491:cave-1"
           },
           "radius": 12,
           "biome": "blackforest",
-          "strength": 1
+          "strength": 3
         }
       ],
       "waterRatio": 0.5183,
@@ -398,13 +398,13 @@
         "x": 1,
         "y": 0
       },
-      "path": "world-12345-r1-0-black-forest.map",
-      "seed": 933926572,
+      "path": "world-4242-r1-0-black-forest.map",
+      "seed": 1213662491,
       "spawns": 0
     },
     {
-      "id": "world-12345-r2-0-black-forest",
-      "sceneryPath": "world-12345-r2-0-black-forest.scenery.json",
+      "id": "world-4242-r2-0-black-forest",
+      "sceneryPath": "world-4242-r2-0-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
@@ -417,21 +417,21 @@
           "kind": "village",
           "world": {
             "i": 114,
-            "j": 350
+            "j": 338
           },
           "region": {
             "x": 2,
             "y": 0
           },
           "local": {
-            "i": 145,
-            "j": 156
+            "i": 139,
+            "j": 162
           },
           "radius": 18,
           "biome": "blackforest",
           "civ": "Nord",
           "playerIndex": 6,
-          "importance": 1.071
+          "importance": 1.065
         }
       ],
       "waterRatio": 0.559,
@@ -439,19 +439,19 @@
         "x": 2,
         "y": 0
       },
-      "path": "world-12345-r2-0-black-forest.map",
-      "seed": 1924164935,
+      "path": "world-4242-r2-0-black-forest.map",
+      "seed": 815378270,
       "spawns": 1
     },
     {
-      "id": "world-12345-r3-0-black-forest",
-      "sceneryPath": "world-12345-r3-0-black-forest.scenery.json",
+      "id": "world-4242-r3-0-black-forest",
+      "sceneryPath": "world-4242-r3-0-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
       "biomeWeights": {
-        "blackforest": 0.6565,
-        "steppe": 0.3435
+        "blackforest": 0.5238,
+        "steppe": 0.4762
       },
       "settlements": [],
       "waterRatio": 0.9433,
@@ -459,36 +459,36 @@
         "x": 3,
         "y": 0
       },
-      "path": "world-12345-r3-0-black-forest.map",
-      "seed": 571058585,
+      "path": "world-4242-r3-0-black-forest.map",
+      "seed": 1463687706,
       "spawns": 0
     },
     {
-      "id": "world-12345-r4-0-steppe",
-      "sceneryPath": "world-12345-r4-0-steppe.scenery.json",
+      "id": "world-4242-r4-0-black-forest",
+      "sceneryPath": "world-4242-r4-0-black-forest.scenery.json",
       "size": 144,
-      "environment": "Steppe",
-      "dominantBiome": "steppe",
+      "environment": "BlackForest",
+      "dominantBiome": "blackforest",
       "biomeWeights": {
-        "blackforest": 0.3389,
-        "steppe": 0.6611
+        "blackforest": 0.5951,
+        "steppe": 0.4049
       },
       "settlements": [
         {
-          "id": "bandit-camp-3",
+          "id": "bandit-camp-2",
           "kind": "banditCamp",
           "world": {
-            "i": 111,
-            "j": 609
+            "i": 107,
+            "j": 625
           },
           "region": {
             "x": 4,
             "y": 0
           },
           "local": {
-            "i": 128,
-            "j": 168,
-            "caveId": "48616040:cave-1"
+            "i": 132,
+            "j": 156,
+            "caveId": "1880172478:cave-1"
           },
           "radius": 12,
           "biome": "blackforest",
@@ -500,40 +500,40 @@
         "x": 4,
         "y": 0
       },
-      "path": "world-12345-r4-0-steppe.map",
-      "seed": 48616040,
+      "path": "world-4242-r4-0-black-forest.map",
+      "seed": 1880172478,
       "spawns": 0
     },
     {
-      "id": "world-12345-r0-1-temperate",
-      "sceneryPath": "world-12345-r0-1-temperate.scenery.json",
+      "id": "world-4242-r0-1-temperate",
+      "sceneryPath": "world-4242-r0-1-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
       "biomeWeights": {
-        "blackforest": 0.4996,
-        "temperate": 0.5004
+        "blackforest": 0.42,
+        "temperate": 0.58
       },
       "settlements": [
         {
-          "id": "bandit-camp-8",
+          "id": "bandit-camp-5",
           "kind": "banditCamp",
           "world": {
-            "i": 215,
-            "j": 87
+            "i": 227,
+            "j": 113
           },
           "region": {
             "x": 0,
             "y": 1
           },
           "local": {
-            "i": 115,
-            "j": 101,
-            "caveId": "2075733727:cave-1"
+            "i": 140,
+            "j": 100,
+            "caveId": "10675297:cave-1"
           },
           "radius": 12,
           "biome": "temperate",
-          "strength": 2
+          "strength": 3
         }
       ],
       "waterRatio": 0.7359,
@@ -541,41 +541,41 @@
         "x": 0,
         "y": 1
       },
-      "path": "world-12345-r0-1-temperate.map",
-      "seed": 2075733727,
+      "path": "world-4242-r0-1-temperate.map",
+      "seed": 10675297,
       "spawns": 0
     },
     {
-      "id": "world-12345-r1-1-black-forest",
-      "sceneryPath": "world-12345-r1-1-black-forest.scenery.json",
+      "id": "world-4242-r1-1-black-forest",
+      "sceneryPath": "world-4242-r1-1-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
       "biomeWeights": {
-        "blackforest": 0.5982,
-        "temperate": 0.4018
+        "blackforest": 0.6009,
+        "temperate": 0.3991
       },
       "settlements": [
         {
           "id": "player-6-village",
           "kind": "village",
           "world": {
-            "i": 226,
-            "j": 204
+            "i": 230,
+            "j": 200
           },
           "region": {
             "x": 1,
             "y": 1
           },
           "local": {
-            "i": 112,
-            "j": 125
+            "i": 114,
+            "j": 131
           },
           "radius": 18,
           "biome": "blackforest",
           "civ": "Alba",
           "playerIndex": 5,
-          "importance": 1.039
+          "importance": 1.254
         }
       ],
       "waterRatio": 0.0816,
@@ -583,57 +583,78 @@
         "x": 1,
         "y": 1
       },
-      "path": "world-12345-r1-1-black-forest.map",
-      "seed": 1919611318,
+      "path": "world-4242-r1-1-black-forest.map",
+      "seed": 1801430097,
       "spawns": 1
     },
     {
-      "id": "world-12345-r2-1-black-forest",
-      "sceneryPath": "world-12345-r2-1-black-forest.scenery.json",
+      "id": "world-4242-r2-1-black-forest",
+      "sceneryPath": "world-4242-r2-1-black-forest.scenery.json",
       "size": 144,
       "environment": "BlackForest",
       "dominantBiome": "blackforest",
       "biomeWeights": {
-        "blackforest": 0.8311,
-        "steppe": 0.0352,
-        "temperate": 0.1337
+        "blackforest": 0.8155,
+        "steppe": 0.0301,
+        "temperate": 0.1544
       },
-      "settlements": [],
+      "settlements": [
+        {
+          "id": "bandit-camp-6",
+          "kind": "banditCamp",
+          "world": {
+            "i": 264,
+            "j": 407
+          },
+          "region": {
+            "x": 2,
+            "y": 1
+          },
+          "local": {
+            "i": 180,
+            "j": 134,
+            "caveId": "1077309608:cave-1"
+          },
+          "radius": 12,
+          "biome": "temperate",
+          "strength": 2
+        }
+      ],
       "waterRatio": 0.0579,
       "region": {
         "x": 2,
         "y": 1
       },
-      "path": "world-12345-r2-1-black-forest.map",
-      "seed": 634428513,
+      "path": "world-4242-r2-1-black-forest.map",
+      "seed": 1077309608,
       "spawns": 0
     },
     {
-      "id": "world-12345-r3-1-steppe",
-      "sceneryPath": "world-12345-r3-1-steppe.scenery.json",
+      "id": "world-4242-r3-1-steppe",
+      "sceneryPath": "world-4242-r3-1-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
       "biomeWeights": {
-        "blackforest": 0.3303,
-        "steppe": 0.6697
+        "blackforest": 0.3601,
+        "steppe": 0.6399
       },
       "settlements": [
         {
           "id": "bandit-camp-4",
           "kind": "banditCamp",
           "world": {
-            "i": 195,
-            "j": 484
+            "i": 234,
+            "j": 543
           },
           "region": {
             "x": 3,
             "y": 1
           },
           "local": {
-            "i": 77,
-            "j": 98,
-            "caveId": "175001971:cave-1"
+            "i": 146,
+            "j": 108,
+            "caveId": "1996533365:cave-1"
           },
           "radius": 12,
           "biome": "steppe",
@@ -645,18 +666,19 @@
         "x": 3,
         "y": 1
       },
-      "path": "world-12345-r3-1-steppe.map",
-      "seed": 175001971,
+      "path": "world-4242-r3-1-steppe.map",
+      "seed": 1996533365,
       "spawns": 0
     },
     {
-      "id": "world-12345-r4-1-steppe",
-      "sceneryPath": "world-12345-r4-1-steppe.scenery.json",
+      "id": "world-4242-r4-1-steppe",
+      "sceneryPath": "world-4242-r4-1-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
       "biomeWeights": {
-        "steppe": 1
+        "blackforest": 0.001,
+        "steppe": 0.999
       },
       "settlements": [],
       "waterRatio": 0.4215,
@@ -664,61 +686,83 @@
         "x": 4,
         "y": 1
       },
-      "path": "world-12345-r4-1-steppe.map",
-      "seed": 300480882,
+      "path": "world-4242-r4-1-steppe.map",
+      "seed": 790398406,
       "spawns": 0
     },
     {
-      "id": "world-12345-r0-2-temperate",
-      "sceneryPath": "world-12345-r0-2-temperate.scenery.json",
+      "id": "world-4242-r0-2-temperate",
+      "sceneryPath": "world-4242-r0-2-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
       "biomeWeights": {
         "temperate": 1
       },
-      "settlements": [],
-      "waterRatio": 0.783,
-      "region": {
-        "x": 0,
-        "y": 2
-      },
-      "path": "world-12345-r0-2-temperate.map",
-      "seed": 795111254,
-      "spawns": 0
-    },
-    {
-      "id": "world-12345-r1-2-temperate",
-      "sceneryPath": "world-12345-r1-2-temperate.scenery.json",
-      "size": 144,
-      "environment": "Temperate",
-      "dominantBiome": "temperate",
-      "biomeWeights": {
-        "blackforest": 0.0044,
-        "desert": 0.0092,
-        "temperate": 0.9864
-      },
       "settlements": [
         {
           "id": "player-2-village",
           "kind": "village",
           "world": {
-            "i": 378,
-            "j": 182
+            "i": 390,
+            "j": 114
+          },
+          "region": {
+            "x": 0,
+            "y": 2
+          },
+          "local": {
+            "i": 159,
+            "j": 118
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Latium",
+          "playerIndex": 1,
+          "importance": 1.088
+        }
+      ],
+      "waterRatio": 0.783,
+      "region": {
+        "x": 0,
+        "y": 2
+      },
+      "path": "world-4242-r0-2-temperate.map",
+      "seed": 1830203380,
+      "spawns": 1
+    },
+    {
+      "id": "world-4242-r1-2-temperate",
+      "sceneryPath": "world-4242-r1-2-temperate.scenery.json",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "blackforest": 0.0025,
+        "desert": 0.0132,
+        "temperate": 0.9843
+      },
+      "settlements": [
+        {
+          "id": "player-1-village",
+          "kind": "village",
+          "world": {
+            "i": 368,
+            "j": 258
           },
           "region": {
             "x": 1,
             "y": 2
           },
           "local": {
-            "i": 109,
-            "j": 144
+            "i": 137,
+            "j": 96
           },
           "radius": 18,
           "biome": "temperate",
-          "civ": "Latium",
-          "playerIndex": 1,
-          "importance": 1.034
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "importance": 1.081
         }
       ],
       "waterRatio": 0.1647,
@@ -726,65 +770,43 @@
         "x": 1,
         "y": 2
       },
-      "path": "world-12345-r1-2-temperate.map",
-      "seed": 1041803203,
+      "path": "world-4242-r1-2-temperate.map",
+      "seed": 1161214826,
       "spawns": 1
     },
     {
-      "id": "world-12345-r2-2-temperate",
-      "sceneryPath": "world-12345-r2-2-temperate.scenery.json",
+      "id": "world-4242-r2-2-temperate",
+      "sceneryPath": "world-4242-r2-2-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
       "biomeWeights": {
-        "blackforest": 0.016,
-        "desert": 0.112,
-        "steppe": 0.0976,
-        "temperate": 0.7744
+        "blackforest": 0.0688,
+        "desert": 0.0855,
+        "steppe": 0.1561,
+        "temperate": 0.6897
       },
-      "settlements": [
-        {
-          "id": "player-1-village",
-          "kind": "village",
-          "world": {
-            "i": 348,
-            "j": 324
-          },
-          "region": {
-            "x": 2,
-            "y": 2
-          },
-          "local": {
-            "i": 78,
-            "j": 115
-          },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Hellas",
-          "playerIndex": 0,
-          "importance": 1.101
-        }
-      ],
+      "settlements": [],
       "waterRatio": 0.1696,
       "region": {
         "x": 2,
         "y": 2
       },
-      "path": "world-12345-r2-2-temperate.map",
-      "seed": 2085258815,
-      "spawns": 1
+      "path": "world-4242-r2-2-temperate.map",
+      "seed": 1790410826,
+      "spawns": 0
     },
     {
-      "id": "world-12345-r3-2-steppe",
-      "sceneryPath": "world-12345-r3-2-steppe.scenery.json",
+      "id": "world-4242-r3-2-steppe",
+      "sceneryPath": "world-4242-r3-2-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
       "biomeWeights": {
-        "blackforest": 0.006,
-        "desert": 0.0042,
-        "steppe": 0.947,
-        "temperate": 0.0429
+        "blackforest": 0.0042,
+        "desert": 0.0118,
+        "steppe": 0.9811,
+        "temperate": 0.003
       },
       "settlements": [
         {
@@ -792,21 +814,21 @@
           "kind": "village",
           "world": {
             "i": 398,
-            "j": 516
+            "j": 512
           },
           "region": {
             "x": 3,
             "y": 2
           },
           "local": {
-            "i": 152,
-            "j": 141
+            "i": 148,
+            "j": 137
           },
           "radius": 18,
           "biome": "steppe",
           "civ": "Sumeria",
           "playerIndex": 3,
-          "importance": 1.028
+          "importance": 1.114
         }
       ],
       "waterRatio": 0.0324,
@@ -814,13 +836,13 @@
         "x": 3,
         "y": 2
       },
-      "path": "world-12345-r3-2-steppe.map",
-      "seed": 570342675,
+      "path": "world-4242-r3-2-steppe.map",
+      "seed": 378872143,
       "spawns": 1
     },
     {
-      "id": "world-12345-r4-2-steppe",
-      "sceneryPath": "world-12345-r4-2-steppe.scenery.json",
+      "id": "world-4242-r4-2-steppe",
+      "sceneryPath": "world-4242-r4-2-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
@@ -833,21 +855,21 @@
           "kind": "village",
           "world": {
             "i": 316,
-            "j": 638
+            "j": 632
           },
           "region": {
             "x": 4,
             "y": 2
           },
           "local": {
-            "i": 59,
-            "j": 70
+            "i": 58,
+            "j": 71
           },
           "radius": 18,
           "biome": "steppe",
           "civ": "Xia",
           "playerIndex": 4,
-          "importance": 1.282
+          "importance": 1.307
         }
       ],
       "waterRatio": 0.6264,
@@ -855,124 +877,82 @@
         "x": 4,
         "y": 2
       },
-      "path": "world-12345-r4-2-steppe.map",
-      "seed": 2095405095,
+      "path": "world-4242-r4-2-steppe.map",
+      "seed": 279367369,
       "spawns": 1
     },
     {
-      "id": "world-12345-r0-3-temperate",
-      "sceneryPath": "world-12345-r0-3-temperate.scenery.json",
+      "id": "world-4242-r0-3-temperate",
+      "sceneryPath": "world-4242-r0-3-temperate.scenery.json",
       "size": 144,
       "environment": "Temperate",
       "dominantBiome": "temperate",
       "biomeWeights": {
-        "desert": 0.068,
-        "temperate": 0.932
+        "desert": 0.0669,
+        "temperate": 0.9331
       },
-      "settlements": [
-        {
-          "id": "bandit-camp-1",
-          "kind": "banditCamp",
-          "world": {
-            "i": 451,
-            "j": 53
-          },
-          "region": {
-            "x": 0,
-            "y": 3
-          },
-          "local": {
-            "i": 46,
-            "j": 66,
-            "caveId": "943948758:cave-1"
-          },
-          "radius": 12,
-          "biome": "temperate",
-          "strength": 1
-        }
-      ],
+      "settlements": [],
       "waterRatio": 0.8098,
       "region": {
         "x": 0,
         "y": 3
       },
-      "path": "world-12345-r0-3-temperate.map",
-      "seed": 943948758,
+      "path": "world-4242-r0-3-temperate.map",
+      "seed": 1775284666,
       "spawns": 0
     },
     {
-      "id": "world-12345-r1-3-desert",
-      "sceneryPath": "world-12345-r1-3-desert.scenery.json",
+      "id": "world-4242-r1-3-desert",
+      "sceneryPath": "world-4242-r1-3-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
       "biomeWeights": {
-        "desert": 0.5994,
-        "temperate": 0.4006
+        "desert": 0.5724,
+        "temperate": 0.4276
       },
-      "settlements": [
-        {
-          "id": "bandit-camp-7",
-          "kind": "banditCamp",
-          "world": {
-            "i": 515,
-            "j": 245
-          },
-          "region": {
-            "x": 1,
-            "y": 3
-          },
-          "local": {
-            "i": 134,
-            "j": 106,
-            "caveId": "89237547:cave-1"
-          },
-          "radius": 12,
-          "biome": "desert",
-          "strength": 1
-        }
-      ],
+      "settlements": [],
       "waterRatio": 0.0625,
       "region": {
         "x": 1,
         "y": 3
       },
-      "path": "world-12345-r1-3-desert.map",
-      "seed": 89237547,
+      "path": "world-4242-r1-3-desert.map",
+      "seed": 1167073846,
       "spawns": 0
     },
     {
-      "id": "world-12345-r2-3-desert",
-      "sceneryPath": "world-12345-r2-3-desert.scenery.json",
+      "id": "world-4242-r2-3-desert",
+      "sceneryPath": "world-4242-r2-3-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
       "biomeWeights": {
-        "desert": 0.7476,
-        "steppe": 0.002,
-        "temperate": 0.2504
+        "desert": 0.7304,
+        "steppe": 0.0006,
+        "temperate": 0.269
       },
       "settlements": [
         {
           "id": "player-3-village",
           "kind": "village",
           "world": {
-            "i": 484,
-            "j": 398
+            "i": 490,
+            "j": 396
           },
           "region": {
             "x": 2,
             "y": 3
           },
           "local": {
-            "i": 107,
-            "j": 70
+            "i": 112,
+            "j": 77
           },
           "radius": 18,
           "biome": "desert",
           "civ": "Kemet",
           "playerIndex": 2,
-          "importance": 1.093
+          "importance": 1.121
         }
       ],
       "waterRatio": 0.0548,
@@ -980,20 +960,20 @@
         "x": 2,
         "y": 3
       },
-      "path": "world-12345-r2-3-desert.map",
-      "seed": 926403929,
+      "path": "world-4242-r2-3-desert.map",
+      "seed": 884735450,
       "spawns": 1
     },
     {
-      "id": "world-12345-r3-3-desert",
-      "sceneryPath": "world-12345-r3-3-desert.scenery.json",
+      "id": "world-4242-r3-3-desert",
+      "sceneryPath": "world-4242-r3-3-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
       "biomeWeights": {
-        "desert": 0.6194,
-        "steppe": 0.3661,
-        "temperate": 0.0145
+        "desert": 0.63,
+        "steppe": 0.3518,
+        "temperate": 0.0182
       },
       "settlements": [],
       "waterRatio": 0.1501,
@@ -1001,39 +981,39 @@
         "x": 3,
         "y": 3
       },
-      "path": "world-12345-r3-3-desert.map",
-      "seed": 1860267567,
+      "path": "world-4242-r3-3-desert.map",
+      "seed": 337754344,
       "spawns": 0
     },
     {
-      "id": "world-12345-r4-3-steppe",
-      "sceneryPath": "world-12345-r4-3-steppe.scenery.json",
+      "id": "world-4242-r4-3-steppe",
+      "sceneryPath": "world-4242-r4-3-steppe.scenery.json",
       "size": 144,
       "environment": "Steppe",
       "dominantBiome": "steppe",
       "biomeWeights": {
-        "desert": 0.0757,
-        "steppe": 0.9243
+        "desert": 0.1022,
+        "steppe": 0.8978
       },
       "settlements": [
         {
-          "id": "bandit-camp-5",
+          "id": "bandit-camp-3",
           "kind": "banditCamp",
           "world": {
-            "i": 509,
-            "j": 646
+            "i": 469,
+            "j": 602
           },
           "region": {
             "x": 4,
             "y": 3
           },
           "local": {
-            "i": 112,
-            "j": 115,
-            "caveId": "1039381677:cave-1"
+            "i": 50,
+            "j": 97,
+            "caveId": "309299946:cave-1"
           },
           "radius": 12,
-          "biome": "desert",
+          "biome": "steppe",
           "strength": 1
         }
       ],
@@ -1042,19 +1022,19 @@
         "x": 4,
         "y": 3
       },
-      "path": "world-12345-r4-3-steppe.map",
-      "seed": 1039381677,
+      "path": "world-4242-r4-3-steppe.map",
+      "seed": 309299946,
       "spawns": 0
     },
     {
-      "id": "world-12345-r0-4-desert",
-      "sceneryPath": "world-12345-r0-4-desert.scenery.json",
+      "id": "world-4242-r0-4-desert",
+      "sceneryPath": "world-4242-r0-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
       "biomeWeights": {
-        "desert": 0.7697,
-        "temperate": 0.2303
+        "desert": 0.9481,
+        "temperate": 0.0519
       },
       "settlements": [],
       "waterRatio": 0.7772,
@@ -1062,40 +1042,39 @@
         "x": 0,
         "y": 4
       },
-      "path": "world-12345-r0-4-desert.map",
-      "seed": 1237275302,
+      "path": "world-4242-r0-4-desert.map",
+      "seed": 1357730547,
       "spawns": 0
     },
     {
-      "id": "world-12345-r1-4-desert",
-      "sceneryPath": "world-12345-r1-4-desert.scenery.json",
+      "id": "world-4242-r1-4-desert",
+      "sceneryPath": "world-4242-r1-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
       "biomeWeights": {
-        "desert": 0.9986,
-        "temperate": 0.0014
+        "desert": 1
       },
       "settlements": [
         {
-          "id": "bandit-camp-2",
+          "id": "bandit-camp-1",
           "kind": "banditCamp",
           "world": {
-            "i": 633,
-            "j": 219
+            "i": 630,
+            "j": 208
           },
           "region": {
             "x": 1,
             "y": 4
           },
           "local": {
-            "i": 95,
-            "j": 93,
-            "caveId": "208606101:cave-1"
+            "i": 86,
+            "j": 95,
+            "caveId": "1424790105:cave-1"
           },
           "radius": 12,
           "biome": "desert",
-          "strength": 3
+          "strength": 2
         }
       ],
       "waterRatio": 0.5897,
@@ -1103,32 +1082,53 @@
         "x": 1,
         "y": 4
       },
-      "path": "world-12345-r1-4-desert.map",
-      "seed": 208606101,
+      "path": "world-4242-r1-4-desert.map",
+      "seed": 1424790105,
       "spawns": 0
     },
     {
-      "id": "world-12345-r2-4-desert",
-      "sceneryPath": "world-12345-r2-4-desert.scenery.json",
+      "id": "world-4242-r2-4-desert",
+      "sceneryPath": "world-4242-r2-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
       "biomeWeights": {
         "desert": 1
       },
-      "settlements": [],
+      "settlements": [
+        {
+          "id": "bandit-camp-8",
+          "kind": "banditCamp",
+          "world": {
+            "i": 662,
+            "j": 379
+          },
+          "region": {
+            "x": 2,
+            "y": 4
+          },
+          "local": {
+            "i": 132,
+            "j": 114,
+            "caveId": "1051346913:cave-1"
+          },
+          "radius": 12,
+          "biome": "desert",
+          "strength": 1
+        }
+      ],
       "waterRatio": 0.6416,
       "region": {
         "x": 2,
         "y": 4
       },
-      "path": "world-12345-r2-4-desert.map",
-      "seed": 733466373,
+      "path": "world-4242-r2-4-desert.map",
+      "seed": 1051346913,
       "spawns": 0
     },
     {
-      "id": "world-12345-r3-4-desert",
-      "sceneryPath": "world-12345-r3-4-desert.scenery.json",
+      "id": "world-4242-r3-4-desert",
+      "sceneryPath": "world-4242-r3-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1141,21 +1141,21 @@
           "kind": "village",
           "world": {
             "i": 604,
-            "j": 480
+            "j": 494
           },
           "region": {
             "x": 3,
             "y": 4
           },
           "local": {
-            "i": 52,
-            "j": 77
+            "i": 59,
+            "j": 70
           },
           "radius": 18,
           "biome": "desert",
           "civ": "Nobatia",
           "playerIndex": 7,
-          "importance": 1.137
+          "importance": 1.311
         }
       ],
       "waterRatio": 0.6179,
@@ -1163,13 +1163,13 @@
         "x": 3,
         "y": 4
       },
-      "path": "world-12345-r3-4-desert.map",
-      "seed": 1007890813,
+      "path": "world-4242-r3-4-desert.map",
+      "seed": 1357600297,
       "spawns": 1
     },
     {
-      "id": "world-12345-r4-4-desert",
-      "sceneryPath": "world-12345-r4-4-desert.scenery.json",
+      "id": "world-4242-r4-4-desert",
+      "sceneryPath": "world-4242-r4-4-desert.scenery.json",
       "size": 144,
       "environment": "Desert",
       "dominantBiome": "desert",
@@ -1182,8 +1182,8 @@
         "x": 4,
         "y": 4
       },
-      "path": "world-12345-r4-4-desert.map",
-      "seed": 539703361,
+      "path": "world-4242-r4-4-desert.map",
+      "seed": 1615311606,
       "spawns": 0
     }
   ]

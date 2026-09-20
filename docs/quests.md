@@ -65,9 +65,25 @@ Une interaction ordinaire n'est utilisable qu'une fois par étape. `nextStageId:
 
 ## Recherche et camps
 
+### Rencontres créées par les quêtes
+
+`ensureQuestEncounter` prépare une rencontre extérieure pour une quête active. Son identifiant est propre à la quête ; les labels des entités, la position et les paramètres sont conservés dans `QuestInstance.encounters`. Une rencontre déjà enregistrée ne recrée pas ses entités, même après chargement ou après leur mort. La fabrique `create(cell)` peut créer des animaux ou des unités hostiles ; elle doit passer par le propriétaire habituel pour que les entités soient sauvegardées avec la carte. L'appelant sauvegarde après avoir associé les réservations et marqueurs.
+
+La recherche avance par tranches de 128 cellules au maximum, avec une cible de 2 ms par tranche et un plafond de 8192 cellules à 48 cases du donneur. Chaque emplacement est accessible par voie terrestre, hors vision et hors caméra avec une marge de 96 pixels, libre, éloigné des bâtiments et des passages réservés. En l'absence de place, une nouvelle tentative est différée de 5 secondes. Ces contrôles sont refaits avant la création du groupe. `runtime.quests.encounter.search` mesure les tranches dans le rapport de performance.
+
+Le tuto prépare trois animaux pendant l'étape du bois et conserve ce groupe pour la chasse. Les anciennes réservations encore utilisables sont adoptées sans duplication. Tant qu'une cible ou un cadavre reste récoltable, aucun nouveau placement n'est recherché. Si toutes les cibles sont épuisées et que le sac ne contient pas encore le butin demandé, la chasse seule autorise un groupe de remplacement.
+
+### Nettoyer un camp de bandits
+
+Hors tutoriel, les chefs IA non hostiles peuvent proposer `neutral-bandit-camp` parmi leurs nouvelles offres (une chance sur trois, sans deux missions de camp consécutives). Les offres déjà sauvegardées restent inchangées. Le délai habituel de trois jours s'applique après la récompense.
+
+L'acceptation lance la recherche bornée d'un emplacement. Toute l'emprise du camp, dans un rayon de neuf cellules, doit être libre, hors caméra et hors vision. `placeOutdoorBanditQuestCamp` réutilise les feux, décors, coffre avec butin et patrouilles des camps générés ; il n'appelle jamais la génération de grotte. Le nombre de gardes suit les règles existantes de niveau du héros. Les labels sauvegardés concernent uniquement les nouveaux gardes, pas les bâtiments ni les autres bandits de la carte.
+
+La quête est validable lorsque tous ces gardes sont morts ou ont été retirés de la carte chargée, quel que soit l'auteur des attaques. Cette vérification ne s'effectue que dans la région de la quête ; un voyage ne valide pas le camp. Le fait `campCleared` est sauvegardé et aucun groupe de remplacement n'est créé. Le joueur retourne au chef pour recevoir une seule fois 25 or et +10 de relation. Détruire les décors ou le coffre n'est pas nécessaire.
+
 Les conditions de cible utilisent un rôle (`missingPerson`, `targetCamp`) associé à un label persistant et un état (`discovered`, `spoken-to`, `defeated`, `reached`). Le système qui connaît le monde décide de cet état. Un cercle de recherche ne constitue jamais une preuve de découverte.
 
-Les marqueurs sont instanciés par étape : position en cellules `i/j`, `spaceId`, rayon optionnel en cellules. `getTrackedMarkers` filtre par quête suivie, étape, région et espace intérieur. Leur rendu sur la minimap n'est pas encore branché.
+Les marqueurs sont instanciés par étape : position en cellules `i/j`, `spaceId`, rayon optionnel en cellules. `getTrackedMarkers` filtre par quête suivie, étape, région et espace intérieur. La minimap affiche les zones en doré pour la quête suivie, puis un « ? » sur le destinataire dès que la remise est possible. Le repère suit sa position et les changements d’inventaire, sans révéler le terrain.
 
 ## Demandes des chefs neutres
 
@@ -81,6 +97,6 @@ Le raccordement initial concerne les cartes extérieures et leurs espaces intég
 
 Le journal et le rappel d’objectif affichent le compteur courant, actualisé depuis l’inventaire. Les paramètres de ressources sont traduits à l’affichage, sans sauvegarder de texte dépendant de la langue.
 
-L’escorte, les attaques scénarisées et le rendu des marqueurs sur la minimap restent des extensions de gameplay.
+L’escorte et les attaques scénarisées restent des extensions de gameplay.
 
 La livraison verse aussi 1 or par ressource (`VILLAGE_QUEST_CONFIG.goldPerResource`), soit 5 à 15 or dans le sac du héros. Le montant `rewardGold` est figé dans les paramètres de chaque offre et affiché dans le dialogue et la description du journal. L’effet générique `give-resource` fait partie de la même transaction que le retrait des ressources : un échec ne retire ni ne verse rien. Cette récompense de mission est créée sans prélever le stock du chef. Les quêtes actives anciennes bénéficient du montant par défaut ; aucune récompense supplémentaire n’est versée aux quêtes déjà terminées.

@@ -5,13 +5,97 @@ const definitions = require('../public/assets/data/gameplay/buildings.json')
 const { getBuildingConfigForAge, getBuildingAge } = loadTsModule('app/lib/buildings/buildingAge.ts')
 
 const expected = {
-  House: [{ wood: 60, stone: 15, leather: 2 }, 75, { wood: 80, stone: 40, fiber: 4 }, 125],
-  Barracks: [{ wood: 200, stone: 60, leather: 6 }, 350, { wood: 240, stone: 120, fiber: 8 }, 550],
-  Granary: [{ wood: 160, stone: 40, leather: 4 }, 350, { wood: 200, stone: 80, fiber: 6 }, 500],
-  StoragePit: [{ wood: 180, stone: 100 }, 350, { wood: 220, stone: 160, fiber: 4 }, 550],
-  Market: [{ wood: 180, stone: 50, leather: 4 }, 350, { wood: 240, stone: 100, fiber: 10 }, 500],
-  Temple: [{ wood: 140, stone: 200, leather: 2 }, 350, { wood: 180, stone: 300, fiber: 8 }, 600],
-  TownCenter: [{ wood: 350, stone: 160, leather: 8 }, 600, { wood: 400, stone: 260, fiber: 12 }, 950],
+  House: [
+    {
+      wood: 40,
+      stone: 10,
+    },
+    75,
+    {
+      wood: 60,
+      stone: 30,
+      fiber: 4,
+    },
+    125,
+  ],
+  StoragePit: [
+    {
+      wood: 60,
+      stone: 20,
+    },
+    350,
+    {
+      wood: 100,
+      stone: 40,
+      fiber: 4,
+    },
+    550,
+  ],
+  Granary: [
+    {
+      wood: 50,
+      stone: 20,
+    },
+    350,
+    {
+      wood: 80,
+      stone: 40,
+      fiber: 4,
+    },
+    500,
+  ],
+  TownCenter: [
+    {
+      wood: 150,
+      stone: 80,
+    },
+    600,
+    {
+      wood: 220,
+      stone: 100,
+      fiber: 8,
+    },
+    950,
+  ],
+  Barracks: [
+    {
+      wood: 120,
+      stone: 40,
+    },
+    350,
+    {
+      wood: 180,
+      stone: 80,
+      fiber: 8,
+    },
+    550,
+  ],
+  Market: [
+    {
+      wood: 100,
+      stone: 40,
+    },
+    350,
+    {
+      wood: 160,
+      stone: 70,
+      fiber: 6,
+    },
+    500,
+  ],
+  Temple: [
+    {
+      wood: 140,
+      stone: 200,
+    },
+    350,
+    {
+      wood: 180,
+      stone: 300,
+      fiber: 8,
+    },
+    600,
+  ],
 }
 
 test('the agreed age 0 and age 1 costs and HP are applied exactly', () => {
@@ -94,7 +178,7 @@ test('new construction, restoration and captured buildings resolve HP from their
   assert.equal(old.totalHitPoints, 75)
   const recent = new Building({ type: 'House', i: 2, j: 2, owner, isBuilt: true }, context)
   assert.equal(recent.totalHitPoints, 125)
-  assert.deepEqual(recent.cost, { wood: 80, stone: 40, fiber: 4 })
+  assert.deepEqual(recent.cost, { wood: 60, stone: 30, fiber: 4 })
   const restored = new Building(
     { type: 'House', i: 1, j: 1, owner, buildingAge: 0, assetAge: 1, isBuilt: true, hitPoints: 37 },
     context
@@ -160,10 +244,33 @@ test('placement charges the chosen tier and rejects missing materials or locked 
   player.fiber = 4
   assert.equal(buyPlayerBuilding(player, 1, 1, 'House'), true)
   assert.equal(player.spawned.buildingAge, 1)
-  assert.deepEqual([player.wood, player.stone, player.fiber, player.leather], [0, 0, 0, 2])
+  assert.deepEqual([player.wood, player.stone, player.fiber, player.leather], [20, 10, 0, 2])
   Object.assign(player, { age: 1, wood: 60, stone: 15, fiber: 0, leather: 2 })
   assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingAge: 0 }), true)
   assert.equal(player.spawned.buildingAge, 0)
-  assert.equal(player.leather, 0)
+  assert.equal(player.leather, 2)
   assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingAge: 2, alreadyPaid: true }), false)
+})
+
+test('one camp chest can fund a starter center and house or both dedicated depots', () => {
+  const { getStorageCapacity } = loadTsModule('app/lib/resources/storagePolicy.ts')
+  const capacity = getStorageCapacity('Chest')
+  for (const types of [
+    ['TownCenter', 'House'],
+    ['StoragePit', 'Granary'],
+  ]) {
+    const total = types.reduce(
+      (sum, type) => sum + Object.values(getBuildingConfigForAge(definitions[type], 0).cost).reduce((a, b) => a + b, 0),
+      0
+    )
+    assert.ok(total <= capacity, types.join(' + '))
+  }
+  for (const type of ['House', 'TownCenter', 'Granary', 'StoragePit', 'Barracks', 'Market']) {
+    assert.ok(
+      Object.keys(getBuildingConfigForAge(definitions[type], 0).cost).every(resource =>
+        ['wood', 'stone'].includes(resource)
+      ),
+      type
+    )
+  }
 })

@@ -19,6 +19,7 @@ export const tutorialHuntQuest: QuestDefinition = {
     {
       id: 'wood',
       dialogue: { key: 'tutorialWoodReminder' },
+      readyDialogue: { key: 'tutorialWoodReady' },
       objectives: [
         {
           id: 'wood',

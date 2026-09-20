@@ -180,6 +180,7 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
         if (
           options.abstractVillages &&
           player.type === PLAYER_TYPES.ai &&
+          player.buildings?.some(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt && isLiving(b)) &&
           unit.autonomousJob !== 'construction' &&
           unit.work !== 'builder'
         ) {

@@ -18,6 +18,7 @@ import {
   validateArray,
   validateEntityPosition,
   validateOptionalFiniteNumber,
+  validateOptionalBoolean,
 } from './SaveValidationPrimitives'
 
 export function validateWorldPursuers(value: unknown, size: number, config: LoadedGameConfig): void {
@@ -184,6 +185,7 @@ function validatePlayerBuildings(
 ): void {
   buildings.forEach((building, buildingIndex) => {
     validateEntityPosition(building, size, `player ${playerIndex} building ${buildingIndex}`)
+    validateOptionalBoolean((building as SaveEntityState).villagerDeliveriesBlocked, 'building villager deliveries')
     if (typeof building.type !== 'string' || !config.buildings?.[building.type]) {
       fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an unsupported type.`)
     }

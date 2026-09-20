@@ -1,7 +1,38 @@
 import { canPlaceBuildingAt } from '../../lib/grid/placement'
-import { getBuildingFootprintCells } from '../../lib/grid/cells'
+import { getBuildingFootprintCells, getPlainCellsAroundPoint } from '../../lib/grid/cells'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { GridPosition } from '../../types/grid'
+
+const CHEST_DIRECTIONS: GridPosition[] = [
+  { i: 0, j: -1 },
+  { i: 1, j: 0 },
+  { i: -1, j: 0 },
+  { i: 0, j: 1 },
+  { i: 1, j: 1 },
+  { i: -1, j: -1 },
+  { i: 1, j: -1 },
+  { i: -1, j: 1 },
+]
+/** Prefer the upper-right side of the fire, with one free cell between the two buildings. */
+export function findChestPlacement(
+  map: RuntimeMap,
+  camp: RuntimeCell,
+  campSize: number,
+  chestSize: number
+): RuntimeCell | null {
+  const margin = Math.ceil(campSize / 2) + Math.ceil(chestSize / 2)
+  for (const direction of CHEST_DIRECTIONS) {
+    const targetI = camp.i + direction.i * margin
+    const targetJ = camp.j + direction.j * margin
+    const target = map.grid[targetI]?.[targetJ]
+    if (target && canPlaceBuildingAt(map.grid, targetI, targetJ, { size: chestSize })) return target
+    const cells = getPlainCellsAroundPoint(targetI, targetJ, map.grid, 1, cell =>
+      canPlaceBuildingAt(map.grid, cell.i, cell.j, { size: chestSize })
+    )
+    if (cells[0]) return cells[0]
+  }
+  return null
+}
 
 /** Search connected land, not just nearby coordinates across water or blocked terrain. */
 function reachable(map: RuntimeMap, start: GridPosition, blocked = new Set<RuntimeCell>(), maxSteps = Infinity): RuntimeCell[] {

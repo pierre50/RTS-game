@@ -21,6 +21,7 @@ type BaseInventoryItemRowOptions = {
   playClick?: boolean
   meta?: string
   title?: string
+  secondaryAction?: Parameters<typeof createInventoryActionRow>[1]['secondaryAction']
   trailingAction?: Parameters<typeof createInventoryActionRow>[1]['trailingAction']
 }
 
@@ -87,6 +88,7 @@ function createItemRow(menu: InventoryItemRowMenu, options: BaseInventoryItemRow
     value: options.showValue !== false && info.goldValue > 0 ? formatGold(info.goldValue) : undefined,
     quantity,
     playClick: options.playClick,
+    secondaryAction: options.secondaryAction,
     trailingAction: options.trailingAction,
   })
   const parts: InventoryItemRowParts = { ...row, info }

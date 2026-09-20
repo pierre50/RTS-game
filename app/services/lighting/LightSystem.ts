@@ -84,9 +84,7 @@ function isLightSourceConfig(value: unknown): value is EntityLightSourceConfig {
 }
 
 function isPlayedUnit(unit: RuntimeEntity): unit is UnitEntity {
-  return (
-    unit.family === FAMILY_TYPES.unit && unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true
-  )
+  return unit.family === FAMILY_TYPES.unit && unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true
 }
 
 function shouldUseUnitLight(unit: RuntimeEntity): boolean {
@@ -137,6 +135,7 @@ export class LightSystem {
     this.canvas = document.createElement('canvas')
     this.resizeCanvas(this.screenRect)
     this.texture = Texture.from(this.canvas)
+    this.texture.dynamic = true
     this.texture.source.autoGarbageCollect = false
     this.sprite = new Sprite(this.texture)
     this.sprite.eventMode = 'none'
@@ -164,12 +163,17 @@ export class LightSystem {
   update(elapsedMs: number): void {
     if (this.context.paused || this.context.defeat) return
     const elapsedSeconds = Math.min(Math.max(elapsedMs, 0), 250) / 1000
+    const targetDarkness = clamp(this.getDarknessLevel(), 0, 1)
+    this.currentDarkness = lerp(this.currentDarkness, targetDarkness, elapsedSeconds * DARKNESS_LERP_PER_SECOND)
+    this.refresh(elapsedMs)
+  }
+
+  // Prepare the visible scene even while a tutorial or transition pauses simulation.
+  refresh(elapsedMs = 0): void {
     this.screenRect = this.getScreenRect()
     this.layer.position.set(this.screenRect.x, this.screenRect.y)
     this.resizeCanvas(this.screenRect)
 
-    const targetDarkness = clamp(this.getDarknessLevel(), 0, 1)
-    this.currentDarkness = lerp(this.currentDarkness, targetDarkness, elapsedSeconds * DARKNESS_LERP_PER_SECOND)
     if (this.getEffectiveDarkness() < 0.01) {
       this.layer.visible = false
       return
@@ -181,6 +185,11 @@ export class LightSystem {
   }
 
   getEffectiveDarkness(): number {
+    // Interior lighting stays at night while the outdoor clock and its smoothed
+    // darkness keep running, ready for the moment the player steps outside.
+    if (this.context.map.mapType === 'interior' || getActiveMapSpace(this.context.map)?.kind === 'interior') {
+      return 1
+    }
     const lightningBrightness = clamp(this.context.weather?.getLightningBrightness?.() ?? 0, 0, 1)
     return this.currentDarkness * (1 - lightningBrightness * LIGHTNING_DARKNESS_REDUCTION)
   }
@@ -190,6 +199,9 @@ export class LightSystem {
     const height = Math.max(1, Math.ceil(screenRect.height))
     if (this.canvas.width !== width) this.canvas.width = width
     if (this.canvas.height !== height) this.canvas.height = height
+    // Sprite sizing uses the texture frame: resize it before computing sprite scale.
+    // Waiting for draw() to update the source leaves one frame at the old scale.
+    this.texture?.source.resize(width, height)
     if (this.sprite) {
       this.sprite.width = screenRect.width
       this.sprite.height = screenRect.height
@@ -238,7 +250,9 @@ export class LightSystem {
     const controls = this.context.controls
     const activeSpace = getActiveMapSpace(this.context.map)
     const buckets =
-      activeSpace && activeSpace.id !== OUTSIDE_SPACE_ID ? activeSpace.instanceBuckets : this.context.map?.instanceBuckets
+      activeSpace && activeSpace.id !== OUTSIDE_SPACE_ID
+        ? activeSpace.instanceBuckets
+        : this.context.map?.instanceBuckets
     if (!buckets || !controls) return
 
     const seen = new Set<RuntimeEntity>()

@@ -1,13 +1,14 @@
 import { ACTION_TYPES, BUILDING_TYPES, SOUND_CUES } from '../../constants'
 import { getBuildingInteriorBlueprintType } from '../../lib/buildings/interiors'
 import { createInventoryContainer, moveInventoryResource } from '../../lib/inventory/inventoryContainers'
-import { getEntitySpaceId } from '../../lib/mapSpaces'
+import { getEntitySpaceId, sameMapSpace } from '../../lib/mapSpaces'
 import { syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import { playAudibleSoundCue } from '../../lib/audio/sound'
 import { resumeVillagerJobIntent } from '../../lib/units/villagerTaskRecovery'
 import { logGoldMinerFlow } from '../../lib/units/autonomy/villagerJobDiagnostics'
 import {
   buildingAcceptsInventoryResource,
+  getBuildingStorageRemaining,
   unitHasDeliverableResourcesForBuilding,
 } from '../../lib/resources/resourceDelivery'
 import { canResumeVillagerReturnTaskBeforeRest } from '../../services/rest/UnitRestRules'
@@ -67,11 +68,14 @@ function scheduleResourceDeliveryUpdate(context: GameContextLike, unit: UnitEnti
 }
 
 function depositUnitResourcesIntoChest(unit: UnitEntity, building: BuildingEntity, chest: BuildingEntity): boolean {
+  if (!unitHasDeliverableResourcesForBuilding(unit, building) || !unitHasDeliverableResourcesForBuilding(unit, chest))
+    return false
   const source = createInventoryContainer(unit, { id: unit.label ?? 'unit', labelKey: 'unit' })
   const destination = createInventoryContainer(chest, {
     id: chest.label ?? 'storage-chest',
     labelKey: 'storageChest',
-    canAcceptResource: resource => buildingAcceptsInventoryResource(building, resource),
+    canAcceptResource: (resource, amount) => buildingAcceptsInventoryResource(building, resource, amount),
+    maxAcceptableResourceAmount: () => getBuildingStorageRemaining(building),
   })
 
   let moved = 0
@@ -228,7 +232,15 @@ export async function routeUnitResourceDelivery(
 
 export function handleResourceDeliveryAction(context: GameContextLike, unit: UnitEntity): boolean {
   const target = isBuildingEntity(unit.dest) ? unit.dest : null
-  if (!target) return false
+  if (!target || unit.action !== ACTION_TYPES.delivery || unit.isDead || unit.isDestroyed) return false
+  if (target.isDead || target.isDestroyed || !sameMapSpace(unit, target)) return false
+  // Action callbacks can outlive the movement that scheduled them.
+  if (unit.spacePortalState || !unit.isUnitAtDest?.(ACTION_TYPES.delivery, target)) {
+    if (!unit.spacePortalState && !unit.path?.length) {
+      unit.sendToEvt?.(target, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })
+    }
+    return false
+  }
 
   const state = unit.resourceDeliveryState
   if (state?.phase === 'toChest' && state.chest === target && state.building) {
@@ -246,6 +258,14 @@ export function handleResourceDeliveryAction(context: GameContextLike, unit: Uni
     ) {
       finishResourceDelivery(context, unit)
     }
+    return true
+  }
+
+  // A standalone chest has no walk-in interior (unlike TownCenter/Granary/StoragePit) —
+  // deposit straight into it instead of routing through the building-interior system.
+  if (target.type === BUILDING_TYPES.chest) {
+    depositUnitResourcesIntoChest(unit, target, target)
+    finishResourceDelivery(context, unit)
     return true
   }
 

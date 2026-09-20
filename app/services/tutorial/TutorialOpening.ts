@@ -53,11 +53,41 @@ export async function prepareTutorialOpening(host: TutorialHost): Promise<void> 
   chief.lookingAtHero = true
   await ensureAndRefreshBakedLpcUnitAssets(chief)
   await placeTutorialActors(host, house, hero, chief)
+  resetTutorialOutsideExploration(context)
   // Autosaves can replace the campaign while the interior loads.
   // Publish the opening state on the live campaign, not the earlier snapshot.
   if (!host._campaignSave) throw new Error('The tutorial campaign is unavailable.')
   host._campaignSave.tutorial = { stage: 'sleeping', worldId: campaign.currentWorldId, houseLabel: house.label, chiefLabel: chief.label }
   host.autosave()
+}
+
+/** The temporary spawn near the TownCenter is not part of the playable tutorial. */
+function resetTutorialOutsideExploration(context: GameContextLike): void {
+  const { player, map, menu } = context
+  const reset = () => {
+    let removed = 0
+    for (const row of map.grid) {
+      for (const cell of row) {
+        if (cell && player.views.isViewed(cell.i, cell.j)) removed++
+      }
+    }
+    player.views.clearVisibility()
+    player.views.clearExploration()
+    player.cellViewed = Math.max(0, player.cellViewed - removed)
+    for (const row of map.grid) {
+      for (const cell of row) {
+        if (!cell) continue
+        cell.viewBy = new Set()
+        if (!map.revealEverything) cell.setFog(true)
+      }
+    }
+  }
+  if (player.views.withSpace) player.views.withSpace('outside', reset)
+  else reset()
+  const fogMap = map as typeof map & { mapFog?: { viewportRenderer?: { invalidate(): void } } }
+  fogMap.mapFog?.viewportRenderer?.invalidate()
+  menu.rebuildTerrainMiniMapFromViews?.()
+  menu.updateResourcesMiniMap?.()
 }
 
 async function placeTutorialActors(host: TutorialHost, house: BuildingEntity, hero: UnitEntity, chief: UnitEntity): Promise<void> {

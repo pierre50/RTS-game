@@ -1,25 +1,10 @@
-import { renderWorldMapTerritories } from './worldMap/WorldMapTerritories'
 import { t } from '../lib/lang'
+import { getActiveColonyAlerts, type RegionAlertType } from '../lib/world/regionAlerts'
 import type { MenuHost } from './MenuHost'
+import { worldEnvironmentLabel } from './worldMap/WorldEnvironmentLabel'
 import { createWorldMapLegend, settlementPlayerColor } from './worldMap/WorldMapLegend'
-import type { MacroWorldRegion, MacroWorldSettlement, MacroWorldManifest } from './worldMap/WorldMapTypes'
-
-function worldEnvironmentLabel(environment?: string | null): string | null {
-  switch (environment) {
-    case 'Temperate':
-      return t('worldMapEnvironmentTemperate')
-    case 'BlackForest':
-      return t('worldMapEnvironmentBlackForest')
-    case 'Jungle':
-      return t('worldMapEnvironmentJungle')
-    case 'Desert':
-      return t('worldMapEnvironmentDesert')
-    case 'Steppe':
-      return t('worldMapEnvironmentSteppe')
-    default:
-      return null
-  }
-}
+import { renderWorldMapTerritories } from './worldMap/WorldMapTerritories'
+import type { MacroWorldManifest, MacroWorldRegion, MacroWorldSettlement } from './worldMap/WorldMapTypes'
 
 function regionId(region: MacroWorldRegion): string {
   return `r${region.x}-${region.y}`
@@ -205,7 +190,55 @@ function renderFlatRegion(
   overlay.appendChild(cell)
 }
 
+function alertMessageKey(type: RegionAlertType): string {
+  switch (type) {
+    case 'populationCapped':
+      return 'worldMapAlertPopulationCapped'
+    case 'foodLow':
+      return 'worldMapAlertFoodLow'
+    case 'storageFull':
+      return 'worldMapAlertStorageFull'
+    case 'workersIdle':
+      return 'worldMapAlertWorkersIdle'
+  }
+}
+
+function regionDisplayLabel(manifest: MacroWorldManifest, regionId: string): string {
+  const entry = manifest.maps?.find(candidate => regionEntryId(candidate) === regionId)
+  const biome = entry?.environment ? worldEnvironmentLabel(entry.environment) : entry?.dominantBiome
+  return biome ? `${t('worldMapColony')} (${biome})` : regionId
+}
+
+// Recomputed from the same offline-economy summaries every time the map opens, so an alert
+// disappears on its own once the underlying condition is no longer true — nothing to clear.
+function renderRegionAlerts(menu: MenuHost, manifest: MacroWorldManifest): HTMLElement | null {
+  const active = getActiveColonyAlerts(menu.context)
+  if (!active.length) return null
+  const lines = active.map(({ regionId, type }) =>
+    t(alertMessageKey(type), { region: regionDisplayLabel(manifest, regionId) })
+  )
+
+  const box = document.createElement('div')
+  box.className = 'worldmap-alerts'
+  const title = document.createElement('h3')
+  title.className = 'worldmap-alerts-title'
+  title.textContent = t('worldMapAlertsTitle')
+  box.appendChild(title)
+  const list = document.createElement('ul')
+  list.className = 'worldmap-alerts-list'
+  for (const line of lines) {
+    const item = document.createElement('li')
+    item.textContent = line
+    list.appendChild(item)
+  }
+  box.appendChild(list)
+  return box
+}
+
 function renderGlobalMap(panel: HTMLElement, menu: MenuHost, manifest: MacroWorldManifest): void {
+  const alerts = renderRegionAlerts(menu, manifest)
+  if (alerts) panel.appendChild(alerts)
+
   const layout = document.createElement('div')
   layout.className = 'worldmap-global-layout'
   const wrap = document.createElement('div')

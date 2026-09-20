@@ -21,8 +21,8 @@ type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import { getPlaceableInventoryBuildingType } from '../lib/hero/placeableInventoryItems'
 import { t } from '../lib/lang'
-import { AGE_PROGRESSION,isAgeObjectiveComplete,type AgeObjectiveDefinition } from '../lib/objectives/ageObjectives'
 import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
+import { getActiveColonyAlerts } from '../lib/world/regionAlerts'
 import type { ResourceAmount } from '../types/common'
 import type { UnitEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
@@ -42,11 +42,12 @@ import { renderInventoryWorldMap } from './InventoryWorldMap'
 import type { MenuHost } from './MenuHost'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
 import { renderMinimapResourcePanel } from './minimap/MinimapResourcePanel'
+import { createQuestMarker } from './questMarker'
 import { ModalTabs } from './Tabs'
 
-type ActionMenuTab = 'info' | 'tools' | 'craft' | 'progression' | 'minimap' | 'worldmap' | 'construction'
+type ActionMenuTab = 'info' | 'tools' | 'craft' | 'minimap' | 'worldmap' | 'construction'
 
-const CHIEF_TABS = new Set<ActionMenuTab>(['construction', 'worldmap', 'progression'])
+const CHIEF_TABS = new Set<ActionMenuTab>(['construction', 'worldmap'])
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -66,7 +67,6 @@ export class InventoryManager {
   worldMapPanel: HTMLDivElement
   craftPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
-  progressionPanel: HTMLDivElement
   weaponPanel: HTMLDivElement
   equippedPanel: HTMLDivElement
   lootedEquipmentPanel: HTMLDivElement
@@ -103,8 +103,6 @@ export class InventoryManager {
     this.worldMapPanel.className = 'action-menu-page action-menu-worldmap-page'
     this.craftPanel = document.createElement('div')
     this.craftPanel.className = 'action-menu-page action-menu-craft-page'
-    this.progressionPanel = document.createElement('div')
-    this.progressionPanel.className = 'action-menu-page action-menu-progression-page'
     this.constructionPanel = document.createElement('div')
     this.constructionPanel.className = 'action-menu-page action-menu-construction-page'
     this.weaponPanel = document.createElement('div')
@@ -125,7 +123,6 @@ export class InventoryManager {
         { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
         { id: 'craft', label: t('inventoryTabCraft'), page: this.craftPanel },
-        { id: 'progression', label: t('inventoryTabProgression'), page: this.progressionPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
         { id: 'worldmap', label: t('inventoryTabWorldmap'), page: this.worldMapPanel },
         { id: 'construction', label: t('inventoryTabConstruction'), page: this.constructionPanel },
@@ -201,7 +198,17 @@ export class InventoryManager {
       button.disabled = !isChief
       button.classList.toggle('hidden', !isChief)
     }
+    this.syncWorldMapAlertBadge()
     return isChief
+  }
+
+  private syncWorldMapAlertBadge(): void {
+    const button = this.modalTabs.tabs.buttons.get('worldmap')
+    if (!button) return
+    const hasAlerts = getActiveColonyAlerts(this.menu.context).length > 0
+    const existing = button.querySelector('.quest-marker')
+    if (hasAlerts && !existing) button.appendChild(createQuestMarker())
+    else if (!hasAlerts && existing) existing.remove()
   }
 
   showTab(tab: ActionMenuTab): void {
@@ -220,9 +227,7 @@ export class InventoryManager {
 
     this.menu.deactivateMiniMap()
 
-    if (tab === 'progression') {
-      this.renderProgression()
-    } else if (tab === 'craft') {
+    if (tab === 'craft') {
       this.renderCraft()
     } else if (tab === 'construction') {
       this.renderConstruction()
@@ -247,6 +252,9 @@ export class InventoryManager {
   }
 
   renderWorldMap(): void {
+    // The current region's colony summary (idleWorkers, stocks…) is otherwise only refreshed on
+    // day-change/region-travel, so it can lag behind what the player sees live on their own map.
+    this.menu.context.updateWorldEconomy?.()
     renderInventoryWorldMap(this.worldMapPanel, this.menu)
   }
 
@@ -360,63 +368,6 @@ export class InventoryManager {
     return getInventoryConstructionButtons(this.menu)
   }
 
-  createObjectiveItem(objective: AgeObjectiveDefinition): HTMLElement {
-    const acquired = isAgeObjectiveComplete(this.menu.context.player, objective.id)
-    const { element, icon } = createInventoryActionRow(this.menu, {
-      id: `inventory-objective-${objective.id}`,
-      className: 'progression-objective-row',
-      title: t(objective.labelKey),
-      description: t(objective.descriptionKey),
-    })
-    element.classList.toggle('is-acquired', acquired)
-    icon.classList.add('progression-objective-marker', acquired ? 'is-acquired' : 'is-pending')
-    icon.setAttribute('aria-hidden', 'true')
-    return element
-  }
-
-  createAgeMilestone(labelKey: string, reached: boolean): HTMLElement {
-    const milestone = document.createElement('div')
-    milestone.id = `inventory-age-${labelKey}`
-    milestone.className = 'inventory-section-header progression-age'
-    milestone.classList.toggle('is-acquired', reached)
-
-    const title = document.createElement('div')
-    title.className = 'inventory-loot-title progression-age-title'
-    title.textContent = t(labelKey)
-
-    const status = document.createElement('span')
-    status.className = 'progression-age-status'
-    status.textContent = t(reached ? 'progressionReached' : 'progressionUpcoming')
-
-    milestone.append(title, status)
-    return milestone
-  }
-
-  renderProgression(): void {
-    this.progressionPanel.textContent = ''
-    this.menu.clearActionHotkeys()
-    const player = this.menu.context.player
-    this.progressionPanel.appendChild(this.createAgeMilestone('stoneAge', true))
-    for (const stage of AGE_PROGRESSION) {
-      const step = document.createElement('section')
-      step.className = 'progression-step'
-      step.classList.toggle('is-current', player.age === stage.age - 1)
-      step.classList.toggle('is-complete', player.age >= stage.age)
-      const heading = document.createElement('div')
-      heading.className = 'progression-section-title'
-      const completed = stage.objectives.filter(objective => isAgeObjectiveComplete(player, objective.id)).length
-      heading.textContent = stage.objectives.length
-        ? t('progressionObjectives', { completed, total: stage.objectives.length })
-        : t('progressionComingSoon')
-      step.appendChild(heading)
-      for (const objective of stage.objectives) {
-        step.appendChild(this.createObjectiveItem(objective))
-      }
-      this.progressionPanel.appendChild(step)
-      this.progressionPanel.appendChild(this.createAgeMilestone(stage.labelKey, player.age >= stage.age))
-    }
-  }
-
   getCraftCostMetaParts(
     cost: ResourceAmount,
     hero: UnitEntity | null | undefined
@@ -501,7 +452,6 @@ export class InventoryManager {
   }
 
   syncObjectiveProgress(): void {
-    if (this.opened && this.activeTab === 'progression') this.renderProgression()
     if (this.opened && this.activeTab === 'craft') this.renderCraft()
   }
 

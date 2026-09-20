@@ -34,6 +34,7 @@ export function expectedVillageArrivals(population: number): number {
 }
 
 export function villageBuildingNeeds(input: {
+  storagePitNeeded: boolean
   population: number
   populationMax: number
   age: number
@@ -47,14 +48,15 @@ export function villageBuildingNeeds(input: {
     [BUILDING_TYPES.house]:
       input.population + expectedVillageArrivals(input.population) + 2 > input.populationMax &&
       !buildings.some(b => b.type === BUILDING_TYPES.house && !b.isBuilt),
-    [BUILDING_TYPES.storagePit]: count(BUILDING_TYPES.storagePit) === 0,
+    [BUILDING_TYPES.storagePit]: input.storagePitNeeded === true,
     [BUILDING_TYPES.granary]: count(BUILDING_TYPES.granary) === 0,
     [BUILDING_TYPES.barracks]: input.phase !== 'economy' && count(BUILDING_TYPES.barracks) < input.desiredBarracks,
-    [BUILDING_TYPES.market]:
-      count(BUILDING_TYPES.storagePit) > 0 && count(BUILDING_TYPES.granary) > 0 && count(BUILDING_TYPES.market) === 0,
+    // Storage pits are optional logistics projects, not a prerequisite for village development.
+    [BUILDING_TYPES.market]: count(BUILDING_TYPES.granary) > 0 && count(BUILDING_TYPES.market) === 0,
     [BUILDING_TYPES.archeryRange]: count(BUILDING_TYPES.barracks) > 0,
     [BUILDING_TYPES.stable]: count(BUILDING_TYPES.barracks) > 0,
     [BUILDING_TYPES.watchTower]: input.age >= 1,
+    [BUILDING_TYPES.temple]: input.age >= 1 && count(BUILDING_TYPES.temple) === 0,
   }
 }
 

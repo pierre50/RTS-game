@@ -1,3 +1,4 @@
+import { createInteriorWallEdges } from '../../../lib/buildings/interiorWalls'
 import { definedProperties } from '../../../lib/definedProperties'
 import { blueprintToLocalGrid, createLocalMapLayout, gridToLocal, localToGrid } from '../../../lib/localMapLayout'
 import type { MapBlueprint } from '../MapGenerationTypes'
@@ -74,6 +75,13 @@ export function createSquareLocalBlueprint(source: MapBlueprint): MapBlueprint {
     relief,
     floorMask,
     borderMask,
+    walls: floorMask
+      ? createInteriorWallEdges(
+          floorMask,
+          size,
+          (source.exits ?? []).flatMap(exit => (exit ? [position(exit)] : []))
+        )
+      : undefined,
     spawns: source.spawns?.map(value => value && position(value)),
     exits: source.exits?.map(value => value && position(value)),
     resources: source.resources?.map(position),
@@ -187,6 +195,7 @@ export function createRoundLocalInteriorBlueprint(source: MapBlueprint): MapBlue
     relief,
     floorMask,
     borderMask,
+    walls: createInteriorWallEdges(floorMask, size, [exit]),
     spawns: [exit],
     exits: [
       {

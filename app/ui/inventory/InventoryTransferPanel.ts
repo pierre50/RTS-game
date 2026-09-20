@@ -20,6 +20,7 @@ export type InventoryTransferEvent = {
 }
 
 export type InventoryTransferPanelOptions = {
+  header?: HTMLElement
   context: GameContextLike
   destination: InventoryContainer
   isTheftTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
@@ -32,6 +33,7 @@ export type InventoryTransferPanelOptions = {
 }
 
 export class InventoryTransferPanel {
+  header?: HTMLElement
   context: GameContextLike
   destination: InventoryContainer
   element: HTMLDivElement
@@ -44,6 +46,7 @@ export class InventoryTransferPanel {
   moveResource: typeof moveInventoryResource
 
   constructor(options: InventoryTransferPanelOptions) {
+    this.header = options.header
     this.context = options.context
     this.destination = options.destination
     this.isTheftTransfer = options.isTheftTransfer
@@ -60,6 +63,7 @@ export class InventoryTransferPanel {
 
   render(): void {
     this.element.replaceChildren(
+      ...(this.header ? [this.header] : []),
       this.createContainerBlock(this.destination, this.source),
       this.createContainerBlock(this.source, this.destination)
     )
@@ -154,6 +158,7 @@ export class InventoryTransferPanel {
     amount: number
   ): HTMLElement {
     const action = this.getTransferAction(container, transferTarget)
+    const full = (transferTarget.maxAcceptableResourceAmount?.(resource) ?? Number.POSITIVE_INFINITY) <= 0
     const handleAction = (mode: 'one' | 'all'): void => {
       if (this.canTransfer?.(container, transferTarget) === false) return
       const amountToMove = mode === 'one' ? 1 : amount
@@ -181,6 +186,7 @@ export class InventoryTransferPanel {
               ariaLabel: t(action.ariaKey, { item: `${t(resource)} x${amount}` }),
               label: action.label,
               onAction: handleAction,
+              disabled: full,
             },
     })
     element.setAttribute('aria-label', t(action.ariaKey, { item: `${t(resource)} x${amount}` }))
@@ -195,6 +201,7 @@ export class InventoryTransferPanel {
   ): HTMLElement {
     const action = this.getTransferAction(container, transferTarget)
     const labelText = formatEquipmentStackLabel(equipment, count)
+    const full = transferTarget.canAcceptEquipment?.(equipment) === false
     const handleAction = (mode: 'one' | 'all'): void => {
       if (this.canTransfer?.(container, transferTarget) === false) return
       const amountToMove = mode === 'one' ? 1 : count
@@ -227,6 +234,7 @@ export class InventoryTransferPanel {
               ariaLabel: t(action.ariaKey, { item: labelText }),
               label: action.label,
               onAction: handleAction,
+              disabled: full,
             },
     })
     element.setAttribute('aria-label', t(action.ariaKey, { item: labelText }))

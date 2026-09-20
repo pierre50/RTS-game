@@ -7,9 +7,9 @@ import {
   WILDGRASS_RESOURCE_TYPES,
 } from '../../constants'
 import {
-  getUnitCarriedResourceAmount,
   getResourceKeyForLoadingType,
   getUnitResourceCapacityRemaining,
+  isUnitResourceCarryFull,
   unitShouldDeliverResource,
 } from '../../lib/resources/resourceDelivery'
 import { getGatherXpBonus } from '../../lib/units/unitExperience'
@@ -52,7 +52,6 @@ export function startForageResourceAction(actions: UnitResourceActions): void {
     onDepleted: dest => {
       if (dest.type === RESOURCE_TYPES.berrybush) {
         markBerrybushDepleted(dest)
-        showDepletedBerrybushMessage(unit, dest)
       }
     },
   })
@@ -66,15 +65,12 @@ export function isChoppableBerrybush(value: RuntimeEntity | null | undefined): b
   return isDepletedBerrybush(value) && (value.hitPoints ?? 0) > 0
 }
 
-export function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEntity | null | undefined): void {
-  if (
-    isDepletedBerrybush(target) &&
-    unit.owner?.isPlayed &&
-    target &&
-    (unit.context?.controls?.instanceInCamera?.(target) ?? true)
-  ) {
-    unit.context?.menu?.showMessage(t('berrybushDepleted'), 'warning')
-  }
+function showHeroResourceCarryFullMessage(unit: UnitEntity): void {
+  if (unit.owner?.isPlayed) unit.context?.menu?.showMessage(t('heroBagFull'), 'warning')
+}
+
+export function notifyIfHeroResourceCarryFull(unit: UnitEntity): void {
+  if (isUnitResourceCarryFull(unit)) showHeroResourceCarryFullMessage(unit)
 }
 
 function markBerrybushDepleted(target: RuntimeEntity): void {
@@ -117,17 +113,11 @@ export function addGatheredResource(unit: UnitEntity, loadingType: string, amoun
 
 export function sendVillagerToDeliveryIfFull(
   unit: UnitEntity,
-  loadingType: string,
-  previousAmount: number | null = null
+  loadingType: string
 ): boolean {
-  if (!unitShouldDeliverResource(unit, loadingType, previousAmount)) return false
+  if (!unitShouldDeliverResource(unit, loadingType)) return false
   if (unit.sendToDelivery?.() === true) return true
   return false
-}
-
-export function getCarriedResourceAmountForLoadingType(unit: UnitEntity, loadingType: string): number {
-  const resource = getResourceKeyForLoadingType(loadingType)
-  return resource ? getUnitCarriedResourceAmount(unit, resource) : 0
 }
 
 function getResourceGatherSwings(loadingType: string, override?: number): number {

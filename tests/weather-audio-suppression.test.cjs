@@ -461,3 +461,46 @@ test('legacy saves adopt the daily plan and debug overrides expire back into it'
   assert.ok(weather.rainIntensity < 0.001)
   weather.destroy()
 })
+
+test('arrival refresh prepares weather at the final viewport while paused without advancing simulation', () => {
+  const WeatherSystem = loadWeatherSystem({ failOnAmbience: true })
+  for (const [phase, rain, snow, sand] of [
+    ['rainHeavy', 0.9, 0, 0],
+    ['snow', 0, 0.8, 0],
+    ['sandstorm', 0, 0, 0.8],
+    ['sunny', 0, 0, 0],
+  ]) {
+    const map = createMap()
+    const viewport = { visibleLeft: 0, visibleTop: 0, visibleWidth: 800, visibleHeight: 600 }
+    let screen = { x: 0, y: 0, width: 800, height: 600 }
+    const context = createContext(map, viewport)
+    const weather = new WeatherSystem(context, map, () => screen)
+    weather.applyState({ phase, forcedUntilMs: 100000, rainIntensity: rain, snowIntensity: snow, sandIntensity: sand })
+    context.paused = true
+    screen = { x: -100, y: -75, width: 1000, height: 750 }
+    Object.assign(viewport, { visibleLeft: 3200, visibleTop: 1800, visibleWidth: 1000, visibleHeight: 750 })
+    map.x = -3300
+    map.y = -1875
+    const veilRects = []
+    weather.rainVeil.rect = (...args) => { veilRects.push(args); return weather.rainVeil }
+    const stateBefore = weather.serializeState()
+
+    weather.refresh()
+
+    assert.deepEqual(weather.serializeState(), stateBefore)
+    assert.equal(weather.layer.visible, true)
+    assert.equal(weather.layer.x, screen.x)
+    assert.equal(weather.layer.y, screen.y)
+    assert.equal(map.filterArea.x, viewport.visibleLeft)
+    assert.equal(map.filterArea.y, viewport.visibleTop)
+    assert.equal(map.filterArea.width, screen.width)
+    assert.equal(map.filterArea.height, screen.height)
+    assert.equal(weather.lastMapX, map.x)
+    assert.equal(weather.lastMapY, map.y)
+    assert.equal(weather.raindrops.some(drop => drop.alpha > 0), rain > 0)
+    assert.equal(weather.snowflakes.some(flake => flake.alpha > 0), snow > 0)
+    assert.equal(weather.sandGrains.some(grain => grain.alpha > 0), sand > 0)
+    if (veilRects.length) assert.deepEqual(veilRects[0], [0, 0, screen.width, screen.height])
+    weather.destroy()
+  }
+})

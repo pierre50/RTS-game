@@ -16,6 +16,30 @@ export function validateCaveDefinition(value: unknown): asserts value is CaveDef
   ) {
     fail('Invalid cave definition.')
   }
+  if (value.minerals != null) {
+    if (!Array.isArray(value.minerals) || value.minerals.length > 6) fail('Invalid cave minerals.')
+    const edge = value.tier === 'large' ? 64 : 32
+    const occupied = new Set<string>()
+    for (const mineral of value.minerals) {
+      if (
+        !isObject(mineral) ||
+        !['Gold', 'Copper', 'Iron'].includes(String(mineral.type)) ||
+        ![mineral.i, mineral.j].every(
+          coordinate => Number.isInteger(coordinate) && Number(coordinate) >= 0 && Number(coordinate) < edge
+        ) ||
+        !Number.isInteger(mineral.totalQuantity) ||
+        Number(mineral.totalQuantity) < 1 ||
+        Number(mineral.totalQuantity) > 10 ||
+        !Number.isInteger(mineral.quantity) ||
+        Number(mineral.quantity) < 0 ||
+        Number(mineral.quantity) > Number(mineral.totalQuantity)
+      )
+        fail('Invalid cave mineral stock.')
+      const key = `${mineral.i},${mineral.j}`
+      if (occupied.has(key)) fail('Duplicate cave mineral position.')
+      occupied.add(key)
+    }
+  }
 }
 
 export function validateCaveOccupantReferences(players: unknown[]): void {

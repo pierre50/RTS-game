@@ -171,6 +171,7 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
   })
   const bought = []
   const ai = {
+    buildings: [{ type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20 } } }],
     age: 0,
     config: { buildings: { Farm: { cost: { wood: 75 }, size: 4 } } },
     food: 0,
@@ -210,6 +211,7 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
     houses: [],
     farms: [],
     granarys: [{ i: 9, j: 9, isBuilt: true }],
+    temples: [],
     storagepits: [{}],
     markets: [{}],
     watchTowers: [],
@@ -270,6 +272,7 @@ test('ai building strategy can spend resources stored in chests', () => {
     houses: [],
     farms: [],
     granarys: [{ i: 9, j: 9, isBuilt: true }],
+    temples: [],
     storagepits: [{}],
     markets: [{}],
     watchTowers: [],
@@ -324,7 +327,8 @@ test('ai economic demand includes stone-heavy core infrastructure', () => {
   const AIStrategy = loadAIStrategy()
   const ai = {
     age: 0,
-    buildings: [{ type: 'TownCenter', inventory: { resources: { wheat: 999 } } }],
+    buildings: [{ type: 'TownCenter', i: 10, j: 10, isBuilt: true, inventory: { resources: { wheat: 999 } } }],
+    foundedTrees: new Set([{ type: 'Tree', i: 22, j: 22, quantity: 500 }]),
     config: {
       buildings: {
         Granary: { cost: { stone: 50, wood: 180 } },
@@ -358,6 +362,7 @@ test('ai building strategy anticipates automatic villager waves before adding ho
     },
   })
   const ai = {
+    buildings: [{ type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20 } } }],
     age: 0,
     buyBuilding: (i, j, type) => {
       bought.push([i, j, type])
@@ -397,6 +402,7 @@ test('ai building strategy anticipates automatic villager waves before adding ho
     houses: [],
     farms: [],
     granarys: [],
+    temples: [],
     storagepits: [],
     markets: [],
     watchTowers: [],
@@ -422,6 +428,7 @@ test('ai building strategy adds passage clearance to construction searches', () 
     },
   })
   const ai = {
+    buildings: [{ type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20 } } }],
     age: 0,
     config: { buildings: { House: { cost: { wood: 30 }, size: 2 } } },
     food: 0,
@@ -458,6 +465,7 @@ test('ai building strategy adds passage clearance to construction searches', () 
     houses: [],
     farms: [],
     granarys: [{}],
+    temples: [],
     storagepits: [{}],
     markets: [{}],
     watchTowers: [],

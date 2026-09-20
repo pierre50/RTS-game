@@ -69,7 +69,7 @@ export function findMapTerritoryOwner<T extends TerritoryPlayer>(
   return residents.find(hasTerritoryBuildings) ?? null
 }
 
-function currentMapTerritoryOwner(context: Pick<GameContextLike, 'map' | 'players'>) {
+export function currentMapTerritoryOwner(context: Pick<GameContextLike, 'map' | 'players'>) {
   const region = context.map?.worldRegion
   const settlements = (context.map?.worldManifest?.settlements ?? []) as TerritorySettlement[]
   return findMapTerritoryOwner(

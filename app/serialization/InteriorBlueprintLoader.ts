@@ -188,6 +188,7 @@ export function decodeInteriorPayload(
     resources: Array.isArray(payload.resources) ? payload.resources : [],
     floorMask: floorMaskValues ? toGrid(floorMaskValues, size, value => value) : undefined,
     borderMask: borderMaskValues ? toGrid(borderMaskValues, size, value => value) : undefined,
+    walls: payload.walls,
     floorShape: payload.floorShape ?? null,
   })
 }

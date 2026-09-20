@@ -1,11 +1,11 @@
 import { FAMILY_TYPES } from '../constants'
+import { OCCLUSION_FADE_ALPHA } from '../constants/occlusion'
 import { getInstanceZIndex } from '../lib/maths'
 import { texturesHaveOpaqueOverlap } from '../lib/graphics/alphaMask'
 import { boundsIntersect } from '../lib/graphics/chunkCulling'
 import { findInstancesInSight, getInstanceScreenBounds, type RenderableInstance } from '../lib/grid/visibility'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 
-const FADE_ALPHA = 0.35
 const FADE_SPEED_PER_MS = 1 / 150
 const SEARCH_RADIUS = 6
 const ZINDEX_EPSILON = 0.01
@@ -39,7 +39,7 @@ export class HeroOcclusionFade {
 
     for (const entity of occluding) {
       this.faded.add(entity)
-      entity.alpha = Math.max(FADE_ALPHA, (entity.alpha ?? 1) - step)
+      entity.alpha = Math.max(OCCLUSION_FADE_ALPHA, (entity.alpha ?? 1) - step)
     }
 
     for (const entity of this.faded) {
@@ -48,7 +48,7 @@ export class HeroOcclusionFade {
         this.faded.delete(entity)
         continue
       }
-      const restored = Math.min(1, (entity.alpha ?? FADE_ALPHA) + step)
+      const restored = Math.min(1, (entity.alpha ?? OCCLUSION_FADE_ALPHA) + step)
       entity.alpha = restored
       if (restored >= 1) this.faded.delete(entity)
     }

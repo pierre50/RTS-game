@@ -141,6 +141,7 @@ function loadWorldRegionTravelRuntime(calls) {
           calls.blockInput = options.blockInput
           try {
             await callback()
+            if (calls.checkArrivalFrame) await options.beforeReveal?.()
             calls.revealed = true
           } finally {
             calls.fadeDestroyed = true
@@ -482,7 +483,7 @@ for (const { square, legacyRoot, duplicate, debug } of [
   { square: true, legacyRoot: true, duplicate: true, debug: true },
 ])
   test(`world region travel restores a visited region (${JSON.stringify({ square, legacyRoot, duplicate, debug })})`, async () => {
-    const calls = { addedWorlds: [], travelPartyApplications: [] }
+    const calls = { addedWorlds: [], travelPartyApplications: [], checkArrivalFrame: true }
     const { travelToWorldRegion, debugTeleportWorldMap } = loadWorldRegionTravelRuntime(calls)
     const savedWorldId = legacyRoot ? 'world-4242' : 'region-b'
     const departureState = {
@@ -512,7 +513,12 @@ for (const { square, legacyRoot, duplicate, debug } of [
       world: { worldId: 'world-test', worldRegionId: 'region-b' },
     }
     let currentContext = {
-      app: square ? { canvas: {} } : undefined,
+      app: { canvas: {}, render: () => {
+        assert.equal(calls.paused, true)
+        assert.equal(calls.lightingRefreshed, true)
+        assert.notEqual(calls.revealed, true)
+        calls.arrivalRendered = true
+      } },
       controls: {
         setEquippedItem: item => {
           calls.equippedItem = item
@@ -537,6 +543,11 @@ for (const { square, legacyRoot, duplicate, debug } of [
       serialized: departureState,
     }
     const game = {
+      _refreshSceneLighting: () => {
+        assert.equal(calls.paused, true)
+        assert.equal(calls.travelPartyApplications.length, 1)
+        calls.lightingRefreshed = true
+      },
       _campaignSave: {
         currentWorldId: 'region-a',
         worlds: {
@@ -576,6 +587,7 @@ for (const { square, legacyRoot, duplicate, debug } of [
     if (debug) await debugTeleportWorldMap(game, { worldRegionId: 'region-b', worldI: 9, worldJ: 9 })
     else await travelToWorldRegion(game, 'region-b', 'east')
 
+    assert.equal(calls.arrivalRendered, true)
     assert.equal(game.bootedFromConfig, undefined)
     assert.equal(calls.equippedItem, 'bow')
     assert.equal(game.bootedFromSave.players[0].units[1].label, 'woodcutter')

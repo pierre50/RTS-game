@@ -62,6 +62,9 @@ function createCanvas() {
     strokes: [],
     images: [],
     ellipses: [],
+    labels: [],
+    strokeText() {},
+    fillText(...args) { this.labels.push(args) },
     beginPath() {},
     ellipse(...args) { this.ellipses.push(args) },
     fill() {},
@@ -157,7 +160,8 @@ test('tracked quest areas draw on the minimap without revealing terrain', () => 
   const { QuestSystem } = require('./helpers/loadTsModule.cjs').loadTsModule('app/services/quests/QuestSystem.ts')
   const journal = { trackedQuestId: 'hunt', quests: [{ id: 'hunt', status: 'active', regionId: 'region', stageId: 'hunt',
     markers: { hunt: [{ spaceId: 'outside', position: { i: 1, j: 1 }, radius: 8 }] } }] }
-  menu.context.neutralQuests = { system: new QuestSystem(() => journal) }
+  const system = new QuestSystem(() => journal)
+  menu.context.neutralQuests = { getTrackedMarkers: (...args) => system.getTrackedMarkers(...args) }
   const manager = new MinimapManager(menu)
   manager.activate()
   assert.equal(menu.cameraMinimap.context.ellipses.length, 1)
@@ -166,6 +170,20 @@ test('tracked quest areas draw on the minimap without revealing terrain', () => 
   journal.quests[0].status = 'completed'
   manager.updateCameraMiniMapEvt()
   assert.equal(menu.cameraMinimap.context.ellipses.length, 1, 'completed quests do not redraw markers')
+})
+
+test('quest return is a readable question mark on the minimap overlay', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu()
+  menu.context.neutralQuests = { getTrackedMarkers: () => [
+    { kind: 'return', position: { i: 1, j: 1 } },
+  ] }
+  const manager = new MinimapManager(menu)
+  manager.activate()
+  assert.equal(menu.cameraMinimap.context.labels.length, 1)
+  assert.equal(menu.cameraMinimap.context.labels[0][0], '?')
+  assert.equal(menu.cameraMinimap.context.ellipses.length, 0)
+  assert.equal(menu.terrainMinimap.context.diamonds.length, 0)
 })
 
 test('minimap does not create player layers for other owners', () => {

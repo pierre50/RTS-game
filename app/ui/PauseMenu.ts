@@ -80,13 +80,6 @@ export class PauseMenu {
     )
 
     content.appendChild(
-      this._btn(t('restart'), () => {
-        modal.close()
-        menu.context.restart?.()
-      })
-    )
-
-    content.appendChild(
       this._btn(t('quit'), () => {
         modal.close()
         menu.context.quit?.()

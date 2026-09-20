@@ -44,6 +44,73 @@ function createActor(t) {
   }
 }
 
+const { Instance } = loadTsModule('app/classes/Instance.ts', {
+  mocks: {
+    '../lib': { setUnitTexture, uuidv4: () => 'paused-worker' },
+    './InstanceHudBars': {},
+  },
+})
+
+for (const sheet of ['actionSheet', 'walkingSheet']) {
+  test(`tutorial startup resumes ${sheet} prepared before explicit pause`, t => {
+    const actor = createActor(t)
+    actor.context.paused = true
+    setUnitTexture(sheet, actor)
+    let impacts = 0
+    const onFrameChange = () => impacts++
+    actor.sprite.onFrameChange = onFrameChange
+    assert.equal(actor.sprite.playing, false)
+    // Boot starts paused, then preparation and presentation both request pause again.
+    Instance.prototype.pause.call(actor)
+    Instance.prototype.pause.call(actor)
+    Instance.prototype.resume.call(actor)
+    actor.context.paused = false
+    assert.equal(actor.sprite.playing, true)
+    assert.equal(actor.sprite.onFrameChange, onFrameChange)
+    actor.sprite.update({ deltaTime: 10 })
+    assert.ok(impacts > 0)
+  })
+}
+
+test('a new work order during pause replaces the previous idle playback state', t => {
+  const actor = createActor(t)
+  actor.standingSheet = actor.walkingSheet
+  setUnitTexture('standingSheet', actor)
+  Instance.prototype.pause.call(actor)
+  actor.context.paused = true
+  setUnitTexture('actionSheet', actor)
+  assert.equal(actor.sprite.playing, false)
+  Instance.prototype.resume.call(actor)
+  assert.equal(actor.sprite.playing, true)
+})
+
+test('an idle order during pause cancels the previous work playback state', t => {
+  const actor = createActor(t)
+  actor.standingSheet = actor.walkingSheet
+  setUnitTexture('actionSheet', actor)
+  Instance.prototype.pause.call(actor)
+  actor.context.paused = true
+  setUnitTexture('standingSheet', actor)
+  Instance.prototype.resume.call(actor)
+  assert.equal(actor.sprite.playing, false)
+})
+
+test('repeated pauses preserve playback and frame without starting an already stopped animation', t => {
+  const actor = createActor(t)
+  setUnitTexture('actionSheet', actor)
+  actor.sprite.update({ deltaTime: 10 })
+  const frame = actor.sprite.currentFrame
+  for (const playing of [true, false]) {
+    if (!playing) actor.sprite.stop()
+    Instance.prototype.pause.call(actor)
+    Instance.prototype.pause.call(actor)
+    Instance.prototype.resume.call(actor)
+    assert.equal(actor.sprite.playing, playing)
+    assert.equal(actor.sprite.currentFrame, frame)
+    assert.equal(actor.playingBeforePause, undefined)
+  }
+})
+
 for (const sheet of ['walkingSheet', 'runningSheet', 'actionSheet']) {
   test(`${sheet} advances despite repeated visual refreshes every 20 ms`, t => {
     const actor = createActor(t)

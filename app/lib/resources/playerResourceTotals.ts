@@ -1,68 +1,20 @@
-import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
-import { heroCanCommand } from '../chief'
-import type { GameContextLike } from '../../types/context'
-import { storageResourcePriority } from './storagePolicy'
-
-type StorageResourceName = (typeof RESOURCE_STORAGE_NAMES)[number]
-type ResourceName = StorageResourceName | 'food'
-
-const FOOD_DEDUCTION_ORDER: readonly ('wheat' | 'meat' | 'berry')[] = ['wheat', 'meat', 'berry']
-const RESOURCE_STOCKPILE_BUILDING_TYPES = new Set<string>([
-  BUILDING_TYPES.chest,
-  BUILDING_TYPES.storagePit,
-  BUILDING_TYPES.granary,
-])
-
-export function expandLegacyFoodAmount(amount: ResourceAmount | null | undefined): ResourceAmount {
-  const { food, ...rest } = amount ?? {}
-  const legacyFood = Math.max(0, Math.floor(food ?? 0))
-  if (legacyFood <= 0) return rest
-  const third = Math.floor(legacyFood / 3)
-  return {
-    ...rest,
-    berry: (rest.berry ?? 0) + third,
-    meat: (rest.meat ?? 0) + third,
-    wheat: (rest.wheat ?? 0) + (legacyFood - third * 2),
-  }
-}
-
-function expandFoodCost(cost: ResourceAmount, totals: Record<ResourceName, number>): ResourceAmount {
-  const foodAmount = Math.max(0, Math.floor(cost.food ?? 0))
-  if (foodAmount <= 0) return cost
-  const { food: _food, ...expanded } = cost
-  let remaining = foodAmount
-  for (const sub of FOOD_DEDUCTION_ORDER) {
-    if (remaining <= 0) break
-    const available = totals[sub] ?? 0
-    const taken = Math.min(available, remaining)
-    if (taken > 0) expanded[sub] = (expanded[sub] ?? 0) + taken
-    remaining -= taken
-  }
-  return expanded
-}
-
-function expandFoodDeposit(resources: ResourceAmount): ResourceAmount {
-  const foodAmount = Math.max(0, Math.floor(resources.food ?? 0))
-  if (foodAmount <= 0) return resources
-  const { food: _food, ...expanded } = resources
-  expanded.wheat = (expanded.wheat ?? 0) + foodAmount
-  return expanded
-}
-export type ResourceStoreOwner = {
-  isPlayed?: boolean
-  context?: GameContextLike
-  buildings?: BuildingEntity[]
-  label?: string
-  units?: UnitEntity[]
-}
-type ResourceTotalOptions = {
-  includeHero?: boolean
-  hero?: UnitEntity | null
-  visibleOnly?: boolean
-}
+import type {
+  ResourceStoreOwner,
+  ResourceTotalOptions} from './playerResourceStores';
+import {
+  getPersonalResourceHero,
+  getPlayerResourceHeroes,
+  getPlayerResourceStores,
+  isVisibleStorageBuilding,
+} from './playerResourceStores'
+import { getBuildingStorageCapacity } from './resourceDelivery'
+import type { ResourceName} from './resourceFoodAmounts';
+import { expandFoodCost, expandFoodDeposit } from './resourceFoodAmounts'
+import { allowsVillagerDeliveries, storageResourcePriority } from './storagePolicy'
 
 function createEmptyResourceTotals(): Record<ResourceName, number> {
   return Object.fromEntries([...RESOURCE_STORAGE_NAMES, 'food'].map(resource => [resource, 0])) as Record<
@@ -71,76 +23,8 @@ function createEmptyResourceTotals(): Record<ResourceName, number> {
   >
 }
 
-function isOwnedChest(building: BuildingEntity, player: ResourceStoreOwner): boolean {
-  if (!RESOURCE_STOCKPILE_BUILDING_TYPES.has(building.type)) return false
-  if (building.isDead || building.isDestroyed) return false
-  if (!building.owner) return true
-  return building.owner === player || building.owner.label === player.label
-}
-
-function getPlayerResourceChests(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
-  if (!player) return []
-  return (player.buildings ?? []).filter(building => isOwnedChest(building, player))
-}
-
-function isOwnedStartingResourceDepot(building: BuildingEntity, player: ResourceStoreOwner): boolean {
-  if (building.type !== BUILDING_TYPES.townCenter) return false
-  if (building.isDead || building.isDestroyed) return false
-  if (!building.inventory?.resources) return false
-  if (!building.owner) return true
-  return building.owner === player || building.owner.label === player.label
-}
-
-function getPlayerStartingResourceDepots(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
-  if (!player) return []
-  return (player.buildings ?? []).filter(building => isOwnedStartingResourceDepot(building, player))
-}
-
-export function getPlayerResourceStores(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
-  return [...new Set([...getPlayerResourceChests(player), ...getPlayerStartingResourceDepots(player)])]
-}
-
-function isOwnedHero(unit: UnitEntity, player: ResourceStoreOwner): boolean {
-  if (unit.type !== UNIT_TYPES.hero) return false
-  if (unit.isDead || unit.isDestroyed) return false
-  if (!unit.owner) return true
-  return unit.owner === player || unit.owner.label === player.label
-}
-
-function getPlayerResourceHeroes(
-  player: ResourceStoreOwner | null | undefined,
-  extraHero?: UnitEntity | null
-): UnitEntity[] {
-  if (!player && !extraHero) return []
-  const heroes = new Set<UnitEntity>()
-  if (player) {
-    for (const unit of player.units ?? []) {
-      if (isOwnedHero(unit, player)) heroes.add(unit)
-    }
-  }
-  if (extraHero && (!player || isOwnedHero(extraHero, player))) heroes.add(extraHero)
-  return [...heroes]
-}
-
 /** Personal spending uses the active hero's bag until they can command the village.
  * Explicit village-only queries remain available to upkeep and offline simulation. */
-function getPersonalResourceHero(
-  player: ResourceStoreOwner | null | undefined,
-  options: ResourceTotalOptions = {}
-): UnitEntity | null {
-  if (!player?.isPlayed || options.includeHero === false) return null
-  const hero = options.hero ?? player.context?.controls?.heroUnit ?? getPlayerResourceHeroes(player)[0]
-  return hero && isOwnedHero(hero, player) && !heroCanCommand(hero) ? hero : null
-}
-
-function isVisibleStorageBuilding(building: BuildingEntity, player: ResourceStoreOwner | PlayerLike): boolean {
-  const map = building.context?.map
-  if (map?.revealEverything) return true
-  const views = (player as PlayerLike).views
-  if (!views) return building.visible !== false
-  const checkVisible = () => views.isVisible(building.i, building.j)
-  return views.withSpace?.(building.spaceId, checkVisible) ?? checkVisible()
-}
 
 export function hasPlayerResourceChests(player: unknown): player is ResourceStoreOwner {
   return Boolean(player && typeof player === 'object' && Array.isArray((player as ResourceStoreOwner).buildings))
@@ -227,45 +111,19 @@ export function withdrawChestResources(
     let remaining = Math.max(0, Math.floor(rawAmount ?? 0))
     if (remaining <= 0) continue
 
-    for (const chest of personalHero ? [] : getPlayerResourceChests(player)) {
-      const resources = chest.inventory?.resources
+    const stores = personalHero ? [] : getPlayerResourceStores(player)
+    const heroes =
+      options.includeHero === false ? [] : personalHero ? [personalHero] : getPlayerResourceHeroes(player, options.hero)
+    for (const store of [...stores, ...heroes]) {
+      if (remaining <= 0) break
+      const resources = store.inventory?.resources
       if (!resources) continue
       const available = Math.max(0, Math.floor(resources[resource] ?? 0))
       if (available <= 0) continue
-
       const consumed = Math.min(available, remaining)
       resources[resource] = available - consumed
       if ((resources[resource] ?? 0) <= 0) delete resources[resource]
       remaining -= consumed
-      if (remaining <= 0) break
-    }
-
-    for (const depot of personalHero ? [] : getPlayerStartingResourceDepots(player)) {
-      if (remaining <= 0) break
-      const resources = depot.inventory?.resources
-      if (!resources) continue
-      const available = Math.max(0, Math.floor(resources[resource] ?? 0))
-      if (available <= 0) continue
-
-      const consumed = Math.min(available, remaining)
-      resources[resource] = available - consumed
-      if ((resources[resource] ?? 0) <= 0) delete resources[resource]
-      remaining -= consumed
-    }
-
-    if (options.includeHero !== false) {
-      for (const hero of personalHero ? [personalHero] : getPlayerResourceHeroes(player, options.hero)) {
-        if (remaining <= 0) break
-        const resources = hero.inventory?.resources
-        if (!resources) continue
-        const available = Math.max(0, Math.floor(resources[resource] ?? 0))
-        if (available <= 0) continue
-
-        const consumed = Math.min(available, remaining)
-        resources[resource] = available - consumed
-        if ((resources[resource] ?? 0) <= 0) delete resources[resource]
-        remaining -= consumed
-      }
     }
   }
 
@@ -273,9 +131,17 @@ export function withdrawChestResources(
   return true
 }
 
+function getStoreResourceTotal(store: BuildingEntity): number {
+  return Object.values(store.inventory?.resources ?? {}).reduce(
+    (sum, amount) => sum + Math.max(0, Math.floor(amount ?? 0)),
+    0
+  )
+}
+
 export function depositChestResources(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
-  resourcesToDeposit: ResourceAmount | null | undefined
+  resourcesToDeposit: ResourceAmount | null | undefined,
+  options: { automaticDelivery?: boolean } = {}
 ): boolean {
   if (!player || !resourcesToDeposit) return false
   const stores = getPlayerResourceStores(player).filter(store => store.isBuilt !== false)
@@ -289,18 +155,26 @@ export function depositChestResources(
             (parent as BuildingEntity & { interiorBuildings?: BuildingEntity[] }).interiorBuildings?.includes(store) ||
             (store.spaceId && store.spaceId === `interior:${player.label}:${parent.label}`)
         )
-  const candidates = stores.map(store => ({ store, parent: parentOf(store) }))
+  const candidates = stores
+    .map(store => ({ store, parent: parentOf(store) }))
+    .filter(
+      ({ store, parent }) =>
+        !options.automaticDelivery || (allowsVillagerDeliveries(store) && (!parent || allowsVillagerDeliveries(parent)))
+    )
   const expandedDeposit = expandFoodDeposit(resourcesToDeposit)
   const deposits: Array<{ destination: BuildingEntity; resource: keyof ResourceAmount; amount: number }> = []
   for (const [resource, rawAmount] of Object.entries(expandedDeposit) as [keyof ResourceAmount, number][]) {
     const amount = Math.max(0, Math.floor(rawAmount ?? 0))
     if (amount <= 0) continue
+    // The store must have room for the FULL amount — not just be "not yet full" — otherwise a
+    // large deposit (e.g. several offline gather cycles at once) can blow straight past capacity.
     const eligible = candidates.filter(
-      ({ parent }) =>
+      ({ store, parent }) =>
         parent?.isBuilt !== false &&
         !parent?.isDead &&
         !parent?.isDestroyed &&
-        Number.isFinite(storageResourcePriority(parent?.type ?? 'Chest', resource))
+        Number.isFinite(storageResourcePriority(parent?.type ?? 'Chest', resource)) &&
+        getStoreResourceTotal(store) + amount <= getBuildingStorageCapacity(store)
     )
     eligible.sort(
       (a, b) =>
@@ -321,3 +195,7 @@ export function depositChestResources(
   syncPlayerResourceFieldsFromChests(player)
   return true
 }
+
+export { getPlayerResourceStores, type ResourceStoreOwner } from './playerResourceStores'
+
+export { expandLegacyFoodAmount } from './resourceFoodAmounts'

@@ -470,3 +470,17 @@ test('save validation accepts a neutral Gaia owner for generated caves', () => {
   data.players.push({ ...data.players[0], type: 'Gaia', isPlayed: false, diplomacy: 'neutral' })
   assert.doesNotThrow(() => validateSaveData(data))
 })
+
+test('saved daily schedules accept legacy units and reject invalid phase times', () => {
+  const valid = { wakeMinute: 360, workStartMinute: 420, workEndMinute: 1080, bedMinute: 1320 }
+  for (const dailySchedule of [undefined, valid]) {
+    const data = save()
+    data.players[0].units = [{ type: 'Hero', i: 0, j: 0, dailySchedule }]
+    assert.doesNotThrow(() => validateSaveData(data))
+  }
+  for (const dailySchedule of [[], {}, { ...valid, bedMinute: NaN }, { ...valid, bedMinute: 1440 }, { ...valid, wakeMinute: 500 }]) {
+    rejects(data => {
+      data.players[0].units = [{ type: 'Hero', i: 0, j: 0, dailySchedule }]
+    }, /dailySchedule/)
+  }
+})

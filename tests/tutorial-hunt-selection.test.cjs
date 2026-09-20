@@ -4,31 +4,6 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { selectTutorialHunt } = loadTsModule('app/services/quests/TutorialHuntSelection.ts')
 const { commitQuestInventory } = loadTsModule('app/services/quests/QuestInventory.ts')
 
-test('hunting selection ignores unreachable and indoor wildlife and follows actual gathering loot', () => {
-  const grid = Array.from({ length: 7 }, (_, i) =>
-    Array.from({ length: 7 }, () => ({ category: i === 3 ? 'Water' : 'Land' }))
-  )
-  const context = {
-    map: {
-      grid,
-      gaia: {
-        animals: [
-          { type: 'Deer', i: 1, j: 1, quantity: 60 },
-          { type: 'BlackGrouse', i: 5, j: 1, quantity: 1000 },
-          { type: 'BlackGrouse', i: 1, j: 2, quantity: 1000, spaceId: 'cave' },
-          { type: 'BlackGrouse', i: 1, j: 2, quantity: 1000, isDestroyed: true },
-        ],
-      },
-    },
-  }
-  const result = selectTutorialHunt(context, { i: 0, j: 0 })
-  assert.equal(result.parameters.resource, 'leather')
-  assert.equal(result.parameters.quantity, 2)
-  assert.deepEqual(result.markers.hunt[0].position, { i: 1, j: 1 })
-  context.map.gaia.animals = []
-  assert.equal(selectTutorialHunt(context, { i: 0, j: 0 }), null)
-})
-
 test('quest inventory commits resources and equipment together and preserves previous equipment', () => {
   const hero = { inventory: { resources: { wood: 10 }, activeWeapons: { ranged: 'bow_great' } } }
   const npc = { inventory: { resources: { wood: 2 } } }
@@ -56,37 +31,101 @@ test('quest inventory commits resources and equipment together and preserves pre
   assert.equal(hero.inventory.equippedCounts.arrow, 20)
 })
 
-test('missing wildlife is supplemented naturally on the accessible bank, then reserved', () => {
-  const grid = Array.from({ length: 40 }, (_, i) => Array.from({ length: 40 }, (_, j) => ({
-    i, j, type: 'Grass', category: i === 20 ? 'Water' : 'Land', solid: false, has: null,
+
+function fixture({ visible = false, camera = false } = {}) {
+  const grid = Array.from({ length: 60 }, (_, i) => Array.from({ length: 60 }, (_, j) => ({
+    i, j, category: i === 30 ? 'Water' : 'Land', solid: false, has: null,
   })))
   const animals = []
   const context = {
-    player: { views: { isVisible: () => false } },
-    players: [{ buildings: [{ i: 5, j: 5, size: 2 }] }],
-    map: { grid, random: () => 0.1, randomRange: min => min,
-      gaia: { animals, config: { animals: { Deer: {} } }, createAnimal(options) {
-        const animal = { ...options, family: 'animal', label: `deer-${animals.length}`, quantity: 60 }
+    player: { views: { isVisible: () => visible } },
+    controls: { instanceInCamera: () => camera },
+    players: [],
+    scheduler: { elapsedMs: 0 },
+    map: { worldRegionId: 'region', grid, gaia: {
+      animals, config: { animals: { Deer: {} } },
+      createAnimal(options) {
+        const animal = { ...options, label: 'deer-' + animals.length, quantity: 60 }
         animals.push(animal)
-        grid[animal.i][animal.j].solid = true
         grid[animal.i][animal.j].has = animal
+        grid[animal.i][animal.j].solid = true
         return animal
-      } },
-    },
+      },
+    } },
   }
-  const result = selectTutorialHunt(context, { i: 5, j: 5 }, { ensurePopulation: true })
-  assert.equal(result.parameters.resource, 'leather')
-  assert.ok(animals.length > 0)
-  assert.ok(result.reservation.entityLabels.length > 0)
-  for (const animal of animals) {
-    assert.ok(animal.i < 20, 'Must stay on the village bank')
-    assert.ok(Math.max(Math.abs(animal.i - 5), Math.abs(animal.j - 5)) > 5, 'Keep animals outside buildings')
+  const quest = { status: 'active', stageId: 'wood', regionId: 'region', parameters: {}, markers: {} }
+  const npc = { i: 5, j: 5 }
+  const prepare = () => {
+    let result
+    for (let i = 0; i < 100 && !result; i++) {
+      context.scheduler.elapsedMs += 500
+      result = selectTutorialHunt(context, npc, quest)
+    }
+    return result
   }
-  const count = animals.length
-  selectTutorialHunt(context, { i: 5, j: 5 }, { ensurePopulation: true, resource: 'leather', quantity: 3 })
-  assert.equal(animals.length, count, 'Do not add animals when the existing yield is sufficient')
-  for (const animal of animals) { animal.isDestroyed = true; grid[animal.i][animal.j].solid = false; grid[animal.i][animal.j].has = null }
-  const replacement = selectTutorialHunt(context, { i: 5, j: 5 }, { ensurePopulation: true, resource: 'leather', quantity: 1 })
-  assert.equal(replacement.parameters.resource, 'leather', 'Keep the active quest resource')
-  assert.ok(animals.length > count, 'Replenish when unlucky gathering exhausts the wildlife')
+  return { context, quest, npc, animals, prepare }
+}
+
+test('a tutorial creates its own reachable group once, outside both camera and vision', () => {
+  const f = fixture()
+  assert.equal(selectTutorialHunt(f.context, f.npc, f.quest), null, 'Search yields before traversing the map')
+  assert.equal(f.animals.length, 0)
+  const hunt = f.prepare()
+  assert.equal(hunt.parameters.resource, 'leather')
+  assert.equal(f.animals.length, 3)
+  for (const animal of f.animals) {
+    assert.ok(animal.i < 30, 'Never cross the water barrier')
+    assert.ok(Math.hypot(animal.i - 5, animal.j - 5) >= 12)
+  }
+  assert.deepEqual(hunt.reservation.entityLabels, f.animals.map(animal => animal.label))
+  const saved = JSON.parse(JSON.stringify(f.quest))
+  f.context.map.grid = new Proxy([], { get() { throw new Error('A saved encounter must not search again') } })
+  assert.deepEqual(selectTutorialHunt(f.context, f.npc, saved), hunt)
+  assert.equal(f.animals.length, 3)
+})
+
+for (const blocked of [{ visible: true }, { camera: true }]) {
+  test('visible or on-camera terrain never receives a quest spawn ' + JSON.stringify(blocked), () => {
+    const f = fixture(blocked)
+    assert.equal(f.prepare(), null)
+    assert.equal(f.animals.length, 0)
+    assert.equal(f.quest.encounters, undefined)
+  })
+}
+
+test('changing visibility during a search is rechecked before spawning', () => {
+  const f = fixture()
+  selectTutorialHunt(f.context, f.npc, f.quest)
+  f.context.player.views.isVisible = () => true
+  assert.equal(f.prepare(), null)
+  assert.equal(f.animals.length, 0)
+})
+
+test('legacy reserved wildlife is adopted without duplicating it', () => {
+  const f = fixture()
+  f.animals.push({ label: 'legacy', type: 'Deer', i: 10, j: 10, quantity: 20 })
+  f.quest.reservation = { entityLabels: ['legacy'], stageIds: ['wood', 'hunt'] }
+  const result = selectTutorialHunt(f.context, f.npc, f.quest)
+  assert.deepEqual(result.reservation.entityLabels, ['legacy'])
+  assert.equal(f.animals.length, 1)
+})
+
+test('the same placement service supports bandit factories and never respawns a saved defeated group', () => {
+  const { ensureQuestEncounter } = loadTsModule('app/services/quests/QuestEncounterSpawn.ts')
+  const f = fixture()
+  const bandits = []
+  const options = { count: 3, parameters: {}, create(cell) {
+    const unit = { label: 'bandit-' + bandits.length, i: cell.i, j: cell.j }
+    bandits.push(unit)
+    return unit
+  } }
+  let encounter
+  for (let i = 0; i < 100 && !encounter; i++) {
+    encounter = ensureQuestEncounter(f.context, f.quest, 'bandits', f.npc, options)
+  }
+  assert.equal(bandits.length, 3)
+  bandits.forEach(unit => { unit.isDead = true })
+  const restored = JSON.parse(JSON.stringify(f.quest))
+  assert.deepEqual(ensureQuestEncounter(f.context, restored, 'bandits', f.npc, options), encounter)
+  assert.equal(bandits.length, 3)
 })

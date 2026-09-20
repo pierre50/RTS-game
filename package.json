@@ -22,6 +22,7 @@
     "world:generate": "node tools/generate-world-maps.cjs",
     "caves:generate": "node tools/generate-cave-maps.cjs",
     "interiors:generate": "node tools/generate-interior-maps.cjs",
+    "assets:interior-walls": "python3 scripts/build_interior_wall_textures.py",
     "assets:lpc:build": "python3 scripts/lpc/export_runtime_palettes.py && python3 scripts/lpc/build.py && python3 scripts/lpc/build_equipment.py && python3 scripts/lpc/build_hero_appearance.py && python3 scripts/lpc/build_animals.py",
     "assets:lpc:export-palettes": "python3 scripts/lpc/export_runtime_palettes.py",
     "assets:lpc:build-equipment": "python3 scripts/lpc/build_equipment.py",

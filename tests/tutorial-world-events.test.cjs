@@ -28,6 +28,8 @@ test('daily handlers stay suspended during the tutorial while remote clocks are 
     },
   })
   const runtime = {
+    detectNewColonyAlerts: DailyWorldEventSystem.prototype.detectNewColonyAlerts,
+    seenColonyAlertKeys: new Set(),
     context: { isTutorialActive: () => active, updateWorldEconomy: () => checkpoints++ },
     handlers: [{ handleDailyWorldEvent: () => events++ }],
   }

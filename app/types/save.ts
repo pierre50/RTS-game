@@ -1,3 +1,4 @@
+import type { VillagerSchedule } from '../lib/units/villagerSchedule'
 import type { QuestJournalState } from './quest'
 import type { TargetObservation } from '../lib/units/playerTargetKnowledge'
 import type { CaveDefinition } from './cave'
@@ -73,6 +74,7 @@ export type SaveEntityState = {
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   inactif?: boolean
+  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
@@ -91,6 +93,7 @@ export type SaveEntityState = {
   isFleeing?: boolean
   isUsedBy?: string | null
   j: number
+  dailySchedule?: VillagerSchedule
   label?: string
   loading?: number | null
   trainingStartedDay?: number | null
@@ -353,6 +356,10 @@ export type RegionEconomySave = {
   // Only unvisited regions own a snapshot here; visited regions use campaign.worlds.
   initialState?: SerializedSave
   terrain: string[]
+  // Per-cell elevation (base36 digit per character, parallel to `terrain`), so offline building
+  // placement can reject footprints straddling a relief step. Optional/absent on older saves,
+  // which simply fall back to flat (z=0) terrain, same as before this field existed.
+  elevation?: string[]
   simulatedUntilMs: number
   summaries: Record<
     string,
@@ -365,6 +372,7 @@ export type RegionEconomySave = {
       constructionProjects: number
       constructionDecision?: string
       trainingProjects: number
+      idleWorkers: number
     }
   >
 }

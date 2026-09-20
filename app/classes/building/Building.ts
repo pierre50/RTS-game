@@ -64,6 +64,7 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   marketStock?: string[]
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
+  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   skipBuiltEffects?: boolean
 }
@@ -94,6 +95,7 @@ export class Building extends Instance implements BuildingEntity {
   attackIntervalId: SchedulerTaskId | null
   declare sprite: BuildingSprite
   populationCapacityApplied!: boolean
+  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   quantity?: number
   totalQuantity?: number

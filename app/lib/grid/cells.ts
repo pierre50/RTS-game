@@ -1,4 +1,5 @@
 import type { Grid, GridCell, GridPosition, GridZone } from '../../types/grid'
+import { isFootprintBuildable } from './buildingFootprint'
 
 type CellCondition<TCell extends GridCell> = (cell: TCell) => boolean | void
 type SparseGrid<TCell extends GridCell> = Array<Array<TCell | undefined> | undefined>
@@ -10,12 +11,15 @@ function zoneMatchesCondition<TCell extends GridCell>(
   size: number,
   condition: CellCondition<TCell>
 ): boolean {
-  const surroundingCells = getPlainCellsAroundPoint(i, j, grid, size)
-  if (surroundingCells.length !== (2 * size + 1) ** 2) return false
-  for (const surroundingCell of surroundingCells) {
-    if (!condition(surroundingCell)) return false
-  }
-  return true
+  return isFootprintBuildable(
+    { i, j },
+    size,
+    point => {
+      const cell = grid[point.i]?.[point.j]
+      return Boolean(cell) && Boolean(condition(cell))
+    },
+    point => grid[point.i]?.[point.j]?.z
+  )
 }
 
 export function getZoneInGridWithCondition<TCell extends GridCell>(

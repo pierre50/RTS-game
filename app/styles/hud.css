@@ -652,26 +652,11 @@
 
 .inventory-tools-page,
 .action-menu-construction-page,
-.action-menu-craft-page,
-.action-menu-progression-page {
+.action-menu-craft-page {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ui-gap-8);
   align-content: flex-start;
-}
-
-.action-menu-progression-page {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
-  gap: var(--ui-gap-8);
-}
-
-.action-menu-progression-page {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: var(--ui-gap-12);
 }
 
 .action-menu-construction-page {
@@ -898,6 +883,22 @@
   min-width: 86px;
 }
 
+.inventory-row-action-button.inventory-row-action-button--delete {
+  min-width: 44px;
+  width: 44px;
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e9a49a;
+}
+
+.inventory-row-action-button--delete:hover:not(:disabled),
+.inventory-row-action-button--delete:focus-visible {
+  color: #ffe4de;
+  border-color: #d77969;
+}
+
 .inventory-row-action-button:disabled,
 .inventory-row-action-button[aria-disabled='true'] {
   color: rgba(255, 255, 255, 0.34);
@@ -906,34 +907,6 @@
   filter: grayscale(0.65);
   opacity: 1;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.36);
-}
-
-.progression-step {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-8);
-  min-width: 0;
-  padding: var(--ui-gap-4) 0 var(--ui-gap-12);
-}
-
-.progression-age {
-  margin: var(--ui-gap-4) 0 0;
-}
-
-.progression-objective-row.is-acquired .inventory-action-row-label {
-  color: var(--msg-success-color);
-}
-
-.progression-objective-row {
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: 2px var(--ui-gap-10);
-  min-height: 0;
-  padding: 14px var(--ui-gap-16);
-}
-
-.progression-objective-row .inventory-action-row-label,
-.progression-objective-row .inventory-action-row-description {
-  grid-column: 2;
 }
 
 .progression-objective-marker {
@@ -966,29 +939,6 @@
   border-right: 0;
   border-radius: 0;
   transform: rotate(-45deg) translate(1px, -1px);
-}
-
-.progression-age-title {
-  flex: 0 1 auto;
-}
-
-.progression-age-status {
-  flex: 0 0 auto;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: var(--font-size-xs);
-  font-weight: bold;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.progression-age.is-acquired .progression-age-status {
-  color: var(--msg-success-color);
-}
-
-.progression-section-title {
-  color: var(--text-color-secondary);
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
 }
 
 .action-menu-minimap-page {
@@ -1383,6 +1333,31 @@
   font-size: var(--font-size-sm);
   padding: var(--ui-gap-12);
   text-align: center;
+}
+
+.worldmap-alerts {
+  width: 100%;
+  margin-bottom: var(--ui-gap-12);
+  padding: var(--ui-gap-10);
+  border-radius: var(--main-border-radius);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: var(--font-size-xs);
+}
+
+.worldmap-alerts-title {
+  margin: 0 0 var(--ui-gap-6);
+  color: var(--msg-warning-color);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
+.worldmap-alerts-list {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-4);
 }
 
 .inventory-slot {
@@ -1931,7 +1906,7 @@ body.hero-cursor-hidden {
   top: max(64px, calc(env(safe-area-inset-top) + 64px));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1000;
+  z-index: 3100;
   pointer-events: none;
 }
 

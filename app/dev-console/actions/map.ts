@@ -1,7 +1,7 @@
 import { getGaiaAnimals } from '../../lib'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
-import { normalize, normalizeToggle } from './shared'
+import { getDevMapSpace, normalize, normalizeToggle } from './shared'
 
 function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
   const { map, player, controls } = context
@@ -86,4 +86,23 @@ export function killResources(context: DevConsoleContext, typeName = 'all'): Com
   resources.forEach(resource => resource.die?.(true))
   if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMapEvt?.()
   return { ok: true, message: `Killed ${resources.length} resources${typeName !== 'all' ? ` ${typeName}` : ''}` }
+}
+
+export function toggleInteriorWalls(context: DevConsoleContext, value = ''): CommandResult {
+  if (value && value !== 'on' && value !== 'off') {
+    return { ok: false, message: 'Usage: walls [on|off]' }
+  }
+  const space = getDevMapSpace(context, context.map.activeSpaceId ?? context.controls?.heroUnit?.spaceId)
+  if (space?.kind !== 'interior') {
+    return { ok: false, message: 'Enter a cave or building interior first.' }
+  }
+  const children = 'children' in space.container ? space.container.children : []
+  const walls = children.filter(child => child.label === 'interior-wall')
+  if (!walls.length) return { ok: false, message: 'No walls in this interior.' }
+  const visible = normalizeToggle(
+    value,
+    walls.some(wall => wall.visible)
+  )
+  for (const wall of walls) wall.visible = visible
+  return { ok: true, message: `Interior walls: ${visible ? 'on' : 'off'} (${walls.length})` }
 }

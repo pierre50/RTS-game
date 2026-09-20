@@ -16,12 +16,15 @@ function makeElement() {
   }
 }
 
-test('bag equip action replaces the active weapon and selects its hero tool', () => {
+test('hero bag actions equip weapons and delete one item or the displayed stack', () => {
   const calls = []
   let equipAction = null
+  let deleteEquipmentAction = null
+  let deleteResourceAction = null
   const hero = {
     inventory: {
-      equipment: ['sword_bronze'],
+      equipment: ['sword_bronze', 'sword_bronze', 'sword_bronze'],
+      resources: { wood: 120 },
       equipped: {},
       equippedCounts: {},
       activeWeapons: { melee: 'sword_ceramic' },
@@ -55,7 +58,7 @@ test('bag equip action replaces the active weapon and selects its hero tool', ()
       mocks: {
         '../../constants': {
           BUILDING_TYPES: { farm: 'farm' },
-          RESOURCE_STORAGE_NAMES: [],
+          RESOURCE_STORAGE_NAMES: ['wood'],
         },
         '../../lib': { getBuildingAsset: () => ({}) },
         '../../lib/buildings/buildingAge': { getPlayerBuildingConfig: () => null },
@@ -66,7 +69,7 @@ test('bag equip action replaces the active weapon and selects its hero tool', ()
             return true
           },
           getEquipmentSlot: () => null,
-          getEquipmentStacks: () => [{ equipment: 'sword_bronze', count: 1 }],
+          getEquipmentStacks: bag => bag.length ? [{ equipment: 'sword_bronze', count: bag.length }] : [],
           getHeroEquipmentSlotLabelKey: slot => slot,
           getHeroEquippedItemCount: () => 0,
           getWeaponSlot: () => 'melee',
@@ -86,9 +89,13 @@ test('bag equip action replaces the active weapon and selects its hero tool', ()
         './InventoryItemRows': {
           createInventoryEquipmentRow: (context, rowMenu, options) => {
             equipAction = options.trailingAction
+            deleteEquipmentAction = options.secondaryAction
             return { element: makeElement(), icon: makeElement() }
           },
-          createInventoryResourceRow: () => ({ element: makeElement(), icon: makeElement() }),
+          createInventoryResourceRow: (_menu, options) => {
+            if (options.amount === 99) deleteResourceAction = options.secondaryAction
+            return { element: makeElement(), icon: makeElement() }
+          },
         },
         './InventorySlotRenderer': {
           createInventorySection: options => {
@@ -114,6 +121,23 @@ test('bag equip action replaces the active weapon and selects its hero tool', ()
       ['setEquippedTool', 'sword'],
       ['renderTools'],
     ])
+
+    assert.equal(deleteEquipmentAction.icon, 'trash')
+    deleteEquipmentAction.onAction('one')
+    assert.equal(hero.inventory.equipment.length, 2)
+    renderInventoryLootedEquipment(host)
+    deleteEquipmentAction.onAction('all')
+    assert.deepEqual(hero.inventory.equipment, [])
+    assert.equal(hero.inventory.activeWeapons.melee, 'sword_bronze')
+
+    deleteResourceAction.onAction('one')
+    assert.equal(hero.inventory.resources.wood, 119)
+    deleteResourceAction.onAction('all')
+    assert.equal(hero.inventory.resources.wood, 20)
+    deleteResourceAction.onAction('all')
+    assert.equal(hero.inventory.resources.wood, undefined)
+    assert.equal(calls.filter(([name]) => name === 'renderTools').length, 6)
+    assert.equal(calls.some(([name]) => name === 'close'), false)
   } finally {
     if (previousDocument) global.document = previousDocument
     else delete global.document

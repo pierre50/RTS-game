@@ -1,6 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
 
 function fixture() {
   let wakeComplete
@@ -34,6 +35,7 @@ function fixture() {
     '../../lib/entities/overheadIndicator': { setUnitOverheadIndicator() {}, clearUnitOverheadIndicator() {} },
   } })
   const player = {
+    views: new VisionGrid(8), cellViewed: 0,
     units: [hero], buildings: [], config: { buildings: { House: { size: 2 } } },
     createBuilding(options) { const house = { ...options, label: 'house' }; this.buildings.push(house); return house },
     createUnit(options) { const chief = { ...options, label: 'chief', owner: this, stop() {}, sendToEvt(cell) { this.destination = cell; this.path = [cell] } }; this.units.push(chief); return chief },
@@ -41,7 +43,7 @@ function fixture() {
   player.createBuilding({ type: 'House', i: 7, j: 5, isBuilt: true })
   player.createUnit({ type: 'Chief', i: 3, j: 5 })
   const context = {
-    player, map: { random: () => 0 },
+    player, map: { random: () => 0, grid: [] },
     neutralQuests: { assignResourceRequest: () => true },
     scheduler: { addOneShot(fn) { delayed = fn }, add(fn) { approachTick = fn; return 1 }, remove() { approachTick = null } },
     controls: { heroUnit: hero, setRuntimeInputEnabled(value) { this.enabled = value } },
@@ -57,6 +59,43 @@ function fixture() {
     get dialogue() { return dialogue }, get waking() { return Boolean(wakeComplete) }, tick() { approachTick() },
     wake() { this.beginEntry(); this.enter(); this.arrive(); wakeComplete() }, reply() { dialogue.dialogue.onNodeChanged('polite'); dialogue.dialogue.onComplete() }, get saved() { return saved }, get departures() { return departures } }
 }
+
+test('the opening forgets the temporary outside spawn, keeps interior exploration and preserves later progress', async () => {
+  const f = fixture()
+  const { views } = f.player
+  let fogged = false
+  let invalidated = false
+  let rebuilt = false
+  let resourcesRefreshed = false
+  const cell = { i: 2, j: 3, viewBy: new Set([f.hero]), setFog() { fogged = true } }
+  f.context.map.grid = [[cell]]
+  f.context.map.mapFog = { viewportRenderer: { invalidate() { invalidated = true } } }
+  f.context.menu.rebuildTerrainMiniMapFromViews = () => { rebuilt = true; assert.equal(views.isViewed(2, 3), false) }
+  f.context.menu.updateResourcesMiniMap = () => { resourcesRefreshed = true }
+  views.setViewed(2, 3)
+  views.addViewer(2, 3, f.hero)
+  views.withSpace('house-interior', () => {
+    views.setViewed(4, 4)
+    views.addViewer(4, 4, f.hero)
+  })
+  f.player.cellViewed = 2
+  await f.prepareTutorialOpening(f.host)
+  assert.equal(views.isViewed(2, 3), false)
+  assert.equal(views.isVisible(2, 3), false)
+  assert.equal(cell.viewBy.size, 0)
+  assert.equal(f.player.cellViewed, 1)
+  assert.ok(fogged && invalidated && rebuilt && resourcesRefreshed)
+  views.withSpace('house-interior', () => {
+    assert.equal(views.isViewed(4, 4), true)
+    assert.equal(views.isVisible(4, 4), true)
+  })
+  assert.equal(views.toJSON()[2]?.[3]?.viewed, undefined)
+
+  views.setViewed(2, 3)
+  await f.prepareTutorialOpening(f.host)
+  await f.restoreTutorialOpening(f.host)
+  assert.equal(views.isViewed(2, 3), true)
+})
 
 test('autosaves during preparation keep the opening on the live campaign', async () => {
   const f = fixture()
@@ -186,7 +225,7 @@ test('tutorial resolves the chief and house from the AI host instead of the gues
   village.type = 'AI'
   village.civ = 'Hellas'
   village.units = village.units.filter(unit => unit !== f.hero)
-  const guest = { isPlayed: true, civ: 'Hellas', units: [f.hero], buildings: [], createUnit() {} }
+  const guest = { isPlayed: true, civ: 'Hellas', units: [f.hero], buildings: [], views: new VisionGrid(8), cellViewed: 0, createUnit() {} }
   f.context.player = guest
   f.context.players = [guest, village]
   await f.prepareTutorialOpening(f.host)

@@ -1,3 +1,4 @@
+import { needsStoragePit } from '../../lib/grid/storagePitPlacement'
 import { ABSTRACT_VILLAGE_PRODUCTION } from '../../config/worldEconomyBalance'
 import { villageBuildingNeeds, villageConstructionReserve } from '../../ai/AIDevelopmentPolicy'
 import { getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
@@ -39,7 +40,8 @@ export function produceAbstractVillage(
 ): void {
   if (!player.buildings?.some(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt && isLiving(b))) return
   const owner = savedResourceOwner(player, state.players)
-  if (unit.inventory?.resources && depositChestResources(owner, unit.inventory.resources)) unit.inventory.resources = {}
+  if (unit.inventory?.resources && depositChestResources(owner, unit.inventory.resources, { automaticDelivery: true }))
+    unit.inventory.resources = {}
   stopOfflineTask(unit)
   delete unit.offlineWork
   if (milliseconds <= 0) return
@@ -60,7 +62,7 @@ export function produceAbstractVillage(
     output[resource as keyof ResourceAmount] = whole
     next[resource] = Math.round((amount - whole) * 1e6) / 1e6
   }
-  if (!depositChestResources(owner, output)) return
+  if (!depositChestResources(owner, output, { automaticDelivery: true })) return
   player.abstractProductionRemainder = next
   for (const [resource, count] of Object.entries(output))
     report.gathered[resource as keyof ResourceAmount] = (report.gathered[resource as keyof ResourceAmount] ?? 0) + count
@@ -115,6 +117,7 @@ export function planAbstractTraining(
           phase: player.aiState.phase,
           desiredBarracks: 1,
           buildings: player.buildings ?? [],
+          storagePitNeeded: needsStoragePit(state.resources, player.buildings ?? []),
         })
         const reserve = villageConstructionReserve(
           needs,

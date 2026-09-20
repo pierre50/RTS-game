@@ -9,6 +9,7 @@ export const resourceRequestQuest: QuestDefinition = {
   stages: [
     {
       id: 'delivery',
+      readyDialogue: { key: 'questResourceReady' },
       objectives: [
         resourceDeliveryObjective('deliver'),
       ],

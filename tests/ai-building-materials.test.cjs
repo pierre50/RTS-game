@@ -58,7 +58,7 @@ test('economic demand reads the correct construction tier', () => {
   const strategy = { ai: { age: 1, config: { buildings: require('../public/assets/data/gameplay/buildings.json') } } }
   const demand = {}
   addBuildingReserve(strategy, demand, 'House', 2)
-  assert.deepEqual(demand, { wood: 160, stone: 80, fiber: 8 })
+  assert.deepEqual(demand, { wood: 120, stone: 60, fiber: 8 })
 })
 
 test('missing fiber reserves a worker for a known safe plant', () => {

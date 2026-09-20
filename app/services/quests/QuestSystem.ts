@@ -1,5 +1,6 @@
 import { resourceRequestQuest } from './ResourceRequestQuest'
 import { tutorialHuntQuest } from './TutorialHuntQuest'
+import { banditCampQuest } from './BanditCampQuest'
 import type {
   QuestCondition,
   QuestDefinition,
@@ -33,6 +34,7 @@ export function createQuestJournal(): QuestJournalState {
 // Register authored definitions here when introducing missions. No generated offers at UI construction time.
 const questDefinitions = new Map<string, QuestDefinition>([
   [resourceRequestQuest.id, resourceRequestQuest], [tutorialHuntQuest.id, tutorialHuntQuest],
+  [banditCampQuest.id, banditCampQuest],
 ])
 
 export class QuestSystem {

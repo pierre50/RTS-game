@@ -7,8 +7,10 @@ type DailyWorldReportEntry =
   | { count: number; player: PlayerLike; type: 'market-restocked' }
   | { count: number; player: PlayerLike; type: 'trap-filled' }
   | { count: number; player: PlayerLike; type: 'villager-arrival' }
+  | { count: number; player: PlayerLike; type: 'colony-alert' }
 
 type PlayerReport = {
+  colonyAlerts: number
   foodConsumed: number
   marketsRestocked: number
   trapsFilled: number
@@ -43,6 +45,7 @@ export class DailyWorldReport {
 
   private getPlayerReport(player: PlayerLike): PlayerReport {
     const report: PlayerReport = {
+      colonyAlerts: 0,
       foodConsumed: 0,
       marketsRestocked: 0,
       trapsFilled: 0,
@@ -56,13 +59,16 @@ export class DailyWorldReport {
       else if (entry.type === 'market-restocked') report.marketsRestocked += entry.count
       else if (entry.type === 'trap-filled') report.trapsFilled += entry.count
       else if (entry.type === 'villager-arrival') report.villagerArrivals += entry.count
+      else if (entry.type === 'colony-alert') report.colonyAlerts += entry.count
     }
 
     return report
   }
 
   private hasNotablePlayerEvent(report: PlayerReport): boolean {
-    return report.villagerArrivals > 0 || report.trapsFilled > 0 || report.marketsRestocked > 0
+    return (
+      report.villagerArrivals > 0 || report.trapsFilled > 0 || report.marketsRestocked > 0 || report.colonyAlerts > 0
+    )
   }
 
   private formatPlayerSummary(report: PlayerReport): string {
@@ -90,6 +96,13 @@ export class DailyWorldReport {
     }
     if (report.foodConsumed > 0) {
       parts.push(t('dailyReportFoodConsumed', { count: report.foodConsumed }))
+    }
+    if (report.colonyAlerts > 0) {
+      parts.push(
+        t(report.colonyAlerts === 1 ? 'dailyReportColonyAlert' : 'dailyReportColonyAlerts', {
+          count: report.colonyAlerts,
+        })
+      )
     }
     return t('dailyReportSummary', { day: this.day, summary: parts.join(', ') })
   }

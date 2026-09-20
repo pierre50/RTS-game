@@ -15,6 +15,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string
+  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   accept?: string[]
   queue?: string[]

@@ -308,7 +308,6 @@ export interface GameContextLike {
   load: (event: object) => void
   pause: () => void
   resume: () => void
-  restart: () => void
   quit: () => void
   applyZoom: () => void
   getWorldGraph?: () => WorldGraphSave | null

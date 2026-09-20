@@ -94,7 +94,7 @@ test('four days launch and finish real buildings before the first visit', () => 
   assert.equal(new Set(buildings.map(b => b.label)).size, buildings.length)
 })
 
-test('actual building costs allow funded infrastructure and expose missing leather instead of inventing it', () => {
+test('starter infrastructure can be built with or without leather', () => {
   for (const leather of [0, 100]) {
     const { campaign, player, rules } = fixture()
     player.buildings[0].inventory.resources.leather = leather
@@ -103,11 +103,7 @@ test('actual building costs allow funded infrastructure and expose missing leath
     const region = campaign.economy.regions.away
     const saved = region.initialState.players[0]
     assert.ok(saved.buildings.some(b => b.type === 'StoragePit' && b.isBuilt))
-    if (leather) assert.ok(saved.buildings.some(b => b.type === 'Granary' && b.isBuilt))
-    else {
-      assert.equal(saved.buildings.some(b => b.type === 'Granary'), false)
-      assert.match(region.summaries['civ-hellas'].constructionDecision, /leather/)
-    }
+    assert.ok(saved.buildings.some(b => b.type === 'Granary' && b.isBuilt))
   }
 })
 

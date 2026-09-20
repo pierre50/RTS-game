@@ -16,7 +16,7 @@ import {
   shouldVillagerBeAwake,
   shouldVillagerReturnHome,
 } from '../../lib/units/villagerSchedule'
-import { keepSleepingOutsideVisual, playSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
+import { keepSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
 import {
   canUseUnitRest,
   clearExpiredUnitRestAlert,
@@ -212,7 +212,10 @@ export class UnitRestSystem {
   }
 
   restoreSleepingUnitVisual(unit: UnitEntity): void {
-    if (unit.shelterState?.reason === 'sleep') playSleepingOutsideVisual(unit)
+    if (unit.shelterState?.reason !== 'sleep') return
+    // Evening waiting uses the same rest reason as sleep: resume the phase due now.
+    if (this.shouldSleep(unit)) putRestingUnitToSleep(unit)
+    else this.updateScheduledRest(unit)
   }
 
   sendUnitToSleep(unit: UnitEntity): boolean {

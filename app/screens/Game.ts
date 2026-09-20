@@ -1,102 +1,94 @@
 import type { Application } from 'pixi.js'
-import { Container,type ContainerChild } from 'pixi.js'
+import { Container } from 'pixi.js'
 import Map from '../classes/map/Map'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
 import { getCaveInteriorBlueprint } from '../lib/buildings/caveBlueprint'
 import { canUnitEnterBuildingInterior } from '../lib/buildings/interiorAccess'
-import { getBuildingInteriorBlueprintType,getBuildingInteriorEntryCell } from '../lib/buildings/interiors'
+import { getBuildingInteriorBlueprintType, getBuildingInteriorEntryCell } from '../lib/buildings/interiors'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
 import { clearAllCombatFeedback } from '../lib/combat/combatFeedback'
 import { t } from '../lib/lang'
 import {
-MapBlueprintLoadError,
-loadPregeneratedInteriorBlueprint,
-loadPregeneratedWorldMapBlueprint,
-type WorldBlueprintFileCache,
+  MapBlueprintLoadError,
+  loadPregeneratedInteriorBlueprint,
+  loadPregeneratedWorldMapBlueprint,
+  type WorldBlueprintFileCache,
 } from '../serialization/MapBlueprintLoader'
 import {
-activateBuildingInteriorSpace,
-deactivateBuildingInteriorSpace,
-ensureBuildingInteriorSpace,
-ensureRuntimeBuildingInteriorSpace,
-getBuildingInteriorSpaceForUnit,
-moveHeroPartyIntoBuildingInteriorSpace,
-moveHeroPartyOutOfBuildingInteriorSpace,
-refreshMapSpaceEntityVisibility,
-routeUnitIntoBuildingInteriorSpaceAndMoveBack,
-syncBuildingInteriorShelterOccupants,
-syncBuildingStableInteriorHorses,
-type BuildingInteriorRuntimeSpace,
+  activateBuildingInteriorSpace,
+  deactivateBuildingInteriorSpace,
+  ensureBuildingInteriorSpace,
+  ensureRuntimeBuildingInteriorSpace,
+  getBuildingInteriorSpaceForUnit,
+  moveHeroPartyIntoBuildingInteriorSpace,
+  moveHeroPartyOutOfBuildingInteriorSpace,
+  refreshMapSpaceEntityVisibility,
+  routeUnitIntoBuildingInteriorSpaceAndMoveBack,
+  syncBuildingInteriorShelterOccupants,
+  syncBuildingStableInteriorHorses,
+  type BuildingInteriorRuntimeSpace,
 } from '../services/BuildingInteriorSpaceSystem'
 import {
-prepareGameIntroduction,
-showGameIntroduction,
-startGameIntroduction,
+  prepareGameIntroduction,
+  showGameIntroduction,
+  startGameIntroduction,
 } from '../services/introduction/GameIntroduction'
 import {
-prepareTutorialOpening,
-restoreTutorialOpening,
-showTutorialOpening,
-startTutorialOpening,
+  prepareTutorialOpening,
+  restoreTutorialOpening,
+  showTutorialOpening,
+  startTutorialOpening,
 } from '../services/tutorial/TutorialOpening'
 import { type RegionEdge } from '../services/world/WorldRegionTravelSystem'
 import type { GameContextLike } from '../types/context'
-import type { BuildingEntity,UnitEntity,UnitResourceDeliveryReturnTask } from '../types/entities'
-import type { RuntimeCell,RuntimeMap } from '../types/map'
-import type { CampaignSave,GameConfig,SaveEntityState,SaveRecord,SerializedSave } from '../types/save'
-import { playBuildingInteriorDoorTransition,type BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
+import type { BuildingEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../types/entities'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
+import type { CampaignSave, GameConfig, SaveEntityState, SaveRecord, SerializedSave } from '../types/save'
+import { playBuildingInteriorDoorTransition, type BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
-import { loadGameRuntime,recoverGameAfterDefeat,restartGameRuntime,startGameRuntime } from './game/GameBootFlow'
+import { loadGameRuntime, startGameRuntime } from './game/GameBootFlow'
 import {
-routeInteriorUnitToExit as routeInteriorUnitToExitRuntime,
-synchronizeInteriorOccupantsAfterTimeJump,
-travelIntoBuildingInterior as travelIntoBuildingInteriorRuntime,
-travelOutOfBuildingInterior as travelOutOfBuildingInteriorRuntime,
-type BuildingInteriorSession,
-type BuildingInteriorTravelGame
+  routeInteriorUnitToExit as routeInteriorUnitToExitRuntime,
+  synchronizeInteriorOccupantsAfterTimeJump,
+  travelIntoBuildingInterior as travelIntoBuildingInteriorRuntime,
+  travelOutOfBuildingInterior as travelOutOfBuildingInteriorRuntime,
+  type BuildingInteriorSession,
+  type BuildingInteriorTravelGame,
 } from './game/GameBuildingInteriorTravel'
+import { handleGameDefeat } from './game/GameDefeatRecovery'
 import { changeGameFactionRelation } from './game/GameFactionRelations'
-import { autosaveGame,autosaveGameCampaign,saveGameManually } from './game/GameManualSave'
+import { autosaveGame, autosaveGameCampaign, saveGameManually } from './game/GameManualSave'
 import { type BlueprintRuntimeMap } from './game/GameMapBlueprintRuntime'
 import {
-routeUnitResourceDelivery as routeUnitResourceDeliveryRuntime,
-type ResourceDeliveryGame,
+  routeUnitResourceDelivery as routeUnitResourceDeliveryRuntime,
+  type ResourceDeliveryGame,
 } from './game/GameResourceDelivery'
-import { createGameRuntimeContext,createGameUiRuntime,type GameRuntimeContext } from './game/GameRuntimeContext'
+import { createGameRuntimeContext, createGameUiRuntime, type GameRuntimeContext } from './game/GameRuntimeContext'
 import {
-acquireGameWakeLock,
-applyGameZoom,
-attachGameWindowListeners,
-checkGameDefeat,
-handleGameDocumentHidden,
-handleGameDocumentVisible,
-removeGameWindowListeners,
-setGameOrientationBlocked,
-toggleGamePause,
+  acquireGameWakeLock,
+  applyGameZoom,
+  attachGameWindowListeners,
+  checkGameDefeat,
+  handleGameDocumentHidden,
+  handleGameDocumentVisible,
+  removeGameWindowListeners,
+  setGameOrientationBlocked,
+  toggleGamePause,
 } from './game/GameRuntimeLifecycle'
-import {
-applyMapConfig,
-getGameScreenRect,
-getMapWorldBounds
-} from './game/GameStateHelpers'
-import { applyRuntimePortableUnitState,runtimeHeroUnit,type TravelPartyGame } from './game/GameTravelParty'
+import { mountGameRuntime } from './game/GameRuntimeMount'
+import { applyMapConfig, getGameScreenRect, getMapWorldBounds } from './game/GameStateHelpers'
+import { applyRuntimePortableUnitState, runtimeHeroUnit, type TravelPartyGame } from './game/GameTravelParty'
 import type { NewGameBootOptions } from './game/GameWorldBoot'
-import { bootGameFromConfig,bootGameFromSave,bootGameFromSeedSave } from './game/GameWorldBoot'
+import { bootGameFromConfig, bootGameFromSave, bootGameFromSeedSave } from './game/GameWorldBoot'
 import {
-debugTeleportWorldMap as debugTeleportWorldMapRuntime,
-preloadWorldRegion as preloadWorldRegionRuntime,
-travelToWorldRegion as travelToWorldRegionRuntime,
-type WorldMapDebugTeleportTarget,
-type WorldRegionTravelGame,
+  debugTeleportWorldMap as debugTeleportWorldMapRuntime,
+  preloadWorldRegion as preloadWorldRegionRuntime,
+  travelToWorldRegion as travelToWorldRegionRuntime,
+  type WorldMapDebugTeleportTarget,
+  type WorldRegionTravelGame,
 } from './game/GameWorldRegionTravel'
-import {
-addRuntimeServiceLayers,
-createEmptyRuntimeServices,
-createRuntimeServices,
-destroyRuntimeServices,
-type RuntimeServices,
-} from './game/runtimeServices'
+import { createEmptyRuntimeServices, destroyRuntimeServices, type RuntimeServices } from './game/runtimeServices'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
   RuntimeMap & {
@@ -328,29 +320,7 @@ export default class Game extends Container {
   }
 
   _mountRuntime(dayNightElapsedMs: number | null | undefined = null): void {
-    const { map, controls } = this.context
-    if (!map || !controls) return
-    this.addChild(map as unknown as ContainerChild)
-    this._runtimeServices = createRuntimeServices(
-      this._gameContext(),
-      map,
-      () => this._getScreenRect(),
-      dayNightElapsedMs,
-      this
-    )
-    addRuntimeServiceLayers(this, this._runtimeServices)
-    this.addChild(controls)
-    this.applyZoom()
-    this._attachWindowListeners()
-    const hero = controls.heroUnit
-    const interiorSpace = hero && getBuildingInteriorSpaceForUnit(hero)
-    if (hero && interiorSpace?.building.cave) {
-      activateBuildingInteriorSpace(this._gameContext(), interiorSpace)
-      this._activeBuildingInteriorSpace = interiorSpace
-      controls.focusHeroCamera()
-      controls.updateVisibleCells?.()
-      this.context.menu?.refreshMiniMap?.()
-    }
+    mountGameRuntime(this, dayNightElapsedMs)
   }
 
   _isBuildingInteriorLayerOpen(): boolean {
@@ -393,7 +363,13 @@ export default class Game extends Container {
         context.menu?.setHeroInteractionPrompt?.('heroInteractionExit')
         context.menu?.updateHeroStatus?.(hero)
       },
-      { blockInput: true, beforeReveal: () => context.app.render() }
+      {
+        blockInput: true,
+        beforeReveal: () => {
+          this._refreshSceneLighting()
+          context.app.render()
+        },
+      }
     )
   }
 
@@ -419,8 +395,20 @@ export default class Game extends Container {
         context.menu?.setHeroInteractionPrompt?.(null)
         context.menu?.updateHeroStatus?.(hero)
       },
-      { blockInput: true, beforeReveal: () => context.app.render() }
+      {
+        blockInput: true,
+        beforeReveal: () => {
+          this._refreshSceneLighting()
+          context.app.render()
+        },
+      }
     )
+  }
+
+  _refreshSceneLighting(): void {
+    const { lights, weather } = this._runtimeServices
+    weather?.refresh()
+    lights?.refresh()
   }
 
   _withBuildingInteriorLayerRuntimeRestored<T>(callback: () => T): T {
@@ -550,10 +538,6 @@ export default class Game extends Container {
     applyGameZoom(this)
   }
 
-  async restart(): Promise<void> {
-    await restartGameRuntime(this)
-  }
-
   quit(): void {
     this._destroyRuntime()
     if (this.onQuit) this.onQuit()
@@ -573,19 +557,7 @@ export default class Game extends Container {
   }
 
   _handleDefeat(): void {
-    const campaign = this._campaignSave
-    const raid = Boolean(
-      campaign?.tutorial &&
-        !campaign.introduction &&
-        campaign.quests?.quests.some(
-          quest =>
-            quest.definitionId === 'tutorial-first-tasks' && quest.status === 'active' && quest.stageId === 'raid'
-        )
-    )
-    void recoverGameAfterDefeat(this, raid).catch(error => {
-      console.error('Unable to recover after defeat', error)
-      this.quit()
-    })
+    handleGameDefeat(this)
   }
 
   checkDefeat(): boolean {

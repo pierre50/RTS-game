@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 const fs = require('node:fs')
 const path = require('node:path')
+const { writeInteriorWallAtlas } = require('./maps/interior-walls.cjs')
 const { createCave, validateCave, VARIANTS } = require('./caves/layout.cjs')
 const { writePreview } = require('./caves/preview.cjs')
 
 function generateCaves({ out = path.resolve(__dirname, '../public/maps/interiors/cave'), seed = 4242 } = {}) {
+  writeInteriorWallAtlas()
   const blueprints = []
   const entries = []
   for (const tier of ['small', 'medium', 'large']) {

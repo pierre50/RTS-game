@@ -66,7 +66,11 @@ export function returnFactionRaidUnit(context: GameContextLike, unit: TributeRai
   const source = factionArmySource(context, expedition.regionId, expedition.playerLabel)
   if (!source) return false
   if (source.player.units?.some(saved => saved.label === expedition.original.label)) return true
-  const spatial = new OfflineWorldSpatial(decodeEconomyTerrain(source.region.terrain), source.state, () => 2)
+  const spatial = new OfflineWorldSpatial(
+    decodeEconomyTerrain(source.region.terrain, source.region.elevation),
+    source.state,
+    () => 2
+  )
   const position = spatial.findNear(expedition.original)
   if (!position) return false
   const returned = structuredClone(expedition.original)

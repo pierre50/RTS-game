@@ -145,15 +145,17 @@ test('distance reduces production, disconnected resources cannot be harvested', 
   assert.equal(harvest(25, true), 0)
 })
 
-test('missing depots and unavailable terrain do not create harvests or overlap units', () => {
+test('without a depot workers keep harvested materials in their bounded bag', () => {
   const { state, options, player } = fixture()
   player.units[0].autonomousJob = 'wood'
   state.resources = [node('Tree', { hitPoints: 0 })]
   player.buildings = []
-  const originalPosition = { i: player.units[0].i, j: player.units[0].j }
   const report = simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR })
-  assert.deepEqual(report.gathered, {})
-  assert.deepEqual({ i: player.units[0].i, j: player.units[0].j }, originalPosition)
+  const carried = player.units[0].inventory.resources.wood
+  assert.ok(carried > 0 && carried <= 30)
+  assert.equal(report.gathered.wood, carried)
+  assert.equal(state.resources[0].quantity + carried, 100)
+  assert.notDeepEqual({ i: player.units[0].i, j: player.units[0].j }, { i: state.resources[0].i, j: state.resources[0].j })
 })
 
 test('tree felling consumes work before wood can be gathered', () => {

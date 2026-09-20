@@ -1,5 +1,9 @@
+const { addCaveMinerals } = require('./minerals.cjs')
+const { addCaveRelief } = require('./relief.cjs')
 const { randomFrom } = require('../maps/noise.cjs')
 const { buildingInterior } = require('../generate-interior-maps.cjs')
+
+const { createInteriorWalls } = require('../maps/interior-walls.cjs')
 
 const VARIANTS = ['branches', 'loop', 'chamber']
 const encode = bytes => Buffer.from(bytes).toString('base64')
@@ -7,7 +11,14 @@ const encode = bytes => Buffer.from(bytes).toString('base64')
 function createCave(tier, variant, seed) {
   const id = `cave-${tier}-${variant}`
   if (tier === 'small') {
-    return { ...buildingInterior({ buildingSize: 3, id, seed, size: 13 }), interiorType: 'Cave', tier, variant }
+    return addCaveMinerals(
+      addCaveRelief({
+        ...buildingInterior({ buildingSize: 3, id, seed, size: 13 }),
+        interiorType: 'Cave',
+        tier,
+        variant,
+      })
+    )
   }
   const width = tier === 'medium' ? 32 : 64
   const random = randomFrom(`${seed}:${id}`)
@@ -68,6 +79,19 @@ function createCave(tier, variant, seed) {
   const exit = { id: 'main', i: rooms[0].i + Math.floor(r), j: rooms[0].j + Math.floor(r), direction: 'south' }
   dig(exit.i, exit.j, 2.2)
   dig((exit.i + rooms[0].i) / 2, (exit.j + rooms[0].j) / 2, 2.2)
+  // Dig the entrance landing first, then put the portal on its actual rim.
+  // Keeping the landing footprint preserves access from the first chamber.
+  const rim = []
+  for (let i = 0; i < width; i++)
+    for (let j = 0; j < width; j++) {
+      if (!floor[i * width + j] || i + j < exit.i + exit.j) continue
+      const facesVoid = i === width - 1 || j === width - 1 || !floor[(i + 1) * width + j] || !floor[i * width + j + 1]
+      if (facesVoid) rim.push({ i, j, distance: (i - exit.i) ** 2 + (j - exit.j) ** 2 })
+    }
+  rim.sort((a, b) => a.distance - b.distance || b.i + b.j - a.i - a.j)
+  if (!rim.length) throw new Error(`${id}: missing entrance rim`)
+  exit.i = rim[0].i
+  exit.j = rim[0].j
   const border = new Uint8Array(floor.length)
   // Rock outside the floor is solid. Keep the full corridor width walkable.
   const terrain = Uint8Array.from(floor, value => (value ? 5 : 2))
@@ -87,6 +111,7 @@ function createCave(tier, variant, seed) {
     cellCount: floor.length,
     terrain: encode(terrain),
     relief: encode(new Uint8Array(floor.length)),
+    walls: createInteriorWalls(floor, width, [exit]),
     floorMask: encode(floor),
     borderMask: encode(border),
     spawns: [{ i: exit.i, j: exit.j }],
@@ -94,6 +119,8 @@ function createCave(tier, variant, seed) {
     resources: [],
     rooms: activeRooms,
   }
+  addCaveRelief(blueprint)
+  addCaveMinerals(blueprint)
   validateCave(blueprint)
   return blueprint
 }
@@ -106,6 +133,21 @@ function validateCave(blueprint) {
   const exit = blueprint.exits[0]
   const start = exit.i * width + exit.j
   if (!walkable(start)) throw new Error(`${blueprint.id}: blocked entrance`)
+  const touchesVoid = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ].some(([di, dj]) => {
+    const i = exit.i + di,
+      j = exit.j + dj
+    return i < 0 || j < 0 || i >= width || j >= width || !floor[i * width + j]
+  })
+  if (!touchesVoid) throw new Error(`${blueprint.id}: entrance is not on the floor boundary`)
+  if (blueprint.walls?.some(wall => wall.i === exit.i && wall.j === exit.j)) {
+    throw new Error(`${blueprint.id}: entrance has a wall`)
+  }
+
   const visited = new Set([start]),
     queue = [start]
   for (let n = 0; n < queue.length; n++) {

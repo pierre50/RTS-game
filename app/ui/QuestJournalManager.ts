@@ -1,7 +1,11 @@
 import { formatQuestText } from '../services/quests/QuestText'
 import { Modal } from '../lib/ui/Modal'
 import { t } from '../lib/lang'
+import { AGE_UP_ENABLED } from '../constants'
+import { heroCanCommand } from '../lib/chief'
+import { AGE_PROGRESSION, isAgeObjectiveComplete } from '../lib/objectives/ageObjectives'
 import { QuestSystem } from '../services/quests/QuestSystem'
+import { createQuestMarker } from './questMarker'
 import type { QuestInstance, QuestText } from '../types/quest'
 import type { MenuHost } from './MenuHost'
 import '../styles/quests.css'
@@ -13,6 +17,18 @@ function text(tag: string, content: string, className = ''): HTMLElement {
   return element
 }
 
+type AgeStage = (typeof AGE_PROGRESSION)[number]
+type AgeProgressionEntry = { id: string; stage: AgeStage; status: 'active' | 'completed' }
+type JournalEntry = { kind: 'quest'; quest: QuestInstance } | ({ kind: 'age' } & AgeProgressionEntry)
+
+function entryId(entry: JournalEntry): string {
+  return entry.kind === 'age' ? entry.id : entry.quest.id
+}
+
+function entryStatus(entry: JournalEntry): QuestInstance['status'] {
+  return entry.kind === 'age' ? entry.status : entry.quest.status
+}
+
 export class QuestJournalManager {
   readonly system: QuestSystem
   private modal: Modal | null = null
@@ -21,6 +37,7 @@ export class QuestJournalManager {
   private tracker = document.createElement('div')
   private selectedId: string | null = null
   private signature = ''
+  private seenAgeEntryIds = new Set<string>()
 
   constructor(private readonly menu: MenuHost) {
     this.system = new QuestSystem(() => menu.context.getQuestJournal?.() ?? null)
@@ -80,12 +97,18 @@ export class QuestJournalManager {
     return formatQuestText(value, quest, this.menu.context.controls?.heroUnit?.inventory?.resources)
   }
 
+  private isAgeEntryUnread(id: string): boolean {
+    return !this.seenAgeEntryIds.has(id)
+  }
+
   sync(): void {
     const state = this.system.state
     const quests = state?.quests.filter(quest => quest.status !== 'available') ?? []
-    const unread = quests.some(quest => quest.unread)
+    const unread =
+      quests.some(quest => quest.unread) || this.ageProgressionEntries().some(entry => this.isAgeEntryUnread(entry.id))
     if (this.button) {
-      this.button.textContent = `${t('questJournal')}${unread ? ' !' : ''}`
+      this.button.textContent = t('questJournal')
+      if (unread) this.button.appendChild(createQuestMarker())
       this.button.setAttribute('aria-label', t(unread ? 'questJournalUnread' : 'questJournal'))
     }
     const tracked = quests.find(quest => quest.id === state?.trackedQuestId && quest.status === 'active')
@@ -95,39 +118,94 @@ export class QuestJournalManager {
     if (tracked && definition) {
       this.tracker.textContent = `${this.label(definition.title, tracked)} — ${stage?.objectives.map(objective => this.label(objective.text, tracked)).join(' · ') ?? ''}`
     }
-    const signature = JSON.stringify([state, this.menu.context.controls?.heroUnit?.inventory?.resources])
+    const player = this.menu.context.player
+    const signature = JSON.stringify([
+      state,
+      this.menu.context.controls?.heroUnit?.inventory?.resources,
+      player?.age,
+      player?.completedObjectives,
+    ])
     if (this.modal && signature !== this.signature) this.render()
     this.signature = signature
+  }
+
+  private ageProgressionEntries(): AgeProgressionEntry[] {
+    if (!AGE_UP_ENABLED) return []
+    const player = this.menu.context.player
+    if (!player || !heroCanCommand(this.menu.context.controls?.heroUnit)) return []
+    return AGE_PROGRESSION.filter(stage => stage.age <= player.age + 1).map(stage => {
+      const id = `age-progression-${stage.age}`
+      return {
+        id,
+        stage,
+        status: player.age >= stage.age ? ('completed' as const) : ('active' as const),
+      }
+    })
+  }
+
+  private renderAgeProgressionDetails(details: HTMLElement, stage: AgeStage): void {
+    const player = this.menu.context.player
+    details.appendChild(text('h2', t(stage.labelKey)))
+    details.appendChild(text('h3', t('questObjectives')))
+    const objectives = document.createElement('ul')
+    objectives.className = 'quest-age-objectives'
+    for (const objective of stage.objectives) {
+      const acquired = isAgeObjectiveComplete(player, objective.id)
+      const item = document.createElement('li')
+      item.className = `quest-age-objective${acquired ? ' is-acquired' : ''}`
+      const marker = document.createElement('span')
+      marker.className = `progression-objective-marker ${acquired ? 'is-acquired' : 'is-pending'}`
+      marker.setAttribute('aria-hidden', 'true')
+      item.append(marker, text('span', t(objective.labelKey)))
+      objectives.appendChild(item)
+    }
+    details.appendChild(objectives)
   }
 
   private render(): void {
     const state = this.system.state
     const quests = state?.quests.filter(quest => quest.status !== 'available') ?? []
+    const entries: JournalEntry[] = [
+      ...this.ageProgressionEntries().map(entry => ({ kind: 'age' as const, ...entry })),
+      ...quests.map(quest => ({ kind: 'quest' as const, quest })),
+    ]
     this.content.replaceChildren()
-    if (!quests.length) {
+    if (!entries.length) {
       this.content.appendChild(text('p', t('questJournalEmpty'), 'quest-empty'))
       return
     }
     const selected =
-      quests.find(quest => quest.id === this.selectedId) ?? quests.find(quest => quest.status === 'active') ?? quests[0]
-    this.selectedId = selected.id
-    selected.unread = false
+      entries.find(entry => entryId(entry) === this.selectedId) ??
+      entries.find(entry => entryStatus(entry) === 'active') ??
+      entries[0]
+    this.selectedId = entryId(selected)
+    if (selected.kind === 'quest') selected.quest.unread = false
+    else this.seenAgeEntryIds.add(selected.id)
     const list = document.createElement('nav')
     list.className = 'quest-list'
     list.setAttribute('aria-label', t('questJournal'))
     for (const status of ['active', 'completed', 'failed', 'cancelled'] as const) {
-      const group = quests.filter(quest => quest.status === status)
+      const group = entries.filter(entry => entryStatus(entry) === status)
       if (!group.length) continue
       list.appendChild(text('h3', t(`questStatus_${status}`)))
-      for (const quest of group) {
-        const definition = this.system.definitions.get(quest.definitionId)
+      for (const entry of group) {
         const button = document.createElement('button')
         button.type = 'button'
         button.className = 'quest-list-item ui-btn'
-        button.setAttribute('aria-current', String(quest.id === selected.id))
-        button.textContent = `${state?.trackedQuestId === quest.id ? '◆ ' : ''}${definition ? this.label(definition.title, quest) : t('questUnavailable')}${quest.unread ? ' !' : ''}`
+        button.setAttribute('aria-current', String(entryId(entry) === entryId(selected)))
+        let unread: boolean
+        if (entry.kind === 'age') {
+          button.textContent = t(entry.stage.labelKey)
+          unread = this.isAgeEntryUnread(entry.id)
+        } else {
+          const quest = entry.quest
+          const definition = this.system.definitions.get(quest.definitionId)
+          button.textContent = `${state?.trackedQuestId === quest.id ? '◆ ' : ''}${definition ? this.label(definition.title, quest) : t('questUnavailable')}`
+          unread = quest.unread
+        }
+        if (unread) button.appendChild(createQuestMarker())
         button.addEventListener('click', () => {
-          this.selectedId = quest.id
+          this.selectedId = entryId(entry)
           this.render()
           this.sync()
         })
@@ -136,30 +214,36 @@ export class QuestJournalManager {
     }
     const details = document.createElement('section')
     details.className = 'quest-details'
-    const definition = this.system.definitions.get(selected.definitionId)
-    details.appendChild(text('h2', definition ? this.label(definition.title, selected) : t('questUnavailable')))
-    details.appendChild(text('p', t('questGiver', { name: selected.owner.name }), 'quest-giver'))
-    if (definition) {
-      details.appendChild(text('p', this.label(definition.description, selected)))
-      details.appendChild(text('h3', t('questObjectives')))
-      const objectives = document.createElement('ul')
-      for (const objective of definition.stages.find(stage => stage.id === selected.stageId)?.objectives ?? []) {
-        objectives.appendChild(text('li', this.label(objective.text, selected)))
+    if (selected.kind === 'age') {
+      this.renderAgeProgressionDetails(details, selected.stage)
+    } else {
+      const quest = selected.quest
+      const definition = this.system.definitions.get(quest.definitionId)
+      details.appendChild(text('h2', definition ? this.label(definition.title, quest) : t('questUnavailable')))
+      details.appendChild(text('p', t('questGiver', { name: quest.owner.name }), 'quest-giver'))
+      if (definition) {
+        details.appendChild(text('p', this.label(definition.description, quest)))
+        details.appendChild(text('h3', t('questObjectives')))
+        const objectives = document.createElement('ul')
+        for (const objective of definition.stages.find(stage => stage.id === quest.stageId)?.objectives ?? []) {
+          objectives.appendChild(text('li', this.label(objective.text, quest)))
+        }
+        details.appendChild(objectives)
       }
-      details.appendChild(objectives)
-    }
-    if (selected.status === 'active' && definition) {
-      const follow = document.createElement('button')
-      follow.type = 'button'
-      follow.className = 'ui-btn'
-      const tracked = state?.trackedQuestId === selected.id
-      follow.textContent = t(tracked ? 'questUntrack' : 'questTrack')
-      follow.addEventListener('click', () => {
-        this.system.track(tracked ? null : selected.id)
-        this.render()
-        this.sync()
-      })
-      details.appendChild(follow)
+      if (quest.status === 'active' && definition) {
+        const follow = document.createElement('button')
+        follow.type = 'button'
+        follow.className = 'ui-btn'
+        const tracked = state?.trackedQuestId === quest.id
+        follow.textContent = t(tracked ? 'questUntrack' : 'questTrack')
+        follow.addEventListener('click', () => {
+          this.system.track(tracked ? null : quest.id)
+          this.menu.updateCameraMiniMap?.()
+          this.render()
+          this.sync()
+        })
+        details.appendChild(follow)
+      }
     }
     this.content.append(list, details)
   }

@@ -1,3 +1,6 @@
+const { loadGenerationTs } = require('./load-generation-ts.cjs')
+const { isFootprintBuildable } = loadGenerationTs('app/lib/grid/buildingFootprint.ts')
+
 function getCellsAroundPoint(i, j, grid, radius, predicate) {
   const cells = []
   for (let x = Math.max(0, i - radius); x <= Math.min(grid.length - 1, i + radius); x++) {
@@ -48,14 +51,12 @@ function getZoneInGridWithCondition(bounds, grid, radius, predicate) {
     for (let j = bounds.minY; j <= bounds.maxY; j++) {
       const cell = grid[i]?.[j]
       if (!cell || !predicate(cell)) continue
-      let valid = true
-      for (let x = i - radius; x <= i + radius && valid; x++)
-        for (let y = j - radius; y <= j + radius; y++) {
-          if (!grid[x]?.[y] || !predicate(grid[x][y])) {
-            valid = false
-            break
-          }
-        }
+      const valid = isFootprintBuildable(
+        { i, j },
+        radius,
+        point => Boolean(grid[point.i]?.[point.j]) && predicate(grid[point.i][point.j]),
+        point => grid[point.i]?.[point.j]?.z
+      )
       if (valid) return cell
     }
   return null

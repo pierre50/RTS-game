@@ -213,4 +213,13 @@ export class OfflineWorldSpatial {
     const cell = this.terrain[point.i]?.[point.j]
     return !cell?.waterBorder && !cell?.inclined
   }
+
+  storageSiteFree(point: SaveGridPoint, forBuilding: boolean): boolean {
+    if (!this.land(point) || (forBuilding && this.passages.has(this.key(point)))) return false
+    return [...(this.occupied.get(this.key(point)) ?? [])].every(entity => !forBuilding && this.mobile.has(entity))
+  }
+
+  elevation(point: SaveGridPoint): number | undefined {
+    return this.terrain[point.i]?.[point.j]?.z
+  }
 }

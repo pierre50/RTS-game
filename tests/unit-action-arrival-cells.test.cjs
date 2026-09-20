@@ -13,6 +13,7 @@ function loadActionArrivalCells(interiors = {}) {
   })
   const constants = {
     ACTION_TYPES: { delivery: 'delivery', train: 'train' },
+    BUILDING_TYPES: { chest: 'Chest' },
     FAMILY_TYPES: { building: 'building' },
   }
   const localRequire = request => {
@@ -47,4 +48,17 @@ test('training arrival uses the building entry cell even when the building has n
   assert.equal(getActionArrivalCell(unit, building, constants.ACTION_TYPES.train), entryCell)
   assert.equal(getActionArrivalCell(unit, building, constants.ACTION_TYPES.delivery), interiorCell)
   assert.equal(getActionArrivalCell(unit, building, null), entryCell)
+})
+
+test('delivery to an outdoor chest uses the regular building entry cell', () => {
+  const entryCell = { i: 6, j: 7 }
+  const interiorCell = { i: 9, j: 9 }
+  const { getActionArrivalCell, constants } = loadActionArrivalCells({
+    getBuildingEntryCell: () => entryCell,
+    getBuildingInteriorEntryCell: () => interiorCell,
+  })
+  const unit = { context: { map: { grid: [] } } }
+  const chest = { family: constants.FAMILY_TYPES.building, i: 5, isBuilt: true, j: 5, type: 'Chest' }
+
+  assert.equal(getActionArrivalCell(unit, chest, constants.ACTION_TYPES.delivery), entryCell)
 })

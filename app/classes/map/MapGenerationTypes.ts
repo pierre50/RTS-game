@@ -153,6 +153,7 @@ export type MapBlueprint = {
   exits?: GeneratedPosition[]
   terrain: BlueprintTerrainValue[][]
   relief?: number[][]
+  walls?: { i: number; j: number; side: number }[]
   floorMask?: number[][]
   borderMask?: number[][]
   floorShape?: unknown

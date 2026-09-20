@@ -1,3 +1,4 @@
+import { addInteriorWalls } from '../../../lib/graphics/interiorWalls'
 import { registerPreparedMapContent, applyPreparedTerrain } from './PreparedMapContent'
 import { Assets } from 'pixi.js'
 import { Resource } from '../../Resource'
@@ -114,6 +115,7 @@ export class MapBlueprintGeneration {
       }
     }
     this.applyInteriorMasks(blueprint)
+    if (isInteriorBlueprint(blueprint)) addInteriorWalls(blueprint, this.map)
     this.map.blueprintCellCreationMs = performance.now() - startedAt
     this.map.context.performance?.record?.('blueprint.createGenerationCells', this.map.blueprintCellCreationMs)
     this.map.context.performance?.record('blueprintCellCreation', this.map.blueprintCellCreationMs)
@@ -165,6 +167,7 @@ export class MapBlueprintGeneration {
       }
     }
     this.applyInteriorMasks(blueprint)
+    if (isInteriorBlueprint(blueprint)) addInteriorWalls(blueprint, this.map)
 
     if (isInteriorBlueprint(blueprint)) {
       this.map.blueprintWaterBorderReady = true

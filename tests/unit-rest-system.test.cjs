@@ -2372,3 +2372,49 @@ for (const blocked of [false, true]) {
     }
   })
 }
+
+test('closing evening dialogue preserves waiting until the individual bedtime, including midnight', () => {
+  for (const status of ['inside', 'outside']) {
+    const calls = []
+    const owner = { units: [], buildings: [] }
+    const villager = createUnit(owner, {
+      dailySchedule: { wakeMinute: 360, workStartMinute: 420, workEndMinute: 1080, bedMinute: 1330 },
+    })
+    const context = createContext(19, [owner], calls)
+    villager.context = context
+    const UnitRestSystem = loadUnitRestSystem(calls)
+    const system = new UnitRestSystem(context)
+    villager.shelterState = { status, reason: 'sleep', location: status === 'inside' ? 'shelter' : 'outside' }
+    villager.lookingAtHero = false
+    system.restoreSleepingUnitVisual(villager)
+    assert.notEqual(villager.sleepVisualState, 'sleeping')
+    assert.equal(villager.shelterState.status, status)
+    context.dayNight.state.hour = 22
+    context.dayNight.state.minute = 9
+    system.restoreSleepingUnitVisual(villager)
+    assert.notEqual(villager.sleepVisualState, 'sleeping')
+    context.dayNight.state.minute = 10
+    system.restoreSleepingUnitVisual(villager)
+    assert.equal(villager.sleepVisualState, 'sleeping')
+    context.dayNight.state.hour = 0
+    system.restoreSleepingUnitVisual(villager)
+    assert.equal(villager.sleepVisualState, 'sleeping')
+  }
+})
+
+test('closing dialogue after wake time wakes the villager instead of restoring sleep', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createUnit(owner)
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+  assert.equal(villager.sleepVisualState, 'sleeping')
+  villager.lookingAtHero = true
+  system.previewSleepingUnitWake(villager)
+  context.dayNight.state.hour = 8
+  villager.lookingAtHero = false
+  system.restoreSleepingUnitVisual(villager)
+  assert.notEqual(villager.sleepVisualState, 'sleeping')
+})

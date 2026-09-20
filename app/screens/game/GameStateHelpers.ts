@@ -59,6 +59,7 @@ export function applyPortableUnitState(
     appearanceVariants: cloneRecord((source as { appearanceVariants?: Record<string, string> }).appearanceVariants),
     controlMode: source.controlMode,
     degree: source.degree,
+    dailySchedule: cloneRecord(source.dailySchedule),
     energy: source.energy,
     experience: cloneRecord(source.experience),
     followingHero: source.followingHero,

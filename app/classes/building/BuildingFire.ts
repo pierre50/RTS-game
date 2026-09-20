@@ -43,7 +43,7 @@ const CAMPFIRE_DECORATION_LIGHT: EntityLightSourceConfig = {
   color: '#ffad4f',
   flicker: 0.09,
   intensity: 1.08,
-  radius: 220,
+  radius: 330,
   offsetY: -8,
   verticalScale: 0.68,
 }

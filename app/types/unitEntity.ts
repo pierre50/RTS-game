@@ -1,3 +1,4 @@
+import type { VillagerSchedule } from '../lib/units/villagerSchedule'
 import type { AnimatedSprite } from 'pixi.js'
 import type { ActionProps } from './combat'
 import type { CombatBehaviorConfig, ConfigValue, UnitAppearanceConfig } from './config'
@@ -177,6 +178,7 @@ export interface EnergyEntity extends RuntimeEntityBase {
 }
 
 export interface UnitEntity extends EnergyEntity {
+  dailySchedule?: VillagerSchedule
   sprite?: AnimatedSprite
   shadow?: AnimatedSprite | null
   syncShadow?: () => void

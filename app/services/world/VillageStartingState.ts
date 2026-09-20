@@ -94,12 +94,6 @@ export function applyVillageStartingState(
       layout.reserveBuilding(building)
       layout.recordSite(center, type, building, size)
     }
-    if (
-      (profile.wheatFields ?? 0) > 0 &&
-      (profile.buildings.Granary ?? 0) > 0 &&
-      !player.buildings!.some(building => building.type === 'Granary' && isLiving(building))
-    )
-      addBuilding('Granary')
     // Reserve agriculture before buildings, decorations and newly spawned units
     // fragment the remaining free terrain.
     const fields = profile.wheatFields ?? 0

@@ -12,6 +12,8 @@ import { clearEntityOverheadIndicator, setEntityOverheadIndicator } from '../../
 import { QuestSystem, type QuestEnvironment } from './QuestSystem'
 import { resourceRequestQuest } from './ResourceRequestQuest'
 import { tutorialHuntQuest } from './TutorialHuntQuest'
+import { banditCampQuest } from './BanditCampQuest'
+import { maintainBanditCampEncounter } from './BanditCampEncounter'
 import { selectTutorialHunt } from './TutorialHuntSelection'
 import { commitQuestInventory, questItemCount } from './QuestInventory'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
@@ -143,6 +145,18 @@ export class NeutralVillageQuests {
     const map = this.context.map
     const owner = npc.owner
     if (!map || !owner) return
+    if (owner.type === 'AI' && !this.context.isTutorialActive?.() && map.grid?.length &&
+      Number.isInteger(npc.i) && Number.isInteger(npc.j) && map.randomRange(0, 2) === 0 &&
+      previous?.definitionId !== banditCampQuest.id) {
+      this.system.offer({
+        id: JSON.stringify([banditCampQuest.id, this.regionId(), owner.label, npc.label, this.system.state.quests.length]),
+        definitionId: banditCampQuest.id, regionId: this.regionId(),
+        owner: { entityLabel: npc.label, playerLabel: owner.label, name: npc.name || owner.name || '' },
+        assigneeId: null, parameters: { rewardGold: 25 }, bindings: { recipient: npc.label },
+        status: 'available', stageId: 'clear-camp', facts: {}, usedInteractions: [], markers: {}, unread: false,
+      })
+      return
+    }
     const choices = GATHERABLE.map(choice => ({
       ...choice,
       available: [...map.resources].reduce(
@@ -208,6 +222,7 @@ export class NeutralVillageQuests {
     const playerId = this.context.player?.label
     if (!quest || !playerId || !this.system.accept(quest.id, playerId)) return false
     this.update()
+    this.context.autosave?.()
     return true
   }
 
@@ -222,7 +237,7 @@ export class NeutralVillageQuests {
     const interaction = definition?.stages.find(stage => stage.id === quest?.stageId)?.interactions.find(item => item.id === interactionId)
     if (!quest || !playerId || !interaction || !this.system.canInteract(quest, interaction, this.environment(npc))) return false
     const startingHunt = quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'wood'
-    const hunt = startingHunt ? selectTutorialHunt(this.context, npc, { ensurePopulation: true }) : null
+    const hunt = startingHunt ? selectTutorialHunt(this.context, npc, quest) : null
     if (startingHunt && !hunt) {
       this.context.menu?.showMessage?.(t('tutorialNoHuntAvailable'), 'warning')
       return false
@@ -264,6 +279,27 @@ export class NeutralVillageQuests {
     return true
   }
 
+  /** Resolve return destinations live so moving NPCs and inventory changes need no saved markers. */
+  getTrackedMarkers(spaceId: string, regionId: string) {
+    const state = this.system.state
+    const quest = state?.quests.find(item => item.id === state.trackedQuestId && item.status === 'active')
+    if (!quest || quest.regionId !== regionId || regionId !== this.regionId() ||
+      quest.assigneeId !== this.context.player?.label) return []
+    const stage = this.system.definitions.get(quest.definitionId)?.stages.find(item => item.id === quest.stageId)
+    for (const interaction of stage?.interactions ?? []) {
+      if (interaction.nextStageId === undefined) continue
+      const actorLabel = quest.bindings[interaction.actor]
+      const npc = (this.context.players ?? []).flatMap(player => player.units ?? [])
+        .find(unit => unit.label === actorLabel && unit.owner?.label === quest.owner.playerLabel)
+      if (!npc || !this.eligible(npc) || !this.system.canInteract(quest, interaction, this.environment(npc))) continue
+      // Readiness does not require the recipient to be awake or in the hero's current space.
+      if ((npc.spaceId ?? 'outside') !== spaceId || !Number.isFinite(npc.i) || !Number.isFinite(npc.j)) return []
+      return [{ id: 'quest-return', kind: 'return' as const, spaceId,
+        position: { i: npc.i, j: npc.j }, label: { key: 'questReturnToGiver' } }]
+    }
+    return this.system.getTrackedMarkers(spaceId, regionId).map(marker => ({ ...marker, kind: 'area' as const }))
+  }
+
   private raidPending = false
 
   dialogueClosed(npc: UnitEntity): void {
@@ -291,12 +327,20 @@ export class NeutralVillageQuests {
       !['wood', 'hunt'].includes(quest.stageId) || (npc.spaceId ?? 'outside') !== 'outside') return
     const now = this.context.scheduler?.elapsedMs ?? Date.now()
     if (now < (this.huntChecks.get(quest.id) ?? -Infinity)) return
-    this.huntChecks.set(quest.id, now + 5000)
+    this.huntChecks.set(quest.id, now + 500)
     const resource = quest.stageId === 'hunt' ? String(quest.parameters.resource) : undefined
     const required = quest.stageId === 'hunt' ? Number(quest.parameters.quantity) : 3
     const remaining = resource ? Math.max(0, required - this.environment(npc).resourceCount(resource)) : required
     if (!remaining) return
-    const hunt = selectTutorialHunt(this.context, npc, { ensurePopulation: true, resource, quantity: remaining })
+    if (quest.encounters?.hunt && quest.stageId === 'hunt') {
+      const labels = new Set(quest.encounters.hunt.entityLabels)
+      const animals = this.context.map.gaia?.animals ?? this.context.map.gaia?.units ?? []
+      // Corpses remain harvestable. Only replace exhausted targets when loot is still needed.
+      if (animals.some(animal => labels.has(animal.label) && !animal.isDestroyed && (animal.quantity ?? 0) > 0)) return
+      delete quest.encounters.hunt
+    }
+    if (quest.encounters?.hunt) return
+    const hunt = selectTutorialHunt(this.context, npc, quest)
     if (!hunt) return
     const changed = JSON.stringify(quest.reservation) !== JSON.stringify(hunt.reservation)
     quest.reservation = hunt.reservation
@@ -313,6 +357,7 @@ export class NeutralVillageQuests {
         this.ensureOffer(npc, refreshOffers)
         const quest = this.getQuest(npc)
         if (quest) this.maintainTutorialHunt(quest, npc)
+        if (quest) maintainBanditCampEncounter(this.context, quest, npc)
         if (!quest || !this.canTalk(npc)) continue
         if (quest.status === 'available') wanted.set(npc, 'exclamation')
         else if (
@@ -329,6 +374,7 @@ export class NeutralVillageQuests {
       if (this.marked.get(npc) !== type) setEntityOverheadIndicator(npc, type, { label: INDICATOR_LABEL })
     this.marked = wanted
     this.context.menu?.updateTopbar?.()
+    this.context.menu?.updateCameraMiniMap?.()
   }
 
   destroy(): void {

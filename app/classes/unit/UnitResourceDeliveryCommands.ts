@@ -1,5 +1,6 @@
 import {
   ACTION_TYPES,
+  BUILDING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
   SHEET_TYPES,
@@ -7,12 +8,15 @@ import {
   WORK_TYPES,
 } from '../../constants'
 import { getAutonomyJobForWork, setVillagerAutonomy } from '../../lib'
+import { getClosestInstanceWithPath } from '../../lib/grid/queries'
 import { t } from '../../lib/lang'
+import { sameMapSpace } from '../../lib/mapSpaces'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { applyUnitWorkAssets } from '../../lib/units/unitWorkAppearance'
 import { logGoldMinerFlow } from '../../lib/units/autonomy/villagerJobDiagnostics'
 import {
   findResourceDeliveryTarget,
+  isUnitResourceCarryFull,
   unitHasDeliverableResources,
   unitHasDeliverableResourcesForBuilding,
 } from '../../lib/resources/resourceDelivery'
@@ -76,6 +80,35 @@ function shouldDeliverBeforeGatherJobSwitch(unit: UnitEntity, work: string, acti
   return Boolean(currentJob && nextJob && currentJob !== nextJob)
 }
 
+function findClosestBuiltOwnedBuilding(unit: UnitEntity, types: string[]): BuildingEntity | null {
+  const owner = unit.owner
+  if (!owner) return null
+  const candidates = (owner.buildings ?? []).filter(
+    building =>
+      building.owner === owner &&
+      types.includes(building.type) &&
+      building.isBuilt !== false &&
+      !building.isDead &&
+      !building.isDestroyed &&
+      sameMapSpace(unit, building)
+  )
+  if (!candidates.length) return null
+  return getClosestInstanceWithPath<BuildingEntity>(unit, candidates)?.instance ?? candidates[0] ?? null
+}
+
+function sendUnitToFullStorageFallback(unit: UnitEntity): boolean {
+  if (!isUnitResourceCarryFull(unit) || !unitHasDeliverableResources(unit)) return false
+  const fallback =
+    findClosestBuiltOwnedBuilding(unit, [BUILDING_TYPES.fireCamp]) ??
+    findClosestBuiltOwnedBuilding(unit, [BUILDING_TYPES.townCenter])
+  if (!fallback) return false
+  unit.resourceDeliveryState = null
+  unit.gatherProgressState = null
+  unit.sendToEvt?.(fallback, null, { forceRepath: true })
+  logGoldMinerFlow(unit, 'delivery.full-storage-fallback', { fallback: fallback.label ?? fallback.type })
+  return true
+}
+
 export function getDeliveryBeforeGatherJobSwitch(
   unit: UnitEntity,
   target: RuntimeEntity,
@@ -104,7 +137,9 @@ export function sendUnitToDelivery(
 ): boolean {
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit) || unit.isDead) return false
   const deliveryTarget = target ?? findResourceDeliveryTarget(unit)
-  if (!deliveryTarget || !unitHasDeliverableResourcesForBuilding(unit, deliveryTarget)) return false
+  if (!deliveryTarget || !unitHasDeliverableResourcesForBuilding(unit, deliveryTarget)) {
+    return sendUnitToFullStorageFallback(unit)
+  }
   if (!checkActionCondition(unit, deliveryTarget, ACTION_TYPES.delivery)) return false
 
   const previousDest = isRuntimeEntity(unit.dest) && unit.dest !== deliveryTarget ? unit.dest : null

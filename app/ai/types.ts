@@ -214,7 +214,7 @@ export type AIStrategyPlayerLike = {
   getFreshEnemyInstances?(options?: EnemyMemoryOptions): AIEntityLike[]
   getNow(): number
   isEnemy(owner?: PlayerLike | null): boolean
-  buyBuilding(i: number, j: number, type: string): boolean
+  buyBuilding(i: number, j: number, type: string, options?: { alreadyPaid?: boolean }): boolean
   hasNotReachBuildingLimit(type: string, buildings?: AIBuildingLike[]): boolean
   isBuildingThreatened?(building: AIEntityLike): boolean
 }
@@ -292,6 +292,7 @@ export type AIStrategySnapshot = {
   storagepits: AIBuildingLike[]
   markets: AIBuildingLike[]
   watchTowers: AIBuildingLike[]
+  temples: AIBuildingLike[]
   notBuiltHouses: AIBuildingLike[]
 }
 

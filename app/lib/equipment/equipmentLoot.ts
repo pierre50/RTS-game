@@ -1,4 +1,6 @@
 import { equipHeroInventoryItemData } from './heroEquipmentData'
+import { t } from '../lang'
+import { getUnitResourceCarryRemaining } from '../resources/resourceDelivery'
 import type { ResourceAmount } from '../../types/common'
 import type { UnitConfig } from '../../types/config'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
@@ -7,6 +9,10 @@ import { refreshBakedLpcUnitAssets } from '../lpc'
 import { getUnitEquipmentTier } from '../units/unitExperience'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
 import { addHeroInventoryItem, getHeroInventory, pushEquipmentCopies } from './heroInventory'
+
+function notifyHeroBagFull(hero: UnitEntity): void {
+  if (hero.owner?.isPlayed) hero.context?.menu?.showMessage(t('heroBagFull'), 'warning')
+}
 export {
   formatEquipmentLootLabel,
   formatEquipmentStackLabel,
@@ -114,8 +120,12 @@ export function pickupCorpseResource(
   if (!hero || !corpse.isDead || corpse.isDestroyed) return 0
   const loot = getUnitCorpseLootResources(corpse)
   const available = Math.max(0, Math.floor(loot[resource] ?? 0))
-  const amount = requestedAmount == null ? available : Math.min(available, Math.max(0, Math.floor(requestedAmount)))
-  if (amount <= 0) return 0
+  const requested = requestedAmount == null ? available : Math.min(available, Math.max(0, Math.floor(requestedAmount)))
+  const amount = Math.min(requested, getUnitResourceCarryRemaining(hero))
+  if (amount <= 0) {
+    if (requested > 0) notifyHeroBagFull(hero)
+    return 0
+  }
 
   const heroResources = getHeroInventory(hero).resources
   heroResources[resource] = (heroResources[resource] ?? 0) + amount
@@ -134,6 +144,10 @@ export function pickupCorpseEquipment(
   const loot = getUnitCorpseLootEquipment(corpse)
   const index = loot.indexOf(equipment)
   if (index < 0) return false
+  if (getUnitResourceCarryRemaining(hero) <= 0) {
+    notifyHeroBagFull(hero)
+    return false
+  }
 
   loot.splice(index, 1)
   if (Array.isArray(corpse.equipment)) {

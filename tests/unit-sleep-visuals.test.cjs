@@ -2,13 +2,14 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadUnitSleepVisuals() {
+function loadUnitSleepVisuals(overrides = {}) {
   return loadTsModule('app/services/rest/UnitSleepVisuals.ts', {
     mocks: {
       '../../constants': {
         SHEET_TYPES: { dying: 'dyingSheet', standing: 'standingSheet' },
       },
       '../../lib/entities/entityFade': { cancelFade: unit => unit.calls.push(['cancelFade']) },
+      ...overrides,
     },
   })
 }
@@ -134,4 +135,41 @@ test('clearing a wake visual cancels the task and stale sprite callbacks', () =>
   assert.equal(layer.onComplete, null)
   assert.equal(layer.onFrameChange, null)
   assert.equal(layer.onLoop, null)
+})
+
+
+test('the opening sleeping pose cancels a pending spawn fade before revealing the hero', () => {
+  const fade = loadTsModule('app/lib/entities/entityFade.ts')
+  const { setSleepingOutsideFinalVisual, playSleepingWakeVisual } = loadUnitSleepVisuals({
+    '../../lib/entities/entityFade': fade,
+  })
+  const unit = createUnit()
+  unit.alpha = 1
+  unit.context.paused = true
+  fade.fadeIn(unit, 120)
+  const pendingFade = [...unit.context.scheduler.tasks.values()][0]
+  assert.equal(unit.alpha, 0)
+
+  setSleepingOutsideFinalVisual(unit)
+
+  assert.equal(unit.context.scheduler.tasks.size, 0)
+  assert.equal(unit.alpha, 1)
+  assert.equal(unit.visible, true)
+  assert.equal(unit.sprite.currentFrame, 2)
+  assert.equal(unit.sprite.playing, false)
+  assert.equal(unit.appearanceLayerSprites.get(0).currentFrame, 2)
+  assert.equal(unit.shadow.visible, false)
+  unit.context.paused = false
+  for (let tick = 0; tick < 10; tick++) pendingFade.callback()
+  assert.equal(unit.alpha, 1)
+  assert.equal(unit.sprite.currentFrame, 2)
+
+  let awake = false
+  playSleepingWakeVisual(unit, () => { awake = true })
+  const wakeTask = [...unit.context.scheduler.tasks.values()].find(task => task.name === 'unit.sleepWake')
+  wakeTask.callback()
+  wakeTask.callback()
+  assert.equal(awake, true)
+  assert.equal(unit.sleepVisualState, null)
+  assert.equal(unit.alpha, 1)
 })

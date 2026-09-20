@@ -1,4 +1,5 @@
 import { isTutorialActive } from '../tutorial/TutorialState'
+import { PLAYER_TYPES } from '../../constants'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
 import { simulateOfflineWorld } from './OfflineWorldSimulation'
@@ -52,31 +53,46 @@ export function encodeEconomyTerrain(terrain: (OfflineTerrainCell | null | undef
   )
 }
 
-export function decodeEconomyTerrain(rows: string[]): (OfflineTerrainCell | null)[][] {
-  return rows.map(row =>
-    Array.from(row, code =>
+export function encodeEconomyElevation(terrain: (OfflineTerrainCell | null | undefined)[][]): string[] {
+  return terrain.map(row =>
+    Array.from({ length: row.length }, (_, j) => Math.max(0, Math.min(35, Math.round(row[j]?.z ?? 0))).toString(36)).join(
+      ''
+    )
+  )
+}
+
+export function decodeEconomyTerrain(rows: string[], elevationRows?: string[]): (OfflineTerrainCell | null)[][] {
+  return rows.map((row, i) =>
+    Array.from(row, (code, j) =>
       code === '#'
         ? null
         : {
             category: code === '~' ? 'Water' : 'Land',
             waterBorder: code === ':',
+            z: elevationRows?.[i]?.[j] ? parseInt(elevationRows[i][j], 36) : 0,
           }
     )
   )
 }
 
+// Rival AI factions and the player's own colonies both get a summary; Bandits/Gaia have no
+// economy worth reporting.
+const SUMMARIZED_PLAYER_TYPES = new Set<string>([PLAYER_TYPES.ai, PLAYER_TYPES.human])
+
 export function summarizeEconomy(region: RegionEconomySave, state: SerializedSave): void {
   region.summaries = {}
   for (const player of state.players) {
-    if (player.type !== 'AI' || !player.factionId) continue
+    if (!SUMMARIZED_PLAYER_TYPES.has(player.type ?? '') || !player.factionId) continue
     const buildings: Record<string, number> = {}
     const military: Record<string, number> = {}
+    let idleWorkers = 0
     for (const building of player.buildings ?? []) {
       if (isLiving(building) && building.isBuilt) buildings[building.type] = (buildings[building.type] ?? 0) + 1
     }
     for (const unit of player.units ?? []) {
-      if (isLiving(unit) && unit.type !== 'Villager' && unit.type !== 'Hero')
-        military[unit.type] = (military[unit.type] ?? 0) + 1
+      if (!isLiving(unit)) continue
+      if (unit.type === 'Villager' && unit.inactif) idleWorkers++
+      else if (unit.type !== 'Villager' && unit.type !== 'Hero') military[unit.type] = (military[unit.type] ?? 0) + 1
     }
     region.summaries[player.factionId] = {
       population: player.population ?? 0,
@@ -87,6 +103,7 @@ export function summarizeEconomy(region: RegionEconomySave, state: SerializedSav
       constructionProjects: (player.buildings ?? []).filter(b => isLiving(b) && !b.isBuilt).length,
       ...(player.offlineBuildingDecision ? { constructionDecision: player.offlineBuildingDecision } : {}),
       trainingProjects: (player.buildings ?? []).reduce((n, b) => n + (b.trainingQueue?.length ?? 0), 0),
+      idleWorkers,
     }
   }
 }
@@ -102,6 +119,7 @@ export function captureEconomyRegion(
   const region = campaign.economy.regions[regionId] ?? {
     regionId,
     terrain: encodeEconomyTerrain(terrain),
+    elevation: encodeEconomyElevation(terrain),
     simulatedUntilMs: 0,
     summaries: {},
   }
@@ -154,7 +172,7 @@ export function advanceCampaignEconomy(
       difficulty:
         state.config?.difficulty ?? campaign.worlds[campaign.currentWorldId]?.state.config?.difficulty ?? 'medium',
     }
-    const terrain = decodeEconomyTerrain(region.terrain)
+    const terrain = decodeEconomyTerrain(region.terrain, region.elevation)
     const rules = rulesFor(state)
     let cursor = Math.max(region.simulatedUntilMs, state.runtime?.dayNightElapsedMs ?? 0)
     while (cursor < toElapsedMs) {

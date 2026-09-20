@@ -62,6 +62,7 @@ export const MAX_BUILDING_BY_AGE = {
     ArcheryRange: 1,
     Stable: 1,
     WatchTower: 3,
+    Temple: 1,
   },
   2: {
     StoragePit: 4,
@@ -72,6 +73,7 @@ export const MAX_BUILDING_BY_AGE = {
     ArcheryRange: 2,
     Stable: 1,
     WatchTower: 3,
+    Temple: 1,
   },
 }
 

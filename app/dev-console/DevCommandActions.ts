@@ -15,11 +15,7 @@ export {
   toggleEntityBars,
 } from './actions/debug'
 
-export {
-  toggleFog,
-  toggleResourcesVisibility,
-  killResources,
-} from './actions/map'
+export { toggleFog, toggleInteriorWalls, toggleResourcesVisibility, killResources } from './actions/map'
 
 export {
   healAll,

@@ -14,6 +14,7 @@ import {
   advanceCampaignEconomy,
   captureEconomyRegion,
   economyRegionId,
+  encodeEconomyElevation,
   encodeEconomyTerrain,
   summarizeEconomy,
 } from './WorldEconomy'
@@ -153,6 +154,7 @@ function seedRegion(source: MapBlueprint, regionId: string, campaign: CampaignSa
     regionId,
     initialState,
     terrain: encodeEconomyTerrain(terrain),
+    elevation: encodeEconomyElevation(terrain),
     simulatedUntilMs: 0,
     summaries: {},
   }

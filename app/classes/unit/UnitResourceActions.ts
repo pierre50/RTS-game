@@ -1,3 +1,4 @@
+import { isCaveMineral } from '../../lib/resources/caveMinerals'
 import { MENU_INFO_IDS, MINING_RESOURCE_CONFIG, SHEET_TYPES, SOUND_CUES } from '../../constants'
 import { onSpriteLoopAtFrame, playAudibleSoundCue, showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../lib'
 import { canReachActionTarget, getActionContactTool, isActionTouchingTarget } from '../../lib/actions/contactActions'
@@ -15,12 +16,11 @@ import { logGatherVisualState } from './UnitGatherVisualDebug'
 import { lockManualHeroAction, restartManualHeroActionAnimation, stopManualHeroAction } from './UnitManualHeroWork'
 import {
   addGatheredResource,
-  getCarriedResourceAmountForLoadingType,
   getGatherAmount,
   isRuntimeEntity,
+  notifyIfHeroResourceCarryFull,
   sendVillagerToDeliveryIfFull,
   shouldReleaseGatheredResource,
-  showDepletedBerrybushMessage,
   startForageResourceAction,
 } from './UnitResourceGathering'
 import { handleChopWoodAction as runChopWoodAction } from './work/UnitWoodcuttingAction'
@@ -119,7 +119,7 @@ export class UnitResourceActions {
     }
     this.lastLockedMine = null
     this.startGathering(config.loadingType, this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre), {
-      dieOnEmpty: Boolean(config.dieOnEmpty),
+      dieOnEmpty: Boolean(config.dieOnEmpty) || isCaveMineral(target),
       onImpact: target => spawnWorkImpactFragments(this.unit, target),
     })
   }
@@ -153,7 +153,6 @@ export class UnitResourceActions {
     const menu = unit.context?.menu
     if (!unit.getActionCondition?.(unit.dest)) {
       showIronMiningBlockedMessage(unit, isRuntimeEntity(unit.dest) ? unit.dest : null)
-      showDepletedBerrybushMessage(unit, isRuntimeEntity(unit.dest) ? unit.dest : null)
       unit.affectNewDest?.()
       return
     }
@@ -167,12 +166,14 @@ export class UnitResourceActions {
         finishWorkSwing(unit, workTickFrame, workTickFrame)
         return
       }
-      const previousAmount = getCarriedResourceAmountForLoadingType(unit, loadingType)
-      const gain = addGatheredResource(unit, loadingType, requestedGain)
+      const gain = addGatheredResource(unit, loadingType, Math.min(requestedGain, dest.quantity ?? 0))
       if (gain <= 0) {
         unit.gatherProgressState = null
         if (!isHeroControlled(unit)) unit.sendToDelivery?.()
-        else stopManualHeroAction(unit)
+        else {
+          notifyIfHeroResourceCarryFull(unit)
+          stopManualHeroAction(unit)
+        }
         return
       }
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
@@ -189,7 +190,7 @@ export class UnitResourceActions {
         if (dieOnEmpty) dest.die?.()
         onDepleted?.(dest)
         unit.affectNewDest?.()
-      } else if (sendVillagerToDeliveryIfFull(unit, loadingType, previousAmount)) {
+      } else if (sendVillagerToDeliveryIfFull(unit, loadingType)) {
         unit.gatherProgressState = null
       }
       finishWorkSwing(unit, workTickFrame, workTickFrame)
@@ -208,7 +209,6 @@ export class UnitResourceActions {
       if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
         dest.die?.()
       }
-      showDepletedBerrybushMessage(unit, dest)
       unit.affectNewDest?.()
       return
     }
@@ -245,8 +245,9 @@ export class UnitResourceActions {
   handleDeliveryAction() {
     if (!this.unit.context) return
     const unit = this.unit
+    const target = unit.dest
     void import('../../screens/game/GameResourceDelivery').then(({ handleResourceDeliveryAction }) => {
-      if (!unit.context) return
+      if (!unit.context || unit.dest !== target) return
       handleResourceDeliveryAction(unit.context, unit)
     })
   }

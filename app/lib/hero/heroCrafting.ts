@@ -66,7 +66,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     descriptionKey: 'craftChestDescription',
     outputEquipment: HERO_CHEST_ITEM,
     outputCount: 1,
-    cost: { wood: 5 },
+    cost: { wood: 10 },
   },
   {
     id: HERO_HEALING_POULTICE_ITEM,

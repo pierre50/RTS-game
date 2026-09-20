@@ -213,7 +213,7 @@ test('fresh campaign boot restores profiles once and forwards them to remote vil
     _mountRuntime() {},
     _autosaveCampaign() {},
   }
-  const profile = { age: 0, buildings: { Granary: 1 }, units: { Villager: 4 }, resourceBonus: { wood: 100 } }
+  const profile = { age: 0, buildings: { Granary: 1, StoragePit: 1 }, units: { Villager: 4 }, resourceBonus: { wood: 100 } }
   await bootGameFromConfig(game, { heroStartVillage: 'Hellas', villageStarts: { Hellas: profile } })
   assert.equal(requestedCivilization, 'Hellas')
   assert.equal(restored, 1)

@@ -40,10 +40,10 @@ for (const dead of [false, true]) {
         label: 'npc',
         name: 'Ada',
         isDead: dead,
-        inventory: { equipment: ['axe'], resources: { wood: 120 } },
+        inventory: { equipment: ['axe'], resources: { wood: 20 } },
         lootEquipment: ['axe'],
       }
-      const menu = { context: { app: {}, controls: { heroUnit: hero } }, updateHeroStatus() {} }
+      const menu = { context: { app: {}, controls: { heroUnit: hero } }, showMessage() {}, updateHeroStatus() {} }
       menu.context.menu = menu
       const { UnitInventoryScreen } = loadTsModule('app/ui/inventory/UnitInventoryScreen.ts', {
         mocks: {
@@ -97,18 +97,16 @@ for (const dead of [false, true]) {
       const panel = screen.element.children[0].children[0]
       assert.equal(panel.className, 'inventory-transfer-panel')
       assert.equal(panel.children.length, 2)
-      assert.equal(panel.children[0].children[0].children[1].textContent, '3 items')
+      assert.equal(panel.children[0].children[0].children[1].textContent, '2 items')
       assert.equal(panel.children[1].children[0].children[1].textContent, '0 items')
       const wood = rows.find(row => row.id === 'transfer-resource-npc-wood')
       const axe = rows.find(row => row.id === 'transfer-equipment-npc-axe')
-      const remainder = rows.find(row => row.resource === 'wood' && row.amount === 21)
-      assert.equal(wood.amount, 99)
-      remainder.trailingAction.onAction('all')
+      assert.equal(wood.amount, 20)
       wood.trailingAction.onAction('one')
       axe.trailingAction.onAction('all')
       axe.trailingAction.onAction('all')
-      assert.deepEqual(hero.inventory, { equipment: ['axe'], resources: { wood: 22 } })
-      assert.equal(unit.inventory.resources.wood, 98)
+      assert.deepEqual(hero.inventory, { equipment: ['axe'], resources: { wood: 1 } })
+      assert.equal(unit.inventory.resources.wood, 19)
       assert.equal(corpseEquipmentPickups, dead ? 1 : 0)
       screen.render()
       const updatedPanel = screen.element.children[0].children[0]

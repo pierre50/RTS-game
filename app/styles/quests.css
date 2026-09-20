@@ -41,6 +41,21 @@
 .quest-giver {
   opacity: 0.75;
 }
+.quest-age-objectives {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+  padding: 0;
+  list-style: none;
+}
+.quest-age-objective {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-10);
+}
+.quest-age-objective.is-acquired {
+  color: var(--msg-success-color);
+}
 .quest-empty {
   grid-column: 1 / -1;
   align-self: center;
@@ -66,4 +81,21 @@
 }
 .npc-quest-options {
   margin-bottom: var(--ui-gap-8);
+}
+.quest-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 var(--ui-gap-6);
+  font-family: var(--font-family-ui);
+  font-weight: 900;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--quest-marker-color);
+  -webkit-text-stroke: 3px var(--quest-marker-stroke-color);
+  paint-order: stroke fill;
+  flex: none;
+  vertical-align: middle;
+  text-shadow: none;
+  transform: translateY(-4px);
 }

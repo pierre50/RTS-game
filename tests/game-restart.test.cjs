@@ -257,6 +257,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
   }
   if (realScheduler) delete mocks['../lib/ActionScheduler']
   Object.assign(mocks, {
+    './runtimeServices': mocks['./game/runtimeServices'],
     './GameBuildingInteriorTravel': mocks['./game/GameBuildingInteriorTravel'],
     '../../serialization/SaveStorage': mocks['../serialization/SaveStorage'],
     '../../lib': mocks['../lib'],
@@ -317,49 +318,6 @@ test('region resets keep character fades and pause state connected to the live r
     scheduler._tick(40)
     assert.equal(actions, 1)
   }
-})
-
-test('restart ignores clicks before the initial restart snapshot exists', async () => {
-  const Game = loadGame()
-  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
-  let destroyCalls = 0
-  game._destroyRuntime = () => destroyCalls++
-
-  await game.restart()
-
-  assert.equal(destroyCalls, 0)
-})
-
-test('restart coalesces repeated ingame menu clicks while rebooting', async () => {
-  const Game = loadGame()
-  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
-  let destroyCalls = 0
-  let resolveYield
-  const bootSaves = []
-
-  game._restartSaveData = {
-    version: 2,
-    world: {},
-    config: {},
-    players: [],
-    camera: { x: 0, y: 0 },
-    resources: [],
-    animals: [],
-  }
-  game._destroyRuntime = () => destroyCalls++
-  game._yieldToBrowser = () => new Promise(resolve => (resolveYield = resolve))
-  game._bootFromSave = async save => bootSaves.push(save)
-
-  const firstRestart = game.restart()
-  const secondRestart = game.restart()
-
-  assert.equal(destroyCalls, 1)
-  resolveYield()
-  await Promise.all([firstRestart, secondRestart])
-
-  assert.equal(destroyCalls, 1)
-  assert.equal(bootSaves.length, 1)
-  assert.equal(game._isRestarting, false)
 })
 
 test('restored saves initialize hero controls before mounting runtime', async () => {

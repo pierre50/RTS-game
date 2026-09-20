@@ -24,7 +24,7 @@ export function grantQuestRelationReward(
     if (!context.changeFactionRelation) return t('questCompleted')
     before = faction.relationScore
     after = adjustFactionRelation(faction, amount, Date.now()).relationScore
-    // Commit the receipt before the campaign callback takes its restart snapshot.
+    // Commit the receipt before the campaign callback takes its recovery snapshot.
     quest.facts.relationRewardApplied = true
     context.changeFactionRelation(faction.id, after - before, 'quest')
   } else {

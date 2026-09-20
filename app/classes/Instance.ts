@@ -124,7 +124,7 @@ export class Instance extends Container {
     }
   }
 
-  protected playingBeforePause?: boolean
+  playingBeforePause?: boolean
 
   pause(): void {
     this.playingBeforePause ??= Boolean((this.sprite as AnimatedSprite | undefined)?.playing)

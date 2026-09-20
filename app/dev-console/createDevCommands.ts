@@ -27,6 +27,7 @@ import {
   toggleEntityBars,
   toggleCoordsDebug,
   toggleFog,
+  toggleInteriorWalls,
   toggleFreeCamera,
   toggleGridDebug,
   toggleHeroAimDebug,
@@ -276,6 +277,14 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
     describe: 'Toggle fog of war',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleFog(context, value),
+  })
+
+  registry.register({
+    name: 'walls',
+    usage: 'walls [on|off]',
+    describe: 'Show or hide walls in the current cave or building interior',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleInteriorWalls(context, value),
   })
 
   registry.register({

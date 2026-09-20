@@ -16,6 +16,10 @@
   --color-black-deep: #050716;
   --color-black-blue: #0c1028;
 
+  /* Must match STATUS_EXPRESSION_COLORS['!']/STATUS_EXPRESSION_STROKE in app/lib/entities/statusBubble.ts */
+  --quest-marker-color: #ffd747;
+  --quest-marker-stroke-color: #20140b;
+
   --color-blue-control: #283568;
   --color-blue-bright: #5366a8;
 

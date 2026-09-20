@@ -745,3 +745,25 @@ test('delivery saves retain job intent using references and omit runtime task id
     },
   })
 })
+
+test('individual daily schedules survive saving and travel without sharing state', () => {
+  const { applyPortableUnitState } = loadTsModule('app/screens/game/GameStateHelpers.ts')
+  const context = makeContext()
+  const dailySchedule = { wakeMinute: 370, workStartMinute: 430, workEndMinute: 1090, bedMinute: 1330 }
+  context.players[0].units = [{ type: 'Villager', i: 1, j: 1, dailySchedule }]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
+  assert.deepEqual(saved.dailySchedule, dailySchedule)
+  const target = {}
+  applyPortableUnitState(target, saved)
+  assert.deepEqual(target.dailySchedule, dailySchedule)
+  assert.notEqual(target.dailySchedule, saved.dailySchedule)
+})
+
+test('chest villager delivery preference survives serialization including explicit false', () => {
+  for (const blocked of [true, false]) {
+    const context = makeContext()
+    context.players[0].buildings = [{ type: 'Chest', i: 1, j: 1, isBuilt: true, villagerDeliveriesBlocked: blocked }]
+    const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+    assert.equal(saved.players[0].buildings[0].villagerDeliveriesBlocked, blocked)
+  }
+})

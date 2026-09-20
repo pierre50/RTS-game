@@ -1,7 +1,11 @@
+import { tryCreateCampChest } from '../lib/grid/campChestPlacement'
+import { getPlayerResourceStores, type ResourceStoreOwner } from '../lib/resources/playerResourceTotals'
+import { storageResourcesForAI } from './AIStrategyResources'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { BUILDING_TYPES } from '../constants'
 import { villageBuildingNeeds } from './AIDevelopmentPolicy'
 import { canAfford, getBuildingPlacementSearchSize, getPositionInGridAroundInstance, instancesDistance } from '../lib'
+import { findStoragePitSite, needsStoragePit } from '../lib/grid/storagePitPlacement'
 import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import type {
   AIBuildingLike,
@@ -119,6 +123,7 @@ function buyCoreInfrastructure(options: {
   otherPlayers: AIStrategySnapshot['otherPlayers']
   placementCondition: PlacementConditionFactory
   storagepits: AIBuildingLike[]
+  temples: AIBuildingLike[]
 }): number {
   const {
     ai,
@@ -133,18 +138,21 @@ function buyCoreInfrastructure(options: {
     otherPlayers,
     placementCondition,
     storagepits,
+    temples,
   } = options
   const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
     otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
   const defensivePlacement = () => placementCondition(isEnemyFacing(anchor))
   let actions = 0
+  const storageResources = storageResourcesForAI(ai)
   const needs = villageBuildingNeeds({
+    storagePitNeeded: needsStoragePit(storageResources, ai.buildings),
     population: ai.population,
     populationMax: ai.populationMax,
     age: ai.age,
     phase: ai.phase,
     desiredBarracks,
-    buildings: [...barracks, ...granarys, ...markets, ...storagepits, ...notBuiltHouses],
+    buildings: [...barracks, ...granarys, ...markets, ...storagepits, ...notBuiltHouses, ...temples],
   })
 
   if (
@@ -161,7 +169,22 @@ function buyCoreInfrastructure(options: {
     buy(
       needs[BUILDING_TYPES.storagePit],
       BUILDING_TYPES.storagePit,
-      () => findBuildingPosition(anchor, map, [4, 12], 1, placementCondition()),
+      () =>
+        findStoragePitSite({
+          home: anchor,
+          size: Number(getPlayerBuildingConfig(ai, BUILDING_TYPES.storagePit)?.size) || 3,
+          resources: storageResources,
+          buildings: ai.buildings,
+          terrainAt: point => map.grid[point.i]?.[point.j],
+          isFree: (point, forBuilding) => {
+            const cell = map.grid[point.i]?.[point.j]
+            return (
+              !!cell &&
+              (!cell.solid || (!forBuilding && cell.has?.family === 'unit')) &&
+              (!forBuilding || placementCondition()(cell))
+            )
+          },
+        }),
       false
     )
   )
@@ -212,7 +235,35 @@ function buyCoreInfrastructure(options: {
   )
     actions++
 
+  if (
+    buy(needs[BUILDING_TYPES.temple], BUILDING_TYPES.temple, () =>
+      findBuildingPosition(anchor, map, [4, 12], 1, placementCondition())
+    )
+  )
+    actions++
+
   return actions
+}
+
+function buyCampChest(ai: AIStrategyPlayerLike): number {
+  if (!ai.config.buildings[BUILDING_TYPES.chest]) return 0
+  const grid = ai.context.map.grid
+  const passages = createReservedPassageCellLookup(ai.context)
+  return Number(
+    tryCreateCampChest({
+      workers: ai.units,
+      buildings: ai.buildings,
+      resources: Object.values(ai.foundedResources ?? {}).flatMap(set => [...set]),
+      stocks: getPlayerResourceStores(ai as unknown as ResourceStoreOwner),
+      woodCost: Number(getPlayerBuildingConfig(ai, BUILDING_TYPES.chest)?.cost?.wood) || 0,
+      terrainAt: p => grid[p.i]?.[p.j],
+      isFree: p => {
+        const cell = grid[p.i]?.[p.j]
+        return !!cell && !cell.solid && !passages.has(cell)
+      },
+      create: p => ai.buyBuilding(p.i, p.j, BUILDING_TYPES.chest, { alreadyPaid: true }),
+    })
+  )
 }
 
 export function handleAIBuildingActions(
@@ -235,11 +286,15 @@ export function handleAIBuildingActions(
     archeryRanges,
     stables,
     watchTowers,
+    temples,
     notBuiltHouses,
   } = snapshot
 
-  const anchor = towncenters[0] || ai.getHomeAnchor()
-  if (!anchor) return 0
+  const anchor =
+    towncenters[0] ||
+    ai.buildings?.find(b => b.type === BUILDING_TYPES.chest && b.isBuilt && !b.isDead && !b.isDestroyed) ||
+    ai.getHomeAnchor()
+  if (!anchor) return buyCampChest(ai)
 
   const buildingsByType = {
     [BUILDING_TYPES.townCenter]: towncenters,
@@ -251,6 +306,7 @@ export function handleAIBuildingActions(
     [BUILDING_TYPES.archeryRange]: archeryRanges,
     [BUILDING_TYPES.stable]: stables,
     [BUILDING_TYPES.watchTower]: watchTowers,
+    [BUILDING_TYPES.temple]: temples,
   }
 
   const passageLookup = createReservedPassageCellLookup(ai.context)
@@ -291,7 +347,10 @@ export function handleAIBuildingActions(
     otherPlayers,
     placementCondition,
     storagepits,
+    temples,
   })
+
+  actions += buyCampChest(ai)
 
   const livingWheatTiles = farms.filter(farm => !farm.isDead && !farm.isDestroyed && (farm.quantity ?? 0) > 0)
   const currentWheatFields = Math.ceil(livingWheatTiles.length / WHEAT_TILES_PER_FIELD)

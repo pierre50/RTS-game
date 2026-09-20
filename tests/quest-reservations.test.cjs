@@ -11,6 +11,17 @@ test('reserved quest animals stay available only to the assigned hero until the 
     reservation: { stageIds: ['wood', 'hunt'], entityLabels: ['deer'] } }
   const journal = JSON.parse(JSON.stringify({ version: 1, trackedQuestId: null, quests: [quest] }))
   validateQuestJournal(journal)
+  journal.quests[0].encounters = { hunt: {
+    entityLabels: ['deer'], position: { i: 12, j: 14 }, parameters: { resource: 'leather', quantity: 3 },
+  } }
+  validateQuestJournal(JSON.parse(JSON.stringify(journal)))
+  for (const invalid of [
+    { entityLabels: [3] }, { position: { i: NaN, j: 1 } }, { parameters: { count: Infinity } },
+  ]) {
+    const corrupted = structuredClone(journal)
+    Object.assign(corrupted.quests[0].encounters.hunt, invalid)
+    assert.throws(() => validateQuestJournal(corrupted))
+  }
   const context = { getQuestJournal: () => journal, controls: {} }
   const hero = { context, owner: { label: 'player' } }
   context.controls.heroUnit = hero

@@ -96,18 +96,18 @@ test('work energy costs reflect action effort', () => {
   const { getActionEnergyCost, spendEnergyForAction } = loadUnitEnergy()
   const unit = { energy: 10, totalEnergy: 10 }
 
-  assert.equal(getActionEnergyCost(unit, 'minegold'), 3)
-  assert.equal(getActionEnergyCost(unit, 'minestone'), 3)
-  assert.equal(getActionEnergyCost(unit, 'chopwood'), 2)
+  assert.equal(getActionEnergyCost(unit, 'minegold'), 1.5)
+  assert.equal(getActionEnergyCost(unit, 'minestone'), 1.5)
+  assert.equal(getActionEnergyCost(unit, 'chopwood'), 1)
   assert.equal(getActionEnergyCost(unit, 'build'), 2)
   assert.equal(getActionEnergyCost(unit, 'flee'), 0.25)
-  assert.equal(getActionEnergyCost(unit, 'forageberry'), 0.75)
-  assert.equal(getActionEnergyCost(unit, 'takemeat'), 0.5)
+  assert.equal(getActionEnergyCost(unit, 'forageberry'), 0.375)
+  assert.equal(getActionEnergyCost(unit, 'takemeat'), 0.25)
 
   assert.equal(spendEnergyForAction(unit, 'takemeat'), true)
-  assert.equal(unit.energy, 9.5)
+  assert.equal(unit.energy, 9.75)
   assert.equal(spendEnergyForAction(unit, 'minegold'), true)
-  assert.equal(unit.energy, 6.5)
+  assert.equal(unit.energy, 8.25)
 })
 
 test('easy difficulty makes enemy attacks cost more energy against played units', () => {
@@ -402,13 +402,13 @@ test('hero energy changes refresh the hero HUD immediately', () => {
   unit.context.controls.heroUnit = unit
 
   assert.equal(spendEnergyForAction(unit, 'takemeat'), true)
-  assert.equal(unit.energy, 9.5)
-  assert.deepEqual(calls, [9.5])
+  assert.equal(unit.energy, 9.75)
+  assert.deepEqual(calls, [9.75])
 
   unit.context.scheduler.elapsedMs = 1100
   updateUnitEnergy(unit, 100)
-  assert.equal(unit.energy, 9.7)
-  assert.deepEqual(calls, [9.5, 9.7])
+  assert.equal(unit.energy, 9.95)
+  assert.deepEqual(calls, [9.75, 9.95])
 })
 
 test('low energy progressively slows movement except while mounted', () => {

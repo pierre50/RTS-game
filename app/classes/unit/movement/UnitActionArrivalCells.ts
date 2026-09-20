@@ -1,4 +1,4 @@
-import { ACTION_TYPES, FAMILY_TYPES } from '../../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES } from '../../../constants'
 import { getBuildingEntryCell, getBuildingInteriorEntryCell } from '../../../lib/buildings/interiors'
 import { getEntitySpaceMapLike } from '../../../lib/mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
@@ -20,7 +20,8 @@ export function getActionArrivalCell(
   if (!action) return getBuildingEntryCell(dest, grid)
   if (![ACTION_TYPES.train, ACTION_TYPES.delivery].includes(action)) return null
   if (action === ACTION_TYPES.train) return getBuildingEntryCell(dest, grid)
-  return getBuildingInteriorEntryCell(dest, grid)
+  if (dest.type === BUILDING_TYPES.chest) return getBuildingEntryCell(dest, grid)
+  return getBuildingInteriorEntryCell(dest, grid) ?? getBuildingEntryCell(dest, grid)
 }
 
 export function isUnitOnActionArrivalCell(

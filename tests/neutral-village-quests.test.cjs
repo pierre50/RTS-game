@@ -8,6 +8,9 @@ function fixture() {
   const sounds = []
   const { NeutralVillageQuests } = loadTsModule('app/services/quests/NeutralVillageQuests.ts', {
     mocks: {
+      '../../classes/map/BanditCampGeneration': {
+        placeOutdoorBanditQuestCamp: () => assert.fail('Bandit generation is covered by bandit-camp-quest.test.cjs'),
+      },
       '../../lib/audio/sound': { playSoundCue: cue => sounds.push(cue) },
       '../../lib/equipment/equipmentStats': { refreshUnitEquipmentStats() {} },
       '../../lib/lpc': { refreshBakedLpcUnitAssets() {} },
@@ -72,9 +75,13 @@ test('tutorial wood leads to a saved wildlife choice, equipped rewards and condi
   context.map.grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => ({ category: 'Land' })))
   context.map.gaia = { animals: [
     { type: 'Deer', i: 2, j: 2, quantity: 20 },
-    { type: 'BlackGrouse', i: 3, j: 3, quantity: 100 },
+    { label: 'quest-bird', type: 'BlackGrouse', i: 3, j: 3, quantity: 100 },
   ] }
   assert.equal(runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks'), true)
+  runtime.getQuest(chief).encounters = { hunt: {
+    entityLabels: ['quest-bird'], position: { i: 3, j: 3 },
+    parameters: { resource: 'feather', quantity: 3, rewardGold: 0 },
+  } }
   assert.equal(runtime.deliver(chief), true)
   assert.equal(hero.inventory.resources.wood, 10)
   assert.equal(hero.inventory.resources.gold ?? 0, 0)
@@ -86,6 +93,7 @@ test('tutorial wood leads to a saved wildlife choice, equipped rewards and condi
   assert.equal(quest.parameters.resource, 'feather')
   assert.equal(quest.parameters.quantity, 3)
   assert.equal(quest.markers.hunt.length, 1)
+  assert.equal(runtime.getTrackedMarkers('outside', 'region')[0].kind, 'area')
   assert.equal(runtime.deliver(chief), false)
   assert.equal(runtime.interact(chief, 'arrows'), false)
   reload()
@@ -101,6 +109,7 @@ test('tutorial wood leads to a saved wildlife choice, equipped rewards and condi
   assert.equal(runtime.interact(chief, 'arrows'), false)
   assert.equal(hero.inventory.equippedCounts.arrow, 20)
   hero.inventory.resources.feather = 3
+  assert.equal(runtime.getTrackedMarkers('outside', 'region')[0].kind, 'return')
   assert.equal(runtime.deliver(chief), true)
   assert.equal(runtime.getQuest(chief).status, 'active')
   assert.equal(runtime.getQuest(chief).stageId, 'alarm')
@@ -108,6 +117,45 @@ test('tutorial wood leads to a saved wildlife choice, equipped rewards and condi
   assert.equal(hero.inventory.resources.feather, 0)
   assert.equal(hero.inventory.resources.gold ?? 0, 0)
   assert.equal(runtime.interact(chief, 'arrows'), false)
+})
+
+test('tutorial polling creates one encounter, preserves corpses and replenishes only exhausted targets', () => {
+  const { runtime, context, chief, hero } = fixture()
+  chief.i = 5; chief.j = 5
+  context.scheduler.elapsedMs = 0
+  context.player.views = { isVisible: () => false }
+  context.controls.instanceInCamera = () => true
+  const grid = Array.from({ length: 50 }, (_, i) => Array.from({ length: 50 }, (_, j) => ({
+    i, j, category: 'Land', solid: false, has: null,
+  })))
+  context.map.grid = grid
+  const animals = []
+  context.map.gaia = { animals, config: { animals: { Deer: {} } }, createAnimal(options) {
+    const animal = { ...options, label: 'encounter-' + animals.length, quantity: 60 }
+    animals.push(animal)
+    return animal
+  } }
+  runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
+  assert.equal(runtime.deliver(chief), false, 'Waiting for placement does not take the wood')
+  assert.equal(hero.inventory.resources.wood, 20)
+  context.controls.instanceInCamera = () => false
+  const tick = () => { context.scheduler.elapsedMs += 500; runtime.update(false) }
+  for (let i = 0; i < 100 && !runtime.getQuest(chief).encounters?.hunt; i++) tick()
+  assert.equal(animals.length, 3)
+  context.map.grid = new Proxy([], { get() { throw new Error('Valid encounters must not rescan terrain') } })
+  for (let i = 0; i < 20; i++) tick()
+  assert.equal(runtime.deliver(chief), true)
+  animals.forEach(animal => { animal.isDead = true })
+  for (let i = 0; i < 20; i++) tick()
+  assert.equal(animals.length, 3, 'Harvestable corpses are still valid targets')
+  context.map.grid = grid
+  animals.forEach(animal => { animal.quantity = 0; animal.isDestroyed = true })
+  for (let i = 0; i < 100 && animals.length === 3; i++) tick()
+  assert.equal(animals.length, 6)
+  hero.inventory.resources.leather = 3
+  animals.forEach(animal => { animal.quantity = 0; animal.isDestroyed = true })
+  for (let i = 0; i < 20; i++) tick()
+  assert.equal(animals.length, 6, 'No replacement when the objective is already satisfied')
 })
 
 test('old completed tutorial wood can continue without another payment', () => {
@@ -120,7 +168,8 @@ test('old completed tutorial wood can continue without another payment', () => {
   runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
   chief.i = 0; chief.j = 0
   context.map.grid = [[{ category: 'Land' }]]
-  context.map.gaia = { animals: [{ type: 'Deer', i: 0, j: 0, quantity: 100 }] }
+  context.map.gaia = { animals: [{ label: 'legacy-deer', type: 'Deer', i: 0, j: 0, quantity: 100 }] }
+  runtime.getQuest(chief).reservation = { entityLabels: ['legacy-deer'], stageIds: ['wood', 'hunt'] }
   assert.equal(runtime.interact(chief, 'continue'), true)
   assert.equal(hero.inventory.resources.gold, gold)
   assert.equal(hero.inventory.resources.wood, 0)
@@ -224,10 +273,12 @@ test('only neutral chiefs with locally available resources receive an offer', ()
   assert.equal(f.indicators.size, 0)
 })
 
-test('quest buttons work without orders, keep an unaccepted offer, and refresh bag progress', t => {
+test('quest dialogue hides unavailable deliveries and closes after acceptance and completion', t => {
   const previous = global.document
   global.document = {
+    createTextNode: textContent => ({ textContent }),
     createElement: () => ({
+      setAttribute(name, value) { this[name] = value },
       children: [],
       textContent: '',
       hidden: false,
@@ -248,6 +299,7 @@ test('quest buttons work without orders, keep an unaccepted offer, and refresh b
   })
   const { NpcQuestPanel } = loadTsModule('app/ui/NpcQuestPanel.ts')
   const f = fixture()
+  f.hero.inventory.resources.wood = 0
   let closed = 0
   const menu = {
     context: f.context,
@@ -258,25 +310,62 @@ test('quest buttons work without orders, keep an unaccepted offer, and refresh b
     },
   }
   const panel = new NpcQuestPanel(menu, () => {})
-  assert.match(panel.update(f.chief), /15/)
-  assert.equal(panel.root.children.length, 1)
+  assert.match(panel.update(f.chief), /parler/)
+  assert.equal(panel.root.children.length, 2)
   panel.clear()
   assert.equal(closed, 0)
   assert.equal(f.runtime.getQuest(f.chief).status, 'available')
   panel.update(f.chief, true)
   panel.root.children[0].click()
+  assert.equal(f.runtime.getQuest(f.chief).status, 'available')
+  panel.root.children[0].click()
   assert.equal(f.runtime.getQuest(f.chief).status, 'active')
+  assert.equal(closed, 1, 'Accepting ends the conversation immediately')
+  panel.clear() // Reopening must expose the delivery without selecting a topic.
   f.hero.inventory.resources.wood = 3
   panel.update(f.chief)
-  assert.equal(panel.root.children[1].disabled, true)
-  assert.match(panel.root.children[0].textContent, /3\/15/)
-  assert.equal(panel.root.children[0].textContent.includes('{'), false)
+  assert.equal(panel.root.children.length, 1, 'Only the civilization topic remains; no counters or disabled delivery')
+  assert.equal(panel.root.children[0].disabled, false)
   f.hero.inventory.resources.wood = 15
   panel.update(f.chief)
-  assert.equal(panel.root.children[1].disabled, false)
-  panel.root.children[1].click()
+  assert.equal(panel.root.children[0].disabled, false)
+  panel.root.children[0].click()
   assert.equal(f.runtime.getQuest(f.chief).status, 'completed')
-  assert.equal(panel.root.children.length, 0)
+  assert.equal(closed, 2, 'Completion ends the conversation without another menu')
+  panel.clear()
+  panel.update(f.chief, true)
+  assert.equal(panel.root.children.length, 1, 'Completed quests leave only the civilization topic')
+  assert.equal(f.indicators.has(f.chief), false)
+  panel.root.children[0].click()
+  assert.equal(panel.hasTopic(), true, 'Civilization lore remains accessible')
+  panel.clear()
+  f.nextDay(4)
+  panel.update(f.chief, true)
+  assert.equal(f.runtime.getQuest(f.chief).status, 'available')
+  assert.equal(panel.root.children.length, 2, 'A new offer restores the quest topic')
+  assert.equal(f.indicators.get(f.chief), 'exclamation')
+  const offer = f.runtime.getQuest(f.chief)
+  const resource = offer.parameters.resource
+  const quantity = Number(offer.parameters.quantity)
+  f.hero.inventory.resources[resource] = quantity
+  panel.root.children[0].click()
+  const give = panel.root.children[0]
+  assert.match(give.children.at(-1).textContent, /Voici/)
+  // Inventory may change while the dialogue is open; do not accept an impossible delivery.
+  f.hero.inventory.resources[resource] = 0
+  give.click()
+  assert.equal(offer.status, 'available')
+  f.hero.inventory.resources[resource] = quantity
+  panel.update(f.chief, true)
+  const directGive = panel.root.children[0]
+  const previousGold = f.hero.inventory.resources.gold ?? 0
+  directGive.click()
+  assert.equal(offer.status, 'completed', 'One click accepts and delivers an offer already in the bag')
+  assert.equal(f.hero.inventory.resources[resource], 0)
+  assert.equal(f.hero.inventory.resources.gold, previousGold + Number(offer.parameters.rewardGold))
+  assert.equal(closed, 3)
+  directGive.click()
+  assert.equal(f.hero.inventory.resources.gold, previousGold + Number(offer.parameters.rewardGold), 'No duplicate reward')
 })
 
 test('completion grants faction relation once, reports actual gain and announces crossed thresholds', () => {
@@ -531,4 +620,44 @@ test('a sleeping tutorial chief cannot give ammunition or launch the raid on dia
   context.tributeRaids = { triggerTutorialRaid: () => assert.fail('Sleeping conversation must not start a raid') }
   runtime.dialogueClosed(chief)
   assert.equal(quest.facts.raidStarted, undefined)
+})
+
+
+test('tracked minimap destination switches between objective area and the live recipient', () => {
+  const { runtime, chief, hero, context } = fixture()
+  chief.i = 1; chief.j = 2
+  runtime.update()
+  runtime.accept(chief)
+  const quest = runtime.getQuest(chief)
+  quest.markers.delivery = [{ id: 'area', spaceId: 'outside', position: { i: 8, j: 9 }, radius: 8 }]
+  hero.inventory.resources.wood = 0
+  assert.equal(runtime.getTrackedMarkers('outside', 'region')[0].kind, 'area')
+  hero.inventory.resources.wood = 15
+  assert.equal(runtime.getTrackedMarkers('outside', 'region')[0].kind, 'return')
+  chief.i = 3
+  assert.deepEqual(runtime.getTrackedMarkers('outside', 'region')[0].position, { i: 3, j: 2 })
+  assert.deepEqual(runtime.getTrackedMarkers('outside', 'elsewhere'), [])
+  assert.deepEqual(runtime.getTrackedMarkers('cave', 'region'), [])
+  chief.spaceId = 'cave'
+  assert.deepEqual(runtime.getTrackedMarkers('outside', 'region'), [])
+  assert.equal(runtime.getTrackedMarkers('cave', 'region')[0].kind, 'return')
+  chief.spaceId = 'outside'
+  hero.inventory.resources.wood = 0
+  assert.equal(runtime.getTrackedMarkers('outside', 'region')[0].kind, 'area')
+  runtime.system.track(null)
+  assert.deepEqual(runtime.getTrackedMarkers('outside', 'region'), [])
+  runtime.system.track(quest.id)
+  quest.definitionId = 'neutral-bandit-camp'
+  quest.stageId = 'clear-camp'
+  quest.markers = { 'clear-camp': [{ id: 'camp', spaceId: 'outside', position: { i: 8, j: 9 }, radius: 9 }] }
+  assert.equal(runtime.getTrackedMarkers('outside', 'region')[0].id, 'camp')
+  quest.facts.campCleared = true
+  quest.markers = {}
+  assert.equal(runtime.getTrackedMarkers('outside', 'region')[0].kind, 'return')
+  quest.status = 'completed'
+  assert.deepEqual(runtime.getTrackedMarkers('outside', 'region'), [])
+  let redraws = 0
+  context.menu.updateCameraMiniMap = () => redraws++
+  runtime.update(false)
+  assert.equal(redraws, 1, 'quest polling refreshes the overlay even without camera movement')
 })

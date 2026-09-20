@@ -200,3 +200,84 @@ test('lightning does not add darkness during daylight', () => {
 
   assert.equal(system.getEffectiveDarkness(), 0)
 })
+
+test('active cave and building interiors stay dark during daylight and exterior lightning', () => {
+  const system = createLightSystemHarness()
+  system.currentDarkness = 0
+  system.context.weather = { getLightningBrightness: () => 1 }
+  system.context.map.spaces = new Map([
+    ['cave', { id: 'cave', kind: 'interior' }],
+    ['house', { id: 'house', kind: 'interior' }],
+  ])
+  for (const id of ['cave', 'house']) {
+    system.context.map.activeSpaceId = id
+    assert.equal(system.getEffectiveDarkness(), 1)
+    assert.equal(system.currentDarkness, 0)
+  }
+  system.context.map.activeSpaceId = null
+  assert.equal(system.getEffectiveDarkness(), 0)
+})
+
+test('leaving an interior restores the current outdoor dusk or night lighting', () => {
+  const system = createLightSystemHarness()
+  system.context.map.spaces = new Map([['room', { id: 'room', kind: 'interior' }]])
+  for (const darkness of [0, 0.45, 1]) {
+    system.context.map.activeSpaceId = 'room'
+    system.currentDarkness = darkness
+    assert.equal(system.getEffectiveDarkness(), 1)
+    system.context.map.activeSpaceId = null
+    assert.equal(system.getEffectiveDarkness(), darkness)
+  }
+})
+
+test('standalone interior maps also use night lighting', () => {
+  const system = createLightSystemHarness()
+  system.currentDarkness = 0
+  system.context.map.mapType = 'interior'
+  assert.equal(system.getEffectiveDarkness(), 1)
+})
+
+test('refresh prepares interior darkness while the tutorial is paused, before the first render', () => {
+  const system = createLightSystemHarness()
+  system.context.paused = true
+  system.context.map.spaces = new Map([['room', { id: 'room', kind: 'interior' }]])
+  system.context.map.activeSpaceId = 'room'
+  system.currentDarkness = 0
+  system.getScreenRect = () => ({ x: 10, y: 20, width: 1280, height: 720 })
+  const calls = []
+  system.layer = { visible: false, position: { set: (x, y) => calls.push(['position', x, y]) } }
+  system.resizeCanvas = rect => calls.push(['resize', rect.width, rect.height])
+  system.updateLights = elapsed => calls.push(['lights', elapsed])
+  system.draw = () => calls.push(['draw', system.getEffectiveDarkness()])
+
+  system.refresh()
+
+  assert.equal(system.layer.visible, true)
+  assert.equal(system.currentDarkness, 0)
+  assert.deepEqual(calls, [['position', 10, 20], ['resize', 1280, 720], ['lights', 0], ['draw', 1]])
+  system.context.map.activeSpaceId = null
+  system.refresh()
+  assert.equal(system.layer.visible, false)
+})
+
+test('resizing the night overlay keeps it full-screen on the first frame after a zoom change', async () => {
+  const { Sprite, Texture, TextureSource } = await import('pixi.js')
+  const system = createLightSystemHarness()
+  system.canvas = { width: 1946, height: 1536 }
+  system.texture = new Texture({ source: new TextureSource({ width: 1946, height: 1536 }), dynamic: true })
+  system.sprite = new Sprite(system.texture)
+  try {
+    for (const [width, height] of [[973, 768], [1946, 1536], [1297.5, 1024]]) {
+      system.resizeCanvas({ x: 0, y: 0, width, height })
+      // Drawing uploads the canvas after sizing the sprite, as in the first reveal.
+      system.texture.source.resize(system.canvas.width, system.canvas.height)
+      assert.equal(system.texture.width, Math.ceil(width))
+      assert.equal(system.texture.height, Math.ceil(height))
+      assert.ok(Math.abs(system.sprite.width - width) < 0.000001)
+      assert.ok(Math.abs(system.sprite.height - height) < 0.000001)
+    }
+  } finally {
+    system.sprite.destroy()
+    system.texture.destroy(true)
+  }
+})

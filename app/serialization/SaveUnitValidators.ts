@@ -42,6 +42,17 @@ export function validatePlayerUnits(units: unknown[], playerIndex: number, size:
   units.forEach((unit, unitIndex) => {
     validateEntityPosition(unit, size, `player ${playerIndex} unit ${unitIndex}`)
     validateSavedUnitOrders(unit)
+    if (unit.dailySchedule != null) {
+      const schedule = unit.dailySchedule
+      if (!isObject(schedule)) fail('Invalid save file: dailySchedule is invalid.')
+      const minutes = ['wakeMinute', 'workStartMinute', 'workEndMinute', 'bedMinute'].map(key => schedule[key])
+      if (minutes.some(value => typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value >= 1440)) {
+        fail('Invalid save file: dailySchedule minutes are invalid.')
+      }
+      if (minutes.some((value, index) => index > 0 && (value as number) <= (minutes[index - 1] as number))) {
+        fail('Invalid save file: dailySchedule phases are out of order.')
+      }
+    }
     if (unit.factionExpedition != null) {
       const expedition = unit.factionExpedition
       if (

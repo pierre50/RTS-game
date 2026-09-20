@@ -148,6 +148,11 @@ export function playSleepingOutsideVisual(unit: UnitEntity, onComplete?: () => v
 }
 
 export function setSleepingOutsideFinalVisual(unit: UnitEntity): void {
+  // Scripted openings can freeze a newly spawned unit while its fade is still paused.
+  // The sleeping pose must be fully visible before the scene is revealed.
+  cancelFade(unit)
+  unit.alpha = 1
+  unit.visible = true
   setSleepVisualState(unit, 'sleeping')
   setUnitVisualSheet(unit, SHEET_TYPES.dying, {
     loop: false,

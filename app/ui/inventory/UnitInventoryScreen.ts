@@ -1,18 +1,20 @@
-import { createInventoryContainer } from '../../lib/inventory/inventoryContainers'
+import type { Modal } from '../../lib'
 import {
   getUnitCorpseLootEquipment,
   getUnitCorpseLootResources,
   pickupCorpseEquipment,
   pickupCorpseResource,
 } from '../../lib/equipment/equipmentLoot'
+import { createInventoryContainer } from '../../lib/inventory/inventoryContainers'
 import { t } from '../../lib/lang'
+import { getUnitBagTitle, getUnitResourceCarryRemaining } from '../../lib/resources/resourceDelivery'
+import type { UnitEntity } from '../../types/entities'
 import { createTitledEntityInfoContent } from '../EntityInfoContent'
 import { createInspectionModal } from '../InspectionPanel'
-import { getEntityDisplayName } from '../utils/entityDisplayName'
-import { InventoryTransferPanel } from './InventoryTransferPanel'
-import type { UnitEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
-import type { Modal } from '../../lib'
+import { getEntityDisplayName } from '../utils/entityDisplayName'
+import { createHeroBagContainer } from './HeroBagContainer'
+import { InventoryTransferPanel } from './InventoryTransferPanel'
 
 /** The same character inventory screen serves conversations and corpse inspection. */
 export class UnitInventoryScreen {
@@ -44,17 +46,26 @@ export class UnitInventoryScreen {
     this.element.replaceChildren(content)
     if (!hero || unit.isDestroyed) return
 
-    const source = createInventoryContainer(hero, { id: hero.label, labelKey: 'inventoryYourBag' })
+    const source = createHeroBagContainer(hero, menu)
     const destination = unit.isDead
       ? {
           id: unit.label,
-          labelKey: 'inventoryBag',
+          labelKey: 'inventoryNpcBag',
+          label: t('inventoryNpcBag', { name: getEntityDisplayName(unit) }),
           inventory: {
             equipment: getUnitCorpseLootEquipment(unit),
             resources: getUnitCorpseLootResources(unit),
           },
         }
-      : createInventoryContainer(unit, { id: unit.label, labelKey: 'inventoryBag' })
+      : createInventoryContainer(unit, {
+          id: unit.label,
+          labelKey: 'inventoryNpcBag',
+          label: getUnitBagTitle(unit, getEntityDisplayName(unit)),
+          maxAcceptableResourceAmount: () => getUnitResourceCarryRemaining(unit),
+          onResourceRejected: () => menu.showMessage(t('unitResourceCarryFull'), 'warning'),
+          canAcceptEquipment: () => getUnitResourceCarryRemaining(unit) > 0,
+          onEquipmentRejected: () => menu.showMessage(t('unitResourceCarryFull'), 'warning'),
+        })
     const transfer = new InventoryTransferPanel({
       context: menu.context,
       source,
@@ -67,7 +78,11 @@ export class UnitInventoryScreen {
             moveResource: (_from, _to, resource, amount) => pickupCorpseResource(unit, hero, resource, amount),
           }
         : {}),
-      onChange: () => menu.updateHeroStatus?.(hero),
+      onChange: () => {
+        source.label = getUnitBagTitle(hero)
+        if (!unit.isDead) destination.label = getUnitBagTitle(unit, getEntityDisplayName(unit))
+        menu.updateHeroStatus?.(hero)
+      },
     })
     const info = content.classList.contains('selection-info') ? content : content.querySelector('.selection-info')
     ;(info ?? content).appendChild(transfer.element)

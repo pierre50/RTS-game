@@ -5917,7 +5917,6 @@ test('depleted berrybushes stay on the map as empty bushes', () => {
     ['feedback', 'villager-1', 1],
     ['updateInfo', 'quantityText', 0],
     ['updateTexture'],
-    ['message', 'berrybushDepleted', 'warning'],
     ['affectNewDest'],
   ])
 })
@@ -6197,7 +6196,7 @@ test('farm orders stay quiet when immature wheat is outside the camera', () => {
   assert.deepEqual(messages, [])
 })
 
-test('berry orders warn when the bush is depleted', () => {
+test('berry orders stay quiet when the bush is depleted', () => {
   const berrybush = {
     label: 'berrybush-1',
     family: constants.FAMILY_TYPES.resource,
@@ -6233,7 +6232,7 @@ test('berry orders warn when the bush is depleted', () => {
   const started = new UnitCommands(unit).sendToBerrybush(berrybush, true)
 
   assert.equal(started, false)
-  assert.deepEqual(messages, [['berrybushDepleted', 'warning']])
+  assert.deepEqual(messages, [])
 })
 
 test('berry orders stay quiet when the depleted bush is outside the camera', () => {

@@ -31,7 +31,6 @@ type LoadingScreenLike = {
 
 export type GameBootFlowHost = {
   _campaignSave: CampaignSave | null
-  _isRestarting: boolean
   _loadingScreen?: LoadingScreenLike | null
   _lastSavedRecord?: SaveRecord | null
   _restartSaveData: SaveRecord | null
@@ -42,6 +41,7 @@ export type GameBootFlowHost = {
   _restoreTutorial?(): Promise<void>
   _showTutorial?(): void
   _startTutorial?(): void
+  _refreshSceneLighting?(): void
   _showIntroduction?(): void
   _startIntroduction?(): void
   _acquireWakeLock(): Promise<void>
@@ -111,6 +111,7 @@ async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero =
     if (booted && reveal) {
       showGame()
       game.context.controls?.focusHeroCamera?.()
+      game._refreshSceneLighting?.()
       game.context.app.render()
       await game._yieldToBrowser()
       await reveal()
@@ -119,6 +120,7 @@ async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero =
         blockInput: true,
         beforeReveal: () => {
           game.context.controls?.focusHeroCamera?.()
+          game._refreshSceneLighting?.()
           game.context.app.render()
         },
       })
@@ -181,25 +183,6 @@ export async function loadGameRuntime(game: GameBootFlowHost, json: SaveRecord):
   }
 }
 
-export async function restartGameRuntime(game: GameBootFlowHost): Promise<void> {
-  if (game._isRestarting || !game._restartSaveData) return
-  game._isRestarting = true
-  game._destroyRuntime()
-  applyConfiguredSpeed(game)
-  await showLoadingScreen(game, 'generatingTerrain')
-  let booted = false
-  try {
-    await game._bootFromSave(currentCampaignWorld(game))
-    booted = true
-  } finally {
-    try {
-      await finishBoot(game, booted)
-    } finally {
-      game._isRestarting = false
-    }
-  }
-}
-
 /** One transition for both checkpoint recovery and the scripted tutorial ending. */
 export async function recoverGameAfterDefeat(game: GameBootFlowHost, tutorialEnding = false): Promise<void> {
   const checkpoint = tutorialEnding ? null : structuredClone(game._lastSavedRecord ?? game._restartSaveData)
@@ -234,6 +217,7 @@ export async function recoverGameAfterDefeat(game: GameBootFlowHost, tutorialEnd
     game._showTutorial?.()
     game.context.menu?.show?.()
     game.context.controls?.focusHeroCamera?.()
+    game._refreshSceneLighting?.()
     game.context.app.render()
   }, { blockInput: true })
   game.togglePause?.(false, { silent: true })

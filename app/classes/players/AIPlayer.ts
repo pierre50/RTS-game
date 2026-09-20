@@ -14,7 +14,6 @@ import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import { isChiefUnit, isLivingChief } from '../../lib/chief'
 import {
   cleanupAITrackingSets,
-  createAIUnitExtraOptions,
   getApproachableHeroNearChiefAnchor,
   handleAIChiefGuard,
   handleAIVisibleEnemyDefense,
@@ -247,6 +246,7 @@ export class AI extends Player {
       storagepits: this.buildingsByTypes([BUILDING_TYPES.storagePit]),
       markets: this.buildingsByTypes([BUILDING_TYPES.market]),
       watchTowers: this.buildingsByTypes([BUILDING_TYPES.watchTower]),
+      temples: this.buildingsByTypes([BUILDING_TYPES.temple]),
       notBuiltHouses: state.notBuiltHouses,
     }
   }
@@ -254,13 +254,6 @@ export class AI extends Player {
   // Remove depleted resources and destroyed buildings from tracked Sets
   cleanupSets() {
     cleanupAITrackingSets(this)
-  }
-
-  getUnitExtraOptions(type: string) {
-    // Villager flee-vs-fight-back reactions live in the shared evaluateCombatMorale()
-    // (app/lib/combat.ts), which Unit.isAttacked() applies to every player alike — no
-    // AI-specific override needed here.
-    return createAIUnitExtraOptions(this, type, DEBUG)
   }
 
   getBestInfantryUnit() {

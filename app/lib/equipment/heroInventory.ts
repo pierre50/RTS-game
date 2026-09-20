@@ -1,5 +1,13 @@
 import type { UnitEntity } from '../../types/entities'
 
+// Loose items sitting in a bag (distinct from the fixed equipped-gear slots, which only a hero
+// has). These share the unit's single carry-weight pool with resources — see
+// getUnitResourceCarryRemaining in resources/resourceDelivery.ts, which owns the actual capacity
+// number for both heroes and villagers.
+export function getUnitEquipmentBagCount(unit: UnitEntity): number {
+  return unit.inventory?.equipment?.length ?? 0
+}
+
 export function getHeroInventory(hero: UnitEntity): Required<NonNullable<UnitEntity['inventory']>> {
   hero.inventory = hero.inventory ?? {}
   return Object.assign(hero.inventory, {

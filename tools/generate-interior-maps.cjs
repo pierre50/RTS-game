@@ -5,6 +5,7 @@
  * are selected by building type instead of world size/environment. */
 const fs = require('node:fs')
 const path = require('node:path')
+const { createInteriorWalls, writeInteriorWallAtlas } = require('./maps/interior-walls.cjs')
 
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps', 'interiors')
@@ -241,6 +242,7 @@ function buildingInterior({ buildingSize, id, seed, size }) {
     cellCount: terrain.length,
     terrain: encode(terrain),
     relief: encode(relief),
+    walls: createInteriorWalls(floorMask, width, [door]),
     floorMask: encode(floorMask),
     borderMask: encode(borderMask),
     floorShape: {
@@ -256,6 +258,7 @@ function buildingInterior({ buildingSize, id, seed, size }) {
 }
 
 async function main() {
+  writeInteriorWallAtlas()
   let options
   try {
     options = argumentsFrom(process.argv.slice(2))
@@ -337,7 +340,8 @@ async function main() {
 
 module.exports = { buildingInterior }
 
-if (require.main === module) main().catch(error => {
-  console.error(error)
-  process.exitCode = 1
-})
+if (require.main === module)
+  main().catch(error => {
+    console.error(error)
+    process.exitCode = 1
+  })

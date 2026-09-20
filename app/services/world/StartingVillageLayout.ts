@@ -1,3 +1,4 @@
+import { storagePitResources, storagePitSiteScore } from '../../lib/grid/storagePitPlacement'
 import { StartingResourceRelocation } from './StartingResourceRelocation'
 import { planVillageDistricts, type VillageDistrictPlan } from './VillageDistrictPlan'
 import { OfflineWorldSpatial, type OfflineTerrainCell } from './OfflineWorldSpatial'
@@ -16,11 +17,7 @@ export class StartingVillageLayout {
   private readonly placed = new Map<SaveEntityState, SaveEntityState[]>()
   private readonly farmSites = new Map<SaveEntityState, SaveGridPoint[]>()
 
-  constructor(
-    state: SerializedSave,
-    terrain: (OfflineTerrainCell | null | undefined)[][],
-    rules: OfflineWorkRules
-  ) {
+  constructor(state: SerializedSave, terrain: (OfflineTerrainCell | null | undefined)[][], rules: OfflineWorkRules) {
     this.spatial = new OfflineWorldSpatial(
       terrain,
       state,
@@ -140,13 +137,7 @@ export class StartingVillageLayout {
     const plan = this.plan(center)
     const preferred = type ? this.preferredSite(center, type) : anchor
     const distance = (a: SaveGridPoint, b: SaveGridPoint) => Math.hypot(a.i - b.i, a.j - b.j)
-    const deposits =
-      type === 'StoragePit'
-        ? this.movableResources.filter(
-            resource =>
-              ['Tree', 'Stone', 'Gold', 'Copper', 'Iron'].includes(resource.type) && distance(resource, center) <= 35
-          )
-        : []
+    const deposits = type === 'StoragePit' ? storagePitResources(this.movableResources, center) : []
     const protectedResources = [...this.protectedResources]
     const lots: Array<{ point: SaveGridPoint; score: number }> = []
     const before = Math.floor((size - 1) / 2) + 1
@@ -193,24 +184,13 @@ export class StartingVillageLayout {
           displaced * 0.15 +
           breathingRoom * 0.8
         if (type === 'StoragePit' && deposits.length) {
-          // Judge the resource cluster that will remain AFTER this lot is cleared.
-          const surviving = deposits.filter(
-            resource =>
-              resource.i < candidate.i - before ||
-              resource.i > candidate.i + after ||
-              resource.j < candidate.j - before ||
-              resource.j > candidate.j + after
-          )
-          const resourceDistance = surviving.length
-            ? Math.min(...surviving.map(resource => distance(candidate, resource)))
-            : 100
-          const nearby = surviving.filter(resource => distance(candidate, resource) <= 10).length
-          score =
-            resourceDistance * 7 -
-            Math.min(nearby, 25) * 1.5 +
-            distance(candidate, center) * 0.5 +
-            displaced * 2 +
-            breathingRoom
+          // Explicit starting profiles require their depots even if the TownCenter already serves the area.
+          const value = storagePitSiteScore(candidate, center, deposits, [], {
+            required: true,
+            clearance: Math.max(before, after),
+          })
+          if (value === null) continue
+          score = -value + displaced * 2 + breathingRoom
         }
         if (type === 'WatchTower') score += Math.max(0, 13 - distance(candidate, center)) * 5
         lots.push({ point: candidate, score })
@@ -243,8 +223,11 @@ export class StartingVillageLayout {
         resource.j > point.j + after
       )
         continue
-      const moved = this.relocation.move(resource, center, candidate =>
-        Math.abs(candidate.i - point.i) <= radius && Math.abs(candidate.j - point.j) <= radius)
+      const moved = this.relocation.move(
+        resource,
+        center,
+        candidate => Math.abs(candidate.i - point.i) <= radius && Math.abs(candidate.j - point.j) <= radius
+      )
       if (!moved) throw new Error(`No room to relocate ${resource.type} around ${civilization}`)
     }
   }

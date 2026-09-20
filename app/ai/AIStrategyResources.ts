@@ -1,4 +1,4 @@
-import type { AIResourceAmount, AICostResourceName } from './types'
+import type { AIResourceAmount, AICostResourceName, AIStrategyPlayerLike } from './types'
 const RESOURCE_NAMES: AICostResourceName[] = ['wood', 'food', 'gold', 'stone', 'fiber', 'leather']
 export function resourceEntries(cost: AIResourceAmount = {}): [AICostResourceName, number][] {
   return RESOURCE_NAMES.map(resource => [resource, cost[resource]] as [AICostResourceName, number | undefined]).filter(
@@ -12,4 +12,14 @@ export function addResourceAmounts(a: AIResourceAmount, b: AIResourceAmount): AI
     result[resource] = (result[resource] ?? 0) + amount
   }
   return result
+}
+
+export function storageResourcesForAI(ai: AIStrategyPlayerLike) {
+  return [
+    ...(ai.foundedTrees ?? []),
+    ...(ai.foundedGolds ?? []),
+    ...(ai.foundedStones ?? []),
+    ...(ai.foundedCoppers ?? []),
+    ...(ai.foundedIrons ?? []),
+  ]
 }

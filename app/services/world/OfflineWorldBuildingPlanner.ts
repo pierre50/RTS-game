@@ -1,8 +1,12 @@
+import { tryCreateCampChest } from '../../lib/grid/campChestPlacement'
+import { getPlayerResourceStores } from '../../lib/resources/playerResourceTotals'
 import { AI_DIFFICULTIES, MAX_BUILDING_BY_AGE, MAX_BUILDING_BY_AGE_FROZEN } from '../../ai/config'
 import { AGE_UP_ENABLED, BUILDING_TYPES } from '../../constants'
 import { villageBuildingNeeds, villagePhase } from '../../ai/AIDevelopmentPolicy'
 import { getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import { isValidCondition } from '../../lib/combat/configConditions'
+import { isFootprintBuildable } from '../../lib/grid/buildingFootprint'
+import { findStoragePitSite, needsStoragePit } from '../../lib/grid/storagePitPlacement'
 import { getMissingPlayerResources, withdrawChestResources } from '../../lib/resources/playerResourceTotals'
 import { isLiving, OfflineWorldSpatial, type OfflineTerrainCell } from './OfflineWorldSpatial'
 import { isOfflineWorker, savedResourceOwner, stopOfflineTask, type OfflineWorkRules } from './OfflineWorldWork'
@@ -27,7 +31,12 @@ export function restoreOfflineBuilders(state: SerializedSave): void {
   }
 }
 
-function findVillageBuildingSite(anchor: SaveEntityState, size: number, spatial: OfflineWorldSpatial, worker: SaveEntityState) {
+function findVillageBuildingSite(
+  anchor: SaveEntityState,
+  size: number,
+  spatial: OfflineWorldSpatial,
+  worker: SaveEntityState
+) {
   // Keep a free ring around the full footprint for entrances and walking space.
   const radius = Math.ceil(size / 2) + 1
   for (let ring = 4; ring <= 20; ring++) {
@@ -36,16 +45,15 @@ function findVillageBuildingSite(anchor: SaveEntityState, size: number, spatial:
         if (Math.max(Math.abs(di), Math.abs(dj)) !== ring) continue
         const point = { i: anchor.i + di, j: anchor.j + dj }
         if (!spatial.reachable(worker, point)) continue
-        let free = true
-        for (let i = point.i - radius; i <= point.i + radius && free; i++) {
-          for (let j = point.j - radius; j <= point.j + radius; j++) {
-            if (!spatial.naturalCell({ i, j })) {
-              free = false
-              break
-            }
-          }
-        }
-        if (free) return point
+        if (
+          isFootprintBuildable(
+            point,
+            radius,
+            p => spatial.naturalCell(p),
+            p => spatial.elevation(p)
+          )
+        )
+          return point
       }
   }
   return null
@@ -68,14 +76,46 @@ export function planOfflineBuildings(
     player.offlineBuildingPlanDay = day
     player.offlineBuildingDecision = `Day ${day}: no new project needed`
     const workers = (player.units ?? []).filter(isOfflineWorker)
-    if (workers.length < 2) {
+    if (workers.length < 1) {
       player.offlineBuildingDecision = `Day ${day}: not enough workers`
       return
     }
     const buildings = (player.buildings ?? []).filter(isLiving)
-    const center = buildings.find(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt)
+    const center =
+      buildings.find(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt) ??
+      buildings.find(b => b.type === BUILDING_TYPES.chest && b.isBuilt)
+    const createCampChest = () => {
+      const config = rules.buildingConfig(index, BUILDING_TYPES.chest)
+      return tryCreateCampChest({
+        workers,
+        buildings: player.buildings ?? [],
+        resources: state.resources,
+        stocks: getPlayerResourceStores(savedResourceOwner(player, state.players)),
+        woodCost: Number(config.cost?.wood) || 0,
+        terrainAt: p => terrain[p.i]?.[p.j],
+        isFree: p => spatial.naturalCell(p),
+        create: point => {
+          const chest: SaveEntityState = {
+            ...point,
+            type: BUILDING_TYPES.chest,
+            size: 1,
+            label: `camp-chest:${player.label ?? index}:${day}`,
+            isBuilt: true,
+            hitPoints: Number(config.totalHitPoints) || 20,
+            totalHitPoints: Number(config.totalHitPoints) || 20,
+            inventory: { resources: {} },
+          }
+          player.buildings ??= []
+          player.buildings.push(chest)
+          spatial.reserve(chest)
+          player.offlineBuildingDecision = `Day ${day}: built camp chest`
+          return true
+        },
+      })
+    }
     if (!center) {
-      player.offlineBuildingDecision = `Day ${day}: no completed TownCenter`
+      if (!workers.some(w => w.autonomousJob === 'wood' || w.work === 'woodcutter')) workers[0].autonomousJob = 'wood'
+      if (!createCampChest()) player.offlineBuildingDecision = `Day ${day}: waiting for camp supplies`
       return
     }
     let project = buildings.find(b => !b.isBuilt)
@@ -95,6 +135,7 @@ export function planOfflineBuildings(
         phase: player.aiState.phase,
         desiredBarracks: 1,
         buildings,
+        storagePitNeeded: needsStoragePit(state.resources, buildings),
       })
       const priorities = Object.keys(needs).filter(type => needs[type])
       const capsByAge = AGE_UP_ENABLED ? MAX_BUILDING_BY_AGE : MAX_BUILDING_BY_AGE_FROZEN
@@ -133,7 +174,17 @@ export function planOfflineBuildings(
           continue
         }
         const size = Number(config.size) || 0
-        const position = findVillageBuildingSite(center, size, spatial, workers[0])
+        const position =
+          type === BUILDING_TYPES.storagePit
+            ? findStoragePitSite({
+                home: center,
+                size,
+                resources: state.resources,
+                buildings,
+                terrainAt: point => terrain[point.i]?.[point.j],
+                isFree: (point, forBuilding) => spatial.storageSiteFree(point, forBuilding),
+              })
+            : findVillageBuildingSite(center, size, spatial, workers[0])
         if (!position) {
           player.offlineBuildingDecision = `Day ${day}: no safe space for ${type}`
           continue
@@ -162,6 +213,7 @@ export function planOfflineBuildings(
         break
       }
     }
+    if (!project && createCampChest()) return
     if (project) player.offlineBuildingDecision = `Day ${day}: building ${project.type} (${project.label})`
     if (!project || workers.some(unit => unit.autonomousJob === 'construction' || unit.work === 'builder')) return
     const worker = workers.find(unit => spatial.reachable(unit, project!))

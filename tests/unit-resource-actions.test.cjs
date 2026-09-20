@@ -108,7 +108,7 @@ function loadUnitResourceGathering() {
         getResourceKeyForLoadingType: loadingType => loadingType,
         getUnitCarriedResourceAmount: unit => unit.inventory?.resources?.wood ?? 0,
         getUnitResourceCapacityRemaining: () => Number.POSITIVE_INFINITY,
-        unitShouldDeliverResource: (_unit, _loadingType, previousAmount) => previousAmount < 10,
+        unitShouldDeliverResource: unit => (unit.inventory?.resources?.wood ?? 0) >= 30,
       },
       '../../lib/units/unitExperience': {
         getGatherXpBonus: () => 0,
@@ -143,17 +143,17 @@ test('berrybush forage keeps the berry gathering sound', () => {
   assert.equal(captureForageSound('Berrybush'), 'berry-gathering')
 })
 
-test('villagers keep gathering when a delivery batch has no dropoff target', () => {
+test('delivery helper reports failure when a full bag cannot be delivered', () => {
   const { sendVillagerToDeliveryIfFull } = loadUnitResourceGathering()
   const calls = []
   const unit = {
-    inventory: { resources: { wood: 10 } },
+    inventory: { resources: { wood: 30 } },
     owner: { isPlayed: true },
     sendToDelivery: () => false,
     stop: () => calls.push('stop'),
   }
 
-  assert.equal(sendVillagerToDeliveryIfFull(unit, 'wood', 9), false)
+  assert.equal(sendVillagerToDeliveryIfFull(unit, 'wood'), false)
   assert.deepEqual(calls, [])
 })
 
@@ -236,3 +236,37 @@ for (const [type, age, action] of [
     assert.equal(gathering, true, 'reaching the required age restores normal gathering')
   })
 }
+
+test('the final mining hit only grants the remaining stock', () => {
+  const UnitResourceActions = loadUnitResourceActions()
+  let impact
+  let depleted = false
+  const target = {
+    family: 'resource',
+    type: 'Gold',
+    quantity: 1,
+    die: () => {
+      depleted = true
+    },
+  }
+  const unit = {
+    dest: target,
+    action: 'minegold',
+    work: 'goldminer',
+    gatherAmount: { goldminer: 10 },
+    inventory: { resources: {} },
+    sprite: {},
+    getActionCondition: () => target.quantity > 0,
+  }
+  const actions = new UnitResourceActions(unit)
+  actions.prepareLoopingWorkAction = () => true
+  actions.ensureWorkContact = () => true
+  actions.bindWorkImpact = (_frame, callback) => {
+    impact = callback
+  }
+  actions.startGathering('gold', null, { dieOnEmpty: true })
+  impact()
+  assert.equal(unit.inventory.resources.gold, 1)
+  assert.equal(target.quantity, 0)
+  assert.equal(depleted, true)
+})

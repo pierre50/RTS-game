@@ -44,7 +44,6 @@ export type GameRuntimeContextHost = {
   checkDefeat(): boolean
   load(evt: SaveRecord): Promise<void>
   quit(): void
-  restart(): Promise<void>
   save(): { key: string; name: string }
   togglePause(pause: boolean): void
   travelIntoBuildingInterior(building: BuildingEntity): Promise<void>
@@ -89,7 +88,6 @@ export function createGameRuntimeContext(
     resume: () => {
       if (!context.defeat) host.togglePause(false)
     },
-    restart: () => host.restart(),
     quit: () => host.quit(),
     checkDefeat: () => host.checkDefeat(),
     applyZoom: () => host.applyZoom(),

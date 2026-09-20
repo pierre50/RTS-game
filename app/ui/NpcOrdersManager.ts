@@ -8,6 +8,7 @@ import { canShowNpcJobOrder } from './menu/NpcOrderEligibility'
 import { npcTrainingDetail } from './menu/NpcTrainingDetails'
 import { assignVillagerAutonomy } from '../lib'
 import { t } from '../lib/lang'
+import { isUnitBlockedByFullStorage } from '../lib/resources/resourceDelivery'
 import { playUiSound } from '../lib/audio/uiSound'
 import {
   findBestTrainingBuildingForUnit,
@@ -19,7 +20,7 @@ import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { getUnitGender } from '../lib/units/unitIdentity'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
-import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
+import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
 import {
   noticeNpc,
   keepNpcHere,
@@ -30,14 +31,8 @@ import {
 } from '../lib/npc/npcInteraction'
 import { createTitledEntityInfoContent } from './EntityInfoContent'
 import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
-import {
-  pickForeignNpcChatterLine,
-  pickForeignNpcSleepingChatterLine,
-  pickNpcGreetingLine,
-  pickNpcRescueThanksLine,
-  pickNpcRestingChatterLine,
-  pickNpcSleepingChatterLine,
-} from '../lib/npc/npcChatter'
+import { pickNpcRescueThanksLine } from '../lib/npc/npcChatter'
+import { pickNpcRoutineChatterLine } from '../lib/npc/npcRoutineChatter'
 import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
 import { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
 import type { NpcOrdersOpenOptions } from '../types/context'
@@ -84,16 +79,6 @@ const NPC_TRAINING_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 
 
 function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
   return npc?.shelterState?.reason === 'sleep' && npc.sleepVisualState === 'sleeping'
-}
-
-function isRestingBeforeBedNpc(npc: UnitEntity | null | undefined): boolean {
-  return Boolean(
-    npc &&
-      npc.type === UNIT_TYPES.villager &&
-      npc.shelterState?.reason === 'sleep' &&
-      npc.sleepVisualState !== 'sleeping' &&
-      shouldVillagerRestBeforeBed(npc)
-  )
 }
 
 export class NpcOrdersManager {
@@ -206,11 +191,11 @@ export class NpcOrdersManager {
         throw new Error('Invalid dialogue sequence')
     }
     this.scriptedReplyActive = Boolean(dialogue)
-    this.exitButton.hidden = Boolean(dialogue)
     this.scriptedReplyPanel.hidden = !dialogue
     this.scriptedReplyPanel.replaceChildren()
     if (dialogue) this.showDialogueChoices(dialogue, dialogue.startId)
     const hero = this.menu.context.controls?.heroUnit
+    const wasSleeping = npcs.length === 1 && isSleepingNpc(npcs[0])
     if (hero) for (const npc of npcs) noticeNpc(npc, hero, false)
     this.npcs = npcs
     this.opened = true
@@ -222,9 +207,6 @@ export class NpcOrdersManager {
     // Individual information and group composition occupy the same information area.
     this.infoContainer.replaceChildren()
     const soloTarget = npcs.length === 1 ? npcs[0] : null
-    const sleepingSoloTarget = isSleepingNpc(soloTarget)
-    const ownSleepingSoloTarget = sleepingSoloTarget && soloTarget?.owner?.isPlayed === true
-    const restingSoloTarget = isRestingBeforeBedNpc(soloTarget)
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
       this.infoContainer.appendChild(
@@ -255,16 +237,12 @@ export class NpcOrdersManager {
       (rescuedNpcs.length ? pickNpcRescueThanksLine(rescuedNpcs) : null) ??
       options.chatterLine ??
       (soloTarget
-        ? sleepingSoloTarget
-          ? ownSleepingSoloTarget
-            ? pickNpcSleepingChatterLine()
-            : pickForeignNpcSleepingChatterLine()
-          : ordersEnabled
-            ? restingSoloTarget
-              ? pickNpcRestingChatterLine(soloTarget)
-              : pickNpcGreetingLine(this.menu.context.player?.name ?? '')
-            : pickForeignNpcChatterLine(soloTarget)
+        ? pickNpcRoutineChatterLine(soloTarget, hero, {
+            sleeping: wasSleeping,
+            playerName: this.menu.context.player?.name,
+          })
         : null)
+    this.syncExitButtonVisibility()
     if (chatterLine) {
       const chatterSourceNpc = soloTarget ?? rescuedNpcs[0] ?? npcs[0] ?? null
       this.showChatterLine(chatterLine, chatterSourceNpc)
@@ -510,6 +488,11 @@ export class NpcOrdersManager {
 
   syncQuest(): void {
     if (this.opened && !this.scriptedReplyActive) this.questPanel.update(this.npcs.length === 1 ? this.npcs[0] : null)
+    this.syncExitButtonVisibility()
+  }
+
+  private syncExitButtonVisibility(): void {
+    this.exitButton.hidden = this.scriptedReplyActive || this.questPanel.hasTopic()
   }
 
   refreshInventory(): void {
@@ -541,9 +524,17 @@ export class NpcOrdersManager {
     this.buttonsContainer.hidden = !this.ordersEnabled
   }
 
+  private refuseBlockedResourceOrder(): boolean {
+    const blocked = this.npcs.find(isUnitBlockedByFullStorage)
+    if (!blocked) return false
+    this.showChatterLine(t('npcStorageFull'), blocked)
+    return true
+  }
+
   private runOrder(spec: NpcOrderSpec): void {
     if (!this.npcs.length) return
     playUiSound(SOUND_CUES.ui.menuClick)
+    if (NPC_RESOURCE_ORDER_SPECS.some(resource => resource.id === spec.id) && this.refuseBlockedResourceOrder()) return
     const npcs = this.npcs
     if (spec.startsPicking) {
       // Still committed to an order (waiting on the world click) — don't resume old tasks yet.

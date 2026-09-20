@@ -1,4 +1,5 @@
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import { currentMapTerritoryOwner } from '../lib/campaign/mapTerritory'
 import { getEntitySpaceMapLike } from '../lib/mapSpaces'
 import { createTitledEntityInfoContent } from '../ui/EntityInfoContent'
 import { createInspectionModal } from '../ui/InspectionPanel'
@@ -143,6 +144,8 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   async triggerRaid(_options: { source?: 'schedule' | 'dev-console' } = {}): Promise<boolean> {
     if (!this.canStartRaid()) return false
     if (hasActiveBanditCampPresence(this.context)) return false
+    // Bandits demand tribute from whoever holds the land; skip raids on ownerless regions.
+    if (!currentMapTerritoryOwner(this.context)) return false
     return this.createRaid({
       kind: 'bandit',
       owner: this.getOrCreateBanditOwner(),

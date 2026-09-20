@@ -82,6 +82,7 @@ export type UnitTextureInstance = {
   actionFrameSequence?: number[] | null
   action?: string | null
   context: { paused?: boolean }
+  playingBeforePause?: boolean
   currentSheet?: string
   degree: number
   equipment?: string[] | null
@@ -121,7 +122,12 @@ function getWalkingFallbackTexture(
 export function setUnitTexture(sheet: string, instance: UnitTextureInstance): void {
   // Pausing stops animation, not visual synchronization during placement or travel.
   updateUnitTexture(sheet, instance)
-  if (instance.context.paused) instance.sprite.stop()
+  if (instance.context.paused) {
+    // A new sheet can start or cancel work during boot/pause. Resume its intended playback,
+    // not the stopped state observed by a later, repeated pause request.
+    instance.playingBeforePause = Boolean(instance.sprite.playing)
+    instance.sprite.stop()
+  }
 }
 
 function updateUnitTexture(sheet: string, instance: UnitTextureInstance): void {

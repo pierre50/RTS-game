@@ -7,9 +7,8 @@
     "displayPopulation": true,
     "increasePopulation": 4,
     "cost": {
-      "wood": 60,
-      "stone": 15,
-      "leather": 2
+      "wood": 40,
+      "stone": 10
     },
     "sounds": {
       "burning": [
@@ -26,16 +25,15 @@
     "ageStats": {
       "0": {
         "cost": {
-          "wood": 60,
-          "stone": 15,
-          "leather": 2
+          "wood": 40,
+          "stone": 10
         },
         "totalHitPoints": 75
       },
       "1": {
         "cost": {
-          "wood": 80,
-          "stone": 40,
+          "wood": 60,
+          "stone": 30,
           "fiber": 4
         },
         "totalHitPoints": 125
@@ -48,9 +46,8 @@
     "totalHitPoints": 350,
     "constructionTime": 72,
     "cost": {
-      "wood": 200,
-      "stone": 60,
-      "leather": 6
+      "wood": 120,
+      "stone": 40
     },
     "units": [
       "Fantassin"
@@ -70,16 +67,15 @@
     "ageStats": {
       "0": {
         "cost": {
-          "wood": 200,
-          "stone": 60,
-          "leather": 6
+          "wood": 120,
+          "stone": 40
         },
         "totalHitPoints": 350
       },
       "1": {
         "cost": {
-          "wood": 240,
-          "stone": 120,
+          "wood": 180,
+          "stone": 80,
           "fiber": 8
         },
         "totalHitPoints": 550
@@ -92,9 +88,8 @@
     "totalHitPoints": 350,
     "constructionTime": 72,
     "cost": {
-      "wood": 160,
-      "stone": 40,
-      "leather": 4
+      "wood": 50,
+      "stone": 20
     },
     "accept": [
       "berry",
@@ -116,17 +111,16 @@
     "ageStats": {
       "0": {
         "cost": {
-          "wood": 160,
-          "stone": 40,
-          "leather": 4
+          "wood": 50,
+          "stone": 20
         },
         "totalHitPoints": 350
       },
       "1": {
         "cost": {
-          "wood": 200,
-          "stone": 80,
-          "fiber": 6
+          "wood": 80,
+          "stone": 40,
+          "fiber": 4
         },
         "totalHitPoints": 500
       }
@@ -138,8 +132,8 @@
     "totalHitPoints": 350,
     "constructionTime": 72,
     "cost": {
-      "wood": 180,
-      "stone": 100
+      "wood": 60,
+      "stone": 20
     },
     "accept": [
       "wood",
@@ -163,15 +157,15 @@
     "ageStats": {
       "0": {
         "cost": {
-          "wood": 180,
-          "stone": 100
+          "wood": 60,
+          "stone": 20
         },
         "totalHitPoints": 350
       },
       "1": {
         "cost": {
-          "wood": 220,
-          "stone": 160,
+          "wood": 100,
+          "stone": 40,
           "fiber": 4
         },
         "totalHitPoints": 550
@@ -267,7 +261,7 @@
   "WatchTower": {
     "size": 2,
     "sight": 16,
-    "totalHitPoints": 100,
+    "totalHitPoints": 300,
     "constructionTime": 120,
     "range": 6,
     "projectile": "Arrow",
@@ -277,7 +271,7 @@
     "rateOfFire": 1.9,
     "cost": {
       "wood": 60,
-      "stone": 240
+      "stone": 120
     },
     "conditions": [
       {
@@ -365,7 +359,9 @@
       "x": 0.5,
       "y": 0.5
     },
-    "cost": {}
+    "cost": {
+      "wood": 10
+    }
   },
   "Market": {
     "size": 3,
@@ -373,9 +369,8 @@
     "totalHitPoints": 350,
     "constructionTime": 96,
     "cost": {
-      "wood": 180,
-      "stone": 50,
-      "leather": 4
+      "wood": 100,
+      "stone": 40
     },
     "sounds": {
       "burning": [
@@ -392,17 +387,16 @@
     "ageStats": {
       "0": {
         "cost": {
-          "wood": 180,
-          "stone": 50,
-          "leather": 4
+          "wood": 100,
+          "stone": 40
         },
         "totalHitPoints": 350
       },
       "1": {
         "cost": {
-          "wood": 240,
-          "stone": 100,
-          "fiber": 10
+          "wood": 160,
+          "stone": 70,
+          "fiber": 6
         },
         "totalHitPoints": 500
       }
@@ -415,8 +409,7 @@
     "constructionTime": 144,
     "cost": {
       "wood": 140,
-      "stone": 200,
-      "leather": 2
+      "stone": 200
     },
     "units": [
       "Priest"
@@ -437,8 +430,7 @@
       "0": {
         "cost": {
           "wood": 140,
-          "stone": 200,
-          "leather": 2
+          "stone": 200
         },
         "totalHitPoints": 350
       },
@@ -459,9 +451,8 @@
     "constructionTime": 144,
     "increasePopulation": 4,
     "cost": {
-      "wood": 350,
-      "stone": 160,
-      "leather": 8
+      "wood": 150,
+      "stone": 80
     },
     "sounds": {
       "burning": [
@@ -478,17 +469,16 @@
     "ageStats": {
       "0": {
         "cost": {
-          "wood": 350,
-          "stone": 160,
-          "leather": 8
+          "wood": 150,
+          "stone": 80
         },
         "totalHitPoints": 600
       },
       "1": {
         "cost": {
-          "wood": 400,
-          "stone": 260,
-          "fiber": 12
+          "wood": 220,
+          "stone": 100,
+          "fiber": 8
         },
         "totalHitPoints": 950
       }

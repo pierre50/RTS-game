@@ -18,6 +18,17 @@ export function validateQuestJournal(value: unknown): void {
   const ids = new Set<string>()
   for (const quest of value.quests) {
     if (!isObject(quest)) return invalid()
+    if (quest.encounters !== undefined) {
+      if (!isObject(quest.encounters)) return invalid()
+      for (const encounter of Object.values(quest.encounters)) {
+        if (!isObject(encounter) || !Array.isArray(encounter.entityLabels) ||
+          !encounter.entityLabels.every(label => typeof label === 'string' && label.length > 0) ||
+          !isObject(encounter.position) ||
+          ![encounter.position.i, encounter.position.j].every(value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) ||
+          !isObject(encounter.parameters) || !Object.values(encounter.parameters).every(value =>
+            typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value)))) return invalid()
+      }
+    }
     const reservation = quest.reservation
     if (reservation !== undefined && (!isObject(reservation) ||
       !['entityLabels', 'stageIds'].every(key => Array.isArray(reservation[key]) &&

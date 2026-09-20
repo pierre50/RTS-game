@@ -22,6 +22,7 @@ function writePreview(blueprint, file) {
     width = cells * scale
   const floor = Buffer.from(blueprint.floorMask, 'base64')
   const border = Buffer.from(blueprint.borderMask, 'base64')
+  const relief = Buffer.from(blueprint.relief, 'base64')
   const pixels = Buffer.alloc((width * 3 + 1) * width)
   for (let y = 0; y < width; y++)
     for (let x = 0; x < width; x++) {
@@ -29,13 +30,16 @@ function writePreview(blueprint, file) {
         j = Math.floor(x / scale),
         index = i * cells + j
       const exit = blueprint.exits.some(exit => exit.i === i && exit.j === j)
-      const color = exit
-        ? [92, 204, 134]
-        : !floor[index]
-          ? [28, 27, 30]
-          : border[index]
-            ? [80, 71, 62]
-            : [174, 151, 116]
+      const mineral = blueprint.resources?.find(resource => resource.i === i && resource.j === j)
+      const color = mineral
+        ? ({ Gold: [222, 207, 16], Copper: [184, 115, 51], Iron: [140, 155, 175] }[mineral.type] ?? [174, 151, 116])
+        : exit
+          ? [92, 204, 134]
+          : !floor[index]
+            ? [28, 27, 30]
+            : border[index]
+              ? [80, 71, 62]
+              : [174, 151, 116].map(channel => Math.min(255, channel + relief[index] * 20))
       const offset = y * (width * 3 + 1) + 1 + x * 3
       pixels.set(color, offset)
     }

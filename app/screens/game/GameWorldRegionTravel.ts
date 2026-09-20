@@ -43,6 +43,7 @@ export type WorldRegionTravelGame = TravelPartyGame & {
     player?: GameContextLike['player'] | null
     weather?: GameContextLike['weather'] | null
   }
+  _refreshSceneLighting?(): void
   _autosaveCampaign(): void
   _bootFromConfig(config: GameConfig, options?: { dayNightElapsedMs?: number | null }): Promise<void>
   _bootFromSave(json: SerializedSave): Promise<void>
@@ -215,7 +216,10 @@ async function withWorldRegionTransition(game: WorldRegionTravelGame, travel: ()
     game.togglePause?.(true, { silent: true })
     await playBuildingInteriorDoorTransition(travel, {
       blockInput: true,
-      beforeReveal: () => game._gameContext().app.render(),
+      beforeReveal: () => {
+        game._refreshSceneLighting?.()
+        game._gameContext().app.render()
+      },
     })
   } finally {
     const heldMovement = releaseMovement?.()

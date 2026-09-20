@@ -71,7 +71,7 @@ const FOREIGN_NPC_CHATTER_LINES: Record<string, Record<ForeignNpcMood, string[]>
   },
 }
 
-function getForeignNpcMood(unit?: UnitEntity | null): ForeignNpcMood {
+export function getForeignNpcMood(unit?: UnitEntity | null): ForeignNpcMood {
   const factionId = unit?.owner?.factionId
   const relationState = factionId ? unit?.context?.getCampaignFactions?.()?.[factionId]?.relationState : null
   if (relationState === 'wary') return 'wary'
@@ -125,7 +125,7 @@ export function pickNpcRescueThanksLine(npcs: UnitEntity[]): string {
           ]
     )
   }
-  const rescued = getNpcGender(npcs[0]) === 'female' ? 'sauvée' : 'sauvé'
+  const rescued = getUnitGender(npcs[0]) === 'female' ? 'sauvée' : 'sauvé'
   return pickRandomItem(
     getLang() === 'en'
       ? [
@@ -141,53 +141,6 @@ export function pickNpcRescueThanksLine(npcs: UnitEntity[]): string {
           'Merci pour votre aide. Je resterai à vos côtés !',
         ]
   )
-}
-
-type NpcGender = 'male' | 'female'
-type GenderedNpcLines = {
-  shared: string[]
-  male: string[]
-  female: string[]
-}
-
-const NPC_RESTING_CHATTER_LINES: Record<string, GenderedNpcLines> = {
-  fr: {
-    shared: [
-      'Je me pose un moment, chef. Je reprendrai demain.',
-      'Je range mes outils pour ce soir, chef.',
-      'Je garde mes forces pour demain, chef.',
-      'Je souffle un peu avant de dormir, chef.',
-    ],
-    male: [
-      'J’ai assez porté pour aujourd’hui, chef. Je reste près des miens.',
-      'Je souffle un moment, chef. Demain, je reprends avant l’aube.',
-    ],
-    female: ['Je laisse mes mains se reposer ce soir, chef.', 'Je reste près de la maison ce soir, chef.'],
-  },
-  en: {
-    shared: [
-      'I am taking a moment, chief. I will work again tomorrow.',
-      'I am putting my tools away for tonight, chief.',
-      'I am saving my strength for tomorrow, chief.',
-      'Let me rest a little before sleep, chief.',
-    ],
-    male: [
-      'I have carried enough for today, chief. I am staying near my people.',
-      'Let me breathe a moment, chief. I will be ready before dawn.',
-    ],
-    female: ['I am resting my hands tonight, chief.', 'I am staying near home tonight, chief.'],
-  },
-}
-
-function getNpcGender(unit?: UnitEntity | null): NpcGender | null {
-  return getUnitGender(unit)
-}
-
-export function pickNpcRestingChatterLine(unit?: UnitEntity | null): string {
-  const linesByGender = NPC_RESTING_CHATTER_LINES[getLang()] ?? NPC_RESTING_CHATTER_LINES.fr
-  const gender = getNpcGender(unit)
-  const lines = gender ? [...linesByGender.shared, ...linesByGender[gender]] : linesByGender.shared
-  return pickRandomItem(lines)
 }
 
 // Shown when the hero talks to one of their own sleeping units — a short in-character half-asleep

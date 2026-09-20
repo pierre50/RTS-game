@@ -1,8 +1,9 @@
+import { needsStoragePit } from '../lib/grid/storagePitPlacement'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { BUILDING_TYPES, DAILY_CONSUMPTION_PER_VILLAGER, VILLAGER_ARRIVAL_CONFIG } from '../constants'
 import { getPlayerResourceTotals, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import type { AIStrategy } from './AIStrategy'
-import { resourceEntries } from './AIStrategyResources'
+import { resourceEntries, storageResourcesForAI } from './AIStrategyResources'
 import type { AIBuildingLike, AIEntityLike, AIResourceAmount } from './types'
 import {
   expectedVillageArrivals as getExpectedVillagerArrivalWave,
@@ -65,6 +66,7 @@ export function getEconomicDemand(strategy: AIStrategy): AIResourceAmount {
     phase: ai.phase,
     desiredBarracks: strategy.getDesiredBarracksCount(),
     buildings: ai.buildings,
+    storagePitNeeded: needsStoragePit(storageResourcesForAI(ai), ai.buildings),
   })
   const currentBarracks = livingBuildings(ai.buildings, BUILDING_TYPES.barracks).length
   const desiredBarracks = strategy.getDesiredBarracksCount()

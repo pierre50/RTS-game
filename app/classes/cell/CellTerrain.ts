@@ -64,6 +64,7 @@ type TerrainContextLike = {
 }
 
 type TerrainContextMapLike = {
+  mapType?: string
   randomRange(min: number, max: number): number
   registerWaterBorderSurface?: (
     sprite: { texture: Texture; destroyed?: boolean },
@@ -332,19 +333,21 @@ export class CellTerrain {
     const resourceName = parseTextureRef(label).sheet
     const texture = getTextureByFrame(resourceName, reliefIndex, Assets)
 
-    // Relief frames are intentionally transparent. Keep the original flat tile
-    // inside the cell so fog baking and container sorting can never expose the scene.
-    const underlay = new Sprite(baseTexture) as TerrainSprite
-    underlay.type = 'reliefUnderlay'
-    underlay.y = elevation
-    underlay.zIndex = -1
-    underlay.roundPixels = true
-    underlay.eventMode = 'none'
-    underlay.anchor.set(
-      Math.floor(baseTexture.width / 2) / baseTexture.width,
-      Math.floor(baseTexture.height / 2) / baseTexture.height
-    )
-    cell.addChild(underlay)
+    // Outdoor fog baking needs a flat backfill. In interiors it would protrude
+    // beyond the actual ramp silhouette into the surrounding void.
+    if (cell.context.map.mapType !== 'interior') {
+      const underlay = new Sprite(baseTexture) as TerrainSprite
+      underlay.type = 'reliefUnderlay'
+      underlay.y = elevation
+      underlay.zIndex = -1
+      underlay.roundPixels = true
+      underlay.eventMode = 'none'
+      underlay.anchor.set(
+        Math.floor(baseTexture.width / 2) / baseTexture.width,
+        Math.floor(baseTexture.height / 2) / baseTexture.height
+      )
+      cell.addChild(underlay)
+    }
 
     if (elevation) {
       cell.y -= elevation

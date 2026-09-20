@@ -1,0 +1,213 @@
+{
+  "frames": {
+    "000_interior_wall_dirt.png": {
+      "frame": {
+        "x": 1,
+        "y": 17,
+        "w": 33,
+        "h": 117
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 117
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 117
+      }
+    },
+    "001_interior_wall_dirt.png": {
+      "frame": {
+        "x": 44,
+        "y": 33,
+        "w": 65,
+        "h": 101
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 101
+      }
+    },
+    "002_interior_wall_dirt.png": {
+      "frame": {
+        "x": 119,
+        "y": 1,
+        "w": 33,
+        "h": 133
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 133
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 133
+      }
+    },
+    "003_interior_wall_dirt.png": {
+      "frame": {
+        "x": 162,
+        "y": 18,
+        "w": 31,
+        "h": 116
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 31,
+        "h": 116
+      },
+      "sourceSize": {
+        "w": 31,
+        "h": 116
+      }
+    },
+    "004_interior_wall_dirt.png": {
+      "frame": {
+        "x": 203,
+        "y": 33,
+        "w": 33,
+        "h": 101
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 101
+      }
+    },
+    "005_interior_wall_dirt.png": {
+      "frame": {
+        "x": 1,
+        "y": 136,
+        "w": 33,
+        "h": 41
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 41
+      }
+    },
+    "006_interior_wall_dirt.png": {
+      "frame": {
+        "x": 44,
+        "y": 136,
+        "w": 65,
+        "h": 25
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 25
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 25
+      }
+    },
+    "007_interior_wall_dirt.png": {
+      "frame": {
+        "x": 119,
+        "y": 136,
+        "w": 33,
+        "h": 57
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 57
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 57
+      }
+    },
+    "008_interior_wall_dirt.png": {
+      "frame": {
+        "x": 162,
+        "y": 136,
+        "w": 33,
+        "h": 41
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 41
+      }
+    },
+    "009_interior_wall_dirt.png": {
+      "frame": {
+        "x": 203,
+        "y": 136,
+        "w": 33,
+        "h": 25
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 25
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 25
+      }
+    }
+  },
+  "meta": {
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 237,
+      "h": 194
+    },
+    "scale": "1"
+  }
+}

@@ -10,14 +10,14 @@ const VILLAGER_SCHEDULE_VARIANCE_MINUTES = 20
 export const VILLAGE_WAKE_COMPLETE_HOUR = VILLAGER_WAKE_HOUR + VILLAGER_SCHEDULE_VARIANCE_MINUTES / 60
 const VILLAGER_WAKE_WINDOW_START_MINUTE = VILLAGER_WAKE_HOUR * 60 - VILLAGER_SCHEDULE_VARIANCE_MINUTES
 
-type VillagerSchedule = {
+export type VillagerSchedule = {
   bedMinute: number
   workStartMinute: number
   wakeMinute: number
   workEndMinute: number
 }
 
-type ScheduledVillager = Pick<UnitEntity, 'type' | 'i' | 'j'> & { label?: string }
+type ScheduledVillager = Pick<UnitEntity, 'type' | 'i' | 'j'> & { label?: string; dailySchedule?: VillagerSchedule }
 
 function stableScheduleOffset(unit: ScheduledVillager, salt: string): number {
   const value = `${unit.label ?? `${unit.type}:${unit.i}:${unit.j}`}:${salt}`
@@ -37,13 +37,15 @@ function minuteOfDay(context: Pick<GameContextLike, 'dayNight'> | null | undefin
 }
 
 export function getVillagerSchedule(unit: ScheduledVillager): VillagerSchedule {
+  if (unit.dailySchedule) return unit.dailySchedule
   const wakeMinute = VILLAGER_WAKE_HOUR * 60 + stableScheduleOffset(unit, 'wake')
-  return {
+  unit.dailySchedule = {
     bedMinute: VILLAGER_BED_HOUR * 60 + stableScheduleOffset(unit, 'bed'),
     wakeMinute,
     workStartMinute: wakeMinute + VILLAGER_MORNING_LINGER_MINUTES,
     workEndMinute: VILLAGER_SLEEP_START_HOUR * 60 + stableScheduleOffset(unit, 'workEnd'),
   }
+  return unit.dailySchedule
 }
 
 export function shouldVillagerReturnHome(unit: UnitEntity): boolean {
@@ -58,12 +60,6 @@ export function shouldVillagerBeAsleep(unit: UnitEntity): boolean {
   const now = minuteOfDay(unit.context)
   const { bedMinute, wakeMinute } = getVillagerSchedule(unit)
   return now >= bedMinute || now < wakeMinute
-}
-
-export function shouldVillagerRestBeforeBed(unit: UnitEntity): boolean {
-  const now = minuteOfDay(unit.context)
-  const { bedMinute, workEndMinute } = getVillagerSchedule(unit)
-  return now >= workEndMinute && now < bedMinute
 }
 
 export function getMinutesUntilVillagerBed(unit: UnitEntity): number {

@@ -1,3 +1,4 @@
+import { removeHeroInventoryItem } from '../../lib/equipment/heroInventory'
 import { createInventoryContents } from './InventoryContents'
 import { getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
 import { Assets } from 'pixi.js'
@@ -18,6 +19,7 @@ import {
   unequipHeroInventorySlot,
 } from '../../lib/equipment/equipmentLoot'
 import { getPlaceableInventoryBuildingType } from '../../lib/hero/placeableInventoryItems'
+import { getUnitBagTitle } from '../../lib/resources/resourceDelivery'
 import { t } from '../../lib/lang'
 import { BUILDING_TYPES } from '../../constants'
 import { getBuildingAsset } from '../../lib'
@@ -63,16 +65,43 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
     createInventoryContents({
       inventory: hero?.inventory ?? {},
       emptyText: t('inventoryEmptySlot'),
-      title: t('inventoryBag'),
+      title: hero ? getUnitBagTitle(hero) : t('inventoryBag'),
       renderResource: (resource, amount) =>
         createInventoryResourceRow(menu, {
           id: `inventory-resource-${resource}`,
           resource,
           amount,
+          secondaryAction: createBagDeleteAction(host, mode => {
+            const resources = hero?.inventory?.resources
+            const available = resources?.[resource] ?? 0
+            if (!resources || available <= 0) return false
+            const remaining = available - Math.min(available, mode === 'all' ? amount : 1)
+            if (remaining > 0) resources[resource] = remaining
+            else delete resources[resource]
+            return true
+          }),
         }).element,
       renderEquipment: (equipment, count) => createBagEquipmentSlot(host, equipment, count),
     })
   )
+}
+
+function createBagDeleteAction(
+  host: InventoryEquipmentRendererHost,
+  remove: (mode: 'one' | 'all') => boolean
+) {
+  return {
+    label: t('inventoryDeleteAction'),
+    icon: 'trash' as const,
+    title: t('inventoryDeleteHint'),
+    ariaLabel: t('inventoryDeleteHint'),
+    onAction: (mode: 'one' | 'all') => {
+      if (!remove(mode)) return
+      host.menu.updateHeroStatus?.(host.menu.context.controls.heroUnit)
+      host.menu.updateTopbar?.()
+      host.renderTools()
+    },
+  }
 }
 
 function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: string, count: number): HTMLElement {
@@ -138,6 +167,9 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
     equipment: item,
     count,
     icon,
+    secondaryAction: createBagDeleteAction(host, mode =>
+      removeHeroInventoryItem(hero, item, mode === 'all' ? count : 1)
+    ),
     trailingAction: hasAction
       ? {
           disabled: !canUseConsumable && !canPlace && !canEquip,

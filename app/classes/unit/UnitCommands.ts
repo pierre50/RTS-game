@@ -110,13 +110,7 @@ export class UnitCommands {
         canShowTargetAlert(unit, target)
       ) {
         unit.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
-      } else if (
-        action === ACTION_TYPES.forageberry &&
-        target.type === RESOURCE_TYPES.berrybush &&
-        (target.quantity ?? 0) <= 0 &&
-        canShowTargetAlert(unit, target)
-      ) {
-        unit.context?.menu?.showMessage(t('berrybushDepleted'), 'warning')
+
       }
       return false
     }

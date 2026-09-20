@@ -94,6 +94,26 @@ function createBanditOwner() {
   return owner
 }
 
+test('quest camps reuse outdoor fires, furniture, chest and patrol units without a cave', () => {
+  const { placeOutdoorBanditQuestCamp } = loadBanditCampGeneration(() => assert.fail('No cave for quest camps'))
+  const owner = createBanditOwner()
+  owner.units = [{ label: 'existing' }]
+  owner.createUnit = options => {
+    const unit = { ...options, label: 'guard-' + owner.units.length }
+    owner.units.push(unit)
+    return unit
+  }
+  const map = { context: { players: [owner] }, grid: [], randomItem: items => items[0], randomRange: min => min }
+  const guards = placeOutdoorBanditQuestCamp(map, map.context, { i: 30, j: 30 })
+  assert.equal(guards.length, 3)
+  assert.ok(guards.every(unit => unit.banditCampAnchor && unit.campPatrolAnchor))
+  assert.ok(guards.some(unit => unit.type === 'BanditChief'))
+  assert.ok(owner.buildings.some(building => building.type === 'FireCamp'))
+  assert.ok(owner.buildings.some(building => building.type === 'Chest' && building.inventory))
+  assert.ok(owner.buildings.some(building => building.type.startsWith('Camp')))
+  assert.ok(!guards.some(unit => unit.label === 'existing'))
+})
+
 test('bandit camps place a bandit-owned chest with loot', () => {
   const { placeBanditCamps } = loadBanditCampGeneration()
   const owner = createBanditOwner()

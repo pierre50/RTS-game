@@ -21,6 +21,7 @@ const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'berry', 'meat', 'wheat', 'st
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
+  dailySchedule?: UnitEntity['dailySchedule']
   offlineBuilderJob?: SaveEntityState['offlineBuilderJob']
   resourceDeliveryState?: UnitEntity['resourceDeliveryState']
   cave?: CaveDefinition
@@ -70,6 +71,7 @@ type SerializableEntity = RuntimeEntityBase & {
   followingHero?: boolean
   pendingRescueThanks?: boolean
   inactif?: boolean
+  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   isUsedBy?: string | { label?: string } | null
   loading?: number | null
@@ -306,6 +308,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'energy',
       'totalEnergy',
       'lastEnergySpentAt',
+      'dailySchedule',
       'path',
       'work',
       'previousWork',
@@ -381,6 +384,7 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'isDead',
       'isDestroyed',
       'isBuilt',
+      'villagerDeliveriesBlocked',
       'hitPoints',
       'quantity',
       'assetCiv',

@@ -36,7 +36,7 @@ function fixture(gender = 'male') {
   return { ...api, host, context, player, tick() { scheduler.elapsedMs += 1000; for (const fn of [...tasks.values()]) fn() }, finishWake() { wakeComplete() }, getSaved: () => saved, getDialogue: () => dialogue, getOpened: () => opened }
 }
 
-for (const gender of ['male', 'female']) test(`new game creates one allied companion opposite to ${gender}, and one camp`, async () => {
+for (const gender of ['male', 'female']) test(`new game creates one allied companion opposite to ${gender}, and one camp with a chest`, async () => {
   const f = fixture(gender)
   await f.prepareGameIntroduction(f.host)
   assert.equal(f.player.units.length, 2)
@@ -44,7 +44,11 @@ for (const gender of ['male', 'female']) test(`new game creates one allied compa
   assert.equal(f.player.units[1].isChief, false)
   assert.equal(f.context.controls.heroUnit.isChief, false)
   assert.ok(Math.max(Math.abs(f.player.units[1].i - 5), Math.abs(f.player.units[1].j - 5)) >= 3)
-  assert.equal(f.player.buildings.length, 1)
+  assert.equal(f.player.buildings.length, 2)
+  const [camp, chest] = f.player.buildings
+  assert.equal(chest.type, 'Chest')
+  assert.equal(chest.i, camp.i)
+  assert.equal(chest.j, camp.j - 2)
   assert.equal(f.context.paused, true)
   assert.equal(f.getSaved().campaign.introduction.status, 'prepared')
   assert.deepEqual(f.getSaved().unitLabels, ['hero', 'companion'])

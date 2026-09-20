@@ -164,6 +164,16 @@ function loadHeadlessImport(request, parent, isMain, originalLoad) {
       }
     }
     if (request === '../../lib/grid/queries') return { hasWaterBorderWithin }
+    if (request === '../../lib/terrain/reliefAppearance') {
+      const { loadGenerationTs } = require('./load-generation-ts.cjs')
+      const { getReliefAppearance } = loadGenerationTs('app/lib/terrain/reliefAppearance.ts')
+      const { CELL_DEPTH } = loadGenerationTs('app/constants/relief.ts')
+      // Blueprints store fractions of a terrain level; runtime rendering uses pixels.
+      return { getReliefAppearance: flags => {
+        const appearance = getReliefAppearance(flags)
+        return appearance && { ...appearance, elevation: appearance.elevation / CELL_DEPTH }
+      } }
+    }
     if (request === '../../constants') return constants
     if (request === '../../lib/terrain/topology') {
       return {

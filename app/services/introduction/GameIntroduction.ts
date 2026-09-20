@@ -6,7 +6,7 @@ import { getInstanceDegree } from '../../lib/maths'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { setSleepingOutsideFinalVisual, playSleepingWakeVisual } from '../rest/UnitSleepVisuals'
 import { setUnitOverheadIndicator, clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import { findIntroductionPlacement } from './IntroductionPlacement'
+import { findIntroductionPlacement, findChestPlacement } from './IntroductionPlacement'
 import type { GameContextLike } from '../../types/context'
 import type { CampaignSave } from '../../types/save'
 
@@ -17,7 +17,7 @@ type IntroductionHost = {
   togglePause(paused: boolean, options?: { silent?: boolean }): void
 }
 
-/** Called only by new-game boot, never by travel, load or restart. */
+/** Called only by new-game boot, never by travel or load. */
 export async function prepareGameIntroduction(host: IntroductionHost): Promise<void> {
   const campaign = host._campaignSave
   if (!campaign || campaign.introduction) return
@@ -42,6 +42,10 @@ export async function prepareGameIntroduction(host: IntroductionHost): Promise<v
     j: placement.camp.j,
     isBuilt: true,
   })
+  const campSize = Number(player.config.buildings[BUILDING_TYPES.fireCamp]?.size ?? 1)
+  const chestSize = Number(player.config.buildings[BUILDING_TYPES.chest]?.size ?? 1)
+  const chestPoint = findChestPlacement(map, placement.camp, campSize, chestSize)
+  if (chestPoint) player.createBuilding({ type: BUILDING_TYPES.chest, i: chestPoint.i, j: chestPoint.j, isBuilt: true })
   const companion = player.createUnit(
     {
       type: UNIT_TYPES.villager,
@@ -53,6 +57,9 @@ export async function prepareGameIntroduction(host: IntroductionHost): Promise<v
     },
     { preserveType: true }
   )
+  // createUnit doesn't bump population itself (unlike building-trained units) — do it here so
+  // the starting village isn't reported as empty (e.g. offline-economy summaries, alerts).
+  player.population = (player.population ?? 0) + 1
   hero.stop?.()
   companion.stop?.()
   companion.degree = getInstanceDegree(companion, hero.x, hero.y)

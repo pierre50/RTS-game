@@ -148,7 +148,6 @@ function workHarness(action, target, hero = false) {
         isResourceEntity: Boolean,
         isFarmHarvestTarget: Boolean,
         isBuildingEntity: Boolean,
-        showDepletedBerrybushMessage: () => {},
         getGatherAmount: () => 1,
         shouldReleaseGatheredResource: () => true,
         getCarriedResourceAmountForLoadingType: () => 0,

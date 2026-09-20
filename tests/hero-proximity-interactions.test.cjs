@@ -49,20 +49,10 @@ function loadHeroProximityInteractions(overrides = {}) {
         getMapSpace: (map, spaceId) => map?.spaces?.get?.(spaceId) ?? null,
         isOutsideSpaceId: spaceId => !spaceId || spaceId === 'outside',
       },
-      '../npc/npcChatter': {
-        pickForeignNpcChatterLine: () => 'foreign chatter',
-        pickNpcChatterLine: () => 'friendly chatter',
-        pickNpcRestingChatterLine: () => 'resting chatter',
-      },
       '../npc/npcInteraction': {
         isTalkableNpc: (_hero, target) => target?.talkable === true,
       },
-      '../units/villagerSchedule': {
-        shouldVillagerRestBeforeBed: unit => {
-          const hour = unit?.context?.dayNight?.state?.hour ?? 12
-          return hour >= 18 && hour < 22
-        },
-      },
+
       './heroCampfireSleep': {
         isUsableFireCamp: (_hero, building) => building?.type === 'FireCamp' && building.reachable !== false,
       },
@@ -612,12 +602,12 @@ test('hero proximity interaction disables npc orders when the hero cannot comman
   assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: npc }), {
     action: 'communicate',
     labelKey: 'heroInteractionCommunicate',
-    npcOptions: { chatterLine: 'friendly chatter', ordersEnabled: false },
+    npcOptions: { ordersEnabled: false },
     target: npc,
   })
 })
 
-test('hero proximity interaction uses rest chatter for own villagers resting before bed', () => {
+test('hero proximity interaction defers evening chatter selection to the panel', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const owner = { isPlayed: true }
   const npc = {
@@ -638,7 +628,7 @@ test('hero proximity interaction uses rest chatter for own villagers resting bef
   assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: npc }), {
     action: 'communicate',
     labelKey: 'heroInteractionCommunicate',
-    npcOptions: { chatterLine: 'resting chatter', ordersEnabled: false },
+    npcOptions: { ordersEnabled: false },
     target: npc,
   })
 })
@@ -661,7 +651,7 @@ test('hero proximity interaction disables npc orders for foreign talkable npcs',
     {
       action: 'communicate',
       labelKey: 'heroInteractionCommunicate',
-      npcOptions: { chatterLine: 'foreign chatter', ordersEnabled: false },
+      npcOptions: { ordersEnabled: false },
       target: npc,
     }
   )

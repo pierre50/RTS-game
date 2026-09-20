@@ -1,3 +1,6 @@
+import { ensureCaveMinerals } from './BuildingInteriorSpaceMinerals'
+import { formatTerrainReliefCells } from '../../app/classes/map/terrain/MapTerrainReliefAppearance'
+import { addInteriorWalls } from '../../app/lib/graphics/interiorWalls'
 import type { ContainerChild } from 'pixi.js'
 import { Cell } from '../../app/classes/cell'
 import { createSquareLocalBlueprint } from '../../app/classes/map/generation/LocalMapBlueprint'
@@ -117,6 +120,9 @@ function buildInteriorSpaceCells(
     }
   }
 
+  formatTerrainReliefCells({ size: blueprint.size, grid })
+  addInteriorWalls(blueprint, renderer.entityLayer)
+
   if (!exitCell) exitCell = grid[center]?.[center] ?? walkableCells[0] ?? null
   const idleCells = sortCellsForSleep(
     walkableCells.filter(cell => cell !== exitCell),
@@ -195,6 +201,7 @@ export function ensureBuildingInteriorSpace(
   map.spaces?.set(id, space)
   map.addChild(renderer)
   ensureInteriorDefaultBuildings(context, space)
+  ensureCaveMinerals(context, space, blueprint)
   syncStableInteriorHorses(context, space)
   return space
 }

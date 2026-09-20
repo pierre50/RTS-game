@@ -1,5 +1,5 @@
 import { findNearestMountableHorse } from './heroMountTargets'
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
@@ -9,9 +9,7 @@ import { heroCanCommand } from '../chief'
 import { isNeutralPlayer } from '../playerState'
 import { instanceIsInActiveOrTeamSight } from '../grid/visibility'
 import { isStoredForeignStableHorse } from '../horses/stableHorseInteraction'
-import { pickForeignNpcChatterLine, pickNpcChatterLine, pickNpcRestingChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
-import { shouldVillagerRestBeforeBed } from '../units/villagerSchedule'
 import { isUsableFireCamp } from './heroCampfireSleep'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
@@ -124,15 +122,6 @@ function isCommandableNpc(hero: UnitEntity, target: UnitEntity): boolean {
   return target.action !== ACTION_TYPES.attack
 }
 
-function isRestingBeforeBedNpc(unit: UnitEntity): boolean {
-  return Boolean(
-    unit.type === UNIT_TYPES.villager &&
-      unit.shelterState?.reason === 'sleep' &&
-      unit.sleepVisualState !== 'sleeping' &&
-      shouldVillagerRestBeforeBed(unit)
-  )
-}
-
 export function resolveHeroNpcProximityInteraction(
   hero: UnitEntity | null,
   target: RuntimeEntity | null | undefined
@@ -142,23 +131,11 @@ export function resolveHeroNpcProximityInteraction(
   if (isCommandableNpc(hero, unit)) {
     return { action: 'communicate', labelKey: 'heroInteractionCommunicate', target: unit }
   }
-  const sleeping = unit.shelterState?.reason === 'sleep' && unit.sleepVisualState === 'sleeping'
-  const resting = !sleeping && unit.owner === hero.owner && isRestingBeforeBedNpc(unit)
   return {
     action: 'communicate',
     labelKey: 'heroInteractionCommunicate',
-    npcOptions: {
-      // Leave it unset while asleep — NpcOrdersManager.open already picks the right "Zzz..." line
-      // for an own vs. a foreign sleeper, which this precomputed line would otherwise override.
-      chatterLine: sleeping
-        ? undefined
-        : unit.owner === hero.owner
-          ? resting
-            ? pickNpcRestingChatterLine(unit)
-            : pickNpcChatterLine()
-          : pickForeignNpcChatterLine(unit),
-      ordersEnabled: false,
-    },
+    // The panel chooses the line using the current phase at interaction time.
+    npcOptions: { ordersEnabled: false },
     target: unit,
   }
 }

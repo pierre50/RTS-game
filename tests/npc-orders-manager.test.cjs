@@ -50,6 +50,7 @@ function makeFakeElement() {
     disabled: false,
     hidden: false,
     _listeners: {},
+    setAttribute(name, value) { this[name] = value },
     appendChild(child) {
       this.children.push(child)
       return child
@@ -120,6 +121,9 @@ function buildMocks(calls, context) {
       Modal: FakeModal,
     },
     '../lib/lang': { t: key => key },
+    '../lib/resources/resourceDelivery': {
+      isUnitBlockedByFullStorage: npc => npc.storageBlocked === true,
+    },
     '../lib/audio/settings': { getVolume: () => 1 },
     '../lib/audio/uiSound': { playUiSound: () => {} },
     '../lib/inventory/inventoryContainers': {
@@ -218,12 +222,14 @@ function buildMocks(calls, context) {
       },
     },
     '../lib/npc/npcChatter': {
-      pickForeignNpcChatterLine: () => 'foreign hi',
-      pickNpcGreetingLine: () => 'hi',
       pickNpcRescueThanksLine: npcs => (npcs.length > 1 ? 'thanks from everyone' : 'thanks for saving me'),
-      pickNpcRestingChatterLine: () => 'resting chatter',
-      pickNpcSleepingChatterLine: () => 'sleepy chatter',
-      pickForeignNpcSleepingChatterLine: () => 'foreign sleepy chatter',
+    },
+    '../lib/npc/npcRoutineChatter': {
+      pickNpcRoutineChatterLine: (unit, _hero, options) => {
+        if (options.sleeping) return unit.owner?.isPlayed ? 'sleepy chatter' : 'foreign sleepy chatter'
+        if (!unit.owner?.isPlayed) return 'foreign hi'
+        return unit.shelterState?.reason === 'sleep' ? 'resting chatter' : 'hi'
+      },
     },
     './inventory/UnitInventoryScreen': {
       UnitInventoryScreen: class {
@@ -252,7 +258,7 @@ function withFakeDocument(fn) {
   global.window = global.window || {}
   global.window.setTimeout = callback => { callback(); return 1 }
   const restore = () => { global.Audio = previousAudio; global.window.setTimeout = previousTimeout; delete global.document }
-  global.document = { createElement: () => makeFakeElement() }
+  global.document = { createElement: () => makeFakeElement(), createTextNode: text => ({ textContent: text }) }
   try {
     const result = fn()
     if (result && typeof result.then === 'function') {
@@ -373,6 +379,32 @@ test('picking a villager-job order assigns it without pausing or resuming the ga
     foodButton.click()
 
     assert.deepEqual(calls, [['assignVillagerAutonomy', 'food', 'paused=false']])
+  })
+})
+
+test('full-storage refusal keeps communication open and rechecks before assigning resources', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager({ context })
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player, storageBlocked: true }
+    manager.open([npc])
+    assert.equal(manager.chatterContainer.children[0].textContent, 'hi')
+    manager.buttons.get('resources').click()
+    assert.equal(manager.buttons.get('wood').hidden, false)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'hi')
+    assert.equal(manager.isOpen(), true)
+    assert.deepEqual(calls, [])
+
+    manager.buttons.get('wood').click()
+    assert.equal(manager.chatterContainer.children[0].textContent, 'npcStorageFull')
+    assert.equal(manager.isOpen(), true)
+    assert.deepEqual(calls, [])
+    npc.storageBlocked = false
+    manager.buttons.get('wood').click()
+    assert.equal(manager.isOpen(), false)
+    assert.deepEqual(calls, [['assignVillagerAutonomy', 'wood', 'paused=false']])
   })
 })
 
@@ -829,7 +861,7 @@ test('neutral chief quest choices remain visible when the hero cannot issue orde
     assert.equal(manager.buttonsContainer.hidden, true)
     assert.equal(manager.questPanel.root.hidden, false)
     assert.equal(manager.questPanel.root.children.length, 1)
-    assert.equal(manager.chatterContainer.children[0].textContent, 'questResourceOffer')
+    assert.equal(manager.chatterContainer.children[0].textContent, 'npcTopicsPrompt')
     manager.close()
     assert.equal(manager.questPanel.root.hidden, true)
     assert.deepEqual(closed, [npc])
@@ -943,7 +975,7 @@ test('sleeping chief shows sleep dialogue without quest choices until the actual
     npc.sleepVisualState = null
     manager.syncQuest()
     assert.equal(manager.questPanel.root.hidden, false)
-    assert.equal(manager.chatterContainer.children[0].textContent, 'questResourceOffer')
+    assert.equal(manager.chatterContainer.children[0].textContent, 'npcTopicsPrompt')
     manager.close()
   })
 })
@@ -992,3 +1024,97 @@ for (const branch of ['polite', 'rebel']) {
     })
   })
 }
+
+test('the panel selects real morning, evening and job chatter independently of order visibility', () => {
+  withFakeDocument(() => {
+    const routine = loadModule('app/lib/npc/npcRoutineChatter.ts', {
+      '../lang': { getLang: () => 'fr' },
+      '../random': { pickRandomItem: lines => lines[0] },
+    })
+    for (const [hour, chief, own, expected] of [
+      [6, false, true, /calme du matin/],
+      [6, true, true, /réveille doucement, chef/],
+      [19, false, false, /journée est terminée/],
+      [19, true, false, /visites des chefs/],
+      [12, true, true, /cuivre, chef/],
+      [12, false, false, /cuivre\. Les artisans/],
+    ]) {
+      const calls = []
+      const context = makeContext(calls)
+      context.dayNight.state = { hour, minute: 30 }
+      context.controls.heroUnit = { type: 'Hero', isChief: chief, owner: context.player }
+      const mocks = buildMocks(calls, context)
+      mocks['../lib/npc/npcRoutineChatter'] = routine
+      const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
+      const manager = new NpcOrdersManager({ context })
+      const npc = {
+        type: 'Villager', label: 'routine-speaker', i: 0, j: 0, context,
+        owner: own ? context.player : { isPlayed: false }, autonomousJob: 'copper',
+        dailySchedule: { wakeMinute: 360, workStartMinute: 420, workEndMinute: 1080, bedMinute: 1320 },
+      }
+      manager.open([npc], { ordersEnabled: false })
+      assert.match(manager.chatterContainer.children[0].textContent, expected)
+      manager.close()
+    }
+  })
+})
+
+test('the panel captures sleeping status before conversation focus wakes the NPC', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.controls.heroUnit = { type: 'Hero', isChief: true, owner: context.player }
+    const mocks = buildMocks(calls, context)
+    mocks['../lib/npc/npcInteraction'].noticeNpc = unit => { unit.sleepVisualState = null; unit.shelterState = null }
+    let captured
+    mocks['../lib/npc/npcRoutineChatter'].pickNpcRoutineChatterLine = (_unit, hero, options) => {
+      captured = { hero, ...options }
+      return 'waking greeting'
+    }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
+    const manager = new NpcOrdersManager({ context })
+    manager.open([{ type: 'Villager', owner: context.player, shelterState: { reason: 'sleep' }, sleepVisualState: 'sleeping' }])
+    assert.equal(captured.sleeping, true)
+    assert.equal(captured.hero, context.controls.heroUnit)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'waking greeting')
+  })
+})
+
+test('quest return exposes delivery immediately and shows the next instruction after one click', () => {
+  withFakeDocument(() => {
+    const context = makeContext([])
+    const quest = { id: 'quest', definitionId: 'tutorial', status: 'active', stageId: 'wood', parameters: { resource: 'wood', quantity: 10 }, owner: { name: 'Chief' } }
+    const delivery = { id: 'deliver', text: { key: 'giveWood' }, visibleWhen: [], nextStageId: 'hunt' }
+    const arrows = { id: 'arrows', text: { key: 'needArrows' }, visibleWhen: [], repeatable: true }
+    const calls = []
+    let enoughWood = false
+    context.neutralQuests = {
+      dialogue: () => quest,
+      environment: () => ({}),
+      system: {
+        definitions: new Map([['tutorial', { stages: [
+          { id: 'wood', dialogue: { key: 'woodReminder' }, readyDialogue: { key: 'woodReady' }, objectives: [{ text: { key: 'woodProgress' } }], interactions: [delivery] },
+          { id: 'hunt', dialogue: { key: 'huntInstructions' }, objectives: [], interactions: [arrows] },
+        ] }]]),
+        matches: () => true,
+        canInteract: (_, interaction) => interaction.id === 'arrows' || enoughWood,
+      },
+      interact: (_, id) => { calls.push(id); quest.stageId = 'hunt'; return true },
+    }
+    const { NpcQuestPanel } = loadModule('app/ui/NpcQuestPanel.ts', buildMocks([], context))
+    const lines = []
+    const panel = new NpcQuestPanel({ context, playUiClick() {}, updateTopbar() {} }, line => lines.push(line))
+    const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' } }
+    assert.equal(panel.update(npc, true), 'woodReminder')
+    assert.equal(panel.root.children.length, 0, 'No unavailable action or progress text')
+    enoughWood = true
+    assert.equal(panel.update(npc, true), 'woodReady')
+    const button = panel.root.children[0]
+    assert.equal(button.disabled, false)
+    assert.equal(button.children.at(-1).textContent, 'giveWood')
+    button.click()
+    assert.deepEqual(calls, ['deliver'])
+    assert.equal(lines.at(-1), 'huntInstructions')
+    assert.equal(panel.root.children[0].children.at(-1).textContent, 'needArrows')
+  })
+})

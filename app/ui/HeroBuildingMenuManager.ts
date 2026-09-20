@@ -4,7 +4,6 @@ import { playAudibleSoundCue } from '../lib/audio/sound'
 import { playUiSound } from '../lib/audio/uiSound'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
-import { t } from '../lib/lang'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
@@ -254,8 +253,8 @@ export class HeroBuildingMenuManager {
     const items = this.stack[this.stack.length - 1] || []
     this.renderInfo()
     this.body.replaceChildren()
-    this.backButton.textContent = this.marketOpen ? t('back') : '<'
-    this.backButton.classList.toggle('is-visible', this.marketOpen || this.stack.length > 1)
+    this.backButton.textContent = '<'
+    this.backButton.classList.toggle('is-visible', !this.marketOpen && this.stack.length > 1)
     if (this.renderContainerBody(building)) {
       this.body.classList.toggle('is-empty', false)
       this.updateProgress()

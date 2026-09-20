@@ -1,28 +1,20 @@
 import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
 import { isInteriorTheftDefender } from '../../ai/AITheftDefense'
-import { getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
-import { canAfford } from '../../lib/accounting'
 import { getPositionInGridAroundInstance } from '../../lib/grid/placement'
-import { getClosestInstance } from '../../lib/grid/queries'
 import { instancesDistance } from '../../lib/maths'
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit } from '../../lib/chief'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import type { EnemyMemory } from '../../ai/AIThreatManager'
-import type { AIAge, AIBuildingLike, AIEntityLike } from '../../ai/types'
-import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
+import type { AIBuildingLike, AIEntityLike } from '../../ai/types'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { BuildingConfig } from '../../types/config'
 import type { PlayerLike } from '../../types/player'
 
 const CHIEF_FORUM_GUARD_RANGE = 8
 const CHIEF_HERO_TALK_RANGE = 2.5
 
 type AIPlayerBehaviorHost = {
-  age: AIAge
-  config: {
-    buildings: Record<string, BuildingConfig>
-  }
   context: {
     controls?: { heroUnit?: UnitEntity | null }
     map: {
@@ -41,12 +33,6 @@ type AIPlayerBehaviorHost = {
   enemyUnitMemory: Map<string, EnemyMemory>
   chiefLossDetectedAt: number | null
   chiefWanderReadyAt: Map<string, number>
-  strategy: {
-    canSpendWithReserve(cost: Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>, reserve: unknown): boolean
-  }
-  buildingsByTypes(types: string[]): AIBuildingLike[]
-  hasNotReachBuildingLimit(buildingType: string, buildings: AIEntityLike[]): boolean
-  buyBuilding(i: number, j: number, buildingType: string): boolean
   getNow(): number
   getLivingChiefs(): AIEntityLike[]
   getVisibleHostilesNear(target: AIEntityLike, radius?: number): AIEntityLike[]
@@ -83,35 +69,6 @@ export function cleanupAITrackingSets(ai: AIPlayerBehaviorHost) {
   }
   ai._refreshEnemyMemory(ai.enemyBuildingMemory)
   ai._refreshEnemyMemory(ai.enemyUnitMemory)
-}
-
-export function createAIUnitExtraOptions(ai: AIPlayerBehaviorHost, type: string, debug = false): UnitCreationExtra {
-  return {
-    handleSetDest: (target: RuntimeEntity | RuntimeCell) => {
-      if (!('family' in target)) return
-      if (type !== UNIT_TYPES.villager || target.family !== FAMILY_TYPES.resource) return
-
-      const buildingType =
-        target.type === RESOURCE_TYPES.berrybush || target.isDead ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
-      const buildings = ai.buildingsByTypes([buildingType])
-      const cost = getPlayerBuildingConfig(ai, buildingType)?.cost as Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>
-      if (!canAfford(ai as Parameters<typeof canAfford>[0], cost) || !ai.strategy.canSpendWithReserve(cost, {})) {
-        return
-      }
-      if (!ai.hasNotReachBuildingLimit(buildingType, buildings)) return
-
-      const closestBuilding = getClosestInstance(target, [
-        ...buildings,
-        ...ai.buildingsByTypes([BUILDING_TYPES.townCenter]),
-      ])
-      if (closestBuilding && instancesDistance(closestBuilding, target) <= 5) return
-
-      const pos = getPositionInGridAroundInstance(target, ai.context.map.grid, [1, 5], 1)
-      if (pos && ai.buyBuilding(pos.i, pos.j, buildingType) && debug) {
-        console.log(`Building ${buildingType} at:`, pos)
-      }
-    },
-  }
 }
 
 export function refreshAIChiefSuccession(ai: AIPlayerBehaviorHost, villagers: AIEntityLike[]): number {
@@ -168,7 +125,13 @@ function getPrimaryVillageDefenseTarget(ai: AIPlayerBehaviorHost, anchor: AIBuil
 }
 
 function sendUnitToDefend(unit: AIEntityLike, target: AIEntityLike): boolean {
-  if (!isAliveCombatUnit(unit) || unit.controlMode === 'hero' || isInteriorTheftDefender(unit) || hasInteriorCombatRoute(unit)) return false
+  if (
+    !isAliveCombatUnit(unit) ||
+    unit.controlMode === 'hero' ||
+    isInteriorTheftDefender(unit) ||
+    hasInteriorCombatRoute(unit)
+  )
+    return false
   if (unit.dest === target && unit.action === ACTION_TYPES.attack) return false
   unit.lookingAtHero = false
   if (unit.type === UNIT_TYPES.villager) {

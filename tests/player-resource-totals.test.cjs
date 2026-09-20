@@ -137,3 +137,15 @@ test('a non-chief player spends only the active hero bag while village upkeep ke
   assert.equal(withdrawChestResources(player, { wood: 5 }), true)
   assert.equal(chest.inventory.resources.wood, 95)
 })
+
+test('blocking automatic deliveries does not reserve chest resources against construction spending', () => {
+  const { depositChestResources, withdrawChestResources } = loadResourceTotals()
+  const player = { label: 'p', buildings: [] }
+  const chest = { type: 'Chest', owner: player, isBuilt: true, villagerDeliveriesBlocked: true, inventory: { resources: { wood: 20 } } }
+  player.buildings.push(chest)
+  assert.equal(depositChestResources(player, { wood: 10 }, { automaticDelivery: true }), false)
+  assert.equal(chest.inventory.resources.wood, 20)
+  assert.equal(depositChestResources(player, { wood: 10 }), true)
+  assert.equal(withdrawChestResources(player, { wood: 10 }, { includeHero: false }), true)
+  assert.equal(chest.inventory.resources.wood, 20)
+})

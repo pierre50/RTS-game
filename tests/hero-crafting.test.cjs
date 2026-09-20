@@ -107,7 +107,7 @@ test('hero chest craft can spend chest resources and adds a placeable chest to t
   const hero = { owner: player, type: 'Hero' }
 
   assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.deepEqual(player.buildings[0].inventory.resources, { wood: 7 })
+  assert.deepEqual(player.buildings[0].inventory.resources, { wood: 2 })
   assert.deepEqual(hero.inventory.equipment, ['chest'])
 })
 
@@ -232,4 +232,15 @@ test('crafted placeable items resolve to their building placements', () => {
   assert.equal(getPlaceableInventoryBuildingType('campfire'), 'FireCamp')
   assert.equal(getPlaceableInventoryBuildingType('chest'), 'Chest')
   assert.equal(getPlaceableInventoryBuildingType('trap'), 'Trap')
+})
+
+test('a lone hero can craft the first chest from a bag of 50 without any building', () => {
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const player = { buildings: [] }
+  const hero = { owner: player, type: 'Hero', inventory: { resources: { wood: 10, stone: 20, wheat: 20 }, equipment: [] } }
+  player.units = [hero]
+  assert.equal(craftHeroRecipe(player, hero, HERO_CRAFT_RECIPES.find(recipe => recipe.id === 'chest')), true)
+  assert.deepEqual(hero.inventory.equipment, ['chest'])
+  assert.equal(hero.inventory.resources.stone, 20)
+  assert.equal(hero.inventory.resources.wheat, 20)
 })

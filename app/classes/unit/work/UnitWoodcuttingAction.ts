@@ -11,10 +11,10 @@ import { stopManualHeroAction } from '../UnitManualHeroWork'
 import {
   addGatheredResource,
   clampDepletedBerrybushHitPoints,
-  getCarriedResourceAmountForLoadingType,
   getGatherAmount,
   isChoppableBerrybush,
   isResourceEntity,
+  notifyIfHeroResourceCarryFull,
   sendVillagerToDeliveryIfFull,
   shouldReleaseGatheredResource,
 } from '../UnitResourceGathering'
@@ -89,11 +89,12 @@ function collectChoppedWood(runtime: UnitResourceActions, dest: RuntimeEntity, w
     finishWorkSwing(unit, workTickFrame, workTickFrame)
     return false
   }
-  const previousAmount = getCarriedResourceAmountForLoadingType(unit, LOADING_TYPES.wood)
   const gain = addGatheredResource(unit, LOADING_TYPES.wood, requestedGain)
   if (gain <= 0) {
-    if (isHeroControlled(unit)) stopManualHeroAction(unit)
-    else unit.sendToDelivery?.()
+    if (isHeroControlled(unit)) {
+      notifyIfHeroResourceCarryFull(unit)
+      stopManualHeroAction(unit)
+    } else unit.sendToDelivery?.()
     return false
   }
   grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
@@ -105,7 +106,7 @@ function collectChoppedWood(runtime: UnitResourceActions, dest: RuntimeEntity, w
   if ((dest.quantity ?? 0) <= 0) {
     dest.die?.()
     unit.affectNewDest?.()
-  } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wood, previousAmount)) {
+  } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wood)) {
     unit.gatherProgressState = null
   }
   return true

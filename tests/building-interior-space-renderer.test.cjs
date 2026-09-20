@@ -49,7 +49,9 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
   }
 
   const mocks = {
-    'pixi.js': { Container, Graphics },
+    '../../app/classes/Resource': { Resource: class {} },
+    'pixi.js': { Container, Graphics, Sprite: class extends Container {} },
+    './textures': { getTextureByFrame: () => ({}) },
     '../classes/cell': {
       Cell: class {
         constructor(options) {

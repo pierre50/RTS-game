@@ -1,7 +1,7 @@
+import { getUnitResourceCarryRemaining } from '../../lib/resources/resourceDelivery'
+import type { UnitEntity } from '../../types/entities'
 import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import {
-  BUILDING_TYPES,
-  FOOD_RESOURCE_NAMES,
   RESOURCE_GATHER_SWINGS,
   RESOURCE_STOCKPILE_TYPES,
   RESOURCE_STORAGE_NAMES,
@@ -10,7 +10,9 @@ import {
   UNIT_TYPES,
 } from '../../constants/entities'
 import { depositChestResources, type ResourceStoreOwner } from '../../lib/resources/playerResourceTotals'
+import { getStorageCapacity, storageAcceptsResource, allowsVillagerDeliveries } from '../../lib/resources/storagePolicy'
 import { canOwnerMineMineral } from '../../lib/resources/ironMining'
+import { isOutsideSpaceId } from '../../lib/mapSpaces'
 import { CELL_HEIGHT, CELL_WIDTH, STEP_TIME } from '../../constants/core'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../config/gameplay'
 import type { AnimalConfig, BuildingConfig, UnitConfig } from '../../types/config'
@@ -107,11 +109,14 @@ export function offlineResourceWork(
   wheatMatureFrame: number
 ): string | undefined {
   if (
-    resource.isDestroyed || (resource.quantity ?? 0) <= 0 ||
+    resource.isDestroyed ||
+    (resource.quantity ?? 0) <= 0 ||
     (!isLiving(resource) && resource.type !== RESOURCE_TYPES.tree) ||
-    !targetMatches(unit, resource) || !canOwnerMineMineral(player, resource.type) ||
+    !targetMatches(unit, resource) ||
+    !canOwnerMineMineral(player, resource.type) ||
     (resource.type === RESOURCE_TYPES.wheat && (resource.currentFrame ?? wheatMatureFrame) < wheatMatureFrame)
-  ) return undefined
+  )
+    return undefined
   return RESOURCE_WORK[RESOURCE_STOCKPILE_TYPES[resource.type]]
 }
 
@@ -144,6 +149,18 @@ function travelMs(unit: SaveGridPoint, target: SaveGridPoint, config: UnitConfig
   return ((distance(unit, target) * pixelsPerCell) / Math.max(0.1, Number(config.speed) || 1.5)) * STEP_TIME
 }
 
+function sumResourceAmount(resources: ResourceAmount | null | undefined): number {
+  return Object.values(resources ?? {}).reduce((sum: number, amount) => sum + Math.max(0, Math.floor(amount ?? 0)), 0)
+}
+
+// depotFor only guarantees at least 1 unit of room — a bigger request must be clamped or
+// depositChestResources rejects it outright (all-or-nothing) and progress stalls forever.
+function depotRemainingCapacity(depot: SaveEntityState): number {
+  return Math.max(0, getStorageCapacity(depot.type) - sumResourceAmount(depot.inventory?.resources))
+}
+
+// Mirrors storageAcceptsResource/getStorageCapacity from the online delivery path (resourceDelivery.ts)
+// so a village behaves the same whether the player is standing in it or it's simulated offline.
 function depotFor(
   player: SavePlayerState,
   resource: keyof ResourceAmount,
@@ -155,9 +172,10 @@ function depotFor(
       building =>
         isLiving(building) &&
         building.isBuilt &&
-        (building.type === BUILDING_TYPES.townCenter ||
-          building.type ===
-            (FOOD_RESOURCE_NAMES.includes(resource as 'wheat') ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit)) &&
+        allowsVillagerDeliveries(building) &&
+        isOutsideSpaceId(building.spaceId) &&
+        storageAcceptsResource(building.type, resource) &&
+        sumResourceAmount(building.inventory?.resources) < getStorageCapacity(building.type) &&
         spatial.reachable(target, building)
     )
     .sort((a, b) => distance(a, target) - distance(b, target))[0]
@@ -174,11 +192,13 @@ export function deliverOfflineInventory(
   const inventory = unit.inventory?.resources
   if (!inventory) return budget
   for (const resource of RESOURCE_STORAGE_NAMES) {
-    const amount = inventory[resource] ?? 0
-    if (!(amount > 0)) continue
+    const carried = inventory[resource] ?? 0
+    if (!(carried > 0)) continue
     const depot = depotFor(player, resource, unit, spatial)
     const point = depot && spatial.findNear(depot, 6, unit)
     if (!depot || !point) continue
+    const amount = Math.min(carried, depotRemainingCapacity(depot))
+    if (amount <= 0) continue
     const key = `delivery:${entityKey(depot)}:${resource}`
     if (unit.offlineWork?.target === key) budget += unit.offlineWork.milliseconds
     const milliseconds = travelMs(unit, point, config) + 1000
@@ -186,8 +206,12 @@ export function deliverOfflineInventory(
       unit.offlineWork = { target: key, milliseconds: budget }
       return 0
     }
-    if (!depositChestResources(savedResourceOwner(player, players), { [resource]: amount })) continue
-    delete inventory[resource]
+    if (
+      !depositChestResources(savedResourceOwner(player, players), { [resource]: amount }, { automaticDelivery: true })
+    )
+      continue
+    inventory[resource] = carried - amount
+    if ((inventory[resource] ?? 0) <= 0) delete inventory[resource]
     delete unit.offlineWork
     budget -= milliseconds
     spatial.move(unit, point)
@@ -250,7 +274,7 @@ export function advanceOfflineWorker(
     }
     const stored = RESOURCE_STOCKPILE_TYPES[target.type] as keyof ResourceAmount | undefined
     const depot = !buildingTask && stored ? depotFor(player, stored, target, spatial) : undefined
-    if (!buildingTask && !depot) {
+    if (!buildingTask && !depot && getUnitResourceCarryRemaining(unit as unknown as UnitEntity) <= 0) {
       findMore()
       continue
     }
@@ -297,11 +321,11 @@ export function advanceOfflineWorker(
         findMore()
         continue
       }
-    } else if (stored && depot) {
+    } else if (stored) {
       const gatherAmounts = config.gatherAmount as Record<string, number> | undefined
       const gain = Math.max(1, Math.round(gatherAmounts?.[work] ?? 1))
       const swings = RESOURCE_GATHER_SWINGS[stored as keyof typeof RESOURCE_GATHER_SWINGS] ?? 2
-      const deliveryPerItem = (travelMs(target, depot, config) * 2) / 10
+      const deliveryPerItem = depot ? (travelMs(target, depot, config) * 2) / 10 : 0
       const itemMs = (cycle * swings) / gain + deliveryPerItem
       const treeHealth = target.hitPoints ?? 0
       if (target.type === RESOURCE_TYPES.tree && treeHealth > 0) {
@@ -313,21 +337,28 @@ export function advanceOfflineWorker(
           return
         }
       }
-      const amount = Math.min(target.quantity ?? 0, Math.floor(budget / itemMs))
+      // `depot` above only guarantees at least 1 unit of room, so the gather amount still needs
+      // clamping to what's actually left — otherwise a request bigger than the remaining room
+      // gets rejected outright and the worker stalls just short of a full storage building.
+      const amount = Math.min(
+        target.quantity ?? 0,
+        Math.floor(budget / itemMs),
+        depot ? depotRemainingCapacity(depot) : getUnitResourceCarryRemaining(unit as unknown as UnitEntity)
+      )
       if (
         amount > 0 &&
-        !savedBuildingsOwnedBy(player, state.players).some(
-          building =>
-            isLiving(building) &&
-            (building.type === BUILDING_TYPES.chest ||
-              building.type === BUILDING_TYPES.storagePit ||
-              (building.type === BUILDING_TYPES.townCenter && building.inventory?.resources))
-        )
+        (!depot ||
+          depositChestResources(
+            savedResourceOwner(player, state.players),
+            { [stored]: amount },
+            { automaticDelivery: true }
+          ))
       ) {
-        delete unit.offlineWork
-        return
-      }
-      if (amount > 0 && depositChestResources(savedResourceOwner(player, state.players), { [stored]: amount })) {
+        if (!depot) {
+          unit.inventory ??= {}
+          unit.inventory.resources ??= {}
+          unit.inventory.resources[stored] = (unit.inventory.resources[stored] ?? 0) + amount
+        }
         target.quantity = Math.max(0, (target.quantity ?? 0) - amount)
         report.gathered[stored] = (report.gathered[stored] ?? 0) + amount
         budget -= amount * itemMs
