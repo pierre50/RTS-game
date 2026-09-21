@@ -3,6 +3,9 @@ import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { FR_QUEST_TRANSLATIONS } from './questTranslations'
 import { FR_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
 export const FR_TRANSLATIONS = {
+  placementHelp: 'Placement',
+  placementPlace: 'Placer',
+  placementMirror: 'Miroir',
   windowPreviousTab: 'Onglet précédent',
   windowNextTab: 'Onglet suivant',
   windowPrevious: 'Précédent',
@@ -83,6 +86,7 @@ export const FR_TRANSLATIONS = {
   heroInteractionExit: 'Sortir',
   heroInteractionMount: 'Monter',
   heroInteractionOpen: 'Ouvrir',
+  ironRequiresBronzePickaxe: 'Une pioche en bronze ou en fer est nécessaire pour extraire le fer.',
   heroInteractionDismantle: 'Démonter',
   heroInteractionRecover: 'Récupérer',
   heroInteractionSleep: 'Dormir',

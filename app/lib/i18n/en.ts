@@ -3,6 +3,9 @@ import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { EN_QUEST_TRANSLATIONS } from './questTranslations'
 import { EN_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
 export const EN_TRANSLATIONS = {
+  placementHelp: 'Placement',
+  placementPlace: 'Place',
+  placementMirror: 'Mirror',
   windowPreviousTab: 'Previous tab',
   windowNextTab: 'Next tab',
   windowPrevious: 'Previous',
@@ -83,6 +86,7 @@ export const EN_TRANSLATIONS = {
   heroInteractionExit: 'Exit',
   heroInteractionMount: 'Mount',
   heroInteractionOpen: 'Open',
+  ironRequiresBronzePickaxe: 'A bronze or iron pickaxe is required to mine iron.',
   heroInteractionDismantle: 'Dismantle',
   heroInteractionRecover: 'Recover',
   heroInteractionSleep: 'Sleep',

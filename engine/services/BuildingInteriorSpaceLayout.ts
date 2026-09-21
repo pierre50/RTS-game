@@ -1,6 +1,6 @@
 import { getCaveInteriorBlueprint } from '../../app/lib/buildings/caveBlueprint'
 import type { MapBlueprint } from '../../app/classes/map/MapGeneration'
-import { createRoundLocalInteriorBlueprint } from '../../app/classes/map/generation/LocalMapBlueprint'
+import { createIsometricInteriorBlueprint } from '../../app/classes/map/generation/LocalMapBlueprint'
 import { getInteriorMapSizeForBuildingSize } from '../../app/lib/buildings/interiorProfiles'
 import type { ReservedPassageCellLookup } from '../../app/lib/buildings/passageCells'
 import {
@@ -29,7 +29,7 @@ export function createDefaultBuildingInteriorBlueprint(building: BuildingEntity)
   if (building.type === 'Cave') return getCaveInteriorBlueprint(building)
   const size = getDefaultInteriorMapSize(building)
   const buildingSize = building.size ?? 2
-  return createRoundLocalInteriorBlueprint({
+  return createIsometricInteriorBlueprint({
     ...(building.context?.map?.seed === undefined ? {} : { seed: building.context.map.seed }),
     buildingSize,
     kind: 'interior',

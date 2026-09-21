@@ -18,10 +18,18 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   })
   const module = { exports: {} }
   const mocks = {
+    './hero-building/HeroForgeBody': {
+      HeroForgeBody: class {
+        constructor() {
+          this.craftPanel = global.document.createElement('forge-craft')
+        }
+      },
+    },
+    '../lib/resources/playerResourceTotals': { getPlayerResourceTotals: () => ({}) },
     '../constants': {
       FAMILY_TYPES: { building: 'building' },
       UNIT_TYPES: { chief: 'Chief' },
-      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', market: 'Market', trap: 'Trap' },
+      BUILDING_TYPES: { forge: 'Forge', chest: 'Chest', fireCamp: 'FireCamp', market: 'Market', trap: 'Trap' },
       SOUND_CUES: { building: { chestOpen: 'building/chest-open' }, ui: { menuClick: 'menuClick' } },
     },
     '../lib/avatar': {
@@ -575,5 +583,26 @@ test('disabled building actions display their explanation directly and only list
     assert.deepEqual([...row.listeners.keys()], ['click'])
   } finally {
     restoreDocument()
+  }
+})
+
+test('forge opens the crafting body and refuses unfinished or unreachable forges', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    const forge = { type: 'Forge', family: 'building', owner: player, isBuilt: true }
+    assert.equal(manager.open(forge), true)
+    assert.equal(manager.body.children.at(-1).tagName, 'forge-craft')
+    assert.equal(manager.modal._panel.classList.contains('inventory-transfer-modal'), true)
+    assert.equal(manager.modal._panel.classList.contains('interaction-panel'), false)
+    assert.equal(manager.canOpenFor({ ...forge, isBuilt: false }), false)
+    assert.equal(manager.canOpenFor({ ...forge, isDestroyed: true }), false)
+  } finally {
+    restoreDocument()
+  }
+  const distant = createManager({ reachable: false })
+  try {
+    assert.equal(distant.manager.canOpenFor({ type: 'Forge', isBuilt: true }), false)
+  } finally {
+    distant.restoreDocument()
   }
 })

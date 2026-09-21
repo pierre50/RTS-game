@@ -17,6 +17,8 @@ import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress
 import { heroCampfireSleepButton } from './hero-building/HeroCampfireSleepButton'
 import { canHeroTradeAtMarket, createHeroMarketBody } from './hero-building/HeroMarketBody'
 import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
+import { HeroForgeBody } from './hero-building/HeroForgeBody'
+import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
 
 function isBuildingEntity(value: unknown): value is BuildingEntity {
@@ -91,6 +93,7 @@ export class HeroBuildingMenuManager {
     const hero = this.menu.context.controls.heroUnit
     if (!hero || !building || building.isDestroyed || building.isDead) return false
     if (building.type === BUILDING_TYPES.trap) return false
+    if (building.type === BUILDING_TYPES.forge && !building.isBuilt) return false
     return isHeroInteractionTargetReachable(hero, null, building)
   }
 
@@ -185,7 +188,12 @@ export class HeroBuildingMenuManager {
   }
 
   refreshInventory(): void {
-    if (this.building?.type !== BUILDING_TYPES.chest && this.building?.type !== BUILDING_TYPES.market) return
+    if (
+      this.building?.type !== BUILDING_TYPES.chest &&
+      this.building?.type !== BUILDING_TYPES.market &&
+      this.building?.type !== BUILDING_TYPES.forge
+    )
+      return
     this.syncLiveState()
   }
 
@@ -194,6 +202,13 @@ export class HeroBuildingMenuManager {
     if (!building) return ''
     const level = this.stack[this.stack.length - 1] || []
     return [
+      building.type === BUILDING_TYPES.forge
+        ? JSON.stringify([
+            this.menu.context.player.age,
+            building.isBuilt,
+            getPlayerResourceTotals(this.menu.context.player, { hero: this.menu.context.controls.heroUnit }),
+          ])
+        : '',
       building.type === BUILDING_TYPES.market
         ? String(canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit))
         : '',
@@ -222,7 +237,8 @@ export class HeroBuildingMenuManager {
     if (!building) return
     this.marketOpen =
       building.type === BUILDING_TYPES.market && canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit)
-    const inventoryMode = this.marketOpen || building.type === BUILDING_TYPES.chest
+    const inventoryMode =
+      this.marketOpen || building.type === BUILDING_TYPES.chest || building.type === BUILDING_TYPES.forge
     setInspectionMode(this.modal, !inventoryMode)
     this.modal?._panel?.classList.toggle('interaction-panel', !inventoryMode)
     this.modal?._panel?.classList.toggle('inventory-transfer-modal', inventoryMode)
@@ -267,6 +283,12 @@ export class HeroBuildingMenuManager {
   }
 
   renderContainerBody(building: BuildingEntity): boolean {
+    if (building.type === BUILDING_TYPES.forge && building.isBuilt) {
+      this.transferPanel = null
+      this.body.appendChild(new HeroForgeBody(this.menu, building).craftPanel)
+      return true
+    }
+
     if (building.type === BUILDING_TYPES.market) {
       if (!this.marketOpen) return false
       const marketBody = createHeroMarketBody(building, this.menu, () => {

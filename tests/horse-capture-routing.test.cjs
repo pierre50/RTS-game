@@ -63,7 +63,7 @@ test('owner-contact routing waits for the owner timeout before failing', () => {
     label: 'villager-1',
     i: 0,
     j: 0,
-    owner: { age: 1, buildings: [stable] },
+    owner: { age: 0, buildings: [stable] },
   }
   const horse = {
     label: 'horse-1',
@@ -128,7 +128,7 @@ for (const unitType of ['Hero', 'Villager']) {
       label: 'villager-1',
       i: 10,
       j: 10,
-      owner: { age: 1, buildings: [stable] },
+      owner: { age: 0, buildings: [stable] },
     }
     const horse = {
       label: 'horse-1',

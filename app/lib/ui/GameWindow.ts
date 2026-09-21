@@ -15,6 +15,7 @@ type Command = {
   run: () => void
 }
 
+const HOLD_DURATION_MS = 850
 const ROW = '.inventory-action-row'
 const GLOBAL_ACTION = '[data-window-action], .entity-delete-building-button'
 const PAD_GLYPHS = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'View', 'Menu', 'L3', 'R3', '↑', '↓', '←', '→']
@@ -34,6 +35,7 @@ export class GameWindow {
   private mode: 'keyboard' | 'gamepad' = 'keyboard'
   private confirmation: Command | null = null
   private holding: { command: Command; since: number } | null = null
+  private keyboardHolding: { command: Command; since: number } | null = null
   private disposed = false
   private queued = false
 
@@ -57,6 +59,8 @@ export class GameWindow {
     panel.addEventListener('change', this.onFieldChange)
     window.addEventListener(LANG_CHANGE_EVENT, this.onFieldChange)
     document.addEventListener('keydown', this.onKey, true)
+    document.addEventListener('keyup', this.onKeyUp, true)
+    window.addEventListener('blur', this.cancelKeyboardHold)
     this.observer = new MutationObserver(records => {
       if (records.some(record => !this.footer.contains(record.target) && !this.details.contains(record.target))) {
         this.scheduleRefresh()
@@ -127,6 +131,7 @@ export class GameWindow {
     if (element !== this.selected) {
       if (element?.id !== this.selectedId) {
         this.holding = null
+        this.cancelKeyboardHold()
         this.confirmation = null
       }
       this.selected?.classList.remove('is-window-selected')
@@ -247,13 +252,13 @@ export class GameWindow {
     }
     const secondary = buttons.find(button => button !== primary)
     if (secondary) {
-      commands.push(this.buttonCommand(secondary, 'secondary', 'Delete', 3))
+      commands.push(this.buttonCommand(secondary, 'secondary', 'X', 3))
       if (
         secondary.matches('.inventory-row-action-button--delete') &&
         row?.querySelector('.inventory-quantity-badge')
       ) {
         commands.push({
-          ...this.buttonCommand(secondary, 'secondary-stack', 'Shift+Delete', 8),
+          ...this.buttonCommand(secondary, 'secondary-stack', 'Shift+X', 8),
           label: t('windowDeleteStack'),
           run: () => {
             if (secondary.isConnected && !secondary.disabled)
@@ -268,9 +273,7 @@ export class GameWindow {
     for (const button of this.panel.querySelectorAll<HTMLButtonElement>(GLOBAL_ACTION)) {
       if (button.closest('[hidden], .hidden, [aria-hidden="true"]')) continue
       const danger = button.matches('.entity-delete-building-button')
-      commands.push(
-        this.buttonCommand(button, danger ? 'remove' : 'deliveries', danger ? 'Delete' : 'V', danger ? 3 : 6)
-      )
+      commands.push(this.buttonCommand(button, danger ? 'remove' : 'deliveries', danger ? 'X' : 'V', danger ? 3 : 6))
     }
     if (this.panel.querySelectorAll('.ui-tab').length > 1) {
       for (const direction of [-1, 1])
@@ -391,7 +394,7 @@ export class GameWindow {
             ] ?? command.key)
       key.dataset.pad = String(command.pad)
       const label = document.createElement('span')
-      label.textContent = `${command.label}${command.danger && this.mode === 'gamepad' ? ` · ${t('windowHold')}` : ''}`
+      label.textContent = `${command.label}${command.danger ? ` · ${t('windowHold')}` : ''}`
       button.append(key, label)
       button.addEventListener('click', () => {
         // Resolve fresh handlers: live refreshes may have replaced the source button.
@@ -419,6 +422,7 @@ export class GameWindow {
 
   private setMode(mode: 'keyboard' | 'gamepad'): void {
     if (mode === this.mode) return
+    this.cancelKeyboardHold()
     this.mode = mode
     this.panel.dataset.inputMode = mode
     this.renderCommands()
@@ -498,13 +502,23 @@ export class GameWindow {
     if (!this.isTopmost() || event.defaultPrevented) return
     const target = event.target as HTMLElement
     if (target.closest('.is-listening')) return
-    if (target.matches('input:not([type=range]):not([type=checkbox]), textarea, [contenteditable="true"]')) {
+    if (
+      target.closest(
+        'input:not([type=range]):not([type=checkbox]), textarea, [contenteditable]:not([contenteditable="false"])'
+      )
+    ) {
+      this.cancelKeyboardHold()
       this.setMode('keyboard')
       // Single-line fields keep horizontal caret movement; vertical arrows navigate the window.
       const verticalNavigation = target.matches('input') && ['ArrowUp', 'ArrowDown'].includes(event.key)
       if (!verticalNavigation && !['Escape', 'PageUp', 'PageDown'].includes(event.key)) return
     }
     this.setMode('keyboard')
+    if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) {
+      this.cancelKeyboardHold()
+      return
+    }
+    if (event.key.toLowerCase() !== 'x') this.cancelKeyboardHold()
     if (getControlActionForKeyboardEvent(event) === 'inventory' && this.panel.classList.contains('inventory-panel')) {
       event.preventDefault()
       event.stopImmediatePropagation()
@@ -512,7 +526,8 @@ export class GameWindow {
       return
     }
     const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key]
-    const commandKey = event.shiftKey && ['Enter', 'Delete'].includes(event.key) ? `Shift+${event.key}` : event.key
+    const commandKey =
+      event.shiftKey && ['enter', 'x'].includes(event.key.toLowerCase()) ? `Shift+${event.key}` : event.key
     const command = this.commands.find(item => item.key.toLowerCase() === commandKey.toLowerCase())
     const page = event.key === 'PageUp' ? -1 : event.key === 'PageDown' ? 1 : 0
     if (!direction && !command && !page && !(this.confirmation && ['Enter', 'Escape'].includes(event.key))) {
@@ -542,7 +557,37 @@ export class GameWindow {
     }
     if (direction) this.move(direction[0], direction[1])
     else if (page) this.switchPanel(page)
-    else if (command && !event.repeat) this.execute(command)
+    else if (command && !event.repeat) {
+      if (command.danger && !command.disabled) this.keyboardHolding = { command, since: performance.now() }
+      else this.execute(command)
+    }
+  }
+
+  private cancelKeyboardHold = (): void => {
+    this.keyboardHolding = null
+  }
+
+  private onKeyUp = (event: KeyboardEvent): void => {
+    if (['x', 'shift'].includes(event.key.toLowerCase())) this.cancelKeyboardHold()
+  }
+
+  private advanceKeyboardHold(now: number): void {
+    const held = this.keyboardHolding
+    if (!held) return
+    const current = this.commands.find(command => command.id === held.command.id)
+    const editing = document.activeElement?.closest(
+      'input:not([type=range]):not([type=checkbox]), textarea, [contenteditable]:not([contenteditable="false"])'
+    )
+    if (!this.isTopmost() || this.confirmation || editing || !current || current.disabled) {
+      this.cancelKeyboardHold()
+      return
+    }
+    this.footer.style.setProperty('--hold-progress', `${Math.min(100, ((now - held.since) / HOLD_DURATION_MS) * 100)}%`)
+    if (now - held.since >= HOLD_DURATION_MS) {
+      this.cancelKeyboardHold()
+      current.run()
+      this.scheduleRefresh()
+    }
   }
 
   private poll = (now: number): void => {
@@ -553,6 +598,7 @@ export class GameWindow {
         ? getActiveGamepad()
         : null
     if (this.panel.querySelector('.is-listening')) {
+      this.cancelKeyboardHold()
       this.padState.reset()
       this.holding = null
       this.frame = requestAnimationFrame(this.poll)
@@ -584,12 +630,15 @@ export class GameWindow {
         if (this.holding) {
           const held = this.holding
           if (!pad.buttons[held.command.pad]?.pressed) this.holding = null
-          else if (now - held.since >= 850) {
+          else if (now - held.since >= HOLD_DURATION_MS) {
             this.holding = null
             const current = this.commands.find(command => command.id === held.command.id)
             if (current && !current.disabled) current.run()
           }
-          this.footer.style.setProperty('--hold-progress', `${Math.min(100, (now - held.since) / 8.5)}%`)
+          this.footer.style.setProperty(
+            '--hold-progress',
+            `${Math.min(100, ((now - held.since) / HOLD_DURATION_MS) * 100)}%`
+          )
         }
       }
     } else {
@@ -597,7 +646,8 @@ export class GameWindow {
       this.holding = null
       if (!pad) this.setMode('keyboard')
     }
-    this.footer.classList.toggle('is-holding', Boolean(this.holding))
+    this.advanceKeyboardHold(now)
+    this.footer.classList.toggle('is-holding', Boolean(this.holding || this.keyboardHolding))
     if (!this.disposed) this.frame = requestAnimationFrame(this.poll)
   }
 
@@ -612,5 +662,8 @@ export class GameWindow {
     this.panel.removeEventListener('change', this.onFieldChange)
     window.removeEventListener(LANG_CHANGE_EVENT, this.onFieldChange)
     document.removeEventListener('keydown', this.onKey, true)
+    document.removeEventListener('keyup', this.onKeyUp, true)
+    window.removeEventListener('blur', this.cancelKeyboardHold)
+    this.cancelKeyboardHold()
   }
 }

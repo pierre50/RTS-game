@@ -15,7 +15,7 @@ const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/Buildin
   },
 })
 
-function furnishInterior(type) {
+function furnishInterior(type, saved, placementMirrored = false) {
   const buildingSize = config[type].size
   const blueprint = buildingInterior({ buildingSize, size: buildingSize * 2 + 7, id: type, seed: 1 })
   const floor = Buffer.from(blueprint.floorMask, 'base64')
@@ -27,9 +27,9 @@ function furnishInterior(type) {
       j,
       category: 'Dirt',
       has: null,
-      border: Boolean(borders[i * width + j]),
-      solid: !floor[i * width + j],
-      terrainHidden: !floor[i * width + j],
+      border: Boolean(borders[placementMirrored ? j * width + i : i * width + j]),
+      solid: !floor[placementMirrored ? j * width + i : i * width + j],
+      terrainHidden: !floor[placementMirrored ? j * width + i : i * width + j],
     }))
   )
   const owner = {
@@ -44,7 +44,8 @@ function furnishInterior(type) {
       return building
     },
   }
-  const exit = blueprint.exits[0]
+  const originalExit = blueprint.exits[0]
+  const exit = placementMirrored ? { i: originalExit.j, j: originalExit.i } : originalExit
   const cells = grid.flat().filter(cell => !cell.border && !cell.solid)
   const space = {
     id: `interior:${type}`,
@@ -54,7 +55,7 @@ function furnishInterior(type) {
     exitCell: grid[exit.i][exit.j],
     walkableCells: cells,
     sleepCells: cells,
-    building: { type, owner },
+    building: { type, owner, interiorBuildings: saved, placementMirrored },
   }
   const context = { map: { randomItem: items => items[0] } }
   ensureInteriorDefaultBuildings(context, space)

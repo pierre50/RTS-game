@@ -153,6 +153,8 @@ function loadControls(mockOverrides = {}) {
       pickNpcChatterLine: () => '',
     },
     '../constants': {
+      CAMP_DECORATION_BUILDING_TYPES: require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/entities.ts')
+        .CAMP_DECORATION_BUILDING_TYPES,
       BUILDING_TYPES: { trap: 'Trap' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,

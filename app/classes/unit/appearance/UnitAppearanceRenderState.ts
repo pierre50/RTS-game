@@ -1,3 +1,4 @@
+import { getMiningPickaxe } from '../../../lib/resources/miningEquipment'
 import { definedProperties } from '../../../lib/definedProperties'
 import { Assets } from 'pixi.js'
 import type { AnimatedSprite } from 'pixi.js'
@@ -38,7 +39,9 @@ function shouldRequestMissingEquipmentLayer(unit: UnitRuntimeHost): boolean {
 
 function requestMissingEquipmentLayer(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer): void {
   if (!shouldRequestMissingEquipmentLayer(unit)) return
-  const equipmentKey = layer.equipmentKey as DynamicEquipmentKey | undefined
+  const equipmentKey = (layer.equipmentKey?.startsWith('pickaxe_') ? getMiningPickaxe(unit) : layer.equipmentKey) as
+    | DynamicEquipmentKey
+    | undefined
   if (!equipmentKey) return
   const request = loadDynamicEquipmentAssetQueued(
     equipmentKey,
@@ -158,7 +161,10 @@ function getLayerSheet(
     (visualSheet === SHOOTING_SHEET_KEY
       ? layer.shootingSheet
       : (layer[visualSheet as keyof RuntimeAppearanceLayer] as string | undefined))
-  return { baseSheetId, mountedSheetOverride }
+  const workSheetId = layer.equipmentKey?.startsWith('pickaxe_')
+    ? baseSheetId?.replace(/^equipments\/pickaxe_[^/]+\//, `equipments/${getMiningPickaxe(unit)}/`)
+    : baseSheetId
+  return { baseSheetId: workSheetId, mountedSheetOverride }
 }
 
 function buildLayerFrameState(

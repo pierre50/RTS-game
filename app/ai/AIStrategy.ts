@@ -1,4 +1,4 @@
-import { AGE_GATE_MAX_UNLOCKABLE_VALUE, AGE_UP_ENABLED } from '../constants'
+import { AGE_UP_ENABLED } from '../constants'
 import { AIMilitary } from './AIMilitary'
 import { villagePhase } from './AIDevelopmentPolicy'
 import { buyAIBuildingIfNeeded, buyAIWheatFieldIfNeeded, handleAIBuildingActions } from './AIStrategyBuilding'
@@ -77,14 +77,6 @@ export class AIStrategy {
     target.maxInfantryByAge = this.maxInfantryByAge
     target.maxArcherByAge = this.maxArcherByAge
     target.maxCavalryByAge = this.maxCavalryByAge
-  }
-
-  // Vrai si l'IA doit être considérée comme ayant atteint `requiredAge` : soit réellement (age-up
-  // actif), soit parce que ce palier est "atteignable" (<= AGE_GATE_MAX_UNLOCKABLE_VALUE) et qu'on
-  // ne veut pas la brider à vie pendant que le passage d'âge est désactivé.
-  hasReachedAge(requiredAge: number): boolean {
-    if (!AGE_UP_ENABLED) return requiredAge <= AGE_GATE_MAX_UNLOCKABLE_VALUE
-    return this.ai.age >= requiredAge
   }
 
   getBestInfantryUnit(): string {

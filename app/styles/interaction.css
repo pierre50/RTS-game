@@ -172,13 +172,13 @@
   width: min(620px, 100%);
 }
 
-.interaction-panel-content:not(
+.interaction-panel .interaction-panel-content:not(
   :has(.interaction-actions button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))
 ) {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.interaction-actions:not(:has(button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))) {
+.interaction-panel .interaction-actions:not(:has(button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))) {
   display: none;
 }
 

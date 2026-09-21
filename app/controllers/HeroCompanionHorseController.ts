@@ -403,7 +403,6 @@ export class HeroCompanionHorseController {
   }
 
   mountCompanionHorse(horse: CompanionHorse): boolean {
-    if ((this.getHeroUnit()?.owner?.age ?? 0) < 1) return false
     return this.startHorseTransition({
       cameraEnd: { x: horse.x, y: horse.y },
       finish: () => this.finishCompanionHorseMount(horse),

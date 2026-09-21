@@ -5,7 +5,7 @@
     "sight": 8,
     "speed": 1.5,
     "attackRecoveryMs": 560,
-    "totalEnergy": 12,
+    "totalEnergy": 18,
     "energyRegenRate": 3.1,
     "energyRegenDelay": 400,
     "energyCosts": {
@@ -146,7 +146,7 @@
     "totalHitPoints": 45,
     "sight": 12,
     "speed": 1.6,
-    "totalEnergy": 12,
+    "totalEnergy": 18,
     "energyRegenRate": 3.1,
     "energyRegenDelay": 480,
     "energyCosts": {
@@ -271,7 +271,7 @@
     "sight": 10,
     "speed": 1.5,
     "attackRecoveryMs": 760,
-    "totalEnergy": 14,
+    "totalEnergy": 21,
     "energyRegenRate": 3.4,
     "energyRegenDelay": 440,
     "energyCosts": {
@@ -319,7 +319,7 @@
     "sight": 8,
     "speed": 1.6,
     "attackRecoveryMs": 640,
-    "totalEnergy": 12,
+    "totalEnergy": 18,
     "energyRegenRate": 3.1,
     "energyRegenDelay": 480,
     "energyCosts": {
@@ -350,7 +350,7 @@
     "sight": 14,
     "speed": 1.6,
     "attackRecoveryMs": 800,
-    "totalEnergy": 12,
+    "totalEnergy": 18,
     "energyRegenRate": 3.1,
     "energyRegenDelay": 480,
     "energyCosts": {
@@ -383,7 +383,7 @@
     "totalHitPoints": 18,
     "sight": 24,
     "speed": 1.1,
-    "totalEnergy": 12,
+    "totalEnergy": 18,
     "energyRegenRate": 3.1,
     "energyRegenDelay": 440,
     "energyCosts": {

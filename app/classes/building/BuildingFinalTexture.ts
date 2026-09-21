@@ -41,6 +41,8 @@ export function applyBuildingFinalTexture(building: BuildingControllerHost): voi
     : new Polygon([-32 * building.size, 0, 0, -16 * building.size, 32 * building.size, 0, 0, 16 * building.size])
   if (!texture.defaultAnchor) throw new Error(`Missing anchor for building texture: ${building.textureName}`)
   building.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+  building.sprite.scale.x =
+    Math.abs(building.sprite.scale.x) * (Boolean(assets.mirrored) !== Boolean(building.placementMirrored) ? -1 : 1)
   building.updateShadow()
 
   const color = building.getChildByLabel(LABEL_TYPES.color)

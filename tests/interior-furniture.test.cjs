@@ -7,19 +7,34 @@ const { getBuildingAsset } = loadTsModule('app/lib/graphics/assets.ts')
 const { preservesInteriorPassages } = loadTsModule('app/lib/buildings/interiorFurniturePlacement.ts')
 
 const expectedFurniture = {
-  House: ['FireCamp', 'CampBookcase', 'CampJarLarge', 'CampAlchemyTable', 'CampSquareStool', 'CampTable', 'CampBench'],
+  House: [
+    'FireCamp',
+    'CampSupplyShelf',
+    'CampJarLarge',
+    'CampArrowBasket',
+    'CampScreen',
+    'CampAlchemyTable',
+    'CampStumpStool',
+    'CampTable',
+    'CampBench',
+    'CampSquareStool',
+  ],
   TownCenter: [
     'FireCamp',
     'Chest',
-    'CampSupplyShelf',
-    'CampThrone',
-    'CampTorchStand',
-    'CampSquareStool',
-    'CampBench',
+    'CampBookcase',
+    'CampMountedSkull',
     'CampBlueJar',
+    'CampJarLarge',
+    'CampFruitBowl',
+    'CampBrazier',
+    'CampThrone',
+    'CampArrowBasket',
+    'CampBench',
+    'CampStumpStool',
+    'CampTorchStand',
   ],
   Barracks: ['CampStumpStool', 'CampForge', 'CampBrazier', 'CampTorchStand', 'CampArrowBasket', 'CampBench'],
-  ArcheryRange: ['CampBookcase', 'CampArrowBasket', 'CampWeavingTable', 'CampJarLarge'],
   Temple: ['CampMountedSkull', 'CampBench', 'CampChair', 'CampBrazier', 'CampTorchStand'],
   Granary: [
     'Chest',
@@ -45,10 +60,9 @@ const expectedFurniture = {
   WatchTower: ['CampChair', 'CampTorchStand'],
 }
 const expectedCounts = {
-  House: 7,
-  TownCenter: 10,
+  House: 10,
+  TownCenter: 16,
   Barracks: 7,
-  ArcheryRange: 5,
   Temple: 9,
   Granary: 9,
   StoragePit: 11,
@@ -68,7 +82,7 @@ for (const [type, expected] of Object.entries(expectedFurniture)) {
       const cell = space.grid[item.i][item.j]
       assert.ok(!cell.terrainHidden)
       assert.ok(Math.max(Math.abs(item.i - space.exitCell.i), Math.abs(item.j - space.exitCell.j)) > 1)
-      const texture = getBuildingAsset(item.type, { age: 0 }, {}).images.final
+      const texture = getBuildingAsset(item.assetType || item.type, { age: 0 }, {}).images.final
       assert.equal(texture.sheet, 'buildings/deco')
       assert.ok(Object.values(atlas.frames)[texture.frame], `missing frame for ${item.type}`)
     }
@@ -115,22 +129,17 @@ test('furniture cannot sever a narrow corridor', () => {
   assert.equal(preservesInteriorPassages(grid, grid[0][2]), true)
 })
 
-test('reference furniture stays on its intended edge cells without being scattered inward', () => {
+test('furniture groups follow the new straight walls and keep the door approach clear', () => {
   const checks = {
     House: [
-      ['CampBookcase', 5, 10],
-      ['CampTable', 8, 12],
-      ['CampAlchemyTable', 6, 5],
+      ['CampSupplyShelf', 5, 8],
+      ['CampTable', 5, 10],
+      ['CampAlchemyTable', 10, 5],
     ],
     TownCenter: [
-      ['FireCamp', 10, 10],
-      ['Chest', 6, 7],
-      ['CampThrone', 10, 6],
-    ],
-    ArcheryRange: [
-      ['CampBookcase', 5, 9],
-      ['CampBookcase', 5, 10],
-      ['CampWeavingTable', 10, 8],
+      ['FireCamp', 11, 11],
+      ['Chest', 6, 11],
+      ['CampThrone', 11, 6],
     ],
     Stable: [
       ['CampBucket', 7, 8],
@@ -156,6 +165,7 @@ test('hides and rugs render on the floor without occupying cells or intercepting
         Sprite: class {
           constructor(texture) {
             this.texture = texture
+            this.scale = { x: 1, y: 1 }
             this.anchor = {
               set: (x, y) => {
                 this.anchor.x = x
@@ -176,7 +186,7 @@ test('hides and rugs render on the floor without occupying cells or intercepting
   })
   for (const [type, expectedCount] of Object.entries({
     House: 4,
-    TownCenter: 6,
+    TownCenter: 5,
     Barracks: 1,
     Temple: 3,
     WatchTower: 1,
@@ -188,6 +198,17 @@ test('hides and rugs render on the floor without occupying cells or intercepting
     const children = []
     addInteriorFloorDecorations(space, { addChild: child => children.push(child) })
     assert.equal(children.length, expectedCount, type)
+    const reflected = []
+    addInteriorFloorDecorations(furnishInterior(type, undefined, true).space, {
+      addChild: child => reflected.push(child),
+    })
+    assert.ok(children.every(child => child.scale.x === 1))
+    assert.ok(reflected.every(child => child.scale.x === -1))
+    assert.deepEqual(
+      reflected.map(child => [child.texture.frame, child.x, child.y]),
+      children.map(child => [child.texture.frame, -child.x || 0, child.y]),
+      `${type}: reflected floor decorations`
+    )
     assert.deepEqual(
       space.grid.flat().map(cell => ({ has: cell.has, solid: cell.solid })),
       before
@@ -199,4 +220,83 @@ test('hides and rugs render on the floor without occupying cells or intercepting
       assert.ok([17, 18, 41].includes(child.texture.frame))
     }
   }
+})
+
+test('saved furniture outside the new room or at its doorway is relocated with its inventory', () => {
+  const saved = [
+    { type: 'Chest', label: 'saved-chest', i: 5, j: 5, inventory: { resources: { wood: 37 } } },
+    { type: 'CampBench', label: 'saved-bench', i: 9, j: 13 },
+  ]
+  const { owner, space } = furnishInterior('House', saved)
+  assert.equal(owner.buildings.length, 2)
+  assert.deepEqual(owner.buildings[0].inventory, saved[0].inventory)
+  for (const item of owner.buildings) {
+    assert.equal(space.grid[item.i][item.j].terrainHidden, false)
+    assert.ok(Math.max(Math.abs(item.i - space.exitCell.i), Math.abs(item.j - space.exitCell.j)) > 1)
+  }
+  assert.equal(space.exitCell.solid, false)
+  assert.equal(space.building.interiorBuildings, undefined)
+})
+
+test('only the TownCenter chest uses the mirrored asset and retains it on restore', () => {
+  const { owner } = furnishInterior('TownCenter')
+  const chest = owner.buildings.find(item => item.type === 'Chest')
+  assert.equal(chest.assetType, 'InteriorMirroredChest')
+  assert.equal(getBuildingAsset(chest.assetType, { age: 0 }, {}).mirrored, true)
+  const saved = [{ ...chest, inventory: { resources: { wood: 37 } } }]
+  const restored = furnishInterior('TownCenter', saved).owner.buildings[0]
+  assert.equal(restored.type, 'Chest')
+  assert.equal(restored.assetType, chest.assetType)
+  assert.deepEqual(restored.inventory, saved[0].inventory)
+  for (const type of ['Granary', 'StoragePit']) {
+    const ordinary = furnishInterior(type).owner.buildings.find(item => item.type === 'Chest')
+    assert.equal(ordinary.assetType, undefined)
+    assert.notEqual(getBuildingAsset(ordinary.type, { age: 0 }, {}).mirrored, true)
+  }
+})
+
+test('mirrored rooms reflect furniture placement and restore saved positions without a second reflection', () => {
+  for (const type of Object.keys(expectedFurniture)) {
+    const normal = furnishInterior(type)
+    const mirrored = furnishInterior(type, undefined, true)
+    assert.deepEqual(
+      mirrored.owner.buildings.map(({ type, i, j }) => ({ type, i, j })),
+      normal.owner.buildings.map(({ type, i, j }) => ({ type, i: j, j: i })),
+      type
+    )
+    assert.ok(
+      normal.owner.buildings.every(item => item.placementMirrored === false),
+      type
+    )
+    assert.ok(
+      mirrored.owner.buildings.every(item => item.placementMirrored === true),
+      type
+    )
+    const saved = JSON.parse(JSON.stringify(mirrored.owner.buildings))
+    // Reproduce saves made before sprites inherited the room mirror.
+    saved.forEach(item => {
+      delete item.placementMirrored
+    })
+    const restored = furnishInterior(type, saved, true)
+    assert.ok(
+      restored.owner.buildings.every(item => item.placementMirrored === true),
+      type
+    )
+    const reloaded = furnishInterior(type, JSON.parse(JSON.stringify(restored.owner.buildings)), true)
+    assert.ok(
+      reloaded.owner.buildings.every(item => item.placementMirrored === true),
+      type
+    )
+    assert.deepEqual(
+      restored.owner.buildings.map(({ type, i, j }) => ({ type, i, j })),
+      mirrored.owner.buildings.map(({ type, i, j }) => ({ type, i, j })),
+      `${type}: restored furniture`
+    )
+  }
+})
+
+test('restoring a mirrored interior retains the orientation of manually placed furniture', () => {
+  const saved = [{ type: 'CampTable', label: 'player-table', i: 9, j: 9, placementMirrored: false }]
+  const { owner } = furnishInterior('House', saved, true)
+  assert.equal(owner.buildings[0].placementMirrored, false)
 })

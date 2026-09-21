@@ -652,7 +652,7 @@
 
 .inventory-tools-page,
 .action-menu-construction-page,
-.action-menu-craft-page {
+.forge-craft-body {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ui-gap-8);
@@ -667,7 +667,7 @@
   gap: var(--ui-gap-8);
 }
 
-.action-menu-craft-page {
+.forge-craft-body {
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;

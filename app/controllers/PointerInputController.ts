@@ -174,6 +174,7 @@ export class PointerInputController {
   }
 
   private updateMousePosition(evt: PointerPageEvent): void {
+    if (evt.target instanceof Element && evt.target.closest('.building-placement-help')) return
     this.host.mouse.x = evt.pageX
     this.host.mouse.y = evt.pageY
   }

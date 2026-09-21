@@ -153,3 +153,24 @@ test('invalid terrain, insufficient stocks, unmet conditions and human owners ca
     assert.deepEqual(player.buildings[0].inventory.resources, before)
   }
 })
+
+test('established villages build one decorative forge offline and retain it when materialized', () => {
+  const { player, state, terrain, rules } = fixture()
+  for (const [n, type] of ['Granary', 'Market', 'Barracks'].entries()) {
+    player.buildings.push({ type, label: type, i: 25, j: 5 + n * 8, isBuilt: true })
+  }
+  state.resources = []
+  rules.buildingConfig = (_index, type) => type === 'Forge' ? realBuildings.Forge : { size: 3 }
+  planOfflineBuildings(state, 1, terrain, rules)
+  const forge = player.buildings.find(building => building.type === 'Forge')
+  assert.ok(forge)
+  assert.equal(forge.isBuilt, false)
+  assert.equal(player.buildings[0].inventory.resources.wood, 940)
+  assert.equal(player.buildings[0].inventory.resources.stone, 480)
+  forge.isBuilt = true
+  restoreOfflineBuilders(state)
+  planOfflineBuildings(state, 2, terrain, rules)
+  assert.equal(player.buildings.filter(building => building.type === 'Forge').length, 1)
+  const arrived = materializeInitialEconomy(structuredClone(state), state, 2 * DAY)
+  assert.ok(arrived.players[0].buildings.some(building => building.type === 'Forge' && building.isBuilt))
+})

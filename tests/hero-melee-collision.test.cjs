@@ -47,6 +47,7 @@ test('dead targets and entities in another map space cannot be hit', () => {
 })
 
 function setupSwing(initialTargets) {
+  const aggressions = []
   let candidates = initialTargets
   let impact
   const hits = []
@@ -55,7 +56,7 @@ function setupSwing(initialTargets) {
   const tools = loadTsModule('app/lib/hero/heroMeleeTools.ts', {
     mocks: {
       '../combat': {
-        getActionCondition: (_hero, target) => target.hitPoints > 0 && !target.isDead,
+        getActionCondition: (_hero, target) => target.hitPoints > 0 && !target.isDead && !target.nonHostile,
         prepareAutomaticParry: () => {},
       },
       '../combat/combatHit': {
@@ -65,8 +66,11 @@ function setupSwing(initialTargets) {
         },
       },
       '../combat/diplomaticAggression': {
-        canTriggerDiplomaticAggression: () => false,
-        applyDiplomaticAggression: () => ({ changed: false }),
+        canTriggerDiplomaticAggression: (_hero, target) => Boolean(target.nonHostile),
+        applyDiplomaticAggression: (_hero, target) => {
+          aggressions.push(target)
+          return { changed: false }
+        },
       },
       '../equipment/equipmentStats': {
         getEquipmentCombatStats: () => ({ weaponPower: 4 }),
@@ -94,6 +98,7 @@ function setupSwing(initialTargets) {
   return {
     hero,
     hits,
+    aggressions,
     sounds,
     tools,
     release: () => impact(),
@@ -300,4 +305,42 @@ test('NPC melee impact applies the shared geometry even when legacy arrival says
   target.x = 30
   callbacks.onReadyToAttack(target)
   assert.equal(damage, 1)
+})
+
+for (const family of ['unit', 'building', 'animal']) {
+  test(`interact cannot attack a non-hostile ${family}, including on an empty-hand swing`, () => {
+    const target = { ...targetAt(20), family, nonHostile: true }
+    const swing = setupSwing([target])
+    assert.equal(swing.tools.triggerInteractMeleeAt(swing.hero), 'miss')
+    swing.tools.playEmptyHandWhiff(swing.hero)
+    swing.release()
+    assert.deepEqual(swing.hits, [])
+    assert.deepEqual(swing.aggressions, [])
+  })
+}
+
+test('interact rechecks relations at impact and never triggers diplomatic aggression', () => {
+  const target = targetAt(20)
+  const swing = setupSwing([target])
+  assert.equal(swing.tools.triggerInteractMeleeAt(swing.hero), 'triggered')
+  target.nonHostile = true
+  swing.release()
+  assert.deepEqual(swing.hits, [])
+  assert.deepEqual(swing.aggressions, [])
+})
+
+test('interact can still hit enemies without invoking diplomatic aggression', () => {
+  const target = targetAt(20)
+  const swing = setupSwing([target])
+  assert.equal(swing.tools.triggerInteractMeleeAt(swing.hero), 'triggered')
+  swing.release()
+  assert.deepEqual(swing.hits, [target])
+  assert.deepEqual(swing.aggressions, [])
+})
+
+test('sword still allows deliberate diplomatic aggression', () => {
+  const target = { ...targetAt(20), nonHostile: true }
+  const swing = setupSwing([target])
+  assert.equal(swing.tools.triggerSwordAttackAt(swing.hero), true)
+  assert.deepEqual(swing.aggressions, [target])
 })

@@ -36,6 +36,7 @@ export type SaveEntityState = {
   }
   cavePosition?: { caveId: string; i: number; j: number }
   cave?: CaveDefinition
+  placementMirrored?: boolean
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string

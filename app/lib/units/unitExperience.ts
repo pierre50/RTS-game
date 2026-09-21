@@ -65,7 +65,6 @@ const ENERGY_REGEN_BONUS_PER_LEVEL = 0.02 // +2% energy regen rate per overall l
 // (Fantassin/Archer). Alimentée par le même XP de combat (melee/ranged/defense) mais avec une
 // courbe plate au lieu de la courbe accélérée du niveau — l'age du joueur plafonne la progression.
 const EQUIPMENT_TIER_XP_PER_LEVEL = 200
-const EQUIPMENT_TIER_CAP_BY_AGE: Record<number, number> = { 0: 5, 1: 15, 2: 20 }
 
 export const WORK_XP_CATEGORY: Record<string, string> = {
   [WORK_TYPES.farmer]: XP_CATEGORIES.farming,
@@ -142,19 +141,6 @@ export function getUnitEquipmentLevel(unit: UnitEntity, category = unit.category
   return getUnitOverallLevel(unit)
 }
 
-function getEquipmentTierCapForAge(age: number): number {
-  const ages = Object.keys(EQUIPMENT_TIER_CAP_BY_AGE)
-    .map(Number)
-    .sort((a, b) => a - b)
-  let cap = 0
-  for (const a of ages) {
-    if (age >= a) cap = EQUIPMENT_TIER_CAP_BY_AGE[a]
-  }
-  return cap
-}
-
-// The new, independent equipment-unlock track: linear XP curve, soldier-only (everything else —
-// villagers, Priest — has no level-gated equipment anyway), capped by the player's current age.
 export function getUnitEquipmentTier(
   unit: Pick<UnitEntity, 'experience' | 'category' | 'type' | 'owner'>,
   category = unit.category || unit.type
@@ -166,7 +152,7 @@ export function getUnitEquipmentTier(
   else return 0
 
   const tierFromXp = Math.min(XP_MAX_LEVEL, Math.floor(totalXp / EQUIPMENT_TIER_XP_PER_LEVEL))
-  return Math.min(tierFromXp, getEquipmentTierCapForAge(unit.owner?.age ?? 0))
+  return tierFromXp
 }
 
 // Kept for legacy/debug summaries only. Gameplay unlocks should use getUnitEquipmentTier,

@@ -7,7 +7,7 @@ import {
 import { scheduleVillagerExplorationResume } from './autonomy/villagerExploration'
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getNearestAvailableStableForUnit } from '../horses/horseCapture'
-import { canOwnerMineMineral } from '../resources/ironMining'
+import { canMineIronResource } from '../resources/ironMining'
 import { shouldVillagerWork } from './villagerSchedule'
 import { villagerAutonomySuspension } from './autonomy/villagerAutonomyAvailability'
 import { logGoldMinerFlow } from './autonomy/villagerJobDiagnostics'
@@ -75,7 +75,7 @@ function noStrictTargetForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob, o
 
 export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
-  if (!canOwnerMineMineral(unit.owner, job)) return false
+  if (!canMineIronResource(unit, { type: job })) return false
   if (job === 'construction') return knownConstructionTargets(unit).length > 0
   if (job === 'food') return knownFoodTargets(unit).length > 0
   if (job === 'horseCapture') {
@@ -230,7 +230,7 @@ export function assignVillagerAutonomy(
 ): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
   if (!shouldVillagerWork(unit)) return false
-  if (!canOwnerMineMineral(unit.owner, job)) return false
+  if (!canMineIronResource(unit, { type: job })) return false
   if (!options.preserveRejectedTargets) clearVillagerAutonomyTargetRejections(unit, job)
   setVillagerAutonomy(unit, job)
   const scoring = {

@@ -15,7 +15,6 @@ function isMountableTamedHorse(
   target: RuntimeEntity | null | undefined,
   allowLegacyCompanionHorse = false
 ): target is AnimalEntity {
-  if ((hero.owner?.age ?? 0) < 1) return false
   if (hero.mountedOnHorse) return false
   if (!target || target.isDead || target.isDestroyed) return false
   if (target.family !== 'animal' || target.type !== 'Horse') return false

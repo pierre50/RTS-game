@@ -159,6 +159,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.buildingPlacer.removeMouseBuilding()
     const {
       context: { gamebox },
     } = this

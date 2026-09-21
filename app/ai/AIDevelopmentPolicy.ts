@@ -55,8 +55,15 @@ export function villageBuildingNeeds(input: {
     [BUILDING_TYPES.market]: count(BUILDING_TYPES.granary) > 0 && count(BUILDING_TYPES.market) === 0,
     [BUILDING_TYPES.archeryRange]: count(BUILDING_TYPES.barracks) > 0,
     [BUILDING_TYPES.stable]: count(BUILDING_TYPES.barracks) > 0,
-    [BUILDING_TYPES.watchTower]: input.age >= 1,
-    [BUILDING_TYPES.temple]: input.age >= 1 && count(BUILDING_TYPES.temple) === 0,
+    [BUILDING_TYPES.watchTower]: true,
+    [BUILDING_TYPES.temple]: count(BUILDING_TYPES.temple) === 0,
+    // A single decorative forge is a late village project, never an economic prerequisite.
+    [BUILDING_TYPES.forge]:
+      count(BUILDING_TYPES.forge) === 0 &&
+      !input.storagePitNeeded &&
+      input.population + expectedVillageArrivals(input.population) + 2 <= input.populationMax &&
+      !buildings.some(building => !building.isBuilt) &&
+      [BUILDING_TYPES.granary, BUILDING_TYPES.market, BUILDING_TYPES.barracks].every(type => count(type) > 0),
   }
 }
 

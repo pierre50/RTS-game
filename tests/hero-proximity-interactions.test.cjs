@@ -6,6 +6,7 @@ function loadHeroProximityInteractions(overrides = {}) {
   return loadTsModule('app/lib/hero/heroProximityInteractions.ts', {
     mocks: {
       '../../constants': {
+        CAMP_DECORATION_BUILDING_TYPES: loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
         ACTION_TYPES: { attack: 'attack' },
         FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
         BUILDING_TYPES: {
@@ -677,5 +678,13 @@ test('a filled trap offers the same dismantling action as an empty trap', () => 
     action: 'dismantleTrap',
     labelKey: 'heroInteractionDismantle',
     target: trap,
+  })
+})
+
+test('forge offers its exterior menu instead of an interior entrance', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const forge = { family: 'building', type: 'Forge', isBuilt: true, i: 5, j: 5 }
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), buildings: [forge], openEntityTarget: forge }), {
+    action: 'open', labelKey: 'heroInteractionOpenMenu', target: forge,
   })
 })

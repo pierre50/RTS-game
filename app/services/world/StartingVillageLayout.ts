@@ -97,6 +97,8 @@ export class StartingVillageLayout {
         ][count % 3]
         return { i: home.i + di, j: home.j + dj }
       }
+      case 'Forge':
+        return nearest(['StoragePit', 'Market'], plan.square)
       case 'Market':
         return plan.square
       case 'FireCamp':

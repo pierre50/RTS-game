@@ -78,6 +78,9 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.map'))) {
       assert.deepEqual(afterTotals, beforeTotals)
       const occupied = new Set(generated.resources.map(r => `${r.i}:${r.j}`))
       const placed = generated.players[0].buildings
+      const homes = placed.filter(building => building.type === 'House')
+      assert.equal(new Set(homes.map(building => building.placementMirrored)).size, 2, 'mixed house orientations')
+      assert.equal(placed.filter(building => building.type === 'Forge' && building.isBuilt).length, 1)
       const center = placed.find(b => b.type === 'TownCenter')
       const distance = (a, b) => Math.hypot(a.i - b.i, a.j - b.j)
       const fields = generated.resources.filter(r => r.type === 'Wheat' && r.label?.startsWith('start:'))
@@ -139,6 +142,15 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.map'))) {
           }
         }
       for (const building of placed) {
+        if (
+          ['TownCenter', 'House', 'Barracks', 'Stable', 'Granary', 'StoragePit', 'Temple', 'WatchTower'].includes(
+            building.type
+          )
+        ) {
+          const i = building.i + (building.placementMirrored ? 2 : 1)
+          const j = building.j + (building.placementMirrored ? 1 : 2)
+          assert.ok(visited.has(`${i}:${j}`), `${building.type}: entrance must remain reachable`)
+        }
         const size = building.size ?? buildings[building.type].size,
           before = Math.floor((size - 1) / 2),
           after = size - before - 1

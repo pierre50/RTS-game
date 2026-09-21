@@ -25,7 +25,3 @@ export const POPULATION_MAX = 200
 // Active le passage d'âge joueur + IA. Les bâtiments utilisent le meilleur asset d'âge disponible
 // et retombent sur l'âge précédent quand l'âge suivant n'a pas encore d'art dédié.
 export const AGE_UP_ENABLED = true
-
-// Fallback conservé pour les tests/configs qui désactivent AGE_UP_ENABLED : les conditions
-// atteignables (N <= 1) restent considérées comme remplies, les sentinelles restent bloquantes.
-export const AGE_GATE_MAX_UNLOCKABLE_VALUE = 1

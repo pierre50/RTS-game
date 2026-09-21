@@ -111,17 +111,18 @@ test('repeated market purchases and sales cannot exceed the available stock or i
   assert.equal(hero.inventory.resources.gold, gold)
 })
 
-test('market equipment catalog follows market civilization and age without tools or quivers', () => {
-  const { getMarketEquipmentOffers } = loadEquipmentMarket()
-
-  assert.deepEqual(
-    getMarketEquipmentOffers({ age: 2, civilization: 'Hellas' }).map(offer => offer.equipment),
-    ['sword_iron', 'helmet_barbuta_iron', 'centurion_crest', 'bow_recurve', 'arrow_copper']
-  )
-  assert.deepEqual(
-    getMarketEquipmentOffers({ age: 1, civilization: 'Latium' }).map(offer => offer.equipment),
-    ['sword_ceramic', 'helmet_legion_bronze', 'centurion_plumage', 'bow_recurve', 'arrow_copper']
-  )
+test('market equipment retains civilization selection but is independent of age', () => {
+  const { getMarketEquipmentOffers, buyMarketEquipment } = loadEquipmentMarket()
+  for (const civilization of ['Hellas', 'Latium']) {
+    const keys = age => getMarketEquipmentOffers({ age, civilization }).map(offer => offer.equipment)
+    assert.deepEqual(keys(0), keys(2))
+    assert.ok(keys(0).includes('sword_iron'))
+    assert.ok(keys(0).includes('bow_recurve'))
+    assert.equal(keys(0).includes('quiver'), false)
+    assert.equal(keys(0).includes('axe_iron'), false)
+  }
+  const hero = { owner: { age: 0 }, inventory: { equipment: [], resources: { gold: 1000 } } }
+  assert.equal(buyMarketEquipment(hero, 'sword_iron'), 1)
 })
 
 test('arrow material increases unit prices, stock offers and resale proceeds', () => {

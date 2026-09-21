@@ -239,6 +239,30 @@
         "x": 0.5,
         "y": 0.7
       }
+    },
+    "010_graphics_buildings_age-0_forge.png": {
+      "frame": {
+        "x": 1637,
+        "y": 0,
+        "w": 170,
+        "h": 134
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 170,
+        "h": 134
+      },
+      "sourceSize": {
+        "w": 170,
+        "h": 134
+      },
+      "anchor": {
+        "x": 0.55,
+        "y": 0.65
+      }
     }
   },
   "meta": {
@@ -247,7 +271,7 @@
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 1619,
+      "w": 1807,
       "h": 139
     },
     "scale": 1

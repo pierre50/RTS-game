@@ -46,7 +46,9 @@ function getSpriteParentBounds(sprite: Sprite): { x: number; y: number; width: n
   const width = texture.orig?.width || texture.width
   const height = texture.orig?.height || texture.height
   return {
-    x: sprite.position.x - sprite.anchor.x * width * sprite.scale.x,
+    x:
+      sprite.position.x +
+      Math.min(-sprite.anchor.x * width * sprite.scale.x, (1 - sprite.anchor.x) * width * sprite.scale.x),
     y: sprite.position.y - sprite.anchor.y * height * sprite.scale.y,
     width: width * Math.abs(sprite.scale.x),
     height: height * Math.abs(sprite.scale.y),
@@ -314,7 +316,7 @@ export function updateBuildingShadow(
   shadow.rotation = 0
   shadow.tint = texture ? 0xffffff : 0x000000
   shadow.scale.set(
-    texture ? sprite.scale.x : Math.abs(sprite.scale.x) * SPRITE_SHADOW_SCALE_X,
+    texture ? sprite.scale.x : sprite.scale.x * SPRITE_SHADOW_SCALE_X,
     texture ? sprite.scale.y : Math.abs(sprite.scale.y) * SPRITE_SHADOW_SCALE_Y
   )
   const point = getEntityMapPoint(building)

@@ -3,7 +3,6 @@ import { getMissingPlayerResources, withdrawChestResources } from '../resources/
 import type { ResourceAmount } from '../../types/common'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
-import { canUseAgeEquipment } from '../objectives/ageRules'
 
 export type HeroCraftRecipe = {
   descriptionKey?: string
@@ -105,8 +104,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
 ]
 
-export function getAvailableHeroCraftRecipes(player: Pick<PlayerLike, 'age'>): readonly HeroCraftRecipe[] {
-  return HERO_CRAFT_RECIPES.filter(recipe => canUseAgeEquipment(player, recipe.outputEquipment))
+export function getAvailableHeroCraftRecipes(_player: Pick<PlayerLike, 'age'>): readonly HeroCraftRecipe[] {
+  return HERO_CRAFT_RECIPES
 }
 
 export function getMissingCraftResources(
@@ -118,10 +117,7 @@ export function getMissingCraftResources(
 }
 
 export function canCraftHeroRecipe(player: PlayerLike, recipe: HeroCraftRecipe, hero?: UnitEntity | null): boolean {
-  return (
-    canUseAgeEquipment(player, recipe.outputEquipment) &&
-    Object.keys(getMissingCraftResources(player, recipe.cost, hero)).length === 0
-  )
+  return Object.keys(getMissingCraftResources(player, recipe.cost, hero)).length === 0
 }
 
 export function craftHeroRecipe(

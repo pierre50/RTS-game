@@ -43,7 +43,8 @@ export const getActionCondition = (
     ...getResourceActionConditions(source, target),
     build: () =>
       (source.type === UNIT_TYPES.villager || source.type === UNIT_TYPES.hero) &&
-      target.owner?.label === source.owner?.label &&
+      (target.owner?.label === source.owner?.label ||
+        (source.type === UNIT_TYPES.hero && isFriendlyTarget(source, target))) &&
       target.family === FAMILY_TYPES.building &&
       (target.hitPoints ?? 0) > 0 &&
       (!target.isBuilt || (target.hitPoints ?? 0) < (target.totalHitPoints ?? 0)) &&
@@ -52,6 +53,7 @@ export const getActionCondition = (
       Boolean(
         canAttack(source) &&
           target &&
+          !target.indestructible &&
           !isFriendlyTarget(source, target) &&
           (source.owner?.isEnemy?.(target.owner as never) || target.family === FAMILY_TYPES.animal) &&
           (source.family !== FAMILY_TYPES.animal || target.family !== FAMILY_TYPES.building) &&

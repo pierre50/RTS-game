@@ -171,8 +171,8 @@ function buildMocks(calls, context) {
       refreshUnitEquipmentStats: npc => calls.push(['refreshUnitEquipmentStats', npc.label]),
     },
     '../lib/resources/ironMining': {
-      canOwnerMineMineral: (owner, resource) =>
-        (owner?.age ?? 0) >= (resource === 'iron' ? 2 : resource === 'copper' ? 1 : 0),
+      canMineIronResource: (unit, target) =>
+        target.type !== 'iron' || (unit.owner?.age ?? 0) >= 1 || unit.inventory?.equipment?.includes('pickaxe_bronze'),
     },
     '../lib/lpc': {
       ensureAndRefreshBakedLpcUnitAssets: async npc => {
@@ -635,13 +635,13 @@ test('resource orders live behind a resources submenu without a visible back but
     assert.equal(manager.buttons.get('wood').hidden, false)
     assert.equal(manager.buttons.get('stone').hidden, false)
     assert.equal(manager.buttons.get('gold').hidden, false)
-    assert.equal(manager.buttons.get('copper').hidden, context.player.age < 1)
+    assert.equal(manager.buttons.get('copper').hidden, false)
     assert.equal(manager.buttons.get('iron').hidden, false)
     assert.equal(manager.buttons.get('back').hidden, true)
   })
 })
 
-test('iron resource order stays hidden before the Bronze Age', () => {
+test('iron resource order requires a suitable pickaxe, while copper is always available', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -655,7 +655,11 @@ test('iron resource order stays hidden before the Bronze Age', () => {
     manager.buttons.get('resources').click()
 
     assert.equal(manager.buttons.get('iron').hidden, true)
-    assert.equal(manager.buttons.get('copper').hidden, true)
+    assert.equal(manager.buttons.get('copper').hidden, false)
+    npc.inventory = { equipment: ['pickaxe_bronze'] }
+    manager.open([npc])
+    manager.buttons.get('resources').click()
+    assert.equal(manager.buttons.get('iron').hidden, false)
   })
 })
 

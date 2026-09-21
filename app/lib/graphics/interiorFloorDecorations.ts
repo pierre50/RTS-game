@@ -7,7 +7,7 @@ import type { RuntimeCell } from '../../types/map'
 
 export function addInteriorFloorDecorations(
   space: {
-    building: { type: string }
+    building: { type: string; placementMirrored?: boolean }
     grid: RuntimeCell[][]
     walkableCells: RuntimeCell[]
     sleepCells: RuntimeCell[]
@@ -19,14 +19,17 @@ export function addInteriorFloorDecorations(
   if (!decorations.length) return
   const center = getInteriorRoomCenter(space)
   for (const decoration of decorations) {
-    const i = center.i + (decoration.offsetX / (CELL_WIDTH / 2) + decoration.offsetY / (CELL_HEIGHT / 2)) / 2
-    const j = center.j + (decoration.offsetY / (CELL_HEIGHT / 2) - decoration.offsetX / (CELL_WIDTH / 2)) / 2
+    const offsetX = decoration.offsetX * (space.building.placementMirrored ? -1 : 1)
+    const i = center.i + (offsetX / (CELL_WIDTH / 2) + decoration.offsetY / (CELL_HEIGHT / 2)) / 2
+    const j = center.j + (decoration.offsetY / (CELL_HEIGHT / 2) - offsetX / (CELL_WIDTH / 2)) / 2
     const cell = space.grid[Math.round(i)]?.[Math.round(j)]
-    if (!cell || cell.terrainHidden || cell.border || cell.category === 'Water') continue
+    if (!cell || cell.terrainHidden || (cell.border && !decoration.allowBorderPlacement) || cell.category === 'Water')
+      continue
     const texture = getTextureByFrame('buildings/deco', decoration.frame, Assets)
     const sprite = new Sprite(texture)
+    sprite.scale.x = space.building.placementMirrored ? -1 : 1
     if (texture.defaultAnchor) sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
-    sprite.x = ((center.i - center.j) * CELL_WIDTH) / 2 + decoration.offsetX
+    sprite.x = ((center.i - center.j) * CELL_WIDTH) / 2 + offsetX
     sprite.y = ((center.i + center.j) * CELL_HEIGHT) / 2 + decoration.offsetY
     sprite.label = 'interior-floor-decoration'
     sprite.eventMode = 'none'

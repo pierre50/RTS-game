@@ -1,3 +1,4 @@
+import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { MAX_ARCHER_BY_AGE, MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE } from '../../ai/config'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
 import { PLAYER_TYPES } from '../../constants'
@@ -13,6 +14,7 @@ const DISTRICT_BUILDING_ORDER = [
   'Granary',
   'StoragePit',
   'Market',
+  'Forge',
   'Barracks',
   'ArcheryRange',
   'Stable',
@@ -86,6 +88,7 @@ export function applyVillageStartingState(
         label: `start:${player.label ?? index}:building:${player.buildings!.length}`,
         isBuilt: true,
         buildingAge: profile.age,
+        placementMirrored: generatedBuildingMirrored(type, point, player.civ ?? index, p => spatial.available(p)),
         hitPoints: Number(config.totalHitPoints),
         totalHitPoints: Number(config.totalHitPoints),
       }

@@ -17,6 +17,10 @@ export function tutorialVillageConfig(config: GameConfig): GameConfig {
         buildings: {
           ...MAX_BUILDING_BY_AGE[0],
           Granary: 2,
+          StoragePit: 2,
+          TownCenter: 1,
+          Barracks: 1,
+          ArcheryRange: 1,
           House: 6,
           WatchTower: 2,
           FireCamp: 2,

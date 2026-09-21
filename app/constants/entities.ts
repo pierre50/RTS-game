@@ -49,6 +49,7 @@ export const BUILDING_TYPES = {
   townCenter: 'TownCenter',
   farm: 'Farm',
   storagePit: 'StoragePit',
+  forge: 'Forge',
   granary: 'Granary',
   barracks: 'Barracks',
   market: 'Market',
@@ -96,6 +97,7 @@ export const BUILDING_TYPES = {
   campStumpStool: 'CampStumpStool',
   campMountedSkull: 'CampMountedSkull',
   campTorchStand: 'CampTorchStand',
+  campFruitBowl: 'CampFruitBowl',
 }
 
 export const CAMP_DECORATION_BUILDING_TYPES = [
@@ -134,6 +136,7 @@ export const CAMP_DECORATION_BUILDING_TYPES = [
   BUILDING_TYPES.campStumpStool,
   BUILDING_TYPES.campMountedSkull,
   BUILDING_TYPES.campTorchStand,
+  BUILDING_TYPES.campFruitBowl,
 ] as const
 
 export const UNIT_TYPES = {

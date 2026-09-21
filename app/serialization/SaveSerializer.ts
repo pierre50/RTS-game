@@ -25,6 +25,7 @@ type SerializableEntity = RuntimeEntityBase & {
   offlineBuilderJob?: SaveEntityState['offlineBuilderJob']
   resourceDeliveryState?: UnitEntity['resourceDeliveryState']
   cave?: CaveDefinition
+  placementMirrored?: boolean
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string
@@ -390,6 +391,7 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'assetCiv',
       'assetAge',
       'buildingAge',
+      'placementMirrored',
       'totalHitPoints',
       'assetType',
       'horseAmount',

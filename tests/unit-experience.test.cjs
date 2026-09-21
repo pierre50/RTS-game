@@ -135,7 +135,7 @@ test('equipment level follows role skills instead of unrelated expertise', () =>
   assert.equal(getUnitEquipmentLevel(archer), 4)
 })
 
-test('equipment tier follows a flat xp curve, soldier-only, capped by age', () => {
+test('equipment tier follows a flat xp curve, soldier-only, independent of age', () => {
   const { getUnitEquipmentTier, XP_MAX_LEVEL } = loadExperience()
   const infantry = makeUnit({ type: 'Fantassin', category: 'Fantassin', owner: { age: 2 } })
   const archer = makeUnit({ type: 'Bowman', category: 'Archer', owner: { age: 2 } })
@@ -159,14 +159,14 @@ test('equipment tier follows a flat xp curve, soldier-only, capped by age', () =
   assert.equal(getUnitEquipmentTier(priest), 0)
   assert.equal(getUnitEquipmentTier(villager), 0)
 
-  // The player's current age caps the tier even when the xp curve would allow more.
+  // All ages allow the same equipment progression.
   infantry.experience.melee = 100_000
   infantry.experience.defense = 100_000
   assert.equal(getUnitEquipmentTier(infantry), XP_MAX_LEVEL)
   infantry.owner.age = 0
-  assert.equal(getUnitEquipmentTier(infantry), 5)
+  assert.equal(getUnitEquipmentTier(infantry), XP_MAX_LEVEL)
   infantry.owner.age = 1
-  assert.equal(getUnitEquipmentTier(infantry), 15)
+  assert.equal(getUnitEquipmentTier(infantry), XP_MAX_LEVEL)
 })
 
 test('earned levels above the level-1 baseline drive reflex, energy and defense multipliers', () => {

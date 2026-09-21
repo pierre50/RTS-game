@@ -246,3 +246,16 @@ test('interior exit cell uses configured exits then falls back to the bottom mid
   map.interiorExits = []
   assert.equal(getInteriorExitCell(map), fallbackCell)
 })
+
+test('mirrored building entrance and hero interaction follow the reflected facade', () => {
+  const { getBuildingEntryCell, getBuildingInteriorEntryCell, findBuildingInteriorEntryTarget } =
+    loadBuildingInteriors()
+  const grid = makeGrid(15)
+  const building = { i: 5, j: 6, type: 'House', isBuilt: true, placementMirrored: true, context: { map: { grid } } }
+  assert.equal(getBuildingInteriorEntryCell(building), grid[7][7])
+  assert.equal(getBuildingEntryCell(building), grid[7][7])
+  assert.equal(findBuildingInteriorEntryTarget({ i: 7, j: 7, context: building.context }, [building]), building)
+  assert.equal(findBuildingInteriorEntryTarget({ i: 6, j: 8, context: building.context }, [building]), null)
+  building.interior = { entryOffset: { i: -1, j: 3 } }
+  assert.equal(getBuildingInteriorEntryCell(building), grid[8][5])
+})

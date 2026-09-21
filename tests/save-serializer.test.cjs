@@ -767,3 +767,25 @@ test('chest villager delivery preference survives serialization including explic
     assert.equal(saved.players[0].buildings[0].villagerDeliveriesBlocked, blocked)
   }
 })
+
+test('building placement orientation survives JSON serialization and legacy saves omit it', () => {
+  for (const placementMirrored of [true, false, undefined]) {
+    const context = makeContext()
+    context.players[0].buildings = [{ type: 'Chest', i: 1, j: 1, placementMirrored }]
+    const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+    assert.equal(saved.players[0].buildings[0].placementMirrored, placementMirrored)
+    const { restorePlayerEntitiesFromSave } = loadTsModule('app/classes/map/MapSaveRestore.ts', {
+      mocks: {
+        '../../lib/units/playerTargetKnowledge': { restoreTargetKnowledge() {}, restoreLegacyStaticKnowledge() {} },
+        '../../lib/resources/playerResourceTotals': { syncPlayerResourceFieldsFromChests() {} },
+        './generation/CaveSaveRestore': {},
+        './MapSaveReferences': {},
+        './MapSaveAI': {},
+        '../../../engine/services/BuildingInteriorSpaceSystemRuntime': {},
+      },
+    })
+    const restored = { createBuilding: options => ({ ...options }) }
+    restorePlayerEntitiesFromSave(restored, { buildings: saved.players[0].buildings }, true)
+    assert.equal(restored.buildings[0].placementMirrored, placementMirrored)
+  }
+})

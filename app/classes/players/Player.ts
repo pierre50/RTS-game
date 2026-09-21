@@ -1,21 +1,21 @@
 import { Assets } from 'pixi.js'
 import { createPlayerData } from '../../config/playerConfig'
 import {
-ACTION_TYPES,
-FADE_DURATION_MS,
-FAMILY_TYPES,
-PLAYER_TYPES,
-POPULATION_MAX,
-SOUND_CUES,
-UNIT_TYPES,
+  ACTION_TYPES,
+  FADE_DURATION_MS,
+  FAMILY_TYPES,
+  PLAYER_TYPES,
+  POPULATION_MAX,
+  SOUND_CUES,
+  UNIT_TYPES,
 } from '../../constants'
 import {
-canUpdateMinimap,
-getActionCondition,
-getHexColor,
-playSoundCue,
-updateInstanceVisibility,
-uuidv4,
+  canUpdateMinimap,
+  getActionCondition,
+  getHexColor,
+  playSoundCue,
+  updateInstanceVisibility,
+  uuidv4,
 } from '../../lib'
 import { playUiSound } from '../../lib/audio/uiSound'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
@@ -29,16 +29,16 @@ import { updatePopulationObjectives } from '../../lib/objectives/ageObjectives'
 import { isNeutralPlayer } from '../../lib/playerState'
 import { VisionGrid } from '../../services/VisionGrid'
 import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity,RuntimeEntity,UnitEntity } from '../../types/entities'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
-import type { PlayerConfigLike,PlayerLike,VisionGridLike } from '../../types/player'
+import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
 import type { SerializedVisionGrid } from '../../types/vision'
 import type { BuildingOptions } from '../building/Building'
 import { Building } from '../building/Building'
 import type { UnitSpawnOptions } from '../unit/Unit'
-import { buyPlayerBuilding,plantPlayerWheatField } from './PlayerBuildingPlacement'
-import { initializePlayerRelations,initializePlayerResources } from './PlayerInitialization'
-import { isBuildingEligible,onAgeChange } from './PlayerProgression'
+import { buyPlayerBuilding, plantPlayerWheatField } from './PlayerBuildingPlacement'
+import { initializePlayerRelations, initializePlayerResources } from './PlayerInitialization'
+import { isBuildingEligible, onAgeChange } from './PlayerProgression'
 import { createPlayerUnit } from './PlayerUnitCreation'
 
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
@@ -278,7 +278,7 @@ export class Player implements PlayerLike {
   plantWheatField(
     i: number,
     j: number,
-    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
+    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
   ) {
     return plantPlayerWheatField(this, i, j, options)
   }
@@ -287,7 +287,7 @@ export class Player implements PlayerLike {
     i: number,
     j: number,
     type: string,
-    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
+    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
   ) {
     return buyPlayerBuilding(this, i, j, type, options)
   }

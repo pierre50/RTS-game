@@ -185,6 +185,7 @@ function validatePlayerBuildings(
 ): void {
   buildings.forEach((building, buildingIndex) => {
     validateEntityPosition(building, size, `player ${playerIndex} building ${buildingIndex}`)
+    validateOptionalBoolean((building as SaveEntityState).placementMirrored, 'building mirror')
     validateOptionalBoolean((building as SaveEntityState).villagerDeliveriesBlocked, 'building villager deliveries')
     if (typeof building.type !== 'string' || !config.buildings?.[building.type]) {
       fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an unsupported type.`)

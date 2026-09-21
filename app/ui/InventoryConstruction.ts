@@ -25,7 +25,13 @@ const CONSTRUCTION_CATEGORIES: ReadonlyArray<{ titleKey: string; types: readonly
   },
   {
     titleKey: 'constructionCategoryEconomy',
-    types: [BUILDING_TYPES.farm, BUILDING_TYPES.granary, BUILDING_TYPES.storagePit, BUILDING_TYPES.market],
+    types: [
+      BUILDING_TYPES.farm,
+      BUILDING_TYPES.granary,
+      BUILDING_TYPES.storagePit,
+      BUILDING_TYPES.forge,
+      BUILDING_TYPES.market,
+    ],
   },
   {
     titleKey: 'constructionCategoryMilitary',

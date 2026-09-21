@@ -22,12 +22,7 @@ function installInteriorMapFetch(root) {
   }
 }
 
-function localCoordinates(i, j, layout) {
-  const row = i + j - (layout.columns - 1)
-  return { column: i - Math.ceil(row / 2), row }
-}
-
-test('interior generator writes size-based round dirt blueprints with a bottom-left door', () => {
+test('interior generator writes size-based rounded isometric dirt blueprints with a bottom-left door', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'interior-blueprint-'))
 
   try {
@@ -50,7 +45,7 @@ test('interior generator writes size-based round dirt blueprints with a bottom-l
     const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json'), 'utf8'))
     assert.equal(manifest.format, 'interior-map-manifest')
     assert.equal(manifest.blueprints.length, 2)
-    assert.equal(manifest.buildingTypes.length, 9)
+    assert.equal(manifest.buildingTypes.length, 8)
     assert.equal(Object.hasOwn(manifest, 'generatedAt'), false)
     assert.deepEqual(
       manifest.blueprints.map(blueprint => [blueprint.id, blueprint.buildingSize, blueprint.size, blueprint.path]),
@@ -65,7 +60,6 @@ test('interior generator writes size-based round dirt blueprints with a bottom-l
         ['TownCenter', 3, 'building-size-3-001', 'town-center-size-3-001'],
         ['House', 2, 'building-size-2-001', 'house-size-2-001'],
         ['Barracks', 3, 'building-size-3-001', 'barracks-size-3-001'],
-        ['ArcheryRange', 3, 'building-size-3-001', 'archery-range-size-3-001'],
         ['Temple', 2, 'building-size-2-001', 'temple-size-2-001'],
         ['Granary', 3, 'building-size-3-001', 'granary-size-3-001'],
         ['StoragePit', 3, 'building-size-3-001', 'storage-pit-size-3-001'],
@@ -86,7 +80,7 @@ test('interior generator writes size-based round dirt blueprints with a bottom-l
       assert.equal(blueprint.kind, 'interior')
       assert.equal(blueprint.buildingSize, entry.buildingSize)
       assert.equal(blueprint.size, entry.size)
-      assert.equal(blueprint.floorShape.type, 'round-local')
+      assert.equal(blueprint.floorShape.type, 'rounded-isometric')
       assert.equal(blueprint.cellCount, expectedCells)
       assert.equal(terrain.length, expectedCells)
       assert.equal(relief.length, expectedCells)
@@ -99,36 +93,29 @@ test('interior generator writes size-based round dirt blueprints with a bottom-l
       assert.ok([...terrain].some(value => value === DIRT_INDEX))
       assert.ok([...terrain].some(value => value === WATER_INDEX))
       const exit = blueprint.exits[0]
-      const exitLocal = localCoordinates(exit.i, exit.j, blueprint.localGridLayout)
-      const exitVisualColumn = exitLocal.column + (exitLocal.row % 2) / 2
-      assert.ok(exitLocal.row > blueprint.floorShape.center.row)
-      assert.ok(exitVisualColumn < blueprint.floorShape.center.column)
+      const { center, halfExtent } = blueprint.floorShape
+      const width = blueprint.size + 1
+      assert.deepEqual(exit, { id: 'main', i: center.i, j: center.j + halfExtent, direction: 'south' })
+      assert.deepEqual(blueprint.spawns, [{ i: exit.i, j: exit.j }])
+      assert.equal(borderMask[exit.i * width + exit.j], 0)
+      assert.equal(floorMask[exit.i * width + exit.j + 1], 0)
+      assert.equal(borderMask[exit.i * width + exit.j - 1], 0)
+      assert.ok(!blueprint.walls.some(wall => wall.i === exit.i && wall.j === exit.j))
+      // Long, straight walls along both grid axes; rounding stays in the corners.
+      for (let offset = -halfExtent + 2; offset <= halfExtent - 2; offset++) {
+        assert.equal(floorMask[(center.i + offset) * width + center.j - halfExtent], 1)
+        assert.equal(floorMask[(center.i - halfExtent) * width + center.j + offset], 1)
+      }
+      assert.equal(floorMask[(center.i - halfExtent) * width + center.j - halfExtent], 0)
+      assert.equal(blueprint.preserveLegacyGrid, true)
+      assert.equal(blueprint.localGridLayout, undefined)
       for (let index = 0; index < expectedCells; index++) {
         if (borderMask[index]) assert.equal(floorMask[index], 1)
         if (floorMask[index]) assert.equal(terrain[index], DIRT_INDEX)
         else assert.equal(terrain[index], WATER_INDEX)
       }
-      if (entry.buildingSize === 2) {
-        assert.deepEqual(blueprint.floorShape, {
-          type: 'round-local',
-          center: { column: 3, row: 12 },
-          radius: { columns: 2.85, rows: 7.2675 },
-          curvePower: 3,
-        })
-        assert.deepEqual(blueprint.localGridLayout, { columns: 7, rows: 25 })
-        assert.deepEqual(blueprint.spawns, [{ i: 12, j: 13 }])
-        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 12, j: 13, direction: 'south' }])
-      } else {
-        assert.deepEqual(blueprint.floorShape, {
-          type: 'round-local',
-          center: { column: 3.5, row: 14 },
-          radius: { columns: 3.35, rows: 8.5425 },
-          curvePower: 3,
-        })
-        assert.deepEqual(blueprint.localGridLayout, { columns: 8, rows: 29 })
-        assert.deepEqual(blueprint.spawns, [{ i: 13, j: 16 }])
-        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 13, j: 16, direction: 'south' }])
-      }
+      assert.equal(blueprint.floorShape.cornerRadius, 1.5)
+      assert.equal(halfExtent, entry.buildingSize + 2)
     }
 
     for (const entry of manifest.buildingTypes) {
@@ -158,7 +145,8 @@ test('interior blueprint loader selects by building size while keeping type-spec
     assert.equal(stable.interiorType, 'Stable')
     assert.equal(stable.buildingSize, 3)
     assert.equal(stable.size, 21)
-    assert.deepEqual(stable.localGridLayout, { columns: 8, rows: 29 })
+    assert.equal(stable.localGridLayout, undefined)
+    assert.equal(stable.preserveLegacyGrid, true)
 
     const legacyStable = await loadPregeneratedInteriorBlueprint({ id: 'stable-circle-001' })
     assert.equal(legacyStable.id, 'stable-size-3-001')
@@ -269,4 +257,21 @@ test('interior blueprint exits remain passable when placed on the dirt border', 
   assert.equal(grid[1][1].solid, false)
   assert.equal(grid[1][1].border, false)
   assert.equal(grid[1][1].terrainHidden, false)
+})
+
+test('generated and runtime interiors share the same shape, walls and doorway', () => {
+  const { buildingInterior } = require('../tools/generate-interior-maps.cjs')
+  const { createIsometricInteriorBlueprint, createSquareLocalBlueprint } = loadTsModule(
+    'app/classes/map/generation/LocalMapBlueprint.ts'
+  )
+  for (const buildingSize of [2, 3]) {
+    const source = { buildingSize, size: buildingSize * 2 + 7, terrain: [], relief: [], exits: [] }
+    const generated = buildingInterior({ ...source, id: 'test', seed: 1 })
+    const runtime = createIsometricInteriorBlueprint(source)
+    assert.equal(createSquareLocalBlueprint(runtime), runtime)
+    assert.deepEqual(runtime.floorMask.flat(), [...Buffer.from(generated.floorMask, 'base64')])
+    assert.deepEqual(runtime.walls, generated.walls)
+    assert.deepEqual(runtime.exits, generated.exits)
+    assert.deepEqual(runtime.floorShape, generated.floorShape)
+  }
 })

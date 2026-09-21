@@ -239,6 +239,30 @@
         "x": 0.5,
         "y": 0.6314685314685314
       }
+    },
+    "010_graphics_buildings_age-0_forge_shadow.png": {
+      "frame": {
+        "x": 1637,
+        "y": 0,
+        "w": 188,
+        "h": 148
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 188,
+        "h": 148
+      },
+      "sourceSize": {
+        "w": 188,
+        "h": 148
+      },
+      "anchor": {
+        "x": 0.55,
+        "y": 0.58
+      }
     }
   },
   "meta": {
@@ -247,7 +271,7 @@
     "image": "texture_shadow.png",
     "format": "RGBA8888",
     "size": {
-      "w": 1637,
+      "w": 1825,
       "h": 153
     },
     "scale": 1

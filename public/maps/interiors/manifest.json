@@ -47,13 +47,6 @@
       "legacyId": "barracks-circle-001"
     },
     {
-      "blueprintId": "building-size-3-001",
-      "buildingSize": 3,
-      "buildingType": "ArcheryRange",
-      "id": "archery-range-size-3-001",
-      "legacyId": "archery-range-circle-001"
-    },
-    {
       "blueprintId": "building-size-2-001",
       "buildingSize": 2,
       "buildingType": "Temple",

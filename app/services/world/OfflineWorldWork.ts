@@ -12,7 +12,7 @@ import {
 } from '../../constants/entities'
 import { depositChestResources, type ResourceStoreOwner } from '../../lib/resources/playerResourceTotals'
 import { getStorageCapacity, storageAcceptsResource, allowsVillagerDeliveries } from '../../lib/resources/storagePolicy'
-import { canOwnerMineMineral } from '../../lib/resources/ironMining'
+import { canMineIronResource } from '../../lib/resources/ironMining'
 import { isOutsideSpaceId } from '../../lib/mapSpaces'
 import { CELL_HEIGHT, CELL_WIDTH, STEP_TIME } from '../../constants/core'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../config/gameplay'
@@ -114,7 +114,7 @@ export function offlineResourceWork(
     (resource.quantity ?? 0) <= 0 ||
     (!isLiving(resource) && resource.type !== RESOURCE_TYPES.tree) ||
     !targetMatches(unit, resource) ||
-    !canOwnerMineMineral(player, resource.type) ||
+    !canMineIronResource({ ...unit, owner: player }, resource) ||
     (resource.type === RESOURCE_TYPES.wheat && (resource.currentFrame ?? wheatMatureFrame) < wheatMatureFrame)
   )
     return undefined

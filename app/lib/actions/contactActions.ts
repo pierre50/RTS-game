@@ -27,7 +27,7 @@ export function getActionContactTool(unit: UnitEntity, action: string | null | u
   if (action === ACTION_TYPES.attack) return getUnitMeleeWeapon(unit)
   const work = action ? WORK_CONTACT_ACTIONS[action] : undefined
   if (!work) return undefined
-  return getUnitWorkEquipment(work, unit.owner?.age).find(key =>
+  return getUnitWorkEquipment(work, unit.owner?.age, unit).find(key =>
     ['axe', 'pickaxe', 'scythe'].includes(CONTACT_TOOL_PROFILES[key] ?? '')
   )
 }

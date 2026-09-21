@@ -11,6 +11,13 @@ type GamepadControlsHost = {
     handlePointerUp(): void
     handlePrimaryPointerDown(): void
   }
+  mouseBuilding?: unknown
+  buildingPlacer?: {
+    confirmPlacement(): void
+    toggleMirror(): void
+    cancelPlacement(): void
+    setPlacementGamepad(value: boolean): void
+  }
   mouse: { x: number; y: number }
   openHeroEntityInteraction(): boolean
 }
@@ -95,6 +102,19 @@ export class GamepadHeroInput {
     this.aimVector = aim.x || aim.y ? aim : null
     this.directionLockActive = Boolean(gamepad.buttons[GAMEPAD_BUTTON.interact]?.pressed)
     this.updateVirtualCursor()
+
+    if (this.controls.mouseBuilding && this.controls.buildingPlacer) {
+      const placer = this.controls.buildingPlacer
+      this.directionLockActive = false
+      if (this.aimVector || gamepad.buttons.some((button, index) => button.pressed && !this.pressedButtons.has(index)))
+        placer.setPlacementGamepad(true)
+      this.dispatchButtonEdge(gamepad, 0, () => placer.confirmPlacement())
+      this.dispatchButtonEdge(gamepad, 2, () => placer.toggleMirror())
+      this.dispatchButtonEdge(gamepad, 1, () => placer.cancelPlacement())
+      // Consume placement buttons so closing the preview cannot trigger combat on the next frame.
+      this.pressedButtons = new Set(gamepad.buttons.flatMap((button, index) => (button.pressed ? [index] : [])))
+      return
+    }
 
     const transferOneButton = getGamepadButtonIndex('inventoryTransferOne')
     const transferAllButton = getGamepadButtonIndex('inventoryTransferAll')

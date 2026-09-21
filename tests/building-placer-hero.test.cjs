@@ -313,3 +313,33 @@ test('non-chief heroes can place distant camp buildings but cannot place village
   controls.heroUnit.isChief = true
   assert.equal(placer.canPlaceMouseBuilding(grid[4][4]), true)
 })
+
+test('placement mirror toggles preview and is passed to the purchased building', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const sprite = { scale: { x: 1 } }
+  let purchased
+  const preview = { type: 'Chest', getChildByLabel: () => sprite }
+  const controls = {
+    mouseBuilding: preview,
+    context: {
+      player: {
+        age: 0,
+        buyBuilding: (_i, _j, _type, options) => {
+          purchased = options
+          return true
+        },
+      },
+      menu: { setActionTarget() {} },
+    },
+    removeMouseBuilding() {},
+  }
+  const placer = new BuildingPlacer(controls)
+  placer.canPlaceMouseBuilding = () => true
+  placer.toggleMirror()
+  assert.equal(sprite.scale.x, -1)
+  placer.toggleMirror()
+  assert.equal(sprite.scale.x, 1)
+  placer.toggleMirror()
+  placer.handleMouseUp({ i: 1, j: 2 })
+  assert.equal(purchased.placementMirrored, true)
+})

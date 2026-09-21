@@ -38,6 +38,7 @@ export type CombatEntity = {
   family?: string
   hitPoints?: number
   devInvincible?: boolean
+  indestructible?: boolean
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean

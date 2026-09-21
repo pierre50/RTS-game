@@ -109,7 +109,7 @@ export interface PlayerLike {
     i: number,
     j: number,
     type: string,
-    options?: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number }
+    options?: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean }
   ) => boolean
   plantWheatField?: (i: number, j: number, options?: { spaceId?: string }) => boolean
   createBuilding: (

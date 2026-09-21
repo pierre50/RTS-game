@@ -1,7 +1,7 @@
 import type { CaveDefinition } from '../../types/cave'
 import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import type { AnimatedSprite, Graphics, Sprite, Texture } from 'pixi.js'
-import { FAMILY_TYPES } from '../../constants'
+import { CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { canUpdateMinimap } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
@@ -51,6 +51,7 @@ type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandS
 
 export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   cave?: CaveDefinition
+  placementMirrored?: boolean
   buildingAge?: number
   assetAge?: number
   trainingQueue?: SavedTrainingEntry[]
@@ -104,6 +105,7 @@ export class Building extends Instance implements BuildingEntity {
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   mountingDays?: number
   interface!: EntityInterfaceLike
+  placementMirrored = false
   buildingAge!: number
   assetType?: string
   textureName?: string
@@ -168,6 +170,8 @@ export class Building extends Instance implements BuildingEntity {
     this.assignProperties(options)
     this.buildingAge = getBuildingAge(options, this.owner.age)
     this.assignProperties(getBuildingConfigForAge(this.owner.config.buildings[this.type], this.buildingAge))
+    // Enforce this after saved options and config so existing decorations are protected too.
+    if (CAMP_DECORATION_BUILDING_TYPES.some(type => type === this.type)) this.indestructible = true
     this.stableHorses = stableHorsesFromOptions(options)
     this.horseAmount = this.stableHorses.length
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)

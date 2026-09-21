@@ -152,7 +152,15 @@ function buyCoreInfrastructure(options: {
     age: ai.age,
     phase: ai.phase,
     desiredBarracks,
-    buildings: [...barracks, ...granarys, ...markets, ...storagepits, ...notBuiltHouses, ...temples],
+    buildings: [
+      ...barracks,
+      ...granarys,
+      ...markets,
+      ...storagepits,
+      ...notBuiltHouses,
+      ...temples,
+      ...ai.buildings.filter(building => building.type === BUILDING_TYPES.forge),
+    ],
   })
 
   if (
@@ -242,6 +250,21 @@ function buyCoreInfrastructure(options: {
   )
     actions++
 
+  if (
+    actions === 0 &&
+    !ai.buildings.some(building => !building.isBuilt && !building.isDead && !building.isDestroyed) &&
+    buy(needs[BUILDING_TYPES.forge], BUILDING_TYPES.forge, () =>
+      findBuildingPosition(
+        storagepits.find(building => building.isBuilt) || markets[0] || anchor,
+        map,
+        [6, 14],
+        Number(getPlayerBuildingConfig(ai, BUILDING_TYPES.forge)?.size) || 3,
+        placementCondition()
+      )
+    )
+  )
+    actions++
+
   return actions
 }
 
@@ -303,6 +326,9 @@ export function handleAIBuildingActions(
     [BUILDING_TYPES.granary]: granarys,
     [BUILDING_TYPES.storagePit]: storagepits,
     [BUILDING_TYPES.market]: markets,
+    [BUILDING_TYPES.forge]: ai.buildings.filter(
+      building => building.type === BUILDING_TYPES.forge && !building.isDead && !building.isDestroyed
+    ),
     [BUILDING_TYPES.archeryRange]: archeryRanges,
     [BUILDING_TYPES.stable]: stables,
     [BUILDING_TYPES.watchTower]: watchTowers,

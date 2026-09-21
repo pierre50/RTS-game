@@ -1,3 +1,4 @@
+import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { townCenterLimitReached } from '../../lib/buildings/townCenterClaim'
 import { findMapTerritoryOwner } from '../../lib/campaign/mapTerritory'
 import { tryCreateCampChest } from '../../lib/grid/campChestPlacement'
@@ -209,6 +210,7 @@ export function planOfflineBuildings(
           size,
           label: `offline-building:${state.world?.worldRegionId ?? 'world'}:${player.label ?? index}:${day}:${type}`,
           buildingAge: player.age ?? 0,
+          placementMirrored: generatedBuildingMirrored(type, position, player.civ ?? index, p => spatial.available(p)),
           isBuilt: false,
           hitPoints: 1,
           totalHitPoints: Number(config.totalHitPoints),

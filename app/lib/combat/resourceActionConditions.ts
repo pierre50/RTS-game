@@ -75,7 +75,6 @@ export function getResourceActionConditions(source: CombatEntity, target: Combat
       !target.isDead,
     captureHorse: () =>
       source.type === UNIT_TYPES.villager &&
-      (source.owner?.age ?? 0) >= 1 &&
       target.family === FAMILY_TYPES.animal &&
       target.type === 'Horse' &&
       isWildHorse(target as { type: string; tamingStatus?: unknown }) &&

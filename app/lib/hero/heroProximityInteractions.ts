@@ -1,5 +1,5 @@
 import { findNearestMountableHorse } from './heroMountTargets'
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
@@ -202,7 +202,11 @@ export function resolveHeroProximityInteraction({
     isHeroInteractionTargetReachable(hero, null, openEntityTarget)
   ) {
     if (openEntityTarget.family === FAMILY_TYPES.building) {
-      if (openEntityTarget.type === BUILDING_TYPES.trap) return null
+      if (
+        openEntityTarget.type === BUILDING_TYPES.trap ||
+        CAMP_DECORATION_BUILDING_TYPES.some(type => type === openEntityTarget.type)
+      )
+        return null
       return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: openEntityTarget }
     }
     if (openEntityTarget.family === FAMILY_TYPES.resource && openEntityTarget.interface?.info) {

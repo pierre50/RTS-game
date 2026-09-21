@@ -121,7 +121,6 @@ function loadPlayer(overrides = {}) {
     if (request === '../../constants') {
       return {
         ACTION_TYPES: {},
-        AGE_GATE_MAX_UNLOCKABLE_VALUE: 1,
         AGE_UP_ENABLED: false,
         AGE_TECHNOLOGIES: new Set(['ToolAge', 'BronzeAge', 'IronAge']),
         BUILDING_TYPES: { farm: 'Farm', townCenter: 'TownCenter' },

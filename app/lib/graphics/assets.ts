@@ -6,6 +6,7 @@ import { civilizationAssetSlug } from '../civilizationAlias'
 
 export type BuildingAsset = {
   animated?: boolean
+  mirrored?: boolean
   images?: {
     final?: TextureRef
     [key: string]: TextureRef | undefined
@@ -45,6 +46,7 @@ const DECO_BUILDING_ASSETS: Record<string, BuildingAsset> = {
   CampJarLarge: staticDecoBuildingAsset(14),
   Trap: staticDecoBuildingAsset(15),
   Chest: staticDecoBuildingAsset(16),
+  InteriorMirroredChest: { ...staticDecoBuildingAsset(16), mirrored: true },
   CampBedroll: staticDecoBuildingAsset(19),
   CampTable: staticDecoBuildingAsset(21),
   CampWorkbench: staticDecoBuildingAsset(22),
@@ -66,6 +68,7 @@ const DECO_BUILDING_ASSETS: Record<string, BuildingAsset> = {
   CampStumpStool: staticDecoBuildingAsset(33),
   CampMountedSkull: staticDecoBuildingAsset(37),
   CampTorchStand: staticDecoBuildingAsset(38),
+  CampFruitBowl: staticDecoBuildingAsset(39),
   Cave: { animated: false, images: { final: { sheet: 'buildings/cave', frame: 0 } } },
 }
 

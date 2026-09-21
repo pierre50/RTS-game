@@ -172,3 +172,30 @@ test('saved mineral stocks reject invalid quantities, coordinates and duplicates
   }
   assert.throws(() => validateCaveDefinition({ ...definition(), minerals: [record, record] }))
 })
+
+test('saved minerals outside a reshaped cave move to accessible floor without replenishing stock', () => {
+  const runtime = loadMinerals()
+  const cave = { ...definition(), minerals: [{ i: 0, j: 0, type: 'Gold', quantity: 2, totalQuantity: 6 }] }
+  const room = space(cave)
+  room.size = 7
+  room.exitCell = { i: 7, j: 4 }
+  room.grid.forEach((row, i) =>
+    row.forEach((cell, j) =>
+      Object.assign(cell, {
+        i,
+        j,
+        terrainHidden: i === 0 || j === 0,
+        border: false,
+        z: 0,
+      })
+    )
+  )
+  runtime.ensureCaveMinerals({ space: room }, room, blueprint)
+  assert.equal(runtime.created.length, 1)
+  const mineral = runtime.created[0]
+  assert.ok(mineral.i > 1 && mineral.j > 1)
+  assert.equal(mineral.quantity, 2)
+  assert.equal(mineral.totalQuantity, 6)
+  assert.equal(cave.minerals[0].i, mineral.i)
+  assert.equal(cave.minerals[0].j, mineral.j)
+})

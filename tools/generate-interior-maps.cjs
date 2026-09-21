@@ -19,7 +19,6 @@ const INTERIOR_TYPE_ORDER = [
   'town-center',
   'house',
   'barracks',
-  'archery-range',
   'temple',
   'granary',
   'storage-pit',
@@ -65,18 +64,6 @@ function createLocalMapLayout(sourceSize) {
   return { columns, rows: 4 * (columns - 1) + 1 }
 }
 
-function localToGrid(column, row, layout) {
-  return {
-    i: column + Math.ceil(row / 2),
-    j: layout.columns - 1 - column + Math.floor(row / 2),
-  }
-}
-
-function gridToLocal(i, j, layout) {
-  const row = i + j - (layout.columns - 1)
-  return { column: i - Math.ceil(row / 2), row }
-}
-
 function localMapSize(layout) {
   return layout.columns - 1 + Math.ceil((layout.rows - 1) / 2)
 }
@@ -95,7 +82,7 @@ function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
   console.log(`Usage: pnpm interiors:generate -- --type all --count 1
 
-  --type <name>          all, town-center, house, barracks, archery-range, temple,
+  --type <name>          all, town-center, house, barracks, temple,
                          granary, storage-pit, stable, watch-tower (default: all)
   --count <n>            interior variants to generate (default: 1)
   --seed <n>             reproducible batch seed (default: current time)
@@ -171,60 +158,38 @@ function buildingInterior({ buildingSize, id, seed, size }) {
   const relief = new Int8Array(width * width)
   const floorMask = new Uint8Array(width * width)
   const borderMask = new Uint8Array(width * width)
-  const centerColumn = (layout.columns - 1) / 2
-  const centerRow = (layout.rows - 1) / 2
-  const radiusColumns = Math.max(2.25, Math.min(layout.columns / 2 - 0.65, buildingSize + 1.35))
-  const radiusRows = Math.min(centerRow - 1, radiusColumns * 2.55)
-  const curvePower = 3
-
+  const center = Math.round(localSize / 2)
+  const halfExtent = Math.floor((size - 3) / 2)
+  const cornerRadius = 1.5
   const indexOf = (i, j) => i * width + j
 
-  for (let row = 0; row < layout.rows; row++) {
-    for (let column = 0; column < layout.columns; column++) {
-      if (row % 2 === 1 && column === layout.columns - 1) continue
-      const { i, j } = localToGrid(column, row, layout)
-      const visualColumn = column + (row % 2) / 2
-      const dx = Math.abs((visualColumn - centerColumn) / radiusColumns)
-      const dy = Math.abs((row - centerRow) / radiusRows)
-      if (dx ** curvePower + dy ** curvePower > 1) continue
+  // Round only the corners of a rectangle aligned with the world grid.
+  for (let i = 0; i <= localSize; i++) {
+    for (let j = 0; j <= localSize; j++) {
+      const dx = Math.max(0, Math.abs(i - center) - halfExtent + cornerRadius)
+      const dy = Math.max(0, Math.abs(j - center) - halfExtent + cornerRadius)
+      if (dx * dx + dy * dy > cornerRadius * cornerRadius) continue
       terrain[indexOf(i, j)] = DIRT
       floorMask[indexOf(i, j)] = 1
     }
   }
 
-  let exit = null
-  const targetExitColumn = centerColumn - radiusColumns * 0.45
   for (let i = 0; i <= localSize; i++) {
     for (let j = 0; j <= localSize; j++) {
-      const index = indexOf(i, j)
-      if (!floorMask[index]) continue
-      const local = gridToLocal(i, j, layout)
-      const visualColumn = local.column + (local.row % 2) / 2
-      if (local.row > centerRow && visualColumn < centerColumn) {
-        const columnDistance = Math.abs(visualColumn - targetExitColumn)
-        const bestColumnDistance = exit ? Math.abs(exit.visualColumn - targetExitColumn) : Infinity
-        if (!exit || local.row > exit.row || (local.row === exit.row && columnDistance < bestColumnDistance)) {
-          exit = { i, j, row: local.row, visualColumn }
-        }
-      }
-      let touchesOutside = false
-      for (let di = -1; di <= 1 && !touchesOutside; di++) {
+      if (!floorMask[indexOf(i, j)]) continue
+      for (let di = -1; di <= 1; di++) {
         for (let dj = -1; dj <= 1; dj++) {
-          if (di === 0 && dj === 0) continue
           const ni = i + di
           const nj = j + dj
           if (ni < 0 || nj < 0 || ni > localSize || nj > localSize || !floorMask[indexOf(ni, nj)]) {
-            touchesOutside = true
-            break
+            borderMask[indexOf(i, j)] = 1
           }
         }
       }
-      if (!touchesOutside) continue
-      borderMask[index] = 1
     }
   }
 
-  const doorCell = exit ? { i: exit.i, j: exit.j } : { i: Math.round(localSize / 2), j: Math.round(localSize / 2) }
+  const doorCell = { i: center, j: center + halfExtent }
   const door = { id: 'main', ...doorCell, direction: 'south' }
   borderMask[indexOf(door.i, door.j)] = 0
   const spawn = { i: door.i, j: door.j }
@@ -236,7 +201,7 @@ function buildingInterior({ buildingSize, id, seed, size }) {
     kind: 'interior',
     buildingSize,
     size: localSize,
-    localGridLayout: layout,
+    preserveLegacyGrid: true,
     seed,
     encoding: 'base64',
     cellCount: terrain.length,
@@ -246,10 +211,10 @@ function buildingInterior({ buildingSize, id, seed, size }) {
     floorMask: encode(floorMask),
     borderMask: encode(borderMask),
     floorShape: {
-      type: 'round-local',
-      center: { column: centerColumn, row: centerRow },
-      radius: { columns: radiusColumns, rows: radiusRows },
-      curvePower,
+      type: 'rounded-isometric',
+      center: { i: center, j: center },
+      halfExtent,
+      cornerRadius,
     },
     spawns: [spawn],
     exits: [door],

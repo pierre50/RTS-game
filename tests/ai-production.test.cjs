@@ -661,15 +661,15 @@ test('ai training skips dead, destroyed and incompatible buildings', () => {
   assert.equal(strategy.trainUnits(0, 1, [...invalid, barracks], 'Fantassin', [villager()]), 1)
 })
 
-test('ai barracks expansion requires military phase, an unlocked age and enough army or training load', () => {
+test('ai barracks expansion requires military phase and enough army or training load at any age', () => {
   const { ai, strategy, barracks } = strategyFixture({ constants: { AGE_UP_ENABLED: true } })
   ai.buildings = [barracks]
   const army = { infantry: Array(8).fill({}) }
   ai.age = 2
   assert.equal(strategy.getDesiredBarracksCount(army), 0)
   ai.phase = 'military_build'
-  ai.age = 1
-  assert.equal(strategy.getDesiredBarracksCount(army), 1)
+  ai.age = 0
+  assert.equal(strategy.getDesiredBarracksCount(army), 2)
   ai.age = 2
   assert.equal(strategy.getDesiredBarracksCount(army), 2)
   assert.equal(strategy.getDesiredBarracksCount(), 1)

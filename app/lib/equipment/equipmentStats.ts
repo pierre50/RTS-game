@@ -1,3 +1,4 @@
+import { getMiningPickaxe, type MiningActor } from '../resources/miningEquipment'
 import { Assets } from 'pixi.js'
 import { FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { dynamicEquipmentForUnit, dynamicEquipmentForWork } from '../lpc/equipment'
@@ -236,8 +237,10 @@ export function getUnitEquipment(
   return config?.equipment ? [...config.equipment] : dynamicEquipmentForUnit(unitType, age, level, civilization)
 }
 
-export function getUnitWorkEquipment(work: string | null | undefined, age = 0): string[] {
-  return dynamicEquipmentForWork(work, age)
+export function getUnitWorkEquipment(work: string | null | undefined, age = 0, unit?: MiningActor): string[] {
+  return dynamicEquipmentForWork(work, age).map(item =>
+    unit && item.startsWith('pickaxe_') ? getMiningPickaxe(unit) : item
+  )
 }
 
 function getUnitEffectiveCombatStats(
@@ -383,7 +386,7 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
   if (explicitRange != null) return explicitRange
 
   if (unit.work) {
-    const workEquipment = getUnitWorkEquipment(unit.work, age)
+    const workEquipment = getUnitWorkEquipment(unit.work, age, unit)
     const workRange = getWeaponRangeFromEquipment(workEquipment)
     if (workRange != null) return workRange
   }
@@ -395,7 +398,8 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
 
 function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
   if (usesHeroInventoryEquipment(entity)) return getHeroInventoryCombatEquipment(entity)
-  if (entity.type === UNIT_TYPES.villager && entity.work) return getUnitWorkEquipment(entity.work, entity.owner?.age)
+  if (entity.type === UNIT_TYPES.villager && entity.work)
+    return getUnitWorkEquipment(entity.work, entity.owner?.age, entity)
   if (Array.isArray(entity.equipment)) return [...entity.equipment]
 
   const config =

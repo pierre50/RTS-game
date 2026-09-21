@@ -76,3 +76,31 @@ test('runtime decodes the assigned cave without a random draw or reshaping its l
   }
   assert.throws(() => getCaveInteriorBlueprint({ cave: { blueprintId: 'missing' } }), /Missing cave blueprint/)
 })
+
+test('cave chambers follow the isometric axes and entrances open on a single wall edge', () => {
+  for (const tier of ['small', 'medium', 'large']) {
+    for (const variant of tier === 'small' ? ['circle'] : VARIANTS) {
+      const cave = createCave(tier, variant, 4242)
+      const width = cave.size + 1
+      const floor = Buffer.from(cave.floorMask, 'base64')
+      assert.equal(cave.preserveLegacyGrid, true)
+      if (tier === 'small') assert.equal(cave.floorShape.type, 'rounded-isometric')
+      for (const room of cave.rooms ?? []) {
+        const extent = Math.floor(room.radius)
+        // The middle of each room keeps long straight spans in both grid directions.
+        for (let offset = -extent + 2; offset <= extent - 2; offset++) {
+          assert.equal(floor[(room.i + offset) * width + room.j - extent], 1)
+          assert.equal(floor[(room.i - extent) * width + room.j + offset], 1)
+        }
+      }
+      const exit = cave.exits[0]
+      const exposed = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ].filter(([di, dj]) => !floor[(exit.i + di) * width + exit.j + dj])
+      assert.equal(exposed.length, 1, cave.id)
+    }
+  }
+})

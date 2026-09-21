@@ -31,8 +31,8 @@ test('gathering respects worker, resource, stock and age requirements', () => {
       assert.equal(allowed(action, villager(), { ...target, ...patch }), false, `${action}: ${JSON.stringify(patch)}`)
     }
     if (action.startsWith('mine')) {
-      assert.equal(allowed(action, { type: U.villager }, target), type !== R.iron && type !== R.copper)
-      assert.equal(allowed(action, { type: U.villager, owner: {} }, target), type !== R.iron && type !== R.copper)
+      assert.equal(allowed(action, { type: U.villager }, target), type !== R.iron)
+      assert.equal(allowed(action, { type: U.villager, owner: {} }, target), type !== R.iron)
     }
   }
   const bush = { ...available, type: R.berrybush, quantity: 0 }
@@ -40,11 +40,11 @@ test('gathering respects worker, resource, stock and age requirements', () => {
   assert.equal(allowed('chopwood', villager(), { ...bush, hitPoints: undefined }), false)
 })
 
-test('iron mining requires the Iron Age for heroes and villagers', () => {
+test('iron mining requires at least a bronze work pickaxe for heroes and villagers', () => {
   const iron = { ...available, type: R.iron }
   for (const age of [0, 1, 2, 3]) {
     for (const type of [U.villager, U.hero]) {
-      assert.equal(allowed('mineiron', { type, owner: { age } }, iron), age >= 2)
+      assert.equal(allowed('mineiron', { type, owner: { age } }, iron), age >= 1)
     }
   }
 })

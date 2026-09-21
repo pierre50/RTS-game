@@ -58,7 +58,10 @@ function canBeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: Her
     return false
   }
   const combatSource = getHeroWeaponCombatSource(hero, tool)
-  return getActionCondition(combatSource, target, ACTION_TYPES.attack) || canTriggerDiplomaticAggression(hero, target)
+  return (
+    getActionCondition(combatSource, target, ACTION_TYPES.attack) ||
+    (tool !== 'interact' && canTriggerDiplomaticAggression(hero, target))
+  )
 }
 
 function findHeroMeleeTargetInAim(
@@ -123,7 +126,7 @@ function hasAxeEquipment(equipment: readonly string[]): boolean {
 
 function getHeroMeleeImpactSound(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): CommandSound {
   if (tool === 'sword') return SOUND_CUES.unit.swordAttack
-  if (target.family === FAMILY_TYPES.unit && hasAxeEquipment(getUnitWorkEquipment(hero.work, hero.owner?.age))) {
+  if (target.family === FAMILY_TYPES.unit && hasAxeEquipment(getUnitWorkEquipment(hero.work, hero.owner?.age, hero))) {
     return SOUND_CUES.unit.swordAttack
   }
   return hero.sounds?.hit
@@ -148,8 +151,10 @@ function resolveHeroMeleeImpact(
     playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' })
     return
   }
-  const aggression = applyDiplomaticAggression(hero, target)
-  if (aggression.changed && !aggression.hostileNow) return
+  if (tool !== 'interact') {
+    const aggression = applyDiplomaticAggression(hero, target)
+    if (aggression.changed && !aggression.hostileNow) return
+  }
   const combatSource = getHeroWeaponCombatSource(hero, tool)
   if (!getActionCondition(combatSource, target, ACTION_TYPES.attack)) return
   const { damageDealt } = applyCombatHit(
@@ -183,8 +188,10 @@ function strikeHeroMeleeTarget(
   if (!resolvedTarget) {
     return 'miss'
   }
-  const openingAggression = applyDiplomaticAggression(hero, resolvedTarget)
-  if (openingAggression.changed && !openingAggression.hostileNow) return 'triggered'
+  if (tool !== 'interact') {
+    const openingAggression = applyDiplomaticAggression(hero, resolvedTarget)
+    if (openingAggression.changed && !openingAggression.hostileNow) return 'triggered'
+  }
   if (!spendHeroEnergy(hero, ACTION_TYPES.attack)) return 'blocked'
   hero.action = ACTION_TYPES.attack
   hero.setDest?.(resolvedTarget)

@@ -221,7 +221,7 @@ test('construction ghost keeps the player-colored texture transparent', () => {
 })
 
 test('building sprite shadows can fall back to a flattened source sprite mask', () => {
-  const { createBuildingShadow, Texture } = loadBuildingVisuals()
+  const { createBuildingShadow, updateBuildingShadow, Texture } = loadBuildingVisuals()
   const texture = new Texture()
   const building = {
     context: { map: { shadowLayer: { addChild: () => {} } } },
@@ -252,6 +252,11 @@ test('building sprite shadows can fall back to a flattened source sprite mask', 
   assert.equal(shadow.scale.y, -1.5)
   assert.equal(shadow.position.x, 100)
   assert.equal(shadow.position.y, 200)
+  building.shadow = shadow
+  building.sprite.scale.x = -2
+  updateBuildingShadow(building)
+  assert.equal(shadow.scale.x, -2.04)
+  assert.equal(shadow.scale.y, -1.5)
 })
 
 test('building shadows only render in the active map space', () => {

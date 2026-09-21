@@ -1,5 +1,4 @@
 import { UNIT_TYPES, type RESOURCE_STORAGE_NAMES } from '../../constants'
-import { canUseAgeEquipment } from '../objectives/ageRules'
 import type { ResourceAmount } from '../../types/common'
 import {
   DYNAMIC_EQUIPMENT_KEYS,
@@ -87,7 +86,7 @@ const EQUIPMENT_BASE_GOLD_VALUES: Record<string, number> = {
 const EQUIPMENT_RESALE_PERCENT = 35
 
 const MARKET_BLOCKED_EQUIPMENT = new Set(['quiver', 'longstick'])
-const MARKET_BLOCKED_PREFIXES = ['axe_', 'pickaxe_', 'hammer_', 'scythe_']
+const MARKET_BLOCKED_PREFIXES = ['axe_', 'hammer_', 'scythe_']
 
 function getMarketEquipmentOfferCount(equipment: string): number {
   return equipment.startsWith('arrow_') ? 20 : 1
@@ -141,17 +140,20 @@ export function getResourceGoldValue(resource: keyof ResourceAmount): number {
 }
 
 function getMarketEquipmentKeys(options: MarketEquipmentOfferOptions = {}): DynamicEquipmentKey[] {
-  const { age = 0, civilization } = options
+  const { civilization } = options
   const equipment = new Set<string>()
-  dynamicEquipmentForWork('heroSword', age).forEach(item => equipment.add(item))
-  for (const unitType of [UNIT_TYPES.chief, UNIT_TYPES.infantry, UNIT_TYPES.bowman, UNIT_TYPES.priest]) {
-    dynamicEquipmentForUnit(unitType, age, Number.POSITIVE_INFINITY, civilization).forEach(item => equipment.add(item))
+  for (const age of [0, 1, 2]) {
+    dynamicEquipmentForWork('heroSword', age).forEach(item => equipment.add(item))
+    dynamicEquipmentForWork('stoneminer', age).forEach(item => equipment.add(item))
+    for (const unitType of [UNIT_TYPES.chief, UNIT_TYPES.infantry, UNIT_TYPES.bowman, UNIT_TYPES.priest]) {
+      dynamicEquipmentForUnit(unitType, age, Number.POSITIVE_INFINITY, civilization).forEach(item =>
+        equipment.add(item)
+      )
+    }
   }
   return [...equipment].filter(
     (item): item is DynamicEquipmentKey =>
-      DYNAMIC_EQUIPMENT_KEYS.includes(item as DynamicEquipmentKey) &&
-      isMarketPurchasableEquipment(item) &&
-      canUseAgeEquipment(options, item)
+      DYNAMIC_EQUIPMENT_KEYS.includes(item as DynamicEquipmentKey) && isMarketPurchasableEquipment(item)
   )
 }
 
@@ -163,9 +165,7 @@ export function getMarketEquipmentOffers(
     return [...new Set(stock)]
       .filter(
         (equipment): equipment is DynamicEquipmentKey =>
-          DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey) &&
-          isMarketPurchasableEquipment(equipment) &&
-          canUseAgeEquipment(options, equipment)
+          DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey) && isMarketPurchasableEquipment(equipment)
       )
       .map(equipment => ({
         count: getStockCount(stock, equipment),
@@ -221,7 +221,6 @@ export function buyMarketEquipment(
   stock?: string[]
 ): number {
   if (!hero) return 0
-  if (!canUseAgeEquipment(hero.owner, equipment)) return 0
   const goldValue = getEquipmentGoldValue(equipment)
   if (goldValue <= 0) return 0
   const inventory = getHeroInventory(hero)

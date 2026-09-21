@@ -12,6 +12,7 @@ import type { TrainingEntry, TrainingTrainee } from './training'
 import type { SaveEntityState } from './save'
 
 export interface BuildingEntity extends RuntimeEntityBase {
+  placementMirrored?: boolean
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string

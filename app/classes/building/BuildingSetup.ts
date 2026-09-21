@@ -83,7 +83,11 @@ export function createInitialBuildingSprite(building: Building): void {
     : new Polygon([-32 * building.size, 0, 0, -16 * building.size, 32 * building.size, 0, 0, 16 * building.size])
   if (texture.defaultAnchor) building.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
   building.sprite.position.y = building.reliefLift ?? 0
-  if (!building.isBuilt) applyBuildingConstructionGhost(building)
+  if (!building.isBuilt) {
+    const assets = getBuildingAsset(building.assetType || building.type, getBuildingAssetOwner(building), Assets)
+    building.sprite.scale.x = Boolean(assets.mirrored) !== Boolean(building.placementMirrored) ? -1 : 1
+    applyBuildingConstructionGhost(building)
+  }
   building.shadow = building.createShadow()
 }
 
@@ -92,7 +96,9 @@ export function occupyBuildingFootprint(building: Building): void {
   const space = getEntityMapSpace(building, map)
   const grid = space?.grid ?? map.grid
   const updatesOutsideWorldVision = space?.kind !== 'interior'
-  const providesOutsideWorldVision = updatesOutsideWorldVision && building.providesVision !== false &&
+  const providesOutsideWorldVision =
+    updatesOutsideWorldVision &&
+    building.providesVision !== false &&
     ownerSharesVision(building.owner, building.context)
   getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
     if (cell.has?.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(cell.has.type)) {

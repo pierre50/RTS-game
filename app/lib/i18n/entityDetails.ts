@@ -25,6 +25,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     GranaryDescription: 'Stocke les baies, le blé et la viande rapportés par vos villageois pour nourrir le village.',
     StoragePitDescription:
       'Point de dépôt pour le bois, la pierre, l’or, le cuivre, le fer et les autres matériaux récoltés par vos villageois.',
+    ForgeDescription: 'Fabrique des équipements, des flèches et des consommables avec vos ressources.',
     ArcheryRangeDescription: 'Forme les archers pour le combat à distance.',
     StableDescription: 'Forme les unités montées et les éléphants de guerre.',
     FarmDescription: 'Place un champ de blé 4x4 récolté comme nourriture.',
@@ -95,6 +96,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     GranaryDescription: 'Stores berries, wheat and meat brought back by your villagers to feed the village.',
     StoragePitDescription:
       'Drop-off point for wood, stone, gold, copper, iron and other materials gathered by your villagers.',
+    ForgeDescription: 'Craft equipment, arrows and consumables using your resources.',
     ArcheryRangeDescription: 'Trains archers for ranged combat.',
     StableDescription: 'Trains mounted units and war elephants.',
     FarmDescription: 'Places a 4x4 wheat field harvested as food.',

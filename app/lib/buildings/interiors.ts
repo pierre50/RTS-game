@@ -29,7 +29,9 @@ export function getBuildingInteriorPortalId(building: BuildingEntity): string {
   return building.interiorPortalId || `${buildingOwnerKey(building)}:${buildingLocalKey(building)}`
 }
 
-export function isBuildingInteriorSupported(building: Pick<BuildingEntity, 'isBuilt' | 'type'> | null | undefined): boolean {
+export function isBuildingInteriorSupported(
+  building: Pick<BuildingEntity, 'isBuilt' | 'type'> | null | undefined
+): boolean {
   return Boolean(building?.isBuilt && BUILDING_INTERIOR_TYPES.has(building.type))
 }
 
@@ -38,10 +40,11 @@ export function getBuildingInteriorBlueprintType(building: BuildingEntity): stri
 }
 
 function entryOffsetForBuilding(building: BuildingWithInteriorConfig): GridPosition {
-  return {
+  const offset = {
     i: building.interior?.entryOffset?.i ?? DEFAULT_BUILDING_INTERIOR_ENTRY_OFFSET.i,
     j: building.interior?.entryOffset?.j ?? DEFAULT_BUILDING_INTERIOR_ENTRY_OFFSET.j,
   }
+  return building.placementMirrored ? { i: offset.j, j: offset.i } : offset
 }
 
 function getBuildingEntryPosition(building: BuildingEntity | null | undefined): GridPosition | null {
@@ -53,9 +56,7 @@ function getBuildingEntryPosition(building: BuildingEntity | null | undefined): 
   }
 }
 
-export function getBuildingInteriorEntryPosition(
-  building: BuildingEntity | null | undefined
-): GridPosition | null {
+export function getBuildingInteriorEntryPosition(building: BuildingEntity | null | undefined): GridPosition | null {
   if (!building || building.isBuilt === false || !BUILDING_INTERIOR_TYPES.has(building.type)) return null
   return getBuildingEntryPosition(building)
 }
@@ -66,7 +67,7 @@ export function getBuildingEntryCell(
 ): RuntimeCell | null {
   if (!building || building.isBuilt === false || !grid) return null
   const position = getBuildingEntryPosition(building)
-  return position ? grid[position.i]?.[position.j] ?? null : null
+  return position ? (grid[position.i]?.[position.j] ?? null) : null
 }
 
 export function getBuildingInteriorEntryCell(
@@ -75,7 +76,7 @@ export function getBuildingInteriorEntryCell(
 ): RuntimeCell | null {
   if (!building || !isBuildingInteriorSupported(building) || !grid) return null
   const position = getBuildingInteriorEntryPosition(building)
-  return position ? grid[position.i]?.[position.j] ?? null : null
+  return position ? (grid[position.i]?.[position.j] ?? null) : null
 }
 
 function isHeroOnBuildingInteriorEntryCell(

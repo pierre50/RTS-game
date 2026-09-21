@@ -1,3 +1,4 @@
+import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { getBuildingAge, getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
 import { constructionTerritoryBlocker } from '../../lib/campaign/mapTerritory'
 import { BUILDING_TYPES, FADE_DURATION_MS, RESOURCE_TYPES } from '../../constants'
@@ -30,7 +31,7 @@ export function plantPlayerWheatField(
   player: Player,
   i: number,
   j: number,
-  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
+  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
 ) {
   if (constructionTerritoryBlocker(player.context, player)) return false
   const buildingAge = getBuildingAge(options, player.age)
@@ -91,7 +92,7 @@ export function buyPlayerBuilding(
   i: number,
   j: number,
   type: string,
-  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number } = {}
+  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
 ) {
   if (type === BUILDING_TYPES.farm) return player.plantWheatField(i, j, options)
   if (constructionTerritoryBlocker(player.context, player)) return false
@@ -123,6 +124,14 @@ export function buyPlayerBuilding(
         spaceId: space?.id,
         type,
         buildingAge,
+        placementMirrored:
+          options.placementMirrored ??
+          (player.type === 'AI' && (!space || space.id === 'outside')
+            ? generatedBuildingMirrored(type, { i, j }, map.seed ?? 0, point => {
+                const cell = grid[point.i]?.[point.j]
+                return Boolean(cell && !cell.solid && !cell.border && !cell.terrainHidden && cell.category !== 'Water')
+              })
+            : false),
         isBuilt: map.instantMode || config.instantPlacement === true,
       })
     )

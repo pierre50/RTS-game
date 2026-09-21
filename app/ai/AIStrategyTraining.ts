@@ -43,7 +43,6 @@ export function getDesiredBarracksCount(
   let desired = ai.phase !== 'economy' ? 1 : 0
 
   if (
-    strategy.hasReachedAge(2) &&
     ai.phase !== 'economy' &&
     (totalMilitary >= 8 || strategy.getTrainingLoad(builtBarracks) >= Math.max(2, builtBarracks.length * 2))
   ) {

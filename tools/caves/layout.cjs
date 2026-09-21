@@ -47,23 +47,19 @@ function createCave(tier, variant, seed) {
   }
   // The loop's center is rock; all other rooms participate in the graph.
   const activeRooms = variant === 'loop' ? rooms.filter((_, index) => index !== 1) : rooms
-  function dig(i, j, radius) {
+  function dig(i, j, radius, cornerRadius = radius) {
     for (let x = Math.max(2, Math.floor(i - radius - 1)); x <= Math.min(width - 3, Math.ceil(i + radius + 1)); x++) {
       for (let y = Math.max(2, Math.floor(j - radius - 1)); y <= Math.min(width - 3, Math.ceil(j + radius + 1)); y++) {
-        if ((x - i) ** 2 + (y - j) ** 2 <= radius ** 2) floor[x * width + y] = 1
+        const dx = Math.max(0, Math.abs(x - i) - radius + cornerRadius)
+        const dy = Math.max(0, Math.abs(y - j) - radius + cornerRadius)
+        if (dx * dx + dy * dy <= cornerRadius * cornerRadius) floor[x * width + y] = 1
       }
     }
   }
+  // Chambers follow the isometric axes, with softened rock corners.
+  // Keep the branching passages and terraces that distinguish the larger caves.
   for (const area of activeRooms) {
-    dig(area.i, area.j, area.radius)
-    for (let k = 0; k < 8; k++) {
-      const angle = (k * Math.PI) / 4
-      dig(
-        area.i + Math.cos(angle) * area.radius * 0.55,
-        area.j + Math.sin(angle) * area.radius * 0.55,
-        area.radius * (0.48 + random() * 0.2)
-      )
-    }
+    dig(area.i, area.j, area.radius, Math.max(1.25, area.radius * 0.28))
   }
   for (const [a, b] of edges) {
     const from = rooms[a],
@@ -77,7 +73,7 @@ function createCave(tier, variant, seed) {
     }
   }
   const exit = { id: 'main', i: rooms[0].i + Math.floor(r), j: rooms[0].j + Math.floor(r), direction: 'south' }
-  dig(exit.i, exit.j, 2.2)
+  dig(exit.i, exit.j, 2.2, 1)
   dig((exit.i + rooms[0].i) / 2, (exit.j + rooms[0].j) / 2, 2.2)
   // Dig the entrance landing first, then put the portal on its actual rim.
   // Keeping the landing footprint preserves access from the first chamber.
@@ -86,7 +82,13 @@ function createCave(tier, variant, seed) {
     for (let j = 0; j < width; j++) {
       if (!floor[i * width + j] || i + j < exit.i + exit.j) continue
       const facesVoid = i === width - 1 || j === width - 1 || !floor[(i + 1) * width + j] || !floor[i * width + j + 1]
-      if (facesVoid) rim.push({ i, j, distance: (i - exit.i) ** 2 + (j - exit.j) ** 2 })
+      const exposed = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ].filter(([di, dj]) => !floor[(i + di) * width + j + dj])
+      if (facesVoid && exposed.length === 1) rim.push({ i, j, distance: (i - exit.i) ** 2 + (j - exit.j) ** 2 })
     }
   rim.sort((a, b) => a.distance - b.distance || b.i + b.j - a.i - a.j)
   if (!rim.length) throw new Error(`${id}: missing entrance rim`)

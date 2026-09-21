@@ -35,8 +35,8 @@ export const AI_BUILDING_TRAINING_CAPACITY = 5
 export const AI_ABSTRACT_DAILY_RECRUITS = 2
 
 export const MAX_VILLAGER_PER_AGE = {
-  0: 16,
-  1: 40,
+  0: 50,
+  1: 50,
   2: 50,
 }
 
@@ -46,58 +46,21 @@ export const VILLAGE_TARGET_PERCENTAGE_BY_AGE = {
   2: { wood: 25, food: 30, gold: 20, stone: 25 },
 }
 
-export const MAX_BUILDING_BY_AGE = {
-  0: {
-    StoragePit: 1,
-    Granary: 1,
-    Barracks: 1,
-    Market: 1,
-  },
-  1: {
-    StoragePit: 3,
-    Granary: 3,
-    Barracks: 2,
-    Market: 1,
-    TownCenter: 2,
-    ArcheryRange: 1,
-    Stable: 1,
-    WatchTower: 3,
-    Temple: 1,
-  },
-  2: {
-    StoragePit: 4,
-    Granary: 4,
-    Barracks: 3,
-    Market: 1,
-    TownCenter: 2,
-    ArcheryRange: 2,
-    Stable: 1,
-    WatchTower: 3,
-    Temple: 1,
-  },
+const BUILDING_CAPS = {
+  StoragePit: 4,
+  Granary: 4,
+  Barracks: 3,
+  Market: 1,
+  Forge: 1,
+  TownCenter: 2,
+  ArcheryRange: 2,
+  Stable: 1,
+  WatchTower: 3,
+  Temple: 1,
 }
+export const MAX_BUILDING_BY_AGE = { 0: BUILDING_CAPS, 1: BUILDING_CAPS, 2: BUILDING_CAPS }
+export const MAX_BUILDING_BY_AGE_FROZEN = MAX_BUILDING_BY_AGE
 
-// Utilisé quand AGE_UP_ENABLED est false : l'IA reste bloquée à l'âge 0 pour toujours, donc on lui
-// donne le plafond le plus haut défini pour chaque type de bâtiment (tous âges confondus) plutôt que
-// de la brider à 1 baraque/1 dépôt/etc. à vie.
-const MERGED_MAX_BUILDING_CAPS = Array.from(
-  new Set(Object.values(MAX_BUILDING_BY_AGE).flatMap(ageConfig => Object.keys(ageConfig)))
-).reduce(
-  (acc, type) => {
-    acc[type] = Math.max(
-      ...Object.values(MAX_BUILDING_BY_AGE).map(ageConfig => (ageConfig as Record<string, number>)[type] || 0)
-    )
-    return acc
-  },
-  {} as Record<string, number>
-)
-
-export const MAX_BUILDING_BY_AGE_FROZEN = {
-  0: MERGED_MAX_BUILDING_CAPS,
-  1: MERGED_MAX_BUILDING_CAPS,
-  2: MERGED_MAX_BUILDING_CAPS,
-}
-
-export const MAX_INFANTRY_BY_AGE = { 0: 8, 1: 10, 2: 12 }
-export const MAX_ARCHER_BY_AGE = { 0: 0, 1: 6, 2: 8 }
-export const MAX_CAVALRY_BY_AGE = { 0: 0, 1: 4, 2: 5 }
+export const MAX_INFANTRY_BY_AGE = { 0: 12, 1: 12, 2: 12 }
+export const MAX_ARCHER_BY_AGE = { 0: 8, 1: 8, 2: 8 }
+export const MAX_CAVALRY_BY_AGE = { 0: 5, 1: 5, 2: 5 }

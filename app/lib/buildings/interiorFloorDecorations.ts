@@ -1,4 +1,5 @@
 export type InteriorFloorDecoration = {
+  allowBorderPlacement?: boolean
   frame: number
   offsetX: number
   offsetY: number
@@ -7,18 +8,17 @@ export type InteriorFloorDecoration = {
 // Ground-level hides and rugs from the reference montage; offsets are in isometric pixels.
 const FLOOR_DECORATIONS: Record<string, readonly InteriorFloorDecoration[]> = {
   TownCenter: [
-    { frame: 17, offsetX: 3, offsetY: -83 },
-    { frame: 41, offsetX: 94, offsetY: -67.5 },
-    { frame: 17, offsetX: -123, offsetY: -48 },
-    { frame: 17, offsetX: -91, offsetY: -4 },
-    { frame: 17, offsetX: 62, offsetY: 16 },
-    { frame: 41, offsetX: 32, offsetY: 63.5 },
+    { frame: 17, offsetX: -96, offsetY: -32 },
+    { frame: 41, offsetX: 0, offsetY: -48 },
+    { frame: 17, offsetX: 96, offsetY: -32 },
+    { frame: 41, offsetX: -32, offsetY: 40 },
+    { frame: 17, offsetX: 0, offsetY: 80 },
   ],
   House: [
-    { frame: 17, offsetX: 64, offsetY: -47 },
-    { frame: 17, offsetX: -35, offsetY: -36 },
-    { frame: 17, offsetX: 69, offsetY: 14 },
-    { frame: 41, offsetX: -33, offsetY: 32.5 },
+    { frame: 41, offsetX: 64, offsetY: 16 },
+    { frame: 41, offsetX: 160, offsetY: 32, allowBorderPlacement: true },
+    { frame: 17, offsetX: 0, offsetY: 48 },
+    { frame: 17, offsetX: 96, offsetY: 68, allowBorderPlacement: true },
   ],
   Barracks: [{ frame: 18, offsetX: 2, offsetY: -15.5 }],
   Temple: [

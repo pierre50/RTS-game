@@ -225,3 +225,37 @@ test('game windows consume controller buttons and release world actions only onc
     global.document = previousDocument
   }
 })
+
+test('placement consumes A/X/B without attacking or opening another interaction', () => {
+  let gamepad = makeGamepad()
+  const calls = []
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
+  const input = new GamepadHeroInput({
+    context: {},
+    mouse: { x: 0, y: 0 },
+    mouseBuilding: {},
+    buildingPlacer: {
+      confirmPlacement: () => calls.push('place'),
+      toggleMirror: () => calls.push('mirror'),
+      cancelPlacement: () => calls.push('cancel'),
+      setPlacementGamepad() {},
+    },
+    heroController: {
+      handleKeyDown: () => calls.push('world'),
+      handleKeyUp() {},
+      cycleTool: () => calls.push('tool'),
+      handlePrimaryPointerDown: () => calls.push('attack'),
+      handlePointerUp() {},
+    },
+    openHeroEntityInteraction: () => calls.push('interact'),
+  })
+  input.update()
+  for (const index of [2, 0, 1]) {
+    gamepad = makeGamepad([index])
+    input.update()
+    input.update()
+    gamepad = makeGamepad()
+    input.update()
+  }
+  assert.deepEqual(calls, ['mirror', 'place', 'cancel'])
+})

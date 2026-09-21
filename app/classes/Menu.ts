@@ -336,7 +336,7 @@ export default class Menu implements MenuLike {
     return this.inventoryManager.render(item)
   }
   syncObjectiveProgress(): void {
-    return this.inventoryManager.syncObjectiveProgress()
+    return this.heroBuildingMenuManager.syncLiveState()
   }
   setEquippedTool(tool: HeroEquippedItem | null): void {
     return this.setEquippedItem(tool)

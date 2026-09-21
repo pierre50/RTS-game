@@ -67,3 +67,55 @@ test('switching tabs activates and focuses the new tab', () => {
   instance.switchPanel(-1)
   assert.equal(instance.selected, tabs[2])
 })
+
+test('keyboard hold executes once after 850 ms and uses the current action', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
+  })
+  const previousDocument = global.document
+  global.document = { activeElement: null }
+  try {
+    const instance = Object.create(GameWindow.prototype)
+    let executions = 0
+    instance.commands = [{ id: 'remove', run: () => executions++ }]
+    instance.keyboardHolding = { command: { id: 'remove', run: () => assert.fail('stale action') }, since: 100 }
+    instance.isTopmost = () => true
+    instance.footer = { style: { setProperty() {} } }
+    instance.cancelKeyboardHold = () => {
+      instance.keyboardHolding = null
+    }
+    instance.scheduleRefresh = () => {}
+    instance.advanceKeyboardHold(949)
+    assert.equal(executions, 0)
+    instance.advanceKeyboardHold(950)
+    instance.advanceKeyboardHold(1200)
+    assert.equal(executions, 1)
+    assert.equal(instance.keyboardHolding, null)
+  } finally {
+    global.document = previousDocument
+  }
+})
+
+test('keyboard hold cancels when editing, covered, disabled or removed', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
+  })
+  const previousDocument = global.document
+  try {
+    for (const reason of ['editing', 'covered', 'disabled', 'removed']) {
+      global.document = { activeElement: { closest: () => (reason === 'editing' ? {} : null) } }
+      const instance = Object.create(GameWindow.prototype)
+      instance.commands =
+        reason === 'removed' ? [] : [{ id: 'remove', disabled: reason === 'disabled', run: () => assert.fail(reason) }]
+      instance.keyboardHolding = { command: { id: 'remove' }, since: 0 }
+      instance.isTopmost = () => reason !== 'covered'
+      instance.cancelKeyboardHold = () => {
+        instance.keyboardHolding = null
+      }
+      instance.advanceKeyboardHold(1000)
+      assert.equal(instance.keyboardHolding, null, reason)
+    }
+  } finally {
+    global.document = previousDocument
+  }
+})

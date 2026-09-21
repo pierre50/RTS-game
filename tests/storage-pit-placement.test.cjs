@@ -167,3 +167,30 @@ test('live construction and offline first-visit/return planning choose the same 
     assert.equal(saved.players[0].buildings.filter(b => b.type === 'StoragePit').length, 1)
   }
 })
+
+test('live village adds one forge after core infrastructure and does not duplicate it', () => {
+  const { handleAIBuildingActions: build } = loadTsModule('app/ai/AIStrategyBuilding.ts', {
+    mocks: {
+      '../lib': { canAfford: () => true, getBuildingPlacementSearchSize: size => size, getPositionInGridAroundInstance: () => ({ i: 10, j: 10 }) },
+      '../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set() },
+    },
+  })
+  const buildings = ['TownCenter', 'Granary', 'Market', 'Barracks'].map(type => ({ type, isBuilt: true, i: 20, j: 20 }))
+  const ai = {
+    age: 0, population: 5, populationMax: 20, phase: 'economy', buildings, units: [],
+    config: { buildings: { Forge: require('../public/assets/data/gameplay/buildings.json').Forge } },
+    context: { map: { grid: [] } }, foundedResources: {},
+    hasNotReachBuildingLimit: (_type, existing) => existing.length < 1,
+    buyBuilding: (i, j, type) => { buildings.push({ type, i, j, isBuilt: false }); return true },
+  }
+  const snapshot = {
+    map: ai.context.map, towncenters: [buildings[0]], granarys: [buildings[1]], markets: [buildings[2]], barracks: [buildings[3]],
+    otherPlayers: [], maxVillagers: 4, houses: [], farms: [], storagepits: [], archeryRanges: [], stables: [], watchTowers: [], temples: [], notBuiltHouses: [],
+  }
+  const strategy = { ai, canSpendWithReserve: () => true, getDesiredBarracksCount: () => 1 }
+  assert.equal(build(strategy, snapshot), 1)
+  assert.equal(build(strategy, snapshot), 0)
+  buildings.at(-1).isBuilt = true
+  assert.equal(build(strategy, snapshot), 0)
+  assert.equal(buildings.filter(building => building.type === 'Forge').length, 1)
+})

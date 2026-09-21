@@ -13,6 +13,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
       this.visible = true
       this.x = 0
       this.y = 0
+      this.scale = { x: 1, y: 1 }
       this.position = { set: (x, y) => ((this.x = x), (this.y = y)) }
       this.zIndex = 0
     }
@@ -96,7 +97,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
       SHEET_TYPES: { standing: 'standing' },
     },
     '../lib/buildings/interiors': {
-      getBuildingInteriorEntryCell: () => null,
+      getBuildingInteriorEntryCell: overrides.getBuildingInteriorEntryCell ?? (() => null),
       getBuildingInteriorPortalId: building => building.label || 'building',
     },
     '../lib/grid/cells': { getCellsAroundPoint: overrides.getCellsAroundPoint ?? (() => []) },
@@ -1117,4 +1118,55 @@ test('destroyed stable releases interior and stored horses as wild runaways', ()
     calls.filter(call => call[0] === 'move'),
     [['move', `${space.id}:stable-horse:0`, 'outside', 1, 1]]
   )
+})
+
+test('mirrored interiors link the reflected outdoor door to the reflected room exit', () => {
+  const { getBuildingInteriorEntryCell } = loadTsModule('app/lib/buildings/interiors.ts')
+  const { ensureBuildingInteriorSpace } = loadBuildingInteriorSpaceSystem({ getBuildingInteriorEntryCell })
+  const grid = Array.from({ length: 10 }, (_, i) => Array.from({ length: 10 }, (_, j) => ({ i, j })))
+  const context = {
+    app: { ticker: { add() {}, remove() {} } },
+    controls: {},
+    map: {
+      grid,
+      spaces: new Map(),
+      gaia: { animals: [] },
+      random: () => 0,
+      randomItem: items => items[0],
+      randomRange: min => min,
+      addToInstanceBucket() {},
+      removeFromInstanceBucket() {},
+      updateInstanceBucket() {},
+      addChild(child) {
+        child.parent = this
+        return child
+      },
+    },
+  }
+  const building = {
+    i: 3,
+    j: 4,
+    x: 120,
+    y: 160,
+    type: 'House',
+    isBuilt: true,
+    label: 'mirror-test',
+    placementMirrored: true,
+    context,
+  }
+  const blueprint = {
+    size: 2,
+    preserveLegacyGrid: true,
+    terrain: Array.from({ length: 3 }, () => Array(3).fill('Dirt')),
+    floorMask: Array.from({ length: 3 }, () => Array(3).fill(1)),
+    exits: [{ i: 1, j: 2 }],
+  }
+  const space = ensureBuildingInteriorSpace(context, building, blueprint)
+  assert.equal(space.exteriorEntryCell, grid[5][5])
+  assert.equal(space.exitCell, space.grid[2][1])
+  assert.equal(space.entryPortal.sourceCell, grid[5][5])
+  assert.equal(space.entryPortal.targetCell, space.exitCell)
+  assert.equal(space.exitPortal.targetCell, grid[5][5])
+  assert.equal(ensureBuildingInteriorSpace(context, building, blueprint), space)
+  assert.deepEqual(blueprint.exits, [{ i: 1, j: 2 }])
 })

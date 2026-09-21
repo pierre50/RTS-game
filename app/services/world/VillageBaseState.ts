@@ -1,3 +1,4 @@
+import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
 import type { ResourceAmount } from '../../types/common'
 import type { SavePlayerState, SaveGridPoint, SaveEntityState } from '../../types/save'
@@ -43,6 +44,9 @@ export function populateVillageBase(
       ...center,
       label: `${player.label}:center`,
       type: 'TownCenter',
+      placementMirrored: generatedBuildingMirrored('TownCenter', center, player.civ ?? index, p =>
+        spatial.available(p)
+      ),
       size: Number(config.size) || 2,
       isBuilt: true,
       hitPoints: Number(config.totalHitPoints) || 100,

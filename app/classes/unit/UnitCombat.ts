@@ -57,7 +57,7 @@ function isSlashingMeleeEquipment(item: string): boolean {
 
 function getMeleeImpactEquipment(unit: UnitEntity): string[] {
   if (Array.isArray(unit.equipment) && unit.equipment.length) return unit.equipment
-  return unit.work && typeof getUnitWorkEquipment === 'function' ? getUnitWorkEquipment(unit.work, unit.owner?.age) : []
+  return unit.work && typeof getUnitWorkEquipment === 'function' ? getUnitWorkEquipment(unit.work, unit.owner?.age, unit) : []
 }
 
 function getMeleeImpactSound(unit: UnitEntity, target: RuntimeEntity | null): CommandSound {

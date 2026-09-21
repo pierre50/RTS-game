@@ -140,3 +140,20 @@ test('shared building policy does not reserve a second house or a premature mark
   input.buildings.push({ type: 'House', isBuilt: false })
   assert.equal(villageBuildingNeeds(input).House, false)
 })
+
+test('decorative forge waits for an established village and never duplicates an existing project', () => {
+  const input = {
+    storagePitNeeded: false, population: 5, populationMax: 20, age: 0,
+    phase: 'economy', desiredBarracks: 1,
+    buildings: ['Granary', 'Market', 'Barracks'].map(type => ({ type, isBuilt: true })),
+  }
+  assert.equal(villageBuildingNeeds(input).Forge, true)
+  assert.equal(villageBuildingNeeds({ ...input, buildings: input.buildings.slice(0, 2) }).Forge, false)
+  assert.equal(villageBuildingNeeds({ ...input, storagePitNeeded: true }).Forge, false)
+  assert.equal(villageBuildingNeeds({ ...input, populationMax: 5 }).Forge, false)
+  for (const isBuilt of [false, true]) {
+    assert.equal(villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'Forge', isBuilt }] }).Forge, false)
+  }
+  assert.equal(villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'House', isBuilt: false }] }).Forge, false)
+  assert.equal(villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'Forge', isDestroyed: true }] }).Forge, true)
+})

@@ -27,7 +27,8 @@ button,
 }
 
 .ui-input,
-.ui-select {
+.ui-select,
+.window-choice {
   box-sizing: border-box;
   min-height: var(--ui-control-height);
   padding: var(--ui-gap-10) var(--ui-control-padding-x);
@@ -44,7 +45,8 @@ button,
     box-shadow var(--ui-transition-fast);
 }
 
-.ui-input {
+.ui-input,
+.window-choice {
   box-shadow: var(--ui-inset-shadow);
 }
 

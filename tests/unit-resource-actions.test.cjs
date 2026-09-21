@@ -158,8 +158,7 @@ test('delivery helper reports failure when a full bag cannot be delivered', () =
 })
 
 for (const [type, age, action] of [
-  ['Copper', 0, 'minecopper'],
-  ['Iron', 1, 'mineiron'],
+  ['Iron', 0, 'mineiron'],
 ]) {
   test(`locked ${type} swings without resources, XP or depletion and warns only once`, () => {
     const constants = loadTsModule('app/lib/constants.ts')
@@ -206,7 +205,7 @@ for (const [type, age, action] of [
       affectNewDest: () => assert.fail('the swing should be allowed'),
     }
     const actions = new UnitResourceActions(unit)
-    const expectedWarning = [[type === 'Copper' ? 'Requis : Âge de Bronze' : 'Requis : Âge de Fer', 'warning']]
+    const expectedWarning = [['Une pioche en bronze ou en fer est nécessaire pour extraire le fer.', 'warning']]
     for (let i = 0; i < 3; i++) {
       actions.startMiningResource(action)
       assert.equal(typeof unit.sprite.onFrameChange, 'function')

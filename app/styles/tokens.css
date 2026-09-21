@@ -273,6 +273,34 @@
   --ui-map-border: drop-shadow(-2px 0 0 var(--ui-map-shadow-dark)) drop-shadow(0 -2px 0 var(--ui-map-shadow-dark))
     drop-shadow(2px 0 0 var(--ui-map-shadow-light)) drop-shadow(0 2px 0 var(--ui-map-shadow-light));
 
+  /* Shared game windows, inventory panels and placement commands. */
+  --window-line: rgba(179, 188, 239, 0.35);
+  --window-line-strong: rgba(179, 188, 239, 0.5);
+  --window-section-bg: rgba(0, 0, 0, 0.12);
+  --window-slot-bg: rgba(23, 38, 63, 0.8);
+  --window-quantity-bg: rgba(8, 13, 30, 0.8);
+  --window-unavailable-icon-filter: grayscale(1) brightness(0.6);
+  --window-slot-hover-bg: rgba(60, 76, 115, 0.65);
+  --window-selected-bg: rgba(69, 78, 117, 0.65);
+  --window-details-bg: rgba(19, 34, 53, 0.6);
+  --window-danger-color: #eea5a1;
+  --window-pad-confirm-color: #91d886;
+  --window-pad-cancel-color: #ee9393;
+  --window-pad-action-color: #93baff;
+  --window-pad-secondary-color: #f6d779;
+  --window-hold-bg: rgba(226, 170, 88, 0.3);
+  --window-choice-hover-bg: rgba(179, 188, 239, 0.15);
+  --window-home-footer-bg: rgba(12, 18, 40, 0.7);
+  --window-tab-active-bg: rgba(179, 188, 239, 0.1);
+  --window-tab-hover-bg: rgba(179, 188, 239, 0.16);
+  --window-backdrop: rgba(5, 7, 18, 0.35);
+  --window-help-shadow: 0 4px 12px #0008;
+  --window-padding-x: 22px;
+  --window-avatar-size: 64px;
+  --window-bag-min-height: 240px;
+  --window-choice-arrow-width: 44px;
+  --window-choice-arrow-font-size: 26px;
+
   /* =========================================================
      DEBUG
      ========================================================= */

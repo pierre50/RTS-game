@@ -4,7 +4,6 @@ const BUILDING_INTERIOR_TYPE_ORDER = [
   BUILDING_TYPES.townCenter,
   BUILDING_TYPES.house,
   BUILDING_TYPES.barracks,
-  BUILDING_TYPES.archeryRange,
   BUILDING_TYPES.temple,
   BUILDING_TYPES.granary,
   BUILDING_TYPES.storagePit,

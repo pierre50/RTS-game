@@ -28,7 +28,6 @@ export function getNearestAvailableStableForUnit(
 ): BuildingEntity | null {
   const owner = unit.owner
   if (!owner) return null
-  if ((owner.age ?? 0) < 1) return null
   let stable: BuildingEntity | null = null
   let bestDistance = Infinity
   const maxDistance = options.maxDistance

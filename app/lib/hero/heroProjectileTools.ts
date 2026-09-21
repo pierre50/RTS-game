@@ -139,7 +139,6 @@ export function throwCatchingPoleAt(
   power = 1,
   options: { onThrowResolved?: () => void } = {}
 ): HeroCatchingPoleThrow | null {
-  if ((hero.owner?.age ?? 0) < 1) return null
   const map = hero.context?.map
   if (!map || !hero.context) return null
   const rangePower = Math.max(HERO_BOW_MIN_POWER, Math.min(1, power))

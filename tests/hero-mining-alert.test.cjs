@@ -33,10 +33,10 @@ function attemptMining({ type = 'Copper', age = 0, touching = false, quantity = 
   return { result: performContextActionAt(hero), messages, hero }
 }
 
-test('locked copper and iron start a mining swing without an immediate warning', () => {
+test('copper and iron start a mining swing without an immediate warning', () => {
   for (const [type, age, action] of [
     ['Copper', 0, 'minecopper'],
-    ['Iron', 1, 'mineiron'],
+    ['Iron', 0, 'mineiron'],
   ]) {
     const { result, messages, hero } = attemptMining({ type, age, touching: true })
     assert.equal(result, 'triggered')
@@ -73,8 +73,8 @@ test('holding interact repeats locked mining swings and releasing stops them', (
     type: 'Hero',
     controlMode: 'hero',
     owner: { age: 0 },
-    action: 'minecopper',
-    dest: { type: 'Copper', quantity: 10 },
+    action: 'mineiron',
+    dest: { type: 'Iron', quantity: 10 },
     context: { controls: { heroActionHeld: true } },
     sprite: { currentFrame: 4 },
     getActionCondition: () => false,
@@ -84,7 +84,7 @@ test('holding interact repeats locked mining swings and releasing stops them', (
     stop: () => {
       stops++
     },
-    affectNewDest: () => assert.fail('age lock should not interrupt held mining'),
+    affectNewDest: () => assert.fail('insufficient pickaxe should not interrupt held mining'),
   }
   finishManualHeroWorkSwing(unit, 4, 4)
   assert.equal(swings, 1)

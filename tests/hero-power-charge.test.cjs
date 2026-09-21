@@ -2195,3 +2195,36 @@ test('free-hand interact still whiffs when a contextual target is aimed but out 
   assert.equal(hero.actionLocked, true)
   assert.equal(hero.currentSheet, 'actionSheet')
 })
+
+for (const state of ['finished', 'no-energy']) {
+  test(`interact never aggresses a friendly building when construction is ${state}`, () => {
+    let aggressions = 0
+    const building = {
+      family: 'building', isBuilt: state === 'finished', hitPoints: 10, totalHitPoints: 10,
+      i: 1, j: 0, x: 10, y: 0,
+    }
+    const { triggerToolAttackAt } = loadHeroTools({
+      './combat/combat': {
+        getActionCondition: (_hero, target, action) =>
+          target === building && action === 'build' && !building.isBuilt,
+      },
+      './combat/diplomaticAggression': {
+        canTriggerDiplomaticAggression: () => true,
+        applyDiplomaticAggression: () => {
+          aggressions++
+          return { changed: true, hostileNow: false }
+        },
+      },
+      './grid/visibility': { findInstancesInSight: (_hero, predicate) => [building].filter(predicate) },
+    })
+    const { hero } = makeHero()
+    Object.assign(hero, { energy: state === 'no-energy' ? 0 : 10, i: 0, j: 0, isUnitAtDest: () => true })
+    triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 })
+    if (hero.sprite.onFrameChange) {
+      hero.sprite.currentFrame = 5
+      hero.sprite.onFrameChange(5)
+    }
+    assert.equal(aggressions, 0)
+    assert.equal(building.hitPoints, 10)
+  })
+}

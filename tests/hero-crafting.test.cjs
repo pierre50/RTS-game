@@ -21,19 +21,11 @@ function loadModule(relativePath, mocks = {}) {
   return module.exports
 }
 
-test('craft lists only recipes unlocked at the current age, independently of resources', () => {
+test('all craft recipes are available from age zero', () => {
   const { getAvailableHeroCraftRecipes } = loadCrafting()
   const ids = age => getAvailableHeroCraftRecipes({ age }).map(recipe => recipe.id)
-  const stone = ids(0)
-  assert.ok(stone.includes('bow'))
-  assert.ok(stone.includes('arrow_ceramic'))
-  for (const id of ['catchingPole', 'arrow_copper', 'arrow_bronze', 'arrow_iron']) {
-    assert.equal(stone.includes(id), false, id)
-  }
-  const bronze = ids(1)
-  for (const id of ['catchingPole', 'arrow_copper', 'arrow_bronze']) assert.ok(bronze.includes(id), id)
-  assert.equal(bronze.includes('arrow_iron'), false)
-  assert.ok(ids(2).includes('arrow_iron'))
+  assert.deepEqual(ids(0), ids(2))
+  for (const id of ['catchingPole', 'arrow_copper', 'arrow_bronze', 'arrow_iron']) assert.ok(ids(0).includes(id))
 })
 
 function getHeroInventory(hero) {
@@ -111,16 +103,13 @@ test('hero bow craft spends wood and sinew and adds a bow to the bag', () => {
   assert.deepEqual(hero.discoveredItems, ['bow'])
 })
 
-test('hero catching pole craft requires Bronze and then spends wood and fiber', () => {
+test('hero catching pole craft works from age zero and spends wood and fiber', () => {
   const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
   const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'catchingPole')
   const player = { age: 1, wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0, fiber: 0 }
   const hero = { type: 'Hero', inventory: { resources: { wood: 4, fiber: 2 } } }
 
   player.age = 0
-  assert.equal(craftHeroRecipe(player, hero, recipe), false)
-  assert.deepEqual(hero.inventory.resources, { wood: 4, fiber: 2 })
-  player.age = 1
   assert.equal(craftHeroRecipe(player, hero, recipe), true)
   assert.deepEqual(hero.inventory.resources, {})
   assert.deepEqual(hero.inventory.equipment, ['catchingPole'])

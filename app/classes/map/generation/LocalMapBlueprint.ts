@@ -1,6 +1,6 @@
 import { createInteriorWallEdges } from '../../../lib/buildings/interiorWalls'
 import { definedProperties } from '../../../lib/definedProperties'
-import { blueprintToLocalGrid, createLocalMapLayout, gridToLocal, localToGrid } from '../../../lib/localMapLayout'
+import { blueprintToLocalGrid, createLocalMapLayout, localToGrid } from '../../../lib/localMapLayout'
 import type { MapBlueprint } from '../MapGenerationTypes'
 
 function createSparseGrid<T>(size: number): T[][] {
@@ -119,58 +119,23 @@ function computeInteriorBorderMask(floorMask: number[][], size: number): number[
   return borderMask
 }
 
-function bottomLeftVisualFloorCell(
-  floorMask: number[][],
-  size: number,
-  layout: ReturnType<typeof createLocalMapLayout>,
-  centerColumn: number,
-  centerRow: number,
-  radiusColumns: number
-): { i: number; j: number } {
-  let best: { i: number; j: number; row: number; visualColumn: number } | null = null
-  const targetColumn = centerColumn - radiusColumns * 0.45
-  for (let i = 0; i <= size; i += 1) {
-    for (let j = 0; j <= size; j += 1) {
-      if (floorMask[i]?.[j] !== 1) continue
-      const local = gridToLocal(i, j, layout)
-      const visualColumn = local.column + (local.row % 2) / 2
-      if (local.row <= centerRow || visualColumn >= centerColumn) continue
-      const candidate = { i, j, row: local.row, visualColumn }
-      if (!best) {
-        best = candidate
-        continue
-      }
-      const columnDistance = Math.abs(visualColumn - targetColumn)
-      const bestColumnDistance = Math.abs(best.visualColumn - targetColumn)
-      if (candidate.row > best.row || (candidate.row === best.row && columnDistance < bestColumnDistance)) {
-        best = candidate
-      }
-    }
-  }
-  return best ?? { i: Math.round(size / 2), j: Math.round(size / 2) }
-}
-
-export function createRoundLocalInteriorBlueprint(source: MapBlueprint): MapBlueprint {
-  if (source.localGridLayout) return source
+/** A rounded rectangle in world coordinates projects along the two isometric axes. */
+export function createIsometricInteriorBlueprint(source: MapBlueprint): MapBlueprint {
+  if (source.localGridLayout || source.preserveLegacyGrid) return source
   const layout = createLocalMapLayout(source.size)
   const size = layout.columns - 1 + Math.ceil((layout.rows - 1) / 2)
   const terrain = createSparseGrid<MapBlueprint['terrain'][number][number]>(size)
   const relief = createSparseGrid<number>(size)
   const floorMask = createSparseGrid<number>(size)
-  const centerColumn = (layout.columns - 1) / 2
-  const centerRow = (layout.rows - 1) / 2
-  const radiusColumns = Math.max(2.25, Math.min(layout.columns / 2 - 0.65, (source.buildingSize ?? 2) + 1.35))
-  const radiusRows = Math.min(centerRow - 1, radiusColumns * 2.55)
-  const curvePower = 3
+  const center = Math.round(size / 2)
+  const halfExtent = Math.floor((source.size - 3) / 2)
+  const cornerRadius = 1.5
 
-  for (let row = 0; row < layout.rows; row += 1) {
-    for (let column = 0; column < layout.columns; column += 1) {
-      if (row % 2 === 1 && column === layout.columns - 1) continue
-      const { i, j } = localToGrid(column, row, layout)
-      const visualColumn = column + (row % 2) / 2
-      const dx = Math.abs((visualColumn - centerColumn) / radiusColumns)
-      const dy = Math.abs((row - centerRow) / radiusRows)
-      const isFloor = dx ** curvePower + dy ** curvePower <= 1
+  for (let i = 0; i <= size; i += 1) {
+    for (let j = 0; j <= size; j += 1) {
+      const dx = Math.max(0, Math.abs(i - center) - halfExtent + cornerRadius)
+      const dy = Math.max(0, Math.abs(j - center) - halfExtent + cornerRadius)
+      const isFloor = dx * dx + dy * dy <= cornerRadius * cornerRadius
       setInteriorCell(terrain, i, j, isFloor ? 'Dirt' : 'Water')
       setInteriorCell(relief, i, j, 0)
       setInteriorCell(floorMask, i, j, isFloor ? 1 : 0)
@@ -178,38 +143,28 @@ export function createRoundLocalInteriorBlueprint(source: MapBlueprint): MapBlue
   }
 
   const borderMask = computeInteriorBorderMask(floorMask, size)
-  const exit = bottomLeftVisualFloorCell(floorMask, size, layout, centerColumn, centerRow, radiusColumns)
+  // Midpoint of the front-left wall: one exposed edge and a straight approach.
+  const exit = { i: center, j: center + halfExtent }
   setInteriorCell(borderMask, exit.i, exit.j, 0)
-  const sourceExit = source.exits?.find(Boolean) as
-    | ({ direction?: string; id?: string } & {
-        i: number
-        j: number
-      })
-    | null
+  const sourceExit = source.exits?.find(Boolean) as { i: number; j: number; id?: string } | undefined
 
   return definedProperties({
     ...source,
     size,
-    localGridLayout: layout,
+    preserveLegacyGrid: true,
     terrain,
     relief,
     floorMask,
     borderMask,
     walls: createInteriorWallEdges(floorMask, size, [exit]),
     spawns: [exit],
-    exits: [
-      {
-        ...exit,
-        ...(sourceExit?.id ? { id: sourceExit.id } : {}),
-        ...(sourceExit?.direction ? { direction: sourceExit.direction } : {}),
-      },
-    ],
+    exits: [{ ...exit, id: sourceExit?.id ?? 'main', direction: 'south' }],
     resources: [],
     floorShape: {
-      type: 'round-local',
-      center: { column: centerColumn, row: centerRow },
-      radius: { columns: radiusColumns, rows: radiusRows },
-      curvePower,
+      type: 'rounded-isometric',
+      center: { i: center, j: center },
+      halfExtent,
+      cornerRadius,
     },
   })
 }

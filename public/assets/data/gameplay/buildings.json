@@ -975,5 +975,41 @@
         "building-destroyed-3"
       ]
     }
+  },
+  "Forge": {
+    "size": 3,
+    "sight": 8,
+    "totalHitPoints": 350,
+    "constructionTime": 72,
+    "cost": {
+      "wood": 60,
+      "stone": 20
+    },
+    "sounds": {
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
+    }
+  },
+  "CampFruitBowl": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
+    }
   }
 }

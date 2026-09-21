@@ -10,7 +10,6 @@ const { getActionCondition } = loadTsModule('app/lib/combat/combatActionConditio
       shouldAttackBuildingForInteriorAccess: (_unit, building) => building.accessBlocked === true,
     },
     './bandits': { isBanditOwner: owner => owner.bandits === true, isBanditUnitType: type => type === 'Bandit' },
-    './combatRelations': { isFriendlyTarget: (source, target) => source.owner?.label === target.owner?.label },
   },
 })
 const owner = { label: 'ally', isEnemy: other => other?.label === 'enemy' }
@@ -102,6 +101,16 @@ test('attack eligibility and the shared guard reject unusable targets and orders
   const fighter = source({ weaponPower: 1 })
   const enemy = source({ owner: { label: 'enemy' } })
   assert.equal(getActionCondition(fighter, enemy, 'attack'), true)
+  for (const type of [U.hero, U.infantry]) {
+    assert.equal(
+      getActionCondition(
+        source({ type, weaponPower: 10 }),
+        building({ owner: enemy.owner, accessBlocked: true, indestructible: true }),
+        'attack'
+      ),
+      false
+    )
+  }
   assert.equal(getActionCondition(source(), enemy, 'attack'), false)
   assert.equal(getActionCondition(fighter, source(), 'attack'), false)
   assert.equal(getActionCondition(fighter, building({ owner: enemy.owner }), 'attack'), false)
@@ -120,4 +129,18 @@ test('attack eligibility and the shared guard reject unusable targets and orders
   assert.equal(getActionCondition(fighter, null, 'attack'), false)
   assert.equal(getActionCondition({ ...fighter, hitPoints: 0 }, enemy, 'attack'), false)
   assert.equal(getActionCondition({ ...fighter, isDead: true }, enemy, 'attack'), false)
+})
+
+test('hero can build and repair non-hostile buildings without extending villager permissions', () => {
+  for (const label of ['ally', 'friendly-village', 'neutral-village', 'enemy']) {
+    for (const isBuilt of [false, true]) {
+      const target = building({ owner: { label }, isBuilt })
+      assert.equal(getActionCondition(source({ type: U.hero }), target, 'build'), label !== 'enemy')
+      assert.equal(getActionCondition(source(), target, 'build'), label === 'ally')
+    }
+  }
+  const hero = source({ type: U.hero })
+  for (const patch of [{ hitPoints: 100 }, { hitPoints: 0 }, { isDead: true }, { owner: null }]) {
+    assert.equal(getActionCondition(hero, building({ owner: { label: 'neutral-village' }, ...patch }), 'build'), false)
+  }
 })

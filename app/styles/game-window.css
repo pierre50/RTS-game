@@ -1,6 +1,5 @@
 /* Shared game windows: only the body scrolls; commands stay within reach. */
 .modal-panel.game-window {
-  --window-line: rgba(179, 188, 239, 0.35);
   gap: 0;
   overflow: hidden;
   padding: 0;
@@ -9,7 +8,7 @@
   max-height: calc(100dvh - 24px);
 }
 .game-window > .modal-header {
-  padding: 16px 22px;
+  padding: var(--ui-gap-16) var(--window-padding-x);
   margin: 0;
   border-bottom: 1px solid var(--window-line);
 }
@@ -19,16 +18,16 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 18px 22px;
+  padding: var(--ui-gap-18) var(--window-padding-x);
 }
 .game-window .entity-info-wrapper {
   align-items: flex-start;
   gap: 14px;
 }
 .game-window .entity-info-wrapper > .unit-avatar-frame {
-  flex: 0 0 64px;
-  width: 64px;
-  height: 64px;
+  flex: 0 0 var(--window-avatar-size);
+  width: var(--window-avatar-size);
+  height: var(--window-avatar-size);
 }
 .game-window .entity-info-modal {
   padding: 0;
@@ -39,7 +38,7 @@
 }
 .game-window .hit-points-display {
   width: min(200px, 100%);
-  margin-top: 6px;
+  margin-top: var(--ui-gap-6);
 }
 .game-window .entity-info-header {
   font-size: var(--font-size-sm);
@@ -48,7 +47,7 @@
   image-rendering: pixelated;
 }
 .game-window .interaction-panel-content {
-  gap: 18px;
+  gap: var(--ui-gap-18);
 }
 .game-window.inventory-transfer-modal {
   width: min(1100px, calc(100vw - 32px));
@@ -58,7 +57,7 @@
 }
 .game-window.inventory-transfer-modal .interaction-information {
   display: block;
-  margin-bottom: 16px;
+  margin-bottom: var(--ui-gap-16);
   padding-bottom: 14px;
   border-bottom: 1px solid var(--window-line);
 }
@@ -68,36 +67,36 @@
 .game-window .inventory-transfer-panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 18px;
+  gap: var(--ui-gap-18);
   align-items: start;
 }
 .game-window .unit-inventory-screen > .entity-info-wrapper,
 .game-window .unit-inventory-screen > .entity-info-modal {
-  margin-bottom: 18px;
+  margin-bottom: var(--ui-gap-18);
 }
 .game-window .inventory-section {
   min-width: 0;
 }
 .game-window .inventory-section-title {
   font-size: var(--font-size-base);
-  margin: 0 0 12px;
+  margin: 0 0 var(--ui-gap-12);
 }
 .game-window .inventory-section-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
-  gap: 8px;
+  gap: var(--ui-gap-8);
   align-content: start;
 }
 .game-window .inventory-transfer-panel > .inventory-section {
-  padding: 12px;
+  padding: var(--ui-gap-12);
   border: 1px solid var(--window-line);
-  background: rgba(0, 0, 0, 0.12);
+  background: var(--window-section-bg);
 }
-.game-window .inventory-transfer-panel .inventory-section-list {
-  min-height: 240px;
+.game-window .inventory-transfer-panel .inventory-section-list,
+.game-window .inventory-transfer-empty {
+  min-height: var(--window-bag-min-height);
 }
 .game-window .inventory-transfer-empty {
-  min-height: 240px;
   display: grid;
   place-items: center;
   border: 0;
@@ -115,7 +114,7 @@
   padding: 7px;
   aspect-ratio: 1;
   border: 1px solid var(--window-line);
-  background: rgba(23, 38, 63, 0.8);
+  background: var(--window-slot-bg);
   cursor: pointer;
 }
 .game-window
@@ -132,16 +131,23 @@
 .game-window .inventory-quantity-badge {
   border: 0;
   border-radius: 0;
-  background: rgba(8, 13, 30, 0.8);
+  background: var(--window-quantity-bg);
   font-size: var(--font-size-sm);
 }
+/* Share unavailable-action styling without dimming focus, costs or quantity badges. */
+.game-window
+  :is(.market-buy-slot, .inventory-construction-row):has(.inventory-row-action-button:disabled)
+  .inventory-action-row-icon
+  > :not(.inventory-quantity-badge) {
+  filter: var(--window-unavailable-icon-filter);
+}
 .game-window .inventory-action-row:hover {
-  background: rgba(60, 76, 115, 0.65);
+  background: var(--window-slot-hover-bg);
 }
 .game-window .is-window-selected {
   outline: 2px solid var(--main-accent-hover);
   outline-offset: -2px;
-  background-color: rgba(69, 78, 117, 0.65);
+  background-color: var(--window-selected-bg);
 }
 .game-window .inventory-section-count,
 .game-window .inventory-section-header > .inventory-transfer-all-button,
@@ -173,12 +179,11 @@
 .game-window .inventory-tools-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  grid-template-rows: auto minmax(0, 1fr);
   align-content: start;
-  gap: 18px;
+  gap: var(--ui-gap-18);
 }
-.game-window .inventory-weapon-section {
-  grid-column: 1;
-}
+.game-window .inventory-weapon-section,
 .game-window .inventory-equipped-section {
   grid-column: 1;
 }
@@ -195,18 +200,18 @@
 }
 .game-window .modal-tab-page {
   box-sizing: border-box;
-  padding: 18px 22px;
+  padding: var(--ui-gap-18) var(--window-padding-x);
 }
 .game-window > .game-window-details {
   flex: 0 0 auto;
-  padding: 12px 22px;
+  padding: var(--ui-gap-12) var(--window-padding-x);
   border-top: 1px solid var(--window-line);
   color: var(--main-text-color);
   font-size: var(--font-size-sm);
   line-height: 1.45;
   max-height: 100px;
   overflow: auto;
-  background: rgba(19, 34, 53, 0.6);
+  background: var(--window-details-bg);
 }
 .game-window-details[hidden] {
   display: none;
@@ -216,8 +221,8 @@
   flex: 0 0 auto;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 12px 18px;
+  gap: var(--ui-gap-8) var(--ui-gap-16);
+  padding: var(--ui-gap-12) var(--ui-gap-18);
   border-top: 2px solid var(--window-line);
   overflow: visible;
   background: var(--main-primary-color);
@@ -226,8 +231,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
-  padding: 7px 5px;
+  gap: var(--ui-gap-8);
+  padding: 7px var(--ui-gap-5);
   min-height: 40px;
   border: 0;
   color: var(--main-text-color);
@@ -247,11 +252,11 @@
   cursor: default;
 }
 .game-window-command.is-danger {
-  color: #eea5a1;
+  color: var(--window-danger-color);
 }
 .game-window-command kbd,
 .game-window-navigation kbd {
-  padding: 3px 6px;
+  padding: 3px var(--ui-gap-6);
   min-width: 18px;
   border: 1px solid var(--window-line);
   color: var(--main-accent-hover);
@@ -263,19 +268,19 @@
   border-color: currentColor;
 }
 .game-window[data-input-mode='gamepad'] kbd[data-pad='0'] {
-  color: #91d886;
+  color: var(--window-pad-confirm-color);
 }
 .game-window[data-input-mode='gamepad'] kbd[data-pad='1'] {
-  color: #ee9393;
+  color: var(--window-pad-cancel-color);
 }
 .game-window[data-input-mode='gamepad'] kbd[data-pad='2'] {
-  color: #93baff;
+  color: var(--window-pad-action-color);
 }
 .game-window[data-input-mode='gamepad'] kbd[data-pad='3'] {
-  color: #f6d779;
+  color: var(--window-pad-secondary-color);
 }
 .game-window-footer.is-holding .is-danger {
-  background: linear-gradient(to right, rgba(226, 170, 88, 0.3) var(--hold-progress), transparent var(--hold-progress));
+  background: linear-gradient(to right, var(--window-hold-bg) var(--hold-progress), transparent var(--hold-progress));
 }
 .game-window-confirmation {
   color: var(--main-accent-hover);
@@ -299,8 +304,8 @@
     min-height: 110px;
   }
   .game-window > .game-window-footer {
-    gap: 4px 10px;
-    padding: 8px 12px;
+    gap: var(--ui-gap-4) var(--ui-gap-10);
+    padding: var(--ui-gap-8) var(--ui-gap-12);
   }
   .game-window-command {
     font-size: var(--font-size-xs);
@@ -308,21 +313,18 @@
 }
 @media (max-height: 550px) {
   .game-window > .modal-header {
-    padding: 8px 14px;
+    padding: var(--ui-gap-8) 14px;
   }
   .game-window > .game-window-footer {
-    padding: 5px 12px;
+    padding: var(--ui-gap-5) var(--ui-gap-12);
   }
   .game-window > .game-window-details {
     max-height: 48px;
-    padding: 6px 14px;
+    padding: var(--ui-gap-6) 14px;
   }
 }
 
 /* Each bag scrolls independently without stretching the equipment column. */
-.game-window .inventory-tools-page {
-  grid-template-rows: auto minmax(0, 1fr);
-}
 .game-window .inventory-loot-section .inventory-section-list,
 .game-window .inventory-transfer-panel .inventory-section-list {
   max-height: min(380px, 44dvh);
@@ -338,10 +340,6 @@
   color: var(--color-stone-muted);
 }
 
-.modal-panel.game-window.inventory-transfer-modal .interaction-actions {
-  display: block;
-}
-
 .game-window [data-window-action] {
   display: none;
 }
@@ -349,15 +347,13 @@
 /* The same native values and callbacks serve mouse, keyboard and controller. */
 .game-window .window-choice {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-columns: var(--window-choice-arrow-width) minmax(0, 1fr) var(--window-choice-arrow-width);
   align-items: center;
-  min-height: 48px;
   min-width: 0;
-  border: 1px solid var(--window-line);
-  background: rgba(23, 38, 63, 0.8);
+  padding: 0;
 }
 .window-choice-value {
-  padding: 8px;
+  padding: var(--ui-gap-10) var(--ui-control-padding-x);
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -367,11 +363,11 @@
   background: transparent;
   color: var(--main-accent-hover);
   font: inherit;
-  font-size: 26px;
+  font-size: var(--window-choice-arrow-font-size);
   cursor: pointer;
 }
 .window-choice-arrow:hover:not(:disabled) {
-  background: rgba(179, 188, 239, 0.15);
+  background: var(--window-choice-hover-bg);
 }
 .window-choice-arrow:disabled {
   opacity: 0.25;
@@ -402,10 +398,9 @@
   overflow: visible;
 }
 .home-command-window.game-window > .game-window-footer {
-  --window-line: rgba(179, 188, 239, 0.35);
   justify-content: center;
-  padding: 8px;
-  background: rgba(12, 18, 40, 0.7);
+  padding: var(--ui-gap-8);
+  background: var(--window-home-footer-bg);
 }
 .home-command-window .game-window-navigation {
   text-align: center;
@@ -421,11 +416,11 @@
 
 /* Tabs share one flat bar. Gold marks the open page; the outline marks keyboard focus. */
 .game-window .modal-tabs-header .ui-tabs {
-  gap: 8px;
+  gap: var(--ui-gap-8);
 }
 .game-window .modal-tabs-header .ui-tab {
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--ui-gap-10) var(--ui-gap-12);
   border: 0;
   border-bottom: 3px solid transparent;
   box-shadow: none;
@@ -434,13 +429,68 @@
 }
 .game-window .modal-tabs-header .ui-tab.active {
   border-bottom-color: var(--main-accent-hover);
-  background: rgba(179, 188, 239, 0.1);
+  background: var(--window-tab-active-bg);
   color: var(--main-accent-hover);
 }
 .game-window .modal-tabs-header .ui-tab:hover {
-  background: rgba(179, 188, 239, 0.16);
+  background: var(--window-tab-hover-bg);
 }
 .game-window .modal-tabs-header .ui-tab:focus-visible {
   outline: 1px solid var(--main-accent-hover);
   outline-offset: -5px;
+}
+
+.building-placement-help {
+  --window-line: var(--window-line-strong);
+  position: fixed;
+  z-index: 100;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-gap-8) 20px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: var(--ui-gap-10) 20px;
+  border: 1px solid var(--window-line);
+  background: var(--main-primary-color);
+  color: var(--main-text-color);
+  box-shadow: var(--window-help-shadow);
+}
+.building-placement-help > span {
+  color: var(--main-accent-hover);
+}
+.building-placement-help [hidden],
+body:has(.modal) .building-placement-help {
+  display: none;
+}
+
+/* Inventory interactions share a light veil; inspection stays close to the world. */
+.modal:has(> .game-window.inventory-transfer-modal),
+.modal:has(> .game-window.inventory-panel) {
+  background: var(--window-backdrop);
+}
+
+.game-window .forge-craft-body.inventory-section-list {
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: var(--ui-gap-10);
+}
+.game-window .forge-craft-body.inventory-section-list .inventory-action-row {
+  aspect-ratio: auto;
+  min-height: 122px;
+  justify-content: flex-start;
+  gap: var(--ui-gap-8);
+}
+.game-window
+  .forge-craft-body.inventory-section-list
+  .inventory-action-row:not(.inventory-action-row--no-icon)
+  > .inventory-action-row-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
 }

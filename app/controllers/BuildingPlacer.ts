@@ -1,3 +1,4 @@
+import { BuildingPlacementHelp } from '../ui/BuildingPlacementHelp'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { Assets, Container, Sprite } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
@@ -27,6 +28,7 @@ const WHEAT_PREVIEW_ALPHA = 0.75
 
 export class BuildingPlacer {
   private readonly placementRules: BuildingPlacementRules
+  private help?: BuildingPlacementHelp
   controls: ControlsLike
   wallPlacementController: WallPlacementController
 
@@ -119,6 +121,7 @@ export class BuildingPlacer {
           alreadyPaid: Boolean(mouseBuilding.inventoryItem),
           buildingAge: typeof mouseBuilding.buildingAge === 'number' ? mouseBuilding.buildingAge : player.age,
           spaceId: cell.spaceId,
+          placementMirrored: mouseBuilding.placementMirrored === true,
         })
       ) {
         if (
@@ -144,6 +147,7 @@ export class BuildingPlacer {
     const {
       context: { player },
     } = controls
+    this.removeMouseBuilding()
     controls.mouseBuilding = new Container() as MouseBuilding
     const texture =
       building.type === BUILDING_TYPES.smallWall
@@ -166,6 +170,13 @@ export class BuildingPlacer {
     Object.keys(building).forEach(prop => {
       ;(controls.mouseBuilding as MouseBuilding)[prop] = building[prop]
     })
+    this.applyPreviewMirror()
+    this.help = new BuildingPlacementHelp({
+      place: () => this.confirmPlacement(),
+      mirror: () => this.toggleMirror(),
+      cancel: () => this.cancelPlacement(),
+      canMirror: this.canMirror(),
+    })
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
     this.tintMouseBuilding(COLOR_GREEN)
     controls.addChild(controls.mouseBuilding)
@@ -175,10 +186,48 @@ export class BuildingPlacer {
   removeMouseBuilding(): void {
     const { controls } = this
     this.wallPlacementController.cancel()
+    this.help?.destroy()
+    this.help = undefined
     if (!controls.mouseBuilding) return
     controls.removeChild(controls.mouseBuilding)
     controls.mouseBuilding.destroy()
     controls.mouseBuilding = null
+  }
+
+  setPlacementGamepad(value: boolean): void {
+    this.help?.setGamepad(value)
+  }
+
+  confirmPlacement(): void {
+    const cell = this.getPointerCell()
+    if (cell) this.handleMouseUp(cell)
+  }
+
+  cancelPlacement(): void {
+    if (this.cancelWallDraft()) return
+    this.controls.removeMouseBuilding()
+    this.controls.context.menu?.updateActionTarget?.()
+  }
+
+  private canMirror(): boolean {
+    const type = this.controls.mouseBuilding?.type
+    return Boolean(type && type !== BUILDING_TYPES.farm && type !== BUILDING_TYPES.smallWall)
+  }
+
+  toggleMirror(): void {
+    if (!this.canMirror()) return
+    const preview = this.controls.mouseBuilding as MouseBuilding
+    preview.placementMirrored = !preview.placementMirrored
+    this.applyPreviewMirror()
+  }
+
+  private applyPreviewMirror(): void {
+    if (!this.canMirror()) return
+    const preview = this.controls.mouseBuilding as MouseBuilding
+    const sprite = preview.getChildByLabel(LABEL_TYPES.sprite) as Sprite | null
+    if (sprite)
+      sprite.scale.x =
+        Math.abs(sprite.scale.x) * (Boolean(preview.mirrored) !== Boolean(preview.placementMirrored) ? -1 : 1)
   }
 
   cancelWallDraft(): boolean {
@@ -248,7 +297,6 @@ export class BuildingPlacer {
   doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
     return this.placementRules.doesBuildingOverlapHero(cell, building)
   }
-
 
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     return this.placementRules.canWallUseCell(cell, owner, allowExistingWall)

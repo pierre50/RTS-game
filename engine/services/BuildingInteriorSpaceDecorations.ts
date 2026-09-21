@@ -20,7 +20,7 @@ function findInteriorDefaultBuildingCell(
   type: string,
   preferred: { i: number; j: number },
   blockedCells: Set<string>,
-  options: { allowBorderPlacement?: boolean } = {}
+  options: { allowBorderPlacement?: boolean; searchRadius?: number } = {}
 ): RuntimeCell | null {
   const config = space.building.owner?.config?.buildings?.[type]
   if (!config) return null
@@ -45,7 +45,7 @@ function findInteriorDefaultBuildingCell(
   return findInteriorDecorationCell(
     { grid: space.grid, randomItem: context.map.randomItem.bind(context.map), size: space.size },
     preferred,
-    { blockedCells, canUseCell, searchRadius: 2 }
+    { blockedCells, canUseCell, searchRadius: options.searchRadius ?? 2, mirrored: space.building.placementMirrored }
   )
 }
 
@@ -95,6 +95,8 @@ function getInteriorDefaultBuildingPreferredCell(
   item: ReturnType<typeof getBuildingInteriorDecorationLayout>[number],
   center: { i: number; j: number }
 ): { i: number; j: number } {
+  const offsetI = space.building.placementMirrored ? item.offsetJ : item.offsetI
+  const offsetJ = space.building.placementMirrored ? item.offsetI : item.offsetJ
   if (item.placement === 'oppositeExitInset') {
     const cell = getOppositeExitInsetCell(space, center)
     if (cell) return cell
@@ -102,7 +104,7 @@ function getInteriorDefaultBuildingPreferredCell(
   if (item.placement === 'oppositeExitBorder' && space.exitCell) {
     const directionI = Math.sign(center.i - space.exitCell.i)
     const directionJ = Math.sign(center.j - space.exitCell.j)
-    if (directionI === 0 && directionJ === 0) return { i: center.i + item.offsetI, j: center.j + item.offsetJ }
+    if (directionI === 0 && directionJ === 0) return { i: center.i + offsetI, j: center.j + offsetJ }
     let i = center.i
     let j = center.j
     let borderCell: RuntimeCell | null = null
@@ -114,7 +116,7 @@ function getInteriorDefaultBuildingPreferredCell(
     }
     if (borderCell) return borderCell
   }
-  return { i: center.i + item.offsetI, j: center.j + item.offsetJ }
+  return { i: center.i + offsetI, j: center.j + offsetJ }
 }
 
 export function ensureInteriorDefaultBuildings(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
@@ -137,7 +139,35 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
           )
         : owner
       if (!contentOwner) throw new Error(`Missing interior owner: ${building.interiorOwner}`)
-      contentOwner.createBuilding({ ...building, spaceId: space.id, skipBuiltEffects: true, deferTrainingResume: true })
+      let position = { i: building.i, j: building.j }
+      const savedCell = space.grid[building.i]?.[building.j]
+      if (
+        savedCell.terrainHidden ||
+        savedCell.solid ||
+        savedCell.has ||
+        isNearInteriorDoor(savedCell, [space.exitCell])
+      ) {
+        // A saved prop may lie beyond the new walls or in the relocated doorway.
+        const relocated = findInteriorDefaultBuildingCell(context, space, building.type, position, new Set(), {
+          allowBorderPlacement: true,
+          searchRadius: space.size,
+        })
+        if (!relocated)
+          throw new Error(`Cannot find room for saved interior building ${building.label ?? building.type}`)
+        position = { i: relocated.i, j: relocated.j }
+      }
+      contentOwner.createBuilding({
+        ...building,
+        ...position,
+        // Older saves mirrored the cells but omitted the furniture's visual orientation.
+        // Recompute defaults from the parent; preserve manually placed furniture.
+        ...(building.label?.startsWith(`${space.id}:default:`)
+          ? { placementMirrored: Boolean(space.building.placementMirrored) }
+          : {}),
+        spaceId: space.id,
+        skipBuiltEffects: true,
+        deferTrainingResume: true,
+      })
     }
     delete space.building.interiorBuildings
     space.defaultBuildingsPlaced = true
@@ -174,6 +204,7 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
     }
     const defaultBuilding = owner.createBuilding({
       ...buildingOptions,
+      placementMirrored: Boolean(space.building.placementMirrored),
       i: cell.i,
       j: cell.j,
       label,

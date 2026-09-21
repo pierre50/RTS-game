@@ -1,3 +1,4 @@
+import { mirrorInteriorBlueprint } from '../../app/lib/buildings/interiorOrientation'
 import { ensureCaveMinerals } from './BuildingInteriorSpaceMinerals'
 import { formatTerrainReliefCells } from '../../app/classes/map/terrain/MapTerrainReliefAppearance'
 import { addInteriorWalls } from '../../app/lib/graphics/interiorWalls'
@@ -144,7 +145,8 @@ export function ensureBuildingInteriorSpace(
   building: BuildingEntity,
   blueprintData: MapBlueprint
 ): BuildingInteriorRuntimeSpace {
-  const blueprint = createSquareLocalBlueprint(blueprintData)
+  const prepared = createSquareLocalBlueprint(blueprintData)
+  const blueprint = building.placementMirrored ? mirrorInteriorBlueprint(prepared) : prepared
   const map = context.map
   const id = getBuildingInteriorSpaceId(building)
   const existing = getMapSpace(map, id)

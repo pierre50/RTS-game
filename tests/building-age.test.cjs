@@ -133,7 +133,10 @@ function loadBuilding() {
   const controller = class {}
   return loadTsModule('app/classes/building/Building.ts', {
     mocks: {
-      '../../constants': { FAMILY_TYPES: { building: 'building' } },
+      '../../constants': {
+        CAMP_DECORATION_BUILDING_TYPES: loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
+        FAMILY_TYPES: { building: 'building' },
+      },
       '../../lib': {},
       '../Instance': {
         Instance: class {

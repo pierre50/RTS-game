@@ -173,9 +173,9 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     name: 'hero-resources',
     aliases: ['resources', 'ressources', 'res', 'hres', 'hero-ressources'],
     usage: `hero-resources [${RESOURCE_NAMES.join('|')}] [amount]`,
-    describe: 'Add resources to the hero bag',
+    describe: 'Add resources to the hero bag (default: 10 each)',
     complete: () => RESOURCE_NAMES,
-    run: ([resource = 'all', amount = 1000], context) => {
+    run: ([resource = 'all', amount = 10], context) => {
       const parsedAmount = Number(amount)
       if (!Number.isFinite(parsedAmount)) return { ok: false, message: 'Amount must be a number' }
       return addHeroInventoryResources(context, resource.toLowerCase(), parsedAmount)

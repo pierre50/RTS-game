@@ -6,6 +6,7 @@ function loadHeroInteractionController(calls) {
   return loadTsModule('app/controllers/HeroInteractionController.ts', {
     mocks: {
       '../constants': {
+        CAMP_DECORATION_BUILDING_TYPES: loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
         BUILDING_TYPES: { trap: 'Trap' },
         FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
         SHEET_TYPES: { corpse: 'corpseSheet' },

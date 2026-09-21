@@ -1,18 +1,10 @@
 import { createInventorySectionTitle } from './inventory/InventorySection'
-import { RESOURCE_ICON_IDS, SOUND_CUES } from '../constants'
+import { SOUND_CUES } from '../constants'
+import { getIconPath } from '../lib/graphics/assets'
 import { Modal } from '../lib'
 import { playUiSound } from '../lib/audio/uiSound'
-import { renderBuildingAvatar } from '../lib/avatar'
 import { heroCanCommand } from '../lib/chief'
 import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
-import { getIconPath } from '../lib/graphics/assets'
-import {
-  canCraftHeroRecipe,
-  craftHeroRecipe,
-  getAvailableHeroCraftRecipes,
-  getMissingCraftResources,
-  type HeroCraftRecipe,
-} from '../lib/hero/heroCrafting'
 import {
   EQUIPPED_ITEM_WEAPON,
   getEquippedItemWeapon,
@@ -20,22 +12,16 @@ import {
   isHeroToolAvailable,
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
-import { getPlaceableInventoryBuildingType } from '../lib/hero/placeableInventoryItems'
 import { t } from '../lib/lang'
-import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
 import { getActiveColonyAlerts } from '../lib/world/regionAlerts'
-import type { ResourceAmount } from '../types/common'
-import type { UnitEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 import { createEntityInfoContent } from './EntityInfoContent'
-import { appendInventoryEmptyIcon, createInventoryActionRow } from './inventory/InventoryActionRow'
-import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
+import { appendInventoryEmptyIcon } from './inventory/InventoryActionRow'
 import { createEquipmentRowInfo } from './inventory/InventoryDetails'
 import {
   renderInventoryEquippedEquipment,
   renderInventoryLootedEquipment,
 } from './inventory/InventoryEquipmentRenderer'
-import { createInventoryEquipmentIcon } from './inventory/InventoryItemIcons'
 import { createInventoryEquipmentRow } from './inventory/InventoryItemRows'
 import { renderInventoryToolIcons } from './inventory/InventoryToolIcons'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
@@ -46,7 +32,7 @@ import { renderMinimapResourcePanel } from './minimap/MinimapResourcePanel'
 import { createQuestMarker } from './questMarker'
 import { ModalTabs } from './Tabs'
 
-type ActionMenuTab = 'info' | 'tools' | 'craft' | 'minimap' | 'worldmap' | 'construction'
+type ActionMenuTab = 'info' | 'tools' | 'minimap' | 'worldmap' | 'construction'
 
 const CHIEF_TABS = new Set<ActionMenuTab>(['worldmap'])
 
@@ -66,7 +52,6 @@ export class InventoryManager {
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
   worldMapPanel: HTMLDivElement
-  craftPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   weaponPanel: HTMLDivElement
   equippedPanel: HTMLDivElement
@@ -102,8 +87,6 @@ export class InventoryManager {
     this.minimapPanel.className = 'action-menu-page action-menu-minimap-page'
     this.worldMapPanel = document.createElement('div')
     this.worldMapPanel.className = 'action-menu-page action-menu-worldmap-page'
-    this.craftPanel = document.createElement('div')
-    this.craftPanel.className = 'action-menu-page action-menu-craft-page'
     this.constructionPanel = document.createElement('div')
     this.constructionPanel.className = 'action-menu-page action-menu-construction-page'
     this.weaponPanel = document.createElement('div')
@@ -123,7 +106,6 @@ export class InventoryManager {
       [
         { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
-        { id: 'craft', label: t('inventoryTabCraft'), page: this.craftPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
         { id: 'worldmap', label: t('inventoryTabWorldmap'), page: this.worldMapPanel },
         { id: 'construction', label: t('inventoryTabConstruction'), page: this.constructionPanel },
@@ -229,9 +211,7 @@ export class InventoryManager {
 
     this.menu.deactivateMiniMap()
 
-    if (tab === 'craft') {
-      this.renderCraft()
-    } else if (tab === 'construction') {
+    if (tab === 'construction') {
       this.renderConstruction()
     } else if (tab === 'worldmap') {
       this.renderWorldMap()
@@ -366,93 +346,6 @@ export class InventoryManager {
     return getInventoryConstructionButtons(this.menu)
   }
 
-  getCraftCostMetaParts(
-    cost: ResourceAmount,
-    hero: UnitEntity | null | undefined
-  ): Array<{ text: string; className: string }> {
-    const { player } = this.menu.context
-    const totals = getPlayerResourceTotals(player, { hero, includeHero: Boolean(hero) })
-    return inventoryCostMetaParts(cost, totals)
-  }
-
-  getCraftMissingResourceMessage(cost: ResourceAmount): string {
-    const { player } = this.menu.context
-    const hero = this.menu.context.controls.heroUnit
-    const missing = getMissingCraftResources(player, cost, hero)
-    const resource = Object.keys(missing)
-      .map(key => t(key))
-      .join(', ')
-    return t('needMore', { resource })
-  }
-
-  createCraftButton(recipe: HeroCraftRecipe): HTMLElement {
-    const { app, player } = this.menu.context
-    const hero = this.menu.context.controls.heroUnit
-    const disabled = !hero || !canCraftHeroRecipe(player, recipe, hero)
-    const { element, icon } = createInventoryActionRow(this.menu, {
-      id: `craft-${recipe.id}`,
-      className: 'inventory-craft-row',
-      disabled,
-      title: t(recipe.labelKey),
-      description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
-      meta: '',
-      metaParts: this.getCraftCostMetaParts(recipe.cost, hero),
-      trailingAction: {
-        disabled,
-        label: t('inventoryTabCraft'),
-        onClick: () => {
-          if (!hero) return
-          if (!craftHeroRecipe(player, hero, recipe)) {
-            this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
-            this.renderCraft()
-            return
-          }
-          this.menu.updateTopbar?.()
-          this.menu.showMessage(
-            t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount }),
-            'success'
-          )
-          this.renderCraft()
-        },
-      },
-    })
-    const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
-    if (recipe.iconResource) {
-      const resourceIcon = document.createElement('img')
-      resourceIcon.className = 'img inventory-resource-icon'
-      resourceIcon.src = getIconPath(RESOURCE_ICON_IDS[recipe.iconResource].commodity)
-      resourceIcon.alt = ''
-      icon.appendChild(resourceIcon)
-    } else {
-      if (placeableBuildingType) {
-        const img = document.createElement('img')
-        img.className = 'img'
-        img.alt = ''
-        const canvas = document.createElement('canvas')
-        canvas.width = 120
-        canvas.height = 120
-        renderBuildingAvatar(app, placeableBuildingType, player, canvas)
-        img.src = canvas.toDataURL()
-        icon.appendChild(img)
-      } else {
-        icon.appendChild(createInventoryEquipmentIcon(this.menu.context, recipe.outputEquipment, 'craft'))
-      }
-    }
-    return element
-  }
-
-  renderCraft(): void {
-    this.craftPanel.textContent = ''
-    this.menu.clearActionHotkeys()
-    for (const recipe of getAvailableHeroCraftRecipes(this.menu.context.player)) {
-      this.craftPanel.appendChild(this.createCraftButton(recipe))
-    }
-  }
-
-  syncObjectiveProgress(): void {
-    if (this.opened && this.activeTab === 'craft') this.renderCraft()
-  }
-
   renderConstruction(): void {
     renderInventoryConstruction(this)
   }
@@ -471,7 +364,6 @@ export class InventoryManager {
       slot.classList.toggle('active', tool === equippedTool)
     }
     if (this.activeTab === 'tools') this.renderLootedEquipment()
-    if (this.activeTab === 'craft') this.renderCraft()
     if (this.activeTab === 'minimap') this.renderMinimapResources()
   }
 
@@ -480,7 +372,6 @@ export class InventoryManager {
     if (this.activeTab === 'construction') this.renderConstruction()
     if (this.activeTab === 'tools') this.renderTools()
     if (this.activeTab === 'info') this.renderInfo()
-    if (this.activeTab === 'craft') this.renderCraft()
   }
 
   destroy(): void {

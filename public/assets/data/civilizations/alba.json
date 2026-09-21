@@ -80,6 +80,14 @@
             "frame": 9
           }
         }
+      },
+      "Forge": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-0",
+            "frame": 10
+          }
+        }
       }
     },
     "1": {
