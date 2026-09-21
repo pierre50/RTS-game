@@ -48,7 +48,7 @@ function loadHeroMarketBody() {
         createInventoryEquipmentIcon: () => ({}),
         createInventoryResourceIcon: () => ({}),
       },
-      '../inventory/InventorySlotRenderer': {
+      '../inventory/InventorySection': {
         createInventorySection: () => ({ tagName: 'section' }),
       },
       '../inventory/InventoryDetails': {

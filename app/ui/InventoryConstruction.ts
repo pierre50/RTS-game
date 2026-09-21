@@ -1,3 +1,4 @@
+import { createInventorySectionTitle } from './inventory/InventorySection'
 import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
 import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import { t } from '../lib/lang'
@@ -14,13 +15,24 @@ import type { MenuButtonSpec, MenuDetails, MenuDetailsSource } from '../types/ui
 import type { MenuHost } from './MenuHost'
 
 const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
-const HIDDEN_HERO_CONSTRUCTION_BUILDINGS = new Set<string>([
-  BUILDING_TYPES.fireCamp,
-  BUILDING_TYPES.trap,
-  BUILDING_TYPES.chest,
-  BUILDING_TYPES.cave,
-  ...CAMP_DECORATION_BUILDING_TYPES,
-])
+const HIDDEN_HERO_CONSTRUCTION_BUILDINGS = new Set<string>([BUILDING_TYPES.cave, ...CAMP_DECORATION_BUILDING_TYPES])
+
+const CONSTRUCTION_CATEGORIES: ReadonlyArray<{ titleKey: string; types: readonly string[] }> = [
+  { titleKey: 'constructionCategoryCamp', types: [BUILDING_TYPES.fireCamp, BUILDING_TYPES.chest, BUILDING_TYPES.trap] },
+  {
+    titleKey: 'constructionCategoryVillage',
+    types: [BUILDING_TYPES.townCenter, BUILDING_TYPES.house, BUILDING_TYPES.temple],
+  },
+  {
+    titleKey: 'constructionCategoryEconomy',
+    types: [BUILDING_TYPES.farm, BUILDING_TYPES.granary, BUILDING_TYPES.storagePit, BUILDING_TYPES.market],
+  },
+  {
+    titleKey: 'constructionCategoryMilitary',
+    types: [BUILDING_TYPES.barracks, BUILDING_TYPES.archeryRange, BUILDING_TYPES.stable],
+  },
+  { titleKey: 'constructionCategoryDefense', types: [BUILDING_TYPES.watchTower, BUILDING_TYPES.smallWall] },
+]
 
 type InventoryConstructionHost = {
   constructionPanel: HTMLDivElement
@@ -54,15 +66,27 @@ export function renderInventoryConstruction(host: InventoryConstructionHost): vo
   if (!selection) return
 
   const usedKeys = new Set<string>(getReservedGameplayHotkeys())
-  getInventoryConstructionButtons(host.menu)
-    .filter(button => !button.hide || !button.hide())
-    .forEach((button, index) => {
+  const buttons = getInventoryConstructionButtons(host.menu).filter(button => !button.hide || !button.hide())
+  const knownTypes = new Set(CONSTRUCTION_CATEGORIES.flatMap(category => category.types))
+  for (const category of CONSTRUCTION_CATEGORIES) {
+    const categoryButtons = buttons.filter(
+      button =>
+        category.types.includes(button.id || '') ||
+        (category.titleKey === 'constructionCategoryVillage' && !knownTypes.has(button.id || ''))
+    )
+    if (!categoryButtons.length) continue
+    const section = document.createElement('section')
+    section.className = 'inventory-section'
+    section.appendChild(createInventorySectionTitle(t(category.titleKey)))
+    for (const button of categoryButtons) {
       const hotkey = host.menu.assignActionHotkey(button.id || '', usedKeys)
       const actionButton = createInventoryConstructionActionButton(host, button)
-      const element = createInventoryConstructionRow(host, selection, actionButton, index, hotkey)
-      host.constructionPanel.appendChild(element)
+      const element = createInventoryConstructionRow(host, selection, actionButton, buttons.indexOf(button), hotkey)
+      section.appendChild(element)
       bindConstructionHotkey(host, selection, button, hotkey)
-    })
+    }
+    host.constructionPanel.appendChild(section)
+  }
 }
 
 function createInventoryConstructionActionButton(

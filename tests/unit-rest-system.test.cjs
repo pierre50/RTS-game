@@ -2418,3 +2418,113 @@ test('closing dialogue after wake time wakes the villager instead of restoring s
   system.restoreSleepingUnitVisual(villager)
   assert.notEqual(villager.sleepVisualState, 'sleeping')
 })
+
+function eveningShelterScenario(count = 1, overrides = {}) {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const context = createContext(20, [owner], calls)
+  const units = Array.from({ length: count }, (_, index) => createUnit(owner, {
+    label: `evening-${index}`,
+    i: index,
+    j: 0,
+    context,
+    dailySchedule: { bedMinute: 1320, wakeMinute: 360, workStartMinute: 420, workEndMinute: 1080 },
+    ...overrides,
+  }))
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+  const house = { label: 'new-house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  return { owner, context, units, system, house }
+}
+
+test('new shelter notifications reserve only available beds, closest villagers first', () => {
+  const { units, system, house } = eveningShelterScenario(7)
+  const originalTask = { label: 'tree' }
+  units[5].shelterState.previousDest = originalTask
+  system.notifyShelterAvailable(house)
+  system.notifyShelterAvailable(house)
+  assert.ok(units.every(unit => unit.shelterState.status === 'outside'))
+  system.update()
+  const travelling = units.filter(unit => unit.shelterState.shelter === house)
+  assert.equal(travelling.length, 5)
+  assert.equal(units[0].shelterState.status, 'outside')
+  assert.equal(units[1].shelterState.status, 'outside')
+  assert.equal(units[5].shelterState.previousDest, originalTask)
+  for (const unit of travelling) {
+    assert.equal(unit.shelterState.status, 'movingToRest')
+    assert.equal(unit.actionLocked, false)
+    assert.equal(unit.dest, unit.shelterState.targetCell)
+  }
+  system.notifyShelterAvailable(house)
+  system.update()
+  assert.equal(units.filter(unit => unit.shelterState.shelter === house).length, 5)
+  // A traveller may claim their own reservation even when every bed is reserved.
+  const arriving = travelling[0]
+  arriving.i = arriving.dest.i
+  arriving.j = arriving.dest.j
+  system.update()
+  assert.equal(arriving.shelterState.status, 'inside')
+  assert.equal(arriving.shelterState.shelter, house)
+})
+
+test('shelter reservations are released when travel is cancelled', () => {
+  const { units, system, house } = eveningShelterScenario(2)
+  house.shelterCapacity = 1
+  system.notifyShelterAvailable(house)
+  system.update()
+  assert.equal(units[1].shelterState.shelter, house)
+  units[1].shelterState = null
+  units[1].followingHero = true
+  system.notifyShelterAvailable(house)
+  system.update()
+  assert.equal(units[0].shelterState.shelter, house)
+})
+
+for (const condition of ['sleeping', 'tooLate', 'talking', 'destroyed', 'foreign', 'hidden', 'unreachable']) {
+  test(`new shelters do not redirect villagers when ${condition}`, () => {
+    const { units: [unit], context, system, house } = eveningShelterScenario()
+    if (condition === 'sleeping') unit.sleepVisualState = 'sleeping'
+    if (condition === 'tooLate') context.dayNight.state = { hour: 21, minute: 59.99 }
+    if (condition === 'talking') unit.lookingAtHero = true
+    if (condition === 'foreign') house.owner = { units: [unit], buildings: [house] }
+    if (condition === 'hidden') unit.owner.views = { isVisible: () => false }
+    if (condition === 'unreachable') {
+      for (const row of context.map.grid) for (const cell of row) cell.solid = true
+    }
+    system.notifyShelterAvailable(house)
+    if (condition === 'destroyed') house.isDestroyed = true
+    system.update()
+    assert.equal(unit.shelterState.status, 'outside')
+    assert.equal(unit.shelterState.shelter, null)
+  })
+}
+
+test('town centers admit ten villagers, including reservations made before arrival', () => {
+  const { units, system, house } = eveningShelterScenario(12)
+  house.type = constants.BUILDING_TYPES.townCenter
+  system.notifyShelterAvailable(house)
+  system.update()
+  assert.equal(units.filter(unit => unit.shelterState.shelter === house).length, 10)
+})
+
+
+test('restored evening rest states discover available shelters on system startup', () => {
+  const { units: [unit], context, system, house } = eveningShelterScenario()
+  system.destroy()
+  const UnitRestSystem = loadUnitRestSystem([])
+  const restoredSystem = new UnitRestSystem(context)
+  assert.equal(unit.shelterState.shelter, house)
+  assert.equal(unit.shelterState.status, 'movingToRest')
+  restoredSystem.destroy()
+})
+
+test('ordinary rest updates do not search again without a shelter notification', () => {
+  const { units: [unit], system, house } = eveningShelterScenario()
+  system.update()
+  system.update()
+  assert.equal(unit.shelterState.status, 'outside')
+  system.notifyShelterAvailable(house)
+  system.update()
+  assert.equal(unit.shelterState.shelter, house)
+})

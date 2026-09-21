@@ -190,7 +190,7 @@ test('runtime building interiors sort floor cells and entities in one scene laye
   assert.equal(renderer.terrainLayer.sortableChildren, true)
 })
 
-test('runtime stable interiors synchronize stored horses without default decorations', () => {
+test('runtime stable interiors synchronize stored horses in a room without furnishing space', () => {
   const createdBuildings = []
   const createdAnimals = []
   const { ensureBuildingInteriorSpace, syncBuildingStableInteriorHorses } = loadBuildingInteriorSpaceSystem()
@@ -510,24 +510,14 @@ test('runtime building interiors place the fire camp at the room center', () => 
     y: 160,
   }
   const blueprint = {
-    floorMask: [
-      [0, 0, 0, 0, 0],
-      [0, 1, 1, 1, 0],
-      [0, 1, 1, 1, 0],
-      [0, 1, 1, 1, 0],
-      [0, 0, 0, 0, 0],
-    ],
-    borderMask: [
-      [0, 0, 0, 0, 0],
-      [0, 1, 1, 1, 0],
-      [0, 1, 0, 1, 0],
-      [0, 1, 1, 1, 0],
-      [0, 0, 0, 0, 0],
-    ],
-    exits: [{ i: 3, j: 2 }],
-    relief: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 0)),
-    size: 4,
-    terrain: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 'Dirt')),
+    floorMask: Array.from({ length: 7 }, (_, i) =>
+      Array.from({ length: 7 }, (_, j) => Number(i > 0 && i < 6 && j > 0 && j < 6))
+    ),
+    borderMask: Array.from({ length: 7 }, () => Array(7).fill(0)),
+    exits: [{ i: 5, j: 3 }],
+    relief: Array.from({ length: 7 }, () => Array(7).fill(0)),
+    size: 6,
+    terrain: Array.from({ length: 7 }, () => Array(7).fill('Dirt')),
   }
 
   const space = ensureBuildingInteriorSpace(context, building, blueprint)

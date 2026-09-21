@@ -55,12 +55,13 @@ function loadBuildingPlacer() {
       payCost: () => {},
     },
     '../constants': {
-      BUILDING_TYPES: { farm: 'Farm', smallWall: 'SmallWall', trap: 'Trap' },
+      BUILDING_TYPES: { farm: 'Farm', smallWall: 'SmallWall', trap: 'Trap', chest: 'Chest', fireCamp: 'FireCamp' },
+      PLAYER_TYPES: { ai: 'AI' },
       COLOR_GREEN: 0x00ff00,
       COLOR_RED: 0xff0000,
       LABEL_TYPES: { sprite: 'sprite' },
       RESOURCE_TYPES: { wheat: 'Wheat' },
-      UNIT_TYPES: { villager: 'Villager' },
+      UNIT_TYPES: { villager: 'Villager', chief: 'Chief', hero: 'Hero' },
     },
     '../classes/Resource': {
       Resource: class {
@@ -120,7 +121,7 @@ test('hero building preview rejects footprints overlapping the hero cell', () =>
   assert.equal(placer.canPlaceMouseBuilding(grid[0][0]), true)
 })
 
-test('crafted inventory building placement stays within two sizes from the hero', () => {
+test('inventory buildings can be placed beyond the former hero radius', () => {
   const BuildingPlacer = loadBuildingPlacer()
   const grid = createGrid(7)
   const controls = {
@@ -131,7 +132,7 @@ test('crafted inventory building placement stays within two sizes from the hero'
   const placer = new BuildingPlacer(controls)
 
   assert.equal(placer.canPlaceMouseBuilding(grid[5][5]), true)
-  assert.equal(placer.canPlaceMouseBuilding(grid[6][6]), false)
+  assert.equal(placer.canPlaceMouseBuilding(grid[6][6]), true)
 })
 
 test('regular construction placement keeps its existing range', () => {
@@ -292,3 +293,23 @@ for (const scenario of [
     assert.equal(removed, !scenario.fails)
   })
 }
+
+test('non-chief heroes can place distant camp buildings but cannot place village buildings', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const grid = createGrid(7)
+  const controls = {
+    context: { map: { grid }, player: { isPlayed: true } },
+    heroUnit: { i: 3, j: 3 },
+    mouseBuilding: null,
+  }
+  const placer = new BuildingPlacer(controls)
+  for (const type of ['Chest', 'FireCamp', 'Trap']) {
+    controls.mouseBuilding = { type, size: 1 }
+    assert.equal(placer.canPlaceMouseBuilding(grid[4][4]), true)
+    assert.equal(placer.canPlaceMouseBuilding(grid[6][6]), true)
+  }
+  controls.mouseBuilding = { type: 'House', size: 1 }
+  assert.equal(placer.canPlaceMouseBuilding(grid[4][4]), false)
+  controls.heroUnit.isChief = true
+  assert.equal(placer.canPlaceMouseBuilding(grid[4][4]), true)
+})

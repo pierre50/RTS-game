@@ -13,7 +13,7 @@ import { isTalkableNpc } from '../npc/npcInteraction'
 import { isUsableFireCamp } from './heroCampfireSleep'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
-type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'recoverTrap'
+type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'dismantleTrap'
 
 export type HeroProximityInteraction =
   | {
@@ -42,8 +42,8 @@ export type HeroProximityInteraction =
       target: RuntimeEntity
     }
   | {
-      action: 'recoverTrap'
-      labelKey: 'heroInteractionRecover'
+      action: 'dismantleTrap'
+      labelKey: 'heroInteractionDismantle'
       target: BuildingEntity
     }
 
@@ -63,7 +63,11 @@ function isOpenableEntity(target: RuntimeEntity | null | undefined): target is R
     target.family === FAMILY_TYPES.building
   )
     return false
-  if (target.family === FAMILY_TYPES.unit && !target.isDead && (target as UnitEntity).currentSheet !== SHEET_TYPES.corpse)
+  if (
+    target.family === FAMILY_TYPES.unit &&
+    !target.isDead &&
+    (target as UnitEntity).currentSheet !== SHEET_TYPES.corpse
+  )
     return false
   const openable = target as RuntimeEntity & { openable?: boolean; interactionAction?: HeroProximityInteractionAction }
   if (openable.openable || openable.interactionAction === 'open') return true
@@ -159,7 +163,7 @@ export function resolveHeroProximityInteraction({
   if (isHeroOnInteriorExitCell(hero)) return { action: 'exit', labelKey: 'heroInteractionExit' }
 
   const trap = resolveFacingRecoverableTrap(hero, openEntityTarget)
-  if (trap) return { action: 'recoverTrap', labelKey: 'heroInteractionRecover', target: trap }
+  if (trap) return { action: 'dismantleTrap', labelKey: 'heroInteractionDismantle', target: trap }
 
   const openableBuilding = resolveFacingOpenableBuilding(hero, openEntityTarget)
   if (openableBuilding) return { action: 'open', labelKey: 'heroInteractionOpen', target: openableBuilding }

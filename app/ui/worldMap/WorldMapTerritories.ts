@@ -46,7 +46,7 @@ export function resolveWorldMapTerritories(menu: MenuHost, manifest: MacroWorldM
       (context.map.worldRegion?.x === region.x && context.map.worldRegion?.y === region.y)
     const players = current ? context.players : (savedRegions.get(id) ?? savedRegions.get(`r${region.x}-${region.y}`))
     if (players) {
-      const territory = ownerTerritory(menu, findMapTerritoryOwner<TerritoryPlayer>(players, settlements), region)
+      const territory = ownerTerritory(menu, findMapTerritoryOwner<TerritoryPlayer>(players), region)
       if (territory) territories.push(territory)
       continue
     }

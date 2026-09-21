@@ -856,7 +856,8 @@
   justify-self: end;
   align-self: center;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   gap: var(--ui-gap-8);
 }
 
@@ -886,17 +887,20 @@
 .inventory-row-action-button.inventory-row-action-button--delete {
   min-width: 44px;
   width: 44px;
-  align-self: flex-end;
+  flex: 0 0 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #e9a49a;
+  color: #ffe4de;
+  background: #692f38;
+  border-color: #d77969;
 }
 
-.inventory-row-action-button--delete:hover:not(:disabled),
-.inventory-row-action-button--delete:focus-visible {
-  color: #ffe4de;
-  border-color: #d77969;
+.inventory-row-action-button.inventory-row-action-button--delete:hover:not(:disabled, .disabled, [aria-disabled='true']),
+.inventory-row-action-button.inventory-row-action-button--delete:focus-visible {
+  color: #fff1ed;
+  background: #873b44;
+  border-color: #ffac98;
 }
 
 .inventory-row-action-button:disabled,
@@ -1395,25 +1399,25 @@
 
 .inventory-weapon-section,
 .inventory-equipped-section,
-.inventory-loot-section {
+.inventory-loot-section,
+.inventory-section,
+.inventory-section-list {
   display: flex;
-  flex: 1 1 100%;
   flex-direction: column;
   gap: var(--ui-gap-8);
+}
+
+.inventory-weapon-section,
+.inventory-equipped-section,
+.inventory-loot-section {
+  flex: 1 1 100%;
   margin-top: var(--ui-gap-8);
 }
 
-.inventory-loot-title {
-  flex: 1 1 100%;
+.inventory-section-title {
   color: var(--text-color-inverse);
   font-weight: bold;
   text-shadow: var(--text-shadow-ui);
-}
-
-.inventory-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-8);
 }
 
 .inventory-section-header {
@@ -1423,16 +1427,15 @@
   gap: var(--ui-gap-8);
 }
 
-.inventory-equipped-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-8);
+.inventory-section-header > .inventory-section-title {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.inventory-loot-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-8);
+.inventory-section-count {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
 }
 
 .inventory-transfer-panel {
@@ -2105,12 +2108,6 @@ body.hero-cursor-hidden {
 
 .inventory-action-row--with-value .inventory-row-actions {
   grid-column: 4;
-}
-
-.inventory-section-count {
-  color: rgba(255, 255, 255, 0.64);
-  font-size: var(--font-size-sm);
-  white-space: nowrap;
 }
 
 @media (max-width: 640px) {

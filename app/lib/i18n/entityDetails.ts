@@ -29,9 +29,10 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     StableDescription: 'Forme les unités montées et les éléphants de guerre.',
     FarmDescription: 'Place un champ de blé 4x4 récolté comme nourriture.',
     TrapDescription:
-      'Piège instantané qui capture du petit gibier au changement de jour, seulement s’il n’est vu par aucune unité ou bâtiment.',
-    ChestDescription: 'Coffre décoratif à poser au sol.',
-    FireCampDescription: 'Feu de camp qui sert de point de rassemblement.',
+      'Capture du petit gibier au changement de jour, hors de vue des unités et bâtiments. Usage unique : démontez le piège pour récupérer la proie sur place. Aucun matériau n’est restitué.',
+    ChestDescription:
+      'Stocke les ressources et les équipements près du camp. Installation immédiate.',
+    FireCampDescription: 'Installe un feu de camp pour dormir jusqu’au matin.',
     CampTotemPlainDescription: 'Totem de camp dressé près du site.',
     CampTotemHornsDescription: 'Totem à cornes utilisé comme marque de territoire.',
     CampTotemSkullDescription: 'Totem orné d’un crâne qui signale un camp dangereux.',
@@ -48,7 +49,8 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     CampJarLargeDescription: 'Grande jarre utilisée pour les réserves du camp.',
     WatchTowerDescription: "Bâtiment défensif à distance dont l'apparence suit l'âge de la civilisation.",
     SmallWallDescription: 'Barrière défensive qui bloque les déplacements ennemis.',
-    MarketDescription: 'Permet au héros d’acheter de l’équipement et de vendre ses ressources et équipements contre de l’or.',
+    MarketDescription:
+      'Permet au héros d’acheter de l’équipement et de vendre ses ressources et équipements contre de l’or.',
     TempleDescription: 'Forme les prêtres capables de soigner et de convertir.',
     TownCenterDescription:
       'Transforme votre camp en village. Centralise les ressources et accueille de nouveaux villageois chaque jour si la nourriture et les logements sont suffisants.',
@@ -97,9 +99,9 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     StableDescription: 'Trains mounted units and war elephants.',
     FarmDescription: 'Places a 4x4 wheat field harvested as food.',
     TrapDescription:
-      'Instant trap that catches small game when the day changes, only if no unit or building can see it.',
-    ChestDescription: 'Decorative chest placed on the ground.',
-    FireCampDescription: 'Camp fire used as a gathering point.',
+      'Catches small game when the day changes, out of sight of units and buildings. Single use: dismantle the trap to collect the prey on its tile. No materials are returned.',
+    ChestDescription: 'Stores resources and equipment at camp. Placed instantly.',
+    FireCampDescription: 'Places a campfire to sleep until morning.',
     CampTotemPlainDescription: 'Camp totem raised near the site.',
     CampTotemHornsDescription: 'Horned totem used as a territorial marker.',
     CampTotemSkullDescription: 'Skull totem that signals a dangerous camp.',

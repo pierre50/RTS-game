@@ -1,3 +1,4 @@
+import { competingTownCenterSites } from '../../lib/buildings/townCenterClaim'
 import { getUnitResourceCarryRemaining } from '../../lib/resources/resourceDelivery'
 import type { UnitEntity } from '../../types/entities'
 import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
@@ -263,6 +264,7 @@ export function advanceOfflineWorker(
 
   for (const target of targets) {
     if (budget <= 0) break
+    if (!validTarget(target)) continue
     if (!spatial.reachable(unit, target)) {
       findMore()
       continue
@@ -311,6 +313,23 @@ export function advanceOfflineWorker(
       budget -= impacts * cycle
       if (target.hitPoints >= total) {
         target.isBuilt = true
+        for (const site of competingTownCenterSites(target, state.players)) {
+          site.hitPoints = 0
+          site.isDead = true
+          site.isDestroyed = true
+          spatial.releaseBuilding(site)
+          for (const resident of state.players) {
+            resident.buildings = resident.buildings?.filter(building => building !== site)
+            for (const worker of resident.units ?? []) {
+              if (site.label && destinationLabel(worker) === site.label) {
+                delete worker.offlineWork
+                stopOfflineTask(worker)
+              }
+              if (site.label && worker.buildQueue)
+                worker.buildQueue = worker.buildQueue.filter(label => label !== site.label)
+            }
+          }
+        }
         player.hasBuilt ??= []
         if (!player.hasBuilt.includes(target.type)) player.hasBuilt.push(target.type)
         player.populationMax = (player.populationMax ?? 0) + rules.buildingCapacity(playerIndex, target.type)

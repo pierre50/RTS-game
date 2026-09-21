@@ -1,3 +1,5 @@
+import { isCampBuilding } from '../lib/buildings/campConstruction'
+import { heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import type { Container } from 'pixi.js'
 import { BUILDING_TYPES } from '../constants'
@@ -44,6 +46,8 @@ export class BuildingPlacementRules {
     const grid = space?.grid ?? map.grid
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
+    if (!isCampBuilding(mouseBuilding.type) && playerNeedsChiefForCommand(player) && !heroCanCommand(controls.heroUnit))
+      return false
     if (
       mouseBuilding.inventoryItem &&
       !controls.heroUnit?.inventory?.equipment?.includes(mouseBuilding.inventoryItem)
@@ -52,7 +56,6 @@ export class BuildingPlacementRules {
     }
     if (mouseBuilding.type !== BUILDING_TYPES.farm && isBuildingLimitReached(player, mouseBuilding.type)) return false
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
-    if (mouseBuilding.inventoryItem && !this.isInventoryBuildingInHeroPlacementRange(cell, mouseBuilding)) return false
     const passageLookup = createReservedPassageCellLookup(controls.context)
     const placementOptions = {
       requireVisible: true,
@@ -75,16 +78,9 @@ export class BuildingPlacementRules {
       footprintCell => footprintCell.i === hero.i && footprintCell.j === hero.j
     )
   }
-  isInventoryBuildingInHeroPlacementRange(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
-    const hero = this.controls.heroUnit
-    if (!hero || hero.isDead || hero.isDestroyed) return false
-    if (!sameCellMapSpace(hero, cell)) return false
-    const size = typeof building.size === 'number' ? building.size : 1
-    const maxDistance = Math.max(1, Math.floor(size) * 2)
-    return Math.max(Math.abs(hero.i - cell.i), Math.abs(hero.j - cell.j)) <= maxDistance
-  }
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     if (
+      (playerNeedsChiefForCommand(this.controls.context.player) && !heroCanCommand(this.controls.heroUnit)) ||
       constructionTerritoryBlocker(this.controls.context, owner) ||
       !cell ||
       this.isHeroOnCell(cell) ||

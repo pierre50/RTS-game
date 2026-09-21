@@ -1,6 +1,7 @@
 import { ensureCaveMinerals } from './BuildingInteriorSpaceMinerals'
 import { formatTerrainReliefCells } from '../../app/classes/map/terrain/MapTerrainReliefAppearance'
 import { addInteriorWalls } from '../../app/lib/graphics/interiorWalls'
+import { addInteriorFloorDecorations } from '../../app/lib/graphics/interiorFloorDecorations'
 import type { ContainerChild } from 'pixi.js'
 import { Cell } from '../../app/classes/cell'
 import { createSquareLocalBlueprint } from '../../app/classes/map/generation/LocalMapBlueprint'
@@ -198,6 +199,7 @@ export function ensureBuildingInteriorSpace(
     walkableCells: built.walkableCells,
   }
   renderer.space = space
+  addInteriorFloorDecorations(space, renderer.terrainLayer)
   map.spaces?.set(id, space)
   map.addChild(renderer)
   ensureInteriorDefaultBuildings(context, space)

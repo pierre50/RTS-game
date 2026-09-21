@@ -2,7 +2,7 @@ import { BUILDING_TYPES, FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
 import { SOUND_CUES } from '../../constants/sounds'
 import { playAudibleSoundCue } from '../../lib/audio/sound'
 import { updateInstanceVisibility } from '../../lib'
-import { addHeroInventoryItem } from '../../lib/equipment/equipmentLoot'
+import { clearTrapPreyVisual, syncTrapPreyVisual } from '../../lib/buildings/trapPreyVisual'
 import { fadeOut } from '../../lib/entities/entityFade'
 import { clearEntityOverheadIndicator, setEntityOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { instanceIsInActiveOrTeamSight } from '../../lib/grid/visibility'
@@ -108,21 +108,21 @@ function spawnContainedAnimal(
   return animal
 }
 
-export function recoverTrapBuilding(hero: GameContextLike['controls']['heroUnit'], building: BuildingEntity): boolean {
+export function dismantleTrapBuilding(
+  hero: GameContextLike['controls']['heroUnit'],
+  building: BuildingEntity
+): boolean {
   if (!hero || !isTrap(building)) return false
   const cell = getTrapCell(building)
   if (!isTrapCell(building, cell)) return false
-  // Consume the world entity before any effects can re-enter recovery. Only its
-  // visual cleanup is delayed, so saving or interrupting the fade cannot duplicate it.
+  const prey = building.containedAnimalType
+  if (prey && (!isTrapPreyType(prey) || !building.context.map.gaia?.createAnimal)) return false
+  // Consume before spawning the prey or fading, so repeated input cannot duplicate it.
   building.isDead = true
-  if (!addHeroInventoryItem(hero, 'trap')) {
-    building.isDead = false
-    return false
-  }
-  const containedAnimalType = building.containedAnimalType
   building.containedAnimalType = null
+  clearTrapPreyVisual(building)
   removeTrapBuilding(building, cell)
-  spawnContainedAnimal(building, cell, containedAnimalType)
+  spawnContainedAnimal(building, cell, prey)
   playAudibleSoundCue(building, SOUND_CUES.building.trapRecover, { profile: 'surface' })
   clearEntityOverheadIndicator(building, { fade: false })
   fadeOut(building, FADE_DURATION_MS, () => building.clear?.())
@@ -175,6 +175,7 @@ export class TrapHarvestSystem implements DailyWorldEventHandler {
   }
 
   syncTrapIndicator(building: RuntimeTrapBuilding): void {
+    syncTrapPreyVisual(building)
     if (
       building.containedAnimalType &&
       instanceIsInActiveOrTeamSight(building, this.context.player, this.context.players)

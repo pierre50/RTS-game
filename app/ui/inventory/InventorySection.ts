@@ -11,18 +11,22 @@ type InventorySectionOptions = {
   renderItems: (grid: HTMLDivElement) => void
 }
 
+export function createInventorySectionTitle(text: string, className?: string): HTMLDivElement {
+  const title = document.createElement('div')
+  title.className = ['inventory-section-title', className].filter(Boolean).join(' ')
+  title.textContent = text
+  return title
+}
+
 export function createInventorySection(options: InventorySectionOptions): HTMLElement {
   const block = document.createElement('section')
   block.className = ['inventory-section', options.className].filter(Boolean).join(' ')
 
   const grid = document.createElement('div')
-  grid.className = options.gridClassName ?? 'inventory-loot-list'
+  grid.className = options.gridClassName ?? 'inventory-section-list'
   options.renderItems(grid)
 
-
-  const title = document.createElement('div')
-  title.className = ['inventory-loot-title', options.titleClassName].filter(Boolean).join(' ')
-  title.textContent = options.title
+  const title = createInventorySectionTitle(options.title, options.titleClassName)
   if (options.action || options.showItemCount) {
     const header = document.createElement('div')
     header.className = 'inventory-section-header'
@@ -40,7 +44,6 @@ export function createInventorySection(options: InventorySectionOptions): HTMLEl
   } else {
     block.appendChild(title)
   }
-
 
   if (grid.childElementCount || !options.emptyText) {
     block.appendChild(grid)

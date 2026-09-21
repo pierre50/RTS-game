@@ -35,17 +35,26 @@ export type FireAnimation = keyof typeof BUILDING_FIRE_SHEETS
 
 const FLAME_SOUND_BASE_VOLUME = 0.62
 const FLAME_SOUND_LERP_PER_SECOND = 7
-const CAMPFIRE_DECORATION_X = 0
-const CAMPFIRE_DECORATION_Y = -9
-const CAMPFIRE_SMOKE_DECORATION_Y = 16
 
 const CAMPFIRE_DECORATION_LIGHT: EntityLightSourceConfig = {
   color: '#ffad4f',
   flicker: 0.09,
   intensity: 1.08,
-  radius: 330,
+  radius: 500,
   offsetY: -8,
   verticalScale: 0.68,
+}
+
+function getDecorationFlameProfile(type: string): { y: number; scale: number; light: EntityLightSourceConfig } | null {
+  if (type === BUILDING_TYPES.fireCamp) return { y: -9, scale: 1, light: CAMPFIRE_DECORATION_LIGHT }
+  // Bowl centers measured relative to the deco atlas ground anchors.
+  if (type === BUILDING_TYPES.campBrazier) {
+    return { y: -44, scale: 0.65, light: { ...CAMPFIRE_DECORATION_LIGHT, radius: 420, intensity: 0.8 } }
+  }
+  if (type === BUILDING_TYPES.campTorchStand) {
+    return { y: -33, scale: 0.5, light: { ...CAMPFIRE_DECORATION_LIGHT, radius: 220, intensity: 0.7 } }
+  }
+  return null
 }
 
 const BUILDING_FIRE_LIGHT: EntityLightSourceConfig = {
@@ -127,7 +136,8 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
   const existing = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
   const existingSmoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL)
 
-  if (building.type !== BUILDING_TYPES.fireCamp) {
+  const profile = getDecorationFlameProfile(building.type)
+  if (!profile) {
     existing?.destroy({ children: true })
     existingSmoke?.destroy({ children: true })
     if (!building.getChildByLabel(LABEL_TYPES.fire)) stopFlameAmbientSound(building)
@@ -137,27 +147,32 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
   const fireTextures = getBuildingFireFrames('light', 'fire')
   const smokeTextures = getBuildingFireFrames('light', 'smoke')
   if (!fireTextures.length || !smokeTextures.length) return
-  const reliefLift = building.reliefLift ?? 0
+  const flameY = profile.y + (building.reliefLift ?? 0)
+  const smokeY = flameY + 25 * profile.scale
 
   if (existing instanceof AnimatedSprite) {
     existing.textures = fireTextures
-    attachFireLight(existing as LightedAnimatedSprite, CAMPFIRE_DECORATION_LIGHT)
-    existing.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y + reliefLift)
+    attachFireLight(existing as LightedAnimatedSprite, profile.light)
+    existing.position.set(0, flameY)
+    existing.scale.set(profile.scale)
     existing.gotoAndPlay(0)
   }
 
   if (existingSmoke instanceof AnimatedSprite) {
     existingSmoke.textures = smokeTextures
-    existingSmoke.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_SMOKE_DECORATION_Y + reliefLift)
+    existingSmoke.position.set(0, smokeY)
+    existingSmoke.scale.set(profile.scale)
     existingSmoke.gotoAndPlay(0)
   }
 
   if (!(existingSmoke instanceof AnimatedSprite)) {
     const smoke = new AnimatedSprite(smokeTextures)
+    bindAnimatedSpriteToTicker(smoke, building.context.app)
     smoke.label = CAMPFIRE_SMOKE_DECORATION_LABEL
     smoke.eventMode = 'none'
     smoke.roundPixels = true
-    smoke.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_SMOKE_DECORATION_Y + reliefLift)
+    smoke.position.set(0, smokeY)
+    smoke.scale.set(profile.scale)
     smoke.animationSpeed = 0.3
     smoke.gotoAndPlay(0)
     building.addChild(smoke)
@@ -167,10 +182,11 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
     const fire = new AnimatedSprite(fireTextures) as LightedAnimatedSprite
     bindAnimatedSpriteToTicker(fire, building.context.app)
     fire.label = CAMPFIRE_DECORATION_LABEL
-    attachFireLight(fire, CAMPFIRE_DECORATION_LIGHT)
+    attachFireLight(fire, profile.light)
     fire.eventMode = 'none'
     fire.roundPixels = true
-    fire.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y + reliefLift)
+    fire.position.set(0, flameY)
+    fire.scale.set(profile.scale)
     fire.animationSpeed = 0.3
     fire.gotoAndPlay(0)
     building.addChild(fire)

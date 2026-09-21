@@ -7,12 +7,14 @@ type ReliefCell = {
 }
 type ReliefMap = { grid: Array<Array<ReliefCell | null | undefined> | undefined> }
 
-// Ground-space limits calibrated against the straight faces of texture copy.png.
+// Ground-space limits based on the straight faces of texture copy.png.
 // They describe geometry, never whether a light/dark face is uphill or downhill.
 const BACK_START = -1 - 24.5 / 64
 const BACK_END = -1 + 21.5 / 64
-const FRONT_START = 1 + 1 / 64
-const FRONT_END = 1 + 7 / 64
+// Widen the short front transition by 50% around its painted centre (4 / 64)
+// to soften the step while preserving the plateau height and rear profile.
+const FRONT_START = 1 - 0.5 / 64
+const FRONT_END = 1 + 8.5 / 64
 const EASE_FRACTION = 0.15
 
 /** Ease only the ends. Unlike smoothstep, the bounded middle derivative cannot

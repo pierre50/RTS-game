@@ -155,7 +155,10 @@ test('without a depot workers keep harvested materials in their bounded bag', ()
   assert.ok(carried > 0 && carried <= 30)
   assert.equal(report.gathered.wood, carried)
   assert.equal(state.resources[0].quantity + carried, 100)
-  assert.notDeepEqual({ i: player.units[0].i, j: player.units[0].j }, { i: state.resources[0].i, j: state.resources[0].j })
+  assert.notDeepEqual(
+    { i: player.units[0].i, j: player.units[0].j },
+    { i: state.resources[0].i, j: state.resources[0].j }
+  )
 })
 
 test('tree felling consumes work before wood can be gathered', () => {
@@ -517,8 +520,12 @@ test('offline construction uses the saved building tier instead of the owners ne
     const house = { type: 'House', label: 'house', i: 14, j: 14, isBuilt: false, hitPoints: 1, buildingAge: age }
     player.buildings.push(house)
     Object.assign(player.units[0], { autonomousJob: 'construction', buildQueue: ['house'] })
-    options.buildingConfig = () => ({ size: 2, constructionTime: 48, totalHitPoints: 75,
-      ageStats: { 0: { totalHitPoints: 75 }, 1: { totalHitPoints: 125 } } })
+    options.buildingConfig = () => ({
+      size: 2,
+      constructionTime: 48,
+      totalHitPoints: 75,
+      ageStats: { 0: { totalHitPoints: 75 }, 1: { totalHitPoints: 125 } },
+    })
     simulateOfflineWorld(state, options)
     assert.equal(house.isBuilt, true)
     assert.equal(house.hitPoints, age === 0 ? 75 : 125)
@@ -527,12 +534,17 @@ test('offline construction uses the saved building tier instead of the owners ne
 
 test('returning to a map restores only night sleep health for villagers and soldiers', () => {
   const { state, options, player } = fixture()
-  player.units = [villager({ hitPoints: 2, totalHitPoints: 18 }),
+  player.units = [
+    villager({ hitPoints: 2, totalHitPoints: 18 }),
     villager({ type: 'Soldier', label: 'soldier', hitPoints: 2, totalHitPoints: 18 }),
     villager({ label: 'dead', hitPoints: 0, totalHitPoints: 18, isDead: true }),
-    villager({ label: 'hero', controlMode: 'hero', hitPoints: 2, totalHitPoints: 18 })]
+    villager({ label: 'hero', controlMode: 'hero', hitPoints: 2, totalHitPoints: 18 }),
+  ]
   simulateOfflineWorld(state, { ...options, toElapsedMs: 4 * HOUR })
-  assert.deepEqual(player.units.map(unit => unit.hitPoints), [2, 2, 0, 2])
+  assert.deepEqual(
+    player.units.map(unit => unit.hitPoints),
+    [2, 2, 0, 2]
+  )
   simulateOfflineWorld(state, { ...options, fromElapsedMs: 4 * HOUR, toElapsedMs: DAY })
   assert.ok(player.units[0].hitPoints > 17)
   assert.equal(player.units[1].hitPoints, 18)
@@ -541,7 +553,10 @@ test('returning to a map restores only night sleep health for villagers and sold
   const restored = structuredClone(state)
   const health = restored.players[0].units.map(unit => unit.hitPoints)
   simulateOfflineWorld(restored, { ...options, fromElapsedMs: DAY, toElapsedMs: DAY })
-  assert.deepEqual(restored.players[0].units.map(unit => unit.hitPoints), health)
+  assert.deepEqual(
+    restored.players[0].units.map(unit => unit.hitPoints),
+    health
+  )
 })
 
 test('the configured world clock charges upkeep once at its actual next dawn', () => {
@@ -549,14 +564,60 @@ test('the configured world clock charges upkeep once at its actual next dawn', (
   const { state, options, player } = fixture()
   const config = gameplay.DAY_NIGHT_CONFIG
   const hourMs = config.dayLengthMs / config.hoursPerDay
-  const untilDawn = ((config.newDayHour - config.startHour + config.hoursPerDay) % config.hoursPerDay || config.hoursPerDay) * hourMs
+  const untilDawn =
+    ((config.newDayHour - config.startHour + config.hoursPerDay) % config.hoursPerDay || config.hoursPerDay) * hourMs
   const report = liveSimulation.simulateOfflineWorld(state, {
-    ...options, fromElapsedMs: untilDawn - hourMs, toElapsedMs: untilDawn,
+    ...options,
+    fromElapsedMs: untilDawn - hourMs,
+    toElapsedMs: untilDawn,
   })
   assert.equal(report.foodConsumed, 4)
   assert.equal(player.buildings[0].inventory.resources.wheat, 96)
   const repeated = liveSimulation.simulateOfflineWorld(state, {
-    ...options, fromElapsedMs: untilDawn, toElapsedMs: untilDawn,
+    ...options,
+    fromElapsedMs: untilDawn,
+    toElapsedMs: untilDawn,
   })
   assert.equal(repeated.foodConsumed, 0)
+})
+
+test('offline center completion removes competing sites and their worker orders without converting assets', () => {
+  const { advanceOfflineWorker } = loadTsModule('app/services/world/OfflineWorldWork.ts')
+  const { OfflineWorldSpatial } = loadTsModule('app/services/world/OfflineWorldSpatial.ts')
+  const { state, options, player } = fixture()
+  const center = { type: 'TownCenter', i: 14, j: 14, label: 'winner', isBuilt: false, hitPoints: 1 }
+  player.buildings = [center]
+  Object.assign(player.units[0], { autonomousJob: 'construction', buildQueue: ['winner'] })
+  const rivalCenter = { ...center, i: 22, j: 22, label: 'loser' }
+  const house = { type: 'House', i: 24, j: 25, label: 'house', isBuilt: true }
+  const rivalWorker = villager({
+    label: 'rival-worker',
+    i: 20,
+    j: 20,
+    autonomousJob: 'construction',
+    action: 'build',
+    dest: [22, 22, 'loser'],
+    buildQueue: ['loser'],
+  })
+  const rival = {
+    type: 'Human',
+    label: 'rival',
+    units: [rivalWorker],
+    buildings: [rivalCenter, house],
+    populationMax: 1,
+  }
+  state.players.push(rival)
+  const spatial = new OfflineWorldSpatial(options.terrain, state, () => 2)
+  const report = { buildingsCompleted: 0 }
+  advanceOfflineWorker(state, player, 0, player.units[0], 120000, 1, spatial, options, report)
+  advanceOfflineWorker(state, rival, 1, rivalWorker, 120000, 1, spatial, options, report)
+  assert.equal(center.isBuilt, true)
+  assert.equal(rivalCenter.isDead, true)
+  assert.equal(rivalCenter.isBuilt, false)
+  assert.deepEqual(rival.buildings, [house])
+  assert.deepEqual(rivalWorker.buildQueue, [])
+  assert.equal(spatial.entity('loser'), undefined)
+  assert.equal(spatial.naturalCell({ i: 21, j: 22 }), true)
+  assert.equal(report.buildingsCompleted, 1)
+  assert.equal(rival.populationMax, 1)
 })

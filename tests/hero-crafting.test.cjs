@@ -99,44 +99,6 @@ test('hero craft refuses missing resources without changing inventory or resourc
   assert.deepEqual(hero.inventory.equipment, ['arrow_ceramic'])
 })
 
-test('hero chest craft can spend chest resources and adds a placeable chest to the bag', () => {
-  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'chest')
-  const player = { label: 'p1', wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0, buildings: [] }
-  player.buildings = [{ owner: player, type: 'Chest', inventory: { resources: { wood: 12 } } }]
-  const hero = { owner: player, type: 'Hero' }
-
-  assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.deepEqual(player.buildings[0].inventory.resources, { wood: 2 })
-  assert.deepEqual(hero.inventory.equipment, ['chest'])
-})
-
-test('hero campfire craft spends resources and adds a placeable campfire to the bag', () => {
-  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'campfire')
-  const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
-  const hero = { type: 'Hero', inventory: { resources: { wood: 8, stone: 2 } } }
-
-  assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.deepEqual(hero.inventory.resources, {})
-  assert.deepEqual(hero.inventory.equipment, ['campfire'])
-})
-
-test('hero trap craft requires plant fiber', () => {
-  const { HERO_CRAFT_RECIPES, craftHeroRecipe, getMissingCraftResources } = loadCrafting()
-  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'trap')
-  const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
-  const hero = { type: 'Hero', inventory: { resources: { wood: 5, fiber: 1 }, equipment: [] } }
-
-  assert.deepEqual(getMissingCraftResources(player, recipe.cost, hero), { fiber: 1 })
-  assert.equal(craftHeroRecipe(player, hero, recipe), false)
-  hero.inventory.resources.fiber = 2
-
-  assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.deepEqual(hero.inventory.resources, {})
-  assert.deepEqual(hero.inventory.equipment, ['trap'])
-})
-
 test('hero bow craft spends wood and sinew and adds a bow to the bag', () => {
   const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
   const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'bow')
@@ -234,13 +196,21 @@ test('crafted placeable items resolve to their building placements', () => {
   assert.equal(getPlaceableInventoryBuildingType('trap'), 'Trap')
 })
 
-test('a lone hero can craft the first chest from a bag of 50 without any building', () => {
-  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const player = { buildings: [] }
-  const hero = { owner: player, type: 'Hero', inventory: { resources: { wood: 10, stone: 20, wheat: 20 }, equipment: [] } }
-  player.units = [hero]
-  assert.equal(craftHeroRecipe(player, hero, HERO_CRAFT_RECIPES.find(recipe => recipe.id === 'chest')), true)
-  assert.deepEqual(hero.inventory.equipment, ['chest'])
-  assert.equal(hero.inventory.resources.stone, 20)
-  assert.equal(hero.inventory.resources.wheat, 20)
+test('camp installations are construction options, not craft recipes', () => {
+  const { HERO_CRAFT_RECIPES } = loadCrafting()
+  for (const id of ['chest', 'campfire', 'trap'])
+    assert.equal(
+      HERO_CRAFT_RECIPES.some(recipe => recipe.id === id),
+      false
+    )
+  const definitions = require('../public/assets/data/gameplay/buildings.json')
+  for (const [type, cost] of [
+    ['Chest', { wood: 10 }],
+    ['FireCamp', { wood: 8, stone: 2 }],
+    ['Trap', { wood: 5, fiber: 2 }],
+  ]) {
+    assert.deepEqual(definitions[type].cost, cost)
+    assert.equal(definitions[type].instantPlacement, true)
+    assert.equal(definitions[type].inventoryItem, undefined)
+  }
 })

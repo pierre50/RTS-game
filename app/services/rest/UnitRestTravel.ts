@@ -91,7 +91,11 @@ export function canResumeVillagerReturnTaskBeforeRest(
 export function canReachShelterBeforeBed(unit: UnitEntity, targetCell: RuntimeCell): boolean {
   if (!isVillager(unit)) return true
   if (shouldVillagerBeAsleep(unit)) return true
+  const remainingMs = getMinutesUntilVillagerBed(unit) * GAME_MINUTE_MS
+  // Even an unobstructed diagonal route must cover this many cells.
+  const minimumCells = Math.max(Math.abs(unit.i - targetCell.i), Math.abs(unit.j - targetCell.j))
+  const minimumMs = estimatePathTravelMs(unit, minimumCells)
+  if (minimumMs == null || minimumMs > remainingMs) return false
   const travelMs = estimateTravelMsToCell(unit, targetCell)
-  if (travelMs == null) return false
-  return travelMs <= getMinutesUntilVillagerBed(unit) * GAME_MINUTE_MS
+  return travelMs != null && travelMs <= remainingMs
 }

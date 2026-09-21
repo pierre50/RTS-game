@@ -65,16 +65,22 @@ function isShelterVisibleToUnit(unit: UnitEntity, building: BuildingEntity): boo
   return isVisibleToUnit(unit, building)
 }
 
+/** Validate one newly available shelter without scanning every building. */
+export function getShelterRestSite(unit: UnitEntity, building: BuildingEntity): UnitRestSite | null {
+  if (!isUsableShelter(building, unit.owner) || !isShelterVisibleToUnit(unit, building)) return null
+  if (isShelterUnsafe(building)) return null
+  if (!hasBuildingShelterCapacity(building, unit.owner?.units ?? [], { exclude: unit })) return null
+  const targetCell = getShelterEntryCell(unit, building)
+  if (!targetCell || !canReachShelterBeforeBed(unit, targetCell)) return null
+  return { location: 'shelter', shelter: building, targetCell }
+}
+
 export function getNearestShelter(unit: UnitEntity): { shelter: BuildingEntity; targetCell: RuntimeCell } | null {
   let best: { shelter: BuildingEntity; targetCell: RuntimeCell; score: number } | null = null
   for (const building of unit.owner?.buildings ?? []) {
-    if (!isUsableShelter(building, unit.owner)) continue
-    if (!isShelterVisibleToUnit(unit, building)) continue
-    if (hitPointRatio(building) <= CRITICAL_SHELTER_HITPOINT_RATIO) continue
-    if (!hasBuildingShelterCapacity(building, unit.owner?.units ?? [], { exclude: unit })) continue
-    const targetCell = getShelterEntryCell(unit, building)
-    if (!targetCell) continue
-    if (!canReachShelterBeforeBed(unit, targetCell)) continue
+    const site = getShelterRestSite(unit, building)
+    if (!site) continue
+    const { targetCell } = site
     const score = restDistance(unit, building)
     if (!best || score < best.score) best = { shelter: building, targetCell, score }
   }

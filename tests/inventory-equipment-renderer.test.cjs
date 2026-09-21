@@ -97,7 +97,7 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
             return { element: makeElement(), icon: makeElement() }
           },
         },
-        './InventorySlotRenderer': {
+        './InventorySection': {
           createInventorySection: options => {
             const grid = makeElement()
             options.renderItems(grid)

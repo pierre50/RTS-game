@@ -20,7 +20,7 @@ function loadActionSpecFactory(options = {}) {
       ACTION_TYPES: { flee: 'flee' },
       AGE_TECHNOLOGIES: new Set(),
       AGE_UP_ENABLED: true,
-      BUILDING_TYPES: { stable: 'Stable' },
+      BUILDING_TYPES: { stable: 'Stable', townCenter: 'TownCenter', chest: 'Chest', fireCamp: 'FireCamp', trap: 'Trap' },
       FAMILY_TYPES: { building: 'building' },
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
     },
@@ -280,7 +280,13 @@ test('territory blocks both the construction button and its direct hotkey callba
   const { factory, player } = createFactory({ hero: {}, messages })
   player.config.buildings.House = { cost: { wood: 30 }, size: 2 }
   player.label = 'hero'
-  const resident = { label: 'resident', name: 'Hellas', type: 'AI', units: [{ hitPoints: 100 }], buildings: [{ hitPoints: 100 }] }
+  const resident = {
+    label: 'resident',
+    name: 'Hellas',
+    type: 'AI',
+    units: [{ hitPoints: 100 }],
+    buildings: [{ type: 'TownCenter', isBuilt: true, hitPoints: 100 }],
+  }
   factory.menu.context.players = [player, resident]
   const button = factory.getActionBuildingButton('House')
   assert.equal(button.disabled(), true)
@@ -292,4 +298,18 @@ test('territory blocks both the construction button and its direct hotkey callba
   assert.equal(button.disabled(), false)
   button.onClick()
   assert.equal(factory.menu.mouseBuilding.type, 'House')
+})
+
+test('camp buildings bypass chief gating while village buildings stay locked', () => {
+  const { factory, player } = createFactory({ hero: {}, messages: [] })
+  factory.isChiefCommandBlocked = () => true
+  const definitions = require('../public/assets/data/gameplay/buildings.json')
+  for (const type of ['Chest', 'FireCamp', 'Trap', 'House']) {
+    player.config.buildings[type] = definitions[type]
+    const button = factory.getActionBuildingButton(type)
+    factory.menu.mouseBuilding = undefined
+    assert.equal(button.disabled(), type === 'House')
+    button.onClick()
+    assert.equal(factory.menu.mouseBuilding?.type, type === 'House' ? undefined : type)
+  }
 })

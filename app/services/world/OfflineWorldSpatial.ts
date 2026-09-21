@@ -141,6 +141,15 @@ export class OfflineWorldSpatial {
     if (!occupants?.size) this.occupied.delete(key)
   }
 
+  releaseBuilding(entity: SaveEntityState): void {
+    this.entities.delete(entityKey(entity))
+    // Buildings reserve their entire footprint, unlike resources and moving units.
+    for (const [key, occupants] of this.occupied) {
+      occupants.delete(entity)
+      if (!occupants.size) this.occupied.delete(key)
+    }
+  }
+
   entity(label: string | undefined): SaveEntityState | undefined {
     return label ? this.entities.get(label) : undefined
   }

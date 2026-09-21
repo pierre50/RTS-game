@@ -2,7 +2,7 @@ import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import { getEquipmentStacks } from '../../lib/equipment/equipmentLoot'
 import type { InventoryStorage } from '../../lib/inventory/inventoryContainers'
 import type { ResourceAmount } from '../../types/common'
-import { createInventorySection } from './InventorySlotRenderer'
+import { createInventorySection } from './InventorySection'
 
 const INVENTORY_STACK_LIMIT = 99
 

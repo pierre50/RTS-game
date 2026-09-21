@@ -249,9 +249,6 @@ export class BuildingPlacer {
     return this.placementRules.doesBuildingOverlapHero(cell, building)
   }
 
-  isInventoryBuildingInHeroPlacementRange(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
-    return this.placementRules.isInventoryBuildingInHeroPlacementRange(cell, building)
-  }
 
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     return this.placementRules.canWallUseCell(cell, owner, allowExistingWall)

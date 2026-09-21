@@ -3,30 +3,14 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { isValidCondition } = loadTsModule('app/lib/combat/configConditions.ts')
 
-test('the stable requires Bronze, never a catching pole discovery', () => {
-  const { Stable } = require('../public/assets/data/gameplay/buildings.json')
-  const player = { age: 0, discoveredEquipment: [], completedObjectives: [] }
-  assert.deepEqual(Stable.conditions, [{ key: 'age', op: '>=', value: 1 }])
-  assert.equal(
-    Stable.conditions.every(condition => isValidCondition(condition, player)),
-    false
-  )
-  player.age = 1
-  assert.equal(
-    Stable.conditions.every(condition => isValidCondition(condition, player)),
-    true
-  )
-})
-
-test('advanced buildings require the Bronze Age while first-age objective buildings remain available', () => {
+test('all building definitions are eligible from the Stone Age without discoveries', () => {
   const config = require('../public/assets/data/gameplay/buildings.json')
-  const gated = new Set(['ArcheryRange', 'WatchTower', 'SmallWall', 'Stable'])
   for (const age of [0, 1, 2]) {
-    const player = { age, completedObjectives: [] }
+    const player = { age, discoveredEquipment: [], completedObjectives: [] }
     for (const [type, entry] of Object.entries(config)) {
       assert.equal(
         (entry.conditions ?? []).every(condition => isValidCondition(condition, player)),
-        !gated.has(type) || age >= 1,
+        true,
         `${type}, age ${age}`
       )
     }

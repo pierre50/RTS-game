@@ -13,7 +13,7 @@ import {
 } from '../../lib/equipment/equipmentMarket'
 import { t } from '../../lib/lang'
 import { createInventoryEquipmentRow, createInventoryResourceRow } from '../inventory/InventoryItemRows'
-import { createInventorySection } from '../inventory/InventorySlotRenderer'
+import { createInventorySection } from '../inventory/InventorySection'
 import { formatGold } from '../inventory/InventoryDetails'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
@@ -204,7 +204,7 @@ export function createHeroMarketBody(
   panel.appendChild(
     createInventorySection({
       className: 'market-section',
-      gridClassName: 'inventory-loot-list market-grid',
+      gridClassName: 'inventory-section-list market-grid',
       title: t('marketStockTitle'),
       titleClassName: 'market-title',
       renderItems: grid => appendBuySlots(grid, building, hero, menu, onChange),
@@ -220,7 +220,7 @@ export function createHeroMarketBody(
     createInventorySection({
       className: 'market-section',
       emptyText: t('marketSellBagEmpty'),
-      gridClassName: 'inventory-loot-list market-grid',
+      gridClassName: 'inventory-section-list market-grid',
       title: t('inventoryYourBag'),
       titleClassName: 'market-title',
       renderItems: grid => {

@@ -202,8 +202,8 @@ test('hero proximity interaction can recover a visible foreign trap', () => {
   }
 
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: building }), {
-    action: 'recoverTrap',
-    labelKey: 'heroInteractionRecover',
+    action: 'dismantleTrap',
+    labelKey: 'heroInteractionDismantle',
     target: building,
   })
 })
@@ -336,7 +336,10 @@ test('hero proximity interaction resolves a close companion horse as mount', () 
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const horse = { family: 'animal', i: 0, isDead: false, isDestroyed: false, j: 1, type: 'Horse', x: 110, y: 250 }
 
-  assert.equal(resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ owner: { age: 0 }, y: 100 }) }), null)
+  assert.equal(
+    resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ owner: { age: 0 }, y: 100 }) }),
+    null
+  )
 
   assert.deepEqual(resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ y: 100 }) }), {
     action: 'mount',
@@ -484,9 +487,19 @@ test('hero proximity interaction examines resources only while available', () =>
   const hero = makeHero()
 
   for (const type of ['MedicinalHerb', 'Berrybush', 'Wheat', 'Tree']) {
-    const resource = { family: 'resource', type, interface: { info() {} }, isDead: false, isDestroyed: false, x: 100, y: 248 }
+    const resource = {
+      family: 'resource',
+      type,
+      interface: { info() {} },
+      isDead: false,
+      isDestroyed: false,
+      x: 100,
+      y: 248,
+    }
     assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: resource }), {
-      action: 'open', labelKey: 'heroInteractionExamine', target: resource,
+      action: 'open',
+      labelKey: 'heroInteractionExamine',
+      target: resource,
     })
 
     resource.isDead = true
@@ -655,4 +668,14 @@ test('hero proximity interaction disables npc orders for foreign talkable npcs',
       target: npc,
     }
   )
+})
+
+test('a filled trap offers the same dismantling action as an empty trap', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const trap = { type: 'Trap', isBuilt: true, containedAnimalType: 'Fox', reachable: true, i: 6, j: 7 }
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: trap }), {
+    action: 'dismantleTrap',
+    labelKey: 'heroInteractionDismantle',
+    target: trap,
+  })
 })

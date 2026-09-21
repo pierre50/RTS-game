@@ -1,3 +1,6 @@
+import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { getShelterRestSite, isShelterUnsafe } from './UnitRestShelter'
+import { restDistance } from './UnitRestMath'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { getEntityCell } from '../../lib/mapSpaces'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
@@ -6,6 +9,7 @@ import {
   getRestReturnTask,
   putRestingUnitToSleep,
   sendUnitToRest,
+  sendUnitToRestSite,
   sleepOutside,
   settleUnitRestForTimeJump,
   wakeUnit,
@@ -53,22 +57,60 @@ type RestUnitBuckets = {
 export class UnitRestSystem {
   context: GameContextLike
   taskId: SchedulerTaskId | null
+  private pendingShelters = new Set<BuildingEntity>()
 
   constructor(context: GameContextLike) {
     this.context = context
     this.taskId = null
     this.taskId = context.scheduler.add(() => this.update(), REST_CHECK_INTERVAL_MS, 'unit.rest')
+    // Reconcile restored evening rest states once; pending notifications are not saved.
+    for (const player of context.players ?? []) {
+      for (const building of player.buildings ?? []) this.notifyShelterAvailable(building)
+    }
     this.update()
   }
 
   update(): void {
     const { livingUnits, restUnits } = this.collectUnits()
-    if (!livingUnits.length) return
+    if (!livingUnits.length) {
+      this.pendingShelters.clear()
+      return
+    }
 
     for (const unit of restUnits) clearExpiredUnitRestAlert(unit)
     if (isSleepTime(this.context)) this.updateRestAlerts(restUnits)
+    this.updateAvailableShelters()
     for (const unit of restUnits) this.updateScheduledRest(unit)
     this.updateSleepingOutsideVisuals(restUnits)
+  }
+
+  notifyShelterAvailable(building: BuildingEntity): void {
+    if (!isShelterUnsafe(building)) this.pendingShelters.add(building)
+  }
+
+  private updateAvailableShelters(): void {
+    for (const building of this.pendingShelters) {
+      if (isShelterUnsafe(building) || !hasBuildingShelterCapacity(building)) continue
+      const candidates = (building.owner?.units ?? [])
+        .filter(
+          unit =>
+            isVillager(unit) &&
+            unit.shelterState?.reason === 'sleep' &&
+            unit.shelterState.status === 'outside' &&
+            unit.sleepVisualState !== 'sleeping' &&
+            !unit.lookingAtHero &&
+            this.shouldReturnHome(unit) &&
+            !this.shouldSleep(unit) &&
+            shouldRest(unit)
+        )
+        .sort((a, b) => restDistance(a, building) - restDistance(b, building))
+      for (const unit of candidates) {
+        if (!hasBuildingShelterCapacity(building)) break
+        const site = getShelterRestSite(unit, building)
+        if (site) sendUnitToRestSite(unit, 'sleep', site, { transition: false })
+      }
+    }
+    this.pendingShelters.clear()
   }
 
   private shouldReturnHome(unit: UnitEntity): boolean {
@@ -303,6 +345,7 @@ export class UnitRestSystem {
   }
 
   destroy(): void {
+    this.pendingShelters.clear()
     if (this.taskId != null) {
       this.context.scheduler.remove(this.taskId)
       this.taskId = null

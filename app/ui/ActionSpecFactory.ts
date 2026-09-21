@@ -1,3 +1,4 @@
+import { isCampBuilding } from '../lib/buildings/campConstruction'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import { Assets } from 'pixi.js'
@@ -94,7 +95,7 @@ export class ActionSpecFactory {
 
   getBuildingDetails(type: string, owner: PlayerLike, config: BuildingConfig): MenuDetails {
     return buildBuildingDetails({
-      commandBlocked: this.isChiefCommandBlocked(),
+      commandBlocked: !isCampBuilding(type) && this.isChiefCommandBlocked(),
       config,
       isLimitReached: isBuildingLimitReached(owner, type),
       type,
@@ -273,7 +274,7 @@ export class ActionSpecFactory {
       hide: () => !owner.isBuildingEligible?.(type),
       disabled: () =>
         Boolean(constructionTerritoryBlocker(menu.context, owner)) ||
-        this.isChiefCommandBlocked() ||
+        (!isCampBuilding(type) && this.isChiefCommandBlocked()) ||
         isBuildingLimitReached(owner, type) ||
         !config ||
         !canPayActionCost(owner, config.cost),
@@ -289,7 +290,7 @@ export class ActionSpecFactory {
           )
           return
         }
-        if (this.isChiefCommandBlocked()) {
+        if (!isCampBuilding(type) && this.isChiefCommandBlocked()) {
           menu.showMessage(t('requiresChief'), 'warning')
           return
         }

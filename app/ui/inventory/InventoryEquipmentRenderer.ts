@@ -23,7 +23,7 @@ import { getUnitBagTitle } from '../../lib/resources/resourceDelivery'
 import { t } from '../../lib/lang'
 import { BUILDING_TYPES } from '../../constants'
 import { getBuildingAsset } from '../../lib'
-import { createInventorySection } from './InventorySlotRenderer'
+import { createInventorySection } from './InventorySection'
 import { createInventoryBuildingIcon, createInventoryResourceIcon } from './InventoryItemIcons'
 import { createInventoryEquipmentRow, createInventoryResourceRow } from './InventoryItemRows'
 import type { MenuHost } from '../MenuHost'
@@ -189,7 +189,6 @@ export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendere
 
   host.equippedPanel.appendChild(
     createInventorySection({
-      gridClassName: 'inventory-equipped-grid',
       title: t('inventoryEquippedEquipment'),
       renderItems: grid => {
         for (const slotId of HERO_EQUIPMENT_SLOTS) {

@@ -102,50 +102,26 @@ test('stable interior entry uses the shared building entry flow', () => {
 })
 
 test('interior decorations vary by building type', () => {
+  const { BUILDING_TYPES } = loadTsModule('app/constants/entities.ts')
   const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/interiorDecorations.ts', {
-    mocks: {
-      '../../constants': {
-        BUILDING_TYPES: {
-          archeryRange: 'ArcheryRange',
-          barracks: 'Barracks',
-          campBucket: 'CampBucket',
-          campCrate: 'CampCrate',
-          campDryingRack: 'CampDryingRack',
-          campFencePost: 'CampFencePost',
-          campJarSmall: 'CampJarSmall',
-          campJarLarge: 'CampJarLarge',
-          campRockPile: 'CampRockPile',
-          campSkull: 'CampSkull',
-          campTotemHorns: 'CampTotemHorns',
-          campTotemPlain: 'CampTotemPlain',
-          chest: 'Chest',
-          fireCamp: 'FireCamp',
-          granary: 'Granary',
-          house: 'House',
-          market: 'Market',
-          stable: 'Stable',
-          storagePit: 'StoragePit',
-          temple: 'Temple',
-          townCenter: 'TownCenter',
-          watchTower: 'WatchTower',
-        },
-      },
-    },
+    mocks: { '../../constants': { BUILDING_TYPES } },
   })
 
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Stable' }).map(item => item.type),
-    ['CampBucket', 'CampDryingRack']
+    ['CampBucket', 'CampBucket']
   )
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Barracks' }).map(item => item.type),
-    ['FireCamp', 'CampCrate', 'CampTotemPlain']
+    ['CampStumpStool', 'CampForge', 'CampBrazier', 'CampBrazier', 'CampTorchStand', 'CampArrowBasket', 'CampBench']
   )
   assert.deepEqual(
-    getBuildingInteriorDecorationLayout({ type: 'TownCenter' }).map(item => ({
-      indestructible: item.buildingOptions?.indestructible,
-      type: item.type,
-    })),
+    getBuildingInteriorDecorationLayout({ type: 'TownCenter' })
+      .slice(0, 2)
+      .map(item => ({
+        indestructible: item.buildingOptions?.indestructible,
+        type: item.type,
+      })),
     [
       { indestructible: undefined, type: 'FireCamp' },
       { indestructible: true, type: 'Chest' },
@@ -156,9 +132,9 @@ test('interior decorations vary by building type', () => {
     {
       key: 'storage-chest',
       type: 'Chest',
-      offsetI: 0,
-      offsetJ: 0,
-      placement: 'oppositeExitInset',
+      offsetI: -1,
+      offsetJ: -5,
+      allowBorderPlacement: true,
       buildingOptions: { indestructible: true },
     }
   )
@@ -167,15 +143,25 @@ test('interior decorations vary by building type', () => {
     {
       key: 'storage-chest',
       type: 'Chest',
-      offsetI: 0,
-      offsetJ: 0,
-      placement: 'oppositeExitInset',
+      offsetI: -1,
+      offsetJ: -5,
+      allowBorderPlacement: true,
       buildingOptions: { indestructible: true },
     }
   )
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Temple' }).map(item => item.type),
-    ['CampTotemHorns', 'CampJarLarge', 'CampJarSmall']
+    [
+      'CampMountedSkull',
+      'CampBench',
+      'CampChair',
+      'CampBench',
+      'CampBrazier',
+      'CampBrazier',
+      'CampBench',
+      'CampBench',
+      'CampTorchStand',
+    ]
   )
 })
 

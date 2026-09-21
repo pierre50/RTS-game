@@ -65,6 +65,7 @@ interface TributeRaidSystemLike {
 }
 
 interface UnitRestSystemLike {
+  notifyShelterAvailable?(building: BuildingEntity): void
   handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
   handleShelterAttack?(building: BuildingEntity, attacker: RuntimeEntity | null | undefined): boolean
   evacuateUnitsFromShelter(building: BuildingEntity, options?: { force?: boolean }): void

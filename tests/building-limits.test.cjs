@@ -28,11 +28,7 @@ const { isBuildingLimitReached } = loadBuildingLimits()
 
 test('town center is limited to one living building per owner', () => {
   const owner = {
-    buildings: [
-      { type: 'TownCenter' },
-      { type: 'TownCenter', isDead: true },
-      { type: 'House' },
-    ],
+    buildings: [{ type: 'TownCenter' }, { type: 'TownCenter', isDead: true }, { type: 'House' }],
   }
 
   assert.equal(isBuildingLimitReached(owner, 'TownCenter'), true)
@@ -43,5 +39,24 @@ test('non-limited buildings are not blocked by building limits', () => {
     buildings: [{ type: 'House' }, { type: 'House' }],
   }
 
+  assert.equal(isBuildingLimitReached(owner, 'House'), false)
+})
+
+test('rival factions may race, but a completed center blocks every owner on the map', () => {
+  const owner = { factionId: 'a', buildings: [] }
+  const rival = { factionId: 'b', buildings: [{ type: 'TownCenter', isBuilt: false, hitPoints: 1 }] }
+  owner.context = { players: [owner, rival] }
+  assert.equal(isBuildingLimitReached(owner, 'TownCenter'), false)
+  rival.buildings[0].isBuilt = true
+  assert.equal(isBuildingLimitReached(owner, 'TownCenter'), true)
+  rival.buildings[0].isDead = true
+  assert.equal(isBuildingLimitReached(owner, 'TownCenter'), false)
+})
+
+test('regional owners of the same faction share the one-site limit', () => {
+  const owner = { factionId: 'a', buildings: [] }
+  const ally = { factionId: 'a', buildings: [{ type: 'TownCenter', isBuilt: false, hitPoints: 1 }] }
+  owner.context = { players: [owner, ally] }
+  assert.equal(isBuildingLimitReached(owner, 'TownCenter'), true)
   assert.equal(isBuildingLimitReached(owner, 'House'), false)
 })

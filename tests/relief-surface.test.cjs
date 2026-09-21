@@ -5,10 +5,13 @@ const { point, reliefMap } = require('./helpers/reliefFixture.cjs')
 const { getReliefLevelAtPoint: height } = loadTsModule('app/lib/terrain/reliefSurface.ts')
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`)
 
-test('straight faces keep the painted band limits, with the direction determined by elevations', () => {
+test('front faces soften beyond the painted band while rear faces keep their profile', () => {
   const front = reliefMap(i => (i < 4 ? 1 : 0))
-  near(height(front, point(4, 4)), 1)
+  near(height(front, point(4 - 0.5 / 64, 4)), 1)
+  assert.ok(height(front, point(4 + 1 / 64, 4)) < 1)
   near(height(front, point(4 + 4 / 64, 4)), 0.5)
+  assert.ok(height(front, point(4 + 7 / 64, 4)) > 0)
+  near(height(front, point(4 + 8.5 / 64, 4)), 0)
   near(height(front, point(4.25, 4)), 0)
   const back = reliefMap(i => (i > 4 ? 1 : 0))
   near(height(back, point(3.55, 4)), 0)

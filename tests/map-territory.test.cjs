@@ -4,6 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { findMapTerritoryOwner, constructionTerritoryBlocker } = loadTsModule('app/lib/campaign/mapTerritory.ts')
 const { PLAYER_TYPES } = loadTsModule('app/constants/entities.ts')
 const alive = () => ({ hitPoints: 100 })
+const center = () => ({ ...alive(), type: 'TownCenter', isBuilt: true })
 const human = () => ({
   label: 'hero',
   type: PLAYER_TYPES.human,
@@ -18,7 +19,7 @@ const resident = () => ({
   civ: 'Hellas',
   factionId: 'hellas',
   units: [alive()],
-  buildings: [alive()],
+  buildings: [center()],
 })
 const settlements = [{ kind: 'village', civ: 'Hellas', region: { x: 1, y: 0 } }]
 function context(players) {
@@ -26,15 +27,15 @@ function context(players) {
 }
 
 for (const relation of ['allied', 'hostile']) {
-  test(`a living ${relation} resident blocks construction; their defeat releases it`, () => {
+  test(`a living ${relation} resident blocks construction; destroying their center releases it`, () => {
     const player = human()
     const owner = { ...resident(), diplomacy: relation }
     const ctx = context([player, owner])
     assert.equal(constructionTerritoryBlocker(ctx, player), owner)
     assert.equal(constructionTerritoryBlocker(ctx, owner), null)
-    owner.units[0].isDead = true
+    owner.buildings[0].isDead = true
     assert.equal(constructionTerritoryBlocker(ctx, player), null)
-    player.buildings.push(alive())
+    player.buildings.push(center())
     assert.equal(findMapTerritoryOwner(ctx.players, settlements), player)
   })
 }
@@ -47,7 +48,7 @@ test('a passing army and bandit camp do not claim empty territory', () => {
 })
 
 test('the native resident takes priority over a visitor with captured buildings', () => {
-  const player = { ...human(), buildings: [alive()] }
+  const player = { ...human(), buildings: [{ ...alive(), type: 'House', isBuilt: true }] }
   const owner = resident()
   assert.equal(findMapTerritoryOwner([player, owner], settlements), owner)
 })
@@ -55,14 +56,14 @@ test('the native resident takes priority over a visitor with captured buildings'
 test('a matching hero-only start does not claim the settlement without a building', () => {
   const player = { ...human(), civ: 'Hellas', factionId: 'hellas' }
   assert.equal(findMapTerritoryOwner([player], settlements), null)
-  player.buildings.push(alive())
+  player.buildings.push(center())
   assert.equal(findMapTerritoryOwner([player], settlements), player)
 })
 
-test('a defeated native and destroyed bases do not retain ownership', () => {
+test('destroyed centers do not retain ownership', () => {
   const owner = resident()
-  owner.units = []
-  const player = { ...human(), buildings: [{ ...alive(), isDestroyed: true }] }
+  owner.buildings[0].isDead = true
+  const player = { ...human(), buildings: [{ ...center(), isDestroyed: true }] }
   assert.equal(findMapTerritoryOwner([owner, player], settlements), null)
 })
 
@@ -100,7 +101,7 @@ test('blocked purchases and wheat planting return before costs or map mutation',
   assert.equal(buyPlayerBuilding(player, 1, 1, 'House', { alreadyPaid: true }), false)
 })
 
-test('construction tab names the occupying player and clears the warning after elimination', () => {
+test('construction tab names the occupying player and clears the warning after center destruction', () => {
   const { renderInventoryConstruction } = loadTsModule('app/ui/InventoryConstruction.ts', {
     mocks: {
       '../lib/avatar': {},
@@ -128,10 +129,38 @@ test('construction tab names the occupying player and clears the warning after e
     const host = { constructionPanel: panel, menu: { context: ctx, clearActionHotkeys() {} } }
     renderInventoryConstruction(host)
     assert.equal(panel.children[0].textContent, 'constructionTerritoryOccupied:Hellas')
-    owner.units = []
+    owner.buildings[0].isDead = true
     renderInventoryConstruction(host)
     assert.deepEqual(panel.children, [])
   } finally {
     global.document = previous
   }
+})
+
+test('only completed living town centers claim land, regardless of the remaining units', () => {
+  const owner = resident()
+  owner.units = []
+  assert.equal(findMapTerritoryOwner([owner]), owner)
+  owner.buildings[0].isBuilt = false
+  assert.equal(findMapTerritoryOwner([owner]), null)
+  owner.buildings[0].isBuilt = true
+  owner.buildings[0].hitPoints = 0
+  assert.equal(findMapTerritoryOwner([owner]), null)
+  owner.buildings = [{ ...alive(), type: 'House', isBuilt: true }]
+  assert.equal(findMapTerritoryOwner([owner]), null)
+})
+
+test('destroying a center frees construction without transferring surviving buildings or units', () => {
+  const owner = resident()
+  const player = human()
+  const house = { ...alive(), type: 'House', isBuilt: true }
+  owner.buildings.push(house)
+  owner.buildings[0].isDestroyed = true
+  assert.equal(constructionTerritoryBlocker(context([owner, player]), player), null)
+  assert.equal(owner.buildings[1], house)
+  assert.equal(owner.units.length, 1)
+  assert.deepEqual(player.buildings, [])
+  player.buildings.push(center())
+  assert.equal(findMapTerritoryOwner([owner, player], settlements), player)
+  assert.equal(owner.buildings[1], house)
 })

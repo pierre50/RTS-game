@@ -5,6 +5,11 @@ import {
   interiorCellKey,
 } from '../../app/lib/buildings/interiorDecorations'
 import { canPlaceBuildingAt } from '../../app/lib/grid/placement'
+import {
+  getInteriorRoomCenter,
+  isNearInteriorDoor,
+  preservesInteriorPassages,
+} from '../../app/lib/buildings/interiorFurniturePlacement'
 import type { GameContextLike } from '../../app/types/context'
 import type { RuntimeCell } from '../../app/types/map'
 import type { BuildingInteriorRuntimeSpace } from './BuildingInteriorSpaceTypes'
@@ -23,6 +28,8 @@ function findInteriorDefaultBuildingCell(
   const placementSize = Number(config.size ?? 1)
   const canUseCell = (cell: RuntimeCell | null | undefined): cell is RuntimeCell => {
     if (!cell) return false
+    if (cell.terrainHidden || isNearInteriorDoor(cell, [space.entryCell, space.exitCell])) return false
+    if (!preservesInteriorPassages(space.grid, cell)) return false
     if (!options.allowBorderPlacement) return canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig)
     if (Math.floor(placementSize) !== 1) return canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig)
     return (
@@ -38,7 +45,7 @@ function findInteriorDefaultBuildingCell(
   return findInteriorDecorationCell(
     { grid: space.grid, randomItem: context.map.randomItem.bind(context.map), size: space.size },
     preferred,
-    { blockedCells, canUseCell }
+    { blockedCells, canUseCell, searchRadius: 2 }
   )
 }
 
@@ -110,29 +117,6 @@ function getInteriorDefaultBuildingPreferredCell(
   return { i: center.i + item.offsetI, j: center.j + item.offsetJ }
 }
 
-function getInteriorRoomCenter(space: BuildingInteriorRuntimeSpace): { i: number; j: number } {
-  const cells = space.walkableCells.length ? space.walkableCells : space.sleepCells
-  const first = cells[0]
-  if (!first) return { i: Math.round(space.size / 2), j: Math.round(space.size / 2) }
-  const total = cells.reduce(
-    (sum, cell) => ({
-      i: sum.i + cell.i,
-      j: sum.j + cell.j,
-    }),
-    { i: 0, j: 0 }
-  )
-  const center = {
-    i: total.i / cells.length,
-    j: total.j / cells.length,
-  }
-  const nearest = cells.reduce((best, cell) => {
-    const bestDistance = (best.i - center.i) ** 2 + (best.j - center.j) ** 2
-    const cellDistance = (cell.i - center.i) ** 2 + (cell.j - center.j) ** 2
-    return cellDistance < bestDistance ? cell : best
-  }, first)
-  return { i: nearest.i, j: nearest.j }
-}
-
 export function ensureInteriorDefaultBuildings(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
   if (space.defaultBuildingsPlaced) return
   const saved = space.building.interiorBuildings
@@ -159,7 +143,7 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
     space.defaultBuildingsPlaced = true
     return
   }
-  if (space.building.type === BUILDING_TYPES.stable || space.building.type === BUILDING_TYPES.cave) {
+  if (space.building.type === BUILDING_TYPES.cave) {
     space.defaultBuildingsPlaced = true
     return
   }
@@ -173,7 +157,12 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
     const label = `${space.id}:default:${item.key}`
     if (owner.buildings.some(building => building.label === label && !building.isDestroyed)) continue
     const preferred = getInteriorDefaultBuildingPreferredCell(space, item, center)
-    const cell = findInteriorDefaultBuildingCell(context, space, item.type, preferred, blockedCells, item)
+    let cell = findInteriorDefaultBuildingCell(context, space, item.type, preferred, blockedCells, item)
+    // Older/custom blueprints can be smaller than the montage; never lose their storage chest.
+    if (!cell && item.key === 'storage-chest') {
+      const fallback = getOppositeExitInsetCell(space, center)
+      if (fallback) cell = findInteriorDefaultBuildingCell(context, space, item.type, fallback, blockedCells, item)
+    }
     if (!cell) continue
     const buildingOptions = { ...item.buildingOptions }
     const pendingResources = item.key === 'storage-chest' ? (space.building.inventory?.resources ?? {}) : null

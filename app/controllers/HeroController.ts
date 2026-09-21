@@ -15,7 +15,7 @@ import { setUnitControlMode } from '../lib/units/unitControl'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
-import { recoverTrapBuilding } from '../services/world/TrapHarvestSystem'
+import { dismantleTrapBuilding } from '../services/world/TrapHarvestSystem'
 import {
   resolveHeroProximityInteraction,
   wakeOwnSleepingNpcForCommunication,
@@ -337,9 +337,7 @@ export class HeroController {
       this.controls.context.menu?.openNpcOrders?.([interaction.target], interaction.npcOptions)
       return true
     }
-    if (interaction.action === 'recoverTrap') {
-      return recoverTrapBuilding(this.heroUnit, interaction.target)
-    }
+    if (interaction.action === 'dismantleTrap') return dismantleTrapBuilding(this.heroUnit, interaction.target)
     return this.controls.openHeroEntityInteraction(interaction.target)
   }
 

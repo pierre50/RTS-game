@@ -8,7 +8,7 @@ const { createInventoryContents } = loadTsModule('app/ui/inventory/InventoryCont
     '../../lib/equipment/equipmentLoot': {
       getEquipmentStacks: equipment => equipment.length ? [{ equipment: 'arrow', count: equipment.length }] : [],
     },
-    './InventorySlotRenderer': {
+    './InventorySection': {
       createInventorySection: options => {
         const rows = []
         options.renderItems({ appendChild: row => rows.push(row) })

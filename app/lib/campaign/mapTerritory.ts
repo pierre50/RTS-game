@@ -1,8 +1,9 @@
 import { PLAYER_TYPES } from '../../constants'
 import type { GameContextLike } from '../../types/context'
-import { isPlayerEliminated } from '../playerState'
+import { isTerritoryTownCenter } from '../buildings/townCenterClaim'
 
 type TerritoryEntity = {
+  type?: string
   hitPoints?: number
   isDead?: boolean
   isDestroyed?: boolean
@@ -24,58 +25,24 @@ export type TerritoryPlayer = {
   buildings?: TerritoryEntity[]
 }
 
-export type TerritorySettlement = {
-  kind?: string
-  civ?: string
-  factionId?: string | null
-  region?: { x: number; y: number }
-}
-
 export function territoryPlayerKey(player: TerritoryPlayer): string | undefined {
   return player.factionId || player.civ || player.label
 }
 
-function hasTerritoryBuildings(player: TerritoryPlayer): boolean {
-  return Boolean(
-    player.buildings?.some(building => !building.isDead && !building.isDestroyed && (building.hitPoints ?? 0) > 0)
+export function findMapTerritoryOwner<T extends TerritoryPlayer>(players: readonly T[]): T | null {
+  // Territory follows the completed center, independently of units, defeat or native settlement.
+  return (
+    players.find(
+      player =>
+        player.type !== PLAYER_TYPES.bandits &&
+        player.type !== PLAYER_TYPES.gaia &&
+        player.buildings?.some(isTerritoryTownCenter)
+    ) ?? null
   )
-}
-
-export function findMapTerritoryOwner<T extends TerritoryPlayer>(
-  players: readonly T[],
-  settlements: readonly TerritorySettlement[] = []
-): T | null {
-  const residents = players.filter(
-    player =>
-      player.type !== PLAYER_TYPES.bandits &&
-      player.type !== PLAYER_TYPES.gaia &&
-      // The hero is removed from regional saves while travelling; their base still owns the region.
-      (!isPlayerEliminated(player) || (player.isPlayed && hasTerritoryBuildings(player)))
-  )
-  const native = residents.find(player =>
-    Boolean(
-      hasTerritoryBuildings(player) &&
-        settlements.some(
-          settlement =>
-            (settlement.kind === 'village' || settlement.kind === 'city') &&
-            (settlement.factionId
-              ? settlement.factionId === player.factionId
-              : Boolean(settlement.civ && settlement.civ === player.civ))
-        )
-    )
-  )
-  if (native) return native
-  // A base claims an empty or conquered region; travelling units do not.
-  return residents.find(hasTerritoryBuildings) ?? null
 }
 
 export function currentMapTerritoryOwner(context: Pick<GameContextLike, 'map' | 'players'>) {
-  const region = context.map?.worldRegion
-  const settlements = (context.map?.worldManifest?.settlements ?? []) as TerritorySettlement[]
-  return findMapTerritoryOwner(
-    context.players ?? [],
-    settlements.filter(settlement => region && settlement.region?.x === region.x && settlement.region?.y === region.y)
-  )
+  return findMapTerritoryOwner(context.players ?? [])
 }
 
 export function constructionTerritoryBlocker(

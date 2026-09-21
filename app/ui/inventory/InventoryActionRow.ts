@@ -130,7 +130,7 @@ export function createInventoryActionRow(
   if (options.trailingAction || options.secondaryAction) {
     const actions = document.createElement('div')
     actions.className = 'inventory-row-actions'
-    for (const action of [options.secondaryAction, options.trailingAction]) {
+    for (const action of [options.trailingAction, options.secondaryAction]) {
       if (action) appendTrailingActionButton(menu, actions, { ...options, trailingAction: action })
     }
     element.appendChild(actions)

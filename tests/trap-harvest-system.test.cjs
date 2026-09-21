@@ -21,14 +21,6 @@ function loadTrapHarvestSystem({ deferFade = false } = {}) {
         animal.visibilityUpdated = true
       },
     },
-    '../lib/equipment/equipmentLoot': {
-      addHeroInventoryItem: (hero, item) => {
-        hero.inventory = hero.inventory ?? { equipment: [] }
-        hero.inventory.equipment = hero.inventory.equipment ?? []
-        hero.inventory.equipment.push(item)
-        return true
-      },
-    },
     '../lib/entities/entityFade': {
       fadeOut: (_entity, _duration, onComplete) => {
         if (deferFade) pendingFades.push(onComplete)
@@ -108,8 +100,10 @@ function createContext() {
       this.isDestroyed = true
     },
   }
-  const hero = { inventory: { equipment: [] } }
+  const hero = { type: 'Hero', inventory: { equipment: [] } }
   const owner = {
+    age: 0,
+    config: { buildings: { Trap: { cost: { wood: 5, fiber: 2 } } } },
     buildings: [trap],
     label: 'player',
     selectedBuilding: null,
@@ -268,6 +262,8 @@ test('trap harvest shows the overhead marker for a visible foreign trap', () => 
     },
   }
   const foreignOwner = {
+    age: 0,
+    config: { buildings: { Trap: { cost: { wood: 5, fiber: 2 } } } },
     buildings: [trap],
     label: 'foreign-player',
     team: 2,
@@ -308,92 +304,52 @@ test('daily trap harvest skips a trap visible from another unit or building sigh
   )
 })
 
-test('recovering a filled trap returns the trap and spawns a gatherable dead prey', () => {
-  const { recoverTrapBuilding } = loadTrapHarvestSystem()
-  const { context, hero, trap } = createContext()
-  trap.containedAnimalType = 'Fox'
-
-  assert.equal(recoverTrapBuilding(hero, trap), true)
-
-  const trapCell = context.map.grid[trap.i][trap.j]
-  assert.equal(hero.inventory.equipment.includes('trap'), true)
-  assert.equal(trap.owner.buildings.includes(trap), false)
-  assert.equal(trap.isDestroyed, true)
-  assert.equal(trapCell.solid, true)
-  assert.equal(context.map.gaia.animals.length, 1)
-  const animal = context.map.gaia.animals[0]
-  assert.equal(animal.currentSheet, 'corpse')
-  assert.equal(animal.family, 'animal')
-  assert.equal(animal.hitPoints, 0)
-  assert.equal(animal.i, 2)
-  assert.equal(animal.isDead, true)
-  assert.equal(animal.j, 2)
-  assert.equal(animal.quantity, 10)
-  assert.equal(animal.spaceId, 'outside')
-  assert.equal(animal.trapPrey, true)
-  assert.equal(animal.type, 'Fox')
-  assert.equal(animal.visibilityUpdated, true)
-  assert.equal(trapCell.has, animal)
-})
-
 for (const filled of [false, true]) {
-  test(`recovering a ${filled ? 'filled' : 'empty'} trap plays its recovery sound once`, () => {
-    const { recoverTrapBuilding, __soundCalls } = loadTrapHarvestSystem()
-    const { hero, trap } = createContext()
-    if (filled) trap.containedAnimalType = 'Fox'
-    assert.equal(recoverTrapBuilding(hero, trap), true)
-    assert.deepEqual(__soundCalls, [[trap, 'building/trap-recover', { profile: 'surface' }]])
-    assert.equal(recoverTrapBuilding(hero, trap), false)
-    assert.equal(__soundCalls.length, 1)
-  })
-}
-
-test('failed trap recovery does not play a sound', () => {
-  const { recoverTrapBuilding, __soundCalls } = loadTrapHarvestSystem()
-  const { hero, trap } = createContext()
-  assert.equal(recoverTrapBuilding(null, trap), false)
-  trap.isBuilt = false
-  assert.equal(recoverTrapBuilding(hero, trap), false)
-  assert.equal(__soundCalls.length, 0)
-})
-
-for (const filled of [false, true]) {
-  test(`repeated recovery during a ${filled ? 'filled' : 'empty'} trap fade consumes it exactly once`, () => {
-    const { recoverTrapBuilding, TrapHarvestSystem, __pendingFades, __soundCalls } = loadTrapHarvestSystem({
+  test(`dismantling a ${filled ? 'filled' : 'empty'} trap consumes it once without refunds`, () => {
+    const { dismantleTrapBuilding, TrapHarvestSystem, __pendingFades, __soundCalls } = loadTrapHarvestSystem({
       deferFade: true,
     })
     const { context, hero, trap } = createContext()
     if (filled) trap.containedAnimalType = 'Fox'
-    const otherHero = { inventory: { equipment: [] } }
-    const cell = context.map.grid[trap.i][trap.j]
-
-    assert.equal(recoverTrapBuilding(hero, trap), true)
-    for (let i = 0; i < 20; i++) {
-      assert.equal(recoverTrapBuilding(hero, trap), false)
-      assert.equal(recoverTrapBuilding(otherHero, trap), false)
-    }
-    assert.deepEqual(hero.inventory.equipment, ['trap'])
-    assert.deepEqual(otherHero.inventory.equipment, [])
+    hero.inventory.resources = { wood: 50 }
+    // No adjacent free space is required.
+    context.map.grid.flat().forEach(cell => {
+      cell.solid = true
+    })
+    assert.equal(dismantleTrapBuilding(hero, trap), true)
+    assert.equal(trap.owner.buildings.includes(trap), false)
+    assert.equal(trap.isDead, true)
+    assert.equal(trap.containedAnimalType, null)
+    assert.deepEqual(hero.inventory, { equipment: [], resources: { wood: 50 } })
+    const cell = context.map.grid[2][2]
+    if (filled) {
+      const animal = context.map.gaia.animals[0]
+      assert.equal(animal.type, 'Fox')
+      assert.equal(animal.isDead, true)
+      assert.equal(animal.trapPrey, true)
+      assert.equal(animal.i, trap.i)
+      assert.equal(animal.j, trap.j)
+      assert.equal(cell.has, animal)
+    } else assert.equal(cell.has, null)
+    for (let i = 0; i < 10; i++) assert.equal(dismantleTrapBuilding(hero, trap), false)
     assert.equal(__soundCalls.length, 1)
     assert.equal(__pendingFades.length, 1)
-    assert.equal(trap.isDead, true)
-    assert.equal(trap.isDestroyed, false)
-    // Save sources must already reflect the completed transfer while the visual remains.
-    assert.equal(trap.owner.buildings.includes(trap), false)
-    assert.equal(trap.removedFromBucket, true)
-    assert.notEqual(cell.has, trap)
-    assert.equal(context.map.gaia.animals.length, filled ? 1 : 0)
     new TrapHarvestSystem(context).fillTraps()
     assert.equal(trap.containedAnimalType, null)
-
-    const replacement = cell.has ?? { type: 'replacement' }
-    cell.has = replacement
-    cell.solid = true
+    const occupant = cell.has
     __pendingFades[0]()
     assert.equal(trap.isDestroyed, true)
-    assert.equal(cell.has, replacement)
-    assert.equal(cell.solid, true)
+    assert.equal(cell.has, occupant)
     assert.equal(context.map.gaia.animals.length, filled ? 1 : 0)
-    assert.equal(recoverTrapBuilding(hero, trap), false)
   })
 }
+
+test('unavailable prey spawning keeps a filled trap intact', () => {
+  const { dismantleTrapBuilding } = loadTrapHarvestSystem()
+  const { context, hero, trap } = createContext()
+  trap.containedAnimalType = 'Fox'
+  context.map.gaia.createAnimal = undefined
+  assert.equal(dismantleTrapBuilding(hero, trap), false)
+  assert.equal(trap.isDead, false)
+  assert.equal(trap.containedAnimalType, 'Fox')
+})

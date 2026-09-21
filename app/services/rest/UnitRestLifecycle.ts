@@ -24,7 +24,7 @@ function isCurrentOutsideRestSite(unit: UnitEntity, site: UnitRestSite): boolean
   return site.location === 'outside' && site.targetCell.i === unit.i && site.targetCell.j === unit.j
 }
 
-function sendUnitToRestSite(
+export function sendUnitToRestSite(
   unit: UnitEntity,
   reason: UnitRestReason,
   restSite: UnitRestSite,
@@ -45,6 +45,7 @@ function sendUnitToRestSite(
     startedAtMs: now,
     retryCount: 0,
   })
+  unit.actionLocked = false
   unit.sendToEvt?.(transitionTargetCell ?? restSite.targetCell, null, {
     forceRepath: true,
     preserveAutonomy: true,

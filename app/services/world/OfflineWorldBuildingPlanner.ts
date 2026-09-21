@@ -1,3 +1,5 @@
+import { townCenterLimitReached } from '../../lib/buildings/townCenterClaim'
+import { findMapTerritoryOwner } from '../../lib/campaign/mapTerritory'
 import { tryCreateCampChest } from '../../lib/grid/campChestPlacement'
 import { getPlayerResourceStores } from '../../lib/resources/playerResourceTotals'
 import { AI_DIFFICULTIES, MAX_BUILDING_BY_AGE, MAX_BUILDING_BY_AGE_FROZEN } from '../../ai/config'
@@ -80,11 +82,17 @@ export function planOfflineBuildings(
       player.offlineBuildingDecision = `Day ${day}: not enough workers`
       return
     }
+    const territoryOwner = findMapTerritoryOwner(state.players)
+    const canBuild =
+      !territoryOwner ||
+      territoryOwner === player ||
+      Boolean(player.factionId && player.factionId === territoryOwner.factionId)
     const buildings = (player.buildings ?? []).filter(isLiving)
     const center =
       buildings.find(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt) ??
       buildings.find(b => b.type === BUILDING_TYPES.chest && b.isBuilt)
     const createCampChest = () => {
+      if (!canBuild) return false
       const config = rules.buildingConfig(index, BUILDING_TYPES.chest)
       return tryCreateCampChest({
         workers,
@@ -119,7 +127,7 @@ export function planOfflineBuildings(
       return
     }
     let project = buildings.find(b => !b.isBuilt)
-    if (!project) {
+    if (!project && canBuild) {
       const difficulty =
         AI_DIFFICULTIES[state.config?.difficulty as keyof typeof AI_DIFFICULTIES] ?? AI_DIFFICULTIES.medium
       player.aiState ??= {}
@@ -141,6 +149,7 @@ export function planOfflineBuildings(
       const capsByAge = AGE_UP_ENABLED ? MAX_BUILDING_BY_AGE : MAX_BUILDING_BY_AGE_FROZEN
       const caps = capsByAge[Math.min(2, player.age ?? 0) as keyof typeof capsByAge] as Record<string, number>
       for (const type of priorities) {
+        if (type === BUILDING_TYPES.townCenter && townCenterLimitReached(player, state.players)) continue
         if (type !== BUILDING_TYPES.house && buildings.filter(b => b.type === type).length >= (caps[type] ?? 0))
           continue
         const config = getBuildingConfigForAge(rules.buildingConfig(index, type), player.age ?? 0)

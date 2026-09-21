@@ -47,19 +47,19 @@ function setup() {
     civ: 'Hellas',
     color: '#f00',
     units: [{ hitPoints: 100 }],
-    buildings: [{ hitPoints: 100 }],
+    buildings: [{ type: 'TownCenter', isBuilt: true, hitPoints: 100 }],
   }
   const menu = { context: { map: { worldRegionId: 'r1-0' }, players: [], getWorldGraph: () => ({ nodes: {} }) } }
   return { manifest, menu, owner }
 }
 
-test('unvisited territories use settlements; saved defeated owners never reappear', () => {
+test('unvisited territories use settlements; saved destroyed centers never reappear', () => {
   const { manifest, menu, owner } = setup()
   assert.equal(resolveWorldMapTerritories(menu, manifest)[0].key, 'civ-hellas')
   menu.context.getWorldGraph = () => ({ nodes: { saved: { id: 'saved' } } })
   menu.context.getCampaignWorldState = () => ({ config: { worldRegionId: 'r0-0' }, players: [owner] })
   assert.equal(resolveWorldMapTerritories(menu, manifest)[0].key, 'civ-hellas')
-  owner.units = []
+  owner.buildings[0].isDead = true
   assert.deepEqual(resolveWorldMapTerritories(menu, manifest), [])
 })
 
@@ -73,7 +73,7 @@ test('live capture overrides both the manifest and stale saved state', () => {
     colorHex: '#00f',
     isPlayed: true,
     units: [{ hitPoints: 100 }],
-    buildings: [{ hitPoints: 100 }],
+    buildings: [{ type: 'TownCenter', isBuilt: true, hitPoints: 100 }],
   }
   menu.context.players = [captor]
   assert.equal(resolveWorldMapTerritories(menu, manifest)[0].key, 'self')
@@ -127,7 +127,7 @@ test('a saved human base keeps its territory while the hero travels elsewhere', 
         isPlayed: true,
         type: PLAYER_TYPES.human,
         units: [],
-        buildings: [{ hitPoints: 100, isBuilt: true }],
+        buildings: [{ type: 'TownCenter', hitPoints: 100, isBuilt: true }],
       },
     ],
   })

@@ -9,7 +9,9 @@ const DEFAULT_BUILDING_SHELTER_CAPACITY: Record<string, number> = {
   [BUILDING_TYPES.townCenter]: 10,
 }
 
-export function getBuildingShelterCapacity(building: Pick<BuildingEntity, 'shelterCapacity' | 'type'> | null | undefined): number {
+export function getBuildingShelterCapacity(
+  building: Pick<BuildingEntity, 'shelterCapacity' | 'type'> | null | undefined
+): number {
   if (!building) return 0
   const configured = Number(building.shelterCapacity)
   if (Number.isFinite(configured) && configured > 0) return Math.floor(configured)
@@ -24,7 +26,9 @@ function countBuildingShelterOccupants(
   return units.reduce((count, unit) => {
     if (unit === options.exclude || unit.isDead || unit.isDestroyed) return count
     const state = unit.shelterState
-    if (!state || state.location !== 'shelter' || state.status !== 'inside') return count
+    // A destination reserves its bed immediately, including travel within the interior.
+    if (!state || state.location !== 'shelter') return count
+    if (!['inside', 'movingToRest', 'windingDown'].includes(state.status)) return count
     return sameBuilding(state.shelter, building) ? count + 1 : count
   }, 0)
 }

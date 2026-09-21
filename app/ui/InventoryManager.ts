@@ -1,3 +1,4 @@
+import { createInventorySectionTitle } from './inventory/InventorySection'
 import { RESOURCE_ICON_IDS,SOUND_CUES } from '../constants'
 import { Modal } from '../lib'
 import { playUiSound } from '../lib/audio/uiSound'
@@ -47,7 +48,7 @@ import { ModalTabs } from './Tabs'
 
 type ActionMenuTab = 'info' | 'tools' | 'craft' | 'minimap' | 'worldmap' | 'construction'
 
-const CHIEF_TABS = new Set<ActionMenuTab>(['construction', 'worldmap'])
+const CHIEF_TABS = new Set<ActionMenuTab>(['worldmap'])
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -296,13 +297,10 @@ export class InventoryManager {
     this.slots.clear()
     this.toolIcons.clear()
 
-    const title = document.createElement('div')
-    title.className = 'inventory-loot-title'
-    title.textContent = t('inventoryActiveWeapons')
-    this.weaponPanel.appendChild(title)
+    this.weaponPanel.appendChild(createInventorySectionTitle(t('inventoryActiveWeapons')))
 
     const list = document.createElement('div')
-    list.className = 'inventory-loot-list'
+    list.className = 'inventory-section-list'
     for (const tool of HERO_TOOL_ORDER) {
       const available = this.isActiveWeaponAvailable(tool)
       const equipment = this.getActiveWeaponEquipment(tool)

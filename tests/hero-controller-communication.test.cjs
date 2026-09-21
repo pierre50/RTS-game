@@ -158,7 +158,7 @@ function loadHeroController({
       },
     },
     '../services/world/TrapHarvestSystem': {
-      recoverTrapBuilding: () => false,
+      dismantleTrapBuilding: () => false,
     },
     '../services/TimeSkipSystem': {
       getHoursUntilNextMorning: (hour, minute) => hour + minute / 60,
@@ -1437,10 +1437,7 @@ test('E exiting an interior preserves held movement for the travel capture', () 
 
   assert.deepEqual([...controller.keysPressed], ['heroDown'])
   assert.equal(controller.shiftMoveLockedDegree, 180)
-  assert.deepEqual(calls, [
-    ['setHeroInteractionPrompt', 'heroInteractionExit'],
-    ['travelOutOfBuildingInterior'],
-  ])
+  assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionExit'], ['travelOutOfBuildingInterior']])
 })
 
 test('E shows communication radius even when no villagers are nearby', () => {
