@@ -18,10 +18,18 @@ test('owned outdoor chests expose an initially allowed delivery toggle; foreign 
         },
       },
     })
-    global.document = { createElement: () => ({ setAttribute() {} }) }
+    global.document = {
+      createElement: () => ({
+        children: [],
+        append(...children) {
+          this.children.push(...children)
+        },
+        setAttribute() {},
+      }),
+    }
 
     const owner = { label: 'p', isPlayed: true, buildings: [] }
-    const hero = { type: 'Hero', label: 'hero', owner, inventory: { resources: {} } }
+    const hero = { type: 'Hero', isChief: true, label: 'hero', owner, inventory: { resources: {} } }
     const chest = {
       type: 'Chest',
       family: 'building',
@@ -34,13 +42,18 @@ test('owned outdoor chests expose an initially allowed delivery toggle; foreign 
     const menu = { context: { controls: { heroUnit: hero } }, showMessage() {} }
     let changed = 0
     const panel = createHeroBuildingContainerBody(chest, menu, () => changed++)
-    assert.equal(panel.header.textContent, 'villagerDeliveriesAllowed')
-    panel.header.onclick()
+    assert.equal(panel.header.children[0].textContent, 'villagerDeliveriesAllowed')
+    panel.header.children[1].onclick()
     assert.equal(chest.villagerDeliveriesBlocked, true)
-    assert.equal(panel.header.textContent, 'villagerDeliveriesBlocked')
-    panel.header.onclick()
+    assert.equal(panel.header.children[0].textContent, 'villagerDeliveriesBlocked')
+    panel.header.children[1].onclick()
     assert.equal(chest.villagerDeliveriesBlocked, false)
     assert.equal(changed, 2)
+    hero.isChief = false
+    assert.equal(createHeroBuildingContainerBody(chest, menu, () => {}).header, undefined)
+    panel.header.children[1].onclick()
+    assert.equal(chest.villagerDeliveriesBlocked, false)
+    hero.isChief = true
     const foreign = { ...chest, owner: { label: 'other' } }
     assert.equal(createHeroBuildingContainerBody(foreign, menu, () => {}).header, undefined)
     const inside = { ...chest, spaceId: 'interior:tc' }

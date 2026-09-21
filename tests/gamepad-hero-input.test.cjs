@@ -42,7 +42,8 @@ function loadGamepadHeroInput(getGamepad) {
       getGamepadButtonIndex: action => (action === 'inventoryTransferOne' ? 0 : 2),
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.GamepadHeroInput
 }
@@ -185,4 +186,42 @@ test('gamepad X holds and releases hero direction lock', () => {
   gamepad = makeGamepad()
   input.update()
   assert.equal(input.directionLockActive, false)
+})
+
+test('game windows consume controller buttons and release world actions only once', () => {
+  let gamepad = makeGamepad()
+  let modalOpen = false
+  const previousDocument = global.document
+  global.document = { querySelector: () => (modalOpen ? {} : null) }
+  const calls = []
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
+  const input = new GamepadHeroInput({
+    context: { gamebox: { getBoundingClientRect: () => ({ width: 100, height: 100 }) } },
+    mouse: { x: 0, y: 0 },
+    heroController: {
+      handleKeyDown: action => calls.push(`down:${action}`),
+      handleKeyUp: action => calls.push(`up:${action}`),
+      handlePointerUp: () => calls.push('release'),
+      handlePrimaryPointerDown: () => calls.push('attack'),
+      cycleTool: () => calls.push('tool'),
+    },
+    openHeroEntityInteraction: () => calls.push('inspect'),
+  })
+  try {
+    input.update()
+    gamepad = makeGamepad([12])
+    input.update()
+    modalOpen = true
+    gamepad = makeGamepad([3, 5, 12])
+    input.update()
+    input.update()
+    assert.deepEqual(calls, ['down:heroUp', 'up:heroUp', 'release'])
+    assert.deepEqual(input.moveVector, { dx: 0, dy: 0 })
+    modalOpen = false
+    input.update()
+    assert.equal(calls.includes('attack'), false)
+    assert.equal(calls.includes('down:inventory'), false)
+  } finally {
+    global.document = previousDocument
+  }
 })

@@ -192,6 +192,8 @@ export class QuestJournalManager {
         const button = document.createElement('button')
         button.type = 'button'
         button.className = 'quest-list-item ui-btn'
+        button.id = `journal-entry-${entryId(entry)}`
+        button.setAttribute('data-window-label', t('windowRead'))
         button.setAttribute('aria-current', String(entryId(entry) === entryId(selected)))
         let unread: boolean
         if (entry.kind === 'age') {

@@ -187,6 +187,7 @@ export class InventoryTransferPanel {
               label: action.label,
               onAction: handleAction,
               disabled: full,
+              title: full ? t('storageFull') : undefined,
             },
     })
     element.setAttribute('aria-label', t(action.ariaKey, { item: `${t(resource)} x${amount}` }))
@@ -235,6 +236,7 @@ export class InventoryTransferPanel {
               label: action.label,
               onAction: handleAction,
               disabled: full,
+              title: full ? t('storageFull') : undefined,
             },
     })
     element.setAttribute('aria-label', t(action.ariaKey, { item: labelText }))

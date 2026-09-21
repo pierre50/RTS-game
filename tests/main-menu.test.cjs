@@ -15,6 +15,11 @@ function loadMainMenu({ saveEntries }) {
 
   let saveListOptions = null
   const mocks = {
+    '../lib/ui/GameWindow': {
+      GameWindow: class {
+        destroy() {}
+      },
+    },
     '../lib/audio/uiSound': { playClickSound() {} },
     '../lib/lang': { t: key => key },
     '../ui/modals/settingsPanel': { openSettingsModal() {} },

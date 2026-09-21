@@ -48,6 +48,7 @@ export function createInspectionModal({
   const modal = new Modal({
     title,
     content,
+    gameWindow: true,
     dismissible,
     showCloseButton,
     onClose: () => {

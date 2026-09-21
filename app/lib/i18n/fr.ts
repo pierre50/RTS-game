@@ -3,6 +3,27 @@ import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { FR_QUEST_TRANSLATIONS } from './questTranslations'
 import { FR_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
 export const FR_TRANSLATIONS = {
+  windowPreviousTab: 'Onglet précédent',
+  windowNextTab: 'Onglet suivant',
+  windowPrevious: 'Précédent',
+  windowNext: 'Suivant',
+  windowPreviousValue: '{name} : valeur précédente',
+  windowNextValue: '{name} : valeur suivante',
+  windowToggle: 'Activer / désactiver',
+  windowEditText: 'Saisir au clavier',
+  windowRead: 'Consulter',
+  windowDeleteStack: 'Supprimer la pile',
+  windowInsufficientGold: 'Or insuffisant',
+  windowCommands: 'Commandes',
+  windowWholeStack: 'Toute la pile',
+  windowConfirm: 'Confirmer',
+  windowHold: 'Maintenir',
+  windowRemoveChest: 'Retirer le coffre',
+  windowBlockDeliveries: 'Bloquer les dépôts',
+  windowAllowDeliveries: 'Autoriser les dépôts',
+  windowNavigation: 'Naviguer',
+  windowPanels: 'Changer de panneau',
+
   ...FR_QUEST_TRANSLATIONS,
   ...FR_CIV_LORE_TRANSLATIONS,
   npcQuestSleeping: 'Zzzz… On verra ça demain. Laisse-moi dormir.',
@@ -305,7 +326,8 @@ export const FR_TRANSLATIONS = {
   npcOrderCancelSleep: 'Oups, rien',
   npcOrderGoTo: 'Aller vers',
   npcOrderResources: 'Ressources',
-  npcStorageFull: "Mon sac est plein et je n'ai aucun coffre disponible pour déposer mes ressources. Faites de la place dans un coffre ou videz mon sac avant de me renvoyer récolter.",
+  npcStorageFull:
+    "Mon sac est plein et je n'ai aucun coffre disponible pour déposer mes ressources. Faites de la place dans un coffre ou videz mon sac avant de me renvoyer récolter.",
   npcOrderFood: 'Nourriture',
   npcOrderWood: 'Bois',
   npcOrderStone: 'Pierre',

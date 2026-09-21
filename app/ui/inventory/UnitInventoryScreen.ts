@@ -84,8 +84,7 @@ export class UnitInventoryScreen {
         menu.updateHeroStatus?.(hero)
       },
     })
-    const info = content.classList.contains('selection-info') ? content : content.querySelector('.selection-info')
-    ;(info ?? content).appendChild(transfer.element)
+    this.element.appendChild(transfer.element)
     this.element.setAttribute('aria-label', t('inventoryNpcBag', { name: getEntityDisplayName(unit) }))
   }
 }

@@ -22,7 +22,7 @@ export class Tabs<T extends string> {
       button.className = 'ui-tab'
       button.dataset.tab = item.id
       button.textContent = item.label
-      button.addEventListener('pointerup', () => this.setActive(item.id))
+      button.addEventListener('click', () => this.setActive(item.id))
       this.buttons.set(item.id, button)
       this.element.appendChild(button)
     })

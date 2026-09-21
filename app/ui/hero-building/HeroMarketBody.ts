@@ -90,6 +90,7 @@ function appendBuySlots(
         ariaLabel: t('marketBuyItem', { item: label, gold: String(totalGold) }),
         disabled,
         label: getMarketActionLabel('buy', offer.goldValue, offer.count),
+        title: disabled ? t('windowInsufficientGold') : undefined,
         onAction: mode => {
           const amountToBuy = mode === 'one' ? 1 : offer.count
           const bought = buyMarketEquipment(hero, offer.equipment, amountToBuy, marketStock)

@@ -53,7 +53,22 @@ type SettingsModalOptions = SettingsContentOptions & {
  * @param {Function} [opts.onZoomChange] - called with new zoom value for live in-game updates
  */
 export function openSettingsModal(options: SettingsModalOptions = {}): Modal {
-  const modalTabs = createSettingsTabs(options)
+  const contentOptions = {
+    ...options,
+    onLangChange: () => {
+      const active = modalTabs.activeId
+      const previous = modalTabs
+      modalTabs = createSettingsTabs(contentOptions)
+      modalTabs.setActive(active)
+      previous.tabs.element.remove()
+      previous.element.replaceWith(modalTabs.element)
+      modalTabs.mountHeader(modal._panel, 'settings-topbar')
+      modal._panel?.setAttribute('aria-label', t('settings'))
+      options.onLangChange?.()
+      queueMicrotask(() => modal._panel?.querySelector<HTMLElement>('.is-window-selected')?.focus())
+    },
+  }
+  let modalTabs = createSettingsTabs(contentOptions)
   const modal = new Modal({ content: modalTabs.element, onClose: options.onClose })
   modal._panel?.classList.add('settings-panel')
   modal._panel?.setAttribute('aria-label', t('settings'))
@@ -148,7 +163,7 @@ function buildControlsPage(panel: HTMLDivElement): void {
   gamepadTitle.textContent = t('controlsGroupGamepad')
   gamepadSection.appendChild(gamepadTitle)
   gamepadSection.appendChild(buildCheckboxRow(t('gamepadEnabled'), getGamepadEnabled(), setGamepadEnabled))
-  buildGamepadBindings(gamepadSection)
+  const refreshGamepad = buildGamepadBindings(gamepadSection)
   panel.appendChild(gamepadSection)
 
   const bindings = getKeyBindings()
@@ -232,6 +247,7 @@ function buildControlsPage(panel: HTMLDivElement): void {
   reset.addEventListener('click', () => {
     resetKeyBindings()
     resetGamepadBindings()
+    refreshGamepad()
     refresh()
   })
 
@@ -240,7 +256,7 @@ function buildControlsPage(panel: HTMLDivElement): void {
   refresh()
 }
 
-function buildGamepadBindings(section: HTMLDivElement): void {
+function buildGamepadBindings(section: HTMLDivElement): () => void {
   const actions: GamepadBindingAction[] = ['inventoryTransferOne', 'inventoryTransferAll']
   const buttons = new Map<GamepadBindingAction, HTMLButtonElement>()
   let listeningAction: GamepadBindingAction | null = null
@@ -269,12 +285,23 @@ function buildGamepadBindings(section: HTMLDivElement): void {
   }
 
   function listenForButton(action: GamepadBindingAction, button: HTMLButtonElement): void {
+    button.focus()
     listeningAction = action
+    let released = false
     button.textContent = t('controlsPressButton')
     button.classList.add('is-listening')
     const poll = () => {
       if (listeningAction !== action) return
+      if (!button.isConnected) {
+        stopListening(button)
+        return
+      }
       const pads = navigator.getGamepads?.() ?? []
+      if (!released) {
+        released = !Array.from(pads).some(pad => pad?.buttons.some(value => value.pressed))
+        listeningFrame = requestAnimationFrame(poll)
+        return
+      }
       for (const pad of pads) {
         const index = pad?.buttons.findIndex(gamepadButton => gamepadButton.pressed)
         if (index != null && index >= 0) {
@@ -300,6 +327,12 @@ function buildGamepadBindings(section: HTMLDivElement): void {
     button.className = 'settings-key-button ui-btn'
     button.textContent = getGamepadButtonLabel(getGamepadBindings()[action])
     button.addEventListener('click', () => listenForButton(action, button))
+    button.addEventListener('keydown', event => {
+      if (listeningAction !== action) return
+      event.preventDefault()
+      event.stopPropagation()
+      if (event.key === 'Escape') stopListening(button)
+    })
     button.addEventListener('blur', () => {
       if (listeningAction === action) stopListening(button)
     })
@@ -309,4 +342,5 @@ function buildGamepadBindings(section: HTMLDivElement): void {
   }
 
   refresh()
+  return refresh
 }

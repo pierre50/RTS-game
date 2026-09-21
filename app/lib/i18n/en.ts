@@ -3,6 +3,27 @@ import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { EN_QUEST_TRANSLATIONS } from './questTranslations'
 import { EN_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
 export const EN_TRANSLATIONS = {
+  windowPreviousTab: 'Previous tab',
+  windowNextTab: 'Next tab',
+  windowPrevious: 'Previous',
+  windowNext: 'Next',
+  windowPreviousValue: '{name}: previous value',
+  windowNextValue: '{name}: next value',
+  windowToggle: 'Toggle',
+  windowEditText: 'Type with keyboard',
+  windowRead: 'Read',
+  windowDeleteStack: 'Discard stack',
+  windowInsufficientGold: 'Not enough gold',
+  windowCommands: 'Commands',
+  windowWholeStack: 'Whole stack',
+  windowConfirm: 'Confirm',
+  windowHold: 'Hold',
+  windowRemoveChest: 'Remove chest',
+  windowBlockDeliveries: 'Block deliveries',
+  windowAllowDeliveries: 'Allow deliveries',
+  windowNavigation: 'Navigate',
+  windowPanels: 'Switch panel',
+
   ...EN_QUEST_TRANSLATIONS,
   ...EN_CIV_LORE_TRANSLATIONS,
   npcQuestSleeping: 'Zzzz… Let’s see this tomorrow. Let me sleep.',
@@ -303,7 +324,8 @@ export const EN_TRANSLATIONS = {
   npcOrderCancelSleep: 'Oops, nothing',
   npcOrderGoTo: 'Go to',
   npcOrderResources: 'Resources',
-  npcStorageFull: 'My bag is full and I have no available chest for my resources. Make room in a chest or empty my bag before sending me to gather again.',
+  npcStorageFull:
+    'My bag is full and I have no available chest for my resources. Make room in a chest or empty my bag before sending me to gather again.',
   npcOrderFood: 'Food',
   npcOrderWood: 'Wood',
   npcOrderStone: 'Stone',

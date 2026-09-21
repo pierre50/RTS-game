@@ -1,6 +1,7 @@
 import { BUILDING_TYPES } from '../../constants'
 import { createInventoryContainer, type InventoryContainer } from '../../lib/inventory/inventoryContainers'
 import { t } from '../../lib/lang'
+import { heroCanCommand } from '../../lib/chief'
 import {
   buildingAcceptsInventoryResource,
   getBuildingStorageCapacity,
@@ -53,18 +54,35 @@ export function createHeroBuildingContainerBody(
   })
   const heroContainer = createHeroBagContainer(hero, menu)
 
-  let header: HTMLButtonElement | undefined
-  if (isStandaloneStorageChest(building) && building.owner && hero.owner?.label === building.owner.label) {
-    header = document.createElement('button')
-    header.type = 'button'
-    header.className = 'ui-btn inventory-transfer-all-button'
+  let header: HTMLDivElement | undefined
+  if (
+    isStandaloneStorageChest(building) &&
+    building.owner &&
+    hero.owner?.label === building.owner.label &&
+    heroCanCommand(hero)
+  ) {
+    header = document.createElement('div')
+    header.className = 'chest-delivery-status'
+    const status = document.createElement('span')
+    const toggle = document.createElement('button')
+    toggle.type = 'button'
+    toggle.setAttribute('data-window-action', 'deliveries')
+    header.append(status, toggle)
     const refresh = () => {
-      header!.textContent = t(
+      status.textContent = t(
         building.villagerDeliveriesBlocked ? 'villagerDeliveriesBlocked' : 'villagerDeliveriesAllowed'
       )
-      header!.setAttribute('aria-pressed', String(!building.villagerDeliveriesBlocked))
+      toggle.textContent = t(building.villagerDeliveriesBlocked ? 'windowAllowDeliveries' : 'windowBlockDeliveries')
+      toggle.setAttribute('aria-pressed', String(!building.villagerDeliveriesBlocked))
     }
-    header.onclick = () => {
+    toggle.onclick = () => {
+      if (
+        !heroCanCommand(hero) ||
+        hero.owner?.label !== building.owner?.label ||
+        building.isDead ||
+        building.isDestroyed
+      )
+        return
       building.villagerDeliveriesBlocked = !building.villagerDeliveriesBlocked
       refresh()
       onChange()

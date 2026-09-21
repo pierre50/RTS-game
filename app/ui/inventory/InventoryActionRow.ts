@@ -151,9 +151,11 @@ function appendTrailingActionButton(
   button.type = 'button'
   button.className = 'ui-btn inventory-row-action-button'
   button.textContent = action.label
+  button.setAttribute('data-window-label', action.label)
   if (action.icon === 'trash') {
     button.classList.add('inventory-row-action-button--delete')
-    button.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>'
+    button.innerHTML =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>'
   }
   if (action.title) button.title = action.title
   button.disabled = action.disabled ?? options.disabled ?? false

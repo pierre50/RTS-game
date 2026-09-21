@@ -1,9 +1,11 @@
 import { t } from '../lang'
+import { GameWindow } from './GameWindow'
 import { uuidv4 } from '../maths'
 import { playClickSound } from '../audio/uiSound'
 
 export class Modal {
   private dismissible: boolean
+  private gameWindow?: GameWindow
   _backdrop?: HTMLDivElement
   _closed?: boolean
   _id: string
@@ -18,13 +20,28 @@ export class Modal {
     onClose,
     dismissible = true,
     showCloseButton = true,
-  }: { title?: string; content?: Node; onClose?: () => void; dismissible?: boolean; showCloseButton?: boolean } = {}) {
+    gameWindow = true,
+  }: {
+    gameWindow?: boolean
+    title?: string
+    content?: Node
+    onClose?: () => void
+    dismissible?: boolean
+    showCloseButton?: boolean
+  } = {}) {
     this.dismissible = dismissible
     this._id = uuidv4()
     this._onClose = onClose
     this._previousActiveElement = document.activeElement
     this._onKeyDown = this._handleKeyDown.bind(this)
     this._build(title, content, showCloseButton)
+    if (gameWindow && this._panel)
+      this.gameWindow = new GameWindow(
+        this._panel,
+        () => this._dismiss(),
+        () => this._isTopmost(),
+        dismissible
+      )
   }
 
   _build(title?: string, content?: Node, showCloseButton = true): void {
@@ -78,7 +95,8 @@ export class Modal {
     document.addEventListener('keydown', this._onKeyDown)
     requestAnimationFrame(() => {
       if (!this._backdrop?.isConnected) return
-      this._getFocusableElements()[0]?.focus()
+      const initial = this._panel?.querySelector<HTMLElement>('.is-window-selected') ?? this._getFocusableElements()[0]
+      initial?.focus()
       if (!this._panel?.contains(document.activeElement)) this._panel?.focus()
     })
   }
@@ -100,7 +118,7 @@ export class Modal {
   }
 
   _isTopmost(): boolean {
-    const modals = document.querySelectorAll('.modal')
+    const modals = document.querySelectorAll('.modal:not([hidden])')
     return modals.length > 0 && modals[modals.length - 1] === this._backdrop
   }
 
@@ -141,6 +159,7 @@ export class Modal {
   _removeEl(): void {
     if (this._closed) return
     this._closed = true
+    this.gameWindow?.destroy()
     document.removeEventListener('keydown', this._onKeyDown)
     this._backdrop?.remove()
     if (this._previousActiveElement?.isConnected) {

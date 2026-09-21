@@ -1,4 +1,5 @@
 import type { Application } from 'pixi.js'
+import { GameWindow } from '../lib/ui/GameWindow'
 import { playClickSound } from '../lib/audio/uiSound'
 import { t } from '../lib/lang'
 import { openSettingsModal } from '../ui/modals/settingsPanel'
@@ -16,6 +17,8 @@ declare global {
 }
 
 export default class MainMenu {
+  private gameWindow?: GameWindow
+  private commandPanel?: HTMLDivElement
   app?: Application
   backdrop?: MainMenuBackdrop
   onStart: () => void
@@ -45,6 +48,7 @@ export default class MainMenu {
 
     this._showMain()
     document.body.appendChild(this.el)
+    this._mountCommands()
     this._focusFirstHomeButton()
     document.addEventListener('keydown', this._onKeyDown)
   }
@@ -84,7 +88,8 @@ export default class MainMenu {
     void this._revealLogoWhenFontsAreReady(logoShell)
 
     const buttons = document.createElement('div')
-    buttons.className = 'button-group'
+    buttons.className = 'button-group home-command-window'
+    this.commandPanel = buttons
     if (listSaves().length) {
       buttons.appendChild(this._btn(t('continueGame'), () => this._continueLatestSave()))
     }
@@ -144,7 +149,7 @@ export default class MainMenu {
   }
 
   _handleKeyDown(evt: KeyboardEvent): void {
-    if (evt.repeat || document.querySelector('.modal')) return
+    if (evt.defaultPrevented || evt.repeat || document.querySelector('.modal')) return
 
     const buttons = this._getHomeButtons()
     if (!buttons.length) return
@@ -181,9 +186,21 @@ export default class MainMenu {
     })
   }
 
+  private _mountCommands(): void {
+    if (!this.commandPanel) return
+    this.gameWindow = new GameWindow(
+      this.commandPanel,
+      () => {},
+      () => this.el.isConnected && !document.querySelector('.modal:not([hidden])'),
+      false
+    )
+  }
+
   _refreshHome(): void {
+    this.gameWindow?.destroy()
     this._showMain()
-    this._focusFirstHomeButton()
+    this._mountCommands()
+    if (!document.querySelector('.modal:not([hidden])')) this._focusFirstHomeButton()
   }
 
   _continueLatestSave(): void {
@@ -208,6 +225,7 @@ export default class MainMenu {
   }
 
   destroy(): void {
+    this.gameWindow?.destroy()
     document.removeEventListener('keydown', this._onKeyDown)
     this.backdrop?.destroy()
     this.backdrop = undefined

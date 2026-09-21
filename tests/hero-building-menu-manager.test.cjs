@@ -20,6 +20,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const mocks = {
     '../constants': {
       FAMILY_TYPES: { building: 'building' },
+      UNIT_TYPES: { chief: 'Chief' },
       BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', market: 'Market', trap: 'Trap' },
       SOUND_CUES: { building: { chestOpen: 'building/chest-open' }, ui: { menuClick: 'menuClick' } },
     },
@@ -40,7 +41,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
       },
     },
     '../lib/lang': {
-      t: (key, params) => params ? `${key}:${params.target}:${params.owner}` : key,
+      t: (key, params) => (params ? `${key}:${params.target}:${params.owner}` : key),
     },
     '../lib/audio/uiSound': {
       playUiSound: () => {},
@@ -115,7 +116,9 @@ function installMockDocument() {
         className: '',
         dataset: {},
         attributes: new Map(),
-        setAttribute(name, value) { this.attributes.set(name, String(value)) },
+        setAttribute(name, value) {
+          this.attributes.set(name, String(value))
+        },
         id: '',
         disabled: false,
         textContent: '',
@@ -124,9 +127,16 @@ function installMockDocument() {
         style: { setProperty() {} },
         classList: {
           values: new Set(),
-          add(value) { this.values.add(value) },
-          toggle(value, enabled) { if (enabled) this.values.add(value); else this.values.delete(value) },
-          contains(value) { return this.values.has(value) },
+          add(value) {
+            this.values.add(value)
+          },
+          toggle(value, enabled) {
+            if (enabled) this.values.add(value)
+            else this.values.delete(value)
+          },
+          contains(value) {
+            return this.values.has(value)
+          },
         },
         appendChild(child) {
           this.children.push(child)
@@ -320,7 +330,7 @@ test('hero building menu renders a reusable inventory transfer panel for chests'
   }
 })
 
-test('market trade opens on request, refreshes in place and returns to the building sheet', () => {
+test('market opens directly, closes on back and restores trading when access returns', () => {
   const { manager, player, restoreDocument } = createManager()
   try {
     const building = {
@@ -342,9 +352,11 @@ test('market trade opens on request, refreshes in place and returns to the build
     assert.equal(manager.open(building), true)
 
     const modal = manager.modal
-    assert.equal(manager.marketOpen, false)
-    assert.equal(manager.body.children.some(child => child.className === 'hero-market-panel'), false)
-    manager.body.children.find(child => child.dataset.actionId === 'marketTrade').dispatch('click')
+    assert.equal(manager.marketOpen, true)
+    assert.equal(
+      manager.body.children.some(child => child.className === 'hero-market-panel'),
+      true
+    )
     assert.equal(manager.modal, modal)
     assert.equal(manager.marketOpen, true)
     assert.equal(modal._panel.classList.contains('inventory-transfer-modal'), true)
@@ -357,16 +369,25 @@ test('market trade opens on request, refreshes in place and returns to the build
     assert.equal(manager.marketOpen, true)
     assert.equal(manager.body.children.at(-1).className, 'hero-market-panel')
     manager.backButton.dispatch('click')
-    assert.equal(manager.modal, modal)
-    assert.equal(manager.marketOpen, false)
-    assert.equal(modal._panel.classList.contains('inventory-transfer-modal'), false)
-    assert.equal(modal._panel.classList.contains('interaction-panel'), true)
-    assert.ok(manager.body.children.find(child => child.dataset.actionId === 'marketTrade'))
-    manager.body.children.find(child => child.dataset.actionId === 'marketTrade').dispatch('click')
+    assert.equal(manager.opened, false)
+    assert.equal(manager.modal, undefined)
+    assert.equal(manager.open(building), true)
+    assert.equal(manager.marketOpen, true)
     building.tradeBlocked = true
     manager.syncLiveState()
     assert.equal(manager.marketOpen, false)
-    assert.equal(manager.body.children.some(child => child.dataset.actionId === 'marketTrade'), false)
+    assert.equal(
+      manager.body.children.some(child => child.dataset.actionId === 'marketTrade'),
+      false
+    )
+    building.tradeBlocked = false
+    manager.syncLiveState()
+    assert.equal(manager.marketOpen, true)
+    assert.equal(manager.body.children.at(-1).className, 'hero-market-panel')
+    assert.equal(
+      manager.getBuildingActionMenuItems(building).some(item => item.id === 'marketTrade'),
+      false
+    )
   } finally {
     restoreDocument()
   }
@@ -537,15 +558,17 @@ test('hero building menu marks and reports foreign chest theft only when taking 
   }
 })
 
-
 test('disabled building actions display their explanation directly and only listen for clicks', () => {
   const { manager, restoreDocument } = createManager()
   try {
-    const row = manager.createButton({}, {
-      id: 'heroCampfireSleep',
-      disabled: () => true,
-      details: () => ({ title: 'Dormir', description: 'Un ennemi est proche.' }),
-    })
+    const row = manager.createButton(
+      {},
+      {
+        id: 'heroCampfireSleep',
+        disabled: () => true,
+        details: () => ({ title: 'Dormir', description: 'Un ennemi est proche.' }),
+      }
+    )
     assert.equal(row.disabled, true)
     assert.equal(row.children[0].textContent, 'Dormir')
     assert.equal(row.children[1].textContent, 'Un ennemi est proche.')

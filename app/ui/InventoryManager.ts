@@ -1,24 +1,24 @@
 import { createInventorySectionTitle } from './inventory/InventorySection'
-import { RESOURCE_ICON_IDS,SOUND_CUES } from '../constants'
+import { RESOURCE_ICON_IDS, SOUND_CUES } from '../constants'
 import { Modal } from '../lib'
 import { playUiSound } from '../lib/audio/uiSound'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { heroCanCommand } from '../lib/chief'
-import { getWeaponSlot,unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
+import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
 import { getIconPath } from '../lib/graphics/assets'
 import {
-canCraftHeroRecipe,
-craftHeroRecipe,
-getAvailableHeroCraftRecipes,
-getMissingCraftResources,
-type HeroCraftRecipe,
+  canCraftHeroRecipe,
+  craftHeroRecipe,
+  getAvailableHeroCraftRecipes,
+  getMissingCraftResources,
+  type HeroCraftRecipe,
 } from '../lib/hero/heroCrafting'
 import {
-EQUIPPED_ITEM_WEAPON,
-getEquippedItemWeapon,
-HERO_TOOL_ORDER,
-isHeroToolAvailable,
-type HeroEquippedItem,
+  EQUIPPED_ITEM_WEAPON,
+  getEquippedItemWeapon,
+  HERO_TOOL_ORDER,
+  isHeroToolAvailable,
+  type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import { getPlaceableInventoryBuildingType } from '../lib/hero/placeableInventoryItems'
 import { t } from '../lib/lang'
@@ -28,17 +28,17 @@ import type { ResourceAmount } from '../types/common'
 import type { UnitEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 import { createEntityInfoContent } from './EntityInfoContent'
-import { appendInventoryEmptyIcon,createInventoryActionRow } from './inventory/InventoryActionRow'
+import { appendInventoryEmptyIcon, createInventoryActionRow } from './inventory/InventoryActionRow'
 import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
 import { createEquipmentRowInfo } from './inventory/InventoryDetails'
 import {
-renderInventoryEquippedEquipment,
-renderInventoryLootedEquipment,
+  renderInventoryEquippedEquipment,
+  renderInventoryLootedEquipment,
 } from './inventory/InventoryEquipmentRenderer'
 import { createInventoryEquipmentIcon } from './inventory/InventoryItemIcons'
 import { createInventoryEquipmentRow } from './inventory/InventoryItemRows'
 import { renderInventoryToolIcons } from './inventory/InventoryToolIcons'
-import { getInventoryConstructionButtons,renderInventoryConstruction } from './InventoryConstruction'
+import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import type { MenuHost } from './MenuHost'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
@@ -160,6 +160,7 @@ export class InventoryManager {
       document.getElementById('pause')?.remove()
     }
     this.modal = new Modal({
+      gameWindow: true,
       content: this.panel,
       onClose: () => this.close(),
     })
@@ -269,7 +270,6 @@ export class InventoryManager {
 
   getActiveWeaponEquipment(tool: HeroEquippedItem): string | undefined {
     const hero = this.menu.context.controls.heroUnit
-    if (tool === 'bow' && !hero?.inventory?.equipped?.arrow) return undefined
     return getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0, hero)
   }
 

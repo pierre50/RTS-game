@@ -114,8 +114,9 @@ export class BuildingInterface {
           ? 'removeBuildingObject'
           : 'demolishBuilding'
     )
+    if (building.type === BUILDING_TYPES.chest) button.textContent = t('windowRemoveChest')
     button.addEventListener('click', () => {
-      if (building.isDead || building.isDestroyed) return
+      if (!canHeroDeleteBuildingInfoTarget(building)) return
       const menu = building.context?.menu
       menu?.playUiClick?.()
       menu?.closeEntityInfoModal?.()

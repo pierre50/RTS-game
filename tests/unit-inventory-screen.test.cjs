@@ -48,7 +48,10 @@ for (const dead of [false, true]) {
       const { UnitInventoryScreen } = loadTsModule('app/ui/inventory/UnitInventoryScreen.ts', {
         mocks: {
           '../../constants': { RESOURCE_STORAGE_NAMES: ['wood'] },
-          '../../lib/lang': { t: (key, params) => params?.count != null ? `${params.count} ${key === 'inventoryItemCountOne' ? 'item' : 'items'}` : key },
+          '../../lib/lang': {
+            t: (key, params) =>
+              params?.count != null ? `${params.count} ${key === 'inventoryItemCountOne' ? 'item' : 'items'}` : key,
+          },
           '../utils/entityDisplayName': { getEntityDisplayName: target => target.name },
           '../EntityInfoContent': { createTitledEntityInfoContent: () => element() },
           '../InspectionPanel': {
@@ -94,7 +97,7 @@ for (const dead of [false, true]) {
       screen.open(() => {})
       assert.equal(modalOptions.title, 'Ada')
       assert.equal(modalOptions.content, screen.element)
-      const panel = screen.element.children[0].children[0]
+      const panel = screen.element.children[1]
       assert.equal(panel.className, 'inventory-transfer-panel')
       assert.equal(panel.children.length, 2)
       assert.equal(panel.children[0].children[0].children[1].textContent, '2 items')
@@ -109,7 +112,7 @@ for (const dead of [false, true]) {
       assert.equal(unit.inventory.resources.wood, 19)
       assert.equal(corpseEquipmentPickups, dead ? 1 : 0)
       screen.render()
-      const updatedPanel = screen.element.children[0].children[0]
+      const updatedPanel = screen.element.children[1]
       assert.equal(updatedPanel.children[0].children[0].children[1].textContent, '1 item')
       const heroAxe = rows.findLast(row => row.id === 'transfer-equipment-hero-axe')
       assert.equal(Boolean(heroAxe.trailingAction), !dead)

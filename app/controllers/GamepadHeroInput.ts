@@ -42,6 +42,7 @@ export class GamepadHeroInput {
   connected: boolean
   private pressedButtons: Set<number>
   private cursorActive: boolean
+  private uiActive = false
 
   constructor(controls: GamepadControlsHost) {
     this.controls = controls
@@ -68,6 +69,25 @@ export class GamepadHeroInput {
       return
     }
 
+    // UI has its own polling loop, including while the game is paused.
+    if (typeof document !== 'undefined' && document.querySelector?.('.game-window')) {
+      this.moveVector = { dx: 0, dy: 0 }
+      this.aimVector = null
+      this.directionLockActive = false
+      if (!this.uiActive) {
+        for (const [index, action] of HERO_ACTION_BUTTONS) {
+          if (this.pressedButtons.has(index)) this.controls.heroController.handleKeyUp(action)
+        }
+        this.controls.heroController.handlePointerUp()
+      }
+      this.uiActive = true
+      this.pressedButtons = new Set(gamepad.buttons.flatMap((button, index) => (button.pressed ? [index] : [])))
+      this.cursorActive = false
+      setVirtualCursorVisible(false)
+      return
+    }
+
+    this.uiActive = false
     const move = readStick(gamepad, GAMEPAD_AXIS.moveX, GAMEPAD_AXIS.moveY)
     this.moveVector = { dx: move.x, dy: move.y }
 

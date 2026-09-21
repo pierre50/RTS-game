@@ -1,4 +1,5 @@
 import { BUILDING_TYPES } from '../../constants'
+import { heroCanCommand } from '../../lib/chief'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 
 function inventorySignature(hero: UnitEntity | null | undefined): string[] {
@@ -14,6 +15,9 @@ export function getHeroBuildingInteractiveInventorySignature(
   }
   if (building.type === BUILDING_TYPES.chest) {
     return [
+      String(heroCanCommand(hero)),
+      String(building.villagerDeliveriesBlocked ?? false),
+      building.owner?.label ?? '',
       building.inventory?.equipment?.join(',') || '',
       JSON.stringify(building.inventory?.resources ?? {}),
       ...inventorySignature(hero),
