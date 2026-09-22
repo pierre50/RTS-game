@@ -1,7 +1,7 @@
 import { createResourceIconMaps } from './utils/resourceIcons'
 import type { MenuHost } from './MenuHost'
 
-const AGE_LABEL_KEYS = ['stoneAge', 'bronzeAge', 'ironAge'] as const
+import { AGE_LABEL_KEYS } from '../lib/objectives/ageRules'
 type ResourcePlayer = { age?: number }
 
 export class TopbarView {

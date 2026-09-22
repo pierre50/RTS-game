@@ -1,26 +1,26 @@
 import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
-import { getShelterRestSite, isShelterUnsafe } from './UnitRestShelter'
-import { restDistance } from './UnitRestMath'
-import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
-import { getEntityCell } from '../../lib/mapSpaces'
-import type { GameContextLike, SchedulerTaskId } from '../../types/context'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import {
-  getRestReturnTask,
-  putRestingUnitToSleep,
-  sendUnitToRest,
-  sendUnitToRestSite,
-  sleepOutside,
-  settleUnitRestForTimeJump,
-  wakeUnit,
-} from './UnitRestLifecycle'
-import { setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import {
   shouldVillagerBeAsleep,
   shouldVillagerBeAwake,
   shouldVillagerReturnHome,
 } from '../../lib/units/villagerSchedule'
-import { keepSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
+import type { GameContextLike, SchedulerTaskId } from '../../types/context'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import {
+  findHeroRestAlertTarget,
+  findPropagatedRestAlertSleepers,
+  handleShelterAttack,
+  handleUnitDanger,
+  reactUnitToDanger,
+} from './UnitRestDanger'
+import {
+  putRestingUnitToSleep,
+  sendUnitToRest,
+  sendUnitToRestSite,
+  settleUnitRestForTimeJump,
+  wakeUnit,
+} from './UnitRestLifecycle'
+import { restDistance } from './UnitRestMath'
 import {
   canUseUnitRest,
   clearExpiredUnitRestAlert,
@@ -32,27 +32,21 @@ import {
   shouldRest,
 } from './UnitRestRules'
 import {
+  collectRestUnits,
+  updateOutsideSleepVisuals,
+  wakeRestingUnitAtExit,
+  type RestUnitBuckets,
+} from './UnitRestRuntimeHelpers'
+import { getShelterRestSite, isShelterUnsafe } from './UnitRestShelter'
+import {
   evacuateUnitsFromShelter,
   evacuateUnitsIfShelterUnsafe,
   isVillager,
   settleSleepState,
-  shouldRouteUnitToInteriorExit,
   updateMovingRestUnit,
   wakeRestingUnitInstant,
 } from './UnitRestStateTransitions'
-import {
-  findHeroRestAlertTarget,
-  findPropagatedRestAlertSleepers,
-  handleShelterAttack,
-  handleUnitDanger,
-  reactUnitToDanger,
-} from './UnitRestDanger'
-
-type RestUnitBuckets = {
-  livingUnits: UnitEntity[]
-  restUnits: UnitEntity[]
-  villagers: UnitEntity[]
-}
+import { playSleepingWakeVisual } from './UnitSleepVisuals'
 
 export class UnitRestSystem {
   context: GameContextLike
@@ -166,20 +160,7 @@ export class UnitRestSystem {
   }
 
   private collectUnits(): RestUnitBuckets {
-    const buckets: RestUnitBuckets = {
-      livingUnits: [],
-      restUnits: [],
-      villagers: [],
-    }
-    for (const player of this.context.players ?? []) {
-      for (const unit of player.units ?? []) {
-        if (unit.isDead || unit.isDestroyed) continue
-        buckets.livingUnits.push(unit)
-        if (isVillager(unit)) buckets.villagers.push(unit)
-        if (canUseUnitRest(unit) || unit.shelterState) buckets.restUnits.push(unit)
-      }
-    }
-    return buckets
+    return collectRestUnits(this.context)
   }
 
   private findHeroRestAlertTarget(unit: UnitEntity): RuntimeEntity | null {
@@ -302,31 +283,11 @@ export class UnitRestSystem {
   }
 
   updateSleepingOutsideVisuals(units = this.collectUnits().restUnits): void {
-    const passages = createReservedPassageCellLookup(this.context)
-    for (const unit of units) {
-      if (unit.shelterState?.status !== 'outside') continue
-      if (unit.sleepVisualState !== 'sleeping') continue
-      if (passages.has(getEntityCell(unit, this.context.map))) {
-        sleepOutside(unit)
-        continue
-      }
-      keepSleepingOutsideVisual(unit)
-      setUnitOverheadIndicator(unit, 'sleep')
-    }
+    return updateOutsideSleepVisuals(this.context, units)
   }
 
   private wakeRestingUnit(unit: UnitEntity): void {
-    const routeToInteriorExit = shouldRouteUnitToInteriorExit(this.context, unit)
-    const returnTask = routeToInteriorExit ? getRestReturnTask(unit) : null
-    wakeUnit(
-      unit,
-      routeToInteriorExit
-        ? {
-            mode: 'order',
-            onComplete: () => this.context.routeInteriorUnitToExit?.(unit, returnTask),
-          }
-        : undefined
-    )
+    return wakeRestingUnitAtExit(this.context, unit)
   }
 
   wakeRestingUnits(units = this.collectUnits().restUnits): void {

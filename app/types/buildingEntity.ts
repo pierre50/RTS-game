@@ -45,7 +45,6 @@ export interface BuildingEntity extends RuntimeEntityBase {
   upgrade?: (target: string) => void
   assetType?: string
   textureName?: string
-  hideWhenFogged?: boolean
   providesVision?: boolean
   requiresActiveSightInteraction?: boolean
   overheadIndicatorOffsetX?: number

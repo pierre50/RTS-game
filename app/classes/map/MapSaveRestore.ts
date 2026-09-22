@@ -158,20 +158,13 @@ export function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, c
   context.context.menu?.setActionTarget?.(heroUnit ?? null)
 }
 
-export function restorePlayerViewsAndFog(player: PlayerLike, map: MapGenerationMap): void {
+export function restorePlayerViews(player: PlayerLike, map: MapGenerationMap): void {
   player.views.restoreViewers(name => getDestEntity(name, map))
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       if (!map.grid[i]?.[j]) continue
       if (player.views.isViewed(i, j)) {
         player.views.onViewed?.(i, j)
-      }
-      if (player.isPlayed && player.views.isViewed(i, j)) {
-        if (!player.views.isVisible(i, j)) {
-          map.grid[i][j].setFog(true)
-        } else {
-          map.grid[i][j].removeFog()
-        }
       }
     }
   }

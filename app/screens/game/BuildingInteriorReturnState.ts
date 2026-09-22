@@ -14,7 +14,7 @@ import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { CampaignSave, SaveEntityState, SerializedSave } from '../../types/save'
-import { withFogEnabledState, worldStateWithCampaignClock } from './GameStateHelpers'
+import { withDebugRevealDisabled, worldStateWithCampaignClock } from './GameStateHelpers'
 import { extractTravelParty, teleportRuntimeUnit, type TravelPartyGame, type TravelPartyState } from './GameTravelParty'
 import { removeBuildingInteriorOccupants, type BuildingInteriorOccupantState } from './BuildingInteriorOccupants'
 import type { BuildingInteriorSession, BuildingInteriorTravelGame } from './BuildingInteriorTravelTypes'
@@ -279,13 +279,13 @@ export function buildBuildingInteriorSessionSaveRecord(
   const session = game._buildingInteriorSession
   if (!session) return null
   const campaign = game._campaignSave ?? session.sourceCampaign
-  const interiorState = withFogEnabledState(serializeGame(game._gameContext()))
+  const interiorState = withDebugRevealDisabled(serializeGame(game._gameContext()))
   const party = extractTravelParty(interiorState)
   const parentState = worldStateWithCampaignClock(
     buildSessionParentStateFromInterior(session, interiorState, party, game._gameContext().player?.units ?? []),
     interiorState.runtime?.dayNightElapsedMs ?? session.sourceWorldState.runtime?.dayNightElapsedMs
   )
-  return updateCampaignWorldState(campaign, session.sourceWorldId, withFogEnabledState(parentState), now)
+  return updateCampaignWorldState(campaign, session.sourceWorldId, withDebugRevealDisabled(parentState), now)
 }
 
 function commitBuildingInteriorSessionSourceState(
@@ -297,7 +297,7 @@ function commitBuildingInteriorSessionSourceState(
   const session = game._buildingInteriorSession
   if (!session) return
   const nextSourceWorldState = worldStateWithCampaignClock(
-    withFogEnabledState(sourceWorldState),
+    withDebugRevealDisabled(sourceWorldState),
     options.dayNightElapsedMs
   )
   const campaign = updateCampaignWorldState(

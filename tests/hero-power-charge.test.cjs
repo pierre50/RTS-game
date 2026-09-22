@@ -1370,7 +1370,7 @@ test('bow release drains energy up to the mouse-up instant', () => {
   }
 })
 
-test('hero interact can gather from an aimed resource target', () => {
+test('hero interact does not gather from an aimed animal carcass', () => {
   const carcass = {
     family: 'animal',
     i: 1,
@@ -1404,9 +1404,8 @@ test('hero interact can gather from an aimed resource target', () => {
   })
 
   assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
-  assert.equal(hero.startedAction, 'takemeat')
-  assert.equal(hero.dest, carcass)
-  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.startedAction, undefined)
+  assert.notEqual(hero.dest, carcass)
   assert.deepEqual(messages, [])
 })
 

@@ -53,7 +53,6 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   height: number
   visible?: boolean
   alpha?: number
-  hideWhenFogged?: boolean
   occlusionFade?: boolean
   providesVision?: boolean
   requiresActiveSightInteraction?: boolean

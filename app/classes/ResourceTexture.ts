@@ -60,7 +60,8 @@ const RESOURCE_TEXTURE_MIGRATIONS: Record<string, { sheet: string; frameOffset: 
   'resources/tree/dark-forest-2': { sheet: 'resources/tree/dark-forest', frameOffset: 1 },
   'resources/tree/dark-forest-3': { sheet: 'resources/tree/dark-forest', frameOffset: 2 },
   'resources/tree/dark-forest-4': { sheet: 'resources/tree/dark-forest', frameOffset: 3 },
-  'resources/tree/fallen': { sheet: 'resources/tree/dead', frameOffset: 0 },
+  // Older saves used fallen sprites that have since been replaced by stumps.
+  'resources/tree/fallen': { sheet: 'resources/tree/dead', frameOffset: 4 },
   'resources/tree/stump': { sheet: 'resources/tree/dead', frameOffset: 4 },
   'resources/gold': { sheet: 'resources/minerals', frameOffset: 0 },
   'resources/stone': { sheet: 'resources/minerals', frameOffset: 3 },

@@ -16,7 +16,7 @@ const { occupyBuildingFootprint } = loadTsModule('app/classes/building/BuildingS
   },
 })
 
-test('player building footprints do not discover terrain before the hero exists or before promotion', () => {
+test('player building footprints preserve perception but never discover terrain', () => {
   const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
   for (const isChief of [undefined, false, true]) {
     const views = new VisionGrid(4)
@@ -28,7 +28,7 @@ test('player building footprints do not discover terrain before the hero exists 
     const building = { i: 2, j: 2, size: 2, owner: player, context: { player, map: { grid } } }
     occupyBuildingFootprint(building)
     for (const cell of getBuildingFootprintCells(2, 2, grid, 2)) {
-      assert.equal(views.isViewed(cell.i, cell.j), isChief === true)
+      assert.equal(views.isViewed(cell.i, cell.j), false)
       assert.equal(views.isVisible(cell.i, cell.j), isChief === true)
       assert.equal(cell.has, building)
     }
@@ -37,7 +37,7 @@ test('player building footprints do not discover terrain before the hero exists 
 
 test('building footprint destroys wheat and every wildgrass type before occupying their cells', () => {
   const grid = Array.from({ length: 5 }, (_, i) =>
-    Array.from({ length: 5 }, (_, j) => ({ i, j, has: null, solid: false, corpses: new Set() }))
+    Array.from({ length: 5 }, (_, j) => ({ i, j, has: null, solid: false, corpses: new Set(), updateVisible() {} }))
   )
   const building = { i: 2, j: 2, size: 2, context: { map: { grid, kind: 'interior' } } }
   const cells = getBuildingFootprintCells(2, 2, grid, 2)
@@ -78,4 +78,18 @@ test('building footprint destroys wheat and every wildgrass type before occupyin
     assert.equal(cell.corpses.size, 0)
   }
   assert.equal(grid[0][0].has, neighbor)
+})
+
+
+test('AI building footprints still discover their own terrain', () => {
+  const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+  const owner = { isPlayed: false, views: new VisionGrid(4), cellViewed: 0 }
+  const cell = { i: 2, j: 2, corpses: new Set(), updateVisible() {} }
+  const grid = Array.from({ length: 5 }, () => [])
+  grid[2][2] = cell
+  const building = { i: 2, j: 2, size: 1, owner, context: { player: {}, map: { grid } } }
+  occupyBuildingFootprint(building)
+  assert.equal(owner.views.isViewed(2, 2), true)
+  assert.equal(owner.views.isVisible(2, 2), true)
+  assert.equal(owner.cellViewed, 1)
 })

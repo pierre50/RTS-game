@@ -59,7 +59,7 @@ function isOpenableEntity(target: RuntimeEntity | null | undefined): target is R
     !target ||
     target.isDestroyed ||
     target.family === FAMILY_TYPES.resource ||
-    target.family === FAMILY_TYPES.animal ||
+    (target.family === FAMILY_TYPES.animal && !target.isDead) ||
     target.family === FAMILY_TYPES.building
   )
     return false

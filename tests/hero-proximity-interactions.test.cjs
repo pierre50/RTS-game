@@ -333,13 +333,13 @@ test('hero proximity interaction still opens fire camp usage when a hostile is i
   )
 })
 
-test('hero proximity interaction resolves a close companion horse as mount', () => {
+test('hero proximity interaction allows a close companion horse from the first age', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const horse = { family: 'animal', i: 0, isDead: false, isDestroyed: false, j: 1, type: 'Horse', x: 110, y: 250 }
 
   assert.equal(
-    resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ owner: { age: 0 }, y: 100 }) }),
-    null
+    resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ owner: { age: 0 }, y: 100 }) })?.action,
+    'mount'
   )
 
   assert.deepEqual(resolveHeroProximityInteraction({ companionHorse: horse, hero: makeHero({ y: 100 }) }), {
@@ -687,4 +687,15 @@ test('forge offers its exterior menu instead of an interior entrance', () => {
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), buildings: [forge], openEntityTarget: forge }), {
     action: 'open', labelKey: 'heroInteractionOpenMenu', target: forge,
   })
+})
+
+test('dead animals offer E loot while living animals do not', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const animal = { family: 'animal', type: 'Deer', isDead: true, x: 105, y: 100 }
+  const hero = makeHero({ y: 100 })
+  assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: animal }), {
+    action: 'open', labelKey: 'heroInteractionOpen', target: animal,
+  })
+  assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: { ...animal, isDead: false } }), null)
+  assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: { ...animal, isDestroyed: true } }), null)
 })

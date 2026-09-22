@@ -73,3 +73,24 @@ export function refreshEnteredCameraCells(previousCells: Set<RuntimeCell>, nextC
   }
   return updated
 }
+
+/** The render halo must never count as explored terrain. */
+export function exploreCameraCells(
+  cells: Iterable<RuntimeCell>,
+  origin: CameraPoint,
+  viewport: Viewport,
+  views: { setViewed(i: number, j: number): boolean }
+): number {
+  let discovered = 0
+  const right = viewport.visibleLeft + viewport.visibleWidth
+  const bottom = viewport.visibleTop + viewport.visibleHeight
+  for (const cell of cells) {
+    const x = cell.x + origin.x
+    const y = cell.y + origin.y
+    const dx = Math.max(viewport.visibleLeft - x, 0, x - right)
+    const dy = Math.max(viewport.visibleTop - y, 0, y - bottom)
+    if (dx / (CELL_WIDTH / 2) + dy / (CELL_HEIGHT / 2) > 1) continue
+    if (views.setViewed(cell.i, cell.j)) discovered++
+  }
+  return discovered
+}

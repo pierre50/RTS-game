@@ -87,7 +87,7 @@ test('a companion physically inside the stable is never deducted from its stock'
 
 test('interior horses render even when the matching outdoor coordinates are fogged', () => {
   const { updateInstanceRenderVisibility, instanceIsInPlayerSight } = loadTsModule('app/lib/grid/visibility.ts', {
-    mocks: { '../../services/FogOfWar': { updateVisibility() {} } },
+    mocks: { '../../services/UnitPerception': { updateVisibility() {} } },
   })
   const id = 'interior:stable'
   const map = { grid: [[]], size: 5, activeSpaceId: id, spaces: new Map() }

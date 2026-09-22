@@ -2,18 +2,8 @@ import { Assets } from 'pixi.js'
 import type { ContainerChild } from 'pixi.js'
 import { getDeterministicCellVariant, textureRefToString } from '../../lib'
 import { CELL_DEPTH, CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES } from '../../constants'
-import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { TextureRef } from '../../lib'
-import type { CellFog } from './CellFog'
-import {
-  addCellFogBuilding,
-  ensureCellFog,
-  removeCellFog,
-  removeCellFogBuilding,
-  setCellFog,
-  setCellFogChildren,
-} from './CellFog'
 import { LogicalCell } from './LogicalCell'
 
 type GenerationCellContext = {
@@ -49,7 +39,6 @@ type TerrainDecoration = ContainerChild & {
 export class GenerationCell extends LogicalCell implements RuntimeCell {
   override map: GenerationCellContext['map']
   children: TerrainDecoration[]
-  cellFog: CellFog | null
   isGenerationCell: boolean
 
   constructor(options: GenerationCellOptions, context: GenerationCellContext) {
@@ -84,7 +73,6 @@ export class GenerationCell extends LogicalCell implements RuntimeCell {
     })
     this.map = context.map
     this.children = []
-    this.cellFog = null
     this.isGenerationCell = true
   }
 
@@ -154,25 +142,6 @@ export class GenerationCell extends LogicalCell implements RuntimeCell {
     if (!this._terrainAppearance.patchBorders) this._terrainAppearance.patchBorders = new Set()
     this._terrainAppearance.patchBorders.add(direction)
     this._terrainAppearance.patchBorderGroundType = groundType
-  }
-
-  setFog(init: boolean): void {
-    return setCellFog(this, init)
-  }
-  removeFog(): void {
-    return removeCellFog(this)
-  }
-  addFogBuilding(textureSheet: string, colorName?: string): void {
-    return addCellFogBuilding(this, textureSheet, colorName)
-  }
-  removeFogBuilding(instance?: RuntimeEntity): void {
-    return removeCellFogBuilding(this, instance)
-  }
-  setFogChildren(instance: RuntimeEntity, init: boolean): void {
-    return setCellFogChildren(this, instance, init)
-  }
-  _ensureCellFog(): CellFog {
-    return ensureCellFog(this)
   }
 
   getTerrainDecorations(): TerrainDecoration[] {

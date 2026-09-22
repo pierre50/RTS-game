@@ -398,12 +398,7 @@
   overflow: visible;
 }
 .home-command-window.game-window > .game-window-footer {
-  justify-content: center;
-  padding: var(--ui-gap-8);
-  background: var(--window-home-footer-bg);
-}
-.home-command-window .game-window-navigation {
-  text-align: center;
+  display: none;
 }
 @media (max-width: 640px) {
   .game-window .config-row:has(.ui-range) {

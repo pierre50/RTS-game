@@ -17,13 +17,6 @@ export type TravelPartyState = {
 }
 
 type TravelRuntimeMap = RuntimeMap & {
-  _flushFogQueue(): void
-  mapFog: {
-    viewportRenderer: {
-      invalidate(): void
-      update(viewport: Viewport, force?: boolean): void
-    }
-  }
   updateRenderChunks(viewport: Viewport): void
 }
 
@@ -88,9 +81,8 @@ export function teleportRuntimeUnit(game: TravelPartyGame, unit: UnitEntity, cel
   teleportRuntimeUnitToCell(map, unit, cell)
 }
 
-export function refreshTravelPartyFog(game: TravelPartyGame, units: UnitEntity[]): void {
+export function refreshTravelPartyVisibility(game: TravelPartyGame, units: UnitEntity[]): void {
   const { map, controls, menu } = game._gameContext()
-  if (map.revealEverything) return
   const runtimeMap = map as TravelRuntimeMap
   const viewport = (
     controls as { cameraController?: { getViewportRect?: () => Viewport } }
@@ -101,54 +93,26 @@ export function refreshTravelPartyFog(game: TravelPartyGame, units: UnitEntity[]
     updateInstanceVisibility(unit)
   }
 
-  runtimeMap._flushFogQueue()
+  controls.updateVisibleCells?.()
   if (viewport) {
-    runtimeMap.mapFog.viewportRenderer.invalidate()
-    runtimeMap.mapFog.viewportRenderer.update(viewport, true)
     runtimeMap.updateRenderChunks(viewport)
   }
-  if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
+  if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap?.()
 }
 
-function applyFogStateToCell(game: TravelPartyGame, i: number, j: number): void {
-  const { map, player } = game._gameContext()
-  const cell = map.grid[i]?.[j]
-  if (!cell) return
-  cell.viewBy = new Set(player.views.getViewers(i, j))
-  if (map.revealEverything) {
-    cell.removeFog()
-  } else if (player.views.isVisible(i, j)) {
-    cell.removeFog()
-  } else {
-    cell.setFog()
-  }
-}
-
-function clearTravelUnitFogViewers(game: TravelPartyGame, units: UnitEntity[]): void {
+function clearTravelUnitPerception(game: TravelPartyGame, units: UnitEntity[]): void {
   const { player } = game._gameContext()
-  const changed = new Set<number>()
   for (const unit of units) {
-    for (const index of player.views.removeViewerEverywhere(unit)) changed.add(index)
+    player.views.removeViewerEverywhere(unit)
     unit.visibleCells = new Set()
   }
-  for (const index of changed) {
-    const [i, j] = player.views.coordinates(index)
-    applyFogStateToCell(game, i, j)
-  }
 }
 
-function resetPlayedFogForFreshWorld(game: TravelPartyGame): void {
-  const { map, player, menu } = game._gameContext()
+function resetPlayerExploration(game: TravelPartyGame): void {
+  const { player, menu } = game._gameContext()
   player.views.clearVisibility()
   player.views.clearExploration()
   player.cellViewed = 0
-  for (const row of map.grid) {
-    for (const cell of row) {
-      if (!cell) continue
-      cell.viewBy = new Set()
-      if (!map.revealEverything) cell.setFog()
-    }
-  }
   menu.rebuildTerrainMiniMapFromViews?.()
 }
 
@@ -162,8 +126,8 @@ export function applyTravelPartyToRuntime(
   const hero = runtimeHeroUnit(game)
   if (!hero) return
 
-  if (freshWorld) resetPlayedFogForFreshWorld(game)
-  clearTravelUnitFogViewers(game, [hero, ...player.units.filter(unit => unit !== hero && unit.followingHero)])
+  if (freshWorld) resetPlayerExploration(game)
+  clearTravelUnitPerception(game, [hero, ...player.units.filter(unit => unit !== hero && unit.followingHero)])
   if (party.hero) applyPortableUnitState(hero as Partial<SaveEntityState>, party.hero, { keepAlive: true })
   refreshUnitEquipmentStats(hero)
   if (arrivalCell) teleportRuntimeUnit(game, hero, arrivalCell)
@@ -198,7 +162,7 @@ export function applyTravelPartyToRuntime(
   }
 
   for (const unit of travelUnits) unit.setTextures?.(SHEET_TYPES.standing)
-  refreshTravelPartyFog(game, travelUnits)
+  refreshTravelPartyVisibility(game, travelUnits)
   controls.init?.()
   if (equippedItem) controls.setEquippedItem?.(equippedItem)
   controls.context?.menu?.updateHeroStatus?.(hero)

@@ -442,7 +442,8 @@ test('traps fill only when unobserved, do not refill full traps and stay determi
 test('wildlife renews dead and depleted slots but not trapped prey or occupied cells', () => {
   const { state, options } = fixture()
   state.animals = [
-    { type: 'Hare', label: 'corpse', i: 25, j: 25, isDead: true, hitPoints: 0, totalHitPoints: 8, totalQuantity: 12 },
+    { type: 'Hare', label: 'corpse', i: 25, j: 25, isDead: true, hitPoints: 0, totalHitPoints: 8, totalQuantity: 12,
+      inventory: { resources: { leather: 2 } }, corpseMaterialDecayRemainingMs: 15000 },
     { type: 'Hare', label: 'slot', i: 28, j: 28, isDead: true, isDestroyed: true },
     { type: 'Hare', label: 'trap-prey', i: 25, j: 26, isDead: true, trapPrey: true },
     { type: 'Hare', label: 'blocked', i: 6, j: 6, isDead: true, isDestroyed: true },
@@ -450,6 +451,8 @@ test('wildlife renews dead and depleted slots but not trapped prey or occupied c
   options.animalConfig = () => ({ totalHitPoints: 8, totalQuantity: 12, ambientMovement: true })
   assert.equal(simulateOfflineWorld(state, options).animalsRevived, 2)
   assert.equal(state.animals[0].hitPoints, 8)
+  assert.equal(state.animals[0].inventory, undefined)
+  assert.equal(state.animals[0].corpseMaterialDecayRemainingMs, undefined)
   assert.equal(state.animals[1].quantity, 12)
   assert.equal(state.animals[1].isDestroyed, false)
   assert.equal(state.animals[2].isDead, true)

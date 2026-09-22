@@ -118,8 +118,7 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
     action: 'gather',
     matches: target =>
       (isForageResource(target) && !isDepletedBerrybush(target)) ||
-      resourceKind(target) === 'Wheat' ||
-      (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
+      resourceKind(target) === 'Wheat',
     resolve: (hero, target) => {
       if (resourceKind(target) === 'Wheat') {
         return resolveHeroGatherAction(hero, target, ACTION_TYPES.farm, WORK_TYPES.farmer)
@@ -130,7 +129,7 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
           ? resolveHeroGatherAction(hero, target, ACTION_TYPES.forageberry, WORK_TYPES.forager)
           : null
       }
-      return resolveHeroGatherAction(hero, target, ACTION_TYPES.takemeat, WORK_TYPES.hunter)
+      return null
     },
   },
   {
@@ -184,7 +183,6 @@ function getContextActionForTarget(contextAction: HeroContextAction, target: Run
   if (contextAction === 'gather' && (resourceKind(target) === 'Wheat' || isForageResource(target))) {
     return getResourceAction(target)
   }
-  if (contextAction === 'gather' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
   if (contextAction === 'chop' && (resourceKind(target) === 'Tree' || isDepletedBerrybush(target)))
     return ACTION_TYPES.chopwood
   if (contextAction === 'mine') return getMiningResourceConfig(target)?.action ?? null

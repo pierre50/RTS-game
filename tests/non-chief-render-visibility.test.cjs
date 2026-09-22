@@ -2,10 +2,10 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-test('owned NPCs and live buildings obey fog for a non-chief, while chief ownership keeps its existing visibility', () => {
+test('camera rendering is independent of chief status and gameplay perception', () => {
   const { updateInstanceRenderVisibility, instanceIsInPlayerSight } = loadTsModule('app/lib/grid/visibility.ts', {
     mocks: {
-      '../../services/FogOfWar': { updateVisibility() {} },
+      '../../services/UnitPerception': { updateVisibility() {} },
       './screenBounds': {
         getRenderablePosition: instance => instance,
         getVisibilityRuntimeMap: instance => instance.context.map,
@@ -13,16 +13,24 @@ test('owned NPCs and live buildings obey fog for a non-chief, while chief owners
       },
     },
   })
-  const { playerCanSeeInstance } = loadTsModule('app/lib/extra.ts', { mocks: {
-    './grid': { instanceIsInPlayerSight }, './ui/Modal': {}, './entities/spriteTextures': {},
-  } })
+  const { playerCanSeeInstance } = loadTsModule('app/lib/extra.ts', {
+    mocks: {
+      './grid': { instanceIsInPlayerSight },
+      './ui/Modal': {},
+      './entities/spriteTextures': {},
+    },
+  })
   let inSight = false
   const hero = { type: 'Hero', isChief: false }
   const owner = { label: 'player', isPlayed: true, views: { isVisible: () => inSight } }
-  const context = { player: owner, map: { showResources: true }, controls: { heroUnit: hero, instanceInCamera: () => true } }
+  const context = {
+    player: owner,
+    map: { showResources: true },
+    controls: { heroUnit: hero, instanceInCamera: () => true },
+  }
   for (const family of ['unit', 'building']) {
     const instance = { label: family, family, i: 1, j: 1, x: 1, y: 1, owner, context }
-    assert.equal(updateInstanceRenderVisibility(instance), false)
+    assert.equal(updateInstanceRenderVisibility(instance), true)
     assert.equal(playerCanSeeInstance(instance, owner), false)
     inSight = true
     assert.equal(updateInstanceRenderVisibility(instance), true)

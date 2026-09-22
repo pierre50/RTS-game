@@ -352,3 +352,107 @@ test('local camera bounds do not apply to interiors', () => {
   controller.set(2000, 3160)
   assert.deepEqual(controller.camera, { x: 1680, y: 2980 })
 })
+
+function createExplorationCamera(zoom = 1) {
+  const CameraController = loadCameraController(zoom)
+  const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+  const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+  const size = 30
+  const grid = Array.from({ length: size + 1 }, (_, i) =>
+    Array.from({ length: size + 1 }, (_, j) => ({
+      i,
+      j,
+      x: (i - j) * 32,
+      y: (i + j) * 16,
+      has: null,
+      corpses: new Set(),
+      updateVisible() {},
+    }))
+  )
+  const context = {
+    app: { screen: { width: 64, height: 32 } },
+    map: { size, grid, updateRenderChunks() {} },
+    controls: { heroUnit: { spaceId: 'outside' }, freeCameraActive: false },
+    player: { views: new VisionGrid(size), cellViewed: 0 },
+  }
+  const controller = new CameraController(context)
+  controller.camera = { x: 0, y: 300 }
+  return { controller, context, views: context.player.views }
+}
+
+test('only the actual camera footprint is explored, never its render halo', () => {
+  const { controller, context, views } = createExplorationCamera()
+  controller.updateVisibleCells()
+  assert.equal(views.isViewed(10, 10), true)
+  assert.equal(controller.visibleCells.has(context.map.grid[15][10]), true)
+  assert.equal(views.isViewed(15, 10), false)
+  const discovered = context.player.cellViewed
+  assert.ok(discovered > 0)
+  controller.updateVisibleCells()
+  assert.equal(context.player.cellViewed, discovered)
+  controller.camera.x = 300
+  controller.updateVisibleCells(false)
+  assert.equal(views.isViewed(10, 10), true, 'exploration remains after leaving the viewport')
+  assert.ok(context.player.cellViewed > discovered)
+})
+
+test('debug camera cannot explore and switching it off refreshes even an unchanged viewport', () => {
+  const { controller, context, views } = createExplorationCamera()
+  context.controls.freeCameraActive = true
+  controller.updateVisibleCells(false)
+  assert.equal(context.player.cellViewed, 0)
+  assert.ok(controller.visibleCells.size > 0, 'debug rendering still works')
+  context.controls.freeCameraActive = false
+  controller.updateVisibleCells(false)
+  assert.equal(views.isViewed(10, 10), true)
+})
+
+test('camera boot, editor and a different hero space never explore', () => {
+  for (const mode of ['boot', 'editor', 'other-space']) {
+    const { controller, context } = createExplorationCamera()
+    if (mode === 'boot') context.controls.heroUnit = null
+    if (mode === 'editor') context.editor = {}
+    if (mode === 'other-space') context.controls.heroUnit.spaceId = 'interior:house'
+    controller.updateVisibleCells()
+    assert.equal(context.player.cellViewed, 0, mode)
+  }
+})
+
+test('camera exploration respects interior origins and keeps exterior coordinates untouched', () => {
+  const { controller, context, views } = createExplorationCamera()
+  const spaceId = 'interior:house'
+  context.map.activeSpaceId = spaceId
+  context.controls.heroUnit.spaceId = spaceId
+  context.map.spaces = new Map([
+    [
+      spaceId,
+      {
+        id: spaceId,
+        container: {},
+        origin: { x: 1000, y: 2000 },
+        size: context.map.size,
+        grid: context.map.grid,
+      },
+    ],
+  ])
+  controller.camera = { x: 1000, y: 2300 }
+  controller.updateVisibleCells()
+  assert.equal(views.isViewed(10, 10), false)
+  assert.equal(
+    views.withSpace(spaceId, () => views.isViewed(10, 10)),
+    true
+  )
+})
+
+test('zoom changes the explored footprint and sub-cell movement reuses camera candidates', () => {
+  const near = createExplorationCamera(2)
+  const far = createExplorationCamera(0.5)
+  near.controller.updateVisibleCells(false)
+  far.controller.updateVisibleCells(false)
+  assert.ok(far.context.player.cellViewed > near.context.player.cellViewed)
+  const previous = near.controller.visibleCells
+  near.controller.camera.x += 0.5
+  near.controller.updateVisibleCells(false)
+  assert.equal(near.controller.visibleCells, previous)
+  assert.equal(near.controller.visibleCellsStats.samples, 0)
+})

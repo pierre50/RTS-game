@@ -1,19 +1,20 @@
-import { definedProperties } from '../lib/definedProperties'
 import { FAMILY_TYPES } from '../constants'
 import { SOUND_CUES } from '../constants/sounds'
 import { playAudibleSoundCue } from '../lib/audio/sound'
-import { getEntitySpaceId, getMapSpace, moveEntityToMapSpace, sameCellMapSpace } from '../lib/mapSpaces'
 import {
   createReservedPassageCellLookup,
   findNearestPassageWaitingCell,
   routeUnitAwayFromPassageCell,
 } from '../lib/buildings/passageCells'
+import { definedProperties } from '../lib/definedProperties'
 import { getCellsAroundPoint } from '../lib/grid/cells'
-import { updateInstanceRenderVisibility, updateInstanceVisibility } from '../lib/grid/visibility'
+import { updateInstanceVisibility } from '../lib/grid/visibility'
+import { getEntitySpaceId, getMapSpace, moveEntityToMapSpace, sameCellMapSpace } from '../lib/mapSpaces'
 import { isHeroControlled } from '../lib/units/unitControl'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMapSpacePortal } from '../types/map'
+import { canOccupyPortalCell, isPortalCell } from './spacePortal/PortalCellEligibility'
 
 const SPACE_PORTAL_CHECK_INTERVAL_MS = 250
 
@@ -29,15 +30,6 @@ function sameGridPosition(
   b: RuntimeCell | null | undefined
 ): boolean {
   return Boolean(a && b && a.i === b.i && a.j === b.j)
-}
-
-function isPortalCell(cell: RuntimeCell | null | undefined): cell is RuntimeCell {
-  return Boolean(cell && !cell.terrainHidden && !cell.border && !cell.waterBorder && cell.category !== 'Water')
-}
-
-function canOccupyPortalCell(cell: RuntimeCell | null | undefined, unit: UnitEntity): cell is RuntimeCell {
-  if (!isPortalCell(cell)) return false
-  return !cell.solid || cell.has === unit || cell.has?.label === unit.label
 }
 
 function unitIsOnCell(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
@@ -134,7 +126,7 @@ function forceMovePortalBlockerAway(context: GameContextLike, cell: RuntimeCell,
   if (!targetSpace) return false
   moveEntityToMapSpace(context.map, blocker, targetSpace, waitingCell.cell)
   updateInstanceVisibility(blocker)
-  updateInstanceRenderVisibility(blocker)
+
   return true
 }
 
@@ -267,7 +259,7 @@ export function transferUnitThroughSpacePortal(
   playPortalDoorSound(context, unit, portal)
   moveEntityToMapSpace(context.map, unit, targetSpace, arrivalCell)
   updateInstanceVisibility(unit)
-  updateInstanceRenderVisibility(unit)
+
   onTransferred?.()
   if (unitIsOnCell(unit, arrivalCell) && !unit.dest && !unit.action && !unit.path?.length) {
     routeUnitAwayFromPassageCell(unit, arrivalCell)

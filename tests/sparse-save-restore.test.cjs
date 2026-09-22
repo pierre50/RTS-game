@@ -150,7 +150,7 @@ function savedGeneration(AI = class {}) {
       '../../Resource': { Resource: class {} },
       '../../players': { Gaia, AI },
       '../../../lib': { getGaiaAnimals: gaia => gaia.animals },
-      '../../../services/FogOfWar': {},
+      '../../../services/UnitPerception': {},
       '../../cell': {
         Cell: class {
           constructor(options) {
@@ -176,9 +176,6 @@ test('full-grid restoration keeps every sparse row and clears cells from previou
     clearRenderChunks() {},
     resetRandom() {},
     invalidateReliefCoastDistances() {},
-    _initFogChunks() {},
-    _indexFogChunkCells() {},
-    _flushFogQueue() {},
     fillWaterGaps() {},
     normalizeWaterTopology() {},
     rebuildTerrainAppearance() {},
@@ -200,7 +197,7 @@ test('full-grid restoration keeps every sparse row and clears cells from previou
   assert.ok(map.grid.every(Array.isArray))
   assert.equal(map.grid[0][0], undefined)
   assert.equal(map.grid[1][0], undefined)
-  assert.equal(map.grid[1][1].fogged, true)
+  assert.equal(map.grid[1][1].fogged, undefined)
   assert.equal(map.grid[1][1].z, 3, 'saved elevation is read exactly without terrain generation')
   map.grid[1][1].has = { label: 'old resource' }
   clearGeneratedGameplayState(map)

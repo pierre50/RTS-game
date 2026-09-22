@@ -6,52 +6,44 @@ import type { RuntimeEntity } from '../../../types/entities'
 import type { Bounds, Viewport } from '../../../types/geometry'
 import type * as MapTypes from '../../../types/map'
 import type { PlayerLike } from '../../../types/player'
-import { _DW, _DH } from '../../cell/CellFog'
 import { TerrainBakeCell } from '../../cell/TerrainBakeCell'
 import { RuntimeCell, type RuntimeCellContext, type RuntimeCellSource } from '../../cell/RuntimeCell'
 import { getGaiaAnimals } from '../../../lib'
 import { getTerrainBakeChunkRects } from '../../../lib/graphics/terrainBakeChunks'
-import { ViewportFogRenderer } from './ViewportFogRenderer'
 
 type PixiRendererLike = {
   gl?: { getParameter(parameter: number): number; MAX_TEXTURE_SIZE: number } | null
   render(options: { container: Container; target: RenderTexture; transform?: Matrix; clear?: boolean }): void
 }
 
-type TickerCallback = () => void
-
-type FogPerformanceMonitor = {
+type TerrainPerformanceMonitor = {
   measure?<T>(name: string, callback: () => T): T
   record?(name: string, value: number): void
 }
 
-type FogMapContext = {
+type TerrainMapContext = {
   app?: {
     renderer?: PixiRendererLike
-    ticker: {
-      add(callback: TickerCallback): void
-      remove(callback: TickerCallback): void
-    }
   }
   controls?: object | null
   editor?: object | null
   map?: object | null
-  performance?: FogPerformanceMonitor | null
+  performance?: TerrainPerformanceMonitor | null
   player?: PlayerLike | null
   players?: PlayerLike[]
 }
 
-type FogCameraController = {
+type TerrainCameraController = {
   getViewportRect(): Viewport
   visibleCells?: { clear(): void }
 }
 
-function getFogCameraController(controls: FogMapContext['controls']): FogCameraController | null {
+function getTerrainCameraController(controls: TerrainMapContext['controls']): TerrainCameraController | null {
   if (!controls || typeof controls !== 'object') return null
-  const cameraController = (controls as { cameraController?: FogCameraController }).cameraController
+  const cameraController = (controls as { cameraController?: TerrainCameraController }).cameraController
   if (!cameraController || typeof cameraController !== 'object') return null
-  if (typeof (cameraController as FogCameraController).getViewportRect !== 'function') return null
-  return cameraController as FogCameraController
+  if (typeof (cameraController as TerrainCameraController).getViewportRect !== 'function') return null
+  return cameraController as TerrainCameraController
 }
 
 type TerrainAppearance = {
@@ -69,14 +61,13 @@ type TerrainDecoration = {
   zIndex: number
 }
 
-type FogGridCell = MapTypes.RuntimeCell & {
+type TerrainGridCell = MapTypes.RuntimeCell & {
   context?: RuntimeCellContext
   family?: string
   isGenerationCell?: boolean
   terrainTextureName?: string
   terrainSet?: ContainerChild | null
   _terrainAppearance?: TerrainAppearance
-  _hasFog?: boolean
   getChildByLabel?(label: string): ContainerChild | null
   removeChild?(child: ContainerChild): ContainerChild | void
   addChild?(child: ContainerChild): ContainerChild
@@ -87,16 +78,16 @@ type FogGridCell = MapTypes.RuntimeCell & {
   setPatchBorder?(direction: string, groundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'): void
 }
 
-type FogContainerCell = FogGridCell & ContainerChild
+type TerrainContainerCell = TerrainGridCell & ContainerChild
 
 type RelinkableInstance = RuntimeEntity & {
-  currentCell?: FogGridCell | null
-  dest?: FogGridCell | RuntimeEntity | null
-  previousDest?: FogGridCell | RuntimeEntity | null
-  path?: FogGridCell[]
+  currentCell?: TerrainGridCell | null
+  dest?: TerrainGridCell | RuntimeEntity | null
+  previousDest?: TerrainGridCell | RuntimeEntity | null
+  path?: TerrainGridCell[]
 }
 
-type FogMapBounds = {
+type TerrainMapBounds = {
   minX: number
   minY: number
   maxX: number
@@ -105,23 +96,15 @@ type FogMapBounds = {
   totalH: number
 }
 
-type FogRuntimeMap = {
+type TerrainRuntimeMap = {
   size: number
-  grid: FogGridCell[][]
-  context: FogMapContext
+  grid: TerrainGridCell[][]
+  context: TerrainMapContext
   gaia?: Pick<PlayerLike, 'units'> | null
   resources: Iterable<RuntimeEntity>
   terrainBackfill?: Container | null
   revealEverything?: boolean
   revealTerrain?: boolean
-  fogMemoryLayer?: Container | null
-  fogLayer?: Container | null
-  _fogQueue?: Map<FogGridCell, string>
-  _pendingFogChunkUpdates?: Map<FogGridCell, string>
-  _fogInitComplete?: boolean
-  _fogChunks?: Array<{ cells?: FogGridCell[]; bounds?: Bounds }>
-  _fogTickerCb?: TickerCallback | null
-  _fogScratchEraseContainer?: Container | null
   terrainChunkManager?: { initialize(viewport?: Viewport): void }
   addChild<T extends ContainerChild>(child: T): T
   registerRenderChunk(displayObjects: ContainerChild | ContainerChild[], bounds: Bounds): object
@@ -144,23 +127,19 @@ function isBackfillSpriteSource(source: ContainerChild): source is BackfillSprit
   return 'texture' in source && 'anchor' in source && 'roundPixels' in source
 }
 
-function isFogContainerCell(cell: FogGridCell): cell is FogContainerCell {
+function isTerrainContainerCell(cell: TerrainGridCell): cell is TerrainContainerCell {
   return 'parent' in cell && 'destroy' in cell
 }
 
-function isRuntimeCellSource(cell: FogGridCell): cell is FogGridCell & RuntimeCellSource {
+function isRuntimeCellSource(cell: TerrainGridCell): cell is TerrainGridCell & RuntimeCellSource {
   return Boolean(cell.context?.map)
 }
 
-const FOG_VIEWPORT_UPDATE_MARGIN = CELL_WIDTH * 3
+export class MapTerrainBake {
+  map: TerrainRuntimeMap
 
-export class MapFog {
-  map: FogRuntimeMap
-  viewportRenderer: ViewportFogRenderer
-
-  constructor(map: FogRuntimeMap) {
+  constructor(map: TerrainRuntimeMap) {
     this.map = map
-    this.viewportRenderer = new ViewportFogRenderer(map)
   }
 
   _markTerrainCellsVisible(): void {
@@ -218,7 +197,7 @@ export class MapFog {
         }
         const bakeChildren = cell.getTerrainBakeChildren?.()
         if (bakeChildren?.length) terrainContainer.addChild(...bakeChildren)
-        else if (isFogContainerCell(cell)) terrainContainer.addChild(cell)
+        else if (isTerrainContainerCell(cell)) terrainContainer.addChild(cell)
       }
     }
     this.map.context.performance?.record?.('terrainBake.collectCells', performance.now() - collectStartedAt)
@@ -227,7 +206,7 @@ export class MapFog {
   _renderTerrainChunks(
     renderer: PixiRendererLike,
     terrainContainer: Container,
-    bounds: Pick<FogMapBounds, 'minX' | 'minY' | 'totalW' | 'totalH'>,
+    bounds: Pick<TerrainMapBounds, 'minX' | 'minY' | 'totalW' | 'totalH'>,
     maxTex: number
   ): void {
     const chunks = getTerrainBakeChunkRects(
@@ -274,7 +253,7 @@ export class MapFog {
   }
 
   _compactTerrainCells(terrainContainer: Container): void {
-    const replacements = new globalThis.Map<FogGridCell, RuntimeCell>()
+    const replacements = new globalThis.Map<TerrainGridCell, RuntimeCell>()
     const runtimeCellsStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -296,43 +275,26 @@ export class MapFog {
     )
 
     this._relinkCompactedCells(replacements)
-    const indexStartedAt = performance.now()
-    getFogCameraController(this.map.context.controls)?.visibleCells?.clear()
-    this._indexFogChunkCells()
-    this.map.context.performance?.record?.('cellCompaction.reindexFog', performance.now() - indexStartedAt)
-    this.map.terrainChunkManager?.initialize(getFogCameraController(this.map.context.controls)?.getViewportRect())
+    getTerrainCameraController(this.map.context.controls)?.visibleCells?.clear()
+    this.map.terrainChunkManager?.initialize(getTerrainCameraController(this.map.context.controls)?.getViewportRect())
   }
 
-  _relinkCompactedCells(replacements: Map<FogGridCell, RuntimeCell>): void {
+  _relinkCompactedCells(replacements: Map<TerrainGridCell, RuntimeCell>): void {
     const instances = [
       ...getGaiaAnimals(this.map.gaia),
       ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
       ...this.map.resources,
     ] as RelinkableInstance[]
-    const replaceCell = (cell: FogGridCell): FogGridCell => replacements.get(cell) || cell
+    const replaceCell = (cell: TerrainGridCell): TerrainGridCell => replacements.get(cell) || cell
     const relinkStartedAt = performance.now()
     for (const instance of instances) {
       if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
-      if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest as FogGridCell)
+      if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest as TerrainGridCell)
       if (instance.previousDest?.family === FAMILY_TYPES.cell)
-        instance.previousDest = replaceCell(instance.previousDest as FogGridCell)
+        instance.previousDest = replaceCell(instance.previousDest as TerrainGridCell)
       if (instance.path?.length) instance.path = instance.path.map(replaceCell)
     }
     this.map.context.performance?.record?.('cellCompaction.instanceRelinks', performance.now() - relinkStartedAt)
-  }
-
-  _updateViewedCellsAfterTerrainBake(): void {
-    const { player } = this.map.context
-    if (!player) return
-    const updateViewedStartedAt = performance.now()
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (!cell) continue
-        if (player.views.isViewed(i, j)) cell.updateVisible()
-      }
-    }
-    this.map.context.performance?.record?.('terrainBake.updateViewedCells', performance.now() - updateViewedStartedAt)
   }
 
   bakeTerrainToChunks(): void {
@@ -343,7 +305,7 @@ export class MapFog {
     const renderer = this.map.context.app?.renderer
     if (!renderer) return
     const bakeStartedAt = performance.now()
-    const bounds = this._getFogMapBounds()
+    const bounds = this._getTerrainMapBounds()
     const gl = renderer.gl
     const maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096
 
@@ -353,14 +315,13 @@ export class MapFog {
     this._collectTerrainBakeCells(containers)
     this._renderTerrainChunks(renderer, containers.terrainContainer, bounds, maxTex)
     this._cleanupTerrainBakeContainers(containers)
-    this._updateViewedCellsAfterTerrainBake()
     this.map.context.performance?.record?.('terrainBake', performance.now() - bakeStartedAt)
   }
 
   _materializeGenerationCells(): void {
     const startedAt = performance.now()
     const cellsStartedAt = performance.now()
-    const replacements = new globalThis.Map<FogGridCell, TerrainBakeCell>()
+    const replacements = new globalThis.Map<TerrainGridCell, TerrainBakeCell>()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const source = this.map.grid[i][j]
@@ -407,7 +368,7 @@ export class MapFog {
     )
 
     const relinkStartedAt = performance.now()
-    const replaceCell = (cell: FogGridCell): FogGridCell => replacements.get(cell) || cell
+    const replaceCell = (cell: TerrainGridCell): TerrainGridCell => replacements.get(cell) || cell
     const instances = [
       ...getGaiaAnimals(this.map.gaia),
       ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
@@ -415,9 +376,9 @@ export class MapFog {
     ] as RelinkableInstance[]
     for (const instance of instances) {
       if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
-      if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest as FogGridCell)
+      if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest as TerrainGridCell)
       if (instance.previousDest?.family === FAMILY_TYPES.cell)
-        instance.previousDest = replaceCell(instance.previousDest as FogGridCell)
+        instance.previousDest = replaceCell(instance.previousDest as TerrainGridCell)
       if (instance.path?.length) instance.path = instance.path.map(replaceCell)
     }
     this.map.context.performance?.record?.(
@@ -427,26 +388,7 @@ export class MapFog {
     this.map.context.performance?.record?.('generationCellMaterialization', performance.now() - startedAt)
   }
 
-  _initFogChunks(): void {
-    this.destroyFogResources()
-    this.map._fogQueue = new globalThis.Map()
-    this.map._pendingFogChunkUpdates = new globalThis.Map()
-    this.map._fogInitComplete = false
-    this.map._fogChunks = []
-    this.viewportRenderer.initialize()
-
-    this.map._fogTickerCb = () => {
-      if (this.map.context.map !== this.map) {
-        this.map.context.app?.ticker.remove(this.map._fogTickerCb!)
-        return
-      }
-      const flush = () => this._flushFogQueue()
-      this.map.context.performance?.measure?.('fog.flushQueue', flush) ?? flush()
-    }
-    this.map.context.app?.ticker.add(this.map._fogTickerCb)
-  }
-
-  _getFogMapBounds(): FogMapBounds {
+  _getTerrainMapBounds(): TerrainMapBounds {
     if (!this.map.grid.length) {
       const margin = CELL_WIDTH + CELL_DEPTH * 4
       const minX = -this.map.size * (CELL_WIDTH / 2) - margin
@@ -464,7 +406,7 @@ export class MapFog {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i]?.[j]
         if (!cell) continue
-        const bounds = this._getFogCellBounds(cell)
+        const bounds = this._getTerrainCellBounds(cell)
         minX = Math.min(minX, bounds.minX)
         minY = Math.min(minY, bounds.minY)
         maxX = Math.max(maxX, bounds.maxX)
@@ -483,64 +425,14 @@ export class MapFog {
     return { minX, minY, maxX, maxY, totalW: maxX - minX, totalH: maxY - minY }
   }
 
-  _getFogCellBounds(cell: Pick<FogGridCell, 'x' | 'y'>): Omit<FogMapBounds, 'totalW' | 'totalH'> {
-    const hw = _DW / 2
-    const hh = _DH / 2
+  _getTerrainCellBounds(cell: Pick<TerrainGridCell, 'x' | 'y'>): Omit<TerrainMapBounds, 'totalW' | 'totalH'> {
+    const hw = CELL_WIDTH / 2
+    const hh = CELL_HEIGHT / 2
     return {
       minX: cell.x - hw,
       minY: cell.y - hh,
       maxX: cell.x + hw,
       maxY: cell.y + hh,
     }
-  }
-
-  _indexFogChunkCells(): void {
-    this.viewportRenderer.invalidate()
-  }
-
-  _flushFogQueue(): void {
-    const fogQueue = this.map._fogQueue
-    if (!fogQueue || fogQueue.size === 0) {
-      this.map._pendingFogChunkUpdates?.clear()
-      return
-    }
-
-    const viewport = getFogCameraController(this.map.context.controls)?.getViewportRect()
-    const updateViewportFog = this._fogQueueTouchesViewport(fogQueue, viewport)
-    fogQueue.clear()
-    this.map._pendingFogChunkUpdates?.clear()
-
-    if (updateViewportFog) {
-      this.viewportRenderer.invalidate()
-      this.viewportRenderer.update(viewport)
-    }
-  }
-
-  _fogQueueTouchesViewport(fogQueue: Map<FogGridCell, string>, viewport?: Viewport | null): boolean {
-    if (!viewport) return false
-    const left = viewport.visibleLeft - FOG_VIEWPORT_UPDATE_MARGIN
-    const top = viewport.visibleTop - FOG_VIEWPORT_UPDATE_MARGIN
-    const right = viewport.visibleLeft + viewport.visibleWidth + FOG_VIEWPORT_UPDATE_MARGIN
-    const bottom = viewport.visibleTop + viewport.visibleHeight + FOG_VIEWPORT_UPDATE_MARGIN
-
-    for (const cell of fogQueue.keys()) {
-      if (!cell) continue
-      const bounds = this._getFogCellBounds(cell)
-      if (bounds.maxX >= left && bounds.minX <= right && bounds.maxY >= top && bounds.minY <= bottom) {
-        return true
-      }
-    }
-    return false
-  }
-
-  destroyFogResources(): void {
-    if (this.map._fogTickerCb) {
-      this.map.context.app?.ticker.remove(this.map._fogTickerCb)
-      this.map._fogTickerCb = null
-    }
-    this.map._fogChunks = []
-    this.map._fogScratchEraseContainer?.destroy({ children: true })
-    this.map._fogScratchEraseContainer = null
-    this.viewportRenderer.destroy()
   }
 }

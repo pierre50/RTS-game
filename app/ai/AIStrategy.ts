@@ -1,4 +1,3 @@
-import { AGE_UP_ENABLED } from '../constants'
 import { AIMilitary } from './AIMilitary'
 import { villagePhase } from './AIDevelopmentPolicy'
 import { buyAIBuildingIfNeeded, buyAIWheatFieldIfNeeded, handleAIBuildingActions } from './AIStrategyBuilding'
@@ -20,7 +19,6 @@ import {
   AI_DIFFICULTIES,
   MAX_ARCHER_BY_AGE,
   MAX_BUILDING_BY_AGE,
-  MAX_BUILDING_BY_AGE_FROZEN,
   MAX_CAVALRY_BY_AGE,
   MAX_INFANTRY_BY_AGE,
   MAX_VILLAGER_PER_AGE,
@@ -62,7 +60,7 @@ export class AIStrategy {
       (AI_DIFFICULTIES as Record<string, AIDifficultyConfig>)[difficulty] || AI_DIFFICULTIES.medium
     this.maxVillagerPerAge = MAX_VILLAGER_PER_AGE
     this.villageTargetPercentageByAge = VILLAGE_TARGET_PERCENTAGE_BY_AGE
-    this.maxBuildingByAge = AGE_UP_ENABLED ? MAX_BUILDING_BY_AGE : MAX_BUILDING_BY_AGE_FROZEN
+    this.maxBuildingByAge = MAX_BUILDING_BY_AGE
     this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
     this.maxArcherByAge = MAX_ARCHER_BY_AGE
     this.maxCavalryByAge = MAX_CAVALRY_BY_AGE

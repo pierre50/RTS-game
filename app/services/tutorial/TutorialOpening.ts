@@ -1,5 +1,5 @@
 import { BUILDING_TYPES, UNIT_TYPES, SHEET_TYPES } from '../../constants'
-import { refreshPlayerVisibility } from '../FogOfWar'
+import { refreshPlayerVisibility } from '../UnitPerception'
 import { tutorialHuntQuest } from '../quests/TutorialHuntQuest'
 import { t } from '../../lib/lang'
 import { getInstanceDegree } from '../../lib/maths'
@@ -74,18 +74,10 @@ function resetTutorialOutsideExploration(context: GameContextLike): void {
     player.views.clearVisibility()
     player.views.clearExploration()
     player.cellViewed = Math.max(0, player.cellViewed - removed)
-    for (const row of map.grid) {
-      for (const cell of row) {
-        if (!cell) continue
-        cell.viewBy = new Set()
-        if (!map.revealEverything) cell.setFog(true)
-      }
-    }
+
   }
   if (player.views.withSpace) player.views.withSpace('outside', reset)
   else reset()
-  const fogMap = map as typeof map & { mapFog?: { viewportRenderer?: { invalidate(): void } } }
-  fogMap.mapFog?.viewportRenderer?.invalidate()
   menu.rebuildTerrainMiniMapFromViews?.()
   menu.updateResourcesMiniMap?.()
 }

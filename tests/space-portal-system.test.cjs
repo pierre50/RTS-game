@@ -339,8 +339,10 @@ test('portal transfer refreshes visibility and sorts the target space immediatel
   const renderUpdates = []
   const visibilityUpdates = []
   const { routeUnitThroughSpacePortal } = loadSpacePortalSystem({
-    updateInstanceRenderVisibility: unit => renderUpdates.push(unit.label),
-    updateInstanceVisibility: unit => visibilityUpdates.push(unit.label),
+    updateInstanceVisibility: unit => {
+      visibilityUpdates.push(unit.label)
+      renderUpdates.push(unit.label)
+    },
   })
   const { context, portal, sourceCell, sortedContainers, targetCell } = createPortalContext()
   const unit = {

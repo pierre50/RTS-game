@@ -65,6 +65,7 @@ export type SaveEntityState = {
   lastEnergySpentAt?: number
   hitPoints?: number
   horseColor?: string
+  corpseMaterialDecayRemainingMs?: number
   trapPrey?: boolean
   tamingStatus?: HorseTamingStatus
   companionHorseColor?: string | null
@@ -130,6 +131,7 @@ export type SaveEntityState = {
 
 export type SaveCellState = {
   border?: boolean
+  /** Legacy saves only; ignored when restoring runtime cells. */
   fogSprites?: FogSpriteMemory[]
   has?: string
   inclined?: boolean

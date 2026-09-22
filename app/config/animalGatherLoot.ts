@@ -1,30 +1,30 @@
-type MeatGatherBonusResource = 'feather' | 'leather' | 'sinew'
-type MeatGatherBonusDrop = { chance: number; resource: MeatGatherBonusResource }
+type AnimalDrop = { resource: 'feather' | 'leather' | 'sinew'; min: number; max: number; chance: number }
 
-export const MEAT_GATHER_BONUS_DROPS: Record<string, MeatGatherBonusDrop[]> = {
-  BlackGrouse: [{ chance: 0.2, resource: 'feather' }],
+// Rolled once per kill. Primary materials are guaranteed, including tutorial prey.
+export const ANIMAL_CORPSE_DROPS: Record<string, AnimalDrop[]> = {
+  BlackGrouse: [{ resource: 'feather', min: 1, max: 3, chance: 1 }],
   Boar: [
-    { chance: 0.08, resource: 'leather' },
-    { chance: 0.06, resource: 'sinew' },
+    { resource: 'leather', min: 2, max: 4, chance: 1 },
+    { resource: 'sinew', min: 1, max: 3, chance: 0.8 },
   ],
   Deer: [
-    { chance: 0.08, resource: 'leather' },
-    { chance: 0.05, resource: 'sinew' },
+    { resource: 'leather', min: 1, max: 3, chance: 1 },
+    { resource: 'sinew', min: 1, max: 2, chance: 0.7 },
   ],
   Fox: [
-    { chance: 0.06, resource: 'leather' },
-    { chance: 0.04, resource: 'sinew' },
+    { resource: 'leather', min: 1, max: 2, chance: 1 },
+    { resource: 'sinew', min: 1, max: 1, chance: 0.5 },
   ],
   Hare: [
-    { chance: 0.03, resource: 'leather' },
-    { chance: 0.02, resource: 'sinew' },
+    { resource: 'leather', min: 1, max: 1, chance: 1 },
+    { resource: 'sinew', min: 1, max: 1, chance: 0.3 },
   ],
   Horse: [
-    { chance: 0.08, resource: 'leather' },
-    { chance: 0.05, resource: 'sinew' },
+    { resource: 'leather', min: 2, max: 4, chance: 1 },
+    { resource: 'sinew', min: 1, max: 3, chance: 0.8 },
   ],
   Wolf: [
-    { chance: 0.06, resource: 'leather' },
-    { chance: 0.07, resource: 'sinew' },
+    { resource: 'leather', min: 1, max: 3, chance: 1 },
+    { resource: 'sinew', min: 1, max: 3, chance: 0.8 },
   ],
 }

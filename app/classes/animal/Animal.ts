@@ -1,3 +1,5 @@
+import type { InventoryStorage } from '../../lib/inventory/inventoryContainers'
+import { initializeAnimalCorpseLoot } from '../../lib/equipment/animalCorpseLoot'
 import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { Assets, AnimatedSprite } from 'pixi.js'
@@ -70,6 +72,8 @@ export class Animal extends Instance implements AnimalEntity {
   isFleeing!: boolean
   visibleCells!: Set<number>
   currentCell!: RuntimeCell
+  corpseMaterialDecayRemainingMs?: number
+  inventory?: InventoryStorage
   quantity!: number
   totalQuantity!: number
   assets!: Record<string, string>
@@ -181,6 +185,7 @@ export class Animal extends Instance implements AnimalEntity {
 
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     this.quantity = this.quantity ?? this.totalQuantity
+    initializeAnimalCorpseLoot(this)
     ensureUnitEnergy(this)
     map.addToInstanceBucket(this)
 

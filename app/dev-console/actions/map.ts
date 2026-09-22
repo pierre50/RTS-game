@@ -4,14 +4,10 @@ import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { getDevMapSpace, normalize, normalizeToggle } from './shared'
 
 function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
-  const { map, player, controls } = context
+  const { map, controls } = context
 
   getGaiaAnimals(map.gaia).forEach(animal => {
     const cell = map.grid[animal.i]?.[animal.j]
-    if (!map.revealEverything && !player.views.isViewed(animal.i, animal.j)) {
-      animal.visible = false
-      return
-    }
     cell?.updateVisible()
   })
 
@@ -21,18 +17,10 @@ function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
 
 export function toggleFog(context: DevConsoleContext, value: string): CommandResult {
   const { map, menu, players } = context
-  const currently = map.fogLayer?.visible ?? !map.revealEverything
+  const currently = !map.revealEverything
   const showFog = normalizeToggle(value, currently)
   map.revealEverything = !showFog
-  if (map.fogMemoryLayer) map.fogMemoryLayer.visible = showFog
-  if (map.fogLayer) map.fogLayer.visible = showFog
-  if (showFog) {
-    map.mapFog?.viewportRenderer.invalidate()
-    map.mapFog?.viewportRenderer.update(context.controls?.cameraController?.getViewportRect())
-  } else {
-    map._fogQueue?.clear()
-    map._pendingFogChunkUpdates?.clear()
-  }
+  // This debug toggle now controls minimap knowledge only; the main view follows the camera.
 
   map.terrainChunkManager?.invalidateAll()
 
@@ -55,7 +43,7 @@ export function toggleFog(context: DevConsoleContext, value: string): CommandRes
     menu.updateCameraMiniMapEvt?.()
   }
 
-  return { ok: true, message: `Fog of war: ${showFog ? 'on' : 'off'}` }
+  return { ok: true, message: `Minimap exploration: ${showFog ? 'on' : 'off'}` }
 }
 
 export function toggleResourcesVisibility(context: DevConsoleContext, value: string): CommandResult {

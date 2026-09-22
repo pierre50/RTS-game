@@ -83,9 +83,6 @@ export type DevMapLike = {
   instantMode?: boolean
   revealEverything?: boolean
   showResources?: boolean
-  fogLayer?: { visible: boolean } | null
-  fogMemoryLayer?: { visible: boolean } | null
-  mapFog?: { viewportRenderer: { invalidate(): void; update(viewport?: DevViewportRect): void } }
   terrainChunkManager?: {
     clock?: number
     chunks?: Map<
@@ -123,9 +120,6 @@ export type DevMapLike = {
   _debugHeroCollisionTicker?: DebugTickerCallback | null
   _debugTerrainFrameTicker?: DebugTickerCallback | null
   _debugEntityBarsTicker?: DebugTickerCallback | null
-  _fogQueue?: Map<RuntimeCell, string>
-  _pendingFogChunkUpdates?: Map<RuntimeCell, string>
-  viewportRenderer?: { invalidate(): void; update(viewport?: DevViewportRect): void }
   addChild<T extends Container>(child: T): T
   removeChild<T extends Container>(child: T): T
   addToInstanceBucket?(instance: RuntimeEntity): void
@@ -136,8 +130,6 @@ export type DevMapLike = {
     bounds: { minX: number; minY: number; width: number; height: number }
   ): object
 }
-
-type DevViewportRect = { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
 
 type DevMenuLike = {
   updateTopbar(): void
@@ -277,7 +269,10 @@ export type DevConsoleContext = {
   weather?: DevWeatherLike | null
   tributeRaids?: {
     triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
-    triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
+    triggerFactionRaid(options?: {
+      ignoreBaseWorld?: boolean
+      source?: 'schedule' | 'dev-console'
+    }): boolean | Promise<boolean>
   } | null
   timeSkip?: DevTimeSkipLike | null
   unitRest?: {
@@ -336,6 +331,4 @@ export type DevPlayer = PlayerLike & {
 }
 
 export type DevCell = RuntimeCell & {
-  setFog?(init?: boolean): void
-  removeFog?(): void
 }

@@ -156,7 +156,8 @@ function loadGameResourceDelivery(overrides = {}) {
           }),
       },
       '../../lib/resources/resourceDelivery': {
-        buildingAcceptsInventoryResource: () => true,
+        buildingAcceptsInventoryResource: overrides.buildingAcceptsInventoryResource ?? (() => true),
+        findResourceDeliveryTarget: overrides.findResourceDeliveryTarget ?? (() => null),
         unitHasDeliverableResourcesForBuilding: overrides.unitHasDeliverableResourcesForBuilding ?? (() => true),
       },
       '../../services/rest/UnitRestRules': {
@@ -1140,4 +1141,29 @@ test('blocked chests reject villager deliveries but still allow manual transfers
   assert.equal(buildingAcceptsInventoryResource(chest, 'wood', 10), true)
   chest.villagerDeliveriesBlocked = false
   assert.equal(unitHasDeliverableResourcesForBuilding(unit, chest), true)
+})
+
+test('mixed hunting loads finish depositing before returning to the original carcass', () => {
+  const nextDepot = { family: 'building', type: 'StoragePit' }
+  let resumed = 0
+  const { handleResourceDeliveryAction } = loadGameResourceDelivery({
+    buildingAcceptsInventoryResource: (_building, resource) => resource === 'meat',
+    findResourceDeliveryTarget: unit => unit.inventory.resources.leather ? nextDepot : null,
+    resumeVillagerJobIntent: () => { resumed++; return true },
+  })
+  const chest = { family: 'building', type: 'Chest', inventory: { resources: {} } }
+  const originalTask = { action: 'takemeat', dest: { family: 'animal', isDead: true }, work: 'hunter', autonomousJob: 'food' }
+  const sent = []
+  const unit = {
+    action: 'delivery', dest: chest, inventory: { resources: { meat: 10, leather: 2 } },
+    resourceDeliveryState: { phase: 'toBuilding', building: chest, returnTask: originalTask },
+    isUnitAtDest: () => true,
+    sendToDelivery: (building, task) => { sent.push([building, task]); return true },
+  }
+  const context = { scheduler: { remove() {} }, menu: { refreshInventory() {} } }
+  assert.equal(handleResourceDeliveryAction(context, unit), true)
+  assert.equal(chest.inventory.resources.meat, 10)
+  assert.equal(unit.inventory.resources.leather, 2)
+  assert.deepEqual(sent, [[nextDepot, originalTask]])
+  assert.equal(resumed, 0)
 })

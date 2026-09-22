@@ -59,7 +59,6 @@ const BUILDING_CAPS = {
   Temple: 1,
 }
 export const MAX_BUILDING_BY_AGE = { 0: BUILDING_CAPS, 1: BUILDING_CAPS, 2: BUILDING_CAPS }
-export const MAX_BUILDING_BY_AGE_FROZEN = MAX_BUILDING_BY_AGE
 
 export const MAX_INFANTRY_BY_AGE = { 0: 12, 1: 12, 2: 12 }
 export const MAX_ARCHER_BY_AGE = { 0: 8, 1: 8, 2: 8 }

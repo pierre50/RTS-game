@@ -112,17 +112,11 @@ export function occupyBuildingFootprint(building: Building): void {
     cell.solid = true
     if (providesOutsideWorldVision) {
       building.owner.views.addViewer(cell.i, cell.j, building)
-      if (building.owner.views.setViewed(cell.i, cell.j)) {
+      if (building.owner !== player && building.owner.views.setViewed(cell.i, cell.j)) {
         building.owner.cellViewed++
       }
-      cell.viewBy = new Set(player.views.getViewers(cell.i, cell.j))
-      if (player.views.hasViewer(cell.i, cell.j, building) && !map.revealEverything) {
-        cell.removeFog()
-      }
-    } else if (updatesOutsideWorldVision) {
-      cell.viewBy = new Set(player.views.getViewers(cell.i, cell.j))
-      cell.updateVisible()
     }
+    cell.updateVisible()
     return true
   })
 }

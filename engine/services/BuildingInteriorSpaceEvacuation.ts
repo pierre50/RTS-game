@@ -3,7 +3,7 @@ import { sameBuilding } from '../../app/lib/buildings/identity'
 import { getBuildingInteriorEntryCell } from '../../app/lib/buildings/interiors'
 import { clearUnitOverheadIndicator } from '../../app/lib/entities/overheadIndicator'
 import { getCellsAroundPoint } from '../../app/lib/grid/cells'
-import { updateInstanceRenderVisibility, updateInstanceVisibility } from '../../app/lib/grid/visibility'
+import { updateInstanceVisibility } from '../../app/lib/grid/visibility'
 import { HORSE_TAMING_STATUS } from '../../app/lib/horses/horseTaming'
 import type { StableHorse } from '../../app/lib/horses/stableHorses'
 import { getStableHorses } from '../../app/lib/horses/stableHorses'
@@ -160,7 +160,7 @@ export function expelBuildingInteriorOccupants(context: GameContextLike, buildin
       releasedStableHorses += 1
     }
     updateInstanceVisibility(entity)
-    updateInstanceRenderVisibility(entity)
+
     claimedCells.add(evacuationCellKey(cell))
     expelled.push(entity)
   }
@@ -199,7 +199,7 @@ function releaseRemainingHorses(
     const entity = createReleasedStableHorse(context, horse, outsideSpace, cell)
     if (!entity) continue
     updateInstanceVisibility(entity)
-    updateInstanceRenderVisibility(entity)
+
     claimedCells.add(evacuationCellKey(cell))
     expelled.push(entity)
   }

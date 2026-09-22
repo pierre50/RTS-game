@@ -130,14 +130,7 @@ function canEmitImpact(target: RuntimeEntity, action: string | null | undefined,
 }
 
 function isBuildImpactSourceVisible(target: RuntimeEntity): boolean {
-  const context = target.context
-  if (!context?.map || !context.player) return true
-  const { map, player } = context
-  if (map.revealEverything || map.revealTerrain) return true
-  const views = player.views
-  if (!views?.isVisible) return true
-  const check = () => views.isVisible(target.i, target.j)
-  return views.withSpace?.(target.spaceId, check) ?? check()
+  return target.visible !== false
 }
 
 export function spawnWorkImpactFragments(unit: UnitEntity, target: RuntimeEntity | null | undefined): void {
@@ -148,10 +141,7 @@ export function spawnWorkImpactFragments(unit: UnitEntity, target: RuntimeEntity
   if (!context || !canEmitImpact(target, unit.action, performance.now())) return
 
   const spriteTarget = target as SpriteTarget
-  const sourceVisibility =
-    unit.action === ACTION_TYPES.build
-      ? () => isBuildImpactSourceVisible(target)
-      : undefined
+  const sourceVisibility = unit.action === ACTION_TYPES.build ? () => isBuildImpactSourceVisible(target) : undefined
   spawnSpriteFragmentBurst({
     ...preset,
     context,

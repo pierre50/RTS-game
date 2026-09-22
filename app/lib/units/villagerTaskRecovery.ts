@@ -1,3 +1,4 @@
+import { canRecoverAnimalLootForDelivery } from '../equipment/animalCorpseLoot'
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { getEntityCell } from '../mapSpaces'
 import { assignVillagerAutonomy } from './villagerAutonomy'
@@ -41,6 +42,7 @@ function canUseStoredDestination(
   if (!isRuntimeEntity(dest)) return true
   if (dest.isDestroyed || (dest.isDead && action !== ACTION_TYPES.takemeat)) return false
   if (action && unit.getActionCondition?.(dest, action) === false) return false
+  if (action === ACTION_TYPES.takemeat && dest.family === FAMILY_TYPES.animal && !canRecoverAnimalLootForDelivery(dest, unit)) return false
   return true
 }
 

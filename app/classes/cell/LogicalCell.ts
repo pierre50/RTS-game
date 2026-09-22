@@ -1,8 +1,6 @@
 import { FAMILY_TYPES } from '../../constants'
 import type { ContainerChild } from 'pixi.js'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory } from '../../types/map'
-import type { VisionViewerRef } from '../../types/vision'
 import type { TextureRef } from '../../lib'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 import {
@@ -14,7 +12,6 @@ import {
 
 export type LogicalCellContext = {
   map: {
-    fogMemoryLayer?: { addChild<T extends ContainerChild>(child: T): T }
     revealEverything?: boolean
   }
   player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
@@ -57,15 +54,10 @@ export class LogicalCell {
   border!: boolean
   waterBorder!: boolean
   terrainHidden!: boolean
-  viewed!: boolean
-  viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
-  fogSprites: FogSpriteMemory[]
-  _hasFog!: boolean
   _terrainAppearance: TerrainAppearance
   terrainSet: ContainerChild | null
-  _fogChunks: Array<object> | null
 
   constructor(source: LogicalCellSource) {
     this.context = source.context
@@ -80,14 +72,11 @@ export class LogicalCell {
     this.z = 0
     this.assets = []
     this.terrainTextureName = ''
-    this.viewBy = new Set()
     this.has = null
     this.corpses = new Set()
-    this.fogSprites = []
     this._terrainAppearance = createEmptyTerrainAppearance()
     assignCellCommonState(this as CellCommonStateTarget, source)
     this.terrainSet = source.terrainSet ?? null
-    this._fogChunks = null
   }
 
   _updateChild(instance: RuntimeEntity): void {

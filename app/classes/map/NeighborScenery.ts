@@ -203,8 +203,8 @@ export function buildNeighborScenery(map: MapGenerationMap): void {
 
 export function updateNeighborSceneryVisibility(map: RuntimeMap): void {
   for (const group of visuals.get(map) ?? []) {
-    const cell = map.grid[group.i]?.[group.j]
-    const visible = Boolean(map.revealEverything || cell?.viewed || cell?.viewBy?.size)
+    // Registered render chunks already cull these decorations against the camera.
+    const visible = true
     if (visible === group.visible) continue
     group.visible = visible
     for (const display of group.displays) display.visible = visible

@@ -62,7 +62,6 @@ const mocks = {
   '../../../lib': { getGaiaAnimals: () => [], getPlainCellsAroundPoint: () => [], getCellsAroundPoint: () => [] },
   '../../lib': { getTextureByFrame: () => ({}) },
   '../cell': { Cell: class {} },
-  '../../cell/CellFog': { _DW: 64, _DH: 32 },
   '../../cell/TerrainBakeCell': {
     TerrainBakeCell: class {
       constructor(source) {
@@ -78,18 +77,12 @@ const mocks = {
       }
     },
   },
-  './ViewportFogRenderer': {
-    ViewportFogRenderer: class {
-      invalidate() {}
-    },
-  },
   '../players': { Gaia: class {} },
-  '../../services/FogOfWar': { rehydrateAIKnowledge() {} },
+  '../../services/UnitPerception': { rehydrateAIKnowledge() {} },
 }
 const { MapTerrain } = loadTsModule('app/classes/map/terrain/MapTerrain.ts', { mocks })
-const { MapFog } = loadTsModule('app/classes/map/fog/MapFog.ts', { mocks })
+const { MapTerrainBake } = loadTsModule('app/classes/map/terrain/MapTerrainBake.ts', { mocks })
 const { TerrainChunkManager } = loadTsModule('app/classes/map/TerrainChunkManager.ts', { mocks })
-const { setInitialFogCells } = loadTsModule('app/classes/map/MapGenerationPipeline.ts', { mocks })
 const { updateWaterOverlay } = loadTsModule('app/classes/map/MapWaterOverlay.ts', { mocks })
 
 function cell(i, j, category = 'Land', z = 0) {
@@ -159,20 +152,17 @@ test('water relief propagation cannot cross an absent cell', () => {
   assert.equal(grid[1][2].z, 4)
 })
 
-test('fog initialization and baking skip holes, including a missing origin', async () => {
+test('terrain baking skips holes, including a missing origin', async () => {
   const grid = [[], [], []]
   grid[1][1] = { ...cell(1, 1), isGenerationCell: true }
   const map = { grid, size: 2, context: { player: { views: { isViewed: () => true } } }, resources: [] }
-  await setInitialFogCells(map, async () => {}, 1)
-  assert.equal(grid[1][1].fogged, true)
-  const fog = new MapFog(map)
+  assert.equal(grid[1][1].fogged, undefined)
+  const fog = new MapTerrainBake(map)
   fog.bakeTerrainToChunks()
   assert.equal(grid[1][1].isGenerationCell, false)
   fog._markTerrainCellsVisible()
   fog._collectTerrainBakeCells({ terrainContainer: new Container(), terrainSets: [] })
-  fog._updateViewedCellsAfterTerrainBake()
   assert.equal(grid[1][1].visible, true)
-  assert.equal(grid[1][1].updated, true)
   const source = grid[1][1]
   source.context = { map }
   const resource = { currentCell: source, path: [source] }
@@ -185,9 +175,9 @@ test('fog initialization and baking skip holes, including a missing origin', asy
     grid.map(row => Object.keys(row)),
     [[], ['1'], []]
   )
-  assert.ok(Object.values(fog._getFogMapBounds()).every(Number.isFinite))
+  assert.ok(Object.values(fog._getTerrainMapBounds()).every(Number.isFinite))
   delete grid[1][1]
-  assert.ok(Object.values(fog._getFogMapBounds()).every(Number.isFinite))
+  assert.ok(Object.values(fog._getTerrainMapBounds()).every(Number.isFinite))
 })
 
 test('terrain chunks bound occupied cells even when every chunk corner is absent', () => {
@@ -227,31 +217,4 @@ test('water mask merges adjacent cells into one isometric strip', () => {
   const map = { grid, size: 2, context: {}, waterBorderSurfaces: new Set(), addChild() {} }
   updateWaterOverlay(map)
   assert.deepEqual(map.waterOverlayMask.polygons, [[32, 0, 64, 16, 0, 48, -32, 32]])
-})
-
-test('viewport fog queries and draws only occupied cells', () => {
-  const { ViewportFogRenderer } = loadTsModule('app/classes/map/fog/ViewportFogRenderer.ts', {
-    mocks: { ...mocks, '../../../lib': { isometricToCartesian: () => [0, 0] } },
-  })
-  const grid = [[], [, cell(1, 1)], []]
-  const renderer = new ViewportFogRenderer({ grid, size: 2 })
-  const drawn = []
-  renderer._drawShape = (_graphics, x, y) => drawn.push([x, y])
-  const viewed = []
-  const views = {
-    isViewed(i, j) {
-      viewed.push([i, j])
-      return true
-    },
-    isVisible(i, j) {
-      assert.ok(grid[i][j])
-      return true
-    },
-  }
-  renderer._drawViewportCells(new Graphics(), new Graphics(), views, 0, 0, 64, 64)
-  assert.deepEqual(viewed, [[1, 1]])
-  assert.deepEqual(drawn, [
-    [0, 32],
-    [0, 32],
-  ])
 })

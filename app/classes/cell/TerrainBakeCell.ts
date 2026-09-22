@@ -3,9 +3,8 @@ import type { ContainerChild, Sprite } from 'pixi.js'
 import { cartesianToIsometric } from '../../lib'
 import { CELL_DEPTH } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory, RuntimeCell as MapRuntimeCell } from '../../types/map'
+import type { RuntimeCell as MapRuntimeCell } from '../../types/map'
 import { CellTerrain, type TerrainCellLike } from './CellTerrain'
-import type { FogCellLike } from './CellFog'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 import { createCellTerrainSprite } from './CellSpriteFactory'
 import { type CellConfig, type CellContextLike } from './CellTypes'
@@ -16,22 +15,18 @@ export type TerrainBakeCellContext = CellContextLike
 type TerrainBakeCellSource = MapRuntimeCell & {
   context?: unknown
   terrainTextureName?: string
-  fogSprites?: FogSpriteMemory[]
-  _hasFog?: boolean
 }
 
-export class TerrainBakeCell extends CellBase implements MapRuntimeCell, FogCellLike, TerrainCellLike {
+export class TerrainBakeCell extends CellBase implements MapRuntimeCell, TerrainCellLike {
   terrainSet: ContainerChild | null
   override sprite: Sprite | null
-  cellFog: null
 
   constructor(source: TerrainBakeCellSource, context: TerrainBakeCellContext) {
     super(context, source)
     this.map = this.context.map
-    ;(this as unknown as { parent: TerrainCellLike['parent'] }).parent =
-      this.map as unknown as TerrainCellLike['parent']
+    ;(this as unknown as { parent: TerrainCellLike['parent'] }).parent = this
+      .map as unknown as TerrainCellLike['parent']
     this.terrainSet = null
-    this.cellFog = null
 
     const definition = Assets.cache.get('config')?.cells?.[this.type] as CellConfig | undefined
     if (definition) Object.assign(this, definition)
@@ -71,16 +66,6 @@ export class TerrainBakeCell extends CellBase implements MapRuntimeCell, FogCell
   place(entity: RuntimeEntity): void {
     placeCellEntity(this, entity)
   }
-
-  _ensureCellFog(): never {
-    throw new Error('TerrainBakeCell does not create fog sprites')
-  }
-
-  setFog(): void {}
-  removeFog(): void {}
-  addFogBuilding(): void {}
-  removeFogBuilding(): void {}
-  setFogChildren(): void {}
 
   override destroy(options?: Parameters<ContainerChild['destroy']>[0]): void {
     super.destroy(options)

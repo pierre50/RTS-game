@@ -1,5 +1,5 @@
 import type { Container } from 'pixi.js'
-import { updateInstanceRenderVisibility, updateInstanceVisibility } from '../../app/lib/grid/visibility'
+import { updateInstanceVisibility } from '../../app/lib/grid/visibility'
 import type { GameContextLike } from '../../app/types/context'
 import { isBuildingInteriorRuntimeSpace } from './BuildingInteriorSpaceLookup'
 import type { BuildingInteriorRuntimeSpace } from './BuildingInteriorSpaceTypes'
@@ -13,7 +13,6 @@ export function refreshMapSpaceEntityVisibility(context: GameContextLike): void 
           if (refreshed.has(entity)) continue
           refreshed.add(entity)
           updateInstanceVisibility(entity)
-          updateInstanceRenderVisibility(entity)
         }
       }
     }

@@ -3,9 +3,8 @@ import type { Sprite } from 'pixi.js'
 import { cartesianToIsometric } from '../../lib'
 import { CELL_DEPTH } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
+import type { RuntimeCell } from '../../types/map'
 import type { TextureRef } from '../../lib'
-import { CellFog, type FogCellLike } from './CellFog'
 import { CellTerrain, type TerrainCellLike } from './CellTerrain'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 import { createCellTerrainSprite } from './CellSpriteFactory'
@@ -22,18 +21,11 @@ type CellOptions = {
   type: string
   textureName?: TextureRef
   terrainHidden?: boolean
-  skipFog?: boolean
-  fogSprites?: FogSpriteMemory[]
-}
-
-type SavedFogSprite = FogSpriteMemory & {
-  colorSheet?: string
 }
 
 type CellSprite = Sprite
 
-export class Cell extends CellBase implements RuntimeCell, FogCellLike, TerrainCellLike {
-  cellFog: CellFog | null
+export class Cell extends CellBase implements RuntimeCell, TerrainCellLike {
   _terrainRenderResourcesReleased?: boolean
 
   constructor(options: CellOptions, context: CellContext) {
@@ -55,19 +47,7 @@ export class Cell extends CellBase implements RuntimeCell, FogCellLike, TerrainC
     this.sprite = createCellTerrainSprite(this, map, options.textureName) as CellSprite
     this.addChild(this.sprite)
 
-    this.cellFog = options.skipFog ? null : new CellFog(this)
     this.cellTerrain = new CellTerrain(this)
-
-    // Replay last-seen building snapshots loaded from a save.
-    const savedFogSprites = this.fogSprites
-    this.fogSprites = []
-    if (this.cellFog) {
-      savedFogSprites.forEach((s: SavedFogSprite) =>
-        this.cellFog!.addFogBuilding(s.textureSheet, s.colorName ?? s.colorSheet)
-      )
-    } else {
-      this.fogSprites = savedFogSprites
-    }
 
     this.eventMode = 'none'
   }
@@ -98,32 +78,4 @@ export class Cell extends CellBase implements RuntimeCell, FogCellLike, TerrainC
   override destroy(options?: Parameters<CellBase['destroy']>[0]): void {
     super.destroy(options)
   }
-
-  _ensureCellFog(): CellFog {
-    if (!this.cellFog) this.cellFog = new CellFog(this)
-    return this.cellFog
-  }
-
-  // Fog delegates
-  setFog(init: boolean): void {
-    const fog = this._ensureCellFog()
-    fog.setFog(init)
-  }
-  removeFog(): void {
-    const fog = this._ensureCellFog()
-    fog.removeFog()
-  }
-  addFogBuilding(textureSheet: string, colorName?: string): void {
-    const fog = this._ensureCellFog()
-    fog.addFogBuilding(textureSheet, colorName)
-  }
-  removeFogBuilding(instance?: RuntimeEntity): void {
-    const fog = this._ensureCellFog()
-    fog.removeFogBuilding(instance)
-  }
-  setFogChildren(instance: RuntimeEntity, init: boolean): void {
-    const fog = this._ensureCellFog()
-    fog.setFogChildren(instance, init)
-  }
-
 }

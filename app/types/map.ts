@@ -3,14 +3,11 @@ import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid, GridPosition } from './grid'
 import type { ResourceEntity, RuntimeEntity } from './entities'
 import type { ResourceAmount } from './common'
-import type { FogSpriteMemory } from './fog'
 import type { SaveEntityState } from './save'
-import type { VisionViewerRef } from './vision'
 import type { Viewport } from './geometry'
 import type { TextureRef } from '../lib/graphics/textures'
 import type { LocalMapLayout } from '../lib/localMapLayout'
 
-export type { FogSpriteMemory } from './fog'
 
 export type RuntimeWorldManifest = {
   macroPreviewPath?: string
@@ -38,11 +35,8 @@ export interface RuntimeCell extends GridCell {
   border?: boolean
   waterBorder?: boolean
   terrainHidden?: boolean
-  viewed?: boolean
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
-  fogSprites: FogSpriteMemory[]
-  viewBy: Set<VisionViewerRef>
   // Generation-time cells (see app/classes/cell/GenerationCell.ts) act as their own
   // lightweight Container for terrain decorations before the real Cell/Container
   // tree is built, so they also expose these Container-shaped members.
@@ -52,8 +46,6 @@ export interface RuntimeCell extends GridCell {
   getChildByLabel?(label: string): ContainerChild | null
   updateVisible(): void
   place(entity: RuntimeEntity): void
-  setFog(init?: boolean): void
-  removeFog(): void
 }
 
 export interface RenderChunk {
@@ -114,7 +106,6 @@ export interface RuntimeMap {
   // Populated by addToInstanceBucket() lazily on first use — null until then.
   instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null
   gaia?: GaiaPlayerLike | null
-  fogMemoryLayer?: Container
   shadowLayer?: Container
   randomRange(min: number, max: number): number
   random(): number

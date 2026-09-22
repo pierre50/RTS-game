@@ -63,13 +63,10 @@ function fixture() {
 test('the opening forgets the temporary outside spawn, keeps interior exploration and preserves later progress', async () => {
   const f = fixture()
   const { views } = f.player
-  let fogged = false
-  let invalidated = false
   let rebuilt = false
   let resourcesRefreshed = false
-  const cell = { i: 2, j: 3, viewBy: new Set([f.hero]), setFog() { fogged = true } }
+  const cell = { i: 2, j: 3,  }
   f.context.map.grid = [[cell]]
-  f.context.map.mapFog = { viewportRenderer: { invalidate() { invalidated = true } } }
   f.context.menu.rebuildTerrainMiniMapFromViews = () => { rebuilt = true; assert.equal(views.isViewed(2, 3), false) }
   f.context.menu.updateResourcesMiniMap = () => { resourcesRefreshed = true }
   views.setViewed(2, 3)
@@ -82,9 +79,8 @@ test('the opening forgets the temporary outside spawn, keeps interior exploratio
   await f.prepareTutorialOpening(f.host)
   assert.equal(views.isViewed(2, 3), false)
   assert.equal(views.isVisible(2, 3), false)
-  assert.equal(cell.viewBy.size, 0)
   assert.equal(f.player.cellViewed, 1)
-  assert.ok(fogged && invalidated && rebuilt && resourcesRefreshed)
+  assert.ok(rebuilt && resourcesRefreshed)
   views.withSpace('house-interior', () => {
     assert.equal(views.isViewed(4, 4), true)
     assert.equal(views.isVisible(4, 4), true)

@@ -1,4 +1,4 @@
-import { MEAT_GATHER_BONUS_DROPS } from '../../config/animalGatherLoot'
+import { ANIMAL_CORPSE_DROPS } from '../../config/animalGatherLoot'
 import { ensureQuestEncounter } from './QuestEncounterSpawn'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
@@ -14,7 +14,7 @@ export function selectTutorialHunt(context: GameContextLike, npc: UnitEntity, qu
       !animal.isDestroyed && (animal.quantity ?? 0) > 0)
     const target = targets[0]
     const resource = quest.stageId === 'hunt' ? String(quest.parameters.resource) :
-      MEAT_GATHER_BONUS_DROPS[target?.type]?.[0]?.resource
+      ANIMAL_CORPSE_DROPS[target?.type]?.[0]?.resource
     if (target && resource) {
       quest.encounters ??= {}
       quest.encounters.hunt = {
@@ -26,7 +26,7 @@ export function selectTutorialHunt(context: GameContextLike, npc: UnitEntity, qu
   }
   const requested = quest.stageId === 'hunt' ? String(quest.parameters.resource) : null
   const type = ['Deer', 'BlackGrouse'].find(type => gaia?.config?.animals?.[type] &&
-    (!requested || MEAT_GATHER_BONUS_DROPS[type]?.some(drop => drop.resource === requested)))
+    (!requested || ANIMAL_CORPSE_DROPS[type]?.some(drop => drop.resource === requested)))
   const existing = quest.encounters?.hunt
   if (!existing && (!type || !gaia?.createAnimal)) return null
   const resource = requested ?? (type === 'BlackGrouse' ? 'feather' : 'leather')

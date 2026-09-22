@@ -283,6 +283,9 @@ export class MinimapManager {
     if (!cell) return
     if (!this.shouldDrawTerrainCell(cell)) return
 
+    const { map, player } = menu.context
+    if (!map.revealEverything && !this.withMinimapViewSpace(player, () => player?.views?.isViewed(i, j))) return
+
     this.drawTerrainCell(context, cell, transform)
     if (isResourceEntity(cell.has)) {
       this.updateResourceMiniMap(cell.has)
@@ -414,34 +417,6 @@ export class MinimapManager {
         personalVision ? instanceIsInPlayerSight(instance, player) : playerCanSeeInstance(instance, player)
       )
 
-    if (personalVision && !map.revealEverything) {
-      // Read the saved fog image, never the current building, which may have changed unseen.
-      for (const row of this.geometry.getMinimapSpace().grid) {
-        for (const cell of row ?? []) {
-          if (!cell?.fogSprites?.some(memory => memory.colorName === owner.color)) continue
-          if (
-            !this.withMinimapViewSpace(
-              player,
-              () => player?.views.isViewed(cell.i, cell.j) && !player.views.isVisible(cell.i, cell.j)
-            )
-          )
-            continue
-          const position = this.geometry.cellToMinimapPoint(cell, transform)
-          context.save()
-          context.globalAlpha = 0.45
-          canvasDrawRectangle(
-            context,
-            position.x - squareSize / 2,
-            position.y - squareSize / 2,
-            squareSize,
-            squareSize,
-            color
-          )
-          context.restore()
-        }
-      }
-    }
-
     owner.buildings.forEach(building => {
       if (!this.isInMinimapSpace(building)) return
       if (!isVisible(building)) return
@@ -463,7 +438,6 @@ export class MinimapManager {
     owner.units.forEach(unit => {
       if (!isMinimapUnitMarker(unit)) return
       if (!this.isInMinimapSpace(unit)) return
-      if (!isVisible(unit)) return
       const position = this.geometry.instanceToMinimapPoint(unit, transform)
       if (!position) return
       const { selected } = unit

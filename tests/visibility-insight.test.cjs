@@ -42,7 +42,7 @@ test('findInstancesInSight can filter targets by effective insight range', () =>
   const { findInstancesInSight } = loadModule('app/lib/grid/visibility.ts', {
     '../../constants': { ...constants, BUCKET_SIZE: 10 },
     '../../constants/heroControls': { HERO_STEALTH_ANIMAL_DETECTION_FACTOR: 0.55 },
-    '../../services/FogOfWar': { updateVisibility: () => {} },
+    '../../services/UnitPerception': { updateVisibility: () => {} },
   })
   const fastEnemy = { i: 5, j: 0, x: 5, y: 0, label: 'fast-enemy', family: 'unit' }
   const slowEnemy = { i: 5, j: 0, x: 5, y: 0, label: 'slow-enemy', family: 'unit', requestedMoveSpeedFactor: 0.5 }
@@ -71,7 +71,7 @@ test('findInstancesInSight can filter targets by effective insight range', () =>
 test('sight lookup tolerates an empty spatial index while the map initializes', () => {
   const { findInstancesInSight } = loadModule('app/lib/grid/visibility.ts', {
     '../../constants': { ...constants, BUCKET_SIZE: 10 },
-    '../../services/FogOfWar': { updateVisibility: () => {} },
+    '../../services/UnitPerception': { updateVisibility: () => {} },
   })
   for (const instanceBuckets of [undefined, null, [], [[]]]) {
     const observer = { i: 0, j: 0, x: 0, y: 0, sight: 8, context: { map: { instanceBuckets } } }

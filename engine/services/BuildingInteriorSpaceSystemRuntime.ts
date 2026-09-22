@@ -101,7 +101,6 @@ function buildInteriorSpaceCells(
           z: relief[i]?.[j] ?? 0,
           type: String(blueprint.terrain[i]?.[j] ?? 'Dirt'),
           terrainHidden: !isFloor,
-          skipFog: true,
         },
         cellContext
       ) as RuntimeCell

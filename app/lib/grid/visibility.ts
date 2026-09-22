@@ -1,7 +1,6 @@
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
-import { usesPersonalVision } from '../units/playerVisionAccess'
-import type { VisibilityEntity } from '../../services/FogOfWar'
-import { updateVisibility } from '../../services/FogOfWar'
+import type { VisibilityEntity } from '../../services/UnitPerception'
+import { updateVisibility } from '../../services/UnitPerception'
 import type { Bounds } from '../../types/geometry'
 import type { GridPosition, Point } from '../../types/grid'
 import { getEntityMapSpace, sameMapSpace } from '../mapSpaces'
@@ -43,7 +42,6 @@ export type RenderableInstance = VisibilityEntity &
     family?: string
     spaceId?: string
     type?: string
-    hideWhenFogged?: boolean
     owner?:
       | (VisibilityEntity['owner'] & {
           isPlayed?: boolean
@@ -104,36 +102,18 @@ export function findInstancesInSight<
 }
 
 export function updateInstanceVisibility(instance: RenderableInstance): void {
-  return updateVisibility(instance)
+  updateVisibility(instance)
+  updateInstanceRenderVisibility(instance)
 }
 
 function instanceShouldRender(instance?: RenderableInstance | null): boolean {
   const { map, controls } = instance?.context || {}
   if (!map || !controls || !instance || instance.isDestroyed) return false
-  const runtimeMap = getVisibilityRuntimeMap(instance)
   if (!sameMapSpace(instance, { spaceId: map.activeSpaceId ?? null })) return false
   if (!getRenderablePosition(instance)) return false
   if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
   if (!controls.instanceInCamera(instance, getInstanceCameraBounds(instance))) return false
-  if (getEntityMapSpace({ spaceId: instance.spaceId ?? null }, runtimeMap)?.kind === 'interior') return true
-  return instancePassesFog(instance)
-}
-
-function instancePassesFog(instance: RenderableInstance): boolean {
-  const { map, player } = instance.context ?? {}
-  if (!map) return false
-  if (map.revealEverything) return true
-  const inPlayerSight = instanceIsInPlayerSight(instance, player)
-  if (instance.hideWhenFogged && !instanceIsInActiveOrTeamSight(instance, player, instance.context?.players)) {
-    return false
-  }
-
-  return (
-    (instance.owner?.isPlayed && !usesPersonalVision(instance.context)) ||
-    inPlayerSight ||
-    instance.family === FAMILY_TYPES.resource ||
-    (!map.revealTerrain && !instance.owner)
-  )
+  return true
 }
 
 export function updateInstanceRenderVisibility(instance?: RenderableInstance | null): boolean {

@@ -1,20 +1,21 @@
-import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
 import { isInteriorTheftDefender } from '../../ai/AITheftDefense'
-import { getPositionInGridAroundInstance } from '../../lib/grid/placement'
-import { instancesDistance } from '../../lib/maths'
-import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
-import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit } from '../../lib/chief'
-import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import type { EnemyMemory } from '../../ai/AIThreatManager'
 import type { AIBuildingLike, AIEntityLike } from '../../ai/types'
+import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit } from '../../lib/chief'
+import { getPositionInGridAroundInstance } from '../../lib/grid/placement'
+import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
+import { instancesDistance } from '../../lib/maths'
+import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
+import {} from './AITrackingCleanup'
 
 const CHIEF_FORUM_GUARD_RANGE = 8
 const CHIEF_HERO_TALK_RANGE = 2.5
 
-type AIPlayerBehaviorHost = {
+export type AIPlayerBehaviorHost = {
   context: {
     controls?: { heroUnit?: UnitEntity | null }
     map: {
@@ -44,31 +45,6 @@ type AIPlayerBehaviorHost = {
 export type AIVillageDefenseResult = {
   actions: number
   active: boolean
-}
-
-export function cleanupAITrackingSets(ai: AIPlayerBehaviorHost) {
-  for (const resources of Object.values(ai.foundedResources)) {
-    for (const resource of resources) {
-      if ((resource.quantity ?? 0) <= 0 || resource.isDead) resources.delete(resource)
-    }
-  }
-  for (const animal of ai.foundedAnimals) {
-    if (animal.isDead || animal.isDestroyed || (animal.hitPoints ?? 0) <= 0) ai.foundedAnimals.delete(animal)
-  }
-  for (const animal of ai.foundedDeadAnimals) {
-    if (animal.isDestroyed || (animal.quantity ?? 0) <= 0) ai.foundedDeadAnimals.delete(animal)
-  }
-  for (const building of ai.foundedEnemyBuildings) {
-    if (building.isDead || building.isDestroyed || !ai.isEnemy(building.owner))
-      ai.foundedEnemyBuildings.delete(building)
-  }
-  for (const unit of ai.foundedEnemyUnits) {
-    if (unit.isDead || unit.isDestroyed || (unit.hitPoints ?? 0) <= 0 || !ai.isEnemy(unit.owner)) {
-      ai.foundedEnemyUnits.delete(unit)
-    }
-  }
-  ai._refreshEnemyMemory(ai.enemyBuildingMemory)
-  ai._refreshEnemyMemory(ai.enemyUnitMemory)
 }
 
 export function refreshAIChiefSuccession(ai: AIPlayerBehaviorHost, villagers: AIEntityLike[]): number {
@@ -226,3 +202,5 @@ export function getApproachableHeroNearChiefAnchor(
   if (ai.isEnemy(hero.owner) || hero.owner.isEnemy?.(ai as unknown as PlayerLike)) return null
   return instancesDistance(anchor, hero) <= CHIEF_FORUM_GUARD_RANGE ? hero : null
 }
+
+export { cleanupAITrackingSets } from './AITrackingCleanup'

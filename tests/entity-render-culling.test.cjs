@@ -46,9 +46,9 @@ function bindSprite(sprite) {
   return () => tick?.({})
 }
 
-const { updateInstanceRenderVisibility } = loadModule('app/lib/grid/visibility.ts', {
+const { updateInstanceRenderVisibility, updateInstanceVisibility } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
-  '../../services/FogOfWar': { updateVisibility: () => {} },
+  '../../services/UnitPerception': { updateVisibility: () => {} },
   '../units/insightDetection': { getInsightDetectionRange: (_instance, _target, range) => range },
   './cells': { getBuildingFootprintCells: (i, j) => [{ i, j }] },
 })
@@ -123,7 +123,7 @@ test('renders an explored resource only while it is inside the camera', () => {
   assert.equal(resource.visible, true)
 })
 
-test('hideWhenFogged owned entities render only while in active player sight', () => {
+test('legacy hideWhenFogged does not hide entities inside the camera', () => {
   let visible = false
   const trap = {
     family: 'building',
@@ -147,8 +147,8 @@ test('hideWhenFogged owned entities render only while in active player sight', (
     },
   }
 
-  assert.equal(updateInstanceRenderVisibility(trap), false)
-  assert.equal(trap.visible, false)
+  assert.equal(updateInstanceRenderVisibility(trap), true)
+  assert.equal(trap.visible, true)
   visible = true
   assert.equal(updateInstanceRenderVisibility(trap), true)
   assert.equal(trap.visible, true)
@@ -261,4 +261,21 @@ test('culls a sprite-based entity by its full bounding box, not just its anchor 
   assert.equal(updateInstanceRenderVisibility(building), true)
   assert.equal(building.visible, true)
   assert.deepEqual(receivedBounds, { minX: 60, minY: 80, width: 80, height: 196 })
+})
+
+
+test('a perception refresh also updates camera rendering and the shadow once', () => {
+  let cameraContainsEntity = true
+  let shadowUpdates = 0
+  const entity = { i: 1, j: 1, x: 32, y: 32, family: 'unit',
+    context: { map: {}, controls: { instanceInCamera: () => cameraContainsEntity } },
+    syncShadow() { shadowUpdates++ },
+  }
+  updateInstanceVisibility(entity)
+  assert.equal(entity.visible, true)
+  assert.equal(shadowUpdates, 1)
+  cameraContainsEntity = false
+  updateInstanceVisibility(entity)
+  assert.equal(entity.visible, false)
+  assert.equal(shadowUpdates, 2)
 })

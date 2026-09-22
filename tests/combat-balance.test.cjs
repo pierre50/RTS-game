@@ -157,7 +157,7 @@ test('non-siege enemies and aggressive animals have ARPG attack recovery', () =>
 })
 
 test('level-one hero uses the human stamina baseline', () => {
-  assert.equal(units.Villager.totalEnergy, 12)
+  assert.equal(units.Villager.totalEnergy, 18)
   assert.equal(units.Villager.energyRegenRate, 3.1)
   assert.equal(units.Villager.energyRegenDelay, 400)
   assert.equal(units.Villager.energyCosts.attack, 2)
@@ -184,13 +184,13 @@ test('level-one hero uses the human stamina baseline', () => {
   assert.equal(Object.hasOwn(units.Hero.energyCosts, 'heroPowerCharge'), false)
   assert.equal(Object.hasOwn(units.Hero.energyCosts, 'heroDefense'), false)
 
-  assert.equal(units.Fantassin.totalEnergy, 12)
+  assert.equal(units.Fantassin.totalEnergy, 18)
   assert.equal(units.Fantassin.energyCosts.attack, 1.8)
-  assert.equal(units.Bowman.totalEnergy, 12)
+  assert.equal(units.Bowman.totalEnergy, 18)
   assert.equal(units.Bowman.energyCosts.attack, 2)
-  assert.equal(units.Chief.totalEnergy, 14)
+  assert.equal(units.Chief.totalEnergy, 21)
   assert.equal(units.Chief.energyCosts.attack, 1.8)
-  assert.equal(units.Priest.totalEnergy, 12)
+  assert.equal(units.Priest.totalEnergy, 18)
   assert.equal(units.Priest.energyCosts.heal, 1)
   assert.equal(units.Priest.energyCosts.convert, 1.5)
 })

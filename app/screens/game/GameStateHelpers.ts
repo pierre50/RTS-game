@@ -18,7 +18,7 @@ export function savedRuntimeState(save: SerializedSave): SavedGameData {
   return save as SavedGameData
 }
 
-export function withFogEnabledState(state: SerializedSave): SerializedSave {
+export function withDebugRevealDisabled(state: SerializedSave): SerializedSave {
   return {
     ...state,
     config: state.config ? { ...state.config, revealEverything: false } : state.config,

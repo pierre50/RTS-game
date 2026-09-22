@@ -48,9 +48,7 @@ export type MapGenerationMap = RuntimeMap & {
   blueprintInitialWaterBorderMs?: number
   blueprintWaterBorderReady?: boolean
   blueprintResourceLoadMs?: number
-  _fogInitComplete?: boolean
   terrainChunkManager?: { destroy(): void }
-  mapFog?: { destroyFogResources(): void }
   children: GeneratedMapChild[]
   removeChildren(): GeneratedMapChild[]
   getChildByLabel(label: string): ContainerChild | null
@@ -83,9 +81,6 @@ export type MapGenerationMap = RuntimeMap & {
     }
   ): Promise<void>
   placePlayers(): void
-  _initFogChunks(): void
-  _indexFogChunkCells(): void
-  _flushFogQueue(): void
   bakeTerrainToChunks(): void
   removeChild(child: ContainerChild): ContainerChild
 }

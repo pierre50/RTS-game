@@ -359,6 +359,8 @@ test('serializes animal movement and corpse state while skipping destroyed anima
       gaia: {
         animals: [
           {
+            inventory: { resources: { meat: 20, leather: 2 } },
+            corpseMaterialDecayRemainingMs: 35000,
             label: 'gazelle-1',
             family: 'animal',
             type: 'Gazelle',
@@ -400,6 +402,8 @@ test('serializes animal movement and corpse state while skipping destroyed anima
   )
 
   assert.equal(save.animals.length, 1)
+  assert.deepEqual(save.animals[0].inventory, { resources: { meat: 20, leather: 2 } })
+  assert.equal(save.animals[0].corpseMaterialDecayRemainingMs, 35000)
   assert.deepEqual(save.animals[0].dest, [8, 9, 'tree-1'])
   assert.deepEqual(save.animals[0].previousDest, [5, 5, undefined])
   assert.deepEqual(save.animals[0].path, [

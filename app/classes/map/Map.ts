@@ -11,7 +11,7 @@ import {
 } from './MapGeneration'
 import { MapResources, type ResourceDensity } from './resources/MapResources'
 import { MapTerrain, type ReliefLevelBounds } from './terrain/MapTerrain'
-import { MapFog } from './fog/MapFog'
+import { MapTerrainBake } from './terrain/MapTerrainBake'
 import { createSeededRandom } from '../../lib/random'
 import {
   OUTSIDE_SPACE_ID,
@@ -98,7 +98,7 @@ export default class Map extends Container {
   mapGeneration: MapGeneration
   mapResources: MapResources
   mapTerrain: MapTerrain
-  mapFog: MapFog
+  terrainBake: MapTerrainBake
   terrainChunkManager: TerrainChunkManager
   shadowLayer: Container
   waterOverlay: TilingSprite | null
@@ -170,7 +170,7 @@ export default class Map extends Container {
     this.mapGeneration = new MapGeneration(this)
     this.mapResources = new MapResources(this)
     this.mapTerrain = new MapTerrain(this)
-    this.mapFog = new MapFog(this)
+    this.terrainBake = new MapTerrainBake(this)
     this.terrainChunkManager = new TerrainChunkManager(this as ChunkedTerrainMap)
     this.shadowLayer = new Container()
     this.shadowLayer.eventMode = 'none'
@@ -228,7 +228,6 @@ export default class Map extends Container {
     if (this.terrainChunkManager?.chunks.size) {
       this.context.performance?.measure?.('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
     }
-    if (!this.revealEverything) this.mapFog?.viewportRenderer.update(viewport)
 
     const startedAt = performance.now()
     try {
@@ -523,28 +522,15 @@ export default class Map extends Container {
     return this.mapTerrain.formatCellsPatchBorders()
   }
 
-  // MapFog
+  // MapTerrainBake
   bakeTerrainToChunks(): void {
-    this.mapFog.bakeTerrainToChunks()
-  }
-
-  _initFogChunks(): void {
-    return this.mapFog._initFogChunks()
-  }
-
-  _indexFogChunkCells(): void {
-    return this.mapFog._indexFogChunkCells()
-  }
-
-  _flushFogQueue(): void {
-    return this.mapFog._flushFogQueue()
+    this.terrainBake.bakeTerrainToChunks()
   }
 
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
     destroyWaterOverlay(this)
     this.shadowLayer?.destroy({ children: true, texture: false, textureSource: false })
     this.terrainChunkManager?.destroy()
-    this.mapFog?.destroyFogResources()
     super.destroy(options ?? undefined)
   }
 }

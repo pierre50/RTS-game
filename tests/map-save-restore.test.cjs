@@ -127,12 +127,12 @@ test('incoming training resolves its building without entering before the clock 
   assert.equal(unit.trainingTargetType, 'Fantassin')
 })
 
-test('fog restoration skips sparse holes even when their saved vision is viewed', () => {
-  const { restorePlayerViewsAndFog } = loadMapSaveRestore()
+test('exploration restoration skips sparse holes without restoring display fog', () => {
+  const { restorePlayerViews } = loadMapSaveRestore()
   const fog = []
   const viewed = []
   const map = { size: 2, grid: [[], [, { setFog: value => fog.push(value) }], []] }
-  restorePlayerViewsAndFog(
+  restorePlayerViews(
     {
       isPlayed: true,
       views: {
@@ -144,7 +144,7 @@ test('fog restoration skips sparse holes even when their saved vision is viewed'
     },
     map
   )
-  assert.deepEqual(fog, [true])
+  assert.deepEqual(fog, [])
   assert.deepEqual(viewed, [[1, 1]])
 })
 

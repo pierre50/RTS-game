@@ -1,7 +1,6 @@
 import type { Texture } from 'pixi.js'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
-import type { VisionViewerRef } from '../../types/vision'
+import type { RuntimeCell } from '../../types/map'
 import type { TextureRef } from '../../lib'
 
 export type CellMapLike = {
@@ -53,12 +52,8 @@ export type CellCommonStateSource = {
   border?: boolean
   waterBorder?: boolean
   terrainHidden?: boolean
-  viewed?: boolean
-  viewBy?: Set<VisionViewerRef>
   has?: RuntimeEntity | null
   corpses?: Set<RuntimeEntity>
-  fogSprites?: FogSpriteMemory[]
-  _hasFog?: boolean
   _terrainAppearance?: CellTerrainAppearance
 }
 
@@ -66,10 +61,8 @@ export type CellCommonStateTarget = CellCommonStateSource & {
   _terrainAppearance: CellTerrainAppearance
   assets: TextureRef[]
   corpses: Set<RuntimeEntity>
-  fogSprites: FogSpriteMemory[]
   has: RuntimeEntity | null
   terrainTextureName: string
-  viewBy: Set<VisionViewerRef>
   z: number
 }
 
@@ -97,11 +90,7 @@ export function assignCellCommonState(target: CellCommonStateTarget, source: Cel
   target.border = source.border ?? false
   target.waterBorder = source.waterBorder ?? false
   target.terrainHidden = source.terrainHidden ?? false
-  target.viewed = source.viewed ?? false
-  target.viewBy = source.viewBy ?? new Set()
   target.has = source.has ?? null
   target.corpses = source.corpses ?? new Set()
-  target.fogSprites = source.fogSprites ?? []
-  target._hasFog = source._hasFog ?? false
   target._terrainAppearance = source._terrainAppearance ?? createEmptyTerrainAppearance()
 }

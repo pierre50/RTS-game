@@ -3,7 +3,7 @@ import { placeCave } from './generation/CaveGeneration'
 import { buildNeighborScenery } from './NeighborScenery'
 import { updateInstanceVisibility } from '../../lib'
 import { getEnvironmentTerrainParams } from '../../constants'
-import { rehydrateAIKnowledge } from '../../services/FogOfWar'
+import { rehydrateAIKnowledge } from '../../services/UnitPerception'
 import type { GameContextLike } from '../../types/context'
 import type { GenerationTimer, MapGenerationMap, ProgressCallback, GenerateMapOptions } from './MapGenerationTypes'
 
@@ -15,22 +15,6 @@ type PipelineCallbacks = {
     timer: Pick<GenerationTimer, 'measure' | 'timings'>,
     onProgress: ProgressCallback
   ) => Promise<void>
-  setInitialFogCells: (yieldEvery: number) => Promise<number>
-}
-
-export async function setInitialFogCells(
-  map: MapGenerationMap,
-  yieldToBrowser: () => Promise<void>,
-  yieldEvery: number
-): Promise<number> {
-  const fogCellsStartedAt = performance.now()
-  for (let i = 0; i <= map.size; i++) {
-    for (let j = 0; j <= map.size; j++) {
-      map.grid[i][j]?.setFog()
-    }
-    if (i % yieldEvery === 0) await yieldToBrowser()
-  }
-  return performance.now() - fogCellsStartedAt
 }
 
 export async function prepareBaseTerrain(
@@ -56,7 +40,10 @@ export async function generateStylishMap(
   context: GameContextLike,
   timer: GenerationTimer,
   callbacks: PipelineCallbacks,
-  { onProgress = async (_stage: string, _progress: number) => {}, deferPlayerPlacement = false }: GenerateMapOptions = {}
+  {
+    onProgress = async (_stage: string, _progress: number) => {},
+    deferPlayerPlacement = false,
+  }: GenerateMapOptions = {}
 ): Promise<void> {
   const { menu, player } = context
   const { timings, measure, measureAsync } = timer
@@ -71,7 +58,9 @@ export async function generateStylishMap(
     timings.biomeTrees = 0
   } else {
     const resourceOptions = { treeTextureFamily: getEnvironmentTerrainParams(map.environment).treeTextureFamily }
-    await measureAsync('neutralResources', () => map.generateNeutralResourceGroupsAsync(map.playersPos, resourceOptions))
+    await measureAsync('neutralResources', () =>
+      map.generateNeutralResourceGroupsAsync(map.playersPos, resourceOptions)
+    )
     await measureAsync('biomeTrees', () => map.generateBiomeTreesAsync(map.playersPos, resourceOptions))
   }
   measure('banditCampPlacement', callbacks.placeBanditCamps)
@@ -80,7 +69,7 @@ export async function generateStylishMap(
   for (const viewer of map.context.players || []) {
     rehydrateAIKnowledge(viewer, map)
   }
-  await initializeFogForNewGame(map, player, timings, measure, callbacks, onProgress)
+  initializePlayerPerception(player)
   await finalizeGeneratedMap(map, menu, timings, measureAsync, onProgress, true)
 }
 
@@ -88,52 +77,20 @@ export async function prepareTerrainForSavedState(
   map: MapGenerationMap,
   context: GameContextLike,
   timer: GenerationTimer,
-  callbacks: Pick<PipelineCallbacks, 'prepareBaseTerrain' | 'setInitialFogCells'>,
+  callbacks: Pick<PipelineCallbacks, 'prepareBaseTerrain'>,
   { onProgress = async (_stage: string, _progress: number) => {} }: GenerateMapOptions = {}
 ): Promise<void> {
   const { timings, measure, measureAsync } = timer
 
   await callbacks.prepareBaseTerrain(context, { timings, measure }, onProgress)
-  await onProgress('generatingFog', 0.72)
-  measure('fogInit', () => map._initFogChunks())
-
-  if (!map.revealEverything) {
-    timings.fogCells = await callbacks.setInitialFogCells(16)
-  }
-
-  map._fogInitComplete = true
-  map._flushFogQueue()
   await finalizeGeneratedMap(map, null, timings, measureAsync, onProgress, false)
 }
 
-async function initializeFogForNewGame(
-  map: MapGenerationMap,
-  player: GameContextLike['player'],
-  timings: GenerationTimer['timings'],
-  measure: GenerationTimer['measure'],
-  callbacks: Pick<PipelineCallbacks, 'setInitialFogCells'>,
-  onProgress: ProgressCallback
-): Promise<void> {
-  await onProgress('generatingFog', 0.86)
-  measure('fogInit', () => map._initFogChunks())
-
-  if (!map.revealEverything) {
-    const yieldEvery = map.pregeneratedBlueprintId ? 32 : 12
-    timings.fogCells = await callbacks.setInitialFogCells(yieldEvery)
-    for (let i = 0; i < player.buildings.length; i++) {
-      const building = player.buildings[i]
-      building.visibleCells = new Set()
-      updateInstanceVisibility(building)
-    }
-    for (let i = 0; i < player.units.length; i++) {
-      const unit = player.units[i]
-      unit.visibleCells = new Set()
-      updateInstanceVisibility(unit)
-    }
+function initializePlayerPerception(player: GameContextLike['player']): void {
+  for (const entity of [...player.buildings, ...player.units]) {
+    entity.visibleCells = new Set()
+    updateInstanceVisibility(entity)
   }
-
-  map._fogInitComplete = true
-  map._flushFogQueue()
 }
 
 async function finalizeGeneratedMap(

@@ -274,7 +274,7 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'fog',
     usage: 'fog [on|off]',
-    describe: 'Toggle fog of war',
+    describe: 'Toggle unexplored areas on the minimap',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleFog(context, value),
   })
@@ -386,7 +386,7 @@ function registerDebugOverlayCommands(registry: DevCommandRegistry): void {
     name: 'perf-report',
     aliases: ['perfr'],
     usage: 'perf-report [top [limit]|spikes|metric <name>|render|scene|display|json|reset]',
-    describe: 'Print, inspect, export or reset frame, pathfinding, AI and fog timings',
+    describe: 'Print, inspect, export or reset frame, pathfinding, AI and camera timings',
     complete: () => ['top', 'spikes', 'metric', 'render', 'scene', 'display', 'json', 'reset'],
     run: (args, context) => performanceReport(context, args.join(' ')),
   })

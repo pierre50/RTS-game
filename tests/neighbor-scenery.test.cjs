@@ -104,13 +104,13 @@ test('border scenery keeps the playable grid intact and copies actual neighborin
   )
   assert.equal(tree.x, 416)
   assert.equal(tree.eventMode, 'none')
-  assert.equal(tree.visible, false)
+  assert.equal(tree.visible, true)
   map.revealEverything = true
   updateNeighborSceneryVisibility(map)
   assert.equal(tree.visible, true)
   map.revealEverything = false
   updateNeighborSceneryVisibility(map)
-  assert.equal(tree.visible, false)
+  assert.equal(tree.visible, true)
 })
 
 test('a harvested neighboring tree stays absent when the region has saved resources', () => {
@@ -119,7 +119,7 @@ test('a harvested neighboring tree stays absent when the region has saved resour
   assert.equal(map.children.filter(c => c.texture?.name === 'tree:7').length, 0)
 })
 
-test('unchanged fog does not rewrite visibility for every decoration', () => {
+test('camera-only scenery does not rewrite visibility for every decoration', () => {
   const { map } = fixture()
   buildNeighborScenery(map)
   const tree = map.children.find(c => c.texture?.name === 'tree:7')
@@ -134,12 +134,12 @@ test('unchanged fog does not rewrite visibility for every decoration', () => {
   assert.equal(writes, 0)
   map.revealEverything = true
   updateNeighborSceneryVisibility(map)
-  assert.equal(writes, 1)
+  assert.equal(writes, 0)
   updateNeighborSceneryVisibility(map)
-  assert.equal(writes, 1)
+  assert.equal(writes, 0)
   map.revealEverything = false
   updateNeighborSceneryVisibility(map)
-  assert.equal(writes, 2)
+  assert.equal(writes, 0)
 })
 
 test('saved border terrain and resources do not contaminate the shared blueprint', () => {

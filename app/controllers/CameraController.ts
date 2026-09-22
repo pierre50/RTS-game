@@ -17,6 +17,7 @@ import {
   collectCameraCells,
   refreshEnteredCameraCells,
   refreshExitedCameraCells,
+  exploreCameraCells,
   type CameraVisibleCellsStats,
 } from './camera/CameraVisibleCells'
 
@@ -36,12 +37,18 @@ type CameraContext = {
     }
   }
   map: RuntimeMap
+  editor?: object | null
+  controls?: {
+    freeCameraActive?: boolean
+    heroUnit?: { spaceId?: string | null; isDead?: boolean; isDestroyed?: boolean } | null
+  }
   menu?: {
     updateCameraMiniMap?(): void
     isMiniMapActive?(): boolean
   } | null
   player?: {
     views?: VisionGridLike
+    cellViewed?: number
     unselectAll?: () => void
   } | null
   performance?: {
@@ -66,8 +73,8 @@ export class CameraController {
   visibleCells: Set<RuntimeCell>
   mouseMoveState: MouseMoveState | null
   _rafPending: boolean
-  _nextVisibleCells?: Set<RuntimeCell>
   _lastVisibleCellsViewportKey: string | null
+  _lastCameraCellCollectionKey: string | null
   visibleCellsStats: CameraVisibleCellsStats
 
   constructor(context: CameraContext) {
@@ -80,6 +87,7 @@ export class CameraController {
     this.mouseMoveState = null
     this._rafPending = false
     this._lastVisibleCellsViewportKey = null
+    this._lastCameraCellCollectionKey = null
     this.visibleCellsStats = {
       candidates: 0,
       exited: 0,
@@ -129,7 +137,27 @@ export class CameraController {
   }
 
   getVisibleCellsStateKey(viewport: Viewport): string {
-    return `${this.getActiveCameraSpace().id}:${this.getVisibleCellsViewportKey(viewport)}`
+    return [
+      this.getActiveCameraSpace().id,
+      this.canExploreCamera(),
+      viewport.visibleLeft,
+      viewport.visibleTop,
+      viewport.visibleWidth,
+      viewport.visibleHeight,
+    ].join(':')
+  }
+
+  canExploreCamera(): boolean {
+    const { controls, editor } = this.context
+    const hero = controls?.heroUnit
+    return Boolean(
+      !editor &&
+        !controls?.freeCameraActive &&
+        hero &&
+        !hero.isDead &&
+        !hero.isDestroyed &&
+        (hero.spaceId || OUTSIDE_SPACE_ID) === this.getActiveCameraSpace().id
+    )
   }
 
   scheduleVisibleCellsUpdate(): void {
@@ -347,7 +375,22 @@ export class CameraController {
     try {
       if (!player?.views) return
       const margin = CAMERA_CULL_MARGIN
-      const { cells: newVisible, samples, stepX, stepY } = collectCameraCells(activeSpace, viewport, margin)
+      const collectionKey = `${activeSpace.id}:${this.getVisibleCellsViewportKey(viewport)}`
+      const reuseCells = !force && collectionKey === this._lastCameraCellCollectionKey && this.visibleCells.size > 0
+      const {
+        cells: newVisible,
+        samples,
+        stepX,
+        stepY,
+      } = reuseCells
+        ? { cells: this.visibleCells, samples: 0, stepX: CELL_WIDTH / 2, stepY: CELL_HEIGHT / 2 }
+        : collectCameraCells(activeSpace, viewport, margin)
+      this._lastCameraCellCollectionKey = collectionKey
+      if (this.canExploreCamera()) {
+        const explore = () => exploreCameraCells(newVisible, activeSpace.origin, viewport, player.views!)
+        const discovered = player.views.withSpace ? player.views.withSpace(activeSpace.id, explore) : explore()
+        player.cellViewed = (player.cellViewed ?? 0) + discovered
+      }
       const exited = refreshExitedCameraCells(this.visibleCells, newVisible)
       const updated = refreshEnteredCameraCells(this.visibleCells, newVisible)
 
@@ -361,7 +404,6 @@ export class CameraController {
         updated,
       }
 
-      this._nextVisibleCells = this.visibleCells
       this.visibleCells = newVisible
     } finally {
       this.context.performance?.record('camera.visibleCells', performance.now() - startedAt)

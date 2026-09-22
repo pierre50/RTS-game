@@ -11,10 +11,10 @@ test('saved entity restore places every cave occupant before resuming any unit o
     mocks: {
       '../../Resource': {}, '../../players': { Gaia: class {} }, '../../cell': {},
       '../../../lib': { getGaiaAnimals: () => [] },
-      '../../../services/FogOfWar': { rehydrateAIKnowledge() {} },
+      '../../../services/UnitPerception': { rehydrateAIKnowledge() {} },
       './MapOfflineWorldSimulation': {},
       '../MapSaveRestore': {
-        restorePlayerEntitiesFromSave() {}, restorePlayerInteriors() {}, restorePlayerViewsAndFog() {},
+        restorePlayerEntitiesFromSave() {}, restorePlayerInteriors() {}, restorePlayerViews() {},
         restoreBuildingAssignments() {}, restoreAIState() {}, restoreSelection() {},
         restoreCaveOccupants() { placed = true },
         processUnit(unit, map, saved) {

@@ -18,19 +18,16 @@ export const LABEL_TYPES = {
   healthBar: 'healthBar',
   energyBar: 'energyBar',
   powerBar: 'powerBar',
-  buildingFog: 'building',
   mouseBuilding: 'mouseBuilding',
   floor: 'floor',
   set: 'set',
   dither: 'dither',
-  fogOverlay: 'fogOverlay',
   commRadius: 'commRadius',
   buildingInteriorEntry: 'buildingInteriorEntry',
   interiorExit: 'interiorExit',
   overheadIndicator: 'overheadIndicator',
 }
 
-export const COLOR_WHITE = 0xffffff
 export const COLOR_RED = 0xff0000
 export const COLOR_GREEN = 0x00ff00
 export const COLOR_GOLD = 0xffcc33

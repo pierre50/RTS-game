@@ -1,3 +1,4 @@
+import { hasAnimalCorpseLoot } from '../equipment/animalCorpseLoot'
 import { canGatherCaveMineral } from '../resources/caveMinerals'
 import type { CombatEntity } from '../../types/combat'
 import {
@@ -63,7 +64,7 @@ export function getResourceActionConditions(source: CombatEntity, target: Combat
       Boolean(
         isVillagerOrHero(source) &&
           target.family === FAMILY_TYPES.animal &&
-          (target.quantity ?? 0) > 0 &&
+          hasAnimalCorpseLoot(target as Parameters<typeof hasAnimalCorpseLoot>[0]) &&
           target.isDead &&
           !target.isDestroyed
       ),

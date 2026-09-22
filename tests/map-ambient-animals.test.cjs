@@ -49,7 +49,7 @@ function loadMapGeneration() {
       getBuildingFootprintRadius: () => 1,
       getPlainCellsAroundPoint: () => [],
     },
-    '../../services/FogOfWar': { rehydrateAIKnowledge: () => {} },
+    '../../services/UnitPerception': { rehydrateAIKnowledge: () => {} },
     '../../ai/config': {
       MAX_BUILDING_BY_AGE: {},
       MAX_INFANTRY_BY_AGE: {},
@@ -91,7 +91,7 @@ function loadMapGeneration() {
       restoreAIState: () => {},
       restoreBuildingAssignments: () => {},
       restorePlayerEntitiesFromSave: () => {},
-      restorePlayerViewsAndFog: () => {},
+      restorePlayerViews: () => {},
       restoreSelection: () => {},
       restoreTransportCargo: () => {},
     },

@@ -26,7 +26,8 @@ function loadMapActions() {
       normalizeToggle: value => value === 'on',
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
 
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -69,15 +70,15 @@ test('fog off refreshes camera minimap immediately', () => {
 
   const result = toggleFog(context, 'off')
 
-  assert.deepEqual(result, { ok: true, message: 'Fog of war: off' })
+  assert.deepEqual(result, { ok: true, message: 'Minimap exploration: off' })
   assert.equal(context.map.revealEverything, true)
-  assert.equal(context.map.fogLayer.visible, false)
+  assert.equal(context.map.fogLayer.visible, context.map.revealEverything)
   assert.equal(terrainRevealCalls, 1)
   assert.equal(terrainRebuildCalls, 0)
   assert.equal(resourceUpdates, 1)
   assert.equal(cameraUpdates, 1)
-  assert.equal(fogQueueClears, 1)
-  assert.equal(pendingFogClears, 1)
+  assert.equal(fogQueueClears, 0)
+  assert.equal(pendingFogClears, 0)
 })
 
 test('fog on rebuilds terrain minimap from explored cells', () => {
@@ -89,12 +90,6 @@ test('fog on rebuilds terrain minimap from explored cells', () => {
     map: {
       revealEverything: true,
       fogLayer: { visible: false },
-      mapFog: {
-        viewportRenderer: {
-          invalidate: () => {},
-          update: () => {},
-        },
-      },
       terrainChunkManager: { invalidateAll: () => {} },
       resources: [],
       gaia: { units: [] },
@@ -120,9 +115,9 @@ test('fog on rebuilds terrain minimap from explored cells', () => {
 
   const result = toggleFog(context, 'on')
 
-  assert.deepEqual(result, { ok: true, message: 'Fog of war: on' })
+  assert.deepEqual(result, { ok: true, message: 'Minimap exploration: on' })
   assert.equal(context.map.revealEverything, false)
-  assert.equal(context.map.fogLayer.visible, true)
+  assert.equal(context.map.fogLayer.visible, context.map.revealEverything)
   assert.equal(terrainRevealCalls, 0)
   assert.equal(terrainRebuildCalls, 1)
 })

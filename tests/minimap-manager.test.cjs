@@ -132,25 +132,28 @@ function createStyleDeclaration() {
   }
 }
 
-test('non-chief minimap hides live fogged entities and keeps remembered buildings even after unseen removal', () => {
+test('NPC heads remain visible outside hero sight without discovering their route', () => {
   const MinimapManager = loadMinimapManager()
   const menu = createMenu()
   const owner = menu.context.player
-  owner.color = 'blue'
   menu.context.controls.heroUnit = { type: 'Hero', isChief: false }
-  owner.views = { isViewed: () => true, isVisible: i => i === 0 }
-  const instance = (label, i, family) => ({ label, i, j: 0, family, position: { x: i * 10, y: 0 }, owner, context: menu.context })
-  owner.units = [instance('visible', 0, 'unit'), instance('hidden', 2, 'unit')]
-  owner.buildings = [instance('hidden-building', 2, 'building')]
-  menu.context.map.grid[1][1].fogSprites = [{ colorName: 'blue', textureSheet: 'old-building' }]
+  owner.views = { isViewed: () => false, isVisible: () => false }
+  owner.units = [{ label: 'npc', i: 2, j: 0, family: 'unit',
+    position: { x: 20, y: 0 }, owner, context: menu.context }]
   const manager = new MinimapManager(menu)
   manager.activate()
   const layer = menu.playersMinimap.find(layer => layer.id === 'minimap-player').context
-  assert.equal(layer.rectangles.length, 2, 'one visible NPC and one remembered building')
-  owner.buildings = []
-  layer.rectangles.length = 0
+  assert.equal(layer.rectangles.length, 1, 'NPC marker remains on unknown terrain')
+  assert.equal(menu.terrainMinimap.context.diamonds.length, 0)
+  owner.units[0].i = 1
+  owner.units[0].position.x = 10
   manager.updatePlayerMiniMapEvt(owner)
-  assert.equal(layer.rectangles.length, 2, 'unseen demolition does not erase the remembered marker')
+  manager.updateTerrainMiniMap(1, 0)
+  assert.equal(layer.rectangles.length, 2, 'moving NPC redraws its marker')
+  assert.equal(menu.terrainMinimap.context.diamonds.length, 0, 'neither NPC movement nor stale terrain callbacks discover terrain')
+  owner.views.isViewed = i => i === 1
+  manager.updateTerrainMiniMap(1, 0)
+  assert.equal(menu.terrainMinimap.context.diamonds.length, 1, 'camera-discovered terrain can be drawn')
 })
 
 test('tracked quest areas draw on the minimap without revealing terrain', () => {
@@ -433,6 +436,7 @@ test('minimap draws discovered terrain from the active interior space', () => {
 
   menu.terrainMinimap.context.diamonds.length = 0
   menu.context.map.activeSpaceId = 'interior:house'
+  menu.context.player.views.isViewed = (i, j) => i === 2 && j === 2
   manager.updateTerrainMiniMap(2, 2)
 
   const [x, y, width, height, color] = menu.terrainMinimap.context.diamonds[0]

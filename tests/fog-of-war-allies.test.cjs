@@ -10,7 +10,7 @@ function loadFogOfWar() {
       UNIT_TYPES: { chief: 'Chief', hero: 'Hero' },
     },
   }
-  return loadTsModule('app/services/FogOfWar.ts', { mocks })
+  return loadTsModule('app/services/UnitPerception.ts', { mocks })
 }
 
 function createViews(size = 2) {
@@ -137,7 +137,7 @@ test('non-chief hero sees through himself only and promotion refreshes stationar
   assert.equal(player.views.isVisible(2, 2), false)
 })
 
-test('initial NPC visibility does not explore the map before the non-chief hero is created', () => {
+test('unit perception never explores the human map, even after hero promotion', () => {
   const { updateVisibility, refreshPlayerVisibility } = loadFogOfWar()
   const player = { isPlayed: true, label: 'player', views: createViews(), cellViewed: 0, units: [], buildings: [] }
   const grid = Array.from({ length: 3 }, (_, i) => Array.from({ length: 3 }, (_, j) => createCell(i, j)))
@@ -152,11 +152,11 @@ test('initial NPC visibility does not explore the map before the non-chief hero 
   updateVisibility(hero)
   player.units.push(hero)
   refreshPlayerVisibility(context)
-  assert.equal(player.views.isViewed(0, 0), true)
+  assert.equal(player.views.isViewed(0, 0), false)
   assert.equal(player.views.isViewed(2, 2), false)
   hero.isChief = true
   refreshPlayerVisibility(context)
-  assert.equal(player.views.isViewed(2, 2), true)
+  assert.equal(player.views.isViewed(2, 2), false)
 })
 
 test('unit vision updates only its owner, not allied players', () => {
@@ -192,7 +192,7 @@ test('unit vision updates only its owner, not allied players', () => {
   updateVisibility(instance)
 
   assert.equal(owner.views.hasViewer(1, 1, instance), true)
-  assert.equal(owner.cellViewed, 1)
+  assert.equal(owner.cellViewed, 0)
   assert.equal(ally.views.hasViewer(1, 1, instance), false)
   assert.equal(ally.cellViewed, 0)
 })
@@ -260,12 +260,22 @@ test('unit vision in an interior space does not reveal matching exterior coordin
 
   updateVisibility(instance)
 
-  assert.equal(owner.views.withSpace('outside', () => owner.views.isViewed(1, 1)), false)
-  assert.equal(owner.views.withSpace('interior:house', () => owner.views.isViewed(1, 1)), true)
+  assert.equal(
+    owner.views.withSpace('outside', () => owner.views.isViewed(1, 1)),
+    false
+  )
+  assert.equal(
+    owner.views.withSpace('interior:house', () => owner.views.isViewed(1, 1)),
+    false
+  )
+  assert.equal(
+    owner.views.withSpace('interior:house', () => owner.views.hasViewer(1, 1, instance)),
+    true
+  )
   assert.equal(exteriorGrid[1][1].viewBy.has(instance), false)
-  assert.equal(interiorGrid[1][1].viewBy.has(instance), true)
+  assert.equal(interiorGrid[1][1].viewBy.has(instance), false)
   assert.equal(exteriorGrid[1][1].unfogged, false)
-  assert.equal(interiorGrid[1][1].unfogged, true)
+  assert.equal(interiorGrid[1][1].unfogged, false)
 })
 
 test('animal detection uses slow target insight range when a unit reveals its cell', () => {
@@ -308,4 +318,21 @@ test('animal detection uses slow target insight range when a unit reveals its ce
   assert.deepEqual(detectFrom(5, 1), ['scout'])
   assert.deepEqual(detectFrom(5, 0.5), [])
   assert.deepEqual(detectFrom(4, 0.5), ['scout'])
+})
+
+test('moving player NPCs keeps perception without revealing any of their path', () => {
+  const { updateVisibility } = loadFogOfWar()
+  const owner = { label: 'player', isPlayed: true, views: createViews(8), cellViewed: 0 }
+  const hero = { type: 'Hero', isChief: true }
+  const grid = Array.from({ length: 9 }, (_, i) => Array.from({ length: 9 }, (_, j) => createCell(i, j)))
+  const npc = { i: 1, j: 1, sight: 1, label: 'villager', owner,
+    context: { player: owner, map: { grid, size: 8 }, controls: { heroUnit: hero } } }
+  for (let i = 1; i < 7; i++) {
+    npc.i = i
+    updateVisibility(npc)
+    assert.equal(owner.views.isVisible(i, 1), true)
+    assert.equal(owner.views.isViewed(i, 1), false)
+  }
+  assert.equal(owner.cellViewed, 0)
+  assert.equal(owner.views.calls.some(call => call[0] === 'setViewed'), false)
 })

@@ -1,31 +1,10 @@
+import { FR_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
 import { ENTITY_DETAILS_TRANSLATIONS } from './entityDetails'
 import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { FR_QUEST_TRANSLATIONS } from './questTranslations'
-import { FR_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
+import { FR_WINDOW_TRANSLATIONS } from './windowTranslations'
 export const FR_TRANSLATIONS = {
-  placementHelp: 'Placement',
-  placementPlace: 'Placer',
-  placementMirror: 'Miroir',
-  windowPreviousTab: 'Onglet précédent',
-  windowNextTab: 'Onglet suivant',
-  windowPrevious: 'Précédent',
-  windowNext: 'Suivant',
-  windowPreviousValue: '{name} : valeur précédente',
-  windowNextValue: '{name} : valeur suivante',
-  windowToggle: 'Activer / désactiver',
-  windowEditText: 'Saisir au clavier',
-  windowRead: 'Consulter',
-  windowDeleteStack: 'Supprimer la pile',
-  windowInsufficientGold: 'Or insuffisant',
-  windowCommands: 'Commandes',
-  windowWholeStack: 'Toute la pile',
-  windowConfirm: 'Confirmer',
-  windowHold: 'Maintenir',
-  windowRemoveChest: 'Retirer le coffre',
-  windowBlockDeliveries: 'Bloquer les dépôts',
-  windowAllowDeliveries: 'Autoriser les dépôts',
-  windowNavigation: 'Naviguer',
-  windowPanels: 'Changer de panneau',
+  ...FR_WINDOW_TRANSLATIONS,
 
   ...FR_QUEST_TRANSLATIONS,
   ...FR_CIV_LORE_TRANSLATIONS,
@@ -484,7 +463,6 @@ export const FR_TRANSLATIONS = {
   generatingPlayers: 'Installation des joueurs...',
   generatingResources: 'Répartition des ressources...',
   generatingDecorations: 'Ajout des détails...',
-  generatingFog: 'Préparation du brouillard...',
   finalizingWorld: 'Finalisation...',
   loadingBorder: 'Chargement bordures..',
   loadingGraphics: 'Chargement graphismes..',

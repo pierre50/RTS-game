@@ -12,7 +12,7 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
 import { applyPortableUnitState } from './GameStateHelpers'
-import { refreshTravelPartyFog, type TravelPartyGame, type TravelPartyState } from './GameTravelParty'
+import { refreshTravelPartyVisibility, type TravelPartyGame, type TravelPartyState } from './GameTravelParty'
 
 export type BuildingInteriorOccupantState = SaveEntityState & {
   sleepInInterior?: boolean
@@ -252,7 +252,7 @@ export function addInteriorOccupantsToRuntime(
     created.push(occupant)
   }
 
-  if (created.length) refreshTravelPartyFog(game as TravelPartyGame, created)
+  if (created.length) refreshTravelPartyVisibility(game as TravelPartyGame, created)
   return created
 }
 

@@ -135,10 +135,10 @@ export function planAbstractTraining(
           label: worker.label,
           i: worker.i,
           j: worker.j,
-          name: worker.name,
+          ...(worker.name !== undefined ? { name: worker.name } : {}),
           gender: worker.gender,
           appearanceVariants: worker.appearanceVariants,
-          inventory: structuredClone(worker.inventory),
+          ...(worker.inventory !== undefined ? { inventory: structuredClone(worker.inventory) } : {}),
         }
         building.trainingQueue ??= []
         building.trainingQueue.push({

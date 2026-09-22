@@ -62,6 +62,8 @@ function reviveAnimal(animal: AnimalEntity): boolean {
   animal.isDead = false
   animal.hitPoints = totalHitPoints
   animal.quantity = totalQuantity
+  delete animal.inventory
+  delete animal.corpseMaterialDecayRemainingMs
   animal.action = null
   animal.path = []
   animal.dest = null

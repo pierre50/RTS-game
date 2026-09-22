@@ -86,7 +86,7 @@ export class BuildingCombat {
     }
   }
 
-  // Vision-driven aggro (see FogOfWar.updateVisibility) only fires when a mover's own sight
+  // Vision-driven aggro (see UnitPerception.updateVisibility) only fires when a mover's own sight
   // newly reveals this building, so a tower that just came into existence surrounded by
   // already-stationary enemies would otherwise never take its first shot. Scan once here.
   // Called both from the gradual-construction path (BuildingLifecycle.updateTexture) and the

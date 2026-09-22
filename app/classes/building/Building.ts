@@ -109,7 +109,6 @@ export class Building extends Instance implements BuildingEntity {
   buildingAge!: number
   assetType?: string
   textureName?: string
-  hideWhenFogged?: boolean
   useSpriteShadow?: boolean
   providesVision?: boolean
   requiresActiveSightInteraction?: boolean

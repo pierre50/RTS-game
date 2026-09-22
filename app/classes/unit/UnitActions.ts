@@ -155,9 +155,7 @@ export class UnitActions {
         this.handleConvertAction()
         break
       case ACTION_TYPES.takemeat:
-        this.directedActions.startTakeMeatGathering((loadingType, soundId, options) => {
-          this.startGathering(loadingType, soundId, options)
-        })
+        this.directedActions.takeAnimalLoot()
         break
       case ACTION_TYPES.hunt:
         this.handleHuntAction()

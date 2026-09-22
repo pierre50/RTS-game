@@ -1,6 +1,8 @@
-import { MEAT_GATHER_BONUS_DROPS } from '../../config/animalGatherLoot'
-import { ACTION_TYPES, FAMILY_TYPES, LOADING_TYPES, SHEET_TYPES, SOUND_CUES } from '../../constants'
+import { isActionTouchingTarget } from '../../lib/actions/contactActions'
+import { takeAnimalLootForDelivery } from '../../lib/equipment/animalCorpseLoot'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, SOUND_CUES } from '../../constants'
 import {
+  SLASH_IMPACT_FRAME,
   BOW_SHOOT_RELEASE_FRAME,
   HUNTING_PROJECTILE,
   getHuntingAimPoint,
@@ -19,8 +21,6 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/enti
 import type { CommandSound } from '../../types/entities'
 import { Projectile } from '../Projectile'
 import { stopManualHeroAction } from './UnitManualHeroWork'
-import { addGatheredResource } from './UnitResourceGathering'
-import { t } from '../../lib/lang'
 
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
@@ -196,26 +196,32 @@ export class UnitDirectedActions {
     return this.unit.sounds?.work?.[key] ?? fallback
   }
 
-  startTakeMeatGathering(
-    startGathering: (
-      loadingType: string,
-      soundId: CommandSound,
-      options: { checkOwner?: boolean; updateTexture?: boolean; onGathered?: (target: RuntimeEntity) => void }
-    ) => void
-  ): void {
-    startGathering(LOADING_TYPES.meat, this.getWorkSound('takeMeat', SOUND_CUES.villager.takeMeat), {
-      checkOwner: true,
-      updateTexture: true,
-      onGathered: target => {
-        const bonusDrops = MEAT_GATHER_BONUS_DROPS[target.type]
-        if (!bonusDrops?.length) return
-        for (const bonusDrop of bonusDrops) {
-          const roll = this.unit.context?.map?.random?.() ?? Math.random()
-          if (roll >= bonusDrop.chance) continue
-          const gain = addGatheredResource(this.unit, bonusDrop.resource, 1)
-          if (gain > 0) showResourceGainFeedback(this.unit, gain, t(bonusDrop.resource))
-        }
-      },
+  takeAnimalLoot(): void {
+    const unit = this.unit
+    const target = isRuntimeEntity(unit.dest) ? unit.dest : null
+    if (isHeroControlled(unit)) {
+      stopManualHeroAction(unit)
+      return
+    }
+    if (!target || !unit.getActionCondition?.(target) || !unit.isUnitAtDest?.(ACTION_TYPES.takemeat, target)) {
+      unit.affectNewDest?.()
+      return
+    }
+    unit.setTextures?.(SHEET_TYPES.action)
+    if (!unit.sprite) return
+    onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
+      if (unit.isDead || unit.isDestroyed || unit.dest !== target || unit.action !== ACTION_TYPES.takemeat) return
+      if (!isActionTouchingTarget(unit, target, ACTION_TYPES.takemeat)) {
+        unit.sendToEvt?.(target, ACTION_TYPES.takemeat, { forceRepath: true })
+        return
+      }
+      const moved = takeAnimalLootForDelivery(target, unit)
+      if (unit.sprite) delete unit.sprite.onFrameChange
+      if (moved > 0) {
+        this.playSound(this.getWorkSound('takeMeat', SOUND_CUES.villager.takeMeat))
+        showResourceGainFeedback(unit, moved)
+      }
+      if (!unit.sendToDelivery?.()) unit.stop?.()
     })
   }
 }

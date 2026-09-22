@@ -52,6 +52,7 @@ type SerializableEntity = RuntimeEntityBase & {
   totalEnergy?: number
   lastEnergySpentAt?: number
   horseColor?: string
+  corpseMaterialDecayRemainingMs?: number
   trapPrey?: boolean
   tamingStatus?: SaveEntityState['tamingStatus']
   companionHorseColor?: string | null
@@ -265,6 +266,8 @@ function animalData(animal: SerializableEntity): SaveEntityState {
     'quantity',
     'totalQuantity',
     'isFleeing',
+    'corpseMaterialDecayRemainingMs',
+    'inventory',
   ]) as Partial<SaveEntityState>
   return {
     ...data,

@@ -39,7 +39,6 @@ import {
   generateStylishMap,
   prepareBaseTerrain as prepareMapBaseTerrain,
   prepareTerrainForSavedState as prepareMapTerrainForSavedState,
-  setInitialFogCells as setMapInitialFogCells,
 } from './MapGenerationPipeline'
 import {
   applySavedStateToGeneratedMap,
@@ -95,7 +94,6 @@ export class MapGeneration {
 
   destroyGeneratedChildren(): void {
     this.map.terrainChunkManager?.destroy()
-    this.map.mapFog?.destroyFogResources()
     for (const row of this.map.grid) {
       for (const cell of row || []) {
         if (!cell?.isGenerationCell) continue
@@ -171,10 +169,6 @@ export class MapGeneration {
     finishSavedStateRestore(this.map, { bakeTerrain })
   }
 
-  async setInitialFogCells(yieldEvery: number): Promise<number> {
-    return setMapInitialFogCells(this.map, () => this.yieldToBrowser(), yieldEvery)
-  }
-
   generateFromJSON(data: SavedGameData): void {
     generateFromJSON(this.map, data)
   }
@@ -221,7 +215,6 @@ export class MapGeneration {
         timer: Pick<GenerationTimer, 'measure' | 'timings'>,
         onProgress: ProgressCallback
       ) => this.prepareBaseTerrain(context, timer, onProgress),
-      setInitialFogCells: (yieldEvery: number) => this.setInitialFogCells(yieldEvery),
     }
   }
 

@@ -29,7 +29,7 @@ import { renderInventoryWorldMap } from './InventoryWorldMap'
 import type { MenuHost } from './MenuHost'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
 import { renderMinimapResourcePanel } from './minimap/MinimapResourcePanel'
-import { createQuestMarker } from './questMarker'
+import { createQuestMarker } from './QuestMarker'
 import { ModalTabs } from './Tabs'
 
 type ActionMenuTab = 'info' | 'tools' | 'minimap' | 'worldmap' | 'construction'

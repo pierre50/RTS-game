@@ -33,10 +33,6 @@ export function updateCellChildVisibility(cell: VisibleCellHost, instance: Runti
 }
 
 export function updateCellVisible(cell: VisibleCellHost): void {
-  const { player } = cell.context
-  const map = cell.map ?? cell.context.map
-  if (!player?.views) return
-  if (!map?.revealEverything && !player.views.isViewed(cell.i, cell.j)) return
   cell.visible = true
   if (cell.has) updateCellChildVisibility(cell, cell.has)
   for (const corpse of cell.corpses) updateCellChildVisibility(cell, corpse)

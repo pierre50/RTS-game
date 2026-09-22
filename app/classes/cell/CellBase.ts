@@ -2,8 +2,6 @@ import { Container, type ContainerChild } from 'pixi.js'
 import type { Sprite } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory } from '../../types/map'
-import type { VisionViewerRef } from '../../types/vision'
 import type { TextureRef } from '../../lib'
 import type { CellTerrain } from './CellTerrain'
 import type { CellCommonStateSource, CellContextLike, CellMapLike } from './CellTypes'
@@ -65,12 +63,8 @@ export class CellBase extends RuntimeCellContainer {
   waterBorder!: boolean
   terrainHidden!: boolean
   z: number
-  viewed!: boolean
-  viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
-  fogSprites: FogSpriteMemory[]
-  _hasFog!: boolean
   terrainTextureName: string
   sprite: Sprite | null
   cellTerrain!: CellTerrain
@@ -93,12 +87,10 @@ export class CellBase extends RuntimeCellContainer {
     this.z = 0
     this.assets = []
     this.corpses = new Set()
-    this.fogSprites = []
     this.has = null
     this.terrainTextureName = ''
     this.sprite = null
     this.unregisterWaterBorderSurface = null
-    this.viewBy = new Set()
     this._terrainAppearance = createEmptyTerrainAppearance()
     assignCellCommonState(this, source)
   }

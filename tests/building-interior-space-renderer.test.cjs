@@ -644,8 +644,7 @@ test('runtime building interior activation refreshes both interior and exterior 
   const { activateBuildingInteriorSpace, deactivateBuildingInteriorSpace } = loadBuildingInteriorSpaceSystem({
     updateInstanceVisibility: entity => {
       visibilityUpdates.push(entity.label)
-    },
-    updateInstanceRenderVisibility: entity => {
+      // The public visibility update also refreshes rendering and shadows.
       renderUpdates.push(entity.label)
       const entitySpace = entity.spaceId ?? 'outside'
       const activeSpace = entity.context.map.activeSpaceId ?? 'outside'

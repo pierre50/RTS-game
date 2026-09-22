@@ -245,7 +245,7 @@ export class CellTerrain {
   // patches on Temperate/BlackForest/Jungle). `groundType` picks the sheet explicitly —
   // callers that react to a specific cell.type (formatCellsPatchBorders) pass it through;
   // callers that decorate water edges universally (formatCellsWaterBorderOverlays, and
-  // chunk/fog restore) omit it and get the desert sheet, matching every environment.
+  // terrain chunk restore) omit it and get the desert sheet, matching every environment.
   setPatchBorder(direction: string, groundType: PatchBorderGroundType = 'Desert'): void {
     const { cell } = this
     if (!cell.sprite) return
@@ -333,7 +333,7 @@ export class CellTerrain {
     const resourceName = parseTextureRef(label).sheet
     const texture = getTextureByFrame(resourceName, reliefIndex, Assets)
 
-    // Outdoor fog baking needs a flat backfill. In interiors it would protrude
+    // Outdoor terrain baking needs a flat backfill. In interiors it would protrude
     // beyond the actual ramp silhouette into the surrounding void.
     if (cell.context.map.mapType !== 'interior') {
       const underlay = new Sprite(baseTexture) as TerrainSprite

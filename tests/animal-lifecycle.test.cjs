@@ -323,3 +323,39 @@ test('animal die clears pending combat recovery before playing dying animation',
   assert.ok(calls.some(call => call[0] === 'setTextures' && call[1] === 'dyingSheet'))
   assert.ok(calls.some(call => call[0] === 'gotoAndPlay' && call[1] === 0))
 })
+
+test('a meatless carcass keeps its materials accessible without scheduling empty-corpse cleanup', () => {
+  const { animal } = createAnimal({ quantity: 0 })
+  animal.isDead = true
+  animal.inventory = { resources: { leather: 2 } }
+  let stopped = 0
+  let cleared = 0
+  animal.stopInterval = () => stopped++
+  animal.context.scheduler.addOneShot = () => { cleared++; return 1 }
+  new AnimalLifecycle(animal).updateTexture()
+  assert.equal(stopped, 0)
+  assert.equal(cleared, 0)
+  assert.deepEqual(animal.inventory.resources, { leather: 2 })
+  assert.equal(animal.context.map.grid[0][0].corpses.has(animal), true)
+})
+
+test('decomposition consumes shared meat and resumes the saved material decay countdown', () => {
+  const { animal } = createAnimal({ quantity: 1 })
+  animal.isDead = true
+  animal.inventory = { resources: { meat: 1, leather: 2 } }
+  animal.setTextures = () => {}
+  let tick
+  animal.startInterval = callback => { tick = callback }
+  const lifecycle = new AnimalLifecycle(animal)
+  animal.updateTexture = () => lifecycle.updateTexture()
+  lifecycle.decompose()
+  tick()
+  assert.equal(animal.quantity, 0)
+  assert.equal(animal.inventory.resources.meat, 0)
+  assert.equal(animal.inventory.resources.leather, 2)
+  assert.equal(animal.corpseMaterialDecayRemainingMs, 55000)
+  animal.corpseMaterialDecayRemainingMs = 15000
+  lifecycle.decompose()
+  tick()
+  assert.equal(animal.corpseMaterialDecayRemainingMs, 10000)
+})

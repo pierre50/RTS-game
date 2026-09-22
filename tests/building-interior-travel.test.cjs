@@ -32,7 +32,7 @@ function loadBuildingInteriorOccupants(overrides = {}) {
         isSleepTime: context => context.dayNight?.state?.hour >= 18,
       },
       './GameStateHelpers': { applyPortableUnitState: () => {} },
-      './GameTravelParty': { refreshTravelPartyFog: () => {} },
+      './GameTravelParty': { refreshTravelPartyVisibility: () => {} },
     },
   })
 }
@@ -134,7 +134,7 @@ function loadBuildingInteriorTravel(overrides = {}) {
       },
       './GameStateHelpers': {
         extractTravelParty: overrides.extractTravelParty ?? (() => ({ followers: [], hero: null })),
-        withFogEnabledState: state => state,
+        withDebugRevealDisabled: state => state,
         worldStateWithCampaignClock:
           overrides.worldStateWithCampaignClock ??
           ((state, elapsedMs) =>
@@ -675,8 +675,6 @@ test('entering a building interior opens the runtime layer and removes stale chi
         random: () => 0,
         rebuildTerrainAppearance() {},
         size: 15,
-        _flushFogQueue() {},
-        _initFogChunks() {},
       }
     },
     _createUiRuntime() {

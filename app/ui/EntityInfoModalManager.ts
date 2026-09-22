@@ -1,3 +1,4 @@
+import { AnimalInventoryScreen } from './inventory/AnimalInventoryScreen'
 import { InteractionPanel } from './InteractionPanel'
 import { createTitledEntityInfoContent, TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
 import { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
@@ -5,7 +6,7 @@ import { BUILDING_TYPES, FAMILY_TYPES } from '../constants'
 import { createInspectionModal } from './InspectionPanel'
 import { getEntityDisplayName } from './utils/entityDisplayName'
 import type { Modal } from '../lib'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
 function getEntityTitle(entity: RuntimeEntity): string {
@@ -24,7 +25,7 @@ export class EntityInfoModalManager {
   menu: MenuHost
   modal?: Modal
   entity: RuntimeEntity | null
-  inventoryScreen?: UnitInventoryScreen
+  inventoryScreen?: UnitInventoryScreen | AnimalInventoryScreen
   layout?: InteractionPanel
   infoPanel: HTMLElement | null
 
@@ -54,7 +55,8 @@ export class EntityInfoModalManager {
     }
 
     this.inventoryScreen =
-      isUnitEntity(entity) && entity.isDead ? new UnitInventoryScreen(this.menu, entity) : undefined
+      isUnitEntity(entity) && entity.isDead ? new UnitInventoryScreen(this.menu, entity) :
+      entity.family === FAMILY_TYPES.animal && entity.isDead ? new AnimalInventoryScreen(this.menu, entity as AnimalEntity) : undefined
     this.layout = this.inventoryScreen ? undefined : new InteractionPanel()
     const infoContent =
       this.inventoryScreen?.element ??

@@ -117,7 +117,6 @@ type BuildingAgeStats = { cost?: ResourceAmount; totalHitPoints?: number }
 export interface BuildingConfig extends EntityConfig {
   ageStats?: Record<string, BuildingAgeStats>
   totalHitPoints?: number
-  hideWhenFogged?: boolean
   indestructible?: boolean
   providesVision?: boolean
   requiresActiveSightInteraction?: boolean

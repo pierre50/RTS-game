@@ -3,8 +3,8 @@ import { townCenterLimitReached } from '../../lib/buildings/townCenterClaim'
 import { findMapTerritoryOwner } from '../../lib/campaign/mapTerritory'
 import { tryCreateCampChest } from '../../lib/grid/campChestPlacement'
 import { getPlayerResourceStores } from '../../lib/resources/playerResourceTotals'
-import { AI_DIFFICULTIES, MAX_BUILDING_BY_AGE, MAX_BUILDING_BY_AGE_FROZEN } from '../../ai/config'
-import { AGE_UP_ENABLED, BUILDING_TYPES } from '../../constants'
+import { AI_DIFFICULTIES, MAX_BUILDING_BY_AGE } from '../../ai/config'
+import { BUILDING_TYPES } from '../../constants'
 import { villageBuildingNeeds, villagePhase } from '../../ai/AIDevelopmentPolicy'
 import { getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import { isValidCondition } from '../../lib/combat/configConditions'
@@ -147,7 +147,7 @@ export function planOfflineBuildings(
         storagePitNeeded: needsStoragePit(state.resources, buildings),
       })
       const priorities = Object.keys(needs).filter(type => needs[type])
-      const capsByAge = AGE_UP_ENABLED ? MAX_BUILDING_BY_AGE : MAX_BUILDING_BY_AGE_FROZEN
+      const capsByAge = MAX_BUILDING_BY_AGE
       const caps = capsByAge[Math.min(2, player.age ?? 0) as keyof typeof capsByAge] as Record<string, number>
       for (const type of priorities) {
         if (type === BUILDING_TYPES.townCenter && townCenterLimitReached(player, state.players)) continue

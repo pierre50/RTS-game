@@ -1,5 +1,5 @@
 import { createCampIntroductionDialogue } from './CampIntroductionDialogue'
-import { refreshPlayerVisibility } from '../FogOfWar'
+import { refreshPlayerVisibility } from '../UnitPerception'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
 import { BUILDING_TYPES, UNIT_TYPES, SHEET_TYPES } from '../../constants'
 import { getInstanceDegree } from '../../lib/maths'

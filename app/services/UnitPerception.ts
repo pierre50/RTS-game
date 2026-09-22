@@ -1,18 +1,15 @@
 import { FAMILY_TYPES } from '../constants'
 import { heroCanCommand } from '../lib/chief'
-import { OUTSIDE_SPACE_ID,getMapSpace } from '../lib/mapSpaces'
+import { OUTSIDE_SPACE_ID, getMapSpace } from '../lib/mapSpaces'
 import { isAIControlledPlayer } from '../lib/playerState'
 import { instanceIsInInsightRange } from '../lib/units/insightDetection'
 import { observeTarget } from '../lib/units/playerTargetKnowledge'
 import { ownerSharesVision } from '../lib/units/playerVisionAccess'
 import type { PerformanceMonitorLike } from '../types/context'
-import type { RuntimeEntity,UnitEntity } from '../types/entities'
-import type { RuntimeCell,RuntimeMap,RuntimeMapSpace } from '../types/map'
+import type { RuntimeEntity, UnitEntity } from '../types/entities'
+import type { RuntimeCell, RuntimeMap, RuntimeMapSpace } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { VisionViewerRef } from '../types/vision'
 import { updateAIKnowledge } from './visibility/AIVisibilityKnowledge'
-
-type ViewerSet = Set<VisionViewerRef>
 
 type VisibilityContext = {
   performance?: PerformanceMonitorLike | null
@@ -55,25 +52,6 @@ type DetectingEntity = RuntimeEntity & {
 
 function canDetect(entity: RuntimeEntity): entity is DetectingEntity {
   return typeof (entity as { detect?: DetectingEntity['detect'] }).detect === 'function'
-}
-
-function syncVisibleSet(target: ViewerSet, source: ReadonlySet<VisionViewerRef>): void {
-  if (target === source) return
-  if (target.size === source.size) {
-    let identical = true
-    for (const item of source) {
-      if (!target.has(item)) {
-        identical = false
-        break
-      }
-    }
-    if (identical) return
-  }
-
-  target.clear()
-  for (const item of source) {
-    target.add(item)
-  }
 }
 
 export function rehydrateAIKnowledge(viewer: PlayerLike, map: RuntimeMap): void {
@@ -164,11 +142,6 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
       const globalCell = previousSpace.grid[i]?.[j]
       if (!globalCell) continue
       withPlayerViewSpace(ownerPlayer, previousSpace, () => ownerPlayer.views.removeViewer(i, j, instance))
-      withPlayerViewSpace(player, previousSpace, () => syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j)))
-
-      if (!withPlayerViewSpace(player, previousSpace, () => player.views.isVisible(i, j)) && !map.revealEverything) {
-        globalCell.setFog()
-      }
     }
   }
 
@@ -179,23 +152,14 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
       if (!globalCell) continue
 
       withPlayerViewSpace(ownerPlayer, currentSpace, () => ownerPlayer.views.addViewer(i, j, instance))
-      if (withPlayerViewSpace(ownerPlayer, currentSpace, () => ownerPlayer.views.setViewed(i, j))) {
+      // Human exploration comes from the hero camera; AI knowledge keeps its own sight radius.
+      if (owner !== player && withPlayerViewSpace(ownerPlayer, currentSpace, () => ownerPlayer.views.setViewed(i, j))) {
         ownerPlayer.cellViewed++
       }
       if (isAIControlledPlayer(ownerPlayer)) {
         withPlayerViewSpace(ownerPlayer, currentSpace, () => updateAIKnowledge(globalCell, ownerPlayer))
       }
-      withPlayerViewSpace(player, currentSpace, () => syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j)))
       if (globalCell.has) observeTarget(ownerPlayer, globalCell.has)
-      globalCell.updateVisible()
-
-      if (
-        !map.revealEverything &&
-        withPlayerViewSpace(player, currentSpace, () => player.views.hasViewer(i, j, instance))
-      ) {
-        globalCell.removeFog()
-      }
-
       if (!context?.editor && globalCell.has && globalCell.has.sight && canDetect(globalCell.has)) {
         if (instanceIsInInsightRange(globalCell.has, instance)) {
           globalCell.has.detect(instance)

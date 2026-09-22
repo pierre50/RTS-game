@@ -1,3 +1,4 @@
+import type { InventoryStorage } from '../lib/inventory/inventoryContainers'
 import type { RuntimeCell } from './map'
 import type { SpritesheetLike } from './pixi'
 import type { RuntimeEntity } from './entityRuntime'
@@ -5,6 +6,8 @@ import type { EnergyEntity, UnitEntity } from './unitEntity'
 import type { HorseTamingStatus } from '../lib/horses/horseTaming'
 
 export interface AnimalEntity extends EnergyEntity {
+  corpseMaterialDecayRemainingMs?: number
+  inventory?: InventoryStorage
   currentSheet?: string
   inactif?: boolean
   isFleeing?: boolean

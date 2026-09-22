@@ -3,7 +3,7 @@ import { logStartingWheat } from '../../../lib/resources/startingWheatDiagnostic
 import { migrateSavedAge, AGE_RULES_VERSION } from '../../../lib/objectives/ageRules'
 import { Human, AI, Gaia, Player } from '../../players'
 import { getGaiaAnimals } from '../../../lib'
-import { rehydrateAIKnowledge } from '../../../services/FogOfWar'
+import { rehydrateAIKnowledge } from '../../../services/UnitPerception'
 import { FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../../../constants'
 import { Cell } from '../../cell'
 import {
@@ -13,7 +13,7 @@ import {
   restoreAIState,
   restoreBuildingAssignments,
   restorePlayerEntitiesFromSave,
-  restorePlayerViewsAndFog,
+  restorePlayerViews,
   restoreSelection,
 } from '../MapSaveRestore'
 import type { GameContextLike } from '../../../types/context'
@@ -120,7 +120,7 @@ export function restoreSavedEntities(
   restoreCaveOccupants(context, players)
   map.context.players.forEach((player, index) => {
     const savedPlayer = players[index]
-    restorePlayerViewsAndFog(player, map)
+    restorePlayerViews(player, map)
     restoreBuildingAssignments(player, savedPlayer?.buildings || [], map)
     rehydrateAIKnowledge(player, map)
     restoreAIState(player, savedPlayer, map)
@@ -134,8 +134,6 @@ export function finishSavedStateRestore(
   map: MapGenerationMap,
   { bakeTerrain = false }: { bakeTerrain?: boolean } = {}
 ): void {
-  map._fogInitComplete = true
-  map._flushFogQueue()
   if (bakeTerrain) map.bakeTerrainToChunks()
   map.ready = true
 }
@@ -156,7 +154,6 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
 
   restoreSavedPlayers(map, players, runtime)
 
-  map._initFogChunks()
   const gaia = new Gaia(context)
   map.gaia = gaia
 
@@ -168,25 +165,17 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
       }
       const cell = line[j]
       if (!cell) continue
-      const newCell = new Cell({ i, j, z: cell.z ?? 0, type: cell.type, fogSprites: cell.fogSprites ?? [] }, context)
+      const newCell = new Cell({ i, j, z: cell.z ?? 0, type: cell.type }, context)
       map.addChild(newCell)
       map.grid[i][j] = newCell
     }
   }
-  map._indexFogChunkCells()
 
   applyOfflineWorldSimulation(map, data)
   restoreSavedResources(map, resources, data.naturalResourceRespawnSlots ?? naturalResourceRespawnSlots)
 
   map.rebuildTerrainAppearance()
 
-  if (!map.revealEverything) {
-    for (let i = 0; i <= map.size; i++) {
-      for (let j = 0; j <= map.size; j++) {
-        map.grid[i][j]?.setFog()
-      }
-    }
-  }
 
   controls?.setCamera?.(camera.x, camera.y, true)
   menu?.init?.()

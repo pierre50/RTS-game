@@ -102,7 +102,7 @@ function loadMapModule({ waterOverlayFramesAvailable = false } = {}) {
     if (request === './MapGeneration') return { MapGeneration: class {} }
     if (request === './resources/MapResources') return { MapResources: class {} }
     if (request === './terrain/MapTerrain') return { MapTerrain: class {} }
-    if (request === './fog/MapFog') return { MapFog: class {} }
+    if (request === './terrain/MapTerrainBake') return { MapTerrainBake: class {} }
     if (request === '../../lib') return { getTextureByFrame: () => ({}) }
     if (request === '../../lib/mapSpaces') {
       return {

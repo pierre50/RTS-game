@@ -1,3 +1,4 @@
+import { hasAnimalCorpseLoot, initializeAnimalCorpseLoot, syncAnimalLootQuantity } from '../../lib/equipment/animalCorpseLoot'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import {
@@ -125,6 +126,7 @@ export class AnimalLifecycle {
     }
     this.settleCorpseCell()
     animal.isDead = true
+    initializeAnimalCorpseLoot(animal, () => animal.context.map.random())
     detachStableInteriorHorse(animal, animal.context.map)
     animal.zIndex--
     animal.path = []
@@ -184,11 +186,21 @@ export class AnimalLifecycle {
     animal.setTextures(SHEET_TYPES.corpse)
     animal.sprite.animationSpeed = 0
     animal.syncShadow()
+    initializeAnimalCorpseLoot(animal)
     animal.startInterval(() => {
       if (animal.quantity > 0) {
-        animal.quantity--
+        if (animal.inventory?.resources) animal.inventory.resources.meat = Math.max(0, animal.quantity - 1)
+        syncAnimalLootQuantity(animal)
         if (animal.selected && player.selectedOther === animal) {
           menu.updateInfo(MENU_INFO_IDS.quantityText, animal.quantity)
+        }
+      }
+      if (animal.quantity <= 0 && hasAnimalCorpseLoot(animal)) {
+        animal.corpseMaterialDecayRemainingMs = Math.max(0, (animal.corpseMaterialDecayRemainingMs ?? CORPSE_TIME * 1000) - 5000)
+        if (animal.corpseMaterialDecayRemainingMs <= 0) {
+          animal.stopInterval()
+          fadeOutThenClear(animal, FADE_DURATION_MS)
+          return
         }
       }
       animal.updateTexture()
@@ -208,7 +220,7 @@ export class AnimalLifecycle {
       this.setCorpseFrame(2)
       animal.syncShadow()
     } else if (percentage <= 0) {
-      animal.stopInterval()
+      if (!hasAnimalCorpseLoot(animal)) animal.stopInterval()
       const cell = getEntityCell(animal, map)
       if (cell?.has === animal) {
         cell.has = null
@@ -220,6 +232,7 @@ export class AnimalLifecycle {
       }
       this.setCorpseFrame(3)
       animal.syncShadow()
+      if (hasAnimalCorpseLoot(animal) || animal.timeoutId != null) return
       animal.timeoutId = animal.context.scheduler.addOneShot(
         () => fadeOutThenClear(animal, FADE_DURATION_MS),
         CORPSE_TIME * 1000,

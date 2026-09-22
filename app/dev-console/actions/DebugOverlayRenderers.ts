@@ -78,7 +78,6 @@ export function ensurePerfOverlay(context: DevConsoleContext): void {
   const unitMove = metric('unit.move')
   const visibility = metric('visibility.update')
   const camera = metric('camera.visibleCells')
-  const viewportFog = metric('fog.viewport')
   const maxFrame = (value: typeof unitMove) => value?.maxFrameExclusiveMs?.toFixed(2) || value?.maxFrameMs?.toFixed(2) || '0.00'
   const maxCalls = (value: typeof unitMove) => value?.maxFrameCalls || 0
   overlay.textContent = [
@@ -95,7 +94,6 @@ export function ensurePerfOverlay(context: DevConsoleContext): void {
     `Camera ${camera?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(camera)}ms frame`,
     `Path ${pathfinding?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(pathfinding)}ms frame | ${maxCalls(pathfinding)} calls`,
     `AI step ${aiStep?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(aiStep)}ms frame`,
-    `Fog ${viewportFog?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(viewportFog)}ms frame`,
   ].join('\n')
 }
 

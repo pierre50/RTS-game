@@ -7,6 +7,7 @@ import { playAudibleSoundCue } from '../../lib/audio/sound'
 import { resumeVillagerJobIntent } from '../../lib/units/villagerTaskRecovery'
 import { logGoldMinerFlow } from '../../lib/units/autonomy/villagerJobDiagnostics'
 import {
+  findResourceDeliveryTarget,
   buildingAcceptsInventoryResource,
   getBuildingStorageRemaining,
   unitHasDeliverableResourcesForBuilding,
@@ -102,6 +103,10 @@ function finishResourceDelivery(context: GameContextLike, unit: UnitEntity): voi
   if (!canResumeVillagerReturnTaskBeforeRest(unit, returnTask) && sendUnitToRest(unit, 'sleep')) {
     logGoldMinerFlow(unit, 'delivery.rest-started-instead-of-work', {}, returnTask)
     return
+  }
+  if (returnTask?.action === ACTION_TYPES.takemeat) {
+    const nextDepot = findResourceDeliveryTarget(unit)
+    if (nextDepot && unit.sendToDelivery?.(nextDepot, returnTask)) return
   }
   const resumed = resumeVillagerJobIntent(unit, returnTask)
   logGoldMinerFlow(unit, resumed ? 'delivery.work-resumed' : 'delivery.work-stopped', {}, returnTask)

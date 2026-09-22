@@ -17,7 +17,7 @@ import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { CampaignSave, SerializedSave } from '../../types/save'
 import {
-  withFogEnabledState,
+  withDebugRevealDisabled,
   worldStateWithCampaignClock,
 } from './GameStateHelpers'
 import {
@@ -137,7 +137,7 @@ function saveRuntimeToCurrentCampaign(
   campaign: CampaignSave,
   now: number
 ): CampaignSave {
-  const state = withFogEnabledState(serializeGame(game._gameContext()))
+  const state = withDebugRevealDisabled(serializeGame(game._gameContext()))
   return updateCurrentWorldState(campaign, state, now)
 }
 
@@ -154,7 +154,7 @@ async function bootBuildingInteriorParentWorld(
   game._campaignSave = structuredClone(campaign)
   game._restartSaveData = structuredClone(campaign)
   game._destroyRuntime({ preserveLoadingScreen: true })
-  await game._bootFromSave(withFogEnabledState(structuredClone(worldState)))
+  await game._bootFromSave(withDebugRevealDisabled(structuredClone(worldState)))
   const arrivalCell = findBuildingInteriorParentArrivalCell(game, entryPortalId)
   placeParentDoorOccupants(game, party, returningOccupants, arrivalCell)
   applyTravelPartyToRuntime(game as TravelPartyGame, party, arrivalCell, { equippedItem })
@@ -184,7 +184,7 @@ export async function travelIntoBuildingInterior(
   const now = Date.now()
   game._isRestarting = true
   try {
-    const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
+    const currentWorldState = withDebugRevealDisabled(serializeGame(game._gameContext()))
     const baseCampaign = game._campaignSave
       ? updateCurrentWorldState(game._campaignSave, currentWorldState, now)
       : createInitialCampaignSave(currentWorldState, { now })
@@ -209,7 +209,7 @@ async function travelOutOfBuildingInteriorSession(
   let departureHeroProtection: BuildingInteriorHeroInvincibility | null = null
   let arrivalHeroProtection: BuildingInteriorHeroInvincibility | null = null
   const now = Date.now()
-  const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
+  const currentWorldState = withDebugRevealDisabled(serializeGame(game._gameContext()))
   const party = extractTravelParty(currentWorldState)
   const currentReturningOccupants = extractInteriorReturnOccupants(
     currentWorldState,
@@ -226,7 +226,7 @@ async function travelOutOfBuildingInteriorSession(
   const campaign = updateCampaignWorldState(
     game._campaignSave ?? session.sourceCampaign,
     session.sourceWorldId,
-    withFogEnabledState(parentState),
+    withDebugRevealDisabled(parentState),
     now
   )
   const transition = new BuildingInteriorTransition()
@@ -270,7 +270,7 @@ export async function travelOutOfBuildingInterior(game: BuildingInteriorTravelGa
     const now = Date.now()
     await withBuildingInteriorMovementTransition(game, async () => {
       await game._closeBuildingInteriorLayer?.()
-      const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
+      const currentWorldState = withDebugRevealDisabled(serializeGame(game._gameContext()))
       const campaign = game._campaignSave
         ? updateCurrentWorldState(game._campaignSave, currentWorldState, now)
         : createInitialCampaignSave(currentWorldState, { now })
@@ -292,7 +292,7 @@ export async function travelOutOfBuildingInterior(game: BuildingInteriorTravelGa
   let departureHeroProtection: BuildingInteriorHeroInvincibility | null = null
   let arrivalHeroProtection: BuildingInteriorHeroInvincibility | null = null
   const now = Date.now()
-  const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
+  const currentWorldState = withDebugRevealDisabled(serializeGame(game._gameContext()))
   const party = extractTravelParty(currentWorldState)
   const returningOccupants = extractInteriorReturnOccupants(
     currentWorldState,

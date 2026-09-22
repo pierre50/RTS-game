@@ -1,31 +1,10 @@
+import { EN_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
 import { ENTITY_DETAILS_TRANSLATIONS } from './entityDetails'
 import { ENTITY_NAME_TRANSLATIONS } from './entityNames'
 import { EN_QUEST_TRANSLATIONS } from './questTranslations'
-import { EN_CIV_LORE_TRANSLATIONS } from './civLoreTranslations'
+import { EN_WINDOW_TRANSLATIONS } from './windowTranslations'
 export const EN_TRANSLATIONS = {
-  placementHelp: 'Placement',
-  placementPlace: 'Place',
-  placementMirror: 'Mirror',
-  windowPreviousTab: 'Previous tab',
-  windowNextTab: 'Next tab',
-  windowPrevious: 'Previous',
-  windowNext: 'Next',
-  windowPreviousValue: '{name}: previous value',
-  windowNextValue: '{name}: next value',
-  windowToggle: 'Toggle',
-  windowEditText: 'Type with keyboard',
-  windowRead: 'Read',
-  windowDeleteStack: 'Discard stack',
-  windowInsufficientGold: 'Not enough gold',
-  windowCommands: 'Commands',
-  windowWholeStack: 'Whole stack',
-  windowConfirm: 'Confirm',
-  windowHold: 'Hold',
-  windowRemoveChest: 'Remove chest',
-  windowBlockDeliveries: 'Block deliveries',
-  windowAllowDeliveries: 'Allow deliveries',
-  windowNavigation: 'Navigate',
-  windowPanels: 'Switch panel',
+  ...EN_WINDOW_TRANSLATIONS,
 
   ...EN_QUEST_TRANSLATIONS,
   ...EN_CIV_LORE_TRANSLATIONS,
@@ -482,7 +461,6 @@ export const EN_TRANSLATIONS = {
   generatingPlayers: 'Placing players...',
   generatingResources: 'Distributing resources...',
   generatingDecorations: 'Adding details...',
-  generatingFog: 'Preparing fog...',
   finalizingWorld: 'Finalizing...',
   loadingBorder: 'Loading border..',
   loadingGraphics: 'Loading graphics..',

@@ -52,6 +52,8 @@ function renewAnimals(
       animal.isDestroyed = false
       animal.hitPoints = health
       animal.quantity = quantity
+      delete animal.inventory
+      delete animal.corpseMaterialDecayRemainingMs
       stopOfflineTask(animal)
       animal.isFleeing = false
       animal.currentSheet = 'standing'

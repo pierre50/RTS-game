@@ -98,7 +98,7 @@ export class AnimalBehavior {
     }
 
     // Backstop for non-runaway (e.g. attack) strategies: the one-shot vision-reveal
-    // trigger (FogOfWar -> Animal.detect) can be missed entirely if the animal is
+    // trigger (UnitPerception -> Animal.detect) can be missed entirely if the animal is
     // mid ambient-walk at the exact tick vision reaches it. Gated on the action
     // (not path/dest) so it still interrupts an ambient walk, but doesn't re-fire
     // every 250ms while already charging/engaged with a target.

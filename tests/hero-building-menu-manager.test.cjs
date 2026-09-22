@@ -104,6 +104,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
       getBuildingDisplayName: building => building.type || 'building',
     },
   }
+  mocks['./HeroMarketBody'] = mocks['./hero-building/HeroMarketBody']
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

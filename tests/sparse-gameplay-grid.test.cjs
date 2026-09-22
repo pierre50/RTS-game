@@ -83,7 +83,7 @@ test('pause collection skips holes and deduplicates corpses', () => {
   assert.deepEqual([...instances], [corpse])
 })
 
-test('fresh-world party reset clears only real cells', () => {
+test('fresh-world party reset clears player exploration without traversing the grid', () => {
   const { applyTravelPartyToRuntime } = loadTsModule('app/screens/game/GameTravelParty.ts', {
     mocks: {
       '../../lib': { updateInstanceVisibility() {} },
@@ -92,20 +92,20 @@ test('fresh-world party reset clears only real cells', () => {
       './GameStateHelpers': {},
     },
   })
-  let fogCalls = 0
-  const cell = { viewBy: new Set(['old']), setFog() { fogCalls++ } }
+  let visibilityResets = 0
+  let explorationResets = 0
   const hero = { type: 'Hero' }
   const player = {
     units: [hero], cellViewed: 7,
-    views: { clearVisibility() {}, clearExploration() {}, removeViewerEverywhere: () => [] },
+    views: { clearVisibility() { visibilityResets++ }, clearExploration() { explorationResets++ }, removeViewerEverywhere: () => [] },
   }
   const context = {
-    map: { grid: [[], new Array(3), [undefined, cell]], _flushFogQueue() {} },
+    map: { get grid() { assert.fail('reset must not traverse cells') } },
     player, controls: {}, menu: {},
   }
   applyTravelPartyToRuntime({ _gameContext: () => context }, { followers: [], hero: null }, null, { freshWorld: true })
-  assert.equal(fogCalls, 1)
-  assert.equal(cell.viewBy.size, 0)
+  assert.equal(visibilityResets, 1)
+  assert.equal(explorationResets, 1)
   assert.equal(player.cellViewed, 0)
 })
 
@@ -191,7 +191,7 @@ test('instance buckets cover sparse local map rows beyond the first row length',
   const { createRuntimeMapSpaceBuckets, ensureOutsideMapSpace, addEntityToRuntimeMapSpaceBucket } =
     loadTsModule('app/lib/mapSpaces.ts')
   const { findInstancesInSight } = loadTsModule('app/lib/grid/visibility.ts', {
-    mocks: { '../../services/FogOfWar': { updateVisibility() {} } },
+    mocks: { '../../services/UnitPerception': { updateVisibility() {} } },
   })
   const map = {
     grid, size: 219, spaces: new Map(), instanceBuckets: createRuntimeMapSpaceBuckets(grid, 219),
