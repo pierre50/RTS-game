@@ -4,6 +4,49 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { AnimatedSprite, Texture } = require('pixi.js')
+
+for (const replaceBody of [false, true]) {
+  test(`corpse appearance refresh preserves decay until completion (replace body: ${replaceBody})`, () => {
+    const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {})
+    const { CORPSE_TIME } = loadModule('app/constants/core.ts', {})
+    const original = new Texture()
+    const replacement = new Texture()
+    const sprite = new AnimatedSprite({ textures: [original], autoUpdate: false, loop: false })
+    let completed = 0
+    sprite.animationSpeed = 1 / (CORPSE_TIME * 60)
+    sprite.onComplete = () => completed++
+    sprite.play()
+    const unit = {
+      context: {},
+      degree: 180,
+      currentSheet: 'corpseSheet',
+      sheetDirectionCounts: { corpseSheet: 1 },
+      corpseSheet: { data: { animationSpeed: 0 }, textures: { '000.png': original } },
+      sprite,
+    }
+    const advance = seconds => {
+      for (let frame = 0; frame < seconds * 60; frame++) sprite.update({ deltaTime: 1 })
+    }
+
+    advance(CORPSE_TIME / 2)
+    if (replaceBody) unit.corpseSheet.textures['000.png'] = replacement
+    setUnitTexture('corpseSheet', unit)
+
+    assert.equal(sprite.animationSpeed, 1 / (CORPSE_TIME * 60))
+    assert.equal(sprite.playing, true)
+    assert.equal(sprite.loop, false)
+    assert.equal(completed, 0)
+    assert.equal(sprite.texture, replaceBody ? replacement : original)
+    // Identical body textures keep the elapsed time; replacing them must still expire.
+    advance((replaceBody ? CORPSE_TIME : CORPSE_TIME / 2) + 1 / 60)
+    assert.equal(completed, 1)
+    assert.equal(sprite.playing, false)
+    sprite.destroy()
+    original.destroy()
+    replacement.destroy()
+  })
+}
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)

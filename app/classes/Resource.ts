@@ -25,6 +25,7 @@ type SpriteFragmentBurstGroundTarget,
 } from '../lib'
 import { onVisualSettingsChange } from '../lib/audio/settings'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
+import { updateInstanceRenderVisibility } from '../lib/grid/visibility'
 import { logStartingWheatHarvest } from '../lib/resources/startingWheatDiagnostics'
 import { resetHarvestedWheat } from '../lib/resources/wheatGrowth'
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
@@ -171,6 +172,7 @@ export class Resource extends Instance implements ResourceEntity {
     } else initializeVisuals()
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
     map.addToInstanceBucket(this)
+    updateInstanceRenderVisibility(this)
   }
 
   private initializeResourceVisuals(options: ResourceOptions, cell: RuntimeCell): void {
@@ -353,6 +355,7 @@ export class Resource extends Instance implements ResourceEntity {
       cell.corpses.add(this)
       cell.solid = false
     }
+    updateInstanceRenderVisibility(this)
   }
 
   clear() {
@@ -360,6 +363,7 @@ export class Resource extends Instance implements ResourceEntity {
       return
     }
     this.isDestroyed = true
+    updateInstanceRenderVisibility(this)
     this.stopWindMotion()
     for (const cell of this.getFootprintCells()) {
       if (cell.has === this) {
@@ -412,8 +416,8 @@ export class Resource extends Instance implements ResourceEntity {
     this.zIndex = getInstanceZIndex(this)
     this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(cell))
     this.sprite.position.y = this.reliefLift ?? 0
-    this.visible = true
     this.refreshTextureForTerrain()
+    updateInstanceRenderVisibility(this)
   }
 
   shouldUseWindMotion(): boolean {

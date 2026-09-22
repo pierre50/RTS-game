@@ -179,6 +179,9 @@ function loadModule(relativePath, mocks) {
     return module.exports
   }
   const localRequire = request => {
+    if (request.endsWith('/grid/visibility')) {
+      return { updateInstanceRenderVisibility: mocks['../../lib']?.updateInstanceRenderVisibility ?? (() => {}) }
+    }
     if (request.endsWith('/units/pathProgress')) {
       return requireFromTsFile(path.join(__dirname, '../app/lib/units/pathProgress.ts'), filename, {}, dependencyModules)
     }

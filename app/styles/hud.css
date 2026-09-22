@@ -1280,6 +1280,20 @@
   cursor: crosshair;
 }
 
+.worldmap-player-position {
+  position: absolute;
+  z-index: 5;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #00bfff;
+  box-shadow: 0 0 0 2px #142536, 0 2px 8px #142536;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .worldmap-legend-title {
   margin-bottom: var(--ui-gap-6);
   color: var(--text-color-secondary);

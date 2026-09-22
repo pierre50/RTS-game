@@ -181,6 +181,7 @@ export function moveHeroPartyOutOfBuildingInteriorSpace(
   for (const follower of followers) routeUnitOutOfBuildingInteriorSpace(context, follower, space)
   routeBuildingPursuers(context, hero, space, pursuers, false)
   deactivateBuildingInteriorSpace(context, space)
+  context.controls?.focusHeroCamera?.()
   context.controls?.updateVisibleCells?.()
   return true
 }

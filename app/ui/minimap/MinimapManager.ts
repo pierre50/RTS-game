@@ -141,6 +141,22 @@ export class MinimapManager {
     squareSize: number,
     fallbackColor: string
   ): void {
+    if (unit === this.menu.context.controls.heroUnit || unit.type === 'Hero') {
+      const radius = 4 * MINIMAP_RESOLUTION_SCALE
+      context.save()
+      context.beginPath()
+      context.ellipse(x, y, radius, radius, 0, 0, Math.PI * 2)
+      context.fillStyle = '#00bfff'
+      context.fill()
+      context.lineWidth = 2 * MINIMAP_RESOLUTION_SCALE
+      context.strokeStyle = '#142536'
+      context.stroke()
+      context.lineWidth = MINIMAP_RESOLUTION_SCALE
+      context.strokeStyle = '#ffffff'
+      context.stroke()
+      context.restore()
+      return
+    }
     const avatar = this.getUnitAvatar(unit)
     if (!avatar) {
       canvasDrawRectangle(context, x - squareSize / 2, y - squareSize / 2, squareSize, squareSize, fallbackColor)

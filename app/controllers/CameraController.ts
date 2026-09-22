@@ -1,4 +1,5 @@
-import { pointInRectangle } from '../lib'
+import { pointInRectangle, updateInstanceRenderVisibility } from '../lib'
+import type { RenderableInstance } from '../lib/grid/visibility'
 import { rectangleIntersectsViewport } from '../lib/graphics/chunkCulling'
 import { getActiveMapSpace, OUTSIDE_SPACE_ID } from '../lib/mapSpaces'
 import { getLocalMapBounds } from '../lib/localMapLayout'
@@ -15,8 +16,7 @@ import {
 } from './camera/CameraMovement'
 import {
   collectCameraCells,
-  refreshEnteredCameraCells,
-  refreshExitedCameraCells,
+  collectCameraRenderCandidates,
   exploreCameraCells,
   type CameraVisibleCellsStats,
 } from './camera/CameraVisibleCells'
@@ -75,6 +75,9 @@ export class CameraController {
   _rafPending: boolean
   _lastVisibleCellsViewportKey: string | null
   _lastCameraCellCollectionKey: string | null
+  private visibilityRefreshViewport: Viewport | null = null
+  private renderCandidates = new Set<RenderableInstance>()
+  private observedCandidates = new WeakSet<RenderableInstance>()
   visibleCellsStats: CameraVisibleCellsStats
 
   constructor(context: CameraContext) {
@@ -163,7 +166,7 @@ export class CameraController {
   scheduleVisibleCellsUpdate(): void {
     if (!this.getActiveCameraSpace().grid?.length) return
     const viewport = this.getViewportRect()
-    if (this.getVisibleCellsStateKey(viewport) === this._lastVisibleCellsViewportKey) return
+    if (this.visibleCells.size && this.getVisibleCellsStateKey(viewport) === this._lastVisibleCellsViewportKey) return
     if (this._rafPending) return
     this._rafPending = true
     requestAnimationFrame(() => {
@@ -329,10 +332,27 @@ export class CameraController {
   }
 
   instanceInCamera(instance: Point, bounds?: Bounds): boolean {
-    const viewport = this.getViewportRect()
+    const viewport = this.visibilityRefreshViewport ?? this.getViewportRect()
     if (bounds) return rectangleIntersectsViewport(bounds, viewport)
     const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
     return pointInRectangle(instance.x, instance.y, visibleLeft, visibleTop, visibleWidth, visibleHeight)
+  }
+
+  trackRenderCandidate(instance: RenderableInstance, bounds: Bounds | null): void {
+    if (!bounds) {
+      this.renderCandidates.delete(instance)
+      return
+    }
+    const viewport = this.visibilityRefreshViewport ?? this.getViewportRect()
+    if (rectangleIntersectsViewport(bounds, viewport, CAMERA_CULL_MARGIN)) {
+      this.renderCandidates.add(instance)
+      if (instance.once && !this.observedCandidates.has(instance)) {
+        this.observedCandidates.add(instance)
+        instance.once('destroyed', () => this.renderCandidates.delete(instance))
+      }
+    } else {
+      this.renderCandidates.delete(instance)
+    }
   }
 
   getCellOnCamera(callback: (cell: RuntimeCell) => void): void {
@@ -358,20 +378,23 @@ export class CameraController {
     }
   }
 
-  updateVisibleCells(force = true): void {
+  updateVisibleCells(force = false): void {
     const { map, player } = this.context
     const activeSpace = this.getActiveCameraSpace()
     if (!activeSpace.grid?.length) return
     const viewport = this.getViewportRect()
     const viewportKey = this.getVisibleCellsStateKey(viewport)
-    if (!force && viewportKey === this._lastVisibleCellsViewportKey) {
+    if (!force && this.visibleCells.size && viewportKey === this._lastVisibleCellsViewportKey) {
       this.context.performance?.record('camera.visibleCellsSkip', 0)
       return
     }
-    this._lastVisibleCellsViewportKey = viewportKey
     if (activeSpace.isOutside) map.updateRenderChunks?.(viewport)
 
     const startedAt = performance.now()
+    // Share this snapshot only during the synchronous refresh. Individual entity
+    // updates outside this batch must always use the current camera and zoom.
+    const previousViewport = this.visibilityRefreshViewport
+    this.visibilityRefreshViewport = viewport
     try {
       if (!player?.views) return
       const margin = CAMERA_CULL_MARGIN
@@ -385,14 +408,22 @@ export class CameraController {
       } = reuseCells
         ? { cells: this.visibleCells, samples: 0, stepX: CELL_WIDTH / 2, stepY: CELL_HEIGHT / 2 }
         : collectCameraCells(activeSpace, viewport, margin)
-      this._lastCameraCellCollectionKey = collectionKey
       if (this.canExploreCamera()) {
         const explore = () => exploreCameraCells(newVisible, activeSpace.origin, viewport, player.views!)
         const discovered = player.views.withSpace ? player.views.withSpace(activeSpace.id, explore) : explore()
         player.cellViewed = (player.cellViewed ?? 0) + discovered
       }
-      const exited = refreshExitedCameraCells(this.visibleCells, newVisible)
-      const updated = refreshEnteredCameraCells(this.visibleCells, newVisible)
+      let exited = 0
+      let updated = 0
+      if (!reuseCells) {
+        for (const cell of this.visibleCells) {
+          if (!newVisible.has(cell)) exited++
+        }
+        updated = collectCameraRenderCandidates(newVisible, this.renderCandidates)
+      }
+      // Include candidates from the previous view so departing objects are hidden.
+      // Visibility updates also remove destroyed, distant and inactive-space objects.
+      for (const instance of this.renderCandidates) updateInstanceRenderVisibility(instance)
 
       this.visibleCellsStats = {
         candidates: newVisible.size,
@@ -405,7 +436,10 @@ export class CameraController {
       }
 
       this.visibleCells = newVisible
+      this._lastVisibleCellsViewportKey = viewportKey
+      this._lastCameraCellCollectionKey = collectionKey
     } finally {
+      this.visibilityRefreshViewport = previousViewport
       this.context.performance?.record('camera.visibleCells', performance.now() - startedAt)
     }
   }

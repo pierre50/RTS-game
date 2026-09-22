@@ -1,4 +1,5 @@
 import { runPathStep } from '../../lib/units/pathProgress'
+import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
 import { canReachContact } from '../../lib/contact/contactGeometry'
 import { tryStartAnimalContactApproach } from './AnimalContactApproach'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
@@ -163,6 +164,7 @@ function stepAnimalPath(animal: AnimalControllerHost): void {
   const arrived = remaining <= moveSpeed + 1e-6
   if (arrived) settleOnNextCell(animal, nextCell)
   syncEntityRelief(map, animal)
+  if (!arrived) updateInstanceRenderVisibility(animal)
   if (arrived) resolveArrivalAfterStep(animal)
 }
 

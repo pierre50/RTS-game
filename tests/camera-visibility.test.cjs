@@ -3,9 +3,9 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
-const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { requireFromTsFile, loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadCameraController(zoom = 1) {
+function loadCameraController(zoom = 1, refreshEntity) {
   const filename = path.join(__dirname, '../app/controllers/CameraController.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -20,6 +20,7 @@ function loadCameraController(zoom = 1) {
       pointIsBetweenTwoPoint: () => true,
       updateInstanceRenderVisibility: instance => {
         if (!instance) return false
+        if (refreshEntity) return refreshEntity(instance)
         instance.visible = false
         instance.__renderRecomputed = true
         return false
@@ -64,9 +65,64 @@ function loadCameraController(zoom = 1) {
   return module.exports.CameraController
 }
 
-test('refreshes camera-culled entities when their cell remains in the preload area', () => {
-  const CameraController = loadCameraController()
+test('shares one viewport across a visibility refresh and uses fresh bounds afterwards', () => {
+  const CameraController = loadCameraController(1, () => {
+    for (let i = 0; i < 200; i++) {
+      assert.equal(controller.instanceInCamera({ x: 10, y: 10 }, bounds), true)
+    }
+  })
+  const bounds = { minX: 10, minY: 10, width: 10, height: 10 }
+  const cell = {
+    has: {},
+    corpses: new Set(),
+    updateVisible() {
+      throw new Error('must not sweep cell contents')
+    },
+  }
+  const controller = new CameraController({
+    app: { screen: { width: 64, height: 32 } },
+    map: { grid: [[cell]], size: 0 },
+    player: { views: {} },
+  })
+  const getViewportRect = controller.getViewportRect.bind(controller)
+  let viewportReads = 0
+  controller.getViewportRect = () => {
+    viewportReads++
+    return getViewportRect()
+  }
+
+  controller.updateVisibleCells()
+  assert.equal(viewportReads, 1)
+  controller.camera.x = 1000
+  assert.equal(controller.instanceInCamera({ x: 10, y: 10 }, bounds), false)
+  assert.equal(viewportReads, 2)
+})
+
+test('releases the shared viewport when a visibility refresh throws', () => {
+  const CameraController = loadCameraController(1, () => {
+    throw new Error('refresh failed')
+  })
+  const cell = {
+    has: {},
+    corpses: new Set(),
+    updateVisible() {
+      throw new Error('refresh failed')
+    },
+  }
+  const controller = new CameraController({
+    app: { screen: { width: 64, height: 32 } },
+    map: { grid: [[cell]], size: 0 },
+    player: { views: {} },
+  })
+
+  assert.throws(() => controller.updateVisibleCells(), /refresh failed/)
+  controller.camera.x = 1000
+  assert.equal(controller.instanceInCamera({ x: 10, y: 10 }, { minX: 10, minY: 10, width: 10, height: 10 }), false)
+})
+
+test('stationary camera skips entity checks until explicitly invalidated', () => {
   let updates = 0
+  const CameraController = loadCameraController(1, () => updates++)
   const cell = {
     has: { family: 'resource' },
     corpses: new Set(),
@@ -92,6 +148,8 @@ test('refreshes camera-culled entities when their cell remains in the preload ar
   controller.updateVisibleCells()
   controller.updateVisibleCells()
 
+  assert.equal(updates, 1)
+  controller.updateVisibleCells(true)
   assert.equal(updates, 2)
 })
 
@@ -125,7 +183,7 @@ test('recomputes render visibility instead of blindly hiding when a cell drops o
 
   // The cell drops out of the tracked halo (e.g. the camera panned far away).
   map.grid = [[otherCell]]
-  controller.updateVisibleCells()
+  controller.updateVisibleCells(true)
 
   assert.equal(cell.has.visible, false)
   assert.equal(cell.has.__renderRecomputed, true)
@@ -159,10 +217,11 @@ test('skips scheduled visible-cell refreshes while the camera stays in the same 
 
   controller.updateVisibleCells(false)
   controller.updateVisibleCells(false)
-  controller.updateVisibleCells()
+  controller.updateVisibleCells(true)
 
   assert.equal(renderChunkUpdates, 2)
-  assert.equal(updates, 1)
+  assert.equal(updates, 0)
+  assert.equal(cell.visible, true)
 })
 
 test('tracks visible cells from the active interior space instead of the outside map', () => {
@@ -223,7 +282,8 @@ test('tracks visible cells from the active interior space instead of the outside
 
   controller.updateVisibleCells()
 
-  assert.equal(interiorUpdates, 1)
+  assert.equal(interiorUpdates, 0)
+  assert.equal(interiorCell.visible, true)
   assert.equal(outsideUpdates, 0)
   assert.equal(renderChunkUpdates, 0)
   assert.equal(controller.visibleCells.has(interiorCell), true)
@@ -455,4 +515,171 @@ test('zoom changes the explored footprint and sub-cell movement reuses camera ca
   near.controller.updateVisibleCells(false)
   assert.equal(near.controller.visibleCells, previous)
   assert.equal(near.controller.visibleCellsStats.samples, 0)
+})
+
+function createLiveCameraScene() {
+  const { updateInstanceRenderVisibility, forgetInstanceRenderCandidate } = loadTsModule('app/lib/grid/visibility.ts', {
+    mocks: { '../../services/UnitPerception': { updateVisibility() {} } },
+  })
+  let checks = 0
+  const CameraController = loadCameraController(1, instance => {
+    checks++
+    return updateInstanceRenderVisibility(instance)
+  })
+  const cell = { has: null, corpses: new Set(), x: 0, y: 0 }
+  const context = {
+    app: { screen: { width: 64, height: 32 } },
+    map: { grid: [[cell]], size: 0, showResources: true },
+    player: { views: {} },
+  }
+  const controller = new CameraController(context)
+  context.controls = {
+    cameraController: controller,
+    instanceInCamera: (instance, bounds) => controller.instanceInCamera(instance, bounds),
+  }
+  const entity = (family = 'unit') => ({
+    context,
+    family,
+    label: family,
+    i: 0,
+    j: 0,
+    x: 10,
+    y: 10,
+    sprite: { width: 8, height: 8, anchor: { x: 0.5, y: 1 } },
+  })
+  return {
+    controller,
+    cell,
+    context,
+    entity,
+    updateInstanceRenderVisibility,
+    forgetInstanceRenderCandidate,
+    checks: () => checks,
+  }
+}
+
+test('small camera movements check cached objects without reading cell contents again', () => {
+  const scene = createLiveCameraScene()
+  const building = scene.entity('building')
+  scene.cell.has = building
+  scene.cell.corpses.add(building) // Multi-cell footprints and corpses must be deduplicated.
+  scene.controller.updateVisibleCells()
+  assert.equal(scene.checks(), 1)
+  Object.defineProperty(scene.cell, 'has', {
+    get() {
+      throw new Error('unexpected cell scan')
+    },
+  })
+  Object.defineProperty(scene.cell, 'corpses', {
+    get() {
+      throw new Error('unexpected corpse scan')
+    },
+  })
+  scene.controller.camera.x = 1
+  scene.controller.updateVisibleCells()
+  assert.equal(scene.checks(), 2)
+  assert.equal(building.visible, true)
+})
+
+test('spawn and movement events update individual entities with a stationary camera', () => {
+  const scene = createLiveCameraScene()
+  scene.controller.updateVisibleCells()
+  for (const family of ['unit', 'animal', 'building', 'resource']) {
+    const instance = scene.entity(family)
+    scene.updateInstanceRenderVisibility(instance)
+    assert.equal(instance.visible, true)
+    instance.x = -10
+    scene.updateInstanceRenderVisibility(instance)
+    assert.equal(instance.visible, false)
+    instance.x = 10
+    scene.updateInstanceRenderVisibility(instance)
+    assert.equal(instance.visible, true)
+  }
+  scene.controller.updateVisibleCells()
+  assert.equal(scene.checks(), 0)
+  scene.controller.camera.x = 1
+  scene.controller.updateVisibleCells()
+  assert.equal(scene.checks(), 4)
+})
+
+test('a newly registered corpse follows camera changes and is forgotten on destruction', () => {
+  const scene = createLiveCameraScene()
+  scene.controller.updateVisibleCells()
+  const corpse = scene.entity()
+  corpse.isDead = true
+  let onDestroyed
+  corpse.once = (event, callback) => {
+    assert.equal(event, 'destroyed')
+    onDestroyed = callback
+  }
+  scene.cell.corpses.add(corpse)
+  scene.updateInstanceRenderVisibility(corpse)
+  scene.controller.camera.x = 30
+  scene.controller.updateVisibleCells()
+  assert.equal(corpse.visible, false)
+  scene.controller.camera.x = 0
+  scene.controller.updateVisibleCells()
+  assert.equal(corpse.visible, true)
+  const beforeDestroy = scene.checks()
+  scene.cell.corpses.delete(corpse)
+  corpse.isDestroyed = true
+  onDestroyed()
+  scene.controller.camera.x = 1
+  scene.controller.updateVisibleCells()
+  assert.equal(scene.checks(), beforeDestroy)
+})
+
+test('switching spaces hides old candidates and discovers the new space contents', () => {
+  const scene = createLiveCameraScene()
+  const outside = scene.entity()
+  scene.cell.has = outside
+  scene.controller.updateVisibleCells()
+  const inside = scene.entity('animal')
+  inside.spaceId = 'room'
+  const roomCell = { has: inside, corpses: new Set(), x: 0, y: 0 }
+  scene.context.map.spaces.set('room', {
+    id: 'room',
+    kind: 'interior',
+    grid: [[roomCell]],
+    size: 0,
+    origin: { x: 1000, y: 0 },
+    container: {},
+  })
+  scene.context.map.activeSpaceId = 'room'
+  scene.controller.camera.x = 1000
+  scene.controller.updateVisibleCells()
+  assert.equal(outside.visible, false)
+  assert.equal(inside.visible, true)
+  scene.context.map.activeSpaceId = 'outside'
+  scene.controller.camera.x = 0
+  scene.controller.updateVisibleCells()
+  assert.equal(outside.visible, true)
+  assert.equal(inside.visible, false)
+})
+
+test('hidden shelter occupants stay out of camera refreshes until placed again', () => {
+  const scene = createLiveCameraScene()
+  const unit = scene.entity()
+  scene.cell.has = unit
+  scene.controller.updateVisibleCells()
+  scene.cell.has = null
+  unit.visible = false
+  scene.forgetInstanceRenderCandidate(unit)
+  scene.controller.camera.x = 1
+  scene.controller.updateVisibleCells()
+  assert.equal(unit.visible, false)
+  assert.equal(scene.checks(), 1)
+  scene.cell.has = unit
+  scene.updateInstanceRenderVisibility(unit)
+  assert.equal(unit.visible, true)
+})
+
+test('clearing tracked cells invalidates the cache even if the camera has not moved', () => {
+  const scene = createLiveCameraScene()
+  scene.controller.updateVisibleCells()
+  const building = scene.entity('building')
+  scene.cell.has = building
+  scene.controller.visibleCells.clear()
+  scene.controller.updateVisibleCells()
+  assert.equal(building.visible, true)
 })

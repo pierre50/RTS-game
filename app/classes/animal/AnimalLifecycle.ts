@@ -1,5 +1,6 @@
 import { hasAnimalCorpseLoot, initializeAnimalCorpseLoot, syncAnimalLootQuantity } from '../../lib/equipment/animalCorpseLoot'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
+import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
@@ -185,7 +186,7 @@ export class AnimalLifecycle {
     } = animal
     animal.setTextures(SHEET_TYPES.corpse)
     animal.sprite.animationSpeed = 0
-    animal.syncShadow()
+    updateInstanceRenderVisibility(animal)
     initializeAnimalCorpseLoot(animal)
     animal.startInterval(() => {
       if (animal.quantity > 0) {

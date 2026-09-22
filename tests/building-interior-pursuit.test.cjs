@@ -119,6 +119,19 @@ test('death or peace cancels a pending pursuit', () => {
   assert.equal(s.routes[0].options.shouldContinue(), false)
 })
 
+test('leaving an interior recenters before discovering the outside terrain', () => {
+  const s = scenario()
+  s.hero.spaceId = 'inside'
+  let cameraSpace = 'inside'
+  const explored = []
+  s.context.controls = {
+    focusHeroCamera() { cameraSpace = s.hero.spaceId },
+    updateVisibleCells() { explored.push(cameraSpace) },
+  }
+  assert.equal(s.moveHeroPartyOutOfBuildingInteriorSpace(s.context, s.hero, s.space), true)
+  assert.deepEqual(explored, ['outside'])
+})
+
 test('entering a third-party building does not mobilize its bystanders or control another hero', () => {
   const s = scenario({ buildingOwner: 'third-neutral' })
   const bystander = { label: 'bystander', owner: s.space.building.owner, spaceId: 'outside' }

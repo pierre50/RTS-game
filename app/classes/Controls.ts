@@ -470,7 +470,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   updateVisibleCells(): void {
-    this.cameraController.updateVisibleCells()
+    this.cameraController.updateVisibleCells(true)
   }
 
   init(): void {

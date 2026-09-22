@@ -6,7 +6,7 @@ const mocks = {
   '../../../constants': { CELL_WIDTH: 64, CELL_HEIGHT: 32 },
 }
 const { createSquareLocalBlueprint } = loadTsModule('app/classes/map/generation/LocalMapBlueprint.ts', { mocks })
-const { localToGrid, gridToLocal, getLocalMapBounds, blueprintToLocalGrid } = loadTsModule(
+const { localToGrid, gridToLocal, getLocalMapBounds, blueprintToLocalGrid, localGridToBlueprint } = loadTsModule(
   'app/lib/localMapLayout.ts',
   { mocks }
 )
@@ -42,6 +42,7 @@ test('local blueprint fills a square with unchanged isometric diamonds and prese
   for (let i = 0; i <= source.size; i++) {
     for (let j = 0; j <= source.size; j++) {
       const local = blueprintToLocalGrid(i, j, layout)
+      assert.deepEqual(localGridToBlueprint(local.i, local.j, layout), { i, j })
       assert.equal(converted.terrain[local.i][local.j], `${i}:${j}`)
     }
   }

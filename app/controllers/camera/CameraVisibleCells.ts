@@ -1,5 +1,5 @@
 import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
-import { updateInstanceRenderVisibility } from '../../lib'
+import type { RenderableInstance } from '../../lib/grid/visibility'
 import type { RuntimeCell } from '../../types/map'
 import type { Viewport } from '../../types/geometry'
 import type { CameraPoint } from './CameraMovement'
@@ -52,24 +52,17 @@ export function collectCameraCells(
   return { cells, samples, stepX, stepY }
 }
 
-export function refreshExitedCameraCells(previousCells: Set<RuntimeCell>, nextCells: Set<RuntimeCell>): number {
-  let exited = 0
-  for (const cell of previousCells) {
-    if (nextCells.has(cell)) continue
-    exited++
-    if (cell.has) updateInstanceRenderVisibility(cell.has)
-    for (const corpse of cell.corpses) updateInstanceRenderVisibility(corpse)
-  }
-  return exited
-}
-
-export function refreshEnteredCameraCells(previousCells: Set<RuntimeCell>, nextCells: Set<RuntimeCell>): number {
+export function collectCameraRenderCandidates(cells: Set<RuntimeCell>, candidates: Set<RenderableInstance>): number {
   let updated = 0
-  for (const cell of nextCells) {
-    const hasCameraCulledContent = cell.has || cell.corpses?.size
-    if (previousCells.has(cell) && !hasCameraCulledContent) continue
-    updated++
-    cell.updateVisible()
+  for (const cell of cells) {
+    cell.visible = true
+    if (cell.has || cell.corpses.size) updated++
+    if (cell.has?.isDestroyed) {
+      cell.has = null
+      cell.solid = false
+    }
+    if (cell.has) candidates.add(cell.has)
+    for (const corpse of cell.corpses) candidates.add(corpse)
   }
   return updated
 }

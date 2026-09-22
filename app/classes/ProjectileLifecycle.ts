@@ -1,6 +1,7 @@
 import { ARROW_GROUND_TIME, FADE_DURATION_MS, SOUND_CUES } from '../constants'
 import { playAudibleSoundCue, type AudibleInstance } from '../lib/audio/sound'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
+import { updateInstanceRenderVisibility } from '../lib/grid/visibility'
 import { getEntitySpaceGrid } from '../lib/mapSpaces'
 import { getReliefOffset, getTerrainSetZIndex, isometricToCartesian, randomRange } from '../lib/maths'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
@@ -95,6 +96,7 @@ export function landProjectileOnGround(projectile: LifecycleProjectile): void {
   projectile.applyEmbeddedMask('ground')
   projectile.zIndex = getTerrainSetZIndex({ i, j })
   cell.corpses.add(projectile as unknown as RuntimeEntity)
+  updateInstanceRenderVisibility(projectile as unknown as RuntimeEntity)
   scheduleProjectileFade(projectile, 'projectile.groundFade')
 }
 

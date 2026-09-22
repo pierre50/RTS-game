@@ -136,7 +136,7 @@
 }
 /* Share unavailable-action styling without dimming focus, costs or quantity badges. */
 .game-window
-  :is(.market-buy-slot, .inventory-construction-row):has(.inventory-row-action-button:disabled)
+  :is(.market-buy-slot, .inventory-construction-row, .inventory-craft-row):has(.inventory-row-action-button:disabled)
   .inventory-action-row-icon
   > :not(.inventory-quantity-badge) {
   filter: var(--window-unavailable-icon-filter);

@@ -162,6 +162,9 @@ export function applyTravelPartyToRuntime(
   }
 
   for (const unit of travelUnits) unit.setTextures?.(SHEET_TYPES.standing)
+  // Discover terrain only after snapping to the arrival point. setCamera/init
+  // can be blocked while travel has paused the world or disabled input.
+  controls.focusHeroCamera?.()
   refreshTravelPartyVisibility(game, travelUnits)
   controls.init?.()
   if (equippedItem) controls.setEquippedItem?.(equippedItem)

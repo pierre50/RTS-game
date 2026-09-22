@@ -34,3 +34,8 @@ export function getLocalMapBounds(layout: LocalMapLayout): {
 export function blueprintToLocalGrid(i: number, j: number, layout: LocalMapLayout): { i: number; j: number } {
   return localToGrid(Math.floor(j / 2), i * 2 + (j % 2), layout)
 }
+
+export function localGridToBlueprint(i: number, j: number, layout: LocalMapLayout): { i: number; j: number } {
+  const { column, row } = gridToLocal(i, j, layout)
+  return { i: Math.floor(row / 2), j: column * 2 + (row % 2) }
+}

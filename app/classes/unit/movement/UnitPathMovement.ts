@@ -1,4 +1,5 @@
 import { runPathStep } from '../../../lib/units/pathProgress'
+import { updateInstanceRenderVisibility } from '../../../lib/grid/visibility'
 import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { tryStartUnitContactApproach } from './UnitContactApproach'
 import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
@@ -254,4 +255,5 @@ function advanceTowardPathCell(
     unit.setTextures?.(SHEET_TYPES.walking)
   }
   applyUnitWalkingAnimationSpeed(unit, getRequestedMoveSpeedFactor(unit))
+  updateInstanceRenderVisibility(unit)
 }

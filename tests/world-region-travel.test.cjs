@@ -18,7 +18,7 @@ function loadTravelParty(arrivalCell = null) {
     mocks: {
       '../../lib': {
         getFreeLandCellAroundInstance: () => arrivalCell,
-        teleportRuntimeUnitToCell: () => {},
+        teleportRuntimeUnitToCell: (_map, unit, cell) => Object.assign(unit, cell),
         updateInstanceVisibility: () => {},
       },
       '../../lib/buildings/passageCells': { createNonReservedPassageCellCondition: () => () => true },
@@ -34,6 +34,45 @@ function loadWorldRegionPlayers() {
       '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Hellas' }, { value: 'Norse' }, { value: 'Kemet' }] },
       '../../lib/graphics/colors': { playerColors: ['blue', 'red', 'green'] },
     },
+  })
+}
+
+for (const freshWorld of [true, false]) {
+  test(`arrival explores only the destination viewport in a ${freshWorld ? 'new' : 'visited'} world`, () => {
+    const { applyTravelPartyToRuntime } = loadTravelParty()
+    const hero = { type: 'Hero', x: 100, y: 100 }
+    const explored = new Set(freshWorld ? ['temporary spawn'] : ['previous visit'])
+    let camera = 'temporary spawn'
+    const context = {
+      paused: true,
+      player: {
+        units: [hero],
+        views: {
+          removeViewerEverywhere() {},
+          clearVisibility() {},
+          clearExploration: () => explored.clear(),
+        },
+      },
+      controls: {
+        heroUnit: hero,
+        runtimeInputEnabled: false,
+        focusHeroCamera() {
+          camera = `${hero.x}:${hero.y}`
+          this.updateVisibleCells()
+        },
+        updateVisibleCells: () => explored.add(camera),
+        init() {}, // Input-bound camera changes are blocked during travel.
+      },
+      menu: {},
+      map: {},
+    }
+    applyTravelPartyToRuntime(
+      { _gameContext: () => context },
+      { hero: null, followers: [] },
+      { i: 2, j: 3, x: 1000, y: 2000 },
+      { freshWorld }
+    )
+    assert.deepEqual([...explored], freshWorld ? ['1000:2000'] : ['previous visit', '1000:2000'])
   })
 }
 

@@ -1,4 +1,5 @@
 import { FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
+import { forgetInstanceRenderCandidate } from '../../lib/grid/cameraRenderTracking'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { getEntityCell } from '../../lib/mapSpaces'
 import { findRestCellAroundPoint } from './UnitRestShelter'
@@ -44,6 +45,7 @@ function hideUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void 
   setDetachedShadowsVisible(unit, false)
   unit.alpha = 0
   unit.visible = false
+  forgetInstanceRenderCandidate(unit)
 }
 
 function prepareUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void {

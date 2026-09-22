@@ -1,4 +1,5 @@
 import { t } from '../lib/lang'
+import { localGridToBlueprint } from '../lib/localMapLayout'
 import { getActiveColonyAlerts, type RegionAlertType } from '../lib/world/regionAlerts'
 import type { MenuHost } from './MenuHost'
 import { worldEnvironmentLabel } from './worldMap/WorldEnvironmentLabel'
@@ -41,7 +42,7 @@ function runtimeManifest(menu: MenuHost): MacroWorldManifest | null {
   if (!map?.worldManifest) return null
   return {
     macroPreviewPath: map.worldManifest.macroPreviewPath,
-    regionMapSize: map.size,
+    regionMapSize: map.worldManifest.maps?.find(entry => entry.id === map.worldRegionId)?.size ?? map.size,
     regionsHigh: map.worldManifest.regionsHigh,
     regionsWide: map.worldManifest.regionsWide,
     settlements: map.worldManifest.settlements as MacroWorldSettlement[] | undefined,
@@ -290,6 +291,32 @@ function renderGlobalMap(panel: HTMLElement, menu: MenuHost, manifest: MacroWorl
     if (playerColor) marker.style.backgroundColor = playerColor
     marker.setAttribute('aria-label', settlementLabel(settlement))
     overlay.appendChild(marker)
+  }
+
+  const hero = menu.context.controls.heroUnit ?? menu.context.player?.units.find(unit => unit.type === 'Hero')
+  const region = currentRuntimeRegion(menu)
+  if (hero && region && !hero.isDead && !hero.isDestroyed) {
+    const spaceId = hero.spaceId ?? 'outside'
+    const space = menu.context.map?.spaces?.get(spaceId)
+    const exteriorPortal = space?.portals?.find(portal => portal.targetSpaceId === 'outside')
+    const location = spaceId === 'outside' ? hero : exteriorPortal?.targetCell
+    if (location) {
+      const layout = menu.context.map?.localGridLayout
+      const local = layout
+        ? localGridToBlueprint(location.i, location.j, layout)
+        : { i: location.i, j: location.j }
+      const position = settlementPosition({ region, local }, manifest)
+      if (position) {
+        const marker = document.createElement('span')
+        marker.className = 'worldmap-player-position'
+        marker.style.left = `${position.x}%`
+        marker.style.top = `${position.y}%`
+        marker.setAttribute('role', 'img')
+        marker.setAttribute('aria-label', t('you'))
+        marker.title = t('you')
+        overlay.appendChild(marker)
+      }
+    }
   }
 
   wrap.appendChild(overlay)

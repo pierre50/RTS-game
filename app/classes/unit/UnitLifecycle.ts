@@ -1,6 +1,7 @@
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
+import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
@@ -47,6 +48,7 @@ export class UnitLifecycle {
         cell.solid = false
       }
     }
+    updateInstanceRenderVisibility(unit)
   }
 
   death() {

@@ -166,7 +166,11 @@ function updateUnitTexture(sheet: string, instance: UnitTextureInstance): void {
   if (defaultAnchor) {
     instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   }
-  instance.sprite.animationSpeed = getUnitSpritesheetAnimationSpeed(selectedSheet, sheet)
+  // UnitLifecycle uses corpse playback as its decay timer. Appearance refreshes
+  // after looting must not replace that speed with the static corpse asset's zero.
+  if (!(sameSheet && sheet === SHEET_TYPES.corpse && instance.sprite.onComplete)) {
+    instance.sprite.animationSpeed = getUnitSpritesheetAnimationSpeed(selectedSheet, sheet)
+  }
   playSelectedUnitSheet(sheet, instance, selectedSheet, mountedActionSheet, goto, sameTextures)
 }
 

@@ -8,6 +8,7 @@ import { getInsightDetectionRange } from '../units/insightDetection'
 import { getBuildingFootprintCells } from './cells'
 import { getInstanceCameraBounds, getRenderablePosition, getVisibilityRuntimeMap } from './screenBounds'
 export { getInstanceScreenBounds } from './screenBounds'
+export { forgetInstanceRenderCandidate } from './cameraRenderTracking'
 
 type PlayerVisibility = {
   label?: string
@@ -25,6 +26,9 @@ export type RenderableInstance = VisibilityEntity &
     context?: {
       controls?: {
         instanceInCamera: (instance: RenderableInstance, bounds?: Bounds) => boolean
+        cameraController?: {
+          trackRenderCandidate(instance: RenderableInstance, bounds: Bounds | null): void
+        }
       }
       map?: {
         // Real runtime shape is Set<RuntimeEntity>[][] (nullable until first populated) — typed
@@ -48,6 +52,7 @@ export type RenderableInstance = VisibilityEntity &
         })
       | null
     isDestroyed?: boolean
+    once?: (event: 'destroyed', callback: () => void) => unknown
     size?: number
     sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
     syncShadow?: () => void
@@ -108,11 +113,21 @@ export function updateInstanceVisibility(instance: RenderableInstance): void {
 
 function instanceShouldRender(instance?: RenderableInstance | null): boolean {
   const { map, controls } = instance?.context || {}
-  if (!map || !controls || !instance || instance.isDestroyed) return false
-  if (!sameMapSpace(instance, { spaceId: map.activeSpaceId ?? null })) return false
-  if (!getRenderablePosition(instance)) return false
+  if (!instance) return false
+  const camera = controls?.cameraController
+  if (!map || !controls || instance.isDestroyed || !sameMapSpace(instance, { spaceId: map.activeSpaceId ?? null })) {
+    camera?.trackRenderCandidate(instance, null)
+    return false
+  }
+  const position = getRenderablePosition(instance)
+  if (!position) {
+    camera?.trackRenderCandidate(instance, null)
+    return false
+  }
+  const bounds = getInstanceCameraBounds(instance, position)
+  camera?.trackRenderCandidate(instance, bounds ?? { minX: position.x, minY: position.y, width: 0, height: 0 })
   if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
-  if (!controls.instanceInCamera(instance, getInstanceCameraBounds(instance))) return false
+  if (!controls.instanceInCamera(instance, bounds)) return false
   return true
 }
 
