@@ -1,3 +1,4 @@
+import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import type { PlacedCave } from '../../types/cave'
 import type { PreparedTerrainCell } from './generation/PreparedMapContent'
 import type { ContainerChild } from 'pixi.js'
@@ -48,6 +49,7 @@ export type MapGenerationMap = RuntimeMap & {
   blueprintInitialWaterBorderMs?: number
   blueprintWaterBorderReady?: boolean
   blueprintResourceLoadMs?: number
+  terrainBake?: { destroy(): void }
   terrainChunkManager?: { destroy(): void }
   children: GeneratedMapChild[]
   removeChildren(): GeneratedMapChild[]
@@ -186,7 +188,7 @@ export function createGenerationTimer(
     measure<T>(name: string, callback: () => T): T {
       const startedAt = performance.now()
       try {
-        return callback()
+        return traceLoad(`mapGeneration.${name}`, callback)
       } finally {
         const duration = performance.now() - startedAt
         timings[name] = duration
@@ -196,7 +198,7 @@ export function createGenerationTimer(
     async measureAsync<T>(name: string, callback: () => Promise<T> | T): Promise<T> {
       const startedAt = performance.now()
       try {
-        return await callback()
+        return await traceLoadAsync(`mapGeneration.${name}`, callback)
       } finally {
         const duration = performance.now() - startedAt
         timings[name] = duration

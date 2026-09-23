@@ -1,4 +1,5 @@
-export const MAX_MAP_EDGE = 513
+// Includes the 7501 × 7501 internal grid of the 5000 × 5000 blueprint.
+export const MAX_MAP_EDGE = 8193
 
 export type ObjectRecord = Record<string, unknown>
 

@@ -1,34 +1,18 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const LZString = require('lz-string')
 
 function loadSaveStorage(storage, electronSaves) {
-  const filename = path.join(__dirname, '../app/serialization/SaveStorage.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
   global.window = { electronSaves }
   global.localStorage = storage
-  const mockRequire = id => {
-    if (id === './SaveSerializer') return { serializeGame: () => ({}) }
-    if (id === './CampaignSave') {
-      return {
-        createInitialCampaignSave: data => data,
-        updateCurrentWorldState: (_campaign, data) => data,
-      }
-    }
-    if (id === '../lib/debug') return { debugLog: () => {} }
-    return require(id)
-  }
-
-  new Function('module', 'exports', 'require', code)(module, module.exports, mockRequire)
-  return module.exports
+  return loadTsModule('app/serialization/SaveStorage.ts', {
+    mocks: {
+      './SaveSerializer': { serializeGame: () => ({}) },
+      './CampaignSave': { createInitialCampaignSave: data => data, updateCurrentWorldState: (_campaign, data) => data },
+      '../lib/debug': { debugLog: () => {} },
+    },
+  })
 }
 
 function minimalSaveRecord() {

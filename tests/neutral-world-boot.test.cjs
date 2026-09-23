@@ -4,6 +4,8 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 test('a non-Hellas region preloads both neutral villager variants before placing caves', async () => {
   const loaded = new Set()
+  const serialized = []
+  let economySnapshot
   const { ensureNeutralPlayer } = loadTsModule('app/classes/players/GaiaPlayer.ts', {
     mocks: {
       '../../lib': {},
@@ -35,12 +37,24 @@ test('a non-Hellas region preloads both neutral villager variants before placing
   })
   const { bootGameFromConfig } = loadTsModule('app/screens/game/GameWorldBoot.ts', {
     mocks: {
-      '../../services/world/WorldEconomyRuntime': { initializeCampaignEconomy: async () => {} },
+      '../../services/world/WorldEconomyRuntime': {
+        initializeCampaignEconomy: async (_campaign, _context, _load, _profiles, snapshot) => {
+          economySnapshot = snapshot
+        },
+      },
       '../../classes/players/GaiaPlayer': { ensureNeutralPlayer },
       '../../lib/lang': {},
       '../../lib/lpc': { preloadBakedLpcUnitsForPlayers },
-      '../../serialization/SaveSerializer': { serializeGame: () => ({}) },
-      '../../serialization/CampaignSave': { createInitialCampaignSave: () => ({ currentWorldId: 'root', worlds: { root: {} } }) },
+      '../../serialization/SaveSerializer': {
+        serializeGame: () => {
+          const snapshot = {}
+          serialized.push(snapshot)
+          return snapshot
+        },
+      },
+      '../../serialization/CampaignSave': {
+        createInitialCampaignSave: () => ({ currentWorldId: 'root', worlds: { root: {} } }),
+      },
       './GameStateHelpers': { ensureCampaignPlayerRoster: value => value },
       './GameMapBlueprintRuntime': { recordLoadedMapBlueprint() {} },
       './WorldRegionPlayers': {
@@ -89,4 +103,6 @@ test('a non-Hellas region preloads both neutral villager variants before placing
   await bootGameFromConfig(game, {}, { startPaused: true })
   assert.equal(context.paused, true, 'loading must not resume the simulation')
   assert.equal(placed, true)
+  assert.equal(serialized.length, 2, 'initial campaign and mounted runtime are the only required snapshots')
+  assert.equal(economySnapshot, serialized[0], 'economy reuses the initial campaign snapshot')
 })

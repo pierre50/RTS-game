@@ -22,6 +22,21 @@ function indexFilePath() {
   return path.join(savesDir(), 'index.json')
 }
 
+// Publishing a manifest must never leave a partially written JSON/compressed file.
+function writeSaveFile(file, value) {
+  const temporary = `${file}.tmp`
+  try {
+    fs.writeFileSync(temporary, value, 'utf-8')
+    fs.renameSync(temporary, file)
+  } finally {
+    try {
+      fs.unlinkSync(temporary)
+    } catch {
+      /* Renamed already, or no temporary file was written. */
+    }
+  }
+}
+
 ipcMain.on('saves:getIndex', event => {
   try {
     event.returnValue = fs.readFileSync(indexFilePath(), 'utf-8')
@@ -32,7 +47,7 @@ ipcMain.on('saves:getIndex', event => {
 
 ipcMain.on('saves:setIndex', (event, json) => {
   try {
-    fs.writeFileSync(indexFilePath(), json, 'utf-8')
+    writeSaveFile(indexFilePath(), json)
     event.returnValue = { ok: true, path: indexFilePath() }
   } catch (error) {
     event.returnValue = {
@@ -61,7 +76,7 @@ ipcMain.on('saves:setItem', (event, key, value) => {
     return
   }
   try {
-    fs.writeFileSync(saveFilePath(key), value, 'utf-8')
+    writeSaveFile(saveFilePath(key), value)
     event.returnValue = { ok: true, path: saveFilePath(key) }
   } catch (error) {
     event.returnValue = {

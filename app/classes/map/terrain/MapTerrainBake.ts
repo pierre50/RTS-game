@@ -1,3 +1,4 @@
+import { beginLoadTrace, traceLoad } from '../../../lib/loadDiagnostics'
 import { Container, Sprite, RenderTexture, Matrix } from 'pixi.js'
 import type { ContainerChild, PointData, Texture } from 'pixi.js'
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../../constants'
@@ -9,6 +10,7 @@ import type { PlayerLike } from '../../../types/player'
 import { TerrainBakeCell } from '../../cell/TerrainBakeCell'
 import { RuntimeCell, type RuntimeCellContext, type RuntimeCellSource } from '../../cell/RuntimeCell'
 import { getGaiaAnimals } from '../../../lib'
+import { TerrainTextureCache } from './TerrainTextureCache'
 import { getTerrainBakeChunkRects } from '../../../lib/graphics/terrainBakeChunks'
 
 type PixiRendererLike = {
@@ -71,7 +73,7 @@ type TerrainGridCell = MapTypes.RuntimeCell & {
   getChildByLabel?(label: string): ContainerChild | null
   removeChild?(child: ContainerChild): ContainerChild | void
   addChild?(child: ContainerChild): ContainerChild
-  getTerrainDecorations?(): TerrainDecoration[]
+  getTerrainDecorations?(): (TerrainDecoration & ContainerChild)[]
   getTerrainBakeChildren?(): ContainerChild[]
   setWaterBorder?(resourceName: string, index: number): void
   setReliefBorder?(index: number, elevation: number): void
@@ -137,9 +139,215 @@ function isRuntimeCellSource(cell: TerrainGridCell): cell is TerrainGridCell & R
 
 export class MapTerrainBake {
   map: TerrainRuntimeMap
+  textureCache: TerrainTextureCache | null = null
+  private decorations = new WeakMap<TerrainGridCell, TerrainDecoration[]>()
+  private sourcePadding = 256
+  private minYOffset = 0
+  private maxYOffset = 0
 
   constructor(map: TerrainRuntimeMap) {
     this.map = map
+  }
+
+  destroy(): void {
+    this.textureCache?.destroy()
+    this.textureCache = null
+    this.decorations = new WeakMap()
+  }
+
+  updateViewport(viewport: Viewport): void {
+    if (!this.textureCache) return
+    const startedAt = performance.now()
+    this.textureCache.update(viewport)
+    this.map.context.performance?.record?.('terrainTextures.update', performance.now() - startedAt)
+  }
+
+  private initializeStreaming(renderer: PixiRendererLike): void {
+    this.textureCache?.destroy()
+    this.sourcePadding = 256
+    this.minYOffset = 0
+    this.maxYOffset = 0
+    const replacements = new Map<TerrainGridCell, RuntimeCell>()
+    for (const row of this.map.grid) {
+      for (const source of row) {
+        if (!source) continue
+        source.visible = true
+        const offset = source.y - ((source.i + source.j) * CELL_HEIGHT) / 2
+        this.minYOffset = Math.min(this.minYOffset, offset)
+        this.maxYOffset = Math.max(this.maxYOffset, offset)
+        const set = source.getChildByLabel?.(LABEL_TYPES.set)
+        if (set) {
+          source.removeChild?.(set)
+          set.x += source.x
+          set.y += source.y
+          set.zIndex = getTerrainSetZIndex(source)
+          source.terrainSet = set
+          this.map.addChild(set)
+        }
+        const floors =
+          source.getTerrainDecorations?.() ??
+          (isTerrainContainerCell(source)
+            ? (source.children.filter(
+                child => child.label === LABEL_TYPES.floor && isBackfillSpriteSource(child)
+              ) as (ContainerChild & TerrainDecoration)[])
+            : [])
+        const descriptors = floors.length
+          ? floors.map(decoration => ({
+              texture: decoration.texture,
+              label: decoration.label,
+              position: { x: decoration.position.x, y: decoration.position.y },
+              anchor: { x: decoration.anchor.x, y: decoration.anchor.y },
+              zIndex: decoration.zIndex,
+            }))
+          : (this.decorations.get(source) ?? [])
+        this.sourcePadding = Math.max(this.sourcePadding, Math.abs(source._terrainAppearance?.relief?.elevation ?? 0))
+        for (const decoration of descriptors) {
+          this.sourcePadding = Math.max(
+            this.sourcePadding,
+            Math.abs(decoration.position.x) + decoration.texture.width,
+            Math.abs(decoration.position.y) + decoration.texture.height
+          )
+        }
+        let logical = source
+        if (isTerrainContainerCell(source) && isRuntimeCellSource(source)) {
+          const runtime = new RuntimeCell(source)
+          logical = runtime
+          replacements.set(source, runtime)
+          this.map.grid[source.i][source.j] = logical
+          source.destroy({ children: true, texture: false, textureSource: false })
+        } else {
+          for (const decoration of floors) {
+            source.removeChild?.(decoration)
+            decoration.destroy({ texture: false, textureSource: false })
+          }
+        }
+        if (descriptors.length) this.decorations.set(logical, descriptors)
+      }
+    }
+    if (replacements.size) this._relinkCompactedCells(replacements)
+    if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
+    const bounds = this._getTerrainMapBounds()
+    const padding = this.sourcePadding
+    this.textureCache = new TerrainTextureCache(
+      {
+        minX: bounds.minX - padding,
+        minY: bounds.minY - padding,
+        width: bounds.totalW + padding * 2,
+        height: bounds.totalH + padding * 2,
+      },
+      (tile, resolution) => this.bakeStreamingTile(renderer, tile, resolution)
+    )
+    const camera = getTerrainCameraController(this.map.context.controls)
+    camera?.visibleCells?.clear()
+    const viewport = camera?.getViewportRect()
+    if (viewport) this.updateViewport(viewport)
+    this.map.terrainChunkManager?.initialize(viewport)
+  }
+
+  private bakeStreamingTile(
+    renderer: PixiRendererLike,
+    bounds: Bounds,
+    resolution: number
+  ): { renderable: boolean; destroy(): void } {
+    const trace = beginLoadTrace('terrain.bakeTile', { x: bounds.minX, y: bounds.minY, resolution })
+    const containers = this._createTerrainBakeContainers()
+    const visuals: TerrainBakeCell[] = []
+    let texture: RenderTexture | null = null
+    try {
+      // Invert the projected rectangle, including elevation and sprite overhang.
+      const p = this.sourcePadding
+      const left = (bounds.minX - p) / (CELL_WIDTH / 2)
+      const right = (bounds.minX + bounds.width + p) / (CELL_WIDTH / 2)
+      const top = (bounds.minY - p - this.maxYOffset) / (CELL_HEIGHT / 2)
+      const bottom = (bounds.minY + bounds.height + p - this.minYOffset) / (CELL_HEIGHT / 2)
+      const firstI = Math.max(0, Math.floor((top + left) / 2))
+      const lastI = Math.min(this.map.size, Math.ceil((bottom + right) / 2))
+      const firstJ = Math.max(0, Math.floor((top - right) / 2))
+      const lastJ = Math.min(this.map.size, Math.ceil((bottom - left) / 2))
+      for (let i = firstI; i <= lastI; i++) {
+        for (let j = firstJ; j <= lastJ; j++) {
+          const source = this.map.grid[i]?.[j]
+          if (
+            !source ||
+            source.x < bounds.minX - p ||
+            source.x > bounds.minX + bounds.width + p ||
+            source.y < bounds.minY - p ||
+            source.y > bounds.minY + bounds.height + p
+          )
+            continue
+          // Temporary visuals must never mutate occupancy or the logical appearance.
+          const appearance = source._terrainAppearance ?? {}
+          const visualSource = {
+            ...source,
+            has: null,
+            corpses: new Set<RuntimeEntity>(),
+            _terrainAppearance: {
+              ...appearance,
+              patchBorders: new Set(appearance.patchBorders ?? []),
+              relief: appearance.relief ?? null,
+              waterBorder: appearance.waterBorder ?? null,
+            },
+          }
+          const visual = new TerrainBakeCell(
+            visualSource,
+            this.map.context as ConstructorParameters<typeof TerrainBakeCell>[1]
+          )
+          visuals.push(visual)
+          if (appearance.waterBorder)
+            visual.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
+          if (appearance.relief) visual.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
+          for (const direction of appearance.patchBorders ?? [])
+            visual.setPatchBorder(direction, appearance.patchBorderGroundType ?? undefined)
+          for (const decoration of this.decorations.get(source) ?? []) {
+            const sprite = new Sprite(decoration.texture)
+            sprite.position.copyFrom(decoration.position)
+            sprite.anchor.copyFrom(decoration.anchor)
+            sprite.zIndex = decoration.zIndex
+            visual.addChild(sprite)
+          }
+          containers.terrainContainer.addChild(...visual.getTerrainBakeChildren())
+        }
+      }
+      this._copyTerrainBackfill(containers, bounds)
+      texture = RenderTexture.create({ width: bounds.width, height: bounds.height, resolution })
+      renderer.render({
+        container: containers.terrainContainer,
+        target: texture,
+        transform: new Matrix().translate(-bounds.minX, -bounds.minY),
+        clear: true,
+      })
+      const sprite = new Sprite(texture)
+      sprite.position.set(bounds.minX, bounds.minY)
+      sprite.zIndex = -1
+      sprite.eventMode = 'none'
+      sprite.label = 'streamedTerrainTexture'
+      this.map.addChild(sprite)
+      // Sprite.destroy defaults to keeping its texture; this cache owns both.
+      const ownedTexture = texture
+      trace.end({
+        visualCells: visuals.length,
+        textureMiB: (bounds.width * bounds.height * resolution ** 2 * 4) / 1048576,
+      })
+      return {
+        get renderable() {
+          return sprite.renderable
+        },
+        set renderable(value: boolean) {
+          sprite.renderable = value
+        },
+        destroy() {
+          sprite.destroy()
+          ownedTexture.destroy(true)
+        },
+      }
+    } catch (error) {
+      texture?.destroy(true)
+      trace.fail(error)
+      throw error
+    } finally {
+      for (const visual of visuals) visual.destroy({ children: true, texture: false, textureSource: false })
+      containers.terrainContainer.destroy({ children: true, texture: false, textureSource: false })
+    }
   }
 
   _markTerrainCellsVisible(): void {
@@ -164,10 +372,18 @@ export class MapTerrainBake {
     return { terrainContainer, backfillContainer, backfillSprites: [], terrainSets: [] }
   }
 
-  _copyTerrainBackfill({ backfillContainer, backfillSprites }: TerrainBakeContainers): void {
+  _copyTerrainBackfill({ backfillContainer, backfillSprites }: TerrainBakeContainers, bounds?: Bounds): void {
     const backfillStartedAt = performance.now()
     for (const source of this.map.terrainBackfill?.children || []) {
       if (!isBackfillSpriteSource(source)) continue
+      if (
+        bounds &&
+        (source.x + source.texture.width < bounds.minX ||
+          source.x - source.texture.width > bounds.minX + bounds.width ||
+          source.y + source.texture.height < bounds.minY ||
+          source.y - source.texture.height > bounds.minY + bounds.height)
+      )
+        continue
       const sprite = new Sprite(source.texture)
       sprite.position.copyFrom(source.position)
       sprite.anchor.copyFrom(source.anchor)
@@ -298,6 +514,13 @@ export class MapTerrainBake {
   }
 
   bakeTerrainToChunks(): void {
+    const streamingRenderer = this.map.context.app?.renderer
+    if (!this.map.context.editor && streamingRenderer) {
+      const startedAt = performance.now()
+      traceLoad('terrain.initializeStreaming', () => this.initializeStreaming(streamingRenderer))
+      this.map.context.performance?.record?.('terrainBake', performance.now() - startedAt)
+      return
+    }
     if (this.map.grid.some(row => row.some(cell => cell?.isGenerationCell))) {
       this._materializeGenerationCells()
     }

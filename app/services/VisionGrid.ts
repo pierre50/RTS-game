@@ -1,6 +1,7 @@
+import { ExplorationSaveChunks, readCompactVision, VISION_CHUNK_SIZE } from '../serialization/CompactVision'
 import type {
   KnownVisionOccupant,
-  SerializedViewCell,
+  CompactVisionGrid,
   SerializedVisionGrid,
   VisionViewer,
   VisionViewerRef,
@@ -8,6 +9,8 @@ import type {
 
 export class VisionGrid {
   static EMPTY_VIEWERS: ReadonlySet<VisionViewerRef> = Object.freeze(new Set<VisionViewerRef>())
+
+  private explorationChunks = new Map<string, ExplorationSaveChunks>()
 
   activeSpaceId: string
   explored: Uint8Array
@@ -46,18 +49,51 @@ export class VisionGrid {
     this.onViewed = onViewed
     this.onVisibilityChange = onVisibilityChange
 
-    for (let i = 0; i < this.stride; i++) {
-      for (let j = 0; j < this.stride; j++) {
-        const saved = savedViews?.[i]?.[j]
-        const index = this.index(i, j)
-        if (revealTerrain || saved?.viewed) this.explored[index] = 1
-        if (saved?.viewBy?.length) {
-          const viewers = new Set<VisionViewerRef>(saved.viewBy)
-          this.visibleBy.set(index, viewers)
-          this.visibleCount[index] = viewers.size
+    if (revealTerrain) {
+      this.explored.fill(1)
+      this.getExplorationChunks().revealAll(this.stride)
+    }
+    if (Array.isArray(savedViews)) {
+      for (let i = 0; i < Math.min(savedViews.length, this.stride); i++) {
+        const row = savedViews[i] ?? []
+        for (let j = 0; j < Math.min(row.length, this.stride); j++) {
+          const saved = row[j]
+          if (saved?.viewed) this.setViewed(i, j, true, false)
+          if (saved?.viewBy?.length) {
+            const index = this.index(i, j)
+            const viewers = new Set<VisionViewerRef>(saved.viewBy)
+            this.visibleBy.set(index, viewers)
+            this.visibleCount[index] = viewers.size
+          }
         }
       }
+    } else {
+      const data = readCompactVision(savedViews, this.stride)
+      for (const chunk of data.chunks) {
+        for (let bit = 0; bit < VISION_CHUNK_SIZE ** 2; bit++) {
+          if (!(chunk.bytes[bit >> 3] & (1 << (bit & 7)))) continue
+          this.setViewed(
+            chunk.i * VISION_CHUNK_SIZE + Math.floor(bit / VISION_CHUNK_SIZE),
+            chunk.j * VISION_CHUNK_SIZE + (bit % VISION_CHUNK_SIZE),
+            true,
+            false
+          )
+        }
+      }
+      for (const entry of data.visible) {
+        this.visibleBy.set(entry.index, new Set(entry.viewBy))
+        this.visibleCount[entry.index] = entry.viewBy.length
+      }
     }
+  }
+
+  private getExplorationChunks(): ExplorationSaveChunks {
+    let chunks = this.explorationChunks.get(this.activeSpaceId)
+    if (!chunks) {
+      chunks = new ExplorationSaveChunks()
+      this.explorationChunks.set(this.activeSpaceId, chunks)
+    }
+    return chunks
   }
 
   index(i: number, j: number): number {
@@ -137,6 +173,7 @@ export class VisionGrid {
     const explored = this.getExplored()
     if (explored[index] === next) return false
     explored[index] = next
+    this.getExplorationChunks().set(i, j, viewed)
     if (next && notify) this.onViewed?.(i, j)
     return true
   }
@@ -196,6 +233,7 @@ export class VisionGrid {
 
   clearExploration(): void {
     this.getExplored().fill(0)
+    this.getExplorationChunks().clear()
     this.getKnownOccupants().clear()
   }
 
@@ -240,19 +278,18 @@ export class VisionGrid {
     }
   }
 
-  toJSON(): SerializedVisionGrid {
-    return Array.from({ length: this.stride }, (_, i) =>
-      Array.from({ length: this.stride }, (_, j) => {
-        const out: SerializedViewCell = {}
-        if (this.isViewed(i, j)) out.viewed = true
-        const viewBy = [...this.getViewers(i, j)]
-          .map(instance =>
-            instance && typeof instance === 'object' && 'label' in instance ? instance.label : instance
-          )
-          .filter(Boolean)
-        if (viewBy.length) out.viewBy = viewBy
-        return out
-      })
-    )
+  toJSON(): CompactVisionGrid {
+    return {
+      version: 1,
+      stride: this.stride,
+      chunkSize: VISION_CHUNK_SIZE,
+      explored: this.getExplorationChunks().snapshot(),
+      visible: [...this.getVisibleBy()].map(([index, viewers]) => ({
+        index,
+        viewBy: [
+          ...new Set([...viewers].map(viewer => (typeof viewer === 'string' ? viewer : viewer.label)).filter(Boolean)),
+        ],
+      })),
+    }
   }
 }

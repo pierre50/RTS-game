@@ -65,7 +65,7 @@ test('save validation rejects malformed cave orders and delivery references', ()
 
 test('save validation rejects unsupported sizes, seeds, source sizes and world descriptors', () => {
   for (const value of [null, [], 1, 'save']) assert.throws(() => validateSaveData(value), /expected an object/)
-  for (const size of ['1', 0, 513, 1.5, NaN, Infinity])
+  for (const size of ['1', 0, 8193, 1.5, NaN, Infinity])
     rejects(data => {
       data.world.size = size
     }, /map size/)
@@ -73,7 +73,7 @@ test('save validation rejects unsupported sizes, seeds, source sizes and world d
     rejects(data => {
       data.world.seed = seed
     }, /map seed/)
-  for (const sourceSize of ['1', 0, 513, 1.5])
+  for (const sourceSize of ['1', 0, 8193, 1.5])
     rejects(data => {
       data.world.sourceSize = sourceSize
     }, /source map size/)
@@ -103,7 +103,7 @@ test('save validation rejects unsupported sizes, seeds, source sizes and world d
 test('legacy map and camera validation reject malformed grids and cell metadata', () => {
   for (const map of [
     [],
-    Array(514),
+    Array(2050),
     [null, []],
     [[{}], []],
     [
@@ -478,9 +478,25 @@ test('saved daily schedules accept legacy units and reject invalid phase times',
     data.players[0].units = [{ type: 'Hero', i: 0, j: 0, dailySchedule }]
     assert.doesNotThrow(() => validateSaveData(data))
   }
-  for (const dailySchedule of [[], {}, { ...valid, bedMinute: NaN }, { ...valid, bedMinute: 1440 }, { ...valid, wakeMinute: 500 }]) {
+  for (const dailySchedule of [
+    [],
+    {},
+    { ...valid, bedMinute: NaN },
+    { ...valid, bedMinute: 1440 },
+    { ...valid, wakeMinute: 500 },
+  ]) {
     rejects(data => {
       data.players[0].units = [{ type: 'Hero', i: 0, j: 0, dailySchedule }]
     }, /dailySchedule/)
   }
+})
+
+test('large blueprint saves validate with compact exploration and retain a finite size limit', () => {
+  const data = save()
+  data.world.size = 7500
+  data.world.sourceSize = 4999
+  data.players[0].views = { version: 1, stride: 7501, chunkSize: 64, explored: [], visible: [] }
+  assert.equal(validateSaveData(data), data)
+  data.world.size = 8193
+  assert.throws(() => validateSaveData(data), /map size/)
 })

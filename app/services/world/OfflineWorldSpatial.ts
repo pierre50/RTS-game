@@ -1,3 +1,4 @@
+import { beginLoadTrace } from '../../lib/loadDiagnostics'
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../types/save'
 
 export type OfflineTerrainCell = {
@@ -56,63 +57,83 @@ export class OfflineWorldSpatial {
         }
       }
     })
-    if (options.protectVillageAccess !== false) for (const player of state.players) {
-      const center = player.buildings?.find(b => b.type === 'TownCenter' && isLiving(b))
-      if (center) this.protectVillageAccess(center, player.buildings ?? [])
-    }
+    if (options.protectVillageAccess !== false)
+      for (const player of state.players) {
+        const center = player.buildings?.find(b => b.type === 'TownCenter' && isLiving(b))
+        if (center) this.protectVillageAccess(center, player.buildings ?? [])
+      }
   }
 
   /** Preserve real walkable routes, not just terrain connectivity through occupied cells. */
   protectVillageAccess(center: SaveGridPoint, buildings: SaveEntityState[]): void {
-    const walkable = (point: SaveGridPoint) =>
-      this.land(point) && [...(this.occupied.get(this.key(point)) ?? [])].every(entity => this.mobile.has(entity))
-    let start: SaveGridPoint | undefined
-    for (let radius = 1; radius <= 6 && !start; radius++)
-      for (let di = -radius; di <= radius && !start; di++)
-        for (let dj = -radius; dj <= radius; dj++) {
-          const point = { i: center.i + di, j: center.j + dj }
-          if (walkable(point)) {
-            start = point
-            break
+    const trace = beginLoadTrace('spatial.protectVillageAccess', {
+      i: center.i,
+      j: center.j,
+      rows: this.terrain.length,
+      buildings: buildings.length,
+    })
+    try {
+      const walkable = (point: SaveGridPoint) =>
+        this.land(point) && [...(this.occupied.get(this.key(point)) ?? [])].every(entity => this.mobile.has(entity))
+      let start: SaveGridPoint | undefined
+      for (let radius = 1; radius <= 6 && !start; radius++)
+        for (let di = -radius; di <= radius && !start; di++)
+          for (let dj = -radius; dj <= radius; dj++) {
+            const point = { i: center.i + di, j: center.j + dj }
+            if (walkable(point)) {
+              start = point
+              break
+            }
+          }
+      if (!start) {
+        trace.end({ visited: 0, reason: 'noWalkableStart' })
+        return
+      }
+      const previous = new Map<string, SaveGridPoint | null>([[this.key(start), null]])
+      const queue = [start]
+      const extremes = [start, start, start, start]
+      let processed = 0
+      for (const point of queue) {
+        if (++processed % 100000 === 0)
+          trace.progress({ processed, discovered: previous.size, pending: queue.length - processed })
+        if (point.i < extremes[0].i) extremes[0] = point
+        if (point.i > extremes[1].i) extremes[1] = point
+        if (point.j < extremes[2].j) extremes[2] = point
+        if (point.j > extremes[3].j) extremes[3] = point
+        for (const [di, dj] of [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ]) {
+          const next = { i: point.i + di, j: point.j + dj }
+          if (!previous.has(this.key(next)) && walkable(next)) {
+            previous.set(this.key(next), point)
+            queue.push(next)
           }
         }
-    if (!start) return
-    const previous = new Map<string, SaveGridPoint | null>([[this.key(start), null]])
-    const queue = [start]
-    const extremes = [start, start, start, start]
-    for (const point of queue) {
-      if (point.i < extremes[0].i) extremes[0] = point
-      if (point.i > extremes[1].i) extremes[1] = point
-      if (point.j < extremes[2].j) extremes[2] = point
-      if (point.j > extremes[3].j) extremes[3] = point
-      for (const [di, dj] of [
-        [-1, 0],
-        [1, 0],
-        [0, -1],
-        [0, 1],
-      ]) {
-        const next = { i: point.i + di, j: point.j + dj }
-        if (!previous.has(this.key(next)) && walkable(next)) {
-          previous.set(this.key(next), point)
-          queue.push(next)
+      }
+      trace.progress({ phase: 'protectPaths', processed, discovered: previous.size, buildings: buildings.length })
+      const protect = (target: SaveGridPoint) => {
+        let point: SaveGridPoint | null | undefined = target
+        while (point) {
+          const key = this.key(point)
+          this.passages.add(key)
+          point = previous.get(key)
         }
       }
-    }
-    const protect = (target: SaveGridPoint) => {
-      let point: SaveGridPoint | null | undefined = target
-      while (point) {
-        const key = this.key(point)
-        this.passages.add(key)
-        point = previous.get(key)
+      extremes.forEach(protect)
+      for (const building of buildings.filter(isLiving)) {
+        const target = queue.reduce(
+          (best, point) => (distance(point, building) < distance(best, building) ? point : best),
+          start
+        )
+        protect(target)
       }
-    }
-    extremes.forEach(protect)
-    for (const building of buildings.filter(isLiving)) {
-      const target = queue.reduce(
-        (best, point) => (distance(point, building) < distance(best, building) ? point : best),
-        start
-      )
-      protect(target)
+      trace.end({ processed, discovered: previous.size, protectedCells: this.passages.size })
+    } catch (error) {
+      trace.fail(error)
+      throw error
     }
   }
 
@@ -164,24 +185,34 @@ export class OfflineWorldSpatial {
     const key = this.key(point)
     if (this.regions.has(key)) return this.regions.get(key)
     if (!this.land(point)) return undefined
-    const region = ++this.nextRegion
-    const queue = [point]
-    this.regions.set(key, region)
-    for (const cell of queue) {
-      for (const [di, dj] of [
-        [-1, 0],
-        [1, 0],
-        [0, -1],
-        [0, 1],
-      ] as const) {
-        const next = { i: cell.i + di, j: cell.j + dj }
-        const nextKey = this.key(next)
-        if (!this.land(next) || this.regions.has(nextKey)) continue
-        this.regions.set(nextKey, region)
-        queue.push(next)
+    const trace = beginLoadTrace('spatial.connectedRegion', { i: point.i, j: point.j, rows: this.terrain.length })
+    try {
+      const region = ++this.nextRegion
+      const queue = [point]
+      this.regions.set(key, region)
+      let processed = 0
+      for (const cell of queue) {
+        if (++processed % 100000 === 0)
+          trace.progress({ processed, discovered: queue.length, cachedCells: this.regions.size })
+        for (const [di, dj] of [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ] as const) {
+          const next = { i: cell.i + di, j: cell.j + dj }
+          const nextKey = this.key(next)
+          if (!this.land(next) || this.regions.has(nextKey)) continue
+          this.regions.set(nextKey, region)
+          queue.push(next)
+        }
       }
+      trace.end({ processed, discovered: queue.length, cachedCells: this.regions.size })
+      return region
+    } catch (error) {
+      trace.fail(error)
+      throw error
     }
-    return region
   }
 
   reachable(from: SaveGridPoint, to: SaveGridPoint): boolean {

@@ -1,22 +1,7 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
-
-function loadVisionGrid() {
-  const filename = path.join(__dirname, '../app/services/VisionGrid.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  new Function('module', 'exports', 'require', code)(module, module.exports, require)
-  return module.exports.VisionGrid
-}
-
-const VisionGrid = loadVisionGrid()
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
 
 test('stores explored cells compactly and notifies only on first discovery', () => {
   const discovered = []
@@ -78,8 +63,14 @@ test('keeps explored and visible cells separate per runtime map space', () => {
 
   assert.equal(grid.isViewed(2, 2), false)
   assert.equal(grid.isVisible(2, 2), false)
-  assert.equal(grid.withSpace('interior:house', () => grid.isViewed(2, 2)), true)
-  assert.equal(grid.withSpace('interior:house', () => grid.isVisible(2, 2)), true)
+  assert.equal(
+    grid.withSpace('interior:house', () => grid.isViewed(2, 2)),
+    true
+  )
+  assert.equal(
+    grid.withSpace('interior:house', () => grid.isVisible(2, 2)),
+    true
+  )
 })
 
 test('round-trips the existing save format and restores entity references', () => {
@@ -90,5 +81,98 @@ test('round-trips the existing save format and restores entity references', () =
 
   grid.restoreViewers(label => (label === unit.label ? unit : null))
   assert.equal(grid.hasViewer(1, 2, unit), true)
-  assert.deepEqual(grid.toJSON()[1][2], { viewed: true, viewBy: ['unit-1'] })
+  const restored = new VisionGrid(2, JSON.parse(JSON.stringify(grid.toJSON())))
+  assert.equal(restored.isViewed(1, 2), true)
+  assert.deepEqual([...restored.getViewers(1, 2)], ['unit-1'])
+})
+
+test('million-cell sparse exploration saves only changed chunks without scanning the dense grid', () => {
+  const grid = new VisionGrid(1500)
+  grid.setViewed(0, 0)
+  grid.setViewed(1500, 1500)
+  // Saving must not read the dense buffers or query every cell.
+  grid.isViewed = () => assert.fail('dense exploration scan')
+  grid.getViewers = () => assert.fail('dense visibility scan')
+  const saved = grid.toJSON()
+  assert.equal(saved.explored.length, 2)
+  assert.ok(JSON.stringify(saved).length < 1600)
+  const restored = new VisionGrid(1500, saved)
+  assert.equal(restored.isViewed(0, 0), true)
+  assert.equal(restored.isViewed(1500, 1500), true)
+  assert.equal(restored.isViewed(1499, 1500), false)
+})
+
+test('saved snapshots remain immutable across discovery, clearing and interior changes', () => {
+  const grid = new VisionGrid(128)
+  grid.setViewed(63, 64)
+  const first = grid.toJSON()
+  const json = JSON.stringify(first)
+  grid.setViewed(64, 63)
+  grid.withSpace('inside', () => {
+    grid.setViewed(100, 100)
+    grid.clearExploration()
+  })
+  const second = grid.toJSON()
+  assert.equal(first.explored.length, 1)
+  assert.equal(second.explored.length, 2)
+  grid.setViewed(63, 64, false)
+  assert.equal(grid.toJSON().explored.length, 1)
+  grid.clearExploration()
+  assert.equal(grid.toJSON().explored.length, 0)
+  assert.equal(JSON.stringify(first), json)
+})
+
+test('full reveal handles partial edge chunks and sparse viewer references round trip', () => {
+  const grid = new VisionGrid(65, [], null, true)
+  grid.addViewer(65, 65, { label: 'hero' })
+  const saved = grid.toJSON()
+  assert.equal(saved.explored.length, 4)
+  const restored = new VisionGrid(65, saved)
+  for (let i = 0; i <= 65; i++) for (let j = 0; j <= 65; j++) assert.equal(restored.isViewed(i, j), true)
+  assert.equal(restored.isVisible(65, 65), true)
+  restored.restoreViewers(() => null)
+  assert.equal(restored.isVisible(65, 65), false)
+})
+
+test('compact save validation rejects malformed chunks, dimensions and viewer positions', () => {
+  const { validatePlayerViews } = loadTsModule('app/serialization/SaveViewValidation.ts')
+  const grid = new VisionGrid(64)
+  grid.setViewed(64, 64)
+  const valid = grid.toJSON()
+  validatePlayerViews(valid, 0, 65)
+  for (const mutate of [
+    x => {
+      x.version = 2
+    },
+    x => {
+      x.stride = 66
+    },
+    x => {
+      x.chunkSize = 32
+    },
+    x => {
+      x.explored[0].bits = 'bad'
+    },
+    x => {
+      x.explored.push(x.explored[0])
+    },
+    x => {
+      x.explored[0].i = 2
+    },
+    x => {
+      const bytes = Buffer.alloc(512)
+      bytes[0] = 2
+      x.explored[0].bits = bytes.toString('base64')
+    },
+    x => {
+      x.visible = [{ index: 65 * 65, viewBy: ['hero'] }]
+    },
+    x => {
+      x.visible = [{ index: 0, viewBy: [123] }]
+    },
+  ]) {
+    const bad = structuredClone(valid)
+    mutate(bad)
+    assert.throws(() => validatePlayerViews(bad, 0, 65), /Invalid save/)
+  }
 })

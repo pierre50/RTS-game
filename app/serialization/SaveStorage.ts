@@ -1,4 +1,4 @@
-import LZString from 'lz-string'
+import { ZonedSaveStore } from './ZonedSaveStore'
 import { serializeGame } from './SaveSerializer'
 import { createInitialCampaignSave, updateCurrentWorldState } from './CampaignSave'
 import { debugLog } from '../lib/debug'
@@ -58,6 +58,8 @@ const backend = window.electronSaves
       removeItem: (key: string) => localStorage.removeItem(key),
     }
 
+const zonedStore = new ZonedSaveStore(backend)
+
 function getIndex(): SaveIndexEntry[] {
   try {
     const parsed: unknown = JSON.parse(backend.getIndex() || '[]')
@@ -81,14 +83,9 @@ function setIndex(index: SaveIndexEntry[]): void {
   backend.setIndex(JSON.stringify(index))
 }
 
-function isLoadableSaveData(compressed: string | null): boolean {
-  if (!compressed) return false
-
-  const raw = LZString.decompressFromBase64(compressed)
-  if (!raw) return false
-
+function isLoadableSaveData(key: string): boolean {
   try {
-    JSON.parse(raw)
+    zonedStore.load(key)
     return true
   } catch {
     return false
@@ -130,17 +127,18 @@ export function saveRecord(data: SaveRecord, options: SaveRecordOptions = {}): {
   if (!replacing && !isAutosave && index.length >= MAX_SAVES) {
     throw new Error('MAX_SAVES_REACHED')
   }
-  const compressed = LZString.compressToBase64(JSON.stringify(data))
   const key = options.key ?? createSaveKey(index)
+  const name = options.name ?? formatSaveName()
+  const date = Date.now()
   try {
-    backend.setItem(key, compressed)
+    const stats = zonedStore.save(key, data, () =>
+      setIndex([...index.filter(entry => entry.key !== key), { key, name, date }])
+    )
+    console.info(`[save-zones] ${JSON.stringify({ key, ...stats })}`)
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : 'STORAGE_FULL'
     throw new Error(message.startsWith('STORAGE_FULL') ? message : `STORAGE_FULL: ${message}`)
   }
-  const name = options.name ?? formatSaveName()
-  const date = Date.now()
-  setIndex([...index.filter(entry => entry.key !== key), { key, name, date }])
   return { key, name }
 }
 
@@ -160,7 +158,7 @@ export function autosaveRecord(data: SaveRecord, name = 'Autosave'): { key: stri
 
 export function listSaves(): SaveIndexEntry[] {
   const index = getIndex()
-  const loadableIndex = index.filter(entry => isLoadableSaveData(backend.getItem(entry.key)))
+  const loadableIndex = index.filter(entry => isLoadableSaveData(entry.key))
   if (loadableIndex.length !== index.length) {
     try {
       setIndex(loadableIndex)
@@ -172,13 +170,5 @@ export function listSaves(): SaveIndexEntry[] {
 }
 
 export function loadSave(key: string): SaveRecord {
-  const compressed = backend.getItem(key)
-  if (!compressed) throw new Error('SAVE_NOT_FOUND')
-  const raw = LZString.decompressFromBase64(compressed)
-  if (!raw) throw new Error('SAVE_CORRUPT')
-  try {
-    return JSON.parse(raw) as SaveRecord
-  } catch {
-    throw new Error('SAVE_CORRUPT')
-  }
+  return zonedStore.load(key)
 }

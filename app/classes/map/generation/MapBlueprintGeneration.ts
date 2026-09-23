@@ -1,3 +1,4 @@
+import { beginLoadTrace } from '../../../lib/loadDiagnostics'
 import { addInteriorWalls } from '../../../lib/graphics/interiorWalls'
 import { registerPreparedMapContent, applyPreparedTerrain } from './PreparedMapContent'
 import { Assets } from 'pixi.js'
@@ -86,36 +87,49 @@ export class MapBlueprintGeneration {
     this.map.context.performance?.record?.('blueprint.applyMetadata', performance.now() - metadataStartedAt)
 
     const startedAt = performance.now()
-    const cellDefinitions = gameConfig().cells
-    const pickCellVariant = createDeterministicCellVariantPicker(this.map.seed ?? 0)
-    const relief = blueprint.relief ?? []
-    for (let i = 0; i <= this.map.size; i++) {
-      const row: RuntimeCell[] = []
-      this.map.grid[i] = row
-      for (let j = 0; j <= this.map.size; j++) {
-        const type = blueprint.terrain[i][j]
-        if (type == null) continue
-        const definition = cellDefinitions[type] as CellDefinition
-        const cell = new GenerationCell(
-          {
-            i,
-            j,
-            z: relief[i]?.[j] || 0,
-            type: String(type),
-            definition,
-            textureName: pickCellVariant(definition?.assets, i, j) ?? undefined,
-          },
-          context
-        )
-        row[j] = cell
+    const trace = beginLoadTrace('blueprint.createCells', {
+      rows: this.map.size + 1,
+      gridSlots: (this.map.size + 1) ** 2,
+    })
+    let createdCells = 0
+    try {
+      const cellDefinitions = gameConfig().cells
+      const pickCellVariant = createDeterministicCellVariantPicker(this.map.seed ?? 0)
+      const relief = blueprint.relief ?? []
+      for (let i = 0; i <= this.map.size; i++) {
+        const row: RuntimeCell[] = []
+        this.map.grid[i] = row
+        for (let j = 0; j <= this.map.size; j++) {
+          const type = blueprint.terrain[i][j]
+          if (type == null) continue
+          const definition = cellDefinitions[type] as CellDefinition
+          const cell = new GenerationCell(
+            {
+              i,
+              j,
+              z: relief[i]?.[j] || 0,
+              type: String(type),
+              definition,
+              textureName: pickCellVariant(definition?.assets, i, j) ?? undefined,
+            },
+            context
+          )
+          row[j] = cell
+          createdCells++
+          if (createdCells % 100000 === 0) trace.progress({ createdCells, row: i })
+        }
+        if (i % 32 === 0) {
+          await onProgress('loadingPregeneratedMap', 0.03 + (i / this.map.size) * 0.14)
+          await this.yieldToBrowser()
+        }
       }
-      if (i % 32 === 0) {
-        await onProgress('loadingPregeneratedMap', 0.03 + (i / this.map.size) * 0.14)
-        await this.yieldToBrowser()
-      }
+      this.applyInteriorMasks(blueprint)
+      if (isInteriorBlueprint(blueprint)) addInteriorWalls(blueprint, this.map)
+      trace.end({ createdCells })
+    } catch (error) {
+      trace.fail(error)
+      throw error
     }
-    this.applyInteriorMasks(blueprint)
-    if (isInteriorBlueprint(blueprint)) addInteriorWalls(blueprint, this.map)
     this.map.blueprintCellCreationMs = performance.now() - startedAt
     this.map.context.performance?.record?.('blueprint.createGenerationCells', this.map.blueprintCellCreationMs)
     this.map.context.performance?.record('blueprintCellCreation', this.map.blueprintCellCreationMs)

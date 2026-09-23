@@ -93,6 +93,7 @@ export class MapGeneration {
   }
 
   destroyGeneratedChildren(): void {
+    this.map.terrainBake?.destroy()
     this.map.terrainChunkManager?.destroy()
     for (const row of this.map.grid) {
       for (const cell of row || []) {

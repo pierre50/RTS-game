@@ -66,6 +66,16 @@ export default class MapConfig {
 
     this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: 1, simplified: true })
     this.playerSetupPanel.appendSimplifiedControl(
+      buildSelectRow('Carte', [
+        { label: 'Monde normal', value: 'normal' },
+        { label: 'Test — 5000 × 5000', value: 'large-test' },
+      ], 'normal', value => {
+        const large = value === 'large-test'
+        this.config.worldId = large ? 'world-test-5000' : DEFAULT_WORLD_ID
+        this.config.size = large ? 4999 : 144
+      })
+    )
+    this.playerSetupPanel.appendSimplifiedControl(
       buildSelectRow(t('colDifficulty'), DIFFICULTIES, 'medium', val => {
         this.config.difficulty = val
       })

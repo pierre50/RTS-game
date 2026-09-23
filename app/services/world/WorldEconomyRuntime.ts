@@ -1,3 +1,4 @@
+import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import { Assets } from 'pixi.js'
 import { RESOURCE_STOCKPILE_TYPES } from '../../constants/entities'
 import { worldEconomyFactors } from '../../config/worldEconomyBalance'
@@ -74,8 +75,13 @@ export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
   }
 }
 
-function seedRegion(source: MapBlueprint, regionId: string, campaign: CampaignSave, context: GameContextLike,
-  profiles: Record<string, VillageStartProfile> = {}) {
+function seedRegion(
+  source: MapBlueprint,
+  regionId: string,
+  campaign: CampaignSave,
+  context: GameContextLike,
+  profiles: Record<string, VillageStartProfile> = {}
+) {
   const blueprint = createSquareLocalBlueprint(source)
   const base = Assets.cache.get('config') as PlayerConfigLike & { resources: Record<string, ResourceConfig> }
   const state: SerializedSave = {
@@ -142,12 +148,21 @@ function seedRegion(source: MapBlueprint, regionId: string, campaign: CampaignSa
       buildings: [],
     })
     const index = state.players.length - 1
-    populateVillageBase(state.players[index], index, settlement.local, spatial, {
-      buildingConfig: (_i, type) => config.buildings[type] ?? {},
-      unitConfig: (_i, type) => config.units[type] ?? {},
-      buildingCapacity: (_i, type) => getBuildingShelterCapacity({ type, shelterCapacity: config.buildings[type]?.shelterCapacity ?? 0 }) ||
-        Number(config.buildings[type]?.increasePopulation) || 0,
-    }, context.map.startingResources ?? { wood: 200, food: 200, stone: 150 })
+    populateVillageBase(
+      state.players[index],
+      index,
+      settlement.local,
+      spatial,
+      {
+        buildingConfig: (_i, type) => config.buildings[type] ?? {},
+        unitConfig: (_i, type) => config.units[type] ?? {},
+        buildingCapacity: (_i, type) =>
+          getBuildingShelterCapacity({ type, shelterCapacity: config.buildings[type]?.shelterCapacity ?? 0 }) ||
+          Number(config.buildings[type]?.increasePopulation) ||
+          0,
+      },
+      context.map.startingResources ?? { wood: 200, food: 200, stone: 150 }
+    )
   }
   const initialState = applyVillageStartingState(state, profiles, terrain, economyRulesFor(state))
   const region: RegionEconomySave = {
@@ -166,47 +181,65 @@ export async function initializeCampaignEconomy(
   campaign: CampaignSave,
   context: GameContextLike,
   load: (regionId: string, size: number) => Promise<MapBlueprint>,
-  profiles: Record<string, VillageStartProfile> = {}
+  profiles: Record<string, VillageStartProfile> = {},
+  initialState?: SerializedSave
 ): Promise<void> {
-  campaign.economy ??= { version: 1, regions: {} }
-  const manifest = context.map.worldManifest
-  const candidates = manifest?.maps ?? []
-  const settlements = (manifest?.settlements ?? []) as MapSettlement[]
-  const current = serializeGame(context)
-  captureEconomyRegion(campaign, current, context.map.grid)
-  for (const entry of candidates) {
-    if (!entry.id || campaign.economy.regions[entry.id]) continue
-    if (
-      !settlements.some(
-        s =>
-          s.civ &&
-          s.civ !== context.player?.civ &&
-          s.kind !== 'banditCamp' &&
-          s.region?.x === entry.region.x &&
-          s.region?.y === entry.region.y
+  return traceLoadAsync('boot.initializeCampaignEconomy', async () => {
+    campaign.economy ??= { version: 1, regions: {} }
+    const manifest = context.map.worldManifest
+    const candidates = manifest?.maps ?? []
+    const settlements = (manifest?.settlements ?? []) as MapSettlement[]
+    const current = initialState ?? traceLoad('economy.serializeCurrentRegion', () => serializeGame(context))
+    traceLoad('economy.captureCurrentRegion', () => captureEconomyRegion(campaign, current, context.map.grid))
+    for (const entry of candidates) {
+      if (!entry.id || campaign.economy.regions[entry.id]) continue
+      if (
+        !settlements.some(
+          s =>
+            s.civ &&
+            s.civ !== context.player?.civ &&
+            s.kind !== 'banditCamp' &&
+            s.region?.x === entry.region.x &&
+            s.region?.y === entry.region.y
+        )
+      )
+        continue
+      const regionId = entry.id
+      const world = Object.values(campaign.worlds).find(w => economyRegionId(w.state) === regionId)
+      const blueprint = await traceLoadAsync('economy.loadRegion', () => load(regionId, entry.size), {
+        region: entry.id,
+      })
+      const seeded = traceLoad(
+        'economy.seedRegion',
+        () =>
+          seedRegion(
+            world && !world.state.world?.localGridLayout && !world.state.config?.localGridLayout
+              ? { ...blueprint, preserveLegacyGrid: true }
+              : blueprint,
+            regionId,
+            campaign,
+            context,
+            world ? {} : profiles
+          ),
+        { region: entry.id }
+      )
+      if (world) {
+        delete seeded.initialState
+        Object.assign(seeded, { worldId: world.id, simulatedUntilMs: world.state.runtime?.dayNightElapsedMs ?? 0 })
+        summarizeEconomy(seeded, world.state)
+      }
+      campaign.economy.regions[entry.id] = seeded
+    }
+    traceLoad('economy.advanceCampaign', () =>
+      advanceCampaignEconomy(
+        campaign,
+        current.runtime?.dayNightElapsedMs ?? 0,
+        economyRegionId(current),
+        economyRulesFor
       )
     )
-      continue
-    const world = Object.values(campaign.worlds).find(w => economyRegionId(w.state) === entry.id)
-    const blueprint = await load(entry.id, entry.size)
-    const seeded = seedRegion(
-      world && !world.state.world?.localGridLayout && !world.state.config?.localGridLayout
-        ? { ...blueprint, preserveLegacyGrid: true }
-        : blueprint,
-      entry.id,
-      campaign,
-      context,
-      world ? {} : profiles
-    )
-    if (world) {
-      delete seeded.initialState
-      Object.assign(seeded, { worldId: world.id, simulatedUntilMs: world.state.runtime?.dayNightElapsedMs ?? 0 })
-      summarizeEconomy(seeded, world.state)
-    }
-    campaign.economy.regions[entry.id] = seeded
-  }
-  advanceCampaignEconomy(campaign, current.runtime?.dayNightElapsedMs ?? 0, economyRegionId(current), economyRulesFor)
-  campaign.economy.initialized = true
+    campaign.economy.initialized = true
+  })
 }
 
 export function updateWorldEconomy(campaign: CampaignSave, context: GameContextLike): void {

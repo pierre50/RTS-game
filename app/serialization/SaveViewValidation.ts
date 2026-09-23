@@ -1,3 +1,4 @@
+import { readCompactVision } from './CompactVision'
 import { fail, validateArray, validateViewCell } from './SaveValidationPrimitives'
 
 export function validatePlayerViews(
@@ -6,6 +7,10 @@ export function validatePlayerViews(
   size: number,
   containsCell?: (i: number, j: number) => boolean
 ): void {
+  if (views && !Array.isArray(views) && typeof views === 'object') {
+    readCompactVision(views, size)
+    return
+  }
   validateArray(views, `player ${playerIndex} views`)
   if (views.length !== size) {
     fail(`Invalid save file: player ${playerIndex} views have an invalid size.`)
@@ -23,4 +28,3 @@ export function validatePlayerViews(
     }
   }
 }
-

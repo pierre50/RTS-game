@@ -133,7 +133,7 @@ export class Player implements PlayerLike {
     this.hasBuilt = this.hasBuilt || (map.instantMode ? Object.keys(this.config.buildings).map(key => key) : [])
     this.views = new VisionGrid(
       map.size,
-      Array.isArray(options.views) ? options.views : [],
+      options.views && 'toJSON' in options.views ? options.views.toJSON() : (options.views ?? []),
       (i, j) => {
         if (this.isPlayed && !map.revealEverything && this.context.menu.isMiniMapActive?.() !== false) {
           this.context.menu.updateTerrainMiniMap?.(i, j)

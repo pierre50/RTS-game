@@ -66,10 +66,10 @@ export async function generateStylishMap(
   measure('banditCampPlacement', callbacks.placeBanditCamps)
   await onProgress('generatingDecorations', 0.74)
   await measureAsync('decorations', callbacks.generateSetsAsync)
-  for (const viewer of map.context.players || []) {
-    rehydrateAIKnowledge(viewer, map)
-  }
-  initializePlayerPerception(player)
+  measure('initializePerception', () => {
+    for (const viewer of map.context.players || []) rehydrateAIKnowledge(viewer, map)
+    initializePlayerPerception(player)
+  })
   await finalizeGeneratedMap(map, menu, timings, measureAsync, onProgress, true)
 }
 
@@ -111,5 +111,7 @@ async function finalizeGeneratedMap(
       Object.fromEntries(Object.entries(timings).map(([name, duration]) => [name, `${duration.toFixed(1)} ms`]))
     )
   }
-  if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
+  await measureAsync('resourcesMiniMap', () => {
+    if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
+  })
 }

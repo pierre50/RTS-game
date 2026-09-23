@@ -223,6 +223,7 @@ export default class Map extends Container {
   }
 
   updateRenderChunks(viewport: Viewport, margin: number = CELL_WIDTH * 2): void {
+    this.terrainBake.updateViewport(viewport)
     updateNeighborSceneryVisibility(this)
     this.updateWaterOverlay()
     if (this.terrainChunkManager?.chunks.size) {
@@ -530,6 +531,7 @@ export default class Map extends Container {
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
     destroyWaterOverlay(this)
     this.shadowLayer?.destroy({ children: true, texture: false, textureSource: false })
+    this.terrainBake.destroy()
     this.terrainChunkManager?.destroy()
     super.destroy(options ?? undefined)
   }

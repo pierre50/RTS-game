@@ -1,0 +1,362 @@
+{
+  "format": "macro-world-map-manifest",
+  "version": 1,
+  "worldSeed": 1000,
+  "regionMapSize": 999,
+  "regionsWide": 1,
+  "regionsHigh": 1,
+  "settlements": [
+    {
+      "id": "test-village-Hellas",
+      "kind": "village",
+      "world": {
+        "i": 777,
+        "j": 737
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 777,
+        "j": 737
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "importance": 1.081
+    },
+    {
+      "id": "test-village-Latium",
+      "kind": "village",
+      "world": {
+        "i": 860,
+        "j": 640
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 860,
+        "j": 640
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Latium",
+      "playerIndex": 1,
+      "importance": 1.081
+    },
+    {
+      "id": "test-village-Kemet",
+      "kind": "village",
+      "world": {
+        "i": 991,
+        "j": 853
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 991,
+        "j": 853
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Kemet",
+      "playerIndex": 2,
+      "importance": 1.081
+    },
+    {
+      "id": "test-village-Sumeria",
+      "kind": "village",
+      "world": {
+        "i": 941,
+        "j": 988
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 941,
+        "j": 988
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Sumeria",
+      "playerIndex": 3,
+      "importance": 1.081
+    },
+    {
+      "id": "test-village-Xia",
+      "kind": "village",
+      "world": {
+        "i": 747,
+        "j": 944
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 747,
+        "j": 944
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Xia",
+      "playerIndex": 4,
+      "importance": 1.081
+    },
+    {
+      "id": "test-village-Alba",
+      "kind": "village",
+      "world": {
+        "i": 556,
+        "j": 753
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 556,
+        "j": 753
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Alba",
+      "playerIndex": 5,
+      "importance": 1.081
+    },
+    {
+      "id": "test-village-Nord",
+      "kind": "village",
+      "world": {
+        "i": 512,
+        "j": 559
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 512,
+        "j": 559
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Nord",
+      "playerIndex": 6,
+      "importance": 1.081
+    },
+    {
+      "id": "test-village-Nobatia",
+      "kind": "village",
+      "world": {
+        "i": 647,
+        "j": 509
+      },
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 647,
+        "j": 509
+      },
+      "radius": 18,
+      "biome": "temperate",
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "importance": 1.081
+    }
+  ],
+  "maps": [
+    {
+      "id": "world-test-1000-r0-0",
+      "path": "world-test-1000-r0-0.map",
+      "size": 999,
+      "environment": "Temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "seed": 1000,
+      "spawns": 8,
+      "settlements": [
+        {
+          "id": "test-village-Hellas",
+          "kind": "village",
+          "world": {
+            "i": 777,
+            "j": 737
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 777,
+            "j": 737
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "importance": 1.081
+        },
+        {
+          "id": "test-village-Latium",
+          "kind": "village",
+          "world": {
+            "i": 860,
+            "j": 640
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 860,
+            "j": 640
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Latium",
+          "playerIndex": 1,
+          "importance": 1.081
+        },
+        {
+          "id": "test-village-Kemet",
+          "kind": "village",
+          "world": {
+            "i": 991,
+            "j": 853
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 991,
+            "j": 853
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Kemet",
+          "playerIndex": 2,
+          "importance": 1.081
+        },
+        {
+          "id": "test-village-Sumeria",
+          "kind": "village",
+          "world": {
+            "i": 941,
+            "j": 988
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 941,
+            "j": 988
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Sumeria",
+          "playerIndex": 3,
+          "importance": 1.081
+        },
+        {
+          "id": "test-village-Xia",
+          "kind": "village",
+          "world": {
+            "i": 747,
+            "j": 944
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 747,
+            "j": 944
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Xia",
+          "playerIndex": 4,
+          "importance": 1.081
+        },
+        {
+          "id": "test-village-Alba",
+          "kind": "village",
+          "world": {
+            "i": 556,
+            "j": 753
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 556,
+            "j": 753
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Alba",
+          "playerIndex": 5,
+          "importance": 1.081
+        },
+        {
+          "id": "test-village-Nord",
+          "kind": "village",
+          "world": {
+            "i": 512,
+            "j": 559
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 512,
+            "j": 559
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Nord",
+          "playerIndex": 6,
+          "importance": 1.081
+        },
+        {
+          "id": "test-village-Nobatia",
+          "kind": "village",
+          "world": {
+            "i": 647,
+            "j": 509
+          },
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 647,
+            "j": 509
+          },
+          "radius": 18,
+          "biome": "temperate",
+          "civ": "Nobatia",
+          "playerIndex": 7,
+          "importance": 1.081
+        }
+      ]
+    }
+  ]
+}
