@@ -1,7 +1,8 @@
+import { loadSavedGame } from '../LoadSavedGame'
 import { Modal } from '../../lib'
 import { playClickSound } from '../../lib/audio/uiSound'
 import { t } from '../../lib/lang'
-import { listSaves, loadSave } from '../../serialization/SaveStorage'
+import { listSaves } from '../../serialization/SaveStorage'
 import type { SaveIndexEntry, SaveRecord } from '../../types/save'
 import { createInventoryActionRow } from '../inventory/InventoryActionRow'
 
@@ -33,11 +34,12 @@ function createSaveRow(state: SaveListState, { key, name, date }: SaveIndexEntry
       description: formatSaveDate(date),
       trailingAction: {
         label: t('load'),
-        onClick: () => {
+        onClick: async () => {
           try {
-            const saveData = loadSave(key)
-            state.getModal().close()
-            state.onLoad(saveData)
+            await loadSavedGame(key, saveData => {
+              state.getModal().close()
+              state.onLoad(saveData)
+            })
           } catch {
             reportMaybeVisibleError(state, t('corruptSave'))
           }

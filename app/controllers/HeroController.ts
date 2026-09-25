@@ -130,6 +130,7 @@ export class HeroController {
     const aimDegree = getHeroAimDegree(unit, point)
     if (unit.degree !== aimDegree) {
       unit.degree = aimDegree
+      if (unit.owner) unit.context?.menu?.updatePlayerMiniMap?.(unit.owner)
       unit.setTextures?.(unit.currentSheet === SHEET_TYPES.walking ? SHEET_TYPES.walking : SHEET_TYPES.standing)
     }
   }

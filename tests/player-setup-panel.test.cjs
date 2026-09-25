@@ -126,3 +126,24 @@ test('simplified setup keeps only the human player', () => {
   assert.equal(panel.players[0].isHuman, true)
   assert.equal(panel.players[0].name, 'You')
 })
+
+test('random color resolves only for game start, excludes AI colors and keeps setup unchanged', () => {
+  const panel = setupPanel([
+    { name: 'You', color: 'violet', isHuman: true },
+    ...['violet', 'blue', 'red', 'yellow', 'brown', 'orange', 'green'].map(color => ({ color, isHuman: false })),
+  ])
+  panel.randomHumanColor = true
+  assert.equal(panel.getPlayers()[0].color, 'violet')
+  const players = panel.getPlayers(true)
+  assert.equal(players[0].color, 'teal')
+  assert.equal(new Set(players.map(player => player.color)).size, players.length)
+  assert.equal(panel.players[0].color, 'violet')
+})
+
+test('choosing a fixed swatch disables random color', () => {
+  const panel = setupPanel([{ color: 'violet', isHuman: true }])
+  panel.randomHumanColor = true
+  panel._cycleColor(0)
+  assert.equal(panel.randomHumanColor, false)
+  assert.equal(panel.getPlayers(true)[0].color, 'blue')
+})

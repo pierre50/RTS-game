@@ -21,16 +21,22 @@ test('player chest resource totals sum only owned living chests', () => {
   player.buildings = [
     {
       owner: player,
+      i: 0,
+      j: 0,
       type: 'Chest',
       inventory: { resources: { wood: 5.8, wheat: 3 } },
     },
     {
       owner: { label: 'p1' },
+      i: 0,
+      j: 0,
       type: 'Chest',
       inventory: { resources: { wood: 2, stone: 4 } },
     },
     {
       owner: other,
+      i: 0,
+      j: 0,
       type: 'Chest',
       inventory: { resources: { wood: 99 } },
     },
@@ -42,11 +48,14 @@ test('player chest resource totals sum only owned living chests', () => {
     {
       isDestroyed: true,
       owner: player,
+      i: 0,
+      j: 0,
       type: 'Chest',
       inventory: { resources: { wheat: 99 } },
     },
   ]
 
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.deepEqual(getPlayerResourceTotals(player, { includeHero: false }), {
     wood: 7,
     berry: 0,
@@ -60,14 +69,15 @@ test('player chest resource totals sum only owned living chests', () => {
 test('player resource totals include the hero bag and starting town center stock', () => {
   const { getPlayerResourceTotals } = loadResourceTotals()
   const player = { label: 'p1', buildings: [], units: [] }
-  const hero = { owner: player, type: 'Hero', inventory: { resources: { wood: 4, stone: 1 } } }
+  const hero = { owner: player, i: 0, j: 0, type: 'Hero', inventory: { resources: { wood: 4, stone: 1 } } }
   player.units = [hero]
   player.buildings = [
-    { owner: player, type: 'Chest', inventory: { resources: { wood: 7 } } },
-    { owner: player, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
-    { owner: player, type: 'StoragePit', inventory: { resources: { stone: 2 } } },
+    { owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 7 } } },
+    { owner: player, i: 0, j: 0, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
+    { owner: player, i: 0, j: 0, type: 'StoragePit', inventory: { resources: { stone: 2 } } },
   ]
 
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.deepEqual(getPlayerResourceTotals(player), { wood: 11, berry: 0, meat: 0, wheat: 8, stone: 3, food: 8 })
 })
 
@@ -82,7 +92,7 @@ test('visible player resource totals hide unseen storage but keep the hero bag',
       withSpace: (_spaceId, callback) => callback(),
     },
   }
-  const hero = { owner: player, type: 'Hero', inventory: { resources: { wood: 4, stone: 1 } } }
+  const hero = { owner: player, i: 0, j: 0, type: 'Hero', inventory: { resources: { wood: 4, stone: 1 } } }
   player.units = [hero]
   player.buildings = [
     { i: 2, j: 3, owner: player, type: 'Chest', inventory: { resources: { wood: 7 } } },
@@ -90,6 +100,7 @@ test('visible player resource totals hide unseen storage but keep the hero bag',
     { i: 8, j: 9, owner: player, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
   ]
 
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.deepEqual(getPlayerResourceTotals(player, { visibleOnly: true }), {
     wood: 11,
     berry: 0,
@@ -104,9 +115,10 @@ test('missing chest resources compares costs against stored chest totals', () =>
   const { getMissingPlayerResources } = loadResourceTotals()
   const player = {
     label: 'p1',
-    buildings: [{ owner: { label: 'p1' }, type: 'Chest', inventory: { resources: { wood: 7, wheat: 1 } } }],
+    buildings: [{ owner: { label: 'p1' }, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 7, wheat: 1 } } }],
   }
 
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.deepEqual(getMissingPlayerResources(player, { wood: 5, food: 3, stone: 2 }, { includeHero: false }), {
     food: 2,
     stone: 2,
@@ -116,10 +128,18 @@ test('missing chest resources compares costs against stored chest totals', () =>
 test('a non-chief player spends only the active hero bag while village upkeep keeps its stores', () => {
   const { getPlayerResourceTotals, getMissingPlayerResources, withdrawChestResources } = loadResourceTotals()
   const player = { label: 'human', isPlayed: true, buildings: [], units: [] }
-  const hero = { type: 'Hero', isChief: false, owner: player, inventory: { resources: { wood: 3, berry: 2 } } }
-  const chest = { type: 'Chest', owner: player, inventory: { resources: { wood: 100, berry: 50 } } }
+  const hero = {
+    i: 0,
+    j: 0,
+    type: 'Hero',
+    isChief: false,
+    owner: player,
+    inventory: { resources: { wood: 3, berry: 2 } },
+  }
+  const chest = { i: 0, j: 0, type: 'Chest', owner: player, inventory: { resources: { wood: 100, berry: 50 } } }
   player.units.push(hero)
   player.buildings.push(chest)
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.equal(getPlayerResourceTotals(player).wood, 3)
   assert.deepEqual(getMissingPlayerResources(player, { wood: 5 }, { hero }), { wood: 2 })
   assert.equal(withdrawChestResources(player, { wood: 5 }, { hero }), false)
@@ -141,8 +161,17 @@ test('a non-chief player spends only the active hero bag while village upkeep ke
 test('blocking automatic deliveries does not reserve chest resources against construction spending', () => {
   const { depositChestResources, withdrawChestResources } = loadResourceTotals()
   const player = { label: 'p', buildings: [] }
-  const chest = { type: 'Chest', owner: player, isBuilt: true, villagerDeliveriesBlocked: true, inventory: { resources: { wood: 20 } } }
+  const chest = {
+    i: 0,
+    j: 0,
+    type: 'Chest',
+    owner: player,
+    isBuilt: true,
+    villagerDeliveriesBlocked: true,
+    inventory: { resources: { wood: 20 } },
+  }
   player.buildings.push(chest)
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.equal(depositChestResources(player, { wood: 10 }, { automaticDelivery: true }), false)
   assert.equal(chest.inventory.resources.wood, 20)
   assert.equal(depositChestResources(player, { wood: 10 }), true)

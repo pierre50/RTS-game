@@ -1,3 +1,4 @@
+import { CompactResourceSet, resolveResource } from '../classes/resources/CompactResourceSet'
 import { BUCKET_SIZE, FAMILY_TYPES, RESOURCE_TYPES } from '../constants'
 import { isometricToCartesian, pointIsBetweenTwoPoint, pointsDistance } from './maths'
 import type { ResourceEntity } from '../types/entities'
@@ -17,14 +18,24 @@ type TreeSegmentCollisionOptions = {
 
 function findNearbyTrees(map: RuntimeMap, i: number, j: number, searchRadius: number): ResourceEntity[] {
   const buckets = map.instanceBuckets
-  if (!buckets || !buckets.length) return []
+  const trees: ResourceEntity[] =
+    map.resources instanceof CompactResourceSet
+      ? [
+          ...map.resources.readArea(
+            Math.floor((i - searchRadius) / BUCKET_SIZE) * BUCKET_SIZE,
+            Math.floor((j - searchRadius) / BUCKET_SIZE) * BUCKET_SIZE,
+            (Math.floor((i + searchRadius) / BUCKET_SIZE) + 1) * BUCKET_SIZE - 1,
+            (Math.floor((j + searchRadius) / BUCKET_SIZE) + 1) * BUCKET_SIZE - 1
+          ),
+        ].filter(tree => tree.type === RESOURCE_TYPES.tree)
+      : []
+  if (!buckets || !buckets.length) return trees
 
   const minBi = Math.max(Math.floor((i - searchRadius) / BUCKET_SIZE), 0)
   const maxBi = Math.min(Math.floor((i + searchRadius) / BUCKET_SIZE), buckets.length - 1)
   const minBj = Math.max(Math.floor((j - searchRadius) / BUCKET_SIZE), 0)
   const maxBj = Math.min(Math.floor((j + searchRadius) / BUCKET_SIZE), (buckets[0]?.length ?? 1) - 1)
 
-  const trees: ResourceEntity[] = []
   for (let bi = minBi; bi <= maxBi; bi++) {
     for (let bj = minBj; bj <= maxBj; bj++) {
       for (const instance of buckets[bi]?.[bj] ?? []) {
@@ -61,5 +72,5 @@ export function findTreeSegmentCollision(
     closest = tree
     closestDistance = distance
   }
-  return closest
+  return closest ? resolveResource(closest) : null
 }

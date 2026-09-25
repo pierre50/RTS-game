@@ -253,7 +253,7 @@ test('perf-report scene includes gameplay visibility and chunk counts', () => {
   assert.match(result.message, /cells 9 total \| 1 camera candidates/)
   assert.match(result.message, /units 2 total \| 1 camera \| 1 visible \| 1 renderable/)
   assert.match(result.message, /buildings 1 total \| 1 camera \| 1 visible \| 0 renderable/)
-  assert.match(result.message, /resources 1 total \| 0 camera \| 1 visible \| 1 renderable/)
+  assert.match(result.message, /resources 1 total \| 0 camera \| 0 visible \| 0 renderable/)
   assert.match(result.message, /animals 1 total \| 1 camera \| 1 visible \| 1 renderable/)
   assert.match(result.message, /corpses 1 total \| 0 camera \| 1 visible \| 1 renderable/)
   assert.match(result.message, /terrain chunks 2 total \| 1 visible \| 1 mounted \| 5 visual cells/)
@@ -363,4 +363,84 @@ test('fps-cap updates the Pixi ticker cap without changing game speed', () => {
   assert.equal(native.ok, true)
   assert.match(native.message, /FPS cap set: native/)
   assert.equal(context.app.ticker.maxFPS, 0)
+})
+
+test('perf-report never scans cold resources, resolves grid cells or requests lazy sprites', () => {
+  const { performanceReport } = loadDebugActions()
+  const resource = {
+    family: 'resource',
+    visible: true,
+    renderable: true,
+    get sprite() {
+      throw new Error('lazy visual created')
+    },
+  }
+  const cell = { i: 1, j: 1, has: resource }
+  const animal = {
+    visible: true,
+    currentCell: cell,
+    get sprite() {
+      throw new Error('lazy animal visual created')
+    },
+  }
+  const context = {
+    performance: {
+      snapshot: () => ({ frames: { samples: 1, averageMs: 25, p95Ms: 25, p99Ms: 25, fps: 61, speed: 1 }, metrics: {} }),
+    },
+    controls: { cameraController: { visibleCells: new Set([cell]) } },
+    map: {
+      size: 7500,
+      get grid() {
+        throw new Error('grid accessed')
+      },
+      resources: {
+        size: 857963,
+        [Symbol.iterator]() {
+          throw new Error('cold resources scanned')
+        },
+      },
+      gaia: { animals: [animal] },
+    },
+    players: [{ units: [], buildings: [], animals: [animal] }],
+  }
+  const result = performanceReport(context)
+  assert.equal(result.ok, true)
+  assert.match(result.message, /resources 857963 total \| 1 camera \| 1 visible \| 1 renderable/)
+  assert.match(result.message, /animals 1 total/)
+  assert.match(result.message, /window FPS 40.0/)
+  resource.visible = undefined
+  assert.match(
+    performanceReport(context, 'scene').message,
+    /resources 857963 total \| 1 camera \| 0 visible \| 0 renderable/
+  )
+})
+
+test('metric and spike reports do not inspect the scene', () => {
+  const { performanceReport } = loadDebugActions()
+  const context = {
+    performance: { snapshot: () => ({ frames: {}, metrics: {}, slowFrames: [] }) },
+    get map() {
+      throw new Error('unnecessary scene census')
+    },
+  }
+  assert.equal(performanceReport(context, 'spikes').ok, true)
+  assert.equal(performanceReport(context, 'metric missing').ok, false)
+})
+
+test('perf-report events and spikes identify the civilization and teleport near a slow frame', () => {
+  const { performanceReport } = loadDebugActions()
+  const events = [
+    { at: 100, name: 'teleport.minimap', details: { toI: 25, toJ: 40 } },
+    { at: 300, name: 'ai.slowStep', details: { civilization: 'Kemet', durationMs: 180 } },
+  ]
+  const context = { performance: { snapshot: () => ({ events, metrics: {}, slowFrames: [{
+    at: 350, duration: 250, exclusiveMeasuredMs: 180, untrackedMs: 70, measuredMs: 360,
+    phase: 'runtime', phaseFrame: 5, events,
+    metrics: [{ name: 'runtime.ai.buildingPlacement', exclusiveMs: 180, totalMs: 180, count: 1 }],
+  }] }) } }
+  const timeline = performanceReport(context, 'events')
+  assert.match(timeline.message, /teleport.minimap.*toI=25.*toJ=40/)
+  const spikes = performanceReport(context, 'spikes')
+  assert.match(spikes.message, /ai.slowStep 50ms before frame end.*civilization=Kemet/)
+  assert.match(spikes.message, /runtime.ai.buildingPlacement/)
 })

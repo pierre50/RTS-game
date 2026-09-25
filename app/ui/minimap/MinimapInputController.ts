@@ -1,5 +1,6 @@
 import { LONG_CLICK_DURATION, MINIMAP_DRAG_THRESHOLD } from '../../constants'
 import type { ControlsLike, MinimapHostLike } from '../../types/context'
+import { teleportHeroFromMinimap } from './MinimapTeleport'
 
 type PointerSession = {
   id: number
@@ -54,6 +55,8 @@ export class MinimapInputController {
   }
 
   onPointerDown = (evt: PointerEvent): void => {
+    if (evt.button !== 0 || this.pointerSession) return
+    this.longClick = false
     const {
       menu: {
         context: { controls },
@@ -111,8 +114,12 @@ export class MinimapInputController {
       return
     }
     this.longClick = false
-    if (!this.canMoveCamera(controls)) return
     const { x, y } = this.getMinimapPointer(evt)
+    if (!this.menu.editorPanelMap && !controls.mouseBuilding) {
+      teleportHeroFromMinimap(this.menu, { x, y })
+      return
+    }
+    if (!this.canMoveCamera(controls)) return
 
     if (controls.mouseBuilding) {
       controls.setCamera?.(x, y)
@@ -129,7 +136,7 @@ export class MinimapInputController {
   }
 
   getMinimapPointer(evt: PointerEvent): { x: number; y: number } {
-    const rect = (evt.target as HTMLElement).getBoundingClientRect()
+    const rect = ((evt.currentTarget as HTMLElement | null) ?? (evt.target as HTMLElement)).getBoundingClientRect()
     const point = this.menu.minimapManager.getMinimapWorldPoint?.(evt.clientX, evt.clientY, rect)
     if (point) return point
     const minimapFactor = this.menu.minimapManager.getMinimapFactor()

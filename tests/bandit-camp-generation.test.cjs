@@ -2,9 +2,10 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadBanditCampGeneration(furnishBanditCave = () => {}) {
+function loadBanditCampGeneration(furnishBanditCave = () => {}, uniqueCandidates = false, respawnStates = []) {
   return loadTsModule('app/classes/map/BanditCampGeneration.ts', {
     mocks: {
+      '../../lib/camps/CampRespawnState': { campRespawnStates: () => respawnStates },
       './BanditCaveGeneration': { furnishBanditCave },
       '../players': {
         AI: class AI {
@@ -16,6 +17,14 @@ function loadBanditCampGeneration(furnishBanditCave = () => {}) {
       '../../lib': {
         canPlaceBuildingAt: () => true,
         getPlainCellsAroundPoint: (i, j, _grid, _distance, predicate) => {
+          if (uniqueCandidates && _distance >= 2)
+            return Array.from({ length: 10 }, (_, index) => ({
+              i: i + index - 5,
+              j: j + _distance,
+              category: 'Land',
+              solid: false,
+              has: null,
+            })).filter(predicate)
           const cell = { i, j, category: 'Land', solid: false, has: null }
           return predicate(cell) ? [cell] : []
         },
@@ -163,4 +172,89 @@ test('linked camps keep one fire and guards outside and move all furniture into 
   assert.equal(calls.length, 1)
   assert.equal(calls[0][1], cave)
   assert.ok(calls[0][4].equipment.length > 0)
+})
+
+test('authored lairs keep their roster and defer the saved cave payload until first access', () => {
+  const { placeBanditCamps } = loadBanditCampGeneration(() => assert.fail('Interior should stay lazy'), true)
+  const owner = createBanditOwner()
+  const cave = { cave: { id: 'test-cave', seed: 4 } }
+  owner.units = []
+  owner.createUnit = options => {
+    owner.units.push(options)
+    return options
+  }
+  const map = {
+    noAI: true,
+    seed: 10,
+    banditCampPositions: [
+      {
+        i: 30,
+        j: 30,
+        id: 'camp',
+        caveId: 'test-cave',
+        seed: 99,
+        profile: 'lair',
+        unitTypes: ['BanditChief', 'BanditSword', 'BanditArcher', 'BanditSword', 'BanditSword'],
+      },
+    ],
+    context: { players: [owner, { buildings: [cave] }] },
+    grid: [],
+  }
+  placeBanditCamps(map, map.context)
+  assert.equal(cave.cave.banditContent.ownerLabel, 'bandits')
+  assert.ok(cave.cave.banditContent.inventory)
+  assert.equal(cave.cave.banditContent.generated, undefined)
+  assert.deepEqual(
+    owner.units.map(unit => unit.type),
+    map.banditCampPositions[0].unitTypes
+  )
+  assert.ok(owner.units.every(unit => unit.campBehavior.caveId === 'test-cave'))
+  assert.ok(owner.units.every(unit => unit.label.startsWith('camp:unit-')))
+  assert.ok(!owner.buildings.some(building => building.type === 'Chest'))
+})
+
+test('respawn reuses initial sites and rosters without duplicating scenery or loot', () => {
+  const states = []
+  const { placeBanditCamps, respawnBanditCamp } = loadBanditCampGeneration(() => {}, true, states)
+  const owner = createBanditOwner()
+  owner.units = []
+  owner.createUnit = options => {
+    owner.units.push(options)
+    return options
+  }
+  const grid = []
+  grid[30] = []
+  grid[30][30] = { i: 30, j: 30 }
+  const map = {
+    grid,
+    seed: 1,
+    randomItem: items => items[0],
+    randomRange: min => min,
+    banditCampPositions: [
+      { id: 'original', i: 30, j: 30, profile: 'small', seed: 1, unitTypes: ['BanditSword', 'BanditArcher'] },
+    ],
+    context: { players: [owner] },
+  }
+  placeBanditCamps(map, map.context)
+  assert.equal(states.length, 1)
+  assert.deepEqual(
+    states[0].unitTypes,
+    owner.units.map(unit => unit.type)
+  )
+  const sceneryCount = owner.buildings.length
+  const labels = new Set(owner.units.map(unit => unit.label))
+  owner.units = []
+  assert.equal(respawnBanditCamp(map, map.context, states[0]), true)
+  assert.equal(owner.buildings.length, sceneryCount)
+  assert.deepEqual(
+    owner.units.map(unit => unit.type),
+    states[0].unitTypes
+  )
+  assert.ok(owner.units.every(unit => !labels.has(unit.label)))
+  assert.equal(states[0].generation, 1)
+  owner.buildings.find(building => building.type === 'FireCamp').isDead = true
+  owner.units = []
+  assert.equal(respawnBanditCamp(map, map.context, states[0]), true)
+  assert.equal(owner.buildings.length, sceneryCount + 1)
+  assert.equal(owner.buildings.filter(building => building.type === 'FireCamp' && !building.isDead).length, 1)
 })

@@ -1,112 +1,15 @@
-import { RESOURCE_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
-import { getGaiaAnimals, getInstanceZIndex, isWheatMature, updateInstanceVisibility } from '../lib'
+import { CompactResourceSet, materializedResources } from '../classes/resources/CompactResourceSet'
+import { RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import { isWheatMature } from '../lib'
+import { naturalGrowthFor, registerGrowthFlush, ResourceRenewalQueue } from './NaturalGrowthQueue'
 import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
 import { resumeStrictVillagerAutonomy } from '../lib/units/villagerTaskRecovery'
 import { villagerAutonomySuspension } from '../lib/units/autonomy/villagerAutonomyAvailability'
-import type { GameContextLike } from '../types/context'
-import type { AnimalEntity, ResourceEntity, RuntimeEntity } from '../types/entities'
-import type { PlayerLike } from '../types/player'
+import type { GameContextLike, SchedulerTaskId } from '../types/context'
+import type { ResourceEntity } from '../types/entities'
 import type { SaveEntityState } from '../types/save'
 import { NATURAL_REGROWTH_CONFIG, NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../config/gameplay'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
-
-type AnimalSlot = Partial<AnimalEntity> & {
-  horseColor?: string
-  i: number
-  isDestroyed?: boolean
-  j: number
-  label?: string
-  trapPrey?: boolean
-  type: string
-}
-type GaiaWithRespawnSlots = PlayerLike & {
-  animals?: AnimalSlot[]
-  createAnimal?: (options: { horseColor?: string; i: number; j: number; type: string }) => AnimalEntity
-}
-type MapWithNaturalResourceRespawn = GameContextLike['map'] & {
-  naturalResourceRespawnSlots?: SaveEntityState[]
-  respawnNaturalResource?: (slot: SaveEntityState) => boolean
-}
-
-function maxQuantity(entity: RuntimeEntity): number {
-  const total = Number((entity as { totalQuantity?: number }).totalQuantity)
-  return Number.isFinite(total) && total > 0 ? total : Math.max(0, entity.quantity ?? 0)
-}
-
-function regrowQuantity(entity: RuntimeEntity, ratio: number): boolean {
-  if (entity.isDestroyed || entity.isDead) return false
-  const total = maxQuantity(entity)
-  if (total <= 0) return false
-  const current = Math.max(0, entity.quantity ?? 0)
-  const next = Math.min(total, current + Math.max(1, Math.ceil(total * ratio)))
-  if (next === current) return false
-  entity.quantity = next
-  entity.updateTexture?.()
-  return true
-}
-
-function reviveAnimal(animal: AnimalEntity): boolean {
-  if (!animal.isDead || animal.isDestroyed) return false
-  if (animal.trapPrey) return false
-  const totalHitPoints = Number(animal.totalHitPoints)
-  const totalQuantity = Number(animal.totalQuantity)
-  if (!Number.isFinite(totalHitPoints) || totalHitPoints <= 0) return false
-  if (!Number.isFinite(totalQuantity) || totalQuantity <= 0) return false
-
-  const map = animal.context?.map
-  const cell = map?.grid?.[animal.i]?.[animal.j]
-  if (!map || !cell || (cell.has && cell.has !== animal)) return false
-
-  animal.stopInterval?.()
-  animal.stopTimeout?.()
-  animal.isDead = false
-  animal.hitPoints = totalHitPoints
-  animal.quantity = totalQuantity
-  delete animal.inventory
-  delete animal.corpseMaterialDecayRemainingMs
-  animal.action = null
-  animal.path = []
-  animal.dest = null
-  animal.realDest = null
-  animal.previousDest = null
-  animal.inactif = true
-  animal.isFleeing = false
-  cell.corpses?.delete(animal)
-  cell.place(animal)
-  cell.solid = true
-  animal.currentCell = cell
-  animal.zIndex = getInstanceZIndex(animal)
-  animal.setTextures?.(SHEET_TYPES.standing)
-  animal.setAltitude?.(0)
-  map.addToInstanceBucket(animal)
-  animal.owner && (animal.owner.population = (animal.owner.population ?? 0) + 1)
-  updateInstanceVisibility(animal)
-  animal.animalBehavior?.start?.()
-  return true
-}
-
-function respawnDestroyedAnimal(context: GameContextLike, slot: AnimalSlot, slots: AnimalSlot[]): boolean {
-  if (!slot.isDestroyed) return false
-  if (slot.trapPrey) return false
-  const gaia = context.map.gaia as GaiaWithRespawnSlots | null | undefined
-  const cell = context.map.grid?.[slot.i]?.[slot.j]
-  if (!gaia?.createAnimal || !cell || cell.has) return false
-
-  const previousIndex = slots.indexOf(slot)
-  const animal = gaia.createAnimal({
-    horseColor: slot.horseColor,
-    i: slot.i,
-    j: slot.j,
-    type: slot.type,
-  })
-  if (slot.label) animal.label = slot.label
-
-  const createdIndex = slots.indexOf(animal)
-  if (previousIndex >= 0) slots[previousIndex] = animal
-  if (createdIndex >= 0 && createdIndex !== previousIndex) slots.splice(createdIndex, 1)
-  updateInstanceVisibility(animal)
-  return true
-}
 
 function resumeIdleAutonomousVillagersAfterRegrowth(context: GameContextLike): void {
   if (isVillagerSleepTime(context)) return
@@ -120,73 +23,107 @@ function resumeIdleAutonomousVillagersAfterRegrowth(context: GameContextLike): v
   }
 }
 
-function isNaturalResourceRespawnDue(slot: SaveEntityState, day: number): boolean {
-  const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
-  if (!config) return false
-  const depletedDay = Number(slot.depletedDay)
-  if (!Number.isFinite(depletedDay)) {
-    slot.depletedDay = day
-    return false
-  }
-  return day - depletedDay >= config.respawnDelayDays
-}
-
 export class NaturalRegrowthSystem implements DailyWorldEventHandler {
-  context: GameContextLike
-
-  constructor(context: GameContextLike) {
-    this.context = context
+  private queue = new ResourceRenewalQueue()
+  private slots: SaveEntityState[] | undefined
+  private readSlots = 0
+  private jobs: (() => void)[] = []
+  private cursor = 0
+  private task?: SchedulerTaskId
+  private unregister: () => void
+  private changed = false
+  constructor(private context: GameContextLike) {
+    const resources = context.map.resources
+    const initial =
+      resources instanceof CompactResourceSet ? resources.initialGrowthValues() : materializedResources(resources)
+    for (const resource of initial)
+      if (resource.type === RESOURCE_TYPES.berrybush || resource.type === RESOURCE_TYPES.wheat)
+        naturalGrowthFor(context.map).add(resource)
+    this.unregister = registerGrowthFlush(context.map, () => this.flush())
   }
-
   handleDailyWorldEvent(event: DailyWorldEvent): void {
-    this.applyDailyRegrowth(event)
+    this.enqueue(event)
+    if (this.task == null && this.context.scheduler)
+      this.task = this.context.scheduler.add(() => this.flush(32), 50, 'resources.renewal')
+    if (!this.context.scheduler) this.flush()
   }
-
   applyDailyRegrowth(event?: DailyWorldEvent): void {
-    const { map, menu } = this.context
-    const day = event?.day ?? this.context.dayNight?.state?.day ?? 1
-    let resourcesChanged = false
-    const respawnMap = map as MapWithNaturalResourceRespawn
-    const respawnSlots = respawnMap.naturalResourceRespawnSlots ?? []
-
-    for (let index = respawnSlots.length - 1; index >= 0; index--) {
-      const slot = respawnSlots[index]
-      if (!isNaturalResourceRespawnDue(slot, day)) continue
-      if (respawnMap.respawnNaturalResource?.(slot)) {
-        respawnSlots.splice(index, 1)
-        resourcesChanged = true
-      }
+    this.enqueue(event)
+    this.flush()
+  }
+  private enqueue(event?: DailyWorldEvent): void {
+    const map = this.context.map,
+      day = event?.day ?? this.context.dayNight?.state?.day ?? 1
+    const slots = map.naturalResourceRespawnSlots ?? []
+    if (slots !== this.slots) {
+      this.slots = slots
+      this.readSlots = 0
+      this.queue = new ResourceRenewalQueue()
     }
-
-    for (const resource of map.resources as Set<ResourceEntity>) {
-      if (resource.type === RESOURCE_TYPES.berrybush) {
-        resourcesChanged = regrowQuantity(resource, NATURAL_REGROWTH_CONFIG.berryRegrowRatioPerDay) || resourcesChanged
-      } else if (resource.type === RESOURCE_TYPES.wheat) {
-        resourcesChanged =
-          (isWheatMature(resource)
-            ? regrowQuantity(resource, NATURAL_REGROWTH_CONFIG.wheatRegrowRatioPerDay)
-            : resource.advanceWheatGrowth?.(NATURAL_REGROWTH_CONFIG.wheatGrowthFramesPerDay)) || resourcesChanged
-      }
+    for (; this.readSlots < slots.length; this.readSlots++) {
+      const slot = slots[this.readSlots]
+      const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
+      if (!config) continue
+      slot.depletedDay ??= day
+      this.queue.add(slot, slot.depletedDay + config.respawnDelayDays)
     }
-
-    const animalSlots = getGaiaAnimals(map.gaia) as AnimalSlot[]
-    let animalsChanged = false
-    for (const animal of [...animalSlots]) {
-      if (animal.isDestroyed) {
-        animalsChanged = respawnDestroyedAnimal(this.context, animal, animalSlots) || animalsChanged
-      } else {
-        animalsChanged = reviveAnimal(animal as AnimalEntity) || animalsChanged
-      }
+    for (const slot of this.queue.due(day))
+      this.jobs.push(() => {
+        if (map.respawnNaturalResource?.(slot)) {
+          const index = slots.indexOf(slot)
+          if (index >= 0) {
+            slots.splice(index, 1)
+            this.readSlots--
+          }
+          this.changed = true
+        } else this.queue.add(slot, day + 1)
+      })
+    for (const resource of [...naturalGrowthFor(map)]) this.jobs.push(() => this.grow(resource))
+  }
+  private grow(resource: ResourceEntity): void {
+    const growing = naturalGrowthFor(this.context.map)
+    if (resource.isDead || resource.isDestroyed) {
+      growing.delete(resource)
+      return
     }
-
-    if (resourcesChanged && menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
-    if (resourcesChanged || animalsChanged) resumeIdleAutonomousVillagersAfterRegrowth(this.context)
-    if (animalsChanged) {
-      if (menu.isMiniMapActive?.() !== false) {
-        menu.updateResourcesMiniMap?.()
-        menu.updatePlayerMiniMapEvt?.(this.context.player)
-      }
+    if (resource.type === RESOURCE_TYPES.wheat && !isWheatMature(resource)) {
+      this.changed =
+        Boolean(resource.advanceWheatGrowth?.(NATURAL_REGROWTH_CONFIG.wheatGrowthFramesPerDay)) || this.changed
+      return
+    }
+    const total = Math.max(0, resource.totalQuantity ?? 0),
+      quantity = Math.max(0, resource.quantity ?? 0)
+    const ratio =
+      resource.type === RESOURCE_TYPES.wheat
+        ? NATURAL_REGROWTH_CONFIG.wheatRegrowRatioPerDay
+        : NATURAL_REGROWTH_CONFIG.berryRegrowRatioPerDay
+    const next = Math.min(total, quantity + Math.max(1, Math.ceil(total * ratio)))
+    if (next !== quantity) {
+      resource.quantity = next
+      resource.updateTexture?.()
+      this.changed = true
+    }
+    if (next >= total) growing.delete(resource)
+  }
+  private flush(limit = Infinity): void {
+    let count = 0
+    while (this.cursor < this.jobs.length && count++ < limit) this.jobs[this.cursor++]()
+    if (this.cursor < this.jobs.length) return
+    this.jobs = []
+    this.cursor = 0
+    if (this.task != null) {
+      this.context.scheduler.remove(this.task)
+      this.task = undefined
+    }
+    if (this.changed) {
+      if (this.context.menu?.isMiniMapActive?.() !== false) this.context.menu?.updateResourcesMiniMap?.()
+      resumeIdleAutonomousVillagersAfterRegrowth(this.context)
+      this.changed = false
     }
   }
-  destroy(): void {}
+  destroy(): void {
+    if (this.task != null) this.context.scheduler.remove(this.task)
+    this.unregister()
+    this.jobs = []
+  }
 }

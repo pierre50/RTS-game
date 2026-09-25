@@ -8,7 +8,7 @@ test('stores explored cells compactly and notifies only on first discovery', () 
   const grid = new VisionGrid(511, [], (i, j) => discovered.push([i, j]))
 
   assert.equal(grid.length, 512 * 512)
-  assert.equal(grid.explored.byteLength, 512 * 512)
+  assert.equal(grid.toJSON().explored.length, 0)
   assert.equal(grid.setViewed(511, 511), true)
   assert.equal(grid.setViewed(511, 511), false)
   assert.deepEqual(discovered, [[511, 511]])
@@ -22,7 +22,7 @@ test('keeps overlapping viewers until the last contributor leaves', () => {
   grid.addViewer(4, 4, scout)
   grid.addViewer(4, 4, tower)
   assert.equal(grid.isVisible(4, 4), true)
-  assert.equal(grid.visibleCount[grid.index(4, 4)], 2)
+  assert.equal(grid.getViewers(4, 4).size, 2)
 
   grid.removeViewer(4, 4, scout)
   assert.equal(grid.isVisible(4, 4), true)
@@ -175,4 +175,27 @@ test('compact save validation rejects malformed chunks, dimensions and viewer po
     mutate(bad)
     assert.throws(() => validatePlayerViews(bad, 0, 65), /Invalid save/)
   }
+})
+
+test('large worlds and interiors allocate exploration only for discovered chunks', () => {
+  const grid = new VisionGrid(7500)
+  assert.deepEqual(grid.toJSON().explored, [])
+  grid.setViewed(7500, 7500)
+  grid.withSpace('interior:one', () => grid.setViewed(1, 2))
+  assert.equal(grid.toJSON().explored.length, 1)
+  assert.equal(grid.withSpace('interior:one', () => grid.toJSON().explored.length), 1)
+  assert.equal(grid.isViewed(1, 2), false)
+  const restored = new VisionGrid(7500, grid.toJSON())
+  assert.equal(restored.isViewed(7500, 7500), true)
+  assert.equal(restored.isViewed(7499, 7500), false)
+  restored.clearExploration()
+  assert.equal(restored.isViewed(7500, 7500), false)
+})
+
+test('full reveal remains revealed when loading partially explored saved chunks', () => {
+  const partial = new VisionGrid(64)
+  partial.setViewed(0, 0)
+  const revealed = new VisionGrid(64, partial.toJSON(), null, true)
+  assert.equal(revealed.isViewed(0, 1), true)
+  assert.equal(revealed.isViewed(64, 64), true)
 })

@@ -9,19 +9,17 @@ export function createResource(
   type: ResourceType,
   options: ResourcePlacementOptions = {}
 ): ResourceEntity {
-  return map.addChild(
-    new Resource(
-      definedProperties({
-        i,
-        j,
-        type,
-        isNaturalResource: options.isNaturalResource ?? true,
-        textureName: options.textureName,
-        quantity: options.quantity,
-        totalQuantity: options.totalQuantity,
-        startsMature: options.startsMature,
-      }),
-      map.context as ConstructorParameters<typeof Resource>[1]
-    )
+  return Resource.spawn(
+    definedProperties({
+      i,
+      j,
+      type,
+      isNaturalResource: options.isNaturalResource ?? true,
+      textureName: options.textureName,
+      quantity: options.quantity,
+      totalQuantity: options.totalQuantity,
+      startsMature: options.startsMature,
+    }),
+    map.context as ConstructorParameters<typeof Resource>[1]
   )
 }

@@ -1,3 +1,4 @@
+import { CompactResourceSet } from '../resources/CompactResourceSet'
 import type { ContainerChild } from 'pixi.js'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -36,6 +37,12 @@ export function getDest(
 }
 
 function getRuntimeEntityByLabel(map: MapGenerationMap, label: string): RuntimeEntity | null {
+  if (map.resources instanceof CompactResourceSet) {
+    const resource = map.resources.byLabel(label)
+    if (resource) return resource
+  } else {
+    for (const resource of map.resources ?? []) if (resource.label === label) return resource
+  }
   const child = map.getChildByLabel?.(label)
   if (child && isRuntimeEntity(child)) return child
   for (const player of map.context?.players ?? []) {

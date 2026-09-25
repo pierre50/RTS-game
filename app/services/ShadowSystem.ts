@@ -52,7 +52,8 @@ export class ShadowSystem {
 
     this._onTick = ticker => {
       const update = () => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
-      this.context.performance?.measure?.('shadow.update', update) ?? update()
+      if (this.context.performance?.measure) this.context.performance.measure('shadow.update', update)
+      else update()
     }
     context.app.ticker.add(this._onTick)
   }

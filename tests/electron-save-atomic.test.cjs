@@ -17,12 +17,12 @@ function setup(t) {
       id === 'electron'
         ? {
             app: { getPath: () => directory, whenReady: () => ({ then() {} }), on() {} },
-            ipcMain: { on: (name, callback) => handlers.set(name, callback) },
+            ipcMain: { handle() {}, on: (name, callback) => handlers.set(name, callback) },
             BrowserWindow: {},
           }
         : id === 'fs'
           ? fileSystem
-          : require(id),
+          : require(id.startsWith('./') ? path.join(__dirname, '..', id) : id),
   })
   return {
     fileSystem,

@@ -663,7 +663,7 @@ test('iron resource order requires a suitable pickaxe, while copper is always av
   })
 })
 
-test('communication training buttons show cost and training duration details', () => {
+test('communication training buttons show duration without resource costs', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -675,13 +675,14 @@ test('communication training buttons show cost and training duration details', (
     const manager = new NpcOrdersManager(menu)
     const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
 
+    context.player.config.units.Fantassin.trainingDays = 3
     manager.open([npc])
     manager.buttons.get('training').click()
 
     const fantassinButton = manager.buttons.get('train-Fantassin')
     assert.equal(fantassinButton.hidden, false)
     assert.equal(fantassinButton.children[0].textContent, 'Fantassin')
-    assert.equal(fantassinButton.children[1].textContent, '50 food, 15 wood | 2 days')
+    assert.equal(fantassinButton.children[1].textContent, '3 days')
   })
 })
 

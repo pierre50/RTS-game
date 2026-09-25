@@ -1,4 +1,4 @@
-import { CELL_HEIGHT, FAMILY_TYPES, PASSABLE_RESOURCE_TYPES, SHEET_TYPES } from '../../../constants'
+import { CELL_HEIGHT, FAMILY_TYPES, PASSABLE_RESOURCE_TYPES } from '../../../constants'
 import {
   cartesianToIsometric,
   distanceToPolygon,
@@ -28,11 +28,9 @@ const HERO_TERRAIN_COLLISION_PADDING_BY_KIND: Record<HeroTerrainCollisionKind, n
 
 function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
-  // Corpses stay tangible until clear() destroys them. Animals usually remain in cell.has
-  // while units move to cell.corpses, so both families share the same soft-body blocker here.
   if (entity.family === FAMILY_TYPES.animal) return true
   if (entity.family === FAMILY_TYPES.unit) {
-    return !entity.isDead || (entity as UnitEntity).currentSheet === SHEET_TYPES.corpse
+    return !entity.isDead
   }
   if (entity.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(entity.type)) return false
   return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource

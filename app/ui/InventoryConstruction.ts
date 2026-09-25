@@ -1,6 +1,5 @@
 import { createInventorySectionTitle } from './inventory/InventorySection'
 import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
-import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import { t } from '../lib/lang'
 import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES } from '../constants'
 import { renderBuildingAvatar, renderTextureRefAvatar } from '../lib/avatar'
@@ -61,14 +60,6 @@ export function renderInventoryConstruction(host: InventoryConstructionHost): vo
   const selection = host.menu.context.controls.heroUnit || host.menu.selection
   host.constructionPanel.textContent = ''
   host.menu.clearActionHotkeys()
-  const owner = constructionTerritoryBlocker(host.menu.context, host.menu.context.player)
-  if (owner) {
-    const message = document.createElement('p')
-    message.className = 'construction-territory-message'
-    message.setAttribute('role', 'status')
-    message.textContent = t('constructionTerritoryOccupied', { player: owner.name || owner.civ || owner.label || '' })
-    host.constructionPanel.appendChild(message)
-  }
   if (!selection) return
 
   const usedKeys = new Set<string>(getReservedGameplayHotkeys())

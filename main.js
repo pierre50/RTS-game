@@ -64,7 +64,10 @@ ipcMain.on('saves:getItem', (event, key) => {
     return
   }
   try {
-    event.returnValue = fs.readFileSync(saveFilePath(key), 'utf-8')
+    event.returnValue = require('./electron/shared-save-blocks.cjs').decodeBlock(
+      key,
+      fs.readFileSync(saveFilePath(key))
+    )
   } catch {
     event.returnValue = null
   }
@@ -88,7 +91,7 @@ ipcMain.on('saves:setItem', (event, key, value) => {
 })
 
 ipcMain.on('saves:removeItem', (event, key) => {
-  if (isValidSaveKey(key)) {
+  if (isValidSaveKey(key) && !/^save_9\d{78}$/.test(key)) {
     try {
       fs.unlinkSync(saveFilePath(key))
     } catch {
@@ -97,6 +100,22 @@ ipcMain.on('saves:removeItem', (event, key) => {
   }
   event.returnValue = true
 })
+
+let saveTransactions
+function transactions() {
+  return (saveTransactions ??= require('./electron/save-transactions.cjs').createSaveTransactions(savesDir()))
+}
+const saveOwners = new WeakMap()
+ipcMain.handle('saves:begin', (event, key) => {
+  const owner = event.sender
+  if (!saveOwners.has(owner))
+    saveOwners.set(owner, require('./electron/save-owner.cjs').bindSaveOwner(transactions(), owner))
+  return saveOwners.get(owner).begin(key)
+})
+ipcMain.handle('saves:batchNative', (event, token, parts) => transactions().batch(token, event.sender.id, parts, true))
+ipcMain.handle('saves:batch', (event, token, parts) => transactions().batch(token, event.sender.id, parts))
+ipcMain.handle('saves:commit', (event, token, raw, index) => transactions().commit(token, event.sender.id, raw, index))
+ipcMain.handle('saves:abort', (event, token) => transactions().abort(token, event.sender.id))
 
 ipcMain.on('app:quit', () => {
   app.quit()

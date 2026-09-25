@@ -64,9 +64,13 @@ export function hasBuildingTrainingCapacity(building: BuildingEntity, options?: 
   return getBuildingTrainingLoad(building, options) < BUILDING_TRAINING_CAPACITY
 }
 
-export function getMissingResourceNames(owner: PlayerLike, cost: ResourceAmount = {}): (keyof ResourceAmount)[] {
+export function getMissingResourceNames(
+  owner: PlayerLike,
+  cost: ResourceAmount = {},
+  options: { includeHero?: boolean } = {}
+): (keyof ResourceAmount)[] {
   if (hasPlayerResourceChests(owner)) {
-    return Object.keys(getMissingPlayerResources(owner, cost)) as (keyof ResourceAmount)[]
+    return Object.keys(getMissingPlayerResources(owner, cost, options)) as (keyof ResourceAmount)[]
   }
   return (Object.keys(cost) as (keyof ResourceAmount)[]).filter(resource => owner[resource] < (cost[resource] ?? 0))
 }

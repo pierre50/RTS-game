@@ -21,13 +21,13 @@ export class VillagerUpkeepSystem implements DailyWorldEventHandler {
   }
 
   private consumeDailyUpkeep(event: DailyWorldEvent, player: PlayerLike, villagerCount: number): void {
-    const totals = getPlayerResourceTotals(player)
+    const totals = getPlayerResourceTotals(player, { includeHero: false })
     for (const [resource, rate] of Object.entries(DAILY_CONSUMPTION_PER_VILLAGER) as [keyof ResourceAmount, number][]) {
       const needed = rate * villagerCount
       const available = totals[resource] ?? 0
       const toConsume = Math.min(needed, available)
       if (toConsume > 0) {
-        withdrawChestResources(player, { [resource]: toConsume })
+        withdrawChestResources(player, { [resource]: toConsume }, { includeHero: false })
         if (resource === 'food') event.report?.add({ count: toConsume, player, type: 'food-consumed' })
       }
     }

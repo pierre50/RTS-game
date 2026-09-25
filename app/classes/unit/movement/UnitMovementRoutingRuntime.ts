@@ -1,3 +1,6 @@
+import { withinVillageActivity } from '../../../lib/units/villageActivity'
+import { isUnitSuspended, wakeUnitSimulation } from '../../../lib/units/unitSuspension'
+import { campAnchor, canCampPursue } from '../../../lib/units/campBehavior'
 import { routeToRememberedTarget } from '../../../lib/units/targetPursuit'
 import { cancelVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
 import { tryStartUnitContactApproach } from './UnitContactApproach'
@@ -251,7 +254,15 @@ export class UnitMovementRouting {
     }: SendToOptions = {}
   ) {
     const unit = this.unit
+    if (action === ACTION_TYPES.attack || unit.owner?.isPlayed) wakeUnitSimulation(unit)
+    if (isUnitSuspended(unit)) return false
+    if (dest && action !== ACTION_TYPES.attack && !withinVillageActivity(unit, dest)) return false
     const map = getEntitySpaceMapLike(unit, unit.context?.map)
+    if (action === ACTION_TYPES.attack && dest && isRuntimeEntity(dest) && !canCampPursue(unit, dest)) return false
+    if (action === ACTION_TYPES.attack && campAnchor(unit)) {
+      unit.campBehavior ??= { phase: 'guard' }
+      unit.campBehavior.phase = 'pursue'
+    }
     if (unit.actionLocked) {
       return unit.queueOrder?.(dest ?? (() => {}), action)
     }

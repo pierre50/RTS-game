@@ -1,3 +1,4 @@
+import { resolveResource } from '../../classes/resources/CompactResourceSet'
 import { UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -151,6 +152,7 @@ function evaluateCandidate(
   candidate: VillagerJobCandidate,
   options: CandidateScoringOptions
 ): CandidateEvaluation {
+  candidate = { ...candidate, target: resolveResource(candidate.target) }
   const workerLoad = options.targetWorkerLoad(candidate.target, candidate.work, candidate.action)
   const dropoffDistance = nearestDropoffDistance(unit, candidate)
   const pathLength = getCandidatePathLength(unit, candidate)

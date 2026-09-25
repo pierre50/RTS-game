@@ -175,3 +175,32 @@ test('old dense saves and interiors keep validating without layout metadata', ()
     assert.throws(() => validateSaveData(save), /cell 0,0/)
   }
 })
+
+test('blueprint resource deltas validate modified states and reject overlapping or invalid indices', () => {
+  const make = () => {
+    const save = sparseSave()
+    delete save.map
+    save.world.pregeneratedBlueprintId = 'test-blueprint'
+    save.resourceDelta = {
+      version: 1,
+      count: 10,
+      signature: 'abc123',
+      removed: [2],
+      updated: [{ index: 1, state: { type: 'Tree', ...localToGrid(1, 4, save.world.localGridLayout), quantity: 5 } }],
+    }
+    return save
+  }
+  assert.equal(validateSaveData(make()).resourceDelta.updated.length, 1)
+  for (const mutate of [
+    save => save.resourceDelta.removed.push(2),
+    save => save.resourceDelta.removed.push(1),
+    save => save.resourceDelta.removed.push(10),
+    save => (save.resourceDelta.updated[0].state.type = 'Unknown'),
+    save => (save.resourceDelta.updated[0].state.i = -2),
+    save => delete save.world.pregeneratedBlueprintId,
+  ]) {
+    const save = make()
+    mutate(save)
+    assert.throws(() => validateSaveData(save))
+  }
+})

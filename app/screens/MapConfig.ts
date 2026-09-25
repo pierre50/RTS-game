@@ -1,3 +1,4 @@
+import { CONTINENT_WORLD_PRESETS } from '../config/continentWorlds'
 import { definedProperties } from '../lib/definedProperties'
 import { playClickSound } from '../lib/audio/uiSound'
 import { Modal } from '../lib'
@@ -66,14 +67,22 @@ export default class MapConfig {
 
     this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: 1, simplified: true })
     this.playerSetupPanel.appendSimplifiedControl(
-      buildSelectRow('Carte', [
-        { label: 'Monde normal', value: 'normal' },
-        { label: 'Test — 5000 × 5000', value: 'large-test' },
-      ], 'normal', value => {
-        const large = value === 'large-test'
-        this.config.worldId = large ? 'world-test-5000' : DEFAULT_WORLD_ID
-        this.config.size = large ? 4999 : 144
-      })
+      buildSelectRow(
+        'Carte',
+        [
+          { label: 'Monde normal', value: 'normal' },
+          ...CONTINENT_WORLD_PRESETS.map(preset => ({
+            label: `Test — ${preset.edge} × ${preset.edge}`,
+            value: preset.worldId,
+          })),
+        ],
+        'normal',
+        value => {
+          const preset = CONTINENT_WORLD_PRESETS.find(preset => preset.worldId === value)
+          this.config.worldId = preset?.worldId ?? DEFAULT_WORLD_ID
+          this.config.size = preset?.size ?? 144
+        }
+      )
     )
     this.playerSetupPanel.appendSimplifiedControl(
       buildSelectRow(t('colDifficulty'), DIFFICULTIES, 'medium', val => {
@@ -95,7 +104,7 @@ export default class MapConfig {
 
   _startGame(): void {
     this.destroy()
-    this.onPlay({ ...this.config, players: this.playerSetupPanel.getPlayers() })
+    this.onPlay({ ...this.config, players: this.playerSetupPanel.getPlayers(true) })
   }
 
   _handleKeyDown(evt: KeyboardEvent): void {

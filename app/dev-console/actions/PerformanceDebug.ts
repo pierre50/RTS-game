@@ -1,5 +1,11 @@
 import type { CommandResult } from '../DevCommandRegistry'
-import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPerformanceSnapshot } from '../types'
+import type {
+  DevConsoleContext,
+  DevEntity,
+  DevPerformanceMetric,
+  DevPerformanceSnapshot,
+  DevPerformanceEvent,
+} from '../types'
 import { getLazyEquipmentLoadStats } from '../../lib/lpc/lazyEquipmentAssets'
 import { getGaiaAnimals } from '../../lib/playerState'
 
@@ -15,8 +21,16 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
     const limit = Number(rest[0] || 12)
     return { ok: true, message: formatDisplayTreeBreakdown(context, Number.isFinite(limit) ? limit : 12).join('\n') }
   }
-  const scene = createSceneBreakdown(context)
-  if (mode === 'json') return { ok: true, message: JSON.stringify({ ...report, scene }, null, 2) }
+  if (mode === 'json')
+    return { ok: true, message: JSON.stringify({ ...report, scene: createSceneBreakdown(context) }, null, 2) }
+  if (mode === 'events')
+    return {
+      ok: true,
+      message: [
+        'Recent diagnostic events (bounded history)',
+        ...(report.events ?? []).slice(-40).map(event => formatEvent(event)),
+      ].join('\n'),
+    }
   if (mode === 'spikes') {
     const lines = perfReportSlowFrames(report, 8)
     if (!lines.length) return { ok: true, message: 'No slow frames captured yet' }
@@ -28,10 +42,10 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
     if (!name || !metric) return { ok: false, message: 'Usage: perf-report metric <metricName>' }
     const lines = [
       `${name}`,
-      `calls ${metric.count ?? 0} | total ${metric.totalMs.toFixed(2)}ms | avg/call ${metric.averageMs.toFixed(3)}ms`,
-      `exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | exclusive avg ${metric.averageExclusiveMs?.toFixed(3) ?? '0.000'}ms | max exclusive ${metric.maxExclusiveMs?.toFixed(2) ?? '0.00'}ms`,
+      `estimated calls ${metric.count ?? 0} | estimated total ${metric.totalMs.toFixed(2)}ms | avg/call ${metric.averageMs.toFixed(3)}ms`,
+      `estimated exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | exclusive avg ${metric.averageExclusiveMs?.toFixed(3) ?? '0.000'}ms | max exclusive ${metric.maxExclusiveMs?.toFixed(2) ?? '0.00'}ms`,
       `measured ${metric.measuredCount ?? 0} | measured avg ${metric.measuredAverageMs?.toFixed(3) ?? '0.000'}ms | measured exclusive avg ${metric.measuredAverageExclusiveMs?.toFixed(3) ?? '0.000'}ms | max call ${metric.maxMs.toFixed(2)}ms | last ${metric.lastMs?.toFixed(2) ?? '0.00'}ms`,
-      `frames ${metric.frames ?? 0} | avg/frame ${metric.averageFrameMs?.toFixed(2) ?? '0.00'}ms | avg exclusive/frame ${metric.averageFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | max/frame ${metric.maxFrameMs?.toFixed(2) ?? '0.00'}ms | max exclusive/frame ${metric.maxFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | max calls/frame ${metric.maxFrameCalls ?? 0}`,
+      `measured frames ${metric.frames ?? 0} | avg/frame ${metric.averageFrameMs?.toFixed(2) ?? '0.00'}ms | avg exclusive/frame ${metric.averageFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | max/frame ${metric.maxFrameMs?.toFixed(2) ?? '0.00'}ms | measured max exclusive/frame ${metric.maxFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | max calls/frame ${metric.maxFrameCalls ?? 0}`,
       `slow calls ${metric.slowCount ?? 0}`,
     ]
     const slowSamples = metric.slowSamples || []
@@ -48,11 +62,18 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
     if (!lines.length) return { ok: true, message: 'No render stats captured yet' }
     return { ok: true, message: lines.join('\n') }
   }
+  const scene = createSceneBreakdown(context)
   if (mode === 'scene') return { ok: true, message: formatSceneBreakdown(scene).join('\n') }
   const lines = [
-    `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | slow frames ${report.frames.slowCount ?? 0} | FPS ${Math.round(report.frames.fps)} | speed ${report.frames.speed}x`,
+    `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | slow in window ${report.frames.windowSlowCount ?? 'n/a'} | slow since reset ${report.frames.slowCount ?? 0} | window FPS ${report.frames.averageMs > 0 ? (1000 / report.frames.averageMs).toFixed(1) : 'n/a'} | speed ${report.frames.speed}x`,
   ]
+  lines.push(
+    'CPU timings only; sampled totals/calls are estimates, frame peaks use measured samples. Nested inclusive timings and load spans overlap; do not add them. Unattributed interval includes browser/GPU waiting and unmeasured work.'
+  )
   lines.push(...perfReportSlowFrames(report, 3))
+  lines.push(...perfReportMetricGroup(report, 'AI stage timings', 'runtime.ai.', 16))
+  lines.push('Recent diagnostic events (timestamps share the slow-frame clock)')
+  lines.push(...(report.events ?? []).slice(-12).map(event => formatEvent(event)))
   lines.push(...perfReportRenderStats(report, 3))
   lines.push(...formatSceneBreakdown(scene))
   lines.push(...perfReportMetricGroup(report, 'Load breakdown', 'load.', 16))
@@ -63,7 +84,7 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
     .slice(0, Number.isFinite(limit) ? limit : Infinity)
   for (const [name, metric] of metrics as [string, DevPerformanceMetric][]) {
     lines.push(
-      `${name}: ${metric.count} calls | total ${metric.totalMs.toFixed(2)}ms | exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | avg ${metric.averageMs.toFixed(3)}ms | max call ${metric.maxMs.toFixed(2)}ms | max exclusive/frame ${metric.maxFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | calls/frame max ${metric.maxFrameCalls ?? 0} | slow ${metric.slowCount}`
+      `${name}: ${metric.measuredCount ?? metric.count} measured samples | estimated calls ${metric.count} | estimated total ${metric.totalMs.toFixed(2)}ms | estimated exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | avg ${metric.averageMs.toFixed(3)}ms | max call ${metric.maxMs.toFixed(2)}ms | measured max exclusive/frame ${metric.maxFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | samples/frame max ${metric.maxFrameCalls ?? 0} | slow ${metric.slowCount}`
     )
   }
   return { ok: true, message: lines.join('\n') }
@@ -118,13 +139,12 @@ function createEmptyEntityCounts(): SceneEntityCounts {
 }
 
 function isEntityVisible(entity: DevEntity): boolean {
-  const sprite = entity.sprite as { visible?: boolean } | undefined
-  return entity.visible !== false && sprite?.visible !== false
+  // Reading sprite can create a lazy visual. Only inspect existing entity flags.
+  return entity.visible === true
 }
 
 function isEntityRenderable(entity: DevEntity): boolean {
-  const sprite = entity.sprite as { renderable?: boolean } | undefined
-  return isEntityVisible(entity) && entity.renderable !== false && sprite?.renderable !== false
+  return isEntityVisible(entity) && entity.renderable !== false
 }
 
 function countEntity(
@@ -136,7 +156,7 @@ function countEntity(
   if (!entity || entity.isDestroyed) return
 
   counts.total += 1
-  const cell = entity.currentCell ?? context.map.grid[entity.i]?.[entity.j] ?? null
+  const cell = entity.currentCell
   if (cell && visibleCells.has(cell)) counts.camera += 1
   if (isEntityVisible(entity)) counts.visible += 1
   if (isEntityRenderable(entity)) counts.renderable += 1
@@ -150,14 +170,29 @@ function createSceneBreakdown(context: DevConsoleContext): SceneBreakdown {
   const animals = createEmptyEntityCounts()
   const corpses = createEmptyEntityCounts()
 
+  const seenAnimals = new Set<DevEntity>()
+  const countAnimal = (animal: DevEntity) => {
+    if (seenAnimals.has(animal)) return
+    seenAnimals.add(animal)
+    countEntity(animals, context, visibleCells, animal)
+  }
   for (const player of context.players) {
     player.units.forEach(unit => countEntity(units, context, visibleCells, unit as DevEntity))
     player.buildings.forEach(building => countEntity(buildings, context, visibleCells, building as DevEntity))
     player.corpses?.forEach(corpse => countEntity(corpses, context, visibleCells, corpse as DevEntity))
-    player.animals?.forEach(animal => countEntity(animals, context, visibleCells, animal as DevEntity))
+    player.animals?.forEach(animal => countAnimal(animal as DevEntity))
   }
-  getGaiaAnimals(context.map.gaia).forEach(animal => countEntity(animals, context, visibleCells, animal as DevEntity))
-  context.map.resources.forEach(resource => countEntity(resources, context, visibleCells, resource))
+  getGaiaAnimals(context.map.gaia).forEach(animal => countAnimal(animal as DevEntity))
+  const cameraResources = new Set<DevEntity>()
+  for (const cell of visibleCells) {
+    const resource = cell?.has as DevEntity | undefined
+    if (resource?.family !== 'resource' || resource.isDestroyed || cameraResources.has(resource)) continue
+    cameraResources.add(resource)
+    resources.camera++
+    if (isEntityVisible(resource)) resources.visible++
+    if (isEntityRenderable(resource)) resources.renderable++
+  }
+  resources.total = context.map.resources.size
 
   const renderChunks = context.map.renderChunks ?? []
   const terrainChunks = context.map.terrainChunkManager?.chunks
@@ -218,7 +253,8 @@ function formatSceneBreakdown(scene: SceneBreakdown): string[] {
     `camera cells step ${scene.cells.cameraStepX}x${scene.cells.cameraStepY} | margin ${scene.cells.cameraMargin} | updated ${scene.cells.cameraUpdated} | exited ${scene.cells.cameraExited}`,
     formatEntityCounts('units', scene.entities.units),
     formatEntityCounts('buildings', scene.entities.buildings),
-    formatEntityCounts('resources', scene.entities.resources),
+    formatEntityCounts('resources', scene.entities.resources) +
+      ' (visibility: camera candidates only; entity flags, no sprite creation)',
     formatEntityCounts('animals', scene.entities.animals),
     formatEntityCounts('corpses', scene.entities.corpses),
     `terrain chunks ${scene.terrainChunks.total} total | ${scene.terrainChunks.visible} visible | ${scene.terrainChunks.mounted} mounted | ${scene.terrainChunks.visualCells} visual cells`,
@@ -238,26 +274,35 @@ function perfReportMetricGroup(report: DevPerformanceSnapshot, title: string, pr
   const lines = [title]
   for (const [name, metric] of metrics as [string, DevPerformanceMetric][]) {
     lines.push(
-      `${name}: total ${metric.totalMs.toFixed(2)}ms | exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | max ${metric.maxMs.toFixed(2)}ms | calls ${metric.count}`
+      `${name}: elapsed total ${metric.totalMs.toFixed(2)}ms | max span ${metric.maxMs.toFixed(2)}ms | calls ${metric.count}`
     )
   }
   return lines
 }
 
+function formatEvent(event: DevPerformanceEvent, frameAt?: number): string {
+  const time =
+    frameAt == null ? `at ${event.at.toFixed(0)}ms` : `${Math.max(0, frameAt - event.at).toFixed(0)}ms before frame end`
+  return `  ${event.name} ${time} | ${Object.entries(event.details)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(' | ')}`
+}
+
 function perfReportSlowFrames(report: DevPerformanceSnapshot, limit: number): string[] {
   const slowFrames = report.slowFrames || []
   if (!slowFrames.length) return []
-  const lines = ['Slow frames']
-  for (const frame of slowFrames.slice(-limit).reverse()) {
+  const lines = ['Worst slow frames since reset (up to 24 retained)']
+  for (const frame of [...slowFrames].sort((a, b) => b.duration - a.duration).slice(0, limit)) {
     const phaseLabel = `${frame.phase} #${frame.phaseFrame}${frame.mixedPhases ? ' mixed' : ''}`
     lines.push(
-      `${frame.duration.toFixed(2)}ms | exclusive ${frame.exclusiveMeasuredMs.toFixed(2)}ms | untracked ${frame.untrackedMs.toFixed(2)}ms | inclusive ${frame.measuredMs.toFixed(2)}ms | phase ${phaseLabel}`
+      `${frame.duration.toFixed(2)}ms at ${frame.at.toFixed(0)}ms | exclusive ${frame.exclusiveMeasuredMs.toFixed(2)}ms | unattributed interval ${frame.untrackedMs.toFixed(2)}ms | inclusive ${frame.measuredMs.toFixed(2)}ms | phase ${phaseLabel}`
     )
+    for (const event of frame.events ?? []) lines.push(formatEvent(event, frame.at))
     if (!frame.metrics.length) {
       lines.push('  no measured metrics on this interval')
       continue
     }
-    for (const metric of frame.metrics.slice(0, 4)) {
+    for (const metric of frame.metrics.slice(0, 8)) {
       lines.push(
         `  ${metric.name}: exclusive ${metric.exclusiveMs.toFixed(2)}ms | total ${metric.totalMs.toFixed(2)}ms | calls ${metric.count}`
       )
@@ -269,7 +314,7 @@ function perfReportSlowFrames(report: DevPerformanceSnapshot, limit: number): st
 function perfReportRenderStats(report: DevPerformanceSnapshot, limit: number): string[] {
   const stats = report.renderStats || []
   if (!stats.length) return []
-  const lines = ['Recent renders']
+  const lines = ['Sampled CPU renders (scene census at most once/second)']
   for (const stat of stats.slice(-limit).reverse()) {
     const effectiveRenderable = stat.effectiveRenderable ?? stat.renderable
     const effectiveVisible = stat.effectiveVisible ?? stat.visible
@@ -391,7 +436,16 @@ function formatDisplayTreeSection(title: string, root: unknown, limit: number): 
     const label = displayNodeLabel(child)
     let group = groups.get(label)
     if (!group) {
-      group = { count: 0, effectiveRenderable: 0, effectiveVisible: 0, label, maxDepth: 0, nodes: 0, renderable: 0, visible: 0 }
+      group = {
+        count: 0,
+        effectiveRenderable: 0,
+        effectiveVisible: 0,
+        label,
+        maxDepth: 0,
+        nodes: 0,
+        renderable: 0,
+        visible: 0,
+      }
       groups.set(label, group)
     }
     group.count++

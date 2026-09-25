@@ -1,12 +1,21 @@
+export type SchedulerOptions = {
+  /** Spread the initial deadline of tasks with the same name. */
+  stagger?: boolean
+  /** Opt-in for current-state checks only; excess overdue checks are discarded. */
+  maxRunsPerTick?: number
+}
+
 type SchedulerTask = {
   callback: () => void
   elapsed: number
   interval: number
   name: string
   oneShot?: boolean
+  maxRunsPerTick?: number
 }
 
 type PerformanceLike = {
+  markEvent?: (name: string, details: Record<string, string | number | boolean | null>) => void
   measureSampled: (name: string, callback: () => void) => void
   record: (name: string, duration: number) => void
 }
@@ -26,6 +35,7 @@ export class ActionScheduler {
   _toRemove: number[]
   elapsedMs: number
   timeScale: number
+  private staggerCounts = new Map<string, number>()
 
   constructor(
     app: { ticker: TickerLike },
@@ -44,9 +54,19 @@ export class ActionScheduler {
     app.ticker.add(this._onTick)
   }
 
-  add(callback: () => void, intervalMs: number, name = 'scheduler.task'): number {
+  add(callback: () => void, intervalMs: number, name = 'scheduler.task', options: SchedulerOptions = {}): number {
     const id = this._nextId++
-    this._tasks.set(id, { callback, interval: intervalMs, elapsed: 0, name })
+    const ordinal = this.staggerCounts.get(name) ?? 0
+    if (options.stagger) this.staggerCounts.set(name, ordinal + 1)
+    // A low-discrepancy phase avoids needing to know the final number of AIs.
+    const delay = options.stagger ? ((ordinal * 0.618033988749895) % 1) * intervalMs : 0
+    this._tasks.set(id, {
+      callback,
+      interval: intervalMs,
+      elapsed: -delay,
+      name,
+      maxRunsPerTick: options.maxRunsPerTick,
+    })
     return id
   }
 
@@ -67,6 +87,7 @@ export class ActionScheduler {
 
   clear(): void {
     this._tasks.clear()
+    this.staggerCounts.clear()
     this._toRemove.length = 0
   }
 
@@ -77,7 +98,16 @@ export class ActionScheduler {
 
   _tick(deltaMS: number): void {
     if (this._getPaused()) return
-    const tickStartedAt = performance.now()
+    const monitor = this._getPerformance()
+    if (monitor) monitor.measureSampled('scheduler.tick', () => this.runTick(deltaMS))
+    else this.runTick(deltaMS)
+  }
+
+  private runTick(deltaMS: number): void {
+    let calls = 0
+    let catchUpCalls = 0
+    let mostRepeated = ''
+    let maxRepeats = 0
     this.elapsedMs += deltaMS
     this._toRemove.length = 0
     const lastTaskId = this._nextId - 1
@@ -90,23 +120,45 @@ export class ActionScheduler {
         if (task.elapsed >= task.interval) {
           task.elapsed -= task.interval
           this._runTask(task)
+          calls++
           this._toRemove.push(id)
         }
         continue
       }
 
+      let runs = 0
       while (task.elapsed >= task.interval) {
         task.elapsed -= task.interval
         this._runTask(task)
+        calls++
+        runs++
 
         // The callback may remove or replace this task, so stop safely.
         if (!this._tasks.has(id) || this._tasks.get(id) !== task) {
           break
         }
+        if (task.maxRunsPerTick != null && runs >= task.maxRunsPerTick) {
+          // Keep the fractional remainder, but do not carry a burst of obsolete
+          // observations into the next frame. Simulation tasks never opt in.
+          task.elapsed %= task.interval
+          break
+        }
+      }
+      catchUpCalls += Math.max(0, runs - 1)
+      if (runs > maxRepeats) {
+        maxRepeats = runs
+        mostRepeated = task.name
       }
     }
     for (const id of this._toRemove) this._tasks.delete(id)
-    this._getPerformance()?.record('scheduler.tick', performance.now() - tickStartedAt)
+    if (catchUpCalls > 0 && (deltaMS >= 50 || maxRepeats >= 4))
+      this._getPerformance()?.markEvent?.('scheduler.catchUp', {
+        deltaMs: deltaMS,
+        calls,
+        catchUpCalls,
+        mostRepeated,
+        maxRepeats,
+      })
   }
 
   _runTask(task: SchedulerTask): void {

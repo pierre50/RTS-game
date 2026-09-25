@@ -30,6 +30,7 @@ export class NestedButtonMenu<TId extends string> {
   showBackButton: boolean
   onNavigate?: () => void
   onBack?: () => void
+  private readonly refreshDetails: (() => void)[] = []
 
   constructor(options: NestedButtonMenuOptions<TId>) {
     this.container = options.container
@@ -69,6 +70,7 @@ export class NestedButtonMenu<TId extends string> {
   }
 
   syncVisibility(): void {
+    for (const refresh of this.refreshDetails) refresh()
     const visible = new Set(
       (this.stack[this.stack.length - 1] ?? []).filter(item => item.hidden?.() !== true).map(item => item.id)
     )
@@ -89,7 +91,12 @@ export class NestedButtonMenu<TId extends string> {
       if (item.detail) {
         const detail = document.createElement('span')
         detail.className = 'nested-button-menu-detail'
-        detail.textContent = typeof item.detail === 'function' ? item.detail() : item.detail
+        const getDetail = item.detail
+        const refresh = () => {
+          detail.textContent = typeof getDetail === 'function' ? getDetail() : getDetail
+        }
+        this.refreshDetails.push(refresh)
+        refresh()
         button.appendChild(detail)
       }
       button.addEventListener('click', () => {

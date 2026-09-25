@@ -1,3 +1,5 @@
+import { decodeBanditCampPlacements } from './BanditCampPlacements'
+import { createPackedBlueprintGrid } from './PackedBlueprintGrid'
 import { validateCaveDefinition } from './CaveSave'
 import { decodePreparedTerrain } from './PreparedTerrainCodec'
 import { createLocalMapLayout } from '../lib/localMapLayout'
@@ -5,7 +7,8 @@ import type { MapBlueprint, MapSettlement } from '../classes/map/MapGenerationTy
 import { definedProperties } from '../lib/definedProperties'
 import { fail } from './MapBlueprintErrors'
 import type { BlueprintTimings, LoadedBlueprint } from './MapBlueprintTypes'
-export const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
+import { TERRAIN_TYPES } from '../constants/blueprintTerrain'
+export { TERRAIN_TYPES } from '../constants/blueprintTerrain'
 export function decodeBase64Bytes(value: string, ArrayType: Uint8ArrayConstructor): Uint8Array
 export function decodeBase64Bytes(value: string, ArrayType: Int8ArrayConstructor): Int8Array
 export function decodeBase64Bytes(
@@ -43,7 +46,11 @@ function stringOrNumber(value: unknown): string | number | undefined {
   return typeof value === 'string' || typeof value === 'number' ? value : undefined
 }
 
-type DecodedGrids = { terrain: string[][]; relief: number[][] }
+type DecodedGrids = {
+  terrain: string[][]
+  relief: number[][]
+  packedTerrain?: { types: Uint8Array; heights: Int8Array }
+}
 
 function decodeScenery(payload: Record<string, unknown>, size: number, finalized: boolean): DecodedGrids {
   if (!finalized || typeof payload.sceneryCells !== 'string') fail('map-invalid', 'Invalid scenery cells')
@@ -85,6 +92,18 @@ function decodeDenseTerrain(
   }
 
   const gridStartedAt = performance.now()
+  if (finalized && expectedCells > 1_000_000) {
+    const present = (index: number) => terrainValues[index] !== 255
+    const terrain = createPackedBlueprintGrid(
+      terrainValues,
+      size + 1,
+      value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass'),
+      present
+    )
+    const relief = createPackedBlueprintGrid(reliefValues, size + 1, value => value, present)
+    timings.blueprintGridInflate = performance.now() - gridStartedAt
+    return { terrain, relief, packedTerrain: { types: terrainValues, heights: reliefValues } }
+  }
   const terrain = toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass'))
   const relief = toGrid(reliefValues, size, value => value)
   if (finalized) {
@@ -129,16 +148,24 @@ export async function decodeMapBlueprintPayload(
     fail('map-invalid', `Map blueprint "${selected.path}" is invalid`)
   }
 
-  const { terrain, relief } = scenery
+  const { terrain, relief, packedTerrain } = scenery
     ? decodeScenery(payload, size, finalized)
     : decodeDenseTerrain(payload, size, finalized, selected.path, timings)
 
+  const caveIds = new Set<string>()
   if (payload.caves != null) {
-    if (!Array.isArray(payload.caves) || payload.caves.length > 1) fail('map-invalid', 'Invalid cave placements')
+    if (!Array.isArray(payload.caves)) fail('map-invalid', 'Invalid cave placements')
     for (const cave of payload.caves) {
       validateCaveDefinition(cave)
+      if (caveIds.has(cave.id)) fail('map-invalid', 'Duplicate cave identity')
+      caveIds.add(cave.id)
       const position = cave as unknown as { i: number; j: number }
-      if (!Number.isInteger(position.i) || !Number.isInteger(position.j) || !terrain[position.i]?.[position.j]) {
+      if (
+        !Number.isInteger(position.i) ||
+        !Number.isInteger(position.j) ||
+        !terrain[position.i]?.[position.j] ||
+        terrain[position.i]?.[position.j] === 'Water'
+      ) {
         fail('map-invalid', 'Invalid cave position')
       }
     }
@@ -152,6 +179,7 @@ export async function decodeMapBlueprintPayload(
     seed: stringOrNumber(payload.seed),
     terrain,
     relief,
+    packedTerrain,
     spawns: payloadSpawns,
     caves: Array.isArray(payload.caves) ? (payload.caves as MapBlueprint['caves']) : undefined,
     animals: Array.isArray(payload.animals) ? (payload.animals as MapBlueprint['animals']) : undefined,
@@ -161,7 +189,7 @@ export async function decodeMapBlueprintPayload(
         : Array.isArray(payload.terrainAppearance)
           ? (payload.terrainAppearance as MapBlueprint['terrainAppearance'])
           : undefined,
-    banditCampPositions: Array.isArray(payload.banditCampPositions) ? payload.banditCampPositions : [],
+    banditCampPositions: decodeBanditCampPlacements(payload.banditCampPositions, terrain, caveIds),
     settlements: Array.isArray(payload.settlements) ? (payload.settlements as MapSettlement[]) : [],
     resources: Array.isArray(payload.resources) ? payload.resources : undefined,
     timings,

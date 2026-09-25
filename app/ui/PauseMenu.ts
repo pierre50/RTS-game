@@ -51,19 +51,33 @@ export class PauseMenu {
       onClose: resumeIfNeeded,
     })
 
-    content.appendChild(
-      this._btn(t('save'), () => {
-        try {
-          menu.context.save?.()
-          modal.close()
-          resumeIfNeeded()
-          menu.showMessage(t('saveSuccess'), 'success')
-        } catch (e) {
-          const message = e instanceof Error ? e.message : ''
-          menu.showMessage(message === 'MAX_SAVES_REACHED' ? t('maxSavesReached') : t('storageFull'), 'warning')
-        }
-      })
-    )
+    const saveButton = this._btn(t('save'), async () => {
+      if (saveButton.disabled) return
+      saveButton.disabled = true
+      saveButton.textContent = t('savingWorld')
+      try {
+        if (!menu.context.save) throw new Error('SAVE_HANDLER_UNAVAILABLE')
+        await menu.context.save()
+        modal.close()
+        resumeIfNeeded()
+        menu.showMessage(t('saveSuccess'), 'success')
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e)
+        console.error(`[save] Manual save failed: ${message}`, e)
+        menu.showMessage(
+          message === 'MAX_SAVES_REACHED'
+            ? t('maxSavesReached')
+            : message === 'SAVE_RESTART_ELECTRON_REQUIRED'
+              ? t('saveRestartRequired')
+              : t('saveFailed'),
+          'warning'
+        )
+      } finally {
+        saveButton.disabled = false
+        saveButton.textContent = t('save')
+      }
+    })
+    content.appendChild(saveButton)
 
     content.appendChild(
       this._btn(t('loadGame'), () => {

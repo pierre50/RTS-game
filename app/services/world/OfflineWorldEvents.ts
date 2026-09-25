@@ -42,7 +42,7 @@ function renewAnimals(
   report: OfflineWorldReport
 ): void {
   for (const animal of state.animals) {
-    if (animal.trapPrey) continue
+    if (animal.trapPrey || animal.wildlife) continue
     const config = rules.animalConfig?.(animal.type)
     if (animal.isDead) {
       const health = animal.totalHitPoints ?? Number(config?.totalHitPoints)

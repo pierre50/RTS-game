@@ -31,6 +31,10 @@ type SimulationOptions = OfflineWorkRules & {
   fromElapsedMs: number
   toElapsedMs: number
   terrain: (OfflineTerrainCell | null | undefined)[][]
+  /** Shared-map villages leave world events and training to their live owners. */
+  runtimeOwnsDailyEvents?: boolean
+  runtimeOwnsTraining?: boolean
+  spatialOptions?: ConstructorParameters<typeof OfflineWorldSpatial>[3]
 }
 
 const HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
@@ -154,7 +158,8 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
   const spatial = new OfflineWorldSpatial(
     options.terrain,
     state,
-    (building, index) => Number(options.buildingConfig(index, building.type).size) || 1
+    (building, index) => Number(options.buildingConfig(index, building.type).size) || 1,
+    options.spatialOptions
   )
   for (const player of state.players) {
     for (const entity of [...savedBuildingsWithInteriors(player.buildings ?? []), ...(player.units ?? [])]) {
@@ -166,7 +171,7 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
   const end = DAY_NIGHT_CONFIG.startHour * 60 + toElapsedMs / MINUTE_MS
   if (options.planBuildings && fromElapsedMs === 0)
     planOfflineBuildings(state, dayAt(cursor), options.terrain, options, spatial)
-  completeOfflineTraining(state, dayAt(cursor), spatial, options, report)
+  if (!options.runtimeOwnsTraining) completeOfflineTraining(state, dayAt(cursor), spatial, options, report)
   while (cursor < end) {
     if (options.planBuildings) restoreOfflineBuilders(state)
     const boundary = (Math.floor((cursor - NEW_DAY_MINUTE) / DAY_MINUTES) + 1) * DAY_MINUTES + NEW_DAY_MINUTE
@@ -202,12 +207,15 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
     })
     cursor = next
     if (cursor === boundary) {
-      completeOfflineTraining(state, dayAt(cursor), spatial, options, report)
-      regrowOfflineResources(state, dayAt(cursor), spatial, options.wheatMatureFrame, report)
-      applyOfflineDailyEvents(state, dayAt(cursor), spatial, options, report)
-      dailyPopulation(state, dayAt(cursor), spatial, options, report)
+      if (!options.runtimeOwnsTraining) completeOfflineTraining(state, dayAt(cursor), spatial, options, report)
+      if (!options.runtimeOwnsDailyEvents) {
+        regrowOfflineResources(state, dayAt(cursor), spatial, options.wheatMatureFrame, report)
+        applyOfflineDailyEvents(state, dayAt(cursor), spatial, options, report)
+        dailyPopulation(state, dayAt(cursor), spatial, options, report)
+      }
       if (options.planBuildings) planOfflineBuildings(state, dayAt(cursor), options.terrain, options, spatial)
-      if (options.abstractVillages) planAbstractTraining(state, dayAt(cursor), options, spatial)
+      if (options.abstractVillages && !options.runtimeOwnsTraining)
+        planAbstractTraining(state, dayAt(cursor), options, spatial)
     }
   }
   const minute = end % DAY_MINUTES

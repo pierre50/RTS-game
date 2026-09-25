@@ -16,6 +16,33 @@ export function validateCaveDefinition(value: unknown): asserts value is CaveDef
   ) {
     fail('Invalid cave definition.')
   }
+  if (value.banditContent != null) {
+    const content = value.banditContent
+    if (
+      !isObject(content) ||
+      typeof content.ownerLabel !== 'string' ||
+      !content.ownerLabel ||
+      !Number.isSafeInteger(content.campIndex) ||
+      Number(content.campIndex) < 0 ||
+      !isObject(content.inventory) ||
+      (content.generated != null && typeof content.generated !== 'boolean')
+    )
+      fail('Invalid bandit cave content.')
+    const inventory = content.inventory
+    if (
+      inventory.resources != null &&
+      (!isObject(inventory.resources) ||
+        Object.values(inventory.resources).some(
+          amount => typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0
+        ))
+    )
+      fail('Invalid bandit cave resources.')
+    if (
+      inventory.equipment != null &&
+      (!Array.isArray(inventory.equipment) || inventory.equipment.some(item => typeof item !== 'string'))
+    )
+      fail('Invalid bandit cave equipment.')
+  }
   if (value.minerals != null) {
     if (!Array.isArray(value.minerals) || value.minerals.length > 6) fail('Invalid cave minerals.')
     const edge = value.tier === 'large' ? 64 : 32

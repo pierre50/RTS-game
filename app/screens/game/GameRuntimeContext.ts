@@ -39,19 +39,18 @@ export type GameRuntimeContextHost = {
   _campaignSave: CampaignSave | null
   _changeFactionRelation(factionId: string, delta: number): void
   _autosaveCampaign(): void
-  autosave(): { key: string; name: string } | null
+  autosave(): Promise<{ key: string; name: string } | null>
   applyZoom(): void
   checkDefeat(): boolean
   load(evt: SaveRecord): Promise<void>
   quit(): void
-  save(): { key: string; name: string }
+  save(): Promise<{ key: string; name: string }>
   togglePause(pause: boolean): void
   travelIntoBuildingInterior(building: BuildingEntity): Promise<void>
   getBuildingInteriorEntryTargetForCell(cell: RuntimeCell): BuildingEntity | null
   routeUnitIntoBuildingInterior(unit: UnitEntity, building: BuildingEntity): boolean
   travelOutOfBuildingInterior(): Promise<void>
   routeUnitResourceDelivery(unit: UnitEntity, building: BuildingEntity): Promise<boolean>
-  debugTeleportWorldMap(target: { worldI: number; worldJ: number; worldRegionId: string }): Promise<void>
   routeInteriorUnitToExit(unit: UnitEntity, returnTask?: UnitResourceDeliveryReturnTask | null): void
   synchronizeBuildingInteriorAfterTimeJump(): void
   syncStableInteriorHorses(building: BuildingEntity): void
@@ -102,12 +101,6 @@ export function createGameRuntimeContext(
         updateWorldEconomy(host._campaignSave, context as GameContextLike)
     },
     changeFactionRelation: (factionId: string, delta: number) => host._changeFactionRelation(factionId, delta),
-    debugTeleportWorldMap: target => {
-      host.debugTeleportWorldMap(target).catch(error => {
-        console.error('Unable to debug teleport on world map', error)
-        context.menu?.showMessage(t('corruptSave'))
-      })
-    },
     notifyVisionChange: event => {
       for (const listener of visionChangeListeners) listener(event)
     },

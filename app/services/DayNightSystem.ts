@@ -104,7 +104,8 @@ export class DayNightSystem {
     this.state = this.computeState()
     this._onTick = ticker => {
       const update = () => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
-      this.context.performance?.measure?.('dayNight.update', update) ?? update()
+      if (this.context.performance?.measure) this.context.performance.measure('dayNight.update', update)
+      else update()
     }
     context.app.ticker.add(this._onTick)
   }

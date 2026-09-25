@@ -5,7 +5,7 @@ import type { ResourceAmount } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { RegionEconomySave } from '../../types/save'
 
-export type RegionAlertType = 'populationCapped' | 'foodLow' | 'storageFull' | 'workersIdle'
+type RegionAlertType = 'populationCapped' | 'foodLow' | 'storageFull' | 'workersIdle'
 
 type RegionSummary = RegionEconomySave['summaries'][string]
 

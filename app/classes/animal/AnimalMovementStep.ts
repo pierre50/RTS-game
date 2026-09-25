@@ -41,17 +41,28 @@ function isBlockedByMovingAnimal(animal: AnimalControllerHost, nextCell: AnimalC
       typeof nextCell.has.hasPath === 'function' &&
       nextCell.has.hasPath() &&
       instancesDistance(animal, nextCell.has) <= 1 &&
-      nextCell.has.sprite instanceof Object &&
-      'playing' in nextCell.has.sprite &&
-      nextCell.has.sprite.playing
+      movementAnimationPlaying(nextCell.has)
   )
+}
+
+function movementAnimationPlaying(animal: {
+  sprite?: { playing?: boolean }
+  getMovementAnimationPlaying?: () => boolean
+}): boolean {
+  return animal.getMovementAnimationPlaying ? animal.getMovementAnimationPlaying() : Boolean(animal.sprite?.playing)
+}
+
+function setMovementAnimationPlaying(animal: AnimalControllerHost, playing: boolean): void {
+  if (animal.setMovementAnimationPlaying) animal.setMovementAnimationPlaying(playing)
+  else if (playing) animal.sprite.play()
+  else animal.sprite.stop()
 }
 
 function pauseForBlockedAnimal(animal: AnimalControllerHost): void {
   if (isAirborne(animal)) {
-    if (!animal.sprite.playing) animal.sprite.play()
+    if (!movementAnimationPlaying(animal)) setMovementAnimationPlaying(animal, true)
   } else {
-    animal.sprite.stop()
+    setMovementAnimationPlaying(animal, false)
   }
 }
 
@@ -125,12 +136,19 @@ function moveTowardNextCell(
 }
 
 export function moveAnimalToPath(animal: AnimalControllerHost): void {
-  runPathStep(animal, () => stepAnimalPath(animal), () => {
-    if (animal.dest) animal.sendTo(animal.dest, animal.action, {
-      forceRepath: true,
-      ...(animal.movementSheet ? { movementSheet: animal.movementSheet } : {}),
-    })
-  }, () => animal.stop(), isAirborne(animal))
+  runPathStep(
+    animal,
+    () => stepAnimalPath(animal),
+    () => {
+      if (animal.dest)
+        animal.sendTo(animal.dest, animal.action, {
+          forceRepath: true,
+          ...(animal.movementSheet ? { movementSheet: animal.movementSheet } : {}),
+        })
+    },
+    () => animal.stop(),
+    isAirborne(animal)
+  )
 }
 
 function stepAnimalPath(animal: AnimalControllerHost): void {
@@ -150,7 +168,7 @@ function stepAnimalPath(animal: AnimalControllerHost): void {
   const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
 
   if (!canContinueAnimalStep(animal, nextCell)) return
-  if (!animal.sprite.playing) animal.sprite.play()
+  if (!movementAnimationPlaying(animal)) setMovementAnimationPlaying(animal, true)
 
   const isFastFlee = animal.isFleeing && [SHEET_TYPES.running, SHEET_TYPES.flying].includes(animal.movementSheet ?? '')
   // Fleeing energy is charged once per tick, including the final partial step.

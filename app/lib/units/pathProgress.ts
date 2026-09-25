@@ -12,6 +12,7 @@ type PathActor = {
   action?: string | null
   isDead?: boolean
   isDestroyed?: boolean
+  setMovementAnimationPlaying?: (playing: boolean) => void
   sprite?: MovementSprite
   shadow?: MovementSprite | null
   horseSprite?: MovementSprite | null
@@ -25,8 +26,9 @@ const RETRY_AFTER_MS = 2000
 const MAX_RETRIES = 3
 
 function setMovementPlaying(actor: PathActor, playing: boolean): void {
+  actor.setMovementAnimationPlaying?.(playing)
   for (const sprite of [
-    actor.sprite,
+    actor.setMovementAnimationPlaying ? undefined : actor.sprite,
     actor.shadow,
     actor.horseSprite,
     actor.horseShadow,

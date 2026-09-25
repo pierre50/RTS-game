@@ -1,10 +1,9 @@
 import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import type { AIStrategy } from './AIStrategy'
-import { addResourceAmounts } from './AIStrategyResources'
 import type { AIBuildingLike, AIEntityLike, AIResourceAmount, AIStrategySnapshot } from './types'
 
 import { AI_BUILDING_TRAINING_CAPACITY } from './config'
-import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
+
 function hasAiBuildingTrainingCapacity(building: AIBuildingLike): boolean {
   const active = building.loading != null || building.trainingUnit ? 1 : 0
   const queued = Math.max(0, (building.queue?.length ?? 0) - active)
@@ -59,14 +58,12 @@ export function trainUnits(
   buildingList: AIBuildingLike[],
   unitType: string,
   villagers: AIEntityLike[],
-  reserve: AIResourceAmount = {},
+  _reserve: AIResourceAmount = {},
   debug: boolean = false
 ): number {
   const unitsNeeded = maxCount - currentCount
   let trainingOrders = 0
   if (unitsNeeded <= 0) return 0
-  const unitCost = getUnitTrainingCost(strategy.ai, unitType)
-  let reservedForOrders = reserve
   const candidates = villagers.filter(
     villager =>
       villager.type === UNIT_TYPES.villager &&
@@ -78,7 +75,6 @@ export function trainUnits(
 
   for (const villager of candidates) {
     if (trainingOrders >= unitsNeeded) break
-    if (!strategy.canSpendWithReserve(unitCost, reservedForOrders)) break
     const building = buildingList.find(
       candidate =>
         candidate &&
@@ -97,7 +93,6 @@ export function trainUnits(
       continue
     }
     trainingOrders++
-    reservedForOrders = addResourceAmounts(reservedForOrders, unitCost)
     if (debug)
       console.log(`Sending ${villager.label} to train ${unitType} at ${building.type}, Total Orders: ${trainingOrders}`)
   }

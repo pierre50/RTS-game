@@ -1,8 +1,11 @@
+import { unitSuspensionReason } from '../unitSuspension'
 import { ACTION_TYPES } from '../../../constants'
 import { shouldVillagerWork } from '../villagerSchedule'
 import type { UnitEntity } from '../../../types/entities'
 
 export function villagerAutonomySuspension(unit: UnitEntity): string | null {
+  const simulation = unitSuspensionReason(unit)
+  if (simulation) return simulation
   if (unit.isDead || unit.isDestroyed) return 'unavailable'
   const suspension = controlSuspension(unit)
   if (suspension) return suspension

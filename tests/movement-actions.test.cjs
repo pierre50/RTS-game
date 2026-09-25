@@ -183,7 +183,12 @@ function loadModule(relativePath, mocks) {
       return { updateInstanceRenderVisibility: mocks['../../lib']?.updateInstanceRenderVisibility ?? (() => {}) }
     }
     if (request.endsWith('/units/pathProgress')) {
-      return requireFromTsFile(path.join(__dirname, '../app/lib/units/pathProgress.ts'), filename, {}, dependencyModules)
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/units/pathProgress.ts'),
+        filename,
+        {},
+        dependencyModules
+      )
     }
     if (request.endsWith('/playerTargetKnowledge'))
       return { playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
@@ -461,6 +466,30 @@ function loadModule(relativePath, mocks) {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
     }
     if (request === '../HeroCatchingPoleThrow') return { HeroCatchingPoleThrow: class {} }
+    if (request.endsWith('/units/unitSuspension')) {
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/units/unitSuspension.ts'),
+        filename,
+        mocks,
+        dependencyModules
+      )
+    }
+    if (request.endsWith('/units/villageActivity')) {
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/units/villageActivity.ts'),
+        filename,
+        mocks,
+        dependencyModules
+      )
+    }
+    if (request.endsWith('/units/campBehavior')) {
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/units/campBehavior.ts'),
+        filename,
+        mocks,
+        dependencyModules
+      )
+    }
     if (request.endsWith('/units/villagerAutonomyTargeting')) {
       return requireFromTsFile(path.join(__dirname, '../app/lib/units/villagerAutonomyTargeting.ts'), filename, mocks)
     }
@@ -2873,7 +2902,7 @@ test('hero direct movement collides softly with units and animals', () => {
   }
 })
 
-test('hero direct movement collides softly with unit corpses until they clear', () => {
+test('hero direct movement crosses unit corpses before they clear', () => {
   const corpse = {
     currentSheet: 'corpseSheet',
     family: constants.FAMILY_TYPES.unit,
@@ -2955,10 +2984,13 @@ test('hero direct movement collides softly with unit corpses until they clear', 
     y: 0,
   }
 
-  const blocked = new UnitMovement(unit).attemptMoveDirect(9, 0, 1)
+  const moved = new UnitMovement(unit).attemptMoveDirect(9, 0, 1)
 
-  assert.equal(blocked, false)
-  assert.equal(unit.x, 0)
+  assert.equal(moved, true)
+  assert.equal(unit.x, 9)
+  assert.equal(unit.y, 0)
+  assert.equal(grid[1][0].corpses.has(corpse), true)
+  assert.equal(corpse.isDestroyed, false)
 })
 
 test('a blocked gather target sends the villager near it before retrying', () => {
@@ -3616,9 +3648,15 @@ test('blocked paths preserve autonomy and training, portal or exit passage inten
   new UnitMovement(unit).moveToPath()
 
   assert.deepEqual(sent, [
-    ['barracks-1', constants.ACTION_TYPES.train, {
-      forceRepath: true, preserveAutonomy: true, allowPassageStop: true,
-    }],
+    [
+      'barracks-1',
+      constants.ACTION_TYPES.train,
+      {
+        forceRepath: true,
+        preserveAutonomy: true,
+        allowPassageStop: true,
+      },
+    ],
   ])
 
   for (const mode of ['exploration', 'portal', 'interior-exit']) {
@@ -3633,11 +3671,19 @@ test('blocked paths preserve autonomy and training, portal or exit passage inten
       sent.push([target, action, options])
     }
     new UnitMovement(unit).moveToPath()
-    assert.deepEqual(sent.at(-1), [unit.dest, null, {
-      forceRepath: true,
-      preserveAutonomy: true,
-      allowPassageStop: mode !== 'exploration',
-    }], mode)
+    assert.deepEqual(
+      sent.at(-1),
+      [
+        unit.dest,
+        null,
+        {
+          forceRepath: true,
+          preserveAutonomy: true,
+          allowPassageStop: mode !== 'exploration',
+        },
+      ],
+      mode
+    )
   }
 })
 
@@ -6346,4 +6392,44 @@ test('exploration expands beyond fifty cells when the nearby area is already kno
   assert.equal(movement.explore(), false)
   assert.equal(movement.explore(), true)
   assert.ok(destination.i >= 60)
+})
+
+test('gather orders resolve compact candidates to shared handles and reject removed records', () => {
+  const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+  const compact = loadTsModule('app/classes/resources/CompactResourceSet.ts')
+  let created = 0
+  const resources = new compact.CompactResourceSet(
+    2,
+    100,
+    'gather-test',
+    () => ({ totalQuantity: 100 }),
+    state => {
+      created++
+      return { ...state, family: 'resource' }
+    },
+    {}
+  )
+  resources.addState({ i: 1, j: 1, type: 'Tree', textureName: 'tree' })
+  resources.addState({ i: 2, j: 2, type: 'Tree', textureName: 'tree' })
+  const [cold] = [...resources.readValues()]
+  let checked
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    '../resources/CompactResourceSet': compact,
+    '../../lib/units/playerTargetKnowledge': { playerSeesTarget: () => true },
+    '../../lib': {
+      getActionCondition: (_unit, target) => {
+        checked = target
+        return false
+      },
+    },
+  })
+  const commands = new UnitCommands({ owner: {}, buildQueue: [] })
+  commands.sendToTree(cold, true)
+  assert.equal(created, 1)
+  assert.equal(checked, compact.resolveResource(cold))
+  resources.delete(checked)
+  checked = null
+  assert.equal(commands.sendToTree(cold, true), false)
+  assert.equal(checked, null)
+  assert.equal(created, 1)
 })

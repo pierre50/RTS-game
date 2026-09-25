@@ -1,3 +1,5 @@
+import { materializedResources } from '../../resources/CompactResourceSet'
+import { getPackedCellStore } from '../../cell/PackedCellRegistry'
 import { beginLoadTrace, traceLoad } from '../../../lib/loadDiagnostics'
 import { Container, Sprite, RenderTexture, Matrix } from 'pixi.js'
 import type { ContainerChild, PointData, Texture } from 'pixi.js'
@@ -168,7 +170,15 @@ export class MapTerrainBake {
     this.minYOffset = 0
     this.maxYOffset = 0
     const replacements = new Map<TerrainGridCell, RuntimeCell>()
-    for (const row of this.map.grid) {
+    const packed = getPackedCellStore(this.map.grid)
+    if (packed) {
+      packed.markVisible()
+      const bounds = packed.elevationBounds()
+      this.minYOffset = bounds.min
+      this.maxYOffset = bounds.max
+    }
+    const rows = packed ? [packed.changedCells(this.map.grid)] : this.map.grid
+    for (const row of rows) {
       for (const source of row) {
         if (!source) continue
         source.visible = true
@@ -278,7 +288,24 @@ export class MapTerrainBake {
           // Temporary visuals must never mutate occupancy or the logical appearance.
           const appearance = source._terrainAppearance ?? {}
           const visualSource = {
-            ...source,
+            i: source.i,
+            j: source.j,
+            x: source.x,
+            y: source.y,
+            z: source.z,
+            type: source.type,
+            category: source.category,
+            color: source.color,
+            assets: source.assets,
+            terrainTextureName: source.terrainTextureName,
+            solid: source.solid,
+            visible: source.visible,
+            inclined: source.inclined,
+            border: source.border,
+            waterBorder: source.waterBorder,
+            terrainHidden: source.terrainHidden,
+            updateVisible: () => {},
+            place: () => {},
             has: null,
             corpses: new Set<RuntimeEntity>(),
             _terrainAppearance: {
@@ -499,7 +526,7 @@ export class MapTerrainBake {
     const instances = [
       ...getGaiaAnimals(this.map.gaia),
       ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
-      ...this.map.resources,
+      ...materializedResources(this.map.resources),
     ] as RelinkableInstance[]
     const replaceCell = (cell: TerrainGridCell): TerrainGridCell => replacements.get(cell) || cell
     const relinkStartedAt = performance.now()
@@ -595,7 +622,7 @@ export class MapTerrainBake {
     const instances = [
       ...getGaiaAnimals(this.map.gaia),
       ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
-      ...this.map.resources,
+      ...materializedResources(this.map.resources),
     ] as RelinkableInstance[]
     for (const instance of instances) {
       if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
@@ -612,6 +639,16 @@ export class MapTerrainBake {
   }
 
   _getTerrainMapBounds(): TerrainMapBounds {
+    const packed = getPackedCellStore(this.map.grid)
+    if (packed) {
+      const bounds = packed.spatialBounds().bounds
+      if (!Number.isFinite(bounds.minX)) return { minX: 0, minY: 0, maxX: 1, maxY: 1, totalW: 1, totalH: 1 }
+      const minX = bounds.minX - CELL_WIDTH / 2 - CELL_DEPTH
+      const maxX = bounds.maxX + CELL_WIDTH / 2 + CELL_DEPTH
+      const minY = bounds.minY - CELL_HEIGHT / 2 - CELL_DEPTH
+      const maxY = bounds.maxY + CELL_HEIGHT / 2 + CELL_DEPTH
+      return { minX, minY, maxX, maxY, totalW: maxX - minX, totalH: maxY - minY }
+    }
     if (!this.map.grid.length) {
       const margin = CELL_WIDTH + CELL_DEPTH * 4
       const minX = -this.map.size * (CELL_WIDTH / 2) - margin

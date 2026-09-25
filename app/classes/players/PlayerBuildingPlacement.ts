@@ -1,13 +1,11 @@
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { getBuildingAge, getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
-import { constructionTerritoryBlocker } from '../../lib/campaign/mapTerritory'
 import { BUILDING_TYPES, FADE_DURATION_MS, RESOURCE_TYPES } from '../../constants'
 import {
   canAfford,
   canPlaceBuildingAt,
   getBuildingFootprintCells,
   hasBuildingPlacementClearance,
-  isBuildingLimitReached,
   payCost,
 } from '../../lib'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
@@ -33,7 +31,6 @@ export function plantPlayerWheatField(
   j: number,
   options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
 ) {
-  if (constructionTerritoryBlocker(player.context, player)) return false
   const buildingAge = getBuildingAge(options, player.age)
   if (buildingAge > player.age) return false
   const {
@@ -95,7 +92,6 @@ export function buyPlayerBuilding(
   options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
 ) {
   if (type === BUILDING_TYPES.farm) return player.plantWheatField(i, j, options)
-  if (constructionTerritoryBlocker(player.context, player)) return false
   const buildingAge = getBuildingAge(options, player.age)
   if (buildingAge > player.age) return false
   const {
@@ -113,7 +109,6 @@ export function buyPlayerBuilding(
   if (
     (options.alreadyPaid || canAfford(player, config.cost)) &&
     player.isBuildingEligible(type) &&
-    !isBuildingLimitReached(player, type) &&
     canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
     hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
   ) {

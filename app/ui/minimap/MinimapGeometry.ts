@@ -1,3 +1,4 @@
+import { getMinimapZoom } from './MinimapZoom'
 import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
 import type { LocalMapLayout } from '../../lib/localMapLayout'
 import { getLocalMapBounds } from '../../lib/localMapLayout'
@@ -27,7 +28,7 @@ export type MinimapTransform = {
   size: number
   translate: number
 }
-function getMinimapDrawPosition(instance: RuntimeEntity): { x: number; y: number } | null {
+export function getMinimapDrawPosition(instance: RuntimeEntity): { x: number; y: number } | null {
   const pixiInstance = instance as RuntimeEntity & {
     destroyed?: boolean
     position?: { x?: number; y?: number } | null
@@ -59,6 +60,12 @@ const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_X = 12
 const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_Y = 14
 const MINIMAP_UNIT_AVATAR_DISPLAY_SIZE = 6 * MINIMAP_RESOLUTION_SCALE
 export class MinimapGeometry {
+  private zoomAnchor?: { spaceId: string; zoom: number; x: number; y: number }
+
+  resetZoomAnchor(): void {
+    this.zoomAnchor = undefined
+  }
+
   constructor(
     private readonly menu: MinimapHostLike,
     private readonly getAlpha: () => number
@@ -119,6 +126,36 @@ export class MinimapGeometry {
   }
 
   getMinimapTransform(): MinimapTransform {
+    const base = this.getBaseTransform()
+    const zoom = getMinimapZoom(this.menu.context)
+    if (zoom === 1) {
+      this.resetZoomAnchor()
+      return base
+    }
+    const spaceId = this.getMinimapSpace().id
+    if (this.zoomAnchor?.spaceId !== spaceId || this.zoomAnchor.zoom !== zoom) {
+      const hero = this.menu.context.controls?.heroUnit
+      const position = hero && (hero.spaceId || 'outside') === spaceId ? getMinimapDrawPosition(hero) : null
+      this.zoomAnchor = {
+        spaceId,
+        zoom,
+        x: position?.x ?? base.offsetX + (base.canvasWidth / 2 - 2 * base.translate) * base.factor,
+        y: position?.y ?? base.offsetY + (base.canvasHeight / 2) * base.factor,
+      }
+    }
+    const centerX = this.zoomAnchor.x
+    const centerY = this.zoomAnchor.y
+    return {
+      ...base,
+      factor: base.factor / zoom,
+      inputFactor: base.inputFactor / zoom,
+      offsetX: centerX - (centerX - base.offsetX) / zoom,
+      offsetY: centerY - (centerY - base.offsetY) / zoom,
+      layoutKey: `${base.layoutKey}:zoom:${zoom}:${centerX}:${centerY}`,
+    }
+  }
+
+  private getBaseTransform(): MinimapTransform {
     const space = this.getMinimapSpace()
     const bounds = this.getMinimapBounds()
     const size = Math.max(1, bounds.maxI - bounds.minI, bounds.maxJ - bounds.minJ)

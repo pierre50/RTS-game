@@ -1,3 +1,4 @@
+import { CompactResourceSet, resolveResource } from '../../classes/resources/CompactResourceSet'
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
 import type { VisibilityEntity } from '../../services/UnitPerception'
 import { updateVisibility } from '../../services/UnitPerception'
@@ -8,7 +9,6 @@ import { getInsightDetectionRange } from '../units/insightDetection'
 import { getBuildingFootprintCells } from './cells'
 import { getInstanceCameraBounds, getRenderablePosition, getVisibilityRuntimeMap } from './screenBounds'
 export { getInstanceScreenBounds } from './screenBounds'
-export { forgetInstanceRenderCandidate } from './cameraRenderTracking'
 
 type PlayerVisibility = {
   label?: string
@@ -77,9 +77,22 @@ export function findInstancesInSight<
   const map = getVisibilityRuntimeMap(instance)
   const space = getEntityMapSpace({ spaceId: instance.spaceId ?? null }, map)
   const instanceBuckets = space?.instanceBuckets ?? instance.context?.map?.instanceBuckets
-  if (!instanceBuckets?.length) return []
-
   const instances: TTarget[] = []
+  if (map?.resources instanceof CompactResourceSet && (!instance.spaceId || instance.spaceId === 'outside')) {
+    for (const record of map.resources.readArea(
+      instX - searchRadius,
+      instY - searchRadius,
+      instX + searchRadius,
+      instY + searchRadius
+    )) {
+      const target = record as unknown as TTarget
+      const radius = options?.useInsightRange ? getInsightDetectionRange(instance, target, searchRadius) : searchRadius
+      if ((target.i - instX) ** 2 + (target.j - instY) ** 2 <= radius ** 2 && condition(target)) {
+        instances.push(resolveResource(record) as unknown as TTarget)
+      }
+    }
+  }
+  if (!instanceBuckets?.length) return instances
 
   const minBi = Math.max(Math.floor((instX - searchRadius) / BUCKET_SIZE), 0)
   const maxBi = Math.min(Math.floor((instX + searchRadius) / BUCKET_SIZE), instanceBuckets.length - 1)
@@ -103,7 +116,7 @@ export function findInstancesInSight<
     }
   }
 
-  return instances
+  return [...new Set(instances)]
 }
 
 export function updateInstanceVisibility(instance: RenderableInstance): void {

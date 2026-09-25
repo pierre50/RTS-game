@@ -1,17 +1,17 @@
-import { BUILDING_TYPES, POPULATION_MAX, RESOURCE_NAMES, UNIT_TYPES } from '../../constants'
+import { createInventorySectionTitle } from '../inventory/InventorySection'
+import { Modal } from '../../lib/ui/Modal'
+import { createInventoryResourceIcon } from '../inventory/InventoryItemIcons'
+import { BUILDING_TYPES, POPULATION_MAX, RESOURCE_NAMES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants/consumption'
 import { STABLE_HORSE_CAPACITY, getStableHorseAmount } from '../../lib/horses/stableHorses'
 import { t } from '../../lib/lang'
-import { getActiveMapSpace, getEntitySpaceId } from '../../lib/mapSpaces'
-import { getPlayerResourceStores, getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
+import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
 import { getAutonomyJobForWork } from '../../lib/units/villagerAutonomyTargeting'
 import type { BuildingEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
-import type { RuntimeMap } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { MenuHost } from '../MenuHost'
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
-const SOURCE_LIMIT = 3
 const VILLAGER_AUTONOMY_JOB_ORDER: VillagerAutonomyJob[] = [
   'food',
   'wood',
@@ -29,57 +29,6 @@ const MINIMAP_RESOURCE_LABEL_KEYS: Record<ResourceName, string> = {
   iron: 'minimapResourceIron',
   stone: 'minimapResourceStone',
   wood: 'minimapResourceWood',
-}
-
-function isOwnedByPlayer(entity: { owner?: PlayerLike | { label?: string } | null }, player: PlayerLike): boolean {
-  if (!entity.owner) return true
-  return entity.owner === player || entity.owner.label === player.label
-}
-
-function isInActiveSpace(entity: { spaceId?: string | null }, map: RuntimeMap | null | undefined): boolean {
-  const activeSpace = getActiveMapSpace(map)
-  if (!activeSpace) return true
-  return getEntitySpaceId(entity) === activeSpace.id
-}
-
-function getSourceLabel(source: UnitEntity | BuildingEntity): string {
-  if ('type' in source && source.type) return t(source.type)
-  return source.label ?? ''
-}
-
-function getLocalHero(menu: MenuHost): UnitEntity | null {
-  const { controls, player } = menu.context
-  const hero = controls.heroUnit ?? player?.units?.find(unit => unit.type === 'Hero') ?? null
-  if (!hero || !player || !isOwnedByPlayer(hero, player) || !isInActiveSpace(hero, menu.context.map)) return null
-  return hero
-}
-
-function getLocalStockpiles(menu: MenuHost): BuildingEntity[] {
-  const { map, player } = menu.context
-  if (!player) return []
-  const activeSpace = getActiveMapSpace(map)
-  if (!activeSpace) return getPlayerResourceStores(player)
-  const localSpaces = new Set([activeSpace.id])
-  // A room belongs to its exterior building, even when its contents are not currently visible.
-  if (activeSpace.id === 'outside') {
-    const parents = new Set(
-      (player.buildings ?? [])
-        .filter(
-          building =>
-            !building.isDead &&
-            !building.isDestroyed &&
-            isOwnedByPlayer(building, player) &&
-            isInActiveSpace(building, map)
-        )
-        .map(building => building.label)
-        .filter(Boolean)
-    )
-    for (const space of map.spaces?.values() ?? []) {
-      if (space.kind === 'interior' && space.buildingLabel && parents.has(space.buildingLabel))
-        localSpaces.add(space.id)
-    }
-  }
-  return getPlayerResourceStores(player).filter(building => localSpaces.has(getEntitySpaceId(building)))
 }
 
 function getActivePlayerBuildings(player: PlayerLike | null | undefined): BuildingEntity[] {
@@ -152,49 +101,24 @@ function formatDailyConsumption(villagerCount: number): string {
   return parts.join(', ') || '0'
 }
 
+function createReportSection(title: string, content: HTMLElement): HTMLElement {
+  const section = document.createElement('section')
+  section.className = 'inventory-section base-report-section'
+  section.append(createInventorySectionTitle(title), content)
+  return section
+}
+
 function createStatRow(labelText: string, valueText: string): HTMLDivElement {
   const row = document.createElement('div')
-  row.className = 'minimap-resource-stat-row'
+  row.className = 'base-report-stat'
   const label = document.createElement('span')
-  label.className = 'minimap-resource-label'
+  label.className = 'base-report-label'
   label.textContent = labelText
   const value = document.createElement('span')
-  value.className = 'minimap-resource-value'
+  value.className = 'base-report-value'
   value.textContent = valueText
   row.append(label, value)
   return row
-}
-
-function createResourceRow(menu: MenuHost, resource: ResourceName, value: number): HTMLDivElement {
-  const row = document.createElement('div')
-  row.className = 'minimap-resource-row'
-
-  const icon = document.createElement('img')
-  icon.className = 'minimap-resource-icon'
-  const source = menu.icons[resource]
-  if (source) icon.src = source
-  icon.alt = ''
-
-  const label = document.createElement('span')
-  label.className = 'minimap-resource-label'
-  label.textContent = minimapResourceLabel(resource)
-
-  const amount = document.createElement('span')
-  amount.className = 'minimap-resource-value'
-  amount.textContent = String(Math.min(value, 99999))
-
-  row.append(icon, label, amount)
-  return row
-}
-
-function createSourceLine(source: UnitEntity | BuildingEntity, totals: Record<ResourceName, number>): HTMLDivElement {
-  const line = document.createElement('div')
-  line.className = 'minimap-resource-source'
-  const parts = RESOURCE_NAMES.filter(resource => totals[resource] > 0).map(
-    resource => `${totals[resource]} ${minimapResourceLabel(resource)}`
-  )
-  line.textContent = `${getSourceLabel(source)}: ${parts.join(', ')}`
-  return line
 }
 
 function villagerAutonomyJobLabel(job: VillagerAutonomyJob): string {
@@ -203,25 +127,19 @@ function villagerAutonomyJobLabel(job: VillagerAutonomyJob): string {
   return minimapResourceLabel(job)
 }
 
-function createVillagerSection(menu: MenuHost): HTMLDivElement {
+function createVillagerSection(menu: MenuHost): HTMLElement {
   const player = menu.context.player
   const villagers = getActiveVillagers(player)
   const { jobCounts, unassigned } = countVillagersByAutonomy(villagers)
-  const section = document.createElement('div')
-  section.className = 'minimap-resource-section'
-
-  const title = document.createElement('div')
-  title.className = 'minimap-resource-title'
-  title.textContent = t('minimapVillagers')
-
   const rows = document.createElement('div')
-  rows.className = 'minimap-resource-grid'
+  rows.className = 'base-report-stats'
   rows.appendChild(
     createStatRow(
       t('minimapUnits'),
       `${player?.population ?? 0}/${Math.min(POPULATION_MAX, player?.populationMax ?? 0)}`
     )
   )
+  rows.appendChild(createStatRow(t('minimapVillagers'), String(villagers.length)))
   rows.appendChild(createStatRow(t('minimapVillagerConsumption'), formatDailyConsumption(villagers.length)))
 
   for (const job of VILLAGER_AUTONOMY_JOB_ORDER) {
@@ -234,26 +152,18 @@ function createVillagerSection(menu: MenuHost): HTMLDivElement {
   }
   rows.appendChild(createStatRow(t('minimapVillagerUnassigned'), String(unassigned)))
 
-  section.append(title, rows)
-  return section
+  return createReportSection(t('minimapVillagers'), rows)
 }
 
-function createTrainingSection(menu: MenuHost): HTMLDivElement {
+function createTrainingSection(menu: MenuHost): HTMLElement {
   const buildings = getActivePlayerBuildings(menu.context.player)
   const trainingCounts = countQueuedTraining(buildings)
   const horses = getStableHorseSummary(buildings)
-  const section = document.createElement('div')
-  section.className = 'minimap-resource-section'
-
-  const title = document.createElement('div')
-  title.className = 'minimap-resource-title'
-  title.textContent = t('minimapTraining')
-
   const rows = document.createElement('div')
-  rows.className = 'minimap-resource-grid'
+  rows.className = 'base-report-stats'
   if (!trainingCounts.size) {
     const empty = document.createElement('div')
-    empty.className = 'minimap-legend-empty'
+    empty.className = 'base-report-empty'
     empty.textContent = t('minimapTrainingEmpty')
     rows.appendChild(empty)
   } else {
@@ -265,55 +175,58 @@ function createTrainingSection(menu: MenuHost): HTMLDivElement {
   }
   rows.appendChild(createStatRow(t('minimapStableHorses'), `${horses.available}/${horses.capacity}`))
 
-  section.append(title, rows)
-  return section
+  return createReportSection(t('minimapTraining'), rows)
 }
 
-export function renderMinimapResourcePanel(container: HTMLElement, menu: MenuHost): void {
+export function renderBaseReport(container: HTMLElement, menu: MenuHost): void {
   container.replaceChildren()
-  const hero = getLocalHero(menu)
-  const stockpiles = getLocalStockpiles(menu)
-  const visibleTotals = getPlayerResourceTotals({
-    label: menu.context.player?.label,
-    buildings: stockpiles,
-    units: hero ? [hero] : [],
-  })
-
-  const title = document.createElement('div')
-  title.className = 'minimap-resource-title'
-  title.textContent = t('minimapLocalStock')
-
+  const totals = getPlayerResourceTotals(menu.context.player, { includeHero: false })
   const grid = document.createElement('div')
-  grid.className = 'minimap-resource-grid'
-  for (const resource of RESOURCE_NAMES) {
-    const value = visibleTotals[resource]
-    if (value > 0) grid.appendChild(createResourceRow(menu, resource, value))
+  grid.className = 'base-resource-grid'
+  for (const resource of RESOURCE_STORAGE_NAMES) {
+    if (totals[resource] <= 0) continue
+    const item = document.createElement('div')
+    item.className = 'base-resource-item'
+    item.title = `${t(resource)}: ${totals[resource]}`
+    item.setAttribute('aria-label', item.title)
+    const amount = document.createElement('span')
+    amount.textContent = String(totals[resource])
+    item.append(createInventoryResourceIcon(resource), amount)
+    grid.appendChild(item)
   }
   if (!grid.children.length) {
     const empty = document.createElement('div')
-    empty.className = 'minimap-legend-empty'
+    empty.className = 'base-report-empty'
     empty.textContent = t('minimapLocalStockEmpty')
     grid.appendChild(empty)
   }
+  container.append(
+    createReportSection(t('baseReserves'), grid),
+    createVillagerSection(menu),
+    createTrainingSection(menu)
+  )
+}
 
-  const sources = document.createElement('div')
-  sources.className = 'minimap-resource-sources'
-  const sourceEntries = [hero, ...stockpiles]
-    .filter((source): source is UnitEntity | BuildingEntity => Boolean(source))
-    .map(source => {
-      const totals = getPlayerResourceTotals({
-        label: menu.context.player?.label,
-        buildings: source === hero ? [] : [source as BuildingEntity],
-        units: source === hero ? [hero] : [],
-      })
-      return { source, totals }
-    })
-    .filter(({ totals }) => RESOURCE_NAMES.some(resource => totals[resource] > 0))
-
-  for (const { source, totals } of sourceEntries.slice(0, SOURCE_LIMIT)) {
-    sources.appendChild(createSourceLine(source, totals))
+export function openBaseReport(menu: MenuHost): Modal {
+  const content = document.createElement('div')
+  content.className = 'base-report'
+  renderBaseReport(content, menu)
+  const pausedByReport = !menu.context.paused
+  if (pausedByReport) {
+    menu.context.pause?.()
+    document.getElementById('pause')?.remove()
   }
-
-  container.append(createVillagerSection(menu), createTrainingSection(menu), title, grid)
-  if (sources.children.length) container.appendChild(sources)
+  let released = false
+  const release = () => {
+    if (released) return
+    released = true
+    if (pausedByReport) menu.context.resume?.()
+  }
+  class ReportModal extends Modal {
+    override close(): void {
+      super.close()
+      release()
+    }
+  }
+  return new ReportModal({ title: t('baseReport'), content, onClose: release })
 }

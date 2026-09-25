@@ -6,6 +6,9 @@ function makeElement(tag = 'div') {
   return {
     tag,
     alt: '',
+    setAttribute(name, value) {
+      this[name] = value
+    },
     children: [],
     className: '',
     src: '',
@@ -25,7 +28,7 @@ function makeElement(tag = 'div') {
 
 function withFakeDocument(fn) {
   const previousDocument = global.document
-  global.document = { createElement: tag => makeElement(tag) }
+  global.document = { createElement: tag => makeElement(tag), getElementById: () => null }
   try {
     return fn()
   } finally {
@@ -33,9 +36,11 @@ function withFakeDocument(fn) {
   }
 }
 
-function loadPanel() {
+function loadPanel(Modal = class {}) {
   return loadTsModule('app/ui/minimap/MinimapResourcePanel.ts', {
     mocks: {
+      '../../lib/ui/Modal': { Modal },
+      '../inventory/InventoryItemIcons': { createInventoryResourceIcon: resource => ({ resource }) },
       '../../constants': {
         BUILDING_TYPES: { chest: 'Chest', stable: 'Stable', storagePit: 'StoragePit', townCenter: 'TownCenter' },
         POPULATION_MAX: 200,
@@ -82,9 +87,9 @@ function loadPanel() {
   })
 }
 
-test('minimap resource panel renders only active-map hero and stockpile resources', () => {
+test('base report shows village reserves without the hero bag and summarizes workers', () => {
   withFakeDocument(() => {
-    const { renderMinimapResourcePanel } = loadPanel()
+    const { renderBaseReport } = loadPanel()
     const container = makeElement()
     const player = { label: 'player', buildings: [], population: 5, populationMax: 12, units: [] }
     const hero = {
@@ -105,18 +110,24 @@ test('minimap resource panel renders only active-map hero and stockpile resource
       {
         owner: player,
         type: 'TownCenter',
+        i: 0,
+        j: 0,
         spaceId: 'outside',
         inventory: { resources: { wheat: 7, stone: 3 } },
       },
       {
         owner: player,
         type: 'StoragePit',
+        i: 0,
+        j: 0,
         spaceId: 'other-map',
         inventory: { resources: { wood: 99, gold: 99 } },
       },
       {
         owner: player,
         type: 'StoragePit',
+        i: 0,
+        j: 0,
         spaceId: 'outside',
         inventory: { resources: { wood: 11, gold: 4 } },
       },
@@ -142,13 +153,14 @@ test('minimap resource panel renders only active-map hero and stockpile resource
       icons: { wood: 'wood.png', food: 'food.png', stone: 'stone.png', gold: 'gold.png' },
     }
 
-    renderMinimapResourcePanel(container, menu)
+    renderBaseReport(container, menu)
 
-    const villagerRows = container.children[0].children[1].children
+    const villagerRows = container.children[1].children[1].children
     assert.deepEqual(
       villagerRows.map(row => [row.children[0].textContent, row.children[1].textContent]),
       [
         ['minimapUnits', '5/12'],
+        ['minimapVillagers', '4'],
         ['minimapVillagerConsumption', '16 minimapResourceFood'],
         ['minimapResourceFood', '1'],
         ['minimapResourceWood', '1'],
@@ -158,7 +170,7 @@ test('minimap resource panel renders only active-map hero and stockpile resource
       ]
     )
 
-    const trainingRows = container.children[1].children[1].children
+    const trainingRows = container.children[2].children[1].children
     assert.deepEqual(
       trainingRows.map(row => [row.children[0].textContent, row.children[1].textContent]),
       [
@@ -168,14 +180,14 @@ test('minimap resource panel renders only active-map hero and stockpile resource
       ]
     )
 
-    const rows = container.children[3].children
+    const rows = container.children[0].children[1].children
     assert.deepEqual(
-      rows.map(row => [row.children[1].textContent, row.children[2].textContent]),
+      rows.map(row => [row.children[0].resource, row.children[1].textContent]),
       [
-        ['minimapResourceWood', '16'],
-        ['minimapResourceFood', '9'],
-        ['minimapResourceStone', '3'],
-        ['minimapResourceGold', '4'],
+        ['wood', '11'],
+        ['wheat', '7'],
+        ['stone', '3'],
+        ['gold', '4'],
       ]
     )
   })
@@ -183,11 +195,11 @@ test('minimap resource panel renders only active-map hero and stockpile resource
 
 function readStock(menu) {
   const container = makeElement()
-  loadPanel().renderMinimapResourcePanel(container, menu)
+  loadPanel().renderBaseReport(container, menu)
   return Object.fromEntries(
-    container.children[3].children
-      .filter(row => row.className === 'minimap-resource-row')
-      .map(row => [row.children[1].textContent, Number(row.children[2].textContent)])
+    container.children[0].children[1].children
+      .filter(row => row.className === 'base-resource-item')
+      .map(row => [row.children[0].resource, Number(row.children[1].textContent)])
   )
 }
 
@@ -196,13 +208,15 @@ test('outside stock includes local interior chests once, but excludes foreign an
     const player = { label: 'player', units: [], buildings: [] }
     const building = (type, label, spaceId, wood, extra = {}) => ({
       type,
+      i: 0,
+      j: 0,
       label,
       spaceId,
       owner: player,
       inventory: { resources: { wood } },
       ...extra,
     })
-    const chest = building('Chest', 'chest', 'inside', 25, { visible: false })
+    const chest = building('Chest', 'chest', 'interior:player:center', 25, { visible: false })
     player.buildings = [
       building('TownCenter', 'center', 'outside', 5),
       chest,
@@ -225,9 +239,9 @@ test('outside stock includes local interior chests once, but excludes foreign an
       ]),
     }
     const menu = { context: { map, player, controls: {} }, icons: {} }
-    assert.deepEqual(readStock(menu), { minimapResourceWood: 33 })
+    assert.deepEqual(readStock(menu), { wood: 33 })
     map.activeSpaceId = 'inside'
-    assert.deepEqual(readStock(menu), { minimapResourceWood: 25 })
+    assert.deepEqual(readStock(menu), { wood: 33 })
   })
 })
 
@@ -276,7 +290,7 @@ test('starting stock survives the real chest transfer and repeated region save/r
       j: 0,
       inventory: { resources: { wood: 200, wheat: 100, berry: 50, meat: 50, stone: 150 } },
     })
-    const expected = { minimapResourceFood: 200, minimapResourceStone: 150, minimapResourceWood: 200 }
+    const expected = { wheat: 100, berry: 50, meat: 50, stone: 150, wood: 200 }
     assert.deepEqual(readStock(menu), expected)
     const ensureRoom = (_context, building) => {
       const id = `interior:player:${building.label}`
@@ -325,5 +339,44 @@ test('starting stock survives the real chest transfer and repeated region save/r
       assert.equal(player.food, 200)
       assert.equal(player.buildings.filter(building => building.type === 'Chest').length, 1)
     }
+  })
+})
+
+test('base report pauses once and resumes exactly once on close, preserving an existing pause', () => {
+  withFakeDocument(() => {
+    class FakeModal {
+      constructor(options) {
+        this.options = options
+      }
+      close() {
+        this._closed = true
+      }
+    }
+    const { openBaseReport } = loadPanel(FakeModal)
+    let pauses = 0,
+      resumes = 0
+    const context = {
+      paused: false,
+      player: { label: 'p', buildings: [], units: [] },
+      pause() {
+        pauses++
+        this.paused = true
+      },
+      resume() {
+        resumes++
+        this.paused = false
+      },
+    }
+    const modal = openBaseReport({ context })
+    assert.equal(pauses, 1)
+    modal.options.onClose()
+    modal.close()
+    assert.equal(resumes, 1)
+    context.paused = true
+    const alreadyPaused = openBaseReport({ context })
+    alreadyPaused.close()
+    assert.equal(pauses, 1)
+    assert.equal(resumes, 1)
+    assert.equal(context.paused, true)
   })
 })

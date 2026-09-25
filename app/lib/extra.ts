@@ -81,28 +81,6 @@ export function throttle<TArgs extends TimerArg[]>(
   }
 }
 
-export function throttleByKey<TArgs extends TimerArg[]>(
-  callback: (this: TimerThis, ...args: TArgs) => void,
-  wait: number,
-  getKey: (...args: TArgs) => PropertyKey
-): (this: TimerThis, ...args: TArgs) => void {
-  if (typeof callback !== 'function' || typeof wait !== 'number' || typeof getKey !== 'function') {
-    throw new Error('Invalid arguments: callback and getKey must be functions and wait must be a number.')
-  }
-
-  const throttledCallbacks = new Map<PropertyKey, (this: TimerThis, ...args: TArgs) => void>()
-
-  return function (...args) {
-    const key = getKey(...args)
-    let throttled = throttledCallbacks.get(key)
-    if (!throttled) {
-      throttled = throttle(callback, wait)
-      throttledCallbacks.set(key, throttled)
-    }
-    throttled.apply(this, args)
-  }
-}
-
 export const debounce = <TArgs extends TimerArg[]>(
   callback: (this: TimerThis, ...args: TArgs) => void,
   wait: number
@@ -136,6 +114,7 @@ type VisibleInstance = GridPosition & {
     }
   }
   owner?: {
+    type?: string
     label?: string
   } | null
   size?: number
@@ -163,9 +142,14 @@ export const canUpdateMinimap = (instance: VisibleInstance, player?: PlayerLike 
   const activeSpaceId = instance.context?.map?.activeSpaceId || 'outside'
   if (getEntitySpaceId(instance) !== activeSpaceId) return false
   if (instance.context?.map?.revealEverything) return true
-  return playerOwnsInstance(instance, player)
+  // Refresh on AI movement too, including the step that leaves the visible area.
+  // The minimap itself applies visibility before drawing any enemy marker.
+  return playerOwnsInstance(instance, player) || instance.owner?.type === 'AI' || instance.owner?.type === 'Bandits'
 }
 
 export const playerCanSeeInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
-  return (playerOwnsInstance(instance, player) && !usesPersonalVision(instance?.context)) || playerHasVisionOfInstance(instance, player)
+  return (
+    (playerOwnsInstance(instance, player) && !usesPersonalVision(instance?.context)) ||
+    playerHasVisionOfInstance(instance, player)
+  )
 }

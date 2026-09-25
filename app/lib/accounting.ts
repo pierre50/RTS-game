@@ -1,3 +1,4 @@
+import type { ResourceTotalOptions } from './resources/playerResourceStores'
 import {
   depositChestResources,
   getPlayerResourceTotals,
@@ -33,10 +34,14 @@ export function refundCost(player: ResourceLedger | null | undefined, cost: Reso
  * @param {object} player - The player object containing resources.
  * @param {object} cost - An object representing the costs to pay.
  */
-export function payCost(player: ResourceLedger | null | undefined, cost: ResourceLedger | null | undefined): void {
+export function payCost(
+  player: ResourceLedger | null | undefined,
+  cost: ResourceLedger | null | undefined,
+  options: ResourceTotalOptions = {}
+): void {
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return
   if (hasPlayerResourceChests(player)) {
-    withdrawChestResources(player, cost)
+    withdrawChestResources(player, cost, options)
     return
   }
   for (const [prop, amount] of resourceEntries(cost)) {
@@ -50,10 +55,14 @@ export function payCost(player: ResourceLedger | null | undefined, cost: Resourc
  * @param {object} cost - An object representing the costs to check.
  * @returns {boolean} - True if the player can afford the costs, false otherwise.
  */
-export function canAfford(player: ResourceLedger | null | undefined, cost: ResourceLedger | null | undefined): boolean {
+export function canAfford(
+  player: ResourceLedger | null | undefined,
+  cost: ResourceLedger | null | undefined,
+  options: ResourceTotalOptions = {}
+): boolean {
   if (!cost || typeof cost !== 'object') return true
   if (!player || typeof player !== 'object') return false
-  const resources = hasPlayerResourceChests(player) ? getPlayerResourceTotals(player) : player
+  const resources = hasPlayerResourceChests(player) ? getPlayerResourceTotals(player, options) : player
   for (const [prop, amount] of resourceEntries(cost)) {
     if ((resources[prop] || 0) < amount) return false
   }

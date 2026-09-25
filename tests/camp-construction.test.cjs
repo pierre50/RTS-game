@@ -46,3 +46,22 @@ for (const type of ['Chest', 'FireCamp', 'Trap']) {
     assert.equal(player.buildings.length, 2)
   })
 }
+
+test('a player can place multiple town centers on a map with another faction center', () => {
+  const resident = { buildings: [{ type: 'TownCenter', isBuilt: true, hitPoints: 100 }], type: 'AI' }
+  const player = {
+    age: 0,
+    buildings: [{ type: 'TownCenter', isBuilt: true, hitPoints: 100 }],
+    config: { buildings: definitions },
+    isBuildingEligible: () => true,
+    context: { map: { grid: [], instantMode: false }, players: [resident], menu: {} },
+    spawnBuilding(options) {
+      this.buildings.push({ ...options, owner: this })
+    },
+  }
+  player.context.players.push(player)
+  assert.equal(buyPlayerBuilding(player, 5, 5, 'TownCenter', { alreadyPaid: true }), true)
+  assert.equal(buyPlayerBuilding(player, 12, 12, 'TownCenter', { alreadyPaid: true }), true)
+  assert.equal(player.buildings.length, 3)
+  assert.equal(resident.buildings.length, 1)
+})

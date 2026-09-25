@@ -1,6 +1,11 @@
+import { resourceSnapshotZones } from '../classes/resources/CompactResourceSet'
 import type { SaveRecord } from '../types/save'
+import { SAVE_ZONE_SIZE } from './SaveZoneConstants'
+export { SAVE_ZONE_SIZE } from './SaveZoneConstants'
 
-export const SAVE_ZONE_SIZE = 64
+const groupCache = new WeakMap<object, Map<string, { zones: Map<string, ZoneEntry[]> }>>()
+const entryIds = new WeakMap<object, string>()
+let orderCache = new Map<string, ZoneEntry>()
 export type SavePath = (string | number)[]
 type ObjectData = Record<string, unknown>
 export type ZoneEntry = { collection: string; id: string; value: unknown; orderPage?: number }
@@ -41,6 +46,7 @@ function replaceCollection(root: SaveRecord, path: SavePath): void {
 
 /** No terrain-cell scan: only persisted entities, observations and compact exploration chunks. */
 export function partitionSave(record: SaveRecord): PartitionedSave {
+  const nextOrderCache = new Map<string, ZoneEntry>()
   const metadata = { ...record }
   const collections: SaveCollection[] = []
   const zones = new Map<string, ZoneEntry[]>()
@@ -49,61 +55,89 @@ export function partitionSave(record: SaveRecord): PartitionedSave {
     scope: SavePath,
     channel: string,
     mode: 'entity' | 'explored' | 'visible' | 'rows' = 'entity',
-    stride = 1
-  ) => {
-    const list = atSavePath(record, path)
+    stride = 1,
+    supplied?: unknown[],
+    groupOnly = false
+  ): Map<string, ZoneEntry[]> | undefined => {
+    const list = supplied ?? atSavePath(record, path)
     if (!Array.isArray(list)) return
     const collection = JSON.stringify(path)
-    const ids: string[] = []
+    const groupZones = new Map<string, ZoneEntry[]>()
+    let ids: string[] = []
     const occurrences = new Map<string, number>()
-    list.forEach((value, index) => {
-      const entry = object(value) ?? {}
-      const position = object(entry.cavePosition) ?? entry
-      let i = Number(position.i)
-      let j = Number(position.j)
-      if (mode === 'explored') {
-        i *= SAVE_ZONE_SIZE
-        j *= SAVE_ZONE_SIZE
+    const groups = !groupOnly && resourceSnapshotZones.get(list)
+    if (groups) {
+      for (const [name, values] of groups) {
+        const groupChannel = `${channel}:${name}`
+        const cacheKey = JSON.stringify([path, scope, groupChannel])
+        let cache = groupCache.get(values)
+        if (!cache) groupCache.set(values, (cache = new Map()))
+        let cached = cache.get(cacheKey)
+        if (!cached) {
+          cached = { zones: split(path, scope, groupChannel, mode, stride, values, true)! }
+          cache.set(cacheKey, cached)
+        } else for (const [zone, entries] of cached.zones) zones.set(zone, entries)
       }
-      if (mode === 'visible') {
-        i = Math.floor(Number(entry.index) / stride)
-        j = Number(entry.index) % stride
-      }
-      if (mode === 'rows') {
-        i = index
-        j = 0
-      }
-      const identity =
-        mode === 'rows'
-          ? String(index)
-          : mode === 'visible'
-            ? String(entry.index)
-            : typeof entry.label === 'string' && entry.label
-              ? `label:${entry.label}`
-              : JSON.stringify([entry.type ?? null, i, j, entry.instance ?? entry.target ?? null])
-      const occurrence = occurrences.get(identity) ?? 0
-      occurrences.set(identity, occurrence + 1)
-      const id = JSON.stringify([identity, occurrence])
-      ids.push(id)
-      const zone = JSON.stringify([
-        scope,
-        channel,
-        entry.spaceId ?? position.caveId ?? 'outside',
-        Number.isFinite(i) ? Math.floor(i / SAVE_ZONE_SIZE) : 'global',
-        Number.isFinite(j) ? Math.floor(j / SAVE_ZONE_SIZE) : 'global',
-      ])
-      let entries = zones.get(zone)
-      if (!entries) {
-        entries = []
-        zones.set(zone, entries)
-      }
-      entries.push({ collection, id, value })
-    })
+      ids = list.map(value => entryIds.get(value)!)
+    } else
+      list.forEach((value, index) => {
+        const entry = object(value) ?? {}
+        const position = object(entry.cavePosition) ?? object(entry.state) ?? entry
+        let i = Number(position.i)
+        let j = Number(position.j)
+        if (mode === 'explored') {
+          i *= SAVE_ZONE_SIZE
+          j *= SAVE_ZONE_SIZE
+        }
+        if (mode === 'visible') {
+          i = Math.floor(Number(entry.index) / stride)
+          j = Number(entry.index) % stride
+        }
+        if (mode === 'rows') {
+          i = index
+          j = 0
+        }
+        const identity =
+          mode === 'rows'
+            ? String(index)
+            : mode === 'visible'
+              ? String(entry.index)
+              : typeof entry.label === 'string' && entry.label
+                ? `label:${entry.label}`
+                : JSON.stringify([entry.type ?? null, i, j, entry.instance ?? entry.target ?? null])
+        const occurrence = occurrences.get(identity) ?? 0
+        occurrences.set(identity, occurrence + 1)
+        const id = JSON.stringify(groupOnly ? [channel, identity, occurrence] : [identity, occurrence])
+        ids.push(id)
+        if (value && typeof value === 'object') entryIds.set(value, id)
+        const zone = JSON.stringify([
+          scope,
+          channel,
+          entry.spaceId ?? position.caveId ?? 'outside',
+          Number.isFinite(i) ? Math.floor(i / SAVE_ZONE_SIZE) : 'global',
+          Number.isFinite(j) ? Math.floor(j / SAVE_ZONE_SIZE) : 'global',
+        ])
+        let entries = zones.get(zone)
+        if (!entries) {
+          entries = []
+          zones.set(zone, entries)
+        }
+        if (groupOnly) groupZones.set(zone, entries)
+        entries.push({ collection, id, value })
+      })
+    if (groupOnly) return groupZones
     // Ordering is paged separately so deleting an early array element does not rewrite every entity zone.
     for (let page = 0; page * 1024 < ids.length; page++) {
-      zones.set(JSON.stringify(['order', path, page]), [
-        { collection, id: '', orderPage: page, value: ids.slice(page * 1024, (page + 1) * 1024) },
-      ])
+      const key = JSON.stringify(['order', path, page])
+      const values = ids.slice(page * 1024, (page + 1) * 1024)
+      const previous = orderCache.get(key)
+      const oldValues = previous?.value as string[] | undefined
+      const entry =
+        oldValues?.length === values.length && oldValues.every((value, i) => value === values[i])
+          ? previous!
+          : { collection, id: '', orderPage: page, value: values }
+      nextOrderCache.set(key, entry)
+      zones.set(key, [entry])
     }
     collections.push({ path, length: ids.length })
     replaceCollection(metadata, path)
@@ -114,6 +148,11 @@ export function partitionSave(record: SaveRecord): PartitionedSave {
   }
   const world = (state: ObjectData, path: SavePath) => {
     if (Array.isArray(state.map)) split([...path, 'map'], path, 'legacyTerrain', 'rows')
+    const delta = object(state.resourceDelta)
+    if (delta) {
+      split([...path, 'resourceDelta', 'updated'], path, 'resourceChanges')
+      split([...path, 'resourceDelta', 'removed'], path, 'removedResources', 'rows')
+    }
     for (const field of ['resources', 'animals', 'naturalResourceRespawnSlots'])
       optional([...path, field], path, 'entities')
     if (Array.isArray(state.players))
@@ -152,6 +191,7 @@ export function partitionSave(record: SaveRecord): PartitionedSave {
     entries.sort((a, b) =>
       a.collection < b.collection ? -1 : a.collection > b.collection ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0
     )
+  orderCache = nextOrderCache
   return { metadata, collections, zones }
 }
 

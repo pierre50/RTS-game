@@ -1,5 +1,10 @@
+import { minimapMarkerIcon, type MinimapMarkerKind } from '../minimap/MinimapMarkerIcons'
+import { getInteriorExitCell } from '../../lib/buildings/interiorExits'
+import { playerRelation } from '../../lib/combat/playerRelation'
+import { isPlayerEliminated } from '../../lib/playerState'
+import { isMinimapMarkerHidden, minimapOwnerKey, toggleMinimapMarker } from '../minimap/MinimapFilters'
 import { t } from '../../lib/lang'
-import { PLAYER_TYPES } from '../../constants'
+import { BUILDING_TYPES, PLAYER_TYPES } from '../../constants'
 import { worldMapPlayerColor } from './WorldMapPlayerColor'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import { getHexColor } from '../../lib/graphics/colors'
@@ -9,6 +14,7 @@ import type { MacroWorldManifest, MacroWorldSettlement } from './WorldMapTypes'
 
 type WorldMapLegendEntry = {
   color: string
+  icon?: MinimapMarkerKind
   key: string
   name: string
   relation: FactionRelationState | null
@@ -82,8 +88,8 @@ function legendEntryForSettlement(menu: MenuHost, settlement: MacroWorldSettleme
   const player = playerForSettlement(menu, settlement)
   const faction = factionForSettlement(menu, settlement)
   const color = settlementPlayerColor(menu, settlement) ?? '#6ee37a'
-  const relation = player?.isPlayed ? 'allied' : (faction?.relationState ?? player?.diplomacy ?? 'neutral')
-  const key = player?.isPlayed ? 'self' : (faction?.id ?? player?.factionId ?? settlement.civ ?? settlement.id)
+  const relation = player ? playerRelation(menu.context, player) : (faction?.relationState ?? 'neutral')
+  const key = player ? minimapOwnerKey(player) : (faction?.id ?? settlement.civ ?? settlement.id)
   if (!key) return null
 
   return {
@@ -101,10 +107,14 @@ function legendDedupeKey(entry: WorldMapLegendEntry): string {
   return `${entry.variant ?? 'player'}:${entry.name.trim().toLowerCase()}`
 }
 
-export function createWorldMapLegend(menu: MenuHost, manifest: MacroWorldManifest): HTMLElement | null {
+export function createWorldMapLegend(
+  menu: MenuHost,
+  manifest: MacroWorldManifest,
+  interactive = false
+): HTMLElement | null {
   const entries = new Map<string, WorldMapLegendEntry>()
   const dedupeKeys = new Set<string>()
-  for (const settlement of manifest.settlements ?? []) {
+  for (const settlement of interactive ? [] : (manifest.settlements ?? [])) {
     const entry = legendEntryForSettlement(menu, settlement)
     if (!entry) continue
     const dedupeKey = legendDedupeKey(entry)
@@ -112,19 +122,77 @@ export function createWorldMapLegend(menu: MenuHost, manifest: MacroWorldManifes
     entries.set(entry.key, entry)
     dedupeKeys.add(dedupeKey)
   }
+  if (interactive) {
+    for (const player of menu.context.players ?? []) {
+      if (player.type === PLAYER_TYPES.gaia || (player.type === PLAYER_TYPES.bandits && isPlayerEliminated(player))) continue
+      const key = minimapOwnerKey(player)
+      if (entries.has(key)) continue
+      entries.set(key, {
+        key,
+        icon: player.isPlayed ? 'hero' : player.type === PLAYER_TYPES.bandits ? 'camp' : 'village',
+        color: player.colorHex ?? worldMapPlayerColor(menu, player) ?? '#6ee37a',
+        name: player.isPlayed
+          ? t('you')
+          : player.type === PLAYER_TYPES.bandits
+            ? t('worldMapBandits')
+            : (player.name ?? t(player.civ ?? player.label)),
+        relation: player.isPlayed ? null : playerRelation(menu.context, player),
+        variant: player.type === PLAYER_TYPES.bandits ? 'bandits' : undefined,
+        self: player.isPlayed,
+      })
+    }
+    const owner = menu.context.player ?? menu.context.players?.find(player => player.isPlayed)
+    if (
+      owner?.buildings?.some(
+        building =>
+          building.type === BUILDING_TYPES.townCenter &&
+          building.isBuilt !== false &&
+          !building.isDead &&
+          !building.isDestroyed &&
+          (!building.spaceId || building.spaceId === 'outside')
+      )
+    ) {
+      entries.set('base', {
+        key: 'base',
+        icon: 'home',
+        name: t('minimapPlayerBase'),
+        color: owner.colorHex,
+        relation: null,
+        self: true,
+      })
+    }
+    entries.set('caves', { key: 'caves', icon: 'cave', name: t('Cave'), color: '#8f8f8f', relation: null })
+    if (getInteriorExitCell(menu.context.map))
+      entries.set('exit', { key: 'exit', icon: 'exit', name: t('minimapExit'), color: '#27865c', relation: null })
+  }
   if (!entries.size) return null
 
   const legend = document.createElement('aside')
   legend.className = 'worldmap-legend'
   const title = document.createElement('div')
   title.className = 'worldmap-legend-title'
-  title.textContent = t('worldMapLegend')
+  title.textContent = t(interactive ? 'minimapMapLegend' : 'worldMapLegend')
   legend.appendChild(title)
 
   const sortedEntries = [...entries.values()].sort((a, b) => Number(b.self === true) - Number(a.self === true))
   for (const entry of sortedEntries) {
-    const row = document.createElement('div')
+    const row = document.createElement(interactive ? 'button' : 'div')
     row.className = 'worldmap-legend-row'
+    if (interactive) {
+      row.setAttribute('type', 'button')
+      row.classList.add('minimap-legend-toggle')
+      const sync = () => {
+        const hidden = isMinimapMarkerHidden(menu.context, entry.key)
+        row.classList.toggle('is-hidden', hidden)
+        row.setAttribute('aria-pressed', String(!hidden))
+      }
+      sync()
+      row.addEventListener('click', () => {
+        toggleMinimapMarker(menu.context, entry.key)
+        sync()
+        menu.updateCameraMiniMap()
+      })
+    }
     const swatch = document.createElement('span')
     swatch.className = 'worldmap-legend-swatch'
     swatch.classList.toggle('bandits', entry.variant === 'bandits')
@@ -135,6 +203,14 @@ export function createWorldMapLegend(menu: MenuHost, manifest: MacroWorldManifes
     const relation = document.createElement('span')
     relation.className = `worldmap-legend-relation${entry.relation ? ` ${entry.relation}` : ''}`
     relation.textContent = entry.relation ? relationLabel(entry.relation) : ''
+    if (interactive && entry.icon) {
+      const icon = document.createElement('img')
+      icon.src = minimapMarkerIcon(entry.icon!)
+      swatch.classList.add('minimap-legend-marker')
+      icon.alt = ''
+      icon.className = 'minimap-legend-icon'
+      swatch.appendChild(icon)
+    }
     row.append(swatch, name, relation)
     legend.appendChild(row)
   }

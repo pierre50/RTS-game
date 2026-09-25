@@ -47,6 +47,8 @@ export type AnimalControllerHost = AnimalEntity & {
   sight: number
   sounds?: UnitSounds
   speed: number
+  getMovementAnimationPlaying?(): boolean
+  setMovementAnimationPlaying?(playing: boolean): void
   sprite: InteractiveSprite
   strategy?: string
   timeoutId?: SchedulerTaskId | null

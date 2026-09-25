@@ -1,4 +1,5 @@
 import { BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
+import { isUnitSuspended } from '../lib/units/unitSuspension'
 import { isChiefUnit } from '../lib/chief'
 import { sameMapSpace } from '../lib/mapSpaces'
 import { scheduleUnitWalkAround } from '../lib/units/walkAround'
@@ -13,15 +14,22 @@ const IDLE_PATROL_RANGE = 2
 
 function chiefPatrolAnchor(unit: UnitEntity) {
   if (!unit.owner?.isPlayed || !isChiefUnit(unit)) return null
-  return unit.owner.buildings?.find(building =>
-    building.type === BUILDING_TYPES.townCenter && building.isBuilt && !building.isDead &&
-    !building.isDestroyed && sameMapSpace(unit, building)
-  ) ?? null
+  return (
+    unit.owner.buildings?.find(
+      building =>
+        building.type === BUILDING_TYPES.townCenter &&
+        building.isBuilt &&
+        !building.isDead &&
+        !building.isDestroyed &&
+        sameMapSpace(unit, building)
+    ) ?? null
+  )
 }
 
 function canIdlePatrol(unit: UnitEntity): boolean {
   return Boolean(
-    unit.type !== UNIT_TYPES.hero &&
+    !isUnitSuspended(unit) &&
+      unit.type !== UNIT_TYPES.hero &&
       unit.controlMode !== 'hero' &&
       !unit.followingHero &&
       (!unit.work || (Boolean(chiefPatrolAnchor(unit)) && unit.work === WORK_TYPES.attacker)) &&
@@ -78,10 +86,10 @@ export class IdleUnitPatrolSystem {
     scheduleUnitWalkAround(unit, {
       anchor: target => chiefPatrolAnchor(target) ?? target,
       canMove: canIdlePatrol,
-      delayMaxMs: target => chiefPatrolAnchor(target) ? 12000 : IDLE_PATROL_DELAY_MAX_MS,
-      delayMinMs: target => chiefPatrolAnchor(target) ? 6000 : IDLE_PATROL_DELAY_MIN_MS,
+      delayMaxMs: target => (chiefPatrolAnchor(target) ? 12000 : IDLE_PATROL_DELAY_MAX_MS),
+      delayMinMs: target => (chiefPatrolAnchor(target) ? 6000 : IDLE_PATROL_DELAY_MIN_MS),
       onTaskId,
-      range: target => chiefPatrolAnchor(target) ? 6 : IDLE_PATROL_RANGE,
+      range: target => (chiefPatrolAnchor(target) ? 6 : IDLE_PATROL_RANGE),
       shouldContinue: isIdlePatrolUnit,
       taskName: 'unitIdle.patrol',
     })

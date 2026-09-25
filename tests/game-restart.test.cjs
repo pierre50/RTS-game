@@ -2,7 +2,12 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBlueprint, loadPregeneratedWorldMapBlueprint, realScheduler = false } = {}) {
+function loadGame({
+  blueprintFailureReason = null,
+  loadPregeneratedInteriorBlueprint,
+  loadPregeneratedWorldMapBlueprint,
+  realScheduler = false,
+} = {}) {
   class MapBlueprintLoadError extends Error {
     constructor(reason, message) {
       super(message)
@@ -29,7 +34,10 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
 
   const mocks = {
     '../../services/world/WorldEconomy': { materializeInitialEconomy: initial => initial },
-    '../../services/world/WorldEconomyRuntime': { economyRulesFor: () => ({}), initializeCampaignEconomy: async () => {} },
+    '../../services/world/WorldEconomyRuntime': {
+      economyRulesFor: () => ({}),
+      initializeCampaignEconomy: async () => {},
+    },
     '../../classes/players/GaiaPlayer': { ensureNeutralPlayer() {} },
     'pixi.js': { Container },
     '@pixi/sound': { sound: { stopAll() {} } },
@@ -94,7 +102,14 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
           if (blueprintFailureReason) {
             throw new MapBlueprintLoadError(blueprintFailureReason, 'missing test interior blueprint')
           }
-          return { id: 'test-interior-blueprint', kind: 'interior', mapType: 'interior', size: 13, terrain: [], spawns: [] }
+          return {
+            id: 'test-interior-blueprint',
+            kind: 'interior',
+            mapType: 'interior',
+            size: 13,
+            terrain: [],
+            spawns: [],
+          }
         }),
     },
     '../dev-console/DevConsole': { DevConsole: class DevConsole {} },
@@ -231,6 +246,12 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
+    // Interior generation has its own tests; screen lifecycle tests do not build caves.
+    [require.resolve('../app/services/BuildingInteriorSpaceSystem.ts')]: {
+      refreshMapSpaceEntityVisibility() {},
+      syncBuildingInteriorShelterOccupants() {},
+      syncBuildingStableInteriorHorses() {},
+    },
     '../ui/BuildingInteriorTransition': {
       playBuildingInteriorDoorTransition: async callback => callback(),
     },
@@ -303,11 +324,19 @@ test('region resets keep character fades and pause state connected to the live r
     for (const unit of party) fadeIn(unit, 120)
 
     scheduler._tick(120)
-    assert.deepEqual(party.map(unit => unit.alpha), [0, 0], 'arrival remains paused during the transition')
+    assert.deepEqual(
+      party.map(unit => unit.alpha),
+      [0, 0],
+      'arrival remains paused during the transition'
+    )
 
     game.context.paused = false
     scheduler._tick(120)
-    assert.deepEqual(party.map(unit => unit.alpha), [1, 1], 'hero and follower must finish appearing after arrival')
+    assert.deepEqual(
+      party.map(unit => unit.alpha),
+      [1, 1],
+      'hero and follower must finish appearing after arrival'
+    )
 
     let actions = 0
     scheduler.add(() => actions++, 40)
@@ -369,6 +398,7 @@ test('new games fail when the world has no compatible region blueprint', async (
     game._map = () => map
     game._applyMapConfig = () => {}
     game._createUiRuntime = () => {}
+    game._yieldToBrowser = async () => {}
 
     await assert.rejects(() => game._bootFromConfig({ size: 144 }), /mapBlueprintUnavailable/)
 
@@ -478,6 +508,7 @@ test('seed saves without a blueprint id load a world region blueprint', async ()
     },
   })
   const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  game._yieldToBrowser = async () => {}
   let runtimeGenerationCalls = 0
   const map = {
     size: 144,
@@ -511,11 +542,14 @@ test('seed saves without a blueprint id load a world region blueprint', async ()
   })
 
   assert.equal(runtimeGenerationCalls, 0)
-  assert.deepEqual(calls.find(call => call[0] === 'world'), [
-    'world',
-    { size: 144, playerCiv: undefined, worldId: 'world-4242', worldRegionId: undefined },
-  ])
-  assert.deepEqual(calls.find(call => call[0] === 'generate'), ['generate', 'world-4242-r0-0-steppe'])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'world'),
+    ['world', { size: 144, playerCiv: undefined, worldId: 'world-4242', worldRegionId: undefined }]
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'generate'),
+    ['generate', 'world-4242-r0-0-steppe']
+  )
 })
 
 test('interior seed saves load their blueprint from the interior manifest', async () => {
@@ -531,6 +565,7 @@ test('interior seed saves load their blueprint from the interior manifest', asyn
     },
   })
   const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  game._yieldToBrowser = async () => {}
   const map = {
     generateFromBlueprint: async blueprint => calls.push(['generate', blueprint.id]),
     mapGeneration: { applySavedStateToGeneratedMap: () => calls.push(['applySavedState']) },
@@ -567,14 +602,24 @@ test('interior seed saves load their blueprint from the interior manifest', asyn
     animals: [],
   })
 
-  assert.deepEqual(calls.find(call => call[0] === 'interior'), ['interior', { id: 'house-circle-001' }])
-  assert.equal(calls.some(call => call[0] === 'world'), false)
-  assert.deepEqual(calls.find(call => call[0] === 'generate'), ['generate', 'house-circle-001'])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'interior'),
+    ['interior', { id: 'house-circle-001' }]
+  )
+  assert.equal(
+    calls.some(call => call[0] === 'world'),
+    false
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'generate'),
+    ['generate', 'house-circle-001']
+  )
 })
 
 test('portable hero state preserves mounted horse color across worlds', () => {
   const Game = loadGame()
   const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  game._yieldToBrowser = async () => {}
   const target = {
     context: {
       scheduler: { elapsedMs: 1000 },
@@ -600,6 +645,7 @@ test('portable hero state preserves mounted horse color across worlds', () => {
 test('portable hero state preserves all facing directions including zero', () => {
   const Game = loadGame()
   const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  game._yieldToBrowser = async () => {}
   for (const degree of [0, 45, 90, 135, 180, 225, 270, 315]) {
     const target = { degree: 123 }
     game._applyPortableUnitState(target, { i: 0, j: 0, type: 'Hero', degree })
@@ -612,6 +658,7 @@ test('portable hero state preserves all facing directions including zero', () =>
 test('pause applies to live units, buildings, gaia animals and corpses once', () => {
   const Game = loadGame()
   const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  game._yieldToBrowser = async () => {}
   const calls = []
   const makePausable = label => ({
     label,
@@ -678,6 +725,7 @@ test('Escape opens the in-game pause menu', () => {
   try {
     const Game = loadGame()
     const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+    game._yieldToBrowser = async () => {}
     let openCalls = 0
     let pauseCalls = 0
     let preventDefaultCalls = 0
@@ -717,6 +765,7 @@ test('Escape does not open the in-game menu after another handler consumes it', 
   try {
     const Game = loadGame()
     const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+    game._yieldToBrowser = async () => {}
     let openCalls = 0
     game.context.menu = { pauseMenu: { open: () => openCalls++ } }
 

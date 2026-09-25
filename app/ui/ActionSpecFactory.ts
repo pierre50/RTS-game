@@ -1,13 +1,11 @@
 import { isCampBuilding } from '../lib/buildings/campConstruction'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
-import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import { Assets } from 'pixi.js'
 import {
   canAfford,
   getBuildingAsset,
   getIconPath,
   getStableHorseAmount,
-  isBuildingLimitReached,
   storeStableHorse,
   STABLE_HORSE_CAPACITY,
 } from '../lib'
@@ -93,11 +91,10 @@ export class ActionSpecFactory {
     return formatActionCost(cost)
   }
 
-  getBuildingDetails(type: string, owner: PlayerLike, config: BuildingConfig): MenuDetails {
+  getBuildingDetails(type: string, config: BuildingConfig): MenuDetails {
     return buildBuildingDetails({
       commandBlocked: !isCampBuilding(type) && this.isChiefCommandBlocked(),
       config,
-      isLimitReached: isBuildingLimitReached(owner, type),
       type,
     })
   }
@@ -270,32 +267,16 @@ export class ActionSpecFactory {
     const config = getPlayerBuildingConfig(owner, type, buildingAge)!
     return {
       id: type,
-      details: () => this.getBuildingDetails(type, owner, config),
+      details: () => this.getBuildingDetails(type, config),
       hide: () => !owner.isBuildingEligible?.(type),
       disabled: () =>
-        Boolean(constructionTerritoryBlocker(menu.context, owner)) ||
         (!isCampBuilding(type) && this.isChiefCommandBlocked()) ||
-        isBuildingLimitReached(owner, type) ||
         !config ||
         !canPayActionCost(owner, config.cost),
       onClick: () => {
         controls.removeMouseBuilding()
-        const territoryOwner = constructionTerritoryBlocker(menu.context, owner)
-        if (territoryOwner) {
-          menu.showMessage(
-            t('constructionTerritoryOccupied', {
-              player: territoryOwner.name || territoryOwner.civ || territoryOwner.label || '',
-            }),
-            'warning'
-          )
-          return
-        }
         if (!isCampBuilding(type) && this.isChiefCommandBlocked()) {
           menu.showMessage(t('requiresChief'), 'warning')
-          return
-        }
-        if (isBuildingLimitReached(owner, type)) {
-          menu.showMessage(t('buildingLimitReached'), 'warning')
           return
         }
         if (!canPayActionCost(owner, config.cost)) return

@@ -48,6 +48,9 @@ test('public maps expose only the world preview format used by the UI', () => {
 
 test('blueprint resources accept direct sheet/frame texture assets', () => {
   class Resource {
+    static spawn(options, context) {
+      return context.map.addChild(new Resource(options))
+    }
     constructor(options) {
       Object.assign(this, options)
     }

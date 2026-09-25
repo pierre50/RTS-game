@@ -1,3 +1,4 @@
+import { getBaseTerritory } from '../territory/baseTerritory'
 import { BUILDING_TYPES, UNIT_TYPES } from '../../constants'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
@@ -50,7 +51,9 @@ function getPlayerStartingResourceDepots(player: ResourceStoreOwner | null | und
 }
 
 export function getPlayerResourceStores(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
-  return [...new Set([...getPlayerResourceChests(player), ...getPlayerStartingResourceDepots(player)])]
+  return [...new Set([...getPlayerResourceChests(player), ...getPlayerStartingResourceDepots(player)])].filter(store =>
+    Boolean(player && getBaseTerritory(store, [player]))
+  )
 }
 
 function isOwnedHero(unit: UnitEntity, player: ResourceStoreOwner): boolean {
@@ -72,6 +75,10 @@ export function getPlayerResourceHeroes(
     }
   }
   if (extraHero && (!player || isOwnedHero(extraHero, player))) heroes.add(extraHero)
+  if (player?.isPlayed) {
+    const active = extraHero ?? player.context?.controls?.heroUnit ?? [...heroes][0]
+    return active && heroes.has(active) ? [active] : []
+  }
   return [...heroes]
 }
 
@@ -81,7 +88,10 @@ export function getPersonalResourceHero(
 ): UnitEntity | null {
   if (!player?.isPlayed || options.includeHero === false) return null
   const hero = options.hero ?? player.context?.controls?.heroUnit ?? getPlayerResourceHeroes(player)[0]
-  return hero && isOwnedHero(hero, player) && !heroCanCommand(hero) ? hero : null
+  if (!hero || !isOwnedHero(hero, player)) return null
+  const territory = getBaseTerritory(hero, player.context?.players ?? [player])
+  const inOwnBase = territory && (territory.owner === player || territory.owner.label === player.label)
+  return !heroCanCommand(hero) || !inOwnBase ? hero : null
 }
 
 export function isVisibleStorageBuilding(building: BuildingEntity, player: ResourceStoreOwner | PlayerLike): boolean {

@@ -1,4 +1,9 @@
-import { hasAnimalCorpseLoot, initializeAnimalCorpseLoot, syncAnimalLootQuantity } from '../../lib/equipment/animalCorpseLoot'
+import { markWildlifeDeath } from '../../services/WildlifeStore'
+import {
+  hasAnimalCorpseLoot,
+  initializeAnimalCorpseLoot,
+  syncAnimalLootQuantity,
+} from '../../lib/equipment/animalCorpseLoot'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
@@ -127,6 +132,8 @@ export class AnimalLifecycle {
     }
     this.settleCorpseCell()
     animal.isDead = true
+    if (animal.tamingStatus !== 'tamed')
+      markWildlifeDeath(animal.context.map, animal.label, animal.context.dayNight?.state?.day ?? 1)
     initializeAnimalCorpseLoot(animal, () => animal.context.map.random())
     detachStableInteriorHorse(animal, animal.context.map)
     animal.zIndex--
@@ -197,7 +204,10 @@ export class AnimalLifecycle {
         }
       }
       if (animal.quantity <= 0 && hasAnimalCorpseLoot(animal)) {
-        animal.corpseMaterialDecayRemainingMs = Math.max(0, (animal.corpseMaterialDecayRemainingMs ?? CORPSE_TIME * 1000) - 5000)
+        animal.corpseMaterialDecayRemainingMs = Math.max(
+          0,
+          (animal.corpseMaterialDecayRemainingMs ?? CORPSE_TIME * 1000) - 5000
+        )
         if (animal.corpseMaterialDecayRemainingMs <= 0) {
           animal.stopInterval()
           fadeOutThenClear(animal, FADE_DURATION_MS)

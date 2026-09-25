@@ -14,16 +14,19 @@ test('legacy ages migrate once without demoting Bronze or Iron saves', () => {
   )
 })
 
-test('Bronze formations and arrow recipes never require iron, and starting infantry needs no metal', () => {
-  const { UNIT_TRAINING_AGE_METAL_COST } = loadTsModule('app/constants/unitTrainingAgeCost.ts')
+test('training is free at every age, including when old configs contain costs', () => {
+  const { getUnitTrainingCost } = loadTsModule('app/lib/training/unitTrainingCost.ts')
+  for (const age of [0, 1, 2]) {
+    for (const type of ['Fantassin', 'Bowman', 'Priest']) {
+      assert.deepEqual(getUnitTrainingCost({ age, config: { units: { [type]: { cost: { food: 50, gold: 20 } } } } }, type), {})
+    }
+  }
+})
+
+test('Bronze arrow recipes never require iron, and starting infantry needs no metal', () => {
   const units = require('../public/assets/data/gameplay/units.json')
   assert.equal(units.Fantassin.cost.copper, undefined)
   assert.equal(units.Fantassin.cost.iron, undefined)
-  for (const cost of Object.values(UNIT_TRAINING_AGE_METAL_COST)) {
-    assert.equal(cost[1].iron, undefined)
-    assert.ok(cost[1].copper > 0)
-    assert.ok(cost[2].iron > 0)
-  }
   const { HERO_CRAFT_RECIPES } = loadTsModule(require.resolve('../app/lib/hero/heroCrafting.ts'), {
     mocks: { '../equipment/equipmentLoot': {}, '../resources/playerResourceTotals': {} },
   })

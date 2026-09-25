@@ -1,3 +1,5 @@
+import { isContinentWorld } from '../../config/continentWorlds'
+import { isLargeMapIsolationTest } from '../../config/largeMapTest'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import { Assets } from 'pixi.js'
 import { RESOURCE_STOCKPILE_TYPES } from '../../constants/entities'
@@ -184,6 +186,10 @@ export async function initializeCampaignEconomy(
   profiles: Record<string, VillageStartProfile> = {},
   initialState?: SerializedSave
 ): Promise<void> {
+  if (isLargeMapIsolationTest(context.map.worldId) || isContinentWorld(context.map.worldId)) {
+    campaign.economy = { version: 1, initialized: true, regions: {} }
+    return
+  }
   return traceLoadAsync('boot.initializeCampaignEconomy', async () => {
     campaign.economy ??= { version: 1, regions: {} }
     const manifest = context.map.worldManifest
@@ -243,6 +249,8 @@ export async function initializeCampaignEconomy(
 }
 
 export function updateWorldEconomy(campaign: CampaignSave, context: GameContextLike): void {
+  // VillageActivitySystem owns distant production inside a single-region continent.
+  if (isContinentWorld(context.map.worldId)) return
   const state = serializeGame(context)
   captureEconomyRegion(campaign, state, context.map.grid)
   advanceCampaignEconomy(campaign, state.runtime?.dayNightElapsedMs ?? 0, economyRegionId(state), economyRulesFor)

@@ -695,7 +695,7 @@ test('military training starts with the first explicitly ordered trainee to ente
   assert.equal(production.startTrainingWithUnit(villagerB), true)
   assert.equal(building.trainingUnit, villagerB)
   assert.equal(building.trainingType, 'Fantassin')
-  assert.equal(building.owner.food, 35)
+  assert.equal(building.owner.food, 70)
   assert.equal(villagerA.trainingTargetType, 'Fantassin')
 })
 
@@ -810,7 +810,7 @@ test('arrived trainee enters a busy training building queue instead of waiting o
   assert.equal(building.trainingQueue[0].trainee, queuedTrainee)
   assert.equal(building.trainingQueue[0].type, 'Fantassin')
   assert.equal(owner.units.includes(queuedTrainee), false)
-  assert.equal(owner.food, 65)
+  assert.equal(owner.food, 100)
   assert.deepEqual(
     calls.find(call => call[0] === 'button'),
     ['button', 'Fantassin', 2]
@@ -1174,10 +1174,10 @@ test('trainee training updates loading even when the building is not classically
   ])
 })
 
-test('missing resources for trainee training list the exact resources', () => {
+test('trainee training with empty stores succeeds without resource alerts', () => {
   const calls = []
   const owner = {
-    food: 10,
+    food: 0,
     wood: 0,
     population: 1,
     populationMax: 1,
@@ -1253,8 +1253,12 @@ test('missing resources for trainee training list the exact resources', () => {
     },
   })
 
-  assert.equal(new BuildingProduction(building).startTrainingWithUnit(bowman), false)
-  assert.deepEqual(calls[0], ['message', 'needMore:food, wood', 'warning'])
+  const production = new BuildingProduction(building)
+  production.buyUnit = () => true
+  assert.equal(production.startTrainingWithUnit(bowman), true)
+  assert.deepEqual(calls, [])
+  assert.equal(owner.food, 0)
+  assert.equal(owner.wood, 0)
 })
 
 test('active military training cannot be cancelled after the unit entered the building', () => {
@@ -1418,8 +1422,8 @@ test('global unit training cancellation clears active and queued production', ()
   assert.equal(building.trainingStartedDay, null)
   assert.equal(building.trainingCompleteDay, null)
   assert.equal(pending.trainingTargetType, null)
-  assert.equal(owner.food, 75)
-  assert.equal(owner.wood, 20)
+  assert.equal(owner.food, 0)
+  assert.equal(owner.wood, 0)
   assert.deepEqual(
     calls.filter(call => call[0] === 'unsubscribe'),
     [['unsubscribe']]
@@ -1943,8 +1947,8 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(bowman), true)
   assert.equal(owner.population, 1)
-  assert.equal(owner.food, 20)
-  assert.equal(owner.wood, 10)
+  assert.equal(owner.food, 60)
+  assert.equal(owner.wood, 30)
   assert.equal(owner.units.length, 0)
   assert.equal(bowmanCell.has, null)
   assert.equal(bowmanCell.solid, false)
@@ -2063,7 +2067,7 @@ test('failed trainee placement retains the recruit and completed training', () =
   assert.deepEqual(building.queue, ['Fantassin'])
   assert.equal(building.trainingUnit, villager)
   assert.equal(building.trainingType, 'Fantassin')
-  assert.equal(owner.food, 0)
+  assert.equal(owner.food, 35)
 })
 
 test('arrived villager is consumed and trained unit reuses the same population slot', () => {
@@ -2175,7 +2179,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(villager), true)
   assert.equal(owner.population, 1)
-  assert.equal(owner.food, 0)
+  assert.equal(owner.food, 35)
   assert.equal(owner.units.length, 0)
   assert.equal(villagerCell.has, null)
   assert.equal(villagerCell.solid, false)

@@ -5,6 +5,34 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
+test('gathering preserves working villagers, village limits and load-based target selection', () => {
+  const { AIEconomy } = loadAIEconomy()
+  const economy = new AIEconomy({})
+  const nearest = { i: 1, j: 0, type: 'Tree', label: 'nearest' }
+  const alternative = { i: 3, j: 0, type: 'Tree', label: 'alternative' }
+  const outside = { i: 0, j: 0, spaceId: 'unreachable-interior' }
+  const active = { dest: nearest, stop: () => assert.fail('valid worker must retain its order') }
+  const idle = { i: 0, j: 0, villageHome: { i: 0, j: 0, spaceId: 'outside' } }
+  const assigned = []
+  const available = [idle]
+  const resources = new Set([outside, nearest, alternative])
+  assert.equal(
+    economy.assignVillagersToResource(available, [active], resources, 2, (worker, target) =>
+      assigned.push([worker, target])
+    ),
+    1
+  )
+  assert.deepEqual(assigned, [[idle, alternative]])
+  assert.equal(available.length, 0)
+  // A fresh assignment must reflect changed coordinates; no stale target cache.
+  alternative.i = 1000
+  available.push(idle)
+  economy.assignVillagersToResource(available, [active], resources, 2, (worker, target) =>
+    assigned.push([worker, target])
+  )
+  assert.equal(assigned[1][1], nearest)
+})
+
 function loadAIEconomy() {
   const filename = path.join(__dirname, '../app/ai/AIEconomy.ts')
   const source = fs.readFileSync(filename, 'utf8')
@@ -58,7 +86,12 @@ function loadAIEconomy() {
   }
   const localRequire = request => {
     if (request.endsWith('/playerTargetKnowledge'))
-      return { knowsEconomicTarget: () => false, playerSeesTarget: () => true, knownTarget: (_owner, target) => target, observeTarget: () => undefined }
+      return {
+        knowsEconomicTarget: () => false,
+        playerSeesTarget: () => true,
+        knownTarget: (_owner, target) => target,
+        observeTarget: () => undefined,
+      }
     if (request.endsWith('/targetPursuit'))
       return { updateTargetPursuit: () => false, routeToRememberedTarget: () => false }
 
@@ -296,7 +329,7 @@ test('villager economy stops distant live hunts when known berries are near home
   assert.deepEqual(assignments, [['berry', berry]])
 })
 
-test('villager economy still permits distant hunting when no berries are known', () => {
+test('villager economy keeps hunting inside the village territory even without known berries', () => {
   const { AIEconomy, constants } = loadAIEconomy()
   const assignments = []
   const townCenter = {
@@ -339,8 +372,8 @@ test('villager economy still permits distant hunting when no berries are known',
     []
   )
 
-  assert.equal(actions, 1)
-  assert.deepEqual(assignments, [animal])
+  assert.equal(actions, 0)
+  assert.deepEqual(assignments, [])
 })
 
 test('horse capture assignment spreads villagers across unreserved horses and stable slots', () => {

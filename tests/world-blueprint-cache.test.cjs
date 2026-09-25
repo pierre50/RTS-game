@@ -26,7 +26,7 @@ function fixture() {
   }
 }
 
-test('concurrent region loads share decoded neighbor files within one session', async () => {
+test('region loads cache only requested maps within one session', async () => {
   const previousFetch = global.fetch
   const data = fixture()
   global.fetch = data.fetch
@@ -38,15 +38,17 @@ test('concurrent region loads share decoded neighbor files within one session', 
       load({ ...options, worldRegionId: 'a' }, cache),
       load({ ...options, worldRegionId: 'b' }, cache),
     ])
-    assert.equal(data.requests.filter(path => path.endsWith('.map')).length, 3)
-    assert.equal(a.visualNeighbors[0].blueprint.terrain, b.terrain)
-    assert.equal(b.visualNeighbors[0].blueprint.terrain, a.terrain)
-    assert.equal(cache.size, 3)
+    assert.equal(data.requests.filter(path => path.endsWith('.map')).length, 2)
+    assert.equal(a.visualNeighbors, undefined)
+    assert.equal(b.visualNeighbors, undefined)
+    const repeated = await load({ ...options, worldRegionId: 'a' }, cache)
+    assert.equal(repeated.terrain, a.terrain)
+    assert.equal(cache.size, 2)
     assert.ok(a.timings.blueprintManifestFetch >= 0)
     await load({ ...options, worldRegionId: 'b' }, new Map())
     assert.equal(
       data.requests.filter(path => path.endsWith('.map')).length,
-      6,
+      3,
       'new sessions must reload regenerated files'
     )
   } finally {
@@ -54,7 +56,7 @@ test('concurrent region loads share decoded neighbor files within one session', 
   }
 })
 
-test('failed neighbor fetches are evicted and can be retried', async () => {
+test('failed requested map fetches are evicted and can be retried', async () => {
   const previousFetch = global.fetch
   const data = fixture()
   global.fetch = data.fetch
@@ -62,15 +64,15 @@ test('failed neighbor fetches are evicted and can be retried', async () => {
     const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/MapBlueprintLoader.ts')
     const options = { size: 2, worldId: 'test', worldRegionId: 'a' }
     const cache = new Map()
-    data.fail('b.map')
+    data.fail('a.map')
     await assert.rejects(load(options, cache), error => error.reason === 'map-fetch-failed')
-    assert.equal(cache.size, 1)
+    assert.equal(cache.size, 0)
     data.fail(null)
     const result = await load(options, cache)
-    assert.equal(result.visualNeighbors.length, 1)
-    assert.equal(cache.size, 2)
-    assert.equal(data.requests.filter(path => path.endsWith('a.map')).length, 1)
-    assert.equal(data.requests.filter(path => path.endsWith('b.map')).length, 2)
+    assert.equal(result.visualNeighbors, undefined)
+    assert.equal(cache.size, 1)
+    assert.equal(data.requests.filter(path => path.endsWith('a.map')).length, 2)
+    assert.equal(data.requests.filter(path => path.endsWith('b.map')).length, 0)
   } finally {
     global.fetch = previousFetch
   }
@@ -100,4 +102,19 @@ test('world blueprint selection uses the chosen civilization village', () => {
   const selected = selectWorldMap(manifest, { playerCiv: 'Nobatia', size: 144 })
 
   assert.equal(selected.id, 'world-4242-r0-2-temperate')
+})
+
+test('a missing neighboring map does not prevent loading the current map', async () => {
+  const previousFetch = global.fetch
+  const data = fixture()
+  data.fail('b.map')
+  global.fetch = data.fetch
+  try {
+    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/MapBlueprintLoader.ts')
+    const result = await load({ size: 2, worldId: 'test', worldRegionId: 'a' })
+    assert.equal(result.worldRegionId, 'a')
+    assert.deepEqual(data.requests, ['maps/worlds/test/manifest.json', 'maps/worlds/test/maps/a.map'])
+  } finally {
+    global.fetch = previousFetch
+  }
 })

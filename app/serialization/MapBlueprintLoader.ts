@@ -74,30 +74,9 @@ export async function loadPregeneratedWorldMapBlueprint(
 
   try {
     const blueprint = await loadWorldBlueprintFile(worldId, selected, fileCache)
-    const visualNeighbors = await Promise.all(
-      manifest.maps
-        .filter(
-          entry =>
-            entry.path !== selected.path &&
-            entry.size === selected.size &&
-            Math.abs(entry.region.x - selected.region.x) <= 1 &&
-            Math.abs(entry.region.y - selected.region.y) <= 1
-        )
-        .map(async entry => {
-          return definedProperties({
-            region: entry.region,
-            blueprint: await loadWorldBlueprintFile(
-              worldId,
-              { ...entry, path: entry.sceneryPath ?? entry.path },
-              fileCache
-            ),
-          })
-        })
-    )
     return definedProperties({
       ...blueprint,
       timings: { ...timings, ...blueprint.timings },
-      visualNeighbors,
       environment: selected.environment,
       worldId,
       worldRegionId: selected.id || regionIdFromEntry(selected),

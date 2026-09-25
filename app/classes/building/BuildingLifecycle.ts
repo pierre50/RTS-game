@@ -1,6 +1,5 @@
-import { competingTownCenterSites } from '../../lib/buildings/townCenterClaim'
-import { t } from '../../lib/lang'
 import { AnimatedSprite } from 'pixi.js'
+import { wakeDistantOwner } from '../../lib/units/villageActivity'
 import { ACTION_TYPES, LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX } from '../../constants'
 import { getPercentage, updateInstanceVisibility } from '../../lib'
 import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
@@ -77,14 +76,6 @@ export class BuildingLifecycle {
   onBuilt(): void {
     const building = this.building
     if (building.isDead || building.isDestroyed) return
-    const sites = competingTownCenterSites(building, building.context.players ?? [])
-    let lostPlayedSite = false
-    for (const site of sites) {
-      if (site.owner?.isPlayed) lostPlayedSite = true
-      site.hitPoints = 0
-      site.die?.()
-    }
-    if (lostPlayedSite) building.context.menu?.showMessage?.(t('townCenterConstructionLost'), 'warning')
     building.owner.updatePopulationObjectives?.()
     const {
       context: { menu },
@@ -107,6 +98,7 @@ export class BuildingLifecycle {
 
   updateHitPoints(action: string): void {
     const building = this.building
+    if (action === ACTION_TYPES.attack) wakeDistantOwner(building.owner)
     if (building.indestructible) {
       building.hitPoints = building.totalHitPoints
       return

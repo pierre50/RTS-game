@@ -1,7 +1,4 @@
-import { needsStoragePit } from '../../lib/grid/storagePitPlacement'
 import { ABSTRACT_VILLAGE_PRODUCTION } from '../../config/worldEconomyBalance'
-import { villageBuildingNeeds, villageConstructionReserve } from '../../ai/AIDevelopmentPolicy'
-import { getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import {
   VILLAGE_TARGET_PERCENTAGE_BY_AGE,
@@ -10,13 +7,10 @@ import {
   AI_DIFFICULTIES,
 } from '../../ai/config'
 import { AI_BUILDING_TRAINING_CAPACITY, AI_ABSTRACT_DAILY_RECRUITS } from '../../ai/config'
-import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
-import { BUILDING_TYPES, UNIT_TYPES, DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants'
+import { BUILDING_TYPES, UNIT_TYPES } from '../../constants'
 import { getVillagerSchedule } from '../../lib/units/villagerSchedule'
 import {
   depositChestResources,
-  getMissingPlayerResources,
-  withdrawChestResources,
 } from '../../lib/resources/playerResourceTotals'
 import {
   isOfflineWorker,
@@ -87,8 +81,6 @@ export function planAbstractTraining(
       [UNIT_TYPES.bowman, BUILDING_TYPES.archeryRange, MAX_ARCHER_BY_AGE[age]],
     ] as const) {
       const config = rules.unitConfig(index, type)
-      if (!config.cost) continue
-      const cost = getUnitTrainingCost({ age: player.age, config: { units: { [type]: config } } }, type)
       const queued = (player.buildings ?? [])
         .flatMap(b => b.trainingQueue ?? [])
         .filter(entry => entry.type === type).length
@@ -108,28 +100,6 @@ export function planAbstractTraining(
             (b.trainingQueue?.length ?? 0) < AI_BUILDING_TRAINING_CAPACITY
         )
         if (!building || !worker.label) continue
-        const owner = savedResourceOwner(player, state.players)
-        const foodReserve = workers.length * (DAILY_CONSUMPTION_PER_VILLAGER.food ?? 0) * 2
-        const needs = villageBuildingNeeds({
-          population: player.population ?? 0,
-          populationMax: player.populationMax ?? 0,
-          age,
-          phase: player.aiState.phase,
-          desiredBarracks: 1,
-          buildings: player.buildings ?? [],
-          storagePitNeeded: needsStoragePit(state.resources, player.buildings ?? []),
-        })
-        const reserve = villageConstructionReserve(
-          needs,
-          type => getBuildingConfigForAge(rules.buildingConfig(index, type), age).cost ?? {}
-        )
-        const required = { ...cost, food: (cost.food ?? 0) + foodReserve }
-        for (const [resource, amount] of Object.entries(reserve)) {
-          const key = resource as keyof ResourceAmount
-          required[key] = (required[key] ?? 0) + amount
-        }
-        if (Object.keys(getMissingPlayerResources(owner, required, { includeHero: false })).length) break
-        if (!withdrawChestResources(owner, cost, { includeHero: false })) break
         const trainee = {
           type: worker.type,
           label: worker.label,
@@ -144,7 +114,7 @@ export function planAbstractTraining(
         building.trainingQueue.push({
           type,
           trainee,
-          cost: { ...cost },
+          cost: {},
           loading: 0,
           trainingStartedDay: day,
           trainingCompleteDay: day + Math.max(1, Math.ceil(config.trainingDays ?? 1)),

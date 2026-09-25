@@ -1,4 +1,7 @@
+import { isCampPaused } from '../lib/units/campActivity'
 import { updateUnitEnergy } from '../lib'
+import { isDistantOwner } from '../lib/units/villageActivity'
+import { isUnitSuspended } from '../lib/units/unitSuspension'
 import { updateUnitSleepHealth } from '../lib/units/unitSleepHealth'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { UnitEntity } from '../types/entities'
@@ -36,6 +39,8 @@ export class UnitEnergyRegenSystem {
   update(elapsedMs = UNIT_ENERGY_REGEN_INTERVAL_MS): void {
     for (const player of this.context.players ?? []) {
       for (const unit of player.units ?? []) {
+        if (isCampPaused(unit)) continue
+        if ((player.isPlayed || isDistantOwner(player)) && isUnitSuspended(unit)) continue
         updateUnitSleepHealth(unit, elapsedMs)
         if (shouldApplyPassiveUnitEnergyRegen(this.context, unit)) updateUnitEnergy?.(unit, elapsedMs)
       }

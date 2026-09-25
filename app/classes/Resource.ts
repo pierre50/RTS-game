@@ -1,27 +1,29 @@
-import { AnimatedSprite,Assets,Polygon,type Sprite } from 'pixi.js'
+import { trackNaturalGrowth } from '../services/NaturalGrowthQueue'
+import { createLogicalResource } from './resources/LogicalResource'
+import { AnimatedSprite, Assets, Polygon, type Sprite } from 'pixi.js'
 import {
-CELL_HEIGHT,
-CELL_WIDTH,
-FADE_DURATION_MS,
-FAMILY_TYPES,
-LABEL_TYPES,
-PASSABLE_RESOURCE_TYPES,
-RESOURCE_TYPES,
+  CELL_HEIGHT,
+  CELL_WIDTH,
+  FADE_DURATION_MS,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  PASSABLE_RESOURCE_TYPES,
+  RESOURCE_TYPES,
 } from '../constants'
 import {
-attachEntityShadowsToMapSpace,
-cartesianToIsometric,
-getDeterministicCellVariant,
-getEntityCell,
-getEntityMapSpace,
-getGroundReliefLevel,
-getInstanceZIndex,
-getReliefLiftPixels,
-getTexture,
-isAIControlledPlayer,
-parseTextureRef,
-textureRefToString,
-type SpriteFragmentBurstGroundTarget,
+  attachEntityShadowsToMapSpace,
+  cartesianToIsometric,
+  getDeterministicCellVariant,
+  getEntityCell,
+  getEntityMapSpace,
+  getGroundReliefLevel,
+  getInstanceZIndex,
+  getReliefLiftPixels,
+  getTexture,
+  isAIControlledPlayer,
+  parseTextureRef,
+  textureRefToString,
+  type SpriteFragmentBurstGroundTarget,
 } from '../lib'
 import { onVisualSettingsChange } from '../lib/audio/settings'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
@@ -32,45 +34,46 @@ import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
 import { invalidateEconomicKnowledge } from '../services/world/EconomicKnowledgeUpdates'
 import type { ResourceConfig } from '../types/config'
 import type { GameContextLike } from '../types/context'
-import type { EntityInfoRenderOptions,EntityInterfaceLike,ResourceEntity,UnitSounds } from '../types/entities'
+import type { EntityInfoRenderOptions, EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import { ResourceInterface } from '../ui/entity/ResourceInterface'
 import { Instance } from './Instance'
 import { advanceResourceWheatGrowth } from './resource/ResourceWheatGrowth'
 import {
-resourceFootprintCells,
-resourceFragmentGroundTargets,
-spawnDepletedResourceFragments,
-spawnResourceTreeFragments,
+  resourceFootprintCells,
+  resourceFragmentGroundTargets,
+  spawnDepletedResourceFragments,
+  spawnResourceTreeFragments,
 } from './resources/ResourceFragments'
 import { registerResourceRespawnSlot } from './resources/ResourceRespawn'
-import { createResourceSprite,prepareStaticResourceTexture } from './ResourceSpriteFactory'
+import { createResourceSprite, prepareStaticResourceTexture } from './ResourceSpriteFactory'
 import {
-BERRYBUSH_SHEET_ID,
-EMPTY_BERRYBUSH_FRAME,
-getResourceConfig,
-getTerrainAssets,
-pickLifecycleTextureRef,
-type PlayerWithResourceMemory,
-type ResourceAssets,
-type ResourceDefinition,
-type ResourceOptions,
+  BERRYBUSH_SHEET_ID,
+  EMPTY_BERRYBUSH_FRAME,
+  getResourceConfig,
+  getTerrainAssets,
+  normalizeResourceTextureRef,
+  pickLifecycleTextureRef,
+  type PlayerWithResourceMemory,
+  type ResourceAssets,
+  type ResourceDefinition,
+  type ResourceOptions,
 } from './ResourceTexture'
 import {
-canApplyWindMotion,
-createShadow,
-isCutOrFallenTree,
-isWindAnimatedWheat,
-isWindMotionEligible,
-resetWindMotion,
-shouldUseWindMotion,
-startWindMotion,
-stopWindMotion,
-syncShadow,
-syncVisualSettings,
-updateWindMotion,
-type ResourceShadow,
-type WindTick,
+  canApplyWindMotion,
+  createShadow,
+  isCutOrFallenTree,
+  isWindAnimatedWheat,
+  isWindMotionEligible,
+  resetWindMotion,
+  shouldUseWindMotion,
+  startWindMotion,
+  stopWindMotion,
+  syncShadow,
+  syncVisualSettings,
+  updateWindMotion,
+  type ResourceShadow,
+  type WindTick,
 } from './ResourceVisuals'
 
 export type { ResourceOptions } from './ResourceTexture'
@@ -100,6 +103,31 @@ export class Resource extends Instance implements ResourceEntity {
   sounds?: UnitSounds
   spriteScale?: number
 
+  static spawn(
+    options: ResourceOptions & { isDead?: boolean; isDestroyed?: boolean },
+    context: GameContextLike
+  ): Resource {
+    const definition = getResourceConfig().resources[options.type]
+    if (!context.editor && !definition?.isAnimated && !options.textureName && !options.isDead && !options.isDestroyed) {
+      const grid = getEntityMapSpace(options, context.map)?.grid ?? context.map.grid
+      const cell = grid[options.i]?.[options.j]
+      if (cell) {
+        const assets = getTerrainAssets(definition?.assets, cell.type)
+        const ref =
+          typeof assets === 'string'
+            ? { sheet: assets, frame: 0 }
+            : Array.isArray(assets)
+              ? context.map.randomItem(assets)
+              : assets
+        if (ref) options = { ...options, textureName: textureRefToString(normalizeResourceTextureRef(ref)) }
+      }
+    }
+    if (!context.editor && !definition?.isAnimated && options.textureName && !options.isDead && !options.isDestroyed) {
+      return createLogicalResource(options, context)
+    }
+    return context.map.addChild(new Resource(options, context))
+  }
+
   constructor(options: ResourceOptions, context: GameContextLike) {
     super(context)
 
@@ -128,7 +156,18 @@ export class Resource extends Instance implements ResourceEntity {
     if (!cell) throw new Error(`Cannot spawn resource on missing cell (${this.i}, ${this.j})`)
 
     this.quantity = this.quantity ?? this.totalQuantity
-    invalidateEconomicKnowledge(map)
+    let quantity = this.quantity
+    Object.defineProperty(this, 'quantity', {
+      configurable: true,
+      enumerable: true,
+      get: () => quantity,
+      set: (value: number) => {
+        quantity = value
+        trackNaturalGrowth(this)
+      },
+    })
+    trackNaturalGrowth(this)
+    invalidateEconomicKnowledge(map, this)
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
     this.x = flatX
@@ -175,7 +214,7 @@ export class Resource extends Instance implements ResourceEntity {
     updateInstanceRenderVisibility(this)
   }
 
-  private initializeResourceVisuals(options: ResourceOptions, cell: RuntimeCell): void {
+  initializeResourceVisuals(options: ResourceOptions, cell: RuntimeCell): void {
     delete this.deferredVisuals
     delete this.deferredSpriteBounds
     this.sprite = createResourceSprite(this, options, cell)
@@ -495,7 +534,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
-    if (this.context?.map) invalidateEconomicKnowledge(this.context.map)
+    if (this.context?.map) invalidateEconomicKnowledge(this.context.map, this)
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
     this.stopWindMotion()

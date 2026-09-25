@@ -1,8 +1,10 @@
+import { villageAnimals, villageEconomicAnchors } from '../services/world/VillageResourceKnowledge'
+import { VILLAGE_ACTIVITY_RADIUS } from '../config/villageActivity'
 import { knownTarget, knowsEconomicTarget, playerSeesTarget } from '../lib/units/playerTargetKnowledge'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeEntity } from '../types/entities'
 import { ACTION_TYPES, BUILDING_TYPES } from '../constants'
-import { getClosestInstance, getGaiaAnimals, isWheatMature } from '../lib'
+import { getClosestInstance, isWheatMature } from '../lib'
 import type { RuntimeMap } from '../types/map'
 import type {
   AIBuildingLike,
@@ -29,7 +31,6 @@ type FoodSourceContext = {
 }
 
 const MAX_BERRY_DROP_DIST = 14
-const MAX_BERRY_HOME_DIST = 30
 const MAX_HUNT_DROP_DIST_WHEN_BERRIES_KNOWN = 32
 
 export class AIEconomyFoodManager {
@@ -65,20 +66,22 @@ export class AIEconomyFoodManager {
   getViableBerryBushes(dropSites: AIBuildingLike[] = []): Set<AIEntityLike> {
     const { ai } = this
     const effectiveDropSites = dropSites.length > 0 ? dropSites : this.getStorageDropSites()
-    const homeAnchor = ai.getHomeAnchor()
+    const anchors = villageEconomicAnchors(ai)
 
     return new Set(
       [...ai.foundedBerrybushs].filter((bush: AIEntityLike) => {
-        const known = bush && knownTarget(ai as unknown as PlayerLike, bush as RuntimeEntity)
-        if (!known || known.isDead || (known.quantity ?? 0) <= 0 || !this.isLocationSafe(bush)) return false
-
+        if (
+          !bush ||
+          (anchors.length &&
+            !anchors.some(anchor => Math.hypot(bush.i - anchor.i, bush.j - anchor.j) <= VILLAGE_ACTIVITY_RADIUS))
+        )
+          return false
         const nearDropSite =
           effectiveDropSites.length === 0 ||
           effectiveDropSites.some(site => Math.abs(bush.i - site.i) + Math.abs(bush.j - site.j) <= MAX_BERRY_DROP_DIST)
         if (!nearDropSite) return false
-
-        if (!homeAnchor) return true
-        return Math.abs(bush.i - homeAnchor.i) + Math.abs(bush.j - homeAnchor.j) <= MAX_BERRY_HOME_DIST
+        const known = knownTarget(ai as unknown as PlayerLike, bush as RuntimeEntity)
+        return Boolean(known && !known.isDead && (known.quantity ?? 0) > 0 && this.isLocationSafe(bush))
       })
     )
   }
@@ -109,7 +112,14 @@ export class AIEconomyFoodManager {
   }
 
   isViableLiveHunt(animal: AIEntityLike, hasKnownBerryFood: boolean, dropSites: AIBuildingLike[] = []): boolean {
-    if (!animal || animal.isDead || !this.isLocationSafe(animal)) return false
+    if (!animal || animal.isDead) return false
+    const homes = villageEconomicAnchors(this.ai)
+    if (
+      homes.length &&
+      !homes.some(home => Math.hypot(animal.i - home.i, animal.j - home.j) <= VILLAGE_ACTIVITY_RADIUS)
+    )
+      return false
+    if (!this.isLocationSafe(animal)) return false
     if (!hasKnownBerryFood) return true
 
     const anchors = dropSites.length > 0 ? dropSites : this.ai.getHomeAnchor() ? [this.ai.getHomeAnchor()!] : []
@@ -225,9 +235,9 @@ export class AIEconomyFoodManager {
     return actions
   }
 
-  discoverDeadAnimals(map: RuntimeMap): void {
+  discoverDeadAnimals(_map: RuntimeMap): void {
     const { ai } = this
-    for (const animal of getGaiaAnimals(map.gaia)) {
+    for (const animal of villageAnimals(ai)) {
       if (animal.isDead && !animal.isDestroyed && (animal.quantity || 0) > 0) {
         if (playerSeesTarget(ai as unknown as PlayerLike, animal as RuntimeEntity)) ai.foundedDeadAnimals.add(animal)
       }

@@ -19,6 +19,9 @@
     "compile": "pnpm dist",
     "deploy": "pnpm build && gh-pages -d build",
     "world:macro": "python3 tools/generate-macro-world.py",
+    "world:generate-1000": "node tools/maps/generate-large-test.cjs --size 1000",
+    "world:generate-5000": "node tools/maps/generate-large-test.cjs --size 5000",
+    "world:generate-large": "node tools/maps/generate-large-test.cjs",
     "world:generate": "node tools/generate-world-maps.cjs",
     "caves:generate": "node tools/generate-cave-maps.cjs",
     "interiors:generate": "node tools/generate-interior-maps.cjs",
@@ -60,6 +63,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "electron/**/*.cjs",
       {
         "from": "build",
         "to": "build",

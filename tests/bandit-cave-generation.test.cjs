@@ -67,10 +67,19 @@ for (const payload of catalog.blueprints) {
         },
       },
     })
+    const { furnishPendingBanditCave } = loadTsModule('app/classes/map/BanditCaveContent.ts', {
+      mocks: {
+        '../../constants': { BUILDING_TYPES: types, UNIT_TYPES: unitTypes },
+        '../players': { ensureNeutralPlayer: () => neutralOwner },
+      },
+    })
+    owner.label = 'bandits'
     const inventory = { resources: { gold: 9 }, equipment: ['bow'] }
     const context = { players: [owner, neutralOwner], map: { randomRange: () => 3 } }
     owner.units = []
-    furnishBanditCave(context, cave, 0, owner, inventory)
+    cave.cave.banditContent = JSON.parse(JSON.stringify({ ownerLabel: 'bandits', campIndex: 0, inventory }))
+    furnishPendingBanditCave(context, space, cave)
+    assert.equal(cave.cave.banditContent.generated, true)
     const chest = owner.buildings.find(item => item.type === 'Chest')
     assert.ok(chest)
     assert.equal(chest.spaceId, space.id)
@@ -96,5 +105,10 @@ for (const payload of catalog.blueprints) {
     furnishBanditCave(context, cave, 0, owner, inventory)
     assert.equal(neutralOwner.units.length, 0, 'recruited prisoners must not respawn')
     assert.equal(JSON.parse(JSON.stringify(cave.cave)).neutralVillagersGenerated, true)
+    cave.cave = JSON.parse(JSON.stringify(cave.cave))
+    owner.buildings = []
+    furnishPendingBanditCave(context, space, cave)
+    assert.equal(owner.buildings.length, 0, 'looted or removed contents do not regenerate')
+    assert.equal(neutralOwner.units.length, 0)
   })
 }

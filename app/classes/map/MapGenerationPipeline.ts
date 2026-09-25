@@ -1,6 +1,5 @@
 import { Gaia } from '../players'
 import { placeCave } from './generation/CaveGeneration'
-import { buildNeighborScenery } from './NeighborScenery'
 import { updateInstanceVisibility } from '../../lib'
 import { getEnvironmentTerrainParams } from '../../constants'
 import { rehydrateAIKnowledge } from '../../services/UnitPerception'
@@ -103,7 +102,6 @@ async function finalizeGeneratedMap(
 ): Promise<void> {
   await onProgress('finalizingWorld', logTimings ? 0.93 : 0.92)
   await measureAsync('terrainBake', () => map.bakeTerrainToChunks())
-  await measureAsync('neighborScenery', async () => buildNeighborScenery(map))
   map.ready = true
   map.generationTimings = timings
   if (logTimings) {

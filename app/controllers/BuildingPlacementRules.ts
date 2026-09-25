@@ -1,14 +1,7 @@
 import { isCampBuilding } from '../lib/buildings/campConstruction'
 import { heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
-import { constructionTerritoryBlocker } from '../lib/campaign/mapTerritory'
 import type { Container } from 'pixi.js'
-import { BUILDING_TYPES } from '../constants'
-import {
-  canPlaceBuildingAt,
-  getBuildingFootprintCells,
-  hasBuildingPlacementClearance,
-  isBuildingLimitReached,
-} from '../lib'
+import { canPlaceBuildingAt, getBuildingFootprintCells, hasBuildingPlacementClearance } from '../lib'
 import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import { isWall } from '../lib/buildings/walls'
 import { getMapSpace, isOutsideSpaceId, sameCellMapSpace } from '../lib/mapSpaces'
@@ -41,7 +34,7 @@ export class BuildingPlacementRules {
         context: { map, player },
       },
     } = this
-    if (!cell || constructionTerritoryBlocker(controls.context, player)) return false
+    if (!cell) return false
     const space = getMapSpace(map, cell.spaceId)
     const grid = space?.grid ?? map.grid
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
@@ -54,7 +47,6 @@ export class BuildingPlacementRules {
     ) {
       return false
     }
-    if (mouseBuilding.type !== BUILDING_TYPES.farm && isBuildingLimitReached(player, mouseBuilding.type)) return false
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
     const passageLookup = createReservedPassageCellLookup(controls.context)
     const placementOptions = {
@@ -81,7 +73,6 @@ export class BuildingPlacementRules {
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     if (
       (playerNeedsChiefForCommand(this.controls.context.player) && !heroCanCommand(this.controls.heroUnit)) ||
-      constructionTerritoryBlocker(this.controls.context, owner) ||
       !cell ||
       this.isHeroOnCell(cell) ||
       !cell.visible ||

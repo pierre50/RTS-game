@@ -23,7 +23,6 @@ export function getMissingResourceMessage(player: PlayerLike, cost: ResourceAmou
 export function getBuildingDetails(options: {
   commandBlocked: boolean
   config: BuildingConfig
-  isLimitReached: boolean
   type: string
 }): MenuDetails {
   return {
@@ -33,7 +32,6 @@ export function getBuildingDetails(options: {
       t('detailsCost', { cost: formatActionCost(options.config.cost) }),
       options.config.totalHitPoints != null ? t('detailsBuildingHP', { value: options.config.totalHitPoints }) : null,
       options.commandBlocked ? t('requiresChief') : null,
-      options.isLimitReached ? t('buildingLimitReached') : null,
     ],
   }
 }
@@ -51,7 +49,7 @@ export function getUnitDetails(
     title: t(type),
     description: t(`${type}Description`),
     meta: [
-      t('detailsCost', { cost: formatActionCost(cost) }),
+      Object.values(cost).some(amount => (amount ?? 0) > 0) ? t('detailsCost', { cost: formatActionCost(cost) }) : null,
       t('detailsTrainTime', { time: formatUnitTrainingDuration(getUnitTrainingDurationDays(config)) }),
       chiefBlocked ? t('requiresChief') : null,
     ],

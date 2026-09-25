@@ -442,8 +442,18 @@ test('traps fill only when unobserved, do not refill full traps and stay determi
 test('wildlife renews dead and depleted slots but not trapped prey or occupied cells', () => {
   const { state, options } = fixture()
   state.animals = [
-    { type: 'Hare', label: 'corpse', i: 25, j: 25, isDead: true, hitPoints: 0, totalHitPoints: 8, totalQuantity: 12,
-      inventory: { resources: { leather: 2 } }, corpseMaterialDecayRemainingMs: 15000 },
+    {
+      type: 'Hare',
+      label: 'corpse',
+      i: 25,
+      j: 25,
+      isDead: true,
+      hitPoints: 0,
+      totalHitPoints: 8,
+      totalQuantity: 12,
+      inventory: { resources: { leather: 2 } },
+      corpseMaterialDecayRemainingMs: 15000,
+    },
     { type: 'Hare', label: 'slot', i: 28, j: 28, isDead: true, isDestroyed: true },
     { type: 'Hare', label: 'trap-prey', i: 25, j: 26, isDead: true, trapPrey: true },
     { type: 'Hare', label: 'blocked', i: 6, j: 6, isDead: true, isDestroyed: true },
@@ -584,7 +594,7 @@ test('the configured world clock charges upkeep once at its actual next dawn', (
   assert.equal(repeated.foodConsumed, 0)
 })
 
-test('offline center completion removes competing sites and their worker orders without converting assets', () => {
+test('offline center completion preserves other factions centers and lets both finish', () => {
   const { advanceOfflineWorker } = loadTsModule('app/services/world/OfflineWorldWork.ts')
   const { OfflineWorldSpatial } = loadTsModule('app/services/world/OfflineWorldSpatial.ts')
   const { state, options, player } = fixture()
@@ -615,12 +625,38 @@ test('offline center completion removes competing sites and their worker orders 
   advanceOfflineWorker(state, player, 0, player.units[0], 120000, 1, spatial, options, report)
   advanceOfflineWorker(state, rival, 1, rivalWorker, 120000, 1, spatial, options, report)
   assert.equal(center.isBuilt, true)
-  assert.equal(rivalCenter.isDead, true)
-  assert.equal(rivalCenter.isBuilt, false)
-  assert.deepEqual(rival.buildings, [house])
+  assert.equal(rivalCenter.isDead, undefined)
+  assert.equal(rivalCenter.isBuilt, true)
+  assert.deepEqual(rival.buildings, [rivalCenter, house])
   assert.deepEqual(rivalWorker.buildQueue, [])
-  assert.equal(spatial.entity('loser'), undefined)
-  assert.equal(spatial.naturalCell({ i: 21, j: 22 }), true)
-  assert.equal(report.buildingsCompleted, 1)
-  assert.equal(rival.populationMax, 1)
+  assert.equal(spatial.entity('loser'), rivalCenter)
+  assert.equal(spatial.naturalCell({ i: 21, j: 22 }), false)
+  assert.equal(report.buildingsCompleted, 2)
+  assert.equal(rival.populationMax, 1 + options.buildingCapacity(1, 'TownCenter'))
+})
+
+test('shared-map mode leaves daily consumption, resource regrowth and training to the runtime', () => {
+  const { state, options, player } = fixture()
+  const berry = node('Berrybush', { quantity: 10, totalQuantity: 100, isNaturalResource: true })
+  state.resources.push(berry)
+  player.buildings[0].trainingQueue = [
+    {
+      type: 'Infantry',
+      trainee: { label: 'recruit', type: 'Villager' },
+      loading: 0,
+      trainingStartedDay: 1,
+      trainingCompleteDay: 2,
+    },
+  ]
+  const report = simulateOfflineWorld(state, {
+    ...options,
+    runtimeOwnsDailyEvents: true,
+    runtimeOwnsTraining: true,
+  })
+  assert.equal(report.foodConsumed, 0)
+  assert.equal(report.arrivals, 0)
+  assert.equal(report.trainingsCompleted, 0)
+  assert.equal(berry.quantity, 10)
+  assert.equal(player.buildings[0].inventory.resources.wheat, 100)
+  assert.equal(player.buildings[0].trainingQueue.length, 1)
 })

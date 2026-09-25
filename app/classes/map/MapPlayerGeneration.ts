@@ -71,7 +71,7 @@ export function generatePlayers(
       const config = playersConfig?.find(player => player.civ === settlement.civ) ?? playersConfig?.[i]
       if (!position) continue
 
-      if (config?.isHuman || (!players.some(player => player.isPlayed) && i === 0)) {
+      if (config?.isHuman || (!playersConfig?.some(player => player.isHuman) && i === 0)) {
         players.push(createHumanPlayer(context, position.i, position.j, i, config))
       } else if (!map.noAI) {
         players.push(createAIPlayer(map, context, position.i, position.j, i, config))

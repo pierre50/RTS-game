@@ -102,7 +102,7 @@ test('an empty camp gathers its first wood and pays for its chest without invent
   assert.equal(report.gathered.wood, carried + stored + 10)
 })
 
-test('a camp can develop a permanent storage pit from its chest stocks', () => {
+test('a camp outside a town center cannot fund permanent buildings from isolated stocks', () => {
   const { state, terrain, rules } = fixture()
   state.players[0].buildings.push({
     type: 'Chest',
@@ -114,7 +114,8 @@ test('a camp can develop a permanent storage pit from its chest stocks', () => {
     inventory: { resources: { wood: 60, stone: 20 } },
   })
   planOfflineBuildings(state, 2, terrain, rules)
-  assert.ok(state.players[0].buildings.some(b => b.type === 'StoragePit'))
+  assert.equal(state.players[0].buildings.some(b => b.type === 'StoragePit'), false)
+  assert.equal(state.players[0].buildings.find(b => b.type === 'Chest').inventory.resources.wood, 60)
 })
 
 test('the live AI uses the same paid camp placement as the offline planner', () => {

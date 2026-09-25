@@ -1,3 +1,12 @@
+import { serializeCampRespawnStates } from '../lib/camps/CampRespawnState'
+import { flushVillageSimulation } from '../lib/units/villageActivity'
+import type { VillageHome } from '../lib/units/villageActivity'
+import type { CampBehavior } from '../types/camp'
+import { flushNaturalGrowth } from '../services/NaturalGrowthQueue'
+import { getWildlifeStore } from '../services/WildlifeStore'
+import type { AnimalEntity } from '../types/entities'
+import { resourceData } from './ResourceSaveData'
+import { CompactResourceSet, resourceReadValues } from '../classes/resources/CompactResourceSet'
 import { exportTargetKnowledge } from '../lib/units/playerTargetKnowledge'
 import type { CaveDefinition } from '../types/cave'
 import { definedProperties } from '../lib/definedProperties'
@@ -21,6 +30,7 @@ const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'berry', 'meat', 'wheat', 'st
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
+  wildlife?: SaveEntityState['wildlife']
   dailySchedule?: UnitEntity['dailySchedule']
   offlineBuilderJob?: SaveEntityState['offlineBuilderJob']
   resourceDeliveryState?: UnitEntity['resourceDeliveryState']
@@ -56,6 +66,8 @@ type SerializableEntity = RuntimeEntityBase & {
   trapPrey?: boolean
   tamingStatus?: SaveEntityState['tamingStatus']
   companionHorseColor?: string | null
+  villageHome?: VillageHome
+  campBehavior?: CampBehavior
   campPatrolAnchor?: GridPoint | null
   banditCampAnchor?: GridPoint | null
   containedAnimalType?: string | null
@@ -92,6 +104,8 @@ type SerializableEntity = RuntimeEntityBase & {
   isFleeing?: boolean
   isChief?: boolean
   lootEquipment?: string[]
+  getVisualSprite?: () => SpriteState | undefined
+  currentFrame?: number
   sprite?: SpriteState | null
   textureName?: string
   work?: string | null
@@ -201,29 +215,6 @@ function projectInteriorEntityToWorld(entity: SerializableEntity, data: SaveEnti
   return data
 }
 
-function resourceData(resource: SerializableEntity): SaveEntityState {
-  const data: SaveEntityState = {
-    ...filterObject(resource, [
-      'label',
-      'i',
-      'j',
-      'type',
-      'isDead',
-      'quantity',
-      'totalQuantity',
-      'isDestroyed',
-      'isNaturalResource',
-      'size',
-      'hitPoints',
-    ]),
-    textureName: (resource.textureName || '').split('.')[0] ?? '',
-  }
-  if (!('deferredSpriteBounds' in resource && resource.deferredSpriteBounds) && resource.sprite?.currentFrame != null)
-    data.currentFrame = resource.sprite.currentFrame
-  if (resource.berrybushFullTextureName != null) data.berrybushFullTextureName = resource.berrybushFullTextureName
-  return data
-}
-
 function animalData(animal: SerializableEntity): SaveEntityState {
   if (animal.isDestroyed) {
     return {
@@ -266,18 +257,42 @@ function animalData(animal: SerializableEntity): SaveEntityState {
     'quantity',
     'totalQuantity',
     'isFleeing',
+    'wildlife',
     'corpseMaterialDecayRemainingMs',
     'inventory',
   ]) as Partial<SaveEntityState>
   return {
     ...data,
-    currentFrame: animal.sprite?.currentFrame,
-    loop: animal.sprite?.loop,
+    currentFrame:
+      (animal.getVisualSprite ? animal.getVisualSprite() : animal.sprite)?.currentFrame ?? animal.currentFrame,
+    loop: (animal.getVisualSprite ? animal.getVisualSprite() : animal.sprite)?.loop ?? animal.loop,
     dest: referenceData(animal.dest),
     previousDest: referenceData(animal.previousDest),
     path: pathData(animal.path),
     realDest: destinationData(animal.realDest),
   } as SaveEntityState
+}
+
+export function serializeWildAnimal(animal: AnimalEntity): SaveEntityState {
+  return structuredClone(animalData(animal as SerializableEntity))
+}
+function savedAnimals(context: GameContextLike): SaveEntityState[] {
+  const records = new Map<string, SaveEntityState>()
+  for (const [label, entry] of getWildlifeStore(context.map)?.entries ?? [])
+    records.set(label, structuredClone(entry.state))
+  for (const animal of getGaiaAnimals(context.map.gaia)) {
+    if (isDerivedInteriorHorse(animal, context.players)) continue
+    const state = animalData(animal as SerializableEntity)
+    const existing = records.get(state.label!)
+    if (existing?.wildlife)
+      state.wildlife = {
+        ...existing.wildlife,
+        lastCorpseMs: context.dayNight?.getElapsedMs?.() ?? context.scheduler?.elapsedMs ?? 0,
+      }
+    if (!animal.isDestroyed || existing || (animal.isDead && !('trapPrey' in animal && animal.trapPrey)))
+      records.set(state.label ?? `unlabelled:${records.size}`, state)
+  }
+  return [...records.values()]
 }
 
 function unitData(unit: SerializableEntity): SaveEntityState {
@@ -340,6 +355,8 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'mountedOnHorse',
       'horseColor',
       'companionHorseColor',
+      'villageHome',
+      'campBehavior',
       'campPatrolAnchor',
       'banditCampAnchor',
       'experience',
@@ -448,6 +465,10 @@ function playerData(player: SerializablePlayer) {
     ageRulesVersion: 1,
     villagerAssignments: summarizeVillagerAssignments(player.units),
     views: player.views.toJSON(),
+    minimapBuildingMemory: player.minimapBuildingMemory?.map(entry => ({ ...entry })),
+    minimapPreferences: player.minimapPreferences
+      ? { zoom: player.minimapPreferences.zoom, hiddenMarkers: [...player.minimapPreferences.hiddenMarkers] }
+      : undefined,
     selectedUnitLabels: !player.isPlayed
       ? player.selectedUnits?.length
         ? player.selectedUnits.map(unit => unit.label)
@@ -485,6 +506,39 @@ function playerData(player: SerializablePlayer) {
 }
 
 export function serializeGame(context: SerializableContext): SerializedSave {
+  flushVillageSimulation(context)
+  return serializeGameData(context, true)
+}
+
+export function serializeGameForPersistence(context: SerializableContext): SerializedSave {
+  flushVillageSimulation(context)
+  return serializeGameData(context, true, true)
+}
+
+/** Temporary campaign bootstrap only. Must be replaced by a full snapshot before persistence. */
+export function serializeCampaignBootstrap(context: SerializableContext): SerializedSave {
+  return serializeGameData(context, false)
+}
+
+function serializeGameData(
+  context: SerializableContext,
+  includeWorldEntities: boolean,
+  useResourceDelta = false
+): SerializedSave {
+  flushNaturalGrowth(context.map)
+  const delta =
+    useResourceDelta &&
+    context.map.pregeneratedBlueprintId != null &&
+    context.map.resources instanceof CompactResourceSet
+      ? context.map.resources.saveDelta(resource => resourceData(resource as SerializableEntity))
+      : null
+  if (delta)
+    console.info('[save-resources]', {
+      blueprintResources: delta.resourceDelta.count,
+      modified: delta.resourceDelta.updated.length,
+      removed: delta.resourceDelta.removed.length,
+      dynamicOrAdded: delta.resources.length,
+    })
   const sourceSize = context.map.localGridLayout
     ? context.map.worldManifest?.maps?.find(entry => entry.id === context.map.worldRegionId)?.size
     : undefined
@@ -502,8 +556,8 @@ export function serializeGame(context: SerializableContext): SerializedSave {
   const data: SerializedSave = {
     version: 2,
     runtime: {
+      banditCamps: serializeCampRespawnStates(context.map),
       heroEquippedItem: context.controls.equippedItem ?? null,
-      worldPursuers: context.worldPursuit?.serializeState(),
       dayNightElapsedMs: context.dayNight?.getElapsedMs?.() ?? 0,
       elapsedMs: context.scheduler?.elapsedMs ?? 0,
       savedAt: Date.now(),
@@ -529,12 +583,20 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       ...(context.map.localGridLayout ? { localGridLayout: { ...context.map.localGridLayout } } : {}),
     }),
     players: groupPlayersInteriorBuildings((context.players ?? []).map(player => playerData(player))),
-    resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
-    naturalResourceRespawnSlots: (context.map.naturalResourceRespawnSlots ?? []).map(slot => ({ ...slot })),
-    animals: getGaiaAnimals(context.map.gaia)
-      .filter(animal => !isDerivedInteriorHorse(animal, context.players))
-      .filter(animal => !animal.isDestroyed || (animal.isDead && !('trapPrey' in animal && animal.trapPrey)))
-      .map(animal => animalData(animal as SerializableEntity)),
+    ...(delta ? { resourceDelta: delta.resourceDelta } : {}),
+    resources: delta
+      ? delta.resources
+      : includeWorldEntities
+        ? context.map.resources instanceof CompactResourceSet
+          ? context.map.resources.saveValues(resource => resourceData(resource as SerializableEntity))
+          : Array.from(resourceReadValues(context.map.resources), resource =>
+              resourceData(resource as SerializableEntity)
+            )
+        : [],
+    naturalResourceRespawnSlots: includeWorldEntities
+      ? (context.map.naturalResourceRespawnSlots ?? []).map(slot => ({ ...slot }))
+      : [],
+    animals: includeWorldEntities ? savedAnimals(context) : [],
   }
 
   return data

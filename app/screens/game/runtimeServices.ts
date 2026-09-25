@@ -1,3 +1,5 @@
+import { VillageActivitySystem } from '../../services/VillageActivitySystem'
+import { WildlifeSystem } from '../../services/WildlifeSystem'
 import { NeutralVillageQuests } from '../../services/quests/NeutralVillageQuests'
 import type { ContainerChild } from 'pixi.js'
 import { BuildingInteriorEntryMarkerSystem } from '../../services/buildingInterior/BuildingInteriorEntryMarkerSystem'
@@ -15,7 +17,6 @@ import { TributeRaidSystem } from '../../services/TributeRaidSystem'
 import { UnitEnergyRegenSystem } from '../../services/UnitEnergyRegenSystem'
 import { UnitRestSystem } from '../../services/rest/UnitRestSystem'
 import { WeatherSystem } from '../../services/weather/WeatherSystem'
-import { WorldRegionTravelSystem, type RegionTravelHost } from '../../services/world/WorldRegionTravelSystem'
 import { ResourceDeliverySystem } from './GameResourceDelivery'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeMap } from '../../types/map'
@@ -24,15 +25,16 @@ type ScreenRect = { height: number; width: number; x: number; y: number }
 type LayerHost = { addChild(child: ContainerChild): unknown }
 type RuntimeServiceContext = Pick<
   GameContextLike,
-  'neutralQuests' | 'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather' | 'worldPursuit'
+  'neutralQuests' | 'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather'
 >
 
 const WEATHER_LAYER_Z_INDEX = 10
 const LIGHT_LAYER_Z_INDEX = 20
 
 export type RuntimeServices = {
+  villageActivity: VillageActivitySystem | null
+  wildlife: WildlifeSystem | null
   neutralQuests: NeutralVillageQuests | null
-  worldPursuit: WorldPursuitSystem | null
   buildingInteriorEntryMarker: BuildingInteriorEntryMarkerSystem | null
   campPatrols: CampPatrolSystem | null
   dailyWorldEvents: DailyWorldEventSystem | null
@@ -49,13 +51,13 @@ export type RuntimeServices = {
   unitEnergyRegen: UnitEnergyRegenSystem | null
   unitRest: UnitRestSystem | null
   weather: WeatherSystem | null
-  worldRegionTravel: WorldRegionTravelSystem | null
 }
 
 export function createEmptyRuntimeServices(): RuntimeServices {
   return {
+    villageActivity: null,
+    wildlife: null,
     neutralQuests: null,
-    worldPursuit: null,
     buildingInteriorEntryMarker: null,
     campPatrols: null,
     dailyWorldEvents: null,
@@ -72,7 +74,6 @@ export function createEmptyRuntimeServices(): RuntimeServices {
     unitEnergyRegen: null,
     unitRest: null,
     weather: null,
-    worldRegionTravel: null,
   }
 }
 
@@ -80,12 +81,9 @@ export function createRuntimeServices(
   context: GameContextLike,
   map: RuntimeMap,
   getScreenRect: () => ScreenRect,
-  dayNightElapsedMs: number | null | undefined = null,
-  worldRegionTravelHost?: RegionTravelHost | null
+  dayNightElapsedMs: number | null | undefined = null
 ): RuntimeServices {
   const isInterior = map.mapType === 'interior'
-  // Cross-region pursuit is disabled, including pending arrivals from older saves.
-  context.worldPursuit = null
   const timeSkip = new TimeSkipSystem(context)
   context.timeSkip = timeSkip
 
@@ -110,6 +108,7 @@ export function createRuntimeServices(
 
   const neutralQuests = new NeutralVillageQuests(context)
   context.neutralQuests = neutralQuests
+  const villageActivity = new VillageActivitySystem(context)
   const campPatrols = new CampPatrolSystem(context)
   const heroFollowerPatrols = new HeroFollowerPatrolSystem(context)
   const idleUnitPatrols = new IdleUnitPatrolSystem(context)
@@ -121,13 +120,14 @@ export function createRuntimeServices(
   const interiorExitMarker = isInterior ? new InteriorExitMarkerSystem(context, map) : null
   const weather = isInterior ? null : new WeatherSystem(context, map, getScreenRect)
   context.weather = weather
-  const worldRegionTravel =
-    !isInterior && worldRegionTravelHost ? new WorldRegionTravelSystem(context, worldRegionTravelHost) : null
 
   const lights = new LightSystem(context, getScreenRect, () => dayNight.getDarknessLevel())
+  const wildlife = isInterior ? null : new WildlifeSystem(context)
+  if (wildlife) dailyWorldEvents.register({ handleDailyWorldEvent: event => wildlife.handleDailyWorldEvent(event) })
   const services = {
+    villageActivity,
+    wildlife,
     neutralQuests,
-    worldPursuit: null,
     buildingInteriorEntryMarker,
     campPatrols,
     dailyWorldEvents,
@@ -144,7 +144,6 @@ export function createRuntimeServices(
     unitEnergyRegen,
     unitRest,
     weather,
-    worldRegionTravel,
   }
 
   exposeRuntimeServiceDebugGlobals(services)
@@ -163,10 +162,10 @@ export function addRuntimeServiceLayers(host: LayerHost, services: RuntimeServic
 }
 
 export function destroyRuntimeServices(services: RuntimeServices, context: RuntimeServiceContext): RuntimeServices {
+  services.villageActivity?.destroy()
+  services.wildlife?.destroy()
   services.neutralQuests?.destroy()
   context.neutralQuests = null
-  services.worldPursuit?.destroy()
-  context.worldPursuit = null
   services.buildingInteriorEntryMarker?.destroy()
   services.lights?.destroy()
   services.interiorExitMarker?.destroy()
@@ -182,7 +181,6 @@ export function destroyRuntimeServices(services: RuntimeServices, context: Runti
   services.resourceDelivery?.destroy()
   services.dayNight?.destroy()
   services.weather?.destroy()
-  services.worldRegionTravel?.destroy()
 
   context.dayNight = null
   context.weather = null
@@ -214,4 +212,3 @@ function clearRuntimeServiceDebugGlobals(): void {
   runtimeWindow.__weatherSystem = null
   runtimeWindow.__lightSystem = null
 }
-import type { WorldPursuitSystem } from '../../services/world/WorldPursuitSystem'

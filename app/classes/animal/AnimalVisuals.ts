@@ -20,6 +20,7 @@ type AnimalVisualHost = {
   horseColor?: HorseColor
   isDestroyed: boolean
   reliefLift: number
+  getVisualSprite?: () => InteractiveSprite | undefined
   sprite: InteractiveSprite
   shadow: AnimatedSprite | null
   spaceId?: string | null
@@ -65,7 +66,9 @@ export class AnimalVisuals {
     shadow.loop = animal.sprite.loop
     shadow.anchor.set(animal.sprite.anchor.x, animal.sprite.anchor.y)
     shadow.alpha = SHADOW_MASK_ALPHA
-    shadow.visible = Boolean(getShadowsEnabled() && animal.visible && !animal.isDestroyed && isEntityInActiveMapSpace(animal))
+    shadow.visible = Boolean(
+      getShadowsEnabled() && animal.visible && !animal.isDestroyed && isEntityInActiveMapSpace(animal)
+    )
     shadow.rotation = 0
     shadow.scale.x = animal.sprite.scale.x * SHADOW_SCALE_X * altitudeFactor
     shadow.scale.y = Math.abs(animal.sprite.scale.y) * SHADOW_SCALE_Y * altitudeFactor
@@ -81,14 +84,16 @@ export class AnimalVisuals {
   setAltitude(altitude: number): void {
     const animal = this.animal
     animal.altitude = altitude
-    animal.sprite.position.y = -altitude + animal.reliefLift
+    const sprite = animal.getVisualSprite ? animal.getVisualSprite() : animal.sprite
+    if (sprite) sprite.position.y = -altitude + animal.reliefLift
     this.syncShadow()
   }
 
   applyReliefLift(level: number): void {
     const animal = this.animal
     animal.reliefLift = -getReliefLiftPixels(level)
-    animal.sprite.position.y = -animal.altitude + animal.reliefLift
+    const sprite = animal.getVisualSprite ? animal.getVisualSprite() : animal.sprite
+    if (sprite) sprite.position.y = -animal.altitude + animal.reliefLift
     this.syncShadow()
     const healthBar = animal.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) healthBar.position.y = animal.reliefLift

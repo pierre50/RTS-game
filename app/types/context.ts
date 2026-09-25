@@ -1,4 +1,5 @@
 import type { DialogueSequence } from './dialogue'
+import type { SchedulerOptions } from '../lib/ActionScheduler'
 import type { NeutralVillageQuests } from '../services/quests/NeutralVillageQuests'
 import type { QuestJournalState } from './quest'
 import type { Application, Container } from 'pixi.js'
@@ -104,7 +105,7 @@ export type NpcOrdersOpenOptions = {
 export interface SchedulerLike {
   elapsedMs: number
   timeScale?: number
-  add(callback: () => void, time: number, name?: string): SchedulerTaskId
+  add(callback: () => void, time: number, name?: string, options?: SchedulerOptions): SchedulerTaskId
   remove(id: SchedulerTaskId): void
   update(id: SchedulerTaskId, time: number): void
   addOneShot(callback: () => void, time: number, name?: string): SchedulerTaskId
@@ -113,6 +114,7 @@ export interface SchedulerLike {
 }
 
 export interface PerformanceMonitorLike {
+  markEvent?(name: string, details?: Record<string, string | number | boolean | null>): void
   measureSampled<T>(name: string, callback: () => T): T
   measure<T>(name: string, callback: () => T): T
   record(name: string, value: number): void
@@ -188,6 +190,7 @@ interface EntityPreviewLike {
 }
 
 interface MinimapManagerLike {
+  refreshMiniMap?(): void
   getMinimapFactor(): number
   getMinimapWorldPoint?(
     clientX: number,
@@ -289,7 +292,6 @@ export interface GameContextLike {
   controls: ControlsLike
   menu: MenuLike
   scheduler: SchedulerLike
-  worldPursuit?: WorldPursuitSystem | null
   performance?: PerformanceMonitorLike | null
   dayNight?: DayNightSystemLike | null
   weather?: WeatherSystemLike | null
@@ -319,7 +321,6 @@ export interface GameContextLike {
   getQuestJournal?: () => QuestJournalState | null
   getCampaignEconomy?: () => CampaignEconomySave | null
   changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void
-  debugTeleportWorldMap?: (target: { worldI: number; worldJ: number; worldRegionId: string }) => void
   getCurrentWorldId?: () => string | null
   travelIntoBuildingInterior?: (building: BuildingEntity) => void
   getBuildingInteriorEntryTargetForCell?: (cell: RuntimeCell) => BuildingEntity | null
@@ -355,4 +356,3 @@ export type AudibleInstanceLike = {
   visible?: boolean
 }
 import type { HeldMovementKeys } from '../classes/ControlsKeyboard'
-import type { WorldPursuitSystem } from '../services/world/WorldPursuitSystem'

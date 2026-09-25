@@ -275,7 +275,7 @@ test('resource-gated building button is disabled without showing a missing resou
   assert.deepEqual(messages, [])
 })
 
-test('territory blocks both the construction button and its direct hotkey callback until defeat', () => {
+test('another faction town center does not block construction or its hotkey', () => {
   const messages = []
   const { factory, player } = createFactory({ hero: {}, messages })
   player.config.buildings.House = { cost: { wood: 30 }, size: 2 }
@@ -289,12 +289,7 @@ test('territory blocks both the construction button and its direct hotkey callba
   }
   factory.menu.context.players = [player, resident]
   const button = factory.getActionBuildingButton('House')
-  assert.equal(button.disabled(), true)
-  button.onClick()
-  assert.equal(factory.menu.mouseBuilding, undefined)
-  assert.deepEqual(messages, [['constructionTerritoryOccupied', 'warning']])
-  resident.units = []
-  resident.buildings = []
+  assert.deepEqual(messages, [])
   assert.equal(button.disabled(), false)
   button.onClick()
   assert.equal(factory.menu.mouseBuilding.type, 'House')

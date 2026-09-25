@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function setup() {
+function setup(packedStore = null) {
   const made = []
   const textures = []
   const rendered = []
@@ -64,6 +64,7 @@ function setup() {
   }
   const { MapTerrainBake } = loadTsModule('app/classes/map/terrain/MapTerrainBake.ts', {
     mocks: {
+      '../../cell/PackedCellRegistry': { getPackedCellStore: () => packedStore },
       'pixi.js': {
         Container,
         Sprite,
@@ -198,4 +199,21 @@ test('floor decorations survive eviction and rebaking without retaining their or
   h.rendered.length = 0
   h.bake.updateViewport(viewport)
   assert.equal(hasFloor(), true)
+})
+
+test('terrain map bounds use packed metadata without visiting the grid', () => {
+  const h = setup({ spatialBounds: () => ({ bounds: { minX: -320, minY: -64, maxX: 640, maxY: 900 } }) })
+  h.map.grid = new Proxy([], {
+    get() {
+      throw new Error('grid scan')
+    },
+  })
+  assert.deepEqual(h.bake._getTerrainMapBounds(), {
+    minX: -368,
+    minY: -96,
+    maxX: 688,
+    maxY: 932,
+    totalW: 1056,
+    totalH: 1028,
+  })
 })

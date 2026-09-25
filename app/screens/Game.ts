@@ -1,3 +1,4 @@
+import type { SaveProgress } from '../serialization/AsyncSaveStorage'
 import type { Application } from 'pixi.js'
 import { Container } from 'pixi.js'
 import Map from '../classes/map/Map'
@@ -40,7 +41,6 @@ import {
   showTutorialOpening,
   startTutorialOpening,
 } from '../services/tutorial/TutorialOpening'
-import { type RegionEdge } from '../services/world/WorldRegionTravelSystem'
 import type { GameContextLike } from '../types/context'
 import type { BuildingEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -81,13 +81,6 @@ import { applyMapConfig, getGameScreenRect, getMapWorldBounds } from './game/Gam
 import { applyRuntimePortableUnitState, runtimeHeroUnit, type TravelPartyGame } from './game/GameTravelParty'
 import type { NewGameBootOptions } from './game/GameWorldBoot'
 import { bootGameFromConfig, bootGameFromSave, bootGameFromSeedSave } from './game/GameWorldBoot'
-import {
-  debugTeleportWorldMap as debugTeleportWorldMapRuntime,
-  preloadWorldRegion as preloadWorldRegionRuntime,
-  travelToWorldRegion as travelToWorldRegionRuntime,
-  type WorldMapDebugTeleportTarget,
-  type WorldRegionTravelGame,
-} from './game/GameWorldRegionTravel'
 import { createEmptyRuntimeServices, destroyRuntimeServices, type RuntimeServices } from './game/runtimeServices'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
@@ -126,7 +119,8 @@ export default class Game extends Container {
     Promise<Awaited<ReturnType<typeof loadPregeneratedWorldMapBlueprint>>>
   >
   _worldBlueprintFileCache: WorldBlueprintFileCache
-  _worldRegionTransitioning: boolean
+  _initialSaveFailureReason?: string
+  _initialSaveFailed = false
 
   constructor(
     app: Application,
@@ -146,7 +140,6 @@ export default class Game extends Container {
     this._runtimeServices = createEmptyRuntimeServices()
     this._worldRegionBlueprintCache = new globalThis.Map()
     this._worldBlueprintFileCache = new globalThis.Map()
-    this._worldRegionTransitioning = false
     this.config = config
     this.onQuit = onQuit
     this.context = createGameRuntimeContext(this, app, gamebox) as GameRuntimeContext
@@ -190,7 +183,8 @@ export default class Game extends Container {
   }
 
   _measure<T>(name: string, callback: () => T): T {
-    return this.context.performance?.measure?.(name, callback) ?? callback()
+    if (this.context.performance?.measure) return this.context.performance.measure(name, callback)
+    return callback()
   }
 
   _gameContext(): GameContextLike {
@@ -232,18 +226,6 @@ export default class Game extends Container {
       }
       throw error
     }
-  }
-
-  async preloadWorldRegion(worldRegionId: string): Promise<void> {
-    await preloadWorldRegionRuntime(this as WorldRegionTravelGame, worldRegionId)
-  }
-
-  async travelToWorldRegion(worldRegionId: string, edge: RegionEdge): Promise<void> {
-    await travelToWorldRegionRuntime(this as WorldRegionTravelGame, worldRegionId, edge)
-  }
-
-  async debugTeleportWorldMap({ worldI, worldJ, worldRegionId }: WorldMapDebugTeleportTarget): Promise<void> {
-    await debugTeleportWorldMapRuntime(this as WorldRegionTravelGame, { worldI, worldJ, worldRegionId })
   }
 
   async _loadRequiredInteriorBlueprint(options: RequiredInteriorBlueprintOptions = {}) {
@@ -461,16 +443,16 @@ export default class Game extends Container {
     this._lastSavedRecord = structuredClone(this._campaignSave)
   }
 
-  save(): { key: string; name: string } {
+  save(): Promise<{ key: string; name: string }> {
     return saveGameManually.call(this)
   }
 
-  autosave(): { key: string; name: string } | null {
+  autosave(): Promise<{ key: string; name: string } | null> {
     return autosaveGame.call(this)
   }
 
-  _autosaveCampaign(): void {
-    autosaveGameCampaign.call(this)
+  _autosaveCampaign(onProgress?: (progress: SaveProgress) => void): Promise<boolean> {
+    return autosaveGameCampaign.call(this, onProgress)
   }
 
   _changeFactionRelation(factionId: string, delta: number): void {

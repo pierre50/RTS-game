@@ -29,6 +29,7 @@ export class MinimapView {
 
     if (!this.resources) {
       this.resources = document.createElement('canvas')
+      this.resources.classList.add('minimap-markers')
       this.element.appendChild(this.resources)
     }
 

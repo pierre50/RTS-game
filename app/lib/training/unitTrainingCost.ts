@@ -1,12 +1,10 @@
-import { UNIT_TRAINING_AGE_METAL_COST } from '../../constants/unitTrainingAgeCost'
+import { UNIT_TYPES } from '../../constants/entities'
 import type { ResourceAmount } from '../../types/common'
 
 export function getUnitTrainingCost(
   owner: { age?: number; config?: { units?: Record<string, { cost?: ResourceAmount }> } } | null | undefined,
   type: string
 ): ResourceAmount {
-  const baseCost = owner?.config?.units?.[type]?.cost ?? {}
-  const age = Math.max(0, Math.floor(owner?.age ?? 0))
-  const ageCost = UNIT_TRAINING_AGE_METAL_COST[type]?.[age]
-  return ageCost ? { ...baseCost, ...ageCost } : baseCost
+  // Training an existing villager or soldier only takes time, never resources.
+  return type === UNIT_TYPES.villager ? (owner?.config?.units?.[type]?.cost ?? {}) : {}
 }

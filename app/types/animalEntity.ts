@@ -1,3 +1,4 @@
+import type { SaveEntityState } from './save'
 import type { InventoryStorage } from '../lib/inventory/inventoryContainers'
 import type { RuntimeCell } from './map'
 import type { SpritesheetLike } from './pixi'
@@ -6,6 +7,7 @@ import type { EnergyEntity, UnitEntity } from './unitEntity'
 import type { HorseTamingStatus } from '../lib/horses/horseTaming'
 
 export interface AnimalEntity extends EnergyEntity {
+  wildlife?: SaveEntityState['wildlife']
   corpseMaterialDecayRemainingMs?: number
   inventory?: InventoryStorage
   currentSheet?: string

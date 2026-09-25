@@ -1,3 +1,4 @@
+import type { BanditCampPlacement } from '../../types/camp'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import type { PlacedCave } from '../../types/cave'
 import type { PreparedTerrainCell } from './generation/PreparedMapContent'
@@ -28,7 +29,7 @@ export type MapGenerationMap = RuntimeMap & {
   context: MapGenerationContext
   playersPos: GeneratedPosition[]
   interiorExits?: GeneratedPosition[]
-  banditCampPositions: GridPosition[]
+  banditCampPositions: BanditCampPlacement[]
   settlements?: MapSettlement[]
   positionsCount: number
   noAI?: boolean
@@ -132,11 +133,11 @@ export type MapSettlement = {
 }
 
 export type MapBlueprint = {
+  packedTerrain?: { types: Uint8Array; heights: Int8Array }
   caves?: PlacedCave[]
   terrainAppearance?: PreparedTerrainCell[]
   animals?: Array<{ i: number; j: number; type: string }>
 
-  visualNeighbors?: Array<{ region: { x: number; y: number }; blueprint: MapBlueprint }>
   preserveLegacyGrid?: boolean
   localGridLayout?: LocalMapLayout
   seed?: string | number
@@ -156,7 +157,7 @@ export type MapBlueprint = {
   floorShape?: unknown
   resources?: BlueprintResource[]
   settlements?: MapSettlement[]
-  banditCampPositions?: GridPosition[]
+  banditCampPositions?: BanditCampPlacement[]
   worldId?: string | null
   worldRegionId?: string | null
   worldRegion?: { x: number; y: number }

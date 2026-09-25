@@ -14,9 +14,14 @@ function loadMapResources() {
   })
   const module = { exports: {} }
   const mocks = {
-    '../../../lib/buildings/passageCells': { createNonReservedPassageCellCondition: () => cell => !cell.reservedPassage },
+    '../../../lib/buildings/passageCells': {
+      createNonReservedPassageCellCondition: () => cell => !cell.reservedPassage,
+    },
     '../Resource': {
       Resource: class {
+        static spawn(options, context) {
+          return context.map.addChild(new this(options))
+        }
         constructor(options) {
           Object.assign(this, options)
         }
@@ -107,10 +112,19 @@ const { MapResources, getNeutralResourceGroupCount, getScatteredHerbCount, getSc
 test('legacy wheat respawns immature on its original cell and never relocates if occupied', () => {
   const cell = { i: 0, j: 0, category: 'Land', type: 'Grass', has: null }
   const map = {
-    context: {}, grid: [[cell]], size: 0, resources: new Set(),
-    randomRange() { assert.fail('wheat must never look for another location') },
-    addChild(resource) { cell.has = resource; return resource },
+    context: {},
+    grid: [[cell]],
+    size: 0,
+    resources: new Set(),
+    randomRange() {
+      assert.fail('wheat must never look for another location')
+    },
+    addChild(resource) {
+      cell.has = resource
+      return resource
+    },
   }
+  map.context.map = map
   const runtime = new MapResources(map)
   const slot = { type: 'Wheat', i: 0, j: 0, totalQuantity: 12 }
   assert.equal(runtime.respawnNaturalResource(slot), true)
@@ -201,6 +215,7 @@ test('berrybush groups share one color variant across the whole cluster', () => 
       return mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius, options)
     },
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
 
   assert.equal(mapResources.placeResourceGroupAt({ i: 1, j: 1 }, 'Berrybush', 3), true)
@@ -232,13 +247,17 @@ test('tree groups can force a texture family independent of terrain', () => {
     randomItem: items => items[2],
     addChild: child => child,
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
   const textureName = mapResources.pickTreeTextureName('DarkForest')
 
   assert.equal(textureName, '002_resources/tree/dark-forest')
   assert.equal(mapResources.placeResourceGroupAt({ i: 1, j: 1 }, 'Tree', 1, 1, { textureName }), true)
   assert.deepEqual(
-    [...map.resources].map(resource => ({ terrain: grid[resource.i][resource.j].type, textureName: resource.textureName })),
+    [...map.resources].map(resource => ({
+      terrain: grid[resource.i][resource.j].type,
+      textureName: resource.textureName,
+    })),
     [{ terrain: 'Grass', textureName: '002_resources/tree/dark-forest' }]
   )
 })
@@ -267,6 +286,7 @@ test('forced tree groups vary frames inside the same texture family', () => {
     randomItem: items => items[frame++ % items.length],
     addChild: child => child,
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
 
   assert.equal(
@@ -326,6 +346,7 @@ test('biome tree generation can use per-cell macro biome rules', async () => {
       return child
     },
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
 
   await mapResources.generateBiomeTreesAsync([], {
@@ -335,7 +356,10 @@ test('biome tree generation can use per-cell macro biome rules', async () => {
 
   const trees = [...map.resources]
   assert.equal(trees.length, 6)
-  assert.equal(trees.some(tree => grid[tree.i][tree.j].type === 'Desert'), false)
+  assert.equal(
+    trees.some(tree => grid[tree.i][tree.j].type === 'Desert'),
+    false
+  )
   assert(trees.some(tree => tree.textureName === '000_resources/tree/grass'))
   assert(trees.some(tree => tree.textureName === '000_resources/tree/palm'))
   assert(trees.some(tree => tree.textureName === '000_resources/tree/dark-forest'))
@@ -344,13 +368,25 @@ test('biome tree generation can use per-cell macro biome rules', async () => {
 test('biome trees skip holes and empty rows before invoking placement rules', async () => {
   const grid = [[], new Array(5), [undefined, undefined, { i: 2, j: 2, type: 'Grass', category: 'Land' }], [], []]
   const map = {
-    context: {}, grid, size: 4, environment: 'Temperate', resources: new Set(),
-    random: () => 0, randomItem: items => items[0],
-    addChild(child) { assert.ok(grid[child.i][child.j]); return child },
+    context: {},
+    grid,
+    size: 4,
+    environment: 'Temperate',
+    resources: new Set(),
+    random: () => 0,
+    randomItem: items => items[0],
+    addChild(child) {
+      assert.ok(grid[child.i][child.j])
+      return child
+    },
   }
+  map.context.map = map
   const visited = []
   await new MapResources(map).generateBiomeTreesAsync([], {
-    treeChanceForCell: cell => { visited.push(cell); return 1 },
+    treeChanceForCell: cell => {
+      visited.push(cell)
+      return 1
+    },
   })
   assert.deepEqual(visited, [grid[2][2]])
   assert.equal(map.resources.size, 1)
@@ -430,6 +466,7 @@ test('scattered herbs are isolated and use biome-weighted plant types', async ()
       return child
     },
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
 
   await mapResources.generateScatteredHerbsAsync([{ i: 60, j: 60 }])
@@ -465,6 +502,7 @@ test('neutral wheat groups spawn mature', async () => {
       return true
     },
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
   mapResources.generateScatteredStoneAsync = async () => {}
 
@@ -543,6 +581,7 @@ test('scattered stones are isolated and use smaller deposits', async () => {
       return child
     },
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
 
   await mapResources.generateScatteredStoneAsync([{ i: 60, j: 60 }])
@@ -587,6 +626,7 @@ test('mineral respawn restores the original deposit with partial quantity', () =
       return child
     },
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
 
   assert.equal(mapResources.respawnNaturalResource({ i: 6, j: 7, totalQuantity: 4, type: 'Gold' }), true)
@@ -627,6 +667,7 @@ test('wild herb respawn keeps its type and partial quantity in a natural locatio
       return child
     },
   }
+  map.context.map = map
   const mapResources = new MapResources(map)
 
   assert.equal(mapResources.respawnNaturalResource({ i: 5, j: 6, totalQuantity: 5, type: 'MedicinalHerb' }), true)
@@ -639,35 +680,41 @@ test('wild herb respawn keeps its type and partial quantity in a natural locatio
   assert.equal(herb.totalQuantity, 5)
 })
 
-test('daily respawns avoid buildings, passages, shorelines and other landmasses while preserving spacing', () => {
-  const size = 40
-  const grid = Array.from({ length: size + 1 }, (_, i) => Array.from({ length: size + 1 }, (_, j) => ({
-    i, j, type: 'Grass', category: i === 30 ? 'Water' : 'Land', has: null,
-    reservedPassage: j === 20,
-  })))
+test('daily respawns defer occupied or reserved sites instead of searching the continent', () => {
+  const grid = Array.from({ length: 41 }, (_, i) =>
+    Array.from({ length: 41 }, (_, j) => ({
+      i,
+      j,
+      type: 'Grass',
+      category: 'Land',
+      has: null,
+      reservedPassage: j === 20,
+    }))
+  )
   grid[10][10].has = { family: 'building' }
   const map = {
-    context: { dayNight: { state: { day: 10 } } }, grid, size, resources: new Set(),
-    random: () => 0.5, randomItem: items => items[0],
-    addChild(child) { grid[child.i][child.j].has = child; grid[child.i][child.j].solid = true; return child },
+    context: { dayNight: { state: { day: 10 } } },
+    grid,
+    size: 40,
+    resources: new Set(),
+    random: () => 0.5,
+    randomItem: items => items[0],
+    addChild(child) {
+      grid[child.i][child.j].has = child
+      grid[child.i][child.j].solid = true
+      return child
+    },
   }
+  map.context.map = map
   const runtime = new MapResources(map)
-  for (let index = 0; index < 8; index++) {
-    assert.equal(runtime.respawnNaturalResource({ i: 10, j: 10, type: 'Gold', totalQuantity: 100 }), true)
-  }
-  const spawned = [...map.resources]
-  assert.equal(spawned.length, 8)
-  for (const node of spawned) {
-    assert.ok(node.i < 28, 'must stay away from the shore on the source landmass')
-    assert.notEqual(node.j, 20, 'must not occupy a reserved passage')
-    assert.ok(Math.max(Math.abs(node.i - 10), Math.abs(node.j - 10)) > 2)
-    assert.equal(node.quantity, 15)
-    assert.equal(node.totalQuantity, 100)
-    for (const other of spawned) if (other !== node) {
-      assert.ok(Math.max(Math.abs(node.i - other.i), Math.abs(node.j - other.j)) > 3)
-    }
-  }
-  for (const row of grid) for (const cell of row) cell.solid = true
-  assert.equal(runtime.respawnNaturalResource({ i: 10, j: 10, type: 'Gold', totalQuantity: 100 }), false)
-  assert.equal(map.resources.size, 8)
+  const slot = { i: 10, j: 10, type: 'Gold', totalQuantity: 100 }
+  assert.equal(runtime.respawnNaturalResource(slot), false)
+  assert.equal(runtime.respawnNaturalResource({ ...slot, j: 20 }), false)
+  assert.equal(map.resources.size, 0)
+  grid[10][10].has = null
+  assert.equal(runtime.respawnNaturalResource(slot), true)
+  const [node] = map.resources
+  assert.deepEqual([node.i, node.j, node.quantity, node.totalQuantity], [10, 10, 15, 100])
+  assert.equal(runtime.respawnNaturalResource(slot), false)
+  assert.equal(map.resources.size, 1)
 })

@@ -2,6 +2,56 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+for (const edge of [1000, 5000]) {
+  test(`custom ${edge} prepares the camp and starts its introduction after reveal`, async () => {
+    const events = []
+    const { startGameRuntime } = loadTsModule('app/screens/game/GameBootFlow.ts', {
+      mocks: {
+        '../../ui/TutorialPrologue': { TutorialPrologue: class {
+          constructor() { assert.fail('Custom continents skip the tutorial prologue') }
+        } },
+        '../../services/tutorial/TutorialVillage': {},
+        '../../lib/lang': { t: key => key },
+        '../../lib': {},
+        '../../serialization/SaveValidator': {},
+        '../../serialization/CampaignSave': {},
+        '../../lib/audio/settings': { getGameSpeed: () => 1 },
+        '../../ui/GameLoadingScreen': { GameLoadingScreen: class {
+          update() {}
+          destroy() { events.push('hideLoading') }
+        } },
+        '../../ui/BuildingInteriorTransition': { async playBuildingInteriorDoorTransition(show) {
+          events.push('black')
+          await show()
+          events.push('reveal')
+        } },
+        './GameStateHelpers': {},
+      },
+    })
+    const game = {
+      config: { worldId: `world-test-${edge}` },
+      context: { app: { ticker: {}, render() { events.push('render') } } },
+      _acquireWakeLock() {},
+      async _yieldToBrowser() {},
+      async _bootFromConfig(config, options) {
+        assert.equal(config.worldId, `world-test-${edge}`)
+        assert.equal(options.startPaused, true)
+        assert.equal(options.startingSetup, undefined)
+        events.push('boot')
+      },
+      async _prepareTutorial() { assert.fail('Custom continents skip the village tutorial') },
+      async _prepareIntroduction() { events.push('camp') },
+      _showIntroduction() { events.push('show') },
+      _startIntroduction() { events.push('start') },
+      _runtimeHeroUnit: () => null,
+      _measure: (_name, callback) => callback(),
+      togglePause() { assert.fail('The introduction owns pause and resume') },
+    }
+    await startGameRuntime(game)
+    assert.deepEqual(events, ['boot', 'camp', 'show', 'render', 'black', 'hideLoading', 'reveal', 'start'])
+  })
+}
+
 for (const skip of [false, true]) {
   test(`new game loads before prologue choice and starts the scene after reveal (skip=${skip})`, async () => {
     const events = []

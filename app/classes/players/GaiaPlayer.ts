@@ -1,5 +1,4 @@
 import { PLAYER_TYPES } from '../../constants'
-import { invalidateEconomicKnowledge } from '../../services/world/EconomicKnowledgeUpdates'
 import { addEntityToMapSpaceContainer } from '../../lib'
 import { isNeutralPlayer } from '../../lib/playerState'
 import { Animal } from '../animal/Animal'
@@ -26,7 +25,6 @@ export class Gaia extends Player {
     const animal = new Animal({ ...options, owner: this }, context)
     addEntityToMapSpaceContainer(context.map, animal)
     this.animals.push(animal)
-    invalidateEconomicKnowledge(context.map)
     if (!animal.isDead && !animal.isDestroyed) {
       this.population++
     }

@@ -75,7 +75,7 @@ function prepareContent(blueprint) {
       if (
         cell &&
         ((blueprint.caves ?? []).some(cave => isCaveClearing(cell, cave)) ||
-          (blueprint.banditCampPositions ?? []).some(camp => camp.caveId && isClearing(cell, camp)) ||
+          (blueprint.banditCampPositions ?? []).some(camp => isClearing(cell, camp)) ||
           cavePaths.has(`${cell.i}:${cell.j}`))
       )
         cell.solid = true
@@ -113,7 +113,11 @@ function prepareContent(blueprint) {
     pickType: (i, j) =>
       animalGeneration.pickAmbientAnimalType({
         animals: config,
-        biome: blueprint.environment === 'Steppe' ? 'Steppe' : grid[i][j].type,
+        biome:
+          blueprint.macroTerrainRows?.[i]?.[j] === 'S' ||
+          (!blueprint.macroTerrainRows && blueprint.environment === 'Steppe')
+            ? 'Steppe'
+            : grid[i][j].type,
         random,
         isInPlayerStartSafeZone: radius => safe(i, j, radius),
       }),

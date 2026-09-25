@@ -18,6 +18,16 @@ const MACRO_TERRAIN_CODE_TO_TYPE = {
   S: 'Grass',
 }
 
+const BIOME_ENVIRONMENTS = {
+  temperate: 'Temperate',
+  blackforest: 'BlackForest',
+  jungle: 'Jungle',
+  desert: 'Desert',
+  step: 'Steppe',
+  steppe: 'Steppe',
+}
+const MACRO_ENVIRONMENT_BY_CODE = { T: 'Temperate', F: 'BlackForest', J: 'Jungle', D: 'Desert', S: 'Steppe' }
+
 const MACRO_TREE_FAMILY_BY_CODE = {
   T: 'Grass',
   F: 'DarkForest',
@@ -63,6 +73,8 @@ const { ENVIRONMENT_TERRAIN_PARAMS, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = 
 const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
 
 module.exports = {
+  BIOME_ENVIRONMENTS,
+  MACRO_ENVIRONMENT_BY_CODE,
   BLUEPRINT_MAP_SIZE,
   ENVIRONMENT_IDS,
   DEFAULT_ENVIRONMENT_ID,

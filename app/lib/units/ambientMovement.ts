@@ -1,3 +1,4 @@
+import { registerPeriodicCallback } from '../SharedPeriodicCallbacks'
 import type { SchedulerTaskId, GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 
@@ -7,12 +8,14 @@ export type AmbientMovementControllerOptions<THost extends { context: GameContex
   move: (host: THost, destination: RuntimeCell) => void
   pickDestination: (host: THost) => RuntimeCell | null
   taskName: string
+  sharedCadence?: boolean
 }
 
 export class AmbientMovementController<THost extends { context: GameContextLike }> {
   host: THost
   nextMoveAt: number
   taskId: SchedulerTaskId | null
+  private removeSharedTask?: () => void
   options: AmbientMovementControllerOptions<THost>
 
   constructor(host: THost, options: AmbientMovementControllerOptions<THost>) {
@@ -36,12 +39,18 @@ export class AmbientMovementController<THost extends { context: GameContextLike 
   start(intervalMs: number, update: () => void): void {
     if (this.taskId != null) return
     this.schedule()
-    this.taskId = this.host.context.scheduler.add(update, intervalMs, this.options.taskName)
+    if (this.options.sharedCadence) {
+      const task = registerPeriodicCallback(this.host.context.scheduler, update, intervalMs, this.options.taskName)
+      this.taskId = task.taskId
+      this.removeSharedTask = task.remove
+    } else this.taskId = this.host.context.scheduler.add(update, intervalMs, this.options.taskName)
   }
 
   stop(): void {
     if (this.taskId == null) return
-    this.host.context.scheduler.remove(this.taskId)
+    if (this.removeSharedTask) this.removeSharedTask()
+    else this.host.context.scheduler.remove(this.taskId)
+    this.removeSharedTask = undefined
     this.taskId = null
   }
 
@@ -77,15 +86,19 @@ export function scheduleAmbientMove<THost>(
   }
   const minDelay = options.delayMinMs(host)
   const maxDelay = Math.max(minDelay, options.delayMaxMs(host))
-  const taskId = options.scheduler.addOneShot(() => {
-    options.onTaskId?.(host, null)
-    if (!options.shouldContinue(host)) return
-    if (!options.canMove || options.canMove(host)) {
-      const destination = options.pickDestination(host)
-      if (destination) options.move(host, destination)
-    }
-    scheduleAmbientMove(host, options)
-  }, options.randomRange(minDelay, maxDelay), options.taskName)
+  const taskId = options.scheduler.addOneShot(
+    () => {
+      options.onTaskId?.(host, null)
+      if (!options.shouldContinue(host)) return
+      if (!options.canMove || options.canMove(host)) {
+        const destination = options.pickDestination(host)
+        if (destination) options.move(host, destination)
+      }
+      scheduleAmbientMove(host, options)
+    },
+    options.randomRange(minDelay, maxDelay),
+    options.taskName
+  )
   options.onTaskId?.(host, taskId)
   return taskId
 }

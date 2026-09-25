@@ -397,6 +397,24 @@ test('animal save state rejects invalid status, action, position, paths and boun
   }, /unsupported type/)
 })
 
+test('wildlife persistence validates habitat coordinates, generations and renewal clocks', () => {
+  const metadata = { homeI: 0, homeJ: 1, generation: 2, renewDay: 4, lastCorpseMs: 5000, corpseExpiresMs: 10000 }
+  const data = save()
+  data.animals = [{ type: 'Deer', i: 0, j: 0, wildlife: metadata }]
+  assert.equal(validateSaveData(data), data)
+  for (const patch of [
+    { homeI: -1 },
+    { homeJ: 2 },
+    { generation: 0.5 },
+    { renewDay: -1 },
+    { lastCorpseMs: Infinity },
+    { corpseExpiresMs: 'later' },
+  ]) {
+    data.animals[0].wildlife = { ...metadata, ...patch }
+    assert.throws(() => validateSaveData(data), /wildlife/)
+  }
+})
+
 test('saved pursuers require distinct identities, valid owners and finite nonnegative delays', () => {
   const entry = {
     entity: { type: 'Hero', label: 'enemy', i: 0, j: 0 },
@@ -499,4 +517,52 @@ test('large blueprint saves validate with compact exploration and retain a finit
   assert.equal(validateSaveData(data), data)
   data.world.size = 8193
   assert.throws(() => validateSaveData(data), /map size/)
+})
+
+test('wildlife return and relocation metadata is validated and old saves remain valid', () => {
+  const data = save()
+  const meta = {
+    homeI: 0,
+    homeJ: 0,
+    generation: 0,
+    originI: 0,
+    originJ: 1,
+    checkedDay: 2,
+    blockedSinceDay: 1,
+    returnAfterMs: 12345,
+    lastRenewAttemptDay: 2,
+  }
+  data.animals = [{ type: 'Deer', i: 0, j: 0, wildlife: meta }]
+  assert.doesNotThrow(() => validateSaveData(data))
+  for (const patch of [
+    { originI: -1 },
+    { originJ: 99 },
+    { originI: 0.5 },
+    { checkedDay: Infinity },
+    { blockedSinceDay: -1 },
+    { returnAfterMs: NaN },
+    { lastRenewAttemptDay: -1 },
+  ]) {
+    data.animals[0].wildlife = { ...meta, ...patch }
+    assert.throws(() => validateSaveData(data), /wildlife/)
+  }
+  data.animals[0].wildlife = { homeI: 0, homeJ: 0, generation: 0 }
+  assert.doesNotThrow(() => validateSaveData(data))
+})
+
+test('save validation accepts legacy minimaps and validates stored observations and filters', () => {
+  assert.doesNotThrow(() => validateSaveData(save()))
+  const memory = {
+    id: 'destroyed-house', spaceId: 'outside', x: 10, y: 20, i: 1, j: 1, size: 1,
+    color: '#f00', ownerKey: 'enemy', town: false,
+  }
+  const data = save()
+  data.players[0].minimapBuildingMemory = [memory]
+  data.players[0].minimapPreferences = { zoom: 1.5, hiddenMarkers: ['enemy'] }
+  assert.doesNotThrow(() => validateSaveData(data)) // No live building required.
+  for (const patch of [{ x: NaN }, { size: -1 }, { i: 0.5 }, { spaceId: '' }, { town: 'yes' }])
+    rejects(state => { state.players[0].minimapBuildingMemory = [{ ...memory, ...patch }] }, /minimap/)
+  rejects(state => { state.players[0].minimapBuildingMemory = [memory, memory] }, /duplicate minimap/)
+  for (const preferences of [{ zoom: 0, hiddenMarkers: [] }, { zoom: 2, hiddenMarkers: [42] }])
+    rejects(state => { state.players[0].minimapPreferences = preferences }, /minimap/)
 })

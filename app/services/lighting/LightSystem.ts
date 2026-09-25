@@ -1,5 +1,5 @@
 import { Container, Sprite, Texture } from 'pixi.js'
-import { FADE_DURATION_MS, FAMILY_TYPES, UNIT_TYPES } from '../../constants'
+import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, FADE_DURATION_MS, FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { getInstanceScreenBounds } from '../../lib/grid/visibility'
 import { OUTSIDE_SPACE_ID, getActiveMapSpace, getEntityMapPoint } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
@@ -155,7 +155,8 @@ export class LightSystem {
 
     this._onTick = ticker => {
       const update = () => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
-      this.context.performance?.measure?.('light.update', update) ?? update()
+      if (this.context.performance?.measure) this.context.performance.measure('light.update', update)
+      else update()
     }
     context.app.ticker.add(this._onTick)
   }
@@ -255,9 +256,27 @@ export class LightSystem {
         : this.context.map?.instanceBuckets
     if (!buckets || !controls) return
 
+    const viewport = controls.getViewportMetrics?.()
+    if (!viewport) return
+    // Match the camera's terrain halo. Inverse-project its four corners to visit
+    // only nearby buckets, including anchors of sprites overlapping the screen.
+    const margin = CELL_WIDTH * 4
+    const origin = activeSpace?.origin ?? { x: 0, y: 0 }
+    const left = visibleLeft - origin.x - margin
+    const right = left + viewport.visibleWidth + margin * 2
+    const top = visibleTop - origin.y - margin
+    const bottom = top + viewport.visibleHeight + margin * 2
+    const minI = Math.max(0, Math.floor((left / CELL_WIDTH + top / CELL_HEIGHT) / BUCKET_SIZE))
+    const maxI = Math.min(buckets.length - 1, Math.floor((right / CELL_WIDTH + bottom / CELL_HEIGHT) / BUCKET_SIZE))
+    const minJ = Math.max(0, Math.floor((top / CELL_HEIGHT - right / CELL_WIDTH) / BUCKET_SIZE))
+    const maxJ = Math.floor((bottom / CELL_HEIGHT - left / CELL_WIDTH) / BUCKET_SIZE)
     const seen = new Set<RuntimeEntity>()
-    for (const column of buckets) {
-      for (const bucket of column) {
+    for (let i = minI; i <= maxI; i++) {
+      const column = buckets[i]
+      if (!column) continue
+      for (let j = minJ; j <= Math.min(column.length - 1, maxJ); j++) {
+        const bucket = column[j]
+        if (!bucket) continue
         for (const instance of bucket as Set<RuntimeEntity>) {
           if (seen.has(instance)) continue
           seen.add(instance)

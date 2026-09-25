@@ -1,3 +1,5 @@
+import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
+import { canCampPursue } from '../../lib/units/campBehavior'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import {
   evaluateCombatMorale,
@@ -34,9 +36,10 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
   if (unit.context.editor) return
   if (!instance || unit.isDead) return
 
+  wakeUnitSimulation(unit)
   notifyHeroHealthChanged(unit)
   unit.owner.reportThreat?.(unit, instance)
-  if (!canAutoReactToAttack(unit)) return
+  if (!canAutoReactToAttack(unit) || !canCampPursue(unit, instance)) return
   if (unit.shelterState?.reason === 'sleep' && unit.context.unitRest?.handleUnitDanger(unit, instance)) return
   if (unit.sleepVisualState) {
     clearSleepingVisualState(unit)

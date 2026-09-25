@@ -4,6 +4,10 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const wildlifeModule = loadTsModule('app/services/WildlifeStore.ts')
+const growthModule = loadTsModule('app/services/NaturalGrowthQueue.ts')
+const campRespawns = loadTsModule('app/lib/camps/CampRespawnState.ts')
+const compactResources = loadTsModule('app/classes/resources/CompactResourceSet.ts')
 
 test('pending and consumed rescue thanks survive save and travel state copying', () => {
   const { applyPortableUnitState } = loadTsModule('app/screens/game/GameStateHelpers.ts')
@@ -36,7 +40,13 @@ function loadSaveSerializer() {
   })
   const module = { exports: {} }
   const mockRequire = id => {
+    if (id === '../lib/camps/CampRespawnState') return campRespawns
+    if (id === '../lib/units/villageActivity') return loadTsModule('app/lib/units/villageActivity.ts')
+    if (id === '../services/NaturalGrowthQueue') return growthModule
+    if (id === '../services/WildlifeStore') return wildlifeModule
+    if (id === '../classes/resources/CompactResourceSet') return compactResources
     if (id.endsWith('/playerTargetKnowledge')) return { exportTargetKnowledge: () => [] }
+    if (id === './ResourceSaveData') return loadTsModule('app/serialization/ResourceSaveData.ts')
     if (id === './InteriorBuildingSave') return loadTsModule('app/serialization/InteriorBuildingSave.ts')
     if (id === '../lib/definedProperties' || id === './TrainingSave') {
       const dependency = path.join(
@@ -95,21 +105,6 @@ function loadSaveSerializer() {
   new Function('module', 'exports', 'require', code)(module, module.exports, mockRequire)
   return module.exports
 }
-
-test('pending world pursuers are included in the runtime save', () => {
-  const { serializeGame } = loadSaveSerializer()
-  const context = makeContext()
-  const entries = [
-    {
-      entity: { label: 'wolf', type: 'Wolf', i: 1, j: 2 },
-      arrival: { i: 1, j: 2 },
-      targetLabel: 'hero',
-      remainingMs: 1200,
-    },
-  ]
-  context.worldPursuit = { serializeState: () => structuredClone(entries) }
-  assert.deepEqual(serializeGame(context).runtime.worldPursuers, entries)
-})
 
 test('harvested and growing wheat saves its exact growth frame and original planted position', () => {
   const { serializeGame } = loadSaveSerializer()
@@ -792,4 +787,223 @@ test('building placement orientation survives JSON serialization and legacy save
     restorePlayerEntitiesFromSave(restored, { buildings: saved.players[0].buildings }, true)
     assert.equal(restored.buildings[0].placementMirrored, placementMirrored)
   }
+})
+
+test('logical resources save their stable identity and depleted state without creating a view', () => {
+  const { createResourceHandle } = loadTsModule('app/classes/resources/ResourceHandle.ts')
+  const context = makeContext()
+  const resource = createResourceHandle(
+    {
+      label: 'persistent-tree',
+      i: 0,
+      j: 0,
+      type: 'Tree',
+      size: 1,
+      quantity: 37,
+      totalQuantity: 150,
+      hitPoints: 0,
+      textureName: '004_resources/tree/dead',
+      isNaturalResource: true,
+      visible: false,
+      isDead: false,
+      isDestroyed: false,
+    },
+    {
+      method() {},
+      bounds: () => ({ width: 64, height: 32 }),
+      create() {
+        assert.fail('saving must not allocate a resource view')
+      },
+      release() {},
+      sync() {},
+    }
+  )
+  context.map.resources = new Set([resource])
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).resources[0]
+  assert.equal(saved.label, 'persistent-tree')
+  assert.equal(saved.quantity, 37)
+  assert.equal(saved.totalQuantity, 150)
+  assert.equal(saved.hitPoints, 0)
+  assert.equal(saved.textureName, '004_resources/tree/dead')
+})
+
+test('saving an offscreen animal preserves its state without requesting graphics', () => {
+  const context = makeContext()
+  context.map.gaia.animals = [
+    {
+      label: 'cold-deer',
+      type: 'Deer',
+      i: 0,
+      j: 0,
+      hitPoints: 23,
+      quantity: 40,
+      currentSheet: 'walkingSheet',
+      currentFrame: 2,
+      loop: true,
+      path: [],
+      getVisualSprite: () => undefined,
+      get sprite() {
+        assert.fail('save must not create an animal sprite')
+      },
+    },
+  ]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+  const animal = saved.animals[0]
+  assert.equal(animal.label, 'cold-deer')
+  assert.equal(animal.hitPoints, 23)
+  assert.equal(animal.currentFrame, 2)
+  assert.equal(animal.loop, true)
+})
+
+test('serializer preserves compact resources and mutations without materializing untouched resources', () => {
+  const context = makeContext()
+  let created = 0
+  const resources = new compactResources.CompactResourceSet(
+    2,
+    100,
+    'world',
+    () => ({ totalQuantity: 100, totalHitPoints: 30 }),
+    state => {
+      created++
+      return { ...state }
+    },
+    context
+  )
+  resources.addState({ i: 1, j: 2, type: 'Tree', textureName: 'tree_0', isNaturalResource: true })
+  resources.addState({ i: 3, j: 4, type: 'Tree', textureName: 'tree_0', isNaturalResource: true })
+  resources.atCell(102).quantity = 17
+  context.map.resources = resources
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).resources
+  assert.equal(created, 1)
+  assert.equal(saved.length, 2)
+  assert.equal(saved[0].quantity, 17)
+  assert.equal(saved[1].quantity, 100)
+  assert.equal(saved[1].label, 'world:304')
+})
+
+test('campaign bootstrap skips world entities but final serialization captures their latest state', () => {
+  const { serializeCampaignBootstrap, serializeGame } = loadSaveSerializer()
+  const context = makeContext()
+  Object.defineProperty(context.map, 'resources', {
+    configurable: true,
+    get() {
+      throw new Error('resource scan')
+    },
+  })
+  Object.defineProperty(context.map, 'gaia', {
+    configurable: true,
+    get() {
+      throw new Error('animal scan')
+    },
+  })
+  const bootstrap = serializeCampaignBootstrap(context)
+  assert.deepEqual(bootstrap.resources, [])
+  assert.deepEqual(bootstrap.animals, [])
+  Object.defineProperty(context.map, 'resources', { value: new Set([{ type: 'Tree', i: 2, j: 3, quantity: 47 }]) })
+  Object.defineProperty(context.map, 'gaia', { value: { animals: [] } })
+  context.controls.camera = { x: 123, y: 456 }
+  context.weather = { serializeState: () => ({ phase: 'rainHeavy', elapsedMs: 1234 }) }
+  const final = serializeGame(context)
+  assert.equal(final.resources.length, 1)
+  assert.equal(final.resources[0].quantity, 47)
+  assert.equal(final.runtime.weather.phase, 'rainHeavy')
+  assert.equal(final.camera.x, 123)
+  assert.deepEqual(bootstrap.resources, [])
+})
+
+test('persistence stores blueprint resource changes while simulation serialization stays complete', () => {
+  const context = makeContext()
+  const resources = new compactResources.CompactResourceSet(
+    10,
+    100,
+    'world',
+    () => ({ totalQuantity: 100 }),
+    state => ({ ...state }),
+    {}
+  )
+  resources.addState({ i: 1, j: 2, type: 'Tree', textureName: 'tree_0' })
+  resources.addState({ i: 3, j: 4, type: 'Tree', textureName: 'tree_0' })
+  resources.sealBlueprintBaseline()
+  context.map.resources = resources
+  context.map.pregeneratedBlueprintId = 'fixed-blueprint'
+  const { serializeGame, serializeGameForPersistence } = loadSaveSerializer()
+  const pristine = serializeGameForPersistence(context)
+  assert.equal(pristine.resources.length, 0)
+  assert.equal(pristine.resourceDelta.count, 2)
+  resources.atCell(102).quantity = 9
+  const saved = serializeGameForPersistence(context)
+  assert.equal(saved.resources.length, 0)
+  assert.equal(saved.resourceDelta.updated[0].state.quantity, 9)
+  const full = serializeGame(context)
+  assert.equal(full.resourceDelta, undefined)
+  assert.equal(full.resources.length, 2)
+  assert.equal(full.resources[0].quantity, 9)
+})
+
+test('saving includes sleeping wildlife, overlays live state once and isolates the snapshot', () => {
+  const context = makeContext()
+  const store = wildlifeModule.installWildlifeStore(
+    context.map,
+    [
+      { label: 'sleeping', type: 'Deer', i: 1, j: 1, hitPoints: 7 },
+      { label: 'awake', type: 'Deer', i: 2, j: 2, hitPoints: 10 },
+    ],
+    'test'
+  )
+  context.map.gaia = { animals: [{ label: 'awake', type: 'Deer', i: 2, j: 2, hitPoints: 3 }] }
+  const save = loadSaveSerializer().serializeGame(context)
+  assert.equal(save.animals.length, 2)
+  assert.equal(save.animals.find(a => a.label === 'awake').hitPoints, 3)
+  store.entries.get('sleeping').state.hitPoints = 1
+  assert.equal(save.animals.find(a => a.label === 'sleeping').hitPoints, 7)
+  assert.ok(save.animals.every(a => a.wildlife))
+})
+
+test('camp home and return phase survive game serialization', () => {
+  const context = makeContext()
+  const campBehavior = { phase: 'return', homeSpaceId: 'outside', caveId: 'lair', chaseRange: 20, tetherRange: 30 }
+  context.players[0].units = [{ type: 'BanditSword', i: 1, j: 1, campPatrolAnchor: { i: 0, j: 0 }, campBehavior }]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
+  assert.deepEqual(saved.campBehavior, campBehavior)
+  assert.deepEqual(saved.campPatrolAnchor, { i: 0, j: 0 })
+})
+
+test('village territory and fractional production survive a save', () => {
+  const context = makeContext()
+  const villageHome = { id: 'ai:center', i: 1, j: 1, spaceId: 'outside' }
+  context.players[0].units = [
+    { type: 'Villager', i: 1, j: 1, villageHome, offlineWork: { target: 'wood:tree', milliseconds: 321 } },
+  ]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
+  assert.deepEqual(saved.villageHome, villageHome)
+  assert.equal(saved.offlineWork.milliseconds, 321)
+})
+
+
+test('saving retains camp cooldowns and initial rosters as independent snapshots', () => {
+  const context = makeContext()
+  const camps = [{ id: 'camp:1:1', i: 1, j: 1, unitTypes: ['BanditSword'], generation: 2, clearedAtMs: 1234 }]
+  campRespawns.restoreCampRespawnStates(context.map, camps)
+  const saved = loadSaveSerializer().serializeGame(context)
+  assert.deepEqual(saved.runtime.banditCamps, camps)
+  campRespawns.campRespawnStates(context.map)[0].generation++
+  assert.equal(saved.runtime.banditCamps[0].generation, 2)
+})
+
+test('minimap observations and preferences are saved as independent JSON data', () => {
+  const context = makeContext()
+  const player = context.players[0]
+  player.minimapBuildingMemory = [{
+    id: 'old-house', spaceId: 'outside', x: 10, y: 20, i: 1, j: 2, size: 1,
+    color: '#ff0000', ownerKey: 'enemy', town: false,
+  }]
+  player.minimapPreferences = { zoom: 2, hiddenMarkers: ['enemy', 'caves'] }
+  const saved = JSON.parse(JSON.stringify(serializeGame(context))).players[0]
+  assert.deepEqual(saved.minimapBuildingMemory, player.minimapBuildingMemory)
+  assert.deepEqual(saved.minimapPreferences, player.minimapPreferences)
+  const snapshot = serializeGame(context).players[0]
+  player.minimapBuildingMemory[0].x = 999
+  player.minimapPreferences.hiddenMarkers.push('self')
+  assert.equal(snapshot.minimapBuildingMemory[0].x, 10)
+  assert.deepEqual(snapshot.minimapPreferences.hiddenMarkers, ['enemy', 'caves'])
 })

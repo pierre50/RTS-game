@@ -2,7 +2,7 @@ import type { GridInstanceLike } from '../types/grid'
 import type { Point } from '../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { RuntimeEntity, UnitCommandOptions, UnitCreationExtra } from '../types/entities'
+import type { RuntimeEntity, UnitCommandOptions, UnitCreationExtra, UnitEntity } from '../types/entities'
 import type { ConfigValue } from '../types/config'
 import type { GameContextLike } from '../types/context'
 
@@ -45,6 +45,7 @@ export type AIEntityLike = {
   inactif?: boolean
   action?: string | null
   work?: string | null
+  autonomousJob?: UnitEntity['autonomousJob']
   previousWork?: string | null
   dest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
   previousDest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
@@ -182,7 +183,7 @@ export type AIStrategyPlayerLike = {
   }
   units: AIEntityLike[]
   buildings: AIBuildingLike[]
-  context: Pick<GameContextLike, 'dayNight'> & { map: RuntimeMap }
+  context: Pick<GameContextLike, 'dayNight' | 'performance'> & { map: RuntimeMap }
   economy: AIEconomyLike
   views?: {
     length: number

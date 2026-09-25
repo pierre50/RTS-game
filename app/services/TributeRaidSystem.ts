@@ -1,5 +1,4 @@
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
-import { currentMapTerritoryOwner } from '../lib/campaign/mapTerritory'
 import { getEntitySpaceMapLike } from '../lib/mapSpaces'
 import { createTitledEntityInfoContent } from '../ui/EntityInfoContent'
 import { createInspectionModal } from '../ui/InspectionPanel'
@@ -21,6 +20,7 @@ import {
   FACTION_RAID_START_HOUR,
   RAID_APPROACH_RANGE,
   RAID_UPDATE_MS,
+  RAID_SPAWN_RETRY_MS,
   getRaidCellDistance,
   getRaidUnitTypes,
   isFactionRaidHourAllowed,
@@ -62,11 +62,23 @@ import {
   type FactionRaidArmy,
 } from './tribute/FactionRaidEconomy'
 
+type RaidCreationOptions = {
+  scripted?: boolean
+  army?: FactionRaidArmy
+  faction?: FactionSave | null
+  kind: TributeRaidKind
+  owner: TributeRaidOwner
+  size: number
+  tribute: ResourceAmount
+}
+
 export class TributeRaidSystem implements DailyWorldEventHandler {
   context: GameContextLike
   deferredFactionRaidTaskId: SchedulerTaskId | null
   raids: TributeRaid[]
   lastScheduledDay: number
+  private creationPending = false
+  private spawnRetryTasks = new Map<string, SchedulerTaskId>()
   factionRaidPending = false
   destroyed = false
 
@@ -144,8 +156,6 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   async triggerRaid(_options: { source?: 'schedule' | 'dev-console' } = {}): Promise<boolean> {
     if (!this.canStartRaid()) return false
     if (hasActiveBanditCampPresence(this.context)) return false
-    // Bandits demand tribute from whoever holds the land; skip raids on ownerless regions.
-    if (!currentMapTerritoryOwner(this.context)) return false
     return this.createRaid({
       kind: 'bandit',
       owner: this.getOrCreateBanditOwner(),
@@ -191,11 +201,14 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   async triggerTutorialRaid(): Promise<boolean> {
-    if (!this.context.isTutorialActive?.() || this.destroyed || this.factionRaidPending || !this.canStartRaid()) return false
+    if (!this.context.isTutorialActive?.() || this.destroyed || this.factionRaidPending || !this.canStartRaid())
+      return false
     this.factionRaidPending = true
     try {
       const owner = this.createTemporaryRaidOwner({
-        civ: this.context.player?.civ ?? 'Hellas', name: 'Raiders', color: 'red',
+        civ: this.context.player?.civ ?? 'Hellas',
+        name: 'Raiders',
+        color: 'red',
       })
       const started = await this.createRaid({ kind: 'faction', owner, size: 24, tribute: {}, scripted: true })
       if (!started && !owner.units?.length) {
@@ -208,28 +221,78 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     }
   }
 
-  async createRaid(options: {
-    scripted?: boolean
-    army?: FactionRaidArmy
-    faction?: FactionSave | null
-    kind: TributeRaidKind
-    owner: TributeRaidOwner
-    size: number
-    tribute: ResourceAmount
-  }): Promise<boolean> {
+  async createRaid(options: RaidCreationOptions): Promise<boolean> {
+    if (this.destroyed || this.creationPending) return false
+    this.creationPending = true
+    try {
+      return await this.prepareRaid(options)
+    } finally {
+      this.creationPending = false
+    }
+  }
+
+  private deferSpawn({ kind, scripted }: Pick<RaidCreationOptions, 'kind' | 'scripted'>): void {
+    const options = { kind, scripted }
+    const key = options.scripted ? 'tutorial' : options.kind
+    if (this.destroyed || this.spawnRetryTasks.has(key)) return
+    const task = this.context.scheduler.addOneShot(
+      () => {
+        this.spawnRetryTasks.delete(key)
+        if (this.destroyed) return
+        if (Boolean(options.scripted) !== Boolean(this.context.isTutorialActive?.())) return
+        if (
+          !this.canStartRaid() ||
+          this.creationPending ||
+          (options.kind === 'faction' && !options.scripted && !this.isFactionRaidWindowOpen())
+        ) {
+          this.deferSpawn(options)
+          return
+        }
+        // Re-evaluate eligibility and recruit from current faction state, never keep a stale army snapshot.
+        const attempt = options.scripted
+          ? this.triggerTutorialRaid()
+          : options.kind === 'bandit'
+            ? this.triggerRaid({ source: 'schedule' })
+            : this.triggerFactionRaid({ source: 'schedule' })
+        void attempt.catch(error => console.error('Unable to retry tribute raid', error))
+      },
+      RAID_SPAWN_RETRY_MS,
+      'tributeRaid.spawnRetry'
+    )
+    this.spawnRetryTasks.set(key, task)
+  }
+
+  private async prepareRaid(options: RaidCreationOptions): Promise<boolean> {
     if (options.kind === 'faction' && !options.army && !options.scripted) return false
     if (options.kind === 'faction' && !options.scripted && !this.isFactionRaidWindowOpen()) return false
     if (!this.canStartRaid()) return false
+    const initialTarget = findRaidTarget(this.context, options.kind)
+    if (!initialTarget) return false
+    if ((initialTarget.spaceId ?? 'outside') !== 'outside' || this.context.map.mapType === 'interior') {
+      this.deferSpawn(options)
+      return false
+    }
+    const owner = options.owner
+    const map = this.context.map
+    await this.preloadRaidOwnerAssets(owner)
+    if (this.destroyed || this.context.map !== map) return false
+    if (options.kind === 'faction' && !options.scripted && !this.isFactionRaidWindowOpen()) {
+      this.deferSpawn(options)
+      return false
+    }
+    if (!this.canStartRaid()) return false
+    // The hero/camera and occupancy may have changed during asset loading.
     const target = findRaidTarget(this.context, options.kind)
     if (!target) return false
+    if ((target.spaceId ?? 'outside') !== 'outside') {
+      this.deferSpawn(options)
+      return false
+    }
     const spawnCells = this.findSpawnCells(target, options.size, options.faction)
-    if (!spawnCells.length) return false
-
-    const owner = options.owner
-    await this.preloadRaidOwnerAssets(owner)
-    if (this.destroyed) return false
-    if (options.kind === 'faction' && !options.scripted && !this.isFactionRaidWindowOpen()) return false
-    if (!this.canStartRaid()) return false
+    if (spawnCells.length !== options.size) {
+      this.deferSpawn(options)
+      return false
+    }
     const raid: TributeRaid = {
       id: `${options.kind}-raid-${Date.now()}-${Math.round((this.context.map.random?.() ?? Math.random()) * 100000)}`,
       kind: options.kind,
@@ -254,6 +317,10 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       for (const unit of raid.units) this.removeUnitFromRuntime(unit)
       return false
     }
+    const retryKey = options.scripted ? 'tutorial' : options.kind
+    const retryTask = this.spawnRetryTasks.get(retryKey)
+    if (retryTask != null) this.context.scheduler.remove(retryTask)
+    this.spawnRetryTasks.delete(retryKey)
     if (!options.scripted) setUnitOverheadIndicator(raid.chief, 'exclamation')
     this.raids.push(raid)
     if (options.scripted) this.makeRaidHostile(raid)
@@ -437,7 +504,8 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     raid.rallyPoint ??= { i: target.i, j: target.j, spaceId: target.spaceId }
     for (const unit of livingRaidUnits(raid)) {
       // Let an ongoing fight finish; only resume idle soldiers or their approach.
-      if (unit.action || unit.combatMode === 'attack' || unit.combatMode === 'recover' || unit.combatMode === 'flee') continue
+      if (unit.action || unit.combatMode === 'attack' || unit.combatMode === 'recover' || unit.combatMode === 'flee')
+        continue
       if (playerSeesTarget(unit.owner, target)) {
         unit.sendToEvt?.(target, ACTION_TYPES.attack, { forceRepath: true })
         continue
@@ -584,6 +652,8 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
 
   destroy(): void {
     this.destroyed = true
+    for (const task of this.spawnRetryTasks.values()) this.context.scheduler.remove(task)
+    this.spawnRetryTasks.clear()
     if (this.deferredFactionRaidTaskId != null) {
       this.context.scheduler.remove(this.deferredFactionRaidTaskId)
       this.deferredFactionRaidTaskId = null

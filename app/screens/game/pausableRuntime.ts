@@ -1,3 +1,4 @@
+import { getPackedCellStore } from '../../classes/cell/PackedCellRegistry'
 import { getGaiaAnimals } from '../../lib'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
@@ -18,7 +19,9 @@ export function collectPausableInstances(map: RuntimeMap, players: PlayerLike[])
     for (const building of player.buildings ?? []) addPausableInstance(instances, building)
     for (const corpse of player.corpses ?? []) addPausableInstance(instances, corpse)
   }
-  for (const row of map.grid ?? []) {
+  const packed = getPackedCellStore(map.grid)
+  const rows = packed ? [packed.changedCells(map.grid)] : map.grid ?? []
+  for (const row of rows) {
     for (const cell of row ?? []) {
       for (const corpse of cell?.corpses ?? []) addPausableInstance(instances, corpse)
     }

@@ -23,7 +23,7 @@ function createMacroTerrain(gridSize, rows) {
   })
 }
 
-function createMacroTreeOptions(rows, fallbackFamily = null, seed = 0) {
+function createMacroTreeOptions(rows, fallbackFamily = null, seed = 0, origin = { i: 0, j: 0 }) {
   if (!Array.isArray(rows) || !rows.length) return { treeTextureFamily: fallbackFamily }
   const codeForCell = cell => String(rows[cell.i] || '')[cell.j]
   return {
@@ -32,8 +32,8 @@ function createMacroTreeOptions(rows, fallbackFamily = null, seed = 0) {
     treeChanceForCell: cell => {
       const profile = MACRO_FOREST_PROFILE_BY_CODE[codeForCell(cell)]
       if (!profile) return 0
-      const mask = macroForestNoise(cell.i, cell.j, seed, profile.scale, profile.seedOffset)
-      const clearing = macroForestClearingNoise(cell.i, cell.j, seed, profile)
+      const mask = macroForestNoise(cell.i + origin.i, cell.j + origin.j, seed, profile.scale, profile.seedOffset)
+      const clearing = macroForestClearingNoise(cell.i + origin.i, cell.j + origin.j, seed, profile)
       if (mask >= profile.threshold) return applyMacroClearingChance(profile.coreChance, clearing, profile)
       if (mask >= profile.threshold - 0.08) return applyMacroClearingChance(profile.edgeChance, clearing, profile)
       return 0

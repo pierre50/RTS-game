@@ -1,3 +1,5 @@
+import { withinVillageActivity } from '../villageActivity'
+import { nearestResourceRecords } from '../../../classes/resources/CompactResourceSet'
 import { knownTarget, knowsEconomicTarget, playerSeesTarget, rememberedStaticTargets } from '../playerTargetKnowledge'
 import { sameMapSpace } from '../../mapSpaces'
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, WORK_TYPES } from '../../constants'
@@ -58,18 +60,27 @@ function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean
 }
 
 function isKnownToUnit(unit: UnitEntity, entity: RuntimeEntity): boolean {
-  return sameMapSpace(unit, entity) && Boolean(knownTarget(unit.owner, entity))
+  return withinVillageActivity(unit, entity) && sameMapSpace(unit, entity) && Boolean(knownTarget(unit.owner, entity))
 }
 
 function knownState(unit: UnitEntity, entity: RuntimeEntity): RuntimeEntity {
   return (knownTarget(unit.owner, entity) ?? {}) as RuntimeEntity
 }
 
-export function knownResources(unit: UnitEntity, type: string, diagnose = false): RuntimeEntity[] {
+export function knownResources(unit: UnitEntity, type: string, diagnose = false, limit = Infinity): RuntimeEntity[] {
   const owner = unit.owner
-  const resources = new Set([...(unit.context?.map?.resources ?? []), ...rememberedStaticTargets(unit.owner)])
+  const resources = new Set([
+    ...nearestResourceRecords(
+      unit.context?.map?.resources,
+      type,
+      unit,
+      limit,
+      resource => isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
+    ),
+    ...rememberedStaticTargets(unit.owner),
+  ])
   const founded = owner?.foundedResources?.[type]
-  const source = [...new Set([...(founded ?? []), ...resources])]
+  const source = [...new Map([...(founded ?? []), ...resources].map(resource => [resource.label, resource])).values()]
   const targets = source.filter(
     resource => resource.type === type && isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
   )
@@ -114,16 +125,24 @@ export function knownResources(unit: UnitEntity, type: string, diagnose = false)
   return targets
 }
 
-export function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
-  const resources = new Set([...(unit.context?.map?.resources ?? []), ...rememberedStaticTargets(unit.owner)])
+export function knownFoodTargets(unit: UnitEntity, limit = Infinity): RuntimeEntity[] {
+  const accepts = (resource: ResourceEntity) =>
+    isKnownToUnit(unit, resource) &&
+    isUsableResource(knownState(unit, resource)) &&
+    isFoodTargetAvailable(unit, resource)
+  const resources = new Set([
+    ...nearestResourceRecords(unit.context?.map?.resources, RESOURCE_TYPES.berrybush, unit, limit, accepts),
+    ...nearestResourceRecords(unit.context?.map?.resources, RESOURCE_TYPES.wheat, unit, limit, accepts),
+    ...rememberedStaticTargets(unit.owner),
+  ])
   const foundedBerries = unit.owner?.foundedResources?.[RESOURCE_TYPES.berrybush] ?? unit.owner?.foundedBerrybushs
-  const berries = [...new Set([...(foundedBerries ?? []), ...resources])].filter(
-    resource => resource.type === RESOURCE_TYPES.berrybush
-  )
+  const berries = [
+    ...new Map([...(foundedBerries ?? []), ...resources].map(resource => [resource.label, resource])).values(),
+  ].filter(resource => resource.type === RESOURCE_TYPES.berrybush)
   const foundedWheat = unit.owner?.foundedResources?.[RESOURCE_TYPES.wheat] ?? unit.owner?.foundedWheats
-  const wheat = [...new Set([...(foundedWheat ?? []), ...resources])].filter(
-    resource => resource.type === RESOURCE_TYPES.wheat
-  )
+  const wheat = [
+    ...new Map([...(foundedWheat ?? []), ...resources].map(resource => [resource.label, resource])).values(),
+  ].filter(resource => resource.type === RESOURCE_TYPES.wheat)
   const foundedCarcasses = unit.owner?.foundedDeadAnimals
   const carcasses = [
     ...new Set([
@@ -139,7 +158,7 @@ export function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
     ]),
   ].filter(
     animal =>
-      sameMapSpace(unit, animal) &&
+      withinVillageActivity(unit, animal) && sameMapSpace(unit, animal) &&
       (knowsEconomicTarget(unit.owner, animal) || playerSeesTarget(unit.owner, animal)) &&
       canVillagerAutonomouslyHunt(unit, animal)
   )
@@ -148,13 +167,13 @@ export function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
     ...wheat.filter(target => isKnownToUnit(unit, target) && isUsableResource(knownState(unit, target))),
     ...carcasses.filter(target => isKnownToUnit(unit, target) && isUsableAnimalCarcass(knownState(unit, target))),
     ...prey,
-  ].filter(target => isFoodTargetAvailable(unit, target))
+  ].filter(target => withinVillageActivity(unit, target) && isFoodTargetAvailable(unit, target))
 }
 
 export function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
   return (unit.owner?.buildings ?? []).filter(
     building =>
-      building.owner === unit.owner &&
+      withinVillageActivity(unit, building) && building.owner === unit.owner &&
       isAliveEntity(building) &&
       (!building.isBuilt || (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)) &&
       unit.getActionCondition?.(building, ACTION_TYPES.build)
@@ -167,7 +186,7 @@ export function knownCapturableHorses(unit: UnitEntity): RuntimeEntity[] {
 
   return source.filter(
     target =>
-      sameMapSpace(unit, target) &&
+      withinVillageActivity(unit, target) && sameMapSpace(unit, target) &&
       (knowsEconomicTarget(unit.owner, target) || playerSeesTarget(unit.owner, target)) &&
       isCapturableHorse(target)
   )

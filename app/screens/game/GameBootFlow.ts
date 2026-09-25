@@ -1,3 +1,5 @@
+import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
+import { isContinentWorld } from '../../config/continentWorlds'
 import { migrateTutorialVillageOwner } from '../../services/tutorial/TutorialVillageMigration'
 import type { NewGameBootOptions } from './GameWorldBoot'
 import { TutorialPrologue } from '../../ui/TutorialPrologue'
@@ -20,7 +22,7 @@ type BootFlowContext = {
   paused?: boolean
   app: Application
   controls?: { focusHeroCamera?(): void } | null
-  menu?: { show?(): void } | null
+  menu?: { show?(): void; showMessage?(message: string, type?: string): void } | null
   scheduler?: SchedulerLike | null
 }
 
@@ -30,6 +32,8 @@ type LoadingScreenLike = {
 }
 
 export type GameBootFlowHost = {
+  _initialSaveFailureReason?: string
+  _initialSaveFailed?: boolean
   _campaignSave: CampaignSave | null
   _loadingScreen?: LoadingScreenLike | null
   _lastSavedRecord?: SaveRecord | null
@@ -47,7 +51,7 @@ export type GameBootFlowHost = {
   _acquireWakeLock(): Promise<void>
   _bootFromConfig(config: GameConfig, options?: NewGameBootOptions): Promise<void>
   _bootFromSave(json: SerializedSave): Promise<void>
-  _destroyRuntime(): void
+  _destroyRuntime(options?: { preserveLoadingScreen?: boolean }): void
   _measure<T>(name: string, callback: () => T): T
   _runtimeHeroUnit(): UnitEntity | null
   _yieldToBrowser(): Promise<void>
@@ -62,8 +66,8 @@ function applyConfiguredSpeed(game: GameBootFlowHost): void {
 }
 
 async function showLoadingScreen(game: GameBootFlowHost, messageKey: string): Promise<void> {
-  game._loadingScreen = new GameLoadingScreen()
-  game._loadingScreen.update(messageKey, 0.02)
+  game._loadingScreen = new GameLoadingScreen(messageKey === 'readingSave' ? 'loadingSavedGame' : 'generatingWorld')
+  game._loadingScreen.update(messageKey, messageKey === 'readingSave' ? 0.1 : 0.02)
   await game._yieldToBrowser()
 }
 
@@ -95,7 +99,12 @@ function restoreHeroInvincibility(hero: UnitEntity, previousDevInvincible: boole
   }
 }
 
-async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero = false, reveal?: () => Promise<void>): Promise<void> {
+async function finishBoot(
+  game: GameBootFlowHost,
+  booted: boolean,
+  protectHero = false,
+  reveal?: () => Promise<void>
+): Promise<void> {
   if (booted) await game._restoreTutorial?.()
   const hero = booted && protectHero ? game._runtimeHeroUnit() : null
   const previousDevInvincible = hero?.devInvincible
@@ -103,28 +112,49 @@ async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero =
   if (booted) game._showIntroduction?.()
   if (booted) game._showTutorial?.()
   const showGame = (): void => {
+    if (booted) game._loadingScreen?.update(game._initialSaveFailed ? 'worldReadyUnsaved' : 'worldReady', 1)
     game._measure('loading.destroy', () => game._loadingScreen?.destroy())
     game._loadingScreen = null
-    if (booted) game._measure('menu.show', () => game.context.menu?.show?.())
+    if (booted) {
+      game._measure('menu.show', () => game.context.menu?.show?.())
+      if (game._initialSaveFailed)
+        game.context.menu?.showMessage?.(
+          t(
+            game._initialSaveFailureReason === 'SAVE_RESTART_ELECTRON_REQUIRED'
+              ? 'saveRestartRequired'
+              : 'initialSaveFailed'
+          ),
+          'warning'
+        )
+    }
   }
   try {
-    if (booted && reveal) {
-      showGame()
-      game.context.controls?.focusHeroCamera?.()
-      game._refreshSceneLighting?.()
-      game.context.app.render()
+    if (booted) {
+      // Keep the loading screen (or prologue) visible while the first scene is prepared.
+      game._loadingScreen?.update('finishingLoad', 0.99)
+      // Resolving one animation frame still runs before paint. Yield twice so the
+      // loading status reaches the screen before synchronous scene preparation.
       await game._yieldToBrowser()
-      await reveal()
-    } else if (booted)
-      await playBuildingInteriorDoorTransition(showGame, {
-        blockInput: true,
-        beforeReveal: () => {
-          game.context.controls?.focusHeroCamera?.()
-          game._refreshSceneLighting?.()
-          game.context.app.render()
-        },
+      await game._yieldToBrowser()
+      const prepare = (stage: string, callback: () => void) =>
+        traceLoad(stage, () => game._measure(`load.${stage}`, callback))
+      prepare('boot.prepareCamera', () => game.context.controls?.focusHeroCamera?.())
+      await game._yieldToBrowser()
+      prepare('boot.prepareLighting', () => game._refreshSceneLighting?.())
+      await game._yieldToBrowser()
+      prepare('boot.firstRender', () => game.context.app.render())
+      await traceLoadAsync('boot.firstRenderFrames', async () => {
+        await game._yieldToBrowser()
+        await game._yieldToBrowser()
       })
-    else showGame()
+      if (reveal) {
+        showGame()
+        await reveal()
+      } else {
+        // The black transition only reveals a scene that has already been rendered.
+        await playBuildingInteriorDoorTransition(showGame, { blockInput: true })
+      }
+    } else showGame()
   } finally {
     if (hero) restoreHeroInvincibility(hero, previousDevInvincible)
   }
@@ -135,7 +165,8 @@ async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero =
 export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
   game._acquireWakeLock()
   applyConfiguredSpeed(game)
-  const prologue = game._prepareTutorial ? new TutorialPrologue() : null
+  const continentStart = isContinentWorld(game.config?.worldId)
+  const prologue = game._prepareTutorial && !continentStart ? new TutorialPrologue() : null
   let booted = false
   try {
     if (!game.config) throw new Error(t('corruptSave'))
@@ -146,12 +177,17 @@ export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
       await game._yieldToBrowser()
     } else await showLoadingScreen(game, 'generatingWorld')
     // Terrain and unit assets load during narration; only village setup waits for the choice.
-    const startingSetup = prologue ? choice.then(skip => skip
-      ? { heroOnlyStart: true, villageStarts: undefined }
-      : tutorialVillageConfig(game.config!)) : undefined
-    await game._bootFromConfig(prologue ? { ...game.config, heroStartVillage: undefined } : game.config, { startingSetup, startPaused: Boolean(prologue) })
+    const startingSetup = prologue
+      ? choice.then(skip =>
+          skip ? { heroOnlyStart: true, villageStarts: undefined } : tutorialVillageConfig(game.config!)
+        )
+      : undefined
+    await game._bootFromConfig(prologue ? { ...game.config, heroStartVillage: undefined } : game.config, {
+      startingSetup,
+      startPaused: Boolean(prologue) || continentStart,
+    })
     const skipTutorial = await choice
-    if (game._prepareTutorial && !skipTutorial) await game._prepareTutorial()
+    if (!continentStart && game._prepareTutorial && !skipTutorial) await game._prepareTutorial()
     else await game._prepareIntroduction?.()
     booted = true
     await finishBoot(game, true, true, prologue ? () => prologue.reveal() : undefined)
@@ -164,14 +200,14 @@ export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
 export async function loadGameRuntime(game: GameBootFlowHost, json: SaveRecord): Promise<void> {
   let booted = false
   try {
+    await showLoadingScreen(game, 'readingSave')
     const saveData = validateSaveData(json)
     game._campaignSave = ensureCampaignPlayerRoster(
       isCampaignSave(saveData) ? structuredClone(saveData) : createInitialCampaignSave(structuredClone(saveData))
     )
     game._restartSaveData = structuredClone(game._campaignSave)
-    game._destroyRuntime()
+    game._destroyRuntime({ preserveLoadingScreen: true })
     applyConfiguredSpeed(game)
-    await showLoadingScreen(game, 'generatingTerrain')
     await game._bootFromSave(currentCampaignWorld(game))
     booted = true
   } catch (error) {
@@ -187,39 +223,44 @@ export async function loadGameRuntime(game: GameBootFlowHost, json: SaveRecord):
 export async function recoverGameAfterDefeat(game: GameBootFlowHost, tutorialEnding = false): Promise<void> {
   const checkpoint = tutorialEnding ? null : structuredClone(game._lastSavedRecord ?? game._restartSaveData)
   if (!tutorialEnding && !checkpoint) throw new Error(t('corruptSave'))
-  const config = game.config ?? (game._campaignSave
-    ? saveConfig(getCurrentWorldState(game._campaignSave).config)
-    : null)
+  const config =
+    game.config ?? (game._campaignSave ? saveConfig(getCurrentWorldState(game._campaignSave).config) : null)
   if (tutorialEnding && !config) throw new Error(t('corruptSave'))
   game.togglePause?.(true, { silent: true })
-  await playBuildingInteriorDoorTransition(async () => {
-    game.context.defeat = false
-    game.togglePause?.(false, { silent: true })
-    game._destroyRuntime()
-    applyConfiguredSpeed(game)
-    if (tutorialEnding) {
-      game._campaignSave = null
-      game._lastSavedRecord = null
-      game._restartSaveData = null
-      await game._bootFromConfig({ ...config!, heroOnlyStart: true, heroStartVillage: undefined, villageStarts: undefined }, { startPaused: true })
-      await game._prepareIntroduction?.()
-    } else {
-      const save = validateSaveData(checkpoint!)
-      game._campaignSave = ensureCampaignPlayerRoster(
-        isCampaignSave(save) ? structuredClone(save) : createInitialCampaignSave(structuredClone(save))
-      )
-      game._restartSaveData = structuredClone(game._campaignSave)
-      game.context.paused = true
-      await game._bootFromSave(currentCampaignWorld(game))
-      await game._restoreTutorial?.()
-    }
-    game._showIntroduction?.()
-    game._showTutorial?.()
-    game.context.menu?.show?.()
-    game.context.controls?.focusHeroCamera?.()
-    game._refreshSceneLighting?.()
-    game.context.app.render()
-  }, { blockInput: true })
+  await playBuildingInteriorDoorTransition(
+    async () => {
+      game.context.defeat = false
+      game.togglePause?.(false, { silent: true })
+      game._destroyRuntime()
+      applyConfiguredSpeed(game)
+      if (tutorialEnding) {
+        game._campaignSave = null
+        game._lastSavedRecord = null
+        game._restartSaveData = null
+        await game._bootFromConfig(
+          { ...config!, heroOnlyStart: true, heroStartVillage: undefined, villageStarts: undefined },
+          { startPaused: true }
+        )
+        await game._prepareIntroduction?.()
+      } else {
+        const save = validateSaveData(checkpoint!)
+        game._campaignSave = ensureCampaignPlayerRoster(
+          isCampaignSave(save) ? structuredClone(save) : createInitialCampaignSave(structuredClone(save))
+        )
+        game._restartSaveData = structuredClone(game._campaignSave)
+        game.context.paused = true
+        await game._bootFromSave(currentCampaignWorld(game))
+        await game._restoreTutorial?.()
+      }
+      game._showIntroduction?.()
+      game._showTutorial?.()
+      game.context.menu?.show?.()
+      game.context.controls?.focusHeroCamera?.()
+      game._refreshSceneLighting?.()
+      game.context.app.render()
+    },
+    { blockInput: true }
+  )
   game.togglePause?.(false, { silent: true })
   game._startIntroduction?.()
   game._startTutorial?.()

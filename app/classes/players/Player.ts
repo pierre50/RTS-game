@@ -140,7 +140,20 @@ export class Player implements PlayerLike {
         }
       },
       this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain,
-      (i, j) => this.context.notifyVisionChange?.({ i, j, player: this })
+      (i, j) => {
+        this.context.notifyVisionChange?.({ i, j, player: this })
+        if (this.isPlayed && this.views?.activeSpaceId === (map.activeSpaceId || 'outside')) {
+          this.context.menu.updatePlayerMiniMap?.(this)
+        }
+        if (
+          this.isPlayed &&
+          !map.revealEverything &&
+          this.views?.activeSpaceId === (map.activeSpaceId || 'outside') &&
+          this.context.menu.isMiniMapActive?.() !== false
+        ) {
+          this.context.menu.updateTerrainMiniMap?.(i, j)
+        }
+      }
     )
   }
 

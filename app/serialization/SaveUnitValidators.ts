@@ -1,6 +1,14 @@
 import { UNIT_TYPES } from '../constants'
 import type { LoadedGameConfig } from '../types/save'
-import { fail, isObject, validateOptionalGridDestination, validateAnimalPath, validateEntityPosition, validateOptionalBoolean, MAX_MAP_EDGE } from './SaveValidationPrimitives'
+import {
+  fail,
+  isObject,
+  validateOptionalGridDestination,
+  validateAnimalPath,
+  validateEntityPosition,
+  validateOptionalBoolean,
+  MAX_MAP_EDGE,
+} from './SaveValidationPrimitives'
 
 const RUNTIME_SAVE_UNIT_TYPES = new Set<string>([
   UNIT_TYPES.banditChief,
@@ -38,10 +46,34 @@ function validateSavedUnitOrders(unit: Record<string, unknown>): void {
   }
 }
 
-export function validatePlayerUnits(units: unknown[], playerIndex: number, size: number, config: LoadedGameConfig): void {
+export function validatePlayerUnits(
+  units: unknown[],
+  playerIndex: number,
+  size: number,
+  config: LoadedGameConfig
+): void {
   units.forEach((unit, unitIndex) => {
     validateEntityPosition(unit, size, `player ${playerIndex} unit ${unitIndex}`)
     validateSavedUnitOrders(unit)
+    if (unit.villageHome != null) {
+      const home = unit.villageHome
+      if (!isObject(home) || typeof home.id !== 'string' || !home.id || home.spaceId !== 'outside' ||
+        !Number.isInteger(home.i) || !Number.isInteger(home.j) || Number(home.i) < 0 || Number(home.j) < 0 ||
+        Number(home.i) > size || Number(home.j) > size) fail('Invalid village home.')
+    }
+    if (unit.campBehavior != null) {
+      const behavior = unit.campBehavior
+      if (!isObject(behavior) || !['guard', 'pursue', 'return'].includes(String(behavior.phase)))
+        fail('Invalid camp behavior.')
+      for (const key of ['homeSpaceId', 'caveId'])
+        if (behavior[key] != null && typeof behavior[key] !== 'string') fail('Invalid camp space.')
+      for (const key of ['chaseRange', 'tetherRange'])
+        if (
+          behavior[key] != null &&
+          (typeof behavior[key] !== 'number' || !Number.isFinite(behavior[key]) || Number(behavior[key]) <= 0)
+        )
+          fail('Invalid camp pursuit range.')
+    }
     if (unit.dailySchedule != null) {
       const schedule = unit.dailySchedule
       if (!isObject(schedule)) fail('Invalid save file: dailySchedule is invalid.')
@@ -96,7 +128,12 @@ export function validatePlayerUnits(units: unknown[], playerIndex: number, size:
   })
 }
 
-export function validatePlayerCorpses(corpses: unknown[], playerIndex: number, size: number, config: LoadedGameConfig): void {
+export function validatePlayerCorpses(
+  corpses: unknown[],
+  playerIndex: number,
+  size: number,
+  config: LoadedGameConfig
+): void {
   corpses.forEach((corpse, corpseIndex) => {
     validateEntityPosition(corpse, size, `player ${playerIndex} corpse ${corpseIndex}`)
     if (!isSupportedSavedUnitType(corpse.type, config)) {
@@ -104,4 +141,3 @@ export function validatePlayerCorpses(corpses: unknown[], playerIndex: number, s
     }
   })
 }
-

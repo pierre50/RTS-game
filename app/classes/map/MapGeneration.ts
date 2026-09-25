@@ -1,4 +1,8 @@
+import { installWildlifeStore } from '../../services/WildlifeStore'
+import { beginLoadTrace } from '../../lib/loadDiagnostics'
+import { getPackedCellStore } from '../cell/PackedCellRegistry'
 import { takePreparedAnimals } from './generation/PreparedMapContent'
+import { destroyLogicalResourceViews } from '../resources/ResourceHandle'
 import { Assets } from 'pixi.js'
 import { Gaia } from '../players'
 import { MapBlueprintGeneration } from './generation/MapBlueprintGeneration'
@@ -42,6 +46,7 @@ import {
 } from './MapGenerationPipeline'
 import {
   applySavedStateToGeneratedMap,
+  applySavedStateToGeneratedMapAsync,
   clearGeneratedGameplayState,
   finishSavedStateRestore,
   generateFromJSON,
@@ -93,9 +98,12 @@ export class MapGeneration {
   }
 
   destroyGeneratedChildren(): void {
+    destroyLogicalResourceViews(this.map)
     this.map.terrainBake?.destroy()
     this.map.terrainChunkManager?.destroy()
-    for (const row of this.map.grid) {
+    const packed = getPackedCellStore(this.map.grid)
+    const rows = packed ? [packed.changedCells(this.map.grid)] : this.map.grid
+    for (const row of rows) {
       for (const cell of row || []) {
         if (!cell?.isGenerationCell) continue
         for (const child of cell.children || []) {
@@ -180,6 +188,13 @@ export class MapGeneration {
 
   applySavedStateToGeneratedMap(data: SavedGameData): void {
     applySavedStateToGeneratedMap(this.map, data)
+  }
+
+  async applySavedStateToGeneratedMapAsync(
+    data: SavedGameData,
+    onProgress: (stage: string, progress: number) => Promise<void>
+  ): Promise<void> {
+    await applySavedStateToGeneratedMapAsync(this.map, data, onProgress)
   }
 
   async stylishMap({
@@ -286,6 +301,10 @@ export class MapGeneration {
 
   generateSets() {
     const prepared = takePreparedAnimals(this.map)
+    if (prepared && !this.map.context.editor) {
+      installWildlifeStore(this.map, prepared, `wildlife:${this.map.seed ?? 0}`)
+      return
+    }
     if (prepared) {
       for (const animal of prepared)
         if (this.canPlaceAmbientAnimalAt(animal.i, animal.j)) this._gaiaCreateAnimal(animal)
@@ -301,13 +320,48 @@ export class MapGeneration {
 
   async generateSetsAsync() {
     const prepared = takePreparedAnimals(this.map)
+    if (prepared && !this.map.context.editor) {
+      installWildlifeStore(this.map, prepared, `wildlife:${this.map.seed ?? 0}`)
+      return
+    }
     if (prepared) {
-      for (let index = 0; index < prepared.length; index++) {
-        const animal = prepared[index]
-        if (!animal) continue
-        // Villages and camps are placed at runtime; keep occupied cells intact.
-        if (this.canPlaceAmbientAnimalAt(animal.i, animal.j)) this._gaiaCreateAnimal(animal)
-        if (index > 0 && index % 32 === 0) await this.yieldToBrowser()
+      const trace = beginLoadTrace('blueprint.animals', { total: prepared.length })
+      let sliceStartedAt = performance.now()
+      let workMs = 0
+      let yields = 0
+      let created = 0
+      try {
+        for (let index = 0; index < prepared.length; index++) {
+          const animal = prepared[index]
+          if (!animal) continue
+          // Villages and camps are placed at runtime; keep occupied cells intact.
+          if (this.canPlaceAmbientAnimalAt(animal.i, animal.j)) {
+            this._gaiaCreateAnimal(animal)
+            created++
+          }
+          if ((index + 1) % 4096 === 0)
+            trace.progress({
+              processed: index + 1,
+              created,
+              workMs: Math.round(workMs + performance.now() - sliceStartedAt),
+              yields,
+            })
+          if (performance.now() - sliceStartedAt >= 8) {
+            workMs += performance.now() - sliceStartedAt
+            yields++
+            await this.yieldToBrowser()
+            sliceStartedAt = performance.now()
+          }
+        }
+        trace.end({
+          processed: prepared.length,
+          created,
+          workMs: Math.round(workMs + performance.now() - sliceStartedAt),
+          yields,
+        })
+      } catch (error) {
+        trace.fail(error)
+        throw error
       }
       return
     }

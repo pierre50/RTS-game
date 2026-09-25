@@ -603,15 +603,15 @@ function strategyFixture(options = {}) {
   return { ai, strategy, barracks, villager }
 }
 
-test('ai training preserves the reserve and reserves each accepted order only once', () => {
+test('ai training needs no resources and leaves construction reserves untouched', () => {
   const { ai, strategy, barracks, villager } = strategyFixture()
-  ai.food = 170
+  ai.food = 0
   const villagers = [villager(), villager(), villager()]
   const reserve = { food: 70 }
-  assert.equal(strategy.trainUnits(0, 3, [barracks], 'Fantassin', villagers, reserve), 2)
-  assert.equal(villagers.filter(unit => unit.trainingTargetType).length, 2)
+  assert.equal(strategy.trainUnits(0, 3, [barracks], 'Fantassin', villagers, reserve), 3)
+  assert.equal(villagers.filter(unit => unit.trainingTargetType).length, 3)
   assert.deepEqual(reserve, { food: 70 })
-  assert.equal(ai.food, 170)
+  assert.equal(ai.food, 0)
   assert.equal(strategy.trainUnits(3, 3, [barracks], 'Fantassin', villagers), 0)
 })
 

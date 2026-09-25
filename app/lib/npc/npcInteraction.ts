@@ -111,9 +111,7 @@ export function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice 
   if (sleeping && target.owner === hero.owner && heroCanCommand(hero)) {
     // Their chief talking to them is a real wake, not a peek — foreign sleepers stay asleep.
     target.context?.unitRest?.wakeSleepingUnitForOrder(target)
-  } else if (sleeping) {
-    target.context?.unitRest?.previewSleepingUnitWake(target)
-  } else {
+  } else if (!sleeping) {
     target.setTextures?.(SHEET_TYPES.standing)
   }
   if (shouldPlayVoice) playSelectionSound(target)

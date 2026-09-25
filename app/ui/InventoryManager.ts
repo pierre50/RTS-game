@@ -3,7 +3,6 @@ import { SOUND_CUES } from '../constants'
 import { getIconPath } from '../lib/graphics/assets'
 import { Modal } from '../lib'
 import { playUiSound } from '../lib/audio/uiSound'
-import { heroCanCommand } from '../lib/chief'
 import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
 import {
   EQUIPPED_ITEM_WEAPON,
@@ -13,7 +12,6 @@ import {
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import { t } from '../lib/lang'
-import { getActiveColonyAlerts } from '../lib/world/regionAlerts'
 import type { MenuButtonSpec } from '../types/ui'
 import { createEntityInfoContent } from './EntityInfoContent'
 import { appendInventoryEmptyIcon } from './inventory/InventoryActionRow'
@@ -25,16 +23,11 @@ import {
 import { createInventoryEquipmentRow } from './inventory/InventoryItemRows'
 import { renderInventoryToolIcons } from './inventory/InventoryToolIcons'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
-import { renderInventoryWorldMap } from './InventoryWorldMap'
 import type { MenuHost } from './MenuHost'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
-import { renderMinimapResourcePanel } from './minimap/MinimapResourcePanel'
-import { createQuestMarker } from './QuestMarker'
 import { ModalTabs } from './Tabs'
 
-type ActionMenuTab = 'info' | 'tools' | 'minimap' | 'worldmap' | 'construction'
-
-const CHIEF_TABS = new Set<ActionMenuTab>(['worldmap'])
+type ActionMenuTab = 'info' | 'tools' | 'minimap' | 'construction'
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -51,14 +44,12 @@ export class InventoryManager {
   infoPanel: HTMLDivElement
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
-  worldMapPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   weaponPanel: HTMLDivElement
   equippedPanel: HTMLDivElement
   lootedEquipmentPanel: HTMLDivElement
   minimapLayout: HTMLDivElement
   minimapLegend: HTMLDivElement
-  minimapResources: HTMLDivElement
   slots: Map<HeroEquippedItem, HTMLElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
@@ -85,8 +76,6 @@ export class InventoryManager {
     this.toolsPanel.className = 'action-menu-page inventory-tools-page'
     this.minimapPanel = document.createElement('div')
     this.minimapPanel.className = 'action-menu-page action-menu-minimap-page'
-    this.worldMapPanel = document.createElement('div')
-    this.worldMapPanel.className = 'action-menu-page action-menu-worldmap-page'
     this.constructionPanel = document.createElement('div')
     this.constructionPanel.className = 'action-menu-page action-menu-construction-page'
     this.weaponPanel = document.createElement('div')
@@ -99,15 +88,12 @@ export class InventoryManager {
     this.minimapLayout.className = 'minimap-panel-layout'
     this.minimapLegend = document.createElement('div')
     this.minimapLegend.className = 'minimap-legend'
-    this.minimapResources = document.createElement('div')
-    this.minimapResources.className = 'minimap-resources minimap-legend'
 
     this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
         { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
-        { id: 'worldmap', label: t('inventoryTabWorldmap'), page: this.worldMapPanel },
         { id: 'construction', label: t('inventoryTabConstruction'), page: this.constructionPanel },
       ],
       this.activeTab,
@@ -122,7 +108,7 @@ export class InventoryManager {
     this.toolsPanel.appendChild(this.lootedEquipmentPanel)
 
     this.panel.appendChild(this.modalTabs.element)
-    this.minimapLayout.append(menu.minimapWrap, this.minimapLegend, this.minimapResources)
+    this.minimapLayout.append(menu.minimapWrap, this.minimapLegend)
     this.minimapPanel.appendChild(this.minimapLayout)
   }
 
@@ -173,31 +159,7 @@ export class InventoryManager {
     return this.opened
   }
 
-  private syncTabAvailability(): boolean {
-    const isChief = heroCanCommand(this.menu.context.controls.heroUnit)
-    for (const id of CHIEF_TABS) {
-      const button = this.modalTabs.tabs.buttons.get(id)
-      if (!button) continue
-      button.hidden = !isChief
-      button.disabled = !isChief
-      button.classList.toggle('hidden', !isChief)
-    }
-    this.syncWorldMapAlertBadge()
-    return isChief
-  }
-
-  private syncWorldMapAlertBadge(): void {
-    const button = this.modalTabs.tabs.buttons.get('worldmap')
-    if (!button) return
-    const hasAlerts = getActiveColonyAlerts(this.menu.context).length > 0
-    const existing = button.querySelector('.quest-marker')
-    if (hasAlerts && !existing) button.appendChild(createQuestMarker())
-    else if (!hasAlerts && existing) existing.remove()
-  }
-
   showTab(tab: ActionMenuTab): void {
-    const isChief = this.syncTabAvailability()
-    if (!isChief && CHIEF_TABS.has(tab)) tab = 'tools'
     this.activeTab = tab
     this.modalTabs.setActive(tab, { emit: false })
 
@@ -205,7 +167,6 @@ export class InventoryManager {
       this.menu.activateMiniMap()
       this.menu.clearActionHotkeys()
       this.renderMinimapLegend()
-      this.renderMinimapResources()
       return
     }
 
@@ -213,8 +174,6 @@ export class InventoryManager {
 
     if (tab === 'construction') {
       this.renderConstruction()
-    } else if (tab === 'worldmap') {
-      this.renderWorldMap()
     } else {
       if (tab === 'tools') this.renderTools()
       else if (tab === 'info') this.renderInfo()
@@ -233,19 +192,8 @@ export class InventoryManager {
     this.infoPanel.appendChild(createEntityInfoContent(this.menu.context.app, entity, { showAllXp: true }))
   }
 
-  renderWorldMap(): void {
-    // The current region's colony summary (idleWorkers, stocks…) is otherwise only refreshed on
-    // day-change/region-travel, so it can lag behind what the player sees live on their own map.
-    this.menu.context.updateWorldEconomy?.()
-    renderInventoryWorldMap(this.worldMapPanel, this.menu)
-  }
-
   renderMinimapLegend(): void {
-    renderMinimapLegend(this.minimapLegend, this.menu.context.player)
-  }
-
-  renderMinimapResources(): void {
-    renderMinimapResourcePanel(this.minimapResources, this.menu)
+    renderMinimapLegend(this.minimapLegend, this.menu)
   }
 
   getActiveWeaponEquipment(tool: HeroEquippedItem): string | undefined {
@@ -359,12 +307,10 @@ export class InventoryManager {
   }
 
   render(equippedTool: HeroEquippedItem | null): void {
-    if (!this.syncTabAvailability() && CHIEF_TABS.has(this.activeTab)) this.showTab('tools')
     for (const [tool, slot] of this.slots) {
       slot.classList.toggle('active', tool === equippedTool)
     }
     if (this.activeTab === 'tools') this.renderLootedEquipment()
-    if (this.activeTab === 'minimap') this.renderMinimapResources()
   }
 
   refresh(): void {

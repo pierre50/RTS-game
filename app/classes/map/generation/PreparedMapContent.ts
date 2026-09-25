@@ -1,3 +1,4 @@
+import { getPackedCellStore } from '../../cell/PackedCellRegistry'
 import { CELL_DEPTH } from '../../../constants'
 import type { MapBlueprint } from '../MapGenerationTypes'
 import type { TerrainMap, PatchBorderGroundType } from '../terrain/MapTerrainTypes'
@@ -47,7 +48,9 @@ export function consumePreparedTerrain(map: TerrainMap): boolean {
   const entries = terrain.get(map)
   if (!entries) return false
   terrain.delete(map)
-  for (const row of map.grid) for (const cell of row) cell?.resetTerrainAppearance?.()
+  const packed = getPackedCellStore(map.grid)
+  if (packed) packed.resetAppearance()
+  else for (const row of map.grid) for (const cell of row) cell?.resetTerrainAppearance?.()
   applyPreparedTerrain(map, entries)
   return true
 }

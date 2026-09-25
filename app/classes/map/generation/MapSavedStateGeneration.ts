@@ -1,3 +1,11 @@
+import { clearNaturalGrowth } from '../../../services/NaturalGrowthQueue'
+import { installWildlifeStore, clearWildlifeStore, isWildlife } from '../../../services/WildlifeStore'
+import { traceLoad } from '../../../lib/loadDiagnostics'
+import { resourceData } from '../../../serialization/ResourceSaveData'
+import { CompactResourceSet, materializedResources } from '../../resources/CompactResourceSet'
+import { getResourceConfig } from '../../ResourceTexture'
+import { PASSABLE_RESOURCE_TYPES } from '../../../constants'
+import { getPackedCellStore } from '../../cell/PackedCellRegistry'
 import { Resource } from '../../Resource'
 import { logStartingWheat } from '../../../lib/resources/startingWheatDiagnostics'
 import { migrateSavedAge, AGE_RULES_VERSION } from '../../../lib/objectives/ageRules'
@@ -44,12 +52,15 @@ function createGaiaRespawnSlot(animal: SaveEntityState, context: GameContextLike
   }
 }
 
-function createResourceFromState(resource: ResourceOptions, map: MapGenerationMap): ResourceEntity {
+function createResourceFromState(
+  resource: ResourceOptions & { isDead?: boolean; isDestroyed?: boolean },
+  map: MapGenerationMap
+): ResourceEntity {
   const resourceState =
     resource.type === RESOURCE_TYPES.wheat && resource.currentFrame == null && resource.startsMature == null
       ? { ...resource, startsMature: true }
       : resource
-  return map.addChild(new Resource(resourceState, runtimeContext(map)))
+  return Resource.spawn(resourceState, runtimeContext(map))
 }
 
 export function restoreSavedPlayers(
@@ -92,8 +103,29 @@ export function restoreSavedResources(
   resources: SaveEntityState[],
   naturalResourceRespawnSlots?: SaveEntityState[]
 ): void {
-  map.resources = new Set(resources.map(resource => createResourceFromState(resource, map)))
-  logStartingWheat(map.resources)
+  const packed = !map.context.editor && getPackedCellStore(map.grid)
+  if (packed) {
+    const collection = new CompactResourceSet(
+      resources.length,
+      packed.stride,
+      `resource:${map.worldId ?? 'local'}:${map.worldRegionId ?? 'outside'}:${map.seed ?? 0}`,
+      type => getResourceConfig().resources[type],
+      state => createResourceFromState(state, map),
+      runtimeContext(map)
+    )
+    map.resources = collection
+    packed.resourceAt = index => collection.atCell(index)
+    for (const resource of resources) {
+      if (collection.canPack(resource)) {
+        collection.addState(resource)
+        const index = resource.i * packed.stride + resource.j
+        const extra = packed.extras.get(index)
+        if (extra?.has == null && extra) delete extra.has
+        if (!PASSABLE_RESOURCE_TYPES.has(resource.type)) packed.flags[index] |= 1
+      } else collection.add(createResourceFromState(resource, map))
+    }
+  } else map.resources = new Set(resources.map(resource => createResourceFromState(resource, map)))
+  logStartingWheat(materializedResources(map.resources))
   map.naturalResourceRespawnSlots = [...(naturalResourceRespawnSlots ?? [])]
 }
 
@@ -106,12 +138,32 @@ export function restoreSavedEntities(
   map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index], true))
   map.context.players.forEach(restorePlayerInteriors)
   const gaia = map.gaia instanceof Gaia ? map.gaia : null
-  animals.forEach(animal => {
-    if (!gaia) return
-    if (animal.isDestroyed)
-      (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
-    else gaia.createAnimal(animal)
-  })
+  const wildlife = installWildlifeStore(map, animals.filter(isWildlife), `wildlife:${map.seed ?? 0}`)
+  const interacting = new Set<string>()
+  for (const player of players)
+    for (const unit of player.units ?? []) {
+      for (const ref of [unit.dest, unit.previousDest, unit.realDest]) {
+        const label = typeof ref === 'string' ? ref : Array.isArray(ref) ? ref[2] : ref?.label
+        if (label) interacting.add(label)
+      }
+    }
+  // Restore encounter participants before resolving unit destinations and combat references.
+  for (const animal of animals) {
+    if (!isWildlife(animal) || animal.isDestroyed || !gaia) continue
+    if (!animal.isFleeing && animal.action !== 'attack' && !interacting.has(animal.label ?? '')) continue
+    const cell = map.grid[animal.i]?.[animal.j]
+    if (!cell || cell.has) continue
+    const saved = wildlife.entries.get(animal.label ?? '')?.state ?? animal
+    gaia.createAnimal({ ...saved, ...animal })
+  }
+  animals
+    .filter(animal => !isWildlife(animal))
+    .forEach(animal => {
+      if (!gaia) return
+      if (animal.isDestroyed)
+        (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
+      else gaia.createAnimal(animal)
+    })
 
   getGaiaAnimals(gaia)
     .filter(animal => !animal.isDestroyed)
@@ -176,7 +228,6 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
 
   map.rebuildTerrainAppearance()
 
-
   controls?.setCamera?.(camera.x, camera.y, true)
   menu?.init?.()
   if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
@@ -186,6 +237,8 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
 }
 
 export function clearGeneratedGameplayState(map: MapGenerationMap): void {
+  clearWildlifeStore(map)
+  clearNaturalGrowth(map)
   // Stop provisional AI tasks before swapping in the saved village roster.
   for (const player of [...map.context.players]) {
     if (player instanceof AI) player.die()
@@ -206,7 +259,11 @@ export function clearGeneratedGameplayState(map: MapGenerationMap): void {
     map.removeChild(child)
     child.destroy?.({ children: true, texture: false, textureSource: false })
   }
-  for (const row of map.grid || []) {
+  const packed = getPackedCellStore(map.grid)
+  if (packed) packed.resourceAt = undefined
+  if (packed) for (let index = 0; index < packed.flags.length; index++) packed.flags[index] &= ~1
+  const rows = packed ? [packed.changedCells(map.grid)] : map.grid || []
+  for (const row of rows) {
     for (const cell of row || []) {
       if (!cell) continue
       cell.has = null
@@ -223,22 +280,87 @@ export function clearGeneratedGameplayState(map: MapGenerationMap): void {
 }
 
 export function applySavedStateToGeneratedMap(map: MapGenerationMap, data: SavedGameData): void {
+  for (const step of savedStateRestoreSteps(map, data)) step.run()
+}
+
+export async function applySavedStateToGeneratedMapAsync(
+  map: MapGenerationMap,
+  data: SavedGameData,
+  onProgress: (stage: string, progress: number) => Promise<void>
+): Promise<void> {
+  for (const step of savedStateRestoreSteps(map, data)) {
+    await onProgress(step.label, step.progress)
+    step.run()
+  }
+}
+
+function* savedStateRestoreSteps(map: MapGenerationMap, data: SavedGameData) {
+  yield { label: 'restoringResources', progress: 0, run: () => {} }
+
   data.players = groupPlayersInteriorBuildings(data.players)
   data.animals = data.animals.filter(animal => !isDerivedInteriorHorse(animal, data.players))
-  const { players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
+  const { players, camera, naturalResourceRespawnSlots, animals, runtime } = data
   const context = runtimeContext(map)
   const { menu, controls } = context
+  const baseline = map.resources instanceof CompactResourceSet ? map.resources : null
+  let delta = data.resourceDelta
+    ? { resourceDelta: data.resourceDelta, resources: data.resources }
+    : baseline?.deltaFromFullSave(data.resources, resourceData)
+  if (delta && !baseline) throw new Error('SAVE_RESOURCE_BLUEPRINT_MISMATCH')
+  if (delta) baseline!.assertBlueprintDelta(delta.resourceDelta)
+  const needsOffline =
+    runtime?.offlineFromElapsedMs != null &&
+    runtime.dayNightElapsedMs != null &&
+    runtime.dayNightElapsedMs > runtime.offlineFromElapsedMs
+  if (delta && needsOffline) {
+    data.resources = baseline!.expandDelta(delta.resourceDelta, delta.resources, resourceData)
+    delete data.resourceDelta
+  }
 
-  clearGeneratedGameplayState(map)
-  restoreSavedPlayers(map, players, runtime)
-
-  applyOfflineWorldSimulation(map, data)
-  restoreSavedResources(map, resources, data.naturalResourceRespawnSlots ?? naturalResourceRespawnSlots)
-
-  controls?.setCamera?.(camera.x, camera.y, true)
-  menu?.init?.()
-  if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
-
-  restoreSavedEntities(map, players, animals, context)
-  finishSavedStateRestore(map)
+  yield {
+    label: 'restoringResources',
+    progress: 0.1,
+    run: () => {
+      traceLoad('save.clearGeneratedState', () => clearGeneratedGameplayState(map))
+      traceLoad('save.restorePlayers', () => restoreSavedPlayers(map, players, runtime))
+    },
+  }
+  yield {
+    label: 'restoringResources',
+    progress: 0.2,
+    run: () => {
+      traceLoad('save.offlineSimulation', () => applyOfflineWorldSimulation(map, data))
+      if (delta && needsOffline) delta = baseline!.deltaFromFullSave(data.resources, resourceData)
+      if (delta && baseline) {
+        const packed = getPackedCellStore(map.grid)
+        if (!packed) throw new Error('SAVE_RESOURCE_BLUEPRINT_MISMATCH')
+        map.resources = baseline
+        packed.resourceAt = index => baseline.atCell(index)
+        for (const extra of packed.extras.values()) if (extra.has == null) delete extra.has
+        traceLoad('save.restoreResourceDelta', () =>
+          baseline.restoreDelta(delta!.resourceDelta, delta!.resources, index => {
+            packed.flags[index] |= 1
+          })
+        )
+        map.naturalResourceRespawnSlots = [...(data.naturalResourceRespawnSlots ?? naturalResourceRespawnSlots ?? [])]
+      } else restoreSavedResources(map, data.resources, data.naturalResourceRespawnSlots ?? naturalResourceRespawnSlots)
+    },
+  }
+  yield {
+    label: 'restoringCamera',
+    progress: 0.6,
+    run: () => {
+      traceLoad('save.restoreCamera', () => controls?.setCamera?.(camera.x, camera.y, true))
+      menu?.init?.()
+      if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
+    },
+  }
+  yield {
+    label: 'restoringEntities',
+    progress: 0.7,
+    run: () => {
+      traceLoad('save.restoreEntities', () => restoreSavedEntities(map, players, animals, context))
+      finishSavedStateRestore(map)
+    },
+  }
 }

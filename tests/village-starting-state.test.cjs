@@ -158,6 +158,7 @@ test('fresh campaign boot restores profiles once and forwards them to remote vil
       '../../lib/lpc': { preloadBakedLpcUnitsForPlayers: async () => {} },
       '../../serialization/SaveSerializer': {
         serializeGame: () => ({ ...structuredClone(state), players: structuredClone(context.players) }),
+        serializeGameForPersistence: () => ({ ...structuredClone(state), players: structuredClone(context.players) }),
       },
       '../../serialization/CampaignSave': {
         createInitialCampaignSave: saved => ({ currentWorldId: 'root', worlds: { root: { state: saved } } }),

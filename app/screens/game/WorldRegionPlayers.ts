@@ -1,5 +1,5 @@
 import { CIVILIZATIONS } from '../../config/civilizations'
-import { playerColors } from '../../lib/graphics/colors'
+import { playerColors } from '../../lib/graphics/playerColorData'
 import { playableColor } from '../../lib/graphics/playableColor'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import type { MapBlueprint } from '../../classes/map/MapGenerationTypes'
@@ -33,13 +33,14 @@ function configForCivilization(options: {
 }): WorldRegionPlayerConfig {
   const { civ, faction, human, index, isHuman } = options
   const fallbackFactionId = factionIdForCivilization(civ)
+  const humanColor = playableColor(human.color)
+  const availableColors = playerColors.filter(color => color !== humanColor)
+  const fallbackColor = availableColors[index % availableColors.length]
+  const factionColor = playableColor(faction?.color, fallbackColor)
   return {
     ...(isHuman ? human : {}),
     civ,
-    color: playableColor(
-      isHuman ? (human.color ?? faction?.color) : faction?.color,
-      playerColors[index % playerColors.length]
-    ),
+    color: isHuman ? humanColor : (factionColor === humanColor ? fallbackColor : factionColor),
     factionId: isHuman ? (human.factionId ?? faction?.id ?? fallbackFactionId) : (faction?.id ?? fallbackFactionId),
     gender: isHuman ? human.gender : 'male',
     isHuman,

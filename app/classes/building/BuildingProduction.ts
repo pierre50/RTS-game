@@ -253,7 +253,11 @@ export class BuildingProduction {
     const cost = getUnitTrainingCost(building.owner, type)
     const traineeTraining = isTraineeTrainingType(building, type)
     if (!this.canRequestUnitTraining(type, traineeTraining, alreadyPaid, force, trainee)) return false
-    if (building.isBuilt && !building.isDead && (canAfford(building.owner, cost) || alreadyPaid)) {
+    if (
+      building.isBuilt &&
+      !building.isDead &&
+      (canAfford(building.owner, cost, { includeHero: false }) || alreadyPaid)
+    ) {
       if (!alreadyPaid) {
         success = this.enqueueUnitPurchase(type, cost)
       } else if (traineeTraining && trainee) {
@@ -294,12 +298,12 @@ export class BuildingProduction {
     const { menu } = building.context
     if (isAIControlledPlayer(building.owner)) {
       if (!building.queue.length && building.loading === null) {
-        payCost(building.owner, cost)
+        payCost(building.owner, cost, { includeHero: false })
         building.queue.push(type)
         return true
       }
     } else {
-      payCost(building.owner, cost)
+      payCost(building.owner, cost, { includeHero: false })
       building.queue.push(type)
       if (building.selected && building.owner.isPlayed) {
         menu.updateButtonContent(type, building.queue.filter((q: string) => q === type).length)
@@ -334,5 +338,4 @@ export class BuildingProduction {
     }
     return true
   }
-
 }

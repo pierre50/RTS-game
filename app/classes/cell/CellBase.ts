@@ -104,13 +104,13 @@ export class CellBase extends RuntimeCellContainer {
   }
 
   setTerrainType(type: string): void {
+    const wasWater = this.category === 'Water'
     this.cellTerrain.setTerrainType(type)
-    this.map.invalidateWaterOverlay?.()
+    if (wasWater !== (this.category === 'Water')) this.map.invalidateWaterOverlay?.()
   }
 
   setWaterBorder(resourceName: string, index: number): void {
     this.cellTerrain.setWaterBorder(resourceName, index)
-    this.map.invalidateWaterOverlay?.()
   }
 
   setReliefBorder(index: number, elevation?: number): void {
@@ -118,8 +118,9 @@ export class CellBase extends RuntimeCellContainer {
   }
 
   setWater(): void {
+    const wasWater = this.category === 'Water'
     this.cellTerrain.setWater()
-    this.map.invalidateWaterOverlay?.()
+    if (wasWater !== (this.category === 'Water')) this.map.invalidateWaterOverlay?.()
   }
 
   fillReliefCellsAroundCell(): void {

@@ -3,6 +3,7 @@ const MAX_SLOW_SAMPLES = 12
 const MAX_SLOW_FRAMES = 24
 const MAX_FRAME_METRIC_DETAILS = 8
 const MAX_RENDER_STATS = 12
+const RENDER_STATS_INTERVAL_MS = 1000
 const SLOW_CALL_THRESHOLD_MS = 8
 const SLOW_FRAME_THRESHOLD_MS = 24
 const RUNTIME_SAMPLE_RATES = new Map([
@@ -42,6 +43,8 @@ type Metric = {
 type FrameMetric = {
   count: number
   exclusiveMs: number
+  estimatedExclusiveMs: number
+  estimatedMs: number
   measuredMs: number
   measuredCount: number
   total: number
@@ -61,7 +64,10 @@ type MeasureStackEntry = {
   name: string
 }
 
+type DiagnosticEvent = { at: number; name: string; details: Record<string, string | number | boolean | null> }
+
 type SlowFrame = {
+  events: DiagnosticEvent[]
   at: number
   estimatedExclusiveMs: number
   duration: number
@@ -102,6 +108,8 @@ type RenderNode = {
 }
 
 export class PerformanceMonitor {
+  private events: DiagnosticEvent[] = []
+  private lastRenderStatsAt = -Infinity
   app: AppLike
   currentFrameMetrics: Map<string, FrameMetric>
   frameMetricStats: Map<string, FrameMetricStats>
@@ -140,6 +148,11 @@ export class PerformanceMonitor {
     this.wrapRendererRender()
   }
 
+  markEvent(name: string, details: DiagnosticEvent['details'] = {}): void {
+    this.events.push({ at: performance.now(), name, details: { ...details } })
+    if (this.events.length > 128) this.events.shift()
+  }
+
   setPhase(phase: string): void {
     if (this.phase !== phase) {
       this.flushCurrentFrameMetrics()
@@ -168,6 +181,8 @@ export class PerformanceMonitor {
   }
 
   record(name: string, duration: number, weight = 1, exclusiveDuration = duration): void {
+    const parent = this.measureStack[this.measureStack.length - 1]
+    if (parent) parent.childMs += duration
     const metricName = this.metricName(name)
     let metric = this.metrics.get(metricName)
     if (!metric) {
@@ -208,14 +223,24 @@ export class PerformanceMonitor {
   recordFrameMetric(name: string, duration: number, exclusiveDuration: number, weight: number): void {
     let metric = this.currentFrameMetrics.get(name)
     if (!metric) {
-      metric = { count: 0, exclusiveMs: 0, measuredCount: 0, measuredMs: 0, total: 0 }
+      metric = {
+        count: 0,
+        exclusiveMs: 0,
+        estimatedExclusiveMs: 0,
+        estimatedMs: 0,
+        measuredCount: 0,
+        measuredMs: 0,
+        total: 0,
+      }
       this.currentFrameMetrics.set(name, metric)
     }
-    metric.count += weight
-    metric.exclusiveMs += exclusiveDuration * weight
+    metric.count += 1
+    metric.exclusiveMs += exclusiveDuration
+    metric.estimatedExclusiveMs += exclusiveDuration * weight
+    metric.estimatedMs += duration * weight
     metric.measuredCount += 1
     metric.measuredMs += duration
-    metric.total += duration * weight
+    metric.total += duration
   }
 
   finalizeFrame(duration: number): void {
@@ -224,7 +249,7 @@ export class PerformanceMonitor {
       if (duration >= SLOW_FRAME_THRESHOLD_MS) {
         this.slowFrameCount++
         this.slowFrames.push(this.createSlowFrame(duration, 0, 0, 0, 0, []))
-        if (this.slowFrames.length > MAX_SLOW_FRAMES) this.slowFrames.shift()
+        this.retainWorstSlowFrames()
       }
       return
     }
@@ -238,8 +263,8 @@ export class PerformanceMonitor {
       let measuredMs = 0
       let exclusiveMeasuredMs = 0
       for (const metric of this.currentFrameMetrics.values()) {
-        estimatedMs += metric.total
-        estimatedExclusiveMs += metric.exclusiveMs
+        estimatedMs += metric.estimatedMs
+        estimatedExclusiveMs += metric.estimatedExclusiveMs
         measuredMs += metric.measuredMs
         exclusiveMeasuredMs += metric.exclusiveMs
       }
@@ -258,10 +283,16 @@ export class PerformanceMonitor {
       this.slowFrames.push(
         this.createSlowFrame(duration, estimatedMs, estimatedExclusiveMs, measuredMs, exclusiveMeasuredMs, metrics)
       )
-      if (this.slowFrames.length > MAX_SLOW_FRAMES) this.slowFrames.shift()
+      this.retainWorstSlowFrames()
     }
 
     this.currentFrameMetrics.clear()
+  }
+
+  private retainWorstSlowFrames(): void {
+    if (this.slowFrames.length <= MAX_SLOW_FRAMES) return
+    this.slowFrames.sort((a, b) => b.duration - a.duration)
+    this.slowFrames.length = MAX_SLOW_FRAMES
   }
 
   flushCurrentFrameMetrics(): void {
@@ -309,6 +340,10 @@ export class PerformanceMonitor {
     const phases = new Set(metrics.map(metric => metric.phase))
     if (this.phase) phases.add(this.phase)
     return {
+      events: this.events
+        .filter(event => performance.now() - event.at <= Math.max(3000, duration + 250))
+        .slice(-24)
+        .map(event => ({ ...event, details: { ...event.details } })),
       at: performance.now(),
       duration,
       estimatedExclusiveMs,
@@ -353,9 +388,10 @@ export class PerformanceMonitor {
     this._originalRendererRender = originalRender
     renderer.render = (...args: unknown[]) => {
       const options = args[0] as { target?: unknown } | undefined
-      const metricName = options && typeof options === 'object' && 'target' in options && options.target
-        ? 'pixi.renderTexture'
-        : 'pixi.render'
+      const metricName =
+        options && typeof options === 'object' && 'target' in options && options.target
+          ? 'pixi.renderTexture'
+          : 'pixi.render'
       const startedAt = performance.now()
       try {
         return this.measure(metricName, () => originalRender(...args))
@@ -366,6 +402,9 @@ export class PerformanceMonitor {
   }
 
   recordRenderStats(root: unknown, duration: number, target: RenderStats['target']): void {
+    const now = performance.now()
+    if (now - this.lastRenderStatsAt < RENDER_STATS_INTERVAL_MS) return
+    this.lastRenderStatsAt = now
     const stats = this.collectRenderStats(root)
     if (!stats) return
     this.renderStats.push({ ...stats, at: performance.now(), duration, target })
@@ -429,8 +468,6 @@ export class PerformanceMonitor {
     const entry = this.measureStack.pop()
     const childMs = entry?.name === name ? entry.childMs : 0
     const exclusiveDuration = Math.max(0, duration - childMs)
-    const parent = this.measureStack[this.measureStack.length - 1]
-    if (parent) parent.childMs += duration
     this.record(name, duration, weight, exclusiveDuration)
   }
 
@@ -488,34 +525,41 @@ export class PerformanceMonitor {
         maxFrameCalls: frameStats?.maxFrameCalls ?? 0,
       }
     }
+    const averageMs = sortedFrames.length
+      ? sortedFrames.reduce((total, duration) => total + duration, 0) / sortedFrames.length
+      : 0
     return {
       frames: {
         samples: sortedFrames.length,
-        fps: this.app.ticker.FPS,
+        fps: averageMs > 0 ? 1000 / averageMs : 0,
+        tickerFps: this.app.ticker.FPS,
+        windowSlowCount: sortedFrames.filter(duration => duration >= SLOW_FRAME_THRESHOLD_MS).length,
         speed: this.app.ticker.speed,
-        averageMs: sortedFrames.length
-          ? sortedFrames.reduce((total, duration) => total + duration, 0) / sortedFrames.length
-          : 0,
+        averageMs,
         p95Ms: percentile(0.95),
         p99Ms: percentile(0.99),
         slowCount: this.slowFrameCount,
       },
+      events: this.events.map(event => ({ ...event, details: { ...event.details } })),
       metrics,
       renderStats: this.renderStats.map(stats => ({ ...stats })),
       slowFrames: this.slowFrames.map(frame => ({
         ...frame,
+        events: frame.events.map(event => ({ ...event, details: { ...event.details } })),
         metrics: frame.metrics.map(metric => ({ ...metric })),
       })),
     }
   }
 
   reset(): void {
+    this.events.length = 0
     this.currentFrameMetrics.clear()
     this.frameMetricStats.clear()
     this.measureStack.length = 0
     this.metrics.clear()
     this.phaseFrameCount = 0
     this.renderStats.length = 0
+    this.lastRenderStatsAt = -Infinity
     this.sampleCounters.clear()
     this.slowFrameCount = 0
     this.slowFrames.length = 0

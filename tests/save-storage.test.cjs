@@ -8,7 +8,7 @@ function loadSaveStorage(storage, electronSaves) {
   global.localStorage = storage
   return loadTsModule('app/serialization/SaveStorage.ts', {
     mocks: {
-      './SaveSerializer': { serializeGame: () => ({}) },
+      './SaveSerializer': { serializeGameForPersistence: () => ({}) },
       './CampaignSave': { createInitialCampaignSave: data => data, updateCurrentWorldState: (_campaign, data) => data },
       '../lib/debug': { debugLog: () => {} },
     },

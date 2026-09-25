@@ -10,7 +10,9 @@ function loadRuntimeServices() {
         calls.push(name)
         this.layer = { name: `${name}-layer` }
       }
-      destroy() { calls.push(`destroy:${name}`) }
+      destroy() {
+        calls.push(`destroy:${name}`)
+      }
       register() {}
       getDarknessLevel() {
         return 0
@@ -19,8 +21,9 @@ function loadRuntimeServices() {
 
   const module = loadTsModule('app/screens/game/runtimeServices.ts', {
     mocks: {
+      '../../services/VillageActivitySystem': { VillageActivitySystem: service('villageActivity') },
+      '../../services/WildlifeSystem': { WildlifeSystem: service('wildlife') },
       '../../services/quests/NeutralVillageQuests': { NeutralVillageQuests: service('neutralVillageQuests') },
-      '../../services/world/WorldPursuitSystem': { WorldPursuitSystem: service('worldPursuit') },
       '../../services/buildingInterior/BuildingInteriorEntryMarkerSystem': {
         BuildingInteriorEntryMarkerSystem: service('buildingInteriorEntryMarker'),
       },
@@ -83,9 +86,6 @@ test('runtime services skip weather inside interior maps', () => {
   assert.ok(services.interiorExitMarker)
   assert.equal(context.weather, null)
   assert.equal(context.timeSkip, services.timeSkip)
-  assert.equal(context.worldPursuit, null)
-  assert.equal(services.worldPursuit, null)
-  assert.equal(calls.includes('worldPursuit'), false)
   assert.equal(calls.includes('weather'), false)
   assert.equal(calls.includes('timeSkip'), true)
   assert.equal(calls.includes('idleUnitPatrols'), true)
@@ -111,9 +111,6 @@ test('runtime services keep weather outside interior maps', () => {
   assert.ok(services.buildingInteriorEntryMarker)
   assert.equal(services.interiorExitMarker, null)
   assert.equal(context.weather, services.weather)
-  assert.equal(context.worldPursuit, null)
-  assert.equal(services.worldPursuit, null)
-  assert.equal(calls.includes('worldPursuit'), false)
   assert.equal(context.timeSkip, services.timeSkip)
   assert.equal(calls.includes('weather'), true)
   assert.equal(calls.includes('buildingInteriorEntryMarker'), true)
@@ -130,11 +127,41 @@ test('runtime services keep weather outside interior maps', () => {
 test('autonomy monitor mounts after rest and delivery and is destroyed between visits', () => {
   const { createRuntimeServices, destroyRuntimeServices, calls } = loadRuntimeServices()
   const context = {}
-  const services = createRuntimeServices(context, { mapType: 'world-region' }, () => ({ width: 100, height: 100, x: 0, y: 0 }))
+  const services = createRuntimeServices(context, { mapType: 'world-region' }, () => ({
+    width: 100,
+    height: 100,
+    x: 0,
+    y: 0,
+  }))
   assert.ok(calls.indexOf('villagerAutonomy') > calls.indexOf('unitRest'))
   assert.ok(calls.indexOf('villagerAutonomy') > calls.indexOf('resourceDelivery'))
   assert.ok(services.villagerAutonomy)
   const cleared = destroyRuntimeServices(services, context)
   assert.equal(cleared.villagerAutonomy, null)
   assert.equal(calls.filter(call => call === 'destroy:villagerAutonomy').length, 1)
+})
+
+test('outdoor runtime installs no automatic region travel service, including for legacy hosts', () => {
+  const { createRuntimeServices, createEmptyRuntimeServices } = loadRuntimeServices()
+  let travelRequests = 0
+  const context = { controls: { heroUnit: { i: 0, j: 0 } }, players: [] }
+  const map = { mapType: 'world-region', worldRegion: { x: 0, y: 0 }, worldId: 'world' }
+  const legacyHost = {
+    preloadWorldRegion() {
+      travelRequests++
+    },
+    travelToWorldRegion() {
+      travelRequests++
+    },
+  }
+  const services = createRuntimeServices(
+    context,
+    map,
+    () => ({ width: 100, height: 100, x: 0, y: 0 }),
+    null,
+    legacyHost
+  )
+  assert.equal('worldRegionTravel' in services, false)
+  assert.equal('worldRegionTravel' in createEmptyRuntimeServices(), false)
+  assert.equal(travelRequests, 0)
 })

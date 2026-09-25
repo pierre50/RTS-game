@@ -71,6 +71,9 @@ class HeadlessSprite extends HeadlessContainer {
 const pixi = { Assets: { cache: { get: () => ({}) } }, Sprite: HeadlessSprite, Container: HeadlessContainer }
 
 class HeadlessResource {
+  static spawn(options, context) {
+    return context.map.addChild(new HeadlessResource(options, context))
+  }
   constructor(options, context) {
     Object.assign(this, options)
     this.context = context
@@ -169,10 +172,12 @@ function loadHeadlessImport(request, parent, isMain, originalLoad) {
       const { getReliefAppearance } = loadGenerationTs('app/lib/terrain/reliefAppearance.ts')
       const { CELL_DEPTH } = loadGenerationTs('app/constants/relief.ts')
       // Blueprints store fractions of a terrain level; runtime rendering uses pixels.
-      return { getReliefAppearance: flags => {
-        const appearance = getReliefAppearance(flags)
-        return appearance && { ...appearance, elevation: appearance.elevation / CELL_DEPTH }
-      } }
+      return {
+        getReliefAppearance: flags => {
+          const appearance = getReliefAppearance(flags)
+          return appearance && { ...appearance, elevation: appearance.elevation / CELL_DEPTH }
+        },
+      }
     }
     if (request === '../../constants') return constants
     if (request === '../../lib/terrain/topology') {

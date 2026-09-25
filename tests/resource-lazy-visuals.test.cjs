@@ -1,8 +1,9 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const { Container, Sprite } = require('pixi.js')
 
-function setup() {
+function setup(logical = false) {
   const counts = { sprites: 0, shadows: 0, textureChoices: 0 }
   class Instance {
     constructor(context) {
@@ -29,6 +30,8 @@ function setup() {
       '../lib': {
         cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
         getEntityMapSpace: () => null,
+        getEntityCell: resource => resource.context.map.grid[resource.i][resource.j],
+        uuidv4: () => 'stable-resource-id',
         getGroundReliefLevel: cell => cell.z,
         getReliefLiftPixels: z => z * 16,
         getInstanceZIndex: () => 0,
@@ -44,7 +47,7 @@ function setup() {
         },
         createResourceSprite() {
           counts.sprites++
-          return { scale: { set() {} }, position: {}, on() {}, skew: {} }
+          return new Sprite()
         },
       },
       './ResourceVisuals': {
@@ -60,9 +63,18 @@ function setup() {
       },
     },
   })
-  const cell = { type: 'Grass', z: 0 }
-  const context = { map: { grid: [[cell]], addToInstanceBucket() {} } }
-  const resource = new Resource({ type: 'Tree', i: 0, j: 0 }, context)
+  const cell = { type: 'Grass', z: 0, corpses: new Set() }
+  const map = Object.assign(new Container(), {
+    grid: [[cell]],
+    resources: new Set(),
+    addToInstanceBucket() {},
+    removeFromInstanceBucket() {},
+  })
+  const context = { map }
+  const resource = logical
+    ? Resource.spawn({ type: 'Tree', i: 0, j: 0, textureName: 'tree_0' }, context)
+    : new Resource({ type: 'Tree', i: 0, j: 0 }, context)
+  map.resources.add(resource)
   return { resource, cell, counts }
 }
 
@@ -95,4 +107,47 @@ test('removing an unseen tree never materializes its graphics; explicit use mate
   const sprite = b.resource.sprite
   assert.equal(b.counts.sprites, 1)
   assert.equal(b.resource.sprite, sprite)
+})
+
+test('logical resource frees its container and reconstructs visuals without replacing the gameplay target', () => {
+  const { resource, cell, counts } = setup(true)
+  const target = resource
+  assert.equal(resource.context.map.children.length, 0)
+  assert.equal(cell.has, target)
+  resource.quantity -= 3
+  resource.visible = true
+  resource.syncShadow()
+  const firstSprite = resource.sprite
+  assert.equal(resource.context.map.children.length, 1)
+  assert.equal(counts.sprites, 1)
+  resource.visible = false
+  resource.syncShadow()
+  assert.equal(resource.context.map.children.length, 0)
+  assert.equal(firstSprite.destroyed, true)
+  assert.equal(cell.has, target)
+  assert.equal(resource.quantity, 7)
+  resource.visible = true
+  resource.syncShadow()
+  assert.notEqual(resource.sprite, firstSprite)
+  assert.equal(resource.quantity, 7)
+  let destroyed = 0
+  resource.once('destroyed', () => destroyed++)
+  resource.visible = false
+  resource.syncShadow()
+  assert.equal(destroyed, 0)
+  resource.destroy()
+  assert.equal(destroyed, 1)
+  assert.equal(counts.sprites, 2)
+})
+
+test('clearing an unseen logical resource frees occupancy without constructing a view', () => {
+  const { resource, cell, counts } = setup(true)
+  resource.getFootprintCells = () => [cell]
+  resource.clear()
+  assert.equal(cell.has, null)
+  assert.equal(cell.solid, false)
+  assert.equal(resource.context.map.resources.size, 0)
+  assert.equal(resource.isDestroyed, true)
+  assert.equal(counts.sprites, 0)
+  assert.equal(resource.context.map.children.length, 0)
 })

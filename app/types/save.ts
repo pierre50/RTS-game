@@ -1,3 +1,7 @@
+import type { MinimapBuildingMemory, MinimapPreferences } from './minimap'
+import type { CampRespawnState } from '../lib/camps/CampRespawnState'
+import type { VillageHome } from '../lib/units/villageActivity'
+import type { CampBehavior } from './camp'
 import type { VillagerSchedule } from '../lib/units/villagerSchedule'
 import type { QuestJournalState } from './quest'
 import type { TargetObservation } from '../lib/units/playerTargetKnowledge'
@@ -22,6 +26,21 @@ export type SaveDestination = Partial<SaveGridPoint & { x: number; y: number; la
 type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValue } } | null
 
 export type SaveEntityState = {
+  wildlife?: {
+    homeI: number
+    homeJ: number
+    generation: number
+    originI?: number
+    originJ?: number
+    checkedDay?: number
+    blockedSinceDay?: number
+    returnAfterMs?: number
+    lastRenewAttemptDay?: number
+    renewDay?: number
+    lastCorpseMs?: number
+    corpseExpiresMs?: number
+  }
+
   offlineBuilderJob?: VillagerAutonomyJob
   factionExpedition?: FactionExpeditionSave
   caveOrders?: Pick<SaveEntityState, 'action' | 'dest' | 'previousDest' | 'path' | 'realDest'>
@@ -69,6 +88,8 @@ export type SaveEntityState = {
   trapPrey?: boolean
   tamingStatus?: HorseTamingStatus
   companionHorseColor?: string | null
+  villageHome?: VillageHome
+  campBehavior?: CampBehavior
   campPatrolAnchor?: SaveGridPoint | null
   banditCampAnchor?: SaveGridPoint | null
   containedAnimalType?: string | null
@@ -210,6 +231,8 @@ export type SavePlayerState = PlayerSetupConfig & {
     sleeping: number
     moving: number
   }
+  minimapBuildingMemory?: MinimapBuildingMemory[]
+  minimapPreferences?: MinimapPreferences
   views?: SerializedVisionGrid
   wood?: number
   aiState?: SavedAIState
@@ -233,7 +256,8 @@ export type SaveWeatherState = {
   windX?: number
 }
 
-export type PendingWorldPursuer = {
+// Legacy save input only: regional pursuit no longer runs on continent maps.
+type PendingWorldPursuer = {
   entity: SaveEntityState
   owner?: SavePlayerState
   targetLabel: string
@@ -242,6 +266,7 @@ export type PendingWorldPursuer = {
 }
 
 type SaveRuntimeState = {
+  banditCamps?: CampRespawnState[]
   heroEquippedItem?: HeroEquippedItem | null
   offlineFromElapsedMs?: number
   worldPursuers?: PendingWorldPursuer[]
@@ -452,6 +477,14 @@ export type LoadedGameConfig = {
   units?: Record<string, UnitConfig>
 }
 
+export type BlueprintResourceDelta = {
+  version: 1
+  count: number
+  signature: string
+  removed: number[]
+  updated: { index: number; state: SaveEntityState }[]
+}
+
 export type SerializedSave = {
   version?: number
   camera: { x: number; y: number }
@@ -459,6 +492,7 @@ export type SerializedSave = {
   map?: (SaveCellState | null)[][]
   players: SavePlayerState[]
   resources: SaveEntityState[]
+  resourceDelta?: BlueprintResourceDelta
   animals: SaveEntityState[]
   naturalResourceRespawnSlots?: SaveEntityState[]
   runtime?: SaveRuntimeState

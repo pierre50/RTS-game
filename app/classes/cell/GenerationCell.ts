@@ -11,6 +11,7 @@ type GenerationCellContext = {
     seed?: string | number
     randomItem<T>(items: T[]): T
     invalidateReliefCoastDistances(): void
+    invalidateWaterOverlay?(): void
     revealEverything?: boolean
   }
   player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
@@ -117,7 +118,10 @@ export class GenerationCell extends LogicalCell implements RuntimeCell {
     this.assets = definition.assets ?? []
     const textureRef = this.assets.length ? this.map.randomItem(this.assets) : null
     this.terrainTextureName = textureRef ? textureRefToString(textureRef) : ''
-    if (wasWater !== (this.category === 'Water')) this.map.invalidateReliefCoastDistances()
+    if (wasWater !== (this.category === 'Water')) {
+      this.map.invalidateReliefCoastDistances()
+      this.map.invalidateWaterOverlay?.()
+    }
   }
 
   setWater(): void {

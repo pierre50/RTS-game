@@ -1,9 +1,10 @@
 import { Assets } from 'pixi.js'
-import { randomRange, parseTextureRef } from '../lib'
+import { randomRange } from '../lib/maths'
+import { parseTextureRef } from '../lib/graphics/textures'
 import type { ResourceConfig } from '../types/config'
 import type { RuntimeEntity, UnitSounds } from '../types/entities'
 import type { PlayerLike } from '../types/player'
-import type { TextureRef } from '../lib'
+import type { TextureRef } from '../lib/graphics/textures'
 
 export type ResourceAssetList = TextureRef[]
 type ResourceAssetsByTerrain = Record<string, ResourceAssetList>

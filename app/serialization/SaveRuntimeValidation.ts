@@ -11,6 +11,38 @@ export function validateRuntimeState(runtime: unknown, size: number, config: Loa
     ) {
       fail('Invalid save file: runtime heroEquippedItem is invalid.')
     }
+    if (runtime.banditCamps != null) {
+      if (!Array.isArray(runtime.banditCamps)) fail('Invalid save file: bandit camps are invalid.')
+      const ids = new Set<string>()
+      const positions = new Set<string>()
+      for (const camp of runtime.banditCamps) {
+        if (
+          !isObject(camp) ||
+          typeof camp.id !== 'string' ||
+          !camp.id ||
+          ids.has(camp.id) ||
+          !Number.isInteger(camp.i) ||
+          !Number.isInteger(camp.j) ||
+          Number(camp.i) < 0 ||
+          Number(camp.j) < 0 ||
+          Number(camp.i) > size ||
+          Number(camp.j) > size ||
+          positions.has(`${camp.i}:${camp.j}`) ||
+          !Number.isSafeInteger(camp.generation) ||
+          Number(camp.generation) < 0 ||
+          !Array.isArray(camp.unitTypes) ||
+          !camp.unitTypes.length ||
+          camp.unitTypes.length > 10 ||
+          camp.unitTypes.some(type => !['BanditChief', 'BanditSword', 'BanditArcher'].includes(String(type))) ||
+          (camp.caveId != null && typeof camp.caveId !== 'string') ||
+          (camp.clearedAtMs != null &&
+            (typeof camp.clearedAtMs !== 'number' || !Number.isFinite(camp.clearedAtMs) || camp.clearedAtMs < 0))
+        )
+          fail('Invalid save file: bandit camp state is invalid.')
+        ids.add(camp.id)
+        positions.add(`${camp.i}:${camp.j}`)
+      }
+    }
     validateOptionalFiniteNumber(runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
     validateOptionalFiniteNumber(runtime.offlineFromElapsedMs, 'runtime offlineFromElapsedMs')
     validateOptionalFiniteNumber(runtime.elapsedMs, 'runtime elapsedMs')

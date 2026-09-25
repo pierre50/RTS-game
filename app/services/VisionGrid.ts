@@ -13,8 +13,6 @@ export class VisionGrid {
   private explorationChunks = new Map<string, ExplorationSaveChunks>()
 
   activeSpaceId: string
-  explored: Uint8Array
-  exploredBySpace: Map<string, Uint8Array>
   knownOccupants: Map<number, KnownVisionOccupant>
   knownOccupantsBySpace: Map<string, Map<number, KnownVisionOccupant>>
   length: number
@@ -24,8 +22,6 @@ export class VisionGrid {
   stride: number
   visibleBy: Map<number, Set<VisionViewerRef>>
   visibleBySpace: Map<string, Map<number, Set<VisionViewerRef>>>
-  visibleCount: Uint16Array
-  visibleCountBySpace: Map<string, Uint16Array>
 
   constructor(
     size: number,
@@ -38,10 +34,6 @@ export class VisionGrid {
     this.stride = size + 1
     this.length = this.stride * this.stride
     this.activeSpaceId = 'outside'
-    this.explored = new Uint8Array(this.length)
-    this.exploredBySpace = new Map()
-    this.visibleCount = new Uint16Array(this.length)
-    this.visibleCountBySpace = new Map()
     this.visibleBy = new Map()
     this.visibleBySpace = new Map()
     this.knownOccupants = new Map()
@@ -50,7 +42,6 @@ export class VisionGrid {
     this.onVisibilityChange = onVisibilityChange
 
     if (revealTerrain) {
-      this.explored.fill(1)
       this.getExplorationChunks().revealAll(this.stride)
     }
     if (Array.isArray(savedViews)) {
@@ -63,26 +54,14 @@ export class VisionGrid {
             const index = this.index(i, j)
             const viewers = new Set<VisionViewerRef>(saved.viewBy)
             this.visibleBy.set(index, viewers)
-            this.visibleCount[index] = viewers.size
           }
         }
       }
     } else {
       const data = readCompactVision(savedViews, this.stride)
-      for (const chunk of data.chunks) {
-        for (let bit = 0; bit < VISION_CHUNK_SIZE ** 2; bit++) {
-          if (!(chunk.bytes[bit >> 3] & (1 << (bit & 7)))) continue
-          this.setViewed(
-            chunk.i * VISION_CHUNK_SIZE + Math.floor(bit / VISION_CHUNK_SIZE),
-            chunk.j * VISION_CHUNK_SIZE + (bit % VISION_CHUNK_SIZE),
-            true,
-            false
-          )
-        }
-      }
+      if (!revealTerrain) this.getExplorationChunks().restore(data.chunks)
       for (const entry of data.visible) {
         this.visibleBy.set(entry.index, new Set(entry.viewBy))
-        this.visibleCount[entry.index] = entry.viewBy.length
       }
     }
   }
@@ -118,26 +97,6 @@ export class VisionGrid {
     return this.activeSpaceId === 'outside'
   }
 
-  private getExplored(): Uint8Array {
-    if (this.isOutsideSpace()) return this.explored
-    let explored = this.exploredBySpace.get(this.activeSpaceId)
-    if (!explored) {
-      explored = new Uint8Array(this.length)
-      this.exploredBySpace.set(this.activeSpaceId, explored)
-    }
-    return explored
-  }
-
-  private getVisibleCount(): Uint16Array {
-    if (this.isOutsideSpace()) return this.visibleCount
-    let visibleCount = this.visibleCountBySpace.get(this.activeSpaceId)
-    if (!visibleCount) {
-      visibleCount = new Uint16Array(this.length)
-      this.visibleCountBySpace.set(this.activeSpaceId, visibleCount)
-    }
-    return visibleCount
-  }
-
   private getVisibleBy(): Map<number, Set<VisionViewerRef>> {
     if (this.isOutsideSpace()) return this.visibleBy
     let visibleBy = this.visibleBySpace.get(this.activeSpaceId)
@@ -162,24 +121,24 @@ export class VisionGrid {
     return i >= 0 && j >= 0 && i < this.stride && j < this.stride
   }
 
+  forEachViewed(callback: (i: number, j: number) => void): void {
+    this.getExplorationChunks().forEachViewed(callback)
+  }
+
   isViewed(i: number, j: number): boolean {
-    return this.inBounds(i, j) && this.getExplored()[this.index(i, j)] === 1
+    return this.inBounds(i, j) && this.getExplorationChunks().has(i, j)
   }
 
   setViewed(i: number, j: number, viewed = true, notify = true): boolean {
     if (!this.inBounds(i, j)) return false
-    const index = this.index(i, j)
-    const next = viewed ? 1 : 0
-    const explored = this.getExplored()
-    if (explored[index] === next) return false
-    explored[index] = next
+    if (this.getExplorationChunks().has(i, j) === viewed) return false
     this.getExplorationChunks().set(i, j, viewed)
-    if (next && notify) this.onViewed?.(i, j)
+    if (viewed && notify) this.onViewed?.(i, j)
     return true
   }
 
   isVisible(i: number, j: number): boolean {
-    return this.inBounds(i, j) && this.getVisibleCount()[this.index(i, j)] > 0
+    return this.inBounds(i, j) && (this.getVisibleBy().get(this.index(i, j))?.size ?? 0) > 0
   }
 
   addViewer(i: number, j: number, instance: VisionViewer): boolean {
@@ -193,7 +152,6 @@ export class VisionGrid {
     }
     const before = viewers.size
     viewers.add(instance)
-    this.getVisibleCount()[index] = viewers.size
     const changed = viewers.size !== before
     if (changed) this.onVisibilityChange?.(i, j)
     return changed
@@ -205,7 +163,6 @@ export class VisionGrid {
     const visibleBy = this.getVisibleBy()
     const viewers = visibleBy.get(index)
     if (!viewers?.delete(instance)) return false
-    this.getVisibleCount()[index] = viewers.size
     if (!viewers.size) visibleBy.delete(index)
     this.onVisibilityChange?.(i, j)
     return true
@@ -214,10 +171,8 @@ export class VisionGrid {
   removeViewerEverywhere(instance: VisionViewer): number[] {
     const changed: number[] = []
     const visibleBy = this.getVisibleBy()
-    const visibleCount = this.getVisibleCount()
     for (const [index, viewers] of visibleBy) {
       if (!viewers.delete(instance)) continue
-      visibleCount[index] = viewers.size
       if (!viewers.size) visibleBy.delete(index)
       changed.push(index)
       const [i, j] = this.coordinates(index)
@@ -228,11 +183,9 @@ export class VisionGrid {
 
   clearVisibility(): void {
     this.getVisibleBy().clear()
-    this.getVisibleCount().fill(0)
   }
 
   clearExploration(): void {
-    this.getExplored().fill(0)
     this.getExplorationChunks().clear()
     this.getKnownOccupants().clear()
   }
@@ -261,7 +214,6 @@ export class VisionGrid {
 
   restoreViewers(resolve: (label: string) => VisionViewer | null): void {
     const visibleBy = this.getVisibleBy()
-    const visibleCount = this.getVisibleCount()
     for (const [index, viewers] of visibleBy) {
       const restored = new Set<VisionViewer>()
       for (const viewer of viewers) {
@@ -270,10 +222,8 @@ export class VisionGrid {
       }
       if (restored.size) {
         visibleBy.set(index, restored)
-        visibleCount[index] = restored.size
       } else {
         visibleBy.delete(index)
-        visibleCount[index] = 0
       }
     }
   }

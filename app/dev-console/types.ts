@@ -196,6 +196,7 @@ export type DevPerformanceMetric = {
 }
 
 type DevPerformanceSlowFrame = {
+  events?: DevPerformanceEvent[]
   at: number
   duration: number
   estimatedExclusiveMs: number
@@ -217,13 +218,18 @@ type DevPerformanceSlowFrame = {
   untrackedMs: number
 }
 
+export type DevPerformanceEvent = { at: number; name: string; details: Record<string, string | number | boolean | null> }
+
 export type DevPerformanceSnapshot = {
+  events?: DevPerformanceEvent[]
   frames: {
     samples: number
     averageMs: number
     p95Ms: number
     p99Ms: number
     fps: number
+    tickerFps?: number
+    windowSlowCount?: number
     speed: number
     slowCount?: number
   }
@@ -330,5 +336,4 @@ export type DevPlayer = PlayerLike & {
   createUnit?(options: PlayerUnitCreationOptions): UnitEntity
 }
 
-export type DevCell = RuntimeCell & {
-}
+export type DevCell = RuntimeCell & {}

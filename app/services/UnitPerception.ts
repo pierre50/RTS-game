@@ -1,4 +1,5 @@
-import { FAMILY_TYPES } from '../constants'
+import { getPackedCellStore } from '../classes/cell/PackedCellRegistry'
+import { FAMILY_TYPES, PLAYER_TYPES } from '../constants'
 import { heroCanCommand } from '../lib/chief'
 import { OUTSIDE_SPACE_ID, getMapSpace } from '../lib/mapSpaces'
 import { isAIControlledPlayer } from '../lib/playerState'
@@ -34,6 +35,9 @@ export type VisibilityEntity = {
   j: number
   label: string
   type?: string
+  family?: string
+  tamingStatus?: string
+  companionOwner?: unknown
   visible?: boolean
   context?: VisibilityContext
   owner?: VisibilityOwner | null
@@ -57,26 +61,22 @@ function canDetect(entity: RuntimeEntity): entity is DetectingEntity {
 export function rehydrateAIKnowledge(viewer: PlayerLike, map: RuntimeMap): void {
   if (!isAIControlledPlayer(viewer)) return
 
-  for (let i = 0; i < map.grid.length; i++) {
-    const row = map.grid[i]
-    if (!row) continue
-
-    for (let j = 0; j < row.length; j++) {
-      const globalCell = row[j]
-      if (!globalCell || !viewer.views.isViewed(i, j)) continue
-
-      updateAIKnowledge(globalCell, viewer, { staticOnly: !viewer.views.isVisible(i, j) })
-
-      if (viewer.views.isVisible(i, j)) {
+  const packed = getPackedCellStore(map.grid)
+  const rows = packed ? [packed.changedCells(map.grid)] : map.grid
+  for (const row of rows) {
+    for (const globalCell of row ?? []) {
+      if (!globalCell || !viewer.views.isViewed(globalCell.i, globalCell.j)) continue
+      const visible = viewer.views.isVisible(globalCell.i, globalCell.j)
+      updateAIKnowledge(globalCell, viewer, { staticOnly: !visible })
+      if (visible) {
         for (const corpse of globalCell.corpses || []) {
           if (
             corpse.family === FAMILY_TYPES.animal &&
             corpse.isDead &&
             !corpse.isDestroyed &&
             (corpse.quantity ?? 0) > 0
-          ) {
+          )
             viewer.foundedDeadAnimals?.add(corpse)
-          }
         }
       }
     }
@@ -109,6 +109,25 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   const previousSpace = getMapSpace(runtimeMap, instance.visibleSpaceId) ?? currentSpace
   const spaceChanged = previousSpace.id !== currentSpace.id
   const sightSq = sight * sight
+
+  if (
+    instance.family &&
+    instance.family === FAMILY_TYPES.animal &&
+    owner.type === PLAYER_TYPES.gaia &&
+    !instance.companionOwner &&
+    (!instance.tamingStatus || instance.tamingStatus === 'wild')
+  ) {
+    // A horse can return to the wild after owning normal visibility.
+    for (const index of instance.visibleCells ?? []) {
+      const [i, j] = owner.views.coordinates(index)
+      withPlayerViewSpace(ownerPlayer, previousSpace, () => ownerPlayer.views.removeViewer(i, j, instance))
+    }
+    instance.visibleCells?.clear()
+    instance._visibleScratch?.clear()
+    updateWildAnimalPerception(instance, currentSpace)
+    return
+  }
+  wildAnimalFootprints.delete(instance)
 
   const prevVisible = instance.visibleCells ?? new Set()
   const newVisible = instance._visibleScratch ?? new Set()
@@ -173,6 +192,44 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   instance.visibleCells = newVisible
   instance.visibleSpaceId = currentSpace.id
   instance._visibleScratch = prevVisible
+}
+
+// Gaia has no exploration/economy decisions. Keep only the previous footprint,
+// not one viewer Set per cell for every wild animal. Reverse detection still
+// notifies entities on cells newly reached by the animal's sight, as before.
+const wildAnimalFootprints = new WeakMap<VisibilityEntity, { i: number; j: number; sight: number; spaceId: string }>()
+
+function updateWildAnimalPerception(instance: VisibilityEntity, space: RuntimeMapSpace): void {
+  const previous = wildAnimalFootprints.get(instance)
+  const sight = instance.sight ?? 0
+  const providesSight = !instance.isDead && instance.providesVision !== false
+  if (providesSight) {
+    const minI = Math.max(0, instance.i - sight)
+    const maxI = Math.min(space.size, instance.i + sight)
+    const minJ = Math.max(0, instance.j - sight)
+    const maxJ = Math.min(space.size, instance.j + sight)
+    for (let i = minI; i <= maxI; i++) {
+      for (let j = minJ; j <= maxJ; j++) {
+        if ((i - instance.i) ** 2 + (j - instance.j) ** 2 > sight * sight) continue
+        if (previous?.spaceId === space.id && (i - previous.i) ** 2 + (j - previous.j) ** 2 <= previous.sight ** 2)
+          continue
+        const target = space.grid[i]?.[j]?.has
+        if (
+          !instance.context?.editor &&
+          target?.sight &&
+          canDetect(target) &&
+          instanceIsInInsightRange(target, instance)
+        ) {
+          target.detect(instance)
+        }
+      }
+    }
+    wildAnimalFootprints.set(instance, { i: instance.i, j: instance.j, sight, spaceId: space.id })
+  } else wildAnimalFootprints.delete(instance)
+  // Discovery belongs to observers, independent of camera/render visibility.
+  const entity = instance as unknown as RuntimeEntity
+  for (const observer of entity.context?.players ?? []) observeTarget(observer, entity)
+  instance.visibleSpaceId = space.id
 }
 
 function withPlayerViewSpace<T>(player: PlayerLike, space: RuntimeMapSpace, callback: () => T): T {

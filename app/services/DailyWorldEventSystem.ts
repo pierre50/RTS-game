@@ -1,5 +1,5 @@
 import { DailyWorldReport } from './DailyWorldReport'
-import { invalidateEconomicKnowledge } from './world/EconomicKnowledgeUpdates'
+import { flushVillageSimulation, planDistantVillages } from '../lib/units/villageActivity'
 import { NaturalRegrowthSystem } from './NaturalRegrowthSystem'
 import { MarketRestockSystem } from './world/MarketRestockSystem'
 import { TrapHarvestSystem } from './world/TrapHarvestSystem'
@@ -47,8 +47,11 @@ export class DailyWorldEventSystem {
     }
     const report = new DailyWorldReport(this.context, event.day)
     const eventWithReport = { ...event, report }
+    // Settle yesterday's work before upkeep/arrivals read stocks. Each event
+    // stays owned by this runtime, never replayed by the distant worker engine.
+    flushVillageSimulation(this.context)
     for (const handler of this.handlers) handler.handleDailyWorldEvent(eventWithReport)
-    invalidateEconomicKnowledge(this.context.map)
+    planDistantVillages(this.context)
     this.context.updateWorldEconomy?.()
     const newColonyAlerts = this.detectNewColonyAlerts()
     if (newColonyAlerts > 0 && this.context.player) {

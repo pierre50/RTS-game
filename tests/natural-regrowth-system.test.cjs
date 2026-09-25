@@ -2,8 +2,9 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadNaturalRegrowthSystem(calls) {
+function loadNaturalRegrowthSystem(calls, moduleCache = new Map()) {
   return loadTsModule('app/services/NaturalRegrowthSystem.ts', {
+    moduleCache,
     mocks: {
       '../constants': {
         RESOURCE_TYPES: {
@@ -150,4 +151,71 @@ test('daily natural regrowth starts legacy mineral slots from the current day', 
   assert.deepEqual(calls, [])
   assert.equal(slot.depletedDay, 4)
   assert.deepEqual(context.map.naturalResourceRespawnSlots, [slot])
+})
+
+test('depleted compact berries regrow offscreen while intact berries stay compact', () => {
+  const moduleCache = new Map()
+  const { CompactResourceSet } = loadTsModule('app/classes/resources/CompactResourceSet.ts', { moduleCache })
+  const NaturalRegrowthSystem = loadNaturalRegrowthSystem([], moduleCache)
+  let created = 0
+  const resources = new CompactResourceSet(
+    2,
+    100,
+    'world',
+    () => ({ totalQuantity: 50, totalHitPoints: 4 }),
+    state => {
+      created++
+      return { ...state }
+    },
+    {}
+  )
+  resources.addState({ i: 1, j: 1, type: 'Berrybush', textureName: '000_resources/berrybush', quantity: 0 })
+  resources.addState({ i: 2, j: 2, type: 'Berrybush', textureName: '002_resources/berrybush', quantity: 50 })
+  const context = { map: { gaia: { animals: [] }, resources }, menu: {}, players: [] }
+  new NaturalRegrowthSystem(context).applyDailyRegrowth({ day: 2, previousDay: 1 })
+  assert.equal(created, 1)
+  assert.equal(resources.byLabel('world:101').quantity, 10)
+  assert.deepEqual(
+    [...resources.readValues()].map(resource => resource.quantity),
+    [10, 50]
+  )
+  assert.equal(created, 1)
+})
+
+test('daily renewal is batched and saving flushes pending changes exactly once', () => {
+  const cache = new Map()
+  const NaturalRegrowthSystem = loadNaturalRegrowthSystem([], cache)
+  const { flushNaturalGrowth } = loadTsModule('app/services/NaturalGrowthQueue.ts', { moduleCache: cache })
+  const callbacks = new Map()
+  let restored = 0
+  const context = {
+    map: {
+      resources: new Set(),
+      naturalResourceRespawnSlots: Array.from({ length: 100 }, (_, i) => ({ type: 'Gold', i, j: 1, depletedDay: 1 })),
+      respawnNaturalResource: () => {
+        restored++
+        return true
+      },
+    },
+    players: [],
+    scheduler: {
+      add: fn => {
+        callbacks.set(1, fn)
+        return 1
+      },
+      remove: id => callbacks.delete(id),
+    },
+  }
+  const system = new NaturalRegrowthSystem(context)
+  system.handleDailyWorldEvent({ day: 15 })
+  assert.equal(restored, 0)
+  callbacks.get(1)()
+  assert.equal(restored, 32)
+  flushNaturalGrowth(context.map)
+  assert.equal(restored, 100)
+  assert.equal(callbacks.size, 0)
+  assert.equal(context.map.naturalResourceRespawnSlots.length, 0)
+  system.applyDailyRegrowth({ day: 16 })
+  assert.equal(restored, 100)
+  system.destroy()
 })

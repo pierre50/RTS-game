@@ -1,3 +1,4 @@
+import { validateMinimapBuildingMemory, validateMinimapPreferences } from './MinimapMemoryValidation'
 import { validatePlayerViews } from './SaveViewValidation'
 import { validatePlayerUnits, validatePlayerCorpses } from './SaveUnitValidators'
 import { validateAnimalState, validateSavedHorseTamingStatus } from './SaveAnimalState'
@@ -147,6 +148,8 @@ function validatePlayerRecord(
   if (player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.bandits) validateAIState(player.aiState, index)
 
   validateTargetKnowledge(player.targetKnowledge)
+  validateMinimapBuildingMemory(player.minimapBuildingMemory)
+  validateMinimapPreferences(player.minimapPreferences)
   const buildings = player.buildings ?? []
   const units = player.units ?? []
   const corpses = player.corpses ?? []

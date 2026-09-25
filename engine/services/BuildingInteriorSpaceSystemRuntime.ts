@@ -1,3 +1,4 @@
+import { furnishPendingBanditCave } from '../../app/classes/map/BanditCaveContent'
 import { mirrorInteriorBlueprint } from '../../app/lib/buildings/interiorOrientation'
 import { ensureCaveMinerals } from './BuildingInteriorSpaceMinerals'
 import { formatTerrainReliefCells } from '../../app/classes/map/terrain/MapTerrainReliefAppearance'
@@ -151,6 +152,7 @@ export function ensureBuildingInteriorSpace(
   const existing = getMapSpace(map, id)
   if (isBuildingInteriorRuntimeSpace(existing)) {
     syncStableInteriorHorses(context, existing)
+    furnishPendingBanditCave(context, existing, building)
     return existing
   }
 
@@ -206,6 +208,7 @@ export function ensureBuildingInteriorSpace(
   ensureInteriorDefaultBuildings(context, space)
   ensureCaveMinerals(context, space, blueprint)
   syncStableInteriorHorses(context, space)
+  furnishPendingBanditCave(context, space, building)
   return space
 }
 
@@ -214,7 +217,9 @@ export function ensureRuntimeBuildingInteriorSpace(
   building: BuildingEntity
 ): BuildingInteriorRuntimeSpace | null {
   const existing = getBuildingInteriorSpaceForBuilding(context, building)
-  if (existing) return existing
   if (!building.isBuilt || building.isDead || building.isDestroyed) return null
-  return ensureBuildingInteriorSpace(context, building, createDefaultBuildingInteriorBlueprint(building))
+  const space =
+    existing ?? ensureBuildingInteriorSpace(context, building, createDefaultBuildingInteriorBlueprint(building))
+  if (space) furnishPendingBanditCave(context, space, building)
+  return space
 }

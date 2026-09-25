@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "lib": ["DOM", "ES2022"],
     "module": "ESNext",
     "moduleResolution": "Bundler",

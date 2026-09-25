@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadMinimapInputController() {
+function loadMinimapInputController(teleportHeroFromMinimap = () => {}) {
   const filename = path.join(__dirname, '../app/ui/minimap/MinimapInputController.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -14,6 +14,7 @@ function loadMinimapInputController() {
   })
   const module = { exports: {} }
   const mocks = {
+    './MinimapTeleport': { teleportHeroFromMinimap },
     '../constants': {
       LONG_CLICK_DURATION: 400,
       MINIMAP_DRAG_THRESHOLD: 4,
@@ -109,4 +110,20 @@ test('minimap input binding is idempotent and removable', () => {
     removed.map(([type]) => type),
     ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
   )
+})
+
+test('left click teleports in hero camera mode, dragging and right click do not', () => {
+  const calls = []
+  const Controller = loadMinimapInputController((_menu, point) => calls.push(point))
+  const controller = new Controller({ context: { controls: {} }, minimapManager: { getMinimapFactor: () => 2 } })
+  const event = { ...pointerEvent(), button: 0, pointerId: 1 }
+  controller.onPointerDown(event)
+  controller.onPointerUp(event)
+  assert.deepEqual(calls, [{ x: 0, y: 34 }])
+  controller.onPointerDown(event)
+  controller.onPointerMove({ ...event, clientX: 100 })
+  controller.onPointerUp(event)
+  controller.onPointerDown({ ...event, button: 2 })
+  controller.onPointerUp({ ...event, button: 2 })
+  assert.equal(calls.length, 1)
 })

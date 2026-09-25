@@ -22,7 +22,7 @@ let sequence = 0
 
 function decode(value: string | null): unknown {
   if (!value) throw new Error('SAVE_CORRUPT')
-  const json = LZString.decompressFromBase64(value)
+  const json = value.startsWith('json:') ? value.slice(5) : LZString.decompressFromBase64(value)
   if (!json) throw new Error('SAVE_CORRUPT')
   try {
     return JSON.parse(json)
@@ -71,24 +71,18 @@ export class ZonedSaveStore {
     const entries: ZoneEntry[][] = []
     const parts = new Map<string, CachedPart>()
     for (const [zone, key] of data.parts) {
-      const value = decode(this.backend.getItem(key)) as {
-        format: string
-        owner: string
-        zone: string
-        entries: ZoneEntry[]
-      }
-      if (
-        !value ||
-        value.format !== 'zone-part-v1' ||
-        value.owner !== root ||
-        value.zone !== zone ||
-        !Array.isArray(value.entries)
-      )
-        throw new Error('SAVE_CORRUPT')
-      entries.push(value.entries)
-      parts.set(zone, { key, json: JSON.stringify(value.entries) })
+      const values = this.readPart(root, zone, key)
+      entries.push(values)
+      parts.set(zone, { key, json: JSON.stringify(values) })
     }
     return { entries, parts }
+  }
+
+  /** Listing validates the root only; blocks are checked when the selected save is loaded. */
+  inspect(key: string): void {
+    const raw = this.backend.getItem(key)
+    if (!raw) throw new Error('SAVE_NOT_FOUND')
+    manifest(decode(raw))
   }
 
   load(key: string): SaveRecord {
@@ -96,11 +90,45 @@ export class ZonedSaveStore {
     if (!raw) throw new Error('SAVE_NOT_FOUND')
     const value = decode(raw)
     const data = manifest(value)
-    if (!data) return value as SaveRecord // Legacy single-file saves remain readable.
-    const { entries, parts } = this.readParts(key, data)
-    const result = assembleSave(data.metadata, data.collections, entries)
-    this.cache = { root: key, raw, parts }
-    return result
+    if (!data) return value as SaveRecord
+    const entries = data.parts.map(([zone, partKey]) => this.readPart(key, zone, partKey))
+    return assembleSave(data.metadata, data.collections, entries)
+  }
+
+  private readPart(root: string, zone: string, key: string): ZoneEntry[] {
+    const value = decode(this.backend.getItem(key)) as {
+      format: string
+      owner: string
+      zone: string
+      entries: ZoneEntry[]
+    }
+    if (
+      !value ||
+      !(
+        (value.format === 'zone-part-v1' && value.owner === root) ||
+        (value.format === 'zone-part-v2' && /^save_9\d{78}$/.test(key))
+      ) ||
+      value.zone !== zone ||
+      !Array.isArray(value.entries)
+    )
+      throw new Error('SAVE_CORRUPT')
+    return value.entries
+  }
+
+  async loadAsync(key: string, onProgress: (completed: number, total: number) => Promise<void>): Promise<SaveRecord> {
+    const raw = this.backend.getItem(key)
+    if (!raw) throw new Error('SAVE_NOT_FOUND')
+    const value = decode(raw)
+    const data = manifest(value)
+    if (!data) return value as SaveRecord
+    const entries: ZoneEntry[][] = []
+    await onProgress(0, data.parts.length)
+    for (let offset = 0; offset < data.parts.length; offset += 32) {
+      for (const [zone, partKey] of data.parts.slice(offset, offset + 32))
+        entries.push(this.readPart(key, zone, partKey))
+      await onProgress(entries.length, data.parts.length)
+    }
+    return assembleSave(data.metadata, data.collections, entries)
   }
 
   save(

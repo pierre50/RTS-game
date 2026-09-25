@@ -176,3 +176,28 @@ test('restoring player entities preserves saved unit types instead of applying n
     [{ preserveType: true }, { preserveType: true }]
   )
 })
+
+test('restoring visibility resolves repeated viewer labels once, including missing viewers', () => {
+  const { restorePlayerViews } = loadMapSaveRestore()
+  let lookups = 0
+  const hero = { family: 'unit', label: 'hero' }
+  const map = {
+    context: { players: [], menu: {} },
+    getChildByLabel(label) {
+      lookups++
+      return label === 'hero' ? hero : null
+    },
+  }
+  const player = {
+    views: {
+      restoreViewers(resolve) {
+        for (let i = 0; i < 10000; i++) {
+          assert.equal(resolve('hero'), hero)
+          assert.equal(resolve('missing'), null)
+        }
+      },
+    },
+  }
+  restorePlayerViews(player, map)
+  assert.equal(lookups, 2)
+})

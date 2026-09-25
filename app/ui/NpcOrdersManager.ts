@@ -421,6 +421,7 @@ export class NpcOrdersManager {
     return {
       id: spec.id,
       label: t(spec.labelKey),
+      className: spec.trainingType ? 'npc-training-option' : undefined,
       detail: spec.trainingType ? () => this.getTrainingOrderDetail(spec.trainingType!) : undefined,
       hidden: () => !this.canShowOrder(spec),
       onClick: () => this.runOrder(spec),

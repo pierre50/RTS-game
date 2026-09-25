@@ -1,3 +1,4 @@
+import { WILDLIFE_CALM_MS } from '../../services/WildlifeHabitat'
 import { showContactDebug } from '../../lib/contact/contactDebug'
 import { isContactTouching, getContactAimDegree } from '../../lib/contact/contactGeometry'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
@@ -188,6 +189,9 @@ export class AnimalCombat {
 
   runaway(instance: RuntimeEntity, hitDirection?: Point): void {
     const animal = this.animal
+    if (animal.wildlife)
+      animal.wildlife.returnAfterMs =
+        (animal.context.dayNight?.getElapsedMs?.() ?? animal.context.scheduler.elapsedMs) + WILDLIFE_CALM_MS
     const dest = this.getBestFleeCell(instance, this.getFleeCellAlongDirection(hitDirection))
     if (dest) {
       markCombatFlee(animal)

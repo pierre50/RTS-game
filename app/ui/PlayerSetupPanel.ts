@@ -19,6 +19,7 @@ import {
   nextAvailablePlayerColor,
   nextPlayerColor,
   normalizePlayerColor,
+  randomAvailablePlayerColor,
 } from './PlayerSetupColors'
 import type { PlayerSetupConfig } from '../types/save'
 
@@ -71,6 +72,7 @@ export class PlayerSetupPanel {
   humanControlsEl!: HTMLDivElement
   simplifiedExtraControls: HTMLElement[] = []
   heroPreviewRequestId = 0
+  randomHumanColor = false
 
   constructor({ players, maxPlayers, onChange = null, showAge = false, simplified = false }: PlayerSetupPanelOptions) {
     this.onChange = onChange
@@ -161,8 +163,16 @@ export class PlayerSetupPanel {
     this.onChange?.(this.getPlayers())
   }
 
-  getPlayers(): PlayerSetupConfig[] {
-    return this.players.map(player => ({ ...player }))
+  getPlayers(resolveRandomColor = false): PlayerSetupConfig[] {
+    const players = this.players.map(player => ({ ...player }))
+    if (resolveRandomColor && this.randomHumanColor) {
+      const used = new Set(players.filter(player => !player.isHuman).map(player => player.color))
+      players.filter(player => player.isHuman).forEach(player => {
+        player.color = randomAvailablePlayerColor(used)
+        used.add(player.color)
+      })
+    }
+    return players
   }
 
   setMaxPlayers(maxPlayers: number): void {
@@ -324,6 +334,7 @@ export class PlayerSetupPanel {
   _cycleColor(playerIndex: number): void {
     const player = this.players[playerIndex]
     if (!player) return
+    if (player.isHuman) this.randomHumanColor = false
     player.color = player.isHuman
       ? nextPlayerColor(player.color)
       : nextAvailablePlayerColor(player.color, this._usedColors())
@@ -440,6 +451,7 @@ export class PlayerSetupPanel {
       swatch.addEventListener('pointerdown', playClickSound)
       swatch.addEventListener('click', () => this._cycleColor(index))
       colorCell.appendChild(swatch)
+      if (player.isHuman) colorCell.appendChild(this._createRandomColorControl())
       row.appendChild(colorCell)
 
       this.playerTableEl.appendChild(row)
@@ -525,11 +537,26 @@ export class PlayerSetupPanel {
     swatch.addEventListener('pointerdown', playClickSound)
     swatch.addEventListener('click', () => this._cycleColor(0))
     colorRow.appendChild(swatch)
+    colorRow.appendChild(this._createRandomColorControl())
     this.humanControlsEl.appendChild(colorRow)
 
     this.simplifiedExtraControls.forEach(control => {
       this.humanControlsEl.appendChild(control)
     })
+  }
+
+  _createRandomColorControl(): HTMLLabelElement {
+    const label = document.createElement('label')
+    const checkbox = document.createElement('input')
+    checkbox.type = 'checkbox'
+    checkbox.checked = this.randomHumanColor
+    checkbox.addEventListener('change', () => {
+      this.randomHumanColor = checkbox.checked
+      this._emitChange()
+    })
+    label.appendChild(checkbox)
+    label.appendChild(document.createTextNode(t('randomPlayerColor')))
+    return label
   }
 
   _createPlayerCountSelect(): HTMLDivElement {

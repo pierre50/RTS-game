@@ -22,14 +22,7 @@ const DEFAULT_CIVILIZATIONS_CONFIG = path.join(ROOT, 'app', 'config', 'civilizat
 const DEFAULT_BIOMES = 'blackforest,desert,temperate,steppe'
 const DEFAULT_LAND_MASK = path.join(ROOT, 'public', 'maps', 'world-masks', 'continent-001.png')
 
-const BIOME_ENVIRONMENTS = {
-  temperate: 'Temperate',
-  blackforest: 'BlackForest',
-  jungle: 'Jungle',
-  desert: 'Desert',
-  step: 'Steppe',
-  steppe: 'Steppe',
-}
+const { BIOME_ENVIRONMENTS } = require('./maps/config.cjs')
 
 const BIOME_ALIASES = {
   step: 'steppe',

@@ -1,3 +1,4 @@
+import { isUnitSuspended } from '../../lib/units/unitSuspension'
 import type { AnimatedSprite } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import { canUpdateMinimap } from '../../lib'
@@ -373,8 +374,14 @@ export class Unit extends Instance implements UnitEntity {
       return
     }
     this.stopInterval()
-    this.interval = this.context.scheduler.add(callback, time, name)
-    if (immediate) callback()
+    this.interval = this.context.scheduler.add(
+      () => {
+        if (!isUnitSuspended(this)) callback()
+      },
+      time,
+      name
+    )
+    if (immediate && !isUnitSuspended(this)) callback()
   }
 
   explore() {

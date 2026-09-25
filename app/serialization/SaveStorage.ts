@@ -1,5 +1,6 @@
+import type { AsyncSaveBridge, SaveProgress } from './AsyncSaveStorage'
 import { ZonedSaveStore } from './ZonedSaveStore'
-import { serializeGame } from './SaveSerializer'
+import { serializeGameForPersistence } from './SaveSerializer'
 import { createInitialCampaignSave, updateCurrentWorldState } from './CampaignSave'
 import { debugLog } from '../lib/debug'
 import type { GameContextLike } from '../types/context'
@@ -7,7 +8,7 @@ import type { CampaignSave, SaveIndexEntry, SaveRecord } from '../types/save'
 
 declare global {
   interface Window {
-    electronSaves?: {
+    electronSaves?: Partial<AsyncSaveBridge> & {
       getIndex(): string | null
       setIndex(json: string): SaveWriteResult
       getItem(key: string): string | null
@@ -85,7 +86,7 @@ function setIndex(index: SaveIndexEntry[]): void {
 
 function isLoadableSaveData(key: string): boolean {
   try {
-    zonedStore.load(key)
+    zonedStore.inspect(key)
     return true
   } catch {
     return false
@@ -143,7 +144,7 @@ export function saveRecord(data: SaveRecord, options: SaveRecordOptions = {}): {
 }
 
 export function buildSaveRecord(context: GameContextLike, campaign: CampaignSave | null = null): SaveRecord {
-  const worldState = serializeGame(context)
+  const worldState = serializeGameForPersistence(context)
   return campaign ? updateCurrentWorldState(campaign, worldState) : createInitialCampaignSave(worldState)
 }
 
@@ -151,7 +152,7 @@ export function autosaveRecord(data: SaveRecord, name = 'Autosave'): { key: stri
   try {
     return saveRecord(data, { key: AUTOSAVE_KEY, name })
   } catch (error) {
-    console.warn('[save] Autosave failed', error)
+    console.warn(`[save] Autosave failed: ${error instanceof Error ? error.message : String(error)}`, error)
     return null
   }
 }
@@ -171,4 +172,58 @@ export function listSaves(): SaveIndexEntry[] {
 
 export function loadSave(key: string): SaveRecord {
   return zonedStore.load(key)
+}
+
+let asyncSaveQueue: Promise<unknown> = Promise.resolve()
+export function saveRecordAsync(
+  data: SaveRecord,
+  options: SaveRecordOptions = {},
+  onProgress?: (progress: SaveProgress) => void
+): Promise<{ key: string; name: string }> {
+  const run = async () => {
+    const bridge = window.electronSaves
+    if (!bridge?.begin || !bridge.batch || !bridge.batchNative || !bridge.commit || !bridge.abort) {
+      if (bridge) throw new Error('SAVE_RESTART_ELECTRON_REQUIRED')
+      return saveRecord(data, options)
+    }
+    const index = getIndex()
+    const replacing = Boolean(options.key && index.some(entry => entry.key === options.key))
+    if (!replacing && options.key !== AUTOSAVE_KEY && index.length >= MAX_SAVES) throw new Error('MAX_SAVES_REACHED')
+    const key = options.key ?? createSaveKey(index)
+    const name = options.name ?? formatSaveName()
+    const { writeElectronSave } = await import('./AsyncSaveStorage')
+    await writeElectronSave(
+      bridge as AsyncSaveBridge,
+      key,
+      data,
+      JSON.stringify([...index.filter(entry => entry.key !== key), { key, name, date: Date.now() }]),
+      onProgress
+    )
+    return { key, name }
+  }
+  const pending = asyncSaveQueue.then(run)
+  asyncSaveQueue = pending.catch(() => {})
+  return pending
+}
+
+export async function autosaveRecordAsync(
+  data: SaveRecord,
+  name = 'Autosave',
+  onProgress?: (progress: SaveProgress) => void,
+  onError?: (error: unknown) => void
+): Promise<{ key: string; name: string } | null> {
+  try {
+    return await saveRecordAsync(data, { key: AUTOSAVE_KEY, name }, onProgress)
+  } catch (error) {
+    onError?.(error)
+    console.warn(`[save] Autosave failed: ${error instanceof Error ? error.message : String(error)}`, error)
+    return null
+  }
+}
+
+export function loadSaveAsync(
+  key: string,
+  onProgress: (completed: number, total: number) => Promise<void>
+): Promise<SaveRecord> {
+  return zonedStore.loadAsync(key, onProgress)
 }

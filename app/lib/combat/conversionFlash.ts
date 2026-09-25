@@ -1,3 +1,4 @@
+import { HEX_COLOR_MAP } from '../graphics/playerColorData'
 import type { AnimatedSprite, Sprite } from 'pixi.js'
 import { Graphics } from 'pixi.js'
 import type { SchedulerTaskId } from '../../types/context'
@@ -20,22 +21,10 @@ const conversionFlashStates = new WeakMap<DamageSprite, ConversionFlashState>()
 
 const conversionFlashSprites = new Set<DamageSprite>()
 
-const PLAYER_FLASH_COLORS: Record<string, string> = {
-  blue: '#466ac9',
-  red: '#e30b00',
-  yellow: '#c3a31b',
-  brown: '#8b5b37',
-  orange: '#e37840',
-  green: '#4b6b2b',
-  teal: '#008279',
-  violet: '#3d5083',
-  grey: '#8f8f8f',
-  black: '#2d3136',
-  cyan: '#008279',
-}
+
 
 function parseFlashColor(color: string | null | undefined): [number, number, number] {
-  const normalized = color?.startsWith('#') ? color : (PLAYER_FLASH_COLORS[color ?? ''] ?? '#ffffff')
+  const normalized = color?.startsWith('#') ? color : ((HEX_COLOR_MAP as Record<string, string>)[color ?? ''] ?? '#ffffff')
   const match = /^#?([0-9a-f]{6})$/i.exec(normalized)
   if (!match) return [1, 1, 1]
   const value = Number.parseInt(match[1], 16)

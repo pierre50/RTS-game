@@ -25,6 +25,7 @@ export function isLiving(entity: SaveEntityState): boolean {
 
 /** Terrain connectivity is cached; occupancy remains mutable as nodes disappear and units move. */
 export class OfflineWorldSpatial {
+  private traceConnectivity: boolean
   private occupied = new Map<string, Set<SaveEntityState>>()
   private regions = new Map<string, number>()
   private nextRegion = 0
@@ -36,8 +37,9 @@ export class OfflineWorldSpatial {
     private terrain: (OfflineTerrainCell | null | undefined)[][],
     state: SerializedSave,
     buildingSize: (entity: SaveEntityState, playerIndex: number) => number,
-    options: { protectVillageAccess?: boolean; exactBuildingFootprints?: boolean } = {}
+    options: { protectVillageAccess?: boolean; exactBuildingFootprints?: boolean; traceConnectivity?: boolean } = {}
   ) {
+    this.traceConnectivity = options.traceConnectivity !== false
     for (const entity of [...state.resources, ...state.animals]) {
       if (!entity.isDestroyed) this.reserve(entity)
     }
@@ -185,7 +187,9 @@ export class OfflineWorldSpatial {
     const key = this.key(point)
     if (this.regions.has(key)) return this.regions.get(key)
     if (!this.land(point)) return undefined
-    const trace = beginLoadTrace('spatial.connectedRegion', { i: point.i, j: point.j, rows: this.terrain.length })
+    const trace = this.traceConnectivity
+      ? beginLoadTrace('spatial.connectedRegion', { i: point.i, j: point.j, rows: this.terrain.length })
+      : null
     try {
       const region = ++this.nextRegion
       const queue = [point]
@@ -193,7 +197,7 @@ export class OfflineWorldSpatial {
       let processed = 0
       for (const cell of queue) {
         if (++processed % 100000 === 0)
-          trace.progress({ processed, discovered: queue.length, cachedCells: this.regions.size })
+          trace?.progress({ processed, discovered: queue.length, cachedCells: this.regions.size })
         for (const [di, dj] of [
           [-1, 0],
           [1, 0],
@@ -207,10 +211,10 @@ export class OfflineWorldSpatial {
           queue.push(next)
         }
       }
-      trace.end({ processed, discovered: queue.length, cachedCells: this.regions.size })
+      trace?.end({ processed, discovered: queue.length, cachedCells: this.regions.size })
       return region
     } catch (error) {
-      trace.fail(error)
+      trace?.fail(error)
       throw error
     }
   }

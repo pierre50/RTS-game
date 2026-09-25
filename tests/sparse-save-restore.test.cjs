@@ -109,6 +109,7 @@ test('seed saves regenerate the saved footprint and request the exact source blu
         },
       }
       const game = {
+        async _updateLoading() {},
         context: {
           players: [],
           controls: {
@@ -222,4 +223,28 @@ test('replacing generated entities stops every provisional AI before replacing t
   savedGeneration(AI).clearGeneratedGameplayState(map)
   assert.deepEqual(stopped, players)
   assert.deepEqual(map.context.players, [])
+})
+
+test('loading a 1000 seed save restores the same assigned civilization sites as a new game', async () => {
+  const manifest = require('../public/maps/worlds/world-test-1000/manifest.json')
+  const { assignContinentVillages } = loadTsModule('app/lib/campaign/continentVillagePlacement.ts')
+  const source = { id: 'continent', size: manifest.regionMapSize, settlements: manifest.settlements, worldManifest: manifest }
+  const expected = assignContinentVillages(source)
+  let generated
+  const map = {
+    async generateFromBlueprint(blueprint) { generated = blueprint },
+    async prepareTerrainForSavedState() {},
+    mapGeneration: { applySavedStateToGeneratedMap() {} },
+  }
+  await bootGameFromSeedSave({
+    context: { players: [] },
+    _map: () => map,
+    _createRuntime() {}, _createUiRuntime() {}, _mountRuntime() {},
+    async _updateLoading() {},
+    _applyMapConfig: (target, config) => Object.assign(target, config),
+    _loadRequiredWorldMapBlueprint: async () => source,
+  }, { world: { worldId: 'world-test-1000', size: 999 }, players: [] })
+  assert.deepEqual(generated.settlements, expected.settlements)
+  assert.deepEqual(generated.worldManifest.settlements, expected.settlements)
+  assert.ok(source.settlements.filter(site => site.kind === 'village').every(site => !site.civ))
 })

@@ -1,5 +1,17 @@
+import {
+  habitatCells,
+  maintainWildlifeHome,
+  outsideWildlifeHome,
+  WILDLIFE_CALM_MS,
+} from '../../services/WildlifeHabitat'
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
-import { AmbientMovementController, findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
+import {
+  AmbientMovementController,
+  findInstancesInSight,
+  getCellsAroundPoint,
+  getInstancePath,
+  instancesDistance,
+} from '../../lib'
 import {
   canEntityUseCellAsIdleDestination,
   createReservedPassageCellLookup,
@@ -23,6 +35,7 @@ const AMBIENT_WALK_RANGE = 2
 
 export class AnimalBehavior {
   animal: AnimalControllerHost
+  private returnCandidateOffset = 0
   ambientMovement: AmbientMovementController<AnimalControllerHost>
 
   constructor(animal: AnimalControllerHost) {
@@ -33,6 +46,7 @@ export class AnimalBehavior {
       move: (target, destination) => target.sendTo(destination),
       pickDestination: target => this.findAmbientDestination(target),
       taskName: 'animal.behavior',
+      sharedCadence: true,
     })
   }
 
@@ -90,7 +104,12 @@ export class AnimalBehavior {
     }
     updateUnitEnergy(animal, BEHAVIOR_CHECK_INTERVAL)
 
+    const home = this.home()
+    const now = animal.context.dayNight?.getElapsedMs?.() ?? animal.context.scheduler.elapsedMs
+    if (home) maintainWildlifeHome(animal.context, home, animal.context.dayNight?.state?.day ?? 1)
     const threat = this.findNearbyThreat()
+    if (home && (animal.isFleeing || (threat && shouldHorseFleeFromThreat(animal))))
+      home.returnAfterMs = now + WILDLIFE_CALM_MS
     if (threat && !animal.isFleeing && animal.strategy === 'runaway' && shouldHorseFleeFromThreat(animal)) {
       showAlertFeedback(animal)
       animal.getReaction(threat)
@@ -120,20 +139,70 @@ export class AnimalBehavior {
       return
     }
 
+    if (home && now < (home.returnAfterMs ?? 0)) return
+    if (home && outsideWildlifeHome(animal, home)) {
+      this.returnHome()
+      return
+    }
     if (routeEntityAwayFromPassageCell(animal)) return
     this.ambientMovement.tryMove()
+  }
+
+  private home() {
+    const animal = this.animal
+    if (
+      animal.trapPrey ||
+      animal.tamingStatus === 'tamed' ||
+      animal.companionOwner ||
+      (animal.spaceId && animal.spaceId !== 'outside')
+    )
+      return undefined
+    return (animal.wildlife ??= { homeI: animal.i, homeJ: animal.j, generation: 0 })
+  }
+
+  private returnHome(): void {
+    const animal = this.animal,
+      home = this.home()!
+    // Failed routes retry at the normal ambient cadence, never every behavior tick.
+    this.ambientMovement.schedule()
+    const passageLookup = createReservedPassageCellLookup(animal.context)
+    const threats = (animal.context.players ?? [])
+      .flatMap(player => [...player.units, ...player.buildings])
+      .filter(entity => !entity.isDead && !entity.isDestroyed && (!entity.spaceId || entity.spaceId === 'outside'))
+    const hero = animal.context.controls?.heroUnit
+    if (hero && (!hero.spaceId || hero.spaceId === 'outside')) threats.push(hero)
+    const safe = (cell: RuntimeCell) =>
+      !threats.some(entity => Math.hypot(entity.i - cell.i, entity.j - cell.j) <= animal.sight)
+    const cells = habitatCells(animal.context, home).filter(
+      cell => !cell.solid && safe(cell) && canEntityUseCellAsIdleDestination(animal, cell, { passageLookup })
+    )
+    cells.sort((a, b) => Math.hypot(a.i - animal.i, a.j - animal.j) - Math.hypot(b.i - animal.i, b.j - animal.j))
+    const start = this.returnCandidateOffset
+    this.returnCandidateOffset += 8
+    for (let n = 0; n < Math.min(8, cells.length); n++) {
+      const cell = cells[(start + n) % cells.length]
+      const path = getInstancePath<RuntimeCell>(animal, cell.i, cell.j, animal.context.map)
+      if (!path.length || !path.every(safe)) continue
+      animal.setDest(cell)
+      animal.action = null
+      animal.setPath(path)
+      return
+    }
   }
 
   findAmbientDestination(animal: AnimalControllerHost): RuntimeCell | null {
     const map = getEntitySpaceMapLike(animal, animal.context.map)
     if (!map) return null
     const passageLookup = createReservedPassageCellLookup(animal.context)
+    const home = this.home()
+    const homeCells = home ? new Set(habitatCells(animal.context, home).map(cell => `${cell.i}:${cell.j}`)) : null
     const cells = getCellsAroundPoint(
       animal.i,
       animal.j,
       map.grid,
       animal.ambientWalkRange ?? AMBIENT_WALK_RANGE,
       cell =>
+        (!homeCells || homeCells.has(`${cell.i}:${cell.j}`)) &&
         canEntityUseCellAsIdleDestination(animal, cell, { passageLookup }) &&
         (cell.i !== animal.i || cell.j !== animal.j)
     )

@@ -1,3 +1,5 @@
+import type { VillageHome } from '../lib/units/villageActivity'
+import type { CampBehavior } from './camp'
 import type { VillagerSchedule } from '../lib/units/villagerSchedule'
 import type { AnimatedSprite } from 'pixi.js'
 import type { ActionProps } from './combat'
@@ -191,6 +193,9 @@ export interface UnitEntity extends EnergyEntity {
   autonomousJob?: VillagerAutonomyJob | null
   exploringForAutonomy?: boolean
   assigningAutonomousJob?: boolean
+  offlineWork?: { target: string; milliseconds: number }
+  villageHome?: VillageHome
+  campBehavior?: CampBehavior
   campPatrolAnchor?: GridPosition | null
   campPatrolTaskId?: number | null
   heroFollowerPatrolTaskId?: number | null

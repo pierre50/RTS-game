@@ -1,3 +1,4 @@
+import { withinVillageActivity } from '../units/villageActivity'
 import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { getClosestInstanceWithPath } from '../grid/queries'
 import { isHeroControlled } from '../units/unitControl'
@@ -154,7 +155,7 @@ export function buildingAcceptsInventoryResource(
 // (see maxAcceptableResourceAmount in depositUnitResourcesIntoChest), so a building doesn't
 // need to fit the unit's entire carried amount to be worth walking to.
 export function unitHasDeliverableResourcesForBuilding(unit: UnitEntity, building: BuildingEntity): boolean {
-  if (!allowsVillagerDeliveries(building)) return false
+  if (!withinVillageActivity(unit, building) || !allowsVillagerDeliveries(building)) return false
   return getUnitCarriedResourceKeys(unit).some(
     resource => getUnitCarriedResourceAmount(unit, resource) > 0 && buildingAcceptsInventoryResource(building, resource)
   )

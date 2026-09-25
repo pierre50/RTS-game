@@ -1,4 +1,7 @@
+import { isCampPaused } from '../../lib/units/campActivity'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
+import { isDistantOwner } from '../../lib/units/villageActivity'
+import { isUnitSuspended } from '../../lib/units/unitSuspension'
 import { setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { getEntityCell } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
@@ -49,7 +52,9 @@ export function collectRestUnits(context: GameContextLike): RestUnitBuckets {
   }
   for (const player of context.players ?? []) {
     for (const unit of player.units ?? []) {
-      if (unit.isDead || unit.isDestroyed) continue
+      if (isCampPaused(unit)) continue
+      if (unit.isDead || unit.isDestroyed || ((player.isPlayed || isDistantOwner(player)) && isUnitSuspended(unit)))
+        continue
       buckets.livingUnits.push(unit)
       if (isVillager(unit)) buckets.villagers.push(unit)
       if (canUseUnitRest(unit) || unit.shelterState) buckets.restUnits.push(unit)

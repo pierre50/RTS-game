@@ -1,24 +1,26 @@
-import { BUILDING_TYPES,CELL_HEIGHT,CELL_WIDTH } from '../../constants'
 import {
-canvasDrawDiamond,
-canvasDrawRectangle,
-canvasDrawStrokeRectangle,
-playerCanSeeInstance,
-throttle,
-throttleByKey,
-} from '../../lib'
-import { instanceIsInPlayerSight } from '../../lib/grid/visibility'
-import { getEntitySpaceId } from '../../lib/mapSpaces'
-import { usesPersonalVision } from '../../lib/units/playerVisionAccess'
+  minimapSampleIntersectsViewport,
+  minimapTerrainSampling,
+  terrainSampleKey,
+  type MinimapDisplaySize,
+} from './MinimapTerrainSampling'
+import { hasActiveCampGuards } from './MinimapCampState'
+import { getMinimapZoom } from './MinimapZoom'
+import { isMinimapMarkerHidden, minimapOwnerKey } from './MinimapFilters'
+import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
+import { canvasDrawDiamond, throttle } from '../../lib'
 import type { MinimapHostLike } from '../../types/context'
-import type { ResourceEntity,RuntimeEntity } from '../../types/entities'
+import type { ResourceEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
-import { resourceColor,terrainColor } from './MinimapColors'
-import { isMinimapUnitMarker,isResourceEntity } from './MinimapEntityKinds'
-import { getMinimapElement,MINIMAP_RESOLUTION_SCALE,MinimapGeometry,type MinimapTransform } from './MinimapGeometry'
-import { drawMinimapQuestMarkers } from './MinimapQuestMarkers'
-import { getMinimapUnitAvatar } from './MinimapUnitAvatar'
+import { getBuildingFootprintCells } from '../../lib/grid/cells'
+import { getInteriorExitCell } from '../../lib/buildings/interiorExits'
+import { getActiveMapSpace, getEntitySpaceId } from '../../lib/mapSpaces'
+import { drawMinimapMarker } from './MinimapMarkers'
+import { drawMinimapUnitMarker } from './MinimapUnitMarkers'
+import { MinimapBuildingKnowledge } from './MinimapBuildingKnowledge'
+import { terrainColor } from './MinimapColors'
+import { getMinimapElement, MINIMAP_RESOLUTION_SCALE, MinimapGeometry, type MinimapTransform } from './MinimapGeometry'
 import { withMinimapPlayerVision } from './MinimapVisibility'
 
 // Canvases default to the HTML intrinsic 300x150 raster; the world->pixel math below
@@ -27,23 +29,23 @@ import { withMinimapPlayerVision } from './MinimapVisibility'
 // size so the diamond still fills the canvas exactly, just at a crisper resolution
 // once CSS stretches it to the (now larger) on-screen minimap box.
 
-const MINIMAP_CAVE_COLOR = '#a89f91'
-
-
-
-
+const MAX_REMEMBERED_TERRAIN_SAMPLES = 131072
 
 export class MinimapManager {
+  private readonly buildingKnowledge = new MinimapBuildingKnowledge()
   private readonly geometry: MinimapGeometry
   menu: MinimapHostLike
   miniMapAlpha: number
-  updatePlayerMiniMap: (owner: PlayerLike) => void
+  updatePlayerMiniMap: (owner?: PlayerLike) => void
   updateResourcesMiniMap: () => void
   updateCameraMiniMap: () => void
+  private displaySize?: MinimapDisplaySize
+  private resizeObserver?: ResizeObserver
   private active: boolean
   private initialized: boolean
   private layoutKey: string | null
-  private unitAvatarCache: WeakMap<RuntimeEntity, HTMLCanvasElement>
+  private readonly paintedTerrainSamples = new Set<string>()
+  private readonly exploredSamples = new WeakMap<RuntimeCell[][], Map<string, { i: number; j: number }>>()
 
   constructor(menu: MinimapHostLike) {
     this.menu = menu
@@ -52,25 +54,31 @@ export class MinimapManager {
     this.active = false
     this.initialized = false
     this.layoutKey = null
-    this.unitAvatarCache = new WeakMap()
 
-    this.updatePlayerMiniMap = throttleByKey(
-      this.updatePlayerMiniMapEvt.bind(this),
-      500,
-      (owner: PlayerLike) => owner?.label ?? owner
-    )
-    this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt.bind(this), 500)
+    // Entity notifications refresh only the lightweight marker overlay while open.
+    this.updatePlayerMiniMap = throttle(() => this.updatePlayerMiniMapEvt(), 100)
+    this.updateResourcesMiniMap = () => {}
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt.bind(this), 100)
   }
 
   activate(): void {
+    this.geometry.resetZoomAnchor()
     this.active = true
     this.initMiniMap()
     this.redrawMiniMap()
+    if (!this.resizeObserver && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => {
+        const rect = getMinimapElement(this.menu).getBoundingClientRect()
+        if (rect.width !== this.displaySize?.width || rect.height !== this.displaySize?.height) this.refreshMiniMap()
+      })
+      this.resizeObserver.observe(getMinimapElement(this.menu))
+    }
   }
 
   deactivate(): void {
     this.active = false
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = undefined
     this.initialized = false
     this.layoutKey = null
   }
@@ -92,17 +100,11 @@ export class MinimapManager {
   private redrawMiniMap(): void {
     if (!this.canDraw()) return
     this.initMiniMap()
-    const { map, player, players } = this.menu.context
+    const { map } = this.menu.context
     if (map.revealEverything || map.revealTerrain) {
       this.revealTerrainMinimap()
     } else {
       this.rebuildTerrainMiniMapFromViews()
-    }
-    this.updateResourcesMiniMapEvt()
-    if (map.revealEverything) {
-      players.forEach(owner => this.updatePlayerMiniMapEvt(owner))
-    } else if (player) {
-      this.updatePlayerMiniMapEvt(player)
     }
     this.updateCameraMiniMapEvt()
   }
@@ -113,15 +115,28 @@ export class MinimapManager {
     return !cell.terrainHidden && cell.category !== 'Water'
   }
 
-  private drawTerrainCell(context: CanvasRenderingContext2D, cell: RuntimeCell, transform: MinimapTransform): void {
+  private drawTerrainCell(
+    context: CanvasRenderingContext2D,
+    cell: RuntimeCell,
+    transform: MinimapTransform,
+    step = 1
+  ): void {
     const point = this.geometry.cellToMinimapPoint(cell, transform)
+    if (step > 1) {
+      const di = Math.floor(cell.i / step) * step + (step - 1) / 2 - cell.i
+      const dj = Math.floor(cell.j / step) * step + (step - 1) / 2 - cell.j
+      point.x += ((di - dj) * CELL_WIDTH) / 2 / transform.factor
+      point.y += ((di + dj) * CELL_HEIGHT) / 2 / transform.factor
+    }
+    this.paintedTerrainSamples.add(terrainSampleKey(cell.i, cell.j, step))
+    const color = terrainColor(cell)
     canvasDrawDiamond(
       context,
       point.x,
       transform.layout !== 'iso-diamond' ? point.y - CELL_HEIGHT / transform.factor / 2 : point.y,
-      CELL_WIDTH / transform.factor + 1,
-      CELL_HEIGHT / transform.factor + 1,
-      terrainColor(cell)
+      (CELL_WIDTH * step) / transform.factor + 1,
+      (CELL_HEIGHT * step) / transform.factor + 1,
+      color
     )
   }
 
@@ -129,53 +144,9 @@ export class MinimapManager {
     context.clearRect(-transform.translate, 0, canvas.width, canvas.height)
   }
 
-  private getUnitAvatar(unit: RuntimeEntity): HTMLCanvasElement | null {
-    return getMinimapUnitAvatar(this.menu, this.unitAvatarCache, unit)
-  }
-
-  private drawUnitAvatarMarker(
-    context: CanvasRenderingContext2D,
-    unit: RuntimeEntity,
-    x: number,
-    y: number,
-    squareSize: number,
-    fallbackColor: string
-  ): void {
-    if (unit === this.menu.context.controls.heroUnit || unit.type === 'Hero') {
-      const radius = 4 * MINIMAP_RESOLUTION_SCALE
-      context.save()
-      context.beginPath()
-      context.ellipse(x, y, radius, radius, 0, 0, Math.PI * 2)
-      context.fillStyle = '#00bfff'
-      context.fill()
-      context.lineWidth = 2 * MINIMAP_RESOLUTION_SCALE
-      context.strokeStyle = '#142536'
-      context.stroke()
-      context.lineWidth = MINIMAP_RESOLUTION_SCALE
-      context.strokeStyle = '#ffffff'
-      context.stroke()
-      context.restore()
-      return
-    }
-    const avatar = this.getUnitAvatar(unit)
-    if (!avatar) {
-      canvasDrawRectangle(context, x - squareSize / 2, y - squareSize / 2, squareSize, squareSize, fallbackColor)
-      return
-    }
-
-    const size = this.geometry.getUnitAvatarSize(squareSize)
-    context.imageSmoothingEnabled = false
-    context.drawImage(avatar, x - size / 2, y - size / 2, size, size)
-  }
-
   private withMinimapViewSpace<T>(player: PlayerLike | null | undefined, callback: () => T): T {
     const space = this.geometry.getMinimapSpace()
     return withMinimapPlayerVision(player, space.id, callback)
-  }
-
-  private isInMinimapSpace(instance: RuntimeEntity | null | undefined): instance is RuntimeEntity {
-    if (!instance) return false
-    return getEntitySpaceId(instance) === this.geometry.getMinimapSpace().id
   }
 
   private clearPlayerLayers(): void {
@@ -207,7 +178,8 @@ export class MinimapManager {
     if (!this.canDraw()) return
     const nextLayoutKey = this.geometry.getMinimapLayoutKey()
     if (this.initialized && this.layoutKey === nextLayoutKey) return
-    if (this.initialized && this.layoutKey !== nextLayoutKey) this.clearPlayerLayers()
+    this.clearPlayerLayers()
+    this.paintedTerrainSamples.clear()
 
     const { menu } = this
     const transform = this.geometry.getMinimapTransform()
@@ -230,8 +202,8 @@ export class MinimapManager {
       const canvasW = menu.terrainMinimap!.width
       const canvasH = menu.terrainMinimap!.height
       const centerX = 2 * translate
-      const halfW = (N * CELL_WIDTH) / 2 / factor
-      const halfH = (N * CELL_HEIGHT) / 2 / factor
+      const halfW = (N * CELL_WIDTH) / 2 / (factor * getMinimapZoom(menu.context))
+      const halfH = (N * CELL_HEIGHT) / 2 / (factor * getMinimapZoom(menu.context))
 
       const px = (v: number) => `${((v / canvasW) * 100).toFixed(2)}%`
       const py = (v: number) => `${((v / canvasH) * 100).toFixed(2)}%`
@@ -242,222 +214,234 @@ export class MinimapManager {
     this.layoutKey = nextLayoutKey
   }
 
-  revealTerrainMinimap(): void {
-    if (!this.canDraw()) return
-    this.initMiniMap()
-    const { menu } = this
-    const grid = this.geometry.getMinimapGrid()
-    const size = this.geometry.getMinimapSize()
-    const canvas = menu.terrainMinimap!
-    const context = canvas.getContext('2d')!
-    const transform = this.geometry.getMinimapTransform()
-
-    this.clearCanvas(context, canvas, transform)
-    for (let i = 0; i <= size; i++) {
-      for (let j = 0; j <= size; j++) {
-        const cell = grid[i]?.[j]
-        if (!cell) continue
-        if (!this.shouldDrawTerrainCell(cell)) continue
-        this.drawTerrainCell(context, cell, transform)
-      }
+  private sampleMemory(grid: RuntimeCell[][]): Map<string, { i: number; j: number }> {
+    let memory = this.exploredSamples.get(grid)
+    if (!memory) {
+      memory = new Map()
+      this.exploredSamples.set(grid, memory)
     }
+    return memory
+  }
+
+  revealTerrainMinimap(): void {
+    this.rebuildTerrain(true)
   }
 
   rebuildTerrainMiniMapFromViews(): void {
+    this.rebuildTerrain(false)
+  }
+
+  private rebuildTerrain(reveal: boolean): void {
     if (!this.canDraw()) return
+    const rect = getMinimapElement(this.menu).getBoundingClientRect?.()
+    this.displaySize = rect
+      ? {
+          width: rect.width,
+          height: rect.height,
+          pixelRatio: typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+        }
+      : undefined
     this.initMiniMap()
-    const { menu } = this
-    const { player } = menu.context
     const grid = this.geometry.getMinimapGrid()
     const size = this.geometry.getMinimapSize()
-    const canvas = menu.terrainMinimap!
+    const canvas = this.menu.terrainMinimap!
     const context = canvas.getContext('2d')!
     const transform = this.geometry.getMinimapTransform()
-
+    const plan = minimapTerrainSampling(transform, this.displaySize)
+    const { step } = plan
+    const memory = this.sampleMemory(grid)
+    const player = this.menu.context.player
+    const representatives = new Map<string, { i: number; j: number }>()
     this.clearCanvas(context, canvas, transform)
-    if (!player?.views) return
-
-    for (let i = 0; i <= size; i++) {
-      for (let j = 0; j <= size; j++) {
-        if (!this.withMinimapViewSpace(player, () => player.views.isViewed(i, j))) continue
-        const cell = grid[i]?.[j]
-        if (!cell) continue
-        if (!this.shouldDrawTerrainCell(cell)) continue
-        this.drawTerrainCell(context, cell, transform)
+    this.paintedTerrainSamples.clear()
+    this.withMinimapViewSpace(player, () => {
+      for (const sample of memory.values()) {
+        if (sample.i < plan.minI || sample.i > plan.maxI || sample.j < plan.minJ || sample.j > plan.maxJ) continue
+        if (!reveal && !player?.views?.isViewed(sample.i, sample.j)) continue
+        representatives.set(terrainSampleKey(sample.i, sample.j, step), sample)
       }
-    }
+      for (let i = plan.minI; i <= plan.maxI; i += step) {
+        for (let j = plan.minJ; j <= plan.maxJ; j += step) {
+          if (!minimapSampleIntersectsViewport(i, j, step, transform)) continue
+          const key = terrainSampleKey(i, j, step)
+          // Remember discoveries between refreshes, even if a narrow explored path
+          // falls between the overview's regular samples. Never retain cell objects.
+          const sample = !reveal && representatives.get(key)
+          const si = sample ? sample.i : Math.min(size, i + Math.floor(step / 2))
+          const sj = sample ? sample.j : Math.min(size, j + Math.floor(step / 2))
+          if (!reveal && !player?.views?.isViewed(si, sj)) continue
+          const cell = grid[si]?.[sj]
+          if (!cell || !this.shouldDrawTerrainCell(cell)) continue
+          this.drawTerrainCell(context, cell, transform, step)
+        }
+      }
+    })
   }
 
   updateTerrainMiniMap(i: number, j: number): void {
     if (!this.canDraw()) return
     this.initMiniMap()
-    const { menu } = this
-    const canvas = menu.terrainMinimap!
-    const context = canvas.getContext('2d')!
-    const transform = this.geometry.getMinimapTransform()
-    const cell = this.geometry.getMinimapGrid()[i]?.[j]
-    if (!cell) return
-    if (!this.shouldDrawTerrainCell(cell)) return
-
-    const { map, player } = menu.context
-    if (!map.revealEverything && !this.withMinimapViewSpace(player, () => player?.views?.isViewed(i, j))) return
-
-    this.drawTerrainCell(context, cell, transform)
-    if (isResourceEntity(cell.has)) {
-      this.updateResourceMiniMap(cell.has)
-    }
-  }
-
-  updateResourceMiniMap(resource: ResourceEntity): void {
-    if (!this.canDraw()) return
-    this.initMiniMap()
-    const { menu } = this
-    const { map } = menu.context
-    if (!this.isInMinimapSpace(resource)) return
-    if (!map.showResources) return
-
-    const context = menu.resourcesMinimap!.getContext('2d')!
-    const transform = this.geometry.getMinimapTransform()
-    const squareSize = this.geometry.getMarkerSquareSize(transform)
-    const position = this.geometry.instanceToMinimapPoint(resource, transform)
-    if (!position) return
-
-    canvasDrawRectangle(
-      context,
-      position.x - squareSize / 2,
-      position.y - squareSize / 2,
-      squareSize,
-      squareSize,
-      resourceColor(resource)
+    const { map, player } = this.menu.context
+    if (
+      !map.revealEverything &&
+      !map.revealTerrain &&
+      !this.withMinimapViewSpace(player, () => player?.views?.isViewed(i, j))
     )
-  }
-
-  updateResourcesMiniMapEvt(): void {
-    if (!this.canDraw()) return
-    this.initMiniMap()
-    const { menu } = this
-    const { map, player } = menu.context
-    const canvas = menu.resourcesMinimap!
-    const context = canvas.getContext('2d')!
+      return
+    const grid = this.geometry.getMinimapGrid()
+    const cell = grid[i]?.[j]
+    if (!cell || !this.shouldDrawTerrainCell(cell)) return
+    this.updatePlayerMiniMap()
     const transform = this.geometry.getMinimapTransform()
-    const squareSize = this.geometry.getMarkerSquareSize(transform)
-
-    this.clearCanvas(context, canvas, transform)
-    if (!map.showResources) return
-
-    map.resources.forEach(resource => {
-      if (!this.isInMinimapSpace(resource)) return
-      if (
-        resource.color &&
-        (this.withMinimapViewSpace(player, () => Boolean(player?.views?.isViewed(resource.i, resource.j))) ||
-          map.revealEverything)
-      ) {
-        const position = this.geometry.instanceToMinimapPoint(resource, transform)
-        if (!position) return
-
-        canvasDrawRectangle(
-          context,
-          position.x - squareSize / 2,
-          position.y - squareSize / 2,
-          squareSize,
-          squareSize,
-          resourceColor(resource)
-        )
-      }
-    })
+    const plan = minimapTerrainSampling(transform, this.displaySize)
+    const { step } = plan
+    const key = terrainSampleKey(i, j, step)
+    const memory = this.sampleMemory(grid)
+    const previous = memory.get(key)
+    // One representative per overview sample: movement does not repaint the
+    // same subpixel terrain thousands of times.
+    const sample = previous ?? { i, j }
+    if (previous && this.paintedTerrainSamples.has(key)) return
+    if (memory.size >= MAX_REMEMBERED_TERRAIN_SAMPLES && !memory.has(key)) {
+      const oldest = memory.keys().next().value
+      if (oldest !== undefined) memory.delete(oldest)
+    }
+    memory.set(key, sample)
+    if (i < plan.minI || i > plan.maxI || j < plan.minJ || j > plan.maxJ) return
+    const sampleCell = grid[sample.i]?.[sample.j]
+    if (sampleCell) this.drawTerrainCell(this.menu.terrainMinimap!.getContext('2d')!, sampleCell, transform, step)
   }
+
+  updateResourceMiniMap(_resource: ResourceEntity): void {}
+
+  updateResourcesMiniMapEvt(): void {}
 
   updateCameraMiniMapEvt(): void {
     if (!this.canDraw()) return
     this.initMiniMap()
     const { menu } = this
-    const { controls } = menu.context
     const canvas = menu.cameraMinimap!
     const context = canvas.getContext('2d')!
     const transform = this.geometry.getMinimapTransform()
-    const { factor } = transform
-    const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = controls.getViewportMetrics()
-
     this.clearCanvas(context, canvas, transform)
-    canvasDrawStrokeRectangle(
-      context,
-      this.geometry.toMinimapX(visibleLeft - transform.originX, transform),
-      this.geometry.toMinimapY(visibleTop - transform.originY, transform),
-      visibleWidth / factor,
-      visibleHeight / factor,
-      'white'
-    )
-    drawMinimapQuestMarkers(context, menu, this.geometry, transform)
+    const viewport = menu.context.controls.getViewportMetrics?.()
+    if (viewport && viewport.visibleWidth > 0 && viewport.visibleHeight > 0) {
+      const x = this.geometry.toMinimapX(viewport.visibleLeft - transform.originX, transform)
+      const y = this.geometry.toMinimapY(viewport.visibleTop - transform.originY, transform)
+      context.save()
+      context.fillStyle = 'rgba(0, 0, 0, 0.35)'
+      context.fillRect(-transform.translate, 0, canvas.width, canvas.height)
+      context.clearRect(x, y, viewport.visibleWidth / transform.factor, viewport.visibleHeight / transform.factor)
+      context.restore()
+    }
+    this.updatePlayerMiniMapEvt()
   }
 
-  updatePlayerMiniMapEvt(owner: PlayerLike): void {
+  updatePlayerMiniMapEvt(_owner?: PlayerLike): void {
+    const { player: observer, players: owners, map: world } = this.menu.context
+    if (world.ready === false) return // Do not erase observations while saved entities are still being restored.
+    const activeSpace = getActiveMapSpace(world)
+    if (!observer || !activeSpace) return
+    const knownBuildings = this.buildingKnowledge.update(observer, owners, activeSpace, world.revealEverything)
     if (!this.canDraw()) return
     this.initMiniMap()
-    if (!owner) return
-
-    const { menu } = this
-    const { map, player } = menu.context
+    const { map, player, players, controls } = this.menu.context
+    const canvas = this.menu.resourcesMinimap!
+    const context = canvas.getContext('2d')!
     const transform = this.geometry.getMinimapTransform()
-    const { translate } = transform
-    const squareSize = this.geometry.getMarkerSquareSize(transform)
-    const color = owner.colorHex
-    const id = `minimap-${owner.label}`
-    const shouldDrawOwner = map.revealEverything || owner.label === player?.label
-    const shouldDrawOwnerUnits = owner.label === player?.label
-
-    let canvas: HTMLCanvasElement
-    let context: CanvasRenderingContext2D
-    const existing = menu.playersMinimap.find(p => p.id === id)
-    if (!shouldDrawOwner && !existing) return
-
-    if (existing) {
-      canvas = existing.canvas
-      context = existing.context
-    } else {
-      canvas = document.createElement('canvas')
-      canvas.width = transform.canvasWidth
-      canvas.height = transform.canvasHeight
-      context = canvas.getContext('2d')!
-      if (transform.layout === 'iso-diamond') context.translate(translate, 0)
-      menu.playersMinimap.push({ id, canvas, context })
-      getMinimapElement(menu).appendChild(canvas)
-    }
-
+    const space = this.geometry.getMinimapSpace()
     this.clearCanvas(context, canvas, transform)
-    if (!shouldDrawOwner) return
-
-    const personalVision = usesPersonalVision(menu.context)
-    const isVisible = (instance: RuntimeEntity) =>
-      map.revealEverything ||
-      this.withMinimapViewSpace(player, () =>
-        personalVision ? instanceIsInPlayerSight(instance, player) : playerCanSeeInstance(instance, player)
-      )
-
-    owner.buildings.forEach(building => {
-      if (!this.isInMinimapSpace(building)) return
-      if (!isVisible(building)) return
-      const position = this.geometry.instanceToMinimapPoint(building, transform)
-      if (!position) return
-      const { size = 0, selected } = building
-      const finalSize = this.geometry.getBuildingMarkerSize(size, squareSize)
-      canvasDrawRectangle(
-        context,
-        position.x - finalSize / 2,
-        position.y - finalSize / 2,
-        finalSize,
-        finalSize,
-        selected ? 'white' : building.type === BUILDING_TYPES.cave ? MINIMAP_CAVE_COLOR : color
-      )
-    })
-    if (!shouldDrawOwnerUnits) return
-
-    owner.units.forEach(unit => {
-      if (!isMinimapUnitMarker(unit)) return
-      if (!this.isInMinimapSpace(unit)) return
-      const position = this.geometry.instanceToMinimapPoint(unit, transform)
-      if (!position) return
-      const { selected } = unit
-      this.drawUnitAvatarMarker(context, unit, position.x, position.y, squareSize, selected ? 'white' : color)
+    const redraw = () => this.updatePlayerMiniMap()
+    const exitCell = getInteriorExitCell(map)
+    if (exitCell && !isMinimapMarkerHidden(this.menu.context, 'exit')) {
+      drawMinimapMarker(context, 'exit', this.geometry.cellToMinimapPoint(exitCell, transform), '#27865c', redraw)
+    }
+    this.withMinimapViewSpace(player, () => {
+      for (const owner of players) {
+        for (const building of owner.buildings) {
+          const cave = building.type === BUILDING_TYPES.cave
+          const camp = owner.type === PLAYER_TYPES.bandits && building.type === BUILDING_TYPES.fireCamp
+          const ownBase = owner === player && building.type === BUILDING_TYPES.townCenter
+          if (ownBase && building.isBuilt === false) continue
+          if (
+            isMinimapMarkerHidden(
+              this.menu.context,
+              ownBase ? 'base' : owner === player ? 'self' : minimapOwnerKey(owner)
+            ) ||
+            (cave && isMinimapMarkerHidden(this.menu.context, 'caves'))
+          )
+            continue
+          if (owner !== player && !cave && !camp && building.type !== BUILDING_TYPES.townCenter) continue
+          if (camp && !hasActiveCampGuards(owner, building)) continue
+          if (!cave && owner !== player && owner.type === PLAYER_TYPES.ai) continue
+          if (getEntitySpaceId(building) !== space.id || building.isDead || building.isDestroyed) continue
+          if (
+            owner !== player &&
+            !map.revealEverything &&
+            !getBuildingFootprintCells(building.i, building.j, space.grid, building.size).some(cell =>
+              player?.views?.isViewed(cell.i, cell.j)
+            )
+          )
+            continue
+          const point = this.geometry.instanceToMinimapPoint(building, transform)
+          if (owner === player && !cave && !ownBase) {
+            if (point) drawMinimapUnitMarker(context, 'building', point, owner.colorHex, building.selected)
+            continue
+          }
+          const kind = camp
+            ? 'camp'
+            : cave
+              ? 'cave'
+              : owner !== player && owner.type === PLAYER_TYPES.ai
+                ? 'village'
+                : 'home'
+          if (point) {
+            drawMinimapMarker(context, kind, point, cave ? '#8f8f8f' : owner.colorHex, redraw, building.selected)
+          }
+        }
+      }
+      for (const building of knownBuildings) {
+        if (isMinimapMarkerHidden(this.menu.context, building.ownerKey)) continue
+        const point = {
+          x: this.geometry.toMinimapX(building.x, transform),
+          y: this.geometry.toMinimapY(building.y, transform),
+        }
+        context.save()
+        context.filter = building.visible ? 'none' : 'brightness(55%)'
+        if (building.town) drawMinimapMarker(context, 'home', point, building.color, redraw)
+        else drawMinimapUnitMarker(context, 'building', point, building.color)
+        context.restore()
+      }
+      const hero = controls.heroUnit
+      for (const owner of players) {
+        if (owner !== player && owner.type !== PLAYER_TYPES.ai && owner.type !== PLAYER_TYPES.bandits) continue
+        if (isMinimapMarkerHidden(this.menu.context, owner === player ? 'self' : minimapOwnerKey(owner))) continue
+        for (const unit of owner.units) {
+          if (unit === hero || getEntitySpaceId(unit) !== space.id || unit.shelterState?.status === 'inside') continue
+          if (owner !== player && !map.revealEverything && !player.views?.isVisible?.(unit.i, unit.j)) continue
+          const point = this.geometry.instanceToMinimapPoint(unit, transform)
+          if (!point) continue
+          drawMinimapUnitMarker(
+            context,
+            unit.type === UNIT_TYPES.villager ? 'villager' : 'troop',
+            point,
+            owner.colorHex,
+            unit.selected
+          )
+        }
+      }
+      if (hero && !isMinimapMarkerHidden(this.menu.context, 'self') && getEntitySpaceId(hero) === space.id) {
+        const point = this.geometry.instanceToMinimapPoint(hero, transform)
+        if (point)
+          drawMinimapUnitMarker(
+            context,
+            'hero',
+            point,
+            hero.owner?.colorHex ?? player?.colorHex ?? '#ffffff',
+            false,
+            hero.degree
+          )
+      }
     })
   }
 }

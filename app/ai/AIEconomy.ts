@@ -1,3 +1,5 @@
+import { withinVillageActivity } from '../lib/units/villageActivity'
+import type { UnitEntity } from '../types/entities'
 import { assignAIBuildingMaterials } from './AIEconomyBuildingMaterials'
 import { knowsNativeResources } from '../lib/campaign/nativeEconomy'
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
@@ -59,6 +61,11 @@ export class AIEconomy {
 
   getBuildingAsRuntimeEntity(building: AIBuildingLike): BuildingEntity {
     return building as unknown as BuildingEntity
+  }
+
+  private measureStage<T>(stage: string, callback: () => T): T {
+    const monitor = this.ai.context.performance
+    return monitor ? monitor.measure(`ai.economy.${stage}`, callback) : callback()
   }
 
   constructor(ai: AIStrategyPlayerLike) {
@@ -242,12 +249,17 @@ export class AIEconomy {
       for (const resource of resourceList) {
         const dist = Math.abs(villager.i - resource.i) + Math.abs(villager.j - resource.j)
         const score = dist + (nodeLoad.get(resource) || 0) * 8
-        if (score < bestScore) {
+        // Resolve village/space constraints only for candidates that could win.
+        // Preserve the original score, tie order and fresh eligibility check.
+        if (score < bestScore && withinVillageActivity(villager as UnitEntity, resource)) {
           bestScore = score
           best = resource
         }
       }
-      if (!best) continue
+      if (!best) {
+        availableVillagers.push(villager)
+        continue
+      }
       nodeLoad.set(best, (nodeLoad.get(best) || 0) + 1)
       actionCallback(villager, best)
       assigned++
@@ -394,11 +406,13 @@ export class AIEconomy {
         `Food: ${workerSnapshot.villagersOnFood.length}/${targets.maxVillagersOnFood}, Wood: ${workerSnapshot.villagersOnWood.length}/${targets.maxVillagersOnWood}, Stone: ${workerSnapshot.villagersOnStone.length}/${targets.maxVillagersOnStone}, Gold: ${workerSnapshot.villagersOnGold.length}/${targets.maxVillagersOnGold}`
       )
 
-    this.updateRealScout()
+    this.measureStage('scout', () => this.updateRealScout())
     let actions = 0
-    this.discoverDeadAnimals(map)
+    this.measureStage('carcasses', () => this.discoverDeadAnimals(map))
 
-    const buildingVillagers = this.assignBuilders(villagers, notBuiltBuildings, debug)
+    const buildingVillagers = this.measureStage('builders', () =>
+      this.assignBuilders(villagers, notBuiltBuildings, debug)
+    )
     actions += buildingVillagers.size
 
     const materialWorkers = assignAIBuildingMaterials(
@@ -414,9 +428,11 @@ export class AIEconomy {
       .filter((v: AIEntityLike) => !buildingVillagers.has(v))
       .sort((a: AIEntityLike, b: AIEntityLike) => (b.hitPoints || 0) - (a.hitPoints || 0))
 
-    actions += this.assignHorseCaptures(availableVillagers)
+    actions += this.measureStage('horses', () => this.assignHorseCaptures(availableVillagers))
 
-    actions += this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms)
+    actions += this.measureStage('food', () =>
+      this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms)
+    )
 
     // Only mine gold/stone near a storage building — long trips kill efficiency
     const storageBuildings = [...(storagepits || []), ...(towncenters || [])].filter(b => b.isBuilt)
@@ -457,7 +473,9 @@ export class AIEconomy {
     })
 
     for (const { workers, set, max, cb } of gatheringResources) {
-      actions += this.assignVillagersToResource(availableVillagers, workers, set, max, cb)
+      actions += this.measureStage('gathering', () =>
+        this.assignVillagersToResource(availableVillagers, workers, set, max, cb)
+      )
     }
 
     // Demand-driven exploration: send idle villagers proportional to resource node deficit

@@ -66,7 +66,7 @@ function createUndiscoveredFaction(options: {
 function rosterFactionsForCampaign(campaign: CampaignSave, now: number): Record<string, FactionSave> {
   const homeWorldId = campaign.worldGraph.rootWorldId || campaign.currentWorldId
   const heroCiv = heroCivilizationFromCampaign(campaign)
-  const heroColor = heroColorFromCampaign(campaign)
+  const heroColor = playableColor(heroColorFromCampaign(campaign))
   const availableColors = GLOBAL_FACTION_COLORS.filter(color => color !== heroColor && color !== BANDIT_FACTION_COLOR)
   const colorOffset = stableHash(`${homeWorldId}:${heroCiv ?? ''}:colors`) % Math.max(1, availableColors.length)
   const factionColor = (index: number) =>
@@ -105,6 +105,8 @@ function rosterFactionsForCampaign(campaign: CampaignSave, now: number): Record<
 export function ensureCampaignPlayerRoster(campaign: CampaignSave, now: number = Date.now()): CampaignSave {
   const existing = campaign.factions ?? {}
   const roster = rosterFactionsForCampaign(campaign, now)
+  const heroColor = playableColor(heroColorFromCampaign(campaign))
+  const availableColors = GLOBAL_FACTION_COLORS.filter(color => color !== heroColor)
   const nextFactions = { ...existing }
   let changed = false
   for (const [id, faction] of Object.entries(roster)) {
@@ -121,7 +123,9 @@ export function ensureCampaignPlayerRoster(campaign: CampaignSave, now: number =
   }
   for (const [id, faction] of Object.entries(nextFactions)) {
     if (id === BANDIT_FACTION_ID) continue
-    const color = playableColor(faction.color, GLOBAL_FACTION_COLORS[stableHash(id) % GLOBAL_FACTION_COLORS.length])
+    const fallbackColor = roster[id]?.color ?? availableColors[stableHash(id) % availableColors.length]
+    const playable = playableColor(faction.color, fallbackColor)
+    const color = playable === heroColor ? fallbackColor : playable
     if (color !== faction.color) {
       nextFactions[id] = { ...faction, color }
       changed = true

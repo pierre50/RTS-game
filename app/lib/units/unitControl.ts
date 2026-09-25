@@ -1,6 +1,8 @@
+import { wakeUnitSimulation } from './unitSuspension'
 import type { UnitControlMode, UnitEntity } from '../../types/entities'
 
 export function setUnitControlMode(unit: UnitEntity, controlMode: UnitControlMode): void {
+  wakeUnitSimulation(unit)
   unit.controlMode = controlMode
 }
 

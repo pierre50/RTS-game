@@ -13,8 +13,7 @@ export function mountGameRuntime(game: Game, dayNightElapsedMs: number | null | 
     game._gameContext(),
     map,
     () => game._getScreenRect(),
-    dayNightElapsedMs,
-    game
+    dayNightElapsedMs
   )
   addRuntimeServiceLayers(game, game._runtimeServices)
   game.addChild(controls)

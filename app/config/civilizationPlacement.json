@@ -1,0 +1,98 @@
+{
+  "Hellas": {
+    "biomes": {
+      "temperate": 1.0,
+      "steppe": 0.45,
+      "desert": 0.25,
+      "blackforest": 0.15
+    },
+    "target_x": 0.45,
+    "target_y": 0.48,
+    "x_weight": 0.55,
+    "y_weight": 0.45
+  },
+  "Latium": {
+    "biomes": {
+      "temperate": 1.0,
+      "steppe": 0.5,
+      "blackforest": 0.25,
+      "desert": 0.2
+    },
+    "target_x": 0.54,
+    "target_y": 0.48,
+    "x_weight": 0.55,
+    "y_weight": 0.45
+  },
+  "Kemet": {
+    "biomes": {
+      "desert": 1.0,
+      "steppe": 0.55,
+      "temperate": 0.22,
+      "blackforest": -0.25
+    },
+    "target_x": 0.58,
+    "target_y": 0.68,
+    "x_weight": 0.35,
+    "y_weight": 0.85
+  },
+  "Sumeria": {
+    "biomes": {
+      "desert": 0.85,
+      "steppe": 0.9,
+      "temperate": 0.2,
+      "blackforest": -0.15
+    },
+    "target_x": 0.66,
+    "target_y": 0.58,
+    "x_weight": 0.55,
+    "y_weight": 0.75
+  },
+  "Xia": {
+    "biomes": {
+      "steppe": 1.25,
+      "temperate": 0.25,
+      "desert": -0.25,
+      "blackforest": 0.0
+    },
+    "target_x": 0.72,
+    "target_y": 0.44,
+    "x_weight": 0.85,
+    "y_weight": 0.85
+  },
+  "Alba": {
+    "biomes": {
+      "blackforest": 1.0,
+      "temperate": 0.65,
+      "steppe": 0.2,
+      "desert": -0.25
+    },
+    "target_x": 0.28,
+    "target_y": 0.32,
+    "x_weight": 0.65,
+    "y_weight": 0.65
+  },
+  "Nord": {
+    "biomes": {
+      "blackforest": 0.85,
+      "steppe": 0.75,
+      "temperate": 0.25,
+      "desert": -0.35
+    },
+    "target_x": 0.48,
+    "target_y": 0.16,
+    "x_weight": 0.25,
+    "y_weight": 1.05
+  },
+  "Nobatia": {
+    "biomes": {
+      "desert": 1.0,
+      "steppe": 0.65,
+      "temperate": 0.05,
+      "blackforest": -0.45
+    },
+    "target_x": 0.55,
+    "target_y": 0.84,
+    "x_weight": 0.25,
+    "y_weight": 1.25
+  }
+}

@@ -3,7 +3,7 @@ import type { RuntimeEntity } from './entities'
 export type VisionViewer = { label: string }
 export type VisionViewerRef = VisionViewer | string
 
-export type SerializedViewCell = {
+type SerializedViewCell = {
   viewed?: boolean
   viewBy?: VisionViewerRef[]
 }

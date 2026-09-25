@@ -42,3 +42,15 @@ test('camera rendering is independent of chief status and gameplay perception', 
     hero.isChief = false
   }
 })
+
+
+test('AI movement refreshes the minimap even on the step leaving sight, only in the active space', () => {
+  const { canUpdateMinimap } = loadTsModule('app/lib/extra.ts', {
+    mocks: { './grid': {}, './ui/Modal': {}, './entities/spriteTextures': {} },
+  })
+  const unit = { i: 1, j: 1, owner: { type: 'AI', label: 'enemy' }, context: { map: {} } }
+  const player = { label: 'self', views: { isVisible: () => false } }
+  assert.equal(canUpdateMinimap(unit, player), true)
+  unit.spaceId = 'interior:house'
+  assert.equal(canUpdateMinimap(unit, player), false)
+})

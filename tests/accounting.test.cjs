@@ -25,6 +25,7 @@ test('player affordability uses chest inventory instead of legacy resource field
     buildings: [],
   }
 
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.equal(canAfford(player, { wood: 5 }), false)
 })
 
@@ -32,10 +33,11 @@ test('payCost withdraws player costs from owned chests', () => {
   const { canAfford, payCost } = loadAccounting()
   const player = { label: 'p1', buildings: [] }
   player.buildings = [
-    { owner: player, type: 'Chest', inventory: { resources: { wood: 3 } } },
-    { owner: player, type: 'Chest', inventory: { resources: { wood: 4, stone: 2 } } },
+    { owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 3 } } },
+    { owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 4, stone: 2 } } },
   ]
 
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.equal(canAfford(player, { wood: 5, stone: 1 }), true)
   payCost(player, { wood: 5, stone: 1 })
 
@@ -46,10 +48,11 @@ test('payCost withdraws player costs from owned chests', () => {
 test('payCost can complete player costs from the hero bag', () => {
   const { canAfford, payCost } = loadAccounting()
   const player = { label: 'p1', buildings: [], units: [] }
-  const hero = { owner: player, type: 'Hero', inventory: { resources: { wood: 4 } } }
-  player.buildings = [{ owner: player, type: 'Chest', inventory: { resources: { wood: 3 } } }]
+  const hero = { owner: player, i: 0, j: 0, type: 'Hero', inventory: { resources: { wood: 4 } } }
+  player.buildings = [{ owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 3 } } }]
   player.units = [hero]
 
+  player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
   assert.equal(canAfford(player, { wood: 5 }), true)
   payCost(player, { wood: 5 })
 

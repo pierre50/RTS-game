@@ -1,3 +1,5 @@
+import { getPackedCellStore } from '../cell/PackedCellRegistry'
+import { PACKED_TERRAIN_CHUNK_SIZE } from '../cell/PackedCellStore'
 import { Container, Sprite } from 'pixi.js'
 import { CELL_DEPTH, CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
@@ -5,7 +7,7 @@ import { Cell } from '../cell'
 import type { Bounds, Viewport } from '../../types/geometry'
 import type { RuntimeCell } from '../../types/map'
 
-const TERRAIN_CHUNK_SIZE = 32
+const TERRAIN_CHUNK_SIZE = PACKED_TERRAIN_CHUNK_SIZE
 const TERRAIN_CHUNK_CACHE_LIMIT = 20
 const VIEWPORT_MARGIN = CELL_WIDTH * 4
 const TERRAIN_STREAM_LAYER_Z_INDEX = -0.5
@@ -82,6 +84,7 @@ export class TerrainChunkManager {
     this.terrainLayer.zIndex = TERRAIN_STREAM_LAYER_Z_INDEX
     this.map.addChild(this.terrainLayer)
 
+    const packedBounds = getPackedCellStore(this.map.grid)?.spatialBounds()
     const chunkCount = Math.ceil((this.map.size + 1) / TERRAIN_CHUNK_SIZE)
     for (let ci = 0; ci < chunkCount; ci++) {
       for (let cj = 0; cj < chunkCount; cj++) {
@@ -89,7 +92,15 @@ export class TerrainChunkManager {
         const startJ = cj * TERRAIN_CHUNK_SIZE
         const endI = Math.min(this.map.size, startI + TERRAIN_CHUNK_SIZE - 1)
         const endJ = Math.min(this.map.size, startJ + TERRAIN_CHUNK_SIZE - 1)
-        const bounds = this._getChunkBounds(startI, startJ, endI, endJ)
+        const cached = packedBounds?.chunks[ci * chunkCount + cj]
+        const bounds = packedBounds
+          ? cached && {
+              minX: cached.minX - CELL_WIDTH,
+              minY: cached.minY - CELL_HEIGHT - CELL_DEPTH * 4,
+              width: cached.maxX - cached.minX + CELL_WIDTH * 2,
+              height: cached.maxY - cached.minY + (CELL_HEIGHT + CELL_DEPTH * 4) * 2,
+            }
+          : this._getChunkBounds(startI, startJ, endI, endJ)
         if (!bounds) continue
         this.chunks.set(`${ci}:${cj}`, {
           key: `${ci}:${cj}`,

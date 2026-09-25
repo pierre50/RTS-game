@@ -32,6 +32,14 @@ type WaterOverlayCell = {
   category?: string
 }
 
+// Camera refreshes only read this result. Terrain edits explicitly invalidate it;
+// replacing the grid (load/travel) also triggers a fresh lookup.
+const waterPresence = new WeakMap<object, { grid: unknown[][]; present: boolean }>()
+
+export function invalidateWaterOverlay(map: object): void {
+  waterPresence.delete(map)
+}
+
 const WATER_OVERLAY_SHEET = 'water-surface-filter'
 const WATER_OVERLAY_FRAME_COUNT = 4
 const WATER_OVERLAY_FRAME_SPEED = 1 / 17
@@ -73,7 +81,10 @@ export function updateWaterOverlay(map: WaterOverlayHost): void {
     return
   }
   if (!mapHasWaterCells(map)) {
-    if (map.waterOverlay || map.waterBackground || map.waterOverlayMask) destroyWaterOverlay(map)
+    if (map.waterOverlay || map.waterBackground || map.waterOverlayMask) {
+      destroyWaterOverlay(map)
+      waterPresence.set(map, { grid: map.grid, present: false })
+    }
     return
   }
   if (!map.waterOverlay || !map.waterBackground) createWaterOverlay(map)
@@ -123,7 +134,15 @@ function createInteriorBackground(map: WaterOverlayHost): void {
 }
 
 function mapHasWaterCells(map: Pick<WaterOverlayHost, 'grid'>): boolean {
-  for (const row of map.grid as WaterOverlayCell[][]) {
+  const cached = waterPresence.get(map)
+  if (cached?.grid === map.grid) return cached.present
+  const present = findWaterCell(map.grid)
+  waterPresence.set(map, { grid: map.grid, present })
+  return present
+}
+
+function findWaterCell(grid: unknown[][]): boolean {
+  for (const row of grid as WaterOverlayCell[][]) {
     for (const cell of row) {
       if (cell?.category === 'Water') return true
     }
@@ -218,7 +237,8 @@ export function ensureWaterAnimationTicker(map: WaterOverlayHost): void {
       }
       updateWaterBorderSurfaces(map)
     }
-    map.context.performance?.measure?.('water.update', update) ?? update()
+    if (map.context.performance?.measure) map.context.performance.measure('water.update', update)
+    else update()
   }
   ticker.add(tick)
   map.waterOverlayTick = tick
@@ -241,6 +261,7 @@ export function registerWaterBorderSurface(
 }
 
 export function destroyWaterOverlay(map: WaterOverlayHost): void {
+  invalidateWaterOverlay(map)
   const ticker = map.context.app?.ticker as WaterOverlayTicker | undefined
   if (ticker && map.waterOverlayTick) ticker.remove(map.waterOverlayTick)
   map.waterOverlay?.destroy({ texture: false, textureSource: false })

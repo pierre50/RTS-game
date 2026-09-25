@@ -1,15 +1,7 @@
-export const PLAYER_COLORS = [
-  { name: 'violet', hex: '#3d5083' },
-  { name: 'red', hex: '#e30b00' },
-  { name: 'yellow', hex: '#c3a31b' },
-  { name: 'brown', hex: '#8b5b37' },
-  { name: 'orange', hex: '#e37840' },
-  { name: 'green', hex: '#4b6b2b' },
-  { name: 'teal', hex: '#008279' },
-]
+import { PLAYER_COLORS } from '../lib/graphics/playerColorData'
+export { PLAYER_COLORS } from '../lib/graphics/playerColorData'
 
 const LEGACY_PLAYER_COLOR_ALIASES: Record<string, string> = {
-  blue: PLAYER_COLORS[0].name,
   cyan: 'teal',
   grey: PLAYER_COLORS[0].name,
   gray: PLAYER_COLORS[0].name,
@@ -41,4 +33,10 @@ export function nextAvailablePlayerColor(currentColor: string, used: Set<string>
     if (!used.has(candidate.name)) return candidate.name
   }
   return currentColor
+}
+
+export function randomAvailablePlayerColor(used: Set<string>): string {
+  const available = PLAYER_COLORS.filter(color => !used.has(color.name))
+  const choices = available.length ? available : PLAYER_COLORS
+  return choices[Math.floor(Math.random() * choices.length)].name
 }

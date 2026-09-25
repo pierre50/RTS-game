@@ -328,7 +328,10 @@ for (const sheet of ['runningSheet', 'flyingSheet']) {
     for (let elapsed = 0; elapsed < 3000; elapsed += constants.STEP_TIME) movement.moveToPath()
 
     assert.ok(Math.abs(animal.energy - 9.25) < 1e-8)
-    assert.ok(speeds.every(speed => speed === 2.5), 'fleeing must sustain its full speed')
+    assert.ok(
+      speeds.every(speed => speed === 2.5),
+      'fleeing must sustain its full speed'
+    )
   })
 }
 
@@ -430,4 +433,31 @@ test('path movement restores locomotion after an action even without a direction
   movement.moveToPath()
   assert.equal(animal.currentSheet, 'runningSheet')
   assert.deepEqual(calls, [['setTextures', 'runningSheet']])
+})
+
+test('offscreen path steps use logical animation state without requesting a sprite', () => {
+  let playing = true
+  const { movement, animal, grid } = createMovement(
+    {
+      getMovementAnimationPlaying: () => playing,
+      setMovementAnimationPlaying: value => {
+        playing = value
+      },
+    },
+    {
+      moveTowardPoint: target => {
+        target.y += 1
+      },
+    }
+  )
+  Object.defineProperty(animal, 'sprite', {
+    get() {
+      assert.fail('path simulation must not create graphics')
+    },
+  })
+  animal.path = [grid[5][6]]
+  animal.dest = grid[9][9]
+  movement.moveToPath()
+  assert.equal(animal.y, 51)
+  assert.equal(playing, true)
 })

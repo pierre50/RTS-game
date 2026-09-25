@@ -1,3 +1,4 @@
+import type { ResourceAmount } from './common'
 export type CaveMineralState = {
   i: number
   j: number
@@ -11,6 +12,12 @@ export type CaveDefinition = {
   blueprintId: string
   tier: 'small' | 'medium' | 'large'
   seed: number
+  banditContent?: {
+    ownerLabel: string
+    campIndex: number
+    inventory: { resources?: ResourceAmount; equipment?: string[] }
+    generated?: boolean
+  }
   minerals?: CaveMineralState[]
   neutralVillagersGenerated?: boolean
 }

@@ -72,7 +72,7 @@ function loadTributeRaidRules() {
 function loadTributeRaidSpawning() {
   return loadTsModule('app/services/tribute/TributeRaidSpawning.ts', {
     mocks: {
-      '../../constants': { FADE_DURATION_MS: 200 },
+      '../../constants': { FADE_DURATION_MS: 200, CELL_DEPTH: 16, CELL_WIDTH: 32, CELL_HEIGHT: 16 },
       '../../lib': loadTsModule('app/lib/grid/cells.ts'),
       '../../lib/buildings/passageCells': {
         createNonReservedPassageCellCondition: () => () => true,
@@ -316,7 +316,7 @@ test('destroyed bandit camps do not block later bandit raids', () => {
   assert.equal(hasActiveBanditCampPresence(context), false)
 })
 
-test('bandit raids target a living allied ai chief before the hero', () => {
+test('bandit raids target the hero even when an allied chief has more local presence', () => {
   const { findRaidTarget } = loadTributeRaidTargeting()
   const heroOwner = { isEnemy: () => false }
   const hero = { type: constants.UNIT_TYPES.hero, owner: heroOwner }
@@ -335,7 +335,7 @@ test('bandit raids target a living allied ai chief before the hero', () => {
     players: [heroOwner, alliedChiefOwner],
   }
 
-  assert.equal(findRaidTarget(context, 'bandit'), chief)
+  assert.equal(findRaidTarget(context, 'bandit'), hero)
 })
 
 test('bandit raids fall back to the hero without a credible local chief', () => {
@@ -358,114 +358,127 @@ test('bandit raids fall back to the hero without a credible local chief', () => 
   assert.equal(findRaidTarget(context, 'bandit'), hero)
 })
 
-test('tribute raid spawn cells stay clear of the target owner buildings', () => {
-  const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
-  const targetOwner = {
-    buildings: [{ i: 9, j: 10, size: 4, hitPoints: 250 }],
-  }
-  const target = { i: 10, j: 10, owner: targetOwner }
-  const grid = Array.from({ length: 18 }, (_, i) =>
-    Array.from({ length: 18 }, (_, j) => ({
+function raidSpawnFixture() {
+  const target = { i: 50, j: 50, label: 'hero', owner: { buildings: [] } }
+  const grid = Array.from({ length: 100 }, (_, i) =>
+    Array.from({ length: 100 }, (_, j) => ({
       i,
       j,
       solid: false,
       has: null,
-      border: false,
-      waterBorder: false,
       category: 'Grass',
     }))
   )
-
-  const cells = findTributeRaidSpawnCells({ map: { grid, random: () => 0.5 } }, target, 6)
-
-  assert.ok(cells.length > 0)
-  assert.equal(
-    cells.some(cell => Math.hypot(cell.i - 9, cell.j - 10) <= 4),
-    false
-  )
-})
-
-test('faction raid spawn prefers the map edge facing the faction home region', () => {
-  const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
-  const target = { i: 10, j: 10, owner: { buildings: [] } }
-  const grid = Array.from({ length: 20 }, (_, i) =>
-    Array.from({ length: 20 }, (_, j) => ({
-      i,
-      j,
-      solid: false,
-      has: null,
-      border: false,
-      waterBorder: false,
-      category: 'Grass',
-    }))
-  )
-
-  const cells = findTributeRaidSpawnCells(
-    {
-      map: {
-        grid,
-        random: () => 0.5,
-        worldRegion: { x: 2, y: 2 },
-        worldManifest: {
-          settlements: [{ kind: 'village', civ: 'Nord', factionId: 'civ-nord', region: { x: 0, y: 0 } }],
-        },
-      },
+  const { cartesianToIsometric } = loadTsModule('app/lib/maths.ts')
+  const [x, y] = cartesianToIsometric(target.i, target.j)
+  const context = {
+    map: { grid, random: () => 0.5 },
+    controls: {
+      heroUnit: target,
+      getViewportMetrics: () => ({ visibleLeft: x - 100, visibleTop: y - 80, visibleWidth: 200, visibleHeight: 160 }),
     },
-    target,
-    4,
-    { faction: { id: 'civ-nord', civilization: 'Nord' } }
-  )
+  }
+  grid[50][50].has = target
+  grid[50][50].solid = true
+  return { target, grid, context, cartesianToIsometric }
+}
 
-  assert.ok(cells.length > 0)
-  assert.equal(cells[0].i <= 3, true)
-  assert.equal(cells[0].j <= 3, true)
+test('raids spawn together 20–35 cells from the hero, outside the camera and clear of buildings', () => {
+  const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
+  const { target, context, cartesianToIsometric } = raidSpawnFixture()
+  target.owner.buildings.push({ i: 50, j: 24, size: 4 })
+  const cells = findTributeRaidSpawnCells(context, target, 24)
+  assert.equal(cells.length, 24)
+  for (const cell of cells) {
+    const distance = Math.hypot(cell.i - target.i, cell.j - target.j)
+    assert.ok(distance >= 20 && distance <= 35)
+    assert.ok(Math.hypot(cell.i - 50, cell.j - 24) > 4)
+    assert.ok(Math.max(Math.abs(cell.i - cells[0].i), Math.abs(cell.j - cells[0].j)) <= 6)
+    const [x, y] = cartesianToIsometric(cell.i, cell.j)
+    const rect = context.controls.getViewportMetrics()
+    assert.ok(
+      x < rect.visibleLeft - 128 ||
+        x > rect.visibleLeft + rect.visibleWidth + 128 ||
+        y < rect.visibleTop - 128 ||
+        y > rect.visibleTop + rect.visibleHeight + 128
+    )
+  }
 })
 
 for (const bridge of [false, true]) {
-  test(`raid spawns remain reachable across a river (bridge: ${bridge})`, () => {
+  test(`raid spawns are connected to the hero across a river (bridge: ${bridge})`, () => {
     const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
     const { findInstancePath } = loadTsModule('app/services/Pathfinding.ts')
-    const grid = Array.from({ length: 24 }, (_, i) =>
-      Array.from({ length: 24 }, (_, j) => ({
-        i,
-        j,
-        solid: false,
-        has: null,
-        category: j === 10 && !(bridge && i === 6) ? 'Water' : 'Grass',
-      }))
-    )
-    const target = { i: 12, j: 16, owner: { buildings: [] } }
-    const map = {
-      grid,
-      random: () => 0.5,
-      worldRegion: { x: 2, y: 2 },
-      worldManifest: { settlements: [{ factionId: 'enemy', region: { x: 0, y: 0 } }] },
-    }
-    const cells = findTributeRaidSpawnCells({ map }, target, 24, { faction: { id: 'enemy' } })
+    const { target, grid, context } = raidSpawnFixture()
+    for (let i = 0; i < 100; i++) grid[i][40].category = bridge && i === 40 ? 'Grass' : 'Water'
+    context.map.worldRegion = { x: 2, y: 2 }
+    context.map.worldManifest = { settlements: [{ factionId: 'enemy', region: { x: 0, y: 0 } }] }
+    const cells = findTributeRaidSpawnCells(context, target, 24, { faction: { id: 'enemy' } })
     assert.equal(cells.length, 24)
     for (const cell of cells) {
-      assert.ok(findInstancePath(cell, target.i, target.j, map).length, `Unreachable spawn ${cell.i},${cell.j}`)
-      if (!bridge) assert.ok(cell.j > 10)
+      // Reach an adjacent approach cell; the hero's own cell is occupied.
+      assert.ok(findInstancePath(cell, 50, 51, context.map).length, `Unreachable ${cell.i},${cell.j}`)
+      if (!bridge) assert.ok(cell.j > 40)
     }
-    if (bridge) assert.ok(cells[0].j < 10, 'The bridge should allow the preferred entry bank')
   })
 }
 
-test('raid cannot use nearby land across water when the target is isolated', () => {
+test('isolated heroes, interiors and a fully visible search area defer without unsafe fallback', () => {
   const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
-  const grid = Array.from({ length: 18 }, (_, i) =>
-    Array.from({ length: 18 }, (_, j) => ({
-      i,
-      j,
-      solid: false,
-      has: null,
-      category: Math.max(Math.abs(i - 9), Math.abs(j - 9)) === 1 ? 'Water' : 'Grass',
-    }))
+  const { target, grid, context } = raidSpawnFixture()
+  for (const [i, j] of [
+    [49, 50],
+    [51, 50],
+    [50, 49],
+    [50, 51],
+  ])
+    grid[i][j].category = 'Water'
+  assert.deepEqual(findTributeRaidSpawnCells(context, target, 6), [])
+  for (const [i, j] of [
+    [49, 50],
+    [51, 50],
+    [50, 49],
+    [50, 51],
+  ])
+    grid[i][j].category = 'Grass'
+  target.spaceId = 'house'
+  assert.deepEqual(findTributeRaidSpawnCells(context, target, 6), [])
+  delete target.spaceId
+  context.controls.getViewportMetrics = () => ({
+    visibleLeft: -100000,
+    visibleTop: -100000,
+    visibleWidth: 200000,
+    visibleHeight: 200000,
+  })
+  assert.deepEqual(findTributeRaidSpawnCells(context, target, 6), [])
+})
+
+test('5000 map raid search never enumerates the grid and has a fixed cell budget', () => {
+  const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
+  const { target, context } = raidSpawnFixture()
+  target.i = target.j = 2500
+  let reads = 0
+  context.map.grid = new Proxy(
+    {},
+    {
+      get(_rows, i) {
+        assert.ok(/^\d+$/.test(String(i)), 'Only local numeric grid access is allowed')
+        return new Proxy(
+          {},
+          {
+            get(_row, j) {
+              assert.ok(/^\d+$/.test(String(j)))
+              assert.ok(Math.abs(Number(i) - 2500) <= 43 && Math.abs(Number(j) - 2500) <= 43)
+              reads++
+              return { i: Number(i), j: Number(j), category: 'Grass' }
+            },
+          }
+        )
+      },
+    }
   )
-  const target = { i: 9, j: 9, label: 'hero', owner: { buildings: [] } }
-  grid[9][9].has = target
-  grid[9][9].solid = true
-  assert.deepEqual(findTributeRaidSpawnCells({ map: { grid, random: () => 0.5 } }, target, 6), [])
+  assert.equal(findTributeRaidSpawnCells(context, target, 24).length, 24)
+  assert.ok(reads <= 8192, `Read ${reads} cells`)
 })
 
 test('faction raid text ignores stale bandit faction names', () => {
@@ -945,4 +958,149 @@ test('hostile raiders approach the raid location before seeing the hero, then at
   unit.action = 'attack'
   runtime.updateRaid(raid)
   assert.equal(orders.length, 2, 'ongoing combat is not restarted')
+})
+
+function deferredRaidFixture(kind = 'bandit') {
+  const hero = { i: 50, j: 50, label: 'hero' }
+  let committed = 0,
+    nextTask = 0
+  const tasks = new Map()
+  const { TributeRaidSystem } = loadTributeRaidSystem({
+    './TributeRaidTargeting': { findRaidTarget: context => context.controls.heroUnit },
+    './tribute/FactionRaidEconomy': {
+      commitFactionRaidArmy: () => {
+        committed++
+        return true
+      },
+      expeditionState: () => ({}),
+    },
+  })
+  const context = {
+    map: { random: () => 0 },
+    players: [],
+    controls: { heroUnit: hero },
+    scheduler: {
+      add: () => ++nextTask,
+      addOneShot: (callback, delay, name) => {
+        tasks.set(++nextTask, { callback, delay, name })
+        return nextTask
+      },
+      remove: id => tasks.delete(id),
+    },
+  }
+  const system = new TributeRaidSystem(context)
+  const owner = { createUnit: options => ({ ...options, owner }) }
+  const options = {
+    kind,
+    owner,
+    size: 2,
+    tribute: {},
+    ...(kind === 'faction'
+      ? {
+          faction: { id: 'enemy' },
+          army: { units: [{ type: 'Fantassin' }, { type: 'Bowman' }] },
+        }
+      : {}),
+  }
+  system.preloadRaidOwnerAssets = async () => {}
+  system.findSpawnCells = target => [
+    { i: target.i + 25, j: target.j },
+    { i: target.i + 25, j: target.j + 1 },
+  ]
+  system.triggerRaid = () => system.createRaid(options)
+  system.triggerFactionRaid = () => system.createRaid(options)
+  const retry = async () => {
+    const [id, task] = tasks.entries().next().value
+    assert.equal(task.delay, 5000)
+    tasks.delete(id)
+    task.callback()
+    await new Promise(resolve => setImmediate(resolve))
+  }
+  return { system, context, options, tasks, hero, retry, committed: () => committed }
+}
+
+for (const kind of ['bandit', 'faction']) {
+  test(`${kind}: placement uses the hero after preload and concurrent requests cannot duplicate a raid`, async () => {
+    const f = deferredRaidFixture(kind)
+    let loaded
+    f.system.preloadRaidOwnerAssets = () =>
+      new Promise(resolve => {
+        loaded = resolve
+      })
+    const starting = f.system.createRaid(f.options)
+    assert.equal(await f.system.createRaid(f.options), false)
+    f.hero.i = 200
+    loaded()
+    assert.equal(await starting, true)
+    assert.equal(f.system.raids.length, 1)
+    assert.equal(f.system.raids[0].units[0].i, 225)
+  })
+
+  test(`${kind}: blocked placement queues one retry, then spawns without early faction costs`, async () => {
+    const f = deferredRaidFixture(kind)
+    const valid = f.system.findSpawnCells
+    f.system.findSpawnCells = () => []
+    assert.equal(await f.system.createRaid(f.options), false)
+    assert.equal(await f.system.createRaid(f.options), false)
+    assert.equal(f.tasks.size, 1)
+    assert.equal(f.committed(), 0)
+    f.system.findSpawnCells = valid
+    await f.retry()
+    assert.equal(f.system.raids.length, 1)
+    assert.equal(f.committed(), kind === 'faction' ? 1 : 0)
+    assert.equal(f.tasks.size, 0)
+  })
+}
+
+test('indoor heroes defer before asset loading; pending retries disappear with the runtime', async () => {
+  const f = deferredRaidFixture()
+  f.hero.spaceId = 'house'
+  f.system.preloadRaidOwnerAssets = async () => assert.fail('No preload needed indoors')
+  assert.equal(await f.system.createRaid(f.options), false)
+  assert.equal(f.tasks.size, 1)
+  await f.retry()
+  assert.equal(f.tasks.size, 1)
+  assert.equal(f.system.raids.length, 0)
+  f.system.destroy()
+  assert.equal(f.tasks.size, 0)
+})
+
+test('a hero entering an interior during preload defers rather than using outside coordinates', async () => {
+  const f = deferredRaidFixture()
+  f.system.preloadRaidOwnerAssets = async () => {
+    f.hero.spaceId = 'house'
+  }
+  f.system.findSpawnCells = () => assert.fail('Interior coordinates must not be used on the outside grid')
+  assert.equal(await f.system.createRaid(f.options), false)
+  assert.equal(f.tasks.size, 1)
+})
+
+test('faction spawn retry waits for the permitted hour before attempting recruitment', async () => {
+  const f = deferredRaidFixture('faction')
+  f.system.findSpawnCells = () => []
+  assert.equal(await f.system.createRaid(f.options), false)
+  f.context.dayNight = { state: { hour: 20, minute: 0 } }
+  f.system.triggerFactionRaid = () => assert.fail('Faction hours must be respected')
+  await f.retry()
+  assert.equal(f.tasks.size, 1)
+  assert.equal(f.committed(), 0)
+})
+
+test('wide cameras expand the nearby range within a hard cap instead of preventing every raid', () => {
+  const { findTributeRaidSpawnCells } = loadTributeRaidSpawning()
+  const { target, context, cartesianToIsometric } = raidSpawnFixture()
+  const [heroX, heroY] = cartesianToIsometric(target.i, target.j)
+  context.controls.getViewportMetrics = () => ({
+    visibleLeft: heroX - 960,
+    visibleTop: heroY - 540,
+    visibleWidth: 1920,
+    visibleHeight: 1080,
+  })
+  const cells = findTributeRaidSpawnCells(context, target, 24)
+  assert.equal(cells.length, 24)
+  for (const cell of cells) {
+    assert.ok(Math.hypot(cell.i - target.i, cell.j - target.j) <= 80)
+    const [x, y] = cartesianToIsometric(cell.i, cell.j)
+    assert.ok(Math.abs(x - heroX) > 1088 || Math.abs(y - heroY) > 668)
+  }
 })

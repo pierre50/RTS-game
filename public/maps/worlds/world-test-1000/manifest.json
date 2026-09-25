@@ -1,178 +1,554 @@
 {
   "format": "macro-world-map-manifest",
   "version": 1,
-  "worldSeed": 1000,
+  "worldSeed": 5000,
+  "macroPreviewPath": "continent-preview.png",
   "regionMapSize": 999,
   "regionsWide": 1,
   "regionsHigh": 1,
   "settlements": [
     {
-      "id": "test-village-Hellas",
+      "id": "village-slot-0",
       "kind": "village",
-      "world": {
-        "i": 777,
-        "j": 737
-      },
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
       "region": {
         "x": 0,
         "y": 0
       },
       "local": {
-        "i": 777,
-        "j": 737
+        "i": 800,
+        "j": 1024
       },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Hellas",
-      "playerIndex": 0,
-      "importance": 1.081
+      "world": {
+        "i": 662,
+        "j": 276
+      }
     },
     {
-      "id": "test-village-Latium",
+      "id": "village-slot-1",
       "kind": "village",
-      "world": {
-        "i": 860,
-        "j": 640
-      },
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
       "region": {
         "x": 0,
         "y": 0
       },
       "local": {
-        "i": 860,
-        "j": 640
+        "i": 336,
+        "j": 656
       },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Latium",
-      "playerIndex": 1,
-      "importance": 1.081
+      "world": {
+        "i": 246,
+        "j": 180
+      }
     },
     {
-      "id": "test-village-Kemet",
+      "id": "village-slot-2",
       "kind": "village",
-      "world": {
-        "i": 991,
-        "j": 853
-      },
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
       "region": {
         "x": 0,
         "y": 0
       },
       "local": {
-        "i": 991,
-        "j": 853
+        "i": 1168,
+        "j": 1040
       },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Kemet",
-      "playerIndex": 2,
-      "importance": 1.081
+      "world": {
+        "i": 854,
+        "j": 628
+      }
     },
     {
-      "id": "test-village-Sumeria",
+      "id": "village-slot-3",
       "kind": "village",
-      "world": {
-        "i": 941,
-        "j": 988
-      },
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
       "region": {
         "x": 0,
         "y": 0
       },
       "local": {
-        "i": 941,
-        "j": 988
+        "i": 800,
+        "j": 400
       },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Sumeria",
-      "playerIndex": 3,
-      "importance": 1.081
+      "world": {
+        "i": 350,
+        "j": 900
+      }
     },
     {
-      "id": "test-village-Xia",
+      "id": "village-slot-4",
       "kind": "village",
-      "world": {
-        "i": 747,
-        "j": 944
-      },
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
       "region": {
         "x": 0,
         "y": 0
       },
       "local": {
-        "i": 747,
-        "j": 944
+        "i": 1024,
+        "j": 688
       },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Xia",
-      "playerIndex": 4,
-      "importance": 1.081
+      "world": {
+        "i": 606,
+        "j": 836
+      }
     },
     {
-      "id": "test-village-Alba",
+      "id": "village-slot-5",
       "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 384,
+        "j": 336
+      },
       "world": {
-        "i": 556,
+        "i": 110,
+        "j": 548
+      }
+    },
+    {
+      "id": "village-slot-6",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 656,
+        "j": 672
+      },
+      "world": {
+        "i": 414,
+        "j": 484
+      }
+    },
+    {
+      "id": "village-slot-7",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 976,
+        "j": 1312
+      },
+      "world": {
+        "i": 894,
+        "j": 164
+      }
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-1",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 529,
+        "j": 455
+      },
+      "world": {
+        "i": 242,
+        "j": 574
+      },
+      "strength": 7
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-2",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 970,
+        "j": 750
+      },
+      "world": {
+        "i": 610,
+        "j": 720
+      },
+      "strength": 6
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-3",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 902,
+        "j": 649
+      },
+      "world": {
+        "i": 525,
         "j": 753
       },
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 556,
-        "j": 753
-      },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Alba",
-      "playerIndex": 5,
-      "importance": 1.081
+      "strength": 8
     },
     {
-      "id": "test-village-Nord",
-      "kind": "village",
-      "world": {
-        "i": 512,
-        "j": 559
-      },
+      "id": "world-test-1000-r0-0:camp-4",
+      "kind": "banditCamp",
       "region": {
         "x": 0,
         "y": 0
       },
       "local": {
-        "i": 512,
-        "j": 559
+        "i": 619,
+        "j": 296
       },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Nord",
-      "playerIndex": 6,
-      "importance": 1.081
+      "world": {
+        "i": 207,
+        "j": 823
+      },
+      "strength": 5
     },
     {
-      "id": "test-village-Nobatia",
-      "kind": "village",
-      "world": {
-        "i": 647,
-        "j": 509
-      },
+      "id": "world-test-1000-r0-0:camp-5",
+      "kind": "banditCamp",
       "region": {
         "x": 0,
         "y": 0
       },
       "local": {
-        "i": 647,
-        "j": 509
+        "i": 457,
+        "j": 577
       },
-      "radius": 18,
-      "biome": "temperate",
-      "civ": "Nobatia",
-      "playerIndex": 7,
-      "importance": 1.081
+      "world": {
+        "i": 267,
+        "j": 380
+      },
+      "strength": 6
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-6",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 480,
+        "j": 662
+      },
+      "world": {
+        "i": 321,
+        "j": 318
+      },
+      "strength": 8
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-7",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 802,
+        "j": 741
+      },
+      "world": {
+        "i": 521,
+        "j": 561
+      },
+      "strength": 7
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-8",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 967,
+        "j": 978
+      },
+      "world": {
+        "i": 722,
+        "j": 489
+      },
+      "strength": 5
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-9",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 960,
+        "j": 1126
+      },
+      "world": {
+        "i": 793,
+        "j": 334
+      },
+      "strength": 5
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-10",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1185,
+        "j": 994
+      },
+      "world": {
+        "i": 839,
+        "j": 691
+      },
+      "strength": 5
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-11",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 830,
+        "j": 453
+      },
+      "world": {
+        "i": 391,
+        "j": 877
+      },
+      "strength": 2
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-12",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 632,
+        "j": 1000
+      },
+      "world": {
+        "i": 566,
+        "j": 132
+      },
+      "strength": 4
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-13",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 385,
+        "j": 424
+      },
+      "world": {
+        "i": 154,
+        "j": 461
+      },
+      "strength": 3
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-14",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 855,
+        "j": 871
+      },
+      "world": {
+        "i": 613,
+        "j": 484
+      },
+      "strength": 3
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-15",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 667,
+        "j": 535
+      },
+      "world": {
+        "i": 351,
+        "j": 632
+      },
+      "strength": 3
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-16",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 887,
+        "j": 1034
+      },
+      "world": {
+        "i": 710,
+        "j": 353
+      },
+      "strength": 4
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-17",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 703,
+        "j": 851
+      },
+      "world": {
+        "i": 527,
+        "j": 352
+      },
+      "strength": 2
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-18",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1146,
+        "j": 719
+      },
+      "world": {
+        "i": 682,
+        "j": 927
+      },
+      "strength": 4
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-19",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1098,
+        "j": 865
+      },
+      "world": {
+        "i": 731,
+        "j": 733
+      },
+      "strength": 4
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-20",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 746,
+        "j": 555
+      },
+      "world": {
+        "i": 400,
+        "j": 691
+      },
+      "strength": 4
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-21",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 609,
+        "j": 747
+      },
+      "world": {
+        "i": 428,
+        "j": 362
+      },
+      "strength": 2
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-22",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1093,
+        "j": 996
+      },
+      "world": {
+        "i": 794,
+        "j": 597
+      },
+      "strength": 2
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-23",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 294,
+        "j": 494
+      },
+      "world": {
+        "i": 144,
+        "j": 300
+      },
+      "strength": 2
     }
   ],
   "maps": [
@@ -185,176 +561,551 @@
         "x": 0,
         "y": 0
       },
-      "seed": 1000,
+      "seed": 5000,
       "spawns": 8,
       "settlements": [
         {
-          "id": "test-village-Hellas",
+          "id": "village-slot-0",
           "kind": "village",
-          "world": {
-            "i": 777,
-            "j": 737
-          },
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
           "region": {
             "x": 0,
             "y": 0
           },
           "local": {
-            "i": 777,
-            "j": 737
+            "i": 800,
+            "j": 1024
           },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Hellas",
-          "playerIndex": 0,
-          "importance": 1.081
+          "world": {
+            "i": 662,
+            "j": 276
+          }
         },
         {
-          "id": "test-village-Latium",
+          "id": "village-slot-1",
           "kind": "village",
-          "world": {
-            "i": 860,
-            "j": 640
-          },
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
           "region": {
             "x": 0,
             "y": 0
           },
           "local": {
-            "i": 860,
-            "j": 640
+            "i": 336,
+            "j": 656
           },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Latium",
-          "playerIndex": 1,
-          "importance": 1.081
+          "world": {
+            "i": 246,
+            "j": 180
+          }
         },
         {
-          "id": "test-village-Kemet",
+          "id": "village-slot-2",
           "kind": "village",
-          "world": {
-            "i": 991,
-            "j": 853
-          },
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
           "region": {
             "x": 0,
             "y": 0
           },
           "local": {
-            "i": 991,
-            "j": 853
+            "i": 1168,
+            "j": 1040
           },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Kemet",
-          "playerIndex": 2,
-          "importance": 1.081
+          "world": {
+            "i": 854,
+            "j": 628
+          }
         },
         {
-          "id": "test-village-Sumeria",
+          "id": "village-slot-3",
           "kind": "village",
-          "world": {
-            "i": 941,
-            "j": 988
-          },
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
           "region": {
             "x": 0,
             "y": 0
           },
           "local": {
-            "i": 941,
-            "j": 988
+            "i": 800,
+            "j": 400
           },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Sumeria",
-          "playerIndex": 3,
-          "importance": 1.081
+          "world": {
+            "i": 350,
+            "j": 900
+          }
         },
         {
-          "id": "test-village-Xia",
+          "id": "village-slot-4",
           "kind": "village",
-          "world": {
-            "i": 747,
-            "j": 944
-          },
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
           "region": {
             "x": 0,
             "y": 0
           },
           "local": {
-            "i": 747,
-            "j": 944
+            "i": 1024,
+            "j": 688
           },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Xia",
-          "playerIndex": 4,
-          "importance": 1.081
+          "world": {
+            "i": 606,
+            "j": 836
+          }
         },
         {
-          "id": "test-village-Alba",
+          "id": "village-slot-5",
           "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 384,
+            "j": 336
+          },
           "world": {
-            "i": 556,
+            "i": 110,
+            "j": 548
+          }
+        },
+        {
+          "id": "village-slot-6",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 656,
+            "j": 672
+          },
+          "world": {
+            "i": 414,
+            "j": 484
+          }
+        },
+        {
+          "id": "village-slot-7",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 976,
+            "j": 1312
+          },
+          "world": {
+            "i": 894,
+            "j": 164
+          }
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-1",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 529,
+            "j": 455
+          },
+          "world": {
+            "i": 242,
+            "j": 574
+          },
+          "strength": 7
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-2",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 970,
+            "j": 750
+          },
+          "world": {
+            "i": 610,
+            "j": 720
+          },
+          "strength": 6
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-3",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 902,
+            "j": 649
+          },
+          "world": {
+            "i": 525,
             "j": 753
           },
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 556,
-            "j": 753
-          },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Alba",
-          "playerIndex": 5,
-          "importance": 1.081
+          "strength": 8
         },
         {
-          "id": "test-village-Nord",
-          "kind": "village",
-          "world": {
-            "i": 512,
-            "j": 559
-          },
+          "id": "world-test-1000-r0-0:camp-4",
+          "kind": "banditCamp",
           "region": {
             "x": 0,
             "y": 0
           },
           "local": {
-            "i": 512,
-            "j": 559
+            "i": 619,
+            "j": 296
           },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Nord",
-          "playerIndex": 6,
-          "importance": 1.081
+          "world": {
+            "i": 207,
+            "j": 823
+          },
+          "strength": 5
         },
         {
-          "id": "test-village-Nobatia",
-          "kind": "village",
-          "world": {
-            "i": 647,
-            "j": 509
-          },
+          "id": "world-test-1000-r0-0:camp-5",
+          "kind": "banditCamp",
           "region": {
             "x": 0,
             "y": 0
           },
           "local": {
-            "i": 647,
-            "j": 509
+            "i": 457,
+            "j": 577
           },
-          "radius": 18,
-          "biome": "temperate",
-          "civ": "Nobatia",
-          "playerIndex": 7,
-          "importance": 1.081
+          "world": {
+            "i": 267,
+            "j": 380
+          },
+          "strength": 6
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-6",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 480,
+            "j": 662
+          },
+          "world": {
+            "i": 321,
+            "j": 318
+          },
+          "strength": 8
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-7",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 802,
+            "j": 741
+          },
+          "world": {
+            "i": 521,
+            "j": 561
+          },
+          "strength": 7
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-8",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 967,
+            "j": 978
+          },
+          "world": {
+            "i": 722,
+            "j": 489
+          },
+          "strength": 5
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-9",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 960,
+            "j": 1126
+          },
+          "world": {
+            "i": 793,
+            "j": 334
+          },
+          "strength": 5
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-10",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1185,
+            "j": 994
+          },
+          "world": {
+            "i": 839,
+            "j": 691
+          },
+          "strength": 5
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-11",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 830,
+            "j": 453
+          },
+          "world": {
+            "i": 391,
+            "j": 877
+          },
+          "strength": 2
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-12",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 632,
+            "j": 1000
+          },
+          "world": {
+            "i": 566,
+            "j": 132
+          },
+          "strength": 4
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-13",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 385,
+            "j": 424
+          },
+          "world": {
+            "i": 154,
+            "j": 461
+          },
+          "strength": 3
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-14",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 855,
+            "j": 871
+          },
+          "world": {
+            "i": 613,
+            "j": 484
+          },
+          "strength": 3
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-15",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 667,
+            "j": 535
+          },
+          "world": {
+            "i": 351,
+            "j": 632
+          },
+          "strength": 3
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-16",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 887,
+            "j": 1034
+          },
+          "world": {
+            "i": 710,
+            "j": 353
+          },
+          "strength": 4
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-17",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 703,
+            "j": 851
+          },
+          "world": {
+            "i": 527,
+            "j": 352
+          },
+          "strength": 2
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-18",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1146,
+            "j": 719
+          },
+          "world": {
+            "i": 682,
+            "j": 927
+          },
+          "strength": 4
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-19",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1098,
+            "j": 865
+          },
+          "world": {
+            "i": 731,
+            "j": 733
+          },
+          "strength": 4
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-20",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 746,
+            "j": 555
+          },
+          "world": {
+            "i": 400,
+            "j": 691
+          },
+          "strength": 4
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-21",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 609,
+            "j": 747
+          },
+          "world": {
+            "i": 428,
+            "j": 362
+          },
+          "strength": 2
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-22",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1093,
+            "j": 996
+          },
+          "world": {
+            "i": 794,
+            "j": 597
+          },
+          "strength": 2
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-23",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 294,
+            "j": 494
+          },
+          "world": {
+            "i": 144,
+            "j": 300
+          },
+          "strength": 2
         }
       ]
     }

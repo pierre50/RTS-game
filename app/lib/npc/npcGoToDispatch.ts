@@ -1,3 +1,4 @@
+import { wakeUnitSimulation } from '../units/unitSuspension'
 import { delayUnitRestAfterActivity, isSleepTime } from '../../services/rest/UnitRestRules'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
@@ -81,6 +82,7 @@ function refuseNightWorkIfNeeded(
 }
 
 function resetNpcDirectives(target: UnitEntity): void {
+  wakeUnitSimulation(target)
   target.lookingAtHero = false
   target.followingHero = false
   target.followAssist = null

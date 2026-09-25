@@ -1,3 +1,4 @@
+import type { MinimapBuildingMemory, MinimapPreferences } from './minimap'
 import type { GameContextLike } from './context'
 import type { RuntimeCell } from './map'
 import type { AnimalEntity, RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
@@ -8,6 +9,7 @@ import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './visi
 import type { HeroAppearanceConfig } from '../lib/lpc/heroAppearance'
 
 export interface VisionGridLike {
+  activeSpaceId?: string
   length: number
   size: number
   onViewed?: ((i: number, j: number) => void) | null
@@ -21,6 +23,7 @@ export interface VisionGridLike {
   clearExploration(): void
   getViewers(i: number, j: number): ReadonlySet<VisionViewerRef>
   hasViewer(i: number, j: number, viewer: VisionViewer): boolean
+  forEachViewed?(callback: (i: number, j: number) => void): void
   isViewed(i: number, j: number): boolean
   isVisible(i: number, j: number): boolean
   setViewed(i: number, j: number): boolean
@@ -90,6 +93,8 @@ export interface PlayerLike {
   populationMax: number
   villagerPopulation?: number
   isPlayed?: boolean
+  minimapBuildingMemory?: MinimapBuildingMemory[]
+  minimapPreferences?: MinimapPreferences
   views: VisionGridLike
   config: PlayerConfigLike
   onAgeChange?: () => void

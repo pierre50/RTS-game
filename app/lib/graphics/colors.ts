@@ -3,7 +3,8 @@ import { MultiColorReplaceFilter } from 'pixi-filters'
 import { LPC_RUNTIME_PALETTES, LPC_RUNTIME_SOURCE_PALETTES } from '../lpc/generatedPalettes'
 
 const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'teal', 'violet', 'grey', 'black', 'cyan'] as const
-export const playerColors = ['violet', 'red', 'yellow', 'brown', 'orange', 'green', 'teal'] as const
+import { HEX_COLOR_MAP } from './playerColorData'
+export { playerColors } from './playerColorData'
 type PlayerColor = (typeof colors)[number]
 
 // These are NOT the `player_blue` values from scripts/lpc/config.py — the bake
@@ -31,7 +32,7 @@ const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
 
   teal: [0x00deda, 0x00bfa3, 0x00a087, 0x008279, 0x006b6d, 0x005162, 0x004051, 0x002e49],
 
-  violet: [0x8393c3, 0x6c82c4, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450],
+  violet: [0xd1bdfe, 0xbaabf7, 0xa996ec, 0x9585f1, 0x7964ba, 0x584a7f, 0x3c3151, 0x1d1d21],
 
   cyan: [0x00deda, 0x00bfa3, 0x00a087, 0x008279, 0x006b6d, 0x005162, 0x004051, 0x002e49],
 }
@@ -39,19 +40,7 @@ const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
 const NAMED_SOURCE_PALETTES: Record<string, readonly number[]> = LPC_RUNTIME_SOURCE_PALETTES
 const NAMED_TARGET_PALETTES: Record<string, readonly number[]> = LPC_RUNTIME_PALETTES
 
-const HEX_COLOR_MAP: Record<PlayerColor, string> = {
-  blue: '#466ac9',
-  red: '#e30b00',
-  yellow: '#c3a31b',
-  brown: '#8b5b37',
-  orange: '#e37840',
-  green: '#4b6b2b',
-  teal: '#008279',
-  violet: '#3d5083',
-  grey: '#8f8f8f',
-  black: '#2d3136',
-  cyan: '#008279',
-}
+
 
 export type RecolorableTexture = Texture & {
   frame: {

@@ -1,10 +1,11 @@
+import { loadSavedGame } from '../ui/LoadSavedGame'
 import type { Application } from 'pixi.js'
 import { GameWindow } from '../lib/ui/GameWindow'
 import { playClickSound } from '../lib/audio/uiSound'
 import { t } from '../lib/lang'
 import { openSettingsModal } from '../ui/modals/settingsPanel'
 import { openSaveListModal } from '../ui/modals/saveListModal'
-import { listSaves, loadSave } from '../serialization/SaveStorage'
+import { listSaves } from '../serialization/SaveStorage'
 import { MainMenuBackdrop } from './MainMenuBackdrop'
 import type { SaveRecord } from '../types/save'
 
@@ -203,12 +204,12 @@ export default class MainMenu {
     if (!document.querySelector('.modal:not([hidden])')) this._focusFirstHomeButton()
   }
 
-  _continueLatestSave(): void {
+  async _continueLatestSave(): Promise<void> {
     const latestSave = listSaves()[0]
     if (!latestSave) return
 
     try {
-      this.onLoad(loadSave(latestSave.key))
+      await loadSavedGame(latestSave.key, save => this.onLoad(save))
     } catch (error) {
       console.warn('[save] Unable to continue latest save', error)
       this._openSaveList()

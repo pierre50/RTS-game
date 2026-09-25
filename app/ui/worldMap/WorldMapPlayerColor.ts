@@ -1,11 +1,19 @@
 import { PLAYER_TYPES } from '../../constants'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
-import type { TerritoryPlayer } from '../../lib/campaign/mapTerritory'
 import { getHexColor } from '../../lib/graphics/colors'
 import { playableColor } from '../../lib/graphics/playableColor'
 import type { MenuHost } from '../MenuHost'
 
-export function worldMapPlayerColor(menu: MenuHost, player: TerritoryPlayer): string | null {
+type WorldMapPlayer = {
+  factionId?: string | null
+  civ?: string
+  color?: string
+  colorHex?: string
+  isPlayed?: boolean
+  type?: string
+}
+
+export function worldMapPlayerColor(menu: MenuHost, player: WorldMapPlayer): string | null {
   const factions = menu.context.getCampaignFactions?.()
   const faction =
     (player.factionId ? factions?.[player.factionId] : null) ??

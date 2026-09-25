@@ -1,13 +1,14 @@
 import { t } from '../lib/lang'
 
 export class GameLoadingScreen {
+  private lastPercent = 0
   root: HTMLDivElement | null
   status: HTMLDivElement
   track: HTMLDivElement
   progress: HTMLDivElement
   percent: HTMLDivElement
 
-  constructor() {
+  constructor(titleKey = 'generatingWorld') {
     this.root = document.createElement('div')
     this.root.className = 'modal game-loading'
     this.root.setAttribute('role', 'dialog')
@@ -24,7 +25,7 @@ export class GameLoadingScreen {
     const title = document.createElement('div')
     title.id = 'game-loading-title'
     title.className = 'modal-title game-loading__title'
-    title.textContent = t('generatingWorld')
+    title.textContent = t(titleKey)
     header.appendChild(title)
 
     this.status = document.createElement('div')
@@ -58,7 +59,11 @@ export class GameLoadingScreen {
 
   setProgress(progress: number): void {
     const normalizedProgress = Number.isFinite(progress) ? progress : 0
-    const percent = Math.max(0, Math.min(100, Math.round(normalizedProgress * 100)))
+    const percent = Math.max(
+      this.lastPercent,
+      Math.min(normalizedProgress >= 1 ? 100 : 99, Math.floor(normalizedProgress * 100))
+    )
+    this.lastPercent = percent
     this.root!.style.setProperty('--game-loading-progress', `${percent}%`)
     this.track.setAttribute('aria-valuenow', String(percent))
     this.percent.textContent = `${percent}%`

@@ -182,3 +182,18 @@ test('shadow system returns to the outside shadow source when no interior is act
   assert.equal(shadows.sprite.y, 203)
   assert.equal(renders[0].container, map.shadowLayer)
 })
+
+test('a ticker updates shadows exactly once with or without performance measurement', () => {
+  const { ShadowSystem } = loadShadowSystem()
+  for (const monitored of [false, true]) {
+    const context = createContext([])
+    if (monitored) context.performance = { measure: (_name, callback) => callback() }
+    const shadows = new ShadowSystem(context, createMap())
+    const elapsed = []
+    shadows.update = ms => {
+      elapsed.push(ms)
+    }
+    context.app.ticker.handler({ deltaMS: 16 })
+    assert.deepEqual(elapsed, [16])
+  }
+})

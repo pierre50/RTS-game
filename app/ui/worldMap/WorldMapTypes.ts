@@ -1,4 +1,4 @@
-export type MacroWorldRegion = { x: number; y: number }
+type MacroWorldRegion = { x: number; y: number }
 export type MacroWorldSettlement = {
   id?: string
   kind?: string

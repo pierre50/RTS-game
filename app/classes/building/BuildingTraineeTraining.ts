@@ -1,10 +1,8 @@
 import { definedProperties } from '../../lib/definedProperties'
 import { BUILDING_TYPES, FADE_DURATION_MS, MOUNTED_HORSE_SPEED_BONUS, UNIT_TYPES } from '../../constants'
-import { canAfford, payCost } from '../../lib'
 import { fadeOut } from '../../lib/entities/entityFade'
 import {
   canUnitTrainInto,
-  getMissingResourceNames,
   hasBuildingTrainingCapacity,
   isTraineeTrainingType,
 } from '../../lib/buildings/buildingTraining'
@@ -75,11 +73,6 @@ function getTrainingExtra(
   })
   mountedExtra.horseColor = stableHorse?.horseColor ?? trainee.horseColor
   return mountedExtra
-}
-
-function formatMissingResources(owner: BuildingControllerHost['owner'], cost: ResourceAmount = {}): string {
-  const missing = getMissingResourceNames(owner, cost)
-  return missing.map(resource => t(resource)).join(', ')
 }
 
 export function isBlockedByMissingChief(building: BuildingControllerHost, type: string): boolean {
@@ -163,19 +156,6 @@ export function startTrainingWithUnit(
     return failTraineeEntry(building, trainee, t('stableNeedsHorse'))
   }
 
-  const cost = getTrainingCost(building, trainee, type)
-  if (!canAfford(building.owner, cost)) {
-    returnStableHorse(building, stableHorse)
-    return failTraineeEntry(
-      building,
-      trainee,
-      t('needMore', { resource: formatMissingResources(building.owner, cost) }),
-      true
-    )
-  }
-
-  payCost(building.owner, cost)
-  if (building.owner.isPlayed) building.context.menu.updateTopbar()
   removeTraineeForTraining(trainee)
   const started = Boolean(buyUnit(type, true, false, getTrainingExtra(building, trainee, type, stableHorse), trainee))
   if (!started) returnStableHorse(building, stableHorse)

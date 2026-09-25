@@ -83,6 +83,30 @@ export function readCompactVision(
 export class ExplorationSaveChunks {
   private chunks = new Map<string, { i: number; j: number; bytes: Uint8Array; encoded?: string }>()
 
+  forEachViewed(callback: (i: number, j: number) => void): void {
+    for (const chunk of this.chunks.values()) {
+      for (let byteIndex = 0; byteIndex < chunk.bytes.length; byteIndex++) {
+        const byte = chunk.bytes[byteIndex]
+        if (!byte) continue
+        for (let shift = 0; shift < 8; shift++) {
+          if (!(byte & (1 << shift))) continue
+          const bit = byteIndex * 8 + shift
+          callback(chunk.i * VISION_CHUNK_SIZE + Math.floor(bit / VISION_CHUNK_SIZE), chunk.j * VISION_CHUNK_SIZE + bit % VISION_CHUNK_SIZE)
+        }
+      }
+    }
+  }
+
+  has(i: number, j: number): boolean {
+    const chunk = this.chunks.get(`${Math.floor(i / VISION_CHUNK_SIZE)}:${Math.floor(j / VISION_CHUNK_SIZE)}`)
+    const bit = (i % VISION_CHUNK_SIZE) * VISION_CHUNK_SIZE + (j % VISION_CHUNK_SIZE)
+    return Boolean(chunk && (chunk.bytes[bit >> 3] & (1 << (bit & 7))))
+  }
+
+  restore(chunks: Array<{ i: number; j: number; bytes: Uint8Array }>): void {
+    for (const chunk of chunks) this.chunks.set(`${chunk.i}:${chunk.j}`, { ...chunk, bytes: chunk.bytes.slice() })
+  }
+
   set(i: number, j: number, viewed: boolean): void {
     const ci = Math.floor(i / VISION_CHUNK_SIZE)
     const cj = Math.floor(j / VISION_CHUNK_SIZE)

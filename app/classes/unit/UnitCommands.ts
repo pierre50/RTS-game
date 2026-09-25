@@ -1,3 +1,6 @@
+import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
+import { currentResourceRecord, resolveResource, isCompactResourceRecord } from '../resources/CompactResourceSet'
+import { canCampPursue } from '../../lib/units/campBehavior'
 import { routeToRememberedTarget } from '../../lib/units/targetPursuit'
 import { knownTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
 import {
@@ -26,6 +29,7 @@ import {
   sendUnitToDelivery,
 } from './UnitResourceDeliveryCommands'
 import type {
+  ResourceEntity,
   BuildingEntity,
   RuntimeEntity,
   UnitCommandOptions,
@@ -94,7 +98,13 @@ export class UnitCommands {
     actionProps?: ActionProps
   ) {
     const unit = this.unit
+    if (unit.owner?.isPlayed) wakeUnitSimulation(unit)
     if (!target || unit.isDead) return false
+    if (isCompactResourceRecord(target)) {
+      const current = currentResourceRecord(target as ResourceEntity)
+      if (!current || current.isDestroyed) return false
+      target = resolveResource(current)
+    }
     if (!playerSeesTarget(unit.owner, target) && knownTarget(unit.owner, target)) {
       applyWorkForAction(unit, work, action)
       setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(work) ?? null)
@@ -110,7 +120,6 @@ export class UnitCommands {
         canShowTargetAlert(unit, target)
       ) {
         unit.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
-
       }
       return false
     }
@@ -186,6 +195,7 @@ export class UnitCommands {
   }
 
   sendToAttack(target: RuntimeEntity, options: UnitCommandOptions = {}) {
+    if (!canCampPursue(this.unit, target)) return
     if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) {
       if (!applyDiplomaticAggression(this.unit, target).hostileNow) return
       if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) return
@@ -252,6 +262,7 @@ export class UnitCommands {
   }
 
   sendToBuildingQueue(targets: BuildingEntity[]) {
+    if (this.unit.owner?.isPlayed) wakeUnitSimulation(this.unit)
     this.unit.buildQueue = targets.filter(target => checkActionCondition(this.unit, target, ACTION_TYPES.build))
     return this.continueBuildingQueue()
   }

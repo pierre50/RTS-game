@@ -1,3 +1,4 @@
+import { resourceReadValues } from '../resources/CompactResourceSet'
 import { restoreLegacyStaticKnowledge, restoreTargetKnowledge } from '../../lib/units/playerTargetKnowledge'
 import { getEntitySpaceGrid } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
@@ -107,7 +108,8 @@ export function restorePlayerEntitiesFromSave(
   deferInteriors = false
 ): void {
   restoreTargetKnowledge(player, savedPlayer.targetKnowledge)
-  if (!savedPlayer.targetKnowledge) restoreLegacyStaticKnowledge(player, player.context?.map?.resources ?? [])
+  if (!savedPlayer.targetKnowledge)
+    restoreLegacyStaticKnowledge(player, resourceReadValues(player.context?.map?.resources))
   const { buildings, units, corpses } = savedPlayer
   player.buildings = (buildings || []).map(building =>
     player.createBuilding({ ...building, skipBuiltEffects: true, deferTrainingResume: true })
@@ -159,7 +161,19 @@ export function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, c
 }
 
 export function restorePlayerViews(player: PlayerLike, map: MapGenerationMap): void {
-  player.views.restoreViewers(name => getDestEntity(name, map))
+  // A viewer appears in many visible cells. Resolve each label once per restoration.
+  const viewers = new Map<string, ReturnType<typeof getDestEntity>>()
+  player.views.restoreViewers(name => {
+    if (!viewers.has(name)) viewers.set(name, getDestEntity(name, map))
+    return viewers.get(name) ?? null
+  })
+  if (!player.views.onViewed || map.context?.menu?.isMiniMapActive?.() === false) return
+  if (player.views.forEachViewed) {
+    player.views.forEachViewed((i, j) => {
+      if (map.grid[i]?.[j]) player.views.onViewed?.(i, j)
+    })
+    return
+  }
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       if (!map.grid[i]?.[j]) continue

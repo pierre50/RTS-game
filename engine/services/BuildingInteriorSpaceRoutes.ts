@@ -1,3 +1,4 @@
+import { canCampPursue, campSpaceAllowed } from '../../app/lib/units/campBehavior'
 import { hasInteriorCombatCapacity } from '../../app/lib/buildings/interiorCombatCapacity'
 import { ACTION_TYPES } from '../../app/constants'
 import { canUnitEnterBuildingInterior } from '../../app/lib/buildings/interiorAccess'
@@ -122,6 +123,8 @@ function getBuildingPursuers(
         !unit.isDead &&
         !unit.isDestroyed &&
         sameMapSpace(hero, unit) &&
+        canCampPursue(unit, hero) &&
+        campSpaceAllowed(unit, entering ? space.id : space.exitPortal.targetSpaceId) &&
         Boolean(unit.owner?.isEnemy?.(hero.owner) || hero.owner?.isEnemy?.(unit.owner)) &&
         (((unit.dest === hero || unit.realDest === hero) && unit.action === ACTION_TYPES.attack) ||
           unit.spacePortalState?.combatTarget === hero) &&
@@ -140,6 +143,7 @@ function routeBuildingPursuers(
     routeUnitThroughSpacePortal(context, unit, entering ? space.entryPortal : space.exitPortal, {
       combatTarget: hero,
       shouldContinue: () =>
+        canCampPursue(unit, hero) &&
         !hero.isDead &&
         !hero.isDestroyed &&
         !space.building.isDead &&

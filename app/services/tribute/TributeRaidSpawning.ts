@@ -1,42 +1,35 @@
-import { FADE_DURATION_MS } from '../../constants'
-import { getCellsAroundPoint } from '../../lib'
+import { CELL_DEPTH, CELL_HEIGHT, CELL_WIDTH, FADE_DURATION_MS } from '../../constants'
+import { cartesianToIsometric } from '../../lib/maths'
 import { getBuildingContactDistance } from '../../lib/grid/cells'
 import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import { fadeOut } from '../../lib/entities/entityFade'
 import { setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import { findInstancePath } from '../Pathfinding'
 import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity } from '../../types/entities'
-import type { RuntimeCell, RuntimeMap } from '../../types/map'
+import type { RuntimeCell } from '../../types/map'
 import type { UnitEntity } from '../../types/entities'
 import type { FactionSave } from '../../types/save'
 import {
   RAID_SPAWN_BUILDING_CLEARANCE,
-  RAID_SPAWN_EDGE_BAND,
   RAID_SPAWN_MAX_RADIUS,
   RAID_SPAWN_MIN_RADIUS,
+  RAID_SPAWN_SEARCH_MARGIN,
+  RAID_SPAWN_RADIUS_LIMIT,
+  RAID_SPAWN_SEARCH_BUDGET,
+  RAID_SPAWN_GROUP_RADIUS,
+  RAID_SPAWN_CAMERA_MARGIN,
   getRaidCellDistance,
   isOpenRaidLandCell,
   type TributeRaidUnit,
 } from './TributeRaidRules'
 
-type SpawnDirection = {
-  horizontal: 'east' | 'west' | null
-  vertical: 'north' | 'south' | null
-}
-
-type SpawnOptions = {
-  faction?: FactionSave | null
-}
-
-function isAwayFromOwnedBuildings(cell: RuntimeCell, buildings: readonly BuildingEntity[]): boolean {
-  return buildings.every(building => {
-    if (building.isDead || building.isDestroyed) return true
-    const distance = getRaidCellDistance(cell, building)
-    const minDistance = getBuildingContactDistance(building.size ?? 1) + RAID_SPAWN_BUILDING_CLEARANCE
-    return distance > minDistance
-  })
-}
+type SpawnDirection = { horizontal: 'east' | 'west' | null; vertical: 'north' | 'south' | null }
+type SpawnOptions = { faction?: FactionSave | null }
+const STEPS = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+] as const
 
 function factionSpawnDirection(context: GameContextLike, faction?: FactionSave | null): SpawnDirection {
   const currentRegion = context.map?.worldRegion
@@ -68,163 +61,115 @@ function factionSpawnDirection(context: GameContextLike, faction?: FactionSave |
   }
 }
 
-function edgeScore(cell: RuntimeCell, grid: RuntimeMap['grid'], direction: SpawnDirection): number {
-  const maxI = grid.length - 1
-  const maxJ = Math.max(0, (grid[cell.i]?.length ?? 1) - 1)
-  let score = 0
-  if (direction.vertical === 'north') score += cell.i
-  else if (direction.vertical === 'south') score += maxI - cell.i
-  else score += Math.min(cell.i, maxI - cell.i)
-
-  if (direction.horizontal === 'west') score += cell.j
-  else if (direction.horizontal === 'east') score += maxJ - cell.j
-  else score += Math.min(cell.j, maxJ - cell.j)
-
-  const cornerDistance = Math.min(cell.i, maxI - cell.i) + Math.min(cell.j, maxJ - cell.j)
-  return score + cornerDistance * 0.2
-}
-
-function getEdgeSpawnCandidates(
-  grid: RuntimeMap['grid'],
-  canSpawnOnCell: (cell: RuntimeCell) => boolean,
-  direction: SpawnDirection
-): RuntimeCell[] {
-  const candidates: RuntimeCell[] = []
-  const maxI = grid.length - 1
-  for (const row of grid) {
-    if (!row) continue
-    const maxJ = row.length - 1
-    for (const cell of row) {
-      if (!cell || !canSpawnOnCell(cell)) continue
-      const onEdge =
-        cell.i <= RAID_SPAWN_EDGE_BAND ||
-        cell.j <= RAID_SPAWN_EDGE_BAND ||
-        maxI - cell.i <= RAID_SPAWN_EDGE_BAND ||
-        maxJ - cell.j <= RAID_SPAWN_EDGE_BAND
-      if (onEdge) candidates.push(cell)
-    }
-  }
-  return candidates.sort((a, b) => edgeScore(a, grid, direction) - edgeScore(b, grid, direction))
-}
-
-function getApproachCells(
-  map: RuntimeMap,
-  target: UnitEntity,
-  nonPassageCell: (cell: RuntimeCell) => boolean
-): RuntimeCell[] {
-  const approachCells: RuntimeCell[] = []
-  for (let distance = 1; distance <= RAID_SPAWN_MIN_RADIUS; distance++) {
-    approachCells.push(
-      ...getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
-        if (!isOpenRaidLandCell(cell) || !nonPassageCell(cell)) return false
-        // Nearby land may be on another bank: the target must be able to reach it too.
-        return (
-          (cell.i === target.i && cell.j === target.j) || Boolean(findInstancePath(target, cell.i, cell.j, map).length)
-        )
-      })
-    )
-    if (approachCells.length) return approachCells
-  }
-  return approachCells
-}
-
-function hasPathToTarget(context: GameContextLike, start: RuntimeCell, approachCells: RuntimeCell[]): boolean {
-  return approachCells.some(cell => {
-    if (cell === start) return true
-    return findInstancePath({ i: start.i, j: start.j, label: 'tribute-raid-spawn-probe' }, cell.i, cell.j, context.map)
-      .length
-  })
-}
-
-function appendReachableSpawnCellsFromRings(
-  context: GameContextLike,
-  cells: RuntimeCell[],
-  origin: { i: number; j: number },
-  minDistance: number,
-  maxDistance: number,
-  count: number,
-  canSpawnOnCell: (cell: RuntimeCell) => boolean,
-  approachCells: RuntimeCell[]
-): RuntimeCell[] {
-  for (let distance = minDistance; distance <= maxDistance && cells.length < count; distance++) {
-    const ring = getCellsAroundPoint(origin.i, origin.j, context.map.grid, distance, cell => {
-      return canSpawnOnCell(cell) && hasPathToTarget(context, cell, approachCells)
-    })
-    ring.sort(() => (context.map.random?.() ?? Math.random()) - 0.5)
-    for (const cell of ring) {
-      if (cells.includes(cell)) continue
-      cells.push(cell)
-      if (cells.length >= count) return cells
-    }
-  }
-  return cells
-}
-
-function collectSpawnGroup(
-  context: GameContextLike,
-  entryCell: RuntimeCell,
-  count: number,
-  canSpawnOnCell: (cell: RuntimeCell) => boolean,
-  approachCells: RuntimeCell[]
-): RuntimeCell[] {
-  const cells: RuntimeCell[] = [entryCell]
-  return appendReachableSpawnCellsFromRings(
-    context,
-    cells,
-    entryCell,
-    1,
-    RAID_SPAWN_EDGE_BAND,
-    count,
-    canSpawnOnCell,
-    approachCells
-  )
-}
-
-function findFallbackSpawnCells(
-  context: GameContextLike,
-  target: UnitEntity,
-  count: number,
-  canSpawnOnCell: (cell: RuntimeCell) => boolean,
-  approachCells: RuntimeCell[]
-): RuntimeCell[] {
-  const cells: RuntimeCell[] = []
-  return appendReachableSpawnCellsFromRings(
-    context,
-    cells,
-    target,
-    RAID_SPAWN_MIN_RADIUS,
-    RAID_SPAWN_MAX_RADIUS,
-    count,
-    canSpawnOnCell,
-    approachCells
-  )
-}
-
+/** One bounded flood establishes a local route; no map-edge scan or per-cell A* calls. */
 export function findTributeRaidSpawnCells(
   context: GameContextLike,
   target: UnitEntity,
   count: number,
   options: SpawnOptions = {}
 ): RuntimeCell[] {
-  const grid = context.map?.grid
-  if (!grid) return []
-  const nonPassageCell = createNonReservedPassageCellCondition(context)
-  const protectedBuildings = (context.players ?? (target.owner ? [target.owner] : []))
+  const map = context.map
+  const rect = context.controls?.getViewportMetrics?.()
+  if (!map?.grid || !rect || !Number.isSafeInteger(count) || count <= 0 || count > 169) return []
+  if ((target.spaceId ?? 'outside') !== 'outside' || map.mapType === 'interior') return []
+  if (![rect.visibleLeft, rect.visibleTop, rect.visibleWidth, rect.visibleHeight].every(Number.isFinite)) return []
+  const [heroX, heroFlatY] = cartesianToIsometric(target.i, target.j)
+  const heroY = heroFlatY - (target.z ?? 0) * CELL_DEPTH
+  // Expand only enough to clear the closest viewport edge, with room for the formation.
+  const margin = RAID_SPAWN_CAMERA_MARGIN
+  const distanceToHiddenLand = Math.max(
+    0,
+    Math.min(
+      ((heroX - rect.visibleLeft + margin) * Math.SQRT2) / CELL_WIDTH,
+      ((rect.visibleLeft + rect.visibleWidth + margin - heroX) * Math.SQRT2) / CELL_WIDTH,
+      ((heroY - rect.visibleTop + margin) * Math.SQRT2) / CELL_HEIGHT,
+      ((rect.visibleTop + rect.visibleHeight + margin - heroY) * Math.SQRT2) / CELL_HEIGHT
+    )
+  )
+  const maxRadius = Math.min(
+    RAID_SPAWN_RADIUS_LIMIT,
+    Math.max(RAID_SPAWN_MAX_RADIUS, Math.ceil(distanceToHiddenLand) + RAID_SPAWN_GROUP_RADIUS * 2)
+  )
+  const searchRadius = maxRadius + RAID_SPAWN_SEARCH_MARGIN
+  const nonPassage = createNonReservedPassageCellCondition(context)
+  const buildings = (context.players ?? (target.owner ? [target.owner] : []))
     .flatMap(owner => owner.buildings ?? [])
-  const canSpawnOnCell = (cell: RuntimeCell) =>
-    isOpenRaidLandCell(cell) && nonPassageCell(cell) && isAwayFromOwnedBuildings(cell, protectedBuildings)
-  const approachCells = getApproachCells(context.map, target, nonPassageCell)
-  if (!approachCells.length) return []
-
-  const direction = factionSpawnDirection(context, options.faction)
-  const edgeCandidates = getEdgeSpawnCandidates(grid, canSpawnOnCell, direction)
-  for (const entryCell of edgeCandidates) {
-    if (!hasPathToTarget(context, entryCell, approachCells)) continue
-    const group = collectSpawnGroup(context, entryCell, count, canSpawnOnCell, approachCells)
-    if (group.length >= count) return group
+    .filter(
+      building =>
+        !building.isDead &&
+        !building.isDestroyed &&
+        (building.spaceId ?? 'outside') === 'outside' &&
+        getRaidCellDistance(building, target) <= searchRadius + (building.size ?? 1)
+    )
+  const key = (i: number, j: number) => `${i}:${j}`
+  const visited = new Set<string>([key(target.i, target.j)])
+  const reachable = new Map<string, RuntimeCell>()
+  const queue: { i: number; j: number }[] = [{ i: target.i, j: target.j }]
+  for (let head = 0; head < queue.length && head < RAID_SPAWN_SEARCH_BUDGET; head++) {
+    const current = queue[head]
+    for (const [di, dj] of STEPS) {
+      const i = current.i + di,
+        j = current.j + dj
+      if (Math.abs(i - target.i) > searchRadius || Math.abs(j - target.j) > searchRadius) continue
+      const id = key(i, j)
+      if (visited.has(id) || visited.size >= RAID_SPAWN_SEARCH_BUDGET) continue
+      visited.add(id)
+      const cell = map.grid[i]?.[j]
+      if (!isOpenRaidLandCell(cell)) continue
+      reachable.set(id, cell)
+      queue.push(cell)
+    }
   }
-
-  return findFallbackSpawnCells(context, target, count, canSpawnOnCell, approachCells)
+  const candidates = [...reachable.values()].filter(cell => {
+    const distance = getRaidCellDistance(cell, target)
+    if (distance < RAID_SPAWN_MIN_RADIUS || distance > maxRadius || cell.inclined || !nonPassage(cell)) return false
+    const [x, flatY] = cartesianToIsometric(cell.i, cell.j)
+    const y = flatY - (cell.z ?? 0) * CELL_DEPTH
+    const margin = RAID_SPAWN_CAMERA_MARGIN
+    if (
+      x >= rect.visibleLeft - margin &&
+      x <= rect.visibleLeft + rect.visibleWidth + margin &&
+      y >= rect.visibleTop - margin &&
+      y <= rect.visibleTop + rect.visibleHeight + margin
+    )
+      return false
+    return buildings.every(
+      building =>
+        getRaidCellDistance(cell, building) >
+        getBuildingContactDistance(building.size ?? 1) + RAID_SPAWN_BUILDING_CLEARANCE
+    )
+  })
+  // Shuffle once, then retain the faction's approximate approach direction when known.
+  for (let index = candidates.length - 1; index > 0; index--) {
+    const other = Math.floor((map.random?.() ?? Math.random()) * (index + 1))
+    ;[candidates[index], candidates[other]] = [candidates[other], candidates[index]]
+  }
+  const direction = factionSpawnDirection(context, options.faction)
+  const score = (cell: RuntimeCell) =>
+    (direction.horizontal === 'east' ? -cell.j : direction.horizontal === 'west' ? cell.j : 0) +
+    (direction.vertical === 'south' ? -cell.i : direction.vertical === 'north' ? cell.i : 0)
+  if (direction.horizontal || direction.vertical) candidates.sort((a, b) => score(a) - score(b))
+  const allowed = new Map(candidates.map(cell => [key(cell.i, cell.j), cell]))
+  // Limit formation attempts too. Every member shares a connected, safe local footprint.
+  for (const entry of candidates.slice(0, 32)) {
+    const group = [entry]
+    const seen = new Set([key(entry.i, entry.j)])
+    for (let head = 0; head < group.length && group.length < count; head++) {
+      for (const [di, dj] of STEPS) {
+        const i = group[head].i + di,
+          j = group[head].j + dj
+        const id = key(i, j),
+          cell = allowed.get(id)
+        if (!cell || seen.has(id) || Math.max(Math.abs(i - entry.i), Math.abs(j - entry.j)) > RAID_SPAWN_GROUP_RADIUS)
+          continue
+        seen.add(id)
+        group.push(cell)
+        if (group.length === count) break
+      }
+    }
+    if (group.length === count) return group
+  }
+  return []
 }
 
 export function removeTributeRaidUnitFromRuntime(unit: TributeRaidUnit): void {

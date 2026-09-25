@@ -1054,7 +1054,15 @@ for (const isChief of [true, false]) test(`talking to a teammate only wakes them
 
   assert.deepEqual(group, [target])
   assert.equal(target.lookingAtHero, true)
-  assert.deepEqual(calls, [[isChief ? 'wakeForOrder' : 'previewWake', 'sleepy-villager']])
+  assert.deepEqual(calls, isChief ? [['wakeForOrder', 'sleepy-villager']] : [])
+
+  // A visitor must not trigger even a visual wake, whether or not they are a chief.
+  target.lookingAtHero = false
+  calls.length = 0
+  const { noticeNpc } = loadNpcInteraction(target)
+  noticeNpc(target, { ...hero, owner: {} }, false)
+  assert.deepEqual(calls, [])
+  assert.equal(target.sleepVisualState, 'sleeping')
 })
 
 test('closing without an order after a real wake does not resume the old day job', () => {

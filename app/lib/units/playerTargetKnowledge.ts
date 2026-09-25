@@ -1,3 +1,4 @@
+import { isCompactResourceRecord } from '../../classes/resources/CompactResourceSet'
 import { isWheatMature } from '../combat/resourceActionConditions'
 import { knowsNativeResources } from '../campaign/nativeEconomy'
 import { getEntitySpaceId, sameMapSpace } from '../mapSpaces'
@@ -88,7 +89,22 @@ function rememberTarget(owner: PlayerLike, target: RuntimeEntity): TargetObserva
 }
 
 export function knownTarget(owner: PlayerLike | undefined, target: RuntimeEntity): TargetObservation | undefined {
-  if (owner && knowsEconomicTarget(owner, target)) return rememberTarget(owner, target)
+  if (owner && knowsEconomicTarget(owner, target)) {
+    if (isCompactResourceRecord(target))
+      return {
+        label: target.label,
+        type: target.type,
+        family: target.family,
+        spaceId: getEntitySpaceId(target),
+        i: target.i,
+        j: target.j,
+        hitPoints: target.hitPoints,
+        quantity: target.quantity,
+        isDead: target.isDead,
+        isDestroyed: target.isDestroyed,
+      }
+    return rememberTarget(owner, target)
+  }
   return observeTarget(owner, target) ?? (owner && memories.get(owner)?.get(key(target)))
 }
 

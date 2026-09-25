@@ -291,3 +291,49 @@ test('water overlay ticker does not advance while the map is paused', () => {
   assert.equal(sprite.texture.id, 2)
   assert.equal(map.waterOverlayFrame, 2)
 })
+
+test('camera terrain refreshes reuse water presence until terrain changes or the grid is replaced', () => {
+  const Map = loadMapModule({ waterOverlayFramesAvailable: true })
+  const map = new Map({ app: { ticker: { add() {}, remove() {} } }, players: [] })
+  let reads = 0
+  let category = 'Land'
+  const cell = {
+    get category() {
+      reads++
+      return category
+    },
+  }
+  map.size = 1
+  map.grid = [[cell]]
+  map.terrainBake.updateViewport = () => {}
+  map.terrainChunkManager = null
+  const viewport = { visibleLeft: 0, visibleTop: 0, visibleWidth: 100, visibleHeight: 100 }
+  map.updateRenderChunks(viewport)
+  assert.equal(reads, 1)
+  for (let i = 0; i < 100; i++) map.updateRenderChunks({ ...viewport, visibleLeft: i })
+  assert.equal(reads, 1, 'camera movement must not revisit cells')
+  assert.equal(map.waterOverlay, null)
+
+  category = 'Water'
+  map.invalidateWaterOverlay()
+  map.updateRenderChunks(viewport)
+  assert.equal(reads, 2, 'creation must reuse the presence check too')
+  assert.ok(map.waterOverlay)
+  const overlay = map.waterOverlay
+  for (let i = 0; i < 100; i++) map.updateRenderChunks(viewport)
+  assert.equal(reads, 2)
+
+  category = 'Land'
+  map.invalidateWaterOverlay()
+  map.updateRenderChunks(viewport)
+  assert.equal(map.waterOverlay, null)
+  assert.equal(overlay.destroyed, true)
+  assert.equal(reads, 3)
+  map.updateRenderChunks(viewport)
+  map.updateRenderChunks(viewport)
+  assert.equal(reads, 3)
+
+  map.grid = [[{ category: 'Water' }]]
+  map.updateRenderChunks(viewport)
+  assert.ok(map.waterOverlay, 'a replacement grid must not inherit the previous result')
+})

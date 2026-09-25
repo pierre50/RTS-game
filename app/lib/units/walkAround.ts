@@ -18,14 +18,14 @@ export type UnitWalkAroundOptions = {
   taskName: string
 }
 
-function canUnitStartAmbientWalk(unit: UnitEntity): boolean {
+export function canUnitStartAmbientWalk(unit: UnitEntity): boolean {
   return Boolean(
     !unit.isDead &&
       !unit.isDestroyed &&
       !unit.shelterState &&
       !unit.action &&
       !unit.dest &&
-      !(unit.path?.length) &&
+      !unit.path?.length &&
       unit.combatMode !== 'attack' &&
       unit.combatMode !== 'recover' &&
       unit.combatMode !== 'flee' &&
@@ -35,7 +35,11 @@ function canUnitStartAmbientWalk(unit: UnitEntity): boolean {
   )
 }
 
-function findUnitWalkAroundDestination(unit: UnitEntity, anchor: GridPosition | null, range: number): RuntimeCell | null {
+export function findUnitWalkAroundDestination(
+  unit: UnitEntity,
+  anchor: GridPosition | null,
+  range: number
+): RuntimeCell | null {
   const map = unit.context?.map
   const spaceMap = getEntitySpaceMapLike(unit, map)
   if (!map || !anchor) return null

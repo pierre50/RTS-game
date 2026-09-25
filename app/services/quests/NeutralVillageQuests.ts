@@ -1,3 +1,4 @@
+import { resourceReadValues } from '../../classes/resources/CompactResourceSet'
 import { formatEquipmentStackLabel } from '../../lib/equipment/equipmentSlots'
 import { isNpcStillSleeping } from '../../lib/npc/npcSleep'
 import { playSoundCue } from '../../lib/audio/sound'
@@ -78,24 +79,40 @@ export class NeutralVillageQuests {
   }
 
   getQuest(npc: UnitEntity): QuestInstance | undefined {
-    const quests = this.system.state?.quests.filter(
-      quest =>
-        this.system.definitions.has(quest.definitionId) &&
-        quest.owner.entityLabel === npc.label &&
-        quest.owner.playerLabel === npc.owner?.label &&
-        quest.regionId === this.regionId()
-    ) ?? []
-    const quest = quests.find(quest => quest.status === 'available' || quest.status === 'active') ?? quests[quests.length - 1]
-    if (quest?.definitionId === resourceRequestQuest.id) quest.parameters.rewardGold ??= Number(quest.parameters.quantity) * VILLAGE_QUEST_CONFIG.goldPerResource
+    const quests =
+      this.system.state?.quests.filter(
+        quest =>
+          this.system.definitions.has(quest.definitionId) &&
+          quest.owner.entityLabel === npc.label &&
+          quest.owner.playerLabel === npc.owner?.label &&
+          quest.regionId === this.regionId()
+      ) ?? []
+    const quest =
+      quests.find(quest => quest.status === 'available' || quest.status === 'active') ?? quests[quests.length - 1]
+    if (quest?.definitionId === resourceRequestQuest.id)
+      quest.parameters.rewardGold ??= Number(quest.parameters.quantity) * VILLAGE_QUEST_CONFIG.goldPerResource
     return quest
   }
 
   /** Assign a fixed, one-time resource mission through the normal journal and dialogue. */
-  assignResourceRequest(id: string, npc: UnitEntity, resource: string, quantity: number, definitionId = resourceRequestQuest.id): boolean {
+  assignResourceRequest(
+    id: string,
+    npc: UnitEntity,
+    resource: string,
+    quantity: number,
+    definitionId = resourceRequestQuest.id
+  ): boolean {
     const playerId = this.context.player?.label
     const owner = npc.owner
-    if (!playerId || !owner || !this.regionId() || !STORED_RESOURCES.has(resource) ||
-        !Number.isSafeInteger(quantity) || quantity <= 0) return false
+    if (
+      !playerId ||
+      !owner ||
+      !this.regionId() ||
+      !STORED_RESOURCES.has(resource) ||
+      !Number.isSafeInteger(quantity) ||
+      quantity <= 0
+    )
+      return false
     const existing = this.system.state?.quests.find(quest => quest.id === id)
     if (existing && definitionId === tutorialHuntQuest.id && existing.definitionId === resourceRequestQuest.id) {
       existing.definitionId = definitionId
@@ -109,7 +126,11 @@ export class NeutralVillageQuests {
       }
       existing.unread = true
     }
-    if (existing?.definitionId === tutorialHuntQuest.id && existing.status === 'completed' && existing.stageId === 'hunt') {
+    if (
+      existing?.definitionId === tutorialHuntQuest.id &&
+      existing.status === 'completed' &&
+      existing.stageId === 'hunt'
+    ) {
       existing.stageId = 'legacy-hunt'
       existing.status = 'active'
       delete existing.completedDay
@@ -117,13 +138,30 @@ export class NeutralVillageQuests {
       this.system.track(existing.id)
     }
     if (existing) return existing.status === 'active' || existing.status === 'completed'
-    if (!this.system.offer({
-      id, definitionId, regionId: this.regionId(), repeatable: false,
-      owner: { entityLabel: npc.label, playerLabel: owner.label, name: npc.name || owner.name || '' },
-      assigneeId: null, parameters: { resource, quantity, rewardGold: definitionId === tutorialHuntQuest.id ? 0 : quantity * VILLAGE_QUEST_CONFIG.goldPerResource },
-      bindings: { recipient: npc.label }, status: 'available', stageId: this.system.definitions.get(definitionId)?.stages[0]?.id ?? '',
-      facts: {}, usedInteractions: [], markers: {}, unread: false,
-    }) || !this.system.accept(id, playerId)) return false
+    if (
+      !this.system.offer({
+        id,
+        definitionId,
+        regionId: this.regionId(),
+        repeatable: false,
+        owner: { entityLabel: npc.label, playerLabel: owner.label, name: npc.name || owner.name || '' },
+        assigneeId: null,
+        parameters: {
+          resource,
+          quantity,
+          rewardGold: definitionId === tutorialHuntQuest.id ? 0 : quantity * VILLAGE_QUEST_CONFIG.goldPerResource,
+        },
+        bindings: { recipient: npc.label },
+        status: 'available',
+        stageId: this.system.definitions.get(definitionId)?.stages[0]?.id ?? '',
+        facts: {},
+        usedInteractions: [],
+        markers: {},
+        unread: false,
+      }) ||
+      !this.system.accept(id, playerId)
+    )
+      return false
     this.system.track(id)
     this.update(false)
     return true
@@ -145,21 +183,41 @@ export class NeutralVillageQuests {
     const map = this.context.map
     const owner = npc.owner
     if (!map || !owner) return
-    if (owner.type === 'AI' && !this.context.isTutorialActive?.() && map.grid?.length &&
-      Number.isInteger(npc.i) && Number.isInteger(npc.j) && map.randomRange(0, 2) === 0 &&
-      previous?.definitionId !== banditCampQuest.id) {
+    if (
+      owner.type === 'AI' &&
+      !this.context.isTutorialActive?.() &&
+      map.grid?.length &&
+      Number.isInteger(npc.i) &&
+      Number.isInteger(npc.j) &&
+      map.randomRange(0, 2) === 0 &&
+      previous?.definitionId !== banditCampQuest.id
+    ) {
       this.system.offer({
-        id: JSON.stringify([banditCampQuest.id, this.regionId(), owner.label, npc.label, this.system.state.quests.length]),
-        definitionId: banditCampQuest.id, regionId: this.regionId(),
+        id: JSON.stringify([
+          banditCampQuest.id,
+          this.regionId(),
+          owner.label,
+          npc.label,
+          this.system.state.quests.length,
+        ]),
+        definitionId: banditCampQuest.id,
+        regionId: this.regionId(),
         owner: { entityLabel: npc.label, playerLabel: owner.label, name: npc.name || owner.name || '' },
-        assigneeId: null, parameters: { rewardGold: 25 }, bindings: { recipient: npc.label },
-        status: 'available', stageId: 'clear-camp', facts: {}, usedInteractions: [], markers: {}, unread: false,
+        assigneeId: null,
+        parameters: { rewardGold: 25 },
+        bindings: { recipient: npc.label },
+        status: 'available',
+        stageId: 'clear-camp',
+        facts: {},
+        usedInteractions: [],
+        markers: {},
+        unread: false,
       })
       return
     }
     const choices = GATHERABLE.map(choice => ({
       ...choice,
-      available: [...map.resources].reduce(
+      available: [...resourceReadValues(map.resources)].reduce(
         (total, resource) =>
           total +
           (resource.type === choice.type && !resource.isDestroyed && (resource.spaceId ?? 'outside') === 'outside'
@@ -171,16 +229,24 @@ export class NeutralVillageQuests {
     if (!choices.length) return
     const requests = choices.flatMap(choice =>
       Array.from({ length: Math.min(15, Math.floor(choice.available)) - 4 }, (_, index) => ({
-        resource: choice.resource, quantity: index + 5,
+        resource: choice.resource,
+        quantity: index + 5,
       }))
     )
-    const alternatives = requests.filter(request =>
-      request.resource !== previous?.parameters.resource || request.quantity !== previous?.parameters.quantity
+    const alternatives = requests.filter(
+      request =>
+        request.resource !== previous?.parameters.resource || request.quantity !== previous?.parameters.quantity
     )
     const pool = alternatives.length ? alternatives : requests
     const choice = pool[map.randomRange(0, pool.length - 1)]
     const quantity = choice.quantity
-    const id = JSON.stringify([resourceRequestQuest.id, this.regionId(), owner.label, npc.label, this.system.state.quests.length])
+    const id = JSON.stringify([
+      resourceRequestQuest.id,
+      this.regionId(),
+      owner.label,
+      npc.label,
+      this.system.state.quests.length,
+    ])
     this.system.offer({
       id,
       definitionId: resourceRequestQuest.id,
@@ -234,16 +300,18 @@ export class NeutralVillageQuests {
     const quest = this.dialogue(npc)
     const playerId = this.context.player?.label
     const definition = quest && this.system.definitions.get(quest.definitionId)
-    const interaction = definition?.stages.find(stage => stage.id === quest?.stageId)?.interactions.find(item => item.id === interactionId)
-    if (!quest || !playerId || !interaction || !this.system.canInteract(quest, interaction, this.environment(npc))) return false
+    const interaction = definition?.stages
+      .find(stage => stage.id === quest?.stageId)
+      ?.interactions.find(item => item.id === interactionId)
+    if (!quest || !playerId || !interaction || !this.system.canInteract(quest, interaction, this.environment(npc)))
+      return false
     const startingHunt = quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'wood'
     const hunt = startingHunt ? selectTutorialHunt(this.context, npc, quest) : null
     if (startingHunt && !hunt) {
       this.context.menu?.showMessage?.(t('tutorialNoHuntAvailable'), 'warning')
       return false
     }
-    if (!this.system.interact(quest.id, interactionId, playerId, npc.label, this.environment(npc)))
-      return false
+    if (!this.system.interact(quest.id, interactionId, playerId, npc.label, this.environment(npc))) return false
     if (quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'alarm') {
       quest.markers = {}
       playSoundCue(SOUND_CUES.ui.underAttack)
@@ -263,18 +331,36 @@ export class NeutralVillageQuests {
       }
       for (const effect of interaction.effects) {
         if (effect.type !== 'give-item') continue
-        const item = typeof effect.resource === 'string' ? effect.resource : String(quest.parameters[effect.resource.parameter])
-        const quantity = typeof effect.quantity === 'number' ? effect.quantity : Number(quest.parameters[effect.quantity.parameter])
-        this.context.menu?.showMessage?.(t(effect.equip ? 'questItemEquipped' : 'questItemReceived', { item: formatEquipmentStackLabel(item, quantity) }), 'success')
+        const item =
+          typeof effect.resource === 'string' ? effect.resource : String(quest.parameters[effect.resource.parameter])
+        const quantity =
+          typeof effect.quantity === 'number' ? effect.quantity : Number(quest.parameters[effect.quantity.parameter])
+        this.context.menu?.showMessage?.(
+          t(effect.equip ? 'questItemEquipped' : 'questItemReceived', {
+            item: formatEquipmentStackLabel(item, quantity),
+          }),
+          'success'
+        )
       }
     }
     if (quest.status === 'completed') quest.completedDay = this.day()
-    if (quest.status === 'completed' && quest.repeatable !== false) quest.nextOfferDay = this.day() + VILLAGE_QUEST_CONFIG.repeatDelayDays
-    const message = grantQuestRelationReward(this.context, quest, npc, npc.owner?.isPlayed ? 0 : definition?.relationReward ?? 0)
+    if (quest.status === 'completed' && quest.repeatable !== false)
+      quest.nextOfferDay = this.day() + VILLAGE_QUEST_CONFIG.repeatDelayDays
+    const message = grantQuestRelationReward(
+      this.context,
+      quest,
+      npc,
+      npc.owner?.isPlayed ? 0 : (definition?.relationReward ?? 0)
+    )
     this.context.menu?.refreshInventory?.()
     this.update()
-    if (quest.status === 'completed') this.context.menu?.showMessage?.(Number(quest.parameters.rewardGold) > 0
-      ? `${message} ${t('questGoldReceived').replace('{quantity}', String(quest.parameters.rewardGold))}` : message, 'success')
+    if (quest.status === 'completed')
+      this.context.menu?.showMessage?.(
+        Number(quest.parameters.rewardGold) > 0
+          ? `${message} ${t('questGoldReceived').replace('{quantity}', String(quest.parameters.rewardGold))}`
+          : message,
+        'success'
+      )
     this.context.autosave?.()
     return true
   }
@@ -283,19 +369,32 @@ export class NeutralVillageQuests {
   getTrackedMarkers(spaceId: string, regionId: string) {
     const state = this.system.state
     const quest = state?.quests.find(item => item.id === state.trackedQuestId && item.status === 'active')
-    if (!quest || quest.regionId !== regionId || regionId !== this.regionId() ||
-      quest.assigneeId !== this.context.player?.label) return []
+    if (
+      !quest ||
+      quest.regionId !== regionId ||
+      regionId !== this.regionId() ||
+      quest.assigneeId !== this.context.player?.label
+    )
+      return []
     const stage = this.system.definitions.get(quest.definitionId)?.stages.find(item => item.id === quest.stageId)
     for (const interaction of stage?.interactions ?? []) {
       if (interaction.nextStageId === undefined) continue
       const actorLabel = quest.bindings[interaction.actor]
-      const npc = (this.context.players ?? []).flatMap(player => player.units ?? [])
+      const npc = (this.context.players ?? [])
+        .flatMap(player => player.units ?? [])
         .find(unit => unit.label === actorLabel && unit.owner?.label === quest.owner.playerLabel)
       if (!npc || !this.eligible(npc) || !this.system.canInteract(quest, interaction, this.environment(npc))) continue
       // Readiness does not require the recipient to be awake or in the hero's current space.
       if ((npc.spaceId ?? 'outside') !== spaceId || !Number.isFinite(npc.i) || !Number.isFinite(npc.j)) return []
-      return [{ id: 'quest-return', kind: 'return' as const, spaceId,
-        position: { i: npc.i, j: npc.j }, label: { key: 'questReturnToGiver' } }]
+      return [
+        {
+          id: 'quest-return',
+          kind: 'return' as const,
+          spaceId,
+          position: { i: npc.i, j: npc.j },
+          label: { key: 'questReturnToGiver' },
+        },
+      ]
     }
     return this.system.getTrackedMarkers(spaceId, regionId).map(marker => ({ ...marker, kind: 'area' as const }))
   }
@@ -311,20 +410,31 @@ export class NeutralVillageQuests {
     const raids = this.context.tributeRaids
     if (!raids?.triggerTutorialRaid) return
     this.raidPending = true
-    void raids.triggerTutorialRaid().then(started => {
-      if (started) {
-        quest.facts.raidStarted = true
-        this.context.autosave?.()
-      } else this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
-    }).catch(error => {
-      console.error('Unable to start tutorial raid', error)
-      this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
-    }).finally(() => { this.raidPending = false })
+    void raids
+      .triggerTutorialRaid()
+      .then(started => {
+        if (started) {
+          quest.facts.raidStarted = true
+          this.context.autosave?.()
+        } else this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
+      })
+      .catch(error => {
+        console.error('Unable to start tutorial raid', error)
+        this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
+      })
+      .finally(() => {
+        this.raidPending = false
+      })
   }
 
   private maintainTutorialHunt(quest: QuestInstance, npc: UnitEntity): void {
-    if (quest.definitionId !== tutorialHuntQuest.id || quest.status !== 'active' ||
-      !['wood', 'hunt'].includes(quest.stageId) || (npc.spaceId ?? 'outside') !== 'outside') return
+    if (
+      quest.definitionId !== tutorialHuntQuest.id ||
+      quest.status !== 'active' ||
+      !['wood', 'hunt'].includes(quest.stageId) ||
+      (npc.spaceId ?? 'outside') !== 'outside'
+    )
+      return
     const now = this.context.scheduler?.elapsedMs ?? Date.now()
     if (now < (this.huntChecks.get(quest.id) ?? -Infinity)) return
     this.huntChecks.set(quest.id, now + 500)
@@ -363,8 +473,14 @@ export class NeutralVillageQuests {
         else if (
           quest.status === 'active' &&
           quest.assigneeId === this.context.player?.label &&
-          this.system.definitions.get(quest.definitionId)?.stages.find(stage => stage.id === quest.stageId)?.interactions
-            .some(interaction => interaction.nextStageId !== undefined && this.system.canInteract(quest, interaction, this.environment(npc)))
+          this.system.definitions
+            .get(quest.definitionId)
+            ?.stages.find(stage => stage.id === quest.stageId)
+            ?.interactions.some(
+              interaction =>
+                interaction.nextStageId !== undefined &&
+                this.system.canInteract(quest, interaction, this.environment(npc))
+            )
         )
           wanted.set(npc, 'question')
       }

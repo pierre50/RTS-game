@@ -61,15 +61,26 @@ export function validateSaveData(data: unknown): SaveRecord {
     validateSaveData(getCurrentWorldState(data))
     if (data.tutorial !== undefined) {
       const tutorial = data.tutorial
-      if (!isObject(tutorial) || (tutorial.dialogueNodeId !== undefined && typeof tutorial.dialogueNodeId !== 'string') || !['sleeping', 'dialogue', 'wood-requested'].includes(String(tutorial.stage)) ||
-        !(['worldId', 'houseLabel', 'chiefLabel'] as const).every(key => typeof tutorial[key] === 'string' && tutorial[key])) {
+      if (
+        !isObject(tutorial) ||
+        (tutorial.dialogueNodeId !== undefined && typeof tutorial.dialogueNodeId !== 'string') ||
+        !['sleeping', 'dialogue', 'wood-requested'].includes(String(tutorial.stage)) ||
+        !(['worldId', 'houseLabel', 'chiefLabel'] as const).every(
+          key => typeof tutorial[key] === 'string' && tutorial[key]
+        )
+      ) {
         fail('Invalid save file: tutorial is invalid.')
       }
     }
     if (data.introduction !== undefined) {
       const intro = data.introduction
-      if (!isObject(intro) || !['prepared', 'completed'].includes(String(intro.status)) ||
-        !(['worldId', 'companionLabel', 'campfireLabel'] as const).every(key => typeof intro[key] === 'string' && intro[key])) {
+      if (
+        !isObject(intro) ||
+        !['prepared', 'completed'].includes(String(intro.status)) ||
+        !(['worldId', 'companionLabel', 'campfireLabel'] as const).every(
+          key => typeof intro[key] === 'string' && intro[key]
+        )
+      ) {
         fail('Invalid save file: introduction is invalid.')
       }
       if (intro.dialogueNodeId !== undefined && typeof intro.dialogueNodeId !== 'string') {
@@ -78,8 +89,10 @@ export function validateSaveData(data: unknown): SaveRecord {
       if (intro.phase !== undefined && !['approaching', 'waking', 'dialogue'].includes(String(intro.phase))) {
         fail('Invalid save file: introduction phase is invalid.')
       }
-      if (intro.arrival !== undefined && (!isObject(intro.arrival) ||
-        !Number.isInteger(intro.arrival.i) || !Number.isInteger(intro.arrival.j))) {
+      if (
+        intro.arrival !== undefined &&
+        (!isObject(intro.arrival) || !Number.isInteger(intro.arrival.i) || !Number.isInteger(intro.arrival.j))
+      ) {
         fail('Invalid save file: introduction arrival is invalid.')
       }
     }
@@ -110,6 +123,38 @@ export function validateSaveData(data: unknown): SaveRecord {
   validateCamera(data.camera)
   validatePlayers(data.players, size, config, layout ? (i, j) => containsCell(layout, i, j) : undefined)
   validateResources(data.resources, size, config)
+  if (data.resourceDelta !== undefined) {
+    const delta = data.resourceDelta
+    if (
+      !isObject(delta) ||
+      delta.version !== 1 ||
+      !Number.isSafeInteger(delta.count) ||
+      Number(delta.count) < 0 ||
+      Number(delta.count) > (size + 1) * (size + 1) ||
+      typeof delta.signature !== 'string' ||
+      !/^[0-9a-f]{1,8}$/.test(delta.signature) ||
+      !Array.isArray(delta.removed) ||
+      !Array.isArray(delta.updated) ||
+      !isObject(data.world) ||
+      data.world.pregeneratedBlueprintId == null ||
+      Array.isArray(data.map)
+    )
+      fail('Invalid save file: resource blueprint delta is invalid.')
+    const seen = new Set<number>()
+    for (const index of [
+      ...delta.removed,
+      ...delta.updated.map(entry => (isObject(entry) ? entry.index : undefined)),
+    ]) {
+      if (!Number.isInteger(index) || index < 0 || index >= Number(delta.count) || seen.has(index))
+        fail('Invalid save file: resource delta index is invalid.')
+      seen.add(index)
+    }
+    const states = delta.updated.map(entry => entry.state)
+    validateResources(states, size, config)
+    if (layout)
+      for (const state of states)
+        if (!containsCell(layout, state.i, state.j)) fail('Invalid save file: resource delta is outside the map.')
+  }
   validateNaturalResourceRespawnSlots(data.naturalResourceRespawnSlots, size, config)
   validateArray(data.animals, 'animals')
   data.animals = data.animals.filter(

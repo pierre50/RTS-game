@@ -1,3 +1,4 @@
+import { wakeUnitSimulation } from './unitSuspension'
 import {
   knownResources,
   knownFoodTargets,
@@ -77,7 +78,7 @@ export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonom
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
   if (!canMineIronResource(unit, { type: job })) return false
   if (job === 'construction') return knownConstructionTargets(unit).length > 0
-  if (job === 'food') return knownFoodTargets(unit).length > 0
+  if (job === 'food') return knownFoodTargets(unit, 1).length > 0
   if (job === 'horseCapture') {
     const horses = knownCapturableHorses(unit)
     return (
@@ -86,16 +87,18 @@ export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonom
     )
   }
 
-  return knownResources(unit, RESOURCE_AUTONOMY_CONFIG[job].resourceType).length > 0
+  return knownResources(unit, RESOURCE_AUTONOMY_CONFIG[job].resourceType, false, 1).length > 0
 }
 
 export function clearVillagerAutonomy(unit: UnitEntity): void {
   if (unit.type !== UNIT_TYPES.villager) return
+  if (unit.owner?.isPlayed) wakeUnitSimulation(unit)
   unit.autonomousJob = null
 }
 
 export function setVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJob | null): void {
   if (unit.type !== UNIT_TYPES.villager) return
+  if (unit.owner?.isPlayed) wakeUnitSimulation(unit)
   unit.autonomousJob = job
 }
 
@@ -128,7 +131,7 @@ type AutonomyScoring = { targetWorkerLoad(target: RuntimeEntity, work: string, a
 
 function assignFoodAutonomy(unit: UnitEntity, options: AssignmentOptions, scoring: AutonomyScoring): boolean {
   const job = 'food'
-  const targets = knownFoodTargets(unit)
+  const targets = knownFoodTargets(unit, 18)
   if (!targets.length) return noStrictTargetForAutonomy(unit, job, options)
   if (
     tryVillagerJobCandidates(
@@ -193,7 +196,7 @@ function assignResourceAutonomy(
 ): boolean {
   const resourceJob = job
   const resourceConfig = RESOURCE_AUTONOMY_CONFIG[resourceJob]
-  const targets = knownResources(unit, resourceConfig.resourceType, true)
+  const targets = knownResources(unit, resourceConfig.resourceType, true, 18)
   if (!targets.length) {
     logGoldMinerFlow(unit, 'autonomy.no-known-target', { job })
     return noStrictTargetForAutonomy(unit, job, options)

@@ -47,7 +47,7 @@ export class VillagerArrivalSystem implements DailyWorldEventHandler {
     for (const player of this.context.players ?? []) {
       if (!this.canGrow(player)) continue
       const targetArrivals = calculateVillagerArrivals({
-        foodAvailable: getPlayerResourceTotals(player).food,
+        foodAvailable: getPlayerResourceTotals(player, { includeHero: false }).food,
         population: player.population,
         populationMax: player.populationMax,
       })

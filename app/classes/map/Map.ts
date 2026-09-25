@@ -1,5 +1,4 @@
 import { Container, type ContainerChild, type Graphics, type Texture, type Ticker, type TilingSprite } from 'pixi.js'
-import { updateNeighborSceneryVisibility } from './NeighborScenery'
 import type { LocalMapLayout } from '../../lib/localMapLayout'
 import { CELL_WIDTH } from '../../constants'
 import {
@@ -24,8 +23,10 @@ import {
 } from '../../lib/mapSpaces'
 import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
 import { TerrainChunkManager, type ChunkedTerrainMap } from './TerrainChunkManager'
+import { destroyLogicalResourceViews, trimLogicalResourceViews } from '../resources/ResourceHandle'
 import {
   createWaterOverlay,
+  invalidateWaterOverlay,
   destroyWaterOverlay,
   ensureWaterAnimationTicker,
   getWaterOverlayBounds,
@@ -223,8 +224,8 @@ export default class Map extends Container {
   }
 
   updateRenderChunks(viewport: Viewport, margin: number = CELL_WIDTH * 2): void {
+    trimLogicalResourceViews(this)
     this.terrainBake.updateViewport(viewport)
-    updateNeighborSceneryVisibility(this)
     this.updateWaterOverlay()
     if (this.terrainChunkManager?.chunks.size) {
       this.context.performance?.measure?.('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
@@ -278,8 +279,7 @@ export default class Map extends Container {
   }
 
   invalidateWaterOverlay(): void {
-    // The water surface is now a full-map background layer, so terrain edits do
-    // not need to rebuild a water-cell mask.
+    invalidateWaterOverlay(this)
   }
 
   _ensureBuckets(): void {
@@ -529,6 +529,7 @@ export default class Map extends Container {
   }
 
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    destroyLogicalResourceViews(this)
     destroyWaterOverlay(this)
     this.shadowLayer?.destroy({ children: true, texture: false, textureSource: false })
     this.terrainBake.destroy()

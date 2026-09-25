@@ -1,6 +1,13 @@
 import { ACTION_TYPES, SHEET_TYPES, RESOURCE_STORAGE_NAMES } from '../constants'
 import { isHorseTamingStatus } from '../lib/horses/horseTaming'
-import { fail, isObject, validateOptionalFiniteNumber, validateOptionalBoolean, validateAnimalPath, validateOptionalGridDestination } from './SaveValidationPrimitives'
+import {
+  fail,
+  isObject,
+  validateOptionalFiniteNumber,
+  validateOptionalBoolean,
+  validateAnimalPath,
+  validateOptionalGridDestination,
+} from './SaveValidationPrimitives'
 
 const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
 const ANIMAL_SHEETS = new Set<string>(Object.values(SHEET_TYPES))
@@ -10,6 +17,34 @@ export function validateAnimalState(
   size: number,
   label: string
 ): void {
+  if (animal.wildlife != null) {
+    if (!isObject(animal.wildlife)) fail(`Invalid save file: ${label}.wildlife is invalid.`)
+    const meta = animal.wildlife
+    for (const key of ['homeI', 'homeJ', 'generation', 'originI', 'originJ']) {
+      const value = meta[key]
+      if ((key === 'originI' || key === 'originJ') && value == null) continue
+      if (
+        typeof value !== 'number' ||
+        !Number.isSafeInteger(value) ||
+        value < 0 ||
+        (key !== 'generation' && value >= size)
+      )
+        fail(`Invalid save file: ${label}.wildlife.${key} is invalid.`)
+    }
+    for (const key of [
+      'renewDay',
+      'lastCorpseMs',
+      'corpseExpiresMs',
+      'checkedDay',
+      'blockedSinceDay',
+      'returnAfterMs',
+      'lastRenewAttemptDay',
+    ]) {
+      validateOptionalFiniteNumber(meta[key], `${label}.wildlife.${key}`)
+      if (typeof meta[key] === 'number' && meta[key] < 0)
+        fail(`Invalid save file: ${label}.wildlife.${key} is negative.`)
+    }
+  }
   validateOptionalFiniteNumber(animal.quantity, `${label}.quantity`)
   validateOptionalBoundedNumber(animal.quantity, definition.totalQuantity, `${label}.quantity`)
   validateOptionalFiniteNumber(animal.hitPoints, `${label}.hitPoints`)
@@ -18,12 +53,19 @@ export function validateAnimalState(
   validateOptionalBoolean(animal.isDestroyed, `${label}.isDestroyed`)
   validateSavedHorseTamingStatus(animal, label)
   if (animal.inventory != null) {
-    if (!isObject(animal.inventory) || !isObject(animal.inventory.resources)) fail(`Invalid save file: ${label}.inventory is invalid.`)
+    if (!isObject(animal.inventory) || !isObject(animal.inventory.resources))
+      fail(`Invalid save file: ${label}.inventory is invalid.`)
     for (const [resource, amount] of Object.entries(animal.inventory.resources)) {
-      if (!(RESOURCE_STORAGE_NAMES as readonly string[]).includes(resource) || typeof amount !== 'number' || !Number.isInteger(amount) || amount < 0)
+      if (
+        !(RESOURCE_STORAGE_NAMES as readonly string[]).includes(resource) ||
+        typeof amount !== 'number' ||
+        !Number.isInteger(amount) ||
+        amount < 0
+      )
         fail(`Invalid save file: ${label}.inventory resource is invalid.`)
     }
-    if ((animal.inventory.resources.meat ?? 0) !== (animal.quantity ?? 0)) fail(`Invalid save file: ${label}.meat quantity is inconsistent.`)
+    if ((animal.inventory.resources.meat ?? 0) !== (animal.quantity ?? 0))
+      fail(`Invalid save file: ${label}.meat quantity is inconsistent.`)
   }
   validateOptionalFiniteNumber(animal.corpseMaterialDecayRemainingMs, `${label}.corpseMaterialDecayRemainingMs`)
   if (typeof animal.corpseMaterialDecayRemainingMs === 'number' && animal.corpseMaterialDecayRemainingMs < 0)

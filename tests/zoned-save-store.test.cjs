@@ -26,6 +26,8 @@ function world() {
           entity('house', 70, 70, { type: 'House', interiorBuildings: [entity('chest', 4, 4, { type: 'Chest' })] }),
         ],
         corpses: [entity('corpse', 80, 80, { type: 'Villager', isDead: true, quantity: 1 })],
+        minimapBuildingMemory: [{ id: 'gone', spaceId: 'outside', x: 10, y: 10, i: 1, j: 1, size: 1, color: '#f00', ownerKey: 'enemy', town: false }],
+        minimapPreferences: { zoom: 2, hiddenMarkers: ['enemy'] },
         targetKnowledge: [entity('enemy', 300, 300, { family: 'unit', spaceId: 'outside', hitPoints: 5 })],
         views: {
           version: 1,
@@ -234,4 +236,41 @@ test('reordering entities changes only ordering pages, without rewriting entity 
   const current = new Map(decode(backend.data.get('save_0')).parts)
   for (const [zone, key] of old.parts) if (JSON.parse(zone)[0] !== 'order') assert.equal(current.get(zone), key)
   assert.deepEqual(store.load('save_0'), input)
+})
+
+test('listing inspects only the root and async loading reads blocks once in bounded batches', async () => {
+  const backend = memory()
+  const store = new ZonedSaveStore(backend)
+  const input = world()
+  input.resources = Array.from({ length: 80 }, (_, i) => entity(`tree-${i}`, i * 64, i * 64))
+  store.save('save_0', input, publish)
+  const reads = []
+  const reader = new ZonedSaveStore({
+    ...backend,
+    getItem(key) {
+      reads.push(key)
+      return backend.getItem(key)
+    },
+  })
+  reader.inspect('save_0')
+  assert.deepEqual(reads, ['save_0'])
+  reads.length = 0
+  const progress = []
+  const restored = await reader.loadAsync('save_0', async (done, total) => {
+    progress.push([done, total])
+  })
+  assert.deepEqual(restored, input)
+  const total = decode(backend.data.get('save_0')).parts.length
+  assert.equal(reads.length, total + 1)
+  assert.equal(new Set(reads).size, reads.length)
+  assert.deepEqual(progress[0], [0, total])
+  assert.deepEqual(progress.at(-1), [total, total])
+  for (let i = 1; i < progress.length; i++) assert.ok(progress[i][0] - progress[i - 1][0] <= 32)
+  const partKey = decode(backend.data.get('save_0')).parts[0][1]
+  backend.data.delete(partKey)
+  reader.inspect('save_0') // Do not hide a save based on a lightweight menu check.
+  await assert.rejects(
+    reader.loadAsync('save_0', async () => {}),
+    /SAVE_CORRUPT/
+  )
 })
