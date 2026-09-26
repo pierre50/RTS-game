@@ -36,11 +36,10 @@ test('map menu selects the matching continent blueprint and resets normal size',
   const row = rows[0]
   assert.deepEqual(
     row.options.map(option => option.value),
-    ['normal', 'world-test-1000', 'world-test-5000']
+    ['normal', 'world-test-1000']
   )
   for (const [id, size] of [
     ['world-test-1000', 999],
-    ['world-test-5000', 4999],
     ['normal', 144],
   ]) {
     row.change(id)

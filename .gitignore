@@ -27,3 +27,6 @@ reports/health-logs/
 !tools/generate-cave-maps.cjs
 !tools/caves/
 !tools/caves/**
+
+# Large generated test world exceeds the repository file-size limit.
+/public/maps/worlds/world-test-5000/

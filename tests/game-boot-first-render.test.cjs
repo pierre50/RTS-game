@@ -70,7 +70,7 @@ for (const mode of ['new', 'continue']) {
       events.push(name)
     }
     const game = {
-      config: { worldId: 'world-test-5000' },
+      config: { worldId: 'world-test-1000' },
       context: {
         app: { ticker: {}, render: () => prepared('render') },
         controls: { focusHeroCamera: () => prepared('camera') },

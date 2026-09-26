@@ -11,7 +11,7 @@ for (const [continent, saveFails] of [
     saveFails
       ? 'failed initial autosave keeps the generated world available and marks it unsaved'
       : continent
-        ? 'populated 5k bootstrap saves the full post-mount snapshot only'
+        ? 'populated continent bootstrap saves the full post-mount snapshot only'
         : 'a non-Hellas region preloads both neutral villager variants before placing caves',
     async () => {
       const loaded = new Set()
@@ -133,7 +133,7 @@ for (const [continent, saveFails] of [
           return !saveFails
         },
       }
-      await bootGameFromConfig(game, continent ? { worldId: 'world-test-5000' } : {}, { startPaused: true })
+      await bootGameFromConfig(game, continent ? { worldId: 'world-test-1000' } : {}, { startPaused: true })
       assert.equal(context.paused, true, 'loading must not resume the simulation')
       assert.equal(placed, true)
       assert.equal(serialized.length, continent ? 1 : 2)

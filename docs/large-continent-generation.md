@@ -1,8 +1,8 @@
 # Continuous continent generation
 
-`pnpm world:generate-1000` rebuilds `world-test-1000`;
-`pnpm world:generate-5000` rebuilds `world-test-5000`. Both are available in the
-new-game map selector. `pnpm world:generate-large` remains the configurable
+`pnpm world:generate-1000` rebuilds `world-test-1000`, available in the
+new-game map selector. `pnpm world:generate-5000` can generate the larger world
+locally, but its output is ignored by Git and it is not listed in the menu. `pnpm world:generate-large` remains the configurable
 generator (5000 by default). This is an **offline authoring step**;
 starting a game loads its generated blueprint and does not regenerate its biomes.
 

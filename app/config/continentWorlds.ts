@@ -1,6 +1,6 @@
-// Both test sizes share the same continent seed, mask and generation rules.
+// Test continents use the shared seed, mask and generation rules.
 export const CONTINENT_WORLD_SEED = 5000
-export const CONTINENT_WORLD_PRESETS = [1000, 5000].map(edge => ({
+export const CONTINENT_WORLD_PRESETS = [1000].map(edge => ({
   edge,
   size: edge - 1,
   worldId: `world-test-${edge}`,
