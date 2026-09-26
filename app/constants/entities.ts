@@ -250,7 +250,7 @@ export const RESOURCE_GATHER_SWINGS = {
   [LOADING_TYPES.toxicHerb]: 2,
   [LOADING_TYPES.fiber]: 2,
   [LOADING_TYPES.wheat]: 2,
-  [LOADING_TYPES.wood]: 2,
+  [LOADING_TYPES.wood]: 4,
   [LOADING_TYPES.meat]: 3,
   [LOADING_TYPES.stone]: 3,
   [LOADING_TYPES.gold]: 4,

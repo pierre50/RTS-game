@@ -14,6 +14,7 @@ export const SHEET_TYPES = {
   flying: 'flyingSheet',
   action: 'actionSheet',
   standing: 'standingSheet',
+  sitting: 'sittingSheet',
   corpse: 'corpseSheet',
   dying: 'dyingSheet',
   harvest: 'harvestSheet',

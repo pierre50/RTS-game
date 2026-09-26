@@ -1,3 +1,4 @@
+import { getHarvestAmount } from '../../../lib/economy/workRules'
 import { definedProperties } from '../../../lib/definedProperties'
 import { LOADING_TYPES, MENU_INFO_IDS, RESOURCE_TYPES, SOUND_CUES } from '../../../constants'
 import { showDamageFeedback, showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../../lib'
@@ -89,7 +90,7 @@ function collectChoppedWood(runtime: UnitResourceActions, dest: RuntimeEntity, w
     finishWorkSwing(unit, workTickFrame, workTickFrame)
     return false
   }
-  const gain = addGatheredResource(unit, LOADING_TYPES.wood, requestedGain)
+  const gain = addGatheredResource(unit, LOADING_TYPES.wood, getHarvestAmount(requestedGain, dest.quantity ?? 0))
   if (gain <= 0) {
     if (isHeroControlled(unit)) {
       notifyIfHeroResourceCarryFull(unit)

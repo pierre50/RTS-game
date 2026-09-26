@@ -22,6 +22,9 @@ ANCHORS_BY_OUTPUT_SIZE = {
 }
 
 PALETTES: dict[str, list[str]] = {
+    # Full palette of the standard heads after our eye-color edits. Nose art
+    # uses only a subset; use this reference so its skin shades match the head.
+    "lpc_head_source": ["#271920", "#5686AE", "#99423C", "#CC8665", "#E4A47C", "#F9D5BA", "#FAECE7"],
     # ── Skin tones ──────────────────────────────────────────────────────────
     "fair":        ["#1D1D21", "#453125", "#784C49", "#AE6B60", "#D89F75", "#EBBD9D"],
     "alba_fair": ["#492129", "#633432", "#8A5258", "#BD7D64", "#EBBD9D", "#FEDFB1"],
@@ -184,7 +187,9 @@ SKIRT_PLAIN = DressItem("legs/skirts/plain/male/{animation}.png", palette="cloth
 SKIRT_PLAIN_FEMALE = DressItem("legs/skirts/plain/female/{animation}.png", palette="cloth_brown")
 SKIRT_LEGION_TEAM = DressItem("legs/skirts/legion/male/{animation}.png", palette="cloth_brown")
 SKIRT_LEGION_TEAM_FEMALE = DressItem("legs/skirts/legion/female/{animation}.png", palette="cloth_brown")
-SKIRT_SHORT = DressItem("legs/skirts/short/male/{animation}.png", palette="cloth_brown")
+# Blue leather-derived tunic; source RGB edits and LPC credits live in
+# sheet_definitions/torso_clothes_tuniq.json. Includes the upstream sit poses.
+TUNIQ = DressItem("torso/clothes/tuniq/{body}/{animation}.png", team_colored=True)
 PANTS_TEAM = DressItem("legs/pants/male/{animation}/walnut.png")
 STRIPED_PANTS = DressItem("legs/formal_striped/male/{animation}/forest.png")
 STRIPED_PANTS_RED = DressItem("legs/formal_striped/male/{animation}/red.png")
@@ -199,7 +204,28 @@ KIMONO_LONGSLEEVE_FRONT = DressItem(
 )
 SLIT_DRESS = DressItem("dress/slit/female/{animation}/walnut.png")
 
-MALE_SHORT_SKIRT_SLEEVELESS = (SANDALS, SKIRT_SHORT, SLEEVELESS_SHIRT)
+# Sit-compatible village clothing; team colors remain on tops, brown on skirts.
+SLEEVELESS2_TEAM = DressItem("torso/clothes/sleeveless/sleeveless2/{body}/{animation}.png", team_colored=True)
+SLEEVELESS2_SCOOP_TEAM = DressItem("torso/clothes/sleeveless/sleeveless2_scoop/{body}/{animation}.png", team_colored=True)
+LONGSLEEVE2_TEAM = DressItem("torso/clothes/longsleeve/longsleeve2/{body}/{animation}.png", team_colored=True)
+LONGSLEEVE2_SCOOP_TEAM = DressItem("torso/clothes/longsleeve/longsleeve2_scoop/{body}/{animation}.png", team_colored=True)
+
+MALE_VILLAGER_SKIRT_SLEEVELESS2 = (SANDALS, SKIRT_PLAIN, SLEEVELESS2_TEAM)
+MALE_VILLAGER_SKIRT_OBI = (SANDALS, SKIRT_PLAIN, OBI)
+MALE_NOBATIA_VILLAGER_SKIRT_OBI = (SKIRT_PLAIN, OBI)
+
+FEMALE_VILLAGER_OUTFITS = {
+    "hellas": (SANDALS_FEMALE, SKIRT_PLAIN_FEMALE, SLEEVELESS2_SCOOP_TEAM),
+    "latium": (SANDALS_FEMALE, SKIRT_PLAIN_FEMALE, SLEEVELESS2_TEAM),
+    "kemet": (SANDALS_FEMALE, SKIRT_PLAIN_FEMALE, SLEEVELESS2_SCOOP_TEAM, OBI_THIN),
+    "nobatia": (SKIRT_PLAIN_FEMALE, SLEEVELESS2_TEAM, OBI_THIN),
+    "sumeria": (SANDALS_FEMALE, SKIRT_PLAIN_FEMALE, LONGSLEEVE2_TEAM, OBI_THIN),
+    "xia": (BASIC_SHOES_LEATHER_FEMALE, SKIRT_PLAIN_FEMALE, LONGSLEEVE2_SCOOP_TEAM, OBI_THIN),
+    "alba": (BASIC_SHOES_LEATHER_FEMALE, SKIRT_PLAIN_FEMALE, LONGSLEEVE2_SCOOP_TEAM, OBI_THIN),
+    "nord": (BASIC_SHOES_LEATHER_FEMALE, SKIRT_PLAIN_FEMALE, LONGSLEEVE2_TEAM, OBI_THIN),
+}
+
+MALE_TUNIQ = (SANDALS, TUNIQ)
 MALE_LONG_SKIRT_SLEEVELESS = (SANDALS, SKIRT_PLAIN, SLEEVELESS_SHIRT)
 MALE_SLIT_SKIRT_NO_SHIRT = (SANDALS, SLIT_SKIRT)
 MALE_NOBATIA_SLIT_SKIRT_NO_SHIRT = (SLIT_SKIRT,)
@@ -293,7 +319,8 @@ class UnitLook:
     hair_palette: str | None = None
     beard: str | None = None
     beard_palette: str | None = None
-    head: str = "human/male_custom"
+    head: str = "human/male"
+    nose: str | None = "straight"
     eyebrows: bool = True
     # Defaults to the civilization's hair color if neither team_colored nor palette is set.
     hair_extension: DressItem | None = None
@@ -325,7 +352,7 @@ UNIT_LOOKS: dict[str, UnitLook] = {
         hair_palette="white",
         beard="beard/winter/male",
         beard_palette="white",
-        head="human/male_elderly",
+        head="human/male",
         cape=DressItem("cape/solid", team_colored=True),
         dress=(
             SANDALS,
@@ -382,15 +409,15 @@ def civs_for_unit(unit: str, selected_civs: dict[str, dict[str, str]] | None = N
 
 CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "hellas": {
-        "villager": {"hair": "page2", "beard": "beard/medium", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
-        "infantry": {"hair": "long_messy", "beard": "beard/winter/male", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
+        "villager": {"hair": "page2", "beard": "beard/medium", "dress": MALE_TUNIQ},
+        "infantry": {"hair": "long_messy", "beard": "beard/winter/male", "dress": MALE_TUNIQ},
     },
     "latium": {
-        "villager": {"hair": "plain", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
-        "infantry": {"hair": "buzzcut", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
+        "villager": {"hair": "plain", "dress": MALE_TUNIQ},
+        "infantry": {"hair": "buzzcut", "dress": MALE_TUNIQ},
     },
     "sumeria": {
-        "villager": {"hair": "jewfro", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
+        "villager": {"hair": "jewfro", "beard": "beard/winter/male", "dress": MALE_VILLAGER_SKIRT_SLEEVELESS2},
         "infantry": {"hair": "curly_short", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
     },
     "xia": {
@@ -408,12 +435,12 @@ CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "kemet": {
-        "villager": {"hair": "bob", "dress": MALE_SLIT_SKIRT_OBI},
+        "villager": {"hair": "bob", "dress": MALE_VILLAGER_SKIRT_OBI},
         "infantry": {"hair": "buzzcut", "dress": MALE_SLIT_SKIRT_OBI},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
     "nobatia": {
-        "villager": {"hair": "cornrows", "dress": MALE_NOBATIA_SLIT_SKIRT_OBI},
+        "villager": {"hair": "cornrows", "dress": MALE_NOBATIA_VILLAGER_SKIRT_OBI},
         "infantry": {"hair": "dreadlocks_short", "dress": MALE_NOBATIA_SLIT_SKIRT_OBI},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
@@ -421,7 +448,7 @@ CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
 
 
 FEMALE_BASE_LOOK_OVERRIDES = {
-    "head": "human/male_custom",
+    "head": "human/female",
     "beard": None,
     "beard_palette": None,
     "hair_extension": None,
@@ -431,42 +458,42 @@ FEMALE_BASE_LOOK_OVERRIDES = {
 
 FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "sumeria": {
-        "villager": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
+        "villager": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_VILLAGER_OUTFITS["sumeria"]},
         "infantry": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
         "priest": {"hair": None, "hat": HIJAB_TEAM, "hair_palette": None},
     },
     "kemet": {
-        "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
+        "villager": {"hair": "long_center_part", "hair_body_type": "adult", "hair_split": True, "dress": FEMALE_VILLAGER_OUTFITS["kemet"]},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
         "priest": {"hair": None, "hair_palette": None},
     },
     "hellas": {
-        "villager": {"hair": "braid", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
+        "villager": {"hair": "braid", "hair_body_type": "adult", "hair_split": True, "dress": FEMALE_VILLAGER_OUTFITS["hellas"]},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "latium": {
-        "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
+        "villager": {"hair": "long_center_part", "hair_body_type": "adult", "hair_split": True, "dress": FEMALE_VILLAGER_OUTFITS["latium"]},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "priest": {"hair": "long_tied", "hair_body_type": "female", "hair_palette": "white"},
     },
     "xia": {
-        "villager": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
+        "villager": {"hair": "long_tied", "hair_body_type": "adult", "hair_split": True, "dress": FEMALE_VILLAGER_OUTFITS["xia"]},
         "infantry": {"hair": "ponytail", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "priest": {"hair": "single", "hair_body_type": "female", "hair_palette": "white"},
     },
     "alba": {
-        "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
+        "villager": {"hair": "wavy", "hair_body_type": "adult", "hair_split": True, "dress": FEMALE_VILLAGER_OUTFITS["alba"]},
         "infantry": {"hair": "bangslong2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nord": {
-        "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
+        "villager": {"hair": "wavy", "hair_body_type": "adult", "hair_split": True, "dress": FEMALE_VILLAGER_OUTFITS["nord"]},
         "infantry": {"hair": "braid2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nobatia": {
-        "villager": {"hair": "xlong", "hair_body_type": "female", "dress": FEMALE_NOBATIA_SLIT_DRESS_OBI},
+        "villager": {"hair": "xlong", "hair_body_type": "adult", "hair_split": True, "dress": FEMALE_VILLAGER_OUTFITS["nobatia"]},
         "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female", "dress": FEMALE_NOBATIA_SLIT_DRESS_OBI},
         "priest": {"hair": "dreadlocks_long", "hair_body_type": "female", "hair_palette": "white"},
     },
@@ -571,6 +598,13 @@ class Sheet:
     rows: int
     keep_every_other_frame: bool = True
     frame_indices: tuple[int, ...] | None = None
+
+
+def villager_sitting_sheet(body: str) -> Sheet:
+    # LPC sit columns: side-sit, cross-legged, chair. These are poses, not a cycle.
+    # Keep all four directions: side-sitting is asymmetric and must not be mirrored.
+    column = {"male": 1, "female": 0}[body]
+    return Sheet("sitting", "sit", 3, 4, False, tuple(row * 3 + column for row in range(4)))
 
 
 # Rows are up/left/down in source-row order; the LPC source's 4th row (right) is

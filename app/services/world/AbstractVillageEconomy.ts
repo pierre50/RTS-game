@@ -1,3 +1,4 @@
+import { getTrainingDurationDays } from '../../lib/training/trainingRules'
 import { ABSTRACT_VILLAGE_PRODUCTION } from '../../config/worldEconomyBalance'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import {
@@ -9,9 +10,7 @@ import {
 import { AI_BUILDING_TRAINING_CAPACITY, AI_ABSTRACT_DAILY_RECRUITS } from '../../ai/config'
 import { BUILDING_TYPES, UNIT_TYPES } from '../../constants'
 import { getVillagerSchedule } from '../../lib/units/villagerSchedule'
-import {
-  depositChestResources,
-} from '../../lib/resources/playerResourceTotals'
+import { depositChestResources } from '../../lib/resources/playerResourceTotals'
 import {
   isOfflineWorker,
   savedResourceOwner,
@@ -117,7 +116,7 @@ export function planAbstractTraining(
           cost: {},
           loading: 0,
           trainingStartedDay: day,
-          trainingCompleteDay: day + Math.max(1, Math.ceil(config.trainingDays ?? 1)),
+          trainingCompleteDay: day + getTrainingDurationDays(config),
         })
         building.queue = building.trainingQueue.map(entry => entry.type)
         building.loading = building.trainingQueue[0].loading

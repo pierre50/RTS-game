@@ -144,7 +144,7 @@ export class BuildingProduction {
 
     if (!force || building.trainingStartedDay == null || building.trainingCompleteDay == null) {
       const startDay = this.currentTrainingDay()
-      const durationDays = Math.max(0, Math.ceil(getTrainingDays(building, unit, trainee, type)))
+      const durationDays = getTrainingDays(building, unit, trainee, type)
       building.trainingStartedDay = startDay
       building.trainingCompleteDay = startDay + durationDays
     }
@@ -169,7 +169,7 @@ export class BuildingProduction {
   ): void {
     const building = getTrainingBuilding(this.building)
     const startDay = this.currentTrainingDay()
-    const durationDays = Math.max(0, Math.ceil(getTrainingDays(building, unit, trainee, type)))
+    const durationDays = getTrainingDays(building, unit, trainee, type)
     const entry: QueuedTrainingTrainee = definedProperties({
       type,
       trainee,

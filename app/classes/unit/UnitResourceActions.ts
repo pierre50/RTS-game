@@ -1,3 +1,4 @@
+import { getHarvestAmount } from '../../lib/economy/workRules'
 import { isCaveMineral } from '../../lib/resources/caveMinerals'
 import { MENU_INFO_IDS, MINING_RESOURCE_CONFIG, SHEET_TYPES, SOUND_CUES } from '../../constants'
 import { onSpriteLoopAtFrame, playAudibleSoundCue, showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../lib'
@@ -166,7 +167,7 @@ export class UnitResourceActions {
         finishWorkSwing(unit, workTickFrame, workTickFrame)
         return
       }
-      const gain = addGatheredResource(unit, loadingType, Math.min(requestedGain, dest.quantity ?? 0))
+      const gain = addGatheredResource(unit, loadingType, getHarvestAmount(requestedGain, dest.quantity ?? 0))
       if (gain <= 0) {
         unit.gatherProgressState = null
         if (!isHeroControlled(unit)) unit.sendToDelivery?.()

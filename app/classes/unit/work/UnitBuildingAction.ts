@@ -1,3 +1,4 @@
+import { advanceConstruction as advanceConstructionProgress } from '../../../lib/economy/workRules'
 import { definedProperties } from '../../../lib/definedProperties'
 import { SOUND_CUES } from '../../../constants'
 import { showHitPointGainFeedback, SLASH_IMPACT_FRAME } from '../../../lib'
@@ -58,11 +59,11 @@ function advanceConstruction(runtime: UnitResourceActions, dest: BuildingEntity)
   spawnWorkImpactFragments(unit, dest)
   runtime.playSound(runtime.getWorkSound('build', SOUND_CUES.villager.buildLoop))
   const beforeHitPoints = dest.hitPoints ?? 0
-  dest.hitPoints = Math.min(
-    Math.round(
-      beforeHitPoints + ((dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)) * getBuildRateXpMultiplier(unit)
-    ),
-    dest.totalHitPoints ?? 0
+  dest.hitPoints = advanceConstructionProgress(
+    beforeHitPoints,
+    dest.totalHitPoints ?? 0,
+    dest.constructionTime ?? 1,
+    getBuildRateXpMultiplier(unit)
   )
   showHitPointGainFeedback(dest, (dest.hitPoints ?? 0) - beforeHitPoints)
   grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)

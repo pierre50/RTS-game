@@ -47,3 +47,13 @@ Les positions restent dans un instantané local de terrain ; une tâche non pris
 Les diagnostics `village.state` indiquent maintenant `observationReason`, `observer` et `observerDistance` pour distinguer héros, caméra et combat. Les transitions du joueur émettent `player.work.distant` / `player.work.detailed` ; le coût de règlement apparaît sous `player.work.advance`.
 
 La suspension des callbacks est maintenant partagée via `unitSuspension` (`distant-work` pour l’économie, `camp-paused` pour les camps figés). Le service propriétaire reste responsable du règlement du travail et de la reprise ; les règles de territoire restent dans `villageActivity`.
+
+## Pause repas des villageois
+
+Le planning individuel comporte une pause déjeuner : début entre 11 h 40 et 12 h 20, durée entre 40 et 80 minutes. Ces variations sont déterministes par villageois et conservées dans `dailySchedule` ; les anciennes sauvegardes reçoivent ces deux horaires sans modifier leurs heures de réveil, de travail et de coucher. Le créneau reste identique d’un jour à l’autre.
+
+En détail, le villageois interrompt sa tâche et reste éveillé près de son lieu de travail, en libérant les passages si nécessaire. Il reprend la tâche mémorisée à la fin du repas, sans transition de réveil supplémentaire. Les combats, le héros contrôlé, ses suivants et les formations gardent leurs règles de priorité. Les dialogues de déjeuner existent en français et en anglais. Cette pause n’ajoute pas de prélèvement alimentaire à l’entretien quotidien.
+
+Les pauses éveillées du matin, du midi et du soir utilisent la pose `sit` une fois le villageois arrêté, y compris à sa place de repos dans une maison. Les hommes sont assis jambes croisées et les femmes jambes sur le côté : la variante est intégrée à l’atlas, avec une image fixe par direction. Un ordre, un déplacement, un dialogue, une alerte ou la reprise du travail fait quitter cette pose ; le coucher conserve le visuel de sommeil. Les outils ne sont pas affichés pendant la pose assise.
+
+La simulation hors écran retire exactement ce même créneau du temps de travail. Elle conserve les ressources finies et les règles de dépôt existantes. La pause réduit le temps de travail d’environ 9 %, sans changer la cadence de récolte. Les trajets simulés sont désormais amortis sur la capacité réelle du sac, comme les livraisons en détail. Les règles partagées et les limites des approximations sont décrites dans [economy-rules.md](economy-rules.md).

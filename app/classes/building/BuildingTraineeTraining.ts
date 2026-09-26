@@ -1,3 +1,4 @@
+import { getTrainingDurationDays } from '../../lib/training/trainingRules'
 import { definedProperties } from '../../lib/definedProperties'
 import { BUILDING_TYPES, FADE_DURATION_MS, MOUNTED_HORSE_SPEED_BONUS, UNIT_TYPES } from '../../constants'
 import { fadeOut } from '../../lib/entities/entityFade'
@@ -41,9 +42,10 @@ export function getTrainingDays(
   trainee: UnitEntity | null | undefined,
   type: string
 ): number {
-  return isStableMountTraining(building, trainee, type)
-    ? (building.mountingDays ?? unit.trainingDays ?? 1)
-    : (unit.trainingDays ?? 1)
+  return getTrainingDurationDays(
+    unit,
+    isStableMountTraining(building, trainee, type) ? building.mountingDays : undefined
+  )
 }
 
 function getTrainingExtra(

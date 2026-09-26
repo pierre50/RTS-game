@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { advanceVillageWork } = loadTsModule('app/services/world/VillageWorkSimulation.ts', {
   mocks: {
     'pixi.js': { Assets: { cache: { get: () => ({}) } } },
-    '../../classes/map/generation/MapOfflineWorldSimulation': { offlineWorkCycleMs: () => 1000 },
+    '../../lib/economy/configuredWorkTiming': { offlineWorkCycleMs: () => 1000 },
     '../../lib/units/playerTargetKnowledge': { playerSeesTarget: () => true },
     '../../lib/mapSpaces': {
       isOutsideSpaceId: id => !id || id === 'outside',

@@ -660,3 +660,23 @@ test('shared-map mode leaves daily consumption, resource regrowth and training t
   assert.equal(player.buildings[0].inventory.resources.wheat, 100)
   assert.equal(player.buildings[0].trainingQueue.length, 1)
 })
+
+test('offline harvesting pauses for the saved meal window and resumes after it', () => {
+  const { state, options, player } = fixture()
+  player.units[0].autonomousJob = 'wood'
+  player.units[0].dailySchedule = {
+    wakeMinute: 360,
+    workStartMinute: 420,
+    workEndMinute: 1080,
+    bedMinute: 1320,
+    lunchStartMinute: 720,
+    lunchEndMinute: 780,
+  }
+  state.resources = [node('Tree', { hitPoints: 0, quantity: 1000 })]
+  // This fixture starts at 08:00: +4 hours is noon.
+  const lunch = simulateOfflineWorld(state, { ...options, fromElapsedMs: 4 * HOUR, toElapsedMs: 5 * HOUR })
+  assert.equal(lunch.gathered.wood ?? 0, 0)
+  assert.equal(state.resources[0].quantity, 1000)
+  const afternoon = simulateOfflineWorld(state, { ...options, fromElapsedMs: 5 * HOUR, toElapsedMs: 6 * HOUR })
+  assert.ok(afternoon.gathered.wood > 0)
+})

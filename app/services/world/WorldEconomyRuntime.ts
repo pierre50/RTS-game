@@ -9,7 +9,7 @@ import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupanc
 import { populateVillageBase } from './VillageBaseState'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import { createSquareLocalBlueprint } from '../../classes/map/generation/LocalMapBlueprint'
-import { offlineWorkCycleMs } from '../../classes/map/generation/MapOfflineWorldSimulation'
+import { offlineWorkCycleMs } from '../../lib/economy/configuredWorkTiming'
 import { serializeGame } from '../../serialization/SaveSerializer'
 import { OfflineWorldSpatial } from './OfflineWorldSpatial'
 import { applyVillageStartingState } from './VillageStartingState'
@@ -69,9 +69,9 @@ export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
       )
     },
     wheatMatureFrame: Math.max(0, Object.keys(sheet?.textures ?? {}).length - 1),
-    cycleMs: (index, work) => {
-      const key = `${index}:${work}`
-      if (!cycles.has(key)) cycles.set(key, offlineWorkCycleMs(configs[index]?.units.Villager ?? {}, work))
+    cycleMs: (index, work, action) => {
+      const key = `${index}:${work}:${action ?? ''}`
+      if (!cycles.has(key)) cycles.set(key, offlineWorkCycleMs(configs[index]?.units.Villager ?? {}, work, action))
       return cycles.get(key)!
     },
   }

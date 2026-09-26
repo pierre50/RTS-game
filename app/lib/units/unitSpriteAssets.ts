@@ -19,7 +19,15 @@ export function getUnitActivityActionSheet(unit: UnitEntity, work = unit.work, a
 export function applyUnitActivitySpritesheets(unit: UnitEntity, work = unit.work, action = unit.action): void {
   const assets = getUnitActivityAssets(unit, work)
   if (!assets) return
-  for (const key of ['standingSheet', 'walkingSheet', 'dyingSheet', 'corpseSheet', 'harvestSheet', 'shootingSheet']) {
+  for (const key of [
+    'standingSheet',
+    'sittingSheet',
+    'walkingSheet',
+    'dyingSheet',
+    'corpseSheet',
+    'harvestSheet',
+    'shootingSheet',
+  ]) {
     const alias = assets[key]
     Object.assign(unit, { [key]: alias ? Assets.cache.get(alias) : undefined })
   }

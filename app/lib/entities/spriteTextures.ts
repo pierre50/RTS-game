@@ -1,3 +1,5 @@
+import { getUnitSpritesheetAnimationSpeed } from '../animations/animationTiming'
+export { getUnitSpritesheetAnimationSpeed } from '../animations/animationTiming'
 import { getSpriteFrameSelection, type DirectionOrder, type TextureMap } from './spriteFrameSelection'
 export { getAnimationFrames, getSpriteFrameSelection, getMirroredHalfArcFrameIndex } from './spriteFrameSelection'
 import { SHEET_TYPES } from '../constants'
@@ -47,18 +49,6 @@ type DisplayObjectLike = {
 type SheetLike<TTexture = AnimatedSprite['textures'][number]> = {
   data: { animationSpeed?: number }
   textures: TextureMap<TTexture>
-}
-
-const UNIT_SHEET_FALLBACK_ANIMATION_SPEED: Record<string, number> = {
-  [SHEET_TYPES.standing]: 0.2,
-  [SHEET_TYPES.corpse]: 0,
-}
-
-export function getUnitSpritesheetAnimationSpeed(
-  sheet: { data?: { animationSpeed?: number } } | null | undefined,
-  sheetType?: string | null
-): number {
-  return sheet?.data?.animationSpeed ?? (sheetType ? UNIT_SHEET_FALLBACK_ANIMATION_SPEED[sheetType] : undefined) ?? 0.4
 }
 
 function getDefaultAnchor(texture: unknown): DefaultAnchor | null {
@@ -308,6 +298,11 @@ function playSelectedUnitSheet(
   goto: number | false,
   sameTextures: boolean
 ): void {
+  if (sheet === SHEET_TYPES.sitting) {
+    instance.sprite.onComplete = null
+    instance.sprite.stop()
+    return
+  }
   // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
   // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
   // (e.g. wildlife idle animations) is real art and should play normally.

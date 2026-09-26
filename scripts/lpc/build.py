@@ -23,6 +23,7 @@ from config import (
     civs_for_unit,
     variant_look_for_civ,
     variants_for_unit,
+    villager_sitting_sheet,
 )
 from jobs import Job, UNIT_JOBS
 from image_pipeline import compose_frame, layer_paths, open_layer, source_frames, write_sheet
@@ -69,7 +70,7 @@ SLASH_ANIMATION_SPEED = LPC_ANIMATION_SPEED
 
 
 def animation_speed_for(output_sheet: str) -> float:
-    if output_sheet == "corpse":
+    if output_sheet in {"corpse", "sitting"}:
         return 0
     if output_sheet.endswith("slash"):
         return SLASH_ANIMATION_SPEED
@@ -299,9 +300,10 @@ def build_sheet_plan(unit: str, job: Job) -> SheetPlan:
     return plan
 
 
-def villager_build_tasks() -> list[BuildTask]:
+def villager_build_tasks(body: str = "male") -> list[BuildTask]:
     return [
         ("body/walking", SHEET_BY_KEY["walking"], "walk"),
+        ("body/sitting", villager_sitting_sheet(body), "sit"),
         ("body/dying", SHEET_BY_KEY["dying"], "hurt"),
         ("body/corpse", SHEET_BY_KEY["corpse"], "hurt"),
         ("action/slash", SHEET_BY_ANIMATION["slash"], "slash"),
@@ -383,7 +385,7 @@ def build(
                 look = variant_look_for_civ(unit, civ_key, variant)
                 variant_key = f"{civ_key}/{variant.key}" if civ_key else variant.key
                 if unit == "villager":
-                    tasks = villager_build_tasks()
+                    tasks = villager_build_tasks(variant.body)
                 elif unit == "hero":
                     tasks = hero_build_tasks()
                 else:

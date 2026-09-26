@@ -2528,3 +2528,42 @@ test('ordinary rest updates do not search again without a shelter notification',
   system.update()
   assert.equal(unit.shelterState.shelter, house)
 })
+
+test('lunch stops the current work without sleeping and resumes the saved task after eating', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const tree = { type: 'Tree', family: 'resource', i: 2, j: 2, quantity: 100 }
+  const villager = createUnit(owner, {
+    work: 'woodcutter',
+    action: 'chopwood',
+    dest: tree,
+    autonomousJob: 'wood',
+    dailySchedule: {
+      wakeMinute: 360,
+      workStartMinute: 420,
+      workEndMinute: 1080,
+      bedMinute: 1320,
+      lunchStartMinute: 720,
+      lunchEndMinute: 780,
+    },
+  })
+  const context = createContext(12, [owner], calls)
+  context.restTransitionsEnabled = true
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+  assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.shelterState.previousDest, tree)
+  assert.equal(villager.action, null)
+  assert.equal(villager.actionLocked, true)
+  assert.notEqual(villager.sleepVisualState, 'sleeping')
+  context.dayNight.state.minute = 59
+  system.update()
+  assert.equal(villager.action, null)
+  context.dayNight.state = { hour: 13, minute: 0 }
+  system.update()
+  assert.equal(villager.shelterState, null)
+  assert.equal(villager.actionLocked, false)
+  assert.equal(villager.action, 'chopwood')
+  assert.equal(villager.dest, tree)
+})

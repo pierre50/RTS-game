@@ -15,7 +15,7 @@ function scenario({
   own = true,
   chief = true,
   speakerChief = false,
-  hour = 12,
+  hour = 10,
   minute = 0,
   job = 'wood',
   relation = 'neutral',
@@ -312,4 +312,19 @@ test('diplomacy does not change own-group rest, chief greetings or sleeping resp
         unit.context.getCampaignFactions = () => ({ other: { relationState: 'wary' } })
         assert.equal(pick(unit, hero, { sleeping: true }), sleeping)
       }
+})
+
+test('lunch dialogue describes the meal in both languages without addressing visitors as chief', () => {
+  for (language of ['fr', 'en']) {
+    for (const own of [true, false]) {
+      const { unit, hero } = scenario({ own, hour: 12, minute: 30 })
+      unit.dailySchedule.lunchStartMinute = 720
+      unit.dailySchedule.lunchEndMinute = 780
+      choice = 0
+      assert.equal(
+        pick(unit, hero),
+        NPC_ROUTINE_LINES[language].lunch[0].replace('{address}', own ? (language === 'fr' ? ', chef' : ', chief') : '')
+      )
+    }
+  }
 })

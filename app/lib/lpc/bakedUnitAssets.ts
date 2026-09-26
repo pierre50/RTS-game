@@ -141,6 +141,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   unit.appearanceVariants = { ...unit.appearanceVariants, gender }
   unit.sheetDirectionCounts = {
     standingSheet: 3,
+    sittingSheet: 4,
     walkingSheet: 3,
     actionSheet: 3,
     harvestSheet: 3,
@@ -195,6 +196,7 @@ function applyVillagerWorkAssets(unit: UnitEntity, variant: string, resolvedBake
     const bodyCorpse = bodyAlias(variant, 'corpse')
     const sheets = {
       standingSheet: bodyWalking,
+      ...(resolvedBakedUnit === 'villager' ? { sittingSheet: bodyAlias(variant, 'sitting') } : {}),
       walkingSheet: bodyWalking,
       actionSheet: actionAlias(variant, actionAnimation),
       dyingSheet: bodyDying,

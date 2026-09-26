@@ -10,7 +10,7 @@ import {
   withdrawChestResources,
 } from '../../lib/resources/playerResourceTotals'
 import { restoreOfflineUnitSleepHealth } from '../../lib/units/unitSleepHealth'
-import { getVillagerSchedule } from '../../lib/units/villagerSchedule'
+import { getVillagerWorkingMinutes } from '../../lib/units/villagerSchedule'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
 import { calculateVillagerArrivals } from './VillagerArrivalSystem'
 import { completeOfflineTraining } from './OfflineWorldTraining'
@@ -44,18 +44,6 @@ const NEW_DAY_MINUTE = DAY_NIGHT_CONFIG.newDayHour * 60
 
 function dayAt(minute: number): number {
   return Math.max(1, Math.floor((minute - NEW_DAY_MINUTE) / DAY_MINUTES) + 1)
-}
-
-function workingMs(unit: SaveEntityState, from: number, to: number): number {
-  const { workStartMinute, workEndMinute } = getVillagerSchedule(unit)
-  let minutes = 0
-  for (let day = Math.floor(from / DAY_MINUTES); day <= Math.floor(to / DAY_MINUTES); day++) {
-    minutes += Math.max(
-      0,
-      Math.min(to, day * DAY_MINUTES + workEndMinute) - Math.max(from, day * DAY_MINUTES + workStartMinute)
-    )
-  }
-  return minutes * MINUTE_MS
 }
 
 function dailyPopulation(
@@ -181,7 +169,7 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
         restoreOfflineUnitSleepHealth(unit, cursor, next)
         if (!isOfflineWorker(unit)) continue
         const efficiency = options.dailyFactors?.(playerIndex, dayAt(cursor)).workEfficiency ?? 1
-        const milliseconds = workingMs(unit, cursor, next) * efficiency
+        const milliseconds = getVillagerWorkingMinutes(unit, cursor, next) * MINUTE_MS * efficiency
         if (
           options.abstractVillages &&
           player.type === PLAYER_TYPES.ai &&
@@ -223,8 +211,7 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
   for (const player of state.players) {
     for (const unit of player.units ?? []) {
       if (!isOfflineWorker(unit)) continue
-      const schedule = getVillagerSchedule(unit)
-      if (minute < schedule.workStartMinute || minute >= schedule.workEndMinute) stopOfflineTask(unit)
+      if (getVillagerWorkingMinutes(unit, minute, minute + 1) === 0) stopOfflineTask(unit)
     }
     Object.assign(player, getPlayerResourceTotals(savedResourceOwner(player, state.players), { includeHero: false }))
     delete player.villagerAssignments

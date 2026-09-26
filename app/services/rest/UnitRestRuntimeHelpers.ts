@@ -1,4 +1,5 @@
 import { isCampPaused } from '../../lib/units/campActivity'
+import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { isDistantOwner } from '../../lib/units/villageActivity'
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
@@ -33,6 +34,7 @@ export function wakeRestingUnitAtExit(context: GameContextLike, unit: UnitEntity
 export function updateOutsideSleepVisuals(context: GameContextLike, units: UnitEntity[]): void {
   const passages = createReservedPassageCellLookup(context)
   for (const unit of units) {
+    syncUnitSittingPose(unit)
     if (unit.shelterState?.status !== 'outside') continue
     if (unit.sleepVisualState !== 'sleeping') continue
     if (passages.has(getEntityCell(unit, context.map))) {

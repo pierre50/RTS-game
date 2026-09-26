@@ -2,7 +2,7 @@ import { simulateOfflineWorld } from './OfflineWorldSimulation'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { Assets } from 'pixi.js'
 import { VILLAGE_ACTIVITY_RADIUS, VILLAGE_PATH_MARGIN } from '../../config/villageActivity'
-import { offlineWorkCycleMs } from '../../classes/map/generation/MapOfflineWorldSimulation'
+import { offlineWorkCycleMs } from '../../lib/economy/configuredWorkTiming'
 import { ensureOutsideMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import { withinVillageActivity, type VillageHome } from '../../lib/units/villageActivity'
 import { playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
@@ -30,6 +30,7 @@ const FIELDS = [
   'villagerDeliveriesBlocked',
   'inventory',
   'equipment',
+  'experience',
   'work',
   'autonomousJob',
   'offlineWork',
@@ -149,7 +150,8 @@ export function advanceVillageWork(
     unitConfig: (_index: number, type: string) => owner.config?.units?.[type] ?? {},
     buildingConfig: (_index: number, type: string) => owner.config?.buildings?.[type] ?? {},
     buildingCapacity: () => 0,
-    cycleMs: (_index: number, work: string) => offlineWorkCycleMs(owner.config?.units?.Villager ?? {}, work),
+    cycleMs: (_index: number, work: string, action?: string) =>
+      offlineWorkCycleMs(owner.config?.units?.Villager ?? {}, work, action),
     wheatMatureFrame: Math.max(0, Object.keys(wheat?.textures ?? {}).length - 1),
     isKnown: (_index: number, resource: SaveEntityState) => {
       const source = sources.get(resource)

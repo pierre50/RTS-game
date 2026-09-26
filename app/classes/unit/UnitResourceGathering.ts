@@ -1,6 +1,6 @@
+import { getWorkGatherAmount, getResourceGatherSwings } from '../../lib/economy/workRules'
 import {
   LOADING_TYPES,
-  RESOURCE_GATHER_SWINGS,
   RESOURCE_STOCKPILE_TYPES,
   RESOURCE_TYPES,
   SOUND_CUES,
@@ -37,7 +37,10 @@ function isWildgrassResource(value: RuntimeEntity | null | undefined): boolean {
 }
 
 function getForageLoadingType(target: RuntimeEntity | null): string {
-  return (target?.type && RESOURCE_STOCKPILE_TYPES[target.type as keyof typeof RESOURCE_STOCKPILE_TYPES]) || LOADING_TYPES.berry
+  return (
+    (target?.type && RESOURCE_STOCKPILE_TYPES[target.type as keyof typeof RESOURCE_STOCKPILE_TYPES]) ||
+    LOADING_TYPES.berry
+  )
 }
 
 export function startForageResourceAction(actions: UnitResourceActions): void {
@@ -95,7 +98,7 @@ export function isFarmHarvestTarget(
 }
 
 export function getGatherAmount(unit: UnitEntity): number {
-  return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1)) + getGatherXpBonus(unit)
+  return getWorkGatherAmount(unit.gatherAmount, unit.work ?? '', getGatherXpBonus(unit))
 }
 
 export function addGatheredResource(unit: UnitEntity, loadingType: string, amount: number): number {
@@ -111,17 +114,10 @@ export function addGatheredResource(unit: UnitEntity, loadingType: string, amoun
   return gatheredAmount
 }
 
-export function sendVillagerToDeliveryIfFull(
-  unit: UnitEntity,
-  loadingType: string
-): boolean {
+export function sendVillagerToDeliveryIfFull(unit: UnitEntity, loadingType: string): boolean {
   if (!unitShouldDeliverResource(unit, loadingType)) return false
   if (unit.sendToDelivery?.() === true) return true
   return false
-}
-
-function getResourceGatherSwings(loadingType: string, override?: number): number {
-  return Math.max(1, override ?? RESOURCE_GATHER_SWINGS?.[loadingType as keyof typeof RESOURCE_GATHER_SWINGS] ?? 1)
 }
 
 function getGatherProgressState(

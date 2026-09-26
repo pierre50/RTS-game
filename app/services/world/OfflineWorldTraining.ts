@@ -1,3 +1,4 @@
+import { getTrainingProgress, isTrainingComplete } from '../../lib/training/trainingRules'
 import { definedProperties } from '../../lib/definedProperties'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
 import { isLiving, type OfflineWorldSpatial } from './OfflineWorldSpatial'
@@ -18,9 +19,8 @@ export function completeOfflineTraining(
         const start = entry.trainingStartedDay
         const end = entry.trainingCompleteDay
         if (start == null || end == null) continue
-        entry.loading =
-          day >= end ? 100 : Math.min(100, Math.floor((Math.max(0, day - start) / Math.max(1, end - start)) * 100))
-        if (day < end) continue
+        entry.loading = getTrainingProgress(day, start, end)
+        if (!isTrainingComplete(day, end)) continue
         const point = spatial.findNear(building)
         // A blocked exit keeps the completed recruit in the queue for the next attempt.
         if (!point || !spatial.reachable(building, point)) continue

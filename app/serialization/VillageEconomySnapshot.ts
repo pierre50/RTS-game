@@ -14,6 +14,7 @@ const ENTITY_FIELDS = [
   'totalHitPoints',
   'inventory',
   'equipment',
+  'experience',
   'isBuilt',
   'buildingAge',
   'placementMirrored',

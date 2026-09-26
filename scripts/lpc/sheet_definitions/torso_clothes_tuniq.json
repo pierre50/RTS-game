@@ -1,0 +1,103 @@
+{
+  "name": "Tuniq",
+  "layer_1": {
+    "zPos": 60,
+    "male": "torso/clothes/tuniq/male/",
+    "female": "torso/clothes/tuniq/female/"
+  },
+  "animations": [
+    "climb",
+    "emote",
+    "hurt",
+    "idle",
+    "jump",
+    "run",
+    "shoot",
+    "sit",
+    "slash",
+    "spellcast",
+    "thrust",
+    "walk"
+  ],
+  "credits": [
+    {
+      "file": "torso/armour/leather",
+      "notes": "adapted to v3 bases by bluecarrot16, reduced colors and climb/emote/jump by JaidynReiman",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16",
+        "JaidynReiman"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-clothing-updates",
+        "https://opengameart.org/content/lpc-expanded-armor"
+      ]
+    },
+    {
+      "file": "torso/armour/leather/female",
+      "notes": "recolor of torso/armour/leather/female/brown.png, adapted to v3 bases by bluecarrot16, reduced colors and climb/emote/jump by JaidynReiman",
+      "authors": [
+        "Michael Whitlock (bigbeargames)",
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16",
+        "JaidynReiman"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-combat-armor-for-women",
+        "https://opengameart.org/content/lpc-clothing-updates",
+        "https://opengameart.org/content/lpc-expanded-armor"
+      ]
+    },
+    {
+      "file": "torso/armour/leather/teen",
+      "notes": "adapted to v3 bases by bluecarrot16, teen version by JaidynReiman adapted from Male and Female versions",
+      "authors": [
+        "Michael Whitlock (bigbeargames)",
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16",
+        "JaidynReiman"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-combat-armor-for-women",
+        "https://opengameart.org/content/lpc-clothing-updates",
+        "https://opengameart.org/content/lpc-expanded-armor"
+      ]
+    }
+  ],
+  "type_name": "clothes",
+  "source": {
+    "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+    "commit": "4963a69795255fb15a934c47f478a8bdcf3668f5",
+    "definition": "sheet_definitions/torso/armour/torso_armour_leather.json",
+    "cloth_color": "blue",
+    "rgb_replacements": {
+      "867e7f": "322d6a",
+      "726b7e": "322d6a",
+      "4d4a5d": "322d6a",
+      "ffffff": "322d6a",
+      "1d131e": "322d6a",
+      "c4b59f": "180716"
+    },
+    "notes": "Local derivative of Leather. Original authors and licenses retained in credits. All source animation dimensions and alpha channels preserved."
+  }
+}

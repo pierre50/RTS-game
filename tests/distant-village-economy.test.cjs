@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const moduleCache = new Map()
 const mocks = {
-  '../../classes/map/generation/MapOfflineWorldSimulation': { offlineWorkCycleMs: () => 1000 },
+  '../../lib/economy/configuredWorkTiming': { offlineWorkCycleMs: () => 1000 },
   '../../lib/mapSpaces': {
     isOutsideSpaceId: id => !id || id === 'outside',
     getEntitySpaceId: entity => entity?.spaceId ?? 'outside',

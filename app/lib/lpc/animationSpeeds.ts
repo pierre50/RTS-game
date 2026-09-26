@@ -12,13 +12,14 @@ export function lpcSlashFrameMs(): number {
 }
 
 export function lpcAnimationSpeedForAlias(alias: string): number {
-  if (alias.endsWith('/corpse')) return LPC_CORPSE_ANIMATION_SPEED
+  if (alias.endsWith('/corpse') || alias.endsWith('/sitting')) return LPC_CORPSE_ANIMATION_SPEED
   if (alias.endsWith('/slash')) return LPC_SLASH_ANIMATION_SPEED
   return LPC_RUNTIME_ANIMATION_SPEED
 }
 
 export function lpcAnimationSpeedForSheet(sheet: string, { slashAction = true }: { slashAction?: boolean } = {}): number {
   if (sheet === 'corpse' || sheet === 'corpseSheet') return LPC_CORPSE_ANIMATION_SPEED
+  if (sheet === 'sitting' || sheet === 'sittingSheet') return 0
   if (sheet === 'harvest' || sheet === 'harvestSheet') return LPC_SLASH_ANIMATION_SPEED
   if ((sheet === 'action' || sheet === 'actionSheet') && slashAction) return LPC_SLASH_ANIMATION_SPEED
   return LPC_RUNTIME_ANIMATION_SPEED

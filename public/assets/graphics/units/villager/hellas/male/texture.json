@@ -648,7 +648,7 @@
         "y": 0.86
       }
     },
-    "000_graphics_units_villager_hellas_male_body_dying.png": {
+    "000_graphics_units_villager_hellas_male_body_sitting.png": {
       "frame": {
         "x": 1755,
         "y": 0,
@@ -672,7 +672,7 @@
         "y": 0.86
       }
     },
-    "001_graphics_units_villager_hellas_male_body_dying.png": {
+    "001_graphics_units_villager_hellas_male_body_sitting.png": {
       "frame": {
         "x": 1820,
         "y": 0,
@@ -696,7 +696,7 @@
         "y": 0.86
       }
     },
-    "002_graphics_units_villager_hellas_male_body_dying.png": {
+    "002_graphics_units_villager_hellas_male_body_sitting.png": {
       "frame": {
         "x": 1885,
         "y": 0,
@@ -720,7 +720,7 @@
         "y": 0.86
       }
     },
-    "003_graphics_units_villager_hellas_male_body_dying.png": {
+    "003_graphics_units_villager_hellas_male_body_sitting.png": {
       "frame": {
         "x": 1950,
         "y": 0,
@@ -744,7 +744,7 @@
         "y": 0.86
       }
     },
-    "004_graphics_units_villager_hellas_male_body_dying.png": {
+    "000_graphics_units_villager_hellas_male_body_dying.png": {
       "frame": {
         "x": 2015,
         "y": 0,
@@ -768,7 +768,7 @@
         "y": 0.86
       }
     },
-    "005_graphics_units_villager_hellas_male_body_dying.png": {
+    "001_graphics_units_villager_hellas_male_body_dying.png": {
       "frame": {
         "x": 2080,
         "y": 0,
@@ -792,7 +792,7 @@
         "y": 0.86
       }
     },
-    "000_graphics_units_villager_hellas_male_body_corpse.png": {
+    "002_graphics_units_villager_hellas_male_body_dying.png": {
       "frame": {
         "x": 2145,
         "y": 0,
@@ -816,7 +816,7 @@
         "y": 0.86
       }
     },
-    "000_graphics_units_villager_hellas_male_action_slash.png": {
+    "003_graphics_units_villager_hellas_male_body_dying.png": {
       "frame": {
         "x": 2210,
         "y": 0,
@@ -840,7 +840,7 @@
         "y": 0.86
       }
     },
-    "001_graphics_units_villager_hellas_male_action_slash.png": {
+    "004_graphics_units_villager_hellas_male_body_dying.png": {
       "frame": {
         "x": 2275,
         "y": 0,
@@ -864,7 +864,7 @@
         "y": 0.86
       }
     },
-    "002_graphics_units_villager_hellas_male_action_slash.png": {
+    "005_graphics_units_villager_hellas_male_body_dying.png": {
       "frame": {
         "x": 2340,
         "y": 0,
@@ -888,7 +888,7 @@
         "y": 0.86
       }
     },
-    "003_graphics_units_villager_hellas_male_action_slash.png": {
+    "000_graphics_units_villager_hellas_male_body_corpse.png": {
       "frame": {
         "x": 2405,
         "y": 0,
@@ -912,7 +912,7 @@
         "y": 0.86
       }
     },
-    "004_graphics_units_villager_hellas_male_action_slash.png": {
+    "000_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2470,
         "y": 0,
@@ -936,7 +936,7 @@
         "y": 0.86
       }
     },
-    "005_graphics_units_villager_hellas_male_action_slash.png": {
+    "001_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2535,
         "y": 0,
@@ -960,7 +960,7 @@
         "y": 0.86
       }
     },
-    "006_graphics_units_villager_hellas_male_action_slash.png": {
+    "002_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2600,
         "y": 0,
@@ -984,7 +984,7 @@
         "y": 0.86
       }
     },
-    "007_graphics_units_villager_hellas_male_action_slash.png": {
+    "003_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2665,
         "y": 0,
@@ -1008,7 +1008,7 @@
         "y": 0.86
       }
     },
-    "008_graphics_units_villager_hellas_male_action_slash.png": {
+    "004_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2730,
         "y": 0,
@@ -1032,7 +1032,7 @@
         "y": 0.86
       }
     },
-    "009_graphics_units_villager_hellas_male_action_slash.png": {
+    "005_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2795,
         "y": 0,
@@ -1056,7 +1056,7 @@
         "y": 0.86
       }
     },
-    "010_graphics_units_villager_hellas_male_action_slash.png": {
+    "006_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2860,
         "y": 0,
@@ -1080,7 +1080,7 @@
         "y": 0.86
       }
     },
-    "011_graphics_units_villager_hellas_male_action_slash.png": {
+    "007_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2925,
         "y": 0,
@@ -1104,7 +1104,7 @@
         "y": 0.86
       }
     },
-    "012_graphics_units_villager_hellas_male_action_slash.png": {
+    "008_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 2990,
         "y": 0,
@@ -1128,7 +1128,7 @@
         "y": 0.86
       }
     },
-    "013_graphics_units_villager_hellas_male_action_slash.png": {
+    "009_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3055,
         "y": 0,
@@ -1152,7 +1152,7 @@
         "y": 0.86
       }
     },
-    "014_graphics_units_villager_hellas_male_action_slash.png": {
+    "010_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3120,
         "y": 0,
@@ -1176,7 +1176,7 @@
         "y": 0.86
       }
     },
-    "015_graphics_units_villager_hellas_male_action_slash.png": {
+    "011_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3185,
         "y": 0,
@@ -1200,7 +1200,7 @@
         "y": 0.86
       }
     },
-    "016_graphics_units_villager_hellas_male_action_slash.png": {
+    "012_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3250,
         "y": 0,
@@ -1224,7 +1224,7 @@
         "y": 0.86
       }
     },
-    "017_graphics_units_villager_hellas_male_action_slash.png": {
+    "013_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3315,
         "y": 0,
@@ -1248,7 +1248,7 @@
         "y": 0.86
       }
     },
-    "000_graphics_units_villager_hellas_male_action_shoot.png": {
+    "014_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3380,
         "y": 0,
@@ -1272,7 +1272,7 @@
         "y": 0.86
       }
     },
-    "001_graphics_units_villager_hellas_male_action_shoot.png": {
+    "015_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3445,
         "y": 0,
@@ -1296,7 +1296,7 @@
         "y": 0.86
       }
     },
-    "002_graphics_units_villager_hellas_male_action_shoot.png": {
+    "016_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3510,
         "y": 0,
@@ -1320,7 +1320,7 @@
         "y": 0.86
       }
     },
-    "003_graphics_units_villager_hellas_male_action_shoot.png": {
+    "017_graphics_units_villager_hellas_male_action_slash.png": {
       "frame": {
         "x": 3575,
         "y": 0,
@@ -1344,7 +1344,7 @@
         "y": 0.86
       }
     },
-    "004_graphics_units_villager_hellas_male_action_shoot.png": {
+    "000_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 3640,
         "y": 0,
@@ -1368,7 +1368,7 @@
         "y": 0.86
       }
     },
-    "005_graphics_units_villager_hellas_male_action_shoot.png": {
+    "001_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 3705,
         "y": 0,
@@ -1392,7 +1392,7 @@
         "y": 0.86
       }
     },
-    "006_graphics_units_villager_hellas_male_action_shoot.png": {
+    "002_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 3770,
         "y": 0,
@@ -1416,7 +1416,7 @@
         "y": 0.86
       }
     },
-    "007_graphics_units_villager_hellas_male_action_shoot.png": {
+    "003_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 3835,
         "y": 0,
@@ -1440,7 +1440,7 @@
         "y": 0.86
       }
     },
-    "008_graphics_units_villager_hellas_male_action_shoot.png": {
+    "004_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 3900,
         "y": 0,
@@ -1464,7 +1464,7 @@
         "y": 0.86
       }
     },
-    "009_graphics_units_villager_hellas_male_action_shoot.png": {
+    "005_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 3965,
         "y": 0,
@@ -1488,7 +1488,7 @@
         "y": 0.86
       }
     },
-    "010_graphics_units_villager_hellas_male_action_shoot.png": {
+    "006_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 4030,
         "y": 0,
@@ -1512,7 +1512,7 @@
         "y": 0.86
       }
     },
-    "011_graphics_units_villager_hellas_male_action_shoot.png": {
+    "007_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 0,
         "y": 65,
@@ -1536,7 +1536,7 @@
         "y": 0.86
       }
     },
-    "012_graphics_units_villager_hellas_male_action_shoot.png": {
+    "008_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 65,
         "y": 65,
@@ -1560,7 +1560,7 @@
         "y": 0.86
       }
     },
-    "013_graphics_units_villager_hellas_male_action_shoot.png": {
+    "009_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 130,
         "y": 65,
@@ -1584,7 +1584,7 @@
         "y": 0.86
       }
     },
-    "014_graphics_units_villager_hellas_male_action_shoot.png": {
+    "010_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 195,
         "y": 65,
@@ -1608,7 +1608,7 @@
         "y": 0.86
       }
     },
-    "015_graphics_units_villager_hellas_male_action_shoot.png": {
+    "011_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 260,
         "y": 65,
@@ -1632,7 +1632,7 @@
         "y": 0.86
       }
     },
-    "016_graphics_units_villager_hellas_male_action_shoot.png": {
+    "012_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 325,
         "y": 65,
@@ -1656,7 +1656,7 @@
         "y": 0.86
       }
     },
-    "017_graphics_units_villager_hellas_male_action_shoot.png": {
+    "013_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 390,
         "y": 65,
@@ -1680,7 +1680,7 @@
         "y": 0.86
       }
     },
-    "018_graphics_units_villager_hellas_male_action_shoot.png": {
+    "014_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 455,
         "y": 65,
@@ -1704,7 +1704,7 @@
         "y": 0.86
       }
     },
-    "019_graphics_units_villager_hellas_male_action_shoot.png": {
+    "015_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 520,
         "y": 65,
@@ -1728,7 +1728,7 @@
         "y": 0.86
       }
     },
-    "020_graphics_units_villager_hellas_male_action_shoot.png": {
+    "016_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 585,
         "y": 65,
@@ -1752,7 +1752,7 @@
         "y": 0.86
       }
     },
-    "021_graphics_units_villager_hellas_male_action_shoot.png": {
+    "017_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 650,
         "y": 65,
@@ -1776,7 +1776,7 @@
         "y": 0.86
       }
     },
-    "022_graphics_units_villager_hellas_male_action_shoot.png": {
+    "018_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 715,
         "y": 65,
@@ -1800,7 +1800,7 @@
         "y": 0.86
       }
     },
-    "023_graphics_units_villager_hellas_male_action_shoot.png": {
+    "019_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 780,
         "y": 65,
@@ -1824,7 +1824,7 @@
         "y": 0.86
       }
     },
-    "024_graphics_units_villager_hellas_male_action_shoot.png": {
+    "020_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 845,
         "y": 65,
@@ -1848,7 +1848,7 @@
         "y": 0.86
       }
     },
-    "025_graphics_units_villager_hellas_male_action_shoot.png": {
+    "021_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 910,
         "y": 65,
@@ -1872,7 +1872,7 @@
         "y": 0.86
       }
     },
-    "026_graphics_units_villager_hellas_male_action_shoot.png": {
+    "022_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 975,
         "y": 65,
@@ -1896,7 +1896,7 @@
         "y": 0.86
       }
     },
-    "027_graphics_units_villager_hellas_male_action_shoot.png": {
+    "023_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1040,
         "y": 65,
@@ -1920,7 +1920,7 @@
         "y": 0.86
       }
     },
-    "028_graphics_units_villager_hellas_male_action_shoot.png": {
+    "024_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1105,
         "y": 65,
@@ -1944,7 +1944,7 @@
         "y": 0.86
       }
     },
-    "029_graphics_units_villager_hellas_male_action_shoot.png": {
+    "025_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1170,
         "y": 65,
@@ -1968,7 +1968,7 @@
         "y": 0.86
       }
     },
-    "030_graphics_units_villager_hellas_male_action_shoot.png": {
+    "026_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1235,
         "y": 65,
@@ -1992,7 +1992,7 @@
         "y": 0.86
       }
     },
-    "031_graphics_units_villager_hellas_male_action_shoot.png": {
+    "027_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1300,
         "y": 65,
@@ -2016,7 +2016,7 @@
         "y": 0.86
       }
     },
-    "032_graphics_units_villager_hellas_male_action_shoot.png": {
+    "028_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1365,
         "y": 65,
@@ -2040,7 +2040,7 @@
         "y": 0.86
       }
     },
-    "033_graphics_units_villager_hellas_male_action_shoot.png": {
+    "029_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1430,
         "y": 65,
@@ -2064,7 +2064,7 @@
         "y": 0.86
       }
     },
-    "034_graphics_units_villager_hellas_male_action_shoot.png": {
+    "030_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1495,
         "y": 65,
@@ -2088,7 +2088,7 @@
         "y": 0.86
       }
     },
-    "035_graphics_units_villager_hellas_male_action_shoot.png": {
+    "031_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1560,
         "y": 65,
@@ -2112,7 +2112,7 @@
         "y": 0.86
       }
     },
-    "036_graphics_units_villager_hellas_male_action_shoot.png": {
+    "032_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1625,
         "y": 65,
@@ -2136,7 +2136,7 @@
         "y": 0.86
       }
     },
-    "037_graphics_units_villager_hellas_male_action_shoot.png": {
+    "033_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1690,
         "y": 65,
@@ -2160,9 +2160,105 @@
         "y": 0.86
       }
     },
-    "038_graphics_units_villager_hellas_male_action_shoot.png": {
+    "034_graphics_units_villager_hellas_male_action_shoot.png": {
       "frame": {
         "x": 1755,
+        "y": 65,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "035_graphics_units_villager_hellas_male_action_shoot.png": {
+      "frame": {
+        "x": 1820,
+        "y": 65,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "036_graphics_units_villager_hellas_male_action_shoot.png": {
+      "frame": {
+        "x": 1885,
+        "y": 65,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "037_graphics_units_villager_hellas_male_action_shoot.png": {
+      "frame": {
+        "x": 1950,
+        "y": 65,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "038_graphics_units_villager_hellas_male_action_shoot.png": {
+      "frame": {
+        "x": 2015,
         "y": 65,
         "w": 64,
         "h": 64

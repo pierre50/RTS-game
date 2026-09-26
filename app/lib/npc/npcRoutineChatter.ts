@@ -4,7 +4,7 @@ import { heroCanCommand, isChiefUnit } from '../chief'
 import { getLang } from '../lang'
 import { pickRandomItem } from '../random'
 import { getVillagerAssignedJob } from '../units/villagerAssignments'
-import { getVillagerSchedule } from '../units/villagerSchedule'
+import { getVillagerSchedule, isVillagerLunchTime } from '../units/villagerSchedule'
 import {
   getForeignNpcMood,
   pickForeignNpcChatterLine,
@@ -47,6 +47,10 @@ export function pickNpcRoutineChatterLine(
       : pickForeignNpcSleepingChatterLine()
   }
   const lines = NPC_ROUTINE_LINES[getLang() === 'en' ? 'en' : 'fr']
+  if (unit.type === UNIT_TYPES.villager && !isChiefUnit(unit) && isVillagerLunchTime(unit)) {
+    const address = audience === 'ownChief' ? (getLang() === 'en' ? ', chief' : ', chef') : ''
+    return pickRandomItem(lines.lunch).replace('{address}', address)
+  }
   const phase = routinePhase(unit)
   const foreign = audience === 'foreignChief' || audience === 'visitor'
   const mood = getForeignNpcMood(unit)

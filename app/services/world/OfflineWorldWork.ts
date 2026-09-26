@@ -1,8 +1,15 @@
-import { getUnitResourceCarryRemaining } from '../../lib/resources/resourceDelivery'
+import {
+  getWorkGatherAmount,
+  getResourceGatherSwings,
+  getConstructionGain,
+  advanceConstruction,
+  harvestWithinBudget,
+} from '../../lib/economy/workRules'
+import { getGatherXpBonus, getBuildRateXpMultiplier } from '../../lib/units/unitExperience'
+import { getUnitResourceCarryRemaining, getUnitResourceGatherCapacity } from '../../lib/resources/resourceDelivery'
 import type { UnitEntity } from '../../types/entities'
 import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import {
-  RESOURCE_GATHER_SWINGS,
   RESOURCE_STOCKPILE_TYPES,
   RESOURCE_STORAGE_NAMES,
   RESOURCE_TYPES,
@@ -31,7 +38,7 @@ export type OfflineWorkRules = {
   unitConfig(playerIndex: number, type: string): UnitConfig
   buildingConfig(playerIndex: number, type: string): BuildingConfig
   buildingCapacity(playerIndex: number, type: string): number
-  cycleMs(playerIndex: number, work: string): number
+  cycleMs(playerIndex: number, work: string, action?: string): number
   wheatMatureFrame: number
   isKnown?(playerIndex: number, resource: SaveEntityState): boolean
 }
@@ -296,7 +303,7 @@ export function advanceOfflineWorker(
     unit.dest = target.label ? [target.i, target.j, target.label] : [target.i, target.j]
     unit.action = buildingTask ? 'build' : TYPE_ACTION[target.type as keyof typeof TYPE_ACTION]
     unit.inactif = false
-    const cycle = Math.max(1, rules.cycleMs(playerIndex, work))
+    const cycle = Math.max(1, rules.cycleMs(playerIndex, work, unit.action ?? undefined))
     if (buildingTask) {
       const buildingConfig = getBuildingConfigForAge(
         rules.buildingConfig(playerIndex, target.type),
@@ -305,10 +312,11 @@ export function advanceOfflineWorker(
       const total = target.totalHitPoints ?? Number(buildingConfig.totalHitPoints)
       const constructionTime = Number(buildingConfig.constructionTime)
       if (!(total > 0) || !(constructionTime > 0)) continue
-      const gain = Math.max(0, Math.round(total / constructionTime))
+      const multiplier = getBuildRateXpMultiplier(unit)
+      const gain = getConstructionGain(total, constructionTime, multiplier)
       if (!gain) continue
       const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - (target.hitPoints ?? 1)) / gain))
-      target.hitPoints = Math.min(total, (target.hitPoints ?? 1) + impacts * gain)
+      target.hitPoints = advanceConstruction(target.hitPoints ?? 1, total, constructionTime, multiplier, impacts)
       budget -= impacts * cycle
       if (target.hitPoints >= total) {
         target.isBuilt = true
@@ -324,10 +332,11 @@ export function advanceOfflineWorker(
       }
     } else if (stored) {
       const gatherAmounts = config.gatherAmount as Record<string, number> | undefined
-      const gain = Math.max(1, Math.round(gatherAmounts?.[work] ?? 1))
-      const swings = RESOURCE_GATHER_SWINGS[stored as keyof typeof RESOURCE_GATHER_SWINGS] ?? 2
-      const deliveryPerItem = depot ? (travelMs(target, depot, config) * 2) / 10 : 0
-      const itemMs = (cycle * swings) / gain + deliveryPerItem
+      const gain = getWorkGatherAmount(gatherAmounts, work, getGatherXpBonus({ experience: unit.experience, work }))
+      const swings = getResourceGatherSwings(stored)
+      const carry = getUnitResourceGatherCapacity(unit as unknown as UnitEntity)
+      if (carry <= 0) continue
+      const deliveryPerItem = depot ? (travelMs(target, depot, config) * 2) / carry : 0
       const treeHealth = target.hitPoints ?? 0
       if (target.type === RESOURCE_TYPES.tree && treeHealth > 0) {
         const impacts = Math.min(treeHealth, Math.floor(budget / cycle))
@@ -341,11 +350,15 @@ export function advanceOfflineWorker(
       // `depot` above only guarantees at least 1 unit of room, so the gather amount still needs
       // clamping to what's actually left — otherwise a request bigger than the remaining room
       // gets rejected outright and the worker stalls just short of a full storage building.
-      const amount = Math.min(
+      const harvest = harvestWithinBudget(
+        budget,
+        cycle * swings,
+        Math.min(gain, carry),
         target.quantity ?? 0,
-        Math.floor(budget / itemMs),
-        depot ? depotRemainingCapacity(depot) : getUnitResourceCarryRemaining(unit as unknown as UnitEntity)
+        depot ? depotRemainingCapacity(depot) : getUnitResourceCarryRemaining(unit as unknown as UnitEntity),
+        deliveryPerItem
       )
+      const amount = harvest.amount
       if (
         amount > 0 &&
         (!depot ||
@@ -362,7 +375,7 @@ export function advanceOfflineWorker(
         }
         target.quantity = Math.max(0, (target.quantity ?? 0) - amount)
         report.gathered[stored] = (report.gathered[stored] ?? 0) + amount
-        budget -= amount * itemMs
+        budget -= harvest.milliseconds
         if (target.quantity === 0) {
           if (resetHarvestedWheat(target)) {
             report.resourcesDepleted++

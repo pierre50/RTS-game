@@ -1,4 +1,5 @@
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
+import { getUnitRestVisualSheet } from '../../lib/units/unitSittingPose'
 import type { AnimatedSprite } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import { canUpdateMinimap } from '../../lib'
@@ -184,10 +185,13 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   syncAppearanceLayers(sheet: string) {
-    syncUnitAppearanceLayers(this, sheet)
+    const visualSheet =
+      sheet === SHEET_TYPES.standing && this.currentSheet === SHEET_TYPES.sitting ? SHEET_TYPES.sitting : sheet
+    syncUnitAppearanceLayers(this, visualSheet)
   }
 
   override setTextures(sheet: string) {
+    sheet = getUnitRestVisualSheet(this, sheet)
     super.setTextures(sheet)
     this.applyOwnerColorToSprite()
     this.syncShadow()

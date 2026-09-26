@@ -1,0 +1,54 @@
+{
+  "name": "Winter Beard",
+  "layer_1": {
+    "zPos": 110,
+    "male": "beards/beard/winter/male/",
+    "female": "beards/beard/winter/female/",
+    "muscular": "beards/beard/winter/male/",
+    "teen": "beards/beard/winter/female/",
+    "pregnant": "beards/beard/winter/female/"
+  },
+  "animations": [
+    "spellcast",
+    "thrust",
+    "walk",
+    "slash",
+    "shoot",
+    "hurt",
+    "watering",
+    "idle",
+    "jump",
+    "run",
+    "sit",
+    "emote",
+    "climb",
+    "combat",
+    "1h_slash",
+    "1h_backslash",
+    "1h_halfslash"
+  ],
+  "credits": [
+    {
+      "file": "beards/beard/winter",
+      "notes": "",
+      "authors": [
+        "bluecarrot16"
+      ],
+      "licenses": [
+        "CC0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-santa"
+      ]
+    }
+  ],
+  "recolors": {
+    "material": "hair",
+    "palettes": [
+      "ulpc",
+      "lpcr",
+      "all.lpcr"
+    ]
+  },
+  "type_name": "beard"
+}

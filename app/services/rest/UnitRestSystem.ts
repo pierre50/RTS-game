@@ -1,8 +1,11 @@
 import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
 import {
+  isVillagerLunchTime,
   shouldVillagerBeAsleep,
   shouldVillagerBeAwake,
   shouldVillagerReturnHome,
+  shouldVillagerWork,
 } from '../../lib/units/villagerSchedule'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -19,6 +22,7 @@ import {
   sendUnitToRestSite,
   settleUnitRestForTimeJump,
   wakeUnit,
+  wakeUnitInstant,
 } from './UnitRestLifecycle'
 import { restDistance } from './UnitRestMath'
 import {
@@ -46,6 +50,7 @@ import {
   updateMovingRestUnit,
   wakeRestingUnitInstant,
 } from './UnitRestStateTransitions'
+import { waitOutsideForSleep } from './UnitRestSleep'
 import { playSleepingWakeVisual } from './UnitSleepVisuals'
 
 export class UnitRestSystem {
@@ -129,6 +134,17 @@ export class UnitRestSystem {
   }
 
   private updateScheduledRest(unit: UnitEntity): void {
+    if (isVillager(unit) && isVillagerLunchTime(unit)) {
+      // Eat near the workplace, retaining the task for the normal resume path.
+      if (!unit.shelterState && !unit.lookingAtHero && shouldRest(unit)) waitOutsideForSleep(unit)
+      else if (unit.shelterState) this.updateRestingUnit(unit)
+      if (unit.shelterState) unit.shelterState.mealBreak = true
+      return
+    }
+    if (unit.shelterState?.mealBreak && shouldVillagerWork(unit)) {
+      wakeUnitInstant(unit)
+      return
+    }
     const shouldReturnHome = this.shouldReturnHome(unit)
     if (this.shouldWake(unit) && !shouldReturnHome) {
       unit.suspendedRestState = null
@@ -238,7 +254,10 @@ export class UnitRestSystem {
     if (unit.shelterState?.reason !== 'sleep') return
     // Evening waiting uses the same rest reason as sleep: resume the phase due now.
     if (this.shouldSleep(unit)) putRestingUnitToSleep(unit)
-    else this.updateScheduledRest(unit)
+    else {
+      this.updateScheduledRest(unit)
+      syncUnitSittingPose(unit)
+    }
   }
 
   sendUnitToSleep(unit: UnitEntity): boolean {
@@ -251,7 +270,8 @@ export class UnitRestSystem {
 
     for (const unit of restUnits) {
       if (isVillager(unit)) {
-        if (shouldVillagerBeAwake(unit)) wakeRestingUnitInstant(this.context, unit)
+        if (isVillagerLunchTime(unit)) this.updateScheduledRest(unit)
+        else if (shouldVillagerBeAwake(unit)) wakeRestingUnitInstant(this.context, unit)
         else settleUnitRestForTimeJump(unit, shouldVillagerBeAsleep(unit))
       } else if (isSleepTime(this.context)) {
         settleSleepState(unit)

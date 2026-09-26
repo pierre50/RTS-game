@@ -1,0 +1,64 @@
+{
+  "name": "Long center part",
+  "layer_1": {
+    "zPos": 120,
+    "male": "hair/long_center_part/adult/fg/",
+    "muscular": "hair/long_center_part/adult/fg/",
+    "female": "hair/long_center_part/adult/fg/",
+    "pregnant": "hair/long_center_part/adult/fg/",
+    "teen": "hair/long_center_part/adult/fg/"
+  },
+  "layer_2": {
+    "zPos": 9,
+    "male": "hair/long_center_part/adult/bg/",
+    "muscular": "hair/long_center_part/adult/bg/",
+    "female": "hair/long_center_part/adult/bg/",
+    "pregnant": "hair/long_center_part/adult/bg/",
+    "teen": "hair/long_center_part/adult/bg/"
+  },
+  "animations": [
+    "spellcast",
+    "thrust",
+    "walk",
+    "slash",
+    "shoot",
+    "hurt",
+    "watering",
+    "idle",
+    "jump",
+    "run",
+    "sit",
+    "emote",
+    "climb",
+    "combat",
+    "1h_slash",
+    "1h_backslash",
+    "1h_halfslash"
+  ],
+  "credits": [
+    {
+      "file": "hair/long_center_part",
+      "notes": "",
+      "authors": [
+        "thecilekli",
+        "bluecarrot16"
+      ],
+      "licenses": [
+        "CC0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-long-straight-hair-with-12-colors",
+        "https://opengameart.org/content/lpc-hair"
+      ]
+    }
+  ],
+  "recolors": {
+    "material": "hair",
+    "palettes": [
+      "ulpc",
+      "lpcr",
+      "all.lpcr"
+    ]
+  },
+  "type_name": "hair"
+}

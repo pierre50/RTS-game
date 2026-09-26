@@ -29,6 +29,7 @@ type UnitRestStatus = 'delivering' | 'windingDown' | 'movingToRest' | 'inside' |
 export type UnitRestReason = 'sleep'
 type UnitSleepVisualState = 'sleeping' | 'waking'
 export type UnitRestState = {
+  mealBreak?: boolean
   status: UnitRestStatus
   reason?: UnitRestReason
   location: UnitRestLocation
@@ -287,6 +288,7 @@ export interface UnitEntity extends EnergyEntity {
   actionSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null
   standingSheet?: SpritesheetLike | null
+  sittingSheet?: SpritesheetLike | null
   corpseSheet?: SpritesheetLike | null
   dyingSheet?: SpritesheetLike | null
   loop?: boolean

@@ -114,7 +114,7 @@ export function getLevelForXp(xp: number): number {
   return level
 }
 
-export function getUnitLevel(unit: UnitEntity, category: string): number {
+export function getUnitLevel(unit: Pick<UnitEntity, 'experience'>, category: string): number {
   return getLevelForXp(getUnitXp(unit, category))
 }
 
@@ -205,7 +205,7 @@ export function getUnitExperienceEntries(
 
 // Bonus applied on top of gatherAmount for the category matching the unit's
 // current work (a level-6 stoneminer also mines gold faster: same category).
-export function getGatherXpBonus(unit: UnitEntity): number {
+export function getGatherXpBonus(unit: Pick<UnitEntity, 'experience' | 'work'>): number {
   const category = unit.work ? WORK_XP_CATEGORY[unit.work] : null
   if (!category) return 0
   return Math.floor(getProgressionLevel(getUnitLevel(unit, category)) / GATHER_BONUS_LEVEL_STEP)
@@ -219,7 +219,7 @@ export function getHealingXpBonus(unit: UnitEntity): number {
   return Math.floor(getProgressionLevel(getUnitLevel(unit, XP_CATEGORIES.healing)) / HEAL_BONUS_LEVEL_STEP)
 }
 
-export function getBuildRateXpMultiplier(unit: UnitEntity): number {
+export function getBuildRateXpMultiplier(unit: Pick<UnitEntity, 'experience'>): number {
   return 1 + getProgressionLevel(getUnitLevel(unit, XP_CATEGORIES.building)) * BUILD_RATE_BONUS_PER_LEVEL
 }
 

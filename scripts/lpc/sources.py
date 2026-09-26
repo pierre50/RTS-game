@@ -13,6 +13,16 @@ HERO_BODY_ANIMATIONS = ("walk", "hurt", "slash", "shoot")
 MULTI_ANIMATION_BODY_UNITS = {"villager": VILLAGER_BODY_ANIMATIONS, "hero": HERO_BODY_ANIMATIONS}
 
 
+def required_villager_sit_source_paths() -> list[str]:
+    """All appearance layers composed by the gender-specific sitting bake task."""
+    paths: set[str] = set()
+    for civ_key, civ in CIVS.items():
+        for variant in variants_for_unit("villager"):
+            look = variant_look_for_civ("villager", civ_key, variant)
+            paths.update(layer.path for layer in layer_paths(look, "sit", civ, "blue"))
+    return sorted(paths)
+
+
 def required_source_paths() -> list[str]:
     paths: set[str] = set()
     for unit in UNIT_LOOKS:
@@ -41,4 +51,5 @@ def required_source_paths() -> list[str]:
                             for layer in layer_paths(look, animation, civ, player_color):
                                 paths.add(layer.path)
     paths.update(required_dynamic_equipment_source_paths())
+    paths.update(required_villager_sit_source_paths())
     return sorted(paths)

@@ -1,5 +1,6 @@
 import type { RuntimeCell } from '../../types/map'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
+import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
 
 type UnitOrderHost = UnitEntity & {
   stop: () => void
@@ -29,21 +30,24 @@ export function setUnitDestination(unit: UnitOrderHost, dest: RuntimeEntity | Ru
     y: dest.y,
     label: isEntityDestination(dest) ? dest.label : '',
   }
+  syncUnitSittingPose(unit)
 }
 
 export function queueUnitPendingOrder(
   unit: UnitOrderHost,
   orderOrDest: (() => void) | RuntimeEntity | RuntimeCell,
-  action: string | null = null,
+  action: string | null = null
 ): boolean {
   if (typeof orderOrDest === 'function') {
     unit.pendingOrder = { execute: orderOrDest }
+    syncUnitSittingPose(unit)
     return true
   }
 
   const dest = orderOrDest
   if (!dest || isDestroyedDestination(dest)) return false
   unit.pendingOrder = { dest, action }
+  syncUnitSittingPose(unit)
   return true
 }
 

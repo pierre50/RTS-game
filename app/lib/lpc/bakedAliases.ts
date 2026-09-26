@@ -128,6 +128,7 @@ export function bakedLogicalAliases(unit: BakedUnitType, variant: string): strin
     const actionSheets: readonly string[] = unit === 'hero' ? HERO_BASE_ACTION_SHEETS : VILLAGER_ACTION_SHEETS
     return [
       ...VILLAGER_BODY_SHEETS.map(sheet => bodyAlias(variant, sheet)),
+      ...(unit === 'villager' ? [villagerBodyAlias(variant, 'sitting')] : []),
       ...actionSheets.map(sheet => actionAlias(variant, sheet)),
     ]
   }

@@ -1,6 +1,5 @@
 {
   "name": "Straight nose",
-  "type_name": "nose",
   "layer_1": {
     "zPos": 105,
     "male": "head/nose/straight/adult/",
@@ -9,30 +8,6 @@
     "teen": "head/nose/straight/adult/",
     "pregnant": "head/nose/straight/adult/"
   },
-  "variants": [
-    "light",
-    "amber",
-    "olive",
-    "taupe",
-    "bronze",
-    "brown",
-    "black",
-    "lavender",
-    "blue",
-    "zombie_green",
-    "green",
-    "pale_green",
-    "bright_green",
-    "dark_green",
-    "fur_black",
-    "fur_brown",
-    "fur_tan",
-    "fur_copper",
-    "fur_gold",
-    "fur_grey",
-    "fur_white",
-    "zombie"
-  ],
   "match_body_color": true,
   "animations": [
     "spellcast",
@@ -59,6 +34,7 @@
       "notes": "",
       "authors": [
         "Thane Brimhall (pennomi)",
+        "laetissima",
         "Matthew Krohn (makrohn)"
       ],
       "licenses": [
@@ -69,5 +45,69 @@
         "https://opengameart.org/content/lpc-base-character-expressions"
       ]
     }
-  ]
+  ],
+  "recolors": {
+    "material": "body",
+    "palettes": [
+      "ulpc",
+      "lpcr",
+      "all.lpcr"
+    ]
+  },
+  "type_name": "nose",
+  "source": {
+    "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+    "commit": "4963a69795255fb15a934c47f478a8bdcf3668f5",
+    "definition": "sheet_definitions/head/nose/head_nose_straight.json",
+    "files": [
+      {
+        "path": "spritesheets/head/nose/straight/adult/hurt.png",
+        "size": [
+          384,
+          64
+        ],
+        "sha256": "e6530de8ed1b26406ec8b46858107f499611237cdd127cd8b3c76cd8dbebf913"
+      },
+      {
+        "path": "spritesheets/head/nose/straight/adult/shoot.png",
+        "size": [
+          832,
+          256
+        ],
+        "sha256": "62b567e35f00c5350704f46e066a181a7f30ec34dc9cc22e269f950481f9601f"
+      },
+      {
+        "path": "spritesheets/head/nose/straight/adult/sit.png",
+        "size": [
+          192,
+          256
+        ],
+        "sha256": "d1ba2d09e49409c0993524f087396239b98a35d0609a449a4af3d7625ffa28fb"
+      },
+      {
+        "path": "spritesheets/head/nose/straight/adult/slash.png",
+        "size": [
+          384,
+          256
+        ],
+        "sha256": "75145d0c3c3450f05532df119ae970777e96848a0e55eeef7df45211b51f2e20"
+      },
+      {
+        "path": "spritesheets/head/nose/straight/adult/spellcast.png",
+        "size": [
+          448,
+          256
+        ],
+        "sha256": "84aaa572af52a81399d274f4268c59cd7e03cd4ab4bdef6208b742636fe4a17c"
+      },
+      {
+        "path": "spritesheets/head/nose/straight/adult/walk.png",
+        "size": [
+          576,
+          256
+        ],
+        "sha256": "7a3a8bd7c04abf319f97ffad9c8968ef7176cf8702ae454904ca80b1d9ed0d42"
+      }
+    ]
+  }
 }

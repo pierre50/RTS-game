@@ -1,7 +1,7 @@
 import { serializeEconomyPlayer } from '../../serialization/VillageEconomySnapshot'
 import { simulateOfflineWorld } from './OfflineWorldSimulation'
 import { planOfflineBuildings, restoreOfflineBuilders } from './OfflineWorldBuildingPlanner'
-import { offlineWorkCycleMs } from '../../classes/map/generation/MapOfflineWorldSimulation'
+import { offlineWorkCycleMs } from '../../lib/economy/configuredWorkTiming'
 import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { ensureOutsideMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import { VILLAGE_ACTIVITY_RADIUS, VILLAGE_PATH_MARGIN } from '../../config/villageActivity'
@@ -70,7 +70,7 @@ function capture(context: GameContextLike, owner: PlayerLike, homes: VillageHome
 }
 
 function rules(context: GameContextLike, owner: PlayerLike): OfflineWorkRules {
-  const cycle = offlineWorkCycleMs(owner.config?.units?.Villager ?? {}, 'builder')
+  const cycles = new Map<string, number>()
   return {
     abstractVillages: true,
     // Planning is an explicit daily transaction, never a side effect of saving.
@@ -84,7 +84,11 @@ function rules(context: GameContextLike, owner: PlayerLike): OfflineWorkRules {
         0
       )
     },
-    cycleMs: () => cycle,
+    cycleMs: (_index, work, action) => {
+      const key = `${work}:${action ?? ''}`
+      if (!cycles.has(key)) cycles.set(key, offlineWorkCycleMs(owner.config?.units?.Villager ?? {}, work, action))
+      return cycles.get(key)!
+    },
     wheatMatureFrame: 0,
     dailyFactors: (_index, day) =>
       worldEconomyFactors(

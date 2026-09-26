@@ -116,7 +116,7 @@ export function resumeUnitVisuals(unit: UnitRuntimeHost): boolean {
   // A sleeper frozen on its standing sheet must stay frozen even if an earlier movement left
   // stale loop state behind.
   if (isSleepingFinalVisual(unit)) return true
-  if (unit.currentSheet !== SHEET_TYPES.standing) return false
+  if (unit.currentSheet !== SHEET_TYPES.standing && unit.currentSheet !== SHEET_TYPES.sitting) return false
   if (!unit.sprite?.gotoAndStop) return false
   unit.sprite.gotoAndStop(unit.sprite.currentFrame)
   unit.shadow?.gotoAndStop?.(unit.shadow.currentFrame)

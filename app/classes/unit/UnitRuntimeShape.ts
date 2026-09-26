@@ -44,6 +44,7 @@ declare module './Unit' {
       | 'actionSheet'
       | 'walkingSheet'
       | 'standingSheet'
+      | 'sittingSheet'
       | 'loop'
       | 'visibilityTimeout'
       | 'showBuildings'

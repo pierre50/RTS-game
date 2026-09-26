@@ -1,3 +1,9 @@
+import {
+  DEFAULT_UNIT_TOTAL_ENERGY,
+  DEFAULT_UNIT_ENERGY_REGEN_PER_SECOND,
+  DEFAULT_UNIT_ENERGY_REGEN_DELAY_MS,
+  getBaseActionEnergyCost,
+} from './energyRules'
 import { ACTION_TYPES, SHEET_TYPES, STEP_TIME } from '../constants'
 import { getGameDifficultyCombatBalance } from '../../config/gameDifficultyBalance'
 import {
@@ -7,35 +13,12 @@ import {
   updateCombatRecoveryMovement,
 } from '../combat/combatBehavior'
 import { t } from '../lang'
-import { getMiningActions } from './miningActions'
 import { isHeroControlled } from './unitControl'
 import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
-const DEFAULT_UNIT_TOTAL_ENERGY = 10
-const DEFAULT_UNIT_ENERGY_REGEN_PER_SECOND = 2
-const DEFAULT_UNIT_ENERGY_REGEN_DELAY_MS = 650
 const LOW_ENERGY_MOVE_PENALTY_THRESHOLD = 0.5
 const LOW_ENERGY_MOVE_MIN_MULTIPLIER = 0.55
-
-const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
-  [ACTION_TYPES.attack]: 2,
-  [ACTION_TYPES.flee]: 0.25,
-  flee: 0.25,
-  [ACTION_TYPES.hunt]: 2,
-  [ACTION_TYPES.captureHorse]: 2,
-  [ACTION_TYPES.chopwood]: 1,
-  ...Object.fromEntries(getMiningActions().map(action => [action, 1.5])),
-  [ACTION_TYPES.build]: 2,
-  [ACTION_TYPES.forageberry]: 0.375,
-  [ACTION_TYPES.farm]: 0.5,
-  [ACTION_TYPES.takemeat]: 0.25,
-  [ACTION_TYPES.heal]: 1.5,
-  [ACTION_TYPES.convert]: 2,
-  heroPowerCharge: 2,
-  heroDefense: 2,
-  heroWhiff: 0.75,
-}
 
 function getRuntimeEntity(target: EnergyEntity['dest']): RuntimeEntity | null {
   if (!target || typeof target !== 'object') return null
@@ -83,7 +66,7 @@ export function ensureUnitEnergy(unit: EnergyEntity): void {
 export function getActionEnergyCost(unit: EnergyEntity, action: string | null | undefined): number {
   if (!action) return 0
   ensureUnitEnergy(unit)
-  const base = unit.energyCosts?.[action] ?? DEFAULT_ACTION_ENERGY_COST[action] ?? 0
+  const base = getBaseActionEnergyCost(unit.energyCosts, action)
   return Math.max(0, base * getActionEnergyCostMultiplier(unit, action))
 }
 
@@ -163,7 +146,10 @@ function clearEnergyWaitTask(unit: EnergyEntity): void {
   unit.energyWaitTaskId = null
 }
 
-function canResumeEnergyWaitTarget(action: string | null | undefined, target: RuntimeEntity | null | undefined): target is RuntimeEntity {
+function canResumeEnergyWaitTarget(
+  action: string | null | undefined,
+  target: RuntimeEntity | null | undefined
+): target is RuntimeEntity {
   if (!target || target.isDestroyed) return false
   if (target.isDead) return action === ACTION_TYPES.takemeat
   return true

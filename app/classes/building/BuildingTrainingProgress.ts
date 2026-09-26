@@ -1,3 +1,4 @@
+import { getTrainingProgress, isTrainingComplete } from '../../lib/training/trainingRules'
 import { ACTION_TYPES, POPULATION_MAX } from '../../constants'
 import { t } from '../../lib/lang'
 import type { UnitCreationExtra } from '../../types/entities'
@@ -24,9 +25,11 @@ export function updateTrainingProgress(runtime: BuildingProduction): void {
     return
   }
   if (building.loading === null || building.trainingStartedDay == null || building.trainingCompleteDay == null) return
-  const totalDays = Math.max(1, building.trainingCompleteDay - building.trainingStartedDay)
-  const elapsedDays = Math.max(0, runtime.currentTrainingDay() - building.trainingStartedDay)
-  building.loading = Math.min(100, Math.floor((elapsedDays / totalDays) * 100))
+  building.loading = getTrainingProgress(
+    runtime.currentTrainingDay(),
+    building.trainingStartedDay,
+    building.trainingCompleteDay
+  )
   if (building.owner.isPlayed) {
     building.updateTrainingPreview?.()
     refreshOpenBuildingMenu(building)
@@ -34,12 +37,7 @@ export function updateTrainingProgress(runtime: BuildingProduction): void {
 }
 
 export function updateTrainingEntryProgress(runtime: BuildingProduction, entry: QueuedTrainingTrainee): void {
-  const totalDays = Math.max(1, (entry.trainingCompleteDay ?? 1) - (entry.trainingStartedDay ?? 0))
-  const elapsedDays = Math.max(
-    0,
-    runtime.currentTrainingDay() - (entry.trainingStartedDay ?? runtime.currentTrainingDay())
-  )
-  entry.loading = Math.min(100, Math.floor((elapsedDays / totalDays) * 100))
+  entry.loading = getTrainingProgress(runtime.currentTrainingDay(), entry.trainingStartedDay, entry.trainingCompleteDay)
 }
 
 export function syncPrimaryTrainingState(runtime: BuildingProduction): void {
@@ -99,7 +97,7 @@ export function finishUnitTraining(
   if (trainee && !trainingEntry) return false
   const completeDay = trainingEntry?.trainingCompleteDay ?? building.trainingCompleteDay
   if (!trainee && building.queue[0] !== type) return false
-  if (!map.instantMode && runtime.currentTrainingDay() < (completeDay ?? Number.POSITIVE_INFINITY)) {
+  if (!map.instantMode && !isTrainingComplete(runtime.currentTrainingDay(), completeDay)) {
     return false
   }
   if (!trainee && building.owner.population >= Math.min(POPULATION_MAX, building.owner.populationMax)) {

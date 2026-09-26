@@ -8,6 +8,38 @@ and corpse sheets are shared from the default villager job.
 
 ## Generate the baked sprites
 
+### Villager sit source preparation
+
+The village outfits now use sit-compatible tops and plain long skirts. Female
+Hellas/Kemet use `sleeveless2_scoop`, Latium/Nobatia use `sleeveless2`,
+Sumeria/Nord use `longsleeve2`, and Xia/Alba use `longsleeve2_scoop`.
+Male Sumeria uses `sleeveless2`; male Kemet/Nobatia use the plain long skirt.
+Hellas/Latium retain the custom `tuniq`. Tops use team colors and skirts use
+`cloth_brown`; the configured footwear, hijab and obi remain civilization-specific.
+All units, including priests, use the standard LPC male/female heads.
+The straight nose is a separate layer immediately above the head, sharing its
+skin-color mapping. Its six required source sheets include `sit`; original
+credits and the upstream revision are in `sheet_definitions/head_nose_straight.json`.
+These head sources include the requested RGB substitutions `2a3c49` and
+`f2f7f8` to `f9d5ba`, and `57cee4` to `e4a47c`, preserving alpha.
+
+`sources.required_villager_sit_source_paths()` enumerates all 45 source layers
+needed by the 16 villager appearances. Split female hairstyles now use the
+upstream adult back/front layers. `villager-sit-import.json` records the pinned
+upstream revision, source paths, palette conversions and hashes of the 107
+imported PNGs. Original author/license definitions are retained in
+`sheet_definitions/villager_sit_upstream/`.
+
+The villager build plan selects one static pose per direction: cross-legged
+(source column 1) for men, side-sitting (column 0) for women. Column 2, the chair
+pose, is excluded. The four composed frames join the existing variant atlas as
+`body/sitting`, with the same recoloring and finishing as the other sheets.
+The runtime uses `sittingSheet` for stationary, awake villagers during morning,
+lunch and evening breaks. Work, movement, danger and sleep take priority; tools
+without sitting art are hidden. Older atlases without sitting frames keep the
+standing fallback until the assets are built. This change does not itself run
+the build or modify generated atlases.
+
 ```bash
 pnpm assets:lpc:build
 # or directly:

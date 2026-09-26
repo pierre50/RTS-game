@@ -44,9 +44,14 @@ function getUnitBagLoad(unit: UnitEntity): number {
   return getUnitCarriedResourceTotal(unit) + getUnitEquipmentBagCount(unit)
 }
 
+/** Maximum resource load after reserving room for carried equipment. */
+export function getUnitResourceGatherCapacity(unit: UnitEntity): number {
+  return Math.max(0, getUnitResourceCarryCapacity(unit) - getUnitEquipmentBagCount(unit))
+}
+
 /** Total remaining carry room (any mix of resources and bag items). */
 export function getUnitResourceCarryRemaining(unit: UnitEntity): number {
-  return Math.max(0, getUnitResourceCarryCapacity(unit) - getUnitBagLoad(unit))
+  return Math.max(0, getUnitResourceGatherCapacity(unit) - getUnitCarriedResourceTotal(unit))
 }
 
 export function isUnitResourceCarryFull(unit: UnitEntity): boolean {
@@ -175,10 +180,7 @@ function buildingAcceptsAllUnitResources(building: BuildingEntity, unit: UnitEnt
   )
 }
 
-export function unitShouldDeliverResource(
-  unit: UnitEntity,
-  loadingType: string
-): boolean {
+export function unitShouldDeliverResource(unit: UnitEntity, loadingType: string): boolean {
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit)) return false
   const resource = getResourceKeyForLoadingType(loadingType)
   if (!resource) return false
@@ -186,8 +188,12 @@ export function unitShouldDeliverResource(
 }
 
 export function isUnitBlockedByFullStorage(unit: UnitEntity): boolean {
-  return unit.type === UNIT_TYPES.villager && isUnitResourceCarryFull(unit) &&
-    unitHasDeliverableResources(unit) && !findResourceDeliveryTarget(unit)
+  return (
+    unit.type === UNIT_TYPES.villager &&
+    isUnitResourceCarryFull(unit) &&
+    unitHasDeliverableResources(unit) &&
+    !findResourceDeliveryTarget(unit)
+  )
 }
 
 export function findResourceDeliveryTarget(unit: UnitEntity): BuildingEntity | null {

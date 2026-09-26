@@ -1,3 +1,4 @@
+import { getHarvestAmount } from '../../../lib/economy/workRules'
 import { LOADING_TYPES, MENU_INFO_IDS, SOUND_CUES } from '../../../constants'
 import { showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../../lib'
 import { spawnWorkImpactFragments } from '../../../lib/entities/workImpactFragments'
@@ -80,7 +81,7 @@ function harvestFarm(
     finishWorkSwing(unit, SLASH_IMPACT_FRAME)
     return
   }
-  const gain = addGatheredResource(unit, LOADING_TYPES.wheat, requestedGain)
+  const gain = addGatheredResource(unit, LOADING_TYPES.wheat, getHarvestAmount(requestedGain, d.quantity ?? 0))
   if (gain <= 0) {
     if (isHeroControlled(unit)) {
       notifyIfHeroResourceCarryFull(unit)

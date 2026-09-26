@@ -6,6 +6,7 @@ type Lines = [string, ...string[]]
 type ForeignAudience = Extract<NpcAudience, 'foreignChief' | 'visitor'>
 type RelationVariants = 'wary' | 'friendly'
 type RoutineLines = {
+  lunch: Lines
   foreignRest: Record<RelationVariants, Record<'morning' | 'evening', Record<ForeignAudience, Lines>>>
   foreignChiefGreeting: Record<RelationVariants, Record<ForeignAudience, Lines>>
   rest: Record<'morning' | 'evening', Record<NpcAudience, Lines>>
@@ -18,6 +19,11 @@ type RoutineLines = {
 // {address} only addresses the speaker's own chief; foreign leaders receive a separate greeting.
 export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
   fr: {
+    lunch: [
+      'Je prends le temps de manger un morceau. Je reprendrai le travail après le repas{address}.',
+      'Une petite pause pour déjeuner, et je m’y remets{address}.',
+      'La matinée m’a ouvert l’appétit ! Je finis mon repas avant de retourner travailler{address}.',
+    ],
     foreignRest: {
       wary: {
         morning: {
@@ -195,6 +201,11 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
     },
   },
   en: {
+    lunch: [
+      'I am having a bite to eat. I will get back to work after lunch{address}.',
+      'Just taking a short lunch break, then back to work{address}.',
+      'A morning of work builds an appetite! I will finish my meal before getting back to it{address}.',
+    ],
     foreignRest: {
       wary: {
         morning: {

@@ -81,6 +81,21 @@ export function validatePlayerUnits(
       if (minutes.some(value => typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value >= 1440)) {
         fail('Invalid save file: dailySchedule minutes are invalid.')
       }
+      if (schedule.lunchStartMinute != null || schedule.lunchEndMinute != null) {
+        const start = schedule.lunchStartMinute
+        const end = schedule.lunchEndMinute
+        if (
+          typeof start !== 'number' ||
+          typeof end !== 'number' ||
+          !Number.isInteger(start) ||
+          !Number.isInteger(end) ||
+          start < (schedule.workStartMinute as number) ||
+          end > (schedule.workEndMinute as number) ||
+          end <= start
+        ) {
+          fail('Invalid save file: dailySchedule lunch is invalid.')
+        }
+      }
       if (minutes.some((value, index) => index > 0 && (value as number) <= (minutes[index - 1] as number))) {
         fail('Invalid save file: dailySchedule phases are out of order.')
       }

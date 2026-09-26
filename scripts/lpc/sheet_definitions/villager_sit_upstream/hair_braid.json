@@ -1,0 +1,67 @@
+{
+  "name": "Braid",
+  "layer_1": {
+    "zPos": 120,
+    "male": "hair/braid/adult/fg/",
+    "muscular": "hair/braid/adult/fg/",
+    "female": "hair/braid/adult/fg/",
+    "pregnant": "hair/braid/adult/fg/",
+    "teen": "hair/braid/adult/fg/"
+  },
+  "layer_2": {
+    "zPos": 9,
+    "male": "hair/braid/adult/bg/",
+    "muscular": "hair/braid/adult/bg/",
+    "female": "hair/braid/adult/bg/",
+    "pregnant": "hair/braid/adult/bg/",
+    "teen": "hair/braid/adult/bg/"
+  },
+  "animations": [
+    "spellcast",
+    "thrust",
+    "walk",
+    "slash",
+    "shoot",
+    "hurt",
+    "watering",
+    "idle",
+    "jump",
+    "run",
+    "sit",
+    "emote",
+    "climb",
+    "combat",
+    "1h_slash",
+    "1h_backslash",
+    "1h_halfslash"
+  ],
+  "credits": [
+    {
+      "file": "hair/braid",
+      "notes": "",
+      "authors": [
+        "Nila122",
+        "ElizaWy"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0",
+        "GPL 2.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/3-hairs-for-lpc",
+        "https://opengameart.org/content/lpc-hair"
+      ]
+    }
+  ],
+  "recolors": {
+    "material": "hair",
+    "palettes": [
+      "ulpc",
+      "lpcr",
+      "all.lpcr"
+    ]
+  },
+  "type_name": "hair"
+}
