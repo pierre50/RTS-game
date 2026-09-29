@@ -1,4 +1,4 @@
-import { registerPeriodicCallback } from '../SharedPeriodicCallbacks'
+import { registerPeriodicCallback } from '../sharedPeriodicCallbacks'
 import type { SchedulerTaskId, GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 

@@ -50,7 +50,9 @@ function makeFakeElement() {
     disabled: false,
     hidden: false,
     _listeners: {},
-    setAttribute(name, value) { this[name] = value },
+    setAttribute(name, value) {
+      this[name] = value
+    },
     appendChild(child) {
       this.children.push(child)
       return child
@@ -121,9 +123,6 @@ function buildMocks(calls, context) {
       Modal: FakeModal,
     },
     '../lib/lang': { t: key => key },
-    '../lib/resources/resourceDelivery': {
-      isUnitBlockedByFullStorage: npc => npc.storageBlocked === true,
-    },
     '../lib/audio/settings': { getVolume: () => 1 },
     '../lib/audio/uiSound': { playUiSound: () => {} },
     '../lib/inventory/inventoryContainers': {
@@ -133,12 +132,6 @@ function buildMocks(calls, context) {
         target.inventory.resources = target.inventory.resources ?? {}
         return { ...options, inventory: target.inventory }
       },
-    },
-    '../lib/units/unitTrainingOrders': {
-      findBestTrainingBuildingForUnit: () => null,
-      sendUnitToTraining: (npc, type) =>
-        calls.push(['sendUnitToTraining', npc.label, type, `paused=${context.paused}`]),
-      VILLAGER_TRAINING_UNIT_TYPES: ['Fantassin', 'Bowman'],
     },
     '../lib/training/unitTrainingCost': {
       getUnitTrainingCost: (owner, type) => owner?.config?.units?.[type]?.cost ?? {},
@@ -181,13 +174,14 @@ function buildMocks(calls, context) {
       },
     },
     '../lib/npc/npcInteraction': {
-      noticeNpc: npc => { npc.lookingAtHero = true },
+      noticeNpc: npc => {
+        npc.lookingAtHero = true
+      },
       sendNpcToStockpile: () => calls.push(['sendNpcToStockpile', `paused=${context.paused}`]),
       keepNpcHere: () => calls.push(['keepNpcHere', `paused=${context.paused}`]),
       startFollowingHero: () => calls.push(['startFollowingHero', `paused=${context.paused}`]),
       releaseIfStillLooking: () => calls.push(['releaseIfStillLooking', `paused=${context.paused}`]),
       playNpcOrderSound: () => {},
-      clearNpcCommunicationFocus: () => {},
     },
     '../lib/units/villagerSchedule': {
       isVillagerSleepTime: ctx => {
@@ -199,12 +193,14 @@ function buildMocks(calls, context) {
         return hour >= 18 && hour < 22
       },
     },
-    './NpcGroupSummary': { createNpcGroupSummary: (_app, npcs) => {
-      const summary = makeFakeElement()
-      summary.className = 'npc-group-summary'
-      summary.npcs = npcs
-      return summary
-    } },
+    './NpcGroupSummary': {
+      createNpcGroupSummary: (_app, npcs) => {
+        const summary = makeFakeElement()
+        summary.className = 'npc-group-summary'
+        summary.npcs = npcs
+        return summary
+      },
+    },
     './EntityInfoContent': { createTitledEntityInfoContent: () => makeFakeElement() },
     './InspectionPanel': {
       createInspectionModal: options => {
@@ -254,10 +250,22 @@ function buildMocks(calls, context) {
 function withFakeDocument(fn) {
   const previousAudio = global.Audio
   const previousTimeout = global.window?.setTimeout
-  global.Audio = class { play() { return Promise.resolve() } pause() {} }
+  global.Audio = class {
+    play() {
+      return Promise.resolve()
+    }
+    pause() {}
+  }
   global.window = global.window || {}
-  global.window.setTimeout = callback => { callback(); return 1 }
-  const restore = () => { global.Audio = previousAudio; global.window.setTimeout = previousTimeout; delete global.document }
+  global.window.setTimeout = callback => {
+    callback()
+    return 1
+  }
+  const restore = () => {
+    global.Audio = previousAudio
+    global.window.setTimeout = previousTimeout
+    delete global.document
+  }
   global.document = { createElement: () => makeFakeElement(), createTextNode: text => ({ textContent: text }) }
   try {
     const result = fn()
@@ -360,54 +368,6 @@ test('closing the communication panel without picking an order releases frozen N
   })
 })
 
-test('picking a villager-job order assigns it without pausing or resuming the game', () => {
-  withFakeDocument(() => {
-    const calls = []
-    const context = makeContext(calls)
-    const menu = { context }
-    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
-    const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
-
-    manager.open([npc])
-    assert.equal(manager.buttons.get('food').hidden, true)
-    manager.buttons.get('resources').click()
-    const foodButton = manager.buttons.get('food')
-    assert.equal(foodButton.hidden, false)
-    assert.equal(foodButton.disabled, false)
-
-    foodButton.click()
-
-    assert.deepEqual(calls, [['assignVillagerAutonomy', 'food', 'paused=false']])
-  })
-})
-
-test('full-storage refusal keeps communication open and rechecks before assigning resources', () => {
-  withFakeDocument(() => {
-    const calls = []
-    const context = makeContext(calls)
-    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
-    const manager = new NpcOrdersManager({ context })
-    const npc = { type: 'Villager', label: 'villager-1', owner: context.player, storageBlocked: true }
-    manager.open([npc])
-    assert.equal(manager.chatterContainer.children[0].textContent, 'hi')
-    manager.buttons.get('resources').click()
-    assert.equal(manager.buttons.get('wood').hidden, false)
-    assert.equal(manager.chatterContainer.children[0].textContent, 'hi')
-    assert.equal(manager.isOpen(), true)
-    assert.deepEqual(calls, [])
-
-    manager.buttons.get('wood').click()
-    assert.equal(manager.chatterContainer.children[0].textContent, 'npcStorageFull')
-    assert.equal(manager.isOpen(), true)
-    assert.deepEqual(calls, [])
-    npc.storageBlocked = false
-    manager.buttons.get('wood').click()
-    assert.equal(manager.isOpen(), false)
-    assert.deepEqual(calls, [['assignVillagerAutonomy', 'wood', 'paused=false']])
-  })
-})
-
 test('single commandable NPC exposes a bag transfer panel', () => {
   withFakeDocument(() => {
     const calls = []
@@ -478,48 +438,6 @@ test('multi-selection NPC conversations use the same inspection panel placement 
   })
 })
 
-test('copper and iron orders assign distinct autonomous mining jobs', () => {
-  withFakeDocument(() => {
-    const calls = []
-    const context = makeContext(calls)
-    const menu = { context }
-    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
-    const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
-
-    manager.open([npc])
-    manager.buttons.get('resources').click()
-    manager.buttons.get('copper').click()
-    manager.open([npc])
-    manager.buttons.get('resources').click()
-    manager.buttons.get('iron').click()
-
-    assert.deepEqual(calls, [
-      ['assignVillagerAutonomy', 'copper', 'paused=false'],
-      ['assignVillagerAutonomy', 'iron', 'paused=false'],
-    ])
-  })
-})
-
-test('picking the horse capture order assigns the horseCapture villager job', () => {
-  withFakeDocument(() => {
-    const calls = []
-    const context = makeContext(calls)
-    const menu = { context }
-    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
-    const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
-
-    manager.open([npc])
-    const horseCaptureButton = manager.buttons.get('horseCapture')
-    assert.equal(horseCaptureButton.disabled, false)
-
-    horseCaptureButton.click()
-
-    assert.deepEqual(calls, [['assignVillagerAutonomy', 'horseCapture', 'paused=false']])
-  })
-})
-
 test('sleeping villagers keep movement orders visible and hide night work', () => {
   withFakeDocument(() => {
     const calls = []
@@ -542,12 +460,11 @@ test('sleeping villagers keep movement orders visible and hide night work', () =
     assert.equal(manager.buttons.get('goto').hidden, false)
     assert.equal(manager.buttons.get('follow').hidden, false)
     assert.equal(manager.exitButton.hidden, false)
-    assert.equal(manager.buttons.get('resources').hidden, true)
-    assert.equal(manager.buttons.get('food').hidden, true)
-    manager.buttons.get('resources').click()
+    assert.equal(manager.buttons.has('resources'), false)
+    assert.equal(manager.buttons.has('food'), false)
     assert.equal(manager.buttons.get('goto').hidden, false)
     assert.equal(manager.buttons.get('back').hidden, true)
-    assert.equal(manager.buttons.get('food').hidden, true)
+    assert.equal(manager.buttons.has('food'), false)
 
     assert.equal(manager.buttons.get('stay').hidden, true)
     manager.buttons.get('follow').click()
@@ -570,17 +487,16 @@ test('night communication hides work buttons but keeps go-to and follow usable',
 
     assert.equal(manager.buttons.get('goto').disabled, false)
     assert.equal(manager.buttons.get('follow').disabled, false)
-    assert.equal(manager.buttons.get('resources').hidden, true)
-    manager.buttons.get('resources').click()
+    assert.equal(manager.buttons.has('resources'), false)
     assert.equal(manager.buttons.get('back').hidden, true)
-    assert.equal(manager.buttons.get('food').hidden, true)
-    assert.equal(manager.buttons.get('wood').hidden, true)
-    assert.equal(manager.buttons.get('stone').hidden, true)
-    assert.equal(manager.buttons.get('gold').hidden, true)
-    assert.equal(manager.buttons.get('copper').hidden, true)
-    assert.equal(manager.buttons.get('iron').hidden, true)
-    assert.equal(manager.buttons.get('construction').hidden, true)
-    assert.equal(manager.buttons.get('horseCapture').hidden, true)
+    assert.equal(manager.buttons.has('food'), false)
+    assert.equal(manager.buttons.has('wood'), false)
+    assert.equal(manager.buttons.has('stone'), false)
+    assert.equal(manager.buttons.has('gold'), false)
+    assert.equal(manager.buttons.has('copper'), false)
+    assert.equal(manager.buttons.has('iron'), false)
+    assert.equal(manager.buttons.has('construction'), false)
+    assert.equal(manager.buttons.has('horseCapture'), false)
   })
 })
 
@@ -604,85 +520,21 @@ test('resting-before-bed villagers use rest chatter and hide the resources paren
     manager.open([npc])
 
     assert.equal(manager.chatterContainer.children[0].textContent, 'resting chatter')
-    assert.equal(manager.buttons.get('resources').hidden, true)
-    manager.buttons.get('resources').click()
-    assert.equal(manager.buttons.get('food').hidden, true)
+    assert.equal(manager.buttons.has('resources'), false)
+    assert.equal(manager.buttons.has('food'), false)
   })
 })
 
-test('resource orders live behind a resources submenu without a visible back button', () => {
+test('communication no longer exposes training or mounting orders', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
-    const menu = { context }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
-    const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
-
-    manager.open([npc])
-
-    assert.equal(manager.buttons.get('goto').hidden, false)
-    assert.equal(manager.buttons.get('resources').hidden, false)
-    assert.equal(manager.buttons.get('construction').hidden, false)
-    assert.equal(manager.buttons.get('food').hidden, true)
-    assert.equal(manager.buttons.get('back').hidden, true)
-
-    manager.buttons.get('resources').click()
-
-    assert.equal(manager.buttons.get('goto').hidden, true)
-    assert.equal(manager.buttons.get('construction').hidden, true)
-    assert.equal(manager.buttons.get('food').hidden, false)
-    assert.equal(manager.buttons.get('wood').hidden, false)
-    assert.equal(manager.buttons.get('stone').hidden, false)
-    assert.equal(manager.buttons.get('gold').hidden, false)
-    assert.equal(manager.buttons.get('copper').hidden, false)
-    assert.equal(manager.buttons.get('iron').hidden, false)
-    assert.equal(manager.buttons.get('back').hidden, true)
-  })
-})
-
-test('iron resource order requires a suitable pickaxe, while copper is always available', () => {
-  withFakeDocument(() => {
-    const calls = []
-    const context = makeContext(calls)
-    context.player.age = 0
-    const menu = { context }
-    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
-    const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
-
-    manager.open([npc])
-    manager.buttons.get('resources').click()
-
-    assert.equal(manager.buttons.get('iron').hidden, true)
-    assert.equal(manager.buttons.get('copper').hidden, false)
-    npc.inventory = { equipment: ['pickaxe_bronze'] }
-    manager.open([npc])
-    manager.buttons.get('resources').click()
-    assert.equal(manager.buttons.get('iron').hidden, false)
-  })
-})
-
-test('communication training buttons show duration without resource costs', () => {
-  withFakeDocument(() => {
-    const calls = []
-    const context = makeContext(calls)
-    const mocks = buildMocks(calls, context)
-    mocks['../lib/units/unitTrainingOrders'].findBestTrainingBuildingForUnit = (_npc, type) =>
-      type === 'Fantassin' ? { type: 'Barracks' } : null
-    const menu = { context }
-    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
-    const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
-
-    context.player.config.units.Fantassin.trainingDays = 3
-    manager.open([npc])
-    manager.buttons.get('training').click()
-
-    const fantassinButton = manager.buttons.get('train-Fantassin')
-    assert.equal(fantassinButton.hidden, false)
-    assert.equal(fantassinButton.children[0].textContent, 'Fantassin')
-    assert.equal(fantassinButton.children[1].textContent, '3 days')
+    const manager = new NpcOrdersManager({ context })
+    manager.open([{ type: 'Villager', label: 'villager-1', owner: context.player }])
+    for (const id of ['training', 'train-Fantassin', 'train-Priest', 'mountHorse'])
+      assert.equal(manager.buttons.has(id), false)
+    assert.equal(manager.buttons.has('follow'), true)
   })
 })
 
@@ -858,7 +710,16 @@ test('neutral chief quest choices remain visible when the hero cannot issue orde
   withFakeDocument(() => {
     const context = makeContext([])
     const closed = []
-    context.neutralQuests = { system: { definitions: new Map() }, dialogueClosed: npc => closed.push(npc), dialogue: () => ({ id: 'quest', status: 'available', parameters: { resource: 'wood', quantity: 10 }, owner: { name: 'Chief' } }) }
+    context.neutralQuests = {
+      system: { definitions: new Map() },
+      dialogueClosed: npc => closed.push(npc),
+      dialogue: () => ({
+        id: 'quest',
+        status: 'available',
+        parameters: { resource: 'wood', quantity: 10 },
+        owner: { name: 'Chief' },
+      }),
+    }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
     const manager = new NpcOrdersManager({ context })
     const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' } }
@@ -875,14 +736,12 @@ test('neutral chief quest choices remain visible when the hero cannot issue orde
   })
 })
 
-
 test('every conversation keeps a working exit outside conditional menus', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
     context.controls.heroUnit = { label: 'hero', inventory: { equipment: [], resources: {} } }
     const mocks = buildMocks(calls, context)
-    mocks['../lib/units/unitTrainingOrders'].findBestTrainingBuildingForUnit = () => ({ type: 'Barracks' })
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
     const manager = new NpcOrdersManager({ context })
     const own = { type: 'Villager', label: 'own', owner: context.player }
@@ -893,8 +752,6 @@ test('every conversation keeps a working exit outside conditional menus', () => 
       { npcs: [foreign] },
       { npcs: [own], options: { ordersEnabled: false } },
       { npcs: [{ ...foreign, shelterState: { reason: 'sleep' }, sleepVisualState: 'sleeping' }] },
-      { npcs: [own], submenu: 'resources' },
-      { npcs: [own], submenu: 'training' },
       { npcs: [own], submenu: 'bag' },
     ]
     for (const scenario of scenarios) {
@@ -920,7 +777,17 @@ test('scripted introduction requires its reply and cannot be replaced or dismiss
     const manager = new NpcOrdersManager({ context })
     const npc = { type: 'Villager', label: 'companion', owner: context.player }
     let answered = 0
-    manager.open([npc], { ordersEnabled: false, chatterLine: 'Welcome', scriptedReply: { label: 'Ready', onSelect() { answered++; manager.close() } } })
+    manager.open([npc], {
+      ordersEnabled: false,
+      chatterLine: 'Welcome',
+      scriptedReply: {
+        label: 'Ready',
+        onSelect() {
+          answered++
+          manager.close()
+        },
+      },
+    })
     assert.equal(manager.modal._panel.classList.contains('npc-orders-panel'), true)
     assert.equal(manager.modal._panel.classList.contains('inspection-panel'), true)
     assert.equal(manager.modal.showCloseButton, false)
@@ -964,8 +831,13 @@ test('closing the bag ends communication and releases the NPC exactly once', () 
 test('sleeping chief shows sleep dialogue without quest choices until the actual wake', () => {
   withFakeDocument(() => {
     const context = makeContext([])
-    const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' },
-      shelterState: { reason: 'sleep' }, sleepVisualState: null }
+    const npc = {
+      type: 'Chief',
+      label: 'chief',
+      owner: { label: 'neutral-ai' },
+      shelterState: { reason: 'sleep' },
+      sleepVisualState: null,
+    }
     const quest = { id: 'quest', status: 'available', parameters: {}, owner: { name: 'Chief' } }
     context.neutralQuests = { getQuest: () => quest, system: { definitions: new Map() }, dialogue: () => quest }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
@@ -994,26 +866,39 @@ for (const branch of ['polite', 'rebel']) {
       const npc = { type: 'Chief', label: 'chief', owner: context.player }
       const visited = []
       let completed = 0
-      manager.open([npc], { ordersEnabled: false, dialogue: {
-        startId: 'wake',
-        nodes: [
-          { id: 'wake', line: 'Wake up!', choices: [
-            { id: 'polite', label: 'Good morning', nextId: 'polite' },
-            { id: 'rebel', label: 'Let me sleep', nextId: 'rebel' },
-          ] },
-          { id: 'polite', line: 'Please gather wood.', choices: [{ id: 'accept', label: 'All right' }] },
-          { id: 'rebel', line: 'Get to work!', choices: [{ id: 'accept', label: 'Fine' }] },
-        ],
-        onNodeChanged: id => visited.push(id),
-        onComplete() { completed++; manager.close() },
-      } })
+      manager.open([npc], {
+        ordersEnabled: false,
+        dialogue: {
+          startId: 'wake',
+          nodes: [
+            {
+              id: 'wake',
+              line: 'Wake up!',
+              choices: [
+                { id: 'polite', label: 'Good morning', nextId: 'polite' },
+                { id: 'rebel', label: 'Let me sleep', nextId: 'rebel' },
+              ],
+            },
+            { id: 'polite', line: 'Please gather wood.', choices: [{ id: 'accept', label: 'All right' }] },
+            { id: 'rebel', line: 'Get to work!', choices: [{ id: 'accept', label: 'Fine' }] },
+          ],
+          onNodeChanged: id => visited.push(id),
+          onComplete() {
+            completed++
+            manager.close()
+          },
+        },
+      })
       const modal = manager.modal
       manager.questPanel.update = () => assert.fail('Quest refresh must not replace a scripted dialogue')
       manager.syncQuest()
       const oldButtons = [...manager.scriptedReplyPanel.children]
       oldButtons[branch === 'polite' ? 0 : 1].click()
       assert.equal(manager.modal, modal)
-      assert.equal(manager.chatterContainer.children[0].textContent, branch === 'polite' ? 'Please gather wood.' : 'Get to work!')
+      assert.equal(
+        manager.chatterContainer.children[0].textContent,
+        branch === 'polite' ? 'Please gather wood.' : 'Get to work!'
+      )
       assert.deepEqual(visited, [branch])
       assert.equal(completed, 0)
       oldButtons[0].click()
@@ -1037,12 +922,12 @@ test('the panel selects real morning, evening and job chatter independently of o
       '../random': { pickRandomItem: lines => lines[0] },
     })
     for (const [hour, chief, own, expected] of [
-      [6, false, true, /calme du matin/],
-      [6, true, true, /réveille doucement, chef/],
+      [6, false, true, /petit-déjeuner au calme/],
+      [6, true, true, /petit-déjeuner, chef/],
       [19, false, false, /journée est terminée/],
       [19, true, false, /visites des chefs/],
-      [12, true, true, /cuivre, chef/],
-      [12, false, false, /cuivre\. Les artisans/],
+      [14, true, true, /cuivre, chef/],
+      [14, false, false, /cuivre\. Les artisans/],
     ]) {
       const calls = []
       const context = makeContext(calls)
@@ -1053,8 +938,13 @@ test('the panel selects real morning, evening and job chatter independently of o
       const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
       const manager = new NpcOrdersManager({ context })
       const npc = {
-        type: 'Villager', label: 'routine-speaker', i: 0, j: 0, context,
-        owner: own ? context.player : { isPlayed: false }, autonomousJob: 'copper',
+        type: 'Villager',
+        label: 'routine-speaker',
+        i: 0,
+        j: 0,
+        context,
+        owner: own ? context.player : { isPlayed: false },
+        autonomousJob: 'copper',
         dailySchedule: { wakeMinute: 360, workStartMinute: 420, workEndMinute: 1080, bedMinute: 1320 },
       }
       manager.open([npc], { ordersEnabled: false })
@@ -1070,7 +960,10 @@ test('the panel captures sleeping status before conversation focus wakes the NPC
     const context = makeContext(calls)
     context.controls.heroUnit = { type: 'Hero', isChief: true, owner: context.player }
     const mocks = buildMocks(calls, context)
-    mocks['../lib/npc/npcInteraction'].noticeNpc = unit => { unit.sleepVisualState = null; unit.shelterState = null }
+    mocks['../lib/npc/npcInteraction'].noticeNpc = unit => {
+      unit.sleepVisualState = null
+      unit.shelterState = null
+    }
     let captured
     mocks['../lib/npc/npcRoutineChatter'].pickNpcRoutineChatterLine = (_unit, hero, options) => {
       captured = { hero, ...options }
@@ -1078,7 +971,9 @@ test('the panel captures sleeping status before conversation focus wakes the NPC
     }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
     const manager = new NpcOrdersManager({ context })
-    manager.open([{ type: 'Villager', owner: context.player, shelterState: { reason: 'sleep' }, sleepVisualState: 'sleeping' }])
+    manager.open([
+      { type: 'Villager', owner: context.player, shelterState: { reason: 'sleep' }, sleepVisualState: 'sleeping' },
+    ])
     assert.equal(captured.sleeping, true)
     assert.equal(captured.hero, context.controls.heroUnit)
     assert.equal(manager.chatterContainer.children[0].textContent, 'waking greeting')
@@ -1088,7 +983,14 @@ test('the panel captures sleeping status before conversation focus wakes the NPC
 test('quest return exposes delivery immediately and shows the next instruction after one click', () => {
   withFakeDocument(() => {
     const context = makeContext([])
-    const quest = { id: 'quest', definitionId: 'tutorial', status: 'active', stageId: 'wood', parameters: { resource: 'wood', quantity: 10 }, owner: { name: 'Chief' } }
+    const quest = {
+      id: 'quest',
+      definitionId: 'tutorial',
+      status: 'active',
+      stageId: 'wood',
+      parameters: { resource: 'wood', quantity: 10 },
+      owner: { name: 'Chief' },
+    }
     const delivery = { id: 'deliver', text: { key: 'giveWood' }, visibleWhen: [], nextStageId: 'hunt' }
     const arrows = { id: 'arrows', text: { key: 'needArrows' }, visibleWhen: [], repeatable: true }
     const calls = []
@@ -1097,14 +999,31 @@ test('quest return exposes delivery immediately and shows the next instruction a
       dialogue: () => quest,
       environment: () => ({}),
       system: {
-        definitions: new Map([['tutorial', { stages: [
-          { id: 'wood', dialogue: { key: 'woodReminder' }, readyDialogue: { key: 'woodReady' }, objectives: [{ text: { key: 'woodProgress' } }], interactions: [delivery] },
-          { id: 'hunt', dialogue: { key: 'huntInstructions' }, objectives: [], interactions: [arrows] },
-        ] }]]),
+        definitions: new Map([
+          [
+            'tutorial',
+            {
+              stages: [
+                {
+                  id: 'wood',
+                  dialogue: { key: 'woodReminder' },
+                  readyDialogue: { key: 'woodReady' },
+                  objectives: [{ text: { key: 'woodProgress' } }],
+                  interactions: [delivery],
+                },
+                { id: 'hunt', dialogue: { key: 'huntInstructions' }, objectives: [], interactions: [arrows] },
+              ],
+            },
+          ],
+        ]),
         matches: () => true,
         canInteract: (_, interaction) => interaction.id === 'arrows' || enoughWood,
       },
-      interact: (_, id) => { calls.push(id); quest.stageId = 'hunt'; return true },
+      interact: (_, id) => {
+        calls.push(id)
+        quest.stageId = 'hunt'
+        return true
+      },
     }
     const { NpcQuestPanel } = loadModule('app/ui/NpcQuestPanel.ts', buildMocks([], context))
     const lines = []
@@ -1121,5 +1040,33 @@ test('quest return exposes delivery immediately and shows the next instruction a
     assert.deepEqual(calls, ['deliver'])
     assert.equal(lines.at(-1), 'huntInstructions')
     assert.equal(panel.root.children[0].children.at(-1).textContent, 'needArrows')
+  })
+})
+
+test('conversations expose no economic job commands at any hour or storage level', () => {
+  withFakeDocument(() => {
+    for (const hour of [10, 23]) {
+      const calls = []
+      const context = makeContext(calls)
+      context.dayNight.state.hour = hour
+      const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+      const manager = new NpcOrdersManager({ context })
+      manager.open([{ type: 'Villager', owner: context.player, storageBlocked: true }])
+      for (const key of [
+        'resources',
+        'food',
+        'wood',
+        'stone',
+        'gold',
+        'copper',
+        'iron',
+        'construction',
+        'horseCapture',
+      ])
+        assert.equal(manager.buttons.has(key), false)
+      assert.equal(manager.buttons.has('follow'), true)
+      assert.equal(manager.buttons.has('stay'), true)
+      assert.deepEqual(calls, [])
+    }
   })
 })

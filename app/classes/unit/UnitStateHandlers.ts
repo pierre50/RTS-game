@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
 import { canCampPursue } from '../../lib/units/campBehavior'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
@@ -73,11 +74,8 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
     return
   }
   if (unit.type === UNIT_TYPES.villager) {
-    if (instance.family === FAMILY_TYPES.animal) {
-      unit.sendToHunt(instance)
-    } else {
-      unit.sendToAttack(instance)
-    }
+    // Retaliation is combat, including against animals, never a food-gathering job.
+    unit.sendToAttack(instance)
   } else {
     unit.sendTo(instance, ACTION_TYPES.attack)
   }
@@ -102,6 +100,7 @@ export function stopUnit(unit: UnitStateHost): void {
     return
   }
 
+  if (!unit.inactif || unit.action) notifyVillageStateChanged(unit.owner)
   resetStoppedUnitState(unit)
   placeStoppedUnit(unit, heroControlled)
   unit.path = []

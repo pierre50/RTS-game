@@ -1,24 +1,15 @@
-import { getControlActionForKeyboardEvent, getGamepadEnabled, getGamepadButtonIndex } from '../audio/settings'
+import { getControlActionForKeyboardEvent, getGamepadEnabled } from '../audio/settings'
 import { getActiveGamepad } from '../input/gamepad'
-import { t, LANG_CHANGE_EVENT } from '../lang'
-import { adjustWindowField, canAdjustWindowField, enhanceWindowForms, getWindowField } from './GameWindowForms'
+import { consumeGamepadButtons } from '../input/gamepadConsumption'
+import { LANG_CHANGE_EVENT, t } from '../lang'
+import { availableCommands, type Command } from './GameWindowCommands'
+import { renderCommandFooter } from './GameWindowFooter'
+import { adjustWindowField, enhanceWindowForms, getWindowField } from './GameWindowForms'
 import { findDirectionalTarget, GameWindowPadState } from './GameWindowNavigation'
-
-type Command = {
-  id: string
-  label: string
-  key: string
-  pad: number
-  glyph: string
-  disabled?: boolean
-  danger?: boolean
-  run: () => void
-}
 
 const HOLD_DURATION_MS = 850
 const ROW = '.inventory-action-row'
 const GLOBAL_ACTION = '[data-window-action], .entity-delete-building-button'
-const PAD_GLYPHS = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'View', 'Menu', 'L3', 'R3', '↑', '↓', '←', '→']
 
 /** Shared selection, detail panel and input-aware footer. Domain actions stay with their owners. */
 export class GameWindow {
@@ -33,6 +24,7 @@ export class GameWindow {
   private commands: Command[] = []
   private signature = ''
   private mode: 'keyboard' | 'gamepad' = 'keyboard'
+  private hadGamepad = false
   private confirmation: Command | null = null
   private holding: { command: Command; since: number } | null = null
   private keyboardHolding: { command: Command; since: number } | null = null
@@ -46,6 +38,8 @@ export class GameWindow {
     private dismissible = true
   ) {
     panel.classList.add('game-window')
+    this.hadGamepad = Boolean(this.getGamepad())
+    this.mode = this.hadGamepad ? 'gamepad' : 'keyboard'
     panel.dataset.inputMode = this.mode
     this.details.className = 'game-window-details'
     this.details.hidden = true
@@ -174,144 +168,15 @@ export class GameWindow {
     if (this.details.textContent !== text) this.details.textContent = text
   }
 
-  private buttonCommand(button: HTMLButtonElement, id: string, key: string, pad: number): Command {
-    return {
-      id,
-      key,
-      pad,
-      glyph: PAD_GLYPHS[pad],
-      label:
-        button.dataset.windowLabel ||
-        button.querySelector('.hero-building-menu-label')?.textContent?.trim() ||
-        button.textContent?.trim() ||
-        button.getAttribute('aria-label') ||
-        '',
-      disabled: button.disabled,
-      danger: button.matches('.entity-delete-building-button, .inventory-row-action-button--delete'),
-      run: () => {
-        if (button.isConnected && !button.disabled) button.click()
-      },
-    }
-  }
-
-  private availableCommands(): Command[] {
-    const commands: Command[] = []
-    const field = getWindowField(this.selected)
-    if (field) {
-      if (field instanceof HTMLSelectElement || field.type === 'range') {
-        for (const direction of [-1, 1])
-          commands.push({
-            id: direction < 0 ? 'decrease' : 'increase',
-            label: t(direction < 0 ? 'windowPrevious' : 'windowNext'),
-            key: direction < 0 ? 'ArrowLeft' : 'ArrowRight',
-            pad: -1,
-            glyph: direction < 0 ? '←' : '→',
-            disabled: !canAdjustWindowField(this.selected, direction),
-            run: () => {
-              adjustWindowField(this.selected, direction)
-              this.scheduleRefresh()
-            },
-          })
-      } else {
-        commands.push({
-          id: 'field',
-          label: t(field.type === 'checkbox' ? 'windowToggle' : 'windowEditText'),
-          key: 'Enter',
-          pad: 0,
-          glyph: 'A',
-          disabled: field.disabled,
-          run: () => {
-            if (field.type === 'checkbox') field.click()
-            else {
-              field.focus()
-              field.select()
-            }
-          },
-        })
-      }
-    }
-    const row = this.selected
-    const buttons = row?.matches(ROW)
-      ? [...row.querySelectorAll<HTMLButtonElement>('.inventory-row-action-button')]
-      : []
-    const primary =
-      buttons.find(button => !button.matches('.inventory-row-action-button--delete')) ??
-      (row instanceof HTMLButtonElement ? row : null)
-    if (primary) {
-      commands.push(this.buttonCommand(primary, 'primary', 'Enter', 0))
-      if (primary.dataset.inventoryTransferSlot === 'true') {
-        commands.push({
-          ...this.buttonCommand(primary, 'stack', 'Shift+Enter', 2),
-          label: t('windowWholeStack'),
-          run: () => {
-            if (primary.isConnected && !primary.disabled)
-              primary.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
-          },
-        })
-      }
-    }
-    const secondary = buttons.find(button => button !== primary)
-    if (secondary) {
-      commands.push(this.buttonCommand(secondary, 'secondary', 'X', 3))
-      if (
-        secondary.matches('.inventory-row-action-button--delete') &&
-        row?.querySelector('.inventory-quantity-badge')
-      ) {
-        commands.push({
-          ...this.buttonCommand(secondary, 'secondary-stack', 'Shift+X', 8),
-          label: t('windowDeleteStack'),
-          run: () => {
-            if (secondary.isConnected && !secondary.disabled)
-              secondary.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
-          },
-        })
-      }
-    }
-    const section = row?.closest('.inventory-section')
-    const all = section?.querySelector<HTMLButtonElement>('.inventory-transfer-all-button')
-    if (all) commands.push(this.buttonCommand(all, 'all', 'R', 7))
-    for (const button of this.panel.querySelectorAll<HTMLButtonElement>(GLOBAL_ACTION)) {
-      if (button.closest('[hidden], .hidden, [aria-hidden="true"]')) continue
-      const danger = button.matches('.entity-delete-building-button')
-      commands.push(this.buttonCommand(button, danger ? 'remove' : 'deliveries', danger ? 'X' : 'V', danger ? 3 : 6))
-    }
-    if (this.panel.querySelectorAll('.ui-tab').length > 1) {
-      for (const direction of [-1, 1])
-        commands.push({
-          id: direction < 0 ? 'previous-tab' : 'next-tab',
-          label: t(direction < 0 ? 'windowPreviousTab' : 'windowNextTab'),
-          key: direction < 0 ? 'PageUp' : 'PageDown',
-          pad: direction < 0 ? 4 : 5,
-          glyph: direction < 0 ? 'LB' : 'RB',
-          run: () => this.switchPanel(direction),
-        })
-    }
-    if (this.dismissible)
-      commands.push({ id: 'close', label: t('close'), key: 'Escape', pad: 1, glyph: 'B', run: this.dismiss })
-    if (primary?.dataset.inventoryTransferSlot === 'true') {
-      const assigned = new Set<number>()
-      for (const [id, action] of [
-        ['primary', 'inventoryTransferOne'],
-        ['stack', 'inventoryTransferAll'],
-      ] as const) {
-        const command = commands.find(value => value.id === id)
-        const pad = getGamepadButtonIndex(action)
-        if (!command || assigned.has(pad)) continue
-        const occupied = commands.find(value => value !== command && value.pad === pad)
-        if (occupied) {
-          occupied.pad = command.pad
-          occupied.glyph = PAD_GLYPHS[occupied.pad] ?? String(occupied.pad)
-        }
-        command.pad = pad
-        command.glyph = PAD_GLYPHS[pad] ?? String(pad)
-        assigned.add(pad)
-      }
-    }
-    return commands
-  }
-
   private renderCommands(): void {
-    this.commands = this.availableCommands()
+    this.commands = availableCommands({
+      getSelected: () => this.selected,
+      panel: this.panel,
+      dismissible: this.dismissible,
+      dismiss: this.dismiss,
+      scheduleRefresh: () => this.scheduleRefresh(),
+      switchPanel: direction => this.switchPanel(direction),
+    })
     if (
       this.confirmation &&
       !this.commands.some(command => command.id === this.confirmation?.id && !command.disabled)
@@ -360,53 +225,17 @@ export class GameWindow {
     // Keep DOM focus on footer buttons through live resource/health refreshes.
     if (signature === this.signature) return
     this.signature = signature
-    const focusedCommand = (document.activeElement as HTMLElement | null)?.dataset.command
-    this.footer.replaceChildren()
-    if (this.confirmation) {
-      const question = document.createElement('span')
-      question.className = 'game-window-confirmation'
-      question.textContent = `${this.confirmation.label} ?`
-      this.footer.appendChild(question)
-    }
-    if (!this.confirmation && this.items().length) {
-      const navigation = document.createElement('span')
-      navigation.className = 'game-window-navigation'
-      navigation.textContent =
-        this.mode === 'gamepad' ? `✥ ${t('windowNavigation')}` : `↑ ↓ ← → ${t('windowNavigation')}`
-      if (multiplePanels)
-        navigation.textContent +=
-          this.mode === 'gamepad' ? ` · LB / RB ${t('windowPanels')}` : ` · Page ↑ / ↓ ${t('windowPanels')}`
-      this.footer.appendChild(navigation)
-    }
-    for (const command of commands) {
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.className = 'game-window-command'
-      button.dataset.command = command.id
-      button.disabled = command.disabled ?? false
-      button.classList.toggle('is-danger', Boolean(command.danger))
-      const key = document.createElement('kbd')
-      key.textContent =
-        this.mode === 'gamepad'
-          ? command.glyph
-          : ({ ArrowLeft: '←', ArrowRight: '→', Enter: '↵', Escape: 'Esc', PageUp: 'Pg ↑', PageDown: 'Pg ↓' }[
-              command.key
-            ] ?? command.key)
-      key.dataset.pad = String(command.pad)
-      const label = document.createElement('span')
-      label.textContent = `${command.label}${command.danger ? ` · ${t('windowHold')}` : ''}`
-      button.append(key, label)
-      button.addEventListener('click', () => {
-        // Resolve fresh handlers: live refreshes may have replaced the source button.
-        const current = this.confirmation ? command : this.commands.find(item => item.id === command.id)
-        if (current) this.execute(current)
-      })
-      this.footer.appendChild(button)
-      if (focusedCommand === command.id) button.focus({ preventScroll: true })
-    }
-    if (this.confirmation) this.footer.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true })
-    else if (focusedCommand && !this.footer.contains(document.activeElement))
-      this.selected?.focus({ preventScroll: true })
+    renderCommandFooter({
+      footer: this.footer,
+      mode: this.mode,
+      confirmation: this.confirmation,
+      commands,
+      hasItems: Boolean(this.items().length),
+      multiplePanels,
+      restoreSelectionFocus: () => this.selected?.focus({ preventScroll: true }),
+      execute: command => this.execute(command),
+      resolveCommand: command => (this.confirmation ? command : this.commands.find(item => item.id === command.id)),
+    })
   }
 
   private execute(command: Command): void {
@@ -479,8 +308,9 @@ export class GameWindow {
   }
 
   private switchPanel(direction: number): void {
-    const tabs = [...this.panel.querySelectorAll<HTMLButtonElement>('.ui-tab')].filter(
-      tab => !tab.disabled && this.visible(tab)
+    const scope = this.selected?.closest?.('.settings-device-tabs') ?? this.panel
+    const tabs = [...scope.querySelectorAll<HTMLButtonElement>('.ui-tab')].filter(
+      tab => !tab.disabled && this.visible(tab) && (scope !== this.panel || !tab.closest?.('.settings-device-tabs'))
     )
     if (tabs.length) {
       const index = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true')
@@ -590,13 +420,18 @@ export class GameWindow {
     }
   }
 
+  private getGamepad(): Gamepad | null {
+    // Settings must remain navigable after the gameplay gamepad option is turned off.
+    return getGamepadEnabled() || !this.panel.closest('.inventory-panel, .inventory-transfer-modal, .interaction-panel')
+      ? getActiveGamepad()
+      : null
+  }
+
   private poll = (now: number): void => {
     if (this.disposed) return
-    // Settings must remain navigable after the gameplay gamepad option is turned off.
-    const pad =
-      getGamepadEnabled() || !this.panel.closest('.inventory-panel, .inventory-transfer-modal, .interaction-panel')
-        ? getActiveGamepad()
-        : null
+    const pad = this.getGamepad()
+    if (pad && !this.hadGamepad) this.setMode('gamepad')
+    this.hadGamepad = Boolean(pad)
     if (this.panel.querySelector('.is-listening')) {
       this.cancelKeyboardHold()
       this.padState.reset()
@@ -652,6 +487,8 @@ export class GameWindow {
   }
 
   destroy(): void {
+    const pad = this.getGamepad()
+    if (pad) consumeGamepadButtons(pad)
     this.disposed = true
     cancelAnimationFrame(this.frame)
     this.observer.disconnect()

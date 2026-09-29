@@ -18,7 +18,7 @@ function corpse(resources) {
     ...(resources ? { inventory: { resources: { ...resources } } } : {}),
   }
 }
-function hunter(types = ['TownCenter']) {
+function hunter(types = ['Granary', 'StoragePit']) {
   const owner = { buildings: [] }
   owner.buildings = types.map(type => ({
     type,
@@ -84,7 +84,7 @@ test('hunters take meat first, leave overflow, and share the remainder with the 
   assert.equal(loot.takeAnimalLootForDelivery(animal, hunter()), 0)
 })
 
-test('hunters only collect resources with eligible storage, including capacity and blocked deliveries', () => {
+test('hunters collect for eligible depots, respect capacity and ignore retired delivery flags', () => {
   const animal = corpse({ meat: 5, leather: 3 })
   const unit = hunter(['Granary'])
   assert.equal(loot.takeAnimalLootForDelivery(animal, unit), 5)
@@ -94,10 +94,10 @@ test('hunters only collect resources with eligible storage, including capacity a
   assert.equal(loot.takeAnimalLootForDelivery(animal, collector), 3)
   const blocked = hunter()
   blocked.owner.buildings[0].villagerDeliveriesBlocked = true
-  assert.equal(loot.takeAnimalLootForDelivery(corpse({ meat: 5 }), blocked), 0)
+  assert.equal(loot.takeAnimalLootForDelivery(corpse({ meat: 5 }), blocked), 5)
   const nearlyFull = hunter()
-  nearlyFull.owner.buildings[0].inventory.resources.wood = 598
-  assert.equal(loot.takeAnimalLootForDelivery(corpse({ meat: 5, leather: 3 }), nearlyFull), 2)
+  nearlyFull.owner.buildings[0].inventory.resources.wheat = 298
+  assert.equal(loot.takeAnimalLootForDelivery(corpse({ meat: 5, leather: 3 }), nearlyFull), 5)
 })
 
 test('two hunters cannot duplicate the same stock and destroyed corpses cannot be looted', () => {
@@ -125,4 +125,14 @@ test('returning hunters skip loot they cannot deposit', () => {
   const animal = corpse({ leather: 2 })
   assert.equal(loot.canRecoverAnimalLootForDelivery(animal, hunter(['Granary'])), false)
   assert.equal(loot.canRecoverAnimalLootForDelivery(animal, hunter(['StoragePit'])), true)
+})
+
+test('a hungry hunter takes personal provisions without a completed town center or depot', () => {
+  const unit = hunter([])
+  unit.owner.buildings.push({ type: 'TownCenter', isBuilt: false, i: 0, j: 0 })
+  const animal = corpse({ meat: 20, leather: 2 })
+  assert.equal(loot.canRecoverAnimalLootForDelivery(animal, unit), true)
+  assert.equal(loot.takeAnimalLootForDelivery(animal, unit), 12)
+  assert.equal(unit.inventory.resources.meat, 12)
+  assert.deepEqual(animal.inventory.resources, { meat: 8, leather: 2 })
 })

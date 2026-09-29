@@ -46,6 +46,22 @@ export function validatePlayerTraining(
   for (const building of buildings) {
     if (!isObject(building)) continue
     validateExtra(building.trainingExtra, 'building')
+    if (building.trainingRequests != null) {
+      validateArray(building.trainingRequests, 'trainingRequests')
+      for (const request of building.trainingRequests) {
+        if (
+          !isObject(request) ||
+          typeof request.type !== 'string' ||
+          !config.units?.[request.type] ||
+          (request.traineeLabel != null && (typeof request.traineeLabel !== 'string' || !request.traineeLabel)) ||
+          (request.travelRemainingMs != null &&
+            (typeof request.travelRemainingMs !== 'number' ||
+              !Number.isFinite(request.travelRemainingMs) ||
+              request.travelRemainingMs < 0))
+        )
+          invalid('request')
+      }
+    }
     if (building.trainingQueue == null) continue
     validateArray(building.trainingQueue, 'trainingQueue')
     for (const entry of building.trainingQueue) {

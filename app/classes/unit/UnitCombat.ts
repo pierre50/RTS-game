@@ -17,8 +17,6 @@ import {
   evaluateCombatMorale,
   findInstancesInSight,
   getClosestInstanceWithPath,
-  getInstanceDegree,
-  instanceContactInstance,
   BOW_SHOOT_RELEASE_FRAME,
   playAudibleSoundCue,
   prepareAutomaticParry,
@@ -40,7 +38,6 @@ import {
   routeUnitIntoBuildingInteriorSpace,
 } from '../../services/BuildingInteriorSpaceSystem'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
-import { applyUnitActionFrameSequence, getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
 import { setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -57,7 +54,9 @@ function isSlashingMeleeEquipment(item: string): boolean {
 
 function getMeleeImpactEquipment(unit: UnitEntity): string[] {
   if (Array.isArray(unit.equipment) && unit.equipment.length) return unit.equipment
-  return unit.work && typeof getUnitWorkEquipment === 'function' ? getUnitWorkEquipment(unit.work, unit.owner?.age, unit) : []
+  return unit.work && typeof getUnitWorkEquipment === 'function'
+    ? getUnitWorkEquipment(unit.work, unit.owner?.age, unit)
+    : []
 }
 
 function getMeleeImpactSound(unit: UnitEntity, target: RuntimeEntity | null): CommandSound {
@@ -210,18 +209,9 @@ export class UnitCombat {
     if (!targets.length) return false
     const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
     if (!target) return false
-    if (unit.action !== action) {
-      unit.action = action
-      applyUnitActionFrameSequence(unit, unit.work, unit.action)
-      unit.actionSheet = getUnitWorkActionSheet(unit, unit.work, unit.action)
-    }
-    unit.setDest?.(target.instance)
-    if (instanceContactInstance(unitAsInstance, target.instance)) {
-      unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
-      unit.getAction?.(unit.action)
-      return true
-    }
-    unit.setPath?.(target.path)
+    // Use the same precise contact approach as normal work orders, including carcasses.
+    // Grid adjacency alone does not guarantee that the hunter can reach the loot.
+    unit.sendToEvt?.(target.instance, action, { forceRepath: true, preserveAutonomy: true })
     return true
   }
 

@@ -7,6 +7,7 @@ import type { MenuHost } from './MenuHost'
 
 export class PauseMenu {
   menu: MenuHost
+  private modal?: Modal
 
   constructor(menu: MenuHost) {
     this.menu = menu
@@ -34,6 +35,14 @@ export class PauseMenu {
     return button
   }
 
+  toggle(): void {
+    if (this.modal && !this.modal._closed) {
+      if (this.modal._isTopmost()) this.modal._dismiss()
+      return
+    }
+    if (!document.querySelector('.modal')) this.open()
+  }
+
   open(): void {
     const { menu } = this
     const shouldResume = !menu.context.paused
@@ -50,6 +59,8 @@ export class PauseMenu {
       content,
       onClose: resumeIfNeeded,
     })
+
+    this.modal = modal
 
     const saveButton = this._btn(t('save'), async () => {
       if (saveButton.disabled) return

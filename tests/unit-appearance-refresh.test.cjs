@@ -2,14 +2,14 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadAppearance() {
+function loadAppearance(layers = []) {
   return loadTsModule('app/lib/lpc/bakedUnitAssets.ts', {
     mocks: {
       'pixi.js': { Assets: { cache: { has: () => true, get: id => ({ id }) } } },
       './equipment': {
         dynamicEquipmentLayersForEquipment: () => [],
         dynamicEquipmentLayersForUnit: () => [],
-        dynamicEquipmentLayersForVillager: () => [],
+        dynamicEquipmentLayersForVillager: () => layers,
       },
       './heroAppearance': { heroAppearanceLayersForPlayer: () => [] },
       '../units/unitExperience': { getUnitEquipmentTier: unit => unit.tier ?? 0 },
@@ -93,4 +93,26 @@ test('helmet changes and corpse looting refresh the actual displayed base sheets
   unit.setTextures = sheet => rendered.push(unit[sheet].id)
   refreshBakedLpcUnitAssets(unit)
   assert.deepEqual(rendered, ['units/infantry/kemet/female/corpse'])
+})
+
+test('food bags never hide a villager hunter bow or quiver after refresh or reload', () => {
+  const layers = ['bow', 'quiver', 'arrow_wood'].map(equipmentKey => ({
+    equipmentKey,
+    workTypes: ['hunter'],
+    walkingSheet: `${equipmentKey}/walking`,
+    actionSheet: `${equipmentKey}/shoot`,
+  }))
+  const { refreshBakedLpcUnitAssets } = loadAppearance(layers)
+  const unit = unitState({ inventory: { resources: { meat: 6, berry: 6 } } })
+  for (const sheet of ['walkingSheet', 'actionSheet']) {
+    unit.currentSheet = sheet
+    refreshBakedLpcUnitAssets(unit)
+    assert.deepEqual(unit.appearance.layers, layers)
+  }
+  const saved = JSON.parse(JSON.stringify(unit))
+  refreshBakedLpcUnitAssets(saved)
+  assert.deepEqual(saved.appearance.layers, layers)
+  const hero = unitState({ type: 'Hero', inventory: { resources: { meat: 6 } } })
+  refreshBakedLpcUnitAssets(hero)
+  assert.equal(hero.appearance, undefined, 'hero still needs an actual equipped bow')
 })

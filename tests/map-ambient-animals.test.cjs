@@ -182,8 +182,9 @@ test('closed and cold biomes do not spawn wild horses', () => {
   }
 })
 
-test('prepared wildlife loads its list without scanning or rolling new groups', async () => {
+test('prepared wildlife editor placement loads its list without scanning or rolling new groups', async () => {
   const { generation, placed, grid } = createGenerator({ random: () => assert.fail('no animal generation at load') })
+  generation.map.context.editor = true
   grid[11][11].has = { type: 'TownCenter' }
   preparedContent.registerPreparedMapContent(generation.map, {
     animals: [

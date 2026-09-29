@@ -1,3 +1,5 @@
+import { applyUnitActivitySpritesheets } from './unitSpriteAssets'
+import { ANIMAL_CORPSE_DROPS } from '../../config/animalGatherLoot'
 import { wakeUnitSimulation } from './unitSuspension'
 import {
   knownResources,
@@ -5,13 +7,13 @@ import {
   knownConstructionTargets,
   knownCapturableHorses,
 } from './autonomy/villagerKnownTargets'
-import { scheduleVillagerExplorationResume } from './autonomy/villagerExploration'
+import { cancelVillagerExplorationResume, scheduleVillagerExplorationResume } from './autonomy/villagerExploration'
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getNearestAvailableStableForUnit } from '../horses/horseCapture'
 import { canMineIronResource } from '../resources/ironMining'
 import { shouldVillagerWork } from './villagerSchedule'
-import { villagerAutonomySuspension } from './autonomy/villagerAutonomyAvailability'
-import { logGoldMinerFlow } from './autonomy/villagerJobDiagnostics'
+import { hasPriorityCombat, villagerAutonomySuspension } from './autonomy/villagerAutonomyAvailability'
+
 import { sendUnitToMiningAction } from './miningActions'
 import {
   clearVillagerAutonomyTargetRejections,
@@ -49,6 +51,13 @@ function closest<T extends RuntimeEntity>(unit: UnitEntity, candidates: Iterable
   return best
 }
 
+function markUnavailableWork(unit: UnitEntity, job: VillagerAutonomyJob): void {
+  unit.autonomyBlockedJob = job
+  unit.work = null
+  applyUnitActivitySpritesheets(unit, null, null)
+  unit.setTextures?.('standingSheet')
+}
+
 function exploreForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
   const started = unit.explore?.() ?? false
   if (started) unit.autonomousJob = job
@@ -58,19 +67,23 @@ function exploreForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob): boolean
     unit.path = []
     unit.action = null
     unit.inactif = true
+    markUnavailableWork(unit, job)
     scheduleVillagerExplorationResume(unit, resumeVillagerAutonomy, 2000)
   }
-  logGoldMinerFlow(unit, started ? 'autonomy.exploration-started' : 'autonomy.exploration-failed', { job })
+
   return started
 }
 
 function noStrictTargetForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob, options: AssignmentOptions): boolean {
-  if (options.exploreWhenNoTarget !== false) return exploreForAutonomy(unit, job)
+  if (!unit.owner?.isPlayed && options.exploreWhenNoTarget !== false) return exploreForAutonomy(unit, job)
+  cancelVillagerExplorationResume(unit)
+  unit.exploringForAutonomy = false
   setVillagerAutonomy(unit, job)
   unit.dest = null
   unit.path = []
   unit.action = null
   unit.inactif = true
+  markUnavailableWork(unit, job)
   return false
 }
 
@@ -87,10 +100,11 @@ export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonom
     )
   }
 
-  return knownResources(unit, RESOURCE_AUTONOMY_CONFIG[job].resourceType, false, 1).length > 0
+  return knownResources(unit, RESOURCE_AUTONOMY_CONFIG[job].resourceType, 1).length > 0
 }
 
 export function clearVillagerAutonomy(unit: UnitEntity): void {
+  unit.collectiveTask = null
   if (unit.type !== UNIT_TYPES.villager) return
   if (unit.owner?.isPlayed) wakeUnitSimulation(unit)
   unit.autonomousJob = null
@@ -131,7 +145,32 @@ type AutonomyScoring = { targetWorkerLoad(target: RuntimeEntity, work: string, a
 
 function assignFoodAutonomy(unit: UnitEntity, options: AssignmentOptions, scoring: AutonomyScoring): boolean {
   const job = 'food'
-  const targets = knownFoodTargets(unit, 18)
+  const jobResource = unit.collectiveTask
+  const plant =
+    jobResource === 'fiber'
+      ? RESOURCE_TYPES.fiberPlant
+      : jobResource === 'herb'
+        ? RESOURCE_TYPES.medicinalHerb
+        : jobResource === 'toxicHerb'
+          ? RESOURCE_TYPES.toxicHerb
+          : undefined
+  const targets = plant
+    ? knownResources(unit, plant, 18)
+    : knownFoodTargets(unit, 18).filter(target => {
+        if (jobResource === 'wheat') return target.type === RESOURCE_TYPES.wheat
+        if (jobResource === 'berry') return target.type === RESOURCE_TYPES.berrybush
+        if (jobResource === 'meat') return target.family === FAMILY_TYPES.animal
+        if (['leather', 'sinew', 'feather'].includes(jobResource ?? ''))
+          return (
+            target.family === FAMILY_TYPES.animal &&
+            (target.isDead
+              ? (('inventory' in target ? target.inventory?.resources : undefined)?.[
+                  jobResource as 'leather' | 'sinew' | 'feather'
+                ] ?? 0) > 0
+              : (ANIMAL_CORPSE_DROPS[target.type] ?? []).some(drop => drop.resource === jobResource))
+          )
+        return true
+      })
   if (!targets.length) return noStrictTargetForAutonomy(unit, job, options)
   if (
     tryVillagerJobCandidates(
@@ -167,21 +206,19 @@ function assignHorseAutonomy(unit: UnitEntity, options: AssignmentOptions, scori
 
 function assignConstructionAutonomy(unit: UnitEntity, _options: AssignmentOptions, scoring: AutonomyScoring): boolean {
   const job = 'construction'
-  const target = closest(unit, knownConstructionTargets(unit))
-  if (!target) {
+  const targets = knownConstructionTargets(unit)
+  if (!targets.length) {
     return noStrictTargetForAutonomy(unit, job, { exploreWhenNoTarget: false })
   }
   const accepted = tryVillagerJobCandidates(
     unit,
     job,
-    [
-      {
-        action: ACTION_TYPES.build,
-        send: candidate => unit.sendToBuilding?.(candidate as BuildingEntity),
-        target,
-        work: WORK_TYPES.builder,
-      },
-    ],
+    targets.map(target => ({
+      action: ACTION_TYPES.build,
+      send: (candidate: RuntimeEntity) => unit.sendToBuilding?.(candidate as BuildingEntity),
+      target,
+      work: WORK_TYPES.builder,
+    })),
     scoring
   )
   if (accepted) return true
@@ -196,12 +233,11 @@ function assignResourceAutonomy(
 ): boolean {
   const resourceJob = job
   const resourceConfig = RESOURCE_AUTONOMY_CONFIG[resourceJob]
-  const targets = knownResources(unit, resourceConfig.resourceType, true, 18)
+  const targets = knownResources(unit, resourceConfig.resourceType, 18)
   if (!targets.length) {
-    logGoldMinerFlow(unit, 'autonomy.no-known-target', { job })
     return noStrictTargetForAutonomy(unit, job, options)
   }
-  logGoldMinerFlow(unit, 'autonomy.known-targets', { job, targets: targets.map(target => target.label) })
+
   const candidates = targets.map(target => {
     if (resourceJob === 'wood') {
       return {
@@ -219,10 +255,9 @@ function assignResourceAutonomy(
     }
   })
   if (tryVillagerJobCandidates(unit, job, candidates, scoring)) {
-    logGoldMinerFlow(unit, 'autonomy.target-accepted', { job })
     return true
   }
-  logGoldMinerFlow(unit, 'autonomy.targets-rejected', { job })
+
   return noStrictTargetForAutonomy(unit, job, options)
 }
 
@@ -232,9 +267,10 @@ export function assignVillagerAutonomy(
   options: AssignmentOptions = {}
 ): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
-  if (!shouldVillagerWork(unit)) return false
+  if (hasPriorityCombat(unit) || !shouldVillagerWork(unit)) return false
   if (!canMineIronResource(unit, { type: job })) return false
   if (!options.preserveRejectedTargets) clearVillagerAutonomyTargetRejections(unit, job)
+  unit.autonomyBlockedJob = null
   setVillagerAutonomy(unit, job)
   const scoring = {
     targetWorkerLoad: (target: RuntimeEntity, work: string, action: string) =>

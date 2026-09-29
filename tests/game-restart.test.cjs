@@ -33,6 +33,9 @@ function loadGame({
   }
 
   const mocks = {
+    '../../services/world/InitialVillagePlacement': { placeInitialVillageUnits() {} },
+    '../../services/world/VillageStartingState': { villageStartProfiles: () => ({}) },
+    '../../services/world/VillageBaseState': { populateVillageBase() {} },
     '../../services/world/WorldEconomy': { materializeInitialEconomy: initial => initial },
     '../../services/world/WorldEconomyRuntime': {
       economyRulesFor: () => ({}),
@@ -60,7 +63,7 @@ function loadGame({
     },
     '../lib/combat/combatFeedback': { clearAllCombatFeedback() {} },
     '../lib/equipment/equipmentStats': { refreshUnitEquipmentStats() {} },
-    '../lib/ActionScheduler': {
+    '../lib/actionScheduler': {
       ActionScheduler: class ActionScheduler {
         clear() {}
         destroy() {}
@@ -276,7 +279,7 @@ function loadGame({
       UNIT_TYPES: { villager: 'Villager' },
     },
   }
-  if (realScheduler) delete mocks['../lib/ActionScheduler']
+  if (realScheduler) delete mocks['../lib/actionScheduler']
   Object.assign(mocks, {
     './runtimeServices': mocks['./game/runtimeServices'],
     './GameBuildingInteriorTravel': mocks['./game/GameBuildingInteriorTravel'],
@@ -494,7 +497,7 @@ test('world-region boot keeps the played civilization as the active player', asy
     })),
     [
       { civ: 'Norse', color: 'red', factionId: 'civ-norse', isHuman: false, name: 'Clan Nord' },
-      { civ: 'Hellas', color: 'blue', factionId: 'civ-hellas', isHuman: true, name: undefined },
+      { civ: 'Hellas', color: 'violet', factionId: 'civ-hellas', isHuman: true, name: undefined },
     ]
   )
 })

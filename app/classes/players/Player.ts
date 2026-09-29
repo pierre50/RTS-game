@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { Assets } from 'pixi.js'
 import { createPlayerData } from '../../config/playerConfig'
 import {
@@ -183,6 +184,7 @@ export class Player implements PlayerLike {
 
   spawnBuilding(options: BuildingOptions) {
     const building = this.createBuilding(options)
+    notifyVillageStateChanged(this)
     updateInstanceVisibility(building)
     fadeIn(building, FADE_DURATION_MS)
     if (this.isPlayed) {

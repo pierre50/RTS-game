@@ -109,7 +109,7 @@ test('the agreed age 0 and age 1 costs and HP are applied exactly', () => {
     assert.equal(zero.constructionTime, one.constructionTime, 'work duration is not changed by this balance pass')
   }
   for (const age of [0, 1, 2]) {
-    assert.deepEqual(getBuildingConfigForAge(definitions.Farm, age).cost, { wheat: 20 })
+    assert.deepEqual(getBuildingConfigForAge(definitions.Farm, age).cost, { wheat: 1 })
   }
 })
 
@@ -210,7 +210,7 @@ test('sprite selection prefers building age over owner or captured artwork age',
   )
 })
 
-test('placement charges the chosen tier and rejects missing materials or locked ages', () => {
+test('placement records the chosen tier without payment and rejects locked ages', () => {
   const { buyPlayerBuilding } = loadTsModule('app/classes/players/PlayerBuildingPlacement.ts', {
     mocks: {
       '../../lib': {
@@ -242,12 +242,13 @@ test('placement charges the chosen tier and rejects missing materials or locked 
       this.spawned = options
     },
   }
-  assert.equal(buyPlayerBuilding(player, 1, 1, 'House'), false)
+  assert.equal(buyPlayerBuilding(player, 1, 1, 'House'), true)
   assert.equal(player.wood, 80)
   player.fiber = 4
   assert.equal(buyPlayerBuilding(player, 1, 1, 'House'), true)
   assert.equal(player.spawned.buildingAge, 1)
-  assert.deepEqual([player.wood, player.stone, player.fiber, player.leather], [20, 10, 0, 2])
+  assert.deepEqual(player.spawned.constructionMaterials.cost, getBuildingConfigForAge(definitions.House, 1).cost)
+  assert.deepEqual([player.wood, player.stone, player.fiber, player.leather], [80, 40, 4, 2])
   Object.assign(player, { age: 1, wood: 60, stone: 15, fiber: 0, leather: 2 })
   assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingAge: 0 }), true)
   assert.equal(player.spawned.buildingAge, 0)
@@ -255,19 +256,7 @@ test('placement charges the chosen tier and rejects missing materials or locked 
   assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingAge: 2, alreadyPaid: true }), false)
 })
 
-test('one camp chest can fund a starter center and house or both dedicated depots', () => {
-  const { getStorageCapacity } = loadTsModule('app/lib/resources/storagePolicy.ts')
-  const capacity = getStorageCapacity('Chest')
-  for (const types of [
-    ['TownCenter', 'House'],
-    ['StoragePit', 'Granary'],
-  ]) {
-    const total = types.reduce(
-      (sum, type) => sum + Object.values(getBuildingConfigForAge(definitions[type], 0).cost).reduce((a, b) => a + b, 0),
-      0
-    )
-    assert.ok(total <= capacity, types.join(' + '))
-  }
+test('starter buildings use gathered wood and stone without requiring a prefilled chest', () => {
   for (const type of ['House', 'TownCenter', 'Granary', 'StoragePit', 'Barracks', 'Market']) {
     assert.ok(
       Object.keys(getBuildingConfigForAge(definitions[type], 0).cost).every(resource =>

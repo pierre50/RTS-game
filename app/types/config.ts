@@ -123,7 +123,6 @@ export interface BuildingConfig extends EntityConfig {
   overheadIndicatorOffsetX?: number
   overheadIndicatorOffsetY?: number
   constructionTime?: number
-  instantPlacement?: boolean
   inventoryItem?: string
   shelterCapacity?: number
   mountingDays?: number

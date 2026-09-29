@@ -178,7 +178,7 @@ function transferBuildingMembership(
   target.assetType = target.assetType || target.type
   removeFromOwnerList(oldOwner, 'buildings', target)
   addToOwnerList(newOwner, 'buildings', target)
-  const populationCapacity = getBuildingShelterCapacity(target) || target.increasePopulation || 0
+  const populationCapacity = getBuildingShelterCapacity(target)
   if (populationCapacity && target.populationCapacityApplied) {
     oldOwner.populationMax = Math.max(0, oldOwner.populationMax - populationCapacity)
     newOwner.populationMax += populationCapacity

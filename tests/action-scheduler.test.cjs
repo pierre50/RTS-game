@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function schedulerFixture() {
-  const { ActionScheduler } = loadTsModule('app/lib/ActionScheduler.ts')
+  const { ActionScheduler } = loadTsModule('app/lib/actionScheduler.ts')
   return new ActionScheduler({ ticker: { add() {}, remove() {} } }, () => false)
 }
 
@@ -122,7 +122,7 @@ test('blocked contact approach retries yield to the next frame', () => {
 test('scheduler reports catch-up counts without changing the number or order of callbacks', () => {
   const events = []
   const spans = []
-  const { ActionScheduler } = loadTsModule('app/lib/ActionScheduler.ts')
+  const { ActionScheduler } = loadTsModule('app/lib/actionScheduler.ts')
   const monitor = {
     measureSampled(name, callback) {
       spans.push(name)

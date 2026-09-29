@@ -1,5 +1,6 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { definedProperties } from '../../lib/definedProperties'
-import { BUILDING_TYPES, LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX, SOUND_CUES } from '../../constants'
+import { LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX, SOUND_CUES } from '../../constants'
 import {
   canUpdateMinimap,
   getBuildingFootprintCells,
@@ -14,9 +15,8 @@ import { getAdjacentWalls, isWall, updateWallTexture } from '../../lib/buildings
 import { getEntityMapSpace } from '../../lib/mapSpaces'
 import {
   expelBuildingInteriorOccupants,
-  extractBuildingInteriorChestInventory,
+  destroyBuildingInteriorInventory,
 } from '../../services/BuildingInteriorSpaceSystem'
-import type { BuildingEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { CAMPFIRE_DECORATION_LABEL, CAMPFIRE_SMOKE_DECORATION_LABEL, stopFlameAmbientSound } from './BuildingFire'
 import type { BuildingControllerHost } from './BuildingTypes'
@@ -65,41 +65,8 @@ export class BuildingDestruction {
     })
   }
 
-  private spawnRuinsChest(inventory: BuildingEntity['inventory'] | null): void {
-    const building = this.building
-    if (!inventory || !building.owner?.createBuilding) return
-    const space = getEntityMapSpace(building, building.context.map)
-    const grid = space?.grid ?? building.context.map.grid
-    const footprintCells = getBuildingFootprintCells(building.i, building.j, grid, building.size)
-    const centerI = building.i
-    const centerJ = building.j
-    const cell = footprintCells
-      .filter(candidate => {
-        if (candidate.terrainHidden || candidate.border || candidate.waterBorder || candidate.category === 'Water')
-          return false
-        return !candidate.solid && !candidate.has
-      })
-      .sort((a, b) => {
-        const aDistance = Math.abs(a.i - centerI) + Math.abs(a.j - centerJ)
-        const bDistance = Math.abs(b.i - centerI) + Math.abs(b.j - centerJ)
-        return aDistance - bDistance
-      })[0]
-    if (!cell) return
-
-    building.owner.createBuilding({
-      i: cell.i,
-      j: cell.j,
-      type: BUILDING_TYPES.chest,
-      isBuilt: true,
-      skipBuiltEffects: true,
-      label: `${building.label}:ruins:storage-chest`,
-      inventory,
-    })
-  }
-
   private clearDestroyedSprite(): void {
     const building = this.building
-    clearBuildingConstructionReveal(building)
     building.sprite.eventMode = 'none'
     building.sprite.visible = false
     building.sprite.parent?.removeChild(building.sprite)
@@ -112,6 +79,7 @@ export class BuildingDestruction {
   die(): void {
     const building = this.building
     if (building.isDead || building.indestructible) return
+    notifyVillageStateChanged(building.owner)
     const {
       context: { map, player, menu },
     } = building
@@ -120,7 +88,8 @@ export class BuildingDestruction {
     const adjacentWalls = isWall(building) ? getAdjacentWalls(grid, building.i, building.j, building.owner) : []
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
-    const ruinsChestInventory = extractBuildingInteriorChestInventory(building.context, building)
+    destroyBuildingInteriorInventory(building.context, building)
+    if (building.constructionMaterials) building.constructionMaterials.delivered = {}
     building.cancelAllUnitTraining?.()
     expelBuildingInteriorOccupants(building.context, building)
     building.isDead = true
@@ -138,6 +107,8 @@ export class BuildingDestruction {
     this.removeOwnerReferences()
     this.destroyDecorations()
 
+    // Fragments must not inherit the construction ghost's transparency or tint.
+    clearBuildingConstructionReveal(building)
     this.spawnDestructionBurst()
     updateInstanceVisibility(building)
     this.clearDestroyedSprite()
@@ -148,7 +119,6 @@ export class BuildingDestruction {
       }
       return true
     })
-    this.spawnRuinsChest(ruinsChestInventory)
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), BUILDING_DESTRUCTION_CLEAR_MS)
     canUpdateMinimap(building, player) &&
@@ -160,7 +130,7 @@ export class BuildingDestruction {
   private removePopulationCapacity(): void {
     const building = this.building
     const { menu } = building.context
-    const populationCapacity = getBuildingShelterCapacity(building) || building.increasePopulation || 0
+    const populationCapacity = getBuildingShelterCapacity(building)
     if (populationCapacity && building.populationCapacityApplied) {
       building.owner.populationMax = Math.max(0, building.owner.populationMax - populationCapacity)
       building.populationCapacityApplied = false

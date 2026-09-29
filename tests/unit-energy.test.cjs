@@ -363,7 +363,7 @@ test('npc attack fatigue keeps repositioning while waiting for full energy', () 
   assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'attack', { forceRepath: true }])
 })
 
-test('hero shows fatigue feedback but does not auto-resume when energy is missing', () => {
+test('hero stays silent and does not auto-resume when energy is missing', () => {
   const { __fatigueFeedbackCalls, waitForEnergy } = loadUnitEnergy()
   const messages = []
   const calls = []
@@ -382,7 +382,7 @@ test('hero shows fatigue feedback but does not auto-resume when energy is missin
   assert.equal(unit.waitingForEnergyAction, undefined)
   assert.deepEqual(calls, [])
   assert.deepEqual(__fatigueFeedbackCalls, [])
-  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+  assert.deepEqual(messages, [])
 })
 
 test('hero energy changes refresh the hero HUD immediately', () => {

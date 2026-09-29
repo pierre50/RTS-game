@@ -1,3 +1,4 @@
+import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { MAX_ARCHER_BY_AGE, MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE } from '../../ai/config'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
@@ -97,7 +98,10 @@ export function applyVillageStartingState(
       layout.reserveBuilding(building)
       layout.recordSite(center, type, building, size)
     }
-    // Reserve agriculture before buildings, decorations and newly spawned units
+    // Give fields a real depot anchor before filling the agricultural district.
+    const existingGranaries = player.buildings!.filter(b => b.type === 'Granary' && isLiving(b)).length
+    for (let n = existingGranaries; n < (profile.buildings.Granary ?? 0); n++) addBuilding('Granary')
+    // Reserve agriculture before other buildings, decorations and newly spawned units
     // fragment the remaining free terrain.
     const fields = profile.wheatFields ?? 0
     if (!Number.isInteger(fields) || fields < 0 || fields > 20) throw new Error('Invalid starting wheat field count')
@@ -161,7 +165,7 @@ export function applyVillageStartingState(
           hitPoints: Number(config.totalHitPoints),
           totalHitPoints: Number(config.totalHitPoints),
           inactif: true,
-          ...(type === 'Villager' ? { autonomousJob: n % 3 === 0 ? 'wood' : 'food' } : {}),
+          ...(type === 'Villager' ? { inventory: startingVillagerInventory() } : {}),
         }
         player.units.push(unit)
         spatial.reserve(unit)
@@ -169,30 +173,19 @@ export function applyVillageStartingState(
     }
     player.population = population
     player.populationMax = capacity()
-    if (profile.wallRadius !== undefined) {
-      const radius = profile.wallRadius
-      if (!Number.isInteger(radius) || radius < 4 || radius > 100) throw new Error('Invalid starting wall radius')
-      const size = Number(rules.buildingConfig(index, 'SmallWall').size) || 0
-      const footprint = Math.ceil(size / 2)
-      for (let di = -radius; di <= radius; di++) {
-        const dj = radius - Math.abs(di)
-        for (const offset of dj ? [-dj, dj] : [0]) {
-          // Leave cardinal entrances wider than the wall footprint for village access.
-          if (Math.abs(di) <= footprint + 1 || Math.abs(offset) <= footprint + 1) continue
-          const point = { i: center.i + di, j: center.j + offset }
-          let free = true
-          for (let i = point.i - footprint; i <= point.i + footprint; i++)
-            for (let j = point.j - footprint; j <= point.j + footprint; j++)
-              if (!spatial.naturalCell({ i, j })) free = false
-          // Scenic perimeter segments are optional where terrain or buildings intersect.
-          if (free) addBuilding('SmallWall', point)
-        }
-      }
-    }
+    addStartingWalls(
+      profile.wallRadius,
+      Number(rules.buildingConfig(index, 'SmallWall').size) || 0,
+      center,
+      spatial,
+      addBuilding
+    )
     if (profile.resourceBonus) {
       if (Object.values(profile.resourceBonus).some(n => !Number.isFinite(n) || n < 0))
         throw new Error('Invalid starting resources')
-      if (!depositChestResources(savedResourceOwner(player, state.players), profile.resourceBonus))
+      if (
+        !depositChestResources(savedResourceOwner(player, state.players), profile.resourceBonus, { allowPartial: true })
+      )
         throw new Error('Starting village has no resource depot')
     }
   })
@@ -213,4 +206,32 @@ export function placeStartingHeroInVillage(
   const point = spatial.findNear(center, 12)
   if (!point) throw new Error('No safe hero arrival cell in starting village')
   spatial.move(hero, point)
+}
+
+function addStartingWalls(
+  radius: number | undefined,
+  wallSize: number,
+  center: { i: number; j: number },
+  spatial: OfflineWorldSpatial,
+  addBuilding: (type: string, point: { i: number; j: number }) => void
+): void {
+  if (radius !== undefined) {
+    if (!Number.isInteger(radius) || radius < 4 || radius > 100) throw new Error('Invalid starting wall radius')
+    const size = Number(wallSize) || 0
+    const footprint = Math.ceil(size / 2)
+    for (let di = -radius; di <= radius; di++) {
+      const dj = radius - Math.abs(di)
+      for (const offset of dj ? [-dj, dj] : [0]) {
+        // Leave cardinal entrances wider than the wall footprint for village access.
+        if (Math.abs(di) <= footprint + 1 || Math.abs(offset) <= footprint + 1) continue
+        const point = { i: center.i + di, j: center.j + offset }
+        let free = true
+        for (let i = point.i - footprint; i <= point.i + footprint; i++)
+          for (let j = point.j - footprint; j <= point.j + footprint; j++)
+            if (!spatial.naturalCell({ i, j })) free = false
+        // Scenic perimeter segments are optional where terrain or buildings intersect.
+        if (free) addBuilding('SmallWall', point)
+      }
+    }
+  }
 }

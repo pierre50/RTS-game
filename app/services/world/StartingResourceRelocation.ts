@@ -1,12 +1,15 @@
-import { NaturalResourcePlacement } from '../../lib/resources/NaturalResourcePlacement'
+import { NaturalResourcePlacement } from '../../lib/resources/naturalResourcePlacement'
 import type { SaveEntityState, SaveGridPoint } from '../../types/save'
 import type { OfflineTerrainCell, OfflineWorldSpatial } from './OfflineWorldSpatial'
 
 export class StartingResourceRelocation {
   private readonly placement: NaturalResourcePlacement
 
-  constructor(resources: SaveEntityState[], terrain: (OfflineTerrainCell | null | undefined)[][],
-    private readonly spatial: OfflineWorldSpatial) {
+  constructor(
+    resources: SaveEntityState[],
+    terrain: (OfflineTerrainCell | null | undefined)[][],
+    private readonly spatial: OfflineWorldSpatial
+  ) {
     this.placement = new NaturalResourcePlacement(resources, terrain, spatial)
   }
 

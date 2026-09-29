@@ -5,9 +5,6 @@ const { depositChestResources, getPlayerResourceTotals, withdrawChestResources }
   'app/lib/resources/playerResourceTotals.ts'
 )
 const { storageAcceptsResource } = loadTsModule('app/lib/resources/storagePolicy.ts')
-const { invalidateEconomicKnowledge, shouldRefreshEconomicKnowledge } = loadTsModule(
-  'app/services/world/EconomicKnowledgeUpdates.ts'
-)
 const { populateVillageBase } = loadTsModule('app/services/world/VillageBaseState.ts')
 const { OfflineWorldSpatial } = loadTsModule('app/services/world/OfflineWorldSpatial.ts')
 const { applyVillageStartingState } = loadTsModule('app/services/world/VillageStartingState.ts')
@@ -20,7 +17,7 @@ const units = require('../public/assets/data/gameplay/units.json')
 const rules = {
   buildingConfig: (_i, type) => buildings[type] ?? {},
   unitConfig: (_i, type) => units[type] ?? {},
-  buildingCapacity: (_i, type) => buildings[type]?.shelterCapacity ?? buildings[type]?.increasePopulation ?? 0,
+  buildingCapacity: (_i, type) => buildings[type]?.shelterCapacity ?? 0,
   cycleMs: () => 1000,
   wheatMatureFrame: 5,
   abstractVillages: true,
@@ -28,15 +25,22 @@ const rules = {
 }
 
 test('food and materials reach distinct stores before and after interiors are created', () => {
-  const center = { label: 'tc', type: 'TownCenter', isBuilt: true, inventory: { resources: { wood: 20 } } }
-  const granary = { label: 'gr', type: 'Granary', isBuilt: true }
-  const pit = { label: 'pit', type: 'StoragePit', isBuilt: true }
+  const center = { label: 'tc', type: 'TownCenter', i: 0, j: 0, isBuilt: true, inventory: { resources: { wood: 20 } } }
+  const granary = { label: 'gr', type: 'Granary', i: 3, j: 0, isBuilt: true }
+  const pit = { label: 'pit', type: 'StoragePit', i: 0, j: 3, isBuilt: true }
   const owner = { label: 'owner', buildings: [center, pit, granary], units: [] }
   assert.equal(depositChestResources(owner, { food: 60, wood: 80, iron: 5 }), true)
   assert.equal(granary.inventory.resources.wheat, 60)
   assert.equal(pit.inventory.resources.wood, 80)
   assert.equal(center.inventory.resources.wood, 20)
-  const chest = { label: 'chest', type: 'Chest', spaceId: 'interior:owner:gr', inventory: granary.inventory }
+  const chest = {
+    label: 'interior:owner:gr:default:storage-chest',
+    i: 3,
+    j: 0,
+    type: 'Chest',
+    spaceId: 'interior:owner:gr',
+    inventory: granary.inventory,
+  }
   granary.inventory = { resources: {} }
   owner.buildings.push(chest)
   depositChestResources(owner, { wheat: 10, stone: 20 })
@@ -50,22 +54,9 @@ test('food and materials reach distinct stores before and after interiors are cr
   assert.equal(getPlayerResourceTotals(restored).wood, 0)
   assert.equal(storageAcceptsResource('Granary', 'wood'), false)
   assert.equal(storageAcceptsResource('StoragePit', 'wheat'), false)
-  const isolated = { buildings: [{ type: 'Granary', isBuilt: true }] }
+  const isolated = { buildings: [{ type: 'Granary', i: 3, j: 0, isBuilt: true }] }
   assert.equal(depositChestResources(isolated, { wheat: 10, wood: 10 }), false)
   assert.equal(isolated.buildings[0].inventory, undefined, 'a failed mixed deposit is atomic')
-})
-
-test('economic scans skip unchanged decisions and resume after events, exploration or timeout', () => {
-  const owner = {},
-    map = {},
-    other = {}
-  assert.equal(shouldRefreshEconomicKnowledge(owner, map, 0, 5), true)
-  assert.equal(shouldRefreshEconomicKnowledge(owner, map, 4000, 5), false)
-  invalidateEconomicKnowledge(map)
-  assert.equal(shouldRefreshEconomicKnowledge(owner, map, 5000, 5), true)
-  assert.equal(shouldRefreshEconomicKnowledge(owner, map, 6000, 6), true)
-  assert.equal(shouldRefreshEconomicKnowledge(owner, map, 21000, 6), true)
-  assert.equal(shouldRefreshEconomicKnowledge(owner, other, 21001, 6), true)
 })
 
 test('profile, ten offline days, first arrival and saved return preserve economy without double advancement', () => {
@@ -120,7 +111,7 @@ test('profile, ten offline days, first arrival and saved return preserve economy
     getPlayerResourceTotals(savedResourceOwner(saved.worlds.home.state.players[0], saved.worlds.home.state.players)),
     totals
   )
-  assert.deepEqual(saved.worlds.home.state, arrived)
+  assert.deepEqual(saved.worlds.home.state, JSON.parse(JSON.stringify(arrived)))
   assert.equal(saved.economy.regions.home.initialState, undefined)
   const p = arrived.players[0]
   assert.equal(p.population, p.units.length + p.buildings.flatMap(b => b.trainingQueue ?? []).length)

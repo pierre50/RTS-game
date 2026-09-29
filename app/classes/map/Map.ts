@@ -345,6 +345,10 @@ export default class Map extends Container {
     return this.mapGeneration.prepareTerrainForSavedState(options)
   }
 
+  ensureNeutralPlayer(position = { i: 0, j: 0 }): PlayerLike {
+    return this.mapGeneration.ensureNeutralPlayer(position)
+  }
+
   generatePlayers(playersConfig?: Array<Partial<PlayerLike> & PlayerSetupConfig> | null): PlayerLike[] {
     return this.mapGeneration.generatePlayers(playersConfig)
   }

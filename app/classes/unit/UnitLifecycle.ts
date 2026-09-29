@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
@@ -81,6 +82,7 @@ export class UnitLifecycle {
     if (unit.isDead) {
       return
     }
+    notifyVillageStateChanged(unit.owner)
     const player = unit.owner
     const menu = unit.context?.menu
 

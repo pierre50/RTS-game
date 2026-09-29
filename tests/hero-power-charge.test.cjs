@@ -2090,7 +2090,7 @@ test('free-hand interact does not whiff without energy', () => {
   assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
   assert.equal(hero.actionLocked, false)
   assert.equal(hero.currentSheet, 'standingSheet')
-  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+  assert.deepEqual(messages, [])
 })
 
 test('charged sword release does not fall back to a whiff when attack energy is too low', () => {
@@ -2140,7 +2140,7 @@ test('charged sword release does not fall back to a whiff when attack energy is 
     assert.equal(hero.currentSheet, 'standingSheet')
     assert.equal(enemy.hitPoints, 10)
     assert.deepEqual(soundCues, [])
-    assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+    assert.deepEqual(messages, [])
   } finally {
     global.performance = originalPerformance
   }
@@ -2161,7 +2161,7 @@ test('bow charge does not start without energy', () => {
   assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 0 }), false)
   assert.equal(hero.actionLocked, false)
   assert.equal(hero.heroPowerChargeStart, undefined)
-  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+  assert.deepEqual(messages, [])
 })
 
 test('free-hand interact still whiffs when a contextual target is aimed but out of reach', () => {

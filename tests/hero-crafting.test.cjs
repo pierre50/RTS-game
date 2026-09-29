@@ -199,7 +199,8 @@ test('camp installations are construction options, not craft recipes', () => {
     ['Trap', { wood: 5, fiber: 2 }],
   ]) {
     assert.deepEqual(definitions[type].cost, cost)
-    assert.equal(definitions[type].instantPlacement, true)
+    assert.equal(definitions[type].instantPlacement, undefined)
+    assert.equal(definitions[type].constructionTime, 4)
     assert.equal(definitions[type].inventoryItem, undefined)
   }
 })

@@ -134,6 +134,7 @@ export type UnitResourceDeliveryReturnTask = {
 }
 
 type UnitResourceDeliveryState = {
+  pickup?: ResourceAmount
   building?: BuildingEntity | null
   chest?: BuildingEntity | null
   phase: 'toBuilding' | 'entering' | 'toChest' | 'leaving'
@@ -181,6 +182,7 @@ export interface EnergyEntity extends RuntimeEntityBase {
 }
 
 export interface UnitEntity extends EnergyEntity {
+  lastMealAt?: number
   dailySchedule?: VillagerSchedule
   sprite?: AnimatedSprite
   shadow?: AnimatedSprite | null
@@ -191,6 +193,8 @@ export interface UnitEntity extends EnergyEntity {
   gender?: 'male' | 'female'
   work?: string | null
   actionFrameSequence?: number[] | null
+  collectiveTask?: string | null
+  autonomyBlockedJob?: VillagerAutonomyJob | null
   autonomousJob?: VillagerAutonomyJob | null
   exploringForAutonomy?: boolean
   assigningAutonomousJob?: boolean

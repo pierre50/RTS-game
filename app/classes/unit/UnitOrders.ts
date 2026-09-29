@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import type { RuntimeCell } from '../../types/map'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
@@ -21,6 +22,7 @@ export function setUnitDestination(unit: UnitOrderHost, dest: RuntimeEntity | Ru
     return
   }
 
+  if (unit.dest !== dest) notifyVillageStateChanged(unit.owner)
   unit.handleSetDest?.(dest, unit)
   unit.dest = dest
   unit.realDest = {

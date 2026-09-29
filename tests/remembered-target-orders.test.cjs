@@ -148,3 +148,12 @@ test('a failed movement command is not accepted as a remembered-target pursuit',
   )
   assert.equal(pursuit.isPursuingRememberedTarget(unit, target, 'minestone'), false)
 })
+
+test('explicit resource orders replace collective ownership while automatic retries preserve it', () => {
+  for (const automatic of [false, true]) {
+    const { unit, target, commands } = scene()
+    unit.collectiveTask = 'wood'
+    commands.commonSendTo(target, 'stoneminer', 'minestone', false, automatic)
+    assert.equal(unit.collectiveTask, automatic ? 'wood' : null)
+  }
+})

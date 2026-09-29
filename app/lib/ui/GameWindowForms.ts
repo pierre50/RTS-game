@@ -61,6 +61,7 @@ export function enhanceWindowForms(panel: HTMLElement): void {
       choice = document.createElement('div')
       choice.className = 'window-choice'
       choice.setAttribute('data-window-field', 'choice')
+      if (select.id) choice.id = `${select.id}-choice`
       choice.tabIndex = 0
       choice.setAttribute('role', 'spinbutton')
       const label =
@@ -109,7 +110,8 @@ export function enhanceWindowForms(panel: HTMLElement): void {
       value.className = 'window-range-value'
       input.after(value)
     }
-    const text = Number(input.max) <= 2 ? `${Math.round(Number(input.value) * 100)}%` : input.value
+    const text =
+      input.dataset.windowValue ?? (Number(input.max) <= 2 ? `${Math.round(Number(input.value) * 100)}%` : input.value)
     if (value.textContent !== text) value.textContent = text
   }
 }

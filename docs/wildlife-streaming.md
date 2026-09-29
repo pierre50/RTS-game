@@ -10,8 +10,18 @@ lists are deliberately not repopulated during loading.
 `WildlifeStore` indexes plain persistent animal records in 32-cell zones.
 `WildlifeSystem` checks nearby zones every 250 ms and creates at most 16 animals
 per update. Activation follows the camera, hero, and live outdoor units/buildings,
-with a minimum radius of 32 cells. Sleep uses an extra 16-cell margin to prevent
+with a minimum radius of 32 cells. Suspended NPC units and buildings belonging to
+an abstract distant faction no longer activate wildlife. Live workers (including
+trainees), player units, the hero and camera still activate it. Dormant anchors
+retain their sight exclusion for replacements, and existing interaction/return
+pins remain in force. Sleep uses an extra 16-cell margin to prevent
 repeated creation at the boundary. Camera zoom can increase the activation radius.
+
+Streaming reconciliation runs at most once per frame during fast-forward or a
+stall, retaining the fractional interval remainder. Pending renewal work stays
+queued and corpse decay still uses elapsed game time. Movement, combat and
+production retain their normal scheduler catch-up. Animal threat searches skip
+compact resources, since only units and buildings can be threats.
 
 Distant animals keep identity, position and health but do not walk or own display
 objects or behavior timers. Combat, fleeing, selection and direct unit targets
@@ -52,6 +62,10 @@ is closed.
 
 Saves include dormant records plus current active state once per identity.
 Startup logs `[wildlife]` with record, active and pending-renewal counts.
+Every five game seconds, `wildlife.activity` records active/persistent counts,
+dormant anchors, new activations and retained animals by reason (interaction,
+return home, units, buildings, hero or camera). Reasons are exclusive, with
+interaction and return taking precedence over proximity.
 
 ## Resources
 

@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function commands(bindings) {
-  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+  const { availableCommands } = loadTsModule('app/lib/ui/GameWindowCommands.ts', {
     mocks: {
       '../audio/settings': { getGamepadButtonIndex: action => bindings[action] },
       '../lang': { t: key => key },
@@ -21,11 +21,14 @@ function commands(bindings) {
     querySelectorAll: () => [primary],
     closest: () => null,
   }
-  const instance = Object.create(GameWindow.prototype)
-  instance.selected = row
-  instance.dismissible = true
-  instance.panel = { querySelectorAll: () => [] }
-  return instance.availableCommands()
+  return availableCommands({
+    getSelected: () => row,
+    dismissible: true,
+    panel: { querySelectorAll: () => [] },
+    dismiss() {},
+    scheduleRefresh() {},
+    switchPanel() {},
+  })
 }
 
 test('inventory footer honors remapped transfer buttons and moves conflicting close action', () => {
@@ -118,4 +121,95 @@ test('keyboard hold cancels when editing, covered, disabled or removed', () => {
   } finally {
     global.document = previousDocument
   }
+})
+
+test('windows render gamepad hints on first paint without waiting for another button press', () => {
+  const previous = {
+    document: global.document,
+    window: global.window,
+    MutationObserver: global.MutationObserver,
+    requestAnimationFrame: global.requestAnimationFrame,
+    cancelAnimationFrame: global.cancelAnimationFrame,
+  }
+  let pad = { buttons: [{ pressed: true }] }
+  let enabled = true
+  let gameplay = true
+  const makeElement = () => ({
+    dataset: {},
+    classList: { add() {} },
+    setAttribute() {},
+    append() {},
+    addEventListener() {},
+    removeEventListener() {},
+    closest: () => (gameplay ? {} : null),
+  })
+  global.document = { createElement: makeElement, addEventListener() {}, removeEventListener() {} }
+  global.window = { addEventListener() {}, removeEventListener() {} }
+  global.MutationObserver = class {
+    observe() {}
+    disconnect() {}
+  }
+  global.requestAnimationFrame = () => 1
+  global.cancelAnimationFrame = () => {}
+  try {
+    const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+      mocks: {
+        '../lang': { t: key => key },
+        '../audio/settings': { getGamepadEnabled: () => enabled },
+        '../input/gamepad': { getActiveGamepad: () => pad },
+      },
+    })
+    const firstPaints = []
+    GameWindow.prototype.refresh = function () {
+      firstPaints.push(this.panel.dataset.inputMode)
+    }
+    GameWindow.prototype.cancelKeyboardHold = () => {}
+    const open = () => {
+      const instance = new GameWindow(
+        makeElement(),
+        () => {},
+        () => true
+      )
+      instance.destroy()
+    }
+    open()
+    pad = null
+    open()
+    pad = { buttons: [] }
+    enabled = false
+    open()
+    gameplay = false
+    open()
+    assert.deepEqual(firstPaints, ['gamepad', 'keyboard', 'keyboard', 'gamepad'])
+  } finally {
+    Object.assign(global, previous)
+  }
+})
+
+test('panel shortcuts stay within controls device tabs when focus is inside controls', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
+  })
+  let clicked
+  const scope = { querySelectorAll: () => deviceTabs }
+  const tab = (name, active, local) => ({
+    disabled: false,
+    getAttribute: () => String(active),
+    closest: () => (local ? scope : null),
+    click: () => {
+      clicked = name
+    },
+  })
+  const deviceTabs = [tab('keyboard', true, true), tab('gamepad', false, true)]
+  const outerTabs = [tab('game', false, false), tab('graphics', false, false), tab('controls', true, false)]
+  const instance = Object.create(GameWindow.prototype)
+  instance.panel = { querySelectorAll: () => [...outerTabs, ...deviceTabs] }
+  instance.visible = () => true
+  instance.select = () => {}
+  instance.selected = { closest: () => scope }
+  instance.switchPanel(1)
+  assert.equal(clicked, 'gamepad')
+  instance.selected = { closest: () => null }
+  instance.switchPanel(1)
+  assert.equal(clicked, 'game')
 })

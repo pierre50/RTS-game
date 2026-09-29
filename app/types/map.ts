@@ -1,3 +1,4 @@
+import type { PlayerLike } from './player'
 import type { AnimalConfig } from './config'
 import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid, GridPosition } from './grid'
@@ -7,7 +8,6 @@ import type { SaveEntityState } from './save'
 import type { Viewport } from './geometry'
 import type { TextureRef } from '../lib/graphics/textures'
 import type { LocalMapLayout } from '../lib/localMapLayout'
-
 
 export type RuntimeWorldManifest = {
   macroPreviewPath?: string
@@ -105,6 +105,7 @@ export interface RuntimeMap {
   // Coarse spatial grid of BUCKET_SIZE-cell buckets, keyed [floor(i/BUCKET_SIZE)][floor(j/BUCKET_SIZE)].
   // Populated by addToInstanceBucket() lazily on first use — null until then.
   instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null
+  ensureNeutralPlayer?(position: { i: number; j: number }): PlayerLike
   gaia?: GaiaPlayerLike | null
   shadowLayer?: Container
   randomRange(min: number, max: number): number

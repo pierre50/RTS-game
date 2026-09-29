@@ -1,12 +1,23 @@
+import { activeConstructionSite } from '../../lib/economy/collectiveConstruction'
+import { automaticDepositAmount } from '../../lib/resources/resourceDelivery'
+import { isFoodReserveResource } from '../../lib/economy/depotReserves'
+import { materialAmount } from '../../lib/economy/constructionMaterials'
+import { personalFoodReserve } from '../../lib/economy/villagerProvisions'
+import { getUnitResourceCarryRemaining } from '../../lib/resources/resourceDelivery'
+import type { UnitEntity } from '../../types/entities'
+import {
+  collectiveAnchor,
+  belongsToSettlement,
+  settlementPopulation,
+  settlementStockGoals,
+  collectiveHarvestBudget,
+} from '../../lib/economy/collectiveTasks'
+import { collectiveNeeds } from '../../lib/economy/collectiveNeeds'
+import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
 import { getTrainingDurationDays } from '../../lib/training/trainingRules'
 import { ABSTRACT_VILLAGE_PRODUCTION } from '../../config/worldEconomyBalance'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
-import {
-  VILLAGE_TARGET_PERCENTAGE_BY_AGE,
-  MAX_INFANTRY_BY_AGE,
-  MAX_ARCHER_BY_AGE,
-  AI_DIFFICULTIES,
-} from '../../ai/config'
+import { MAX_INFANTRY_BY_AGE, MAX_ARCHER_BY_AGE, AI_DIFFICULTIES } from '../../ai/config'
 import { AI_BUILDING_TRAINING_CAPACITY, AI_ABSTRACT_DAILY_RECRUITS } from '../../ai/config'
 import { BUILDING_TYPES, UNIT_TYPES } from '../../constants'
 import { getVillagerSchedule } from '../../lib/units/villagerSchedule'
@@ -29,33 +40,94 @@ export function produceAbstractVillage(
   unit: SaveEntityState,
   milliseconds: number,
   report: OfflineWorldReport,
-  potential: ResourceAmount = {}
+  potential: ResourceAmount = {},
+  _rules?: OfflineWorkRules,
+  _playerIndex = 0
 ): void {
   if (!player.buildings?.some(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt && isLiving(b))) return
-  const owner = savedResourceOwner(player, state.players)
-  if (unit.inventory?.resources && depositChestResources(owner, unit.inventory.resources, { automaticDelivery: true }))
-    unit.inventory.resources = {}
+  const anchor = collectiveAnchor(player, unit)
+  const allStores = savedResourceOwner(player, state.players)
+  const owner = {
+    ...allStores,
+    buildings: allStores.buildings?.filter(building => belongsToSettlement(player, anchor, building)),
+  }
+  const population = settlementPopulation(player, anchor)
+  for (const [key, amount] of Object.entries(unit.inventory?.resources ?? {})) {
+    const transferable = automaticDepositAmount(
+      { ...unit, owner: player } as unknown as UnitEntity,
+      key as keyof ResourceAmount
+    )
+    if (transferable > 0 && depositChestResources(owner, { [key]: transferable }, { automaticDelivery: true }))
+      unit.inventory!.resources![key as keyof ResourceAmount] = amount - transferable
+  }
   stopOfflineTask(unit)
   delete unit.offlineWork
   if (milliseconds <= 0) return
   const schedule = getVillagerSchedule(unit)
   const workdayMs = ((schedule.workEndMinute - schedule.workStartMinute) * DAY_NIGHT_CONFIG.dayLengthMs) / (24 * 60)
-  const weights = VILLAGE_TARGET_PERCENTAGE_BY_AGE[Math.min(2, player.age ?? 0) as 0 | 1 | 2]
+  const site = activeConstructionSite(player, unit)
+  const projects = settlementStockGoals(player, anchor, site)
   const remainder = player.abstractProductionRemainder ?? {}
   const next = { ...remainder }
   const output: ResourceAmount = {}
-  for (const [resource, dailyRate] of Object.entries(ABSTRACT_VILLAGE_PRODUCTION)) {
-    const weight = resource in weights ? weights[resource as keyof typeof weights] / 100 : 1
-    const regionalFactor = potential[resource as keyof ResourceAmount] ?? 1
-    const amount =
-      Math.round(
-        ((remainder[resource] ?? 0) + (dailyRate * weight * regionalFactor * milliseconds) / workdayMs) * 1e6
-      ) / 1e6
-    const whole = Math.floor(amount)
-    output[resource as keyof ResourceAmount] = whole
-    next[resource] = Math.round((amount - whole) * 1e6) / 1e6
+  let remainingMs = milliseconds
+  const needs = collectiveNeeds(population, projects, getPlayerResourceTotals(owner, { includeHero: false }))
+  if (unit.collectiveTask === 'food') {
+    const food = needs.find(need => need.resource === 'food')!
+    food.missing = Math.max(
+      food.missing,
+      personalFoodReserve() - materialAmount(unit.inventory?.resources ?? {}, 'food')
+    )
   }
-  if (!depositChestResources(owner, output, { automaticDelivery: true })) return
+  for (const need of needs) {
+    const resource = need.resource
+    need.missing = collectiveHarvestBudget(
+      player,
+      unit.collectiveTask ? unit : { ...unit, collectiveTask: resource },
+      resource,
+      Boolean(site)
+    )
+    if (unit.collectiveTask && unit.collectiveTask !== resource) continue
+    const remainderKey = `${anchor.i},${anchor.j}:${resource}`
+    const dailyRate =
+      ABSTRACT_VILLAGE_PRODUCTION[
+        (isFoodReserveResource(resource) ? 'food' : resource) as keyof typeof ABSTRACT_VILLAGE_PRODUCTION
+      ] ?? 0
+    const rate = (dailyRate * (potential[resource] ?? 1)) / workdayMs
+    if (need.missing <= 0) {
+      next[remainderKey] = 0
+      continue
+    }
+    if (remainingMs <= 0 || rate <= 0) continue
+    const fraction = Math.min(remainder[remainderKey] ?? 0, need.missing)
+    const spent = Math.min(remainingMs, Math.max(0, need.missing - fraction) / rate)
+    const amount = Math.min(need.missing, Math.round((fraction + spent * rate) * 1e6) / 1e6)
+    let whole = Math.floor(amount)
+    unit.inventory ??= {}
+    const bag = (unit.inventory.resources ??= {})
+    const provisions =
+      resource === 'food' || isFoodReserveResource(resource)
+        ? Math.min(
+            whole,
+            Math.max(0, personalFoodReserve() - materialAmount(bag, 'food')),
+            getUnitResourceCarryRemaining(unit as unknown as UnitEntity)
+          )
+        : 0
+    if (provisions > 0) {
+      const food = isFoodReserveResource(resource) ? resource : 'wheat'
+      bag[food] = (bag[food] ?? 0) + provisions
+    }
+    const toStore = whole - provisions
+    if (toStore > 0 && (site || !depositChestResources(owner, { [resource]: toStore }, { automaticDelivery: true }))) {
+      const carriedAmount = Math.min(toStore, getUnitResourceCarryRemaining(unit as unknown as UnitEntity))
+      const carried = resource === 'food' ? 'wheat' : resource
+      bag[carried] = (bag[carried] ?? 0) + carriedAmount
+      whole = provisions + carriedAmount
+    }
+    output[resource] = whole
+    next[remainderKey] = Math.round((amount - Math.floor(amount)) * 1e6) / 1e6
+    remainingMs -= spent
+  }
   player.abstractProductionRemainder = next
   for (const [resource, count] of Object.entries(output))
     report.gathered[resource as keyof ResourceAmount] = (report.gathered[resource as keyof ResourceAmount] ?? 0) + count

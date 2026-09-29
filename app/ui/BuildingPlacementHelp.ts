@@ -1,14 +1,21 @@
+import { createGamepadKey } from '../lib/input/gamepadGlyph'
 import { t } from '../lib/lang'
+import { getGamepadButtonIndex, onVisualSettingsChange } from '../lib/audio/settings'
 
 /** Placement stays in the world: this footer does not trap focus or pause movement. */
 export class BuildingPlacementHelp {
   private element = document.createElement('footer')
-  private gamepad = false
+  private gamepad: boolean
   private place: HTMLButtonElement
   private mirror: HTMLButtonElement
   private cancel: HTMLButtonElement
+  private stopSettingsWatch: () => void
 
-  constructor(private actions: { place(): void; mirror(): void; cancel(): void; canMirror: boolean }) {
+  constructor(
+    private actions: { place(): void; mirror(): void; cancel(): void; canMirror: boolean },
+    gamepad = false
+  ) {
+    this.gamepad = gamepad
     this.element.className = 'building-placement-help'
     this.element.setAttribute('aria-label', t('placementHelp'))
     const title = document.createElement('span')
@@ -21,6 +28,7 @@ export class BuildingPlacementHelp {
     document.body.appendChild(this.element)
     document.addEventListener('keydown', this.onKey, true)
     document.addEventListener('pointermove', this.onPointer)
+    this.stopSettingsWatch = onVisualSettingsChange(() => this.render())
     this.render()
   }
 
@@ -40,13 +48,13 @@ export class BuildingPlacementHelp {
   }
 
   private render(): void {
-    for (const [button, key, label] of [
-      [this.place, this.gamepad ? 'A' : '↵', t('placementPlace')],
-      [this.mirror, this.gamepad ? 'X' : 'R', t('placementMirror')],
-      [this.cancel, this.gamepad ? 'B' : 'Esc', t('cancel')],
+    for (const [button, action, key, label] of [
+      [this.place, 'placementPlace', '↵', t('placementPlace')],
+      [this.mirror, 'placementMirror', 'R', t('placementMirror')],
+      [this.cancel, 'placementCancel', 'Esc', t('cancel')],
     ] as const) {
-      const hint = document.createElement('kbd')
-      hint.textContent = key
+      const hint = this.gamepad ? createGamepadKey(getGamepadButtonIndex(action)) : document.createElement('kbd')
+      if (!this.gamepad) hint.textContent = key
       button.replaceChildren(hint, document.createTextNode(label))
     }
   }
@@ -82,6 +90,7 @@ export class BuildingPlacementHelp {
   }
 
   destroy(): void {
+    this.stopSettingsWatch()
     document.removeEventListener('keydown', this.onKey, true)
     document.removeEventListener('pointermove', this.onPointer)
     this.element.remove()

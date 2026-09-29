@@ -34,7 +34,7 @@ import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
 import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { getHorseColorFromSeed, isHorseColor, type HorseColor } from '../../lib/horses/horseColors'
 import { getHorseTamingStatus, shouldHorseFleeFromThreat, type HorseTamingStatus } from '../../lib/horses/horseTaming'
-import { getAnimalRenderBounds } from './animalRenderBounds'
+import { getAnimalRenderBounds } from './AnimalRenderBounds'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; spaceId?: string; type: string }
@@ -238,6 +238,8 @@ export class Animal extends Instance implements AnimalEntity {
     this.assignProperties(options)
     const animalConfig = (this.owner.config.animals?.[this.type] ?? {}) as Partial<AnimalConfig> & PositionedConfig
     this.assignProperties(animalConfig)
+    // Preserve the original meat capacity when restoring a partially looted corpse.
+    if (typeof options.totalQuantity === 'number') this.totalQuantity = options.totalQuantity
     const { trapPrey, spaceId } = this as AnimalEntity
     if (!trapPrey && this.tamingStatus !== 'tamed' && (!spaceId || spaceId === 'outside'))
       this.wildlife ??= { homeI: this.i, homeJ: this.j, generation: 0 }

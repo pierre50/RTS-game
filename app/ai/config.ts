@@ -31,19 +31,13 @@ export const AI_DIFFICULTIES = {
   },
 }
 
-export const AI_BUILDING_TRAINING_CAPACITY = 5
+export { BUILDING_TRAINING_CAPACITY as AI_BUILDING_TRAINING_CAPACITY } from '../lib/training/trainingRules'
 export const AI_ABSTRACT_DAILY_RECRUITS = 2
 
 export const MAX_VILLAGER_PER_AGE = {
   0: 50,
   1: 50,
   2: 50,
-}
-
-export const VILLAGE_TARGET_PERCENTAGE_BY_AGE = {
-  0: { wood: 35, food: 50, gold: 0, stone: 15 },
-  1: { wood: 30, food: 35, gold: 15, stone: 20 },
-  2: { wood: 25, food: 30, gold: 20, stone: 25 },
 }
 
 const BUILDING_CAPS = {

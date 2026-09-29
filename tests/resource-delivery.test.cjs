@@ -123,7 +123,8 @@ function loadGameResourceDelivery(overrides = {}) {
                 (overrides.assignVillagerAutonomy?.(unit, task?.autonomousJob ?? unit.autonomousJob, {
                   exploreWhenNoTarget: true,
                   preserveRejectedTargets: true,
-                }) ?? false)
+                }) ??
+                  false)
             )
           }),
         resumeVillagerStoredTask:
@@ -156,6 +157,7 @@ function loadGameResourceDelivery(overrides = {}) {
           }),
       },
       '../../lib/resources/resourceDelivery': {
+        automaticDepositAmount: (unit, resource) => unit.inventory?.resources?.[resource] ?? 0,
         buildingAcceptsInventoryResource: overrides.buildingAcceptsInventoryResource ?? (() => true),
         findResourceDeliveryTarget: overrides.findResourceDeliveryTarget ?? (() => null),
         unitHasDeliverableResourcesForBuilding: overrides.unitHasDeliverableResourcesForBuilding ?? (() => true),
@@ -176,8 +178,7 @@ function loadGameResourceDelivery(overrides = {}) {
           }),
       },
       '../../services/rest/UnitRestLifecycle': {
-        continueRestAfterDelivery:
-          overrides.continueRestAfterDelivery ?? (() => false),
+        continueRestAfterDelivery: overrides.continueRestAfterDelivery ?? (() => false),
         sendUnitToRest:
           overrides.sendUnitToRest ??
           ((unit, reason) => {
@@ -224,7 +225,8 @@ function loadUnitRestRules(overrides = {}) {
         getCellsAroundPoint: () => [],
       },
       '../../lib/grid/movement': {
-        getInstanceClosestFreeCellPath: overrides.getInstanceClosestFreeCellPath ?? ((_unit, target) => target.path ?? []),
+        getInstanceClosestFreeCellPath:
+          overrides.getInstanceClosestFreeCellPath ?? ((_unit, target) => target.path ?? []),
         getInstancePath: overrides.getInstancePath ?? (() => []),
       },
       '../../lib/units/unitControl': {
@@ -283,20 +285,6 @@ test('villagers deliver only when the shared bag is full', () => {
   villager.controlMode = 'hero'
   villager.inventory.resources.wood = 50
   assert.equal(unitShouldDeliverResource(villager, 'wood'), false)
-})
-
-test('full-storage blocking clears when a chest or the bag has room again', () => {
-  const { isUnitBlockedByFullStorage } = loadResourceDelivery()
-  const owner = { buildings: [] }
-  const unit = { type: 'Villager', owner, inventory: { resources: { wood: 30 } } }
-  assert.equal(isUnitBlockedByFullStorage(unit), true)
-  const chest = { type: 'Chest', family: 'building', owner, isBuilt: true, inventory: { resources: {} } }
-  owner.buildings.push(chest)
-  assert.equal(isUnitBlockedByFullStorage(unit), false)
-  chest.inventory.resources.wood = 100000
-  assert.equal(isUnitBlockedByFullStorage(unit), true)
-  unit.inventory.resources.wood = 29
-  assert.equal(isUnitBlockedByFullStorage(unit), false)
 })
 
 test('villager delivery return tasks account for travel time before resuming work', () => {
@@ -369,7 +357,7 @@ test('delivery targets match the carried resource family', () => {
   )
 })
 
-test('delivery target prefers a building that accepts the whole carried pocket', () => {
+test('mixed loads go to a specialized depot instead of the town center', () => {
   const { findResourceDeliveryTarget } = loadResourceDelivery()
   const owner = { buildings: [] }
   const granary = {
@@ -401,11 +389,11 @@ test('delivery target prefers a building that accepts the whole carried pocket',
       owner,
       type: 'Villager',
     }),
-    townCenter
+    storagePit
   )
 })
 
-test('delivery target routes outdoor chests directly and interior chests through their parent building', () => {
+test('delivery targets exclude both town-center chests and personal outdoor chests', () => {
   const { findResourceDeliveryTarget, getBuildingStorageCapacity } = loadResourceDelivery()
   const owner = { label: 'player-1', buildings: [] }
   const townCenter = {
@@ -440,8 +428,8 @@ test('delivery target routes outdoor chests directly and interior chests through
   }
   owner.buildings = [interiorChest, townCenter, outdoorChest]
 
-  assert.equal(getBuildingStorageCapacity(interiorChest), 600)
-  assert.equal(getBuildingStorageCapacity(outdoorChest), 300)
+  assert.equal(getBuildingStorageCapacity(interiorChest), 300)
+  assert.equal(getBuildingStorageCapacity(outdoorChest), 100)
   assert.equal(
     findResourceDeliveryTarget({
       inventory: { resources: { wood: 10 } },
@@ -450,7 +438,7 @@ test('delivery target routes outdoor chests directly and interior chests through
       spaceId: 'outside',
       type: 'Villager',
     }),
-    townCenter
+    null
   )
 
   owner.buildings = [outdoorChest]
@@ -462,7 +450,7 @@ test('delivery target routes outdoor chests directly and interior chests through
       spaceId: 'outside',
       type: 'Villager',
     }),
-    outdoorChest
+    null
   )
 })
 
@@ -595,19 +583,20 @@ test('gold miner resumes minegold only after the town center exit transfer compl
   unit.isUnitAtDest = () => true
   assert.equal(handleResourceDeliveryAction(context, unit), true)
   assert.equal(unit.resourceDeliveryState.phase, 'leaving')
-  assert.equal(calls.some(call => call[0] === 'sendToMineResource'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'sendToMineResource'),
+    false
+  )
 
   completeExit()
 
   assert.equal(unit.resourceDeliveryState, null)
   assert.equal(unit.dest, gold)
   assert.equal(unit.action, 'minegold')
-  assert.deepEqual(calls.find(call => call[0] === 'sendToMineResource'), [
-    'sendToMineResource',
-    'gold-1',
-    true,
-    'outside',
-  ])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'sendToMineResource'),
+    ['sendToMineResource', 'gold-1', true, 'outside']
+  )
 })
 
 test('resource delivery plays a distant chest open cue when a villager deposits resources', () => {
@@ -653,10 +642,15 @@ test('outdoor chest receives wood only after the villager arrives, without inter
   const chest = { family: 'building', type: 'Chest', i: 10, j: 10, inventory: { resources: {} } }
   const routes = []
   const unit = {
-    action: 'delivery', dest: chest, i: 0, j: 0,
+    action: 'delivery',
+    dest: chest,
+    i: 0,
+    j: 0,
     inventory: { resources: { wood: 10 } },
     path: [{ i: 1, j: 0 }],
-    isUnitAtDest(_action, target) { return this.i === target.i && this.j === target.j - 1 },
+    isUnitAtDest(_action, target) {
+      return this.i === target.i && this.j === target.j - 1
+    },
     sendToEvt: (...args) => routes.push(args),
     stop() {},
   }
@@ -860,11 +854,7 @@ test('evening delivery clears its delivery state before continuing toward shelte
 
   assert.equal(unit.resourceDeliveryState, null)
   assert.equal(unit.shelterState.status, 'delivering')
-  assert.deepEqual(calls, [
-    ['remove', 999],
-    ['refreshInventory'],
-    ['continueRest', null],
-  ])
+  assert.deepEqual(calls, [['remove', 999], ['refreshInventory'], ['continueRest', null]])
 })
 
 test('delivery sends villagers to rest instead of resuming distant work near day end', () => {
@@ -922,12 +912,7 @@ test('delivery sends villagers to rest instead of resuming distant work near day
   handleResourceDeliveryAction(context, unit)
 
   assert.equal(unit.resourceDeliveryState, null)
-  assert.deepEqual(calls, [
-    ['remove', 999],
-    ['refreshInventory'],
-    ['canResume', 'tree-1'],
-    ['sendToRest', 'sleep'],
-  ])
+  assert.deepEqual(calls, [['remove', 999], ['refreshInventory'], ['canResume', 'tree-1'], ['sendToRest', 'sleep']])
   assert.equal(unit.shelterState.status, 'movingToRest')
 })
 
@@ -1121,7 +1106,11 @@ test('resource delivery system reissues a lost outer building order before the c
 
 test('interior storage uses the capacity of each parent building and preserves existing overfull stock', () => {
   const { getBuildingStorageCapacity, getBuildingStorageRemaining } = loadResourceDelivery()
-  for (const [type, capacity] of [['TownCenter', 600], ['StoragePit', 3000], ['Granary', 2000]]) {
+  for (const [type, capacity] of [
+    ['TownCenter', 300],
+    ['StoragePit', 300],
+    ['Granary', 300],
+  ]) {
     const owner = { buildings: [] }
     const chest = { type: 'Chest', label: 'inside', owner, inventory: { resources: { wood: capacity + 50 } } }
     const building = { type, label: 'parent', owner, interiorBuildings: [chest] }
@@ -1133,14 +1122,14 @@ test('interior storage uses the capacity of each parent building and preserves e
   }
 })
 
-test('blocked chests reject villager deliveries but still allow manual transfers', () => {
+test('personal chests reject automatic deliveries regardless of their legacy flag', () => {
   const { unitHasDeliverableResourcesForBuilding, buildingAcceptsInventoryResource } = loadResourceDelivery()
   const chest = { type: 'Chest', family: 'building', inventory: { resources: {} }, villagerDeliveriesBlocked: true }
   const unit = { type: 'Villager', inventory: { resources: { wood: 10 } } }
   assert.equal(unitHasDeliverableResourcesForBuilding(unit, chest), false)
   assert.equal(buildingAcceptsInventoryResource(chest, 'wood', 10), true)
   chest.villagerDeliveriesBlocked = false
-  assert.equal(unitHasDeliverableResourcesForBuilding(unit, chest), true)
+  assert.equal(unitHasDeliverableResourcesForBuilding(unit, chest), false)
 })
 
 test('mixed hunting loads finish depositing before returning to the original carcass', () => {
@@ -1148,17 +1137,30 @@ test('mixed hunting loads finish depositing before returning to the original car
   let resumed = 0
   const { handleResourceDeliveryAction } = loadGameResourceDelivery({
     buildingAcceptsInventoryResource: (_building, resource) => resource === 'meat',
-    findResourceDeliveryTarget: unit => unit.inventory.resources.leather ? nextDepot : null,
-    resumeVillagerJobIntent: () => { resumed++; return true },
+    findResourceDeliveryTarget: unit => (unit.inventory.resources.leather ? nextDepot : null),
+    resumeVillagerJobIntent: () => {
+      resumed++
+      return true
+    },
   })
   const chest = { family: 'building', type: 'Chest', inventory: { resources: {} } }
-  const originalTask = { action: 'takemeat', dest: { family: 'animal', isDead: true }, work: 'hunter', autonomousJob: 'food' }
+  const originalTask = {
+    action: 'takemeat',
+    dest: { family: 'animal', isDead: true },
+    work: 'hunter',
+    autonomousJob: 'food',
+  }
   const sent = []
   const unit = {
-    action: 'delivery', dest: chest, inventory: { resources: { meat: 10, leather: 2 } },
+    action: 'delivery',
+    dest: chest,
+    inventory: { resources: { meat: 10, leather: 2 } },
     resourceDeliveryState: { phase: 'toBuilding', building: chest, returnTask: originalTask },
     isUnitAtDest: () => true,
-    sendToDelivery: (building, task) => { sent.push([building, task]); return true },
+    sendToDelivery: (building, task) => {
+      sent.push([building, task])
+      return true
+    },
   }
   const context = { scheduler: { remove() {} }, menu: { refreshInventory() {} } }
   assert.equal(handleResourceDeliveryAction(context, unit), true)
@@ -1166,4 +1168,93 @@ test('mixed hunting loads finish depositing before returning to the original car
   assert.equal(unit.inventory.resources.leather, 2)
   assert.deepEqual(sent, [[nextDepot, originalTask]])
   assert.equal(resumed, 0)
+})
+
+test('a full bag without a depot does not send the worker to a campfire or town center', () => {
+  const { sendUnitToDelivery } = loadTsModule('app/classes/unit/UnitResourceDeliveryCommands.ts', {
+    mocks: {
+      '../../lib': {},
+      '../../lib/units/unitWorkAppearance': { applyUnitWorkAssets() {} },
+      '../../lib/resources/resourceDelivery': {
+        findResourceDeliveryTarget: () => null,
+        isUnitResourceCarryFull: () => true,
+        unitHasDeliverableResources: () => true,
+      },
+      '../../lib/grid/queries': {
+        getClosestInstanceWithPath: (_unit, candidates) => ({ instance: candidates[0] }),
+      },
+    },
+  })
+  for (const type of ['FireCamp', 'TownCenter']) {
+    const owner = { buildings: [] }
+    owner.buildings.push({ type, owner, isBuilt: true })
+    const tree = { type: 'Tree', hitPoints: 3 }
+    const unit = {
+      type: 'Villager',
+      owner,
+      dest: tree,
+      action: 'chopwood',
+      collectiveTask: 'wood',
+      inventory: { resources: { wheat: 12, wood: 18 } },
+      sendToEvt: () => assert.fail('no trip to a building that cannot accept resources'),
+    }
+    assert.equal(
+      sendUnitToDelivery(unit, () => true),
+      false
+    )
+    assert.equal(unit.dest, tree)
+    assert.equal(unit.collectiveTask, 'wood')
+    assert.deepEqual(unit.inventory.resources, { wheat: 12, wood: 18 })
+  }
+})
+
+test('depot pickup transfers only on contact with the interior chest and exits afterward', () => {
+  const { handleResourceDeliveryAction } = loadGameResourceDelivery()
+  const owner = { buildings: [] }
+  const building = { type: 'StoragePit', family: 'building', owner }
+  const chest = { type: 'Chest', family: 'building', owner, inventory: { resources: { wood: 20 } } }
+  let contact = false
+  const unit = {
+    type: 'Villager',
+    action: 'delivery',
+    dest: chest,
+    inventory: { resources: { wheat: 12 } },
+    context: { dayNight: { state: { hour: 10 } } },
+    resourceDeliveryState: { building, chest, phase: 'toChest', pickup: { wood: 20 } },
+    isUnitAtDest: () => contact,
+    sendToEvt() {},
+    stop() {},
+  }
+  const context = { scheduler: { remove() {} }, menu: { refreshInventory() {} } }
+  assert.equal(handleResourceDeliveryAction(context, unit), false)
+  assert.equal(chest.inventory.resources.wood, 20)
+  assert.equal(unit.inventory.resources.wood, undefined)
+  contact = true
+  assert.equal(handleResourceDeliveryAction(context, unit), true)
+  assert.equal(unit.inventory.resources.wood, 18)
+  assert.equal(chest.inventory.resources.wood, 2)
+  assert.equal(unit.inventory.resources.wheat, 12)
+  assert.equal(unit.resourceDeliveryState, null)
+})
+
+test('completed pickup remains a pickup while exiting and cannot deposit its new cargo on a stale callback', () => {
+  const { handleResourceDeliveryAction } = loadGameResourceDelivery({ routeUnitOutOfBuildingInteriorSpace: () => true })
+  const owner = { buildings: [] }
+  const building = { type: 'StoragePit', family: 'building', owner }
+  const chest = { type: 'Chest', family: 'building', owner, inventory: { resources: { wood: 20 } } }
+  const unit = {
+    type: 'Villager',
+    action: 'delivery',
+    dest: chest,
+    inventory: { resources: {} },
+    resourceDeliveryState: { building, chest, phase: 'toChest', pickup: { wood: 18 } },
+    isUnitAtDest: () => true,
+  }
+  const context = { scheduler: { remove() {} }, menu: { refreshInventory() {} } }
+  assert.equal(handleResourceDeliveryAction(context, unit), true)
+  assert.equal(unit.resourceDeliveryState.phase, 'leaving')
+  assert.deepEqual(unit.resourceDeliveryState.pickup, {})
+  assert.equal(handleResourceDeliveryAction(context, unit), false)
+  assert.equal(unit.inventory.resources.wood, 18)
+  assert.equal(chest.inventory.resources.wood, 2)
 })

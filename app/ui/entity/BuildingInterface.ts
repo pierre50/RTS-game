@@ -1,3 +1,4 @@
+import { getEntityDescription } from './EntityDescription'
 import { BUILDING_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
 import { getIconPath } from '../../lib'
 import { HORSE_COLOR_PALETTES, isHorseColor } from '../../lib/horses/horseColors'
@@ -48,6 +49,26 @@ export class BuildingInterface {
     }
     if (building.type === BUILDING_TYPES.stable && building.isBuilt) {
       element.appendChild(this.getStableHorseElement())
+    }
+    if (!building.isBuilt && building.constructionMaterials) {
+      const state = building.constructionMaterials
+      const status = document.createElement('div')
+      status.className = 'construction-materials'
+      for (const [resource, cost] of Object.entries(state.cost)) {
+        const key = resource as keyof typeof state.cost
+        const consumed = state.consumed[key] ?? 0
+        const delivered = state.delivered[key] ?? 0
+        const row = document.createElement('div')
+        row.textContent = t(delivered > 0 ? 'constructionMaterialLegacyStatus' : 'constructionMaterialStatus', {
+          resource: t(resource),
+          consumed,
+          cost,
+          delivered,
+          missing: Math.max(0, cost - consumed - delivered),
+        })
+        status.appendChild(row)
+      }
+      element.appendChild(status)
     }
     if (canHeroDeleteBuildingInfoTarget(building)) {
       ;(options?.actionsContainer ?? element).appendChild(this.getDeleteBuildingButton())
@@ -140,6 +161,7 @@ export class BuildingInterface {
       building.totalHitPoints,
       {
         hideType: options?.hideIdentity,
+        description: getEntityDescription(building),
       }
     )
 

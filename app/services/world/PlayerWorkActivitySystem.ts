@@ -13,10 +13,21 @@ import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 
 type WorkSession = { home: VillageHome; since: number; waking: boolean; advancing?: boolean }
-const JOBS = new Set(['food', 'wood', 'stone', 'gold', 'copper', 'iron', 'construction'])
-const ACTIONS = new Set(['chopwood', 'forageberry', 'farm', 'minestone', 'minegold', 'minecopper', 'mineiron', 'build'])
+const ACTIONS = new Set([
+  'chopwood',
+  'forageberry',
+  'farm',
+  'minestone',
+  'minegold',
+  'minecopper',
+  'mineiron',
+  'build',
+  'delivery',
+  'hunt',
+  'takemeat',
+])
 
-/** Player orders use finite local resources, never AI production or construction planning. */
+/** Autonomous player villagers share one economic transaction, without AI project planning. */
 export class PlayerWorkActivitySystem {
   private sessions = new Map<UnitEntity, WorkSession>()
   private cooldown = new WeakMap<UnitEntity, number>()
@@ -38,12 +49,12 @@ export class PlayerWorkActivitySystem {
         getEntitySpaceId(unit) === 'outside' &&
         !unit.shelterState &&
         !unit.spacePortalState &&
-        !unit.resourceDeliveryState &&
+        (!unit.resourceDeliveryState || Boolean(unit.resourceDeliveryState.pickup)) &&
         !unit.trainingTargetType &&
         !unit.pendingOrder &&
         !unit.combatMode &&
         !unit.actionLocked &&
-        ((unit.action && ACTIONS.has(unit.action)) || (!unit.action && JOBS.has(unit.autonomousJob ?? '')))
+        (!unit.action || ACTIONS.has(unit.action))
     )
   }
 
@@ -73,6 +84,9 @@ export class PlayerWorkActivitySystem {
           continue
         // Longer routes and interior orders continue in the ordinary runtime.
         if (observeVillage(this.context, home, VILLAGE_DETAIL_EXIT_RADIUS, [unit]).reason !== 'distant') continue
+        // Settle the existing cohort before joining, so nobody receives work retroactively.
+        const peer = [...this.sessions.keys()].find(candidate => candidate.owner === owner)
+        if (peer) this.advance(peer, this.sessions.get(peer)!)
         this.sessions.set(unit, { home, since: this.now(), waking: false })
         setUnitSuspension(unit, { reason: 'distant-work', wake: () => this.wake(unit) })
         unit.stopInterval?.()
@@ -98,15 +112,26 @@ export class PlayerWorkActivitySystem {
   private advance(unit: UnitEntity, state: WorkSession): void {
     const now = this.now()
     if (now <= state.since || !unit.owner || state.advancing) return
-    const run = () => advanceVillageWork(this.context, state.home, unit.owner!, [unit], now - state.since, state.since)
-    state.advancing = true
+    const cohort = [...this.sessions].filter(([member]) => member.owner === unit.owner)
+    const run = () =>
+      advanceVillageWork(
+        this.context,
+        cohort.map(([, session]) => session.home),
+        unit.owner!,
+        cohort.map(([member]) => member),
+        now - state.since,
+        state.since
+      )
+    for (const [, session] of cohort) session.advancing = true
     try {
       if (this.context.performance) this.context.performance.measure('player.work.advance', run)
       else run()
-      updateUnitEnergy(unit, now - state.since)
-      state.since = now
+      for (const [member, session] of cohort) {
+        updateUnitEnergy(member, now - session.since)
+        session.since = now
+      }
     } finally {
-      state.advancing = false
+      for (const [, session] of cohort) session.advancing = false
     }
   }
 

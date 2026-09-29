@@ -1,6 +1,12 @@
+import { getCameraWorkVolume } from '../lib/audio/cameraWorkVolume'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getReliefOffset, isometricToCartesian } from '../lib'
-import { getActiveInteractionSpace, getEntityMapPoint, getSpaceLocalPointFromMapPoint } from '../lib/mapSpaces'
+import {
+  getActiveMapSpace,
+  getActiveInteractionSpace,
+  getEntityMapPoint,
+  getSpaceLocalPointFromMapPoint,
+} from '../lib/mapSpaces'
 import type { AudibleInstanceLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { Bounds } from '../types/geometry'
@@ -109,6 +115,14 @@ export function getCellUnderCursor(controls: Controls): RuntimeCell | null {
 export function instanceInCamera(controls: Controls, instance: { x: number; y: number }, bounds?: Bounds): boolean {
   const point = 'context' in instance ? getEntityMapPoint(instance as UnitEntity) : instance
   return controls.cameraController.instanceInCamera(point, bounds)
+}
+
+export function getWorkSoundVolume(controls: Controls, instance: AudibleInstanceLike): number {
+  if (typeof instance.x !== 'number' || typeof instance.y !== 'number') return 0
+  const activeSpace = getActiveMapSpace(controls.context.map)
+  if ((instance.spaceId || 'outside') !== (activeSpace?.id || 'outside')) return 0
+  const point = getEntityMapPoint({ ...instance, x: instance.x, y: instance.y }, controls.context.map)
+  return getCameraWorkVolume(point, controls.getViewportMetrics())
 }
 
 export function instanceIsAudible(controls: Controls, instance: AudibleEntity): boolean {

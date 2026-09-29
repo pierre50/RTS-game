@@ -1,3 +1,4 @@
+import { GamepadMenuInput } from '../../controllers/GamepadMenuInput'
 import { sound } from '@pixi/sound'
 import { t } from '../../lib/lang'
 import { debounce, isPlayedHeroDefeated } from '../../lib'
@@ -13,11 +14,19 @@ import type { UnitEntity } from '../../types/entities'
 
 type LifecycleContext = {
   app: Application
-  controls?: { heroUnit?: UnitEntity | null; updateVisibleCells?: () => void } | null
+  controls?: {
+    heroUnit?: UnitEntity | null
+    updateVisibleCells?: () => void
+    cancelActiveInteraction?: () => void
+  } | null
   defeat?: boolean
   devConsoleOpen?: boolean
   map?: RuntimeMap | null
-  menu?: { pauseMenu?: { open: () => void }; updateCameraMiniMap?: () => void; isMiniMapActive?: () => boolean } | null
+  menu?: {
+    pauseMenu?: { open: () => void; toggle?: () => void }
+    updateCameraMiniMap?: () => void
+    isMiniMapActive?: () => boolean
+  } | null
   paused?: boolean
   player?: PlayerLike | null
   players?: PlayerLike[]
@@ -59,7 +68,16 @@ export async function acquireGameWakeLock(game: GameRuntimeLifecycleHost): Promi
   }
 }
 
+const gamepadMenus = new WeakMap<GameRuntimeLifecycleHost, GamepadMenuInput>()
+
 export function attachGameWindowListeners(game: GameRuntimeLifecycleHost): void {
+  gamepadMenus.get(game)?.destroy()
+  gamepadMenus.set(
+    game,
+    new GamepadMenuInput(() => {
+      if (!game.context.defeat && !game.context.devConsoleOpen) game.context.menu?.pauseMenu?.toggle?.()
+    })
+  )
   game._onKeydown = evt => handleGameKeydown(game, evt)
   game._onResize = debounce(() => {
     game.applyZoom()
@@ -95,6 +113,8 @@ function handleGameKeydown(game: GameRuntimeLifecycleHost, evt: KeyboardEvent): 
 }
 
 export function removeGameWindowListeners(game: GameRuntimeLifecycleHost): void {
+  gamepadMenus.get(game)?.destroy()
+  gamepadMenus.delete(game)
   window.removeEventListener('keydown', game._onKeydown as EventListener)
   window.removeEventListener('resize', game._onResize as EventListener)
   document.removeEventListener('visibilitychange', game._onDocumentVisibilityChange as EventListener)
@@ -166,6 +186,7 @@ export function toggleGamePause(
   if (game.context.defeat && !pause) return
   const { map, players = [] } = game.context
   if (!map) return
+  game.context.controls?.cancelActiveInteraction?.()
   if (pause) {
     document.getElementById('pause')?.remove()
     if (!options.silent && !game.context.defeat) {

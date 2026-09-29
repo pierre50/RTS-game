@@ -30,7 +30,10 @@ type HudBarHost = {
   label?: string
   context?: {
     controls?: { heroUnit?: UnitEntity | null }
-    scheduler?: { add(callback: () => void, time: number, name?: string): SchedulerTaskId; remove(id: SchedulerTaskId): void }
+    scheduler?: {
+      add(callback: () => void, time: number, name?: string): SchedulerTaskId
+      remove(id: SchedulerTaskId): void
+    }
   }
   addChild: Container['addChild']
   removeChild: Container['removeChild']
@@ -70,7 +73,9 @@ export function drawInstanceHealthBar(host: InstanceHudHost): void {
     if (existing) removeHudBarNow(host, existing)
     return
   }
-  if (!host.totalHitPoints) {
+  const current = host.family === FAMILY_TYPES.animal && host.isDead ? 0 : host.hitPoints
+  const total = host.totalHitPoints
+  if (!total) {
     if (existing) fadeOutHudBar(host, existing)
     return
   }
@@ -90,7 +95,7 @@ export function drawInstanceHealthBar(host: InstanceHudHost): void {
     yOffset: 10,
     zIndex: 4,
   })
-  const ratio = Math.max(0, Math.min(1, host.hitPoints / host.totalHitPoints))
+  const ratio = Math.max(0, Math.min(1, current / total))
   bar.fill(getHealthBarTrackGradient())
   if (ratio > 0) {
     bar.rect(innerX, innerY, Math.round(innerWidth * ratio), innerHeight)
@@ -105,8 +110,8 @@ export function isHeroTeamUnit(host: Pick<InstanceHudHost, 'family' | 'owner' | 
   if (host.family !== FAMILY_TYPES.unit || !owner || !heroOwner) return false
   return Boolean(
     owner === heroOwner ||
-    (owner.label && owner.label === heroOwner.label) ||
-    (owner.team != null && owner.team === heroOwner.team)
+      (owner.label && owner.label === heroOwner.label) ||
+      (owner.team != null && owner.team === heroOwner.team)
   )
 }
 
@@ -168,7 +173,10 @@ export function drawInstanceHeroPowerBar(host: InstanceHudHost, ratio: number): 
   replaceHudBar(host, bar, existing)
 }
 
-export function removeInstanceHudBar(host: HudBarHost & { getChildByLabel(label: string): Container | null }, label: string): void {
+export function removeInstanceHudBar(
+  host: HudBarHost & { getChildByLabel(label: string): Container | null },
+  label: string
+): void {
   const bar = host.getChildByLabel(label)
   if (!bar) return
   if (label === LABEL_TYPES.healthBar && isControlledHero(host)) removeHudBarNow(host, bar)

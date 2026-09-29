@@ -6,16 +6,31 @@ import { getInteriorExitCell } from './interiorExits'
 
 const DEFAULT_BUILDING_SHELTER_CAPACITY: Record<string, number> = {
   [BUILDING_TYPES.house]: 5,
-  [BUILDING_TYPES.townCenter]: 10,
 }
 
 export function getBuildingShelterCapacity(
   building: Pick<BuildingEntity, 'shelterCapacity' | 'type'> | null | undefined
 ): number {
-  if (!building) return 0
+  if (!building || building.type === BUILDING_TYPES.townCenter) return 0
   const configured = Number(building.shelterCapacity)
   if (Number.isFinite(configured) && configured > 0) return Math.floor(configured)
   return DEFAULT_BUILDING_SHELTER_CAPACITY[building.type] ?? 0
+}
+
+type HousingBuilding = Pick<
+  BuildingEntity,
+  'type' | 'shelterCapacity' | 'isBuilt' | 'isDead' | 'isDestroyed'
+>
+
+/** Rebuild saved housing from completed buildings using the current configuration. */
+export function getPopulationCapacityFromBuildings(
+  buildings: readonly HousingBuilding[],
+  config: Readonly<Record<string, Partial<HousingBuilding>>>
+): number {
+  return buildings.reduce((total, building) => {
+    if (!building.isBuilt || building.isDead || building.isDestroyed) return total
+    return total + getBuildingShelterCapacity({ ...config[building.type], ...building })
+  }, 0)
 }
 
 function countBuildingShelterOccupants(

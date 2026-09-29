@@ -62,7 +62,6 @@ for (const asynchronous of [false, true])
             '../../cell': {},
             '../../players': { Gaia, AI: class {} },
             '../../../lib': { getGaiaAnimals: gaia => gaia.animals },
-            '../../../lib/resources/startingWheatDiagnostics': { logStartingWheat() {} },
             '../MapSaveRestore': { restoreCaveOccupants() {}, restorePlayerInteriors() {} },
             '../../../services/UnitPerception': {},
             './MapOfflineWorldSimulation': {

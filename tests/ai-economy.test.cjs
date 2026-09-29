@@ -41,6 +41,7 @@ function loadAIEconomy() {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const constants = {
+    DAILY_CONSUMPTION_PER_VILLAGER: { food: 4 },
     ACTION_TYPES: {
       attack: 'attack',
       build: 'build',
@@ -535,4 +536,29 @@ test('AI economy does not assign villager work during sleep time', () => {
 
   assert.equal(actions, 0)
   assert.deepEqual(assignments, [])
+})
+
+test('collective live targets account for delivered stocks and cargo already claimed by another worker', () => {
+  const { AIEconomy } = loadAIEconomy()
+  const ai = {
+    population: 5,
+    food: 200,
+    wood: 30,
+    stone: 10,
+    gold: 0,
+    strategy: { getEconomicDemand: () => ({ wood: 40, stone: 10 }) },
+    units: [{ inventory: { resources: { wood: 10 } } }],
+  }
+  const economy = new AIEconomy(ai)
+  assert.deepEqual(economy.getResourceTargets(5), {
+    maxVillagersOnFood: 0,
+    maxVillagersOnWood: 0,
+    maxVillagersOnGold: 0,
+    maxVillagersOnStone: 0,
+  })
+  ai.units = []
+  assert.equal(economy.getResourceTargets(5).maxVillagersOnWood, 1)
+  ai.food = 0
+  assert.equal(economy.getResourceTargets(1).maxVillagersOnFood, 1)
+  assert.equal(economy.getResourceTargets(1).maxVillagersOnWood, 0)
 })

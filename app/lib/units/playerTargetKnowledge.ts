@@ -1,5 +1,6 @@
 import { isCompactResourceRecord } from '../../classes/resources/CompactResourceSet'
 import { isWheatMature } from '../combat/resourceActionConditions'
+import { VILLAGE_ACTIVITY_RADIUS } from '../../config/villageActivity'
 import { knowsNativeResources } from '../campaign/nativeEconomy'
 import { getEntitySpaceId, sameMapSpace } from '../mapSpaces'
 import { instanceIsInInsightRange } from './insightDetection'
@@ -15,13 +16,30 @@ const knownEntities = new WeakMap<object, Map<string, RuntimeEntity>>()
 const key = (target: { label: string; spaceId?: string | null }) => target.label
 
 /** Economic updates are shared on explored terrain, without granting actual vision. */
-export function knowsEconomicTarget(owner: PlayerLike | undefined, target: RuntimeEntity): boolean {
+export function knowsEconomicTarget(
+  owner: PlayerLike | undefined,
+  target: RuntimeEntity,
+  worker?: UnitEntity
+): boolean {
   if (!owner || !['resource', 'animal'].includes(target.family) || getEntitySpaceId(target) !== 'outside') return false
   if (target.owner && target.owner !== owner && target.owner.type !== 'Gaia') return false
   const animal = target as RuntimeEntity & { tamingStatus?: string; companionOwner?: unknown }
   if (target.family === 'animal' && (animal.companionOwner || (animal.tamingStatus && animal.tamingStatus !== 'wild')))
     return false
-  if (target.family === 'resource' && knowsNativeResources(owner)) return true
+  if (target.family === 'resource') {
+    if (knowsNativeResources(owner)) return true
+    if (
+      owner.isPlayed &&
+      worker?.owner === owner &&
+      worker.type === 'Villager' &&
+      worker.controlMode !== 'hero' &&
+      !worker.isDead &&
+      !worker.isDestroyed &&
+      sameMapSpace(worker, target) &&
+      Math.hypot(worker.i - target.i, worker.j - target.j) <= VILLAGE_ACTIVITY_RADIUS
+    )
+      return true
+  }
   const explored = () => owner.views?.isViewed(target.i, target.j) ?? false
   return owner.views?.withSpace?.('outside', explored) ?? explored()
 }
@@ -88,8 +106,12 @@ function rememberTarget(owner: PlayerLike, target: RuntimeEntity): TargetObserva
   return observation
 }
 
-export function knownTarget(owner: PlayerLike | undefined, target: RuntimeEntity): TargetObservation | undefined {
-  if (owner && knowsEconomicTarget(owner, target)) {
+export function knownTarget(
+  owner: PlayerLike | undefined,
+  target: RuntimeEntity,
+  worker?: UnitEntity
+): TargetObservation | undefined {
+  if (owner && knowsEconomicTarget(owner, target, worker)) {
     if (isCompactResourceRecord(target))
       return {
         label: target.label,

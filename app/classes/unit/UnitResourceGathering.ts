@@ -1,3 +1,5 @@
+import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
+import { collectiveHarvestBudget } from '../../lib/economy/collectiveTasks'
 import { getWorkGatherAmount, getResourceGatherSwings } from '../../lib/economy/workRules'
 import {
   LOADING_TYPES,
@@ -103,7 +105,11 @@ export function getGatherAmount(unit: UnitEntity): number {
 
 export function addGatheredResource(unit: UnitEntity, loadingType: string, amount: number): number {
   const resourceKey = getResourceKeyForLoadingType(loadingType)
-  const gatheredAmount = Math.min(Math.max(0, Math.floor(amount)), getUnitResourceCapacityRemaining(unit, loadingType))
+  const gatheredAmount = Math.min(
+    Math.max(0, Math.floor(amount)),
+    getUnitResourceCapacityRemaining(unit, loadingType),
+    resourceKey && unit.owner ? collectiveHarvestBudget(unit.owner, unit, resourceKey) : Infinity
+  )
   if (!resourceKey || gatheredAmount <= 0) return 0
   unit.inventory = unit.inventory ?? {}
   unit.inventory.resources = unit.inventory.resources ?? {}
@@ -111,6 +117,7 @@ export function addGatheredResource(unit: UnitEntity, loadingType: string, amoun
   if (unit.context?.controls?.heroUnit === unit) {
     unit.context.menu?.refreshInventory?.()
   }
+  notifyVillageWorkChanged(unit.owner)
   return gatheredAmount
 }
 

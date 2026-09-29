@@ -1,3 +1,5 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { finishSowingTile } from './BuildingSowing'
 import { AnimatedSprite } from 'pixi.js'
 import { wakeDistantOwner } from '../../lib/units/villageActivity'
 import { ACTION_TYPES, LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX } from '../../constants'
@@ -35,12 +37,17 @@ export class BuildingLifecycle {
       context: { menu },
     } = building
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
+    if (building.type === 'Farm' && percentage >= 100) {
+      finishSowingTile(building)
+      return
+    }
 
     if (percentage < 100) {
       syncBuildingConstructionReveal(building, percentage)
     } else {
       const wasBuilt = building.isBuilt
       building.isBuilt = true
+      notifyVillageStateChanged(building.owner)
       clearBuildingConstructionReveal(building)
       building.finalTexture()
       if (!wasBuilt) {
@@ -80,7 +87,7 @@ export class BuildingLifecycle {
     const {
       context: { menu },
     } = building
-    const populationCapacity = getBuildingShelterCapacity(building) || building.increasePopulation || 0
+    const populationCapacity = getBuildingShelterCapacity(building)
     if (populationCapacity && !building.populationCapacityApplied) {
       building.owner.populationMax += populationCapacity
       building.populationCapacityApplied = true

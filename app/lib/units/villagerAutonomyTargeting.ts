@@ -1,5 +1,6 @@
 import { resolveResource } from '../../classes/resources/CompactResourceSet'
-import { UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { knownTarget } from './playerTargetKnowledge'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import {
@@ -9,7 +10,7 @@ import {
 } from '../buildings/passageCells'
 import { getInstanceClosestFreeCellPath } from '../grid/movement'
 import { nearestDropoffDistance } from './autonomy/villagerDropoffDistance'
-import { logGoldMinerFlow } from './autonomy/villagerJobDiagnostics'
+
 import { isPursuingRememberedTarget } from './targetPursuit'
 
 export type VillagerJobCandidate = {
@@ -20,6 +21,7 @@ export type VillagerJobCandidate = {
 }
 
 type CandidateEvaluation = VillagerJobCandidate & {
+  readyWood: boolean
   dropoffDistance: number
   pathLength: number
   rejectedReason: string | null
@@ -41,7 +43,7 @@ function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' 
   return Math.abs(a.i - b.i) + Math.abs(a.j - b.j)
 }
 
-export function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
+function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
   if (!a || !b) return false
   if (a === b) return true
   return Boolean(a.label && b.label && a.label === b.label)
@@ -100,7 +102,6 @@ export function markVillagerAutonomyTargetRejected(unit: UnitEntity, target: Run
     byJob.set(job, targets)
   }
   targets.set(targetKey(target), nowMs() + AUTONOMY_REJECT_TTL_MS)
-  logGoldMinerFlow(unit, 'autonomy.target-marked-rejected', { target: target.label ?? targetKey(target) })
 }
 
 export function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: string, action: string): number {
@@ -163,8 +164,13 @@ function evaluateCandidate(
 
   const dropoffScore = Number.isFinite(dropoffDistance) ? dropoffDistance * DROPOFF_DISTANCE_SCORE : 0
   const score = (pathLength ?? distance(unit, candidate.target)) + workerLoad * WORKER_LOAD_SCORE + dropoffScore
+  const observation = job === 'wood' ? knownTarget(unit.owner, candidate.target, unit) : undefined
+  const readyWood = Boolean(
+    observation?.type === RESOURCE_TYPES.tree && observation.hitPoints === 0 && (observation.quantity ?? 0) > 0
+  )
   return {
     ...candidate,
+    readyWood,
     dropoffDistance,
     pathLength: pathLength ?? Infinity,
     rejectedReason,
@@ -183,7 +189,7 @@ function rankVillagerJobCandidates(
     .sort((a, b) => distance(unit, a.target) - distance(unit, b.target))
     .slice(0, MAX_CANDIDATES_TO_PATH)
     .map(candidate => evaluateCandidate(unit, job, candidate, options))
-    .sort((a, b) => a.score - b.score)
+    .sort((a, b) => Number(b.readyWood) - Number(a.readyWood) || a.score - b.score)
 }
 
 function wasAutonomyOrderAccepted(unit: UnitEntity, candidate: VillagerJobCandidate, result: unknown): boolean {
@@ -209,31 +215,14 @@ export function tryVillagerJobCandidates(
 ): boolean {
   for (const candidate of rankVillagerJobCandidates(unit, job, candidates, options)) {
     if (candidate.rejectedReason) {
-      logGoldMinerFlow(unit, 'autonomy.candidate-skipped', {
-        job,
-        pathLength: candidate.pathLength,
-        reason: candidate.rejectedReason,
-        target: candidate.target.label,
-      })
       continue
     }
     const result = candidate.send(candidate.target)
     if (wasAutonomyOrderAccepted(unit, candidate, result)) {
-      logGoldMinerFlow(unit, 'autonomy.candidate-command-accepted', {
-        action: candidate.action,
-        job,
-        pathLength: candidate.pathLength,
-        target: candidate.target.label,
-      })
       // Keep other failures until their TTL expires, even after accepting a new target.
       return true
     }
-    logGoldMinerFlow(unit, 'autonomy.candidate-command-refused', {
-      action: candidate.action,
-      job,
-      pathLength: candidate.pathLength,
-      target: candidate.target.label,
-    })
+
     markVillagerAutonomyTargetRejected(unit, candidate.target)
   }
   return false

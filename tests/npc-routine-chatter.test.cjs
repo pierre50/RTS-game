@@ -328,3 +328,16 @@ test('lunch dialogue describes the meal in both languages without addressing vis
     }
   }
 })
+
+test('a blocked resource task explains its failure instead of claiming to be working', () => {
+  language = 'fr'
+  const { unit, hero } = scenario({ job: 'stone' })
+  unit.autonomyBlockedJob = 'stone'
+  unit.inactif = true
+  unit.dest = null
+  unit.action = null
+  assert.match(pick(unit, hero), /ne trouve pas.*pierre.*accessible/)
+  language = 'en'
+  assert.match(pick(unit, hero), /cannot find stone/)
+  language = 'fr'
+})

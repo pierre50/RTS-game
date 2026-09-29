@@ -6,55 +6,163 @@ function fixture(gender = 'male') {
   let wakeComplete
   const tasks = new Map()
   let nextId = 0
-  const scheduler = { elapsedMs: 0, add(fn) { const id = ++nextId; tasks.set(id, fn); return id }, remove(id) { tasks.delete(id) }, addOneShot(fn) { const id = this.add(() => { tasks.delete(id); fn() }); return id } }
-  const api = loadTsModule('app/services/introduction/GameIntroduction.ts', { mocks: {
-    '../../lib/lpc': { ensureAndRefreshBakedLpcUnitAssets: async () => {} },
-    '../../lib/grid/visibility': { updateInstanceVisibility() {} },
-    '../../lib/maths': { getInstanceDegree: () => 90 },
-    '../rest/UnitSleepVisuals': { setSleepingOutsideFinalVisual(unit) { unit.sleepVisualState = 'sleeping' }, playSleepingWakeVisual(unit, callback) { unit.sleepVisualState = 'waking'; wakeComplete = () => { unit.sleepVisualState = null; callback() } } },
-    '../../lib/entities/overheadIndicator': { setUnitOverheadIndicator(unit, type) { unit.indicator = type }, clearUnitOverheadIndicator(unit) { unit.indicator = null } },
-  } })
+  const scheduler = {
+    elapsedMs: 0,
+    add(fn) {
+      const id = ++nextId
+      tasks.set(id, fn)
+      return id
+    },
+    remove(id) {
+      tasks.delete(id)
+    },
+    addOneShot(fn) {
+      const id = this.add(() => {
+        tasks.delete(id)
+        fn()
+      })
+      return id
+    },
+  }
+  const api = loadTsModule('app/services/introduction/GameIntroduction.ts', {
+    mocks: {
+      '../../lib/lpc': { ensureAndRefreshBakedLpcUnitAssets: async () => {} },
+      '../../lib/grid/visibility': { updateInstanceVisibility() {} },
+      '../../lib/maths': { getInstanceDegree: () => 90 },
+      '../rest/UnitSleepVisuals': {
+        setSleepingOutsideFinalVisual(unit) {
+          unit.sleepVisualState = 'sleeping'
+        },
+        playSleepingWakeVisual(unit, callback) {
+          unit.sleepVisualState = 'waking'
+          wakeComplete = () => {
+            unit.sleepVisualState = null
+            callback()
+          }
+        },
+      },
+      '../../lib/entities/overheadIndicator': {
+        setUnitOverheadIndicator(unit, type) {
+          unit.indicator = type
+        },
+        clearUnitOverheadIndicator(unit) {
+          unit.indicator = null
+        },
+      },
+    },
+  })
   const hero = { label: 'hero', i: 5, j: 5, x: 5, y: 5, gender, stop() {} }
-  const grid = Array.from({ length: 12 }, (_, i) => Array.from({ length: 12 }, (_, j) => ({ i, j, z: 0, category: 'Land', solid: false, has: null })))
+  const grid = Array.from({ length: 12 }, (_, i) =>
+    Array.from({ length: 12 }, (_, j) => ({ i, j, z: 0, category: 'Land', solid: false, has: null }))
+  )
   grid[5][5].has = hero
   let saved
   let dialogue
   let opened = 0
+  const journal = { version: 1, quests: [], trackedQuestId: null }
   const player = {
-    config: { buildings: { FireCamp: { size: 1 } } }, units: [hero], buildings: [],
-    createBuilding(options) { const entity = { ...options, label: 'camp' }; this.buildings.push(entity); return entity },
-    createUnit(options) { const entity = { ...options, label: 'companion', x: options.i, y: options.j, stop() {}, sendTo(cell) { this.i = cell.i; this.j = cell.j } }; this.units.push(entity); return entity },
+    label: 'player',
+    config: { buildings: { FireCamp: { size: 1 } } },
+    units: [hero],
+    buildings: [],
+    createBuilding(options) {
+      const entity = { ...options, label: 'camp' }
+      this.buildings.push(entity)
+      return entity
+    },
+    createUnit(options) {
+      const entity = {
+        ...options,
+        label: 'companion',
+        x: options.i,
+        y: options.j,
+        stop() {},
+        sendTo(cell) {
+          this.i = cell.i
+          this.j = cell.j
+        },
+      }
+      this.units.push(entity)
+      return entity
+    },
   }
-  const context = { scheduler, player, map: { grid }, controls: { heroUnit: hero, setRuntimeInputEnabled(value) { this.inputEnabled = value } }, menu: {
-    setHudSuppressed(value) { this.hudSuppressed = value },
-    openNpcOrders(npcs, options) { opened++; dialogue = options; assert.equal(npcs[0], player.units[1]) }, closeNpcOrders() {},
-  } }
-  const host = { _campaignSave: { currentWorldId: 'start' }, _gameContext: () => context,
-    togglePause(value) { context.paused = value },
-    autosave() { saved = structuredClone({ campaign: host._campaignSave, unitLabels: player.units.map(unit => unit.label), buildingLabels: player.buildings.map(building => building.label) }) },
+  const context = {
+    scheduler,
+    getQuestJournal: () => journal,
+    getCurrentWorldId: () => 'start',
+    player,
+    map: { grid },
+    controls: {
+      heroUnit: hero,
+      setRuntimeInputEnabled(value) {
+        this.inputEnabled = value
+      },
+    },
+    menu: {
+      setHudSuppressed(value) {
+        this.hudSuppressed = value
+      },
+      openNpcOrders(npcs, options) {
+        opened++
+        dialogue = options
+        assert.equal(npcs[0], player.units[1])
+      },
+      closeNpcOrders() {},
+    },
   }
-  return { ...api, host, context, player, tick() { scheduler.elapsedMs += 1000; for (const fn of [...tasks.values()]) fn() }, finishWake() { wakeComplete() }, getSaved: () => saved, getDialogue: () => dialogue, getOpened: () => opened }
+  const host = {
+    _campaignSave: { currentWorldId: 'start' },
+    _gameContext: () => context,
+    togglePause(value) {
+      context.paused = value
+    },
+    autosave() {
+      saved = structuredClone({
+        campaign: host._campaignSave,
+        journal,
+        unitLabels: player.units.map(unit => unit.label),
+        buildingLabels: player.buildings.map(building => building.label),
+      })
+    },
+  }
+  return {
+    ...api,
+    host,
+    context,
+    player,
+    tick() {
+      scheduler.elapsedMs += 1000
+      for (const fn of [...tasks.values()]) fn()
+    },
+    finishWake() {
+      wakeComplete()
+    },
+    getSaved: () => saved,
+    getDialogue: () => dialogue,
+    getOpened: () => opened,
+  }
 }
 
-for (const gender of ['male', 'female']) test(`new game creates one allied companion opposite to ${gender}, and one camp with a chest`, async () => {
-  const f = fixture(gender)
-  await f.prepareGameIntroduction(f.host)
-  assert.equal(f.player.units.length, 2)
-  assert.equal(f.player.units[1].gender, gender === 'male' ? 'female' : 'male')
-  assert.equal(f.player.units[1].isChief, false)
-  assert.equal(f.context.controls.heroUnit.isChief, false)
-  assert.ok(Math.max(Math.abs(f.player.units[1].i - 5), Math.abs(f.player.units[1].j - 5)) >= 3)
-  assert.equal(f.player.buildings.length, 2)
-  const [camp, chest] = f.player.buildings
-  assert.equal(chest.type, 'Chest')
-  assert.equal(chest.i, camp.i)
-  assert.equal(chest.j, camp.j - 2)
-  assert.equal(f.context.paused, true)
-  assert.equal(f.getSaved().campaign.introduction.status, 'prepared')
-  assert.deepEqual(f.getSaved().unitLabels, ['hero', 'companion'])
-  await f.prepareGameIntroduction(f.host)
-  assert.equal(f.player.units.length, 2)
-})
+for (const gender of ['male', 'female'])
+  test(`new game creates one allied companion opposite to ${gender}, and one camp without a chest`, async () => {
+    const f = fixture(gender)
+    await f.prepareGameIntroduction(f.host)
+    assert.equal(f.player.units.length, 2)
+    assert.equal(f.player.units[1].gender, gender === 'male' ? 'female' : 'male')
+    assert.equal(f.player.units[1].isChief, false)
+    assert.deepEqual(f.player.units[1].inventory.resources, { meat: 6, berry: 6 })
+    assert.equal(f.context.controls.heroUnit.isChief, false)
+    assert.ok(Math.max(Math.abs(f.player.units[1].i - 5), Math.abs(f.player.units[1].j - 5)) >= 3)
+    assert.deepEqual(
+      f.player.buildings.map(building => building.type),
+      ['FireCamp']
+    )
+    assert.equal(f.context.paused, true)
+    assert.equal(f.getSaved().campaign.introduction.status, 'prepared')
+    assert.deepEqual(f.getSaved().unitLabels, ['hero', 'companion'])
+    await f.prepareGameIntroduction(f.host)
+    assert.equal(f.player.units.length, 2)
+  })
 
 test('blocked approach still wakes the hero and releases controls after the reply', async () => {
   const f = fixture()
@@ -106,6 +214,9 @@ test('legacy saves and travel never open an introduction; a prepared reload resu
   assert.equal(f.host._campaignSave.introduction.status, 'completed')
   assert.equal(f.context.controls.heroUnit.isChief, true)
   assert.equal(f.getSaved().campaign.introduction.status, 'completed')
+  assert.equal(f.getSaved().journal.quests[0].definitionId, 'camp-first-house')
+  assert.equal(f.getSaved().journal.quests[0].status, 'active')
+  assert.equal(f.getSaved().journal.trackedQuestId, 'camp-first-house')
   assert.equal(f.context.paused, false)
   assert.equal(f.context.controls.inputEnabled, true)
   assert.equal(f.context.menu.hudSuppressed, false)
@@ -124,27 +235,38 @@ test('camp placement respects occupied cells, water and access around the fire',
   assert.notEqual(placement.camp, placement.companion)
   assert.equal(placement.camp.has, null)
   assert.equal(placement.companion.has, null)
-  for (const [i, j] of [[6,5], [4,5], [5,4], [5,6]]) grid[i][j].solid = true
+  for (const [i, j] of [
+    [6, 5],
+    [4, 5],
+    [5, 4],
+    [5, 6],
+  ])
+    grid[i][j].solid = true
   assert.equal(findIntroductionPlacement(f.context.map, f.context.controls.heroUnit, 1), null)
 })
 
-for (const phase of ['waking', 'dialogue', undefined]) test(`reload resumes ${phase ?? 'legacy dialogue'} without replaying approach`, async () => {
-  const f = fixture()
-  await f.prepareGameIntroduction(f.host)
-  f.host._campaignSave.introduction.phase = phase
-  f.showGameIntroduction(f.host)
-  f.startGameIntroduction(f.host)
-  if (phase === 'waking') {
-    assert.equal(f.getOpened(), 0)
-    f.finishWake()
-  }
-  assert.equal(f.getOpened(), 1)
-  assert.equal(f.player.units.length, 2)
-})
+for (const phase of ['waking', 'dialogue', undefined])
+  test(`reload resumes ${phase ?? 'legacy dialogue'} without replaying approach`, async () => {
+    const f = fixture()
+    await f.prepareGameIntroduction(f.host)
+    f.host._campaignSave.introduction.phase = phase
+    f.showGameIntroduction(f.host)
+    f.startGameIntroduction(f.host)
+    if (phase === 'waking') {
+      assert.equal(f.getOpened(), 0)
+      f.finishWake()
+    }
+    assert.equal(f.getOpened(), 1)
+    assert.equal(f.player.units.length, 2)
+  })
 
 test('companion approaches along a clear straight corridor after the hero spawn shifts one cell', () => {
   const { findIntroductionPlacement } = loadTsModule('app/services/introduction/IntroductionPlacement.ts')
-  for (const [i, j] of [[5, 5], [6, 5], [5, 6]]) {
+  for (const [i, j] of [
+    [5, 5],
+    [6, 5],
+    [5, 6],
+  ]) {
     const f = fixture()
     const grid = f.context.map.grid
     grid[5][5].has = null
@@ -166,7 +288,7 @@ test('companion approaches along a clear straight corridor after the hero spawn 
   }
 })
 
-test('camp questions loop without promoting the hero and persist the current topic', async () => {
+test('camp conversation follows one path and persists each step before promoting the hero', async () => {
   const f = fixture()
   await f.prepareGameIntroduction(f.host)
   f.host._campaignSave.introduction.phase = 'dialogue'
@@ -174,17 +296,16 @@ test('camp questions loop without promoting the hero and persist the current top
   f.startGameIntroduction(f.host)
   const sequence = f.getDialogue().dialogue
   assert.equal(sequence.startId, 'wake')
-  assert.equal(sequence.nodes.find(node => node.id === 'wake').choices.length, 5)
+  assert.ok(sequence.nodes.every(node => node.choices.length === 1))
   f.host._campaignSave = structuredClone(f.host._campaignSave)
-  for (const topic of ['attack', 'rescue', 'next', 'lead']) {
+  for (const topic of ['wake', 'rescue', 'attack', 'next', 'house', 'build', 'lead']) {
     const answer = sequence.nodes.find(node => node.id === topic)
-    assert.equal(answer.choices.find(choice => choice.id === 'questions').nextId, 'questions')
+    assert.equal(answer.choices[0].nextId, sequence.nodes[sequence.nodes.indexOf(answer) + 1]?.id)
     sequence.onNodeChanged(topic)
     assert.equal(f.getSaved().campaign.introduction.dialogueNodeId, topic)
     assert.equal(f.context.controls.heroUnit.isChief, false)
     assert.equal(f.context.menu.hudSuppressed, true)
     assert.equal(f.host._campaignSave.introduction.status, 'prepared')
-    sequence.onNodeChanged('questions')
   }
   sequence.onComplete()
   assert.equal(f.context.controls.heroUnit.isChief, true)
@@ -196,9 +317,30 @@ test('camp dialogue resumes a saved answer and gracefully handles older saves', 
   const { createCampIntroductionDialogue } = loadTsModule('app/services/introduction/CampIntroductionDialogue.ts')
   for (const nodeId of ['attack', 'rescue', 'next', 'lead', 'questions', undefined, 'obsolete']) {
     const sequence = createCampIntroductionDialogue({ nodeId, onNodeChanged() {}, onComplete() {} })
-    assert.equal(sequence.startId, !nodeId || nodeId === 'obsolete' ? 'wake' : nodeId)
-    for (const node of sequence.nodes) for (const choice of node.choices) {
-      if (choice.nextId) assert.ok(sequence.nodes.some(next => next.id === choice.nextId))
-    }
+    assert.equal(sequence.startId, !nodeId || nodeId === 'obsolete' ? 'wake' : nodeId === 'questions' ? 'next' : nodeId)
+    for (const node of sequence.nodes)
+      for (const choice of node.choices) {
+        if (choice.nextId) assert.ok(sequence.nodes.some(next => next.id === choice.nextId))
+      }
+  }
+})
+
+test('starting provisions cover three daily meals and are not refilled by introduction restore', async () => {
+  const { consumeVillageFood } = loadTsModule('app/lib/economy/villageFood.ts')
+  const f = fixture()
+  await f.prepareGameIntroduction(f.host)
+  const companion = f.player.units[1]
+  for (let day = 1; day <= 3; day++) {
+    companion.followingHero = day === 2
+    assert.deepEqual(consumeVillageFood(f.player), { needed: 4, consumed: 4 })
+    assert.equal(
+      Object.values(companion.inventory.resources).reduce((sum, count) => sum + count, 0),
+      12 - day * 4
+    )
+    await f.prepareGameIntroduction(f.host)
+    assert.equal(
+      Object.values(companion.inventory.resources).reduce((sum, count) => sum + count, 0),
+      12 - day * 4
+    )
   }
 })

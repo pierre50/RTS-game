@@ -6,7 +6,7 @@ const babel = require('@babel/core')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const wildlifeModule = loadTsModule('app/services/WildlifeStore.ts')
 const growthModule = loadTsModule('app/services/NaturalGrowthQueue.ts')
-const campRespawns = loadTsModule('app/lib/camps/CampRespawnState.ts')
+const campRespawns = loadTsModule('app/lib/camps/campRespawnState.ts')
 const compactResources = loadTsModule('app/classes/resources/CompactResourceSet.ts')
 
 test('pending and consumed rescue thanks survive save and travel state copying', () => {
@@ -40,7 +40,11 @@ function loadSaveSerializer() {
   })
   const module = { exports: {} }
   const mockRequire = id => {
-    if (id === '../lib/camps/CampRespawnState') return campRespawns
+    if (id === './entity/EntitySaveData')
+      return loadTsModule('app/serialization/entity/EntitySaveData.ts', {
+        mocks: { '../../lib': mockRequire('../lib'), '../../services/WildlifeStore': wildlifeModule },
+      })
+    if (id === '../lib/camps/campRespawnState') return campRespawns
     if (id === '../lib/units/villageActivity') return loadTsModule('app/lib/units/villageActivity.ts')
     if (id === '../services/NaturalGrowthQueue') return growthModule
     if (id === '../services/WildlifeStore') return wildlifeModule
@@ -206,6 +210,7 @@ test('building saves include concurrent recruits and pending unit training order
     i: 0,
     j: 0,
     queue: ['Fantassin'],
+    trainingRequests: [{ type: 'Fantassin', traineeLabel: 'incoming' }, { type: 'Fantassin' }],
     trainingQueue: [
       {
         type: 'Fantassin',
@@ -229,6 +234,10 @@ test('building saves include concurrent recruits and pending unit training order
   })
   const save = JSON.parse(JSON.stringify(serializeGame(context)))
   assert.equal(save.players[0].units[0].trainingTargetType, 'Fantassin')
+  assert.deepEqual(save.players[0].buildings[0].trainingRequests, [
+    { type: 'Fantassin', traineeLabel: 'incoming' },
+    { type: 'Fantassin' },
+  ])
   const saved = save.players[0].buildings[0].trainingQueue[0]
   assert.equal(saved.trainee.label, 'recruit')
   assert.equal(saved.trainee.owner, undefined)
@@ -728,6 +737,7 @@ test('delivery saves retain job intent using references and omit runtime task id
       resourceDeliveryState: {
         building,
         phase: 'entering',
+        pickup: { wood: 18 },
         taskId: 123,
         returnTask: { dest: tree, action: 'chopwood', work: 'woodcutter', autonomousJob: 'wood' },
       },
@@ -736,6 +746,7 @@ test('delivery saves retain job intent using references and omit runtime task id
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
   assert.deepEqual(saved.players[0].units[0].resourceDelivery, {
     building: [1, 2, 'store'],
+    pickup: { wood: 18 },
     returnTask: {
       dest: [3, 4, 'tree'],
       action: 'chopwood',
@@ -749,21 +760,23 @@ test('individual daily schedules survive saving and travel without sharing state
   const { applyPortableUnitState } = loadTsModule('app/screens/game/GameStateHelpers.ts')
   const context = makeContext()
   const dailySchedule = { wakeMinute: 370, workStartMinute: 430, workEndMinute: 1090, bedMinute: 1330 }
-  context.players[0].units = [{ type: 'Villager', i: 1, j: 1, dailySchedule }]
+  context.players[0].units = [{ type: 'Villager', i: 1, j: 1, dailySchedule, lastMealAt: 720 }]
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
   assert.deepEqual(saved.dailySchedule, dailySchedule)
+  assert.equal(saved.lastMealAt, 720)
   const target = {}
   applyPortableUnitState(target, saved)
   assert.deepEqual(target.dailySchedule, dailySchedule)
+  assert.equal(target.lastMealAt, 720)
   assert.notEqual(target.dailySchedule, saved.dailySchedule)
 })
 
-test('chest villager delivery preference survives serialization including explicit false', () => {
+test('legacy chest delivery flags are ignored when saving again', () => {
   for (const blocked of [true, false]) {
     const context = makeContext()
     context.players[0].buildings = [{ type: 'Chest', i: 1, j: 1, isBuilt: true, villagerDeliveriesBlocked: blocked }]
     const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
-    assert.equal(saved.players[0].buildings[0].villagerDeliveriesBlocked, blocked)
+    assert.equal(saved.players[0].buildings[0].villagerDeliveriesBlocked, undefined)
   }
 })
 
@@ -979,7 +992,6 @@ test('village territory and fractional production survive a save', () => {
   assert.equal(saved.offlineWork.milliseconds, 321)
 })
 
-
 test('saving retains camp cooldowns and initial rosters as independent snapshots', () => {
   const context = makeContext()
   const camps = [{ id: 'camp:1:1', i: 1, j: 1, unitTypes: ['BanditSword'], generation: 2, clearedAtMs: 1234 }]
@@ -993,10 +1005,20 @@ test('saving retains camp cooldowns and initial rosters as independent snapshots
 test('minimap observations and preferences are saved as independent JSON data', () => {
   const context = makeContext()
   const player = context.players[0]
-  player.minimapBuildingMemory = [{
-    id: 'old-house', spaceId: 'outside', x: 10, y: 20, i: 1, j: 2, size: 1,
-    color: '#ff0000', ownerKey: 'enemy', town: false,
-  }]
+  player.minimapBuildingMemory = [
+    {
+      id: 'old-house',
+      spaceId: 'outside',
+      x: 10,
+      y: 20,
+      i: 1,
+      j: 2,
+      size: 1,
+      color: '#ff0000',
+      ownerKey: 'enemy',
+      town: false,
+    },
+  ]
   player.minimapPreferences = { zoom: 2, hiddenMarkers: ['enemy', 'caves'] }
   const saved = JSON.parse(JSON.stringify(serializeGame(context))).players[0]
   assert.deepEqual(saved.minimapBuildingMemory, player.minimapBuildingMemory)
@@ -1006,4 +1028,28 @@ test('minimap observations and preferences are saved as independent JSON data', 
   player.minimapPreferences.hiddenMarkers.push('self')
   assert.equal(snapshot.minimapBuildingMemory[0].x, 10)
   assert.deepEqual(snapshot.minimapPreferences.hiddenMarkers, ['enemy', 'caves'])
+})
+
+test('saving retains construction accounting and collective task ownership', () => {
+  const context = makeContext()
+  const materials = { cost: { wood: 40 }, delivered: { wood: 12 }, consumed: { wood: 8 } }
+  context.players[0].buildings = [
+    { type: 'House', i: 1, j: 1, isBuilt: false, hitPoints: 21, constructionMaterials: materials },
+  ]
+  context.players[0].units = [{ type: 'Villager', i: 2, j: 1, collectiveTask: 'wood', autonomousJob: 'wood' }]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+  assert.deepEqual(saved.players[0].buildings[0].constructionMaterials, materials)
+  assert.equal(saved.players[0].units[0].collectiveTask, 'wood')
+})
+
+test('depot target and zero shares survive JSON saves without sharing the runtime object', () => {
+  const context = makeContext()
+  const policy = { target: 120, shares: { wood: 60, stone: 40, iron: 0 } }
+  context.players[0].buildings = [
+    { type: 'StoragePit', label: 'pit', i: 0, j: 0, isBuilt: true, reservePolicy: policy },
+  ]
+  const saved = loadSaveSerializer().serializeGame(context)
+  assert.deepEqual(saved.players[0].buildings[0].reservePolicy, policy)
+  saved.players[0].buildings[0].reservePolicy.shares.wood = 0
+  assert.equal(policy.shares.wood, 60)
 })

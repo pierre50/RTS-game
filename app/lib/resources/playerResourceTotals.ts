@@ -2,9 +2,7 @@ import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
-import type {
-  ResourceStoreOwner,
-  ResourceTotalOptions} from './playerResourceStores';
+import type { ResourceStoreOwner, ResourceTotalOptions } from './playerResourceStores'
 import {
   getPersonalResourceHero,
   getPlayerResourceHeroes,
@@ -12,7 +10,7 @@ import {
   isVisibleStorageBuilding,
 } from './playerResourceStores'
 import { getBuildingStorageCapacity } from './resourceDelivery'
-import type { ResourceName} from './resourceFoodAmounts';
+import type { ResourceName } from './resourceFoodAmounts'
 import { expandFoodCost, expandFoodDeposit } from './resourceFoodAmounts'
 import { allowsVillagerDeliveries, storageResourcePriority } from './storagePolicy'
 
@@ -141,7 +139,7 @@ function getStoreResourceTotal(store: BuildingEntity): number {
 export function depositChestResources(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   resourcesToDeposit: ResourceAmount | null | undefined,
-  options: { automaticDelivery?: boolean } = {}
+  options: { automaticDelivery?: boolean; allowPartial?: boolean } = {}
 ): boolean {
   if (!player || !resourcesToDeposit) return false
   const stores = getPlayerResourceStores(player).filter(store => store.isBuilt !== false)
@@ -159,22 +157,20 @@ export function depositChestResources(
     .map(store => ({ store, parent: parentOf(store) }))
     .filter(
       ({ store, parent }) =>
-        !options.automaticDelivery || (allowsVillagerDeliveries(store) && (!parent || allowsVillagerDeliveries(parent)))
+        !options.automaticDelivery ||
+        (allowsVillagerDeliveries(store, player) && (!parent || allowsVillagerDeliveries(parent, player)))
     )
   const expandedDeposit = expandFoodDeposit(resourcesToDeposit)
   const deposits: Array<{ destination: BuildingEntity; resource: keyof ResourceAmount; amount: number }> = []
   for (const [resource, rawAmount] of Object.entries(expandedDeposit) as [keyof ResourceAmount, number][]) {
     const amount = Math.max(0, Math.floor(rawAmount ?? 0))
     if (amount <= 0) continue
-    // The store must have room for the FULL amount — not just be "not yet full" — otherwise a
-    // large deposit (e.g. several offline gather cycles at once) can blow straight past capacity.
     const eligible = candidates.filter(
-      ({ store, parent }) =>
+      ({ parent }) =>
         parent?.isBuilt !== false &&
         !parent?.isDead &&
         !parent?.isDestroyed &&
-        Number.isFinite(storageResourcePriority(parent?.type ?? 'Chest', resource)) &&
-        getStoreResourceTotal(store) + amount <= getBuildingStorageCapacity(store)
+        Number.isFinite(storageResourcePriority(parent?.type ?? 'Chest', resource))
     )
     eligible.sort(
       (a, b) =>
@@ -183,9 +179,19 @@ export function depositChestResources(
         Number(b.store.type === 'Chest') - Number(a.store.type === 'Chest') ||
         (a.store.inventory?.resources?.[resource] ?? 0) - (b.store.inventory?.resources?.[resource] ?? 0)
     )
-    const destination = eligible[0]?.store
-    if (!destination) return false
-    deposits.push({ destination, resource, amount })
+    let remaining = amount
+    for (const { store: destination } of eligible) {
+      const reserved = deposits
+        .filter(deposit => deposit.destination === destination)
+        .reduce((sum, deposit) => sum + deposit.amount, 0)
+      const room = Math.max(0, getBuildingStorageCapacity(destination) - getStoreResourceTotal(destination) - reserved)
+      const accepted = Math.min(remaining, room)
+      if (accepted) deposits.push({ destination, resource, amount: accepted })
+      remaining -= accepted
+      if (!remaining) break
+    }
+    // Commit only after every resource fits, except explicitly bounded starting grants.
+    if (remaining && !options.allowPartial) return false
   }
   for (const { destination, resource, amount } of deposits) {
     destination.inventory ??= {}
@@ -196,6 +202,6 @@ export function depositChestResources(
   return true
 }
 
-export { getPlayerResourceStores, type ResourceStoreOwner } from './playerResourceStores'
+export type { ResourceStoreOwner } from './playerResourceStores'
 
 export { expandLegacyFoodAmount } from './resourceFoodAmounts'

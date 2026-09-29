@@ -45,8 +45,10 @@ export function validateAnimalState(
         fail(`Invalid save file: ${label}.wildlife.${key} is negative.`)
     }
   }
+  validateOptionalFiniteNumber(animal.totalQuantity, `${label}.totalQuantity`)
+  validateOptionalBoundedNumber(animal.totalQuantity, Number.MAX_VALUE, `${label}.totalQuantity`)
   validateOptionalFiniteNumber(animal.quantity, `${label}.quantity`)
-  validateOptionalBoundedNumber(animal.quantity, definition.totalQuantity, `${label}.quantity`)
+  validateOptionalBoundedNumber(animal.quantity, animal.totalQuantity ?? definition.totalQuantity, `${label}.quantity`)
   validateOptionalFiniteNumber(animal.hitPoints, `${label}.hitPoints`)
   validateOptionalBoundedNumber(animal.hitPoints, definition.totalHitPoints, `${label}.hitPoints`)
   validateOptionalBoolean(animal.isDead, `${label}.isDead`)

@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from './villageStateEvents'
 import type { UnitEntity } from '../../types/entities'
 
 export type UnitSuspensionReason = 'camp-paused' | 'distant-work'
@@ -6,6 +7,7 @@ const suspensions = new WeakMap<UnitEntity, Suspension>()
 
 /** The owning system settles or resumes its activity before releasing the suspension. */
 export function setUnitSuspension(unit: UnitEntity, suspension?: Suspension): void {
+  if (suspensions.get(unit)?.reason !== suspension?.reason) notifyVillageStateChanged(unit.owner)
   if (suspension) suspensions.set(unit, suspension)
   else suspensions.delete(unit)
 }

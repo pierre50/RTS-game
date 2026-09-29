@@ -1,7 +1,7 @@
 import { BANDIT_CAMP_RESPAWN_DAYS } from '../../config/campActivity'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { PLAYER_TYPES } from '../../constants'
-import { campRespawnStates } from '../../lib/camps/CampRespawnState'
+import { campRespawnStates } from '../../lib/camps/campRespawnState'
 import { isUnitAlive } from '../../lib/playerState'
 import { respawnBanditCamp } from '../../classes/map/BanditCampGeneration'
 import type { MapGenerationMap } from '../../classes/map/MapGenerationTypes'

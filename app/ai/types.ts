@@ -1,3 +1,4 @@
+import type { ConstructionMaterials } from '../lib/economy/constructionMaterials'
 import type { GridInstanceLike } from '../types/grid'
 import type { Point } from '../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -6,9 +7,9 @@ import type { RuntimeEntity, UnitCommandOptions, UnitCreationExtra, UnitEntity }
 import type { ConfigValue } from '../types/config'
 import type { GameContextLike } from '../types/context'
 
-export type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
+type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
 
-export type AICostResourceName = AIResourceName | 'fiber' | 'leather'
+export type AICostResourceName = AIResourceName | 'fiber' | 'leather' | 'wheat'
 export type AIResourceAmount = Partial<Record<AICostResourceName, number>>
 
 type AIPhase = 'economy' | 'military_build'
@@ -37,6 +38,7 @@ export type AIEntityLike = {
   owner?: PlayerLike | null
   hitPoints?: number
   totalHitPoints?: number
+  constructionMaterials?: ConstructionMaterials
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
@@ -157,6 +159,7 @@ export type AIStrategyPlayerLike = {
   x?: number
   y?: number
   type?: string
+  wheat?: number
   fiber?: number
   leather?: number
   wood: number
@@ -171,7 +174,6 @@ export type AIStrategyPlayerLike = {
   populationMax: number
   difficultyConfig: AIDifficultyConfig
   maxVillagerPerAge: Record<AIAge, number>
-  villageTargetPercentageByAge: Record<AIAge, Record<AIResourceName, number>>
   maxBuildingByAge: Record<AIAge, Record<string, number>>
   maxInfantryByAge: Record<AIAge, number>
   maxArcherByAge: Record<AIAge, number>

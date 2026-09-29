@@ -31,7 +31,7 @@ imported PNGs. Original author/license definitions are retained in
 `sheet_definitions/villager_sit_upstream/`.
 
 The villager build plan selects one static pose per direction: cross-legged
-(source column 1) for men, side-sitting (column 0) for women. Column 2, the chair
+(source column 0) for men, side-sitting (column 1) for women. Column 2, the chair
 pose, is excluded. The four composed frames join the existing variant atlas as
 `body/sitting`, with the same recoloring and finishing as the other sheets.
 The runtime uses `sittingSheet` for stationary, awake villagers during morning,

@@ -170,8 +170,10 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
       })
     }
     delete space.building.interiorBuildings
-    space.defaultBuildingsPlaced = true
-    return
+    if (![BUILDING_TYPES.granary, BUILDING_TYPES.storagePit, BUILDING_TYPES.stable].includes(space.building.type)) {
+      space.defaultBuildingsPlaced = true
+      return
+    }
   }
   if (space.building.type === BUILDING_TYPES.cave) {
     space.defaultBuildingsPlaced = true
@@ -184,6 +186,7 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
   if (space.entryCell) blockedCells.add(interiorCellKey(space.entryCell))
 
   for (const item of getBuildingInteriorDecorationLayout(space.building)) {
+    if (saved && !item.key.startsWith('depot-light-') && !item.key.startsWith('stable-light-')) continue
     const label = `${space.id}:default:${item.key}`
     if (owner.buildings.some(building => building.label === label && !building.isDestroyed)) continue
     const preferred = getInteriorDefaultBuildingPreferredCell(space, item, center)

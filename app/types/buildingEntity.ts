@@ -1,3 +1,6 @@
+import type { DepotReservePolicy } from '../lib/economy/depotReserves'
+import type { TrainingRequest } from './training'
+import type { ConstructionMaterials } from '../lib/economy/constructionMaterials'
 import type { CaveDefinition } from './cave'
 import type { Container } from 'pixi.js'
 import type { ConfigValue } from './config'
@@ -12,11 +15,12 @@ import type { TrainingEntry, TrainingTrainee } from './training'
 import type { SaveEntityState } from './save'
 
 export interface BuildingEntity extends RuntimeEntityBase {
+  constructionMaterials?: ConstructionMaterials
+  reservePolicy?: DepotReservePolicy
   placementMirrored?: boolean
   buildingAge?: number
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string
-  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   accept?: string[]
   queue?: string[]
@@ -26,6 +30,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   trainingUnit?: TrainingTrainee | null
   trainingType?: string | null
   trainingQueue?: TrainingEntry[]
+  trainingRequests?: TrainingRequest[]
   resumeSavedTraining?: () => void
   trainingStartedDay?: number | null
   trainingCompleteDay?: number | null
@@ -40,6 +45,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
     trainee?: UnitEntity | null
   ) => boolean | void
   cancelUnits?: (type: string) => void
+  cancelTrainingEntry?: (label: string) => boolean
   cancelAllUnitTraining?: () => boolean
   startTrainingWithUnit?: (trainee: UnitEntity) => boolean
   upgrade?: (target: string) => void
@@ -52,7 +58,6 @@ export interface BuildingEntity extends RuntimeEntityBase {
   useSpriteShadow?: boolean
   spriteShadowAnchor?: { x?: number; y?: number }
   finalTexture?: () => void
-  increasePopulation?: number
   shelterCapacity?: number
   populationCapacityApplied?: boolean
   constructionTime?: number

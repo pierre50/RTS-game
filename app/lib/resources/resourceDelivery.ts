@@ -1,3 +1,6 @@
+import { constructionCargoReserve } from '../economy/collectiveConstruction'
+import { isDeliveryTargetRejected } from './resourceDeliveryRecovery'
+import { depositableResource } from '../economy/villagerProvisions'
 import { withinVillageActivity } from '../units/villageActivity'
 import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { getClosestInstanceWithPath } from '../grid/queries'
@@ -110,14 +113,6 @@ function getInteriorChestParentBuilding(chest: BuildingEntity): BuildingEntity |
   })
 }
 
-export function isStandaloneStorageChest(building: BuildingEntity): boolean {
-  return (
-    building.type === BUILDING_TYPES.chest &&
-    !getInteriorChestParentBuilding(building) &&
-    isOutsideSpaceId(building.spaceId)
-  )
-}
-
 function getBuildingStorageTotal(building: BuildingEntity): number {
   const own = sumResourceAmount(building.inventory?.resources)
   if (building.type === BUILDING_TYPES.chest) return own
@@ -159,10 +154,19 @@ export function buildingAcceptsInventoryResource(
 // Eligibility only needs *some* room — an actual delivery clamps to whatever fits
 // (see maxAcceptableResourceAmount in depositUnitResourcesIntoChest), so a building doesn't
 // need to fit the unit's entire carried amount to be worth walking to.
+export function automaticDepositAmount(unit: UnitEntity, resource: ResourceKey): number {
+  const bag = unit.inventory?.resources ?? {}
+  const surplus = Math.max(
+    0,
+    (bag[resource] ?? 0) - (unit.owner ? constructionCargoReserve(unit.owner, unit, resource) : 0)
+  )
+  return Math.min(depositableResource(bag, resource), surplus)
+}
+
 export function unitHasDeliverableResourcesForBuilding(unit: UnitEntity, building: BuildingEntity): boolean {
   if (!withinVillageActivity(unit, building) || !allowsVillagerDeliveries(building)) return false
   return getUnitCarriedResourceKeys(unit).some(
-    resource => getUnitCarriedResourceAmount(unit, resource) > 0 && buildingAcceptsInventoryResource(building, resource)
+    resource => automaticDepositAmount(unit, resource) > 0 && buildingAcceptsInventoryResource(building, resource)
   )
 }
 
@@ -187,28 +191,21 @@ export function unitShouldDeliverResource(unit: UnitEntity, loadingType: string)
   return isUnitResourceCarryFull(unit) && unitHasDeliverableResources(unit)
 }
 
-export function isUnitBlockedByFullStorage(unit: UnitEntity): boolean {
-  return (
-    unit.type === UNIT_TYPES.villager &&
-    isUnitResourceCarryFull(unit) &&
-    unitHasDeliverableResources(unit) &&
-    !findResourceDeliveryTarget(unit)
-  )
-}
-
 export function findResourceDeliveryTarget(unit: UnitEntity): BuildingEntity | null {
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit)) return null
   const owner = unit.owner
   if (!owner) return null
-  const candidates = (owner.buildings ?? []).flatMap(building => {
-    if (building.owner !== owner) return []
-    if (!building.isBuilt || building.isDead || building.isDestroyed) return []
-    if (!unitHasDeliverableResourcesForBuilding(unit, building)) return []
-    const parent = getInteriorChestParentBuilding(building)
-    if (parent && sameMapSpace(unit, parent)) return [parent]
-    if (building.type === BUILDING_TYPES.chest && !isOutsideSpaceId(getEntitySpaceId(building))) return []
-    return [building]
-  })
+  const candidates = (owner.buildings ?? [])
+    .flatMap(building => {
+      if (building.owner !== owner) return []
+      if (!building.isBuilt || building.isDead || building.isDestroyed) return []
+      if (!unitHasDeliverableResourcesForBuilding(unit, building)) return []
+      const parent = getInteriorChestParentBuilding(building)
+      if (parent && sameMapSpace(unit, parent)) return [parent]
+      if (building.type === BUILDING_TYPES.chest && !isOutsideSpaceId(getEntitySpaceId(building))) return []
+      return [building]
+    })
+    .filter(building => !isDeliveryTargetRejected(unit, building))
   if (!candidates.length) return null
   const fullPocketCandidates = candidates.filter(building => buildingAcceptsAllUnitResources(building, unit))
   const preferredCandidates = fullPocketCandidates.length ? fullPocketCandidates : candidates

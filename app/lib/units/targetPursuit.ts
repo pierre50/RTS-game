@@ -36,7 +36,7 @@ export function routeToRememberedTarget(unit: UnitEntity, target: RuntimeEntity,
     searches.delete(unit)
     return false
   }
-  const known = knownTarget(unit.owner, target)
+  const known = knownTarget(unit.owner, target, unit)
   const last = known ?? (unit.dest === target ? unit.realDest : null)
   const map = getEntitySpaceMapLike(unit, unit.context?.map)
   const cell = last && map?.grid[last.i]?.[last.j]

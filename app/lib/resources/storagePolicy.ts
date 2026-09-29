@@ -1,16 +1,18 @@
+import { communalStoreBuilding } from '../economy/constructionStores'
+import type { BuildingEntity } from '../../types/entities'
 const FOOD = new Set(['food', 'berry', 'wheat', 'meat'])
 
-// A camp chest funds the first buildings; dedicated depots provide economical bulk storage.
+// Chests are personal storage; communal depots supply village work.
 const STORAGE_CAPACITY: Record<string, number> = {
-  Chest: 300,
-  TownCenter: 600,
-  StoragePit: 3000,
-  Granary: 2000,
+  Chest: 100,
+  TownCenter: 300,
+  StoragePit: 300,
+  Granary: 300,
 }
 
 /** Shared by runtime deliveries, interior chests and detached village simulation. */
 export function getStorageCapacity(type: string): number {
-  return STORAGE_CAPACITY[type] ?? 1000
+  return STORAGE_CAPACITY[type] ?? 300
 }
 
 /** Shared by physical deliveries and detached village simulation. */
@@ -25,6 +27,16 @@ export function storageResourcePriority(type: string, resource: string): number 
 }
 
 /** This restricts automatic deliveries only, never manual transfers or construction spending. */
-export function allowsVillagerDeliveries(building: { villagerDeliveriesBlocked?: boolean }): boolean {
-  return building.villagerDeliveriesBlocked !== true
+export function allowsVillagerDeliveries(
+  building: { type?: string },
+  owner?: Parameters<typeof communalStoreBuilding>[1]
+): boolean {
+  const depot = communalStoreBuilding(building as BuildingEntity, owner ?? (building as BuildingEntity).owner)
+  return Boolean(
+    depot &&
+      ['StoragePit', 'Granary'].includes(depot.type) &&
+      depot.isBuilt !== false &&
+      !depot.isDead &&
+      !depot.isDestroyed
+  )
 }

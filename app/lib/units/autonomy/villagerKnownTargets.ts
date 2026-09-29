@@ -7,7 +7,6 @@ import { getGaiaAnimals } from '../../playerState'
 import { isWildHorse } from '../../horses/horseTaming'
 import { canVillagerAutonomouslyHunt } from '../villagerHunting'
 import { targetWorkerLoad } from '../villagerAutonomyTargeting'
-import { logGoldMinerFlow } from './villagerJobDiagnostics'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../../types/entities'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
@@ -15,12 +14,12 @@ function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is Runt
 }
 
 function isUsableResource(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
-  // A felled tree has no hit points but remains harvestable until its wood is depleted.
+  // Harvestability depends on remaining stock, not health: minerals may have no
+  // hit points, and felled trees still contain wood.
   return Boolean(
     entity &&
       !entity.isDead &&
       !entity.isDestroyed &&
-      (entity.type === RESOURCE_TYPES.tree || (entity.hitPoints ?? 1) > 0) &&
       entity.family === FAMILY_TYPES.resource &&
       (entity.quantity ?? 1) > 0
   )
@@ -52,7 +51,7 @@ function isCapturableHorse(entity: RuntimeEntity | null | undefined): entity is 
 function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean {
   if (target.family === FAMILY_TYPES.resource && target.type === RESOURCE_TYPES.wheat) {
     return (
-      Boolean(knownTarget(unit.owner, target)?.mature) &&
+      Boolean(knownTarget(unit.owner, target, unit)?.mature) &&
       targetWorkerLoad(unit, target, WORK_TYPES.farmer, ACTION_TYPES.farm) < 1
     )
   }
@@ -60,14 +59,16 @@ function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean
 }
 
 function isKnownToUnit(unit: UnitEntity, entity: RuntimeEntity): boolean {
-  return withinVillageActivity(unit, entity) && sameMapSpace(unit, entity) && Boolean(knownTarget(unit.owner, entity))
+  return (
+    withinVillageActivity(unit, entity) && sameMapSpace(unit, entity) && Boolean(knownTarget(unit.owner, entity, unit))
+  )
 }
 
 function knownState(unit: UnitEntity, entity: RuntimeEntity): RuntimeEntity {
-  return (knownTarget(unit.owner, entity) ?? {}) as RuntimeEntity
+  return (knownTarget(unit.owner, entity, unit) ?? {}) as RuntimeEntity
 }
 
-export function knownResources(unit: UnitEntity, type: string, diagnose = false, limit = Infinity): RuntimeEntity[] {
+export function knownResources(unit: UnitEntity, type: string, limit = Infinity): RuntimeEntity[] {
   const owner = unit.owner
   const resources = new Set([
     ...nearestResourceRecords(
@@ -84,44 +85,6 @@ export function knownResources(unit: UnitEntity, type: string, diagnose = false,
   const targets = source.filter(
     resource => resource.type === type && isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
   )
-  if (diagnose && type === RESOURCE_TYPES.stone) {
-    const hero = unit.context?.controls?.heroUnit
-    const stones = source.filter(resource => resource.type === type)
-    logGoldMinerFlow(unit, 'autonomy.stone-knowledge', {
-      job: 'stone',
-      sameOwnerAsHero: hero ? hero.owner === owner : null,
-      totalStones: stones.length,
-      knownUsableStones: targets.length,
-      nearestStones: stones
-        .sort(
-          (a, b) => Math.abs(unit.i - a.i) + Math.abs(unit.j - a.j) - Math.abs(unit.i - b.i) - Math.abs(unit.j - b.j)
-        )
-        .slice(0, 10)
-        .map(resource => {
-          const sameSpace = sameMapSpace(unit, resource)
-          const observation = sameSpace ? knownTarget(owner, resource) : undefined
-          return {
-            label: resource.label,
-            i: resource.i,
-            j: resource.j,
-            space: resource.spaceId ?? 'outside',
-            knownToVillager: Boolean(observation),
-            economicallyKnownToHero: hero ? knowsEconomicTarget(hero.owner, resource) : null,
-            observedHitPoints: observation?.hitPoints ?? null,
-            observedQuantity: observation?.quantity ?? null,
-            observedDead: observation?.isDead ?? null,
-            observedDestroyed: observation?.isDestroyed ?? null,
-            reason: !sameSpace
-              ? 'different-space'
-              : !observation
-                ? 'unknown'
-                : !targets.includes(resource)
-                  ? 'unusable-resource'
-                  : 'candidate',
-          }
-        }),
-    })
-  }
   return targets
 }
 
@@ -158,14 +121,27 @@ export function knownFoodTargets(unit: UnitEntity, limit = Infinity): RuntimeEnt
     ]),
   ].filter(
     animal =>
-      withinVillageActivity(unit, animal) && sameMapSpace(unit, animal) &&
+      withinVillageActivity(unit, animal) &&
+      sameMapSpace(unit, animal) &&
       (knowsEconomicTarget(unit.owner, animal) || playerSeesTarget(unit.owner, animal)) &&
       canVillagerAutonomouslyHunt(unit, animal)
   )
   return [
     ...berries.filter(target => isKnownToUnit(unit, target) && isUsableResource(knownState(unit, target))),
     ...wheat.filter(target => isKnownToUnit(unit, target) && isUsableResource(knownState(unit, target))),
-    ...carcasses.filter(target => isKnownToUnit(unit, target) && isUsableAnimalCarcass(knownState(unit, target))),
+    ...carcasses.filter(target => {
+      if (!isKnownToUnit(unit, target)) return false
+      const state = knownState(unit, target)
+      if (['leather', 'sinew', 'feather'].includes(unit.collectiveTask ?? '')) {
+        return (
+          state.isDead &&
+          !target.isDestroyed &&
+          'inventory' in target &&
+          (target.inventory?.resources?.[unit.collectiveTask as 'leather' | 'sinew' | 'feather'] ?? 0) > 0
+        )
+      }
+      return isUsableAnimalCarcass(state)
+    }),
     ...prey,
   ].filter(target => withinVillageActivity(unit, target) && isFoodTargetAvailable(unit, target))
 }
@@ -173,7 +149,8 @@ export function knownFoodTargets(unit: UnitEntity, limit = Infinity): RuntimeEnt
 export function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
   return (unit.owner?.buildings ?? []).filter(
     building =>
-      withinVillageActivity(unit, building) && building.owner === unit.owner &&
+      withinVillageActivity(unit, building) &&
+      building.owner === unit.owner &&
       isAliveEntity(building) &&
       (!building.isBuilt || (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)) &&
       unit.getActionCondition?.(building, ACTION_TYPES.build)
@@ -186,7 +163,8 @@ export function knownCapturableHorses(unit: UnitEntity): RuntimeEntity[] {
 
   return source.filter(
     target =>
-      withinVillageActivity(unit, target) && sameMapSpace(unit, target) &&
+      withinVillageActivity(unit, target) &&
+      sameMapSpace(unit, target) &&
       (knowsEconomicTarget(unit.owner, target) || playerSeesTarget(unit.owner, target)) &&
       isCapturableHorse(target)
   )

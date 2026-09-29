@@ -27,9 +27,24 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     },
     '../lib/resources/playerResourceTotals': { getPlayerResourceTotals: () => ({}) },
     '../constants': {
+      DAILY_CONSUMPTION_PER_VILLAGER: { food: 4 },
+      VILLAGER_ARRIVAL_CONFIG: {
+        maxArrivalsPerDay: 3,
+        growthRate: 0.1,
+        currentPopulationReserveDays: 2,
+        newVillagerReserveDays: 3,
+      },
       FAMILY_TYPES: { building: 'building' },
-      UNIT_TYPES: { chief: 'Chief' },
-      BUILDING_TYPES: { forge: 'Forge', chest: 'Chest', fireCamp: 'FireCamp', market: 'Market', trap: 'Trap' },
+      UNIT_TYPES: { chief: 'Chief', priest: 'Priest', villager: 'Villager' },
+      BUILDING_TYPES: {
+        temple: 'Temple',
+        stable: 'Stable',
+        forge: 'Forge',
+        chest: 'Chest',
+        fireCamp: 'FireCamp',
+        market: 'Market',
+        trap: 'Trap',
+      },
       SOUND_CUES: { building: { chestOpen: 'building/chest-open' }, ui: { menuClick: 'menuClick' } },
     },
     '../lib/avatar': {
@@ -67,7 +82,11 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
         _backdrop: global.document.createElement('div'),
         close() {},
       }),
-      setInspectionMode: (modal, enabled) => modal._panel.classList.toggle('inspection-panel', enabled),
+      setInspectionWindowSize: (modal, size) => {
+        modal._panel.classList.toggle('inspection-panel', size === 'small')
+        modal._panel.classList.toggle('inspection-window--small', size === 'small')
+        modal._panel.classList.toggle('inspection-window--large', size === 'large')
+      },
     },
     './EntityInfoContent': {
       TITLED_ENTITY_INFO_OPTIONS: {},
@@ -594,6 +613,7 @@ test('forge opens the crafting body and refuses unfinished or unreachable forges
     assert.equal(manager.open(forge), true)
     assert.equal(manager.body.children.at(-1).tagName, 'forge-craft')
     assert.equal(manager.modal._panel.classList.contains('inventory-transfer-modal'), true)
+    assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
     assert.equal(manager.modal._panel.classList.contains('interaction-panel'), false)
     assert.equal(manager.canOpenFor({ ...forge, isBuilt: false }), false)
     assert.equal(manager.canOpenFor({ ...forge, isDestroyed: true }), false)
@@ -605,5 +625,130 @@ test('forge opens the crafting body and refuses unfinished or unreachable forges
     assert.equal(distant.manager.canOpenFor({ type: 'Forge', isBuilt: true }), false)
   } finally {
     distant.restoreDocument()
+  }
+})
+
+test('military and temple E panels add one recruit per click beyond capacity and remove one request', () => {
+  for (const [buildingType, unitType, category] of [
+    ['Barracks', 'Fantassin', 'Infantry'],
+    ['Temple', 'Priest', 'Civilian'],
+  ]) {
+    const { manager, player, restoreDocument } = createManager()
+    try {
+      Object.assign(player, {
+        label: 'player',
+        units: [],
+        buildings: [],
+        config: { units: { [unitType]: { category } } },
+      })
+      const building = {
+        family: 'building',
+        type: buildingType,
+        label: 'training-building',
+        owner: player,
+        isBuilt: true,
+        units: [unitType],
+      }
+      player.buildings.push(building)
+      manager.open(building)
+      let panel = manager.body.children[0]
+      const buttons = panel.children.filter(child => child.tagName === 'button')
+      assert.equal(buttons.length, 1)
+      assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
+      for (let index = 0; index < 10; index++)
+        manager.body.children[0].children.find(child => child.id === `training-add-${unitType}`).dispatch('click')
+      assert.equal(building.trainingRequests.length, 10)
+      assert.equal(
+        building.trainingRequests.every(request => request.type === unitType),
+        true
+      )
+      panel = manager.body.children[0]
+      const row = panel.children.find(child => child.className === 'hero-training-entry')
+      const cancel = row.children.find(child => child.id === `training-remove-${unitType}`)
+      cancel.dispatch('click')
+      assert.equal(building.trainingRequests.length, 9)
+    } finally {
+      restoreDocument()
+    }
+  }
+})
+
+test('E depot panels allocate building capacity without a total amount control', () => {
+  for (const type of ['StoragePit', 'Granary']) {
+    const { manager, player, restoreDocument } = createManager()
+    try {
+      Object.assign(player, { label: 'player', units: [], buildings: [], population: 1 })
+      const building = { family: 'building', type, label: 'depot', i: 0, j: 0, owner: player, isBuilt: true }
+      player.buildings.push(building)
+      manager.open(building)
+      let panel = manager.body.children[0]
+      assert.equal(
+        panel.children.some(child => child.className.startsWith('depot-reserves-total')),
+        false
+      )
+      assert.ok(panel.children.find(child => child.className === 'depot-reserve-capacity'))
+      const rows = panel.children.filter(child => child.className.startsWith('depot-reserve-row'))
+      assert.equal(rows.length, type === 'StoragePit' ? 5 : 3)
+      const input = rows[1].children.find(child => child.tagName === 'input')
+      assert.equal(input.type, 'range')
+      input.value = '40'
+      input.dispatch('change')
+      assert.equal(building.reservePolicy.target, 300)
+      assert.equal(
+        Object.values(building.reservePolicy.shares).reduce((sum, n) => sum + n, 0),
+        100
+      )
+      panel = manager.body.children[0]
+      const amounts = panel.children
+        .filter(child => child.className.startsWith('depot-reserve-row'))
+        .map(row => Number(row.children.find(child => child.tagName === 'output').textContent))
+      assert.equal(
+        amounts.reduce((sum, n) => sum + n, 0),
+        building.reservePolicy.target
+      )
+      panel.children.find(child => child.textContent === 'depotReserveDisable').dispatch('click')
+      assert.deepEqual(building.reservePolicy.shares, {})
+    } finally {
+      restoreDocument()
+    }
+  }
+})
+
+test('training panel lists each named recruit with remaining time and its own cancel button', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    Object.assign(player, {
+      label: 'player',
+      units: [],
+      buildings: [],
+      config: { units: { Fantassin: { category: 'Infantry' } } },
+    })
+    const cancelled = []
+    const building = {
+      family: 'building',
+      type: 'Barracks',
+      label: 'barracks',
+      owner: player,
+      isBuilt: true,
+      units: ['Fantassin'],
+      context: { dayNight: { state: { day: 2, hour: 8, minute: 0 } } },
+      trainingQueue: [
+        { type: 'Fantassin', trainee: { label: 'a', name: 'Aline' }, trainingCompleteDay: 5 },
+        { type: 'Fantassin', trainee: { label: 'b', name: 'Brune' }, trainingCompleteDay: 8 },
+      ],
+      cancelTrainingEntry: label => cancelled.push(label),
+    }
+    player.buildings.push(building)
+    manager.open(building)
+    const rows = manager.body.children[0].children.filter(child => child.dataset.trainingIndex != null)
+    assert.equal(rows.length, 2)
+    assert.match(rows[0].children[0].textContent, /Aline/)
+    assert.match(rows[1].children[0].textContent, /Brune/)
+    assert.equal(rows[0].children[1].children[0].textContent, '3 jours restants')
+    assert.equal(rows[1].children[1].children[0].textContent, '6 jours restants')
+    rows[1].children[2].dispatch('click')
+    assert.deepEqual(cancelled, ['b'])
+  } finally {
+    restoreDocument()
   }
 })

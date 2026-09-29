@@ -115,7 +115,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
       moveEntityToMapSpace: overrides.moveEntityToMapSpace ?? (() => {}),
       sameMapSpace: () => true,
     },
-    '../lib/ui/interactionCellMarker': {
+    '../lib/ui/InteractionCellMarker': {
       INTERACTION_CELL_MARKER_PULSE_MS: 1400,
       INTERACTION_CELL_MARKER_Z_INDEX: -0.25,
       drawInteractionCellMarker: () => {},
@@ -536,9 +536,9 @@ test('runtime building interiors place the fire camp at the room center', () => 
   assert.deepEqual({ i: fireCamp.i, j: fireCamp.j }, { i: nearestCenterCell.i, j: nearestCenterCell.j })
 })
 
-test('destroyed building interiors merge every interior chest inventory into one drop', () => {
+test('destroyed building interiors discard all chest contents without a drop', () => {
   const removedBuckets = []
-  const { extractBuildingInteriorChestInventory } = loadBuildingInteriorSpaceSystem()
+  const { destroyBuildingInteriorInventory } = loadBuildingInteriorSpaceSystem()
   const context = {
     map: {
       grid: [[{ i: 0, j: 0 }]],
@@ -599,12 +599,8 @@ test('destroyed building interiors merge every interior chest inventory into one
   secondCell.has = secondChest
   owner.buildings.push(parent, firstChest, secondChest, outsideChest)
 
-  const inventory = extractBuildingInteriorChestInventory(context, parent)
+  destroyBuildingInteriorInventory(context, parent)
 
-  assert.deepEqual(inventory, {
-    resources: { food: 10, wood: 4, gold: 1 },
-    equipment: ['basket', 'trap'],
-  })
   assert.deepEqual(owner.buildings, [parent, outsideChest])
   assert.deepEqual(removedBuckets, [firstChest.label, secondChest.label])
   assert.equal(firstChest.isDestroyed, true)
@@ -613,6 +609,24 @@ test('destroyed building interiors merge every interior chest inventory into one
   assert.deepEqual(firstChest.inventory, { resources: {}, equipment: [] })
   assert.equal(firstCell.has, null)
   assert.equal(firstCell.solid, false)
+  assert.deepEqual(secondChest.inventory, { resources: {}, equipment: [] })
+  assert.deepEqual(outsideChest.inventory, { resources: { food: 999 } })
+})
+
+test('destroyed unopened interiors discard saved inventories without creating a room or chest', () => {
+  const { destroyBuildingInteriorInventory } = loadBuildingInteriorSpaceSystem()
+  const context = { map: { spaces: new Map() } }
+  const building = {
+    label: 'unopened-granary',
+    type: 'Granary',
+    owner: { buildings: [] },
+    inventory: { resources: { wheat: 7 } },
+    interiorBuildings: [{ type: 'Chest', inventory: { resources: { wood: 4 }, equipment: ['trap'] } }],
+  }
+  destroyBuildingInteriorInventory(context, building)
+  assert.deepEqual(building.inventory, { resources: {}, equipment: [] })
+  assert.deepEqual(building.interiorBuildings[0].inventory, { resources: {}, equipment: [] })
+  assert.equal(context.map.spaces.size, 0)
 })
 
 test('runtime building interior exit marker stays above terrain and below all units after updates', () => {

@@ -1,73 +1,16 @@
-import { CompactResourceSet } from '../../resources/CompactResourceSet'
-import { getPackedCellStore } from '../../cell/PackedCellRegistry'
-import { PASSABLE_RESOURCE_TYPES } from '../../../constants'
-import { PackedCellStore } from '../../cell/PackedCellStore'
-import { TERRAIN_TYPES } from '../../../serialization/MapBlueprintDecoding'
-import { beginLoadTrace } from '../../../lib/loadDiagnostics'
-import { addInteriorWalls } from '../../../lib/graphics/interiorWalls'
-import { registerPreparedMapContent, applyPreparedTerrain } from './PreparedMapContent'
-import { Assets } from 'pixi.js'
-import { Resource } from '../../Resource'
-import { getTerrainAssets, normalizeResourceTextureRef } from '../../ResourceTexture'
-import { textureRefToString } from '../../../lib/graphics/textures'
-import { Cell, GenerationCell } from '../../cell'
 import { createDeterministicCellVariantPicker } from '../../../lib'
-import { createSquareLocalBlueprint } from './LocalMapBlueprint'
+import { addInteriorWalls } from '../../../lib/graphics/interiorWalls'
+import { beginLoadTrace } from '../../../lib/loadDiagnostics'
 import type { RuntimeCell } from '../../../types/map'
-import type { ResourceEntity } from '../../../types/entities'
-import type { GameContextLike } from '../../../types/context'
-import type { CellDefinition, MapBlueprint, MapGenerationContext, MapGenerationMap } from '../MapGenerationTypes'
+import { Cell, GenerationCell } from '../../cell'
+import { PackedCellStore } from '../../cell/PackedCellStore'
+import type { CellDefinition, MapBlueprint, MapGenerationMap } from '../MapGenerationTypes'
+import { applyInteriorMasks, isInteriorBlueprint } from './BlueprintInteriorMasks'
+import { gameConfig, loadBlueprintResourceBatches, runtimeContext } from './BlueprintResourceLoading'
+import { createSquareLocalBlueprint } from './LocalMapBlueprint'
+import { applyPreparedTerrain, registerPreparedMapContent } from './PreparedMapContent'
 
 type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
-type ResourceAssetRef = { sheet: string; frame: number }
-type ResourceAssets = string | ResourceAssetRef | ResourceAssetRef[] | Record<string, ResourceAssetRef[]>
-type ResourceDefinition = {
-  totalQuantity?: number
-  totalHitPoints?: number
-  isAnimated?: boolean
-  category?: string
-  assets?: ResourceAssets
-}
-type BlueprintGameConfig = {
-  resources: Record<string, ResourceDefinition>
-  cells: Record<string, CellDefinition>
-}
-type BlueprintResourceState = NonNullable<MapBlueprint['resources']>[number]
-
-function runtimeContext(context: MapGenerationContext): GameContextLike {
-  if (!context.app || !context.gamebox || !context.map || !context.scheduler) {
-    throw new Error('Map generation requires a runtime context')
-  }
-  return context as GameContextLike
-}
-
-function gameConfig(): BlueprintGameConfig {
-  return Assets.cache.get('config') as BlueprintGameConfig
-}
-
-function isTextureRefAsset(assets: ResourceAssets | undefined): assets is ResourceAssetRef {
-  return Boolean(assets && typeof assets === 'object' && !Array.isArray(assets) && typeof assets.sheet === 'string')
-}
-
-function isTerrainAssetMap(assets: ResourceAssets | undefined): assets is Record<string, ResourceAssetRef[]> {
-  return Boolean(assets && typeof assets === 'object' && !Array.isArray(assets) && !isTextureRefAsset(assets))
-}
-
-function createResourceFromState(resource: BlueprintResourceState, map: MapGenerationMap): ResourceEntity {
-  return Resource.spawn({ ...resource, isNaturalResource: true }, runtimeContext(map.context))
-}
-
-function isInteriorBlueprint(blueprint: MapBlueprint): boolean {
-  return blueprint.kind === 'interior' || blueprint.mapType === 'interior'
-}
-
-function maskValue(mask: MapBlueprint['floorMask'], i: number, j: number): boolean {
-  return mask?.[i]?.[j] === 1
-}
-
-function isBlueprintExitCell(blueprint: MapBlueprint, i: number, j: number): boolean {
-  return Boolean(blueprint.exits?.some(exit => exit?.i === i && exit?.j === j))
-}
 
 export class MapBlueprintGeneration {
   map: MapGenerationMap
@@ -247,23 +190,7 @@ export class MapBlueprintGeneration {
   }
 
   applyInteriorMasks(blueprint: MapBlueprint): void {
-    if (!isInteriorBlueprint(blueprint) || !blueprint.floorMask) return
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i]?.[j]
-        if (!cell) continue
-        const isFloor = maskValue(blueprint.floorMask, i, j)
-        const isBorder = maskValue(blueprint.borderMask, i, j)
-        const isExit = isBlueprintExitCell(blueprint, i, j)
-        cell.terrainHidden = !isFloor
-        cell.border = isBorder && !isExit
-        cell.waterBorder = false
-        if (!cell.has) cell.solid = !isFloor
-        const sprite = 'sprite' in cell ? (cell.sprite as { renderable?: boolean } | null | undefined) : null
-        if (sprite) sprite.renderable = isFloor && cell.category !== 'Water'
-      }
-    }
+    return applyInteriorMasks.call(this, blueprint)
   }
 
   loadBlueprintResources(blueprint: MapBlueprint): void {
@@ -271,107 +198,6 @@ export class MapBlueprintGeneration {
   }
 
   private *loadBlueprintResourceBatches(blueprint: MapBlueprint): Generator<number> {
-    if (!Array.isArray(blueprint.resources)) {
-      this.map.pregeneratedResourcesLoaded = false
-      this.map.blueprintResourceLoadMs = 0
-      return
-    }
-
-    const startedAt = performance.now()
-    this.map.resources = new Set()
-    this.map.naturalResourceRespawnSlots = []
-    const resourcesConfig = gameConfig().resources
-    const packed = !this.map.context.editor && getPackedCellStore(this.map.grid)
-    const compact = packed
-      ? new CompactResourceSet(
-          blueprint.resources.length,
-          packed.stride,
-          `resource:${this.map.worldId ?? 'local'}:${this.map.worldRegionId ?? 'outside'}:${this.map.seed ?? 0}`,
-          type => resourcesConfig[type],
-          state => createResourceFromState(state, this.map),
-          runtimeContext(this.map.context)
-        )
-      : null
-    if (compact && packed) {
-      this.map.resources = compact
-      packed.resourceAt = index => compact.atCell(index)
-    }
-    let sliceStartedAt = performance.now()
-    const trace = beginLoadTrace('blueprint.resources', {
-      total: blueprint.resources.length,
-      compact: Boolean(compact),
-    })
-    let processed = 0
-    for (const resource of blueprint.resources) {
-      if (++processed % 1024 === 0) {
-        if (processed % 16384 === 0)
-          trace.progress({ processed, created: this.map.resources.size, materialized: compact?.materializedCount })
-        if (performance.now() - sliceStartedAt >= 8) {
-          yield processed
-          sliceStartedAt = performance.now()
-        }
-      }
-      const index = resource.i * (packed ? packed.stride : this.map.size + 1) + resource.j
-      const cell = packed ? undefined : this.map.grid[resource.i]?.[resource.j]
-      if (packed) {
-        if (
-          resource.i < 0 ||
-          resource.j < 0 ||
-          resource.i >= packed.stride ||
-          resource.j >= packed.stride ||
-          packed.types[index] === 255 ||
-          packed.flags[index] & 1 ||
-          packed.extras.get(index)?.has ||
-          compact?.hasAtCell(index)
-        )
-          continue
-      } else if (!cell || cell.solid || cell.has) continue
-      const terrainType = packed
-        ? (packed.extras.get(index)?.type ??
-          (packed.types[index] === 6 ? 'Water' : TERRAIN_TYPES[packed.types[index]] || 'Grass'))
-        : cell!.type
-      const definition = resourcesConfig[resource.type]
-      const assets = definition?.assets
-      const hasCompatibleTexture =
-        resource.textureName ||
-        definition?.isAnimated ||
-        Array.isArray(assets) ||
-        typeof assets === 'string' ||
-        isTextureRefAsset(assets) ||
-        (isTerrainAssetMap(assets) && Boolean(assets[terrainType]))
-      if (!hasCompatibleTexture) continue
-      try {
-        // Generated minerals and herbs omit their texture. Choose the same asset as
-        // the normal factory before packing, preserving the map's random sequence.
-        let state = resource
-        if (compact && !resource.textureName && !definition?.isAnimated) {
-          const assets = getTerrainAssets(definition?.assets, terrainType)
-          const texture =
-            typeof assets === 'string'
-              ? { sheet: assets, frame: 0 }
-              : Array.isArray(assets)
-                ? this.map.randomItem(assets)
-                : assets
-          if (texture) state = { ...resource, textureName: textureRefToString(normalizeResourceTextureRef(texture)) }
-        }
-        if (compact?.canPack(state) && packed) {
-          compact.addState({ ...state, isNaturalResource: true })
-          if (!PASSABLE_RESOURCE_TYPES.has(resource.type)) packed.flags[resource.i * packed.stride + resource.j] |= 1
-        } else this.map.resources.add(createResourceFromState(state, this.map))
-      } catch (error) {
-        console.warn('Skipping invalid blueprint resource', resource, error)
-      }
-    }
-    compact?.sealBlueprintBaseline()
-    trace.end({
-      processed,
-      created: this.map.resources.size,
-      compact: Boolean(compact),
-      materialized: compact?.materializedCount,
-      materializedCells: packed ? packed.materializedCount : undefined,
-    })
-    this.map.pregeneratedResourcesLoaded = true
-    this.map.blueprintResourceLoadMs = performance.now() - startedAt
-    this.map.context.performance?.record('blueprintResources', this.map.blueprintResourceLoadMs)
+    yield* loadBlueprintResourceBatches(this.map, blueprint)
   }
 }

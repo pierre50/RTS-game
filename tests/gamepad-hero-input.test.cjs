@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadGamepadHeroInput(getGamepad) {
+function loadGamepadHeroInput(getGamepad, bindings = {}) {
   const filename = path.join(__dirname, '../app/controllers/GamepadHeroInput.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -39,7 +39,29 @@ function loadGamepadHeroInput(getGamepad) {
     },
     '../lib/audio/settings': {
       getGamepadEnabled: () => true,
-      getGamepadButtonIndex: action => (action === 'inventoryTransferOne' ? 0 : 2),
+      getGamepadButtonIndex: action =>
+        bindings[action] ??
+        {
+          heroUp: 12,
+          heroDown: 13,
+          heroLeft: 14,
+          heroRight: 15,
+          heroDefense: 4,
+          heroInteract: 2,
+          inventory: 3,
+          heroMountHorse: 10,
+          heroDismountHorse: 11,
+          quests: 1,
+          heroToolPrev: 6,
+          heroToolNext: 7,
+          heroInspect: 8,
+          heroAction: 5,
+          placementPlace: 0,
+          placementMirror: 2,
+          placementCancel: 1,
+          inventoryTransferOne: 0,
+          inventoryTransferAll: 2,
+        }[action],
     },
   }
   const localRequire = request =>
@@ -215,7 +237,7 @@ test('game windows consume controller buttons and release world actions only onc
     gamepad = makeGamepad([3, 5, 12])
     input.update()
     input.update()
-    assert.deepEqual(calls, ['down:heroUp', 'up:heroUp', 'release'])
+    assert.deepEqual(calls, ['down:heroUp', 'up:heroUp'])
     assert.deepEqual(input.moveVector, { dx: 0, dy: 0 })
     modalOpen = false
     input.update()
@@ -229,6 +251,7 @@ test('game windows consume controller buttons and release world actions only onc
 test('placement consumes A/X/B without attacking or opening another interaction', () => {
   let gamepad = makeGamepad()
   const calls = []
+  const modes = []
   const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
   const input = new GamepadHeroInput({
     context: {},
@@ -238,7 +261,7 @@ test('placement consumes A/X/B without attacking or opening another interaction'
       confirmPlacement: () => calls.push('place'),
       toggleMirror: () => calls.push('mirror'),
       cancelPlacement: () => calls.push('cancel'),
-      setPlacementGamepad() {},
+      setPlacementGamepad: value => modes.push(value),
     },
     heroController: {
       handleKeyDown: () => calls.push('world'),
@@ -258,4 +281,144 @@ test('placement consumes A/X/B without attacking or opening another interaction'
     input.update()
   }
   assert.deepEqual(calls, ['mirror', 'place', 'cancel'])
+  assert.equal(modes[0], true)
+  gamepad = null
+  input.update()
+  assert.equal(modes.at(-1), false)
+  gamepad = makeGamepad()
+  input.update()
+  assert.equal(modes.at(-1), true)
+})
+
+test('custom hero and placement bindings dispatch the mapped actions and release held actions', () => {
+  let gamepad = makeGamepad()
+  const calls = []
+  const bindings = {
+    heroUp: 15,
+    heroDown: 14,
+    heroLeft: 13,
+    heroRight: 12,
+    heroInteract: 0,
+    heroDefense: 2,
+    inventory: 1,
+    heroMountHorse: 6,
+    heroDismountHorse: 7,
+    quests: 3,
+    heroToolPrev: 10,
+    heroToolNext: 11,
+    heroInspect: 9,
+    heroAction: 8,
+    placementPlace: 3,
+    placementMirror: 4,
+    placementCancel: 5,
+  }
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad, bindings)
+  const controls = {
+    context: {},
+    mouse: { x: 0, y: 0 },
+    heroController: {
+      handleKeyDown: action => calls.push(`down:${action}`),
+      handleKeyUp: action => calls.push(`up:${action}`),
+      cycleTool: direction => calls.push(`tool:${direction}`),
+      handlePrimaryPointerDown: () => calls.push('attack'),
+      handlePointerUp: () => calls.push('release'),
+    },
+    openHeroEntityInteraction: () => calls.push('inspect'),
+    buildingPlacer: {
+      confirmPlacement: () => calls.push('place'),
+      toggleMirror: () => calls.push('mirror'),
+      cancelPlacement: () => calls.push('cancel'),
+      setPlacementGamepad() {},
+    },
+  }
+  const input = new GamepadHeroInput(controls)
+  function press(index) {
+    gamepad = makeGamepad([index])
+    input.update()
+    input.update()
+    gamepad = makeGamepad()
+    input.update()
+  }
+  input.update()
+  for (const action of ['heroUp', 'heroDown', 'heroLeft', 'heroRight', 'heroInteract', 'heroDefense', 'inventory']) {
+    calls.length = 0
+    press(bindings[action])
+    assert.deepEqual(calls, [`down:${action}`, `up:${action}`])
+  }
+  calls.length = 0
+  for (const action of ['heroToolPrev', 'heroToolNext', 'heroInspect', 'heroAction']) press(bindings[action])
+  assert.deepEqual(calls, ['tool:-1', 'tool:1', 'inspect', 'attack', 'release'])
+  controls.mouseBuilding = {}
+  calls.length = 0
+  for (const action of ['placementPlace', 'placementMirror', 'placementCancel']) press(bindings[action])
+  assert.deepEqual(calls, ['place', 'mirror', 'cancel'])
+})
+
+test('disconnect and suspension release held world actions and consume buttons used in menus', () => {
+  let gamepad = makeGamepad()
+  const calls = []
+  const bindings = { heroDefense: 4 }
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad, bindings)
+  const input = new GamepadHeroInput({
+    context: {},
+    mouse: { x: 0, y: 0 },
+    heroController: {
+      cancelActiveInteraction: () => calls.push('cancel'),
+      handleKeyDown: action => calls.push(`down:${action}`),
+      handleKeyUp: action => calls.push(`up:${action}`),
+      handlePrimaryPointerDown: () => calls.push('attack'),
+      handlePointerUp: () => calls.push('release'),
+      cycleTool() {},
+    },
+    openHeroEntityInteraction() {},
+  })
+  input.update()
+  gamepad = makeGamepad([4, 5, 12])
+  input.update()
+  calls.length = 0
+  gamepad = null
+  input.update()
+  input.update()
+  assert.deepEqual(calls, ['cancel', 'up:heroUp', 'up:heroDefense', 'release'])
+  assert.deepEqual(input.moveVector, { dx: 0, dy: 0 })
+  gamepad = makeGamepad([5])
+  input.suspend()
+  calls.length = 0
+  input.update()
+  assert.deepEqual(calls, [])
+  gamepad = makeGamepad()
+  input.update()
+  gamepad = makeGamepad([4])
+  input.update()
+  calls.length = 0
+  bindings.heroDefense = 0
+  input.update()
+  assert.deepEqual(calls, ['up:heroDefense'])
+})
+
+test('horse controls and quest journal have usable controller buttons', () => {
+  let gamepad = makeGamepad()
+  const calls = []
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
+  const input = new GamepadHeroInput({
+    context: { menu: { toggleQuests: () => calls.push('quests') } },
+    mouse: { x: 0, y: 0 },
+    heroController: {
+      handleKeyDown: action => calls.push(action),
+      handleKeyUp() {},
+      handlePrimaryPointerDown() {},
+      handlePointerUp() {},
+      cycleTool() {},
+    },
+    openHeroEntityInteraction() {},
+  })
+  input.update()
+  for (const button of [10, 11, 1]) {
+    gamepad = makeGamepad([button])
+    input.update()
+    input.update()
+    gamepad = makeGamepad()
+    input.update()
+  }
+  assert.deepEqual(calls, ['heroMountHorse', 'heroDismountHorse', 'quests'])
 })

@@ -1,16 +1,11 @@
 import { markWildlifeDeath } from '../../services/WildlifeStore'
-import {
-  hasAnimalCorpseLoot,
-  initializeAnimalCorpseLoot,
-  syncAnimalLootQuantity,
-} from '../../lib/equipment/animalCorpseLoot'
+import { initializeAnimalCorpseLoot } from '../../lib/equipment/animalCorpseLoot'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
-import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
+import { CORPSE_TIME, FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
   getInstanceZIndex,
-  getPercentage,
   isometricToCartesian,
   playAudibleSoundCue,
   updateInstanceVisibility,
@@ -132,6 +127,7 @@ export class AnimalLifecycle {
     }
     this.settleCorpseCell()
     animal.isDead = true
+    if (animal.selected) animal.drawHealthBar?.()
     if (animal.tamingStatus !== 'tamed')
       markWildlifeDeath(animal.context.map, animal.label, animal.context.dayNight?.state?.day ?? 1)
     initializeAnimalCorpseLoot(animal, () => animal.context.map.random())
@@ -188,67 +184,32 @@ export class AnimalLifecycle {
   decompose(): void {
     const animal = this.animal
     clearEntityVisualFeedback(animal)
-    const {
-      context: { player, menu },
-    } = animal
     animal.setTextures(SHEET_TYPES.corpse)
     animal.sprite.animationSpeed = 0
     updateInstanceRenderVisibility(animal)
     initializeAnimalCorpseLoot(animal)
+    // Keep this saved field for compatibility; it now measures the lifetime of
+    // the entire corpse, regardless of how much loot remains.
+    animal.corpseMaterialDecayRemainingMs ??= CORPSE_TIME * 1000
+    this.updateTexture()
     animal.startInterval(() => {
-      if (animal.quantity > 0) {
-        if (animal.inventory?.resources) animal.inventory.resources.meat = Math.max(0, animal.quantity - 1)
-        syncAnimalLootQuantity(animal)
-        if (animal.selected && player.selectedOther === animal) {
-          menu.updateInfo(MENU_INFO_IDS.quantityText, animal.quantity)
-        }
+      animal.corpseMaterialDecayRemainingMs = Math.max(0, (animal.corpseMaterialDecayRemainingMs ?? 0) - 1000)
+      if (animal.corpseMaterialDecayRemainingMs <= 0) {
+        animal.stopInterval()
+        fadeOutThenClear(animal, FADE_DURATION_MS)
       }
-      if (animal.quantity <= 0 && hasAnimalCorpseLoot(animal)) {
-        animal.corpseMaterialDecayRemainingMs = Math.max(
-          0,
-          (animal.corpseMaterialDecayRemainingMs ?? CORPSE_TIME * 1000) - 5000
-        )
-        if (animal.corpseMaterialDecayRemainingMs <= 0) {
-          animal.stopInterval()
-          fadeOutThenClear(animal, FADE_DURATION_MS)
-          return
-        }
-      }
-      animal.updateTexture()
-    }, 5000)
+    }, 1000)
   }
 
   updateTexture(): void {
     const animal = this.animal
-    const {
-      context: { player, map },
-    } = animal
-    const percentage = getPercentage(animal.quantity, animal.totalQuantity)
-    if (percentage > 25 && percentage < 50) {
-      this.setCorpseFrame(1)
-      animal.syncShadow()
-    } else if (percentage > 0 && percentage <= 25) {
-      this.setCorpseFrame(2)
-      animal.syncShadow()
-    } else if (percentage <= 0) {
-      if (!hasAnimalCorpseLoot(animal)) animal.stopInterval()
-      const cell = getEntityCell(animal, map)
-      if (cell?.has === animal) {
-        cell.has = null
-        cell.corpses.add(animal)
-        cell.solid = false
-      }
-      if (animal.selected && player.selectedOther === animal) {
-        player.unselectAll()
-      }
-      this.setCorpseFrame(3)
-      animal.syncShadow()
-      if (hasAnimalCorpseLoot(animal) || animal.timeoutId != null) return
-      animal.timeoutId = animal.context.scheduler.addOneShot(
-        () => fadeOutThenClear(animal, FADE_DURATION_MS),
-        CORPSE_TIME * 1000,
-        'animal.clearCorpse'
-      )
+    this.setCorpseFrame(0)
+    animal.syncShadow()
+    const cell = getEntityCell(animal, animal.context.map)
+    if (cell?.has === animal) {
+      cell.has = null
+      cell.corpses.add(animal)
+      cell.solid = false
     }
   }
 

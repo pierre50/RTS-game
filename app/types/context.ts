@@ -1,5 +1,5 @@
 import type { DialogueSequence } from './dialogue'
-import type { SchedulerOptions } from '../lib/ActionScheduler'
+import type { SchedulerOptions } from '../lib/actionScheduler'
 import type { NeutralVillageQuests } from '../services/quests/NeutralVillageQuests'
 import type { QuestJournalState } from './quest'
 import type { Application, Container } from 'pixi.js'
@@ -231,6 +231,7 @@ export interface ControlsLike extends Container {
   getWorldPointUnderCursor(): { x: number; y: number }
   getCellUnderCursor(): RuntimeCell | null
   getFacingEntityTarget(): RuntimeEntity | null
+  gamepadInput?: { connected: boolean }
   getGamepadMoveVector(): { dx: number; dy: number }
   removeMouseBuilding(): void
   setMouseBuilding?(building: PlaceableBuildingConfig): void
@@ -241,6 +242,7 @@ export interface ControlsLike extends Container {
   updateVisibleCells?(): void
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean
   instanceIsAudible(instance: AudibleInstanceLike): boolean
+  getWorkSoundVolume?(instance: AudibleInstanceLike): number
   isMouseInApp(evt: ControlPointerEvent): boolean
   isInteractionBlocked(): boolean
   getCellOnCamera?(callback: (cell: RuntimeCell) => void): void

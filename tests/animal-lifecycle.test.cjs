@@ -13,7 +13,8 @@ function loadModule(relativePath, mocks) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -47,7 +48,9 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
     clearEntityVisualFeedback: () => {},
   },
   '../../lib/entities/entityFade': {
-    fadeOutThenClear: () => {},
+    fadeOutThenClear: animal => {
+      animal.fading = true
+    },
   },
   '../../lib/combat/combatAttackLoop': {
     clearCombatAttackRecovery: animal => {
@@ -147,11 +150,7 @@ test('animal death always starts the dying animation from the first frame', () =
 
   new AnimalLifecycle(animal).death()
 
-  assert.deepEqual(calls, [
-    ['setTextures', 'dyingSheet'],
-    ['syncShadow'],
-    ['gotoAndPlay', 0],
-  ])
+  assert.deepEqual(calls, [['setTextures', 'dyingSheet'], ['syncShadow'], ['gotoAndPlay', 0]])
   assert.equal(sprite.loop, false)
   assert.equal(sprite.onLoop, undefined)
   assert.equal(typeof sprite.onFrameChange, 'function')
@@ -331,7 +330,10 @@ test('a meatless carcass keeps its materials accessible without scheduling empty
   let stopped = 0
   let cleared = 0
   animal.stopInterval = () => stopped++
-  animal.context.scheduler.addOneShot = () => { cleared++; return 1 }
+  animal.context.scheduler.addOneShot = () => {
+    cleared++
+    return 1
+  }
   new AnimalLifecycle(animal).updateTexture()
   assert.equal(stopped, 0)
   assert.equal(cleared, 0)
@@ -339,23 +341,44 @@ test('a meatless carcass keeps its materials accessible without scheduling empty
   assert.equal(animal.context.map.grid[0][0].corpses.has(animal), true)
 })
 
-test('decomposition consumes shared meat and resumes the saved material decay countdown', () => {
+test('corpse lifetime preserves all loot and resumes the saved countdown until expiration', () => {
   const { animal } = createAnimal({ quantity: 1 })
   animal.isDead = true
   animal.inventory = { resources: { meat: 1, leather: 2 } }
   animal.setTextures = () => {}
   let tick
-  animal.startInterval = callback => { tick = callback }
+  animal.startInterval = (callback, delay) => {
+    tick = callback
+    assert.equal(delay, 1000)
+  }
   const lifecycle = new AnimalLifecycle(animal)
   animal.updateTexture = () => lifecycle.updateTexture()
   lifecycle.decompose()
-  tick()
-  assert.equal(animal.quantity, 0)
-  assert.equal(animal.inventory.resources.meat, 0)
-  assert.equal(animal.inventory.resources.leather, 2)
-  assert.equal(animal.corpseMaterialDecayRemainingMs, 55000)
-  animal.corpseMaterialDecayRemainingMs = 15000
+  for (let n = 0; n < 10; n++) tick()
+  assert.equal(animal.quantity, 1)
+  assert.deepEqual(animal.inventory.resources, { meat: 1, leather: 2 })
+  assert.equal(animal.corpseMaterialDecayRemainingMs, 50000)
+  assert.equal(animal.fading, undefined)
+  animal.corpseMaterialDecayRemainingMs = 2000
   lifecycle.decompose()
   tick()
-  assert.equal(animal.corpseMaterialDecayRemainingMs, 10000)
+  assert.equal(animal.corpseMaterialDecayRemainingMs, 1000)
+  assert.equal(animal.fading, undefined)
+  tick()
+  assert.equal(animal.fading, true)
+  assert.deepEqual(animal.inventory.resources, { meat: 1, leather: 2 })
+})
+
+test('looting never changes the corpse frame or restarts its expiration timer', () => {
+  const { animal, sprite } = createAnimal({ quantity: 40 })
+  animal.isDead = true
+  sprite.textures = ['corpse', 'old-decomposition-1', 'old-decomposition-2', 'old-decomposition-3']
+  animal.corpseMaterialDecayRemainingMs = 17000
+  const lifecycle = new AnimalLifecycle(animal)
+  for (const quantity of [40, 10, 0]) {
+    animal.quantity = quantity
+    lifecycle.updateTexture()
+    assert.equal(sprite.currentFrame, 0)
+    assert.equal(animal.corpseMaterialDecayRemainingMs, 17000)
+  }
 })

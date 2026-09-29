@@ -27,7 +27,7 @@ function loadVillagerArrivalSystem() {
   })
 }
 
-test('villager arrival growth is capped by exponential demand, housing, food and daily cap', () => {
+test('villager arrival growth is capped by population demand, housing and daily cap', () => {
   const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
   const run = ({ foodAvailable, population, populationMax }) => {
     let arrivals = 0
@@ -57,10 +57,10 @@ test('villager arrival growth is capped by exponential demand, housing, food and
   assert.equal(run({ foodAvailable: 5000, population: 40, populationMax: 100 }), 4)
   assert.equal(run({ foodAvailable: 5000, population: 80, populationMax: 100 }), 5)
   assert.equal(run({ foodAvailable: 5000, population: 40, populationMax: 42 }), 2)
-  assert.equal(run({ foodAvailable: 500, population: 40, populationMax: 100 }), 1)
+  assert.equal(run({ foodAvailable: 500, population: 40, populationMax: 100 }), 4)
 })
 
-test('villager arrival requires food reserve and free housing', () => {
+test('villager arrival requires free housing but no food reserve', () => {
   const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
   const run = ({ foodAvailable, population, populationMax }) => {
     let arrivals = 0
@@ -87,9 +87,10 @@ test('villager arrival requires food reserve and free housing', () => {
     return arrivals
   }
 
-  assert.equal(run({ foodAvailable: 71, population: 6, populationMax: 20 }), 0)
+  assert.equal(run({ foodAvailable: 0, population: 6, populationMax: 20 }), 1)
   assert.equal(run({ foodAvailable: 92, population: 6, populationMax: 20 }), 1)
-  assert.equal(run({ foodAvailable: 500, population: 6, populationMax: 6 }), 0)
+  assert.equal(run({ foodAvailable: 0, population: 6, populationMax: 6 }), 0)
+  assert.equal(run({ foodAvailable: 0, population: 0, populationMax: 20 }), 0)
 })
 
 test('daily villager arrival places villagers for a played village and reports the result', () => {
@@ -144,7 +145,7 @@ test('daily villager arrival uses the same growth rules for AI without showing p
   const player = {
     type: 'AI',
     isPlayed: false,
-    foodAvailable: 5000,
+    foodAvailable: 0,
     population: 20,
     populationMax: 40,
     buildings: [
@@ -173,4 +174,28 @@ test('daily villager arrival uses the same growth rules for AI without showing p
 
   assert.equal(arrivals, 2)
   assert.deepEqual(messages, [])
+})
+
+test('houses supply housing while the town center remains the arrival point', () => {
+  const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+  const { getBuildingShelterCapacity } = loadTsModule('app/lib/buildings/buildingOccupancy.ts')
+  const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
+  let arrivals = 0
+  const center = { type: 'TownCenter', isBuilt: true,
+    placeUnit() { arrivals++; return true } }
+  const house = { type: 'House', isBuilt: true, placeUnit() { throw new Error('House must not spawn arrivals') } }
+  const player = { type: 'Human', population: 2, buildings: [center], populationMax: 0 }
+  const system = new VillagerArrivalSystem({ map: { random: () => 0.25 }, players: [player] })
+  const update = () => {
+    player.populationMax = player.buildings.reduce((sum, building) => sum + getBuildingShelterCapacity(building), 0)
+    system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
+  }
+  update()
+  assert.equal(arrivals, 0)
+  player.buildings.push(house)
+  update()
+  assert.equal(arrivals, 1)
+  player.buildings = [house]
+  update()
+  assert.equal(arrivals, 1)
 })

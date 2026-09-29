@@ -218,3 +218,44 @@ test('training validation accepts legacy saves but rejects broken or duplicate r
     assert.throws(() => validatePlayerTraining([invalid], [], 8, config), /Invalid save/)
   }
 })
+
+test('training requests accept pending and incoming recruits but reject invalid travel progress', () => {
+  const building = {
+    trainingRequests: [{ type: 'Fantassin' }, { type: 'Fantassin', traineeLabel: 'incoming', travelRemainingMs: 1500 }],
+  }
+  assert.doesNotThrow(() => validatePlayerTraining([building], [], 20, config))
+  building.trainingRequests[1].travelRemainingMs = -1
+  assert.throws(() => validatePlayerTraining([building], [], 20, config), /invalid training/)
+})
+
+test('cancel all training clears unstarted requests without refunds or creating recruits', () => {
+  const { building, production, refunds, placed } = runtime([])
+  building.loading = null
+  building.trainingRequests = Array.from({ length: 10 }, () => ({ type: 'Fantassin' }))
+  assert.equal(production.cancelAllUnitTraining(), true)
+  assert.deepEqual(building.trainingRequests, [])
+  assert.deepEqual(refunds, [])
+  assert.deepEqual(placed, [])
+})
+
+test('individual cancellation restores only the chosen recruit and refunds exactly once', () => {
+  const state = runtime([entry('Aline'), entry('Brune', 16)])
+  state.production.resumeSavedTraining()
+  state.block(true)
+  assert.equal(state.production.cancelTrainingEntry('Brune'), false)
+  assert.equal(state.refunds.length, 0)
+  state.block(false)
+  assert.equal(state.production.cancelTrainingEntry('Brune'), true)
+  assert.deepEqual(
+    state.building.trainingQueue.map(item => item.trainee.label),
+    ['Aline']
+  )
+  assert.equal(state.placed[0].extra.label, 'Brune')
+  assert.equal(state.callbacks.size, 1)
+  assert.equal(state.refunds.length, 1)
+  assert.equal(state.production.cancelTrainingEntry('Brune'), false)
+  assert.equal(state.refunds.length, 1)
+  state.advance(12)
+  assert.equal(state.placed[1].type, 'Fantassin')
+  assert.equal(state.placed[1].extra.name, 'Aline')
+})

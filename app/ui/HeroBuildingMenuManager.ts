@@ -1,3 +1,6 @@
+import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
+import { createHeroDepotReservesBody } from './hero-building/HeroDepotReservesBody'
+import { createHeroTrainingBody } from './hero-building/HeroTrainingBody'
 import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import type { Modal } from '../lib'
 import { playAudibleSoundCue } from '../lib/audio/sound'
@@ -7,7 +10,7 @@ import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
-import { createInspectionModal, setInspectionMode } from './InspectionPanel'
+import { createInspectionModal, setInspectionWindowSize } from './InspectionPanel'
 import { InteractionPanel } from './InteractionPanel'
 import type { MenuHost } from './MenuHost'
 import { buttonMeta, buttonTitle } from './hero-building/HeroBuildingButtonText'
@@ -217,7 +220,13 @@ export class HeroBuildingMenuManager {
       building.type === BUILDING_TYPES.market && canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit)
     const inventoryMode =
       this.marketOpen || building.type === BUILDING_TYPES.chest || building.type === BUILDING_TYPES.forge
-    setInspectionMode(this.modal, !inventoryMode)
+    const managementMode =
+      inventoryMode ||
+      (building.isBuilt &&
+        building.owner?.label === this.menu.context.player.label &&
+        (['StoragePit', 'Granary'].includes(building.type) ||
+          (building.units ?? []).some(type => isTraineeTrainingType(building, type))))
+    setInspectionWindowSize(this.modal, managementMode ? 'large' : 'small')
     this.modal?._panel?.classList.toggle('interaction-panel', !inventoryMode)
     this.modal?._panel?.classList.toggle('inventory-transfer-modal', inventoryMode)
     this.panel.classList.toggle('market-trade-screen', this.marketOpen)
@@ -261,6 +270,18 @@ export class HeroBuildingMenuManager {
   }
 
   renderContainerBody(building: BuildingEntity): boolean {
+    const reserves = createHeroDepotReservesBody(building, this.menu, () => this.render())
+    if (reserves) {
+      this.transferPanel = null
+      this.body.appendChild(reserves)
+      return true
+    }
+    const training = createHeroTrainingBody(building, this.menu, () => this.refresh())
+    if (training) {
+      this.transferPanel = null
+      this.body.appendChild(training)
+      return true
+    }
     if (building.type === BUILDING_TYPES.forge && building.isBuilt) {
       this.transferPanel = null
       this.body.appendChild(new HeroForgeBody(this.menu, building).craftPanel)

@@ -2,9 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-const { normalizeSavedInteriorBuildings } = loadTsModule(
-  'app/serialization/InteriorBuildingSave.ts'
-)
+const { normalizeSavedInteriorBuildings } = loadTsModule('app/serialization/InteriorBuildingSave.ts')
 function groupInteriorBuildings(buildings, label) {
   const player = { buildings, label }
   normalizeSavedInteriorBuildings(player)
@@ -148,7 +146,7 @@ test('region restore places the saved chest in its room even when exterior cell 
   assert.deepEqual(again[0].interiorBuildings[0].inventory, chest().inventory)
 })
 
-test('offline upkeep consumes interior chest food once without moving that chest outside', () => {
+test('offline meals consume carried provisions without remotely draining a chest', () => {
   const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
   const player = {
     label: 'human',
@@ -156,7 +154,9 @@ test('offline upkeep consumes interior chest food once without moving that chest
     population: 1,
     populationMax: 1,
     buildings: [parent(), chest()],
-    units: [{ type: 'Villager', label: 'worker', i: 35, j: 35 }],
+    units: [
+      { type: 'Villager', label: 'worker', i: 35, j: 35, hitPoints: 10, inventory: { resources: { wheat: 12 } } },
+    ],
   }
   normalizeSavedInteriorBuildings(player)
   const state = { players: [player], resources: [], animals: [], world: { mapType: 'world-region' } }
@@ -172,11 +172,11 @@ test('offline upkeep consumes interior chest food once without moving that chest
   }
   const report = simulateOfflineWorld(state, options)
   assert.equal(report.foodConsumed, 4)
-  assert.equal(player.food, 16)
+  assert.equal(player.units[0].inventory.resources.wheat, 8)
   assert.equal(player.buildings.length, 1)
   const stored = player.buildings[0].interiorBuildings[0]
   assert.equal(stored.i, 11)
-  assert.equal(stored.inventory.resources.wheat, 16)
+  assert.equal(stored.inventory.resources.wheat, 20)
   assert.deepEqual(stored.inventory.equipment, ['hammer'])
 })
 

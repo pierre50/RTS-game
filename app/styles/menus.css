@@ -752,3 +752,89 @@
     text-align: right;
   }
 }
+
+.settings-device-tabs,
+.settings-device-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-12);
+}
+.settings-device-tabs > .ui-tabs {
+  display: flex;
+  gap: var(--ui-gap-8);
+}
+.settings-device-tabs > .ui-tabs .ui-tab {
+  flex: 1;
+}
+.settings-controls-section {
+  gap: 0;
+  border-bottom: 1px solid var(--window-line-strong);
+}
+.settings-controls-section h3 {
+  margin: 0;
+}
+.settings-section-toggle {
+  width: 100%;
+  padding: var(--ui-gap-12) 0;
+  border: 0;
+  background: transparent;
+  color: var(--main-accent-color);
+  font: inherit;
+  text-align: left;
+}
+.settings-section-toggle:focus-visible {
+  outline: 1px solid var(--main-accent-color);
+}
+.settings-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+  padding-bottom: var(--ui-gap-12);
+}
+.settings-section-body[hidden],
+.settings-device-page.hidden {
+  display: none;
+}
+.settings-binding-label {
+  flex: 1 1 160px;
+}
+.settings-controls-help {
+  margin: 0 0 var(--ui-gap-8);
+  color: var(--color-stone-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+.settings-device-page .settings-key-button {
+  min-width: 80px;
+  min-height: 40px;
+  text-transform: none;
+}
+.settings-key-button kbd.gamepad-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  text-shadow: none;
+}
+.settings-binding-dialog {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-12);
+}
+.settings-binding-dialog p {
+  flex-basis: 100%;
+  line-height: 1.5;
+}
+
+.settings-device-page .config-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+.settings-device-page .settings-key-button {
+  min-width: 72px;
+  min-height: 36px;
+  padding: var(--ui-gap-4) var(--ui-gap-8);
+}
+.settings-key-button.is-conflict {
+  border-color: var(--text-color-danger);
+}

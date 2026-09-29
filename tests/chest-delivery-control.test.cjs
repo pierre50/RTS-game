@@ -2,7 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-test('owned outdoor chests expose an initially allowed delivery toggle; foreign and interior chests do not', () => {
+test('chests no longer expose delivery toggles, including old blocked chests', () => {
   const original = global.document
   try {
     const { createHeroBuildingContainerBody } = loadTsModule('app/ui/hero-building/HeroBuildingContainerBody.ts', {
@@ -42,17 +42,10 @@ test('owned outdoor chests expose an initially allowed delivery toggle; foreign 
     const menu = { context: { controls: { heroUnit: hero } }, showMessage() {} }
     let changed = 0
     const panel = createHeroBuildingContainerBody(chest, menu, () => changed++)
-    assert.equal(panel.header.children[0].textContent, 'villagerDeliveriesAllowed')
-    panel.header.children[1].onclick()
-    assert.equal(chest.villagerDeliveriesBlocked, true)
-    assert.equal(panel.header.children[0].textContent, 'villagerDeliveriesBlocked')
-    panel.header.children[1].onclick()
-    assert.equal(chest.villagerDeliveriesBlocked, false)
-    assert.equal(changed, 2)
-    hero.isChief = false
+    assert.equal(panel.header, undefined)
+    chest.villagerDeliveriesBlocked = true
     assert.equal(createHeroBuildingContainerBody(chest, menu, () => {}).header, undefined)
-    panel.header.children[1].onclick()
-    assert.equal(chest.villagerDeliveriesBlocked, false)
+    assert.equal(changed, 0)
     hero.isChief = true
     const foreign = { ...chest, owner: { label: 'other' } }
     assert.equal(createHeroBuildingContainerBody(foreign, menu, () => {}).header, undefined)

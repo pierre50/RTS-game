@@ -14,6 +14,7 @@ function loadBuildingPlacer() {
   })
   const module = { exports: {} }
   const mocks = {
+    '../lib/audio/settings': {},
     'pixi.js': {
       Assets: {},
       Container: class {

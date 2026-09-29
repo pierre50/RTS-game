@@ -601,9 +601,9 @@ class Sheet:
 
 
 def villager_sitting_sheet(body: str) -> Sheet:
-    # LPC sit columns: side-sit, cross-legged, chair. These are poses, not a cycle.
+    # LPC sit columns: cross-legged, side-sit, chair. These are poses, not a cycle.
     # Keep all four directions: side-sitting is asymmetric and must not be mirrored.
-    column = {"male": 1, "female": 0}[body]
+    column = {"male": 0, "female": 1}[body]
     return Sheet("sitting", "sit", 3, 4, False, tuple(row * 3 + column for row in range(4)))
 
 

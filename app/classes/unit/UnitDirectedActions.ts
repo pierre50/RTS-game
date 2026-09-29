@@ -1,9 +1,10 @@
+import { getContactAimDegree } from '../../lib/contact/contactGeometry'
 import { isActionTouchingTarget } from '../../lib/actions/contactActions'
 import { takeAnimalLootForDelivery } from '../../lib/equipment/animalCorpseLoot'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, SOUND_CUES } from '../../constants'
 import {
-  SLASH_IMPACT_FRAME,
   BOW_SHOOT_RELEASE_FRAME,
+  SLASH_IMPACT_FRAME,
   HUNTING_PROJECTILE,
   getHuntingAimPoint,
   onSpriteLoopAtFrame,
@@ -16,12 +17,12 @@ import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
 import { isHeroControlled } from '../../lib/units/unitControl'
+import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
 import { Projectile } from '../Projectile'
 import { stopManualHeroAction } from './UnitManualHeroWork'
-
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -58,9 +59,7 @@ export class UnitDirectedActions {
       return
     }
     {
-      const buildingBusy = Boolean(
-        dest && (dest.loading != null || dest.queue?.length || dest.trainingUnit)
-      )
+      const buildingBusy = Boolean(dest && (dest.loading != null || dest.queue?.length || dest.trainingUnit))
       if (buildingBusy) {
         unit.path = []
         unit.setTextures?.(SHEET_TYPES.standing)
@@ -198,30 +197,59 @@ export class UnitDirectedActions {
 
   takeAnimalLoot(): void {
     const unit = this.unit
+    if (unit.isDead || unit.isDestroyed || unit.action !== ACTION_TYPES.takemeat) return
     const target = isRuntimeEntity(unit.dest) ? unit.dest : null
     if (isHeroControlled(unit)) {
       stopManualHeroAction(unit)
       return
     }
-    if (!target || !unit.getActionCondition?.(target) || !unit.isUnitAtDest?.(ACTION_TYPES.takemeat, target)) {
+    if (!target || !unit.getActionCondition?.(target)) {
       unit.affectNewDest?.()
       return
     }
-    unit.setTextures?.(SHEET_TYPES.action)
-    if (!unit.sprite) return
-    onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
-      if (unit.isDead || unit.isDestroyed || unit.dest !== target || unit.action !== ACTION_TYPES.takemeat) return
-      if (!isActionTouchingTarget(unit, target, ACTION_TYPES.takemeat)) {
-        unit.sendToEvt?.(target, ACTION_TYPES.takemeat, { forceRepath: true })
+    unit.degree = getContactAimDegree(unit, target)
+    if (
+      !unit.isUnitAtDest?.(ACTION_TYPES.takemeat, target) ||
+      !isActionTouchingTarget(unit, target, ACTION_TYPES.takemeat)
+    ) {
+      unit.sendToEvt?.(target, ACTION_TYPES.takemeat, { forceRepath: true, preserveAutonomy: true })
+      return
+    }
+    this.animateAnimalLoot(target)
+  }
+
+  private animateAnimalLoot(target: RuntimeEntity): void {
+    const unit = this.unit
+    const sprite = unit.sprite
+    if (!sprite) return
+    const token = setUnitVisualSheet(unit, SHEET_TYPES.harvest, { frame: 0, loop: false, play: 'play' })
+    const isCurrent = () =>
+      isUnitVisualAnimationCurrent(unit, token) &&
+      !unit.isDead &&
+      !unit.isDestroyed &&
+      unit.dest === target &&
+      unit.action === ACTION_TYPES.takemeat
+    let harvested = false
+    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+      if (!isCurrent() || harvested) return
+      harvested = true
+      if (
+        !unit.getActionCondition?.(target) ||
+        !unit.isUnitAtDest?.(ACTION_TYPES.takemeat, target) ||
+        !isActionTouchingTarget(unit, target, ACTION_TYPES.takemeat)
+      )
         return
-      }
       const moved = takeAnimalLootForDelivery(target, unit)
-      if (unit.sprite) delete unit.sprite.onFrameChange
       if (moved > 0) {
         this.playSound(this.getWorkSound('takeMeat', SOUND_CUES.villager.takeMeat))
         showResourceGainFeedback(unit, moved)
       }
-      if (!unit.sendToDelivery?.()) unit.stop?.()
     })
+    sprite.onComplete = () => {
+      if (!isCurrent()) return
+      // Clear the finished swing before delivery or autonomy selects the next action.
+      setUnitVisualSheet(unit, SHEET_TYPES.standing, { frame: 0, loop: true, play: 'stop' })
+      if (!unit.sendToDelivery?.()) unit.stop?.()
+    }
   }
 }

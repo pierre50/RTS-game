@@ -245,6 +245,7 @@ export class UnitMovement {
 
   explore(): boolean {
     const unit = this.unit
+    if (unit.owner?.isPlayed && unit.type === UNIT_TYPES.villager) return false
     const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (!map) return false
     const { grid } = map

@@ -55,9 +55,9 @@ export function encodeEconomyTerrain(terrain: (OfflineTerrainCell | null | undef
 
 export function encodeEconomyElevation(terrain: (OfflineTerrainCell | null | undefined)[][]): string[] {
   return terrain.map(row =>
-    Array.from({ length: row.length }, (_, j) => Math.max(0, Math.min(35, Math.round(row[j]?.z ?? 0))).toString(36)).join(
-      ''
-    )
+    Array.from({ length: row.length }, (_, j) =>
+      Math.max(0, Math.min(35, Math.round(row[j]?.z ?? 0))).toString(36)
+    ).join('')
   )
 }
 
@@ -133,20 +133,6 @@ export function captureEconomyRegion(
   summarizeEconomy(region, state)
 }
 
-function assignIdleEconomyWorkers(state: SerializedSave): void {
-  for (const player of state.players) {
-    if (player.type !== 'AI') continue
-    const construction = (player.buildings ?? []).some(b => isLiving(b) && !b.isBuilt)
-    let workers = 0
-    for (const unit of player.units ?? []) {
-      if (unit.type !== 'Villager' || !isLiving(unit) || unit.trainingTargetType || unit.followingHero) continue
-      if (unit.autonomousJob || unit.work || (unit.action && unit.action !== 'move')) continue
-      unit.autonomousJob = construction && workers === 0 ? 'construction' : workers % 3 < 2 ? 'food' : 'wood'
-      workers++
-    }
-  }
-}
-
 /** Advance only detached data. The currently running region remains owned by its runtime. */
 export function advanceCampaignEconomy(
   campaign: CampaignSave,
@@ -180,7 +166,6 @@ export function advanceCampaignEconomy(
       const offset = (((DAY_NIGHT_CONFIG.newDayHour - DAY_NIGHT_CONFIG.startHour + 24) % 24) / 24) * dayMs
       const boundary = offset + (Math.floor((cursor - offset) / dayMs) + 1) * dayMs
       const end = Math.min(toElapsedMs, boundary)
-      assignIdleEconomyWorkers(state)
       simulateOfflineWorld(state, { ...rules, terrain, fromElapsedMs: cursor, toElapsedMs: end })
       cursor = end
     }

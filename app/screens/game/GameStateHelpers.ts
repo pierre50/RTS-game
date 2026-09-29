@@ -60,6 +60,7 @@ export function applyPortableUnitState(
     controlMode: source.controlMode,
     degree: source.degree,
     dailySchedule: cloneRecord(source.dailySchedule),
+    lastMealAt: source.lastMealAt,
     energy: source.energy,
     experience: cloneRecord(source.experience),
     followingHero: source.followingHero,

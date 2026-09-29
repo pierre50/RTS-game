@@ -1,37 +1,31 @@
+import { updateVillageFoundingQuests } from './VillageFoundingQuests'
 import { resourceReadValues } from '../../classes/resources/CompactResourceSet'
-import { formatEquipmentStackLabel } from '../../lib/equipment/equipmentSlots'
-import { isNpcStillSleeping } from '../../lib/npc/npcSleep'
-import { playSoundCue } from '../../lib/audio/sound'
-import { SOUND_CUES } from '../../constants'
 import { VILLAGE_QUEST_CONFIG } from '../../config/gameplay'
-import { t } from '../../lib/lang'
-import { grantQuestRelationReward } from './QuestRelationReward'
-import { RESOURCE_TYPES, RESOURCE_STORAGE_NAMES } from '../../constants'
+import { RESOURCE_TYPES } from '../../constants'
 import { isLivingChief } from '../../lib/chief'
-import { isNeutralPlayer } from '../../lib/playerState'
 import { clearEntityOverheadIndicator, setEntityOverheadIndicator } from '../../lib/entities/overheadIndicator'
+import { t } from '../../lib/lang'
+import { isNeutralPlayer } from '../../lib/playerState'
+import type { ResourceAmount } from '../../types/common'
+import type { GameContextLike } from '../../types/context'
+import type { UnitEntity } from '../../types/entities'
+import type { QuestInstance } from '../../types/quest'
+import { maintainBanditCampEncounter } from './BanditCampEncounter'
+import { banditCampQuest } from './BanditCampQuest'
+import { canTalk } from './NeutralQuestConversation'
+import { getTrackedMarkers } from './NeutralQuestMarkers'
+import { assignResourceRequest, interact } from './NeutralQuestTransactions'
+import { commitQuestInventory, questItemCount } from './QuestInventory'
 import { QuestSystem, type QuestEnvironment } from './QuestSystem'
 import { resourceRequestQuest } from './ResourceRequestQuest'
 import { tutorialHuntQuest } from './TutorialHuntQuest'
-import { banditCampQuest } from './BanditCampQuest'
-import { maintainBanditCampEncounter } from './BanditCampEncounter'
 import { selectTutorialHunt } from './TutorialHuntSelection'
-import { commitQuestInventory, questItemCount } from './QuestInventory'
-import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
-import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
-import type { GameContextLike } from '../../types/context'
-import type { UnitEntity } from '../../types/entities'
-import type { ResourceAmount } from '../../types/common'
-import type { QuestInstance } from '../../types/quest'
-
 const INDICATOR_LABEL = 'quest-offer-indicator'
-const STORED_RESOURCES = new Set<string>(RESOURCE_STORAGE_NAMES)
 const GATHERABLE = [
   { resource: 'wood', type: RESOURCE_TYPES.tree },
   { resource: 'stone', type: RESOURCE_TYPES.stone },
   { resource: 'berry', type: RESOURCE_TYPES.berrybush },
 ] as const
-
 export class NeutralVillageQuests {
   readonly system: QuestSystem
   private taskId: number | null = null
@@ -66,16 +60,7 @@ export class NeutralVillageQuests {
   }
 
   private canTalk(npc: UnitEntity): boolean {
-    const hero = this.context.controls?.heroUnit
-    return Boolean(
-      hero &&
-        !hero.isDead &&
-        !hero.isDestroyed &&
-        this.eligible(npc) &&
-        !isNpcStillSleeping(npc) &&
-        npc.action !== 'attack' &&
-        (hero.spaceId ?? 'outside') === (npc.spaceId ?? 'outside')
-    )
+    return canTalk.call(this, this.context, this.eligible.bind(this), npc)
   }
 
   getQuest(npc: UnitEntity): QuestInstance | undefined {
@@ -102,69 +87,17 @@ export class NeutralVillageQuests {
     quantity: number,
     definitionId = resourceRequestQuest.id
   ): boolean {
-    const playerId = this.context.player?.label
-    const owner = npc.owner
-    if (
-      !playerId ||
-      !owner ||
-      !this.regionId() ||
-      !STORED_RESOURCES.has(resource) ||
-      !Number.isSafeInteger(quantity) ||
-      quantity <= 0
+    return assignResourceRequest.call(
+      this,
+      this.context,
+      this.regionId.bind(this),
+      this.day.bind(this),
+      id,
+      npc,
+      resource,
+      quantity,
+      definitionId
     )
-      return false
-    const existing = this.system.state?.quests.find(quest => quest.id === id)
-    if (existing && definitionId === tutorialHuntQuest.id && existing.definitionId === resourceRequestQuest.id) {
-      existing.definitionId = definitionId
-      existing.stageId = 'wood'
-      existing.parameters.rewardGold = 0
-      if (existing.status === 'completed') {
-        existing.status = 'active'
-        existing.facts.legacyWoodDelivered = true
-        delete existing.completedDay
-        this.system.track(existing.id)
-      }
-      existing.unread = true
-    }
-    if (
-      existing?.definitionId === tutorialHuntQuest.id &&
-      existing.status === 'completed' &&
-      existing.stageId === 'hunt'
-    ) {
-      existing.stageId = 'legacy-hunt'
-      existing.status = 'active'
-      delete existing.completedDay
-      existing.unread = true
-      this.system.track(existing.id)
-    }
-    if (existing) return existing.status === 'active' || existing.status === 'completed'
-    if (
-      !this.system.offer({
-        id,
-        definitionId,
-        regionId: this.regionId(),
-        repeatable: false,
-        owner: { entityLabel: npc.label, playerLabel: owner.label, name: npc.name || owner.name || '' },
-        assigneeId: null,
-        parameters: {
-          resource,
-          quantity,
-          rewardGold: definitionId === tutorialHuntQuest.id ? 0 : quantity * VILLAGE_QUEST_CONFIG.goldPerResource,
-        },
-        bindings: { recipient: npc.label },
-        status: 'available',
-        stageId: this.system.definitions.get(definitionId)?.stages[0]?.id ?? '',
-        facts: {},
-        usedInteractions: [],
-        markers: {},
-        unread: false,
-      }) ||
-      !this.system.accept(id, playerId)
-    )
-      return false
-    this.system.track(id)
-    this.update(false)
-    return true
   }
 
   private day(): number {
@@ -297,106 +230,19 @@ export class NeutralVillageQuests {
   }
 
   interact(npc: UnitEntity, interactionId: string): boolean {
-    const quest = this.dialogue(npc)
-    const playerId = this.context.player?.label
-    const definition = quest && this.system.definitions.get(quest.definitionId)
-    const interaction = definition?.stages
-      .find(stage => stage.id === quest?.stageId)
-      ?.interactions.find(item => item.id === interactionId)
-    if (!quest || !playerId || !interaction || !this.system.canInteract(quest, interaction, this.environment(npc)))
-      return false
-    const startingHunt = quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'wood'
-    const hunt = startingHunt ? selectTutorialHunt(this.context, npc, quest) : null
-    if (startingHunt && !hunt) {
-      this.context.menu?.showMessage?.(t('tutorialNoHuntAvailable'), 'warning')
-      return false
-    }
-    if (!this.system.interact(quest.id, interactionId, playerId, npc.label, this.environment(npc))) return false
-    if (quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'alarm') {
-      quest.markers = {}
-      playSoundCue(SOUND_CUES.ui.underAttack)
-    }
-    if (hunt) {
-      Object.assign(quest.parameters, hunt.parameters)
-      quest.markers = hunt.markers
-      quest.reservation = hunt.reservation
-      this.system.track(quest.id)
-    }
-    if (interaction.effects.some(effect => effect.type === 'give-item')) {
-      const hero = this.context.controls?.heroUnit
-      if (hero) {
-        refreshUnitEquipmentStats(hero)
-        refreshBakedLpcUnitAssets(hero)
-        hero.syncAppearanceLayers?.(hero.currentSheet ?? 'standing')
-      }
-      for (const effect of interaction.effects) {
-        if (effect.type !== 'give-item') continue
-        const item =
-          typeof effect.resource === 'string' ? effect.resource : String(quest.parameters[effect.resource.parameter])
-        const quantity =
-          typeof effect.quantity === 'number' ? effect.quantity : Number(quest.parameters[effect.quantity.parameter])
-        this.context.menu?.showMessage?.(
-          t(effect.equip ? 'questItemEquipped' : 'questItemReceived', {
-            item: formatEquipmentStackLabel(item, quantity),
-          }),
-          'success'
-        )
-      }
-    }
-    if (quest.status === 'completed') quest.completedDay = this.day()
-    if (quest.status === 'completed' && quest.repeatable !== false)
-      quest.nextOfferDay = this.day() + VILLAGE_QUEST_CONFIG.repeatDelayDays
-    const message = grantQuestRelationReward(
-      this.context,
-      quest,
-      npc,
-      npc.owner?.isPlayed ? 0 : (definition?.relationReward ?? 0)
-    )
-    this.context.menu?.refreshInventory?.()
-    this.update()
-    if (quest.status === 'completed')
-      this.context.menu?.showMessage?.(
-        Number(quest.parameters.rewardGold) > 0
-          ? `${message} ${t('questGoldReceived').replace('{quantity}', String(quest.parameters.rewardGold))}`
-          : message,
-        'success'
-      )
-    this.context.autosave?.()
-    return true
+    return interact.call(this, this.context, this.regionId.bind(this), this.day.bind(this), npc, interactionId)
   }
 
   /** Resolve return destinations live so moving NPCs and inventory changes need no saved markers. */
   getTrackedMarkers(spaceId: string, regionId: string) {
-    const state = this.system.state
-    const quest = state?.quests.find(item => item.id === state.trackedQuestId && item.status === 'active')
-    if (
-      !quest ||
-      quest.regionId !== regionId ||
-      regionId !== this.regionId() ||
-      quest.assigneeId !== this.context.player?.label
+    return getTrackedMarkers.call(
+      this,
+      this.context,
+      this.regionId.bind(this),
+      this.eligible.bind(this),
+      spaceId,
+      regionId
     )
-      return []
-    const stage = this.system.definitions.get(quest.definitionId)?.stages.find(item => item.id === quest.stageId)
-    for (const interaction of stage?.interactions ?? []) {
-      if (interaction.nextStageId === undefined) continue
-      const actorLabel = quest.bindings[interaction.actor]
-      const npc = (this.context.players ?? [])
-        .flatMap(player => player.units ?? [])
-        .find(unit => unit.label === actorLabel && unit.owner?.label === quest.owner.playerLabel)
-      if (!npc || !this.eligible(npc) || !this.system.canInteract(quest, interaction, this.environment(npc))) continue
-      // Readiness does not require the recipient to be awake or in the hero's current space.
-      if ((npc.spaceId ?? 'outside') !== spaceId || !Number.isFinite(npc.i) || !Number.isFinite(npc.j)) return []
-      return [
-        {
-          id: 'quest-return',
-          kind: 'return' as const,
-          spaceId,
-          position: { i: npc.i, j: npc.j },
-          label: { key: 'questReturnToGiver' },
-        },
-      ]
-    }
-    return this.system.getTrackedMarkers(spaceId, regionId).map(marker => ({ ...marker, kind: 'area' as const }))
   }
 
   private raidPending = false
@@ -460,6 +306,7 @@ export class NeutralVillageQuests {
 
   update(refreshOffers = true): void {
     this.initialized = true
+    updateVillageFoundingQuests(this.context, this.system)
     const wanted = new Map<UnitEntity, 'exclamation' | 'question'>()
     for (const player of this.context.players ?? [])
       for (const npc of player.units ?? []) {

@@ -20,7 +20,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     backMenuDescription: 'Revient au menu précédent.',
     cancelTechnologyDescription: 'Annule la technologie en cours de recherche.',
 
-    HouseDescription: 'Augmente la population maximale de votre civilisation.',
+    HouseDescription: 'Fournit des couchages aux habitants et augmente la capacité de population du village.',
     BarracksDescription: "Forme les unités d'infanterie pour le combat au corps à corps.",
     GranaryDescription: 'Stocke les baies, le blé et la viande rapportés par vos villageois pour nourrir le village.',
     StoragePitDescription:
@@ -28,7 +28,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     ForgeDescription: 'Fabrique des équipements, des flèches et des consommables avec vos ressources.',
     ArcheryRangeDescription: 'Forme les archers pour le combat à distance.',
     StableDescription: 'Forme les unités montées et les éléphants de guerre.',
-    FarmDescription: 'Place un champ de blé 4x4 récolté comme nourriture.',
+    FarmDescription: 'Délimite une parcelle de 16 cases. Chaque case se sème avec un grain de blé.',
     TrapDescription:
       'Capture du petit gibier au changement de jour, hors de vue des unités et bâtiments. Usage unique : démontez le piège pour récupérer la proie sur place. Aucun matériau n’est restitué.',
     ChestDescription: 'Stocke les ressources et les équipements près du camp. Installation immédiate.',
@@ -75,7 +75,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
       'Permet au héros d’acheter de l’équipement et de vendre ses ressources et équipements contre de l’or.',
     TempleDescription: 'Forme les prêtres capables de soigner et de convertir.',
     TownCenterDescription:
-      'Transforme votre camp en village. Centralise les ressources et accueille de nouveaux villageois chaque jour si la nourriture et les logements sont suffisants.',
+      'Transforme votre camp en village. Centralise les ressources, sert de lieu de rassemblement et accueille de nouveaux villageois si les logements sont suffisants. Les maisons fournissent les couchages et les places de population.',
     HeroDescription: 'Chef jouable capable de combattre, récolter, construire et commander votre civilisation.',
     VillagerDescription: 'Unité civile polyvalente qui récolte, construit et répare vos bâtiments.',
     ChiefDescription: 'Chef de village armé d’une épée, indispensable au commandement et au développement.',
@@ -112,7 +112,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     backMenuDescription: 'Returns to the previous menu.',
     cancelTechnologyDescription: 'Cancels the technology currently being researched.',
 
-    HouseDescription: 'Increases the maximum population of your civilization.',
+    HouseDescription: 'Provides beds for residents and increases the village’s population capacity.',
     BarracksDescription: 'Trains infantry units for melee combat.',
     GranaryDescription: 'Stores berries, wheat and meat brought back by your villagers to feed the village.',
     StoragePitDescription:
@@ -120,7 +120,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     ForgeDescription: 'Craft equipment, arrows and consumables using your resources.',
     ArcheryRangeDescription: 'Trains archers for ranged combat.',
     StableDescription: 'Trains mounted units and war elephants.',
-    FarmDescription: 'Places a 4x4 wheat field harvested as food.',
+    FarmDescription: 'Marks out a 16-tile plot. Each tile is sown with one grain of wheat.',
     TrapDescription:
       'Catches small game when the day changes, out of sight of units and buildings. Single use: dismantle the trap to collect the prey on its tile. No materials are returned.',
     ChestDescription: 'Stores resources and equipment at camp. Placed instantly.',
@@ -166,7 +166,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     MarketDescription: 'Allows the hero to buy equipment and sell resources and equipment for gold.',
     TempleDescription: 'Trains priests who can heal and convert.',
     TownCenterDescription:
-      'Turns your camp into a village. Stores resources and welcomes new villagers each day when food and housing are sufficient.',
+      'Turns your camp into a village. Stores resources, serves as a gathering place and welcomes new villagers when housing is available. Houses provide beds and population capacity.',
     HeroDescription: 'Playable leader able to fight, gather, build and command your civilization.',
     VillagerDescription: 'Versatile civilian unit that gathers resources, builds and repairs structures.',
     ChiefDescription: 'Village leader armed with a sword, required for command and development.',

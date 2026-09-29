@@ -1,13 +1,11 @@
 import { BUILDING_TYPES } from '../../constants'
 import { createInventoryContainer, type InventoryContainer } from '../../lib/inventory/inventoryContainers'
 import { t } from '../../lib/lang'
-import { heroCanCommand } from '../../lib/chief'
 import {
   buildingAcceptsInventoryResource,
   getBuildingStorageCapacity,
   getBuildingStorageRemaining,
   getUnitBagTitle,
-  isStandaloneStorageChest,
 } from '../../lib/resources/resourceDelivery'
 import { applyTheftConsequences, THEFT_SUBJECT_TYPES } from '../../lib/theft/theft'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
@@ -54,44 +52,7 @@ export function createHeroBuildingContainerBody(
   })
   const heroContainer = createHeroBagContainer(hero, menu)
 
-  let header: HTMLDivElement | undefined
-  if (
-    isStandaloneStorageChest(building) &&
-    building.owner &&
-    hero.owner?.label === building.owner.label &&
-    heroCanCommand(hero)
-  ) {
-    header = document.createElement('div')
-    header.className = 'chest-delivery-status'
-    const status = document.createElement('span')
-    const toggle = document.createElement('button')
-    toggle.type = 'button'
-    toggle.setAttribute('data-window-action', 'deliveries')
-    header.append(status, toggle)
-    const refresh = () => {
-      status.textContent = t(
-        building.villagerDeliveriesBlocked ? 'villagerDeliveriesBlocked' : 'villagerDeliveriesAllowed'
-      )
-      toggle.textContent = t(building.villagerDeliveriesBlocked ? 'windowAllowDeliveries' : 'windowBlockDeliveries')
-      toggle.setAttribute('aria-pressed', String(!building.villagerDeliveriesBlocked))
-    }
-    toggle.onclick = () => {
-      if (
-        !heroCanCommand(hero) ||
-        hero.owner?.label !== building.owner?.label ||
-        building.isDead ||
-        building.isDestroyed
-      )
-        return
-      building.villagerDeliveriesBlocked = !building.villagerDeliveriesBlocked
-      refresh()
-      onChange()
-    }
-    refresh()
-  }
-
   return new InventoryTransferPanel({
-    header,
     context: menu.context,
     destination: chestContainer,
     isTheftTransfer: (source: InventoryContainer, transferTarget: InventoryContainer) =>

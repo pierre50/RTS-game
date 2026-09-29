@@ -1,4 +1,3 @@
-import { definedProperties } from '../../../lib/definedProperties'
 import { Assets } from 'pixi.js'
 import { offlineWorkCycleMs } from '../../../lib/economy/configuredWorkTiming'
 import type { WorkSpriteSheet } from '../../../lib/economy/workTiming'
@@ -36,11 +35,7 @@ export function applyOfflineWorldSimulation(map: MapGenerationMap, data: SavedGa
       Boolean(map.revealEverything || players[index]?.views?.isViewed(resource.i, resource.j)),
     wheatMatureFrame: Math.max(0, Object.keys(wheatSheet?.textures ?? {}).length - 1),
     buildingCapacity: (index, type) =>
-      getBuildingShelterCapacity(
-        definedProperties({ type, shelterCapacity: buildingConfig(index, type).shelterCapacity })
-      ) ||
-      Number(buildingConfig(index, type).increasePopulation) ||
-      0,
+      getBuildingShelterCapacity({ type, ...buildingConfig(index, type) }),
     cycleMs: (index, work, action) => {
       const key = `${index}:${work}:${action ?? ''}`
       const cached = cycles.get(key)

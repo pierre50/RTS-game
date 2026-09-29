@@ -1,3 +1,4 @@
+import { releaseCollectiveWorker } from './AICollectiveWorkers'
 import { villageAnimals, villageEconomicAnchors } from '../services/world/VillageResourceKnowledge'
 import { VILLAGE_ACTIVITY_RADIUS } from '../config/villageActivity'
 import { knownTarget, knowsEconomicTarget, playerSeesTarget } from '../lib/units/playerTargetKnowledge'
@@ -176,8 +177,7 @@ export class AIEconomyFoodManager {
     })
     for (const villager of releasable) {
       if (excess <= 0) break
-      villager.stop?.()
-      if (!availableVillagers.includes(villager)) availableVillagers.push(villager)
+      releaseCollectiveWorker(villager, availableVillagers)
       excess--
     }
   }

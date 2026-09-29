@@ -121,6 +121,7 @@ type SaveRecordOptions = {
   name?: string
 }
 
+/** @public Loaded by tests/save-storage.test.cjs (loadTsModule). */
 export function saveRecord(data: SaveRecord, options: SaveRecordOptions = {}): { key: string; name: string } {
   const index = getIndex()
   const replacing = Boolean(options.key && index.some(entry => entry.key === options.key))
@@ -148,6 +149,7 @@ export function buildSaveRecord(context: GameContextLike, campaign: CampaignSave
   return campaign ? updateCurrentWorldState(campaign, worldState) : createInitialCampaignSave(worldState)
 }
 
+/** @public Loaded by tests/save-storage.test.cjs (loadTsModule). */
 export function autosaveRecord(data: SaveRecord, name = 'Autosave'): { key: string; name: string } | null {
   try {
     return saveRecord(data, { key: AUTOSAVE_KEY, name })
@@ -170,6 +172,7 @@ export function listSaves(): SaveIndexEntry[] {
   return loadableIndex.slice().reverse()
 }
 
+/** @public Loaded by tests/save-storage.test.cjs (loadTsModule). */
 export function loadSave(key: string): SaveRecord {
   return zonedStore.load(key)
 }

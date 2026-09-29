@@ -72,7 +72,9 @@ test('loading preserves saved chief promotions and explicit non-chief roles over
   ]) {
     const unit = {
       context: { map: { grid: [[{ z: 0 }]] } },
-      assignProperties(values) { Object.assign(this, values) },
+      assignProperties(values) {
+        Object.assign(this, values)
+      },
     }
     const saved = JSON.parse(JSON.stringify({ type: 'Hero', i: 0, j: 0, isChief: savedRole }))
     applyUnitSpawnConfiguration(unit, {
@@ -89,11 +91,17 @@ test('villager construction initializes legacy schedules and restores saved time
   const create = dailySchedule => {
     const unit = {
       context: { map: { grid: [[{ z: 0 }]] } },
-      assignProperties(values) { Object.assign(this, values) },
+      assignProperties(values) {
+        Object.assign(this, values)
+      },
     }
     applyUnitSpawnConfiguration(unit, {
       owner: { config: { units: { Villager: {} } } },
-      type: 'Villager', label: 'legacy-villager', i: 0, j: 0, dailySchedule,
+      type: 'Villager',
+      label: 'legacy-villager',
+      i: 0,
+      j: 0,
+      dailySchedule,
     })
     return unit
   }
@@ -102,6 +110,7 @@ test('villager construction initializes legacy schedules and restores saved time
   assert.deepEqual(create().dailySchedule, legacy.dailySchedule)
   const saved = { wakeMinute: 365, workStartMinute: 425, workEndMinute: 1085, bedMinute: 1325 }
   const restored = create(saved)
-  assert.deepEqual(restored.dailySchedule, saved)
+  assert.deepEqual(Object.fromEntries(Object.keys(saved).map(key => [key, restored.dailySchedule[key]])), saved)
+  assert.ok(restored.dailySchedule.lunchEndMinute > restored.dailySchedule.lunchStartMinute)
   assert.notEqual(restored.dailySchedule, saved)
 })

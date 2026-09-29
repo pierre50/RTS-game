@@ -36,7 +36,7 @@ import {
 import type { BuildingInteriorRuntimeSpace } from './BuildingInteriorSpaceTypes'
 import { refreshMapSpaceEntityVisibility } from './BuildingInteriorSpaceVisibility'
 export { expelBuildingInteriorOccupants } from './BuildingInteriorSpaceEvacuation'
-export { extractBuildingInteriorChestInventory } from './BuildingInteriorSpaceInventory'
+export { destroyBuildingInteriorInventory } from './BuildingInteriorSpaceInventory'
 export { getBuildingInteriorSpaceForBuilding, getBuildingInteriorSpaceForUnit } from './BuildingInteriorSpaceLookup'
 export { BuildingInteriorSpaceRenderer } from './BuildingInteriorSpaceRenderer'
 export {

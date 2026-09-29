@@ -19,10 +19,10 @@ function getSheetTextureCount(sheet: unknown): number | null {
 }
 
 export function logGatherVisualState(unit: UnitEntity, dest: RuntimeEntity, loadingType: string, gain: number): void {
+  if (!isGatherVisualDebugEnabled()) return
   const currentSheet = unit.currentSheet ?? null
   const expectedSheet = SHEET_TYPES.action
   const mismatch = Boolean(currentSheet) && currentSheet !== expectedSheet
-  if (!mismatch && !isGatherVisualDebugEnabled()) return
 
   const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
   const key = unit.label ?? `${unit.type ?? 'unit'}:${unit.i},${unit.j}`

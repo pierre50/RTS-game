@@ -81,3 +81,46 @@ test('sight lookup tolerates an empty spatial index while the map initializes', 
     )
   }
 })
+
+test('threat-only lookup skips compact resources without losing nearby units or buildings', () => {
+  let scans = 0
+  const tree = { i: 1, j: 0, family: 'resource', label: 'tree' }
+  class CompactResourceSet {
+    *readArea() {
+      scans++
+      yield tree
+    }
+  }
+  const { findInstancesInSight } = loadModule('app/lib/grid/visibility.ts', {
+    '../../constants': { ...constants, BUCKET_SIZE: 10 },
+    '../../services/UnitPerception': { updateVisibility() {} },
+    '../../classes/resources/CompactResourceSet': { CompactResourceSet, resolveResource: record => record },
+  })
+  const targets = [
+    { i: 2, j: 0, family: 'unit', label: 'unit' },
+    { i: 3, j: 0, family: 'building', label: 'building' },
+  ]
+  const observer = {
+    i: 0,
+    j: 0,
+    x: 0,
+    y: 0,
+    sight: 8,
+    context: {
+      map: { grid: [], size: 10, resources: new CompactResourceSet(), instanceBuckets: [[new Set(targets)]] },
+    },
+  }
+  assert.deepEqual(
+    findInstancesInSight(observer, () => true),
+    [tree, ...targets]
+  )
+  assert.equal(scans, 1)
+  scans = 0
+  for (let i = 0; i < 1000; i++) {
+    assert.deepEqual(
+      findInstancesInSight(observer, () => true, { includeResources: false }),
+      targets
+    )
+  }
+  assert.equal(scans, 0)
+})

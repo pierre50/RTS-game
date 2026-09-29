@@ -1,30 +1,6 @@
 import { BUILDING_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../constants'
-import type { ResourceAmount } from '../types/common'
 
-export function villageConstructionReserve(
-  needs: Record<string, boolean>,
-  costFor: (type: string) => ResourceAmount,
-  missingBarracks = 1
-): ResourceAmount {
-  const result: ResourceAmount = {}
-  for (const type of [
-    BUILDING_TYPES.house,
-    BUILDING_TYPES.storagePit,
-    BUILDING_TYPES.granary,
-    BUILDING_TYPES.barracks,
-    BUILDING_TYPES.market,
-  ]) {
-    if (!needs[type]) continue
-    const count = type === BUILDING_TYPES.barracks ? missingBarracks : 1
-    for (const [resource, value] of Object.entries(costFor(type))) {
-      const key = resource as keyof ResourceAmount
-      result[key] = (result[key] ?? 0) + value * count
-    }
-  }
-  return result
-}
-
-export function expectedVillageArrivals(population: number): number {
+function expectedVillageArrivals(population: number): number {
   return population > 0
     ? Math.min(
         VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay,

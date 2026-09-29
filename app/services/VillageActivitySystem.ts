@@ -50,7 +50,7 @@ export class VillageActivitySystem {
     for (const owner of this.context.players ?? []) {
       if (owner.isPlayed || owner.type !== 'AI') continue
       const centers = (owner.buildings ?? []).filter(
-        b => b.type === 'TownCenter' && b.isBuilt && !b.isDead && !b.isDestroyed && getEntitySpaceId(b) === 'outside'
+        b => b.type === 'TownCenter' && !b.isDead && !b.isDestroyed && getEntitySpaceId(b) === 'outside'
       )
       for (const center of centers) {
         const id = `${owner.label}:${center.label}`

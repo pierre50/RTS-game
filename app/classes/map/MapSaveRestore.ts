@@ -52,6 +52,7 @@ export function processUnit(unit: RestoringMobileEntity, context: MapGenerationM
           ? (building as BuildingEntity)
           : null,
       phase: 'toBuilding',
+      pickup: saved.resourceDelivery.pickup,
       returnTask: task ? { ...task, dest: getDest(task.dest, context, grid) } : null,
     }
     unit.dest = null

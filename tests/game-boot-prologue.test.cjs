@@ -2,35 +2,53 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-for (const edge of [1000, 5000]) {
+const { CONTINENT_WORLD_PRESETS } = loadTsModule('app/config/continentWorlds.ts')
+for (const { edge } of CONTINENT_WORLD_PRESETS) {
   test(`custom ${edge} prepares the camp and starts its introduction after reveal`, async () => {
     const events = []
     const { startGameRuntime } = loadTsModule('app/screens/game/GameBootFlow.ts', {
       mocks: {
-        '../../ui/TutorialPrologue': { TutorialPrologue: class {
-          constructor() { assert.fail('Custom continents skip the tutorial prologue') }
-        } },
+        '../../ui/TutorialPrologue': {
+          TutorialPrologue: class {
+            constructor() {
+              assert.fail('Custom continents skip the tutorial prologue')
+            }
+          },
+        },
         '../../services/tutorial/TutorialVillage': {},
         '../../lib/lang': { t: key => key },
         '../../lib': {},
         '../../serialization/SaveValidator': {},
         '../../serialization/CampaignSave': {},
         '../../lib/audio/settings': { getGameSpeed: () => 1 },
-        '../../ui/GameLoadingScreen': { GameLoadingScreen: class {
-          update() {}
-          destroy() { events.push('hideLoading') }
-        } },
-        '../../ui/BuildingInteriorTransition': { async playBuildingInteriorDoorTransition(show) {
-          events.push('black')
-          await show()
-          events.push('reveal')
-        } },
+        '../../ui/GameLoadingScreen': {
+          GameLoadingScreen: class {
+            update() {}
+            destroy() {
+              events.push('hideLoading')
+            }
+          },
+        },
+        '../../ui/BuildingInteriorTransition': {
+          async playBuildingInteriorDoorTransition(show) {
+            events.push('black')
+            await show()
+            events.push('reveal')
+          },
+        },
         './GameStateHelpers': {},
       },
     })
     const game = {
       config: { worldId: `world-test-${edge}` },
-      context: { app: { ticker: {}, render() { events.push('render') } } },
+      context: {
+        app: {
+          ticker: {},
+          render() {
+            events.push('render')
+          },
+        },
+      },
       _acquireWakeLock() {},
       async _yieldToBrowser() {},
       async _bootFromConfig(config, options) {
@@ -39,13 +57,23 @@ for (const edge of [1000, 5000]) {
         assert.equal(options.startingSetup, undefined)
         events.push('boot')
       },
-      async _prepareTutorial() { assert.fail('Custom continents skip the village tutorial') },
-      async _prepareIntroduction() { events.push('camp') },
-      _showIntroduction() { events.push('show') },
-      _startIntroduction() { events.push('start') },
+      async _prepareTutorial() {
+        assert.fail('Custom continents skip the village tutorial')
+      },
+      async _prepareIntroduction() {
+        events.push('camp')
+      },
+      _showIntroduction() {
+        events.push('show')
+      },
+      _startIntroduction() {
+        events.push('start')
+      },
       _runtimeHeroUnit: () => null,
       _measure: (_name, callback) => callback(),
-      togglePause() { assert.fail('The introduction owns pause and resume') },
+      togglePause() {
+        assert.fail('The introduction owns pause and resume')
+      },
     }
     await startGameRuntime(game)
     assert.deepEqual(events, ['boot', 'camp', 'show', 'render', 'black', 'hideLoading', 'reveal', 'start'])
@@ -57,36 +85,66 @@ for (const skip of [false, true]) {
     const events = []
     let finishReveal
     let reportReveal
-    const fading = new Promise(resolve => { reportReveal = resolve })
-    const revealed = new Promise(resolve => { finishReveal = resolve })
+    const fading = new Promise(resolve => {
+      reportReveal = resolve
+    })
+    const revealed = new Promise(resolve => {
+      finishReveal = resolve
+    })
     let finishLoading
     let reportWaiting
-    const loading = new Promise(resolve => { finishLoading = resolve })
-    const waiting = new Promise(resolve => { reportWaiting = resolve })
+    const loading = new Promise(resolve => {
+      finishLoading = resolve
+    })
+    const waiting = new Promise(resolve => {
+      reportWaiting = resolve
+    })
     let choose
-    const choice = new Promise(resolve => { choose = resolve })
+    const choice = new Promise(resolve => {
+      choose = resolve
+    })
     const { startGameRuntime } = loadTsModule('app/screens/game/GameBootFlow.ts', {
       mocks: {
-        '../../ui/TutorialPrologue': { TutorialPrologue: class {
-          chooseSkip() { return choice }
-          async reveal() { events.push('reveal'); reportReveal(); await revealed }
-          destroy() {}
-        } },
-        '../../services/tutorial/TutorialVillage': { tutorialVillageConfig: () => ({ heroOnlyStart: false, villageStarts: { Hellas: {} } }) },
+        '../../ui/TutorialPrologue': {
+          TutorialPrologue: class {
+            chooseSkip() {
+              return choice
+            }
+            async reveal() {
+              events.push('reveal')
+              reportReveal()
+              await revealed
+            }
+            destroy() {}
+          },
+        },
+        '../../services/tutorial/TutorialVillage': {
+          tutorialVillageConfig: () => ({ heroOnlyStart: false, villageStarts: { Hellas: {} } }),
+        },
         '../../lib/lang': { t: key => key },
         '../../lib': { Modal: class {} },
         '../../serialization/SaveValidator': {},
         '../../serialization/CampaignSave': {},
         '../../lib/audio/settings': { getGameSpeed: () => 1 },
         '../../ui/GameLoadingScreen': {},
-        '../../ui/BuildingInteriorTransition': { playBuildingInteriorDoorTransition: () => assert.fail('Duplicate transition') },
+        '../../ui/BuildingInteriorTransition': {
+          playBuildingInteriorDoorTransition: () => assert.fail('Duplicate transition'),
+        },
         './GameStateHelpers': {},
       },
     })
     const hero = {}
     const game = {
       config: {},
-      context: { app: { ticker: {}, render() { events.push('render') } }, menu: { show() {} } },
+      context: {
+        app: {
+          ticker: {},
+          render() {
+            events.push('render')
+          },
+        },
+        menu: { show() {} },
+      },
       _acquireWakeLock() {},
       async _yieldToBrowser() {},
       async _bootFromConfig(_config, options) {
@@ -98,11 +156,17 @@ for (const skip of [false, true]) {
         reportWaiting()
         await loading
       },
-      async _prepareTutorial() { events.push('tutorial') },
-      async _prepareIntroduction() { events.push('camp') },
+      async _prepareTutorial() {
+        events.push('tutorial')
+      },
+      async _prepareIntroduction() {
+        events.push('camp')
+      },
       _runtimeHeroUnit: () => hero,
       _measure: (_name, callback) => callback(),
-      _startTutorial() { events.push('start') },
+      _startTutorial() {
+        events.push('start')
+      },
     }
     const boot = startGameRuntime(game)
     await waiting
@@ -129,11 +193,13 @@ test('tutorial defeat prepares a normal camp under black and starts it after rev
       '../../serialization/CampaignSave': {},
       '../../lib/audio/settings': { getGameSpeed: () => 1 },
       '../../ui/GameLoadingScreen': {},
-      '../../ui/BuildingInteriorTransition': { async playBuildingInteriorDoorTransition(prepare) {
-        events.push('black')
-        await prepare()
-        events.push('reveal')
-      } },
+      '../../ui/BuildingInteriorTransition': {
+        async playBuildingInteriorDoorTransition(prepare) {
+          events.push('black')
+          await prepare()
+          events.push('reveal')
+        },
+      },
       './GameStateHelpers': {},
     },
   })
@@ -142,7 +208,9 @@ test('tutorial defeat prepares a normal camp under black and starts it after rev
     _campaignSave: { tutorial: {} },
     context: { app: { ticker: {}, render() {} }, defeat: true },
     togglePause() {},
-    _destroyRuntime() { events.push('destroy') },
+    _destroyRuntime() {
+      events.push('destroy')
+    },
     async _bootFromConfig(config, options) {
       assert.equal(options.startPaused, true)
       assert.equal(this._campaignSave, null)
@@ -151,9 +219,15 @@ test('tutorial defeat prepares a normal camp under black and starts it after rev
       assert.deepEqual(config.players, this.config.players)
       events.push('boot')
     },
-    async _prepareIntroduction() { events.push('prepare') },
-    _showIntroduction() { events.push('show') },
-    _startIntroduction() { events.push('start') },
+    async _prepareIntroduction() {
+      events.push('prepare')
+    },
+    _showIntroduction() {
+      events.push('show')
+    },
+    _startIntroduction() {
+      events.push('start')
+    },
   }
   await recoverGameAfterDefeat(game, true)
   assert.deepEqual(events, ['black', 'destroy', 'boot', 'prepare', 'show', 'reveal', 'start'])
@@ -161,39 +235,69 @@ test('tutorial defeat prepares a normal camp under black and starts it after rev
 
 test('normal death restores the last saved world and clock under one fade before resuming', async () => {
   const events = []
-  const checkpoint = { currentWorldId: 'home', clock: { dayNightElapsedMs: 123 }, worlds: { home: { state: { name: 'saved-world' } } } }
-  const { recoverGameAfterDefeat } = loadTsModule('app/screens/game/GameBootFlow.ts', { mocks: {
-    '../../ui/TutorialPrologue': {},
-    '../../services/tutorial/TutorialVillage': {},
-    '../../services/tutorial/TutorialVillageMigration': { migrateTutorialVillageOwner() {} },
-    '../../lib/lang': { t: key => key },
-    '../../lib': {},
-    '../../serialization/SaveValidator': { validateSaveData: value => value },
-    '../../serialization/CampaignSave': { isCampaignSave: () => true, getCurrentWorldState: save => save.worlds[save.currentWorldId].state },
-    '../../lib/audio/settings': { getGameSpeed: () => 1 },
-    '../../ui/GameLoadingScreen': {},
-    '../../ui/BuildingInteriorTransition': { async playBuildingInteriorDoorTransition(prepare) {
-      events.push('black')
-      await prepare()
-      assert.equal(game.context.paused, true)
-      events.push('reveal')
-    } },
-    './GameStateHelpers': { ensureCampaignPlayerRoster: value => value, worldStateWithCampaignClock: (state, clock) => ({ ...state, clock }) },
-  } })
+  const checkpoint = {
+    currentWorldId: 'home',
+    clock: { dayNightElapsedMs: 123 },
+    worlds: { home: { state: { name: 'saved-world' } } },
+  }
+  const { recoverGameAfterDefeat } = loadTsModule('app/screens/game/GameBootFlow.ts', {
+    mocks: {
+      '../../ui/TutorialPrologue': {},
+      '../../services/tutorial/TutorialVillage': {},
+      '../../services/tutorial/TutorialVillageMigration': { migrateTutorialVillageOwner() {} },
+      '../../lib/lang': { t: key => key },
+      '../../lib': {},
+      '../../serialization/SaveValidator': { validateSaveData: value => value },
+      '../../serialization/CampaignSave': {
+        isCampaignSave: () => true,
+        getCurrentWorldState: save => save.worlds[save.currentWorldId].state,
+      },
+      '../../lib/audio/settings': { getGameSpeed: () => 1 },
+      '../../ui/GameLoadingScreen': {},
+      '../../ui/BuildingInteriorTransition': {
+        async playBuildingInteriorDoorTransition(prepare) {
+          events.push('black')
+          await prepare()
+          assert.equal(game.context.paused, true)
+          events.push('reveal')
+        },
+      },
+      './GameStateHelpers': {
+        ensureCampaignPlayerRoster: value => value,
+        worldStateWithCampaignClock: (state, clock) => ({ ...state, clock }),
+      },
+    },
+  })
   const game = {
-    config: {}, _lastSavedRecord: checkpoint,
+    config: {},
+    _lastSavedRecord: checkpoint,
     _restartSaveData: { name: 'unsaved-changes' },
     _campaignSave: { clock: { dayNightElapsedMs: 999 } },
-    context: { defeat: true, app: { ticker: {}, render() { events.push('render') } } },
-    togglePause(value) { this.context.paused = value },
-    _destroyRuntime() { events.push('destroy') },
+    context: {
+      defeat: true,
+      app: {
+        ticker: {},
+        render() {
+          events.push('render')
+        },
+      },
+    },
+    togglePause(value) {
+      this.context.paused = value
+    },
+    _destroyRuntime() {
+      events.push('destroy')
+    },
     async _bootFromSave(state) {
       assert.deepEqual(state, { name: 'saved-world', clock: 123 })
       assert.equal(this.context.paused, true)
       events.push('load')
     },
     async _restoreTutorial() {},
-    _startIntroduction() { assert.equal(this.context.paused, false); events.push('start') },
+    _startIntroduction() {
+      assert.equal(this.context.paused, false)
+      events.push('start')
+    },
   }
   await recoverGameAfterDefeat(game)
   assert.deepEqual(events, ['black', 'destroy', 'load', 'render', 'reveal', 'start'])

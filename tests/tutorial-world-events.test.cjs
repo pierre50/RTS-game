@@ -18,7 +18,11 @@ test('daily handlers stay suspended during the tutorial while remote clocks are 
   let events = 0
   const { DailyWorldEventSystem } = loadTsModule('app/services/DailyWorldEventSystem.ts', {
     mocks: {
-      './DailyWorldReport': { DailyWorldReport: class { flush() {} } },
+      './DailyWorldReport': {
+        DailyWorldReport: class {
+          flush() {}
+        },
+      },
       './world/EconomicKnowledgeUpdates': { invalidateEconomicKnowledge() {} },
       './NaturalRegrowthSystem': { NaturalRegrowthSystem: class {} },
       './world/TrapHarvestSystem': { TrapHarvestSystem: class {} },
@@ -28,8 +32,6 @@ test('daily handlers stay suspended during the tutorial while remote clocks are 
     },
   })
   const runtime = {
-    detectNewColonyAlerts: DailyWorldEventSystem.prototype.detectNewColonyAlerts,
-    seenColonyAlertKeys: new Set(),
     context: { isTutorialActive: () => active, updateWorldEconomy: () => checkpoints++ },
     handlers: [{ handleDailyWorldEvent: () => events++ }],
   }
@@ -40,4 +42,41 @@ test('daily handlers stay suspended during the tutorial while remote clocks are 
   DailyWorldEventSystem.prototype.handleDayChange.call(runtime, { day: 9, previousDay: 8 })
   assert.equal(events, 1)
   assert.equal(checkpoints, 2)
+})
+
+test('day changes do not add housing or storage alerts to the daily report', () => {
+  const entries = []
+  let flushes = 0
+  const { DailyWorldEventSystem } = loadTsModule('app/services/DailyWorldEventSystem.ts', {
+    mocks: {
+      '../lib/world/regionAlerts': {
+        getActiveColonyAlerts: () => [
+          { regionId: 'village', type: 'populationCapped' },
+          { regionId: 'village', type: 'storageFull' },
+        ],
+      },
+      './DailyWorldReport': {
+        DailyWorldReport: class {
+          add(entry) {
+            entries.push(entry)
+          }
+          flush() {
+            flushes++
+          }
+        },
+      },
+      '../lib/units/villageActivity': { flushVillageSimulation() {}, planDistantVillages() {} },
+      './NaturalRegrowthSystem': { NaturalRegrowthSystem: class {} },
+      './world/TrapHarvestSystem': { TrapHarvestSystem: class {} },
+      './world/MarketRestockSystem': { MarketRestockSystem: class {} },
+      './world/VillagerUpkeepSystem': { VillagerUpkeepSystem: class {} },
+      './world/VillagerArrivalSystem': { VillagerArrivalSystem: class {} },
+    },
+  })
+  const runtime = { context: { player: { isPlayed: true, label: 'p1' } }, handlers: [] }
+  for (const day of [2, 3]) {
+    DailyWorldEventSystem.prototype.handleDayChange.call(runtime, { day, previousDay: day - 1 })
+  }
+  assert.deepEqual(entries, [])
+  assert.equal(flushes, 2)
 })

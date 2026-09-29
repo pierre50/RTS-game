@@ -1,4 +1,4 @@
-import { ACTION_TYPES, FAMILY_TYPES, TYPE_ACTION } from '../constants'
+import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
 import type { CursorState } from '../hero/heroCursor'
 import type { GameContextLike } from '../../types/context'
@@ -9,40 +9,18 @@ function canAnyUnitPerform(units: UnitEntity[], target: RuntimeEntity, action: s
   return units.some(unit => !unit.isDead && !unit.isDestroyed && Boolean(unit.getActionCondition?.(target, action)))
 }
 
-function resolveResourceCursorState(units: UnitEntity[], target: RuntimeEntity): CursorState {
-  const kind = target.category || target.type
-  const action = kind ? TYPE_ACTION[kind as keyof typeof TYPE_ACTION] : undefined
-  return action && canAnyUnitPerform(units, target, action) ? 'resource' : 'move'
-}
-
 function resolveBuildingCursorState(units: UnitEntity[], target: BuildingEntity): CursorState {
-  if (
-    canAnyUnitPerform(units, target, ACTION_TYPES.build) ||
-    canAnyUnitPerform(units, target, ACTION_TYPES.delivery)
-  ) {
-    return 'resource'
-  }
   if (canAnyUnitPerform(units, target, ACTION_TYPES.attack)) return 'combat'
   return 'move'
 }
 
 function resolveAnimalCursorState(units: UnitEntity[], target: RuntimeEntity): CursorState {
-  if (target.isDead && canAnyUnitPerform(units, target, ACTION_TYPES.takemeat)) return 'resource'
-  if (
-    canAnyUnitPerform(units, target, ACTION_TYPES.attack) ||
-    canAnyUnitPerform(units, target, ACTION_TYPES.hunt) ||
-    canAnyUnitPerform(units, target, ACTION_TYPES.captureHorse)
-  ) {
-    return 'combat'
-  }
+  if (canAnyUnitPerform(units, target, ACTION_TYPES.attack)) return 'combat'
   return 'move'
 }
 
 function resolveUnitCursorState(units: UnitEntity[], target: RuntimeEntity): CursorState {
-  if (
-    canAnyUnitPerform(units, target, ACTION_TYPES.attack) ||
-    canAnyUnitPerform(units, target, ACTION_TYPES.convert)
-  ) {
+  if (canAnyUnitPerform(units, target, ACTION_TYPES.attack) || canAnyUnitPerform(units, target, ACTION_TYPES.convert)) {
     return 'combat'
   }
   if (canAnyUnitPerform(units, target, ACTION_TYPES.heal)) return 'resource'
@@ -61,7 +39,7 @@ export function resolveNpcGoToCursorState(
   const entryBuilding = hoverCell ? context?.getBuildingInteriorEntryTargetForCell?.(hoverCell) : null
   if (entryBuilding && activeUnits.some(unit => canUnitEnterBuildingInterior(unit, entryBuilding))) return 'enter'
 
-  if (hoverTarget?.family === FAMILY_TYPES.resource) return resolveResourceCursorState(activeUnits, hoverTarget)
+  if (hoverTarget?.family === FAMILY_TYPES.resource) return 'move'
   if (hoverTarget?.family === FAMILY_TYPES.building) {
     return resolveBuildingCursorState(activeUnits, hoverTarget as BuildingEntity)
   }

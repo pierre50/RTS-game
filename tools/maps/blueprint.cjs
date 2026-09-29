@@ -10,6 +10,7 @@ const { runtimeNeutralResources, runtimeBiomeTrees } = require('./headless-loade
 const { buildHeadlessMap, createResourceScope } = require('./headless-map.cjs')
 const { finalizeRelief } = require('./relief.cjs')
 const { finalizeBlueprintPayload } = require('./local-blueprint.cjs')
+const { addVillageGroves } = require('./village-groves.cjs')
 
 function encode(array) {
   return Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64')
@@ -23,6 +24,7 @@ function encodeBlueprint(map, size, seed, environmentId, options, spawns, bandit
     i: resource.i,
     j: resource.j,
     ...(typeof resource.quantity === 'number' ? { quantity: resource.quantity } : {}),
+    ...(typeof resource.totalQuantity === 'number' ? { totalQuantity: resource.totalQuantity } : {}),
     ...(resource.textureName ? { textureName: resource.textureName } : {}),
     ...(resource.startsMature ? { startsMature: true } : {}),
   }))
@@ -87,8 +89,8 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
     )
   }
   try {
-    return finalizeBlueprintPayload(
-      encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions)
+    return addVillageGroves(
+      finalizeBlueprintPayload(encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions))
     )
   } catch (error) {
     if (error.code === 'CAVE_PLACEMENT_FAILED') return null

@@ -24,6 +24,7 @@ function fixture() {
       i: 15 + i,
       j: 15,
       autonomousJob: i ? 'food' : 'wood',
+      inventory: { resources: { wheat: 12 } },
     })),
     buildings: [
       {
@@ -41,7 +42,11 @@ function fixture() {
     world: { worldRegionId: 'away', size: 40 },
     runtime: { dayNightElapsedMs: 0 },
     players: [player],
-    resources: [{ type: 'Tree', label: 'tree', i: 20, j: 20, quantity: 10000, hitPoints: 0 }],
+    resources: [
+      { type: 'Tree', label: 'tree', i: 20, j: 20, quantity: 10000, hitPoints: 0 },
+      { type: 'Wheat', label: 'wheat', i: 20, j: 22, quantity: 10000, currentFrame: 5 },
+      { type: 'Stone', label: 'stone', i: 22, j: 20, quantity: 10000 },
+    ],
     animals: [],
   }
   const terrain = Array.from({ length: 41 }, () => Array.from({ length: 41 }, () => ({ category: 'Land' })))
@@ -118,26 +123,26 @@ test('daily ticks, batched catch-up and JSON reload produce the same projects an
   assert.deepEqual(reloaded, JSON.parse(JSON.stringify(daily)))
 })
 
-test('one paid project per day borrows a worker and restores their job at completion', () => {
+test('one free project per day records its recipe without spending or commandeering workers', () => {
   const { player, state, terrain, rules } = fixture()
+  const orders = player.units.map(unit => unit.autonomousJob)
   planOfflineBuildings(state, 1, terrain, rules)
   assert.equal(player.buildings.length, 2)
-  assert.equal(player.buildings[0].inventory.resources.wood, 950)
-  const worker = player.units.find(unit => unit.offlineBuilderJob)
-  assert.equal(worker.autonomousJob, 'construction')
+  assert.equal(player.buildings[0].inventory.resources.wood, 1000)
+  assert.equal(player.buildings[1].constructionMaterials.cost.wood, 50)
+  assert.deepEqual(player.buildings[1].constructionMaterials.consumed, {})
+  assert.deepEqual(
+    player.units.map(unit => unit.autonomousJob),
+    orders
+  )
   planOfflineBuildings(state, 1, terrain, rules)
   assert.equal(player.buildings.length, 2)
-  player.buildings[1].isBuilt = true
-  restoreOfflineBuilders(state)
-  assert.equal(worker.autonomousJob, 'wood')
-  assert.equal(worker.offlineBuilderJob, undefined)
 })
 
-test('invalid terrain, insufficient stocks, unmet conditions and human owners cannot buy a building', () => {
-  for (const reason of ['terrain', 'stocks', 'conditions', 'human']) {
+test('invalid terrain, unmet conditions and human owners cannot plan a building', () => {
+  for (const reason of ['terrain', 'conditions', 'human']) {
     const { player, state, terrain, rules } = fixture()
     if (reason === 'terrain') terrain.forEach(row => row.fill(null))
-    if (reason === 'stocks') player.buildings[0].inventory.resources.wood = 0
     if (reason === 'conditions')
       rules.buildingConfig = () => ({
         size: 2,
@@ -160,13 +165,13 @@ test('established villages build one decorative forge offline and retain it when
     player.buildings.push({ type, label: type, i: 25, j: 5 + n * 8, isBuilt: true })
   }
   state.resources = []
-  rules.buildingConfig = (_index, type) => type === 'Forge' ? realBuildings.Forge : { size: 3 }
+  rules.buildingConfig = (_index, type) => (type === 'Forge' ? realBuildings.Forge : { size: 3 })
   planOfflineBuildings(state, 1, terrain, rules)
   const forge = player.buildings.find(building => building.type === 'Forge')
   assert.ok(forge)
   assert.equal(forge.isBuilt, false)
-  assert.equal(player.buildings[0].inventory.resources.wood, 940)
-  assert.equal(player.buildings[0].inventory.resources.stone, 480)
+  assert.equal(player.buildings[0].inventory.resources.wood, 1000)
+  assert.equal(player.buildings[0].inventory.resources.stone, 500)
   forge.isBuilt = true
   restoreOfflineBuilders(state)
   planOfflineBuildings(state, 2, terrain, rules)

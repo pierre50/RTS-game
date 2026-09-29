@@ -1,201 +1,45 @@
-import type { BanditCampPlacement } from '../../types/camp'
-import { restoreCampRespawnStates } from '../../lib/camps/CampRespawnState'
 import { isContinentWorld } from '../../config/continentWorlds'
+import { DEFAULT_WORLD_ID } from '../../config/worlds'
+import { PLAYER_TYPES } from '../../constants'
 import { assignContinentVillages } from '../../lib/campaign/continentVillagePlacement'
-import type { SaveProgress } from '../../serialization/AsyncSaveStorage'
-import { isLargeMapIsolationTest, isolateLargeMapConfig, isolateLargeMapBlueprint } from '../../config/largeMapTest'
-import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
+import { restoreCampRespawnStates } from '../../lib/camps/campRespawnState'
 import { definedProperties } from '../../lib/definedProperties'
-import { economyRulesFor, initializeCampaignEconomy } from '../../services/world/WorldEconomyRuntime'
+import { t } from '../../lib/lang'
+import { traceLoadAsync } from '../../lib/loadDiagnostics'
+import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
+import { createInitialCampaignSave } from '../../serialization/CampaignSave'
+import {
+  serializeCampaignBootstrap,
+  serializeGame,
+  serializeGameForPersistence,
+} from '../../serialization/SaveSerializer'
 import { placeInitialVillageUnits } from '../../services/world/InitialVillagePlacement'
-import { populateVillageBase } from '../../services/world/VillageBaseState'
 import { OfflineWorldSpatial } from '../../services/world/OfflineWorldSpatial'
+import { populateVillageBase } from '../../services/world/VillageBaseState'
 import {
   applyVillageStartingState,
   placeStartingHeroInVillage,
   villageStartProfiles,
 } from '../../services/world/VillageStartingState'
 import { materializeInitialEconomy } from '../../services/world/WorldEconomy'
-import { t } from '../../lib/lang'
-import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
-import { DEFAULT_WORLD_ID } from '../../config/worlds'
-import { CIVILIZATIONS } from '../../config/civilizations'
-import {
-  serializeCampaignBootstrap,
-  serializeGame,
-  serializeGameForPersistence,
-} from '../../serialization/SaveSerializer'
-import { createInitialCampaignSave } from '../../serialization/CampaignSave'
-import { PLAYER_TYPES } from '../../constants'
-import { ensureNeutralPlayer } from '../../classes/players/GaiaPlayer'
-import type { GameContextLike } from '../../types/context'
-import type { MapBlueprint } from '../../classes/map/MapGenerationTypes'
-import type { RuntimeMap } from '../../types/map'
-import type { PlayerLike } from '../../types/player'
-import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../../types/save'
+import { economyRulesFor, initializeCampaignEconomy } from '../../services/world/WorldEconomyRuntime'
+import type { BanditCampPlacement } from '../../types/camp'
+import type { GameConfig, SerializedSave } from '../../types/save'
+import type { GameWorldBootHost, NewGameBootOptions, RuntimeMapInstance } from './GameBootContext'
+import { measure, measureAsync, reportProgress } from './GameBootContext'
+import { prepareBootMap } from './GameBootMap'
+import { recordLoadedMapBlueprint } from './GameMapBlueprintRuntime'
 import { ensureCampaignPlayerRoster, hasSerializedGrid, saveConfig, savedRuntimeState } from './GameStateHelpers'
-import { recordLoadedMapBlueprint, type BlueprintRuntimeMap } from './GameMapBlueprintRuntime'
-import { buildWorldRegionPlayerConfigs, humanPlayerConfig, selectActivePlayer } from './WorldRegionPlayers'
-
-type LoadedMapBlueprint = MapBlueprint & {
-  id: string | number
-  timings?: Record<string, number>
-}
-
-type RuntimeMapInstance = BlueprintRuntimeMap & {
-  noAI?: boolean
-  startingUnits?: number
-  destroy(options?: unknown): void
-  generateFromBlueprint(
-    blueprint: LoadedMapBlueprint,
-    options?: { onProgress?: (messageKey: string, progress: number) => void }
-  ): Promise<void>
-  generateFromJSON(state: ReturnType<typeof savedRuntimeState>): void
-  generatePlayers(players: Array<Partial<PlayerLike> & PlayerSetupConfig> | null): PlayerLike[]
-  mapGeneration: {
-    applySavedStateToGeneratedMap(state: ReturnType<typeof savedRuntimeState>): void
-    applySavedStateToGeneratedMapAsync?(
-      state: ReturnType<typeof savedRuntimeState>,
-      onProgress: (stage: string, progress: number) => Promise<void>
-    ): Promise<void>
-  }
-  prepareTerrainForSavedState(options?: { onProgress?: (messageKey: string, progress: number) => void }): Promise<void>
-  stylishMap(options?: {
-    onProgress?: (messageKey: string, progress: number) => void
-    deferPlayerPlacement?: boolean
-  }): Promise<void>
-}
-
-export type GameWorldBootHost = {
-  _initialSaveFailed?: boolean
-  _campaignSave: ReturnType<typeof createInitialCampaignSave> | null
-  context: {
-    paused?: boolean
-    controls?: { init?: () => void; setEquippedItem?: GameContextLike['controls']['setEquippedItem'] } | null
-    menu?: { init?: () => void } | null
-    performance?: { record?: (name: string, duration: number) => void; setPhase?: (phase: string) => void } | null
-    player: PlayerLike | null
-    players: PlayerLike[]
-    weather?: GameContextLike['weather'] | null
-  }
-  _applyMapConfig(map: RuntimeMap, config?: GameConfig): void
-  _autosaveCampaign(onProgress?: (progress: SaveProgress) => void): void | Promise<boolean>
-  _createRuntime(): void
-  _createUiRuntime(): void
-  _gameContext(): GameContextLike
-  _loadRequiredWorldMapBlueprint(options: {
-    playerCiv?: string | null
-    size?: number
-    worldId: string
-    worldRegionId?: string
-  }): Promise<LoadedMapBlueprint>
-  _loadRequiredInteriorBlueprint(options?: {
-    buildingSize?: number
-    buildingType?: string
-    id?: string
-    interiorType?: string
-  }): Promise<LoadedMapBlueprint>
-  _map(): RuntimeMapInstance
-  _mountRuntime(dayNightElapsedMs?: number | null): void
-  _updateLoading(messageKey: string, progress: number): Promise<void>
-}
-
-function reportProgress(game: GameWorldBootHost) {
-  return (messageKey: string, progress: number) => game._updateLoading(messageKey, 0.12 + progress * 0.55)
-}
-
-async function measureAsync<T>(game: GameWorldBootHost, name: string, callback: () => Promise<T>): Promise<T> {
-  const startedAt = performance.now()
-  try {
-    return await traceLoadAsync(name, callback)
-  } finally {
-    game.context.performance?.record?.(name, performance.now() - startedAt)
-  }
-}
-
-function measure<T>(game: GameWorldBootHost, name: string, callback: () => T): T {
-  const startedAt = performance.now()
-  try {
-    return traceLoad(name, callback)
-  } finally {
-    game.context.performance?.record?.(name, performance.now() - startedAt)
-  }
-}
-
-export type NewGameBootOptions = {
-  /** Keep simulation suspended until the opening has been revealed. */
-  startPaused?: boolean
-  dayNightElapsedMs?: number | null
-  startingSetup?: Promise<Pick<GameConfig, 'heroOnlyStart' | 'heroStartVillage' | 'villageStarts'>>
-}
+export type { GameWorldBootHost, NewGameBootOptions } from './GameBootContext'
 
 export async function bootGameFromConfig(
   game: GameWorldBootHost,
   config: GameConfig,
   options: NewGameBootOptions = {}
 ): Promise<void> {
-  config = isolateLargeMapConfig(config)
-  const isolationTest = isLargeMapIsolationTest(config.worldId)
-  game.context.performance?.setPhase?.('load')
-  measure(game, 'boot.createRuntime', () => game._createRuntime())
-  if (options.startPaused) game.context.paused = true
-  const map = game._map()
-  measure(game, 'boot.applyMapConfig', () =>
-    game._applyMapConfig(map, config.heroStartVillage ? { ...config, heroOnlyStart: true } : config)
-  )
-  if (isolationTest) map.noAI = true
-  measure(game, 'boot.createUiRuntime', () => game._createUiRuntime())
-
-  const mapGenerationStartedAt = performance.now()
-  const human = humanPlayerConfig(config)
-  const worldId = config.worldId ?? DEFAULT_WORLD_ID
-  await game._updateLoading('readingMap', 0.03)
-  const loadedBlueprint = await measureAsync(game, 'boot.loadMapBlueprint', () =>
-    game._loadRequiredWorldMapBlueprint({
-      size: map.size,
-      playerCiv: config.heroStartVillage ?? human.civ,
-      worldId,
-      worldRegionId: config.worldRegionId ?? undefined,
-    })
-  )
-  const blueprint = isolateLargeMapBlueprint(
-    isContinentWorld(config.worldId) ? assignContinentVillages(loadedBlueprint) : loadedBlueprint,
-    config
-  )
-  if (isolationTest)
-    console.info('[load] Continent isolation test: hero with authored camps and wildlife, no rival civilizations')
-  if (blueprint.environment) map.environment = blueprint.environment
-  await measureAsync(game, 'boot.generateFromBlueprint', () =>
-    map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
-  )
-  recordLoadedMapBlueprint(map, blueprint, 'pregenerated-blueprint', mapGenerationStartedAt)
-  await measureAsync(game, 'boot.preloadUnits', () =>
-    preloadBakedLpcUnitsForPlayers(
-      buildWorldRegionPlayerConfigs(config, blueprint, game._campaignSave?.factions).map(player => ({
-        civ: player.civ ?? human.civ ?? 'Hellas',
-        label: player.factionId ?? player.civ ?? 'preload',
-        gender: player.gender,
-        heroAppearance: player.heroAppearance,
-      })),
-      game.context.performance,
-      {
-        villagerCivilizations: CIVILIZATIONS.map(civilization => civilization.value),
-        preloadEquipment: true,
-      }
-    )
-  )
-  if (options.startingSetup) {
-    config = { ...config, ...(await measureAsync(game, 'boot.waitForStartingSetup', () => options.startingSetup!)) }
-    config = isolateLargeMapConfig(config)
-    map.heroOnlyStart = Boolean(config.heroOnlyStart)
-  }
-  await game._updateLoading('generatingPlayers', 0.27)
-  game.context.players = measure(game, 'boot.generatePlayers', () =>
-    map.generatePlayers(buildWorldRegionPlayerConfigs(config, blueprint, game._campaignSave?.factions))
-  )
-  game.context.player = selectActivePlayer(game.context.players)
-  if (!isolationTest) ensureNeutralPlayer(game._gameContext())
-  measure(game, 'boot.menuInit', () => game.context.menu?.init?.())
+  const prepared = await prepareBootMap(game, config, options)
+  config = prepared.config
+  const { map, isolationTest, human, worldId } = prepared
   const previousCampaign = game._campaignSave
   const profiles = villageStartProfiles(config)
   const economy = map.worldRegionId ? previousCampaign?.economy?.regions[map.worldRegionId]?.initialState : undefined
@@ -454,10 +298,18 @@ export async function bootGameFromSave(game: GameWorldBootHost, json: Serialized
 
 function restoreSavedRuntimeState(game: GameWorldBootHost, json: SerializedSave): void {
   const map = game._map() as RuntimeMapInstance & { banditCampPositions?: BanditCampPlacement[] }
-  const camps = json.runtime?.banditCamps ?? (map.banditCampPositions ?? [])
-    .filter(camp => camp.profile && camp.unitTypes?.length)
-    .map(camp => ({ id: `camp:${camp.i}:${camp.j}`, i: camp.i, j: camp.j,
-      unitTypes: [...camp.unitTypes!], generation: 0, ...(camp.caveId ? { caveId: camp.caveId } : {}) }))
+  const camps =
+    json.runtime?.banditCamps ??
+    (map.banditCampPositions ?? [])
+      .filter(camp => camp.profile && camp.unitTypes?.length)
+      .map(camp => ({
+        id: `camp:${camp.i}:${camp.j}`,
+        i: camp.i,
+        j: camp.j,
+        unitTypes: [...camp.unitTypes!],
+        generation: 0,
+        ...(camp.caveId ? { caveId: camp.caveId } : {}),
+      }))
   restoreCampRespawnStates(map, camps)
   if (json.runtime?.heroEquippedItem !== undefined) {
     game.context.controls?.setEquippedItem?.(json.runtime.heroEquippedItem)

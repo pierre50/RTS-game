@@ -14,7 +14,7 @@ function loadResourceTotals() {
   })
 }
 
-test('player chest resource totals sum only owned living chests', () => {
+test('player chest resource totals sum only owned living depots', () => {
   const { getPlayerResourceTotals } = loadResourceTotals()
   const player = { label: 'p1', buildings: [] }
   const other = { label: 'p2' }
@@ -23,21 +23,21 @@ test('player chest resource totals sum only owned living chests', () => {
       owner: player,
       i: 0,
       j: 0,
-      type: 'Chest',
+      type: 'StoragePit',
       inventory: { resources: { wood: 5.8, wheat: 3 } },
     },
     {
       owner: { label: 'p1' },
       i: 0,
       j: 0,
-      type: 'Chest',
+      type: 'StoragePit',
       inventory: { resources: { wood: 2, stone: 4 } },
     },
     {
       owner: other,
       i: 0,
       j: 0,
-      type: 'Chest',
+      type: 'StoragePit',
       inventory: { resources: { wood: 99 } },
     },
     {
@@ -50,7 +50,7 @@ test('player chest resource totals sum only owned living chests', () => {
       owner: player,
       i: 0,
       j: 0,
-      type: 'Chest',
+      type: 'StoragePit',
       inventory: { resources: { wheat: 99 } },
     },
   ]
@@ -72,7 +72,7 @@ test('player resource totals include the hero bag and starting town center stock
   const hero = { owner: player, i: 0, j: 0, type: 'Hero', inventory: { resources: { wood: 4, stone: 1 } } }
   player.units = [hero]
   player.buildings = [
-    { owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 7 } } },
+    { owner: player, i: 0, j: 0, type: 'StoragePit', inventory: { resources: { wood: 7 } } },
     { owner: player, i: 0, j: 0, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
     { owner: player, i: 0, j: 0, type: 'StoragePit', inventory: { resources: { stone: 2 } } },
   ]
@@ -95,8 +95,8 @@ test('visible player resource totals hide unseen storage but keep the hero bag',
   const hero = { owner: player, i: 0, j: 0, type: 'Hero', inventory: { resources: { wood: 4, stone: 1 } } }
   player.units = [hero]
   player.buildings = [
-    { i: 2, j: 3, owner: player, type: 'Chest', inventory: { resources: { wood: 7 } } },
-    { i: 8, j: 9, owner: player, type: 'Chest', inventory: { resources: { wood: 99, wheat: 99 } } },
+    { i: 2, j: 3, owner: player, type: 'StoragePit', inventory: { resources: { wood: 7 } } },
+    { i: 8, j: 9, owner: player, type: 'StoragePit', inventory: { resources: { wood: 99, wheat: 99 } } },
     { i: 8, j: 9, owner: player, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
   ]
 
@@ -115,7 +115,9 @@ test('missing chest resources compares costs against stored chest totals', () =>
   const { getMissingPlayerResources } = loadResourceTotals()
   const player = {
     label: 'p1',
-    buildings: [{ owner: { label: 'p1' }, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 7, wheat: 1 } } }],
+    buildings: [
+      { owner: { label: 'p1' }, i: 0, j: 0, type: 'StoragePit', inventory: { resources: { wood: 7, wheat: 1 } } },
+    ],
   }
 
   player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
@@ -136,7 +138,7 @@ test('a non-chief player spends only the active hero bag while village upkeep ke
     owner: player,
     inventory: { resources: { wood: 3, berry: 2 } },
   }
-  const chest = { i: 0, j: 0, type: 'Chest', owner: player, inventory: { resources: { wood: 100, berry: 50 } } }
+  const chest = { i: 0, j: 0, type: 'StoragePit', owner: player, inventory: { resources: { wood: 100, berry: 50 } } }
   player.units.push(hero)
   player.buildings.push(chest)
   player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
@@ -158,13 +160,13 @@ test('a non-chief player spends only the active hero bag while village upkeep ke
   assert.equal(chest.inventory.resources.wood, 95)
 })
 
-test('blocking automatic deliveries does not reserve chest resources against construction spending', () => {
+test('obsolete delivery flags do not block dedicated depots', () => {
   const { depositChestResources, withdrawChestResources } = loadResourceTotals()
   const player = { label: 'p', buildings: [] }
   const chest = {
     i: 0,
     j: 0,
-    type: 'Chest',
+    type: 'StoragePit',
     owner: player,
     isBuilt: true,
     villagerDeliveriesBlocked: true,
@@ -172,9 +174,28 @@ test('blocking automatic deliveries does not reserve chest resources against con
   }
   player.buildings.push(chest)
   player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
-  assert.equal(depositChestResources(player, { wood: 10 }, { automaticDelivery: true }), false)
-  assert.equal(chest.inventory.resources.wood, 20)
+  assert.equal(depositChestResources(player, { wood: 10 }, { automaticDelivery: true }), true)
+  assert.equal(chest.inventory.resources.wood, 30)
   assert.equal(depositChestResources(player, { wood: 10 }), true)
   assert.equal(withdrawChestResources(player, { wood: 10 }, { includeHero: false }), true)
-  assert.equal(chest.inventory.resources.wood, 20)
+  assert.equal(chest.inventory.resources.wood, 30)
+})
+
+test('mixed deposits reserve shared capacity atomically and can span several depots', () => {
+  const { depositChestResources } = loadTsModule('app/lib/resources/playerResourceTotals.ts')
+  const player = {
+    label: 'p',
+    buildings: [
+      { type: 'TownCenter', i: 0, j: 0, inventory: { resources: { wood: 300 } } },
+      { type: 'StoragePit', i: 2, j: 2, inventory: { resources: { wood: 290 } } },
+    ],
+  }
+  const before = structuredClone(player)
+  assert.equal(depositChestResources(player, { wood: 15, stone: 10 }), false)
+  assert.deepEqual(player, before)
+  player.buildings.push({ type: 'StoragePit', i: 3, j: 3, inventory: { resources: {} } })
+  assert.equal(depositChestResources(player, { wood: 15, stone: 10 }), true)
+  assert.equal(player.wood, 605)
+  assert.equal(player.stone, 10)
+  assert.ok(player.buildings.every(b => Object.values(b.inventory.resources).reduce((a, b) => a + b, 0) <= 300))
 })

@@ -1,9 +1,8 @@
 import { serializeEconomyPlayer } from '../../serialization/VillageEconomySnapshot'
-import { simulateOfflineWorld } from './OfflineWorldSimulation'
-import { planOfflineBuildings, restoreOfflineBuilders } from './OfflineWorldBuildingPlanner'
+import { advanceVillageWork } from './VillageWorkSimulation'
+import { planOfflineBuildings } from './OfflineWorldBuildingPlanner'
 import { offlineWorkCycleMs } from '../../lib/economy/configuredWorkTiming'
 import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
-import { ensureOutsideMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import { VILLAGE_ACTIVITY_RADIUS, VILLAGE_PATH_MARGIN } from '../../config/villageActivity'
 import { worldEconomyFactors } from '../../config/worldEconomyBalance'
 import { type VillageHome } from '../../lib/units/villageActivity'
@@ -78,11 +77,7 @@ function rules(context: GameContextLike, owner: PlayerLike): OfflineWorkRules {
     buildingConfig: (_index, type) => owner.config?.buildings?.[type] ?? {},
     buildingCapacity: (_index, type) => {
       const config = owner.config?.buildings?.[type]
-      return (
-        getBuildingShelterCapacity({ type, shelterCapacity: config?.shelterCapacity ?? 0 }) ||
-        Number(config?.increasePopulation) ||
-        0
-      )
+      return getBuildingShelterCapacity({ type, ...config })
     },
     cycleMs: (_index, work, action) => {
       const key = `${work}:${action ?? ''}`
@@ -99,49 +94,16 @@ function rules(context: GameContextLike, owner: PlayerLike): OfflineWorkRules {
   }
 }
 
-function commit(context: GameContextLike, owner: PlayerLike, player: SavePlayerState): void {
-  // Buildings complete through the normal lifecycle (population, access, visuals).
+/** Planning only adds projects. The shared work simulation owns stocks and workers. */
+function commitPlan(owner: PlayerLike, player: SavePlayerState): void {
   for (const copy of player.buildings ?? []) {
-    let building = owner.buildings.find(candidate => candidate.label === copy.label)
-    if (!building) {
-      building = owner.createBuilding({ ...copy, isBuilt: false })
-    }
-    building.inventory = copy.inventory
-    if (copy.hitPoints != null && (building.hitPoints !== copy.hitPoints || (copy.isBuilt && !building.isBuilt))) {
-      building.hitPoints = copy.hitPoints
-      building.updateHitPoints?.('build')
-    }
+    if (!owner.buildings.some(building => building.label === copy.label))
+      owner.createBuilding({ ...copy, isBuilt: false })
   }
   Object.assign(owner, {
-    abstractProductionRemainder: player.abstractProductionRemainder,
     offlineBuildingPlanDay: player.offlineBuildingPlanDay,
     offlineBuildingDecision: player.offlineBuildingDecision,
   })
-  const space = ensureOutsideMapSpace(context.map)
-  for (const copy of player.units ?? []) {
-    const unit = owner.units.find(candidate => candidate.label === copy.label)
-    if (!unit || !isUnitSuspended(unit)) continue
-    Object.assign(unit, {
-      inventory: copy.inventory,
-      offlineWork: copy.offlineWork,
-      offlineBuilderJob: copy.offlineBuilderJob,
-      hitPoints: copy.hitPoints ?? unit.hitPoints,
-      work: copy.work ?? null,
-      autonomousJob: copy.autonomousJob ?? null,
-      action: null,
-      dest: null,
-      path: [],
-      inactif: true,
-      resourceDeliveryState: null,
-    })
-    unit.buildQueue = copy.buildQueue?.flatMap(label => {
-      const building = owner.buildings.find(candidate => candidate.label === label)
-      return building ? [building] : []
-    })
-    const cell = context.map.grid[copy.i]?.[copy.j]
-    if (cell && (!cell.has || cell.has === unit) && (unit.i !== copy.i || unit.j !== copy.j))
-      moveEntityToMapSpace(context.map, unit, space, cell)
-  }
 }
 
 export function advanceDistantVillageEconomy(
@@ -152,24 +114,20 @@ export function advanceDistantVillageEconomy(
   toElapsedMs: number
 ): void {
   if (toElapsedMs <= fromElapsedMs) return
-  const { state, player, terrain } = capture(context, owner, homes)
-  restoreOfflineBuilders(state)
-  simulateOfflineWorld(state, {
-    ...rules(context, owner),
-    terrain,
-    fromElapsedMs,
-    toElapsedMs,
-    runtimeOwnsDailyEvents: true,
-    runtimeOwnsTraining: true,
-    spatialOptions: { protectVillageAccess: false, traceConnectivity: false, exactBuildingFootprints: true },
-  })
-  restoreOfflineBuilders(state)
-  commit(context, owner, player)
+  advanceVillageWork(
+    context,
+    homes,
+    owner,
+    owner.units.filter(isUnitSuspended),
+    toElapsedMs - fromElapsedMs,
+    fromElapsedMs
+  )
 }
 
 export function planDistantVillageBuildings(context: GameContextLike, owner: PlayerLike, homes: VillageHome[]): void {
+  if (owner.isPlayed || owner.type !== 'AI') return
   const day = context.dayNight?.state.day ?? 1
   const { state, player, terrain } = capture(context, owner, homes)
   planOfflineBuildings(state, day, terrain, rules(context, owner))
-  commit(context, owner, player)
+  commitPlan(owner, player)
 }

@@ -75,7 +75,10 @@ for (const payload of catalog.blueprints) {
     })
     owner.label = 'bandits'
     const inventory = { resources: { gold: 9 }, equipment: ['bow'] }
-    const context = { players: [owner, neutralOwner], map: { randomRange: () => 3 } }
+    const context = {
+      players: [owner, neutralOwner],
+      map: { randomRange: () => 3, ensureNeutralPlayer: () => neutralOwner },
+    }
     owner.units = []
     cave.cave.banditContent = JSON.parse(JSON.stringify({ ownerLabel: 'bandits', campIndex: 0, inventory }))
     furnishPendingBanditCave(context, space, cave)

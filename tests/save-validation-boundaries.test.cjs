@@ -553,16 +553,41 @@ test('wildlife return and relocation metadata is validated and old saves remain 
 test('save validation accepts legacy minimaps and validates stored observations and filters', () => {
   assert.doesNotThrow(() => validateSaveData(save()))
   const memory = {
-    id: 'destroyed-house', spaceId: 'outside', x: 10, y: 20, i: 1, j: 1, size: 1,
-    color: '#f00', ownerKey: 'enemy', town: false,
+    id: 'destroyed-house',
+    spaceId: 'outside',
+    x: 10,
+    y: 20,
+    i: 1,
+    j: 1,
+    size: 1,
+    color: '#f00',
+    ownerKey: 'enemy',
+    town: false,
   }
   const data = save()
   data.players[0].minimapBuildingMemory = [memory]
   data.players[0].minimapPreferences = { zoom: 1.5, hiddenMarkers: ['enemy'] }
   assert.doesNotThrow(() => validateSaveData(data)) // No live building required.
   for (const patch of [{ x: NaN }, { size: -1 }, { i: 0.5 }, { spaceId: '' }, { town: 'yes' }])
-    rejects(state => { state.players[0].minimapBuildingMemory = [{ ...memory, ...patch }] }, /minimap/)
-  rejects(state => { state.players[0].minimapBuildingMemory = [memory, memory] }, /duplicate minimap/)
-  for (const preferences of [{ zoom: 0, hiddenMarkers: [] }, { zoom: 2, hiddenMarkers: [42] }])
-    rejects(state => { state.players[0].minimapPreferences = preferences }, /minimap/)
+    rejects(state => {
+      state.players[0].minimapBuildingMemory = [{ ...memory, ...patch }]
+    }, /minimap/)
+  rejects(state => {
+    state.players[0].minimapBuildingMemory = [memory, memory]
+  }, /duplicate minimap/)
+  for (const preferences of [
+    { zoom: 0, hiddenMarkers: [] },
+    { zoom: 2, hiddenMarkers: [42] },
+  ])
+    rejects(state => {
+      state.players[0].minimapPreferences = preferences
+    }, /minimap/)
+})
+
+test('legacy delivery-blocking flags do not prevent loading old buildings', () => {
+  for (const blocked of [true, false]) {
+    const data = save()
+    data.players[0].buildings = [{ type: 'House', i: 0, j: 0, villagerDeliveriesBlocked: blocked }]
+    assert.doesNotThrow(() => validateSaveData(data))
+  }
 })

@@ -1,6 +1,8 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { getRandomUnitName } from '../../config/name'
-import { FADE_DURATION_MS,UNIT_TYPES } from '../../constants'
-import { canUpdateMinimap,updateInstanceVisibility,uuidv4 } from '../../lib'
+import { FADE_DURATION_MS, UNIT_TYPES } from '../../constants'
+import { canUpdateMinimap, updateInstanceVisibility, uuidv4 } from '../../lib'
 import { definedProperties } from '../../lib/definedProperties'
 import { fadeIn } from '../../lib/entities/entityFade'
 import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
@@ -25,6 +27,7 @@ export function createPlayerUnit(
   let unit = new Unit(
     definedProperties({
       ...options,
+      inventory: options.inventory ?? (type === UNIT_TYPES.villager ? startingVillagerInventory() : undefined),
       label,
       gender: identity.gender,
       assetCiv: identity.civ,
@@ -46,5 +49,6 @@ export function createPlayerUnit(
     fadeIn(unit, FADE_DURATION_MS)
   }
   this.updatePopulationObjectives()
+  notifyVillageStateChanged(this)
   return unit
 }

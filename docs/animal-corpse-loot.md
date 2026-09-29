@@ -2,7 +2,8 @@
 
 À la mort, la viande restante et les matériaux sont placés dans un inventaire unique.
 Le héros l’ouvre avec E ; Gather reste réservé aux ressources du décor.
-Les chasseurs ramassent une charge au contact, viande en priorité, puis déposent et
+Les chasseurs ramassent immédiatement une charge au contact, sans animation de découpe,
+viande en priorité, puis déposent et
 reviennent au même corps si un butin qu’ils peuvent déposer y reste. Une charge mixte
 peut nécessiter plusieurs dépôts. Les autres PNJ et le héros prélèvent dans le même stock.
 

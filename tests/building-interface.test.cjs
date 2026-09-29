@@ -29,6 +29,7 @@ function loadBuildingInterface() {
       POPULATION_MAX: 200,
     },
     '../../lib': { getIconPath: id => id },
+    './EntityDescription': { getEntityDescription: () => '' },
     '../../lib/horses/horseColors': {
       HORSE_COLOR_PALETTES: {
         dark: [0, 0x73737f, 0, 0, 0x2d3136],
@@ -70,7 +71,8 @@ function loadBuildingInterface() {
     },
     '../utils/entityDisplayName': { getBuildingDisplayName: building => building.type },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

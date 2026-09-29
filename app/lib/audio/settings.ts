@@ -1,3 +1,4 @@
+import { planBindingChange } from '../input/bindingChange'
 import { sound } from '@pixi/sound'
 
 const VOLUME_KEY = 'sfx_volume'
@@ -53,7 +54,52 @@ export type ControlBindingAction =
 
 export type ControlKeyBindings = Record<ControlBindingAction, string>
 
-export type GamepadBindingAction = 'inventoryTransferOne' | 'inventoryTransferAll'
+export type GamepadBindingAction =
+  | 'heroUp'
+  | 'heroDown'
+  | 'heroLeft'
+  | 'heroRight'
+  | 'heroInteract'
+  | 'heroDefense'
+  | 'inventory'
+  | 'quests'
+  | 'heroMountHorse'
+  | 'heroDismountHorse'
+  | 'gameMenu'
+  | 'heroAction'
+  | 'heroInspect'
+  | 'heroToolPrev'
+  | 'heroToolNext'
+  | 'placementPlace'
+  | 'placementMirror'
+  | 'placementCancel'
+  | 'inventoryTransferOne'
+  | 'inventoryTransferAll'
+
+export const GAMEPAD_BINDING_GROUPS: { key: string; actions: GamepadBindingAction[] }[] = [
+  {
+    key: 'controlsGroupHero',
+    actions: [
+      'heroUp',
+      'heroDown',
+      'heroLeft',
+      'heroRight',
+      'gameMenu',
+      'quests',
+      'heroMountHorse',
+      'heroDismountHorse',
+      'heroAction',
+      'heroDefense',
+      'heroInteract',
+      'heroInspect',
+      'heroToolPrev',
+      'heroToolNext',
+      'inventory',
+    ],
+  },
+  { key: 'placementHelp', actions: ['placementPlace', 'placementMirror', 'placementCancel'] },
+  { key: 'inventory', actions: ['inventoryTransferOne', 'inventoryTransferAll'] },
+]
 export type GamepadButtonBinding = `Button${number}`
 export type GamepadButtonBindings = Record<GamepadBindingAction, GamepadButtonBinding>
 
@@ -80,6 +126,24 @@ const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
 }
 
 const DEFAULT_GAMEPAD_BINDINGS: GamepadButtonBindings = {
+  gameMenu: 'Button9',
+  quests: 'Button1',
+  heroMountHorse: 'Button10',
+  heroDismountHorse: 'Button11',
+  heroUp: 'Button12',
+  heroDown: 'Button13',
+  heroLeft: 'Button14',
+  heroRight: 'Button15',
+  heroInteract: 'Button2',
+  heroDefense: 'Button4',
+  inventory: 'Button3',
+  heroAction: 'Button5',
+  heroInspect: 'Button8',
+  heroToolPrev: 'Button6',
+  heroToolNext: 'Button7',
+  placementPlace: 'Button0',
+  placementMirror: 'Button2',
+  placementCancel: 'Button1',
   inventoryTransferOne: 'Button0',
   inventoryTransferAll: 'Button2',
 }
@@ -295,12 +359,53 @@ export function setGamepadBindingFromButtonIndex(action: GamepadBindingAction, i
   if (!Number.isInteger(index) || index < 0) return
   _gamepadBindings = { ..._gamepadBindings, [action]: `Button${index}` as GamepadButtonBinding }
   localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(_gamepadBindings))
+  notifySettingsChanged()
 }
 
-export function resetGamepadBindings(): GamepadButtonBindings {
-  _gamepadBindings = { ...DEFAULT_GAMEPAD_BINDINGS }
+export function resetGamepadBindings(
+  actions: readonly GamepadBindingAction[] = GAMEPAD_BINDING_ACTIONS
+): GamepadButtonBindings {
+  _gamepadBindings = { ..._gamepadBindings }
+  for (const action of actions) _gamepadBindings[action] = DEFAULT_GAMEPAD_BINDINGS[action]
   localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(_gamepadBindings))
+  notifySettingsChanged()
   return getGamepadBindings()
+}
+
+export function getGamepadBindingChange(action: GamepadBindingAction, index: number) {
+  const sharesContext = (a: GamepadBindingAction, b: GamepadBindingAction): boolean =>
+    GAMEPAD_BINDING_GROUPS.some(group => group.actions.includes(a) && group.actions.includes(b)) ||
+    (a === 'gameMenu' && b.startsWith('placement')) ||
+    (b === 'gameMenu' && a.startsWith('placement'))
+  return planBindingChange(_gamepadBindings, action, `Button${index}`, sharesContext)
+}
+
+export function rebindGamepadButton(action: GamepadBindingAction, index: number): boolean {
+  if (!Number.isInteger(index) || index < 0) return false
+  const { swapped } = getGamepadBindingChange(action, index)
+  if (!swapped) return false
+  _gamepadBindings = swapped as GamepadButtonBindings
+  localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(_gamepadBindings))
+  notifySettingsChanged()
+  return true
+}
+
+export function getKeyboardBindingChange(action: ControlBindingAction, event: KeyboardEvent) {
+  return planBindingChange(
+    _keyBindings,
+    action,
+    normalizeControlKey(getControlKeyFromKeyboardEvent(event)),
+    () => true,
+    areControlKeysEquivalent
+  )
+}
+
+export function rebindKeyboardKey(action: ControlBindingAction, event: KeyboardEvent): boolean {
+  const { swapped } = getKeyboardBindingChange(action, event)
+  if (!swapped) return false
+  _keyBindings = swapped
+  localStorage.setItem(KEY_BINDINGS_KEY, JSON.stringify(_keyBindings))
+  return true
 }
 
 export function onVisualSettingsChange(callback: () => void): () => void {
@@ -336,8 +441,11 @@ export function setKeyBindingFromKeyboardEvent(action: ControlBindingAction, evt
   setKeyBinding(action, getControlKeyFromKeyboardEvent(evt))
 }
 
-export function resetKeyBindings(): ControlKeyBindings {
-  _keyBindings = { ...DEFAULT_KEY_BINDINGS }
+export function resetKeyBindings(
+  actions: readonly ControlBindingAction[] = CONTROL_BINDING_ACTIONS
+): ControlKeyBindings {
+  _keyBindings = { ..._keyBindings }
+  for (const action of actions) _keyBindings[action] = DEFAULT_KEY_BINDINGS[action]
   localStorage.setItem(KEY_BINDINGS_KEY, JSON.stringify(_keyBindings))
   return getKeyBindings()
 }

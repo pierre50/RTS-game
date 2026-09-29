@@ -27,7 +27,7 @@ function fixture() {
         population: 5,
         populationMax: 10,
         units: [],
-        buildings: [{ type: 'TownCenter', isBuilt: true, inventory: { resources: { wood: 123 } } }],
+        buildings: [{ type: 'TownCenter', i: 0, j: 0, isBuilt: true, inventory: { resources: { wood: 123 } } }],
       },
     ],
     getCampaignEconomy: () => economy,

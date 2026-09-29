@@ -1,3 +1,9 @@
+import { notifyVillageWorkChanged } from '../../../lib/units/villageWorkEvents'
+import { t } from '../../../lib/lang'
+import {
+  advanceMaterialConstruction,
+  missingConstructionMaterialsForNextPoint,
+} from '../../../lib/economy/constructionMaterials'
 import { advanceConstruction as advanceConstructionProgress } from '../../../lib/economy/workRules'
 import { definedProperties } from '../../../lib/definedProperties'
 import { SOUND_CUES } from '../../../constants'
@@ -17,6 +23,7 @@ import type { UnitResourceActions } from '../UnitResourceActions'
 
 export function handleBuildAction(runtime: UnitResourceActions) {
   const unit = runtime.unit
+  if (blockUnfundedBuild(runtime)) return
   if (!runtime.prepareLoopingWorkAction()) return
   const sprite = unit.sprite
   if (!sprite) return
@@ -36,6 +43,7 @@ function buildImpact(runtime: UnitResourceActions, workTickFrame: number): void 
   if (!dest) return
   if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
     if (!runtime.ensureWorkContact(dest)) return
+    if (blockUnfundedBuild(runtime)) return
     if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
       if (isHeroControlled(unit)) stopManualHeroAction(unit)
       return
@@ -56,19 +64,44 @@ function advanceConstruction(runtime: UnitResourceActions, dest: BuildingEntity)
   const unit = runtime.unit
   const menu = unit.context?.menu
   const player = unit.owner
-  spawnWorkImpactFragments(unit, dest)
-  runtime.playSound(runtime.getWorkSound('build', SOUND_CUES.villager.buildLoop))
   const beforeHitPoints = dest.hitPoints ?? 0
-  dest.hitPoints = advanceConstructionProgress(
+  const requested = advanceConstructionProgress(
     beforeHitPoints,
     dest.totalHitPoints ?? 0,
     dest.constructionTime ?? 1,
     getBuildRateXpMultiplier(unit)
   )
+  dest.hitPoints = advanceMaterialConstruction(dest, requested, [unit.inventory?.resources ?? {}])
+  if (dest.hitPoints === beforeHitPoints) return
+  notifyVillageWorkChanged(unit.owner)
+  spawnWorkImpactFragments(unit, dest)
+  runtime.playSound(runtime.getWorkSound('build', SOUND_CUES.villager.buildLoop))
   showHitPointGainFeedback(dest, (dest.hitPoints ?? 0) - beforeHitPoints)
   grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
   if (shouldSyncBuildHealthDisplay(dest)) {
     syncEntityHealthDisplay(dest, definedProperties({ menu, player, forceInfo: unit.owner?.isPlayed }))
   }
   dest.updateHitPoints?.(unit.action ?? '')
+}
+
+function blockUnfundedBuild(runtime: UnitResourceActions): boolean {
+  const unit = runtime.unit
+  if (!isBuildingEntity(unit.dest)) return false
+  const missing = missingConstructionMaterialsForNextPoint(unit.dest, unit.inventory?.resources)
+  if (!Object.keys(missing).length) return false
+  if (!isHeroControlled(unit)) {
+    // stop() resumes autonomous work first; release the job so the collective planner can resupply.
+    unit.autonomousJob = null
+    unit.collectiveTask = 'construction'
+    unit.stop?.()
+    unit.work = null
+    notifyVillageWorkChanged(unit.owner)
+    return true
+  }
+  const resources = Object.entries(missing)
+    .map(([key, count]) => `${count} ${t(key)}`)
+    .join(', ')
+  unit.context?.menu?.showMessage(t('constructionMissingMaterials', { resources }), 'warning')
+  stopManualHeroAction(unit)
+  return true
 }

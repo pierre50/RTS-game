@@ -53,6 +53,7 @@ test('restored delivery rebuilds its return task without reviving transient time
   const unit = { family: 'unit', path: [], dest: null }
   processUnit(unit, map, {
     resourceDelivery: {
+      pickup: { wood: 18 },
       building: 'store',
       returnTask: {
         dest: 'tree',
@@ -64,6 +65,7 @@ test('restored delivery rebuilds its return task without reviving transient time
   })
   assert.equal(unit.resourceDeliveryState.building, building)
   assert.equal(unit.resourceDeliveryState.phase, 'toBuilding')
+  assert.deepEqual(unit.resourceDeliveryState.pickup, { wood: 18 })
   assert.equal(unit.resourceDeliveryState.returnTask.dest, resource)
   assert.equal(unit.resourceDeliveryState.returnTask.work, 'woodcutter')
   assert.equal(unit.resourceDeliveryState.taskId, undefined)

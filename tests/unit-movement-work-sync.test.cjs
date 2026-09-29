@@ -37,7 +37,9 @@ function loadUnitMovement(calls) {
       ],
     })
     const tsModule = { exports: {} }
-    new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, request => localRequire(request, tsFilename))
+    new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, request =>
+      localRequire(request, tsFilename)
+    )
     return tsModule.exports
   }
   const mocks = {}
@@ -189,6 +191,8 @@ function loadUnitMovement(calls) {
     if (request === './movement/UnitMovementRouting' || request === './UnitMovementRouting') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRouting.ts'))
     }
+    if (request === './ManualMoveState')
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/ManualMoveState.ts'))
     if (request === './UnitMovementRoutingRuntime') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRoutingRuntime.ts'))
     }
@@ -317,4 +321,21 @@ test('training movement routes a unit to the building entry cell before starting
     calls.find(call => call[0] === 'setPath'),
     ['setPath', path]
   )
+})
+
+test('reissuing hunt after rest restarts a stationary walking animation instead of ignoring the order', () => {
+  const calls = []
+  const { UnitMovement, constants } = loadUnitMovement(calls)
+  const unit = makeUnit(constants, calls)
+  const target = { family: 'animal', label: 'deer', i: 0, j: 0, x: 0, y: 0 }
+  Object.assign(unit, {
+    dest: target,
+    action: 'hunt',
+    work: 'hunter',
+    currentSheet: constants.SHEET_TYPES.walking,
+    inactif: false,
+  })
+  const movement = new UnitMovement(unit)
+  movement.sendToEvt(target, 'hunt')
+  assert.ok(calls.some(([event, action]) => event === 'getAction' && action === 'hunt'))
 })

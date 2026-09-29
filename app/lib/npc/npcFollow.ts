@@ -1,7 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { applyUnitCrouchPose } from '../units/unitCrouchPose'
 import { clearRequestedMoveSpeedFactor, requestUnitWalk } from '../units/unitLocomotion'
-import { tryFollowAssistHero } from './npcFollowAssist'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { findInstancesInSight } from '../grid/visibility'
@@ -44,11 +43,10 @@ function isEscortThreat(hero: UnitEntity, target: RuntimeEntity): boolean {
 }
 
 function findEscortThreats(hero: UnitEntity): RuntimeEntity[] {
-  return findInstancesInSight<UnitEntity, RuntimeEntity>(
-    hero,
-    target => isEscortThreat(hero, target),
-    { range: ESCORT_ENGAGE_RANGE, useInsightRange: true }
-  )
+  return findInstancesInSight<UnitEntity, RuntimeEntity>(hero, target => isEscortThreat(hero, target), {
+    range: ESCORT_ENGAGE_RANGE,
+    useInsightRange: true,
+  })
 }
 
 function pickEscortTarget(hero: UnitEntity, unit: UnitEntity, threats: RuntimeEntity[]): RuntimeEntity | null {
@@ -115,6 +113,14 @@ export function updateNpcFollow(hero: UnitEntity, options: { matchHeroWalk?: boo
   for (const unit of units) {
     if (!unit.followingHero || unit === hero || unit.isDead || unit.isDestroyed) continue
     if (!sameMapSpace(hero, unit)) continue
+    // Discard legacy economic assistance saved before following became an exclusive task.
+    if (unit.followAssist) {
+      unit.followAssist = null
+      unit.autonomousJob = null
+      unit.collectiveTask = null
+      unit.work = null
+      unit.stop?.()
+    }
     syncFollowerCrouchPose(hero, unit)
     if (options.matchHeroWalk) requestUnitWalk(unit)
     else clearRequestedMoveSpeedFactor(unit)
@@ -129,7 +135,6 @@ export function updateNpcFollow(hero: UnitEntity, options: { matchHeroWalk?: boo
       unit.sendToAttack?.(target)
       continue
     }
-    if (tryFollowAssistHero(hero, unit)) continue
     formationUnits.push(unit)
   }
   if (!formationUnits.length) return

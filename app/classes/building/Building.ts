@@ -55,17 +55,19 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   buildingAge?: number
   assetAge?: number
   trainingQueue?: SavedTrainingEntry[]
+  trainingRequests?: BuildingEntity['trainingRequests']
+  reservePolicy?: BuildingEntity['reservePolicy']
   trainingExtra?: SavedTrainingExtra
   deferTrainingResume?: boolean
   i: number
   j: number
   type: string
   spaceId?: string
+  constructionMaterials?: BuildingEntity['constructionMaterials']
   inventory?: BuildingEntity['inventory']
   marketStock?: string[]
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
-  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   skipBuiltEffects?: boolean
 }
@@ -84,6 +86,8 @@ export class Building extends Instance implements BuildingEntity {
   private savedTrainingExtra?: SavedTrainingExtra
   trainingType: string | null
   trainingQueue: NonNullable<BuildingEntity['trainingQueue']>
+  trainingRequests: NonNullable<BuildingEntity['trainingRequests']>
+  reservePolicy?: BuildingEntity['reservePolicy']
   trainingStartedDay: number | null
   trainingCompleteDay: number | null
   trainingDayChangeUnsubscribe: (() => void) | null
@@ -96,7 +100,6 @@ export class Building extends Instance implements BuildingEntity {
   attackIntervalId: SchedulerTaskId | null
   declare sprite: BuildingSprite
   populationCapacityApplied!: boolean
-  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   quantity?: number
   totalQuantity?: number
@@ -125,7 +128,6 @@ export class Building extends Instance implements BuildingEntity {
   flameSoundLoop?: { stop(): void; volume: number } | null
   flameSoundTicker?: ((ticker?: { deltaMS?: number; elapsedMS?: number }) => void) | null
   flameSoundStopped?: boolean
-  increasePopulation?: number
   shelterCapacity?: number
   cave?: CaveDefinition
   indestructible?: boolean
@@ -134,6 +136,7 @@ export class Building extends Instance implements BuildingEntity {
     resources?: ResourceAmount
     equipment?: string[]
   }
+  constructionMaterials?: BuildingEntity['constructionMaterials']
   marketStock?: string[]
   visualSettingsCleanup: (() => void) | null
 
@@ -154,6 +157,8 @@ export class Building extends Instance implements BuildingEntity {
     this.trainingUnit = null
     this.trainingType = null
     this.trainingQueue = []
+    this.reservePolicy = options.reservePolicy ? structuredClone(options.reservePolicy) : undefined
+    this.trainingRequests = structuredClone(options.trainingRequests ?? [])
     this.trainingStartedDay = null
     this.trainingCompleteDay = null
     this.trainingDayChangeUnsubscribe = null
@@ -387,6 +392,10 @@ export class Building extends Instance implements BuildingEntity {
 
   cancelUnits(type: string): boolean {
     return this.buildingProduction.cancelUnits(type)
+  }
+
+  cancelTrainingEntry(label: string): boolean {
+    return this.buildingProduction.cancelTrainingEntry(label)
   }
 
   cancelAllUnitTraining(): boolean {

@@ -1,8 +1,8 @@
-import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
+import { getEntityDescription } from './EntityDescription'
+import { appendBaseEntityInfo } from './BaseEntityInterface'
 import { getEntityDisplayName } from '../utils/entityDisplayName'
 import type { AnimalEntity, EntityInfoRenderOptions } from '../../types/entities'
 import type { AnimalConfig } from '../../types/config'
-import type { MenuLike } from '../../types/context'
 
 export class AnimalInterface {
   animal: AnimalEntity
@@ -13,12 +13,12 @@ export class AnimalInterface {
 
   setDefaultInterface(element: HTMLElement, _data: AnimalConfig, options?: EntityInfoRenderOptions): void {
     const animal = this.animal
-    const menu = (animal.context as { menu: MenuLike }).menu
+    const current = animal.isDead ? 0 : animal.hitPoints
+    const total = animal.totalHitPoints
 
-    appendBaseEntityInfo(element, '', getEntityDisplayName(animal), animal.hitPoints, animal.totalHitPoints, {
+    appendBaseEntityInfo(element, '', getEntityDisplayName(animal), current, total, {
       hideType: options?.hideIdentity,
+      description: getEntityDescription(animal),
     })
-
-    appendQuantityInfo(element, menu.icons!['food'], animal.quantity!)
   }
 }

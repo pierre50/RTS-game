@@ -135,3 +135,42 @@ test('manual save waits for publication and reports the real failure without sho
     console.error = previousError
   }
 })
+
+test('Start toggles the pause menu without dismissing another modal', () => {
+  const previousDocument = global.document
+  let anotherModal = false
+  global.document = { querySelector: () => anotherModal }
+  try {
+    const PauseMenu = loadPauseMenu()
+    const menu = new PauseMenu({ context: {} })
+    let opened = 0
+    let closed = 0
+    menu.open = () => {
+      opened++
+    }
+    menu.toggle()
+    assert.equal(opened, 1)
+    let topmost = true
+    menu.modal = {
+      _closed: false,
+      _isTopmost: () => topmost,
+      _dismiss: () => {
+        closed++
+        menu.modal._closed = true
+      },
+    }
+    menu.toggle()
+    assert.equal(closed, 1)
+    menu.toggle()
+    assert.equal(opened, 2)
+    anotherModal = true
+    menu.toggle()
+    assert.equal(opened, 2)
+    menu.modal._closed = false
+    topmost = false
+    menu.toggle()
+    assert.equal(closed, 1)
+  } finally {
+    global.document = previousDocument
+  }
+})

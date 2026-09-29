@@ -1,3 +1,4 @@
+import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
 import { simulateOfflineWorld } from './OfflineWorldSimulation'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { Assets } from 'pixi.js'
@@ -5,7 +6,7 @@ import { VILLAGE_ACTIVITY_RADIUS, VILLAGE_PATH_MARGIN } from '../../config/villa
 import { offlineWorkCycleMs } from '../../lib/economy/configuredWorkTiming'
 import { ensureOutsideMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import { withinVillageActivity, type VillageHome } from '../../lib/units/villageActivity'
-import { playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
+import { knowsEconomicTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
 import { OfflineWorldSpatial, type OfflineTerrainCell } from './OfflineWorldSpatial'
 import { advanceOfflineWorker, type OfflineWorldReport } from './OfflineWorldWork'
 import type { GameContextLike } from '../../types/context'
@@ -27,18 +28,25 @@ const FIELDS = [
   'isDead',
   'isDestroyed',
   'isBuilt',
-  'villagerDeliveriesBlocked',
+  'isChief',
+  'inactif',
+  'villageHome',
+  'buildingAge',
+  'constructionMaterials',
+  'reservePolicy',
   'inventory',
   'equipment',
   'experience',
   'work',
   'autonomousJob',
+  'collectiveTask',
   'offlineWork',
   'age',
   'isNaturalResource',
   'controlMode',
   'action',
   'dailySchedule',
+  'lastMealAt',
   'followingHero',
   'trainingTargetType',
   'offlineBuilderJob',
@@ -54,6 +62,13 @@ function snapshot(entity: RuntimeEntity): SaveEntityState {
   const frame = animated.sprite?.currentFrame ?? animated.currentFrame
   if (frame != null) result.currentFrame = frame
   const unit = entity as UnitEntity
+  if (unit.resourceDeliveryState?.pickup && unit.resourceDeliveryState.building) {
+    const building = unit.resourceDeliveryState.building
+    result.resourceDelivery = {
+      building: [building.i, building.j, building.label],
+      pickup: { ...unit.resourceDeliveryState.pickup },
+    }
+  }
   if (unit.dest) result.dest = [unit.dest.i, unit.dest.j, 'label' in unit.dest ? unit.dest.label : undefined]
   if (unit.buildQueue) result.buildQueue = unit.buildQueue.map(building => building.label)
   return result as SaveEntityState
@@ -62,32 +77,35 @@ function snapshot(entity: RuntimeEntity): SaveEntityState {
 /** A bounded snapshot of real terrain, nodes and stores. Never runs daily events or abstract production. */
 export function advanceVillageWork(
   context: GameContextLike,
-  home: VillageHome,
+  home: VillageHome | VillageHome[],
   owner: PlayerLike,
   units: UnitEntity[],
   milliseconds: number,
   fromElapsedMs?: number
 ): void {
   if (milliseconds <= 0 || !units.length) return
+  const homes = Array.isArray(home) ? home : [home]
   const terrain: (OfflineTerrainCell | undefined)[][] = []
   const sources = new Map<SaveEntityState, RuntimeEntity>()
   const resources: SaveEntityState[] = []
   const seen = new Set<RuntimeEntity>()
   const radius = VILLAGE_ACTIVITY_RADIUS + VILLAGE_PATH_MARGIN
-  for (let i = Math.max(0, home.i - radius); i <= home.i + radius; i++) {
-    terrain[i] = []
-    for (let j = Math.max(0, home.j - radius); j <= home.j + radius; j++) {
-      if (Math.hypot(i - home.i, j - home.j) > radius) continue
-      const cell = context.map.grid[i]?.[j]
-      if (!cell) continue
-      terrain[i][j] = { category: cell.category, z: cell.z, inclined: cell.inclined, waterBorder: cell.waterBorder }
-      const entity = cell.has
-      if (!entity || seen.has(entity)) continue
-      seen.add(entity)
-      if (entity.family !== 'resource') continue
-      const copy = snapshot(entity)
-      sources.set(copy, entity)
-      resources.push(copy)
+  for (const home of homes) {
+    for (let i = Math.max(0, home.i - radius); i <= home.i + radius; i++) {
+      terrain[i] ??= []
+      for (let j = Math.max(0, home.j - radius); j <= home.j + radius; j++) {
+        if (Math.hypot(i - home.i, j - home.j) > radius) continue
+        const cell = context.map.grid[i]?.[j]
+        if (!cell || terrain[i][j]) continue
+        terrain[i][j] = { category: cell.category, z: cell.z, inclined: cell.inclined, waterBorder: cell.waterBorder }
+        const entity = cell.has
+        if (!entity || seen.has(entity)) continue
+        seen.add(entity)
+        if (entity.family !== 'resource') continue
+        const copy = snapshot(entity)
+        sources.set(copy, entity)
+        resources.push(copy)
+      }
     }
   }
   const copies = units.map(snapshot)
@@ -97,11 +115,11 @@ export function advanceVillageWork(
         ? entity
         : context.map.spaces?.get(getEntitySpaceId(entity))?.portals?.find(p => p.targetSpaceId === 'outside')
             ?.targetCell
-    return Boolean(point && Math.hypot(point.i - home.i, point.j - home.j) <= VILLAGE_ACTIVITY_RADIUS)
+    return Boolean(
+      point && homes.some(home => Math.hypot(point.i - home.i, point.j - home.j) <= VILLAGE_ACTIVITY_RADIUS)
+    )
   }
-  const buildings = (owner.buildings ?? []).filter(
-    b => !b.isDead && !b.isDestroyed && local(b) && withinVillageActivity(units[0], b)
-  )
+  const buildings = (owner.buildings ?? []).filter(b => !b.isDead && !b.isDestroyed && local(b))
   const savedBuildings = buildings.map(building => {
     const copy = snapshot(building)
     if (building.spaceId && building.spaceId !== 'outside') {
@@ -158,8 +176,11 @@ export function advanceVillageWork(
       return Boolean(
         source &&
           local(source) &&
-          withinVillageActivity(units[0], source) &&
-          (context.map.revealEverything || owner.views?.isViewed(source.i, source.j) || playerSeesTarget(owner, source))
+          units.some(unit => withinVillageActivity(unit, source)) &&
+          (context.map.revealEverything ||
+            units.some(unit => knowsEconomicTarget(owner, source, unit)) ||
+            owner.views?.isViewed(source.i, source.j) ||
+            playerSeesTarget(owner, source))
       )
     },
   }
@@ -170,6 +191,8 @@ export function advanceVillageWork(
       fromElapsedMs,
       toElapsedMs: fromElapsedMs + milliseconds,
       runtimeOwnsDailyEvents: true,
+      runtimeOwnsMeals: false,
+      autonomousResidents: true,
       runtimeOwnsTraining: true,
       spatialOptions: { protectVillageAccess: false, traceConnectivity: true, exactBuildingFootprints: true },
     })
@@ -181,6 +204,20 @@ export function advanceVillageWork(
     })
     for (const copy of copies) advanceOfflineWorker(state, player, 0, copy, milliseconds, 0, spatial, rules, report)
   }
+  commitVillageWork(context, sources, resources, savedBuildings, buildings, copies, units, fromElapsedMs)
+  notifyVillageWorkChanged(owner)
+}
+
+function commitVillageWork(
+  context: GameContextLike,
+  sources: Map<SaveEntityState, RuntimeEntity>,
+  resources: SaveEntityState[],
+  savedBuildings: SaveEntityState[],
+  buildings: PlayerLike['buildings'],
+  copies: SaveEntityState[],
+  units: UnitEntity[],
+  fromElapsedMs?: number
+): void {
   // Commit synchronously: no live callbacks can interleave with this transaction.
   for (const [copy, source] of sources) {
     const felled = source.type === 'Tree' && (source.hitPoints ?? 0) > 0 && copy.hitPoints === 0
@@ -197,6 +234,7 @@ export function advanceVillageWork(
   savedBuildings.forEach((copy, index) => {
     const building = buildings[index]
     building.inventory = copy.inventory
+    building.constructionMaterials = copy.constructionMaterials
     if (
       fromElapsedMs != null &&
       copy.hitPoints != null &&
@@ -210,7 +248,22 @@ export function advanceVillageWork(
   copies.forEach((copy, index) => {
     const unit = units[index]
     unit.inventory = copy.inventory
+    unit.lastMealAt = copy.lastMealAt
+    unit.collectiveTask = copy.collectiveTask
+    unit.autonomousJob = copy.autonomousJob
     unit.offlineWork = copy.offlineWork
+    if (unit.resourceDeliveryState?.pickup || copy.resourceDelivery?.pickup) {
+      const oldTask = unit.resourceDeliveryState?.taskId
+      if (oldTask != null) context.scheduler?.remove(oldTask)
+      const ref = copy.resourceDelivery?.building
+      const label = typeof ref === 'string' ? ref : Array.isArray(ref) ? ref[2] : undefined
+      const building = buildings.find(building => building.label === label)
+      unit.resourceDeliveryState =
+        building && copy.resourceDelivery?.pickup
+          ? { building, phase: 'toBuilding', pickup: { ...copy.resourceDelivery.pickup } }
+          : null
+    }
+
     if (fromElapsedMs != null) {
       unit.hitPoints = copy.hitPoints ?? unit.hitPoints
       unit.work = copy.work ?? null

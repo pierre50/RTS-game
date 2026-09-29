@@ -1,0 +1,62 @@
+const assert = require('node:assert/strict')
+const test = require('node:test')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+
+const config = { buildings: { House: { shelterCapacity: 5 }, TownCenter: {} } }
+class RestoredPlayer {
+  constructor(options) { Object.assign(this, options); this.config = config }
+}
+const { restoreSavedPlayers } = loadTsModule('app/classes/map/generation/MapSavedEntities.ts', {
+  mocks: {
+    '../../../lib': {},
+    '../../../services/UnitPerception': {},
+    '../../../services/WildlifeStore': {},
+    '../../cell/PackedCellRegistry': {},
+    '../../Resource': {},
+    '../../ResourceTexture': {},
+    '../../resources/CompactResourceSet': {},
+    '../MapSaveRestore': {},
+    '../../players': { Human: RestoredPlayer, AI: RestoredPlayer, Player: RestoredPlayer } },
+})
+
+test('loading derives housing from completed houses without changing the population', () => {
+  const player = { type: 'Human', isPlayed: true, population: 8, populationMax: 25, buildings: [
+    { type: 'TownCenter', isBuilt: true },
+    { type: 'House', isBuilt: true },
+    { type: 'House', isBuilt: false },
+    { type: 'House', isBuilt: true, isDead: true },
+  ] }
+  const context = { app: {}, gamebox: {}, map: {}, scheduler: {} }
+  const map = { context }
+  restoreSavedPlayers(map, [player])
+  assert.equal(context.player.populationMax, 5)
+  assert.equal(player.populationMax, 5)
+  assert.equal(context.player.population, 8)
+  restoreSavedPlayers(map, [player])
+  assert.equal(context.player.populationMax, 5)
+  player.buildings = [player.buildings[0]]
+  restoreSavedPlayers(map, [player])
+  assert.equal(context.player.populationMax, 0)
+  assert.equal(context.player.population, 8)
+})
+
+test('remote economy uses the same housing capacity as the active village', () => {
+  const { economyRulesFor } = loadTsModule('app/services/world/WorldEconomyRuntime.ts', {
+    mocks: {
+      'pixi.js': { Assets: { cache: { get: () => ({ resources: {} }) } } },
+      '../../config/playerConfig': { createPlayerData: () => config },
+      '../../serialization/SaveSerializer': {},
+      './WorldEconomy': {},
+      './VillageStartingState': {},
+      './VillageBaseState': {},
+      './OfflineWorldSpatial': {},
+    },
+  })
+  const player = { type: 'AI', population: 8, populationMax: 15,
+    buildings: [{ type: 'TownCenter', isBuilt: true }, { type: 'House', isBuilt: true }] }
+  const rules = economyRulesFor({ players: [player], resources: [] })
+  assert.equal(player.populationMax, 5)
+  assert.equal(player.population, 8)
+  assert.equal(rules.buildingCapacity(0, 'TownCenter'), 0)
+  assert.equal(rules.buildingCapacity(0, 'House'), 5)
+})

@@ -6,7 +6,7 @@ export { SAVE_ZONE_SIZE } from './SaveZoneConstants'
 const groupCache = new WeakMap<object, Map<string, { zones: Map<string, ZoneEntry[]> }>>()
 const entryIds = new WeakMap<object, string>()
 let orderCache = new Map<string, ZoneEntry>()
-export type SavePath = (string | number)[]
+type SavePath = (string | number)[]
 type ObjectData = Record<string, unknown>
 export type ZoneEntry = { collection: string; id: string; value: unknown; orderPage?: number }
 export type SaveCollection = { path: SavePath; length: number }
@@ -16,7 +16,7 @@ function object(value: unknown): ObjectData | undefined {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as ObjectData) : undefined
 }
 
-export function atSavePath(root: unknown, path: SavePath): unknown {
+function atSavePath(root: unknown, path: SavePath): unknown {
   let value = root
   for (const key of path) {
     if (

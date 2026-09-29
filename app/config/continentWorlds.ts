@@ -1,4 +1,5 @@
 // Test continents use the shared seed, mask and generation rules.
+/** @public Loaded by tools/maps/generate-large-test.cjs (loadGenerationTs). */
 export const CONTINENT_WORLD_SEED = 5000
 export const CONTINENT_WORLD_PRESETS = [1000].map(edge => ({
   edge,

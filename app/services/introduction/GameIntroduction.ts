@@ -1,3 +1,6 @@
+import { assignVillageFoundingQuests } from '../quests/VillageFoundingQuests'
+import { QuestSystem } from '../quests/QuestSystem'
+import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { createCampIntroductionDialogue } from './CampIntroductionDialogue'
 import { refreshPlayerVisibility } from '../UnitPerception'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
@@ -6,7 +9,7 @@ import { getInstanceDegree } from '../../lib/maths'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { setSleepingOutsideFinalVisual, playSleepingWakeVisual } from '../rest/UnitSleepVisuals'
 import { setUnitOverheadIndicator, clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import { findIntroductionPlacement, findChestPlacement } from './IntroductionPlacement'
+import { findIntroductionPlacement } from './IntroductionPlacement'
 import type { GameContextLike } from '../../types/context'
 import type { CampaignSave } from '../../types/save'
 
@@ -42,10 +45,6 @@ export async function prepareGameIntroduction(host: IntroductionHost): Promise<v
     j: placement.camp.j,
     isBuilt: true,
   })
-  const campSize = Number(player.config.buildings[BUILDING_TYPES.fireCamp]?.size ?? 1)
-  const chestSize = Number(player.config.buildings[BUILDING_TYPES.chest]?.size ?? 1)
-  const chestPoint = findChestPlacement(map, placement.camp, campSize, chestSize)
-  if (chestPoint) player.createBuilding({ type: BUILDING_TYPES.chest, i: chestPoint.i, j: chestPoint.j, isBuilt: true })
   const companion = player.createUnit(
     {
       type: UNIT_TYPES.villager,
@@ -54,6 +53,7 @@ export async function prepareGameIntroduction(host: IntroductionHost): Promise<v
       gender: (hero.gender ?? hero.appearanceVariants?.gender) === 'female' ? 'male' : 'female',
       isChief: false,
       suppressCreateSound: true,
+      inventory: startingVillagerInventory(),
     },
     { preserveType: true }
   )
@@ -114,9 +114,12 @@ export function showGameIntroduction(host: IntroductionHost): void {
   hero.actionLocked = true
   // Suppress autonomous jobs while the scripted movement owns this unit.
   companion.lookingAtHero = true
-  const isCurrent = () => host._gameContext().map === context.map &&
+  const isCurrent = () =>
+    host._gameContext().map === context.map &&
     host._campaignSave?.introduction?.status === 'prepared' &&
-    host._campaignSave?.currentWorldId === state.worldId && !hero.isDestroyed && !companion.isDestroyed
+    host._campaignSave?.currentWorldId === state.worldId &&
+    !hero.isDestroyed &&
+    !companion.isDestroyed
   const savePhase = (phase: 'approaching' | 'waking' | 'dialogue') => {
     const current = host._campaignSave?.introduction
     if (current) current.phase = phase
@@ -146,6 +149,7 @@ export function showGameIntroduction(host: IntroductionHost): void {
           // Discard even the partial final tutorial day before enabling world simulation.
           if (context.isTutorialActive?.()) context.updateWorldEconomy?.()
           current.status = 'completed'
+          assignVillageFoundingQuests(context, new QuestSystem(() => context.getQuestJournal?.() ?? null), companion)
           hero.isChief = true
           refreshPlayerVisibility(context)
           for (const player of context.players ?? [context.player]) {
@@ -183,27 +187,35 @@ export function showGameIntroduction(host: IntroductionHost): void {
       return
     }
     const scheduler = context.scheduler
-    scheduler.addOneShot(() => {
-      if (!isCurrent()) return
-      const arrival = state.arrival && context.map?.grid[state.arrival.i]?.[state.arrival.j]
-      if (!arrival || (arrival.has && arrival.has !== companion) || arrival.solid) {
-        wake()
-        return
-      }
-      companion.sendTo?.(arrival)
-      const startedAt = scheduler.elapsedMs
-      const task = scheduler.add(() => {
-        if (!isCurrent()) {
-          scheduler.remove(task)
+    scheduler.addOneShot(
+      () => {
+        if (!isCurrent()) return
+        const arrival = state.arrival && context.map?.grid[state.arrival.i]?.[state.arrival.j]
+        if (!arrival || (arrival.has && arrival.has !== companion) || arrival.solid) {
+          wake()
           return
         }
-        const arrived = companion.i === arrival.i && companion.j === arrival.j && !companion.path?.length
-        // A blocked path must never trap the player in the opening scene.
-        if (arrived || scheduler.elapsedMs - startedAt >= 12000) {
-          scheduler.remove(task)
-          wake()
-        }
-      }, 100, 'introduction.approach')
-    }, 900, 'introduction.sleep')
+        companion.sendTo?.(arrival)
+        const startedAt = scheduler.elapsedMs
+        const task = scheduler.add(
+          () => {
+            if (!isCurrent()) {
+              scheduler.remove(task)
+              return
+            }
+            const arrived = companion.i === arrival.i && companion.j === arrival.j && !companion.path?.length
+            // A blocked path must never trap the player in the opening scene.
+            if (arrived || scheduler.elapsedMs - startedAt >= 12000) {
+              scheduler.remove(task)
+              wake()
+            }
+          },
+          100,
+          'introduction.approach'
+        )
+      },
+      900,
+      'introduction.sleep'
+    )
   })
 }

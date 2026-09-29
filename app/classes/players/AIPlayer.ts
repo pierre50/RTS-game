@@ -77,7 +77,6 @@ export class AI extends Player {
   chiefLossDetectedAt!: number | null
   chiefWanderReadyAt!: Map<string, number>
   maxVillagerPerAge!: AIStrategyPlayerLike['maxVillagerPerAge']
-  villageTargetPercentageByAge!: AIStrategyPlayerLike['villageTargetPercentageByAge']
   maxBuildingByAge!: AIStrategyPlayerLike['maxBuildingByAge']
   maxInfantryByAge!: AIStrategyPlayerLike['maxInfantryByAge']
   maxArcherByAge!: AIStrategyPlayerLike['maxArcherByAge']

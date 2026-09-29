@@ -11,7 +11,7 @@ function base(label = 'p', i = 0) {
   return player
 }
 function chest(player, i, wood, extra = {}) {
-  const store = { type: 'Chest', i, j: 0, owner: player, inventory: { resources: { wood } }, ...extra }
+  const store = { type: 'StoragePit', i, j: 0, owner: player, inventory: { resources: { wood } }, ...extra }
   player.buildings.push(store)
   return store
 }
@@ -30,7 +30,7 @@ test('territory uses inclusive Euclidean cells and the closest living completed 
 
 test('interior reserves use the exterior position, isolated chests and caves are excluded', () => {
   const player = base()
-  player.buildings.push({ type: 'House', label: 'house', i: 2, j: 0 })
+  player.buildings.push({ type: 'StoragePit', label: 'house', i: 2, j: 0 })
   chest(player, 999, 20, { spaceId: 'interior:p:house' })
   chest(player, radius + 1, 100)
   chest(player, 0, 100, { spaceId: 'cave:1' })

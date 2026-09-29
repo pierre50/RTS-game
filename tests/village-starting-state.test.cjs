@@ -13,12 +13,21 @@ const units = require('../public/assets/data/gameplay/units.json')
 test('civilization profiles leave neutral and bandit owners unchanged even when they use the same civilization', () => {
   const { state, terrain, rules } = fixture()
   const specialOwners = ['Gaia', 'Bandits'].map(type => ({
-    type, civ: 'Hellas', label: type, units: [], buildings: [],
+    type,
+    civ: 'Hellas',
+    label: type,
+    units: [],
+    buildings: [],
   }))
   state.players.push(...specialOwners)
-  const result = applyVillageStartingState(state, {
-    Hellas: { age: 0, buildings: { Granary: 1 }, units: {} },
-  }, terrain, rules)
+  const result = applyVillageStartingState(
+    state,
+    {
+      Hellas: { age: 0, buildings: { Granary: 1 }, units: {} },
+    },
+    terrain,
+    rules
+  )
   assert.ok(result.players[0].buildings.some(b => b.type === 'Granary'))
   assert.deepEqual(result.players.slice(-2), specialOwners)
 })
@@ -67,7 +76,7 @@ function fixture() {
     buildingConfig: (_i, type) => buildings[type] ?? {},
     unitConfig: (_i, type) => units[type] ?? {},
     wheatMatureFrame: 3,
-    buildingCapacity: (_i, type) => buildings[type]?.shelterCapacity ?? buildings[type]?.increasePopulation ?? 0,
+    buildingCapacity: (_i, type) => buildings[type]?.shelterCapacity ?? 0,
   }
   return { state, terrain, rules }
 }
@@ -91,7 +100,7 @@ test('tutorial profile produces deterministic saved entities and physical stocks
   assert.ok(player.populationMax >= player.population)
   assert.equal(player.units.filter(u => u.type === 'Villager').length, 10)
   assert.ok(player.buildings.some(b => b.type === 'House'))
-  assert.equal(getPlayerResourceTotals(savedResourceOwner(player, result.players)).wood, 700)
+  assert.equal(getPlayerResourceTotals(savedResourceOwner(player, result.players)).wood, 500)
   assert.equal(getPlayerResourceTotals(savedResourceOwner(player, result.players)).food, 260)
   const arrived = materializeInitialEconomy(state, { ...result, players: [player] }, 0)
   assert.deepEqual(
@@ -214,7 +223,12 @@ test('fresh campaign boot restores profiles once and forwards them to remote vil
     _mountRuntime() {},
     _autosaveCampaign() {},
   }
-  const profile = { age: 0, buildings: { Granary: 1, StoragePit: 1 }, units: { Villager: 4 }, resourceBonus: { wood: 100 } }
+  const profile = {
+    age: 0,
+    buildings: { Granary: 1, StoragePit: 1 },
+    units: { Villager: 4 },
+    resourceBonus: { wood: 100 },
+  }
   await bootGameFromConfig(game, { heroStartVillage: 'Hellas', villageStarts: { Hellas: profile } })
   assert.equal(requestedCivilization, 'Hellas')
   assert.equal(restored, 1)
@@ -238,11 +252,18 @@ test('new tutorial configuration reuses village generation with one chief and wo
   state.players[0].isPlayed = false
   state.players[0].type = 'AI'
   state.players[0].units = []
-  state.players.push({ type: 'Human', isPlayed: true, civ: 'Hellas', label: 'guest', buildings: [], units: [{ type: 'Hero', label: 'hero', i: 27, j: 27, hitPoints: 45 }] })
+  state.players.push({
+    type: 'Human',
+    isPlayed: true,
+    civ: 'Hellas',
+    label: 'guest',
+    buildings: [],
+    units: [{ type: 'Hero', label: 'hero', i: 27, j: 27, hitPoints: 45 }],
+  })
   const generated = applyVillageStartingState(state, villageStartProfiles(config), terrain, rules, { skipPlayed: true })
   assert.deepEqual(generated.players[1], state.players[1])
   const village = generated.players[0]
-  assert.equal(generated.resources.filter(r => r.type === 'Wheat').length, 80)
+  assert.equal(generated.resources.filter(r => r.type === 'Wheat').length, config.villageStarts.Hellas.wheatFields)
   const center = village.buildings.find(b => b.type === 'TownCenter')
   assert.ok(
     generated.resources
@@ -257,7 +278,17 @@ test('new tutorial configuration reuses village generation with one chief and wo
   assert.equal(village.units.filter(u => u.type === 'Chief').length, 1)
   assert.equal(village.units.filter(u => u.type === 'Villager').length, 12)
   assert.equal(village.units.filter(u => u.type === 'Fantassin').length, 4)
-  assert.ok(village.units.filter(u => u.type === 'Villager').every(u => u.autonomousJob))
+  assert.ok(
+    village.units
+      .filter(u => u.type === 'Villager')
+      .every(
+        u =>
+          !u.autonomousJob &&
+          u.inventory.resources.meat === 6 &&
+          u.inventory.resources.berry === 6 &&
+          !u.inventory.resources.wheat
+      )
+  )
   assert.ok(village.buildings.filter(b => b.type === 'House').length >= 6)
   for (const [type, count] of Object.entries(config.villageStarts.Hellas.buildings)) {
     assert.ok(village.buildings.filter(b => b.type === type && b.isBuilt).length >= count, type)

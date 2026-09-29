@@ -53,6 +53,19 @@ const MACRO_FOREST_PROFILE_BY_CODE = {
   S: { threshold: 0.76, coreChance: 0.16, edgeChance: 0.025, scale: 0.05, seedOffset: 1511 },
 }
 
+// Nearby groves supplement sparse biomes without depending on village ownership.
+const VILLAGE_GROVE_PROFILES = {
+  Desert: {
+    terrain: 'Desert',
+    treeFamily: 'Desert',
+    distance: 20,
+    radius: 6,
+    coreRadius: 4,
+    coreChance: 0.14,
+    edgeChance: 0.035,
+  },
+}
+
 // app/constants/environments.ts is plain data (no pixi/DOM deps), so it can be loaded
 // directly instead of duplicating its thresholds here like the mocks below have to.
 function loadPlainTsModule(relativePath) {
@@ -73,6 +86,7 @@ const { ENVIRONMENT_TERRAIN_PARAMS, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = 
 const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
 
 module.exports = {
+  VILLAGE_GROVE_PROFILES,
   BIOME_ENVIRONMENTS,
   MACRO_ENVIRONMENT_BY_CODE,
   BLUEPRINT_MAP_SIZE,

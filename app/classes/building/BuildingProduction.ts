@@ -30,7 +30,10 @@ import {
   wakeNextWaitingTrainee as trainingWakeNextWaitingTrainee,
 } from './BuildingTrainingProgress'
 import type { BuildingControllerHost, QueuedTrainingTrainee } from './BuildingTypes'
-import { cancelAllUnitTraining as cancelAllBuildingUnitTraining } from './BuildingUnitTrainingCancellation'
+import {
+  cancelAllUnitTraining as cancelAllBuildingUnitTraining,
+  cancelTrainingEntry,
+} from './BuildingUnitTrainingCancellation'
 
 export class BuildingProduction {
   building: BuildingControllerHost
@@ -85,6 +88,10 @@ export class BuildingProduction {
       refreshOpenBuildingMenu(building)
     }
     return true
+  }
+
+  cancelTrainingEntry(label: string): boolean {
+    return cancelTrainingEntry(getTrainingBuilding(this.building), this, label)
   }
 
   cancelAllUnitTraining(): boolean {

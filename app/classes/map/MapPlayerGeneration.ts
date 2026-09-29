@@ -1,3 +1,4 @@
+import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { definedProperties } from '../../lib/definedProperties'
 import { playerColors } from '../../lib'
 import { BUILDING_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
@@ -27,7 +28,6 @@ export function applyStartingBonuses(
   const age = configuredAge == null ? map.startingAge : configuredAge
   const startingAge = Math.max(0, Math.min(Number(age) || 0, 2))
   player.age = startingAge
-
 }
 
 export function generatePlayers(
@@ -240,11 +240,15 @@ function placeStartingUnits(map: MapGenerationMap, player: PlayerLike, towncente
   if (player.type === PLAYER_TYPES.ai) {
     towncenter.placeUnit?.(UNIT_TYPES.chief)
   } else if (player.isPlayed) {
-    towncenter.placeUnit?.(UNIT_TYPES.villager)
+    towncenter.placeUnit?.(UNIT_TYPES.villager, { inventory: startingVillagerInventory() })
   }
   for (let i = 0; i < startingCivilianCount; i++) {
     const gender = STARTING_CIVILIAN_GENDERS[i % STARTING_CIVILIAN_GENDERS.length]
-    towncenter.placeUnit?.(UNIT_TYPES.villager, { gender, appearanceVariants: { gender } })
+    towncenter.placeUnit?.(UNIT_TYPES.villager, {
+      gender,
+      appearanceVariants: { gender },
+      inventory: startingVillagerInventory(),
+    })
   }
 }
 
@@ -255,11 +259,5 @@ function applyAllStartingBonuses(
 ): void {
   players
     .filter(player => player.type !== PLAYER_TYPES.bandits)
-    .forEach((player, index) =>
-      applyStartingBonuses(
-        map,
-        player,
-        playersConfig?.[index]?.age ?? null
-      )
-    )
+    .forEach((player, index) => applyStartingBonuses(map, player, playersConfig?.[index]?.age ?? null))
 }

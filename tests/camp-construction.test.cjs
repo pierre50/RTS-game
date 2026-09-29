@@ -22,7 +22,7 @@ const { buyPlayerBuilding } = loadTsModule('app/classes/players/PlayerBuildingPl
 })
 
 for (const type of ['Chest', 'FireCamp', 'Trap']) {
-  test(`a lone hero builds ${type} instantly using bag resources and can still place a legacy item`, () => {
+  test(`a lone hero places ${type} without payment, builds from the bag, and preserves prepaid items`, () => {
     const player = {
       age: 0,
       isPlayed: true,
@@ -39,11 +39,28 @@ for (const type of ['Chest', 'FireCamp', 'Trap']) {
     player.units = [hero]
     player.context.controls = { heroUnit: hero }
     assert.equal(buyPlayerBuilding(player, 1, 1, type), true)
-    assert.equal(player.buildings[0].isBuilt, true)
-    assert.deepEqual(hero.inventory.resources, {})
-    assert.equal(buyPlayerBuilding(player, 2, 2, type), false)
+    const site = player.buildings[0]
+    assert.equal(site.isBuilt, false)
+    assert.deepEqual(hero.inventory.resources, definitions[type].cost)
+    assert.deepEqual(site.constructionMaterials, { cost: definitions[type].cost, consumed: {}, delivered: {} })
+    Object.assign(site, { hitPoints: 1, totalHitPoints: definitions[type].totalHitPoints })
+    const { advanceMaterialConstruction } = loadTsModule('app/lib/economy/constructionMaterials.ts')
+    const { advanceConstruction } = loadTsModule('app/lib/economy/workRules.ts')
+    for (let impact = 0; impact < 4; impact++) {
+      site.hitPoints = advanceMaterialConstruction(
+        site,
+        advanceConstruction(site.hitPoints, site.totalHitPoints, definitions[type].constructionTime),
+        [hero.inventory.resources]
+      )
+    }
+    assert.equal(site.hitPoints, site.totalHitPoints)
+    assert.deepEqual(site.constructionMaterials.consumed, definitions[type].cost)
+    assert.ok(Object.values(hero.inventory.resources).every(amount => amount === 0))
+    assert.equal(buyPlayerBuilding(player, 2, 2, type), true)
+    assert.equal(player.buildings[1].isBuilt, false)
     assert.equal(buyPlayerBuilding(player, 2, 2, type, { alreadyPaid: true }), true)
-    assert.equal(player.buildings.length, 2)
+    assert.equal(player.buildings.length, 3)
+    assert.equal(player.buildings[2].constructionMaterials, undefined)
   })
 }
 

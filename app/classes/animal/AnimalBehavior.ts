@@ -87,7 +87,7 @@ export class AnimalBehavior {
         !instance.isDestroyed &&
         (instance.family === FAMILY_TYPES.unit ||
           (animal.strategy === 'runaway' && instance.family === FAMILY_TYPES.building)),
-      { useInsightRange: true }
+      { useInsightRange: true, includeResources: false }
     )
     return threats.reduce(
       (closest: AnimalThreat | null, threat: AnimalThreat) =>

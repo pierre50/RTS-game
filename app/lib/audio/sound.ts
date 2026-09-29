@@ -14,12 +14,18 @@ type PlayAudibleSoundCueOptions = PlaySoundCueOptions & {
   profile?: SoundDistanceProfileId
 }
 
+// Query live instances so completion, stopAll and scene changes release slots automatically.
+const workSoundIds = new Set<string>()
+const MAX_WORK_SOUNDS = 6
+const MAX_SAME_WORK_SOUNDS = 2
+
 let gameplaySoundSuppressed = false
 
 export type AudibleInstance = {
   context?: {
     controls?: {
       heroUnit?: AudibleInstanceLike | null
+      getWorkSoundVolume?: (instance: AudibleInstanceLike) => number
       instanceIsAudible?: (instance: AudibleInstanceLike) => boolean
     }
   }
@@ -97,8 +103,25 @@ export function playAudibleSoundCue(
   if (gameplaySoundSuppressed) return null
   if (!instance?.context?.controls?.instanceIsAudible?.(instance)) return null
   const { profile, ...playOptions } = options
-  const volume = getHeroDistanceSoundVolume(instance, profile, playOptions.volume ?? 1)
+  const volume =
+    profile === 'work'
+      ? clamp((instance.context?.controls?.getWorkSoundVolume?.(instance) ?? 0) * (playOptions.volume ?? 1), 0, 1)
+      : getHeroDistanceSoundVolume(instance, profile, playOptions.volume ?? 1)
   if (volume <= 0) return null
+  if (profile === 'work') {
+    const soundId = resolveSoundCue(cue)
+    if (!soundId) return null
+    const id = String(soundId)
+    workSoundIds.add(id)
+    let total = 0
+    for (const workId of workSoundIds) {
+      const count = sound.exists(workId) ? sound.find(workId).instances.length : 0
+      if (workId === id && count >= MAX_SAME_WORK_SOUNDS) return null
+      total += count
+    }
+    if (total >= MAX_WORK_SOUNDS) return null
+    return playSoundCue(soundId, { ...playOptions, volume })
+  }
   return playSoundCue(cue, { ...playOptions, volume })
 }
 

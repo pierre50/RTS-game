@@ -1,3 +1,4 @@
+import { isCommunalResourceStore } from '../economy/constructionStores'
 import { getBaseTerritory } from '../territory/baseTerritory'
 import { BUILDING_TYPES, UNIT_TYPES } from '../../constants'
 import type { GameContextLike } from '../../types/context'
@@ -5,11 +6,7 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import { heroCanCommand } from '../chief'
 
-const RESOURCE_STOCKPILE_BUILDING_TYPES = new Set<string>([
-  BUILDING_TYPES.chest,
-  BUILDING_TYPES.storagePit,
-  BUILDING_TYPES.granary,
-])
+const RESOURCE_STOCKPILE_BUILDING_TYPES = new Set<string>([BUILDING_TYPES.storagePit, BUILDING_TYPES.granary])
 
 export type ResourceStoreOwner = {
   isPlayed?: boolean
@@ -26,7 +23,7 @@ export type ResourceTotalOptions = {
 }
 
 function isOwnedChest(building: BuildingEntity, player: ResourceStoreOwner): boolean {
-  if (!RESOURCE_STOCKPILE_BUILDING_TYPES.has(building.type)) return false
+  if (!RESOURCE_STOCKPILE_BUILDING_TYPES.has(building.type) && !isCommunalResourceStore(building, player)) return false
   if (building.isDead || building.isDestroyed) return false
   if (!building.owner) return true
   return building.owner === player || building.owner.label === player.label

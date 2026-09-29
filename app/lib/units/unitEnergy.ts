@@ -12,7 +12,6 @@ import {
   isCombatRecoveryReadyToReengage,
   updateCombatRecoveryMovement,
 } from '../combat/combatBehavior'
-import { t } from '../lang'
 import { isHeroControlled } from './unitControl'
 import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -238,7 +237,6 @@ export function waitForEnergy(
   ensureUnitEnergy(unit)
   const heroControlled = isHeroControlled(unit as UnitEntity)
   if (heroControlled) {
-    unit.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
     unit.actionLocked = false
     return false
   }

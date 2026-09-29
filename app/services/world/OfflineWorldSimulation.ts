@@ -1,14 +1,14 @@
+import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
+import { advanceOfflineTrainingRequests } from './OfflineTrainingRequests'
+import { getBaseTerritory } from '../../lib/territory/baseTerritory'
+import { consumeVillagerMeals } from '../../lib/economy/villagerMeals'
+import { planOfflineCollectiveWork } from './OfflineCollectiveWork'
 import { regrowOfflineResources } from './OfflineWorldResources'
 import { produceAbstractVillage, planAbstractTraining } from './AbstractVillageEconomy'
 import { planOfflineBuildings, restoreOfflineBuilders } from './OfflineWorldBuildingPlanner'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants/entities'
-import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants/consumption'
-import {
-  expandLegacyFoodAmount,
-  getPlayerResourceTotals,
-  withdrawChestResources,
-} from '../../lib/resources/playerResourceTotals'
+import { expandLegacyFoodAmount, getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
 import { restoreOfflineUnitSleepHealth } from '../../lib/units/unitSleepHealth'
 import { getVillagerWorkingMinutes } from '../../lib/units/villagerSchedule'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
@@ -34,6 +34,10 @@ type SimulationOptions = OfflineWorkRules & {
   /** Shared-map villages leave world events and training to their live owners. */
   runtimeOwnsDailyEvents?: boolean
   runtimeOwnsTraining?: boolean
+  /** Meals must follow work chronologically during shared-map catch-up. */
+  runtimeOwnsMeals?: boolean
+  /** Active settlements use autonomous priorities, including residents carrying legacy jobs. */
+  autonomousResidents?: boolean
   spatialOptions?: ConstructorParameters<typeof OfflineWorldSpatial>[3]
 }
 
@@ -54,15 +58,6 @@ function dailyPopulation(
   report: OfflineWorldReport
 ): void {
   state.players.forEach((player, playerIndex) => {
-    const villagers = (player.units ?? []).filter(
-      unit => unit.type === UNIT_TYPES.villager && isLiving(unit) && !unit.followingHero && unit.controlMode !== 'hero'
-    ).length
-    const owner = savedResourceOwner(player, state.players)
-    const needed = villagers * (DAILY_CONSUMPTION_PER_VILLAGER.food ?? 0)
-    const consumed = Math.min(needed, getPlayerResourceTotals(owner, { includeHero: false }).food)
-    if (consumed > 0) withdrawChestResources(owner, { food: consumed }, { includeHero: false })
-    report.foodConsumed += consumed
-    report.foodShortage += needed - consumed
     if (player.type !== PLAYER_TYPES.human && player.type !== PLAYER_TYPES.ai) return
     const centers = (player.buildings ?? []).filter(
       building => building.type === BUILDING_TYPES.townCenter && building.isBuilt && isLiving(building)
@@ -70,7 +65,6 @@ function dailyPopulation(
     if (!centers.length) return
     if (options.dailyFactors?.(playerIndex, day).arrivalsAllowed === false) return
     const count = calculateVillagerArrivals({
-      foodAvailable: getPlayerResourceTotals(owner, { includeHero: false }).food,
       population: Math.max(
         0,
         (player.population ?? 0) -
@@ -102,6 +96,7 @@ function dailyPopulation(
         appearanceVariants: { gender },
         hitPoints: Number(config.totalHitPoints) || 18,
         totalHitPoints: Number(config.totalHitPoints) || 18,
+        inventory: startingVillagerInventory(),
         inactif: true,
         action: null,
         dest: null,
@@ -165,6 +160,10 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
     const boundary = (Math.floor((cursor - NEW_DAY_MINUTE) / DAY_MINUTES) + 1) * DAY_MINUTES + NEW_DAY_MINUTE
     const next = Math.min(end, cursor + 15, boundary)
     state.players.forEach((player, playerIndex) => {
+      if (!options.runtimeOwnsTraining)
+        advanceOfflineTrainingRequests(player, playerIndex, dayAt(cursor), cursor, next, MINUTE_MS, spatial, options)
+      if (player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.human)
+        planOfflineCollectiveWork(player, options.autonomousResidents)
       for (const unit of player.units ?? []) {
         restoreOfflineUnitSleepHealth(unit, cursor, next)
         if (!isOfflineWorker(unit)) continue
@@ -172,12 +171,24 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
         const milliseconds = getVillagerWorkingMinutes(unit, cursor, next) * MINUTE_MS * efficiency
         if (
           options.abstractVillages &&
+          !unit.resourceDelivery?.pickup &&
           player.type === PLAYER_TYPES.ai &&
+          Boolean(unit.collectiveTask || unit.autonomousJob) &&
+          !!getBaseTerritory(unit.villageHome ?? unit, [player]) &&
           player.buildings?.some(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt && isLiving(b)) &&
           unit.autonomousJob !== 'construction' &&
           unit.work !== 'builder'
         ) {
-          produceAbstractVillage(state, player, unit, milliseconds, report, options.abstractPotential)
+          produceAbstractVillage(
+            state,
+            player,
+            unit,
+            milliseconds,
+            report,
+            options.abstractPotential,
+            options,
+            playerIndex
+          )
           continue
         }
         if (milliseconds > 0)
@@ -193,9 +204,26 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
           )
       }
     })
+    if (!(options.runtimeOwnsMeals ?? options.runtimeOwnsDailyEvents)) {
+      for (const player of state.players)
+        for (const unit of player.units ?? []) {
+          const meal = consumeVillagerMeals(
+            unit,
+            cursor,
+            next,
+            cursor === DAY_NIGHT_CONFIG.startHour * 60 + fromElapsedMs / MINUTE_MS
+          )
+          report.foodConsumed += meal.consumed
+          report.foodShortage += meal.needed - meal.consumed
+        }
+    }
+    // Rest transitions belong to simulation time, not to the caller's catch-up boundaries.
+    for (const player of state.players)
+      for (const unit of player.units ?? [])
+        if (isOfflineWorker(unit) && getVillagerWorkingMinutes(unit, next, next + 1) === 0) stopOfflineTask(unit)
     cursor = next
+    if (!options.runtimeOwnsTraining) completeOfflineTraining(state, dayAt(cursor), spatial, options, report)
     if (cursor === boundary) {
-      if (!options.runtimeOwnsTraining) completeOfflineTraining(state, dayAt(cursor), spatial, options, report)
       if (!options.runtimeOwnsDailyEvents) {
         regrowOfflineResources(state, dayAt(cursor), spatial, options.wheatMatureFrame, report)
         applyOfflineDailyEvents(state, dayAt(cursor), spatial, options, report)
@@ -206,13 +234,8 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
         planAbstractTraining(state, dayAt(cursor), options, spatial)
     }
   }
-  const minute = end % DAY_MINUTES
   if (options.planBuildings) restoreOfflineBuilders(state)
   for (const player of state.players) {
-    for (const unit of player.units ?? []) {
-      if (!isOfflineWorker(unit)) continue
-      if (getVillagerWorkingMinutes(unit, minute, minute + 1) === 0) stopOfflineTask(unit)
-    }
     Object.assign(player, getPlayerResourceTotals(savedResourceOwner(player, state.players), { includeHero: false }))
     delete player.villagerAssignments
   }

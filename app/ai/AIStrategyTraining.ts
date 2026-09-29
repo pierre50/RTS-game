@@ -1,3 +1,4 @@
+import { getBuildingTrainingLoad } from '../lib/buildings/buildingTraining'
 import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import type { AIStrategy } from './AIStrategy'
 import type { AIBuildingLike, AIEntityLike, AIResourceAmount, AIStrategySnapshot } from './types'
@@ -5,14 +6,7 @@ import type { AIBuildingLike, AIEntityLike, AIResourceAmount, AIStrategySnapshot
 import { AI_BUILDING_TRAINING_CAPACITY } from './config'
 
 function hasAiBuildingTrainingCapacity(building: AIBuildingLike): boolean {
-  const active = building.loading != null || building.trainingUnit ? 1 : 0
-  const queued = Math.max(0, (building.queue?.length ?? 0) - active)
-  const concurrent = building.trainingQueue?.length ?? 0
-  const incoming =
-    building.owner?.units?.filter(
-      unit => unit.dest === building && Boolean(unit.trainingTargetType) && !unit.isDead && !unit.isDestroyed
-    ).length ?? 0
-  return active + queued + concurrent + incoming < AI_BUILDING_TRAINING_CAPACITY
+  return getBuildingTrainingLoad(building) < AI_BUILDING_TRAINING_CAPACITY
 }
 
 function canAiVillagerTrainAtBuilding(building: AIBuildingLike, villager: AIEntityLike, unitType: string): boolean {

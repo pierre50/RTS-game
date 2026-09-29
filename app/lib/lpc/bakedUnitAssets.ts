@@ -48,7 +48,7 @@ function getInventoryAppearanceEquipment(unit: UnitEntity): string[] {
 }
 
 function usesAssignableHeroWeapons(unit: UnitEntity): boolean {
-  return unit.controlMode === 'hero' || unit.type === UNIT_TYPES.hero || Boolean(unit.inventory)
+  return unit.controlMode === 'hero' || unit.type === UNIT_TYPES.hero
 }
 
 function isLayerReplacedByActiveWeapon(layer: UnitAppearanceLayerConfig, unit: UnitEntity): boolean {
@@ -112,12 +112,7 @@ function resolveBakedUnitForRuntime(unit: UnitEntity): BakedUnitType | undefined
 function resolveBakedRuntimeVariant(unit: UnitEntity, bakedUnit: BakedUnitType): string | null {
   if (!unit.owner) return null
   const identity = resolveUnitIdentity(unit)
-  return bakedVariantKey(
-    bakedUnit,
-    { ...unit.owner, civ: identity.civ },
-    unit.label,
-    identity.gender
-  )
+  return bakedVariantKey(bakedUnit, { ...unit.owner, civ: identity.civ }, unit.label, identity.gender)
 }
 
 export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {

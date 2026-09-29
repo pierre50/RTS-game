@@ -160,11 +160,7 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
 ]
 
 function checkHeroEnergy(hero: UnitEntity, action: string): boolean {
-  if (hasEnergyForAction(hero, action)) return true
-  if (hero.owner?.isPlayed) {
-    hero.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
-  }
-  return false
+  return hasEnergyForAction(hero, action)
 }
 
 function runContextAction(

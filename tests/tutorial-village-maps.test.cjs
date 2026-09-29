@@ -14,7 +14,7 @@ const units = require('../public/assets/data/gameplay/units.json')
 const rules = {
   buildingConfig: (_i, type) => buildings[type] ?? {},
   unitConfig: (_i, type) => units[type] ?? {},
-  buildingCapacity: (_i, type) => buildings[type]?.shelterCapacity ?? buildings[type]?.increasePopulation ?? 0,
+  buildingCapacity: (_i, type) => buildings[type]?.shelterCapacity ?? 0,
   wheatMatureFrame: 3,
 }
 const dir = path.join(__dirname, '../public/maps/worlds/world-4242/maps')
@@ -63,7 +63,7 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.map'))) {
       }
       assert.equal(
         generated.resources.filter(r => r.type === 'Wheat').length,
-        state.resources.filter(r => r.type === 'Wheat').length + 80
+        state.resources.filter(r => r.type === 'Wheat').length + config.villageStarts[settlement.civ].wheatFields
       )
       const beforeTotals = state.resources.reduce((totals, r) => {
         totals[r.type] = (totals[r.type] ?? 0) + (r.quantity ?? 0)
@@ -84,8 +84,17 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.map'))) {
       const center = placed.find(b => b.type === 'TownCenter')
       const distance = (a, b) => Math.hypot(a.i - b.i, a.j - b.j)
       const fields = generated.resources.filter(r => r.type === 'Wheat' && r.label?.startsWith('start:'))
-      for (const granary of placed.filter(b => b.type === 'Granary')) {
-        assert.ok(Math.min(...fields.map(field => distance(granary, field))) <= 7, 'granary must serve the fields')
+      for (const field of fields) {
+        const walkToGranary = placed
+          .filter(b => b.type === 'Granary')
+          .map(granary => {
+            const radius = (granary.size - 1) / 2
+            return Math.hypot(
+              Math.max(0, Math.abs(granary.i - field.i) - radius),
+              Math.max(0, Math.abs(granary.j - field.j) - radius)
+            )
+          })
+        assert.ok(Math.min(...walkToGranary) <= 7, 'each field must be within seven tiles of a granary entrance')
       }
       const storage = placed.find(b => b.type === 'StoragePit')
       const deposits = generated.resources.filter(r => ['Tree', 'Stone', 'Gold', 'Copper', 'Iron'].includes(r.type))

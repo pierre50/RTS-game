@@ -28,6 +28,8 @@ function fixture() {
         units: [villager()],
         buildings: [
           { type: 'TownCenter', i: 6, j: 6, label: 'center', isBuilt: true, inventory: { resources: { wheat: 100 } } },
+          { type: 'StoragePit', i: 6, j: 12, label: 'pit', isBuilt: true, inventory: { resources: {} } },
+          { type: 'Granary', i: 6, j: 16, label: 'grain', isBuilt: true, inventory: { resources: {} } },
         ],
       },
     ],
@@ -98,15 +100,24 @@ test('zero, backwards and invalid absence leave the save untouched', () => {
   }
 })
 
-test('upkeep crosses 06:00 exactly once, never midnight, and draws from real food stores', () => {
+test('upkeep crosses 06:00 exactly once and consumes the personal bag without touching stores', () => {
   const { state, options, player } = fixture()
+  player.units[0].dailySchedule = {
+    wakeMinute: 360,
+    workStartMinute: 420,
+    lunchStartMinute: 720,
+    lunchEndMinute: 780,
+    workEndMinute: 1080,
+    bedMinute: 1320,
+  }
+  player.units[0].inventory = { resources: { wheat: 12 } }
   player.units[0].autonomousJob = 'wood'
   simulateOfflineWorld(state, { ...options, fromElapsedMs: 15 * HOUR, toElapsedMs: 16 * HOUR })
   assert.equal(player.food, 100)
   const report = simulateOfflineWorld(state, { ...options, fromElapsedMs: 21 * HOUR, toElapsedMs: 22 * HOUR })
-  assert.equal(player.food, 96)
-  assert.equal(player.buildings[0].inventory.resources.wheat, 96)
-  assert.equal(report.foodConsumed, 4)
+  assert.equal(player.food, 100)
+  assert.equal(player.buildings[0].inventory.resources.wheat, 100)
+  assert.equal(report.foodConsumed, 1)
 })
 
 test('night shifts produce nothing and clear stale actions without erasing assignments', () => {
@@ -187,25 +198,28 @@ test('construction follows saved queues and grants housing once per completion',
   assert.equal(player.populationMax, 11)
 })
 
-test('arrivals require food and housing; new villagers eat on subsequent days only', () => {
+test('arrivals require housing but no food and villagers continue eating scheduled meals', () => {
   const { state, options, player } = fixture()
+  player.buildings[0].inventory.resources.wheat = 0
+  player.buildings[2].inventory.resources.wheat = 100
   player.populationMax = 3
   const report = simulateOfflineWorld(state, { ...options, toElapsedMs: 2 * DAY })
   assert.equal(report.arrivals, 2)
-  assert.equal(report.foodConsumed, 12)
+  assert.equal(report.foodConsumed, 14)
   assert.equal(player.population, 3)
   assert.equal(new Set(player.units.map(unit => `${unit.i}:${unit.j}`)).size, 3)
   const starving = fixture()
   starving.player.populationMax = 10
-  starving.player.buildings[0].inventory.resources.wheat = 2
+  starving.player.buildings[0].inventory.resources.wheat = 0
+  starving.player.buildings[2].inventory.resources.wheat = 2
   const hunger = simulateOfflineWorld(starving.state, starving.options)
-  assert.equal(hunger.arrivals, 0)
-  assert.equal(hunger.foodConsumed, 2)
+  assert.equal(hunger.arrivals, 1)
+  assert.equal(hunger.foodConsumed, 3) // Resident eats 2; arrival eats breakfast from personal provisions.
   assert.equal(hunger.foodShortage, 2)
   assert.equal(starving.player.food, 0)
 })
 
-test('travelling followers do not consume food and stale hero inventories cannot fund growth', () => {
+test('travelling followers do not consume food and arrivals leave hero inventories untouched', () => {
   const { state, options, player } = fixture()
   player.units.push(villager({ label: 'follower', followingHero: true }), {
     type: 'Hero',
@@ -213,16 +227,19 @@ test('travelling followers do not consume food and stale hero inventories cannot
     j: 1,
     inventory: { resources: { wheat: 10000 } },
   })
+  player.population = 3 // Resident, travelling follower and hero.
   player.populationMax = 20
-  player.buildings[0].inventory.resources.wheat = 4
+  player.buildings[0].inventory.resources.wheat = 0
+  player.units[0].inventory = { resources: { wheat: 4 } }
   const report = simulateOfflineWorld(state, options)
-  assert.equal(report.foodConsumed, 4)
-  assert.equal(report.arrivals, 0)
-  assert.equal(player.units.at(-1).inventory.resources.wheat, 10000)
+  assert.equal(report.foodConsumed, 5) // Resident ration plus the new arrival's breakfast.
+  assert.equal(report.arrivals, 1)
+  assert.equal(player.units.find(unit => unit.type === 'Hero').inventory.resources.wheat, 10000)
 })
 
 test('regrowth respects due days, plant maturity and deterministic relocation', () => {
   const { state, options } = fixture()
+  state.players[0].units = [] // Isolate regrowth from the new autonomous food replenishment.
   state.resources = [node('Wheat', { currentFrame: 0 }), node('Berrybush', { label: 'berries', i: 20, quantity: 10 })]
   state.naturalResourceRespawnSlots = [
     node('Stone', { quantity: 0, depletedDay: 1, i: 25 }),
@@ -256,12 +273,12 @@ test('small absence preserves incomplete work for the next visit and stamps the 
   assert.equal(state.runtime.elapsedMs, 100)
 })
 
-test('carried food is delivered once before sleeping without being counted as newly harvested', () => {
+test('carried personal provisions remain in the bag before sleeping', () => {
   const { state, options, player } = fixture()
   player.units[0].inventory = { resources: { wheat: 8 }, equipment: ['hammer'] }
   const report = simulateOfflineWorld(state, { ...options, fromElapsedMs: 14 * HOUR, toElapsedMs: 16 * HOUR })
-  assert.equal(player.food, 108)
-  assert.deepEqual(player.units[0].inventory.resources, {})
+  assert.equal(player.food, 100)
+  assert.deepEqual(player.units[0].inventory.resources, { wheat: 8 })
   assert.deepEqual(player.units[0].inventory.equipment, ['hammer'])
   assert.deepEqual(report.gathered, {})
 })
@@ -273,7 +290,8 @@ test('food workers preserve exhausted berry bushes for daily regrowth and harves
   simulateOfflineWorld(state, { ...options, toElapsedMs: 2 * HOUR })
   assert.equal(state.resources[0].quantity, 0)
   assert.equal(state.resources[1].quantity, 100)
-  assert.equal(player.berry, 1)
+  assert.equal(player.berry, 0)
+  assert.equal(player.units[0].inventory.resources.berry, 1)
   simulateOfflineWorld(state, { ...options, fromElapsedMs: 2 * HOUR, toElapsedMs: 22 * HOUR })
   assert.equal(state.resources[0].quantity, 1)
 })
@@ -320,13 +338,14 @@ function trainingBuilding(extra = {}) {
 
 test('offline formations finish independently at dawn and retain reserved population without paying again', () => {
   const { state, options, player } = fixture()
+  player.units[0].inventory = { resources: { wheat: 12 } }
   const barracks = trainingBuilding()
   player.buildings.push(barracks)
   player.population = 3
   const report = simulateOfflineWorld(state, { ...options, toElapsedMs: DAY })
   assert.equal(report.trainingsCompleted, 1)
   assert.equal(player.population, 3)
-  assert.equal(player.food, 96)
+  assert.equal(player.food, 100)
   assert.equal(player.units[1].label, 'recruit-0')
   assert.equal(player.units[1].type, 'Fantassin')
   assert.equal(player.units[1].gender, 'female')
@@ -575,6 +594,15 @@ test('returning to a map restores only night sleep health for villagers and sold
 test('the configured world clock charges upkeep once at its actual next dawn', () => {
   const liveSimulation = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
   const { state, options, player } = fixture()
+  player.units[0].dailySchedule = {
+    wakeMinute: 360,
+    workStartMinute: 420,
+    lunchStartMinute: 720,
+    lunchEndMinute: 780,
+    workEndMinute: 1080,
+    bedMinute: 1320,
+  }
+  player.units[0].inventory = { resources: { wheat: 12 } }
   const config = gameplay.DAY_NIGHT_CONFIG
   const hourMs = config.dayLengthMs / config.hoursPerDay
   const untilDawn =
@@ -584,8 +612,8 @@ test('the configured world clock charges upkeep once at its actual next dawn', (
     fromElapsedMs: untilDawn - hourMs,
     toElapsedMs: untilDawn,
   })
-  assert.equal(report.foodConsumed, 4)
-  assert.equal(player.buildings[0].inventory.resources.wheat, 96)
+  assert.equal(report.foodConsumed, 1)
+  assert.equal(player.buildings[0].inventory.resources.wheat, 100)
   const repeated = liveSimulation.simulateOfflineWorld(state, {
     ...options,
     fromElapsedMs: untilDawn,
@@ -637,6 +665,8 @@ test('offline center completion preserves other factions centers and lets both f
 
 test('shared-map mode leaves daily consumption, resource regrowth and training to the runtime', () => {
   const { state, options, player } = fixture()
+  player.units[0].inventory = { resources: { wheat: 12 } }
+  player.buildings[2].inventory.resources.wheat = 100
   const berry = node('Berrybush', { quantity: 10, totalQuantity: 100, isNaturalResource: true })
   state.resources.push(berry)
   player.buildings[0].trainingQueue = [
@@ -679,4 +709,151 @@ test('offline harvesting pauses for the saved meal window and resumes after it',
   assert.equal(state.resources[0].quantity, 1000)
   const afternoon = simulateOfflineWorld(state, { ...options, fromElapsedMs: 5 * HOUR, toElapsedMs: 6 * HOUR })
   assert.ok(afternoon.gathered.wood > 0)
+})
+
+test('offline cargo stays in its settlement even when another center has less stock', () => {
+  const { state, options, player } = fixture()
+  const local = player.buildings.find(b => b.type === 'StoragePit')
+  local.inventory.resources.wood = 50
+  const remote = { type: 'TownCenter', label: 'remote', isBuilt: true, i: 200, j: 200, inventory: { resources: {} } }
+  player.buildings.push(remote)
+  player.units[0].inventory = { resources: { wood: 10 } }
+  player.units[0].autonomousJob = 'wood'
+  simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR })
+  assert.equal(local.inventory.resources.wood, 60)
+  assert.equal(remote.inventory.resources.wood ?? 0, 0)
+})
+
+test('daily events never remove resources from unattended depot or personal chest stocks', () => {
+  const { state, options, player } = fixture()
+  player.units = []
+  player.population = 0
+  player.populationMax = 0
+  player.buildings[1].inventory.resources = { wood: 100, stone: 50 }
+  player.buildings[2].inventory.resources = { wheat: 100, meat: 20 }
+  player.buildings.push({
+    type: 'Chest',
+    label: 'personal',
+    i: 2,
+    j: 2,
+    isBuilt: true,
+    inventory: { resources: { wood: 30, wheat: 15, gold: 10 } },
+  })
+  const before = player.buildings.map(building => structuredClone(building.inventory))
+  const report = simulateOfflineWorld(state, { ...options, toElapsedMs: 3 * DAY })
+  assert.equal(report.foodConsumed, 0)
+  assert.equal(report.arrivals, 0)
+  assert.deepEqual(
+    player.buildings.map(building => building.inventory),
+    before
+  )
+})
+
+test('offline recruitment keeps five training places and advances a saved queue of ten requests', () => {
+  const { state, options, player } = fixture()
+  player.population = 10
+  player.populationMax = 10
+  player.units = Array.from({ length: 10 }, (_, index) =>
+    villager({ label: `recruit-${index}`, i: 10 + index, inventory: { resources: { wheat: 12 } } })
+  )
+  const barracks = {
+    type: 'Barracks',
+    label: 'barracks',
+    i: 15,
+    j: 15,
+    isBuilt: true,
+    trainingRequests: Array.from({ length: 10 }, () => ({ type: 'Fantassin' })),
+  }
+  player.buildings.push(barracks)
+  options.buildingConfig = () => ({ size: 2, units: ['Fantassin'] })
+  options.unitConfig = () => ({ speed: 1.5, totalHitPoints: 30, trainingDays: 1 })
+  simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR })
+  assert.equal(barracks.trainingQueue.length, 5)
+  assert.equal(barracks.trainingRequests.length, 5)
+  assert.equal(player.units.length, 5)
+  const restored = JSON.parse(JSON.stringify(state))
+  const report = simulateOfflineWorld(restored, { ...options, fromElapsedMs: HOUR, toElapsedMs: 3 * DAY })
+  assert.equal(report.trainingsCompleted, 10)
+  const savedBarracks = restored.players[0].buildings.find(building => building.label === 'barracks')
+  assert.equal(savedBarracks.trainingRequests.length, 0)
+  assert.equal(savedBarracks.trainingQueue.length, 0)
+  assert.equal(restored.players[0].units.filter(unit => unit.type === 'Fantassin').length, 10)
+  assert.equal(new Set(restored.players[0].units.map(unit => unit.label)).size, 10)
+})
+
+function trainingFixture(recruits, requests, duration = 2) {
+  const f = fixture()
+  f.player.population = recruits
+  f.player.populationMax = recruits
+  f.player.units = Array.from({ length: recruits }, (_, index) =>
+    villager({
+      label: `recruit-${index}`,
+      i: 10 + index,
+      inventory: { resources: { meat: 12 } },
+    })
+  )
+  const barracks = {
+    type: 'Barracks',
+    label: 'barracks',
+    i: 15,
+    j: 15,
+    isBuilt: true,
+    trainingRequests: Array.from({ length: requests }, () => ({ type: 'Fantassin' })),
+  }
+  f.player.buildings.push(barracks)
+  f.options.buildingConfig = () => ({ size: 2, units: ['Fantassin', 'Archer'] })
+  f.options.unitConfig = (_index, type) => ({
+    speed: 1.5,
+    totalHitPoints: 30,
+    trainingDays: type === 'Archer' ? 4 : duration,
+  })
+  f.options.runtimeOwnsDailyEvents = true
+  return { ...f, barracks }
+}
+
+test('offline training keeps excess requests pending when only three villagers exist', () => {
+  const f = trainingFixture(3, 10)
+  const report = simulateOfflineWorld(f.state, { ...f.options, toElapsedMs: 7 * DAY })
+  assert.equal(report.trainingsCompleted, 3)
+  assert.equal(f.barracks.trainingRequests.length, 7)
+  assert.equal(f.player.units.length, 3)
+  assert.ok(f.player.units.every(unit => unit.type === 'Fantassin'))
+})
+
+test('offline training respects individual durations and preserves partially completed recruits on return', () => {
+  const f = trainingFixture(2, 2)
+  f.barracks.trainingRequests[1].type = 'Archer'
+  simulateOfflineWorld(f.state, { ...f.options, toElapsedMs: DAY })
+  assert.equal(f.barracks.trainingQueue.length, 2)
+  assert.equal(f.barracks.trainingQueue[0].trainingCompleteDay, 3)
+  assert.equal(f.barracks.trainingQueue[1].trainingCompleteDay, 5)
+  const report = simulateOfflineWorld(f.state, { ...f.options, fromElapsedMs: DAY, toElapsedMs: 2 * DAY })
+  assert.equal(report.trainingsCompleted, 1)
+  assert.equal(f.barracks.trainingQueue.length, 1)
+  assert.equal(f.barracks.trainingQueue[0].type, 'Archer')
+  assert.equal(f.barracks.trainingQueue[0].loading, 50)
+})
+
+test('a long absence and daily saved returns produce identical training waves without duplicating recruits', () => {
+  const full = trainingFixture(10, 13)
+  const split = trainingFixture(10, 13)
+  simulateOfflineWorld(full.state, { ...full.options, toElapsedMs: 5 * DAY })
+  for (let day = 0; day < 5; day++) {
+    split.state = JSON.parse(JSON.stringify(split.state))
+    simulateOfflineWorld(split.state, { ...split.options, fromElapsedMs: day * DAY, toElapsedMs: (day + 1) * DAY })
+  }
+  const snapshot = state => {
+    const player = state.players[0]
+    const barracks = player.buildings.find(building => building.label === 'barracks')
+    return {
+      units: player.units.map(unit => [unit.label, unit.type]).sort(),
+      requests: barracks.trainingRequests,
+      active: barracks.trainingQueue,
+    }
+  }
+  assert.deepEqual(snapshot(split.state), snapshot(full.state))
+  assert.equal(full.barracks.trainingRequests.length, 3)
+  assert.equal(full.barracks.trainingQueue.length, 0)
+  assert.equal(full.player.units.filter(unit => unit.type === 'Fantassin').length, 10)
+  assert.equal(new Set(full.player.units.map(unit => unit.label)).size, 10)
 })

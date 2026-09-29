@@ -15,9 +15,13 @@ function scene() {
 
 test('native AI knows resources without revealing foreign units or buildings of any relation', () => {
   const { owner, hero } = scene()
-  Object.assign(owner, { type: 'AI', civ: 'Hellas', context: {
-    map: { mapType: 'world-region', settlements: [{ kind: 'village', civ: 'Hellas' }] },
-  } })
+  Object.assign(owner, {
+    type: 'AI',
+    civ: 'Hellas',
+    context: {
+      map: { mapType: 'world-region', settlements: [{ kind: 'village', civ: 'Hellas' }] },
+    },
+  })
   owner.buildings.push({ type: 'TownCenter', isBuilt: true, i: 0, j: 0, sight: 3 })
   const tree = { label: 'remote-tree', type: 'Tree', family: 'resource', i: 25, j: 25, quantity: 100 }
   assert.equal(knowledge.playerSeesTarget(owner, tree), false)
@@ -199,4 +203,39 @@ test('invalid or duplicated saved knowledge is rejected', () => {
   const records = knowledge.exportTargetKnowledge(owner)
   assert.throws(() => knowledge.restoreTargetKnowledge({}, [{ ...records[0], i: -1 }]), /Invalid/)
   assert.throws(() => knowledge.restoreTargetKnowledge({}, [...records, ...records]), /Invalid/)
+})
+
+test('hero villagers share economic knowledge locally without granting vision or knowledge of enemies', () => {
+  const { owner } = scene()
+  owner.isPlayed = true
+  const worker = { owner, type: 'Villager', i: 0, j: 0, spaceId: 'outside' }
+  const tree = { label: 'local-tree', type: 'Tree', family: 'resource', i: 30, j: 0, quantity: 100 }
+  assert.equal(knowledge.knownTarget(owner, tree), undefined)
+  assert.equal(knowledge.knownTarget(owner, tree, worker).quantity, 100)
+  tree.quantity = 0
+  assert.equal(knowledge.knownTarget(owner, tree, worker).quantity, 0)
+  assert.equal(owner.views.isViewed(30, 0), false)
+  assert.equal(knowledge.playerSeesTarget(owner, tree), false)
+  for (const target of [
+    { ...tree, label: 'too-far', i: 31 },
+    { ...tree, label: 'other-space', spaceId: 'interior:cave' },
+    { ...tree, label: 'foreign-resource', owner: { type: 'Human' } },
+    { ...tree, label: 'enemy', type: 'Soldier', family: 'unit' },
+    { ...tree, label: 'building', type: 'House', family: 'building' },
+  ])
+    assert.equal(knowledge.knownTarget(owner, target, worker), undefined)
+  assert.equal(knowledge.knowsEconomicTarget(owner, tree, { ...worker, controlMode: 'hero' }), false)
+  assert.equal(knowledge.knowsEconomicTarget(owner, tree, { ...worker, owner: {} }), false)
+})
+
+test('autonomy selects an unexplored local resource through the shared knowledge system', () => {
+  const { knownResources } = loadTsModule('app/lib/units/autonomy/villagerKnownTargets.ts')
+  const { owner } = scene()
+  owner.isPlayed = true
+  const tree = { label: 'unexplored-tree', type: 'Tree', family: 'resource', i: 25, j: 0, quantity: 100 }
+  const worker = { owner, type: 'Villager', i: 0, j: 0, context: { map: { resources: [tree] } } }
+  assert.deepEqual(knownResources(worker, 'Tree', 18), [tree])
+  assert.equal(owner.views.isViewed(25, 0), false)
+  tree.quantity = 0
+  assert.deepEqual(knownResources(worker, 'Tree', 18), [])
 })

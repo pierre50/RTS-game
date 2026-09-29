@@ -20,6 +20,12 @@ type DecorationTemplate = Omit<BuildingInteriorDecorationSpec, 'type'> & {
   type: keyof typeof BUILDING_TYPES
 }
 
+const DEPOT_LIGHTS: DecorationTemplate[] = [
+  { key: 'depot-light-1', type: 'campBrazier', offsetI: 3, offsetJ: -4, allowBorderPlacement: true },
+  { key: 'depot-light-2', type: 'campBrazier', offsetI: -3, offsetJ: 3, allowBorderPlacement: true },
+  { key: 'depot-light-3', type: 'campBrazier', offsetI: 4, offsetJ: 3, allowBorderPlacement: true },
+]
+
 // Furniture groups follow the room's isometric walls and leave the doorway open.
 const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
   [BUILDING_TYPES.townCenter]: [
@@ -80,6 +86,7 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
     { key: 'torch-stand-1', type: 'campTorchStand', offsetI: 5, offsetJ: 1, allowBorderPlacement: true },
   ],
   [BUILDING_TYPES.granary]: [
+    ...DEPOT_LIGHTS,
     {
       key: 'storage-chest',
       type: 'chest',
@@ -98,6 +105,7 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
     { key: 'blue-jar-1', type: 'campBlueJar', offsetI: 4, offsetJ: -1, allowBorderPlacement: true },
   ],
   [BUILDING_TYPES.storagePit]: [
+    ...DEPOT_LIGHTS,
     {
       key: 'storage-chest',
       type: 'chest',
@@ -120,6 +128,8 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
   [BUILDING_TYPES.stable]: [
     { key: 'bucket-1', type: 'campBucket', offsetI: -4, offsetJ: -3, allowBorderPlacement: true },
     { key: 'bucket-2', type: 'campBucket', offsetI: 4, offsetJ: -1, allowBorderPlacement: true },
+    { key: 'stable-light-1', type: 'campBrazier', offsetI: -3, offsetJ: 3, allowBorderPlacement: true },
+    { key: 'stable-light-2', type: 'campBrazier', offsetI: 3, offsetJ: -4, allowBorderPlacement: true },
   ],
   [BUILDING_TYPES.watchTower]: [
     { key: 'chair-1', type: 'campChair', offsetI: -1, offsetJ: -3, allowBorderPlacement: true },

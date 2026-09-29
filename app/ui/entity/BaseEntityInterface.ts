@@ -1,3 +1,4 @@
+import { appendEntityDescription } from './EntityDescription'
 import { MENU_INFO_IDS } from '../../constants'
 import { formatHitPointsText } from '../../lib/entities/hitPointsText'
 
@@ -97,7 +98,7 @@ export function appendBaseEntityInfo(
   typeText: string,
   hitPoints?: string | number,
   totalHitPoints?: string | number,
-  options: { hideType?: boolean } = {}
+  options: { hideType?: boolean; description?: string } = {}
 ): void {
   const header = document.createElement('div')
   header.className = 'entity-info-header'
@@ -111,6 +112,8 @@ export function appendBaseEntityInfo(
   if (header.childElementCount > 0) {
     element.appendChild(header)
   }
+
+  appendEntityDescription(element, options.description ?? '')
 
   if (hitPoints !== undefined)
     element.appendChild(createHitPointsInfo(MENU_INFO_IDS.hitPoints, hitPoints, totalHitPoints ?? 0))

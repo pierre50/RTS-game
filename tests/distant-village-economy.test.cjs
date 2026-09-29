@@ -3,6 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const moduleCache = new Map()
 const mocks = {
+  'pixi.js': { Assets: { cache: { get: () => ({}) } } },
   '../../lib/economy/configuredWorkTiming': { offlineWorkCycleMs: () => 1000 },
   '../../lib/mapSpaces': {
     isOutsideSpaceId: id => !id || id === 'outside',
@@ -40,7 +41,7 @@ function fixture(builder = false) {
     hasBuilt: ['TownCenter'],
     config: {
       units: { Villager: { speed: 1.5 } },
-      buildings: { House: { size: 1, totalHitPoints: 96, constructionTime: 48, increasePopulation: 5 } },
+      buildings: { House: { size: 1, totalHitPoints: 96, constructionTime: 48, shelterCapacity: 5 } },
     },
   }
   const store = {
@@ -67,7 +68,7 @@ function fixture(builder = false) {
     autonomousJob: builder ? 'construction' : 'wood',
     work: builder ? 'builder' : 'woodcutter',
     path: [],
-    inventory: { resources: { wood: 3 } },
+    inventory: { resources: { wood: 3, wheat: 12 } },
   }
   owner.units.push(worker)
   setUnitSuspension(worker, { reason: 'distant-work', wake() {} })
@@ -100,7 +101,7 @@ function advance(f, from, to) {
   advanceDistantVillageEconomy(f.context, f.owner, f.homes, from, to)
 }
 
-test('shared-map catch-up matches split updates and neither consumes daily food nor creates villagers', () => {
+test('shared-map catch-up matches split updates and consumes meals once without creating villagers', () => {
   const whole = fixture()
   const split = fixture()
   advance(whole, 0, DAY)
@@ -109,8 +110,8 @@ test('shared-map catch-up matches split updates and neither consumes daily food 
   assert.deepEqual(split.owner.abstractProductionRemainder, whole.owner.abstractProductionRemainder)
   assert.equal(whole.owner.units.length, 1)
   assert.ok(whole.store.inventory.resources.wheat >= 100)
-  assert.ok(whole.store.inventory.resources.wood > 3)
-  assert.deepEqual(whole.worker.inventory.resources, {})
+  assert.equal(whole.store.inventory.resources.wood ?? 0, 0)
+  assert.deepEqual(whole.worker.inventory.resources, { wood: 3, wheat: 8 })
 })
 
 test('construction completes through runtime lifecycle once and preserves paid costs', () => {
@@ -146,7 +147,7 @@ test('new live workers are not retroactively credited before being suspended', (
   assert.deepEqual(newcomer.inventory.resources, {})
 })
 
-test('real interior chest inventory receives abstract production exactly once', () => {
+test('personal interior chest stays outside communal production', () => {
   const f = fixture()
   const chest = {
     label: 'chest',
@@ -162,7 +163,7 @@ test('real interior chest inventory receives abstract production exactly once', 
   f.store.inventory = undefined
   f.context.map.spaces.set(chest.spaceId, { portals: [{ targetSpaceId: 'outside', targetCell: { i: 36, j: 36 } }] })
   advance(f, 0, DAY)
-  assert.ok(chest.inventory.resources.wood > 3)
+  assert.deepEqual(chest.inventory.resources, {})
   const stocks = structuredClone(chest.inventory)
   advance(f, DAY, DAY)
   assert.deepEqual(chest.inventory, stocks)
@@ -170,7 +171,7 @@ test('real interior chest inventory receives abstract production exactly once', 
   assert.equal(chest.i, 3)
 })
 
-test('daily planning pays and creates a real project once', () => {
+test('daily planning creates one unpaid project with a persistent material recipe', () => {
   const f = fixture()
   f.owner.populationMax = 1
   f.owner.config.buildings.House.cost = { wood: 10 }
@@ -186,8 +187,31 @@ test('daily planning pays and creates a real project once', () => {
   planDistantVillageBuildings(f.context, f.owner, f.homes)
   assert.equal(created.length, 1)
   assert.equal(created[0].type, 'House')
-  assert.equal(f.store.inventory.resources.wood, 90)
+  assert.deepEqual(created[0].constructionMaterials, { cost: { wood: 10 }, delivered: {}, consumed: {} })
+  assert.equal(f.store.inventory.resources.wood, 100)
   planDistantVillageBuildings(f.context, f.owner, f.homes)
   assert.equal(created.length, 1)
-  assert.equal(f.store.inventory.resources.wood, 90)
+  assert.equal(f.store.inventory.resources.wood, 100)
+})
+
+test('AI project planning does not erase a pending material pickup or the current work checkpoint', () => {
+  const f = fixture()
+  f.worker.resourceDeliveryState = { building: f.store, pickup: { wood: 2 }, phase: 'toBuilding' }
+  f.worker.action = 'delivery'
+  f.worker.dest = f.store
+  f.worker.offlineWork = { target: 'pickup:center', milliseconds: 500 }
+  const pickup = f.worker.resourceDeliveryState
+  planDistantVillageBuildings(f.context, f.owner, f.homes)
+  assert.equal(f.worker.resourceDeliveryState, pickup)
+  assert.equal(f.worker.action, 'delivery')
+  assert.equal(f.worker.dest, f.store)
+  assert.deepEqual(f.worker.offlineWork, { target: 'pickup:center', milliseconds: 500 })
+})
+
+test('player settlements never run AI project decisions', () => {
+  const f = fixture()
+  f.owner.isPlayed = true
+  f.owner.type = 'Human'
+  planDistantVillageBuildings(f.context, f.owner, f.homes)
+  assert.equal(f.owner.offlineBuildingPlanDay, undefined)
 })

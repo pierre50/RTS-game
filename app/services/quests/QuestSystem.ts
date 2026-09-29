@@ -1,3 +1,4 @@
+import { villageFoundingQuests } from './VillageFoundingQuests'
 import { resourceRequestQuest } from './ResourceRequestQuest'
 import { tutorialHuntQuest } from './TutorialHuntQuest'
 import { banditCampQuest } from './BanditCampQuest'
@@ -34,7 +35,7 @@ export function createQuestJournal(): QuestJournalState {
 // Register authored definitions here when introducing missions. No generated offers at UI construction time.
 const questDefinitions = new Map<string, QuestDefinition>([
   [resourceRequestQuest.id, resourceRequestQuest], [tutorialHuntQuest.id, tutorialHuntQuest],
-  [banditCampQuest.id, banditCampQuest],
+  [banditCampQuest.id, banditCampQuest], ...villageFoundingQuests.map(quest => [quest.id, quest] as [string, QuestDefinition]),
 ])
 
 export class QuestSystem {

@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadAccounting() {
   const constants = {
-    BUILDING_TYPES: { chest: 'Chest' },
+    BUILDING_TYPES: { granary: 'Granary', storagePit: 'StoragePit', chest: 'Chest' },
     RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
     RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
     UNIT_TYPES: { hero: 'Hero' },
@@ -29,12 +29,12 @@ test('player affordability uses chest inventory instead of legacy resource field
   assert.equal(canAfford(player, { wood: 5 }), false)
 })
 
-test('payCost withdraws player costs from owned chests', () => {
+test('payCost withdraws player costs from owned depots', () => {
   const { canAfford, payCost } = loadAccounting()
   const player = { label: 'p1', buildings: [] }
   player.buildings = [
-    { owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 3 } } },
-    { owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 4, stone: 2 } } },
+    { owner: player, i: 0, j: 0, type: 'StoragePit', inventory: { resources: { wood: 3 } } },
+    { owner: player, i: 0, j: 0, type: 'StoragePit', inventory: { resources: { wood: 4, stone: 2 } } },
   ]
 
   player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })
@@ -49,7 +49,7 @@ test('payCost can complete player costs from the hero bag', () => {
   const { canAfford, payCost } = loadAccounting()
   const player = { label: 'p1', buildings: [], units: [] }
   const hero = { owner: player, i: 0, j: 0, type: 'Hero', inventory: { resources: { wood: 4 } } }
-  player.buildings = [{ owner: player, i: 0, j: 0, type: 'Chest', inventory: { resources: { wood: 3 } } }]
+  player.buildings = [{ owner: player, i: 0, j: 0, type: 'StoragePit', inventory: { resources: { wood: 3 } } }]
   player.units = [hero]
 
   player.buildings.push({ type: 'TownCenter', i: 0, j: 0, owner: player })

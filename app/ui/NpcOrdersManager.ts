@@ -4,30 +4,19 @@ import { createNpcGroupSummary } from './NpcGroupSummary'
 import { InteractionPanel } from './InteractionPanel'
 import type { Modal } from '../lib'
 import { NpcQuestPanel } from './NpcQuestPanel'
-import { canShowNpcJobOrder } from './menu/NpcOrderEligibility'
-import { npcTrainingDetail } from './menu/NpcTrainingDetails'
-import { assignVillagerAutonomy } from '../lib'
 import { t } from '../lib/lang'
-import { isUnitBlockedByFullStorage } from '../lib/resources/resourceDelivery'
 import { playUiSound } from '../lib/audio/uiSound'
-import {
-  findBestTrainingBuildingForUnit,
-  sendUnitToTraining,
-  VILLAGER_TRAINING_UNIT_TYPES,
-} from '../lib/units/unitTrainingOrders'
 import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/units/unitExperience'
 import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { getUnitGender } from '../lib/units/unitIdentity'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
-import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
 import {
   noticeNpc,
   keepNpcHere,
   startFollowingHero,
   releaseIfStillLooking,
   playNpcOrderSound,
-  clearNpcCommunicationFocus,
 } from '../lib/npc/npcInteraction'
 import { createTitledEntityInfoContent } from './EntityInfoContent'
 import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
@@ -36,46 +25,25 @@ import { pickNpcRoutineChatterLine } from '../lib/npc/npcRoutineChatter'
 import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
 import { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
 import type { NpcOrdersOpenOptions } from '../types/context'
-import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
+import type { UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 import { SpokenTextReveal } from './SpokenTextReveal'
 
-type NpcOrderId = 'stay' | 'follow' | 'goto' | 'mountHorse' | VillagerAutonomyJob | `train-${string}`
-type NpcOrderMenuId = NpcOrderId | 'resources' | 'training' | 'bag'
+type NpcOrderId = 'stay' | 'follow' | 'goto'
+type NpcOrderMenuId = NpcOrderId | 'bag'
 
 type NpcOrderSpec = {
   id: NpcOrderId
   labelKey: string
   run?: (npc: UnitEntity) => void
-  villagerJob?: VillagerAutonomyJob
-  trainingType?: string
-  mountHorse?: boolean
   startsPicking?: boolean
 }
 
 const NPC_ORDER_SPECS: NpcOrderSpec[] = [
   { id: 'goto', labelKey: 'npcOrderGoTo', startsPicking: true },
-  { id: 'construction', labelKey: 'npcOrderConstruction', villagerJob: 'construction' },
-  { id: 'horseCapture', labelKey: 'npcOrderHorseCapture', villagerJob: 'horseCapture' },
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
   { id: 'stay', labelKey: 'npcOrderStay', run: keepNpcHere },
 ]
-
-const NPC_RESOURCE_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 'villagerJob'>>[] = [
-  { id: 'food', labelKey: 'npcOrderFood', villagerJob: 'food' },
-  { id: 'wood', labelKey: 'npcOrderWood', villagerJob: 'wood' },
-  { id: 'stone', labelKey: 'npcOrderStone', villagerJob: 'stone' },
-  { id: 'gold', labelKey: 'npcOrderGold', villagerJob: 'gold' },
-  { id: 'copper', labelKey: 'npcOrderCopper', villagerJob: 'copper' },
-  { id: 'iron', labelKey: 'npcOrderIron', villagerJob: 'iron' },
-]
-
-const NPC_TRAINING_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 'trainingType'>>[] =
-  VILLAGER_TRAINING_UNIT_TYPES.map(type => ({
-    id: `train-${type}`,
-    labelKey: type,
-    trainingType: type,
-  }))
 
 function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
   return npc?.shelterState?.reason === 'sleep' && npc.sleepVisualState === 'sleeping'
@@ -112,7 +80,6 @@ export class NpcOrdersManager {
     this.npcs = []
     this.ordersEnabled = false
     this.bagScreen = null
-
 
     const layout = new InteractionPanel()
     this.panel = layout.element
@@ -178,16 +145,33 @@ export class NpcOrdersManager {
 
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
     if (this.scriptedReplyActive) return
-    const dialogue = options.dialogue ?? (options.scriptedReply ? {
-      startId: 'reply',
-      nodes: [{ id: 'reply', line: options.chatterLine ?? '', choices: [{ id: 'reply', label: options.scriptedReply.label }] }],
-      onComplete: options.scriptedReply.onSelect,
-    } : undefined)
+    const dialogue =
+      options.dialogue ??
+      (options.scriptedReply
+        ? {
+            startId: 'reply',
+            nodes: [
+              {
+                id: 'reply',
+                line: options.chatterLine ?? '',
+                choices: [{ id: 'reply', label: options.scriptedReply.label }],
+              },
+            ],
+            onComplete: options.scriptedReply.onSelect,
+          }
+        : undefined)
     if (dialogue) {
       const ids = new Set(dialogue.nodes.map(node => node.id))
-      if (ids.size !== dialogue.nodes.length || !ids.has(dialogue.startId) || dialogue.nodes.some(node =>
-        !node.choices.length || new Set(node.choices.map(choice => choice.id)).size !== node.choices.length ||
-        node.choices.some(choice => choice.nextId !== undefined && !ids.has(choice.nextId))))
+      if (
+        ids.size !== dialogue.nodes.length ||
+        !ids.has(dialogue.startId) ||
+        dialogue.nodes.some(
+          node =>
+            !node.choices.length ||
+            new Set(node.choices.map(choice => choice.id)).size !== node.choices.length ||
+            node.choices.some(choice => choice.nextId !== undefined && !ids.has(choice.nextId))
+        )
+      )
         throw new Error('Invalid dialogue sequence')
     }
     this.scriptedReplyActive = Boolean(dialogue)
@@ -210,7 +194,10 @@ export class NpcOrdersManager {
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
       this.infoContainer.appendChild(
-        createTitledEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true, hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit) })
+        createTitledEntityInfoContent(this.menu.context.app, soloTarget, {
+          showAllXp: true,
+          hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit),
+        })
       )
     } else if (npcs.length > 1) {
       this.infoContainer.appendChild(createNpcGroupSummary(this.menu.context.app, npcs))
@@ -262,7 +249,11 @@ export class NpcOrdersManager {
       return
     }
     this.modal = createInspectionModal({
-      proximity: { context: this.menu.context, targets: () => this.npcs.filter(npc => !npc.isDead), enabled: () => !this.scriptedReplyActive },
+      proximity: {
+        context: this.menu.context,
+        targets: () => this.npcs.filter(npc => !npc.isDead),
+        enabled: () => !this.scriptedReplyActive,
+      },
       title,
       content: this.panel,
       panelClass: 'npc-orders-panel',
@@ -309,14 +300,21 @@ export class NpcOrdersManager {
     await ensureAndRefreshBakedLpcUnitAssets(target)
     this.infoContainer.replaceChildren()
     if (target.interface?.info) {
-      this.infoContainer.appendChild(createTitledEntityInfoContent(this.menu.context.app, target, { showAllXp: true, hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit) }))
+      this.infoContainer.appendChild(
+        createTitledEntityInfoContent(this.menu.context.app, target, {
+          showAllXp: true,
+          hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit),
+        })
+      )
     }
     this.updateDebugControls(target)
     this.menu.updateHeroStatus?.(target)
   }
 
   private updateDebugControls(target: UnitEntity | null): void {
-    const showDebug = Boolean(heroCanCommand(this.menu.context.controls?.heroUnit) && target && target.type !== UNIT_TYPES.villager)
+    const showDebug = Boolean(
+      heroCanCommand(this.menu.context.controls?.heroUnit) && target && target.type !== UNIT_TYPES.villager
+    )
     this.debugContainer.hidden = !showDebug
     if (!target) return
     if (!showDebug) return
@@ -352,7 +350,10 @@ export class NpcOrdersManager {
     const renderedLine = document.createElement('p')
     renderedLine.className = 'npc-orders-chatter-line'
     this.chatterContainer.appendChild(renderedLine)
-    this.chatterReveal.show([{ element: renderedLine, text: line }], getUnitGender(speaker) === 'female' ? 'female' : 'male')
+    this.chatterReveal.show(
+      [{ element: renderedLine, text: line }],
+      getUnitGender(speaker) === 'female' ? 'female' : 'male'
+    )
   }
 
   private stopChatterReveal(): void {
@@ -395,24 +396,6 @@ export class NpcOrdersManager {
           hidden: () => !this.canShowBagButton(),
           onClick: () => this.openBag(),
         },
-        {
-          id: 'resources',
-          label: t('npcOrderResources'),
-          hidden: () => !this.canShowResourcesButton(),
-          children: NPC_RESOURCE_ORDER_SPECS.map(resourceSpec => this.createOrderMenuItem(resourceSpec)),
-        },
-        {
-          id: 'training',
-          label: t('unitTrainingMenu'),
-          hidden: () => !this.canShowTrainingButton(),
-          children: NPC_TRAINING_ORDER_SPECS.map(trainingSpec => this.createOrderMenuItem(trainingSpec)),
-        },
-        {
-          id: 'mountHorse',
-          label: t('mountHorseTraining'),
-          hidden: () => !this.canShowMountHorseButton(),
-          onClick: () => this.runOrder({ id: 'mountHorse', labelKey: 'mountHorseTraining', mountHorse: true }),
-        },
       ]
     })
   }
@@ -421,70 +404,15 @@ export class NpcOrdersManager {
     return {
       id: spec.id,
       label: t(spec.labelKey),
-      className: spec.trainingType ? 'npc-training-option' : undefined,
-      detail: spec.trainingType ? () => this.getTrainingOrderDetail(spec.trainingType!) : undefined,
       hidden: () => !this.canShowOrder(spec),
       onClick: () => this.runOrder(spec),
     }
   }
 
-  private getTrainingOrderDetail(trainingType: string): string {
-    return npcTrainingDetail(this.npcs, this.menu.context.player, trainingType)
-  }
-
-  private hasVillager(): boolean {
-    return this.npcs.some(npc => npc.type === UNIT_TYPES.villager)
-  }
-
-  private hasNightWorkBlock(): boolean {
-    return this.hasVillager() && isVillagerSleepTime(this.menu.context)
-  }
-
   private canShowOrder(spec: NpcOrderSpec): boolean {
     if (spec.id === 'follow') return this.npcs.some(npc => npc.followingHero !== true)
     if (spec.id === 'stay') return this.npcs.some(npc => npc.followingHero === true)
-    if (spec.villagerJob) return this.canShowVillagerJobOrder(spec.villagerJob)
-    if (spec.trainingType) return this.canShowTrainingOrder(spec.trainingType)
-    if (spec.mountHorse) return this.canShowMountHorseButton()
     return true
-  }
-
-  private canShowResourcesButton(): boolean {
-    return this.hasVillager() && !this.hasNightWorkBlock()
-  }
-
-  private canShowTrainingButton(): boolean {
-    return (
-      this.hasVillager() &&
-      !this.hasNightWorkBlock() &&
-      this.npcs.some(
-        npc =>
-          npc.type === UNIT_TYPES.villager &&
-          VILLAGER_TRAINING_UNIT_TYPES.some(type => findBestTrainingBuildingForUnit(npc, type))
-      )
-    )
-  }
-
-  private canShowTrainingOrder(trainingType: string): boolean {
-    return (
-      !this.hasNightWorkBlock() &&
-      this.npcs.some(
-        npc => npc.type === UNIT_TYPES.villager && Boolean(findBestTrainingBuildingForUnit(npc, trainingType))
-      )
-    )
-  }
-
-  private canShowMountHorseButton(): boolean {
-    return this.npcs.some(
-      npc =>
-        npc.type !== UNIT_TYPES.villager &&
-        !npc.mountedOnHorse &&
-        Boolean(findBestTrainingBuildingForUnit(npc, npc.type))
-    )
-  }
-
-  private canShowVillagerJobOrder(job: VillagerAutonomyJob): boolean {
-    return canShowNpcJobOrder(this.npcs, this.menu.context, job)
   }
 
   syncQuest(): void {
@@ -525,17 +453,9 @@ export class NpcOrdersManager {
     this.buttonsContainer.hidden = !this.ordersEnabled
   }
 
-  private refuseBlockedResourceOrder(): boolean {
-    const blocked = this.npcs.find(isUnitBlockedByFullStorage)
-    if (!blocked) return false
-    this.showChatterLine(t('npcStorageFull'), blocked)
-    return true
-  }
-
   private runOrder(spec: NpcOrderSpec): void {
     if (!this.npcs.length) return
     playUiSound(SOUND_CUES.ui.menuClick)
-    if (NPC_RESOURCE_ORDER_SPECS.some(resource => resource.id === spec.id) && this.refuseBlockedResourceOrder()) return
     const npcs = this.npcs
     if (spec.startsPicking) {
       // Still committed to an order (waiting on the world click) — don't resume old tasks yet.
@@ -544,30 +464,7 @@ export class NpcOrdersManager {
       return
     }
     this.close(true)
-    if (spec.villagerJob) {
-      for (const npc of npcs) {
-        if (npc.type !== UNIT_TYPES.villager) continue
-        clearNpcCommunicationFocus(npc)
-        npc.previousDest = null
-        assignVillagerAutonomy(npc, spec.villagerJob)
-      }
-    } else if (spec.trainingType) {
-      for (const npc of npcs) {
-        if (npc.type !== UNIT_TYPES.villager) continue
-        clearNpcCommunicationFocus(npc)
-        npc.previousDest = null
-        sendUnitToTraining(npc, spec.trainingType)
-      }
-    } else if (spec.mountHorse) {
-      for (const npc of npcs) {
-        if (npc.type === UNIT_TYPES.villager || npc.mountedOnHorse) continue
-        clearNpcCommunicationFocus(npc)
-        npc.previousDest = null
-        sendUnitToTraining(npc, npc.type)
-      }
-    } else {
-      for (const npc of npcs) spec.run?.(npc)
-    }
+    for (const npc of npcs) spec.run?.(npc)
     playNpcOrderSound(npcs)
   }
 }

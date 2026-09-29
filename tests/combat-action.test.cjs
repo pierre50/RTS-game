@@ -19,7 +19,11 @@ const unitWorkAppearanceMock = {
 
 function loadModule(relativePath, mocks) {
   const defaultMocks = {
-    '../../lib/actions/contactActions': { canReachActionTarget: () => true, isActionTouchingTarget: () => true, getActionContactTool: () => undefined },
+    '../../lib/actions/contactActions': {
+      canReachActionTarget: () => true,
+      isActionTouchingTarget: () => true,
+      getActionContactTool: () => undefined,
+    },
     '../../lib/contact/contactDebug': { showContactDebug: () => {} },
     '../../lib/contact/contactGeometry': { isContactTouching: () => true, getContactAimDegree: () => 0 },
     '../../lib/combat/unitMelee': {
@@ -50,7 +54,10 @@ function loadModule(relativePath, mocks) {
         getGameDifficultyCombatBalance: difficulty => balances[difficulty] ?? balances.medium,
       }
     })(),
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
     '../../lib/equipment/equipmentStats': { getUnitCombatRange: unit => unit?.combatRange ?? 0 },
     '../../lib/horses/horseCapture': { getNearestAvailableStableForUnit: () => null },
     '../../lib/combat/combatAttackLoop': {
@@ -59,19 +66,23 @@ function loadModule(relativePath, mocks) {
         if (!sprite) return
         sprite.loop = true
         callbacks.prepareAttackSheet()
-        ;(mocks['../../lib'] ?? defaultMocks['../../lib'])?.onSpriteLoopAtFrame?.(sprite, callbacks.releaseFrame, () => {
-          const target = attacker.dest?.family ? attacker.dest : null
-          if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
-            callbacks.onTargetUnavailable(target)
-            return
+        ;(mocks['../../lib'] ?? defaultMocks['../../lib'])?.onSpriteLoopAtFrame?.(
+          sprite,
+          callbacks.releaseFrame,
+          () => {
+            const target = attacker.dest?.family ? attacker.dest : null
+            if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
+              callbacks.onTargetUnavailable(target)
+              return
+            }
+            if (!target) return
+            if (!attacker.isUnitAtDest?.(attacker.action, target)) {
+              callbacks.onOutOfRange(target)
+              return
+            }
+            callbacks.onReadyToAttack(target)
           }
-          if (!target) return
-          if (!attacker.isUnitAtDest?.(attacker.action, target)) {
-            callbacks.onOutOfRange(target)
-            return
-          }
-          callbacks.onReadyToAttack(target)
-        })
+        )
       },
     },
     './combat/combatBehavior': {
@@ -164,7 +175,10 @@ const target = {
 test('units with no weapon config can attack enemies with unarmed power', () => {
   const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
 
   const villager = {
@@ -182,7 +196,10 @@ test('units with no weapon config can attack enemies with unarmed power', () => 
 test('combat weapons cannot attack neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
 
   const swordsman = {
@@ -207,7 +224,10 @@ test('combat weapons cannot attack neutral berry bushes', () => {
 test('attack orders cannot target neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
 
   const swordsman = {
@@ -232,7 +252,10 @@ test('attack orders cannot target neutral berry bushes', () => {
 test('animals cannot attack buildings', () => {
   const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
 
   const boar = {
@@ -497,7 +520,10 @@ test('attackers route into an assault-ready building interior instead of retarge
 test('sendToAttack does not issue an attack order against neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const sendCalls = []
   const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
@@ -551,7 +577,10 @@ test('sendToAttack does not issue an attack order against neutral berry bushes',
 test('villagers can still forage neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
 
   const villager = {
@@ -576,7 +605,10 @@ test('villagers can still forage neutral berry bushes', () => {
 test('healthy villagers fight back against hostile units', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
@@ -587,7 +619,10 @@ test('healthy villagers fight back against hostile units', () => {
 test('villagers keep hunting a nearly-dead animal instead of fleeing full health', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const woundedDeer = { family: 'animal', hitPoints: 2, weaponPower: 1, totalHitPoints: 20, type: 'Deer' }
@@ -598,7 +633,10 @@ test('villagers keep hunting a nearly-dead animal instead of fleeing full health
 test('villagers retreat from a healthy animal once critically hurt themselves', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const woundedVillager = { category: 'Civilian', hitPoints: 5, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const healthyBoar = { family: 'animal', hitPoints: 40, weaponPower: 6, totalHitPoints: 40, type: 'Boar' }
@@ -609,7 +647,10 @@ test('villagers retreat from a healthy animal once critically hurt themselves', 
 test('brave wounded villagers can keep fighting instead of fleeing', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const woundedVillager = {
     category: 'Civilian',
@@ -628,7 +669,10 @@ test('brave wounded villagers can keep fighting instead of fleeing', () => {
 test('heroes and chiefs hold their ground like combatants instead of fleeing every hit', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const healthyHero = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Hero' }
   const chief = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Chief' }
@@ -782,7 +826,10 @@ test('early resource actions work without unlocking technologies', () => {
 test('military units fight on until critically wounded, then retreat from a real threat', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const healthySoldier = { category: 'Fantassin', hitPoints: 40, weaponPower: 3, totalHitPoints: 40, type: 'Fantassin' }
   const criticalSoldier = { category: 'Fantassin', hitPoints: 5, weaponPower: 3, totalHitPoints: 40, type: 'Fantassin' }
@@ -798,7 +845,10 @@ test('military units fight on until critically wounded, then retreat from a real
 test('brave combatants can hold their ground when critically wounded', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const braveSoldier = {
     category: 'Fantassin',
@@ -817,7 +867,10 @@ test('brave combatants can hold their ground when critically wounded', () => {
 test('low-bravery combatants still flee when critically wounded', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': {
+      getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
+    },
   })
   const cautiousSoldier = {
     category: 'Fantassin',
@@ -1874,4 +1927,49 @@ test('damage feedback can be cleared before its timer fires', () => {
 
   showDamageFeedback(building, 2.6)
   assert.equal(building.child.text, '-3')
+})
+
+test('a player villager attacks immediately instead of passing through the gathering command throttle', () => {
+  const calls = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      getActionCondition: () => true,
+      getAutonomyJobForWork: () => null,
+      setVillagerAutonomy: (unit, job) => {
+        unit.autonomousJob = job
+      },
+    },
+    '../../lib/units/playerTargetKnowledge': { playerSeesTarget: () => true },
+    '../../lib/units/campBehavior': { canCampPursue: () => true },
+    '../../lib/units/unitSuspension': { wakeUnitSimulation: () => {} },
+    './UnitResourceDeliveryCommands': {
+      applyWorkForAction: (unit, work) => {
+        unit.work = work
+      },
+      getDeliveryBeforeGatherJobSwitch: () => null,
+    },
+  })
+  const target = { label: 'enemy', family: 'unit' }
+  const unit = {
+    type: 'Villager',
+    owner: { isPlayed: true },
+    action: 'chopwood',
+    work: 'woodcutter',
+    collectiveTask: 'wood',
+    autonomousJob: 'wood',
+    path: [],
+    sendTo: () => calls.push('delayed'),
+    sendToEvt: (dest, action) => {
+      calls.push(action)
+      unit.dest = dest
+      unit.action = action
+      return true
+    },
+  }
+  assert.equal(new UnitCommands(unit).sendToAttack(target), true)
+  assert.deepEqual(calls, ['attack'])
+  assert.equal(unit.dest, target)
+  assert.equal(unit.collectiveTask, null)
+  assert.equal(unit.autonomousJob, null)
 })

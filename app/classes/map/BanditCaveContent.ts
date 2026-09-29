@@ -3,7 +3,7 @@ import { createSeededRandom } from '../../lib/random'
 import { canPlaceBuildingAt } from '../../lib/grid/placement'
 import { BUILDING_TYPES, UNIT_TYPES } from '../../constants'
 import { CIVILIZATIONS } from '../../config/civilizations'
-import { ensureNeutralPlayer } from '../players'
+import { isNeutralPlayer } from '../../lib/playerState'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -134,8 +134,9 @@ function placeNeutralCaveVillagers(
 ): void {
   const random = createSeededRandom(`${seed}:neutral-villagers`)
   const randomRange = (min: number, max: number) => min + Math.floor(random() * (max - min + 1))
-  const neutralOwner = ensureNeutralPlayer(context, space.entryCell ?? { i: 0, j: 0 })
-  if (!neutralOwner.createUnit) throw new Error('Neutral owner cannot create cave villagers')
+  const neutralOwner =
+    context.players.find(isNeutralPlayer) ?? context.map.ensureNeutralPlayer?.(space.entryCell ?? { i: 0, j: 0 })
+  if (!neutralOwner?.createUnit) throw new Error('Neutral owner cannot create cave villagers')
   if (context.players.some(owner => hasNeutralCaveVillagers(owner, space.id, campIndex))) return
 
   const count = randomRange(MIN_NEUTRAL_CAVE_VILLAGERS, MAX_NEUTRAL_CAVE_VILLAGERS)

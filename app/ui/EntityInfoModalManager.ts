@@ -37,6 +37,7 @@ export class EntityInfoModalManager {
 
   open(entity: RuntimeEntity): boolean {
     if (isBuildingEntity(entity) && entity.type === BUILDING_TYPES.trap) return false
+    if (entity.family === FAMILY_TYPES.animal && !entity.isDead) return false
     if (entity === this.menu.context.controls?.heroUnit) return false
     if (!entity.interface?.info || entity.isDestroyed) return false
     if (this.modal && this.entity === entity) return true

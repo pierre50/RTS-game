@@ -37,7 +37,8 @@ export const getActionCondition = (
   props?: ActionProps
 ): boolean => {
   if (!action || !source || !target) return false
-  if (['hunt', 'takemeat', 'attack', 'captureHorse'].includes(action) && isReservedQuestTarget(source, target)) return false
+  if (['hunt', 'takemeat', 'attack', 'captureHorse'].includes(action) && isReservedQuestTarget(source, target))
+    return false
 
   const conditions: Record<string, (props?: ActionProps) => boolean> = {
     ...getResourceActionConditions(source, target),
@@ -87,7 +88,8 @@ export const getActionCondition = (
           target.isBuilt &&
           (target.hitPoints ?? 0) > 0 &&
           !target.isDead &&
-          unitHasDeliverableResourcesForBuilding(source as UnitEntity, target as BuildingEntity)
+          (Boolean((source as UnitEntity).resourceDeliveryState?.pickup) ||
+            unitHasDeliverableResourcesForBuilding(source as UnitEntity, target as BuildingEntity))
       ),
     heal: () =>
       target &&

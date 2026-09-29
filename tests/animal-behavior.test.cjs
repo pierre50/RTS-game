@@ -147,7 +147,7 @@ test('a nearby villager interrupts idle behavior immediately', () => {
 
   behavior.update()
 
-  assert.deepEqual(findInstancesInSightCalls, [{ useInsightRange: true }])
+  assert.deepEqual(findInstancesInSightCalls, [{ useInsightRange: true, includeResources: false }])
   assert.deepEqual(alertCalls, [animal])
   assert.deepEqual(calls, [['reaction', 'villager-1']])
 })

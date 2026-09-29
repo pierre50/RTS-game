@@ -1,10 +1,12 @@
-import { GAMEPAD_AXIS, GAMEPAD_BUTTON, GAMEPAD_CURSOR_SPEED, getActiveGamepad, readStick } from '../lib/input/gamepad'
+import { GAMEPAD_AXIS, GAMEPAD_CURSOR_SPEED, getActiveGamepad, readStick } from '../lib/input/gamepad'
+import { getConsumedGamepadButtons } from '../lib/input/gamepadConsumption'
 import { setVirtualCursorPosition, setVirtualCursorVisible } from '../lib/hero/heroCursor'
 import { getGamepadButtonIndex, getGamepadEnabled, type ControlBindingAction } from '../lib/audio/settings'
 
 type GamepadControlsHost = {
-  context: { gamebox: HTMLElement }
+  context: { gamebox: HTMLElement; menu?: { toggleQuests?(): void } }
   heroController: {
+    cancelActiveInteraction?(): void
     cycleTool(direction: -1 | 1): void
     handleKeyDown(action: ControlBindingAction): boolean | void
     handleKeyUp(action: ControlBindingAction): void
@@ -26,15 +28,21 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
 
-const HERO_ACTION_BUTTONS: [number, ControlBindingAction][] = [
-  [GAMEPAD_BUTTON.dpadUp, 'heroUp'],
-  [GAMEPAD_BUTTON.dpadDown, 'heroDown'],
-  [GAMEPAD_BUTTON.dpadLeft, 'heroLeft'],
-  [GAMEPAD_BUTTON.dpadRight, 'heroRight'],
-  [GAMEPAD_BUTTON.defense, 'heroDefense'],
-  [GAMEPAD_BUTTON.interact, 'heroInteract'],
-  [GAMEPAD_BUTTON.inventory, 'inventory'],
-]
+const HERO_ACTIONS = [
+  'heroUp',
+  'heroDown',
+  'heroLeft',
+  'heroRight',
+  'heroDefense',
+  'heroInteract',
+  'inventory',
+  'heroMountHorse',
+  'heroDismountHorse',
+] as const
+type HeroButtonAction = (typeof HERO_ACTIONS)[number]
+function heroActionButtons(): [number, HeroButtonAction][] {
+  return HERO_ACTIONS.map(action => [getGamepadButtonIndex(action), action])
+}
 
 /**
  * Translates a connected gamepad into the same inputs keyboard/mouse already drive on
@@ -48,8 +56,11 @@ export class GamepadHeroInput {
   directionLockActive: boolean
   connected: boolean
   private pressedButtons: Set<number>
+  private consumedButtons = new Set<number>()
   private cursorActive: boolean
   private uiActive = false
+  private activeActions = new Map<HeroButtonAction, number>()
+  private primaryHeld = false
 
   constructor(controls: GamepadControlsHost) {
     this.controls = controls
@@ -62,9 +73,14 @@ export class GamepadHeroInput {
   }
 
   update(): void {
+    this.consumedButtons.clear()
     const gamepad = getGamepadEnabled() ? getActiveGamepad() : null
+    const wasConnected = this.connected
     this.connected = Boolean(gamepad)
     if (!gamepad) {
+      this.releaseWorldActions()
+      this.uiActive = false
+      if (this.controls.mouseBuilding) this.controls.buildingPlacer?.setPlacementGamepad(false)
       this.moveVector = { dx: 0, dy: 0 }
       this.aimVector = null
       this.directionLockActive = false
@@ -76,17 +92,15 @@ export class GamepadHeroInput {
       return
     }
 
+    // A window may close before this loop sees its final button press.
+    for (const index of getConsumedGamepadButtons(gamepad)) this.pressedButtons.add(index)
+
     // UI has its own polling loop, including while the game is paused.
     if (typeof document !== 'undefined' && document.querySelector?.('.game-window')) {
       this.moveVector = { dx: 0, dy: 0 }
       this.aimVector = null
       this.directionLockActive = false
-      if (!this.uiActive) {
-        for (const [index, action] of HERO_ACTION_BUTTONS) {
-          if (this.pressedButtons.has(index)) this.controls.heroController.handleKeyUp(action)
-        }
-        this.controls.heroController.handlePointerUp()
-      }
+      if (!this.uiActive) this.releaseWorldActions()
       this.uiActive = true
       this.pressedButtons = new Set(gamepad.buttons.flatMap((button, index) => (button.pressed ? [index] : [])))
       this.cursorActive = false
@@ -100,17 +114,24 @@ export class GamepadHeroInput {
 
     const aim = readStick(gamepad, GAMEPAD_AXIS.aimX, GAMEPAD_AXIS.aimY)
     this.aimVector = aim.x || aim.y ? aim : null
-    this.directionLockActive = Boolean(gamepad.buttons[GAMEPAD_BUTTON.interact]?.pressed)
+    this.directionLockActive = Boolean(gamepad.buttons[getGamepadButtonIndex('heroInteract')]?.pressed)
     this.updateVirtualCursor()
 
     if (this.controls.mouseBuilding && this.controls.buildingPlacer) {
+      this.releaseWorldActions()
       const placer = this.controls.buildingPlacer
       this.directionLockActive = false
-      if (this.aimVector || gamepad.buttons.some((button, index) => button.pressed && !this.pressedButtons.has(index)))
+      if (
+        !wasConnected ||
+        move.x ||
+        move.y ||
+        this.aimVector ||
+        gamepad.buttons.some((button, index) => button.pressed && !this.pressedButtons.has(index))
+      )
         placer.setPlacementGamepad(true)
-      this.dispatchButtonEdge(gamepad, 0, () => placer.confirmPlacement())
-      this.dispatchButtonEdge(gamepad, 2, () => placer.toggleMirror())
-      this.dispatchButtonEdge(gamepad, 1, () => placer.cancelPlacement())
+      this.dispatchButtonEdge(gamepad, getGamepadButtonIndex('placementPlace'), () => placer.confirmPlacement())
+      this.dispatchButtonEdge(gamepad, getGamepadButtonIndex('placementMirror'), () => placer.toggleMirror())
+      this.dispatchButtonEdge(gamepad, getGamepadButtonIndex('placementCancel'), () => placer.cancelPlacement())
       // Consume placement buttons so closing the preview cannot trigger combat on the next frame.
       this.pressedButtons = new Set(gamepad.buttons.flatMap((button, index) => (button.pressed ? [index] : [])))
       return
@@ -122,23 +143,67 @@ export class GamepadHeroInput {
     this.dispatchInventoryTransferButton(gamepad, transferAllButton, 'all')
 
     const hero = this.controls.heroController
-    for (const [index, action] of HERO_ACTION_BUTTONS) {
+    // Release the original action even if its button was reassigned while held.
+    for (const [action, index] of this.activeActions) {
+      if (getGamepadButtonIndex(action) !== index) {
+        hero.handleKeyUp(action)
+        this.activeActions.delete(action)
+      }
+    }
+    for (const [index, action] of heroActionButtons()) {
       this.dispatchButtonEdge(
         gamepad,
         index,
-        () => hero.handleKeyDown(action),
-        () => hero.handleKeyUp(action)
+        () => {
+          this.activeActions.set(action, index)
+          hero.handleKeyDown(action)
+        },
+        () => {
+          if (this.activeActions.delete(action)) hero.handleKeyUp(action)
+        }
       )
     }
-    this.dispatchButtonEdge(gamepad, GAMEPAD_BUTTON.toolPrev, () => hero.cycleTool(-1))
-    this.dispatchButtonEdge(gamepad, GAMEPAD_BUTTON.toolNext, () => hero.cycleTool(1))
-    this.dispatchButtonEdge(gamepad, GAMEPAD_BUTTON.inspect, () => this.controls.openHeroEntityInteraction())
+    this.dispatchButtonEdge(gamepad, getGamepadButtonIndex('quests'), () =>
+      this.controls.context.menu?.toggleQuests?.()
+    )
+    this.dispatchButtonEdge(gamepad, getGamepadButtonIndex('heroToolPrev'), () => hero.cycleTool(-1))
+    this.dispatchButtonEdge(gamepad, getGamepadButtonIndex('heroToolNext'), () => hero.cycleTool(1))
+    this.dispatchButtonEdge(gamepad, getGamepadButtonIndex('heroInspect'), () =>
+      this.controls.openHeroEntityInteraction()
+    )
     this.dispatchButtonEdge(
       gamepad,
-      GAMEPAD_BUTTON.action,
-      () => hero.handlePrimaryPointerDown(),
-      () => hero.handlePointerUp()
+      getGamepadButtonIndex('heroAction'),
+      () => {
+        this.primaryHeld = true
+        hero.handlePrimaryPointerDown()
+      },
+      () => {
+        if (this.primaryHeld) hero.handlePointerUp()
+        this.primaryHeld = false
+      }
     )
+    this.pressedButtons = new Set(gamepad.buttons.flatMap((button, index) => (button.pressed ? [index] : [])))
+  }
+
+  /** Consume held buttons when a menu, pause or focus change interrupts gameplay. */
+  suspend(): void {
+    this.releaseWorldActions()
+    this.moveVector = { dx: 0, dy: 0 }
+    this.aimVector = null
+    this.directionLockActive = false
+    const pad = getGamepadEnabled() ? getActiveGamepad() : null
+    this.pressedButtons = new Set(pad?.buttons.flatMap((button, index) => (button.pressed ? [index] : [])) ?? [])
+    this.cursorActive = false
+    setVirtualCursorVisible(false)
+  }
+
+  private releaseWorldActions(): void {
+    if (this.activeActions.size || this.primaryHeld) this.controls.heroController.cancelActiveInteraction?.()
+    for (const action of this.activeActions.keys()) this.controls.heroController.handleKeyUp(action)
+    this.activeActions.clear()
+    if (this.primaryHeld) this.controls.heroController.handlePointerUp()
+    this.primaryHeld = false
   }
 
   /**
@@ -167,11 +232,10 @@ export class GamepadHeroInput {
   private dispatchButtonEdge(gamepad: Gamepad, index: number, onDown: () => void, onUp?: () => void): void {
     const pressed = Boolean(gamepad.buttons[index]?.pressed)
     const wasPressed = this.pressedButtons.has(index)
+    if (this.consumedButtons.has(index)) return
     if (pressed && !wasPressed) {
-      this.pressedButtons.add(index)
       onDown()
     } else if (!pressed && wasPressed) {
-      this.pressedButtons.delete(index)
       onUp?.()
     }
   }
@@ -179,16 +243,11 @@ export class GamepadHeroInput {
   private dispatchInventoryTransferButton(gamepad: Gamepad, index: number, mode: 'one' | 'all'): void {
     const pressed = Boolean(gamepad.buttons[index]?.pressed)
     const wasPressed = this.pressedButtons.has(index)
-    if (!pressed) {
-      if (wasPressed) this.pressedButtons.delete(index)
-      return
-    }
-    if (wasPressed) return
-
+    if (!pressed) return
     const slot = this.getHoveredInventoryTransferSlot()
     if (!slot) return
-
-    this.pressedButtons.add(index)
+    this.consumedButtons.add(index)
+    if (wasPressed) return
     slot.dispatchEvent(new CustomEvent('inventorytransfergamepad', { bubbles: true, detail: { mode } }))
   }
 

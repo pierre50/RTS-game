@@ -1,15 +1,15 @@
+import { isSowingPlacement } from '../lib/buildings/campConstruction'
+import { createConstructionMaterials } from '../lib/economy/constructionMaterials'
 import { BuildingPlacementHelp } from '../ui/BuildingPlacementHelp'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { Assets, Container, Sprite } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
-import type { ResourceLedger } from '../lib'
-import { canAfford, cartesianToIsometric, getTexture, payCost } from '../lib'
+import { cartesianToIsometric, getTexture } from '../lib'
 import { isTrapObservedBySight } from '../lib/buildings/trapRules'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
 import { addHeroInventoryItem, removeHeroInventoryItem } from '../lib/equipment/equipmentLoot'
 import { t } from '../lib/lang'
 import { getCellMapPoint } from '../lib/mapSpaces'
-import { getMissingPlayerResources, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import type { ControlsLike } from '../types/context'
 import type { PlaceableBuildingConfig, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -106,7 +106,7 @@ export class BuildingPlacer {
     }
     if (cell.inclined || cell.border) return
     if (this.canPlaceMouseBuilding(cell)) {
-      if (mouseBuilding.type === BUILDING_TYPES.farm) {
+      if (isSowingPlacement(mouseBuilding.type ?? '')) {
         return this.placeWheatField(cell)
       }
       if (
@@ -171,12 +171,15 @@ export class BuildingPlacer {
       ;(controls.mouseBuilding as MouseBuilding)[prop] = building[prop]
     })
     this.applyPreviewMirror()
-    this.help = new BuildingPlacementHelp({
-      place: () => this.confirmPlacement(),
-      mirror: () => this.toggleMirror(),
-      cancel: () => this.cancelPlacement(),
-      canMirror: this.canMirror(),
-    })
+    this.help = new BuildingPlacementHelp(
+      {
+        place: () => this.confirmPlacement(),
+        mirror: () => this.toggleMirror(),
+        cancel: () => this.cancelPlacement(),
+        canMirror: this.canMirror(),
+      },
+      Boolean(controls.gamepadInput?.connected)
+    )
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
     this.tintMouseBuilding(COLOR_GREEN)
     controls.addChild(controls.mouseBuilding)
@@ -317,24 +320,6 @@ export class BuildingPlacer {
     if (!cells.length) return true
 
     const config = getPlayerBuildingConfig(owner, BUILDING_TYPES.smallWall)!
-    const totalCost = Object.fromEntries(
-      Object.entries(config.cost ?? {}).map(([resource, amount]) => [resource, (amount as number) * cells.length])
-    ) as ResourceLedger
-    const ownerLedger: ResourceLedger = owner
-    if (!canAfford(ownerLedger, totalCost as ResourceLedger)) {
-      const missing = hasPlayerResourceChests(owner)
-        ? getMissingPlayerResources(owner, totalCost)
-        : Object.fromEntries(
-            (Object.keys(totalCost) as Array<keyof ResourceLedger>)
-              .filter(key => Number(ownerLedger[key]) < Number(totalCost[key]))
-              .map(key => [key, totalCost[key]])
-          )
-      const resource = (Object.keys(missing) as Array<keyof ResourceLedger>)[0]
-      menu.showMessage(t('needMore', { resource: t(resource ?? '') }), 'warning')
-      return false
-    }
-
-    payCost(owner, totalCost as ResourceLedger)
     const walls = cells.map(cell =>
       owner.createBuilding({
         i: cell.i,
@@ -342,6 +327,7 @@ export class BuildingPlacer {
         spaceId: cell.spaceId,
         type: BUILDING_TYPES.smallWall,
         isBuilt: map.instantMode,
+        constructionMaterials: map.instantMode ? undefined : createConstructionMaterials(config.cost),
       })
     )
 

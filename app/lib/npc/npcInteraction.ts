@@ -1,13 +1,5 @@
 import { heroCanCommand } from '../chief'
-import {
-  ACTION_TYPES,
-  CELL_WIDTH,
-  FAMILY_TYPES,
-  PLAYER_TYPES,
-  SHEET_TYPES,
-  SOUND_CUES,
-  UNIT_TYPES,
-} from '../constants'
+import { ACTION_TYPES, CELL_WIDTH, FAMILY_TYPES, PLAYER_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { findInstancesInSight } from '../grid/visibility'
 import { getCellsInCellRadius } from '../grid/cells'
 import { angleDelta, getInstanceDegree } from '../maths'
@@ -17,12 +9,7 @@ import { getEntitySpaceMapLike } from '../mapSpaces'
 import { transferNeutralEntityToPlayer } from '../entities/entityOwnerTransfer'
 import { isNeutralPlayer } from '../playerState'
 export { updateNpcFollow } from './npcFollow'
-export {
-  clearNpcCommunicationFocus,
-  keepNpcHere,
-  resolveHoverTarget,
-  startFollowingHero,
-} from './npcGoToDispatch'
+export { keepNpcHere, resolveHoverTarget, startFollowingHero } from './npcGoToDispatch'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Point } from '../../types/grid'
@@ -129,9 +116,13 @@ export function playNpcOrderSound(npcs: UnitEntity[]): void {
     return
   }
   if (npcs.some(npc => npc.type !== UNIT_TYPES.villager)) {
-    playAudibleSoundCue(npcs.find(npc => npc.type !== UNIT_TYPES.villager) ?? npcs[0], SOUND_CUES.unit.militaryCommand, {
-      profile: 'voice',
-    })
+    playAudibleSoundCue(
+      npcs.find(npc => npc.type !== UNIT_TYPES.villager) ?? npcs[0],
+      SOUND_CUES.unit.militaryCommand,
+      {
+        profile: 'voice',
+      }
+    )
     return
   }
   const villager = npcs.find(npc => npc.type === UNIT_TYPES.villager) ?? npcs[0]

@@ -61,6 +61,8 @@ export type RenderableInstance = VisibilityEntity &
 export type FindInstancesInSightOptions = {
   range?: number
   useInsightRange?: boolean
+  /** Skip compact resource queries when only units/buildings can be targets. */
+  includeResources?: boolean
 }
 
 export function findInstancesInSight<
@@ -78,7 +80,11 @@ export function findInstancesInSight<
   const space = getEntityMapSpace({ spaceId: instance.spaceId ?? null }, map)
   const instanceBuckets = space?.instanceBuckets ?? instance.context?.map?.instanceBuckets
   const instances: TTarget[] = []
-  if (map?.resources instanceof CompactResourceSet && (!instance.spaceId || instance.spaceId === 'outside')) {
+  if (
+    options?.includeResources !== false &&
+    map?.resources instanceof CompactResourceSet &&
+    (!instance.spaceId || instance.spaceId === 'outside')
+  ) {
     for (const record of map.resources.readArea(
       instX - searchRadius,
       instY - searchRadius,

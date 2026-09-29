@@ -60,20 +60,6 @@ export class BuildingCombat {
 
     const actionOk = getActionCondition(building, instance, ACTION_TYPES.attack)
     const dist = instancesDistance(building, instance)
-    console.debug(
-      `[TowerDetect] ${building.type}#${building.label} <- ${instance.type ?? instance.family}#${instance.label}`,
-      {
-        isBuilt: building.isBuilt,
-        isAnimal: instance.family === FAMILY_TYPES.animal,
-        alreadyAttacking: Boolean(building.attackIntervalId),
-        actionOk,
-        dist: Number(dist.toFixed(1)),
-        range,
-        inRange: dist <= range,
-        targetOwner: instance.owner?.label,
-        targetHitPoints: instance.hitPoints,
-      }
-    )
 
     if (
       building.isBuilt &&
@@ -100,15 +86,7 @@ export class BuildingCombat {
       candidate => getActionCondition(building, candidate, ACTION_TYPES.attack),
       { range, useInsightRange: true }
     )
-    console.debug(
-      `[TowerBuilt] ${building.type}#${building.label} range=${range}: ${candidates.length} hostile candidate(s)`,
-      candidates.map(c => ({
-        type: c.type ?? c.family,
-        label: c.label,
-        owner: c.owner?.label,
-        dist: Number(instancesDistance(building, c).toFixed(1)),
-      }))
-    )
+
     const target = candidates[0]
     if (target) building.detect(target)
   }

@@ -1,3 +1,4 @@
+import { completeTrainingRequest } from '../../lib/training/trainingRequests'
 import { getTrainingDurationDays } from '../../lib/training/trainingRules'
 import { definedProperties } from '../../lib/definedProperties'
 import { BUILDING_TYPES, FADE_DURATION_MS, MOUNTED_HORSE_SPEED_BONUS, UNIT_TYPES } from '../../constants'
@@ -160,6 +161,7 @@ export function startTrainingWithUnit(
 
   removeTraineeForTraining(trainee)
   const started = Boolean(buyUnit(type, true, false, getTrainingExtra(building, trainee, type, stableHorse), trainee))
-  if (!started) returnStableHorse(building, stableHorse)
+  if (started) completeTrainingRequest(building, trainee.label)
+  else returnStableHorse(building, stableHorse)
   return started
 }

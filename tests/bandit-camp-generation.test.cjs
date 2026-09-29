@@ -5,7 +5,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function loadBanditCampGeneration(furnishBanditCave = () => {}, uniqueCandidates = false, respawnStates = []) {
   return loadTsModule('app/classes/map/BanditCampGeneration.ts', {
     mocks: {
-      '../../lib/camps/CampRespawnState': { campRespawnStates: () => respawnStates },
+      '../../lib/camps/campRespawnState': { campRespawnStates: () => respawnStates },
       './BanditCaveGeneration': { furnishBanditCave },
       '../players': {
         AI: class AI {

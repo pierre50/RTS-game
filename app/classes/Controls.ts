@@ -16,6 +16,7 @@ import type { TickerLike } from './ControlsFrame'
 import { onTick as runOnTick } from './ControlsFrame'
 import {
   getCellUnderCursor as runGetCellUnderCursor,
+  getWorkSoundVolume as runGetWorkSoundVolume,
   getHeroCameraCenter as runGetHeroCameraCenter,
   getMapPointUnderCursor as runGetMapPointUnderCursor,
   getWorldPointUnderCursor as runGetWorldPointUnderCursor,
@@ -450,6 +451,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   cancelActiveInteraction(): void {
+    this.gamepadInput.suspend()
     this.stopKeyboardMove()
     this.stopMouseCameraMove()
     this.touchInputController.cancel()
@@ -463,6 +465,10 @@ export default class Controls extends Container implements ControlsLike {
 
   instanceIsAudible(instance: AudibleEntity): boolean {
     return runInstanceIsAudible(this, instance)
+  }
+
+  getWorkSoundVolume(instance: AudibleInstanceLike): number {
+    return runGetWorkSoundVolume(this, instance)
   }
 
   getCellOnCamera(callback: (cell: RuntimeCell) => void): void {

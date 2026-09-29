@@ -4,7 +4,7 @@ import { getPackedCellStore } from '../cell/PackedCellRegistry'
 import { takePreparedAnimals } from './generation/PreparedMapContent'
 import { destroyLogicalResourceViews } from '../resources/ResourceHandle'
 import { Assets } from 'pixi.js'
-import { Gaia } from '../players'
+import { Gaia, ensureNeutralPlayer } from '../players'
 import { MapBlueprintGeneration } from './generation/MapBlueprintGeneration'
 import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/Player'
@@ -236,6 +236,10 @@ export class MapGeneration {
 
   applyStartingBonuses(player: PlayerLike, configuredAge: number | null = null): void {
     applyPlayerStartingBonuses(this.map, player, configuredAge)
+  }
+
+  ensureNeutralPlayer(position: { i: number; j: number }): PlayerLike {
+    return ensureNeutralPlayer(this.map.context as GameContextLike, position)
   }
 
   generatePlayers(playersConfig: Array<PlayerOptions> | null = null): PlayerLike[] {

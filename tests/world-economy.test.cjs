@@ -9,14 +9,18 @@ test('tutorial days freeze remote economies without catching up after completion
   const { campaign, region, state } = fixture()
   campaign.tutorial = { stage: 'wood-requested' }
   const original = structuredClone(state)
-  advanceCampaignEconomy(campaign, 5 * DAY, 'home', () => { throw new Error('Tutorial must not simulate') })
+  advanceCampaignEconomy(campaign, 5 * DAY, 'home', () => {
+    throw new Error('Tutorial must not simulate')
+  })
   assert.deepEqual(state.players, original.players)
   assert.deepEqual(state.resources, original.resources)
   assert.equal(region.simulatedUntilMs, 5 * DAY)
   assert.equal(state.runtime.dayNightElapsedMs, 5 * DAY)
   const restored = JSON.parse(JSON.stringify(campaign))
   restored.introduction = { status: 'completed' }
-  advanceCampaignEconomy(restored, 5 * DAY, 'home', () => { throw new Error('No tutorial catch-up') })
+  advanceCampaignEconomy(restored, 5 * DAY, 'home', () => {
+    throw new Error('No tutorial catch-up')
+  })
   const normal = structuredClone(restored)
   delete normal.tutorial
   advanceCampaignEconomy(restored, 6 * DAY, 'home', rules)
@@ -62,9 +66,20 @@ function fixture() {
         label: 'ai',
         population: 1,
         populationMax: 10,
-        units: [{ type: 'Villager', label: 'worker', i: 10, j: 10, autonomousJob: 'wood' }],
+        units: [
+          {
+            type: 'Villager',
+            label: 'worker',
+            i: 10,
+            j: 10,
+            autonomousJob: 'wood',
+            inventory: { resources: { wheat: 12 } },
+          },
+        ],
         buildings: [
-          { type: 'TownCenter', label: 'center', i: 6, j: 6, isBuilt: true, inventory: { resources: { wheat: 200 } } },
+          { type: 'TownCenter', label: 'center', i: 6, j: 6, isBuilt: true, inventory: { resources: {} } },
+          { type: 'Granary', label: 'granary', i: 3, j: 3, isBuilt: true, inventory: { resources: { wheat: 300 } } },
+          { type: 'StoragePit', label: 'pit', i: 3, j: 6, isBuilt: true, inventory: { resources: {} } },
         ],
       },
     ],
@@ -86,7 +101,7 @@ test('unvisited AI produces, consumes and receives villagers without loading a r
   advanceCampaignEconomy(campaign, DAY, 'home', rules)
   assert.equal(region.simulatedUntilMs, DAY)
   assert.ok(region.summaries.faction.stocks.wood > 0)
-  assert.ok(region.summaries.faction.stocks.food < 200)
+  assert.ok(region.initialState.players[0].units[0].inventory.resources.wheat < 12)
   assert.ok(region.summaries.faction.population > 1)
   assert.equal(campaign.worlds.remote, undefined)
 })
@@ -203,7 +218,11 @@ test('abstract snapshots validate without a human or a full fog grid; corrupt me
   const { campaign, state } = fixture()
   state.world.seed = 4242
   state.players[0].isPlayed = false
-  const config = { resources: { Tree: {} }, units: { Villager: {} }, buildings: { TownCenter: {} } }
+  const config = {
+    resources: { Tree: {} },
+    units: { Villager: {} },
+    buildings: { TownCenter: {}, Granary: {}, StoragePit: {} },
+  }
   assert.doesNotThrow(() => validateWorldEconomy(campaign, config))
   const invalid = structuredClone(campaign)
   invalid.economy.regions.remote.simulatedUntilMs = -1

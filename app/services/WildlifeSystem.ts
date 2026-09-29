@@ -2,6 +2,8 @@ import { habitatCells, maintainWildlifeHome, outsideWildlifeHome } from './Wildl
 import type { DailyWorldEvent } from './DailyWorldEventTypes'
 import { CORPSE_TIME, FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { isometricToCartesian } from '../lib'
+import { isDistantOwner } from '../lib/units/villageActivity'
+import { isUnitSuspended } from '../lib/units/unitSuspension'
 import { serializeWildAnimal } from '../serialization/SaveSerializer'
 import { getWildlifeStore, installWildlifeStore, isWildlife, WILDLIFE_RENEW_DAYS } from './WildlifeStore'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
@@ -12,6 +14,14 @@ import type { Gaia } from '../classes/players/GaiaPlayer'
 const WAKE_RADIUS = 32
 const SLEEP_RADIUS = 48
 const BATCH = 16
+type WildlifeAnchor = {
+  i: number
+  j: number
+  radius: number
+  sightRadius: number
+  kind: 'units' | 'buildings' | 'hero' | 'camera'
+  activates: boolean
+}
 
 /** Only nearby wildlife becomes a runtime entity. The registry remains the authoritative dormant state. */
 export class WildlifeSystem {
@@ -19,6 +29,7 @@ export class WildlifeSystem {
   private task: SchedulerTaskId
   private pending: Iterator<string> | undefined
   private renewalDay: number
+  private reportAt = 0
   constructor(private context: GameContextLike) {
     this.renewalDay = context.dayNight?.state?.day ?? 1
     const animals = (context.map.gaia as Gaia | undefined)?.animals ?? []
@@ -34,9 +45,10 @@ export class WildlifeSystem {
         this.active.set(animal.label, animal)
       }
 
-    this.task = context.scheduler.add(() => this.update(), 250, 'wildlife.streaming')
+    // Reconcile the current surroundings once per frame, even during fast-forward.
+    // Corpse decay uses elapsed game time; pending work remains queued in batches.
+    this.task = context.scheduler.add(() => this.update(), 250, 'wildlife.streaming', { maxRunsPerTick: 1 })
     this.update()
-    console.info(`[wildlife] ${JSON.stringify(this.getStats())}`)
   }
   handleDailyWorldEvent(event: DailyWorldEvent): void {
     this.renewalDay = event.day
@@ -49,19 +61,48 @@ export class WildlifeSystem {
     return this.context.dayNight?.getElapsedMs?.() ?? this.context.scheduler.elapsedMs ?? 0
   }
   private anchors() {
-    const result: { i: number; j: number; radius: number; sightRadius: number }[] = []
-    for (const player of this.context.players)
-      for (const entity of [...player.units, ...player.buildings])
-        if (!entity.isDead && !entity.isDestroyed && (!entity.spaceId || entity.spaceId === 'outside'))
-          result.push({
-            i: entity.i,
-            j: entity.j,
-            radius: Math.max(WAKE_RADIUS, Number(entity.sight) + 8 || 0),
-            sightRadius: Number(entity.sight) || 8,
-          })
+    const result: WildlifeAnchor[] = []
+    for (const player of this.context.players) {
+      const distant = !player.isPlayed && isDistantOwner(player)
+      for (const unit of player.units) {
+        if (unit.isDead || unit.isDestroyed || (unit.spaceId && unit.spaceId !== 'outside')) continue
+        result.push({
+          i: unit.i,
+          j: unit.j,
+          radius: Math.max(WAKE_RADIUS, Number(unit.sight) + 8 || 0),
+          sightRadius: Number(unit.sight) || 8,
+          kind: 'units',
+          activates: Boolean(
+            player.isPlayed ||
+              !isUnitSuspended(unit) ||
+              unit.action === 'attack' ||
+              unit.action === 'flee' ||
+              unit.combatMode
+          ),
+        })
+      }
+      for (const building of player.buildings) {
+        if (building.isDead || building.isDestroyed || (building.spaceId && building.spaceId !== 'outside')) continue
+        result.push({
+          i: building.i,
+          j: building.j,
+          radius: Math.max(WAKE_RADIUS, Number(building.sight) + 8 || 0),
+          sightRadius: Number(building.sight) || 8,
+          kind: 'buildings',
+          activates: !distant,
+        })
+      }
+    }
     const hero = this.context.controls?.heroUnit
-    if (hero && (!hero.spaceId || hero.spaceId === 'outside'))
-      result.push({ i: hero.i, j: hero.j, radius: WAKE_RADIUS, sightRadius: Number(hero.sight) || 8 })
+    if (hero && !hero.isDead && !hero.isDestroyed && (!hero.spaceId || hero.spaceId === 'outside'))
+      result.push({
+        i: hero.i,
+        j: hero.j,
+        radius: WAKE_RADIUS,
+        sightRadius: Number(hero.sight) || 8,
+        kind: 'hero',
+        activates: true,
+      })
     const rect = this.context.controls?.getViewportMetrics?.()
     if (rect) {
       const [i, j] = isometricToCartesian(
@@ -73,7 +114,14 @@ export class WildlifeSystem {
         [rect.visibleLeft + rect.visibleWidth, rect.visibleTop + rect.visibleHeight],
       ].map(([x, y]) => isometricToCartesian(x, y))
       const radius = Math.max(WAKE_RADIUS, ...corners.map(([x, y]) => Math.hypot(x - i, y - j) + 8))
-      result.push({ i, j, radius, sightRadius: Math.max(...corners.map(([x, y]) => Math.hypot(x - i, y - j))) })
+      result.push({
+        i,
+        j,
+        radius,
+        sightRadius: Math.max(...corners.map(([x, y]) => Math.hypot(x - i, y - j))),
+        kind: 'camera',
+        activates: true,
+      })
     }
     return result
   }
@@ -103,10 +151,12 @@ export class WildlifeSystem {
     const store = getWildlifeStore(this.context.map)
     if (!store) return
     const anchors = this.anchors()
+    const activeAnchors = anchors.filter(anchor => anchor.activates)
     const near = (point: { i: number; j: number }, margin = 0) =>
-      anchors.some(a => Math.hypot(a.i - point.i, a.j - point.j) <= a.radius + margin)
+      activeAnchors.find(a => Math.hypot(a.i - point.i, a.j - point.j) <= a.radius + margin)
     const now = this.now(),
       day = this.context.dayNight?.state?.day ?? 1
+    const reasons = { interaction: 0, returning: 0, units: 0, buildings: 0, hero: 0, camera: 0 }
     const targets = new Set<object>()
     for (const player of this.context.players)
       for (const unit of player.units) {
@@ -123,7 +173,7 @@ export class WildlifeSystem {
       }
       if (animal.isDead || animal.isDestroyed) {
         entry.state.wildlife!.renewDay ??= day + WILDLIFE_RENEW_DAYS
-        if (!animal.quantity && animal.isDead)
+        if (animal.isDead)
           entry.state.wildlife!.corpseExpiresMs ??= now + (animal.corpseMaterialDecayRemainingMs ?? CORPSE_TIME * 1000)
         store.pending.add(label)
       }
@@ -133,9 +183,15 @@ export class WildlifeSystem {
         targets.has(animal) ||
         animal.action === 'attack' ||
         animal.isFleeing ||
-        (!animal.isDead && outsideWildlifeHome(animal, entry.state.wildlife!)) ||
         (animal.isDead && animal.currentSheet !== SHEET_TYPES.corpse && !animal.isDestroyed)
-      if (!animal.isDestroyed && (pin || near(animal, SLEEP_RADIUS - WAKE_RADIUS))) continue
+      const returning = !animal.isDead && outsideWildlifeHome(animal, entry.state.wildlife!)
+      const anchor = !pin && !returning ? near(animal, SLEEP_RADIUS - WAKE_RADIUS) : undefined
+      if (!animal.isDestroyed && (pin || returning || anchor)) {
+        if (pin) reasons.interaction++
+        else if (returning) reasons.returning++
+        else if (anchor) reasons[anchor.kind]++
+        continue
+      }
       const state = serializeWildAnimal(animal)
       state.wildlife = { ...entry.state.wildlife!, lastCorpseMs: now }
       if (!state.isDead) {
@@ -203,10 +259,10 @@ export class WildlifeSystem {
     const candidates = function* () {
       // Loaded displaced survivors must finish returning even when both ends are off screen.
       yield* store.displaced
-      for (const anchor of anchors) yield* store.near(anchor.i, anchor.j, anchor.radius)
+      for (const anchor of activeAnchors) yield* store.near(anchor.i, anchor.j, anchor.radius)
     }
     for (const label of candidates()) {
-      if (created >= BATCH) return
+      if (created >= BATCH) break
       if (this.active.has(label)) continue
       const state = store.entries.get(label)!.state
       if (state.isDead) this.decay(state, now)
@@ -216,6 +272,15 @@ export class WildlifeSystem {
       this.active.set(label, animal)
       store.displaced.delete(label)
       created++
+    }
+    if (now >= this.reportAt) {
+      this.reportAt = now + 5000
+      this.context.performance?.markEvent?.('wildlife.activity', {
+        ...this.getStats(),
+        ...reasons,
+        created,
+        dormantAnchors: anchors.length - activeAnchors.length,
+      })
     }
   }
   private available(point: { i: number; j: number; label?: string }, renewal: boolean): boolean {
@@ -235,20 +300,16 @@ export class WildlifeSystem {
     if (!state.isDead || state.isDestroyed) return
     const meta = state.wildlife!
     const last = meta.lastCorpseMs ?? now
-    const ticks = Math.floor(Math.max(0, now - last) / 5000)
-    const meat = Math.max(0, state.inventory?.resources?.meat ?? state.quantity ?? 0)
-    state.quantity = Math.max(0, meat - ticks)
-    if (state.inventory?.resources) state.inventory.resources.meat = state.quantity
-    meta.lastCorpseMs = last + ticks * 5000
-    if (!state.quantity) {
-      meta.corpseExpiresMs ??=
-        last + Math.min(ticks, meat) * 5000 + (state.corpseMaterialDecayRemainingMs ?? CORPSE_TIME * 1000)
-      if (now >= meta.corpseExpiresMs) {
-        state.isDestroyed = true
-        delete state.inventory
-      } else state.corpseMaterialDecayRemainingMs = meta.corpseExpiresMs - now
+    meta.corpseExpiresMs ??= last + (state.corpseMaterialDecayRemainingMs ?? CORPSE_TIME * 1000)
+    meta.lastCorpseMs = now
+    state.corpseMaterialDecayRemainingMs = Math.max(0, meta.corpseExpiresMs - now)
+    if (now >= meta.corpseExpiresMs) {
+      state.isDestroyed = true
+      state.quantity = 0
+      delete state.inventory
     }
   }
+
   destroy(): void {
     this.context.scheduler.remove(this.task)
     this.active.clear()

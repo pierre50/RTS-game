@@ -93,10 +93,7 @@ test('daily natural regrowth waits for mineral respawn delays before resources r
 
   system.applyDailyRegrowth({ day: 17, previousDay: 16 })
 
-  assert.deepEqual(calls, [
-    ['updateResourcesMiniMap'],
-    ['resumeAutonomy', 'gold-miner', 'gold', { exploreWhenNoTarget: false }],
-  ])
+  assert.deepEqual(calls, [['updateResourcesMiniMap']])
   assert.deepEqual(context.map.naturalResourceRespawnSlots, [])
 })
 

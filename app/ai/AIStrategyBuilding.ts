@@ -1,5 +1,3 @@
-import { tryCreateCampChest } from '../lib/grid/campChestPlacement'
-import { getPlayerResourceStores, type ResourceStoreOwner } from '../lib/resources/playerResourceTotals'
 import { storageResourcesForAI } from './AIStrategyResources'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { BUILDING_TYPES } from '../constants'
@@ -44,7 +42,7 @@ export function buyAIBuildingIfNeeded(
   buildingType: string,
   buildingsByType: BuildingListByType,
   positionCallback: () => AIGridPosition | null,
-  reserve: AIResourceAmount = {},
+  _reserve: AIResourceAmount = {},
   debug: boolean = false
 ): boolean {
   const { ai } = strategy
@@ -52,8 +50,7 @@ export function buyAIBuildingIfNeeded(
   if (!building) return false
   if (
     condition &&
-    canAfford(ai as Parameters<typeof canAfford>[0], building.cost) &&
-    strategy.canSpendWithReserve(building.cost || {}, reserve) &&
+    !ai.buildings.some(site => !site.isBuilt && !site.isDead && !site.isDestroyed) &&
     ai.hasNotReachBuildingLimit(buildingType, buildingsByType[buildingType])
   ) {
     const pos = positionCallback()
@@ -70,7 +67,7 @@ export function buyAIWheatFieldIfNeeded(
   condition: boolean,
   currentWheatTiles: AIEntityLike[],
   positionCallback: () => AIGridPosition | null,
-  reserve: AIResourceAmount = {},
+  _reserve: AIResourceAmount = {},
   debug: boolean = false
 ): boolean {
   const { ai } = strategy
@@ -78,8 +75,9 @@ export function buyAIWheatFieldIfNeeded(
   if (
     condition &&
     field &&
-    canAfford(ai as Parameters<typeof canAfford>[0], field.cost) &&
-    strategy.canSpendWithReserve(field.cost || {}, reserve)
+    canAfford(ai as Parameters<typeof canAfford>[0], { wheat: 1 }) &&
+    strategy.canSpendWithReserve({ wheat: 1 }) &&
+    !ai.buildings.some(site => site.type === BUILDING_TYPES.farm && !site.isBuilt && !site.isDead && !site.isDestroyed)
   ) {
     const pos = positionCallback()
     if (pos && ai.buyBuilding(pos.i, pos.j, BUILDING_TYPES.farm)) {
@@ -268,27 +266,6 @@ function buyCoreInfrastructure(options: {
   return actions
 }
 
-function buyCampChest(ai: AIStrategyPlayerLike): number {
-  if (!ai.config.buildings[BUILDING_TYPES.chest]) return 0
-  const grid = ai.context.map.grid
-  const passages = createReservedPassageCellLookup(ai.context)
-  return Number(
-    tryCreateCampChest({
-      workers: ai.units,
-      buildings: ai.buildings,
-      resources: Object.values(ai.foundedResources ?? {}).flatMap(set => [...set]),
-      stocks: getPlayerResourceStores(ai as unknown as ResourceStoreOwner),
-      woodCost: Number(getPlayerBuildingConfig(ai, BUILDING_TYPES.chest)?.cost?.wood) || 0,
-      terrainAt: p => grid[p.i]?.[p.j],
-      isFree: p => {
-        const cell = grid[p.i]?.[p.j]
-        return !!cell && !cell.solid && !passages.has(cell)
-      },
-      create: p => ai.buyBuilding(p.i, p.j, BUILDING_TYPES.chest, { alreadyPaid: true }),
-    })
-  )
-}
-
 export function handleAIBuildingActions(
   strategy: BuildingStrategy,
   snapshot: AIStrategySnapshot,
@@ -313,11 +290,15 @@ export function handleAIBuildingActions(
     notBuiltHouses,
   } = snapshot
 
-  const anchor =
-    towncenters[0] ||
-    ai.buildings?.find(b => b.type === BUILDING_TYPES.chest && b.isBuilt && !b.isDead && !b.isDestroyed) ||
-    ai.getHomeAnchor()
-  if (!anchor) return buyCampChest(ai)
+  const anchor = towncenters[0] || ai.getHomeAnchor() || snapshot.villagers[0]
+  if (!anchor) return 0
+  if (
+    !towncenters.length &&
+    !ai.buildings.some(b => b.type === BUILDING_TYPES.townCenter && !b.isDead && !b.isDestroyed)
+  ) {
+    const point = getPositionInGridAroundInstance(anchor, map.grid, [5, 10], 0)
+    return point ? Number(ai.buyBuilding(point.i, point.j, BUILDING_TYPES.townCenter)) : 0
+  }
 
   const buildingsByType = {
     [BUILDING_TYPES.townCenter]: towncenters,
@@ -376,10 +357,11 @@ export function handleAIBuildingActions(
     temples,
   })
 
-  actions += buyCampChest(ai)
-
   const livingWheatTiles = farms.filter(farm => !farm.isDead && !farm.isDestroyed && (farm.quantity ?? 0) > 0)
-  const currentWheatFields = Math.ceil(livingWheatTiles.length / WHEAT_TILES_PER_FIELD)
+  const pendingWheatTiles = ai.buildings.filter(
+    site => site.type === BUILDING_TYPES.farm && !site.isDead && !site.isDestroyed
+  ).length
+  const currentWheatFields = Math.ceil((livingWheatTiles.length + pendingWheatTiles) / WHEAT_TILES_PER_FIELD)
   const desiredWheatFields = Math.min(MAX_AI_WHEAT_FIELDS, Math.max(1, Math.ceil(maxVillagers / 10)))
   const wheatAnchor = granarys.find(granary => granary.isBuilt && !granary.isDead && !granary.isDestroyed) || anchor
   if (

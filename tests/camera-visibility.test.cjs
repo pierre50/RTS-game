@@ -518,7 +518,8 @@ test('zoom changes the explored footprint and sub-cell movement reuses camera ca
 })
 
 function createLiveCameraScene() {
-  const { updateInstanceRenderVisibility, forgetInstanceRenderCandidate } = loadTsModule('app/lib/grid/visibility.ts', {
+  const { forgetInstanceRenderCandidate } = loadTsModule('app/lib/grid/cameraRenderTracking.ts')
+  const { updateInstanceRenderVisibility } = loadTsModule('app/lib/grid/visibility.ts', {
     mocks: { '../../services/UnitPerception': { updateVisibility() {} } },
   })
   let checks = 0

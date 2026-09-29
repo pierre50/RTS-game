@@ -171,9 +171,11 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
   })
   const bought = []
   const ai = {
-    buildings: [{ type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20 } } }],
+    buildings: [
+      { type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20, wheat: 1 } } },
+    ],
     age: 0,
-    config: { buildings: { Farm: { cost: { wood: 75 }, size: 4 } } },
+    config: { buildings: { Farm: { cost: { wheat: 1 }, size: 1 } } },
     food: 0,
     gold: 0,
     phase: 'economy',
@@ -222,7 +224,7 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
   assert.deepEqual(bought, [[12, 14, 'Farm']])
 })
 
-test('ai building strategy can spend resources stored in chests', () => {
+test('AI farming cannot spend a personal chest', () => {
   const AIStrategy = loadAIStrategy({
     lib: {
       getPositionInGridAroundInstance: () => ({ i: 12, j: 14 }),
@@ -231,7 +233,7 @@ test('ai building strategy can spend resources stored in chests', () => {
   const bought = []
   const ai = {
     age: 0,
-    config: { buildings: { Farm: { cost: { wood: 75 }, size: 4 } } },
+    config: { buildings: { Farm: { cost: { wheat: 1 }, size: 1 } } },
     food: 0,
     gold: 0,
     label: 'ai-1',
@@ -249,7 +251,7 @@ test('ai building strategy can spend resources stored in chests', () => {
     },
     hasNotReachBuildingLimit: () => true,
   }
-  ai.buildings.push({ owner: ai, type: 'Chest', inventory: { resources: { wood: 80 } } })
+  ai.buildings.push({ owner: ai, type: 'Chest', inventory: { resources: { wheat: 80 } } })
   const strategy = new AIStrategy(ai)
 
   const actions = strategy.handleBuildingActions({
@@ -279,11 +281,11 @@ test('ai building strategy can spend resources stored in chests', () => {
     notBuiltHouses: [],
   })
 
-  assert.equal(actions, 1)
-  assert.deepEqual(bought, [[12, 14, 'Farm']])
+  assert.equal(actions, 0)
+  assert.deepEqual(bought, [])
 })
 
-test('ai reserve checks can read resources stored in chests', () => {
+test('AI reserve checks exclude personal chests', () => {
   const AIStrategy = loadAIStrategy()
   const ai = {
     age: 0,
@@ -294,10 +296,10 @@ test('ai reserve checks can read resources stored in chests', () => {
     wood: 0,
     buildings: [],
   }
-  ai.buildings.push({ owner: ai, type: 'Chest', inventory: { resources: { wood: 80 } } })
+  ai.buildings.push({ owner: ai, type: 'Chest', inventory: { resources: { wheat: 80 } } })
   const strategy = new AIStrategy(ai)
 
-  assert.equal(strategy.canSpendWithReserve({ wood: 75 }, { wood: 5 }), true)
+  assert.equal(strategy.canSpendWithReserve({ wood: 75 }, { wood: 5 }), false)
   assert.equal(strategy.canSpendWithReserve({ wood: 76 }, { wood: 5 }), false)
 })
 
@@ -320,10 +322,10 @@ test('ai economic demand reserves food for automatic villager growth', () => {
   }
   const strategy = new AIStrategy(ai)
 
-  assert.equal(strategy.getEconomicDemand().food, 100)
+  assert.equal(strategy.getEconomicDemand().food, 180)
 })
 
-test('ai economic demand includes stone-heavy core infrastructure', () => {
+test('AI resources are requested for placed projects instead of hypothetical buildings', () => {
   const AIStrategy = loadAIStrategy()
   const ai = {
     age: 0,
@@ -351,7 +353,7 @@ test('ai economic demand includes stone-heavy core infrastructure', () => {
   const strategy = new AIStrategy(ai)
 
   // A market is not reserved before its storage and granary prerequisites exist.
-  assert.deepEqual(strategy.getEconomicDemand(), { food: 0, gold: 0, stone: 130, wood: 360 })
+  assert.deepEqual(strategy.getEconomicDemand(), { food: 148, gold: 0, stone: 0, wood: 0 })
 })
 
 test('ai building strategy anticipates automatic villager waves before adding houses', () => {
@@ -362,7 +364,9 @@ test('ai building strategy anticipates automatic villager waves before adding ho
     },
   })
   const ai = {
-    buildings: [{ type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20 } } }],
+    buildings: [
+      { type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20, wheat: 1 } } },
+    ],
     age: 0,
     buyBuilding: (i, j, type) => {
       bought.push([i, j, type])
@@ -428,7 +432,9 @@ test('ai building strategy adds passage clearance to construction searches', () 
     },
   })
   const ai = {
-    buildings: [{ type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20 } } }],
+    buildings: [
+      { type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20, wheat: 1 } } },
+    ],
     age: 0,
     config: { buildings: { House: { cost: { wood: 30 }, size: 2 } } },
     food: 0,
@@ -635,11 +641,11 @@ test('ai training ignores unavailable villagers and does not reserve failed move
   assert.equal(accepted.trainingTargetType, 'Fantassin')
 })
 
-test('ai training accounts for active, queued, concurrent and incoming trainees', () => {
+test('ai training shares capacity accounting without counting mirrored concurrent entries twice', () => {
   const { strategy, barracks, villager } = strategyFixture()
   barracks.loading = 0
-  barracks.queue = ['Fantassin', 'Fantassin']
-  barracks.trainingQueue = [{}]
+  barracks.queue = ['Fantassin', 'Fantassin', 'Fantassin']
+  barracks.trainingQueue = [{}, {}, {}]
   villager({ dest: barracks, trainingTargetType: 'Fantassin' })
   villager({ dest: barracks, trainingTargetType: 'Fantassin', isDead: true })
   villager({ dest: barracks, trainingTargetType: 'Fantassin', isDestroyed: true })
@@ -688,14 +694,14 @@ test('ai growth reserves respect housing capacity, population and the daily arri
   const { ai, strategy } = strategyFixture()
   assert.equal(strategy.getVillagerGrowthFoodReserve(), 0)
   ai.population = 10
-  assert.equal(strategy.getVillagerGrowthFoodReserve(), 140)
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 180)
   ai.populationMax = 10
-  assert.equal(strategy.getVillagerGrowthFoodReserve(), 120)
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 160)
   ai.populationMax = 8
-  assert.equal(strategy.getVillagerGrowthFoodReserve(), 120)
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 160)
   ai.population = 100
   ai.populationMax = 200
-  assert.equal(strategy.getVillagerGrowthFoodReserve(), 1300)
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 1700)
 })
 
 test('AI ignores legacy age costs when planning its economy', () => {

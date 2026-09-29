@@ -8,6 +8,7 @@ const { BuildingLifecycle } = loadTsModule('app/classes/building/BuildingLifecyc
     '../../lib': { getPercentage: (hp, total) => (hp * 100) / total, updateInstanceVisibility() {} },
     '../../lib/lang': { t: key => key },
     '../../lib/buildings/townCenterClaim': { competingTownCenterSites: () => [] },
+    './BuildingSowing': { finishSowingTile: () => false },
     './BuildingDestruction': {},
     './BuildingFinalTexture': {},
     './BuildingFire': {},
@@ -37,5 +38,17 @@ test('only actual construction completion notifies the rest system, once', () =>
   lifecycle.updateTexture()
   building.onBuilt() // Activation of an already built/loaded building is not a new construction.
   assert.deepEqual(notifications, [building])
+  assert.equal(building.owner.populationMax, 5)
+})
+
+test('town center construction supplies no housing', () => {
+  const building = {
+    type: 'TownCenter', isBuilt: true,
+    owner: { population: 2, populationMax: 5 }, context: { menu: {} },
+  }
+  const lifecycle = new BuildingLifecycle(building)
+  lifecycle.onBuilt()
+  lifecycle.onBuilt()
+  assert.equal(building.owner.population, 2)
   assert.equal(building.owner.populationMax, 5)
 })

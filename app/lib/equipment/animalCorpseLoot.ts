@@ -1,3 +1,7 @@
+import { notifyVillageWorkChanged } from '../units/villageWorkEvents'
+import { collectiveHarvestBudget } from '../economy/collectiveTasks'
+import { personalFoodReserve } from '../economy/villagerProvisions'
+import { materialAmount } from '../economy/constructionMaterials'
 import { ANIMAL_CORPSE_DROPS } from '../../config/animalGatherLoot'
 import {
   createInventoryContainer,
@@ -80,8 +84,14 @@ export function canRecoverAnimalLootForDelivery(animal: AnimalLootSource, unit: 
   const resources = animal.inventory?.resources ?? { meat: animal.quantity ?? 0 }
   return Object.entries(resources).some(([resource, amount]) => {
     if (!amount) return false
-    const probe = Object.assign(Object.create(unit) as UnitEntity, { inventory: { resources: { [resource]: 1 } } })
-    return Boolean(findResourceDeliveryTarget(probe))
+    if (unit.owner && collectiveHarvestBudget(unit.owner, unit, resource as keyof ResourceAmount) <= 0) return false
+    const probe = Object.assign(Object.create(unit) as UnitEntity, {
+      inventory: { resources: { [resource]: resource === 'meat' ? personalFoodReserve() + 1 : 1 } },
+    })
+    return (
+      Boolean(findResourceDeliveryTarget(probe)) ||
+      (resource === 'meat' && materialAmount(unit.inventory?.resources ?? {}, 'food') < personalFoodReserve())
+    )
   })
 }
 
@@ -93,9 +103,20 @@ export function takeAnimalLootForDelivery(animal: AnimalLootSource, unit: UnitEn
   const keys = Object.keys(resources) as Array<keyof ResourceAmount>
   keys.sort((a, b) => Number(b === 'meat') - Number(a === 'meat'))
   for (const resource of keys) {
-    const probe = Object.assign(Object.create(unit) as UnitEntity, { inventory: { resources: { [resource]: 1 } } })
+    const probe = Object.assign(Object.create(unit) as UnitEntity, {
+      inventory: { resources: { [resource]: resource === 'meat' ? personalFoodReserve() + 1 : 1 } },
+    })
     const depot = findResourceDeliveryTarget(probe)
-    if (!depot) continue
+    if (!depot) {
+      if (resource === 'meat')
+        moved += pickupAnimalResource(
+          animal,
+          unit,
+          resource,
+          Math.max(0, personalFoodReserve() - materialAmount(unit.inventory?.resources ?? {}, 'food'))
+        )
+      continue
+    }
     const room = Math.max(
       0,
       getBuildingStorageRemaining(depot) -
@@ -105,7 +126,9 @@ export function takeAnimalLootForDelivery(animal: AnimalLootSource, unit: UnitEn
           0
         )
     )
-    moved += pickupAnimalResource(animal, unit, resource, room)
+    const budget = unit.owner ? collectiveHarvestBudget(unit.owner, unit, resource) : Infinity
+    moved += pickupAnimalResource(animal, unit, resource, Math.min(room, budget))
   }
+  if (moved > 0) notifyVillageWorkChanged(unit.owner)
   return moved
 }

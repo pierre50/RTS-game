@@ -1,5 +1,8 @@
+import type { DepotReservePolicy } from '../lib/economy/depotReserves'
+import type { TrainingRequest } from './training'
+import type { ConstructionMaterials } from '../lib/economy/constructionMaterials'
 import type { MinimapBuildingMemory, MinimapPreferences } from './minimap'
-import type { CampRespawnState } from '../lib/camps/CampRespawnState'
+import type { CampRespawnState } from '../lib/camps/campRespawnState'
 import type { VillageHome } from '../lib/units/villageActivity'
 import type { CampBehavior } from './camp'
 import type { VillagerSchedule } from '../lib/units/villagerSchedule'
@@ -26,6 +29,8 @@ export type SaveDestination = Partial<SaveGridPoint & { x: number; y: number; la
 type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValue } } | null
 
 export type SaveEntityState = {
+  collectiveTask?: string | null
+  constructionMaterials?: ConstructionMaterials
   wildlife?: {
     homeI: number
     homeJ: number
@@ -45,6 +50,7 @@ export type SaveEntityState = {
   factionExpedition?: FactionExpeditionSave
   caveOrders?: Pick<SaveEntityState, 'action' | 'dest' | 'previousDest' | 'path' | 'realDest'>
   resourceDelivery?: {
+    pickup?: ResourceAmount
     building?: SaveReference | null
     returnTask?: {
       action?: string | null
@@ -97,7 +103,6 @@ export type SaveEntityState = {
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   inactif?: boolean
-  villagerDeliveriesBlocked?: boolean
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
@@ -116,6 +121,7 @@ export type SaveEntityState = {
   isFleeing?: boolean
   isUsedBy?: string | null
   j: number
+  lastMealAt?: number
   dailySchedule?: VillagerSchedule
   label?: string
   loading?: number | null
@@ -123,6 +129,8 @@ export type SaveEntityState = {
   trainingCompleteDay?: number | null
   trainingTargetType?: string | null
   trainingQueue?: SavedTrainingEntry[]
+  trainingRequests?: TrainingRequest[]
+  reservePolicy?: DepotReservePolicy
   trainingExtra?: SavedTrainingExtra
   loop?: boolean
   lootEquipment?: string[]

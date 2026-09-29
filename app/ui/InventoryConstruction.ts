@@ -1,15 +1,13 @@
 import { createInventorySectionTitle } from './inventory/InventorySection'
-import { inventoryCostMetaParts } from './inventory/InventoryCostMeta'
+import { isSowingPlacement } from '../lib/buildings/campConstruction'
+import { formatActionCost } from './ActionDetailsFactory'
 import { t } from '../lib/lang'
 import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES } from '../constants'
 import { renderBuildingAvatar, renderTextureRefAvatar } from '../lib/avatar'
 import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
-import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
-import type { ResourceAmount } from '../types/common'
-import type { PlayerLike } from '../types/player'
 import { createInventoryActionRow } from './inventory/InventoryActionRow'
-import type { RuntimeEntity, UnitEntity } from '../types/entities'
+import type { RuntimeEntity } from '../types/entities'
 import type { MenuButtonSpec, MenuDetails, MenuDetailsSource } from '../types/ui'
 import type { MenuHost } from './MenuHost'
 
@@ -62,6 +60,11 @@ export function renderInventoryConstruction(host: InventoryConstructionHost): vo
   host.menu.clearActionHotkeys()
   if (!selection) return
 
+  const help = document.createElement('p')
+  help.className = 'construction-help'
+  help.textContent = t('constructionPlacementHelp')
+  host.constructionPanel.appendChild(help)
+
   const usedKeys = new Set<string>(getReservedGameplayHotkeys())
   const buttons = getInventoryConstructionButtons(host.menu).filter(button => !button.hide || !button.hide())
   const knownTypes = new Set(CONSTRUCTION_CATEGORIES.flatMap(category => category.types))
@@ -106,15 +109,6 @@ function resolveMenuDetails(source?: MenuDetailsSource): MenuDetails | null {
   return typeof source === 'function' ? source() : source
 }
 
-function getConstructionCostMetaParts(
-  cost: ResourceAmount,
-  player: PlayerLike,
-  hero?: UnitEntity | null
-): Array<{ text: string; className: string }> {
-  const totals = getPlayerResourceTotals(player, { hero, includeHero: Boolean(hero) })
-  return inventoryCostMetaParts(cost, totals)
-}
-
 function isDetailsCostMetaLine(meta: string, costPrefix: string): boolean {
   return meta.trim().toLowerCase().startsWith(costPrefix)
 }
@@ -129,9 +123,13 @@ function createInventoryConstructionRow(
   const disabled = button.disabled?.(selection) ?? false
   const details = resolveMenuDetails(button.details)
   const { player } = host.menu.context
-  const { heroUnit } = host.menu.context.controls
   const config = button.id ? getPlayerBuildingConfig(player, button.id, player.age) : undefined
-  const costMetaParts = config?.cost ? getConstructionCostMetaParts(config.cost, player, heroUnit) : []
+  const sowing = isSowingPlacement(button.id ?? '')
+  const costMetaParts = config?.cost
+    ? sowing
+      ? [{ text: t('constructionSowingCost'), className: '' }]
+      : [{ text: t('constructionMaterialsCost', { cost: formatActionCost(config.cost) }), className: '' }]
+    : []
   const detailsCostPrefix = t('detailsCost', { cost: '' }).trim().toLowerCase()
   const detailsHpPrefix = t('detailsBuildingHP', { value: '' }).trim().toLowerCase()
   const detailsMeta = (details?.meta ?? [])
@@ -147,7 +145,7 @@ function createInventoryConstructionRow(
     meta: detailsMeta.join(' | '),
     metaParts: costMetaParts,
     trailingAction: {
-      label: t('inventoryBuildAction'),
+      label: t(sowing ? 'inventorySowAction' : 'inventoryPlaceSiteAction'),
       disabled,
       onClick: evt => {
         if (button.disabled?.(selection)) return

@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { BUILDING_TYPES } from '../../constants'
 import { refundCost } from '../../lib'
 import { HORSE_TAMING_STATUS } from '../../lib/horses/horseTaming'
@@ -54,11 +55,13 @@ function cancelPendingTraineeOrders(building: BuildingControllerHost): boolean {
 
 function cancelConcurrentTrainingEntries(
   building: BuildingControllerHost,
-  host: TrainingCancellationHost
+  host: TrainingCancellationHost,
+  traineeLabel?: string
 ): { cancelled: boolean; typeCounts: Map<string, number> } {
   const typeCounts = new Map<string, number>()
   let cancelled = false
   for (const entry of [...(building.trainingQueue ?? [])]) {
+    if (traineeLabel != null && entry.trainee.label !== traineeLabel) continue
     typeCounts.set(entry.type, (typeCounts.get(entry.type) ?? 0) + 1)
     if (!restoreCancelledTrainee(host, entry.trainee)) continue
     entry.trainingDayChangeUnsubscribe?.()
@@ -103,6 +106,7 @@ function refundRemainingQueue(building: BuildingControllerHost, trainingEntryTyp
 }
 
 function refreshCancelledTrainingUi(building: BuildingControllerHost): void {
+  notifyVillageStateChanged(building.owner)
   if (!building.owner.isPlayed) return
   building.context.menu.updateTopbar?.()
   for (const type of building.units ?? []) {
@@ -113,7 +117,9 @@ function refreshCancelledTrainingUi(building: BuildingControllerHost): void {
 }
 
 export function cancelAllUnitTraining(building: BuildingControllerHost, host: TrainingCancellationHost): boolean {
-  let cancelled = cancelPendingTraineeOrders(building)
+  let cancelled = Boolean(building.trainingRequests?.length)
+  building.trainingRequests = []
+  cancelled = cancelPendingTraineeOrders(building) || cancelled
   const concurrent = cancelConcurrentTrainingEntries(building, host)
   cancelled = concurrent.cancelled || cancelled
   if (!concurrent.typeCounts.size) cancelled = cancelClassicActiveTraining(building, host) || cancelled
@@ -123,4 +129,17 @@ export function cancelAllUnitTraining(building: BuildingControllerHost, host: Tr
   host.syncPrimaryTrainingState()
   if (cancelled) refreshCancelledTrainingUi(building)
   return cancelled
+}
+
+export function cancelTrainingEntry(
+  building: BuildingControllerHost,
+  host: TrainingCancellationHost,
+  label: string
+): boolean {
+  const { cancelled } = cancelConcurrentTrainingEntries(building, host, label)
+  if (!cancelled) return false
+  building.queue = (building.trainingQueue ?? []).map(entry => entry.type)
+  host.syncPrimaryTrainingState()
+  refreshCancelledTrainingUi(building)
+  return true
 }

@@ -21,7 +21,7 @@ function setup() {
       },
     },
   }
-  const state = loadTsModule('app/lib/camps/CampRespawnState.ts', options)
+  const state = loadTsModule('app/lib/camps/campRespawnState.ts', options)
   const { CampRespawnSystem } = loadTsModule('app/services/patrol/CampRespawnSystem.ts', options)
   const { DAY_NIGHT_CONFIG } = loadTsModule('app/config/gameplay.ts')
   const context = { map: {}, players: [{ type: 'Bandits', units: [] }], dayNight: { getElapsedMs: () => now } }

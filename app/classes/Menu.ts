@@ -271,12 +271,6 @@ export default class Menu implements MenuLike {
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec {
     return this.actionSpecs.getCancelUnitTrainingButton(building)
   }
-  getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec {
-    return this.actionSpecs.getUnitTrainingMenuButton(unit)
-  }
-  getMountHorseButton(unit: UnitEntity): MenuButtonSpec {
-    return this.actionSpecs.getMountHorseButton(unit)
-  }
   getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     return this.actionSpecs.getActionBuildingButton(type, ownerOverride)
   }

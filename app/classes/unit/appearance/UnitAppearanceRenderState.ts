@@ -2,7 +2,8 @@ import { getMiningPickaxe } from '../../../lib/resources/miningEquipment'
 import { definedProperties } from '../../../lib/definedProperties'
 import { Assets } from 'pixi.js'
 import type { AnimatedSprite } from 'pixi.js'
-import { SHEET_TYPES } from '../../../constants'
+import { ACTION_TYPES, SHEET_TYPES, WORK_TYPES } from '../../../constants'
+import { isSowingPlacement } from '../../../lib/buildings/campConstruction'
 import { getSpriteFrameSelection } from '../../../lib'
 import {
   applyActionFrameSequence,
@@ -105,6 +106,11 @@ function isLayerEnabled(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, ac
 }
 
 function isLayerHidden(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, sheet: string) {
+  // Sowing keeps the builder's slash animation, but uses bare hands.
+  const isSowingTool =
+    Boolean(layer.equipmentKey && layer.workTypes?.includes(WORK_TYPES.builder)) &&
+    unit.action === ACTION_TYPES.build &&
+    isSowingPlacement(unit.dest?.type ?? '')
   const isLayerHiddenByAction = Boolean(unit.action && layer.hideForActions?.includes(unit.action))
   const isLayerHiddenByFrame =
     sheet === SHEET_TYPES.action &&
@@ -117,7 +123,11 @@ function isLayerHidden(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, she
     equipmentKey != null &&
     !unit.lootEquipment.includes(equipmentKey)
   return (
-    isLayerHiddenByAction || isLayerHiddenByFrame || isLootedCorpseEquipment || isLayerHiddenByEquipment(unit, layer)
+    isSowingTool ||
+    isLayerHiddenByAction ||
+    isLayerHiddenByFrame ||
+    isLootedCorpseEquipment ||
+    isLayerHiddenByEquipment(unit, layer)
   )
 }
 

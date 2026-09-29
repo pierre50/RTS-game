@@ -28,7 +28,7 @@ function validateSavedUnitOrders(unit: Record<string, unknown>): void {
   const task = (value: unknown, label: string) => {
     if (!isObject(value)) fail(`Invalid save file: ${label} is invalid.`)
     reference(value.dest, `${label}.dest`)
-    for (const key of ['action', 'work', 'autonomousJob']) {
+    for (const key of ['action', 'work', 'autonomousJob', 'collectiveTask']) {
       if (value[key] != null && typeof value[key] !== 'string') fail(`Invalid save file: ${label}.${key} is invalid.`)
     }
   }
@@ -42,6 +42,12 @@ function validateSavedUnitOrders(unit: Record<string, unknown>): void {
   if (unit.resourceDelivery != null) {
     if (!isObject(unit.resourceDelivery)) fail('Invalid save file: resourceDelivery is invalid.')
     reference(unit.resourceDelivery.building, 'resourceDelivery.building')
+    const pickup = unit.resourceDelivery.pickup
+    if (
+      pickup != null &&
+      (!isObject(pickup) || Object.values(pickup).some(n => typeof n !== 'number' || !Number.isFinite(n) || n < 0))
+    )
+      fail('Invalid save file: resourceDelivery.pickup is invalid.')
     if (unit.resourceDelivery.returnTask != null) task(unit.resourceDelivery.returnTask, 'resourceDelivery.returnTask')
   }
 }
@@ -57,9 +63,19 @@ export function validatePlayerUnits(
     validateSavedUnitOrders(unit)
     if (unit.villageHome != null) {
       const home = unit.villageHome
-      if (!isObject(home) || typeof home.id !== 'string' || !home.id || home.spaceId !== 'outside' ||
-        !Number.isInteger(home.i) || !Number.isInteger(home.j) || Number(home.i) < 0 || Number(home.j) < 0 ||
-        Number(home.i) > size || Number(home.j) > size) fail('Invalid village home.')
+      if (
+        !isObject(home) ||
+        typeof home.id !== 'string' ||
+        !home.id ||
+        home.spaceId !== 'outside' ||
+        !Number.isInteger(home.i) ||
+        !Number.isInteger(home.j) ||
+        Number(home.i) < 0 ||
+        Number(home.j) < 0 ||
+        Number(home.i) > size ||
+        Number(home.j) > size
+      )
+        fail('Invalid village home.')
     }
     if (unit.campBehavior != null) {
       const behavior = unit.campBehavior
@@ -74,6 +90,11 @@ export function validatePlayerUnits(
         )
           fail('Invalid camp pursuit range.')
     }
+    if (
+      unit.lastMealAt != null &&
+      (typeof unit.lastMealAt !== 'number' || !Number.isFinite(unit.lastMealAt) || unit.lastMealAt < 0)
+    )
+      fail('Invalid save file: lastMealAt is invalid.')
     if (unit.dailySchedule != null) {
       const schedule = unit.dailySchedule
       if (!isObject(schedule)) fail('Invalid save file: dailySchedule is invalid.')

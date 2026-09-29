@@ -36,3 +36,5 @@ export type TrainingEntry = Omit<SavedTrainingEntry, 'extra'> & {
   extra?: UnitCreationExtra
   trainingDayChangeUnsubscribe?: (() => void) | null
 }
+
+export type TrainingRequest = { type: string; traineeLabel?: string; travelRemainingMs?: number }

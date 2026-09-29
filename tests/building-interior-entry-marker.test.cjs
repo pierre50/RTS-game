@@ -24,7 +24,7 @@ function loadEntryMarker() {
         BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
         LABEL_TYPES: { buildingInteriorEntry: 'buildingInteriorEntry' },
       },
-      '../../lib/ui/interactionCellMarker': {
+      '../../lib/ui/InteractionCellMarker': {
         INTERACTION_CELL_MARKER_PULSE_MS: 1400,
         INTERACTION_CELL_MARKER_Z_INDEX: -0.25,
         drawInteractionCellMarker: (_layer, cell, pulse) => drawn.push(['draw', cell.i, cell.j, pulse]),
@@ -74,11 +74,7 @@ test('building interior entry marker draws supported exterior entry cells', () =
   const marker = new BuildingInteriorEntryMarkerSystem(context, map)
 
   assert.equal(children[0].label, 'buildingInteriorEntry')
-  assert.deepEqual(drawn, [
-    ['clear'],
-    ['draw', 6, 7, 0.5],
-    ['draw', 11, 6, 0.5],
-  ])
+  assert.deepEqual(drawn, [['clear'], ['draw', 6, 7, 0.5], ['draw', 11, 6, 0.5]])
 
   marker.destroy()
 })

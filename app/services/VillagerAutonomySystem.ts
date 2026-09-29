@@ -1,3 +1,5 @@
+import { flushTrainingRequests } from '../lib/training/trainingRequests'
+import { flushCollectiveVillageWork } from './CollectiveVillageWork'
 import { isUnitSuspended } from '../lib/units/unitSuspension'
 import { logStationaryVillager } from '../lib/units/autonomy/villagerJobDiagnostics'
 import { ACTION_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
@@ -98,6 +100,12 @@ export class VillagerAutonomySystem {
     const now = this.context.scheduler.elapsedMs
     if (now === this.lastScanMs) return
     this.lastScanMs = now
+    for (const player of this.context.players ?? []) {
+      if (player.isPlayed || player.type === 'AI') {
+        flushTrainingRequests(player, this.context)
+        flushCollectiveVillageWork(player, now)
+      }
+    }
     const units = (this.context.players ?? []).flatMap(player => player.units ?? [])
     let recoveries = 0
     for (let count = 0; count < Math.min(SCAN_BATCH_SIZE, units.length); count++) {
@@ -166,10 +174,11 @@ export class VillagerAutonomySystem {
       state.attempts = 0
       state.progress = progress
     }
+    const obsoleteExploration = Boolean(unit.owner?.isPlayed && unit.exploringForAutonomy)
     const invalid = hasInvalidTarget(unit)
     const missingTarget = Boolean(action && !unit.dest && !unit.blockedGatherApproach && !unit.path?.length)
     const stalled = now - state.lastProgressMs >= (unit.path?.length ? STALLED_MOVE_MS : STALLED_WORK_MS)
-    if (hasTask && !invalid && !missingTarget && !stalled) {
+    if (hasTask && !obsoleteExploration && !invalid && !missingTarget && !stalled) {
       state.reason = unit.exploringForAutonomy ? 'exploring' : 'working'
       return false
     }
@@ -187,6 +196,10 @@ export class VillagerAutonomySystem {
     unit.exploringForAutonomy = false
     unit.action = null
     unit.realDest = null
+    if (obsoleteExploration) {
+      unit.dest = null
+      unit.path = []
+    }
     const resumed = resumeVillagerJobIntent(unit)
     state.attempts++
     state.nextRetryMs = now + Math.min(MAX_RETRY_MS, 2000 * 2 ** Math.min(state.attempts - 1, 4))

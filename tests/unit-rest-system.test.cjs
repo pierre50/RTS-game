@@ -2500,12 +2500,12 @@ for (const condition of ['sleeping', 'tooLate', 'talking', 'destroyed', 'foreign
   })
 }
 
-test('town centers admit ten villagers, including reservations made before arrival', () => {
+test('town centers never reserve beds', () => {
   const { units, system, house } = eveningShelterScenario(12)
   house.type = constants.BUILDING_TYPES.townCenter
   system.notifyShelterAvailable(house)
   system.update()
-  assert.equal(units.filter(unit => unit.shelterState.shelter === house).length, 10)
+  assert.equal(units.filter(unit => unit.shelterState.shelter === house).length, 0)
 })
 
 
@@ -2566,4 +2566,40 @@ test('lunch stops the current work without sleeping and resumes the saved task a
   assert.equal(villager.actionLocked, false)
   assert.equal(villager.action, 'chopwood')
   assert.equal(villager.dest, tree)
+})
+
+
+test('ordinary daytime rest checks reuse the roster and resume at the evening boundary', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createUnit(owner)
+  const context = createContext(10, [owner], calls)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+  let scans = 0
+  const collect = system.collectUnits.bind(system)
+  system.collectUnits = () => { scans++; return collect() }
+  for (let i = 0; i < 100; i++) system.update(false)
+  assert.equal(scans, 0)
+  context.dayNight.state.hour = 23
+  system.update(false)
+  assert.equal(scans, 1)
+  assert.ok(villager.shelterState)
+  system.destroy()
+})
+
+test('rest checks keep retrying blocked sleep without rebuilding the roster', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createUnit(owner, { restWakeLockUntilMs: 1000 })
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+  assert.equal(Boolean(villager.shelterState), false)
+  context.scheduler.elapsedMs = 1001
+  system.update(false)
+  assert.ok(villager.shelterState)
+  system.destroy()
 })

@@ -87,7 +87,7 @@ function loadPanel(Modal = class {}) {
   })
 }
 
-test('base report shows village reserves without the hero bag and summarizes workers', () => {
+test('base report shows village reserves without the hero bag and keeps only population and daily consumption', () => {
   withFakeDocument(() => {
     const { renderBaseReport } = loadPanel()
     const container = makeElement()
@@ -160,13 +160,7 @@ test('base report shows village reserves without the hero bag and summarizes wor
       villagerRows.map(row => [row.children[0].textContent, row.children[1].textContent]),
       [
         ['minimapUnits', '5/12'],
-        ['minimapVillagers', '4'],
         ['minimapVillagerConsumption', '16 minimapResourceFood'],
-        ['minimapResourceFood', '1'],
-        ['minimapResourceWood', '1'],
-        ['minimapResourceStone', '1'],
-        ['minimapResourceGold', '1'],
-        ['minimapVillagerUnassigned', '0'],
       ]
     )
 
@@ -216,9 +210,12 @@ test('outside stock includes local interior chests once, but excludes foreign an
       inventory: { resources: { wood } },
       ...extra,
     })
-    const chest = building('Chest', 'chest', 'interior:player:center', 25, { visible: false })
+    const chest = building('Chest', 'interior:player:pit:default:storage-chest', 'interior:player:pit', 25, {
+      visible: false,
+    })
     player.buildings = [
       building('TownCenter', 'center', 'outside', 5),
+      building('StoragePit', 'pit', 'outside', 0),
       chest,
       chest,
       building('Chest', 'loose-chest', 'outside', 3),
@@ -239,9 +236,9 @@ test('outside stock includes local interior chests once, but excludes foreign an
       ]),
     }
     const menu = { context: { map, player, controls: {} }, icons: {} }
-    assert.deepEqual(readStock(menu), { wood: 33 })
+    assert.deepEqual(readStock(menu), { wood: 30 })
     map.activeSpaceId = 'inside'
-    assert.deepEqual(readStock(menu), { wood: 33 })
+    assert.deepEqual(readStock(menu), { wood: 30 })
   })
 })
 

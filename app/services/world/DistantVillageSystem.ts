@@ -15,7 +15,7 @@ import type { PlayerLike } from '../../types/player'
 import type { UnitEntity } from '../../types/entities'
 
 type DistantVillageCandidate = { home: VillageHome; owner: PlayerLike; observed: boolean }
-type DistantOwner = { homes: VillageHome[]; since: number; waking: boolean }
+type DistantOwner = { homes: VillageHome[]; since: number; waking: boolean; advancing?: boolean }
 const WORK_ACTIONS = new Set([
   'chopwood',
   'forageberry',
@@ -181,18 +181,23 @@ export class DistantVillageSystem {
 
   private advance(owner: PlayerLike, state: DistantOwner): void {
     const now = this.now()
-    if (now <= state.since) return
+    if (now <= state.since || state.advancing) return
     const run = () => advanceDistantVillageEconomy(this.context, owner, state.homes, state.since, now)
-    if (this.context.performance) this.context.performance.measure('village.abstractAdvance', run)
-    else run()
-    for (const unit of owner.units) if (isUnitSuspended(unit)) updateUnitEnergy(unit, now - state.since)
-    // Commit the checkpoint only after the transaction succeeds.
-    state.since = now
+    state.advancing = true
+    try {
+      if (this.context.performance) this.context.performance.measure('village.abstractAdvance', run)
+      else run()
+      for (const unit of owner.units) if (isUnitSuspended(unit)) updateUnitEnergy(unit, now - state.since)
+      // Commit the checkpoint only after the transaction succeeds.
+      state.since = now
+    } finally {
+      state.advancing = false
+    }
   }
 
   wake(owner: PlayerLike): void {
     const state = this.owners.get(owner)
-    if (!state || state.waking) return
+    if (!state || state.waking || state.advancing) return
     state.waking = true
     try {
       this.advance(owner, state)

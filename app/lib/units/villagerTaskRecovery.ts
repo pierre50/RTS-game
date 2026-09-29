@@ -3,7 +3,7 @@ import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { getEntityCell } from '../mapSpaces'
 import { assignVillagerAutonomy } from './villagerAutonomy'
 import { getAutonomyJobForWork } from './villagerAutonomyTargeting'
-import { logGoldMinerFlow } from './autonomy/villagerJobDiagnostics'
+
 import { sendUnitToMiningAction } from './miningActions'
 import { isPursuingRememberedTarget } from './targetPursuit'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
@@ -42,7 +42,12 @@ function canUseStoredDestination(
   if (!isRuntimeEntity(dest)) return true
   if (dest.isDestroyed || (dest.isDead && action !== ACTION_TYPES.takemeat)) return false
   if (action && unit.getActionCondition?.(dest, action) === false) return false
-  if (action === ACTION_TYPES.takemeat && dest.family === FAMILY_TYPES.animal && !canRecoverAnimalLootForDelivery(dest, unit)) return false
+  if (
+    action === ACTION_TYPES.takemeat &&
+    dest.family === FAMILY_TYPES.animal &&
+    !canRecoverAnimalLootForDelivery(dest, unit)
+  )
+    return false
   return true
 }
 
@@ -171,18 +176,17 @@ export function resumeVillagerJobIntent(
   options: Pick<ResumeStoredTaskOptions, 'clearMotion' | 'preserveAutonomy'> = {}
 ): boolean {
   const autonomousJob = getStoredTaskAutonomyJob(unit, task)
-  logGoldMinerFlow(unit, 'job.resume.requested', { resolvedJob: autonomousJob }, task)
+
   if (options.clearMotion ?? true) clearMotionForStoredTask(unit)
   if (task?.work) unit.work = task.work
   if (options.preserveAutonomy !== false) unit.autonomousJob = autonomousJob
 
   if (task && canUseStoredDestination(unit, task.dest, task.action) && routeStoredTask(unit, task, task.dest)) {
-    logGoldMinerFlow(unit, 'job.resume.previous-target-accepted', {}, task)
     return true
   }
-  logGoldMinerFlow(unit, 'job.resume.previous-target-rejected', {}, task)
+
   const resumed = resumeStrictVillagerAutonomy(unit, autonomousJob, { exploreWhenNoTarget: true })
-  logGoldMinerFlow(unit, resumed ? 'job.resume.autonomy-accepted' : 'job.resume.autonomy-stopped', {}, task)
+
   return resumed
 }
 

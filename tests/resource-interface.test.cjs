@@ -113,6 +113,7 @@ test('resource info modal title uses translated resource type instead of technic
     let capturedTitle = null
     const { EntityInfoModalManager } = loadModule('app/ui/EntityInfoModalManager.ts', {
       './inventory/UnitInventoryScreen': {},
+      './inventory/AnimalInventoryScreen': {},
       '../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
       '../lib': { changeSpriteColor: () => {} },
       '../lib/avatar': {
@@ -158,6 +159,7 @@ test('entity info modal syncs live resource health without reopening', () => {
   withFakeDocument(() => {
     const { EntityInfoModalManager } = loadModule('app/ui/EntityInfoModalManager.ts', {
       './inventory/UnitInventoryScreen': {},
+      './inventory/AnimalInventoryScreen': {},
       '../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
       '../lib': { changeSpriteColor: () => {} },
       '../lib/avatar': {

@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { ActionScheduler } = loadTsModule('app/lib/ActionScheduler.ts')
+const { ActionScheduler } = loadTsModule('app/lib/actionScheduler.ts')
 
 function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
   let paused = false
@@ -9,7 +9,7 @@ function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
   const rejected = []
   const stalledLogs = []
   const scheduler = new ActionScheduler({ ticker: { add() {}, remove() {} } }, () => paused)
-  const context = { scheduler, editor, dayNight: { state: { hour: 12, minute: 0 } }, players: [] }
+  const context = { scheduler, editor, dayNight: { state: { hour: 10, minute: 0 } }, players: [] }
   const units = Array.from({ length: count }, (_, index) => ({
     type: 'Villager',
     label: `worker-${index}`,
@@ -195,7 +195,7 @@ test('nighttime and pause never advance work or recovery deadlines', () => {
   h.tick()
   assert.equal(h.calls.length, 0)
   assert.equal(h.system.getStatus(h.unit).reason, 'outside-work-hours')
-  h.context.dayNight.state.hour = 12
+  h.context.dayNight.state.hour = 10
   h.pause(true)
   h.tick(120000)
   assert.equal(h.calls.length, 0)
@@ -298,7 +298,6 @@ test('the editor never starts autonomous work', () => {
   assert.equal(h.scheduler._tasks.size, 0)
 })
 
-
 test('stationary walking reports once even during rest, then resets after movement', () => {
   const { SHEET_TYPES } = loadTsModule('app/constants/index.ts')
   const h = harness({ extra: { currentSheet: SHEET_TYPES.walking, shelterState: { reason: 'sleep' } } })
@@ -309,4 +308,21 @@ test('stationary walking reports once even during rest, then resets after moveme
   h.tick()
   for (let n = 0; n < 6; n++) h.tick()
   assert.deepEqual(h.stalledLogs, ['worker-0', 'worker-0'])
+})
+
+test('hero villagers immediately abandon restored exploration and resume their job', () => {
+  const h = harness({
+    extra: {
+      owner: { isPlayed: true },
+      exploringForAutonomy: true,
+      dest: { has: null },
+      path: [{}],
+    },
+  })
+  h.tick()
+  assert.equal(h.calls.length, 1)
+  assert.equal(h.unit.exploringForAutonomy, false)
+  assert.deepEqual(h.unit.path, [])
+  assert.equal(h.unit.dest, h.target)
+  assert.equal(h.unit.action, 'forageberry')
 })

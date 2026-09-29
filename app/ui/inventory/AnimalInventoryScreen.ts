@@ -1,10 +1,10 @@
+import { createTitledEntityInfoContent } from '../EntityInfoContent'
 import type { Modal } from '../../lib'
 import type { AnimalEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
 import { initializeAnimalCorpseLoot, pickupAnimalResource } from '../../lib/equipment/animalCorpseLoot'
 import { createInventoryContainer } from '../../lib/inventory/inventoryContainers'
 import { createInspectionModal } from '../InspectionPanel'
-import { createTitledEntityInfoContent } from '../EntityInfoContent'
 import { getEntityDisplayName } from '../utils/entityDisplayName'
 import { createHeroBagContainer } from './HeroBagContainer'
 import { InventoryTransferPanel } from './InventoryTransferPanel'
@@ -15,6 +15,7 @@ export class AnimalInventoryScreen {
     private menu: MenuHost,
     private animal: AnimalEntity
   ) {
+    this.element.className = 'unit-inventory-screen'
     this.render()
   }
 
@@ -31,7 +32,7 @@ export class AnimalInventoryScreen {
 
   render(): void {
     const { menu, animal } = this
-    this.element.replaceChildren(createTitledEntityInfoContent(menu.context.app, animal))
+    this.element.replaceChildren()
     const hero = menu.context.controls.heroUnit
     if (!hero || animal.isDestroyed || !animal.isDead) return
     initializeAnimalCorpseLoot(animal)
@@ -52,6 +53,7 @@ export class AnimalInventoryScreen {
         menu.refreshInventory?.()
       },
     })
+    this.element.appendChild(createTitledEntityInfoContent(menu.context.app, animal))
     this.element.appendChild(transfer.element)
   }
 }

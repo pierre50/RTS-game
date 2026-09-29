@@ -70,7 +70,7 @@ function fixture(difficulty = 'medium') {
     planBuildings: true,
     buildingConfig: (_i, type) => buildings[type] ?? {},
     unitConfig: (_i, type) => units[type] ?? {},
-    buildingCapacity: (_i, type) => buildings[type]?.increasePopulation ?? 0,
+    buildingCapacity: (_i, type) => buildings[type]?.shelterCapacity ?? 0,
     cycleMs: () => 1000,
     wheatMatureFrame: 5,
   })

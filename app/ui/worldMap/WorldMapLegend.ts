@@ -49,6 +49,7 @@ function playerForSettlement(menu: MenuHost, settlement: MacroWorldSettlement) {
   return factionPlayer ?? civilizationPlayer ?? matchingIndexedPlayer ?? null
 }
 
+/** @public Loaded by tests/world-map-legend.test.cjs (loadTsModule). */
 export function settlementPlayerColor(menu: MenuHost, settlement: MacroWorldSettlement): string | null {
   if (settlement.kind !== 'village' && settlement.kind !== 'city') return null
 
@@ -124,7 +125,8 @@ export function createWorldMapLegend(
   }
   if (interactive) {
     for (const player of menu.context.players ?? []) {
-      if (player.type === PLAYER_TYPES.gaia || (player.type === PLAYER_TYPES.bandits && isPlayerEliminated(player))) continue
+      if (player.type === PLAYER_TYPES.gaia || (player.type === PLAYER_TYPES.bandits && isPlayerEliminated(player)))
+        continue
       const key = minimapOwnerKey(player)
       if (entries.has(key)) continue
       entries.set(key, {

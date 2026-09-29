@@ -1,4 +1,3 @@
-import { t } from '../lang'
 import {
   drainEnergyAmount,
   ensureUnitEnergy,
@@ -10,18 +9,13 @@ import type { UnitEntity } from '../../types/entities'
 export type RememberTimedEnergyAt = (now: number) => void
 
 export function spendHeroEnergy(hero: UnitEntity, action: string): boolean {
-  if (spendEnergyForAction(hero, action)) return true
-  if (hero.owner?.isPlayed) {
-    hero.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
-  }
-  return false
+  return spendEnergyForAction(hero, action)
 }
 
 export function hasEnergyToStartTimedHeroAction(hero: UnitEntity, action: string): boolean {
   ensureUnitEnergy(hero)
   if (getActionEnergyCost(hero, action) <= 0) return true
   if ((hero.energy ?? 0) > 0) return true
-  if (hero.owner?.isPlayed) hero.context?.menu?.showMessage(t('heroNotEnoughEnergy'), 'warning')
   return false
 }
 

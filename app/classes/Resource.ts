@@ -1,10 +1,8 @@
-import { trackNaturalGrowth } from '../services/NaturalGrowthQueue'
-import { createLogicalResource } from './resources/LogicalResource'
-import { AnimatedSprite, Assets, Polygon, type Sprite } from 'pixi.js'
+import type { AnimatedSprite } from 'pixi.js'
+import { Assets, Polygon, type Sprite } from 'pixi.js'
 import {
   CELL_HEIGHT,
   CELL_WIDTH,
-  FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
   PASSABLE_RESOURCE_TYPES,
@@ -20,17 +18,13 @@ import {
   getInstanceZIndex,
   getReliefLiftPixels,
   getTexture,
-  isAIControlledPlayer,
   parseTextureRef,
   textureRefToString,
   type SpriteFragmentBurstGroundTarget,
 } from '../lib'
 import { onVisualSettingsChange } from '../lib/audio/settings'
-import { fadeOutThenClear } from '../lib/entities/entityFade'
 import { updateInstanceRenderVisibility } from '../lib/grid/visibility'
-import { logStartingWheatHarvest } from '../lib/resources/startingWheatDiagnostics'
-import { resetHarvestedWheat } from '../lib/resources/wheatGrowth'
-import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
+import { trackNaturalGrowth } from '../services/NaturalGrowthQueue'
 import { invalidateEconomicKnowledge } from '../services/world/EconomicKnowledgeUpdates'
 import type { ResourceConfig } from '../types/config'
 import type { GameContextLike } from '../types/context'
@@ -39,6 +33,8 @@ import type { RuntimeCell } from '../types/map'
 import { ResourceInterface } from '../ui/entity/ResourceInterface'
 import { Instance } from './Instance'
 import { advanceResourceWheatGrowth } from './resource/ResourceWheatGrowth'
+import { createLogicalResource } from './resources/LogicalResource'
+import { die } from './resources/ResourceDepletion'
 import {
   resourceFootprintCells,
   resourceFragmentGroundTargets,
@@ -54,7 +50,6 @@ import {
   getTerrainAssets,
   normalizeResourceTextureRef,
   pickLifecycleTextureRef,
-  type PlayerWithResourceMemory,
   type ResourceAssets,
   type ResourceDefinition,
   type ResourceOptions,
@@ -123,7 +118,7 @@ export class Resource extends Instance implements ResourceEntity {
       }
     }
     if (!context.editor && !definition?.isAnimated && options.textureName && !options.isDead && !options.isDestroyed) {
-      return createLogicalResource(options, context)
+      return createLogicalResource(options, context, Resource.prototype)
     }
     return context.map.addChild(new Resource(options, context))
   }
@@ -248,53 +243,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   override die(immediate?: boolean) {
-    if (this.isDead) {
-      return
-    }
-    if (!immediate && this.type === RESOURCE_TYPES.wheat && this.quantity <= 0) {
-      logStartingWheatHarvest(this, this.context)
-    }
-    if (!immediate && resetHarvestedWheat(this)) {
-      this.stopWindMotion()
-      if (this.sprite instanceof AnimatedSprite) this.sprite.gotoAndStop(0)
-      this.syncShadow()
-      this.context.menu?.refreshInventory?.()
-      return
-    }
-    const {
-      context: { player, players, map, menu },
-    } = this
-    if (this.selected && player.selectedOther === this) {
-      player.unselectAll()
-    }
-    const listName = 'founded' + this.type + 's'
-    for (let i = 0; i < players.length; i++) {
-      if (isAIControlledPlayer(players[i]) && playerSeesTarget(players[i], this)) {
-        const list = (players[i] as PlayerWithResourceMemory)[listName]
-        if (list) {
-          list.delete(this)
-        }
-      }
-    }
-    map.resources.delete(this)
-    this.registerNaturalRespawnSlot()
-    if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap()
-    map.removeFromInstanceBucket(this)
-    this.isDead = true
-    this.stopWindMotion()
-    let clearWithoutFade = false
-    if (this.type === RESOURCE_TYPES.tree && !immediate) {
-      this.onTreeDie()
-    } else {
-      clearWithoutFade = !immediate && this.spawnDepletedResourceFragmentBurst()
-      this.prepareFadeOut()
-    }
-    if (clearWithoutFade) {
-      this.hideDepletedResourceSprite()
-      this.context.scheduler.addOneShot(() => this.clear(), FADE_DURATION_MS, 'resource.fragmentBurstClear')
-    } else {
-      fadeOutThenClear(this, FADE_DURATION_MS)
-    }
+    return die.call(this, immediate)
   }
 
   setCuttedTreeTexture() {

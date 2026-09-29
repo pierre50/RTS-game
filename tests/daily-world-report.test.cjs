@@ -1,84 +1,91 @@
 const assert = require('node:assert/strict')
-const path = require('node:path')
 const test = require('node:test')
-const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadDailyWorldReport() {
-  const filename = path.join(__dirname, '../app/services/DailyWorldReport.ts')
-  return requireFromTsFile(filename, filename, {
-    '../lib/lang': {
-      t: (key, vars = {}) =>
-        ({
-          dailyReportFoodConsumed: `${vars.count} food consumed`,
-          dailyReportSummary: `Day ${vars.day}: ${vars.summary}.`,
-          dailyReportMarketRestocked: 'new items are available at the market',
-          dailyReportMarketsRestocked: `new items are available at ${vars.count} markets`,
-          dailyReportTrapFilled: '1 filled trap',
-          dailyReportTrapsFilled: `${vars.count} filled traps`,
-          dailyReportVillagerArrived: '1 new villager',
-          dailyReportVillagersArrived: `${vars.count} new villagers`,
-        })[key] ?? key,
-    },
-  }).DailyWorldReport
-}
-
-test('daily report stays quiet for upkeep-only days', () => {
-  const DailyWorldReport = loadDailyWorldReport()
+function fixture() {
   const messages = []
   const player = { isPlayed: true, label: 'p1' }
-  const report = new DailyWorldReport(
-    {
-      menu: { showMessage: (...args) => messages.push(args) },
-      player,
+  const { DailyWorldReport } = loadTsModule('app/services/DailyWorldReport.ts', {
+    mocks: {
+      '../lib/lang': {
+        t: (key, vars = {}) =>
+          ({
+            dailyReportVillagerArrived: '1 new villager',
+            dailyReportVillagersArrived: `${vars.count} new villagers`,
+            colonyRegionLocation: `region ${vars.x}, ${vars.y}`,
+            colonyHousingFullNotification: `No housing available — ${vars.region}. Build more housing.`,
+            colonyStorageFullNotification: `Storage is full — ${vars.region}.`,
+          })[key] ?? key,
+      },
     },
-    4
-  )
+  })
+  const context = {
+    player,
+    menu: { showMessage: (...args) => messages.push(args) },
+    map: { worldManifest: { maps: [{ id: 'village', region: { x: 2, y: 4 } }] } },
+  }
+  return { report: new DailyWorldReport(context), messages, player }
+}
 
-  report.add({ count: 24, player, type: 'food-consumed' })
+test('routine days stay silent, including restocked markets, filled traps and idle workers', () => {
+  const { report, messages, player } = fixture()
+  for (const type of ['market-restocked', 'trap-filled']) report.add({ type, count: 10, player })
+  report.add({ type: 'colony-alert', player, alert: { regionId: 'village', type: 'workersIdle' } })
   report.flush()
-
   assert.deepEqual(messages, [])
 })
 
-test('daily report groups notable events into one player summary', () => {
-  const DailyWorldReport = loadDailyWorldReport()
-  const messages = []
-  const player = { isPlayed: true, label: 'p1' }
-  const enemy = { isPlayed: false, label: 'enemy' }
-  const report = new DailyWorldReport(
-    {
-      menu: { showMessage: (...args) => messages.push(args) },
-      player,
-    },
-    5
-  )
-
-  report.add({ count: 36, player, type: 'food-consumed' })
-  report.add({ count: 3, player, type: 'villager-arrival' })
-  report.add({ count: 2, player, type: 'trap-filled' })
-  report.add({ count: 1, player, type: 'market-restocked' })
-  report.add({ count: 5, enemy, type: 'villager-arrival' })
+test('arrivals produce a standalone player notification once without a day summary', () => {
+  const { report, messages, player } = fixture()
+  report.add({ count: 2, player, type: 'villager-arrival' })
+  report.add({ count: 1, player: { ...player }, type: 'villager-arrival' })
+  report.add({ count: 5, player: { label: 'enemy' }, type: 'villager-arrival' })
   report.flush()
-
-  assert.deepEqual(messages, [
-    ['Day 5: 3 new villagers, 2 filled traps, new items are available at the market, 36 food consumed.', 'info'],
-  ])
+  report.flush()
+  assert.deepEqual(messages, [['3 new villagers', 'info']])
 })
 
-test('daily report announces market restock as a notable event', () => {
-  const DailyWorldReport = loadDailyWorldReport()
-  const messages = []
-  const player = { isPlayed: true, label: 'p1' }
-  const report = new DailyWorldReport(
-    {
-      menu: { showMessage: (...args) => messages.push(args) },
-      player,
-    },
-    6
-  )
-
-  report.add({ count: 2, player, type: 'market-restocked' })
+test('housing and storage alerts stay silent, including duplicates and foreign alerts', () => {
+  const { report, messages, player } = fixture()
+  for (const type of ['populationCapped', 'populationCapped', 'storageFull']) {
+    report.add({ type: 'colony-alert', player, alert: { regionId: 'village', type } })
+  }
+  report.add({ type: 'colony-alert', player: { label: 'enemy' }, alert: { regionId: 'enemy', type: 'storageFull' } })
   report.flush()
+  assert.deepEqual(messages, [])
+})
 
-  assert.deepEqual(messages, [['Day 6: new items are available at 2 markets.', 'info']])
+test('colony alerts stay silent when the region is missing from the manifest', () => {
+  const { report, messages, player } = fixture()
+  report.add({ type: 'colony-alert', player, alert: { regionId: 'distant-region', type: 'storageFull' } })
+  report.flush()
+  assert.deepEqual(messages, [])
+})
+
+test('simultaneous arrival and colony alert only notify the arrival', () => {
+  const { report, messages, player } = fixture()
+  report.add({ count: 1, player, type: 'villager-arrival' })
+  report.add({ type: 'colony-alert', player, alert: { regionId: 'village', type: 'storageFull' } })
+  report.flush()
+  assert.deepEqual(messages, [['1 new villager', 'info']])
+})
+
+test('empty food stocks do not produce colony alerts or daily notifications', () => {
+  const { getActiveColonyAlerts } = loadTsModule('app/lib/world/regionAlerts.ts')
+  const { report, player, messages } = fixture()
+  const alerts = getActiveColonyAlerts({
+    player: { ...player, factionId: 'own' },
+    getCampaignEconomy: () => ({
+      regions: {
+        village: {
+          regionId: 'village',
+          summaries: { own: { population: 10, populationMax: 20, stocks: {}, buildings: {}, idleWorkers: 0 } },
+        },
+      },
+    }),
+  })
+  assert.deepEqual(alerts, [])
+  for (const alert of alerts) report.add({ type: 'colony-alert', player, alert })
+  report.flush()
+  assert.deepEqual(messages, [])
 })

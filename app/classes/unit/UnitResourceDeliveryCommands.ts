@@ -1,6 +1,7 @@
+import { readyConstructionSite } from '../../lib/economy/collectiveTasks'
+import { hasPriorityCombat } from '../../lib/units/autonomy/villagerAutonomyAvailability'
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
   SHEET_TYPES,
@@ -8,15 +9,12 @@ import {
   WORK_TYPES,
 } from '../../constants'
 import { getAutonomyJobForWork, setVillagerAutonomy } from '../../lib'
-import { getClosestInstanceWithPath } from '../../lib/grid/queries'
 import { t } from '../../lib/lang'
-import { sameMapSpace } from '../../lib/mapSpaces'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { applyUnitWorkAssets } from '../../lib/units/unitWorkAppearance'
-import { logGoldMinerFlow } from '../../lib/units/autonomy/villagerJobDiagnostics'
+
 import {
   findResourceDeliveryTarget,
-  isUnitResourceCarryFull,
   unitHasDeliverableResources,
   unitHasDeliverableResourcesForBuilding,
 } from '../../lib/resources/resourceDelivery'
@@ -74,39 +72,11 @@ function shouldDeliverBeforeGatherJobSwitch(unit: UnitEntity, work: string, acti
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit) || unit.isDead) return false
   if (unit.action === ACTION_TYPES.delivery || unit.resourceDeliveryState) return false
   if (!isGatherAction(action) || !unitHasDeliverableResources(unit)) return false
+  if (unit.owner && readyConstructionSite(unit.owner, unit)) return false
 
   const currentJob = unit.autonomousJob ?? getAutonomyJobForWork?.(unit.work) ?? null
   const nextJob = getAutonomyJobForWork?.(work) ?? null
   return Boolean(currentJob && nextJob && currentJob !== nextJob)
-}
-
-function findClosestBuiltOwnedBuilding(unit: UnitEntity, types: string[]): BuildingEntity | null {
-  const owner = unit.owner
-  if (!owner) return null
-  const candidates = (owner.buildings ?? []).filter(
-    building =>
-      building.owner === owner &&
-      types.includes(building.type) &&
-      building.isBuilt !== false &&
-      !building.isDead &&
-      !building.isDestroyed &&
-      sameMapSpace(unit, building)
-  )
-  if (!candidates.length) return null
-  return getClosestInstanceWithPath<BuildingEntity>(unit, candidates)?.instance ?? candidates[0] ?? null
-}
-
-function sendUnitToFullStorageFallback(unit: UnitEntity): boolean {
-  if (!isUnitResourceCarryFull(unit) || !unitHasDeliverableResources(unit)) return false
-  const fallback =
-    findClosestBuiltOwnedBuilding(unit, [BUILDING_TYPES.fireCamp]) ??
-    findClosestBuiltOwnedBuilding(unit, [BUILDING_TYPES.townCenter])
-  if (!fallback) return false
-  unit.resourceDeliveryState = null
-  unit.gatherProgressState = null
-  unit.sendToEvt?.(fallback, null, { forceRepath: true })
-  logGoldMinerFlow(unit, 'delivery.full-storage-fallback', { fallback: fallback.label ?? fallback.type })
-  return true
 }
 
 export function getDeliveryBeforeGatherJobSwitch(
@@ -136,9 +106,17 @@ export function sendUnitToDelivery(
   returnTaskOverride: UnitResourceDeliveryReturnTask | null = null
 ): boolean {
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit) || unit.isDead) return false
+  if (unit.followingHero || hasPriorityCombat(unit)) return false
+  const site = unit.owner && readyConstructionSite(unit.owner, unit)
+  if (site && unit.sendToBuilding) {
+    unit.collectiveTask = 'construction'
+    unit.sendToBuilding(site as BuildingEntity)
+    return true
+  }
   const deliveryTarget = target ?? findResourceDeliveryTarget(unit)
   if (!deliveryTarget || !unitHasDeliverableResourcesForBuilding(unit, deliveryTarget)) {
-    return sendUnitToFullStorageFallback(unit)
+    // Keep cargo for collective construction or a future compatible depot.
+    return false
   }
   if (!checkActionCondition(unit, deliveryTarget, ACTION_TYPES.delivery)) return false
 
@@ -163,7 +141,7 @@ export function sendUnitToDelivery(
           }
         : null,
   }
-  logGoldMinerFlow(unit, 'delivery.started', { deliveryTarget: deliveryTarget.label })
+
   applyWorkForAction(unit, previousWork ?? WORK_TYPES.forager, ACTION_TYPES.delivery)
   setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(previousWork) ?? unit.autonomousJob ?? null)
   unit.sendToEvt?.(deliveryTarget, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })

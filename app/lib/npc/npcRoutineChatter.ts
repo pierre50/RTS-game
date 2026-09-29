@@ -63,6 +63,21 @@ export function pickNpcRoutineChatterLine(
     const rest = foreign && mood !== 'neutral' ? lines.foreignRest[mood][phase][audience] : lines.rest[phase][audience]
     return pickRandomItem(rest)
   }
+  if (phase === 'work' && unit.autonomyBlockedJob && !unit.action && !unit.dest) {
+    const key = unit.autonomyBlockedJob
+    const labels: Record<string, [string, string]> = {
+      stone: ['pierre', 'stone'],
+      wood: ['bois', 'wood'],
+      gold: ['or', 'gold'],
+      copper: ['cuivre', 'copper'],
+      iron: ['fer', 'iron'],
+      food: ['nourriture', 'food'],
+    }
+    const label = labels[key]?.[getLang() === 'en' ? 1 : 0]
+    return getLang() === 'en'
+      ? `I cannot find ${label ?? 'a suitable target'} within reach. I am looking for another useful task.`
+      : `Je ne trouve pas ${label === 'or' ? 'd’or' : label ? 'de ' + label : 'de cible adaptée'} accessible. Je cherche une autre tâche utile.`
+  }
   const job = unit.autonomousJob ?? getVillagerAssignedJob(unit)
   if (phase === 'work' && job && Object.hasOwn(lines.jobs, job)) {
     const address = audience === 'ownChief' ? (getLang() === 'en' ? ', chief' : ', chef') : ''

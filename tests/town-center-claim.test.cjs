@@ -7,7 +7,7 @@ const { BuildingLifecycle } = loadTsModule('app/classes/building/BuildingLifecyc
     'pixi.js': { AnimatedSprite: class {} },
     '../../lib': { getPercentage: (hp, total) => (hp * 100) / total, updateInstanceVisibility() {} },
     '../../lib/lang': { t: key => key },
-    '../../lib/buildings/buildingOccupancy': { getBuildingShelterCapacity: () => 5 },
+    './BuildingSowing': { finishSowingTile: () => false },
     './BuildingDestruction': {},
     './BuildingFinalTexture': {},
     './BuildingFire': {},
@@ -70,11 +70,11 @@ for (const sameOwner of [false, true]) {
     assert.equal(first.isBuilt, true)
     assert.equal(second.isBuilt, true)
     assert.equal(second.isDead, undefined)
-    assert.equal(a.populationMax, sameOwner ? 10 : 5)
-    assert.equal(b.populationMax, sameOwner ? 0 : 5)
+    assert.equal(a.populationMax, 0)
+    assert.equal(b.populationMax, 0)
     assert.deepEqual(messages, [])
     first.onBuilt()
     second.onBuilt()
-    assert.equal(a.populationMax, sameOwner ? 10 : 5)
+    assert.equal(a.populationMax, 0)
   })
 }

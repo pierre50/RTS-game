@@ -1,3 +1,4 @@
+import { settlementDepotPolicy } from '../../lib/economy/collectiveTasks'
 import { BUILDING_TYPES } from '../../constants'
 import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
 import type { HeroBuildingMenuManager } from '../HeroBuildingMenuManager'
@@ -8,6 +9,9 @@ export function heroBuildingStructureSignature(manager: HeroBuildingMenuManager)
   if (!building) return ''
   const level = manager.stack[manager.stack.length - 1] || []
   return [
+    ['StoragePit', 'Granary'].includes(building.type) && building.owner
+      ? JSON.stringify(settlementDepotPolicy(building.owner, building))
+      : '',
     building.type === BUILDING_TYPES.forge
       ? JSON.stringify([
           manager.menu.context.player.age,
@@ -19,8 +23,12 @@ export function heroBuildingStructureSignature(manager: HeroBuildingMenuManager)
       ? String(canHeroTradeAtMarket(building, manager.menu.context.controls.heroUnit))
       : '',
     building.queue?.join(',') || '',
+    JSON.stringify(building.trainingRequests ?? []),
     building.trainingQueue
-      ?.map(entry => `${entry.type}:${entry.trainingStartedDay ?? ''}:${entry.trainingCompleteDay ?? ''}`)
+      ?.map(
+        entry =>
+          `${entry.trainee.label}:${entry.type}:${entry.trainingStartedDay ?? ''}:${entry.trainingCompleteDay ?? ''}`
+      )
       .join(',') || '',
     level.map(item => item.id || '').join(','),
     level.map(item => (item.hide?.() ? '1' : '0')).join(','),

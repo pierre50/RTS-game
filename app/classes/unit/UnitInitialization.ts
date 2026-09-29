@@ -138,6 +138,7 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   // Saved promotions take precedence over the unit type's default role.
   unit.isChief = options.isChief ?? unit.isChief
   if (unit.type === UNIT_TYPES.villager) {
+    unit.lastMealAt = options.lastMealAt
     unit.dailySchedule = options.dailySchedule ? { ...options.dailySchedule } : undefined
     getVillagerSchedule(unit)
   }

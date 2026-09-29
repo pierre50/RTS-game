@@ -5,7 +5,7 @@ import { Assets } from 'pixi.js'
 import { RESOURCE_STOCKPILE_TYPES } from '../../constants/entities'
 import { worldEconomyFactors } from '../../config/worldEconomyBalance'
 import { createPlayerData } from '../../config/playerConfig'
-import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { getBuildingShelterCapacity, getPopulationCapacityFromBuildings } from '../../lib/buildings/buildingOccupancy'
 import { populateVillageBase } from './VillageBaseState'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import { createSquareLocalBlueprint } from '../../classes/map/generation/LocalMapBlueprint'
@@ -31,6 +31,10 @@ import type { OfflineWorkRules } from './OfflineWorldWork'
 export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
   const base = Assets.cache.get('config') as PlayerConfigLike & { resources: Record<string, ResourceConfig> }
   const configs = state.players.map(player => createPlayerData(base, player.civ ?? 'Hellas'))
+  state.players.forEach((player, index) => {
+    if (!['Human', 'AI'].includes(player.type)) return
+    player.populationMax = getPopulationCapacityFromBuildings(player.buildings ?? [], configs[index].buildings)
+  })
   const wheat = base.resources.Wheat
   const sheet = typeof wheat?.assets === 'string' ? Assets.cache.get(wheat.assets) : null
   const cycles = new Map<string, number>()
@@ -62,11 +66,7 @@ export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
     animalConfig: type => base.animals?.[type] ?? {},
     buildingCapacity: (index, type) => {
       const config = configs[index]?.buildings[type]
-      return (
-        getBuildingShelterCapacity({ type, shelterCapacity: config?.shelterCapacity ?? 0 }) ||
-        Number(config?.increasePopulation) ||
-        0
-      )
+      return getBuildingShelterCapacity({ type, ...config })
     },
     wheatMatureFrame: Math.max(0, Object.keys(sheet?.textures ?? {}).length - 1),
     cycleMs: (index, work, action) => {
@@ -123,7 +123,7 @@ function seedRegion(
       ...resource,
       label: `economy:${regionId}:resource:${index}`,
       quantity: resource.quantity ?? (Number(config.totalQuantity) || 1),
-      totalQuantity: resource.quantity ?? (Number(config.totalQuantity) || 1),
+      totalQuantity: resource.totalQuantity ?? resource.quantity ?? (Number(config.totalQuantity) || 1),
       hitPoints: Number(config.totalHitPoints) || 1,
       totalHitPoints: Number(config.totalHitPoints) || 1,
       isNaturalResource: true,
@@ -158,10 +158,7 @@ function seedRegion(
       {
         buildingConfig: (_i, type) => config.buildings[type] ?? {},
         unitConfig: (_i, type) => config.units[type] ?? {},
-        buildingCapacity: (_i, type) =>
-          getBuildingShelterCapacity({ type, shelterCapacity: config.buildings[type]?.shelterCapacity ?? 0 }) ||
-          Number(config.buildings[type]?.increasePopulation) ||
-          0,
+        buildingCapacity: (_i, type) => getBuildingShelterCapacity({ type, ...config.buildings[type] }),
       },
       context.map.startingResources ?? { wood: 200, food: 200, stone: 150 }
     )

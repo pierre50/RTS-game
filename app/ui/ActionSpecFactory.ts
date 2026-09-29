@@ -1,27 +1,13 @@
-import { isCampBuilding } from '../lib/buildings/campConstruction'
+import { isCampBuilding, isSowingPlacement, WHEAT_PLOT_SIZE } from '../lib/buildings/campConstruction'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
 import { Assets } from 'pixi.js'
-import {
-  canAfford,
-  getBuildingAsset,
-  getIconPath,
-  getStableHorseAmount,
-  storeStableHorse,
-  STABLE_HORSE_CAPACITY,
-} from '../lib'
+import { getBuildingAsset, getIconPath, getStableHorseAmount, storeStableHorse, STABLE_HORSE_CAPACITY } from '../lib'
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { HORSE_COLOR_PALETTES, type HorseColor } from '../lib/horses/horseColors'
 import { t } from '../lib/lang'
-import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/audio/uiSound'
-import {
-  canShowMountHorseAction,
-  canShowVillagerTrainingMenu,
-  findBestTrainingBuildingForUnit,
-  sendUnitToTraining,
-  VILLAGER_TRAINING_UNIT_TYPES,
-} from '../lib/units/unitTrainingOrders'
 import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
 import {
   formatActionCost,
@@ -29,7 +15,7 @@ import {
   getMissingResourceMessage,
   getUnitDetails as buildUnitDetails,
 } from './ActionDetailsFactory'
-import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, MenuDetails } from '../types/ui'
 import type { BuildingConfig, UnitConfig } from '../types/config'
@@ -38,10 +24,6 @@ import type { MenuHost } from './MenuHost'
 
 function isBuildingEntity(selection: unknown): selection is BuildingEntity {
   return (selection as RuntimeEntity | null | undefined)?.family === FAMILY_TYPES.building
-}
-
-function isUnitEntity(selection: unknown): selection is UnitEntity {
-  return (selection as RuntimeEntity | null | undefined)?.family === FAMILY_TYPES.unit
 }
 
 function hasQueuedTrainingType(selection: BuildingEntity, type: string): boolean {
@@ -53,15 +35,16 @@ function hasQueuedTrainingType(selection: BuildingEntity, type: string): boolean
 }
 
 function hasAnyUnitTraining(selection: BuildingEntity): boolean {
-  return Boolean(selection.queue?.length || selection.trainingQueue?.length || selection.loading != null)
+  return Boolean(
+    selection.trainingRequests?.length ||
+      selection.queue?.length ||
+      selection.trainingQueue?.length ||
+      selection.loading != null
+  )
 }
 
 function isOwnedByPlayer(building: BuildingEntity, player: PlayerLike): boolean {
   return building.owner === player || Boolean(building.owner?.label && building.owner.label === player.label)
-}
-
-function canPayActionCost(player: PlayerLike, cost: ResourceAmount | null | undefined): boolean {
-  return !cost || canAfford(player, cost)
 }
 
 export class ActionSpecFactory {
@@ -171,68 +154,6 @@ export class ActionSpecFactory {
     }
   }
 
-  getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec {
-    return {
-      id: 'unitTraining',
-      icon: getIconPath('010_50721'),
-      details: () => ({
-        title: t('unitTrainingMenu'),
-        description: t('unitTrainingMenuDescription'),
-      }),
-      hide: () => !canShowVillagerTrainingMenu(unit),
-      children: VILLAGER_TRAINING_UNIT_TYPES.map(type => this.getUnitTrainingOrderButton(type)),
-    }
-  }
-
-  getUnitTrainingOrderButton(type: string): MenuButtonSpec {
-    const unitConfig = this.menu.context.player.config.units[type]
-    return {
-      id: `train-${type}`,
-      details: () => this.getUnitDetails(type, unitConfig),
-      disabled: selection => !isUnitEntity(selection) || !findBestTrainingBuildingForUnit(selection, type),
-      onClick: selection => {
-        if (!isUnitEntity(selection)) return
-        sendUnitToTraining(selection, type)
-      },
-      onCreate: (selection, element) => {
-        if (!isUnitEntity(selection)) return
-        const img = document.createElement('img')
-        img.className = 'img'
-        img.alt = ''
-        const avatarCanvas = document.createElement('canvas')
-        avatarCanvas.width = 92
-        avatarCanvas.height = 92
-        if (
-          renderUnitTypeAvatar(this.menu.context.app, type, selection.owner ?? this.menu.context.player, avatarCanvas)
-        ) {
-          img.src = avatarCanvas.toDataURL()
-        }
-        img.addEventListener('pointerup', () => {
-          this.playUiClick()
-          if (!findBestTrainingBuildingForUnit(selection, type)) return
-          sendUnitToTraining(selection, type)
-        })
-        element.appendChild(img)
-      },
-    }
-  }
-
-  getMountHorseButton(unit: UnitEntity): MenuButtonSpec {
-    return {
-      id: 'mountHorse',
-      icon: getIconPath('001_50721'),
-      details: () => ({
-        title: t('mountHorseTraining'),
-        description: t('mountHorseTrainingDescription'),
-      }),
-      hide: () => !canShowMountHorseAction(unit),
-      onClick: selection => {
-        if (!isUnitEntity(selection)) return
-        sendUnitToTraining(selection, selection.type)
-      },
-    }
-  }
-
   getStableDebugAddHorseButton(building: BuildingEntity): MenuButtonSpec {
     const { menu } = this
     const horseColors = Object.keys(HORSE_COLOR_PALETTES) as HorseColor[]
@@ -268,23 +189,26 @@ export class ActionSpecFactory {
     return {
       id: type,
       details: () => this.getBuildingDetails(type, config),
-      hide: () => !owner.isBuildingEligible?.(type),
-      disabled: () =>
-        (!isCampBuilding(type) && this.isChiefCommandBlocked()) ||
-        !config ||
-        !canPayActionCost(owner, config.cost),
+      hide: () =>
+        !owner.isBuildingEligible?.(type) ||
+        (type === 'Chest' && (!controls.heroUnit?.spaceId || controls.heroUnit.spaceId === 'outside')),
+      disabled: () => (!isCampBuilding(type) && this.isChiefCommandBlocked()) || !config,
       onClick: () => {
         controls.removeMouseBuilding()
         if (!isCampBuilding(type) && this.isChiefCommandBlocked()) {
           menu.showMessage(t('requiresChief'), 'warning')
           return
         }
-        if (!canPayActionCost(owner, config.cost)) return
-        const assets =
-          type === 'Farm'
-            ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
-            : getBuildingAsset(type, { ...owner, age: buildingAge }, Assets)
-        const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type, buildingAge }
+        const assets = isSowingPlacement(type)
+          ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
+          : getBuildingAsset(type, { ...owner, age: buildingAge }, Assets)
+        const placeableBuilding: PlaceableBuildingConfig = {
+          ...config,
+          ...assets,
+          type,
+          buildingAge,
+          ...(isSowingPlacement(type) ? { size: WHEAT_PLOT_SIZE } : {}),
+        }
         controls.setMouseBuilding?.(placeableBuilding)
       },
     }
@@ -292,13 +216,6 @@ export class ActionSpecFactory {
 
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
     if (!selection.interface) return []
-    if (isUnitEntity(selection)) {
-      return [
-        ...(selection.interface.menu || []),
-        ...(selection.type === UNIT_TYPES.villager ? [this.getUnitTrainingMenuButton(selection)] : []),
-        ...(selection.type !== UNIT_TYPES.villager ? [this.getMountHorseButton(selection)] : []),
-      ]
-    }
     if (!isBuildingEntity(selection)) return selection.interface.menu || []
     if (!selection.isBuilt) return []
     const debugItems = selection.type === BUILDING_TYPES.stable ? [this.getStableDebugAddHorseButton(selection)] : []

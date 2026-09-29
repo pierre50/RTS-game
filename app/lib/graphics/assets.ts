@@ -118,6 +118,7 @@ export function getBuildingTextureNameWithSize(size: number): TextureRef | undef
 }
 
 export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetCacheLike): BuildingAsset {
+  if (type === 'Farm') return { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
   const decoAsset = DECO_BUILDING_ASSETS[type]
   if (decoAsset) return decoAsset
 

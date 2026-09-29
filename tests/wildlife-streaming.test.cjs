@@ -2,6 +2,8 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const cache = new Map()
+const { setDistantOwner } = loadTsModule('app/lib/units/villageActivity.ts', { moduleCache: cache })
+const { setUnitSuspension } = loadTsModule('app/lib/units/unitSuspension.ts', { moduleCache: cache })
 const wildlife = loadTsModule('app/services/WildlifeStore.ts', { moduleCache: cache })
 const serialize = animal =>
   Object.fromEntries(
@@ -22,7 +24,7 @@ const { WildlifeSystem } = loadTsModule('app/services/WildlifeSystem.ts', {
     '../serialization/SaveSerializer': { serializeWildAnimal: animal => structuredClone(serialize(animal)) },
   },
 })
-function fixture(states) {
+function fixture(states, scheduler) {
   const cells = new Map(),
     callbacks = new Map()
   let lookups = 0,
@@ -53,7 +55,7 @@ function fixture(states) {
     map: { grid, seed: 1, removeFromInstanceBucket() {} },
     players: [],
     controls: { heroUnit: hero },
-    scheduler: {
+    scheduler: scheduler ?? {
       elapsedMs: 0,
       add(fn) {
         callbacks.set(++task, fn)
@@ -100,6 +102,49 @@ test('100,000 distant records create no runtime objects or world-wide cell scans
   f.system.destroy()
   assert.equal(f.callbacks.size, 0)
 })
+
+test('fast-forward reconciles wildlife once per frame while simulation and corpse clocks catch up', () => {
+  const { ActionScheduler } = loadTsModule('app/lib/actionScheduler.ts')
+  let paused = false
+  const scheduler = new ActionScheduler({ ticker: { add() {}, remove() {} } }, () => paused)
+  const f = fixture([], scheduler)
+  f.store.put({
+    label: 'dead',
+    type: 'Deer',
+    i: 200,
+    j: 200,
+    isDead: true,
+    quantity: 10,
+    wildlife: { homeI: 200, homeJ: 200, generation: 0, renewDay: 4, lastCorpseMs: 0 },
+  })
+  let updates = 0
+  const update = f.system.update.bind(f.system)
+  f.system.update = () => {
+    updates++
+    update()
+  }
+  const calls = { movement: 0, combat: 0, production: 0 }
+  for (const name of Object.keys(calls)) scheduler.add(() => calls[name]++, 40, name)
+  // 100 ms of wall time at speed 8; only observation work is coalesced.
+  scheduler._tick(800)
+  assert.equal(updates, 1)
+  assert.deepEqual(calls, { movement: 20, combat: 20, production: 20 })
+  scheduler._tick(200)
+  assert.equal(updates, 2)
+  for (let i = 0; i < 5; i++) scheduler._tick(800)
+  assert.equal(scheduler.elapsedMs, 5000)
+  assert.equal(updates, 7)
+  assert.equal(f.store.entries.get('dead').state.quantity, 10)
+  assert.equal(f.store.entries.get('dead').state.corpseMaterialDecayRemainingMs, 15000)
+  paused = true
+  scheduler._tick(800)
+  assert.equal(updates, 7)
+  assert.equal(scheduler.elapsedMs, 5000)
+  f.system.destroy()
+  paused = false
+  scheduler._tick(800)
+  assert.equal(updates, 7)
+})
 test('sleep and wake preserve identity and wounds; active interactions remain resident', () => {
   const f = fixture([{ label: 'deer', type: 'Deer', i: 12, j: 12 }])
   const animal = f.context.map.gaia.animals[0]
@@ -130,7 +175,7 @@ test('workers wake wildlife without the hero; activation is bounded per update',
   f.system.update()
   assert.equal(f.context.map.gaia.animals.length, 32)
 })
-test('corpses decay asleep, replacements are delayed, distinct and never duplicated by reload', () => {
+test('corpse loot stays intact asleep until expiration, replacements are delayed, distinct and never duplicated by reload', () => {
   const f = fixture([
     {
       label: 'dead-deer',
@@ -146,9 +191,14 @@ test('corpses decay asleep, replacements are delayed, distinct and never duplica
   ])
   f.context.scheduler.elapsedMs = 10000
   f.system.update()
-  assert.equal(f.store.entries.get('dead-deer').state.quantity, 0)
+  assert.equal(f.store.entries.get('dead-deer').state.quantity, 2)
+  assert.deepEqual(f.store.entries.get('dead-deer').state.inventory.resources, { meat: 2, leather: 1 })
   assert.equal(f.store.entries.get('dead-deer').state.isDestroyed, undefined)
-  f.context.scheduler.elapsedMs = 40000
+  f.context.scheduler.elapsedMs = 19999
+  f.system.update()
+  assert.equal(f.store.entries.get('dead-deer').state.isDestroyed, undefined)
+  assert.equal(f.store.entries.get('dead-deer').state.quantity, 2)
+  f.context.scheduler.elapsedMs = 20000
   f.system.update()
   f.system.update()
   assert.equal(f.store.entries.get('dead-deer').state.isDestroyed, true)
@@ -305,4 +355,100 @@ test('population slots sharing a home keep distinct replacement identities', () 
     [...f.store.entries.values()].every(e => e.state.wildlife.generation === 1),
     true
   )
+})
+
+function distantFixture() {
+  const f = fixture([{ label: 'remote-deer', type: 'Deer', i: 200, j: 200 }])
+  const owner = { units: [], buildings: [{ i: 210, j: 200, sight: 6 }] }
+  const worker = { i: 200, j: 200, owner }
+  owner.units.push(worker)
+  f.context.players = [owner]
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 1)
+  setDistantOwner(owner, () => {})
+  setUnitSuspension(worker, { reason: 'distant-work', wake() {} })
+  return { ...f, owner, worker }
+}
+
+test('a distant village releases nearby fauna and wakes it when detailed work resumes', () => {
+  const f = distantFixture()
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 0)
+  assert.equal(f.store.entries.size, 1)
+  setDistantOwner(f.owner)
+  setUnitSuspension(f.worker)
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals[0].label, 'remote-deer')
+})
+
+test('live workers, hero, camera and player ownership still activate distant wildlife', () => {
+  for (const reason of ['worker', 'hero', 'camera', 'player']) {
+    const f = distantFixture()
+    f.system.update()
+    if (reason === 'worker') setUnitSuspension(f.worker)
+    if (reason === 'hero') Object.assign(f.hero, { i: 200, j: 200 })
+    if (reason === 'camera')
+      f.context.controls.getViewportMetrics = () => ({
+        visibleLeft: 190,
+        visibleTop: 190,
+        visibleWidth: 20,
+        visibleHeight: 20,
+      })
+    if (reason === 'player') f.owner.isPlayed = true
+    f.system.update()
+    assert.equal(f.context.map.gaia.animals.length, 1, reason)
+  }
+})
+
+test('distant status never removes hunted, fighting, fleeing, selected or returning animals', () => {
+  for (const reason of ['target', 'previousTarget', 'attack', 'flee', 'selected', 'returning', 'airborne']) {
+    const f = distantFixture()
+    const animal = f.context.map.gaia.animals[0]
+    if (reason === 'target') f.worker.dest = animal
+    if (reason === 'previousTarget') f.worker.previousDest = animal
+    if (reason === 'attack') animal.action = 'attack'
+    if (reason === 'flee') animal.isFleeing = true
+    if (reason === 'selected') animal.selected = true
+    if (reason === 'returning') animal.i += 12
+    if (reason === 'airborne') animal.altitude = 4
+    f.system.update()
+    assert.equal(f.context.map.gaia.animals[0], animal, reason)
+  }
+})
+
+test('dormant village sight still prevents replacements spawning in sight', () => {
+  const f = distantFixture()
+  f.system.update()
+  f.owner.buildings[0].sight = 40
+  f.store.remove('remote-deer')
+  f.store.put({
+    label: 'dead',
+    type: 'Deer',
+    i: 200,
+    j: 200,
+    isDead: true,
+    isDestroyed: true,
+    wildlife: { homeI: 200, homeJ: 200, generation: 0, renewDay: 1 },
+  })
+  f.system.update()
+  assert.equal(f.store.entries.has('dead'), true)
+  assert.equal(f.store.entries.size, 1)
+})
+
+test('wildlife activity reports dormant anchors and why remaining animals are active', () => {
+  const f = distantFixture()
+  const events = []
+  f.context.performance = { markEvent: (name, details) => events.push({ name, details }) }
+  f.context.scheduler.elapsedMs = 5000
+  f.system.update()
+  const event = events.find(event => event.name === 'wildlife.activity')
+  assert.equal(event.details.active, 0)
+  assert.equal(event.details.records, 1)
+  assert.equal(event.details.dormantAnchors, 2)
+  f.hero.i = 200
+  f.hero.j = 200
+  f.system.update()
+  f.context.scheduler.elapsedMs = 10000
+  f.system.update()
+  assert.equal(events.at(-1).details.hero, 1)
 })

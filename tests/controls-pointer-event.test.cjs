@@ -102,6 +102,7 @@ function loadControls(mockOverrides = {}) {
           this.connected = false
         }
         update() {}
+        suspend() {}
       },
     },
     '../lib': {
@@ -153,8 +154,8 @@ function loadControls(mockOverrides = {}) {
       pickNpcChatterLine: () => '',
     },
     '../constants': {
-      CAMP_DECORATION_BUILDING_TYPES: require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/entities.ts')
-        .CAMP_DECORATION_BUILDING_TYPES,
+      CAMP_DECORATION_BUILDING_TYPES:
+        require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
       BUILDING_TYPES: { trap: 'Trap' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
@@ -166,6 +167,8 @@ function loadControls(mockOverrides = {}) {
   }
   Object.assign(mocks, mockOverrides)
   const localRequire = request => {
+    if (request === '../lib/audio/cameraWorkVolume')
+      return require('./helpers/loadTsModule.cjs').loadTsModule('app/lib/audio/cameraWorkVolume.ts')
     if (request === '../controllers/TouchInputController') {
       return loadTsFile(path.join(__dirname, '../app/controllers/TouchInputController.ts'))
     }

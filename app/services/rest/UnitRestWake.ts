@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { ACTION_TYPES, FADE_DURATION_MS, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { cancelFade, fadeIn } from '../../lib/entities/entityFade'
@@ -20,6 +21,7 @@ type UnitWakeMode = 'resume' | 'order'
 const GAME_MINUTE_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay / 60
 
 function restoreAwakeState(unit: UnitEntity, options: { clearShelterState?: boolean } = {}): void {
+  notifyVillageStateChanged(unit.owner)
   if (options.clearShelterState ?? true) unit.shelterState = null
   unit.actionLocked = false
   unit.alpha = 1
@@ -54,6 +56,7 @@ function resumeStoredReturnTask(unit: UnitEntity, state: UnitRestState): boolean
 
 export function finishUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
   unit.shelterState = null
+  notifyVillageStateChanged(unit.owner)
   if (unit.type === UNIT_TYPES.villager && !shouldVillagerWork(unit)) {
     unit.autonomousJob = state.previousAutonomousJob ?? unit.autonomousJob ?? null
     return

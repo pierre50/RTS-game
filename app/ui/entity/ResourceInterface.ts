@@ -1,9 +1,9 @@
-import { RESOURCE_STOCKPILE_TYPES } from '../../constants'
-import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
+import { getEntityDescription } from './EntityDescription'
+import { RESOURCE_TYPES } from '../../constants'
+import { appendBaseEntityInfo } from './BaseEntityInterface'
 import { getEntityDisplayName } from '../utils/entityDisplayName'
 import type { EntityInfoRenderOptions, ResourceEntity } from '../../types/entities'
 import type { ResourceConfig } from '../../types/config'
-import type { MenuLike } from '../../types/context'
 
 export class ResourceInterface {
   resource: ResourceEntity
@@ -14,23 +14,16 @@ export class ResourceInterface {
 
   setDefaultInterface(element: HTMLElement, _data: ResourceConfig, options?: EntityInfoRenderOptions): void {
     const resource = this.resource
-    const menu = (resource.context as { menu: MenuLike }).menu
+    const standingTree =
+      resource.type === RESOURCE_TYPES.tree && !resource.isCutOrFallenTree?.() && (resource.hitPoints ?? 0) > 0
+    const emptyBush = resource.type === RESOURCE_TYPES.berrybush && (resource.quantity ?? 0) <= 0
+    const showResistance = standingTree || emptyBush
+    const current = showResistance ? (resource.hitPoints ?? 0) : (resource.quantity ?? 0)
+    const total = showResistance ? (resource.totalHitPoints ?? 0) : (resource.totalQuantity ?? current)
 
-    appendBaseEntityInfo(
-      element,
-      '',
-      getEntityDisplayName(resource),
-      resource.hitPoints,
-      resource.totalHitPoints ?? 0,
-      {
-        hideType: options?.hideIdentity,
-      }
-    )
-
-    if (resource.quantity) {
-      const stockpileType = RESOURCE_STOCKPILE_TYPES[resource.type as keyof typeof RESOURCE_STOCKPILE_TYPES]
-      const iconToUse = stockpileType ? menu.infoIcons?.[stockpileType] : undefined
-      appendQuantityInfo(element, iconToUse ?? menu.infoIcons?.['gold'] ?? '', resource.quantity)
-    }
+    appendBaseEntityInfo(element, '', getEntityDisplayName(resource), current, total, {
+      hideType: options?.hideIdentity,
+      description: getEntityDescription(resource),
+    })
   }
 }

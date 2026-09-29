@@ -23,7 +23,7 @@ function trainingStatus(
 }
 
 export function updateHeroBuildingProgress(body: HTMLElement, building: BuildingEntity): void {
-  body.querySelectorAll<HTMLElement>('button.ui-btn').forEach(button => {
+  body.querySelectorAll<HTMLElement>('button.ui-btn, .hero-training-entry').forEach(button => {
     const id = button.dataset.actionId || button.id.replace(/^hero-/, '')
     const status = button.querySelector<HTMLElement>('.hero-building-menu-status')
     const text = button.querySelector<HTMLElement>('.hero-building-menu-status-text')

@@ -59,7 +59,7 @@ export class CompactResourceSet extends Set<ResourceEntity> {
   private saveSnapshot?: SaveEntityState[]
   private saveGroups = new Map<string, SaveEntityState[]>()
   private dynamicSaveJson = ''
-  private baseline?: { count: number; signature: string; flags: Uint8Array }
+  private baseline?: { count: number; signature: string; legacySignature?: string; flags: Uint8Array }
   private deltaRemoved = new Set<number>()
   private deltaAdded = new Set<number>()
   private used = 0
@@ -255,27 +255,37 @@ export class CompactResourceSet extends Set<ResourceEntity> {
   }
 
   /** Seal once, before village placement or gameplay can alter the blueprint. No entity snapshots are retained. */
-  sealBlueprintBaseline(): void {
-    let hash = 2166136261
-    const consume = (bytes: Uint8Array) => {
-      for (const byte of bytes) hash = Math.imul(hash ^ byte, 16777619) >>> 0
-    }
-    for (const array of [
-      this.positions,
-      this.kinds,
-      this.textures,
-      this.quantities,
-      this.totals,
-      this.hitPoints,
-      this.flags,
-    ])
-      consume(new Uint8Array(array.buffer, array.byteOffset, this.used * array.BYTES_PER_ELEMENT))
-    consume(
-      new TextEncoder().encode(
-        JSON.stringify([this.prefix, this.typeNames, this.textureNames, [...this.labels], [...this.berryTextures]])
+  sealBlueprintBaseline(legacyTotals?: number[]): void {
+    const signature = (totals: Float64Array) => {
+      let hash = 2166136261
+      const consume = (bytes: Uint8Array) => {
+        for (const byte of bytes) hash = Math.imul(hash ^ byte, 16777619) >>> 0
+      }
+      for (const array of [
+        this.positions,
+        this.kinds,
+        this.textures,
+        this.quantities,
+        totals,
+        this.hitPoints,
+        this.flags,
+      ])
+        consume(new Uint8Array(array.buffer, array.byteOffset, this.used * array.BYTES_PER_ELEMENT))
+      consume(
+        new TextEncoder().encode(
+          JSON.stringify([this.prefix, this.typeNames, this.textureNames, [...this.labels], [...this.berryTextures]])
+        )
       )
-    )
-    this.baseline = { count: this.used, signature: hash.toString(16), flags: this.flags.slice(0, this.used) }
+      return hash.toString(16)
+    }
+    this.baseline = {
+      count: this.used,
+      signature: signature(this.totals),
+      // Accept saves made before legacy map capacities were inferred from their
+      // initial stock, while still validating all other blueprint contents.
+      ...(legacyTotals?.length === this.used ? { legacySignature: signature(Float64Array.from(legacyTotals)) } : {}),
+      flags: this.flags.slice(0, this.used),
+    }
     this.deltaRemoved.clear()
     this.deltaAdded.clear()
   }
@@ -330,7 +340,7 @@ export class CompactResourceSet extends Set<ResourceEntity> {
       !this.baseline ||
       delta.version !== 1 ||
       delta.count !== this.baseline.count ||
-      delta.signature !== this.baseline.signature
+      (delta.signature !== this.baseline.signature && delta.signature !== this.baseline.legacySignature)
     )
       throw new Error('SAVE_RESOURCE_BLUEPRINT_MISMATCH')
     const seen = new Set<number>()

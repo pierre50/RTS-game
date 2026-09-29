@@ -1,8 +1,3 @@
-import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
-import { currentResourceRecord, resolveResource, isCompactResourceRecord } from '../resources/CompactResourceSet'
-import { canCampPursue } from '../../lib/units/campBehavior'
-import { routeToRememberedTarget } from '../../lib/units/targetPursuit'
-import { knownTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
 import {
   ACTION_TYPES,
   MINING_RESOURCE_CONFIG,
@@ -12,25 +7,24 @@ import {
   WORK_TYPES,
 } from '../../constants'
 import {
-  getActionCondition,
+  getAutonomyJobForWork,
   getInstanceDegree,
   getInstancePath,
-  getAutonomyJobForWork,
   isWheatMature,
   setVillagerAutonomy,
 } from '../../lib'
+import type { ActionProps } from '../../lib/combat'
+import { applyDiplomaticAggression } from '../../lib/combat/diplomaticAggression'
 import { getNearestAvailableStableForUnit } from '../../lib/horses/horseCapture'
 import { t } from '../../lib/lang'
-import { applyDiplomaticAggression } from '../../lib/combat/diplomaticAggression'
+import { canCampPursue } from '../../lib/units/campBehavior'
+import { knownTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
+import { routeToRememberedTarget } from '../../lib/units/targetPursuit'
 import { isHeroControlled } from '../../lib/units/unitControl'
-import {
-  applyWorkForAction,
-  getDeliveryBeforeGatherJobSwitch,
-  sendUnitToDelivery,
-} from './UnitResourceDeliveryCommands'
+import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
 import type {
-  ResourceEntity,
   BuildingEntity,
+  ResourceEntity,
   RuntimeEntity,
   UnitCommandOptions,
   UnitCreationExtra,
@@ -38,32 +32,13 @@ import type {
   UnitResourceDeliveryReturnTask,
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { ActionProps } from '../../lib/combat'
-
-function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
-  return Boolean(value && !('has' in value && 'corpses' in value))
-}
-
-function checkActionCondition(
-  source: UnitEntity,
-  target: object | null | undefined,
-  action?: string,
-  props?: ActionProps | UnitCreationExtra
-): boolean {
-  if (!target) return false
-  if (
-    ['attack', 'hunt', 'captureHorse', 'convert'].includes(action ?? '') &&
-    !playerSeesTarget(source.owner, target as RuntimeEntity)
-  )
-    return false
-  const actionProps =
-    action === ACTION_TYPES.train && !props ? { trainingType: source.trainingTargetType ?? '' } : props
-  return getActionCondition(source, target as RuntimeEntity, action ?? '', actionProps as ActionProps)
-}
-
-function canShowTargetAlert(unit: UnitEntity, target: RuntimeEntity): boolean {
-  return Boolean(unit.owner?.isPlayed && (unit.context?.controls?.instanceInCamera?.(target) ?? true))
-}
+import { currentResourceRecord, isCompactResourceRecord, resolveResource } from '../resources/CompactResourceSet'
+import { canShowTargetAlert, checkActionCondition, isRuntimeEntity } from './UnitCommandConditions'
+import {
+  applyWorkForAction,
+  getDeliveryBeforeGatherJobSwitch,
+  sendUnitToDelivery,
+} from './UnitResourceDeliveryCommands'
 
 export class UnitCommands {
   unit: UnitEntity
@@ -105,7 +80,8 @@ export class UnitCommands {
       if (!current || current.isDestroyed) return false
       target = resolveResource(current)
     }
-    if (!playerSeesTarget(unit.owner, target) && knownTarget(unit.owner, target)) {
+    if (!playerSeesTarget(unit.owner, target) && knownTarget(unit.owner, target, unit)) {
+      if (!immediate && !unit.assigningAutonomousJob) unit.collectiveTask = null
       applyWorkForAction(unit, work, action)
       setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(work) ?? null)
       if (routeToRememberedTarget(unit, target, action)) return true
@@ -128,6 +104,8 @@ export class UnitCommands {
         this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps)
       )
     }
+    // A direct order takes ownership even when it repeats the current automatic task.
+    if (!immediate && !unit.assigningAutonomousJob) unit.collectiveTask = null
     if (this.isRedundantOrder(target, work, action)) return false
 
     const deliveryTransition = getDeliveryBeforeGatherJobSwitch(unit, target, work, action)
@@ -158,7 +136,7 @@ export class UnitCommands {
 
     // AI job switches must bypass the public command throttle, otherwise the villager
     // can change work/action while still keeping the old destination.
-    if (immediate || !unit.owner?.isPlayed) {
+    if (immediate || action === ACTION_TYPES.attack || !unit.owner?.isPlayed) {
       return unit.sendToEvt?.(target, action ?? undefined)
     }
     return unit.sendTo?.(target, action ?? undefined)

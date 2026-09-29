@@ -14,9 +14,6 @@ function loadOwnerTransfer(calls = []) {
       '../combat/bandits': {
         isBanditOwner: owner => Boolean(owner?.devConsoleBanditOwner),
       },
-      '../buildings/buildingOccupancy': {
-        getBuildingShelterCapacity: building => building.shelterCapacity ?? 0,
-      },
       '../grid/visibility': {
         updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.label, target.owner.label]),
       },

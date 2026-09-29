@@ -47,6 +47,10 @@ function loadUnitActions(calls, captureHorse) {
   }
 
   const localRequire = request => {
+    if (request.startsWith('../../lib/economy/'))
+      return require('./helpers/loadTsModule.cjs').loadTsModule('app/lib/economy/' + request.split('/').pop() + '.ts')
+    if (request === '../../lib/equipment/animalCorpseLoot') return {}
+    if (request === '../../lib/actions/contactActions') return { isActionTouchingTarget: () => true }
     if (request === '../../lib/actions/contactActions') {
       return {
         canReachActionTarget: () => true,
@@ -198,8 +202,10 @@ function loadUnitActions(calls, captureHorse) {
     if (request === './UnitPreviousWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
     }
-    if (request === '../../config/animalGatherLoot') return loadTsFile(path.join(__dirname, '../app/config/animalGatherLoot.ts'))
-    if (request === '../../lib/resources/caveMinerals') return loadTsFile(path.join(__dirname, '../app/lib/resources/caveMinerals.ts'))
+    if (request === '../../config/animalGatherLoot')
+      return loadTsFile(path.join(__dirname, '../app/config/animalGatherLoot.ts'))
+    if (request === '../../lib/resources/caveMinerals')
+      return loadTsFile(path.join(__dirname, '../app/lib/resources/caveMinerals.ts'))
     return require(request)
   }
 

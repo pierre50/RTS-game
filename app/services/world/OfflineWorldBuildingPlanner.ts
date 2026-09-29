@@ -1,6 +1,5 @@
+import { createConstructionMaterials } from '../../lib/economy/constructionMaterials'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
-import { tryCreateCampChest } from '../../lib/grid/campChestPlacement'
-import { getPlayerResourceStores } from '../../lib/resources/playerResourceTotals'
 import { AI_DIFFICULTIES, MAX_BUILDING_BY_AGE } from '../../ai/config'
 import { BUILDING_TYPES } from '../../constants'
 import { villageBuildingNeeds, villagePhase } from '../../ai/AIDevelopmentPolicy'
@@ -8,9 +7,8 @@ import { getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import { isValidCondition } from '../../lib/combat/configConditions'
 import { isFootprintBuildable } from '../../lib/grid/buildingFootprint'
 import { findStoragePitSite, needsStoragePit } from '../../lib/grid/storagePitPlacement'
-import { getMissingPlayerResources, withdrawChestResources } from '../../lib/resources/playerResourceTotals'
 import { isLiving, OfflineWorldSpatial, type OfflineTerrainCell } from './OfflineWorldSpatial'
-import { isOfflineWorker, savedResourceOwner, stopOfflineTask, type OfflineWorkRules } from './OfflineWorldWork'
+import { isOfflineWorker, stopOfflineTask, type OfflineWorkRules } from './OfflineWorldWork'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
 
 export function restoreOfflineBuilders(state: SerializedSave): void {
@@ -82,43 +80,7 @@ export function planOfflineBuildings(
       return
     }
     const buildings = (player.buildings ?? []).filter(isLiving)
-    const center =
-      buildings.find(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt) ??
-      buildings.find(b => b.type === BUILDING_TYPES.chest && b.isBuilt)
-    const createCampChest = () => {
-      const config = rules.buildingConfig(index, BUILDING_TYPES.chest)
-      return tryCreateCampChest({
-        workers,
-        buildings: player.buildings ?? [],
-        resources: state.resources,
-        stocks: getPlayerResourceStores(savedResourceOwner(player, state.players)),
-        woodCost: Number(config.cost?.wood) || 0,
-        terrainAt: p => terrain[p.i]?.[p.j],
-        isFree: p => spatial.naturalCell(p),
-        create: point => {
-          const chest: SaveEntityState = {
-            ...point,
-            type: BUILDING_TYPES.chest,
-            size: 1,
-            label: `camp-chest:${player.label ?? index}:${day}`,
-            isBuilt: true,
-            hitPoints: Number(config.totalHitPoints) || 20,
-            totalHitPoints: Number(config.totalHitPoints) || 20,
-            inventory: { resources: {} },
-          }
-          player.buildings ??= []
-          player.buildings.push(chest)
-          spatial.reserve(chest)
-          player.offlineBuildingDecision = `Day ${day}: built camp chest`
-          return true
-        },
-      })
-    }
-    if (!center) {
-      if (!workers.some(w => w.autonomousJob === 'wood' || w.work === 'woodcutter')) workers[0].autonomousJob = 'wood'
-      if (!createCampChest()) player.offlineBuildingDecision = `Day ${day}: waiting for camp supplies`
-      return
-    }
+    const center = buildings.find(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt) ?? workers[0]
     let project = buildings.find(b => !b.isBuilt)
     if (!project) {
       const difficulty =
@@ -138,7 +100,9 @@ export function planOfflineBuildings(
         buildings,
         storagePitNeeded: needsStoragePit(state.resources, buildings),
       })
-      const priorities = Object.keys(needs).filter(type => needs[type])
+      const priorities = buildings.some(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt)
+        ? Object.keys(needs).filter(type => needs[type])
+        : [BUILDING_TYPES.townCenter]
       const capsByAge = MAX_BUILDING_BY_AGE
       const caps = capsByAge[Math.min(2, player.age ?? 0) as keyof typeof capsByAge] as Record<string, number>
       for (const type of priorities) {
@@ -164,16 +128,6 @@ export function planOfflineBuildings(
           )
         )
           continue
-        const missing = getMissingPlayerResources(savedResourceOwner(player, state.players), config.cost, {
-          includeHero: false,
-        })
-        if (Object.keys(missing).length) {
-          if (player.offlineBuildingDecision.endsWith('no new project needed'))
-            player.offlineBuildingDecision = `Day ${day}: ${type} waiting for ${Object.entries(missing)
-              .map(([resource, amount]) => `${amount} ${resource}`)
-              .join(', ')}`
-          continue
-        }
         const size = Number(config.size) || 0
         const position =
           type === BUILDING_TYPES.storagePit
@@ -190,11 +144,6 @@ export function planOfflineBuildings(
           player.offlineBuildingDecision = `Day ${day}: no safe space for ${type}`
           continue
         }
-        if (
-          !position ||
-          !withdrawChestResources(savedResourceOwner(player, state.players), config.cost, { includeHero: false })
-        )
-          continue
         project = {
           ...position,
           type,
@@ -203,6 +152,7 @@ export function planOfflineBuildings(
           buildingAge: player.age ?? 0,
           placementMirrored: generatedBuildingMirrored(type, position, player.civ ?? index, p => spatial.available(p)),
           isBuilt: false,
+          constructionMaterials: createConstructionMaterials(config.cost),
           hitPoints: 1,
           totalHitPoints: Number(config.totalHitPoints),
         }
@@ -215,16 +165,6 @@ export function planOfflineBuildings(
         break
       }
     }
-    if (!project && createCampChest()) return
     if (project) player.offlineBuildingDecision = `Day ${day}: building ${project.type} (${project.label})`
-    if (!project || workers.some(unit => unit.autonomousJob === 'construction' || unit.work === 'builder')) return
-    const worker = workers.find(unit => spatial.reachable(unit, project!))
-    if (!worker) return
-    worker.offlineBuilderJob =
-      worker.autonomousJob && worker.autonomousJob !== 'construction' ? worker.autonomousJob : 'wood'
-    stopOfflineTask(worker)
-    delete worker.offlineWork
-    worker.autonomousJob = 'construction'
-    worker.work = 'builder'
   })
 }

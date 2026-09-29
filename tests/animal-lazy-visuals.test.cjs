@@ -3,7 +3,7 @@ const test = require('node:test')
 const { Container, Texture } = require('pixi.js')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function setup() {
+function setup(options = {}) {
   const ticks = new Set()
   const sheet = { textures: { south: Texture.EMPTY } }
   let stops = 0
@@ -114,7 +114,7 @@ function setup() {
       },
     },
   }
-  const animal = new Animal({ i: 0, j: 0, type: 'Deer', owner }, { map, app: {}, editor: null })
+  const animal = new Animal({ i: 0, j: 0, type: 'Deer', owner, ...options }, { map, app: {}, editor: null })
   map.addChild(animal)
   return { animal, cell, map, ticks, stops: () => stops }
 }
@@ -194,4 +194,10 @@ test('eviction during pause preserves intended playback when the animal returns'
   animal.syncShadow()
   assert.equal(animal.getVisualSprite().playing, true)
   animal.destroy({ children: true })
+})
+
+test('restoring an animal retains its individual meat capacity and remaining stock', () => {
+  const { animal } = setup({ quantity: 15, totalQuantity: 23 })
+  assert.equal(animal.quantity, 15)
+  assert.equal(animal.totalQuantity, 23)
 })

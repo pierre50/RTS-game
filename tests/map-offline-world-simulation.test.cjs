@@ -5,9 +5,6 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { applyOfflineWorldSimulation } = loadTsModule('app/classes/map/generation/MapOfflineWorldSimulation.ts', {
   mocks: {
     'pixi.js': { Assets: { cache: { get: name => (name === 'config' ? { resources: {} } : undefined) } } },
-    '../../../lib/buildings/buildingOccupancy': {
-      getBuildingShelterCapacity: ({ type }) => (type === 'House' ? 5 : 0),
-    },
   },
 })
 

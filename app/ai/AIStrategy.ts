@@ -22,7 +22,6 @@ import {
   MAX_CAVALRY_BY_AGE,
   MAX_INFANTRY_BY_AGE,
   MAX_VILLAGER_PER_AGE,
-  VILLAGE_TARGET_PERCENTAGE_BY_AGE,
 } from './config'
 import type {
   AIAge,
@@ -31,7 +30,6 @@ import type {
   AIEntityLike,
   AIGridPosition,
   AIResourceAmount,
-  AIResourceName,
   AIStrategyPlayerLike,
   AIStrategySnapshot,
 } from './types'
@@ -46,7 +44,6 @@ export class AIStrategy {
   difficulty: string
   difficultyConfig: AIDifficultyConfig
   maxVillagerPerAge: AgeMap<number>
-  villageTargetPercentageByAge: AgeMap<Record<AIResourceName, number>>
   maxBuildingByAge: AgeMap<Record<string, number>>
   maxInfantryByAge: AgeMap<number>
   maxArcherByAge: AgeMap<number>
@@ -59,7 +56,6 @@ export class AIStrategy {
     this.difficultyConfig =
       (AI_DIFFICULTIES as Record<string, AIDifficultyConfig>)[difficulty] || AI_DIFFICULTIES.medium
     this.maxVillagerPerAge = MAX_VILLAGER_PER_AGE
-    this.villageTargetPercentageByAge = VILLAGE_TARGET_PERCENTAGE_BY_AGE
     this.maxBuildingByAge = MAX_BUILDING_BY_AGE
     this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
     this.maxArcherByAge = MAX_ARCHER_BY_AGE
@@ -70,7 +66,6 @@ export class AIStrategy {
   applyConfig(target: AIStrategyPlayerLike): void {
     target.difficultyConfig = this.difficultyConfig
     target.maxVillagerPerAge = this.maxVillagerPerAge
-    target.villageTargetPercentageByAge = this.villageTargetPercentageByAge
     target.maxBuildingByAge = this.maxBuildingByAge
     target.maxInfantryByAge = this.maxInfantryByAge
     target.maxArcherByAge = this.maxArcherByAge

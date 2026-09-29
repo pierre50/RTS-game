@@ -1719,6 +1719,7 @@ body.hero-cursor-hidden {
 }
 
 .message-content {
+  white-space: pre-line;
   display: inline-block;
   padding: var(--msg-padding);
   font-size: var(--font-size-base);
@@ -2029,13 +2030,22 @@ body.hero-cursor-hidden {
   text-align: left;
   cursor: pointer;
 }
-.minimap-legend-toggle:hover, .minimap-legend-toggle:focus-visible {
+.minimap-legend-toggle:hover,
+.minimap-legend-toggle:focus-visible {
   background: #ffffff12;
   outline: 1px solid #ffffff55;
 }
-.minimap-legend-toggle.is-hidden { opacity: .45; }
-.minimap-legend-toggle.is-hidden .worldmap-legend-name { text-decoration: line-through; }
-.minimap-legend-icon { display: block; width: 12px; height: 12px; }
+.minimap-legend-toggle.is-hidden {
+  opacity: 0.45;
+}
+.minimap-legend-toggle.is-hidden .worldmap-legend-name {
+  text-decoration: line-through;
+}
+.minimap-legend-icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+}
 
 .minimap-zoom-controls {
   display: flex;
@@ -2044,8 +2054,15 @@ body.hero-cursor-hidden {
   gap: 10px;
   margin-bottom: 12px;
 }
-.minimap-zoom-controls button { min-width: 34px; min-height: 32px; }
-.minimap-zoom-controls span { min-width: 54px; text-align: center; font-variant-numeric: tabular-nums; }
+.minimap-zoom-controls button {
+  min-width: 34px;
+  min-height: 32px;
+}
+.minimap-zoom-controls span {
+  min-width: 54px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 
 .worldmap-legend-swatch.minimap-legend-marker {
   box-sizing: border-box;
@@ -2070,4 +2087,93 @@ body.hero-cursor-hidden {
   line-height: 1.6;
   color: var(--main-accent-hover);
   padding-top: var(--ui-gap-8);
+}
+
+.depot-reserves {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+.depot-reserves p,
+.depot-reserve-amount {
+  font-size: 16px;
+  line-height: 1.5;
+  text-shadow: none;
+}
+.depot-reserves p {
+  margin: 0 0 4px;
+}
+.depot-reserve-capacity {
+  font-weight: bold;
+}
+.game-window .depot-reserve-row.config-row:has(.ui-range) {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) minmax(90px, 2fr) 65px;
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+}
+.game-window .depot-reserve-row.config-row:has(.ui-range) > label {
+  grid-column: auto;
+  cursor: pointer;
+}
+.depot-reserve-row .ui-range {
+  width: 100%;
+}
+.depot-reserve-amount {
+  text-align: right;
+}
+.depot-reserves > .ui-btn {
+  justify-self: start;
+}
+
+.construction-help {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  text-shadow: none;
+  margin: 0 0 16px;
+}
+
+.hero-training-panel {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+.hero-training-panel > p {
+  margin: 0;
+}
+.hero-training-entry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ui-border, #555c80);
+}
+.hero-training-entry > span:first-child {
+  flex: 1;
+}
+.hero-training-entry .hero-building-menu-status {
+  position: static;
+}
+
+.entity-description {
+  margin: 0;
+  color: var(--main-text-color);
+  font-size: var(--font-size-base);
+  font-weight: normal;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.inventory-transfer-modal .entity-description {
+  margin-bottom: var(--ui-gap-8);
 }

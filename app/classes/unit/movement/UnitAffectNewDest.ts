@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../../lib/units/villageStateEvents'
 import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { scheduleVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
 import { isVillagerWorkTargetRejected } from '../../../lib/units/villagerAutonomyTargeting'
@@ -98,6 +99,7 @@ function handleIdleDestination(unit: UnitEntity): void {
     unit.dest = null
     unit.realDest = null
     unit.path = []
+    notifyVillageStateChanged(unit.owner)
     unit.inactif = true
     unit.sprite?.stop()
     unit.setTextures?.(SHEET_TYPES.standing)

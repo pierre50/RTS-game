@@ -114,6 +114,7 @@ type BlueprintResource = {
   j: number
   type: string
   quantity?: number
+  totalQuantity?: number
   textureName?: string
   startsMature?: boolean
 }

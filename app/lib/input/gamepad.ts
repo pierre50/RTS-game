@@ -1,22 +1,6 @@
 const GAMEPAD_DEADZONE = 0.2
 export const GAMEPAD_CURSOR_SPEED = 18 // screen pixels per frame at full stick tilt
 
-// Standard Gamepad API mapping (https://w3c.github.io/gamepad/#remapping) — matches
-// 8BitDo controllers and other Xbox-layout pads once the browser reports mapping: "standard".
-export const GAMEPAD_BUTTON = {
-  action: 5, // R1 — attack/use tool
-  defense: 4, // L1 — hold hero defense
-  inspect: 8, // View / Select — inspect/select the hovered entity
-  interact: 2, // X / Square
-  inventory: 3, // Y / Triangle
-  toolPrev: 6, // L2 — cycle tool backward
-  toolNext: 7, // R2 — cycle tool forward
-  dpadUp: 12,
-  dpadDown: 13,
-  dpadLeft: 14,
-  dpadRight: 15,
-} as const
-
 export const GAMEPAD_AXIS = {
   moveX: 0,
   moveY: 1,

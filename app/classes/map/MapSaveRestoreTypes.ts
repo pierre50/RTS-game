@@ -2,6 +2,7 @@ import type { TargetObservation } from '../../lib/units/playerTargetKnowledge'
 import type { SaveEntityState, SavedAIState } from '../../types/save'
 
 export type SavedPlayer = {
+  populationMax?: number
   targetKnowledge?: TargetObservation[]
   age?: number
   ageRulesVersion?: number

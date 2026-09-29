@@ -115,3 +115,37 @@ test('failed settlement keeps the previous checkpoint for retry', () => {
   rules.wakeUnitSimulation(unit)
   assert.equal(advances[0].ms, 1000)
 })
+
+test('idle autonomous villagers enter catch-up without a pre-existing job', () => {
+  const { system, context, unit, rules, advances } = fixture()
+  Object.assign(unit, { work: null, action: null, dest: null, autonomousJob: null, inactif: true })
+  system.update()
+  assert.equal(rules.isUnitSuspended(unit), true)
+  context.scheduler.elapsedMs = 5000
+  system.flush()
+  assert.equal(advances[0].ms, 5000)
+})
+
+test('workers sharing stocks settle together and newcomers do not receive earlier work', () => {
+  const { system, context, unit, advances } = fixture()
+  system.update()
+  context.scheduler.elapsedMs = 1000
+  const second = { ...unit, label: 'second', i: 49 }
+  unit.owner.units.push(second)
+  system.update()
+  assert.deepEqual(
+    advances.map(a => [a.ms, a.units.length]),
+    [[1000, 1]]
+  )
+  context.scheduler.elapsedMs = 4000
+  system.flush()
+  assert.deepEqual(
+    advances.map(a => [a.ms, a.units.length]),
+    [
+      [1000, 1],
+      [3000, 2],
+    ]
+  )
+  system.flush()
+  assert.equal(advances.length, 2)
+})

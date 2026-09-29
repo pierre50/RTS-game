@@ -34,7 +34,7 @@ export function updateVillageResource(map: object, resource: ResourceEntity): vo
   }
 }
 
-export function* localInstances(map: RuntimeMap, anchor: Point): Iterable<RuntimeEntity> {
+function* localInstances(map: RuntimeMap, anchor: Point): Iterable<RuntimeEntity> {
   const buckets = map.instanceBuckets
   if (buckets) {
     for (

@@ -109,7 +109,7 @@ test('interior decorations vary by building type', () => {
 
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Stable' }).map(item => item.type),
-    ['CampBucket', 'CampBucket']
+    ['CampBucket', 'CampBucket', 'CampBrazier', 'CampBrazier']
   )
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Barracks' }).map(item => item.type),

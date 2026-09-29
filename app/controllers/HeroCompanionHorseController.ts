@@ -1,28 +1,27 @@
-import { playAudibleSoundCue } from '../lib'
-import { getEntityCell, getEntitySpaceGrid, getMapSpace, moveEntityToMapSpace, sameMapSpace } from '../lib/mapSpaces'
-import { BUILDING_TYPES, MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES, SOUND_CUES } from '../constants'
-import { instanceIsInPlayerSight } from '../lib/grid/visibility'
+import { MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES } from '../constants'
+import { takeStableInteriorHorseForHero } from '../lib/horses/stableHorseInteraction'
 import type { StableHorse } from '../lib/horses/stableHorses'
 import { t } from '../lib/lang'
-import { takeStableInteriorHorseForHero } from '../lib/horses/stableHorseInteraction'
+import { getEntityCell, getEntitySpaceGrid } from '../lib/mapSpaces'
 import type { ControlsLike } from '../types/context'
 import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import {
   COMPANION_HORSE_CALL_MAX_RADIUS,
   COMPANION_HORSE_CALL_MIN_RADIUS,
-  MOUNT_TRANSITION_CAMERA_MS,
-  MOUNT_TRANSITION_FADE_IN_MS,
-  MOUNT_TRANSITION_FADE_OUT_MS,
-  MOUNT_TRANSITION_HIDDEN_ALPHA,
-  MOUNT_TRANSITION_TICK_MS,
-  easeInOut,
   findCompanionHorseSpawnCell,
   findCompanionHorseSpawnCellNear,
   type CompanionHorse,
   type HeroAimPoint,
   type ViewportMetrics,
 } from './HeroControllerSupport'
+import { moveCompanionHorseToCell, sendCompanionHorseToHero } from './horse/CompanionHorseMovement'
+import { startHorseTransition } from './horse/CompanionHorseTransition'
+import {
+  getViewportMetrics,
+  isCompanionHorseVisibleToHero,
+  isStableVisibleToHero,
+} from './horse/CompanionHorseVisibility'
 
 const COMPANION_HORSE_STABLE_EXIT_RADIUS = 6
 
@@ -58,18 +57,7 @@ export class HeroCompanionHorseController {
   }
 
   getViewportMetrics(): ViewportMetrics | null {
-    const getViewportMetrics = this.controls.getViewportMetrics
-    if (typeof getViewportMetrics !== 'function') return null
-    const viewport = getViewportMetrics.call(this.controls)
-    if (
-      typeof viewport?.visibleLeft !== 'number' ||
-      typeof viewport.visibleTop !== 'number' ||
-      typeof viewport.visibleWidth !== 'number' ||
-      typeof viewport.visibleHeight !== 'number'
-    ) {
-      return null
-    }
-    return viewport
+    return getViewportMetrics.call(this)
   }
 
   createCompanionHorseNearHero(
@@ -106,36 +94,11 @@ export class HeroCompanionHorseController {
   }
 
   isCompanionHorseVisibleToHero(horse: CompanionHorse, unit: UnitEntity): boolean {
-    if (horse.visible === false) return false
-    if (!sameMapSpace(horse, unit)) return false
-    const owner = unit.owner ?? this.controls.context.player
-    if (owner?.views) return instanceIsInPlayerSight(horse, owner)
-    const viewport = this.getViewportMetrics()
-    if (!viewport) return true
-    return (
-      horse.x >= viewport.visibleLeft &&
-      horse.x <= viewport.visibleLeft + viewport.visibleWidth &&
-      horse.y >= viewport.visibleTop &&
-      horse.y <= viewport.visibleTop + viewport.visibleHeight
-    )
+    return isCompanionHorseVisibleToHero.call(this, horse, unit)
   }
 
   isStableVisibleToHero(stable: BuildingEntity, unit: UnitEntity): boolean {
-    if (
-      stable.type !== BUILDING_TYPES.stable ||
-      stable.owner !== unit.owner ||
-      !stable.isBuilt ||
-      stable.isDead ||
-      stable.isDestroyed
-    ) {
-      return false
-    }
-    if (!sameMapSpace(stable, unit)) return false
-    const distance = Math.hypot(stable.i - unit.i, stable.j - unit.j)
-    if (distance > (unit.sight ?? COMPANION_HORSE_CALL_MAX_RADIUS)) return false
-    const owner = unit.owner ?? this.controls.context.player
-    if (owner?.views) return instanceIsInPlayerSight(stable, owner)
-    return stable.visible !== false
+    return isStableVisibleToHero.call(this, stable, unit)
   }
 
   findVisibleOwnedStableForCompanionHorse(): BuildingEntity | null {
@@ -172,28 +135,7 @@ export class HeroCompanionHorseController {
   }
 
   moveCompanionHorseToCell(horse: CompanionHorse, cell: RuntimeCell): void {
-    const map = this.getHeroUnit()?.context?.map
-    const oldI = horse.i
-    const oldJ = horse.j
-    const targetSpace = map ? getMapSpace(map, cell.spaceId) : null
-    if (map && targetSpace) {
-      moveEntityToMapSpace(map, horse, targetSpace, cell)
-      return
-    }
-    const currentCell = horse.currentCell ?? (map ? getEntityCell(horse, map) : null)
-    if (currentCell?.has === horse) {
-      currentCell.has = null
-      currentCell.solid = false
-    }
-    horse.i = cell.i
-    horse.j = cell.j
-    horse.x = cell.x
-    horse.y = cell.y
-    horse.z = cell.z
-    horse.currentCell = cell
-    cell.place(horse)
-    cell.solid = true
-    map?.updateInstanceBucket?.(horse, oldI, oldJ)
+    return moveCompanionHorseToCell.call(this, this.getHeroUnit, horse, cell)
   }
 
   registerCompanionHorse(horse: CompanionHorse): CompanionHorse {
@@ -221,13 +163,7 @@ export class HeroCompanionHorseController {
   }
 
   sendCompanionHorseToHero(horse: CompanionHorse, unit: UnitEntity): void {
-    const cell = getEntityCell(unit, unit.context?.map)
-    const destination = cell
-      ? { i: cell.i, j: cell.j, x: cell.x, y: cell.y, z: cell.z }
-      : { i: unit.i, j: unit.j, x: unit.x, y: unit.y, z: unit.z ?? 0 }
-    horse.sendTo?.(destination, null, { forceRepath: true })
-    playAudibleSoundCue(horse, SOUND_CUES.unit.horseMoving, { profile: 'voice' })
-    this.controls.context.menu?.showMessage(t('companionHorseComing'), 'success')
+    return sendCompanionHorseToHero.call(this, this.getHeroUnit, horse, unit)
   }
 
   callCompanionHorse(): boolean {
@@ -355,51 +291,12 @@ export class HeroCompanionHorseController {
     taskName: string
     targetValid?: () => boolean
   }): boolean {
-    const unit = this.getHeroUnit()
-    const scheduler = this.controls.context.scheduler
-    if (!unit) return false
-    if (this.mountTransitionTaskId != null) return true
-    if (!scheduler) return finish()
-
-    const startedAt = scheduler.elapsedMs
-    const cameraStart = { x: unit.x, y: unit.y }
-    let swapped = false
-    unit.alpha = 1
-    const taskId = scheduler.add(
-      () => {
-        const currentUnit = this.getHeroUnit()
-        if (!currentUnit || currentUnit.isDead || currentUnit.isDestroyed || targetValid?.() === false) {
-          this.cancelMountTransition()
-          return
-        }
-        const elapsed = scheduler.elapsedMs - startedAt
-        const cameraProgress = easeInOut(elapsed / MOUNT_TRANSITION_CAMERA_MS)
-        this.controls.setCamera?.(
-          cameraStart.x + (cameraEnd.x - cameraStart.x) * cameraProgress,
-          cameraStart.y + (cameraEnd.y - cameraStart.y) * cameraProgress
-        )
-        if (elapsed < MOUNT_TRANSITION_FADE_OUT_MS) {
-          const progress = Math.max(0, elapsed / MOUNT_TRANSITION_FADE_OUT_MS)
-          currentUnit.alpha = 1 - (1 - MOUNT_TRANSITION_HIDDEN_ALPHA) * progress
-          return
-        }
-        if (!swapped) {
-          currentUnit.alpha = MOUNT_TRANSITION_HIDDEN_ALPHA
-          if (!finish()) {
-            this.cancelMountTransition()
-            return
-          }
-          swapped = true
-        }
-        const fadeInProgress = Math.min(1, (elapsed - MOUNT_TRANSITION_FADE_OUT_MS) / MOUNT_TRANSITION_FADE_IN_MS)
-        currentUnit.alpha = MOUNT_TRANSITION_HIDDEN_ALPHA + (1 - MOUNT_TRANSITION_HIDDEN_ALPHA) * fadeInProgress
-        if (fadeInProgress >= 1) this.cancelMountTransition(false)
-      },
-      MOUNT_TRANSITION_TICK_MS,
-      taskName
-    )
-    this.mountTransitionTaskId = taskId
-    return true
+    return startHorseTransition.call(this, this.getHeroUnit.bind(this), {
+      cameraEnd,
+      finish,
+      taskName,
+      targetValid,
+    })
   }
 
   mountCompanionHorse(horse: CompanionHorse): boolean {

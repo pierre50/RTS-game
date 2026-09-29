@@ -37,6 +37,7 @@ const expectedFurniture = {
   Barracks: ['CampStumpStool', 'CampForge', 'CampBrazier', 'CampTorchStand', 'CampArrowBasket', 'CampBench'],
   Temple: ['CampMountedSkull', 'CampBench', 'CampChair', 'CampBrazier', 'CampTorchStand'],
   Granary: [
+    'CampBrazier',
     'Chest',
     'CampSupplyShelf',
     'CampArrowBasket',
@@ -47,6 +48,7 @@ const expectedFurniture = {
     'CampBlueJar',
   ],
   StoragePit: [
+    'CampBrazier',
     'Chest',
     'CampSupplyShelf',
     'CampArrowBasket',
@@ -56,7 +58,7 @@ const expectedFurniture = {
     'CampBlueJar',
     'CampJarSmall',
   ],
-  Stable: ['CampBucket'],
+  Stable: ['CampBucket', 'CampBrazier'],
   WatchTower: ['CampChair', 'CampTorchStand'],
 }
 const expectedCounts = {
@@ -64,9 +66,9 @@ const expectedCounts = {
   TownCenter: 16,
   Barracks: 7,
   Temple: 9,
-  Granary: 9,
-  StoragePit: 11,
-  Stable: 2,
+  Granary: 12,
+  StoragePit: 14,
+  Stable: 4,
   WatchTower: 2,
 }
 
@@ -299,4 +301,29 @@ test('restoring a mirrored interior retains the orientation of manually placed f
   const saved = [{ type: 'CampTable', label: 'player-table', i: 9, j: 9, placementMirrored: false }]
   const { owner } = furnishInterior('House', saved, true)
   assert.equal(owner.buildings[0].placementMirrored, false)
+})
+
+test('depots and stables have separated lights in both orientations and retrofit old rooms without duplication', () => {
+  for (const [type, prefix, count] of [
+    ['Granary', 'depot-light-', 3],
+    ['StoragePit', 'depot-light-', 3],
+    ['Stable', 'stable-light-', 2],
+  ])
+    for (const mirrored of [false, true]) {
+      const fresh = furnishInterior(type, undefined, mirrored)
+      const lights = fresh.owner.buildings.filter(item => item.label.includes(`:default:${prefix}`))
+      assert.equal(lights.length, count)
+      for (let a = 0; a < lights.length; a++)
+        for (let b = a + 1; b < lights.length; b++)
+          assert.ok(Math.hypot(lights[a].i - lights[b].i, lights[a].j - lights[b].j) >= 3)
+      const saved = fresh.owner.buildings
+        .filter(item => !item.label.includes(`:default:${prefix}`))
+        .map(item => ({ ...item }))
+      const restored = furnishInterior(type, saved, mirrored)
+      assert.equal(restored.owner.buildings.filter(item => item.label.includes(`:default:${prefix}`)).length, count)
+      ensureInteriorDefaultBuildings(restored.context, restored.space)
+      assert.equal(restored.owner.buildings.length, fresh.owner.buildings.length)
+      const reloaded = furnishInterior(type, JSON.parse(JSON.stringify(restored.owner.buildings)), mirrored)
+      assert.equal(reloaded.owner.buildings.length, fresh.owner.buildings.length)
+    }
 })

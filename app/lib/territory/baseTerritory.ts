@@ -5,6 +5,7 @@ type TerritoryBuilding = Point & {
   type: string
   owner?: { label?: string } | null
   label?: string
+  interiorPortalId?: string
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
@@ -21,7 +22,7 @@ function territoryPosition(point: Point, owners: readonly TerritoryOwner[]): Poi
       building =>
         !building.isDead &&
         !building.isDestroyed &&
-        (point.spaceId === `interior:${owner.label}:${building.label}` ||
+        (point.spaceId === `interior:${building.interiorPortalId || `${owner.label}:${building.label}`}` ||
           building.interiorBuildings?.some(child => child.spaceId === point.spaceId))
     )
     if (parent && (!parent.spaceId || parent.spaceId === 'outside')) return parent

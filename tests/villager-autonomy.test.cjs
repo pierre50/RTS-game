@@ -24,6 +24,8 @@ function loadModule(relativePath, mocks) {
 const constants = {
   SHEET_TYPES: { walking: 'walking' },
   ACTION_TYPES: {
+    attack: 'attack',
+    flee: 'flee',
     chopwood: 'chopwood',
     forageberry: 'forageberry',
     minestone: 'minestone',
@@ -193,24 +195,27 @@ function createVillager(owner, extra = {}) {
     },
     ...extra,
   }
+  // Exercise work outside the individual lunch window unless a schedule is explicit.
+  villager.context ??= {}
+  villager.context.dayNight ??= { state: { hour: 10, minute: 0 } }
   owner.units.push(villager)
   return villager
 }
 
-test('wood autonomy resumes harvesting a nearby felled tree before choosing a farther standing tree', () => {
+test('wood autonomy resumes a nearby felled tree even when a standing tree is closer', () => {
   const { resumeVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const felledTree = {
     type: 'Tree',
     family: 'resource',
     label: 'felled-tree',
-    i: 1,
+    i: 5,
     j: 0,
     hitPoints: 0,
     quantity: 25,
     isDead: false,
     isDestroyed: false,
   }
-  const standingTree = { ...felledTree, label: 'standing-tree', i: 10, hitPoints: 10 }
+  const standingTree = { ...felledTree, label: 'standing-tree', i: 1, hitPoints: 10 }
   const owner = createOwner()
   const unit = createVillager(owner, {
     autonomousJob: 'wood',
@@ -921,7 +926,7 @@ test('runtime reconciliation resumes real food selection after restore and resou
   const berries = { family: 'resource', type: 'Berrybush', label: 'berries-1', i: 2, j: 2, quantity: 10 }
   owner.foundedBerrybushs.add(berries)
   const context = {
-    dayNight: { state: { hour: 12, minute: 0 } },
+    dayNight: { state: { hour: 10, minute: 0 } },
     players: [owner],
     scheduler: { elapsedMs: 0, add: () => 1, remove() {} },
   }
@@ -982,4 +987,129 @@ test('food search retries after failure and collects newly discovered food on th
   assert.equal(villager.dest, berries)
   assert.equal(villager.action, constants.ACTION_TYPES.forageberry)
   assert.equal(tasks.length, 2)
+})
+
+test('hero villagers retain missing resource jobs without exploration or a retry timer', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const owner = createOwner({ isPlayed: true })
+  const villager = createVillager(owner, {
+    exploringForAutonomy: true,
+    explore() {
+      assert.fail('hero villagers must not explore')
+    },
+    context: {
+      scheduler: {
+        addOneShot() {
+          assert.fail('must use the shared autonomy retry')
+        },
+      },
+    },
+  })
+  assert.equal(assignVillagerAutonomy(villager, 'gold', { exploreWhenNoTarget: true }), false)
+  assert.equal(villager.autonomousJob, 'gold')
+  assert.equal(villager.exploringForAutonomy, false)
+  assert.equal(villager.dest, null)
+  assert.deepEqual(villager.path, [])
+  assert.equal(villager.inactif, true)
+})
+
+test('ready wood priority allows multiple workers while a contact position remains reachable', () => {
+  const { resumeVillagerAutonomy } = loadVillagerAutonomy()
+  for (const unavailable of ['occupied', 'unreachable']) {
+    const felled = {
+      type: 'Tree',
+      family: 'resource',
+      label: 'felled',
+      i: 5,
+      j: 0,
+      hitPoints: 0,
+      quantity: 25,
+      path: unavailable === 'unreachable' ? [] : [{ i: 4, j: 0 }],
+    }
+    const standing = { ...felled, label: 'standing', i: 1, hitPoints: 10, path: [{ i: 1, j: 0 }] }
+    const owner = createOwner()
+    if (unavailable === 'occupied') {
+      for (let count = 0; count < 3; count++)
+        createVillager(owner, { dest: felled, work: 'woodcutter', action: 'chopwood' })
+    }
+    const unit = createVillager(owner, {
+      autonomousJob: 'wood',
+      context: { map: { resources: [felled, standing], grid: [[]] } },
+    })
+    assert.equal(resumeVillagerAutonomy(unit), true)
+    assert.equal(unit.dest, unavailable === 'occupied' ? felled : standing, unavailable)
+  }
+})
+
+test('combat blocks both automatic assignment and automatic resumption without changing the order', () => {
+  const { assignVillagerAutonomy, resumeVillagerAutonomy } = loadVillagerAutonomy()
+  for (const combat of [
+    { action: 'attack' },
+    { action: 'flee' },
+    { combatMode: 'recover' },
+    { followAssist: { target: {} } },
+    { followAssistIntent: { target: {} } },
+  ]) {
+    const target = { label: 'enemy' }
+    const unit = { type: 'Villager', autonomousJob: 'wood', dest: target, ...combat }
+    assert.equal(assignVillagerAutonomy(unit, 'food'), false)
+    assert.equal(resumeVillagerAutonomy(unit), false)
+    assert.equal(unit.dest, target)
+    assert.equal(unit.autonomousJob, 'wood')
+    assert.equal(unit.action, combat.action)
+  }
+})
+
+test('a leather reserve can use a carcass after its meat is depleted', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const carcass = {
+    family: 'animal',
+    type: 'Deer',
+    label: 'leather-carcass',
+    i: 1,
+    j: 1,
+    isDead: true,
+    quantity: 0,
+    visible: true,
+    inventory: { resources: { leather: 2 } },
+  }
+  const villager = createVillager(createOwner(), {
+    collectiveTask: 'leather',
+    context: { map: { gaia: { animals: [carcass] } } },
+  })
+  assert.equal(assignVillagerAutonomy(villager, 'food'), true)
+  assert.equal(villager.dest, carcass)
+  assert.equal(villager.action, constants.ACTION_TYPES.takemeat)
+})
+
+test('unavailable stone clears the old woodcutting role and records the blocked intention', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const unit = createVillager(createOwner({ isPlayed: true }), { work: 'woodcutter', autonomousJob: 'wood' })
+  assert.equal(assignVillagerAutonomy(unit, 'stone'), false)
+  assert.equal(unit.work, null)
+  assert.equal(unit.action, null)
+  assert.equal(unit.dest, null)
+  assert.equal(unit.inactif, true)
+  assert.equal(unit.autonomyBlockedJob, 'stone')
+})
+
+test('zero-health mineral records remain harvestable until depleted or destroyed', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  for (const job of ['stone', 'gold', 'copper', 'iron']) {
+    const type = constants.RESOURCE_TYPES[job]
+    const mineral = { family: 'resource', type, label: job, i: 3, j: 4, hitPoints: 0, quantity: 23 }
+    const owner = createOwner({ foundedResources: { [type]: new Set([mineral]) } })
+    const worker = createVillager(owner)
+    assert.equal(hasVillagerAutonomyTarget(worker, job), true, job)
+    assert.equal(assignVillagerAutonomy(worker, job), true, job)
+    assert.equal(worker.dest, mineral, job)
+    mineral.quantity = 0
+    assert.equal(hasVillagerAutonomyTarget(worker, job), false, job)
+    mineral.quantity = 23
+    mineral.isDestroyed = true
+    assert.equal(hasVillagerAutonomyTarget(worker, job), false, job)
+    mineral.isDestroyed = false
+    mineral.isDead = true
+    assert.equal(hasVillagerAutonomyTarget(worker, job), false, job)
+  }
 })

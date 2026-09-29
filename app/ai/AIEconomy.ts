@@ -1,10 +1,12 @@
+import { flushCollectiveVillageWork } from '../services/CollectiveVillageWork'
+import type { PlayerLike } from '../types/player'
+import { collectiveWorkerClaims } from '../lib/economy/collectiveNeeds'
+import { releaseCollectiveWorker } from './AICollectiveWorkers'
 import { withinVillageActivity } from '../lib/units/villageActivity'
 import type { UnitEntity } from '../types/entities'
-import { assignAIBuildingMaterials } from './AIEconomyBuildingMaterials'
 import { knowsNativeResources } from '../lib/campaign/nativeEconomy'
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { getClosestInstance, instancesDistance, isWheatMature } from '../lib'
-import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
+import { instancesDistance } from '../lib'
 import { assignBuilders, getBuildersNeeded, isValidBuildAssignment, recoverInvalidBuilder } from './AIEconomyBuilders'
 import { AIEconomyFoodManager } from './AIEconomyFoodManager'
 import {
@@ -28,13 +30,6 @@ import type {
 } from './types'
 import type { BuildingEntity } from '../types/entities'
 
-type GatheringResource = {
-  workers: AIEntityLike[]
-  set: Set<AIEntityLike>
-  max: number
-  cb: (villager: AIEntityLike, resource: AIEntityLike) => void
-}
-
 type DemandResource = 'food' | 'wood' | 'gold' | 'stone'
 
 function getAIResourceSnapshot(ai: AIStrategyPlayerLike): Record<DemandResource, number> {
@@ -45,12 +40,6 @@ function getAIResourceSnapshot(ai: AIStrategyPlayerLike): Record<DemandResource,
     stone: resources.stone ?? 0,
     wood: resources.wood ?? 0,
   }
-}
-
-function getDemandBoost(demand: number, available: number): number {
-  const shortage = Math.max(0, demand - available)
-  if (shortage <= 0) return 0
-  return Math.min(30, Math.max(10, Math.ceil(shortage / 50) * 5))
 }
 
 export class AIEconomy {
@@ -114,48 +103,19 @@ export class AIEconomy {
     const { ai } = this
     const demand = ai.strategy.getEconomicDemand()
     const resources = getAIResourceSnapshot(ai)
-    const base = ai.villageTargetPercentageByAge[ai.age]
-    const demandWood = demand.wood || 0
-    const demandFood = demand.food || 0
-    const demandGold = demand.gold || 0
-    const demandStone = demand.stone || 0
-
-    const woodBoost = (resources.wood < 50 ? 15 : 0) + getDemandBoost(demandWood, resources.wood)
-    const foodBoost = (resources.food < 50 ? 15 : 0) + getDemandBoost(demandFood, resources.food)
-    const goldBoost = getDemandBoost(demandGold, resources.gold)
-    const stoneBoost = getDemandBoost(demandStone, resources.stone)
-    const shouldProspectGold = ai.foundedGolds.size > 0 || demandGold > 0
-    const shouldProspectStone = ai.foundedStones.size > 0 || demandStone > 0
-
-    const weights = {
-      food: base.food + foodBoost,
-      wood: base.wood + woodBoost,
-      // Allow unmet demand to trigger prospecting for undiscovered ore nodes.
-      gold: shouldProspectGold ? base.gold + goldBoost : 0,
-      stone: shouldProspectStone ? base.stone + stoneBoost : 0,
+    // Count cargo already on its way once, separately from stored resources.
+    for (const unit of ai.units ?? []) {
+      if (unit.isDead || unit.isDestroyed || unit.controlMode === 'hero') continue
+      const cargo = (unit as UnitEntity).inventory?.resources ?? {}
+      resources.food += (cargo.berry ?? 0) + (cargo.meat ?? 0) + (cargo.wheat ?? 0)
+      for (const resource of ['wood', 'stone', 'gold'] as const) resources[resource] += cargo[resource] ?? 0
     }
-
-    const totalWeight = weights.food + weights.wood + weights.gold + weights.stone
-    if (totalWeight === 0 || villagersCount === 0) {
-      return {
-        maxVillagersOnFood: villagersCount,
-        maxVillagersOnWood: 0,
-        maxVillagersOnGold: 0,
-        maxVillagersOnStone: 0,
-      }
-    }
-
-    // Floor-allocate non-food resources first; food absorbs the remainder so every villager has a slot
-    const woodTarget = Math.floor((weights.wood / totalWeight) * villagersCount)
-    const goldTarget = Math.floor((weights.gold / totalWeight) * villagersCount)
-    const stoneTarget = Math.floor((weights.stone / totalWeight) * villagersCount)
-    const foodTarget = villagersCount - woodTarget - goldTarget - stoneTarget
-
+    const claims = collectiveWorkerClaims(ai.population ?? villagersCount, demand, resources, villagersCount)
     return {
-      maxVillagersOnFood: Math.max(0, foodTarget),
-      maxVillagersOnWood: woodTarget,
-      maxVillagersOnGold: goldTarget,
-      maxVillagersOnStone: stoneTarget,
+      maxVillagersOnFood: claims.food ?? 0,
+      maxVillagersOnWood: claims.wood ?? 0,
+      maxVillagersOnGold: claims.gold ?? 0,
+      maxVillagersOnStone: claims.stone ?? 0,
     }
   }
 
@@ -221,10 +181,7 @@ export class AIEconomy {
   ): number {
     for (let i = maxVillagersForResource; i < villagersOnResource.length; i++) {
       const villager = villagersOnResource[i]
-      villager.stop?.()
-      if (villager !== this.ai.scout && !availableVillagers.includes(villager)) {
-        availableVillagers.push(villager)
-      }
+      releaseCollectiveWorker(villager, availableVillagers)
     }
     if (resourceList.size === 0) return 0
     const activeVillagers = Math.min(villagersOnResource.length, maxVillagersForResource)
@@ -386,122 +343,7 @@ export class AIEconomy {
     return assignBuilders(this, villagers, notBuiltBuildings, debug)
   }
 
-  handleVillagerActions({
-    villagers,
-    map,
-    farms,
-    notBuiltBuildings,
-    storagepits,
-    towncenters,
-    debug = false,
-  }: AIVillagerActionOptions): number {
-    if (isVillagerSleepTime(this.ai.context)) return 0
-
-    let workerSnapshot = this.getWorkerSnapshot(villagers)
-    const targets = this.getResourceTargets(villagers.length)
-    const emptyFarms = farms.filter(farm => !farm.isUsedBy && isWheatMature(farm))
-
-    if (debug)
-      console.log(
-        `Food: ${workerSnapshot.villagersOnFood.length}/${targets.maxVillagersOnFood}, Wood: ${workerSnapshot.villagersOnWood.length}/${targets.maxVillagersOnWood}, Stone: ${workerSnapshot.villagersOnStone.length}/${targets.maxVillagersOnStone}, Gold: ${workerSnapshot.villagersOnGold.length}/${targets.maxVillagersOnGold}`
-      )
-
-    this.measureStage('scout', () => this.updateRealScout())
-    let actions = 0
-    this.measureStage('carcasses', () => this.discoverDeadAnimals(map))
-
-    const buildingVillagers = this.measureStage('builders', () =>
-      this.assignBuilders(villagers, notBuiltBuildings, debug)
-    )
-    actions += buildingVillagers.size
-
-    const materialWorkers = assignAIBuildingMaterials(
-      this,
-      villagers.filter(unit => !buildingVillagers.has(unit))
-    )
-    actions += materialWorkers.size
-    if (materialWorkers.size)
-      workerSnapshot = this.getWorkerSnapshot(villagers.filter(unit => !materialWorkers.has(unit)))
-
-    // Idle villagers not already sent to build
-    const availableVillagers = workerSnapshot.inactifVillagers
-      .filter((v: AIEntityLike) => !buildingVillagers.has(v))
-      .sort((a: AIEntityLike, b: AIEntityLike) => (b.hitPoints || 0) - (a.hitPoints || 0))
-
-    actions += this.measureStage('horses', () => this.assignHorseCaptures(availableVillagers))
-
-    actions += this.measureStage('food', () =>
-      this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms)
-    )
-
-    // Only mine gold/stone near a storage building — long trips kill efficiency
-    const storageBuildings = [...(storagepits || []), ...(towncenters || [])].filter(b => b.isBuilt)
-    const MAX_MINING_DIST = 22
-    const nearStorage = (node: AIEntityLike) =>
-      !storageBuildings.length ||
-      storageBuildings.some(s => Math.abs(node.i - s.i) + Math.abs(node.j - s.j) <= MAX_MINING_DIST)
-
-    const viableGolds = new Set([...this.ai.foundedGolds].filter(nearStorage))
-    const viableStones = new Set([...this.ai.foundedStones].filter(nearStorage))
-
-    // Assign wood/stone/gold in order of worst coverage ratio (most understaffed first)
-    const gatheringResources = [
-      {
-        workers: workerSnapshot.villagersOnWood,
-        set: this.ai.foundedTrees,
-        max: targets.maxVillagersOnWood,
-        cb: (v: AIEntityLike, r: AIEntityLike) => v.sendToTree?.(r),
-      },
-      {
-        workers: workerSnapshot.villagersOnStone,
-        set: viableStones,
-        max: targets.maxVillagersOnStone,
-        cb: (v: AIEntityLike, r: AIEntityLike) => v.sendToStone?.(r),
-      },
-      {
-        workers: workerSnapshot.villagersOnGold,
-        set: viableGolds,
-        max: targets.maxVillagersOnGold,
-        cb: (v: AIEntityLike, r: AIEntityLike) => v.sendToGold?.(r),
-      },
-    ] satisfies GatheringResource[]
-
-    gatheringResources.sort((a, b) => {
-      const ra = a.max > 0 ? a.workers.length / a.max : 1
-      const rb = b.max > 0 ? b.workers.length / b.max : 1
-      return ra - rb
-    })
-
-    for (const { workers, set, max, cb } of gatheringResources) {
-      actions += this.measureStage('gathering', () =>
-        this.assignVillagersToResource(availableVillagers, workers, set, max, cb)
-      )
-    }
-
-    // Demand-driven exploration: send idle villagers proportional to resource node deficit
-    if (availableVillagers.length > 0 && this.hasUnexploredCells()) {
-      const need = this.getExplorationNeed(targets)
-      if (need > 0) {
-        // Take from the end (lowest HP — least critical for defence)
-        const count = Math.min(need, availableVillagers.length)
-        const explorers = availableVillagers.splice(availableVillagers.length - count, count)
-        for (const v of explorers) {
-          if (this.sendVillagerExploring(v)) actions++
-        }
-      }
-    }
-
-    // Any remaining idle villager goes to wood (quota was already met, this is overflow)
-    if (availableVillagers.length > 0 && this.ai.foundedTrees.size > 0) {
-      for (const villager of [...availableVillagers]) {
-        const tree = getClosestInstance(villager, this.ai.foundedTrees) || null
-        if (tree) {
-          villager.sendToTree?.(tree)
-          actions++
-        }
-      }
-    }
-
-    return actions
+  handleVillagerActions(_options: AIVillagerActionOptions): number {
+    return flushCollectiveVillageWork(this.ai as unknown as PlayerLike)
   }
 }

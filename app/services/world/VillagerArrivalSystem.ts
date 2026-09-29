@@ -1,39 +1,20 @@
-import {
-  BUILDING_TYPES,
-  DAILY_CONSUMPTION_PER_VILLAGER,
-  PLAYER_TYPES,
-  UNIT_TYPES,
-  VILLAGER_ARRIVAL_CONFIG,
-} from '../../constants'
-import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
+import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../../constants'
 import type { DailyWorldEvent, DailyWorldEventHandler } from '../DailyWorldEventTypes'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitCreationExtra } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
 type VillagerArrivalInput = {
-  foodAvailable: number
   population: number
   populationMax: number
 }
 
-export function calculateVillagerArrivals({ foodAvailable, population, populationMax }: VillagerArrivalInput): number {
+export function calculateVillagerArrivals({ population, populationMax }: VillagerArrivalInput): number {
   const freeHousing = Math.max(0, Math.min(populationMax, Number.POSITIVE_INFINITY) - population)
   if (population <= 0 || freeHousing <= 0) return 0
 
-  const dailyFood = DAILY_CONSUMPTION_PER_VILLAGER.food ?? 0
-  if (dailyFood <= 0) return 0
-
-  const foodReserveNeeded = dailyFood * population * VILLAGER_ARRIVAL_CONFIG.currentPopulationReserveDays
-  const foodPerNewVillager = dailyFood * VILLAGER_ARRIVAL_CONFIG.newVillagerReserveDays
-  const foodSupportedGrowth = Math.floor((foodAvailable - foodReserveNeeded) / foodPerNewVillager)
-  if (foodSupportedGrowth <= 0) return 0
-
   const growthDemand = Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate))
-  return Math.max(
-    0,
-    Math.min(growthDemand, freeHousing, foodSupportedGrowth, VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay)
-  )
+  return Math.max(0, Math.min(growthDemand, freeHousing, VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay))
 }
 
 export class VillagerArrivalSystem implements DailyWorldEventHandler {
@@ -47,7 +28,6 @@ export class VillagerArrivalSystem implements DailyWorldEventHandler {
     for (const player of this.context.players ?? []) {
       if (!this.canGrow(player)) continue
       const targetArrivals = calculateVillagerArrivals({
-        foodAvailable: getPlayerResourceTotals(player, { includeHero: false }).food,
         population: player.population,
         populationMax: player.populationMax,
       })

@@ -255,7 +255,8 @@
   color: var(--window-danger-color);
 }
 .game-window-command kbd,
-.game-window-navigation kbd {
+.game-window-navigation kbd,
+kbd.gamepad-key {
   padding: 3px var(--ui-gap-6);
   min-width: 18px;
   border: 1px solid var(--window-line);
@@ -263,20 +264,25 @@
   font: inherit;
   text-align: center;
 }
-.game-window[data-input-mode='gamepad'] .game-window-command kbd {
+.game-window[data-input-mode='gamepad'] .game-window-command kbd,
+kbd.gamepad-key {
   border-radius: 50%;
   border-color: currentColor;
 }
-.game-window[data-input-mode='gamepad'] kbd[data-pad='0'] {
+.game-window[data-input-mode='gamepad'] kbd[data-pad='0'],
+kbd.gamepad-key[data-pad='0'] {
   color: var(--window-pad-confirm-color);
 }
-.game-window[data-input-mode='gamepad'] kbd[data-pad='1'] {
+.game-window[data-input-mode='gamepad'] kbd[data-pad='1'],
+kbd.gamepad-key[data-pad='1'] {
   color: var(--window-pad-cancel-color);
 }
-.game-window[data-input-mode='gamepad'] kbd[data-pad='2'] {
+.game-window[data-input-mode='gamepad'] kbd[data-pad='2'],
+kbd.gamepad-key[data-pad='2'] {
   color: var(--window-pad-action-color);
 }
-.game-window[data-input-mode='gamepad'] kbd[data-pad='3'] {
+.game-window[data-input-mode='gamepad'] kbd[data-pad='3'],
+kbd.gamepad-key[data-pad='3'] {
   color: var(--window-pad-secondary-color);
 }
 .game-window-footer.is-holding .is-danger {
@@ -488,4 +494,59 @@ body:has(.modal) .building-placement-help {
   line-height: 1.25;
   text-align: center;
   overflow-wrap: anywhere;
+}
+
+/* Two shared information-window formats. Content determines height, never a fixed empty panel. */
+.modal.inspection-window-backdrop--large {
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: var(--window-backdrop);
+}
+.modal.inspection-window-backdrop--small:has(> .game-window) {
+  align-items: flex-end;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(5, 7, 18, 0.18);
+}
+.modal-panel.game-window.inspection-window--large {
+  width: min(1100px, 100%);
+  height: auto;
+  max-height: 100%;
+}
+.modal-panel.game-window.inspection-window--small {
+  width: min(620px, 100%);
+  height: auto;
+  max-height: min(720px, 100%);
+}
+.game-window:is(.inspection-window--small, .inspection-window--large) .interaction-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-16);
+}
+.game-window:is(.inspection-window--small, .inspection-window--large) .interaction-information {
+  flex: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.game-window:is(.inspection-window--small, .inspection-window--large) .interaction-actions {
+  width: 100%;
+  padding: var(--ui-gap-16) 0 0;
+  border-left: 0;
+  border-top: 1px solid var(--window-line);
+}
+.game-window.inspection-window--small .interaction-actions {
+  padding-top: var(--ui-gap-10);
+}
+
+.hero-interaction-prompt .gamepad-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--ui-gap-6);
+  text-shadow: none;
 }

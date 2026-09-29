@@ -47,6 +47,7 @@ export type BuildingControllerHost = Omit<
     trainingUnit?: TrainingTrainee | null
     trainingType?: string | null
     trainingQueue?: QueuedTrainingTrainee[]
+    trainingRequests?: BuildingEntity['trainingRequests']
     trainingStartedDay?: number | null
     trainingCompleteDay?: number | null
     trainingDayChangeUnsubscribe?: (() => void) | null
@@ -102,6 +103,7 @@ export type TrainingBuilding = BuildingControllerHost & {
   trainingUnit?: TrainingTrainee | null
   trainingType?: string | null
   trainingQueue?: QueuedTrainingTrainee[]
+  trainingRequests?: BuildingEntity['trainingRequests']
   trainingStartedDay?: number | null
   trainingCompleteDay?: number | null
   mountingDays?: number

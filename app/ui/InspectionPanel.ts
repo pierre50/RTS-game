@@ -3,7 +3,10 @@ import { isHeroInteractionSessionInRange } from '../lib/hero/heroActionRange'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 
+export type InspectionWindowSize = 'small' | 'large'
+
 type InspectionModalOptions = {
+  size?: InspectionWindowSize
   proximity?: {
     context: GameContextLike
     targets: () => RuntimeEntity[]
@@ -25,11 +28,22 @@ export function setModalTitle(modal: Modal | undefined, title: string): void {
 }
 
 export function setInspectionMode(modal: Modal | undefined, enabled: boolean): void {
-  modal?._panel?.classList.toggle('inspection-panel', enabled)
-  modal?._backdrop?.classList.toggle('inspection-panel-backdrop', enabled)
+  setInspectionWindowSize(modal, enabled ? 'small' : 'large')
+}
+
+/** Two explicit layouts shared by conversations, inspection and building management. */
+export function setInspectionWindowSize(modal: Modal | undefined, size: InspectionWindowSize): void {
+  const small = size === 'small'
+  modal?._panel?.classList.toggle('inspection-panel', small)
+  modal?._backdrop?.classList.toggle('inspection-panel-backdrop', small)
+  for (const value of ['small', 'large'] as const) {
+    modal?._panel?.classList.toggle(`inspection-window--${value}`, size === value)
+    modal?._backdrop?.classList.toggle(`inspection-window-backdrop--${value}`, size === value)
+  }
 }
 
 export function createInspectionModal({
+  size,
   proximity,
   title,
   content,
@@ -75,7 +89,7 @@ export function createInspectionModal({
     )
   }
   if (panelClass) modal._panel?.classList.add(...panelClass.split(/\s+/).filter(Boolean))
-  setInspectionMode(modal, inspection)
+  setInspectionWindowSize(modal, size ?? (inspection ? 'small' : 'large'))
   if (interaction) modal._panel?.classList.add('interaction-panel')
   return modal
 }

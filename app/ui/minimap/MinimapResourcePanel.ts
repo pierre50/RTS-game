@@ -6,22 +6,11 @@ import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants/consumption'
 import { STABLE_HORSE_CAPACITY, getStableHorseAmount } from '../../lib/horses/stableHorses'
 import { t } from '../../lib/lang'
 import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
-import { getAutonomyJobForWork } from '../../lib/units/villagerAutonomyTargeting'
-import type { BuildingEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
+import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { MenuHost } from '../MenuHost'
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
-const VILLAGER_AUTONOMY_JOB_ORDER: VillagerAutonomyJob[] = [
-  'food',
-  'wood',
-  'stone',
-  'gold',
-  'copper',
-  'iron',
-  'construction',
-  'horseCapture',
-]
 const MINIMAP_RESOURCE_LABEL_KEYS: Record<ResourceName, string> = {
   copper: 'minimapResourceCopper',
   food: 'minimapResourceFood',
@@ -63,32 +52,6 @@ function getStableHorseSummary(buildings: BuildingEntity[]): { available: number
   }
 }
 
-function resolveVillagerAutonomyJob(villager: UnitEntity): VillagerAutonomyJob | null {
-  const sleepState = villager.shelterState?.reason === 'sleep' ? villager.shelterState : null
-  return (
-    sleepState?.previousAutonomousJob ??
-    villager.autonomousJob ??
-    getAutonomyJobForWork(sleepState?.previousWork ?? villager.work)
-  )
-}
-
-function countVillagersByAutonomy(villagers: UnitEntity[]): {
-  jobCounts: Map<VillagerAutonomyJob, number>
-  unassigned: number
-} {
-  const jobCounts = new Map<VillagerAutonomyJob, number>()
-  let unassigned = 0
-  for (const villager of villagers) {
-    const job = resolveVillagerAutonomyJob(villager)
-    if (!job) {
-      unassigned++
-      continue
-    }
-    jobCounts.set(job, (jobCounts.get(job) ?? 0) + 1)
-  }
-  return { jobCounts, unassigned }
-}
-
 function minimapResourceLabel(resource: ResourceName): string {
   return t(MINIMAP_RESOURCE_LABEL_KEYS[resource])
 }
@@ -121,16 +84,9 @@ function createStatRow(labelText: string, valueText: string): HTMLDivElement {
   return row
 }
 
-function villagerAutonomyJobLabel(job: VillagerAutonomyJob): string {
-  if (job === 'construction') return t('npcOrderConstruction')
-  if (job === 'horseCapture') return t('npcOrderHorseCapture')
-  return minimapResourceLabel(job)
-}
-
-function createVillagerSection(menu: MenuHost): HTMLElement {
+function createOverviewSection(menu: MenuHost): HTMLElement {
   const player = menu.context.player
   const villagers = getActiveVillagers(player)
-  const { jobCounts, unassigned } = countVillagersByAutonomy(villagers)
   const rows = document.createElement('div')
   rows.className = 'base-report-stats'
   rows.appendChild(
@@ -139,45 +95,31 @@ function createVillagerSection(menu: MenuHost): HTMLElement {
       `${player?.population ?? 0}/${Math.min(POPULATION_MAX, player?.populationMax ?? 0)}`
     )
   )
-  rows.appendChild(createStatRow(t('minimapVillagers'), String(villagers.length)))
   rows.appendChild(createStatRow(t('minimapVillagerConsumption'), formatDailyConsumption(villagers.length)))
 
-  for (const job of VILLAGER_AUTONOMY_JOB_ORDER) {
-    const count = jobCounts.get(job) ?? 0
-    if (count > 0) rows.appendChild(createStatRow(villagerAutonomyJobLabel(job), String(count)))
-  }
-  for (const [job, count] of [...jobCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    if (VILLAGER_AUTONOMY_JOB_ORDER.includes(job)) continue
-    rows.appendChild(createStatRow(villagerAutonomyJobLabel(job), String(count)))
-  }
-  rows.appendChild(createStatRow(t('minimapVillagerUnassigned'), String(unassigned)))
-
-  return createReportSection(t('minimapVillagers'), rows)
+  return createReportSection(t('baseOverview'), rows)
 }
 
-function createTrainingSection(menu: MenuHost): HTMLElement {
+function createTrainingSection(menu: MenuHost): HTMLElement | null {
   const buildings = getActivePlayerBuildings(menu.context.player)
   const trainingCounts = countQueuedTraining(buildings)
   const horses = getStableHorseSummary(buildings)
   const rows = document.createElement('div')
   rows.className = 'base-report-stats'
-  if (!trainingCounts.size) {
-    const empty = document.createElement('div')
-    empty.className = 'base-report-empty'
-    empty.textContent = t('minimapTrainingEmpty')
-    rows.appendChild(empty)
-  } else {
-    for (const [type, count] of [...trainingCounts.entries()].sort(
-      (a, b) => b[1] - a[1] || t(a[0]).localeCompare(t(b[0]))
-    )) {
-      rows.appendChild(createStatRow(t(type), String(count)))
-    }
+  if (!trainingCounts.size && !horses.available) return null
+  for (const [type, count] of [...trainingCounts.entries()].sort(
+    (a, b) => b[1] - a[1] || t(a[0]).localeCompare(t(b[0]))
+  )) {
+    rows.appendChild(createStatRow(t(type), String(count)))
   }
-  rows.appendChild(createStatRow(t('minimapStableHorses'), `${horses.available}/${horses.capacity}`))
+  if (horses.available > 0) {
+    rows.appendChild(createStatRow(t('minimapStableHorses'), `${horses.available}/${horses.capacity}`))
+  }
 
   return createReportSection(t('minimapTraining'), rows)
 }
 
+/** @public Loaded by tests/minimap-resource-panel.test.cjs (loadTsModule). */
 export function renderBaseReport(container: HTMLElement, menu: MenuHost): void {
   container.replaceChildren()
   const totals = getPlayerResourceTotals(menu.context.player, { includeHero: false })
@@ -200,11 +142,9 @@ export function renderBaseReport(container: HTMLElement, menu: MenuHost): void {
     empty.textContent = t('minimapLocalStockEmpty')
     grid.appendChild(empty)
   }
-  container.append(
-    createReportSection(t('baseReserves'), grid),
-    createVillagerSection(menu),
-    createTrainingSection(menu)
-  )
+  container.append(createReportSection(t('baseReserves'), grid), createOverviewSection(menu))
+  const training = createTrainingSection(menu)
+  if (training) container.appendChild(training)
 }
 
 export function openBaseReport(menu: MenuHost): Modal {

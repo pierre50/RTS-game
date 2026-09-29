@@ -95,11 +95,11 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
     rest: {
       morning: {
         ownChief: [
-          'Je me réveille doucement, chef. Je prendrai bientôt mes outils.',
+          'Je prends mon petit-déjeuner, chef. Je prendrai bientôt mes outils.',
           'Je prends un moment avant de commencer la journée, chef.',
         ],
         ownPeer: [
-          'Je profite du calme du matin avant de reprendre le travail.',
+          'Un petit-déjeuner au calme avant de reprendre le travail.',
           'Je finis de me réveiller. La journée commencera bien assez tôt.',
         ],
         foreignChief: [
@@ -113,11 +113,11 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
       },
       evening: {
         ownChief: [
-          'Je range mes outils pour ce soir, chef. Je souffle un peu avant de dormir.',
+          'Les outils sont rangés, chef. Je prends mon repas avant de dormir.',
           'La journée est finie pour moi, chef. Je garde mes forces pour demain.',
         ],
         ownPeer: [
-          'Je me repose un peu avant de dormir. Le travail attendra demain.',
+          'Un repas et un peu de repos avant de dormir. Le travail attendra demain.',
           'Les outils sont rangés. Je profite de la soirée près des miens.',
         ],
         foreignChief: [
@@ -277,11 +277,11 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
     rest: {
       morning: {
         ownChief: [
-          'I am waking up slowly, chief. I will pick up my tools soon.',
+          'I am having breakfast, chief. I will pick up my tools soon.',
           'I am taking a moment before starting the day, chief.',
         ],
         ownPeer: [
-          'I am enjoying the quiet morning before getting back to work.',
+          'A quiet breakfast before getting back to work.',
           'Let me wake up properly. The day will start soon enough.',
         ],
         foreignChief: [
@@ -295,11 +295,11 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
       },
       evening: {
         ownChief: [
-          'I am putting my tools away for tonight, chief. A little rest before bed.',
+          'My tools are put away, chief. Supper before bed.',
           'My work is done for today, chief. I am saving my strength for tomorrow.',
         ],
         ownPeer: [
-          'I am resting a little before bed. Work can wait until tomorrow.',
+          'Supper and a little rest before bed. Work can wait until tomorrow.',
           'The tools are put away. I am spending the evening near my people.',
         ],
         foreignChief: [

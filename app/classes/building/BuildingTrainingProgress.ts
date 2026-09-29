@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { getTrainingProgress, isTrainingComplete } from '../../lib/training/trainingRules'
 import { ACTION_TYPES, POPULATION_MAX } from '../../constants'
 import { t } from '../../lib/lang'
@@ -152,6 +153,7 @@ export function finishTrainingEntry(runtime: BuildingProduction, trainee: Traini
   const index = building.trainingQueue?.findIndex(entry => entry.trainee === trainee) ?? -1
   if (index >= 0) {
     const [entry] = building.trainingQueue?.splice(index, 1) ?? []
+    notifyVillageStateChanged(building.owner)
     entry?.trainingDayChangeUnsubscribe?.()
     const queueIndex = building.queue.findIndex(type => type === entry?.type)
     if (queueIndex >= 0) building.queue.splice(queueIndex, 1)

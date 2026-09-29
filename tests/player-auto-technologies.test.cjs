@@ -12,8 +12,13 @@ test('offscreen attack warnings only play for a chief hero and retain their cool
   global.document = { visibilityState: 'hidden', hasFocus: () => false }
   try {
     const hero = { isChief: false }
-    const player = { label: 'player', isPlayed: true, type: 'human', lastUnderAttackAlertAt: 0,
-      context: { controls: { heroUnit: hero, instanceInCamera: () => false } } }
+    const player = {
+      label: 'player',
+      isPlayed: true,
+      type: 'human',
+      lastUnderAttackAlertAt: 0,
+      context: { controls: { heroUnit: hero, instanceInCamera: () => false } },
+    }
     const target = { owner: player }
     Player.prototype.reportThreat.call(player, target, {})
     assert.deepEqual(sounds, [])
@@ -129,7 +134,11 @@ function loadPlayer(overrides = {}) {
         POPULATION_MAX: 200,
         RESOURCE_NAMES: [],
         RESOURCE_TYPES: { wheat: 'Wheat' },
-        SOUND_CUES: { ui: { underAttack: 'attack-warning' }, player: { ageAdvance: 'ageAdvance' }, unit: { militaryCommand: 'militaryCommand' } },
+        SOUND_CUES: {
+          ui: { underAttack: 'attack-warning' },
+          player: { ageAdvance: 'ageAdvance' },
+          unit: { militaryCommand: 'militaryCommand' },
+        },
         UNIT_TYPES: { villager: 'Villager' },
         FADE_DURATION_MS: 2000,
       }
@@ -153,7 +162,8 @@ function loadPlayer(overrides = {}) {
         updateWallAndNeighbours: () => {},
       }
     }
-    if (request === './PlayerUnitCreation') return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerUnitCreation.ts'))
+    if (request === './PlayerUnitCreation')
+      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerUnitCreation.ts'))
     if (request === './PlayerInitialization') {
       return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerInitialization.ts'))
     }
@@ -204,7 +214,10 @@ test('unit creation passes unit gender to random civilization names', () => {
   assert.equal(unit.assetCiv, 'Latium')
 
   const legacy = player.createUnit({
-    type: 'Villager', gender: 'male', appearanceVariants: { gender: 'female' }, assetCiv: 'Kemet',
+    type: 'Villager',
+    gender: 'male',
+    appearanceVariants: { gender: 'female' },
+    assetCiv: 'Kemet',
   })
   assert.equal(legacy.name, 'Kemet-female-unit')
   assert.equal(legacy.gender, 'female')
@@ -364,10 +377,11 @@ test('existing buildings keep their construction age and HP when their owner adv
   ])
 })
 
-test('planting wheat fields refreshes each planted cell before fading resources in', () => {
+test('placing a wheat parcel creates pending seed sites without unlocking the sowing objective', () => {
   const updated = []
   const faded = []
   const randomValues = [0, 0.25, 0.75, 1]
+  const sites = []
   const grid = Array.from({ length: 2 }, (_, i) =>
     Array.from({ length: 2 }, (_, j) => ({
       i,
@@ -382,6 +396,7 @@ test('planting wheat fields refreshes each planted cell before fading resources 
     getBuildingFootprintCells: () => [grid[0][0], grid[0][1], grid[1][0], grid[1][1]],
   })
   const player = {
+    spawnBuilding: options => sites.push(options),
     isPlayed: true,
     technologies: ['Farming'],
     config: {
@@ -410,13 +425,10 @@ test('planting wheat fields refreshes each planted cell before fading resources 
   Object.setPrototypeOf(player, Player.prototype)
 
   assert.equal(player.plantWheatField(0, 0), true)
-  assert.deepEqual(player.completedObjectives, ['createWheatField'])
-  assert.deepEqual(updated, ['0,0', '0,1', '1,0', '1,1'])
-  assert.deepEqual(faded, ['0,0', '0,1', '1,0', '1,1'])
-  assert.deepEqual(
-    [...player.context.map.resources].map(wheat => wheat.quantity),
-    [8, 9, 11, 12]
-  )
+  assert.equal(player.completedObjectives, undefined)
+  assert.equal(sites.length, 4)
+  assert.ok(sites.every(site => !site.isBuilt && site.constructionMaterials.cost.wheat === 1))
+  assert.equal(player.context.map.resources.size, 0)
 })
 
 test('missing building definitions reject purchases and wheat fields before any payment or spawn', () => {

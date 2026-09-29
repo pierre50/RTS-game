@@ -1,3 +1,5 @@
+export const BUILDING_TRAINING_CAPACITY = 5
+
 /** Calendar rules; placement, payment and UI remain the responsibility of each adapter. */
 export function getTrainingDurationDays(config: { trainingDays?: number }, override?: number): number {
   return Math.max(0, Math.ceil(override ?? config.trainingDays ?? 1))

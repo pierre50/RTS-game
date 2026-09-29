@@ -1,28 +1,34 @@
-import { withinVillageActivity } from '../../../lib/units/villageActivity'
-import { isUnitSuspended, wakeUnitSimulation } from '../../../lib/units/unitSuspension'
-import { campAnchor, canCampPursue } from '../../../lib/units/campBehavior'
-import { routeToRememberedTarget } from '../../../lib/units/targetPursuit'
-import { cancelVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
-import { tryStartUnitContactApproach } from './UnitContactApproach'
-import { ACTION_TYPES, UNIT_TYPES } from '../../../constants'
+import { ACTION_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../../constants'
 import {
-  clearVillagerAutonomy,
   getCellsAroundPoint,
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
   getInstancePath,
   markVillagerAutonomyTargetRejected,
 } from '../../../lib'
-import { debugCombatMove } from './UnitMovementDebug'
 import {
-  canUnitWaitOnCell,
   canUnitUseCellAsIdleDestination,
+  canUnitWaitOnCell,
   canUseReservedPassageCellForTransit,
   createReservedPassageCellLookup,
   findNearestPassageWaitingCell,
   shouldUnitAvoidPassageStop,
   unitHasActivePassageStopIntent,
 } from '../../../lib/buildings/passageCells'
+import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../../../lib/mapSpaces'
+import { cancelVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
+import { campAnchor, canCampPursue } from '../../../lib/units/campBehavior'
+import { routeToRememberedTarget } from '../../../lib/units/targetPursuit'
+import { cancelEnergyWait } from '../../../lib/units/unitEnergy'
+import { isUnitSuspended, wakeUnitSimulation } from '../../../lib/units/unitSuspension'
+import { withinVillageActivity } from '../../../lib/units/villageActivity'
+import type { PathfindingOptions } from '../../../services/Pathfinding'
+import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
+import type { RuntimeCell } from '../../../types/map'
+import { clearManualMoveWorkState } from './ManualMoveState'
+import { getActionArrivalCell } from './UnitActionArrivalCells'
+import { tryStartUnitContactApproach } from './UnitContactApproach'
+import { debugCombatMove } from './UnitMovementDebug'
 import {
   BLOCKED_GATHER_APPROACH_ACTIONS,
   MAX_BLOCKED_GATHER_APPROACH_DISTANCE,
@@ -32,26 +38,8 @@ import {
   syncVillagerWorkForAction,
   type SendToOptions,
 } from './UnitMovementHelpers'
-import { cancelEnergyWait } from '../../../lib/units/unitEnergy'
-import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../../../lib/mapSpaces'
-import { getActionArrivalCell } from './UnitActionArrivalCells'
-import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
-import type { RuntimeCell } from '../../../types/map'
-import type { PathfindingOptions } from '../../../services/Pathfinding'
 
 type PassageLookup = ReturnType<typeof createReservedPassageCellLookup>
-
-function clearManualMoveWorkState(unit: UnitEntity, preserveAutonomy: boolean): void {
-  if (preserveAutonomy) return
-  unit.exploringForAutonomy = false
-  unit.previousDest = null
-  unit.previousWork = null
-  unit.gatherProgressState = null
-  unit.resourceDeliveryState = null
-  if (unit.type === UNIT_TYPES.villager) unit.work = null
-  clearVillagerAutonomy?.(unit)
-  if (unit.owner?.isPlayed) unit.context?.menu?.updateTopbar?.()
-}
 
 function createPassagePathfindingOptions(passageLookup: PassageLookup): PathfindingOptions<RuntimeCell> {
   return {
@@ -293,7 +281,7 @@ export class UnitMovementRouting {
     }
     cancelEnergyWait(unit)
     syncVillagerWorkForAction(unit, action)
-    if (this.tryArriveAtDestination(map, dest, action, forceRepath, currentDestMatchesTarget)) return
+    if (this.tryArriveAtDestination(map, dest, action)) return
     if (isRuntimeEntity(dest) && tryStartUnitContactApproach(unit, dest, action)) return
     this.routePreparedDestination(dest, action, map, passageLookup, passageStopAllowed, allowBlockedGatherApproach)
   }
@@ -311,7 +299,8 @@ export class UnitMovementRouting {
         isRuntimeEntity(unit.dest) &&
         currentDestMatchesTarget &&
         unit.action === action &&
-        ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
+        ((unit.path?.length ?? 0) > 0 ||
+          (!unit.inactif && unit.currentSheet !== SHEET_TYPES.walking && unit.isUnitAtDest?.(action, dest)))
     )
   }
 
@@ -339,9 +328,7 @@ export class UnitMovementRouting {
   private tryArriveAtDestination(
     map: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>,
     dest: RuntimeEntity | RuntimeCell,
-    action: string | null,
-    forceRepath: boolean,
-    currentDestMatchesTarget: boolean
+    action: string | null
   ): boolean {
     const unit = this.unit
     const currentCell = map.grid[unit.i]?.[unit.j]
@@ -350,9 +337,6 @@ export class UnitMovementRouting {
       unit.isUnitAtDest?.(action, dest) &&
       (!currentCell.solid || currentCell.has?.label === unit.label)
     ) {
-      if (!forceRepath && currentDestMatchesTarget && unit.action === action && (unit.path?.length ?? 0) === 0) {
-        return true
-      }
       unit.setDest?.(dest)
       unit.action = action
       unit.degree = getInstanceDegree(unit, dest.x, dest.y)

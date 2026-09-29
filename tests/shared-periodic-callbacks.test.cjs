@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { registerPeriodicCallback } = loadTsModule('app/lib/SharedPeriodicCallbacks.ts')
-const { ActionScheduler } = loadTsModule('app/lib/ActionScheduler.ts')
+const { registerPeriodicCallback } = loadTsModule('app/lib/sharedPeriodicCallbacks.ts')
+const { ActionScheduler } = loadTsModule('app/lib/actionScheduler.ts')
 
 test('animal observations are bounded after a stall and every bucket still gets serviced', () => {
   const scheduler = new ActionScheduler({ ticker: { add() {}, remove() {} } }, () => false)

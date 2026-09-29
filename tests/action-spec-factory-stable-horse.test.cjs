@@ -20,7 +20,14 @@ function loadActionSpecFactory(options = {}) {
       ACTION_TYPES: { flee: 'flee' },
       AGE_TECHNOLOGIES: new Set(),
       AGE_UP_ENABLED: true,
-      BUILDING_TYPES: { stable: 'Stable', townCenter: 'TownCenter', chest: 'Chest', fireCamp: 'FireCamp', trap: 'Trap' },
+      BUILDING_TYPES: {
+        farm: 'Farm',
+        stable: 'Stable',
+        townCenter: 'TownCenter',
+        chest: 'Chest',
+        fireCamp: 'FireCamp',
+        trap: 'Trap',
+      },
       FAMILY_TYPES: { building: 'building' },
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
     },
@@ -59,13 +66,6 @@ function loadActionSpecFactory(options = {}) {
     },
     '../lib/lang': { t: key => key },
     '../lib/audio/uiSound': { playUiSound: () => {} },
-    '../lib/units/unitTrainingOrders': {
-      canShowMountHorseAction: () => false,
-      canShowVillagerTrainingMenu: () => false,
-      findBestTrainingBuildingForUnit: () => null,
-      sendUnitToTraining: () => false,
-      VILLAGER_TRAINING_UNIT_TYPES: ['Fantassin', 'Bowman'],
-    },
   }
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
@@ -264,13 +264,13 @@ test('building training status button is hidden without an active queue and has 
   assert.equal(button.disabled, undefined)
 })
 
-test('resource-gated building button is disabled without showing a missing resource alert', () => {
+test('a sowing plot can be placed without seeds', () => {
   const messages = []
   const { factory, player } = createFactory({ canAfford: () => false, hero: {}, messages })
-  player.config.buildings.House = { cost: { wood: 30 }, size: 2 }
+  player.config.buildings.Farm = { cost: { wheat: 20 }, size: 4 }
 
-  const button = factory.getActionBuildingButton('House')
-  assert.equal(button.disabled(), true)
+  const button = factory.getActionBuildingButton('Farm')
+  assert.equal(button.disabled(), false)
   button.onClick()
   assert.deepEqual(messages, [])
 })
@@ -306,5 +306,16 @@ test('camp buildings bypass chief gating while village buildings stay locked', (
     assert.equal(button.disabled(), type === 'House')
     button.onClick()
     assert.equal(factory.menu.mouseBuilding?.type, type === 'House' ? undefined : type)
+  }
+})
+
+test('all building sites can be selected without paying materials upfront', () => {
+  for (const type of ['House', 'Trap', 'FireCamp', 'Chest']) {
+    const { factory, player } = createFactory({ canAfford: () => false, hero: {}, messages: [] })
+    player.config.buildings[type] = { cost: { wood: 10 }, size: 1 }
+    const button = factory.getActionBuildingButton(type)
+    assert.equal(button.disabled(), false)
+    button.onClick()
+    assert.equal(factory.menu.mouseBuilding.type, type)
   }
 })

@@ -1,6 +1,6 @@
 import { ownerSharesVision } from '../../lib/units/playerVisionAccess'
 import { Assets, Polygon, Sprite } from 'pixi.js'
-import { FAMILY_TYPES, LABEL_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
 import {
   attachEntityShadowsToMapSpace,
   cartesianToIsometric,
@@ -109,7 +109,7 @@ export function occupyBuildingFootprint(building: Building): void {
       typeof corpse.clear === 'function' && corpse.clear()
     }
     cell.has = building
-    cell.solid = true
+    cell.solid = building.type !== BUILDING_TYPES.farm
     if (providesOutsideWorldVision) {
       building.owner.views.addViewer(cell.i, cell.j, building)
       if (building.owner !== player && building.owner.views.setViewed(cell.i, cell.j)) {

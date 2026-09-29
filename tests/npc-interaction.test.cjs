@@ -472,7 +472,7 @@ test('"aller vers" moves toward a resource when selected npcs cannot gather it',
   assert.deepEqual(moveCalls, [targetCell])
 })
 
-test('"aller vers" sends villagers to hunt a live animal under the cursor', () => {
+test('"aller vers" moves without hunting the animal under the cursor', () => {
   const target = {
     family: constants.FAMILY_TYPES.animal,
     hitPoints: 8,
@@ -488,6 +488,7 @@ test('"aller vers" sends villagers to hunt a live animal under the cursor', () =
   const calls = []
   const npc = {
     context: { map: { grid: [] } },
+    sendTo: cell => calls.push(['move', cell]),
     getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.hunt,
     i: 1,
     j: 1,
@@ -497,7 +498,8 @@ test('"aller vers" sends villagers to hunt a live animal under the cursor', () =
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['hunt', target]])
+  assert.ok(calls.every(call => call[0] === 'move'))
+  assert.ok(calls.length > 0)
 })
 
 test('"aller vers" sends a communicated villager to a training building without starting training', () => {
@@ -536,7 +538,7 @@ test('"aller vers" sends a communicated villager to a training building without 
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.equal(npc.trainingTargetType, undefined)
+  assert.equal(npc.trainingTargetType, null)
   assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
@@ -580,7 +582,7 @@ test('"aller vers" sends a resource-carrying villager beside a storage building 
   assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
-test('"aller vers" sends a communicated villager to harvest wheat', () => {
+test('"aller vers" does not turn movement into wheat harvesting', () => {
   const owner = { label: 'player' }
   const target = {
     family: constants.FAMILY_TYPES.resource,
@@ -598,6 +600,7 @@ test('"aller vers" sends a communicated villager to harvest wheat', () => {
   const calls = []
   const npc = {
     context: { map: { grid: [] } },
+    sendTo: cell => calls.push(['move', cell]),
     getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.farm,
     i: 1,
     j: 1,
@@ -609,10 +612,11 @@ test('"aller vers" sends a communicated villager to harvest wheat', () => {
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['farm', target]])
+  assert.ok(calls.every(call => call[0] === 'move'))
+  assert.ok(calls.length > 0)
 })
 
-test('"aller vers" sends a communicated villager to harvest wildgrass plants', () => {
+test('"aller vers" does not turn movement into wildgrass harvesting', () => {
   const owner = { label: 'player' }
   const target = {
     family: constants.FAMILY_TYPES.resource,
@@ -629,6 +633,7 @@ test('"aller vers" sends a communicated villager to harvest wildgrass plants', (
   const calls = []
   const npc = {
     context: { map: { grid: [] } },
+    sendTo: cell => calls.push(['move', cell]),
     getActionCondition: (orderTarget, action) =>
       orderTarget === target && action === constants.ACTION_TYPES.forageberry,
     i: 1,
@@ -641,10 +646,11 @@ test('"aller vers" sends a communicated villager to harvest wildgrass plants', (
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['forage', target]])
+  assert.ok(calls.every(call => call[0] === 'move'))
+  assert.ok(calls.length > 0)
 })
 
-test('"aller vers" refuses night resource work without moving villagers', () => {
+test('"aller vers" keeps night resource clicks as movement without work refusals', () => {
   const owner = { label: 'player' }
   const grid = createNpcTestGrid(6)
   const target = {
@@ -688,11 +694,7 @@ test('"aller vers" refuses night resource work without moving villagers', () => 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.equal(npc.restWakeLockUntilMs, 15000)
-  assert.deepEqual(calls, [
-    ['indicator', 'villager-1', 'sleep'],
-    ['schedule', 1200, 'npc.nightWorkRefusal'],
-    ['clearIndicator', 'villager-1'],
-  ])
+  assert.deepEqual(calls, [['move', { i: 5, j: 5, has: target }]])
 })
 
 test('"aller vers" still lets villagers attack enemies at night', () => {
@@ -1011,59 +1013,60 @@ test('closing communication resumes a pending training order', () => {
   assert.deepEqual(calls, [['sendTo', barracks, constants.ACTION_TYPES.train]])
 })
 
-for (const isChief of [true, false]) test(`talking to a teammate only wakes them for real when the hero is chief (${isChief})`, () => {
-  const calls = []
-  const owner = {}
-  const target = {
-    family: constants.FAMILY_TYPES.unit,
-    getChildByLabel: () => null,
-    addChildAt: () => {},
-    context: {
-      unitRest: {
-        previewSleepingUnitWake: unit => calls.push(['previewWake', unit.label]),
-        wakeSleepingUnitForOrder: unit => {
-          calls.push(['wakeForOrder', unit.label])
-          return true
+for (const isChief of [true, false])
+  test(`talking to a teammate only wakes them for real when the hero is chief (${isChief})`, () => {
+    const calls = []
+    const owner = {}
+    const target = {
+      family: constants.FAMILY_TYPES.unit,
+      getChildByLabel: () => null,
+      addChildAt: () => {},
+      context: {
+        unitRest: {
+          previewSleepingUnitWake: unit => calls.push(['previewWake', unit.label]),
+          wakeSleepingUnitForOrder: unit => {
+            calls.push(['wakeForOrder', unit.label])
+            return true
+          },
         },
       },
-    },
-    i: 1,
-    isDead: false,
-    isDestroyed: false,
-    j: 0,
-    label: 'sleepy-villager',
-    owner,
-    shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
-    sleepVisualState: 'sleeping',
-    x: 32,
-    y: 0,
-  }
-  const hero = {
-    type: 'Hero',
-    isChief,
-    degree: 0,
-    i: 0,
-    j: 0,
-    owner,
-    x: 0,
-    y: 0,
-  }
-  const { resolveCommGroup } = loadNpcInteraction(target)
+      i: 1,
+      isDead: false,
+      isDestroyed: false,
+      j: 0,
+      label: 'sleepy-villager',
+      owner,
+      shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+      sleepVisualState: 'sleeping',
+      x: 32,
+      y: 0,
+    }
+    const hero = {
+      type: 'Hero',
+      isChief,
+      degree: 0,
+      i: 0,
+      j: 0,
+      owner,
+      x: 0,
+      y: 0,
+    }
+    const { resolveCommGroup } = loadNpcInteraction(target)
 
-  const group = resolveCommGroup(hero, 0, { precisionOnly: true })
+    const group = resolveCommGroup(hero, 0, { precisionOnly: true })
 
-  assert.deepEqual(group, [target])
-  assert.equal(target.lookingAtHero, true)
-  assert.deepEqual(calls, isChief ? [['wakeForOrder', 'sleepy-villager']] : [])
+    assert.deepEqual(group, [target])
+    assert.equal(target.lookingAtHero, true)
+    assert.deepEqual(calls, isChief ? [['wakeForOrder', 'sleepy-villager']] : [])
 
-  // A visitor must not trigger even a visual wake, whether or not they are a chief.
-  target.lookingAtHero = false
-  calls.length = 0
-  const { noticeNpc } = loadNpcInteraction(target)
-  noticeNpc(target, { ...hero, owner: {} }, false)
-  assert.deepEqual(calls, [])
-  assert.equal(target.sleepVisualState, 'sleeping')
-})
+    // A visitor must not trigger even a visual wake, whether or not they are a chief.
+    target.lookingAtHero = false
+    calls.length = 0
+    const { noticeNpc } = loadNpcInteraction(target)
+    noticeNpc(target, { ...hero, owner: {} }, false)
+    assert.deepEqual(calls, [])
+    assert.equal(target.sleepVisualState, 'sleeping')
+  })
 
 test('closing without an order after a real wake does not resume the old day job', () => {
   const calls = []
@@ -1130,7 +1133,7 @@ test('"aller vers" cursor shows combat feedback only when a selected npc can att
   }
 })
 
-test('"aller vers" cursor shows the resource hand over actionable building work', () => {
+test('"aller vers" cursor shows movement over actionable building work', () => {
   const classes = new Set()
   global.document = {
     body: {
@@ -1157,7 +1160,7 @@ test('"aller vers" cursor shows the resource hand over actionable building work'
 
     updateHeroCursor(null, resolveNpcGoToCursorState([npc], target, null, null))
 
-    assert.equal(classes.has('hero-cursor-resource'), true)
+    assert.equal(classes.has('hero-cursor-move'), true)
     resetHeroCursor()
   } finally {
     delete global.document
@@ -1270,7 +1273,7 @@ test('"aller vers" cursor shows movement, not resource, when selected npcs canno
   }
 })
 
-test('"aller vers" cursor shows the resource hand when a selected npc can gather a resource', () => {
+test('"aller vers" cursor shows movement when a selected npc can gather a resource', () => {
   const classes = new Set()
   global.document = {
     body: {
@@ -1298,7 +1301,7 @@ test('"aller vers" cursor shows the resource hand when a selected npc can gather
 
     updateHeroCursor(null, resolveNpcGoToCursorState([villager], tree, null, null))
 
-    assert.equal(classes.has('hero-cursor-resource'), true)
+    assert.equal(classes.has('hero-cursor-move'), true)
     resetHeroCursor()
   } finally {
     delete global.document
@@ -1777,7 +1780,7 @@ test('a follower dragged past the leash breaks off and returns to the hero', () 
   assert.deepEqual(calls, [['move', heroCell]])
 })
 
-test('villager followers mirror the hero chopping nearby trees without keeping a permanent wood job', () => {
+test('villager followers do not gather when the hero chops trees', () => {
   const tree = {
     family: constants.FAMILY_TYPES.resource,
     hitPoints: 10,
@@ -1810,8 +1813,8 @@ test('villager followers mirror the hero chopping nearby trees without keeping a
 
   updateNpcFollow(hero)
 
-  assert.deepEqual(calls, [['chopwood', tree]])
-  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.chopwood, targetLabel: 'tree-1' })
+  assert.ok(calls.every(call => call[0] === 'move'))
+  assert.equal(follower.followAssist, undefined)
   assert.equal(follower.autonomousJob, null)
 })
 
@@ -1848,7 +1851,7 @@ test('villager followers do not mirror hero resource work at night', () => {
   assert.equal(follower.followAssist, undefined)
 })
 
-test('villager followers mirror hero farming while skipping occupied wheat', () => {
+test('villager followers do not farm when the hero harvests wheat', () => {
   const occupiedWheat = {
     family: constants.FAMILY_TYPES.resource,
     hitPoints: 10,
@@ -1893,11 +1896,11 @@ test('villager followers mirror hero farming while skipping occupied wheat', () 
 
   updateNpcFollow(hero)
 
-  assert.deepEqual(calls, [['farm', freeWheat]])
-  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.farm, targetLabel: 'wheat-2' })
+  assert.ok(calls.every(call => call[0] === 'move'))
+  assert.equal(follower.followAssist, undefined)
 })
 
-test('followers mirror the hero attacking a live target', () => {
+test('followers do not autonomously attack wildlife hunted by the hero', () => {
   const target = {
     family: constants.FAMILY_TYPES.animal,
     hitPoints: 12,
@@ -1923,11 +1926,11 @@ test('followers mirror the hero attacking a live target', () => {
 
   updateNpcFollow(hero)
 
-  assert.deepEqual(calls, [['attack', target]])
-  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.attack, targetLabel: 'boar-1' })
+  assert.ok(calls.every(call => call[0] === 'move'))
+  assert.equal(follower.followAssist, undefined)
 })
 
-test('villager followers treat a hero bow intent at a deer as a hunt order for that deer', () => {
+test('villager followers ignore economic hunt assistance from hero bow intent', () => {
   const deer = {
     family: constants.FAMILY_TYPES.animal,
     hitPoints: 8,
@@ -1960,8 +1963,8 @@ test('villager followers treat a hero bow intent at a deer as a hunt order for t
 
   updateNpcFollow(hero)
 
-  assert.deepEqual(calls, [['hunt', deer]])
-  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.hunt, targetLabel: 'deer-1' })
+  assert.ok(calls.every(call => call[0] === 'move'))
+  assert.equal(follower.followAssist, undefined)
 })
 
 test('villager followers do not walk toward a deer for a hero bow-shot intent', () => {
@@ -2102,14 +2105,24 @@ test('assisted hunters stop when their hunted animal dies instead of switching t
   assert.equal(unit.followAssist, null)
 })
 
-
 test('direct conversation focus stops a chief and closing restores their previous walk', () => {
   const { noticeNpc, releaseIfStillLooking } = loadNpcInteraction(null)
   const destination = { i: 4, j: 5, has: null, corpses: new Set() }
   let stopped = 0
   let resumed
-  const npc = { x: 0, y: 0, dest: destination, path: [destination],
-    stopInterval() { stopped++ }, setTextures() {}, sendTo(dest) { resumed = dest } }
+  const npc = {
+    x: 0,
+    y: 0,
+    dest: destination,
+    path: [destination],
+    stopInterval() {
+      stopped++
+    },
+    setTextures() {},
+    sendTo(dest) {
+      resumed = dest
+    },
+  }
   noticeNpc(npc, { x: 1, y: 1 }, false)
   assert.equal(npc.lookingAtHero, true)
   assert.equal(stopped, 1)
@@ -2123,8 +2136,15 @@ test('direct conversation focus stops a chief and closing restores their previou
 test('closing a conversation never replaces an attack with the previous job', () => {
   const { releaseIfStillLooking } = loadNpcInteraction(null)
   const enemy = { label: 'enemy' }
-  const npc = { lookingAtHero: true, action: constants.ACTION_TYPES.attack, dest: enemy,
-    previousDest: { i: 2, j: 2 }, goBackToPrevious() { assert.fail('Combat was interrupted') } }
+  const npc = {
+    lookingAtHero: true,
+    action: constants.ACTION_TYPES.attack,
+    dest: enemy,
+    previousDest: { i: 2, j: 2 },
+    goBackToPrevious() {
+      assert.fail('Combat was interrupted')
+    },
+  }
   releaseIfStillLooking([npc])
   assert.equal(npc.dest, enemy)
   assert.equal(npc.previousDest, null)

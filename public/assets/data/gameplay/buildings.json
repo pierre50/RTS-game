@@ -5,7 +5,7 @@
     "totalHitPoints": 75,
     "constructionTime": 48,
     "displayPopulation": true,
-    "increasePopulation": 4,
+    "shelterCapacity": 5,
     "cost": {
       "wood": 40,
       "stone": 10
@@ -227,24 +227,14 @@
     "mountingTime": 16
   },
   "Farm": {
-    "size": 4,
-    "constructionTime": 0,
+    "size": 1,
+    "providesVision": false,
+    "totalHitPoints": 2,
+    "constructionTime": 1,
     "cost": {
-      "wheat": 20
+      "wheat": 1
     },
-    "conditions": [],
-    "ageStats": {
-      "0": {
-        "cost": {
-          "wheat": 20
-        }
-      },
-      "1": {
-        "cost": {
-          "wheat": 20
-        }
-      }
-    }
+    "conditions": []
   },
   "WatchTower": {
     "size": 2,
@@ -304,8 +294,7 @@
     "requiresActiveSightInteraction": true,
     "overheadIndicatorOffsetY": 30,
     "totalHitPoints": 20,
-    "constructionTime": 0,
-    "instantPlacement": true,
+    "constructionTime": 4,
     "useSpriteShadow": true,
     "spriteShadowAnchor": {
       "x": 0.5,
@@ -329,8 +318,7 @@
     "occlusionFade": false,
     "providesVision": false,
     "totalHitPoints": 20,
-    "constructionTime": 0,
-    "instantPlacement": true,
+    "constructionTime": 4,
     "useSpriteShadow": true,
     "spriteShadowAnchor": {
       "x": 0.5,
@@ -426,7 +414,6 @@
     "sight": 14,
     "totalHitPoints": 600,
     "constructionTime": 144,
-    "increasePopulation": 4,
     "cost": {
       "wood": 150,
       "stone": 80
@@ -467,8 +454,7 @@
     "occlusionFade": false,
     "sight": 9,
     "totalHitPoints": 180,
-    "constructionTime": 0,
-    "instantPlacement": true,
+    "constructionTime": 4,
     "cost": {
       "wood": 8,
       "stone": 2

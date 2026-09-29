@@ -6,7 +6,6 @@ const targeting = loadTsModule('app/lib/units/villagerAutonomyTargeting.ts', {
   mocks: {
     '../buildings/passageCells': {},
     '../grid/movement': {},
-    './autonomy/villagerJobDiagnostics': { logGoldMinerFlow: () => {} },
   },
 })
 const { tryStartUnitContactApproach } = loadTsModule('app/classes/unit/movement/UnitContactApproach.ts', {
