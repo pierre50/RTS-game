@@ -1258,3 +1258,61 @@ test('completed pickup remains a pickup while exiting and cannot deposit its new
   assert.equal(unit.inventory.resources.wood, 18)
   assert.equal(chest.inventory.resources.wood, 2)
 })
+
+test('a collective gatherer brings resources home instead of supplying an unrelated distant settlement', () => {
+  const { findResourceDeliveryTarget } = loadResourceDelivery()
+  const owner = { buildings: [] }
+  const remote = { owner, family: 'building', type: 'StoragePit', isBuilt: true, i: 200, j: 0 }
+  const home = { owner, family: 'building', type: 'StoragePit', isBuilt: true, i: 2, j: 0 }
+  owner.buildings = [remote, home]
+  const unit = {
+    owner,
+    type: 'Villager',
+    i: 201,
+    j: 0,
+    collectiveTask: 'wood',
+    collectiveHome: { i: 0, j: 0, spaceId: 'outside' },
+    inventory: { resources: { wood: 20 } },
+  }
+  assert.equal(findResourceDeliveryTarget(unit), home)
+  unit.collectiveTask = null
+  assert.equal(findResourceDeliveryTarget(unit), remote, 'direct orders retain ordinary delivery selection')
+})
+
+test('automatic return to construction retains the collective trip after the building command clears it', () => {
+  const { sendUnitToDelivery } = loadTsModule('app/classes/unit/UnitResourceDeliveryCommands.ts', {
+    mocks: { '../../lib': {}, '../../lib/units/unitWorkAppearance': { applyUnitWorkAssets() {} } },
+  })
+  const site = {
+    type: 'House',
+    label: 'project',
+    i: 2,
+    j: 0,
+    isBuilt: false,
+    hitPoints: 1,
+    totalHitPoints: 101,
+    constructionMaterials: { cost: { wood: 20 }, delivered: {}, consumed: {} },
+  }
+  const owner = { isPlayed: true, buildings: [site] }
+  const unit = {
+    owner,
+    type: 'Villager',
+    i: 200,
+    j: 0,
+    collectiveTask: 'wood',
+    collectiveHome: { i: 0, j: 0, spaceId: 'outside' },
+    inventory: { resources: { wood: 18, meat: 6, berry: 6 } },
+    sendToBuilding(target) {
+      this.collectiveTask = null
+      this.collectiveHome = undefined
+      this.dest = target
+    },
+  }
+  assert.equal(
+    sendUnitToDelivery(unit, () => true),
+    true
+  )
+  assert.equal(unit.dest, site)
+  assert.equal(unit.collectiveTask, 'construction')
+  assert.equal(unit.collectiveHome.i, 0)
+})

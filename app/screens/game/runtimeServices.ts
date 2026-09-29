@@ -1,3 +1,4 @@
+import { SleepSimulation } from '../../services/world/SleepSimulation'
 import { VillageActivitySystem } from '../../services/VillageActivitySystem'
 import { WildlifeSystem } from '../../services/WildlifeSystem'
 import { NeutralVillageQuests } from '../../services/quests/NeutralVillageQuests'
@@ -84,8 +85,6 @@ export function createRuntimeServices(
   dayNightElapsedMs: number | null | undefined = null
 ): RuntimeServices {
   const isInterior = map.mapType === 'interior'
-  const timeSkip = new TimeSkipSystem(context)
-  context.timeSkip = timeSkip
 
   const dayNight = new DayNightSystem(context, { elapsedMs: dayNightElapsedMs })
   context.dayNight = dayNight
@@ -109,6 +108,8 @@ export function createRuntimeServices(
   const neutralQuests = new NeutralVillageQuests(context)
   context.neutralQuests = neutralQuests
   const villageActivity = new VillageActivitySystem(context)
+  const timeSkip = new TimeSkipSystem(context, new SleepSimulation(context, villageActivity))
+  context.timeSkip = timeSkip
   const campPatrols = new CampPatrolSystem(context)
   const heroFollowerPatrols = new HeroFollowerPatrolSystem(context)
   const idleUnitPatrols = new IdleUnitPatrolSystem(context)
@@ -162,6 +163,7 @@ export function addRuntimeServiceLayers(host: LayerHost, services: RuntimeServic
 }
 
 export function destroyRuntimeServices(services: RuntimeServices, context: RuntimeServiceContext): RuntimeServices {
+  services.timeSkip?.destroy()
   services.villageActivity?.destroy()
   services.wildlife?.destroy()
   services.neutralQuests?.destroy()
@@ -170,7 +172,6 @@ export function destroyRuntimeServices(services: RuntimeServices, context: Runti
   services.lights?.destroy()
   services.interiorExitMarker?.destroy()
   services.shadows?.destroy()
-  services.timeSkip?.destroy()
   services.dailyWorldEvents?.destroy()
   services.unitRest?.destroy()
   services.campPatrols?.destroy()

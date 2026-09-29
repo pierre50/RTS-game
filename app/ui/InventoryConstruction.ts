@@ -1,5 +1,6 @@
 import { createInventorySectionTitle } from './inventory/InventorySection'
-import { isSowingPlacement } from '../lib/buildings/campConstruction'
+import { isCampBuilding, isSowingPlacement } from '../lib/buildings/campConstruction'
+import { getActiveInteractionSpace } from '../lib/mapSpaces'
 import { formatActionCost } from './ActionDetailsFactory'
 import { t } from '../lib/lang'
 import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES } from '../constants'
@@ -49,8 +50,10 @@ function isHeroConstructionBuildingType(type: string): boolean {
 
 export function getInventoryConstructionButtons(menu: MenuHost): MenuButtonSpec[] {
   const { player } = menu.context
+  const interior = getActiveInteractionSpace(menu.context)?.kind === 'interior'
   return Object.keys(player.config.buildings)
     .filter(isHeroConstructionBuildingType)
+    .filter(type => !interior || isCampBuilding(type))
     .map(type => menu.getActionBuildingButton(type))
 }
 

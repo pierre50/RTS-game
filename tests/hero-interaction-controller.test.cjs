@@ -7,7 +7,7 @@ function loadHeroInteractionController(calls) {
     mocks: {
       '../constants': {
         CAMP_DECORATION_BUILDING_TYPES: loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
-        BUILDING_TYPES: { trap: 'Trap' },
+        BUILDING_TYPES: { chest: 'Chest', trap: 'Trap' },
         FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
@@ -94,6 +94,16 @@ test('neutral chest direct interaction claims it before opening', () => {
     ['claimNeutral', 'chest', 'player'],
     ['openHeroBuildingMenu', target],
   ])
+})
+
+test('unfinished chest cannot be opened or claimed through direct interaction', () => {
+  const owner = { diplomacy: 'neutral', label: 'neutral', type: 'Gaia' }
+  const target = { family: 'building', type: 'Chest', isBuilt: false, owner }
+  const { calls, controller } = createController(target)
+
+  assert.equal(controller.openHeroEntityInteraction(target), false)
+  assert.deepEqual(calls, [])
+  assert.equal(target.owner, owner)
 })
 
 test('wildgrass direct interaction opens info instead of starting forage work', () => {

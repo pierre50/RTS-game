@@ -34,7 +34,12 @@ export function updateUnitSleepHealth(unit: UnitEntity, elapsedMs: number): void
 }
 
 /** Integrate scheduled sleep across midnight, including partial nights on an unloaded map. */
-export function restoreOfflineUnitSleepHealth(unit: SaveEntityState, fromMinute: number, toMinute: number): void {
+export function restoreOfflineUnitSleepHealth(
+  unit: SleepHealthUnit &
+    Pick<SaveEntityState, 'i' | 'j' | 'label' | 'dailySchedule' | 'followingHero' | 'trainingTargetType'>,
+  fromMinute: number,
+  toMinute: number
+): void {
   // The hero only rests through explicit sleep, never an NPC's offline schedule.
   if (unit.type === UNIT_TYPES.hero || unit.controlMode === 'hero' || unit.followingHero || unit.trainingTargetType)
     return

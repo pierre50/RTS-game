@@ -166,6 +166,23 @@ test('daily trap harvest stores prey in an empty fogged trap without spawning it
   )
 })
 
+test('unfinished traps cannot capture prey or be dismantled until construction completes', () => {
+  const { TrapHarvestSystem, dismantleTrapBuilding } = loadTrapHarvestSystem()
+  const { context, hero, trap } = createContext()
+  trap.isBuilt = false
+  const system = new TrapHarvestSystem(context)
+  system.fillTraps()
+  assert.equal(trap.containedAnimalType, undefined)
+  assert.equal(dismantleTrapBuilding(hero, trap), false)
+  assert.equal(trap.isDead, false)
+  assert.equal(context.map.gaia.animals.length, 0)
+  trap.isBuilt = true
+  system.fillTraps()
+  assert.equal(trap.containedAnimalType, 'Hare')
+  assert.equal(dismantleTrapBuilding(hero, trap), true)
+  assert.equal(context.map.gaia.animals.length, 1)
+})
+
 test('daily trap harvest does not refill a trap that already contains prey', () => {
   const TrapHarvestSystem = loadTrapHarvestSystem()
   const { context, trap } = createContext()

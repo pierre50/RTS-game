@@ -38,6 +38,27 @@ const MAX_CANDIDATES_TO_PATH = 18
 const WORKER_LOAD_SCORE = 6
 const DROPOFF_DISTANCE_SCORE = 0.15
 const rejectedAutonomyTargets = new WeakMap<UnitEntity, Map<VillagerAutonomyJob, Map<string, number>>>()
+const candidateSearches = new WeakMap<UnitEntity, Map<string, { space: unknown; offset: number }>>()
+
+function candidateSearch(unit: UnitEntity, job: VillagerAutonomyJob) {
+  let searches = candidateSearches.get(unit)
+  if (!searches) {
+    searches = new Map()
+    candidateSearches.set(unit, searches)
+  }
+  const key = `${job}:${unit.collectiveTask ?? ''}`
+  let state = searches.get(key)
+  if (!state || state.space !== unit.spaceId) {
+    state = { space: unit.spaceId, offset: 0 }
+    searches.set(key, state)
+  }
+  return state
+}
+
+/** Read enough nearby records for the next batch, but still path at most 18 per attempt. */
+export function villagerJobCandidateLimit(unit: UnitEntity, job: VillagerAutonomyJob): number {
+  return candidateSearch(unit, job).offset + MAX_CANDIDATES_TO_PATH
+}
 
 function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
   return Math.abs(a.i - b.i) + Math.abs(a.j - b.j)
@@ -70,6 +91,7 @@ function clearEmptyRejectedTargets(unit: UnitEntity, job: VillagerAutonomyJob): 
 }
 
 export function clearVillagerAutonomyTargetRejections(unit: UnitEntity, job: VillagerAutonomyJob): void {
+  candidateSearches.delete(unit)
   const byJob = rejectedAutonomyTargets.get(unit)
   byJob?.delete(job)
   if (byJob && byJob.size === 0) rejectedAutonomyTargets.delete(unit)
@@ -156,9 +178,10 @@ function evaluateCandidate(
   candidate = { ...candidate, target: resolveResource(candidate.target) }
   const workerLoad = options.targetWorkerLoad(candidate.target, candidate.work, candidate.action)
   const dropoffDistance = nearestDropoffDistance(unit, candidate)
-  const pathLength = getCandidatePathLength(unit, candidate)
+  const rejected = isRejectedTarget(unit, job, candidate.target)
+  const pathLength = rejected ? null : getCandidatePathLength(unit, candidate)
   let rejectedReason: string | null = null
-  if (isRejectedTarget(unit, job, candidate.target)) rejectedReason = 'recently-rejected'
+  if (rejected) rejectedReason = 'recently-rejected'
   else if (!unit.getActionCondition?.(candidate.target, candidate.action)) rejectedReason = 'invalid-action'
   else if (pathLength === null) rejectedReason = 'no-contact-path'
 
@@ -185,9 +208,10 @@ function rankVillagerJobCandidates(
   candidates: VillagerJobCandidate[],
   options: CandidateScoringOptions
 ): CandidateEvaluation[] {
+  const offset = candidateSearch(unit, job).offset
   return [...candidates]
     .sort((a, b) => distance(unit, a.target) - distance(unit, b.target))
-    .slice(0, MAX_CANDIDATES_TO_PATH)
+    .slice(offset, offset + MAX_CANDIDATES_TO_PATH)
     .map(candidate => evaluateCandidate(unit, job, candidate, options))
     .sort((a, b) => Number(b.readyWood) - Number(a.readyWood) || a.score - b.score)
 }
@@ -213,17 +237,22 @@ export function tryVillagerJobCandidates(
   candidates: VillagerJobCandidate[],
   options: CandidateScoringOptions
 ): boolean {
-  for (const candidate of rankVillagerJobCandidates(unit, job, candidates, options)) {
+  const search = candidateSearch(unit, job)
+  const ranked = rankVillagerJobCandidates(unit, job, candidates, options)
+  for (const candidate of ranked) {
     if (candidate.rejectedReason) {
       continue
     }
     const result = candidate.send(candidate.target)
     if (wasAutonomyOrderAccepted(unit, candidate, result)) {
+      search.offset = 0
       // Keep other failures until their TTL expires, even after accepting a new target.
       return true
     }
 
     markVillagerAutonomyTargetRejected(unit, candidate.target)
   }
+  // Do not let the nearest unreachable deposits hide the rest of the map forever.
+  search.offset = ranked.length === MAX_CANDIDATES_TO_PATH ? search.offset + MAX_CANDIDATES_TO_PATH : 0
   return false
 }

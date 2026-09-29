@@ -62,10 +62,11 @@ test('reserve goals use the capacity of each completed depot', () => {
   assert.deepEqual(settlementStockGoals(owner, units[0]), { food: 8 })
 })
 test('idle human workers divide stock deficits into bounded claims', () => {
-  const { owner, units } = fixture()
+  const { owner, units } = fixture(10)
   const jobs = [...planCollectiveTasks(owner, units).values()].map(task => task.job)
-  assert.deepEqual(jobs, ['wood', 'wood', 'stone', 'stone', 'gold', 'copper'])
-  assert.equal(jobs.filter(job => job === 'wood').length, 2)
+  // The depot needs 150 wood; each provisioned bag has 18 free slots.
+  assert.deepEqual(jobs, [...Array(9).fill('wood'), 'stone'])
+  assert.equal(jobs.filter(job => job === 'wood').length, Math.ceil(150 / 18))
 })
 test('five missing wood claims one worker; cargo and manual assignments prevent duplicate work', () => {
   const { owner, units, pit } = fixture()
@@ -205,22 +206,36 @@ test('three days away replenish within full-capacity targets and never deposit i
   assert.equal(again.gathered.stone ?? 0, 0)
 })
 
-test('regional production without depots keeps bounded supplies in bags, never banks overflow as future production', () => {
-  const { produceAbstractVillage } = loadTsModule('app/services/world/AbstractVillageEconomy.ts')
+test('regional gathering without depots consumes only what fits and never banks future production', () => {
+  const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
   const { owner, units, center } = fixture(1)
   owner.type = 'AI'
   owner.buildings = [center]
   center.inventory.resources = {}
-  for (const building of owner.buildings) if (building.type === 'Granary') building.inventory.resources = {}
   units[0].collectiveTask = 'food'
   units[0].inventory.resources = {}
   units[0].inventory.equipment = Array(29).fill('hammer')
-  const report = { gathered: {} }
-  produceAbstractVillage({ players: [owner], resources: [] }, owner, units[0], 1440000, report)
-  assert.equal(units[0].inventory.resources.wheat, 1)
+  const berry = { type: 'Berrybush', label: 'berries', i: 15, j: 15, quantity: 100, hitPoints: 10 }
+  const report = simulateOfflineWorld(
+    { players: [owner], resources: [berry], animals: [] },
+    {
+      abstractVillages: true,
+      fromElapsedMs: 0,
+      toElapsedMs: 60000,
+      terrain: Array.from({ length: 31 }, () => Array.from({ length: 31 }, () => ({ category: 'Grass' }))),
+      unitConfig: () => ({ speed: 1.5, gatherAmount: { forager: 1 } }),
+      buildingConfig: () => ({}),
+      buildingCapacity: () => 0,
+      cycleMs: () => 1000,
+      wheatMatureFrame: 5,
+      runtimeOwnsMeals: true,
+    }
+  )
+  assert.equal(units[0].inventory.resources.berry, 1)
+  assert.equal(berry.quantity, 99)
   assert.deepEqual(center.inventory.resources, {})
-  assert.ok(Object.values(owner.abstractProductionRemainder).every(n => n >= 0 && n < 1))
-  assert.equal(report.gathered.food, 1)
+  assert.equal(owner.abstractProductionRemainder, undefined)
+  assert.equal(report.gathered.berry, 1)
 })
 
 test('a provisioned starting companion chooses the new chantier instead of food gathering', () => {

@@ -446,7 +446,8 @@ test('traps fill only when unobserved, do not refill full traps and stay determi
   const { state, options, player } = fixture()
   const trap = { type: 'Trap', label: 'trap', i: 25, j: 25, isBuilt: true }
   const watched = { ...trap, label: 'watched', i: 10, j: 11 }
-  player.buildings.push(trap, watched)
+  const unfinished = { ...trap, label: 'unfinished', i: 28, j: 28, isBuilt: false }
+  player.buildings.push(trap, watched, unfinished)
   const copy = structuredClone(state)
   options.unitConfig = () => ({ sight: 4 })
   const report = simulateOfflineWorld(state, options)
@@ -455,6 +456,7 @@ test('traps fill only when unobserved, do not refill full traps and stay determi
   assert.deepEqual(state, copy)
   assert.ok(['Hare', 'Fox', 'BlackGrouse'].includes(trap.containedAnimalType))
   assert.equal(watched.containedAnimalType, undefined)
+  assert.equal(unfinished.containedAnimalType, undefined)
   assert.equal(simulateOfflineWorld(state, { ...options, fromElapsedMs: DAY, toElapsedMs: 2 * DAY }).trapsFilled, 0)
 })
 
@@ -856,4 +858,38 @@ test('a long absence and daily saved returns produce identical training waves wi
   assert.equal(full.barracks.trainingQueue.length, 0)
   assert.equal(full.player.units.filter(unit => unit.type === 'Fantassin').length, 10)
   assert.equal(new Set(full.player.units.map(unit => unit.label)).size, 10)
+})
+
+test('detached AI gathering consumes finite nodes even with the legacy abstract-village option', () => {
+  for (const abstractVillages of [false, true]) {
+    const { state, options, player } = fixture()
+    player.type = 'AI'
+    player.units[0].inventory = { resources: { meat: 6, berry: 6 } }
+    const tree = node('Tree', { quantity: 3, totalQuantity: 3, hitPoints: 0 })
+    state.resources = [tree]
+    const report = simulateOfflineWorld(state, { ...options, abstractVillages, toElapsedMs: HOUR })
+    assert.equal(report.gathered.wood, 3)
+    assert.equal(report.gathered.gold ?? 0, 0)
+    assert.equal(tree.quantity, 0)
+    const next = simulateOfflineWorld(state, {
+      ...options,
+      abstractVillages,
+      fromElapsedMs: HOUR,
+      toElapsedMs: 2 * HOUR,
+    })
+    assert.equal(next.gathered.wood ?? 0, 0)
+    assert.equal(player.abstractProductionRemainder, undefined)
+  }
+})
+
+test('detached AI cannot use a deposit across impassable terrain', () => {
+  const { state, options, player } = fixture()
+  player.type = 'AI'
+  player.units[0].inventory = { resources: { meat: 6, berry: 6 } }
+  const tree = node('Tree', { i: 10, j: 25, quantity: 3, totalQuantity: 3, hitPoints: 0 })
+  state.resources = [tree]
+  for (const row of options.terrain) row[20].category = 'Water'
+  const report = simulateOfflineWorld(state, { ...options, abstractVillages: true, toElapsedMs: HOUR })
+  assert.equal(report.gathered.wood ?? 0, 0)
+  assert.equal(tree.quantity, 3)
 })

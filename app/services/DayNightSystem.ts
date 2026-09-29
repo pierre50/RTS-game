@@ -111,7 +111,7 @@ export class DayNightSystem {
   }
 
   update(elapsedMs: number): void {
-    if (this.context.paused || this.context.defeat) return
+    if (this.context.paused || this.context.defeat || this.context.timeSkip?.simulatingSleep) return
     const previousDay = this.state.day
     const maxDeltaMs = this.context.timeSkip?.dayNightMaxDeltaMs ?? 250
     this.elapsedMs += Math.min(Math.max(elapsedMs, 0), maxDeltaMs)

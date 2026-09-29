@@ -20,6 +20,7 @@ export type CollectiveMember = Point & {
   label?: string
   isDead?: boolean
   isDestroyed?: boolean
+  collectiveHome?: Point
   villageHome?: Point
   inventory?: { resources?: ResourceAmount; equipment?: string[]; activeWeapons?: { melee?: string | null } }
   autonomousJob?: string | null
@@ -47,8 +48,14 @@ export type Owner = {
   buildings?: CollectiveSite[]
 }
 
+/** A gathering trip stays attached to its settlement until another order takes ownership. */
+export function collectivePosition(unit: CollectiveMember): Point {
+  if (unit.followingHero || unit.controlMode === 'hero') return unit
+  return unit.villageHome ?? (unit.collectiveTask ? unit.collectiveHome : undefined) ?? unit
+}
+
 export function collectiveAnchor(owner: Owner, unit: CollectiveMember): CollectiveSite | Point {
-  const point = unit.followingHero || unit.controlMode === 'hero' ? unit : (unit.villageHome ?? unit)
+  const point = collectivePosition(unit)
   const territory = getBaseTerritory(point, [owner])
   if (territory) return territory.center
   return (

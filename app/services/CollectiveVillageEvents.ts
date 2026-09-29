@@ -1,7 +1,12 @@
 import { constructionAssignment } from '../lib/economy/constructionAssignments'
 import { UNIT_TYPES, DAILY_CONSUMPTION_PER_VILLAGER } from '../constants'
 import type { PlayerLike } from '../types/player'
-import { activeConstructionSite, collectiveAnchor, belongsToSettlement } from '../lib/economy/collectiveConstruction'
+import {
+  activeConstructionSite,
+  collectiveAnchor,
+  belongsToSettlement,
+  collectivePosition,
+} from '../lib/economy/collectiveConstruction'
 import { collectiveNeeds, COLLECTIVE_WORK_POLICY } from '../lib/economy/collectiveNeeds'
 import { settlementAvailableStock, settlementStockGoals } from '../lib/economy/collectiveStock'
 import { constructionBagNeeds, materialAmount } from '../lib/economy/constructionMaterials'
@@ -23,7 +28,7 @@ export function collectiveVillageEventSnapshot(owner: PlayerLike): string {
     const site = activeConstructionSite(owner, unit)
     const key = site ?? anchor
     if (!settlements.has(key)) {
-      const locals = members.filter(member => belongsToSettlement(owner, anchor, member.villageHome ?? member))
+      const locals = members.filter(member => belongsToSettlement(owner, anchor, collectivePosition(member)))
       settlements.set(
         key,
         collectiveNeeds(

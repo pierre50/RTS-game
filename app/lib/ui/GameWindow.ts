@@ -292,7 +292,8 @@ export class GameWindow {
     const items = this.items()
     const index = findDirectionalTarget(
       items.map(item => {
-        const rect = item.getBoundingClientRect()
+        // Fields have different widths; vertical navigation follows their rows.
+        const rect = (dy ? item.closest('.config-row') ?? item : item).getBoundingClientRect()
         return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
       }),
       items.indexOf(this.selected!),

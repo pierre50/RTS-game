@@ -1,3 +1,4 @@
+import { canSeekVillageResource } from '../villageSupplyTrips'
 import { withinVillageActivity } from '../villageActivity'
 import { nearestResourceRecords } from '../../../classes/resources/CompactResourceSet'
 import { knownTarget, knowsEconomicTarget, playerSeesTarget, rememberedStaticTargets } from '../playerTargetKnowledge'
@@ -60,7 +61,9 @@ function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean
 
 function isKnownToUnit(unit: UnitEntity, entity: RuntimeEntity): boolean {
   return (
-    withinVillageActivity(unit, entity) && sameMapSpace(unit, entity) && Boolean(knownTarget(unit.owner, entity, unit))
+    (withinVillageActivity(unit, entity) || canSeekVillageResource(unit, entity)) &&
+    sameMapSpace(unit, entity) &&
+    Boolean(knownTarget(unit.owner, entity, unit))
   )
 }
 
@@ -143,7 +146,11 @@ export function knownFoodTargets(unit: UnitEntity, limit = Infinity): RuntimeEnt
       return isUsableAnimalCarcass(state)
     }),
     ...prey,
-  ].filter(target => withinVillageActivity(unit, target) && isFoodTargetAvailable(unit, target))
+  ].filter(
+    target =>
+      (withinVillageActivity(unit, target) || canSeekVillageResource(unit, target)) &&
+      isFoodTargetAvailable(unit, target)
+  )
 }
 
 export function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {

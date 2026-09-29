@@ -379,3 +379,48 @@ test('a legacy gathering job stops once no stock or project needs it', () => {
   assert.equal(f.unit.autonomousJob, null)
   assert.equal(f.unit.action, null)
 })
+
+test('coarse sleep projects room workers to the doorway without moving live occupants out of their shelter', () => {
+  const { context, home, owner, unit } = fixture()
+  context.map.grid[unit.i][unit.j].has = null
+  Object.assign(unit, {
+    i: 2,
+    j: 3,
+    spaceId: 'house-room',
+    hitPoints: 5,
+    totalHitPoints: 20,
+    dailySchedule: {
+      bedMinute: 1320,
+      wakeMinute: 360,
+      workStartMinute: 420,
+      workEndMinute: 1080,
+      lunchStartMinute: 720,
+      lunchEndMinute: 780,
+    },
+  })
+  const shelter = { status: 'inside', reason: 'sleep' }
+  unit.shelterState = shelter
+  context.map.spaces = new Map([
+    ['house-room', { portals: [{ targetSpaceId: 'outside', targetCell: { i: 40, j: 40 } }] }],
+  ])
+  advanceVillageWork(context, home, owner, [unit], 60000, (22 - 7.5) * 60000, true)
+  assert.equal(unit.spaceId, 'house-room')
+  assert.equal(unit.i, 2)
+  assert.equal(unit.j, 3)
+  assert.equal(unit.shelterState, shelter)
+  assert.equal(unit.hitPoints, 7.5)
+})
+
+test('exhausting local AI work hands resource search back to the live dispatcher', () => {
+  const { context, home, owner, unit, tree } = fixture()
+  unit.collectiveTask = 'wood'
+  unit.inventory = { resources: { meat: 6, berry: 6 } }
+  owner.units = [unit]
+  const pit = { type: 'StoragePit', label: 'pit', i: 44, j: 40, isBuilt: true, inventory: { resources: {} } }
+  owner.buildings.push(pit)
+  context.map.grid[44][40].has = pit
+  advanceVillageWork(context, home, owner, [unit], 90000, 0)
+  assert.equal(tree.quantity, 0)
+  assert.equal(unit.autonomousJob, null)
+  assert.equal(unit.autonomyBlockedJob, 'wood')
+})

@@ -139,3 +139,25 @@ test('loaded builders spread across projects instead of all bringing wood to the
   assert.equal(plan.size, 4)
   for (const site of sites) assert.equal([...plan.values()].filter(task => task.site === site).length, 2)
 })
+
+test('a distant gatherer keeps its settlement, project and cargo reservation across replanning and reload', () => {
+  const { owner, units, sites } = fixture([{ wood: 100 }])
+  owner.units = [units[0]]
+  const unit = units[0]
+  apply(planCollectiveTasks(owner, [unit]))
+  assert.deepEqual(unit.collectiveHome, { i: 5, j: 5, spaceId: 'outside' })
+  unit.i = 200
+  unit.j = 200
+  assert.equal(activeConstructionSite(owner, unit), sites[0])
+  assert.equal(planCollectiveTasks(owner, [unit]).get(unit).site, sites[0])
+  unit.inventory.resources.wood = 18
+  const next = planCollectiveTasks(owner, [unit]).get(unit)
+  assert.equal(next.job, 'construction')
+  assert.equal(next.site, sites[0])
+  const restored = JSON.parse(JSON.stringify(unit))
+  owner.units = [restored]
+  assert.equal(activeConstructionSite(owner, restored), sites[0])
+  assert.equal(planCollectiveTasks(owner, [restored]).get(restored).site, sites[0])
+  restored.collectiveTask = null
+  assert.equal(activeConstructionSite(owner, restored), undefined, 'a new direct order releases the old origin')
+})

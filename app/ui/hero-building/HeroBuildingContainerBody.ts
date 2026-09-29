@@ -38,7 +38,7 @@ export function createHeroBuildingContainerBody(
   menu: MenuHost,
   onChange: () => void
 ): InventoryTransferPanel | null {
-  if (building.type !== BUILDING_TYPES.chest) return null
+  if (building.type !== BUILDING_TYPES.chest || !building.isBuilt) return null
   const hero = menu.context.controls.heroUnit
   if (!hero) return null
 

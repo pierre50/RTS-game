@@ -109,7 +109,8 @@ function hasRequiredVisibility<TCell extends GridCell>(
 
 function canPlaceGroundBuilding<TCell extends GridCell>(
   cells: TCell[],
-  visibility: PlacementVisibility<TCell>
+  visibility: PlacementVisibility<TCell>,
+  allowBorder = false
 ): boolean {
   const groundLevel = cells[0].z
   return cells.every(
@@ -118,7 +119,7 @@ function canPlaceGroundBuilding<TCell extends GridCell>(
       !cell.waterBorder &&
       !cell.solid &&
       !cell.inclined &&
-      !cell.border &&
+      (allowBorder || !cell.border) &&
       cell.z === groundLevel &&
       hasRequiredVisibility(cell, visibility) &&
       (!visibility.canUseCell || visibility.canUseCell(cell))
@@ -197,7 +198,8 @@ export function canPlaceBuildingAt<TCell extends GridCell = GridCell>(
     requireExplored = false,
     isExplored = null,
     canUseCell = null,
-  }: Partial<PlacementVisibility<TCell>> = {}
+    allowBorder = false,
+  }: Partial<PlacementVisibility<TCell>> & { allowBorder?: boolean } = {}
 ): boolean {
   const { cells, expectedCells } = getPlacementFootprintCells(grid, i, j, building)
   if (cells.length !== expectedCells) return false
@@ -208,5 +210,5 @@ export function canPlaceBuildingAt<TCell extends GridCell = GridCell>(
     isExplored,
     canUseCell,
   }
-  return canPlaceGroundBuilding(cells, visibility)
+  return canPlaceGroundBuilding(cells, visibility, allowBorder)
 }

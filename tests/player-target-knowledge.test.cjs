@@ -205,7 +205,7 @@ test('invalid or duplicated saved knowledge is rejected', () => {
   assert.throws(() => knowledge.restoreTargetKnowledge({}, [...records, ...records]), /Invalid/)
 })
 
-test('hero villagers share economic knowledge locally without granting vision or knowledge of enemies', () => {
+test('hero villagers locate distant resources without granting vision or knowledge of enemies', () => {
   const { owner } = scene()
   owner.isPlayed = true
   const worker = { owner, type: 'Villager', i: 0, j: 0, spaceId: 'outside' }
@@ -217,7 +217,6 @@ test('hero villagers share economic knowledge locally without granting vision or
   assert.equal(owner.views.isViewed(30, 0), false)
   assert.equal(knowledge.playerSeesTarget(owner, tree), false)
   for (const target of [
-    { ...tree, label: 'too-far', i: 31 },
     { ...tree, label: 'other-space', spaceId: 'interior:cave' },
     { ...tree, label: 'foreign-resource', owner: { type: 'Human' } },
     { ...tree, label: 'enemy', type: 'Soldier', family: 'unit' },
@@ -226,6 +225,12 @@ test('hero villagers share economic knowledge locally without granting vision or
     assert.equal(knowledge.knownTarget(owner, target, worker), undefined)
   assert.equal(knowledge.knowsEconomicTarget(owner, tree, { ...worker, controlMode: 'hero' }), false)
   assert.equal(knowledge.knowsEconomicTarget(owner, tree, { ...worker, owner: {} }), false)
+  for (const type of ['Tree', 'Stone', 'Gold', 'Copper', 'Iron', 'Berrybush']) {
+    const distant = { ...tree, label: `distant-${type}`, type, i: 300, quantity: 100 }
+    assert.equal(knowledge.knownTarget(owner, distant, worker).quantity, 100)
+    assert.equal(knowledge.playerSeesTarget(owner, distant), false)
+    assert.equal(owner.views.isViewed(300, 0), false)
+  }
 })
 
 test('autonomy selects an unexplored local resource through the shared knowledge system', () => {
@@ -238,4 +243,39 @@ test('autonomy selects an unexplored local resource through the shared knowledge
   assert.equal(owner.views.isViewed(25, 0), false)
   tree.quantity = 0
   assert.deepEqual(knownResources(worker, 'Tree', 18), [])
+})
+
+test('hero resource jobs switch to distant deposits when the nearby supply is depleted', () => {
+  const { assignVillagerAutonomy } = loadTsModule('app/lib/units/villagerAutonomy.ts')
+  for (const [job, type, action, send] of [
+    ['wood', 'Tree', 'chopwood', 'sendToTree'],
+    ['stone', 'Stone', 'minestone', 'sendToStone'],
+  ]) {
+    const { owner } = scene()
+    owner.isPlayed = true
+    const near = { label: `near-${type}`, type, family: 'resource', i: 5, j: 0, quantity: 100 }
+    const far = { ...near, label: `far-${type}`, i: 80 }
+    const worker = {
+      owner,
+      type: 'Villager',
+      i: 0,
+      j: 0,
+      context: { map: { resources: [far, near] }, dayNight: { state: { hour: 10 } } },
+      getActionCondition: target => target.quantity > 0,
+      [send](target) {
+        this.dest = target
+        this.action = action
+        return true
+      },
+    }
+    assert.equal(assignVillagerAutonomy(worker, job), true)
+    assert.equal(worker.dest, near)
+    near.quantity = 0
+    worker.dest = null
+    worker.action = null
+    assert.equal(assignVillagerAutonomy(worker, job), true)
+    assert.equal(worker.dest, far)
+    assert.equal(worker.autonomousJob, job)
+    assert.equal(owner.views.isViewed(far.i, far.j), false)
+  }
 })

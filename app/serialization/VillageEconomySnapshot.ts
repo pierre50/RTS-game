@@ -24,6 +24,7 @@ const ENTITY_FIELDS = [
   'work',
   'autonomousJob',
   'collectiveTask',
+  'collectiveHome',
   'offlineWork',
   'offlineBuilderJob',
   'dailySchedule',

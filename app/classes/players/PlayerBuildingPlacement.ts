@@ -1,4 +1,4 @@
-import { isSowingPlacement, WHEAT_PLOT_SIZE } from '../../lib/buildings/campConstruction'
+import { isCampBuilding, isSowingPlacement, WHEAT_PLOT_SIZE } from '../../lib/buildings/campConstruction'
 import { createConstructionMaterials } from '../../lib/economy/constructionMaterials'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { getBuildingAge, getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
@@ -73,14 +73,17 @@ export function buyPlayerBuilding(
   const config = getPlayerBuildingConfig(player, type, buildingAge)
   if (!config) return false
   const placementConfig = { ...config, type }
+  const interiorCamp = space?.kind === 'interior' && isCampBuilding(type)
   const passageLookup = createReservedPassageCellLookup(player.context)
   const placementOptions = {
-    canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
+    allowBorder: interiorCamp,
+    canUseCell: (cell: RuntimeCell) =>
+      !passageLookup.has(cell) && (!interiorCamp || (!cell.terrainHidden && !cell.has)),
   }
   if (
     player.isBuildingEligible(type) &&
     canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
-    hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
+    (interiorCamp || hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions))
   ) {
     player.spawnBuilding(
       definedProperties({

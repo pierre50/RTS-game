@@ -157,3 +157,14 @@ test('explicit resource orders replace collective ownership while automatic retr
     assert.equal(unit.collectiveTask, automatic ? 'wood' : null)
   }
 })
+
+test('a direct resource order releases the old collective origin while automatic retries keep it', () => {
+  for (const automatic of [false, true]) {
+    const { unit, commands, target } = scene()
+    const home = { i: 200, j: 200, spaceId: 'outside' }
+    Object.assign(unit, { collectiveTask: 'stone', collectiveHome: home, assigningAutonomousJob: automatic })
+    commands.sendToStone(target)
+    assert.equal(unit.collectiveHome, automatic ? home : undefined)
+    assert.equal(unit.collectiveTask, automatic ? 'stone' : null)
+  }
+})

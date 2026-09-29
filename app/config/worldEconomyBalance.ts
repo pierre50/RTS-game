@@ -4,22 +4,6 @@ const WORLD_ECONOMY_BALANCE = {
   hard: { workEfficiency: 1.2, arrivalChance: 1 },
 } as const
 
-// Per full worker-day spent on one resource, only while a collective need remains.
-export const ABSTRACT_VILLAGE_PRODUCTION = {
-  food: 32,
-  wood: 80,
-  stone: 45,
-  gold: 20,
-  copper: 20,
-  iron: 20,
-  herb: 1,
-  toxicHerb: 1,
-  leather: 1,
-  fiber: 1,
-  sinew: 0.3,
-  feather: 0.3,
-} as const
-
 export function worldEconomyFactors(difficulty: string | undefined, seed: string, day: number) {
   const balance =
     WORLD_ECONOMY_BALANCE[difficulty as keyof typeof WORLD_ECONOMY_BALANCE] ?? WORLD_ECONOMY_BALANCE.medium

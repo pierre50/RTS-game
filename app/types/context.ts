@@ -57,6 +57,7 @@ interface WeatherSystemLike {
 }
 
 interface TributeRaidSystemLike {
+  interruptsSleep?(): boolean
   triggerTutorialRaid?(): Promise<boolean>
   triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
   triggerFactionRaid(options?: {
@@ -80,6 +81,7 @@ interface UnitRestSystemLike {
 }
 
 interface TimeSkipSystemLike {
+  simulatingSleep?: boolean
   active: boolean
   dayNightMaxDeltaMs?: number
   suppressAudio: boolean
@@ -89,7 +91,13 @@ interface TimeSkipSystemLike {
   getProgress(): number
   start(
     hours: number,
-    options?: { completedMessage?: string; onCancel?: () => void; onComplete?: () => void }
+    options?: {
+      mode?: 'sleep'
+      fadeToBlack?: boolean
+      completedMessage?: string
+      onCancel?: () => void
+      onComplete?: () => void
+    }
   ): { ok: boolean; message: string }
 }
 
@@ -103,12 +111,15 @@ export type NpcOrdersOpenOptions = {
 }
 
 export interface SchedulerLike {
+  suspended?: boolean
+  advanceSleepTime?(deltaMs: number): void
+  getSleepDeadlineMs?(): number
   elapsedMs: number
   timeScale?: number
   add(callback: () => void, time: number, name?: string, options?: SchedulerOptions): SchedulerTaskId
   remove(id: SchedulerTaskId): void
   update(id: SchedulerTaskId, time: number): void
-  addOneShot(callback: () => void, time: number, name?: string): SchedulerTaskId
+  addOneShot(callback: () => void, time: number, name?: string, options?: SchedulerOptions): SchedulerTaskId
   clear?(): void
   destroy?(): void
 }

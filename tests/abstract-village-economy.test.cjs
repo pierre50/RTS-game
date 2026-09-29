@@ -77,21 +77,20 @@ function fixture(difficulty = 'medium') {
   return { campaign, rules }
 }
 
-test('J1, J5 and J10 villages develop without leather nodes or detailed harvesting', () => {
+test('detached villages cannot create wood or minerals after their real deposits are exhausted', () => {
   const { campaign, rules } = fixture()
-  const stages = []
   for (const day of [1, 5, 10]) {
     advanceCampaignEconomy(campaign, day * DAY, 'here', rules)
     const state = campaign.economy.regions.away.initialState
-    stages.push(state.players[0].buildings.filter(b => b.isBuilt).length)
-    assert.equal(state.resources.length, 0)
+    const player = state.players[0]
+    const stores = [...player.units, ...player.buildings]
+    const total = key => stores.reduce((n, store) => n + (store.inventory?.resources?.[key] ?? 0), 0)
+    assert.ok(total('wood') <= 200)
+    assert.ok(total('stone') <= 150)
+    assert.equal(total('gold'), 0)
+    assert.equal(player.abstractProductionRemainder, undefined)
   }
-  assert.ok(stages[1] > stages[0], JSON.stringify(stages))
-  // Cheaper starter buildings can finish the current development targets before day 5.
-  assert.ok(stages[2] >= stages[1], JSON.stringify(stages))
   const state = campaign.economy.regions.away.initialState
-  assert.ok(state.players[0].buildings.some(b => b.type === 'Granary' && b.isBuilt))
-  assert.ok(state.players[0].populationMax > 10)
   const arrived = materializeInitialEconomy(
     { ...state, players: [{ isPlayed: true }, { factionId: 'faction' }] },
     state,
@@ -100,14 +99,12 @@ test('J1, J5 and J10 villages develop without leather nodes or detailed harvesti
   assert.deepEqual(arrived.players[1], state.players[0])
 })
 
-test('daily runs and catch-up preserve stock totals and training identities through reload', () => {
+test('daily runs and catch-up preserve finite stocks and resident identities through reload', () => {
   const { campaign, rules } = fixture('hard')
   const daily = structuredClone(campaign)
   advanceCampaignEconomy(campaign, 15 * DAY, 'here', rules)
   for (let day = 1; day <= 15; day++) advanceCampaignEconomy(daily, day * DAY, 'here', rules)
-  const summary = campaign.economy.regions.away.summaries.faction
   assert.deepEqual(daily.economy.regions.away.summaries, campaign.economy.regions.away.summaries)
-  assert.ok((summary.military.Fantassin ?? 0) > 0, JSON.stringify(summary))
   const restored = JSON.parse(JSON.stringify(campaign))
   const before = structuredClone(restored)
   advanceCampaignEconomy(restored, 15 * DAY, 'here', rules)
@@ -143,8 +140,12 @@ test('shared building policy does not reserve a second house or a premature mark
 
 test('decorative forge waits for an established village and never duplicates an existing project', () => {
   const input = {
-    storagePitNeeded: false, population: 5, populationMax: 20, age: 0,
-    phase: 'economy', desiredBarracks: 1,
+    storagePitNeeded: false,
+    population: 5,
+    populationMax: 20,
+    age: 0,
+    phase: 'economy',
+    desiredBarracks: 1,
     buildings: ['Granary', 'Market', 'Barracks'].map(type => ({ type, isBuilt: true })),
   }
   assert.equal(villageBuildingNeeds(input).Forge, true)
@@ -152,8 +153,17 @@ test('decorative forge waits for an established village and never duplicates an 
   assert.equal(villageBuildingNeeds({ ...input, storagePitNeeded: true }).Forge, false)
   assert.equal(villageBuildingNeeds({ ...input, populationMax: 5 }).Forge, false)
   for (const isBuilt of [false, true]) {
-    assert.equal(villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'Forge', isBuilt }] }).Forge, false)
+    assert.equal(
+      villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'Forge', isBuilt }] }).Forge,
+      false
+    )
   }
-  assert.equal(villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'House', isBuilt: false }] }).Forge, false)
-  assert.equal(villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'Forge', isDestroyed: true }] }).Forge, true)
+  assert.equal(
+    villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'House', isBuilt: false }] }).Forge,
+    false
+  )
+  assert.equal(
+    villageBuildingNeeds({ ...input, buildings: [...input.buildings, { type: 'Forge', isDestroyed: true }] }).Forge,
+    true
+  )
 })

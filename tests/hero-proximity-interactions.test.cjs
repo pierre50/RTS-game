@@ -525,6 +525,18 @@ test('hero proximity interaction resolves a facing openable corpse as open', () 
   })
 })
 
+test('unfinished chest does not fall back to the generic building menu prompt', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const target = { family: 'building', type: 'Chest', isBuilt: false }
+  assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), null)
+  target.isBuilt = true
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), {
+    action: 'open',
+    labelKey: 'heroInteractionOpen',
+    target,
+  })
+})
+
 test('facing buildings offer their menu including construction sites', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   for (const isBuilt of [false, true]) {

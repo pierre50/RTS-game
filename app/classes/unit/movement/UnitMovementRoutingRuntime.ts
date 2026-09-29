@@ -1,3 +1,4 @@
+import { canMoveForVillageSupply } from '../../../lib/units/villageSupplyTrips'
 import { ACTION_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../../constants'
 import {
   getCellsAroundPoint,
@@ -244,7 +245,14 @@ export class UnitMovementRouting {
     const unit = this.unit
     if (action === ACTION_TYPES.attack || unit.owner?.isPlayed) wakeUnitSimulation(unit)
     if (isUnitSuspended(unit)) return false
-    if (dest && action !== ACTION_TYPES.attack && !withinVillageActivity(unit, dest)) return false
+    if (
+      dest &&
+      action !== ACTION_TYPES.attack &&
+      !withinVillageActivity(unit, dest) &&
+      !canMoveForVillageSupply(unit, dest, action)
+    )
+      return false
+    if (dest && canMoveForVillageSupply(unit, dest, action) && unit.campBehavior) unit.campBehavior.phase = 'guard'
     const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (action === ACTION_TYPES.attack && dest && isRuntimeEntity(dest) && !canCampPursue(unit, dest)) return false
     if (action === ACTION_TYPES.attack && campAnchor(unit)) {

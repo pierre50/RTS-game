@@ -1,4 +1,6 @@
 export type SchedulerOptions = {
+  /** A calendar deadline that must interrupt simplified sleep. */
+  interruptSleep?: boolean
   /** Spread the initial deadline of tasks with the same name. */
   stagger?: boolean
   /** Opt-in for current-state checks only; excess overdue checks are discarded. */
@@ -10,6 +12,7 @@ type SchedulerTask = {
   elapsed: number
   interval: number
   name: string
+  interruptSleep?: boolean
   oneShot?: boolean
   maxRunsPerTick?: number
 }
@@ -34,6 +37,7 @@ export class ActionScheduler {
   _tasks: Map<number, SchedulerTask>
   _toRemove: number[]
   elapsedMs: number
+  suspended = false
   timeScale: number
   private staggerCounts = new Map<string, number>()
 
@@ -66,13 +70,26 @@ export class ActionScheduler {
       elapsed: -delay,
       name,
       maxRunsPerTick: options.maxRunsPerTick,
+      interruptSleep: options.interruptSleep,
     })
     return id
   }
 
-  addOneShot(callback: () => void, delayMs: number, name = 'scheduler.oneShot'): number {
+  addOneShot(
+    callback: () => void,
+    delayMs: number,
+    name = 'scheduler.oneShot',
+    options: SchedulerOptions = {}
+  ): number {
     const id = this._nextId++
-    this._tasks.set(id, { callback, interval: delayMs, elapsed: 0, oneShot: true, name })
+    this._tasks.set(id, {
+      callback,
+      interval: delayMs,
+      elapsed: 0,
+      oneShot: true,
+      name,
+      interruptSleep: options.interruptSleep,
+    })
     return id
   }
 
@@ -96,8 +113,21 @@ export class ActionScheduler {
     this._app.ticker.remove(this._onTick)
   }
 
+  getSleepDeadlineMs(): number {
+    let remaining = Infinity
+    for (const task of this._tasks.values())
+      if (task.interruptSleep) remaining = Math.min(remaining, Math.max(0, task.interval - task.elapsed))
+    return remaining
+  }
+
+  /** Advance the calendar without creating a backlog of movement/visual callbacks. */
+  advanceSleepTime(deltaMs: number): void {
+    this.elapsedMs += deltaMs
+    for (const task of this._tasks.values()) if (task.interruptSleep) task.elapsed += deltaMs
+  }
+
   _tick(deltaMS: number): void {
-    if (this._getPaused()) return
+    if (this.suspended || this._getPaused()) return
     const monitor = this._getPerformance()
     if (monitor) monitor.measureSampled('scheduler.tick', () => this.runTick(deltaMS))
     else this.runTick(deltaMS)
@@ -112,6 +142,7 @@ export class ActionScheduler {
     this._toRemove.length = 0
     const lastTaskId = this._nextId - 1
     for (const [id, task] of this._tasks) {
+      if (this.suspended) break
       // Map iteration includes newly added tasks. Defer them so retries cannot
       // repeatedly consume this frame's delta and starve rendering/input.
       if (id > lastTaskId) break
@@ -127,7 +158,7 @@ export class ActionScheduler {
       }
 
       let runs = 0
-      while (task.elapsed >= task.interval) {
+      while (!this.suspended && task.elapsed >= task.interval) {
         task.elapsed -= task.interval
         this._runTask(task)
         calls++

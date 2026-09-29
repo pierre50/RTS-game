@@ -24,8 +24,8 @@ import type { SaveEntityState, SaveGridPoint, SavePlayerState } from '../../../t
 import { distance, entityKey, isLiving, type OfflineWorldSpatial } from '../OfflineWorldSpatial'
 
 export type OfflineWorkRules = {
+  /** Enables detached village recruitment; gathering always consumes real resources. */
   abstractVillages?: boolean
-  abstractPotential?: ResourceAmount
   planBuildings?: boolean
   dailyFactors?(playerIndex: number, day: number): { workEfficiency: number; arrivalsAllowed: boolean }
   animalConfig?(type: string): AnimalConfig

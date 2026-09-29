@@ -382,6 +382,26 @@
   pointer-events: none;
 }
 
+.time-skip-overlay--sleep {
+  background: #000;
+  animation: sleep-fade-to-black 800ms ease-in-out;
+}
+
+@keyframes sleep-fade-to-black {
+  from {
+    background-color: transparent;
+  }
+  to {
+    background-color: #000;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .time-skip-overlay--sleep {
+    animation: none;
+  }
+}
+
 .time-skip-overlay__panel {
   width: min(520px, calc(100vw - 48px));
 }
@@ -401,4 +421,24 @@
 .time-skip-overlay__fill {
   height: 100%;
   background: var(--main-text-color);
+}
+
+.time-skip-overlay__controls {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.time-skip-overlay__controls > span:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-skip-overlay__controls kbd {
+  padding: 3px 7px;
+  border: 1px solid var(--border-divider-subtle);
+  border-radius: 4px;
+  font: inherit;
 }

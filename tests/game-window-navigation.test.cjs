@@ -21,6 +21,40 @@ test('spatial navigation follows responsive grids and stops at their edges', () 
   assert.equal(findDirectionalTarget([], -1, 1, 0), -1)
 })
 
+test('vertical settings navigation visits zoom before brightness despite different field widths', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: {
+      '@pixi/sound': { sound: {} },
+      './GameWindowForms': { getWindowField: () => null },
+    },
+  })
+  const item = (x, y, row = false) => ({
+    getBoundingClientRect: () => ({ x, y, width: 20, height: 20 }),
+    closest: () => (row ? { getBoundingClientRect: () => ({ x: 0, y, width: 400, height: 20 }) } : null),
+    matches: selector => !row && (selector === '.ui-tab' || selector === '.ui-tab[aria-selected="true"]'),
+  })
+  const tab = item(100, 0)
+  const zoom = item(300, 60, true)
+  const brightness = item(200, 110, true)
+  const shadows = item(380, 160, true)
+  const window = Object.create(GameWindow.prototype)
+  Object.assign(window, {
+    selected: tab,
+    items: () => [tab, zoom, brightness, shadows],
+    select(next) {
+      this.selected = next
+    },
+  })
+  for (const expected of [zoom, brightness, shadows]) {
+    window.move(0, 1)
+    assert.equal(window.selected, expected)
+  }
+  for (const expected of [brightness, zoom, tab]) {
+    window.move(0, -1)
+    assert.equal(window.selected, expected)
+  }
+})
+
 test('opening a window with a held button cannot execute an action', () => {
   const state = new GameWindowPadState()
   assert.deepEqual(state.read(pad([3]), 0).pressed, [])

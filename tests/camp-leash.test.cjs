@@ -137,3 +137,30 @@ test('blocked returns try one different home candidate per retry instead of four
   assert.equal(tried.length, 2)
   assert.notEqual(tried[0], tried[1])
 })
+
+test('village supply trips can leave the home perimeter, but combat and arbitrary walks remain leashed', () => {
+  const { unit, controller } = setup()
+  delete unit.campPatrolAnchor
+  Object.assign(unit, {
+    type: 'Villager',
+    i: 60,
+    j: 10,
+    villageHome: { id: 'village', i: 10, j: 10, spaceId: 'outside' },
+    autonomousJob: 'wood',
+    action: 'chopwood',
+    dest: { i: 61, j: 10, family: 'resource', type: 'Tree', quantity: 20 },
+  })
+  assert.equal(controller.update(unit), false)
+  assert.equal(unit.orders ?? 0, 0)
+  const target = unit.dest
+  unit.dest = { i: 61, j: 10, has: target }
+  unit.action = null
+  assert.equal(controller.update(unit), false, 'remembered-resource approach stays authorized')
+  unit.dest = { i: 11, j: 10, family: 'building' }
+  unit.action = 'delivery'
+  assert.equal(controller.update(unit), false, 'the return leg must keep its cargo destination')
+  unit.dest = { i: 61, j: 10, family: 'unit' }
+  unit.action = 'attack'
+  assert.equal(controller.update(unit), true)
+  assert.equal(unit.campBehavior.phase, 'return')
+})

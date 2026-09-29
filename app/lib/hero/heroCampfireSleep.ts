@@ -76,8 +76,14 @@ export function sleepHeroAtFireCamp(hero: UnitEntity | null | undefined, buildin
   setUnitOverheadIndicator(hero, 'sleep')
   playSleepingOutsideVisual(hero, () => {
     const dayNightState = context?.dayNight?.state
-    const hours = getHoursUntilNextMorning(dayNightState?.hour ?? 7, dayNightState?.minute ?? 0, VILLAGE_WAKE_COMPLETE_HOUR)
+    const hours = getHoursUntilNextMorning(
+      dayNightState?.hour ?? 7,
+      dayNightState?.minute ?? 0,
+      VILLAGE_WAKE_COMPLETE_HOUR
+    )
     const result = context?.timeSkip?.start?.(hours, {
+      mode: 'sleep',
+      fadeToBlack: true,
       completedMessage: t('heroSleepComplete'),
       onCancel: () => wakeHeroFromFireCamp(hero),
       onComplete: () => {

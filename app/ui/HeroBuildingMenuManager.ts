@@ -95,7 +95,8 @@ export class HeroBuildingMenuManager {
     const hero = this.menu.context.controls.heroUnit
     if (!hero || !building || building.isDestroyed || building.isDead) return false
     if (building.type === BUILDING_TYPES.trap) return false
-    if (building.type === BUILDING_TYPES.forge && !building.isBuilt) return false
+    if ((building.type === BUILDING_TYPES.forge || building.type === BUILDING_TYPES.chest) && !building.isBuilt)
+      return false
     return isHeroInteractionTargetReachable(hero, null, building)
   }
 

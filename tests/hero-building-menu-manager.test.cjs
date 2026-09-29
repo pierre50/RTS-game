@@ -230,6 +230,23 @@ test('hero building menu can open own unfinished buildings for inspection', () =
   }
 })
 
+test('chest inventory stays unavailable until construction completes', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    const building = { family: 'building', type: 'Chest', owner: player, isBuilt: false }
+    assert.equal(manager.open(building), false)
+    assert.equal(manager.renderContainerBody(building), false)
+    assert.equal(manager.constructor.__transferPanels.length, 0)
+    assert.equal(manager.constructor.__audibleSoundCues.length, 0)
+    building.isBuilt = true
+    assert.equal(manager.open(building), true)
+    assert.equal(manager.constructor.__transferPanels.length, 1)
+    assert.equal(manager.constructor.__audibleSoundCues.length, 1)
+  } finally {
+    restoreDocument()
+  }
+})
+
 test('trap menus cannot open even through a direct request', () => {
   const { manager, player, restoreDocument } = createManager()
   try {

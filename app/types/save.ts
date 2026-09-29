@@ -30,6 +30,7 @@ type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValu
 
 export type SaveEntityState = {
   collectiveTask?: string | null
+  collectiveHome?: { i: number; j: number; spaceId?: string | null }
   constructionMaterials?: ConstructionMaterials
   wildlife?: {
     homeI: number

@@ -40,6 +40,7 @@ const FIELDS = [
   'work',
   'autonomousJob',
   'collectiveTask',
+  'collectiveHome',
   'offlineWork',
   'age',
   'isNaturalResource',
@@ -81,7 +82,8 @@ export function advanceVillageWork(
   owner: PlayerLike,
   units: UnitEntity[],
   milliseconds: number,
-  fromElapsedMs?: number
+  fromElapsedMs?: number,
+  sleeping = false
 ): void {
   if (milliseconds <= 0 || !units.length) return
   const homes = Array.isArray(home) ? home : [home]
@@ -108,7 +110,21 @@ export function advanceVillageWork(
       }
     }
   }
-  const copies = units.map(snapshot)
+  const copies = units.map(unit => {
+    const copy = snapshot(unit)
+    // Room coordinates are local. Use the doorway for coarse work, retaining
+    // the live shelter/space until the rest system reconciles at wake-up.
+    if (sleeping && getEntitySpaceId(unit) !== 'outside') {
+      const exit = context.map.spaces
+        ?.get(getEntitySpaceId(unit))
+        ?.portals?.find(p => p.targetSpaceId === 'outside')?.targetCell
+      if (exit) {
+        copy.i = exit.i
+        copy.j = exit.j
+      }
+    }
+    return copy
+  })
   const local = (entity: RuntimeEntity) => {
     const point =
       getEntitySpaceId(entity) === 'outside'
@@ -204,7 +220,7 @@ export function advanceVillageWork(
     })
     for (const copy of copies) advanceOfflineWorker(state, player, 0, copy, milliseconds, 0, spatial, rules, report)
   }
-  commitVillageWork(context, sources, resources, savedBuildings, buildings, copies, units, fromElapsedMs)
+  commitVillageWork(context, sources, resources, savedBuildings, buildings, copies, units, fromElapsedMs, sleeping)
   notifyVillageWorkChanged(owner)
 }
 
@@ -216,7 +232,8 @@ function commitVillageWork(
   buildings: PlayerLike['buildings'],
   copies: SaveEntityState[],
   units: UnitEntity[],
-  fromElapsedMs?: number
+  fromElapsedMs?: number,
+  sleeping = false
 ): void {
   // Commit synchronously: no live callbacks can interleave with this transaction.
   for (const [copy, source] of sources) {
@@ -250,6 +267,10 @@ function commitVillageWork(
     unit.inventory = copy.inventory
     unit.lastMealAt = copy.lastMealAt
     unit.collectiveTask = copy.collectiveTask
+    unit.collectiveHome = copy.collectiveHome
+    // A bounded snapshot can run out of local work while the full map still has supplies.
+    // Hand the search back to the live dispatcher instead of sleeping indefinitely.
+    if (fromElapsedMs != null && !copy.autonomousJob && unit.autonomousJob) unit.autonomyBlockedJob = unit.autonomousJob
     unit.autonomousJob = copy.autonomousJob
     unit.offlineWork = copy.offlineWork
     if (unit.resourceDeliveryState?.pickup || copy.resourceDelivery?.pickup) {
@@ -277,6 +298,7 @@ function commitVillageWork(
         : null
       unit.path = []
     }
+    if (sleeping && getEntitySpaceId(unit) !== 'outside') return
     const cell = context.map.grid[copy.i]?.[copy.j]
     if (cell && (!cell.has || cell.has === unit) && (unit.i !== copy.i || unit.j !== copy.j))
       moveEntityToMapSpace(context.map, unit, space, cell)

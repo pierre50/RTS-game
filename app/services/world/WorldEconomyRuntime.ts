@@ -2,7 +2,6 @@ import { isContinentWorld } from '../../config/continentWorlds'
 import { isLargeMapIsolationTest } from '../../config/largeMapTest'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import { Assets } from 'pixi.js'
-import { RESOURCE_STOCKPILE_TYPES } from '../../constants/entities'
 import { worldEconomyFactors } from '../../config/worldEconomyBalance'
 import { createPlayerData } from '../../config/playerConfig'
 import { getBuildingShelterCapacity, getPopulationCapacityFromBuildings } from '../../lib/buildings/buildingOccupancy'
@@ -39,18 +38,9 @@ export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
   const sheet = typeof wheat?.assets === 'string' ? Assets.cache.get(wheat.assets) : null
   const cycles = new Map<string, number>()
   const factors = new Map<string, ReturnType<typeof worldEconomyFactors>>()
-  const resourceCounts: Record<string, number> = {}
-  for (const resource of state.resources) {
-    const stored = RESOURCE_STOCKPILE_TYPES[resource.type]
-    const key = ['berry', 'wheat', 'meat'].includes(stored) ? 'food' : stored
-    if (key && !resource.isDestroyed) resourceCounts[key] = (resourceCounts[key] ?? 0) + 1
-  }
   return {
     planBuildings: true,
     abstractVillages: true,
-    abstractPotential: Object.fromEntries(
-      ['food', 'wood', 'stone', 'gold'].map(key => [key, Math.min(1.2, 0.8 + (resourceCounts[key] ?? 0) / 50)])
-    ),
     dailyFactors: (index, day) => {
       const player = state.players[index]
       if (player?.type !== 'AI') return { workEfficiency: 1, arrivalsAllowed: true }

@@ -583,6 +583,17 @@ test('a previously completed hunt continues without paying its resources twice',
   assert.equal(runtime.interact(chief, 'continue'), false)
 })
 
+test('meal breaks allow accepting and delivering quests at noon', () => {
+  const { runtime, chief, context } = fixture()
+  context.dayNight.state.hour = 12
+  context.dayNight.state.minute = 0
+  runtime.update()
+  chief.shelterState = { reason: 'sleep', status: 'outside', location: 'outside', mealBreak: true }
+  chief.sleepVisualState = null
+  assert.equal(runtime.accept(chief), true)
+  assert.equal(runtime.deliver(chief), true)
+})
+
 test('sleep sessions block quests through preview and waking until the real wake completes', () => {
   for (const visual of ['sleeping', 'waking', null]) {
     const { runtime, chief, hero } = fixture()

@@ -1,3 +1,4 @@
+import { isVillageResourceWorker } from './villageSupplyTrips'
 import { applyUnitActivitySpritesheets } from './unitSpriteAssets'
 import { ANIMAL_CORPSE_DROPS } from '../../config/animalGatherLoot'
 import { wakeUnitSimulation } from './unitSuspension'
@@ -19,6 +20,7 @@ import {
   clearVillagerAutonomyTargetRejections,
   targetWorkerLoad,
   tryVillagerJobCandidates,
+  villagerJobCandidateLimit,
   type VillagerJobCandidate,
 } from './villagerAutonomyTargeting'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
@@ -75,7 +77,8 @@ function exploreForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob): boolean
 }
 
 function noStrictTargetForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob, options: AssignmentOptions): boolean {
-  if (!unit.owner?.isPlayed && options.exploreWhenNoTarget !== false) return exploreForAutonomy(unit, job)
+  if (!unit.owner?.isPlayed && !isVillageResourceWorker(unit) && options.exploreWhenNoTarget !== false)
+    return exploreForAutonomy(unit, job)
   cancelVillagerExplorationResume(unit)
   unit.exploringForAutonomy = false
   setVillagerAutonomy(unit, job)
@@ -105,6 +108,7 @@ export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonom
 
 export function clearVillagerAutonomy(unit: UnitEntity): void {
   unit.collectiveTask = null
+  unit.collectiveHome = undefined
   if (unit.type !== UNIT_TYPES.villager) return
   if (unit.owner?.isPlayed) wakeUnitSimulation(unit)
   unit.autonomousJob = null
@@ -155,8 +159,8 @@ function assignFoodAutonomy(unit: UnitEntity, options: AssignmentOptions, scorin
           ? RESOURCE_TYPES.toxicHerb
           : undefined
   const targets = plant
-    ? knownResources(unit, plant, 18)
-    : knownFoodTargets(unit, 18).filter(target => {
+    ? knownResources(unit, plant, villagerJobCandidateLimit(unit, job))
+    : knownFoodTargets(unit, villagerJobCandidateLimit(unit, job)).filter(target => {
         if (jobResource === 'wheat') return target.type === RESOURCE_TYPES.wheat
         if (jobResource === 'berry') return target.type === RESOURCE_TYPES.berrybush
         if (jobResource === 'meat') return target.family === FAMILY_TYPES.animal
@@ -233,7 +237,7 @@ function assignResourceAutonomy(
 ): boolean {
   const resourceJob = job
   const resourceConfig = RESOURCE_AUTONOMY_CONFIG[resourceJob]
-  const targets = knownResources(unit, resourceConfig.resourceType, 18)
+  const targets = knownResources(unit, resourceConfig.resourceType, villagerJobCandidateLimit(unit, job))
   if (!targets.length) {
     return noStrictTargetForAutonomy(unit, job, options)
   }

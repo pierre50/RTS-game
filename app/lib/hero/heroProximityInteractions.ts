@@ -203,6 +203,7 @@ export function resolveHeroProximityInteraction({
   ) {
     if (openEntityTarget.family === FAMILY_TYPES.building) {
       if (
+        (openEntityTarget.type === BUILDING_TYPES.chest && !(openEntityTarget as BuildingEntity).isBuilt) ||
         openEntityTarget.type === BUILDING_TYPES.trap ||
         CAMP_DECORATION_BUILDING_TYPES.some(type => type === openEntityTarget.type)
       )

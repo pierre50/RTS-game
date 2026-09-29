@@ -1,3 +1,4 @@
+import { isVillageSupplyTrip } from '../../lib/units/villageSupplyTrips'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import {
   campAnchor,
@@ -52,6 +53,11 @@ export class CampLeashController {
 
   /** True means this unit is returning and must not acquire a new target. */
   update(unit: UnitEntity): boolean {
+    if (isVillageSupplyTrip(unit)) {
+      this.tracking.delete(unit)
+      if (unit.campBehavior) unit.campBehavior.phase = 'guard'
+      return false
+    }
     const anchor = campAnchor(unit)
     if (!anchor) return false
     const now = this.context.scheduler.elapsedMs

@@ -1,6 +1,6 @@
 import { isCompactResourceRecord } from '../../classes/resources/CompactResourceSet'
 import { isWheatMature } from '../combat/resourceActionConditions'
-import { VILLAGE_ACTIVITY_RADIUS } from '../../config/villageActivity'
+import { isVillageResourceWorker } from './villageSupplyTrips'
 import { knowsNativeResources } from '../campaign/nativeEconomy'
 import { getEntitySpaceId, sameMapSpace } from '../mapSpaces'
 import { instanceIsInInsightRange } from './insightDetection'
@@ -28,15 +28,16 @@ export function knowsEconomicTarget(
     return false
   if (target.family === 'resource') {
     if (knowsNativeResources(owner)) return true
+    // Player villagers and settled AI workers can source distant materials.
+    // Candidate ranking still favors nearby reachable resources; this grants no vision.
     if (
-      owner.isPlayed &&
+      (owner.isPlayed || (worker && isVillageResourceWorker(worker))) &&
       worker?.owner === owner &&
       worker.type === 'Villager' &&
       worker.controlMode !== 'hero' &&
       !worker.isDead &&
       !worker.isDestroyed &&
-      sameMapSpace(worker, target) &&
-      Math.hypot(worker.i - target.i, worker.j - target.j) <= VILLAGE_ACTIVITY_RADIUS
+      sameMapSpace(worker, target)
     )
       return true
   }

@@ -109,8 +109,11 @@ export function sendUnitToDelivery(
   if (unit.followingHero || hasPriorityCombat(unit)) return false
   const site = unit.owner && readyConstructionSite(unit.owner, unit)
   if (site && unit.sendToBuilding) {
-    unit.collectiveTask = 'construction'
+    const home = unit.collectiveHome
     unit.sendToBuilding(site as BuildingEntity)
+    // Public building commands release collective ownership; this is an automatic return.
+    unit.collectiveTask = 'construction'
+    unit.collectiveHome = home
     return true
   }
   const deliveryTarget = target ?? findResourceDeliveryTarget(unit)

@@ -39,6 +39,7 @@ export class BuildingPlacementRules {
     const grid = space?.grid ?? map.grid
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
+    const interiorCamp = space?.kind === 'interior' && isCampBuilding(mouseBuilding.type)
     if (!isCampBuilding(mouseBuilding.type) && playerNeedsChiefForCommand(player) && !heroCanCommand(controls.heroUnit))
       return false
     if (
@@ -50,14 +51,16 @@ export class BuildingPlacementRules {
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
     const passageLookup = createReservedPassageCellLookup(controls.context)
     const placementOptions = {
+      allowBorder: interiorCamp,
       requireVisible: true,
       requireExplored: true,
       isExplored: (candidate: RuntimeCell) => this.isExploredForPlacement(candidate, player),
-      canUseCell: (candidate: RuntimeCell) => !passageLookup.has(candidate),
+      canUseCell: (candidate: RuntimeCell) =>
+        !passageLookup.has(candidate) && (!interiorCamp || (!candidate.terrainHidden && !candidate.has)),
     }
     return (
       canPlaceBuildingAt(grid, cell.i, cell.j, mouseBuilding, placementOptions) &&
-      hasBuildingPlacementClearance(grid, cell.i, cell.j, mouseBuilding, placementOptions)
+      (interiorCamp || hasBuildingPlacementClearance(grid, cell.i, cell.j, mouseBuilding, placementOptions))
     )
   }
   doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {

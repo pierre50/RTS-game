@@ -1053,3 +1053,13 @@ test('depot target and zero shares survive JSON saves without sharing the runtim
   saved.players[0].buildings[0].reservePolicy.shares.wood = 0
   assert.equal(policy.shares.wood, 60)
 })
+
+test('collective trip origin survives serialization independently of the current position', () => {
+  const context = makeContext()
+  const collectiveHome = { i: 1, j: 1, spaceId: 'outside' }
+  context.players[0].units = [{ type: 'Villager', i: 80, j: 90, collectiveTask: 'wood', collectiveHome }]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
+  assert.deepEqual(saved.collectiveHome, collectiveHome)
+  assert.equal(saved.collectiveTask, 'wood')
+  assert.equal(saved.i, 80)
+})

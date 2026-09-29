@@ -10,18 +10,24 @@ import { isUnitSuspended } from '../../lib/units/unitSuspension'
 import type { OfflineTerrainCell } from './OfflineWorldSpatial'
 import type { OfflineWorkRules } from './OfflineWorldWork'
 import type { GameContextLike } from '../../types/context'
+import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { SavePlayerState, SerializedSave, SaveEntityState } from '../../types/save'
 
 /** Copies are transaction-local. Runtime entities remain the canonical save/interaction data. */
-function capture(context: GameContextLike, owner: PlayerLike, homes: VillageHome[]) {
+function capture(
+  context: GameContextLike,
+  owner: PlayerLike,
+  homes: VillageHome[],
+  units = owner.units.filter(isUnitSuspended)
+) {
   const player = serializeEconomyPlayer(owner)
-  const suspended = new Set(owner.units.filter(isUnitSuspended).map(unit => unit.label))
+  const suspended = new Set(units.map(unit => unit.label))
   player.units = player.units?.filter(unit => suspended.has(unit.label ?? ''))
   const terrain: (OfflineTerrainCell | undefined)[][] = []
   const obstacles = new Map<object, SaveEntityState>()
   const resources = new Map<object, SaveEntityState>()
-  const participants = new Set<object>([...owner.units.filter(isUnitSuspended), ...owner.buildings])
+  const participants = new Set<object>([...units, ...owner.buildings])
   const radius = VILLAGE_ACTIVITY_RADIUS + VILLAGE_PATH_MARGIN
   for (const home of homes) {
     for (let i = Math.max(0, home.i - radius); i <= home.i + radius; i++) {
@@ -124,10 +130,15 @@ export function advanceDistantVillageEconomy(
   )
 }
 
-export function planDistantVillageBuildings(context: GameContextLike, owner: PlayerLike, homes: VillageHome[]): void {
+export function planDistantVillageBuildings(
+  context: GameContextLike,
+  owner: PlayerLike,
+  homes: VillageHome[],
+  units?: UnitEntity[]
+): void {
   if (owner.isPlayed || owner.type !== 'AI') return
   const day = context.dayNight?.state.day ?? 1
-  const { state, player, terrain } = capture(context, owner, homes)
+  const { state, player, terrain } = capture(context, owner, homes, units)
   planOfflineBuildings(state, day, terrain, rules(context, owner))
   commitPlan(owner, player)
 }

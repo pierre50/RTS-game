@@ -591,3 +591,18 @@ test('legacy delivery-blocking flags do not prevent loading old buildings', () =
     assert.doesNotThrow(() => validateSaveData(data))
   }
 })
+
+test('collective trip origins accept saved points and reject malformed coordinates', () => {
+  const data = save()
+  data.players[0].units = [{ type: 'Hero', i: 0, j: 0, collectiveHome: { i: 1, j: 1, spaceId: 'outside' } }]
+  assert.doesNotThrow(() => validateSaveData(data))
+  for (const collectiveHome of [
+    { i: -1, j: 0 },
+    { i: 0.5, j: 0 },
+    { i: 0, j: 0, spaceId: {} },
+    { i: 9000, j: 0 },
+  ]) {
+    data.players[0].units[0].collectiveHome = collectiveHome
+    assert.throws(() => validateSaveData(data), /collective home/)
+  }
+})

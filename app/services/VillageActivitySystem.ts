@@ -1,3 +1,4 @@
+import { isVillageSupplyTrip, villageWorkNeedsLiveSearch } from '../lib/units/villageSupplyTrips'
 import { observeVillage } from './world/VillageObservation'
 import { PlayerWorkActivitySystem } from './world/PlayerWorkActivitySystem'
 import {
@@ -28,6 +29,7 @@ type Village = { home: VillageHome; owner: PlayerLike; units: UnitEntity[]; simp
 const GATHER_ACTIONS = new Set(['chopwood', 'forageberry', 'farm', 'minestone', 'minegold', 'minecopper', 'mineiron'])
 
 export class VillageActivitySystem {
+  private sleeping = false
   private villages = new Map<string, Village>()
   private task: SchedulerTaskId | null = null
   private refreshAt = 0
@@ -104,6 +106,7 @@ export class VillageActivitySystem {
         unit.type !== 'Villager'
           ? !unit.action && !unit.spacePortalState
           : getEntitySpaceId(unit) === 'outside' &&
+            !villageWorkNeedsLiveSearch(unit) &&
             !unit.shelterState &&
             !unit.spacePortalState &&
             !unit.resourceDeliveryState &&
@@ -173,6 +176,7 @@ export class VillageActivitySystem {
   }
 
   update(): void {
+    if (this.sleeping) return
     this.playerWork.update()
     const now = this.context.scheduler.elapsedMs
     if (now >= this.refreshAt) {
@@ -247,6 +251,7 @@ export class VillageActivitySystem {
       } else if (now - village.since >= VILLAGE_SIMULATION_STEP_MS) this.advance(village)
       if (village.simplified) continue
       for (const unit of village.units) {
+        if (isVillageSupplyTrip(unit)) continue
         if (unit.action !== 'attack' && unit.dest && !withinVillageActivity(unit, unit.dest)) {
           this.leash.recall(unit)
         }
@@ -262,10 +267,29 @@ export class VillageActivitySystem {
   }
 
   flush(): void {
+    if (this.sleeping) return
     this.playerWork.flush()
     this.distant.flush()
     for (const village of this.villages.values()) this.advance(village)
   }
+  /** Settle old checkpoints before another simulation takes ownership of time. */
+  beginSleep(): void {
+    this.flush()
+    this.playerWork.destroy()
+    this.distant.destroy()
+    for (const village of this.villages.values()) this.wake(village)
+    this.sleeping = true
+  }
+
+  endSleep(): void {
+    if (!this.sleeping) return
+    this.sleeping = false
+    this.playerWork = new PlayerWorkActivitySystem(this.context)
+    this.distant = new DistantVillageSystem(this.context)
+    for (const village of this.villages.values()) village.since = this.context.scheduler.elapsedMs
+    this.refreshAt = 0
+  }
+
   destroy(): void {
     this.playerWork.destroy()
     this.distant.destroy()

@@ -65,6 +65,7 @@ export class HeroInteractionController {
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
       if (
+        (building.type === BUILDING_TYPES.chest && !building.isBuilt) ||
         building.type === BUILDING_TYPES.trap ||
         CAMP_DECORATION_BUILDING_TYPES.some(type => type === building.type)
       )

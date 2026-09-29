@@ -54,3 +54,29 @@ Indexes are runtime-only and rebuild for a loaded/new map.
 Compare `ai.knowledge`, `ai.economy.food` and worst frames on the same teleport
 route before/after this change. These changes do not address building placement
 cost or the synchronized scheduling of the seven AI steps.
+
+## Campfire sleep
+
+Campfire sleep now uses `SleepSimulation`, rather than the debug fast-forward
+speed. The overlay continues rendering while animation time and the action
+scheduler are suspended. Each interval is at most one game hour and stops at a
+new-day boundary or an interrupting raid deadline. Owner transactions run on
+separate frames; cancellation finishes the current interval before waking.
+
+Existing village checkpoints are settled before the hand-off. Daytime work uses
+`advanceVillageWork` / `simulateOfflineWorld`; fully sleeping intervals only
+integrate scheduled healing and meals, avoiding terrain snapshots. The live
+calendar alone dispatches daily events and training completion. On waking, the
+rest system reconciles shelters and village activity starts fresh checkpoints.
+Ordinary movement and cosmetic timers retain their remaining delay and never
+replay the skipped night. Combat movement is not simulated during sleep; nearby
+hostiles, active raids and scheduled faction-raid deadlines interrupt the skip.
+The developer console's ordinary fast-forward command still uses its prior mode.
+
+To compare, reset the performance report immediately before sleeping and capture
+it after waking. `sleep.begin`, `sleep.end` and `runtime.sleep.simulation` identify
+the coarse work; `scheduler.catchUp` should no longer report sleep-induced 7200 ms
+bursts. Test both uninterrupted sleep and Escape/gamepad cancellation, including
+a night crossing 06:00. In-game frame-time improvements still need measurement
+on the affected save; automated tests verify clocks, healing, ownership and
+resumption rather than GPU performance.

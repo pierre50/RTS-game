@@ -107,10 +107,14 @@ function dispatchCollectiveVillage(owner: PlayerLike): number {
     let sent: unknown
     if (task.job === 'construction') {
       unit.autonomyBlockedJob = null
+      const home = unit.collectiveHome
       sent = unit.sendToBuilding?.(task.site as BuildingEntity)
+      unit.collectiveHome = home
     } else {
       unit.collectiveTask = task.job
-      sent = assignVillagerAutonomy(unit, reserveUsesFoodJob(task.job) ? 'food' : (task.job as VillagerAutonomyJob))
+      sent = assignVillagerAutonomy(unit, reserveUsesFoodJob(task.job) ? 'food' : (task.job as VillagerAutonomyJob), {
+        preserveRejectedTargets: true,
+      })
     }
     if (sent === false && task.job !== 'construction') {
       const failures = excluded ?? new Set<string>()

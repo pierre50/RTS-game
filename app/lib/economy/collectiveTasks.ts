@@ -5,7 +5,12 @@ import type { UnitEntity } from '../../types/entities'
 import { hasIronMiningPickaxe } from '../resources/miningEquipment'
 import { getUnitResourceCarryRemaining } from '../resources/resourceDelivery'
 import type { CollectiveMember, CollectiveSite, Owner } from './collectiveConstruction'
-import { activeConstructionSite, belongsToSettlement, collectiveAnchor } from './collectiveConstruction'
+import {
+  activeConstructionSite,
+  belongsToSettlement,
+  collectiveAnchor,
+  collectivePosition,
+} from './collectiveConstruction'
 import { collectiveNeeds } from './collectiveNeeds'
 import { settlementAvailableStock, settlementStockGoals } from './collectiveStock'
 import {
@@ -47,7 +52,7 @@ export function planCollectiveTasks<T extends CollectiveMember>(
     if (!pending.has(first)) continue
     const anchor = collectiveAnchor(owner, first)
     const group = workers.filter(
-      unit => pending.has(unit) && belongsToSettlement(owner, anchor, unit.villageHome ?? unit)
+      unit => pending.has(unit) && belongsToSettlement(owner, anchor, collectivePosition(unit))
     )
     group.forEach(unit => pending.delete(unit))
     const inhabitants = members.filter(
@@ -55,7 +60,7 @@ export function planCollectiveTasks<T extends CollectiveMember>(
         unit.type === 'Villager' &&
         !unit.isDead &&
         !unit.isDestroyed &&
-        belongsToSettlement(owner, anchor, unit.villageHome ?? unit)
+        belongsToSettlement(owner, anchor, collectivePosition(unit))
     )
     const sites = (owner.buildings ?? []).filter(
       site => !site.isBuilt && !site.isDead && !site.isDestroyed && belongsToSettlement(owner, anchor, site)
@@ -273,6 +278,11 @@ export function planCollectiveTasks<T extends CollectiveMember>(
       }
     }
   }
+  for (const unit of result.keys()) {
+    if (unit.collectiveTask && unit.collectiveHome) continue
+    const home = collectiveAnchor(owner, unit)
+    unit.collectiveHome = { i: home.i, j: home.j, spaceId: home.spaceId ?? 'outside' }
+  }
   return result
 }
 
@@ -290,7 +300,7 @@ export function collectiveHarvestBudget(
       !member.isDead &&
       !member.isDestroyed &&
       member.type === 'Villager' &&
-      belongsToSettlement(owner, anchor, member.villageHome ?? member)
+      belongsToSettlement(owner, anchor, collectivePosition(member))
   )
   const site = activeConstructionSite(owner, unit)
   if (limitToBag && site && resource !== 'food' && !isFoodReserveResource(resource)) {

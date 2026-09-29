@@ -4,7 +4,7 @@ import type { ResourceAmount } from '../../types/common'
 import { hasIronMiningPickaxe } from '../resources/miningEquipment'
 import { getStorageCapacity } from '../resources/storagePolicy'
 import type { CollectiveMember, CollectiveSite, Owner, Point } from './collectiveConstruction'
-import { belongsToSettlement } from './collectiveConstruction'
+import { belongsToSettlement, collectivePosition } from './collectiveConstruction'
 import { COLLECTIVE_WORK_POLICY } from './collectiveNeeds'
 import { materialAmount, remainingConstructionMaterials, takeMaterial } from './constructionMaterials'
 import { constructionStores } from './constructionStores'
@@ -25,7 +25,7 @@ export function settlementPopulation(
       !unit.isDead &&
       !unit.isDestroyed &&
       unit.type !== 'Hero' &&
-      belongsToSettlement(owner, anchor, unit.villageHome ?? unit)
+      belongsToSettlement(owner, anchor, collectivePosition(unit))
   ).length
   return local || owner.population || 0
 }
@@ -92,7 +92,7 @@ export function settlementStockGoals(owner: Owner, anchor: Point, site?: Collect
     needs.iron &&
     !hasIronMiningPickaxe({ owner }) &&
     !(owner.units ?? []).some(
-      unit => belongsToSettlement(owner, anchor, unit.villageHome ?? unit) && hasIronMiningPickaxe({ ...unit, owner })
+      unit => belongsToSettlement(owner, anchor, collectivePosition(unit)) && hasIronMiningPickaxe({ ...unit, owner })
     )
   )
     needs.iron = 0

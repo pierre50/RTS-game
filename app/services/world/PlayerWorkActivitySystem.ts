@@ -2,7 +2,11 @@ import {
   VILLAGE_ACTIVITY_RADIUS,
   VILLAGE_DETAIL_ENTER_RADIUS,
   VILLAGE_DETAIL_EXIT_RADIUS,
+  VILLAGE_PATH_MARGIN,
 } from '../../config/villageActivity'
+import { activeConstructionSite, belongsToSettlement, collectiveAnchor } from '../../lib/economy/collectiveConstruction'
+import { communalStoreBuilding } from '../../lib/economy/constructionStores'
+import { allowsVillagerDeliveries, storageAcceptsResource } from '../../lib/resources/storagePolicy'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { type VillageHome } from '../../lib/units/villageActivity'
 import { isUnitSuspended, setUnitSuspension } from '../../lib/units/unitSuspension'
@@ -58,10 +62,52 @@ export class PlayerWorkActivitySystem {
     )
   }
 
+  /** Keep the complete supply trip live if the bounded snapshot would omit part of it. */
+  private localWork(unit: UnitEntity, home: VillageHome): boolean {
+    const local = (point: { i: number; j: number; spaceId?: string | null }, margin = 0) =>
+      getEntitySpaceId(point) === 'outside' &&
+      Math.hypot(point.i - home.i, point.j - home.j) <= VILLAGE_ACTIVITY_RADIUS + margin
+    if (!local(unit) || (unit.dest && !local(unit.dest))) return false
+    if (unit.path?.some(cell => !local(cell, VILLAGE_PATH_MARGIN))) return false
+    // Missing targets must keep retrying in the live world, including distant deposits.
+    if (unit.autonomyBlockedJob || (unit.autonomousJob && !unit.dest)) return false
+    const owner = unit.owner!
+    const anchor = collectiveAnchor(owner, unit)
+    if (!local(anchor)) return false
+    const site = activeConstructionSite(owner, unit)
+    if (site && !local(site)) return false
+    const delivery = unit.resourceDeliveryState
+    if (delivery?.building && !local(delivery.building)) return false
+    if (delivery?.returnTask?.dest && !local(delivery.returnTask.dest)) return false
+    // Include potential return depots even before the worker's bag is full.
+    const resource =
+      unit.collectiveTask ??
+      unit.autonomousJob ??
+      { woodcutter: 'wood', forager: 'food', farmer: 'food', hunter: 'food', stoneminer: 'stone', goldminer: 'gold' }[
+        unit.work ?? ''
+      ]
+    if (resource && resource !== 'construction') {
+      for (const building of owner.buildings ?? []) {
+        if (building.isDead || building.isDestroyed || !allowsVillagerDeliveries(building, owner)) continue
+        const depot = communalStoreBuilding(building, owner)
+        // Collective deliveries stay in their origin settlement, as in offline work.
+        if (depot && unit.collectiveTask && unit.collectiveHome && !belongsToSettlement(owner, anchor, depot)) continue
+        if (depot && storageAcceptsResource(depot.type, resource) && !local(depot)) return false
+      }
+    }
+    return true
+  }
+
   update(): void {
     for (const [unit, state] of this.sessions) {
       const reason = observeVillage(this.context, state.home, VILLAGE_DETAIL_ENTER_RADIUS, [unit])
-      if (!this.eligible(unit) || reason.reason !== 'distant' || this.context.isTutorialActive?.()) this.wake(unit)
+      if (
+        !this.eligible(unit) ||
+        !this.localWork(unit, state.home) ||
+        reason.reason !== 'distant' ||
+        this.context.isTutorialActive?.()
+      )
+        this.wake(unit)
     }
     if (this.context.isTutorialActive?.()) return
     // At most one transition per tick. No recurring worker simulation while away.
@@ -75,13 +121,9 @@ export class PlayerWorkActivitySystem {
           (this.cooldown.get(unit) ?? 0) > this.now()
         )
           continue
-        const home = { id: `player-work:${unit.label}`, i: unit.i, j: unit.j, spaceId: 'outside' }
-        if (
-          unit.dest &&
-          (getEntitySpaceId(unit.dest) !== 'outside' ||
-            Math.hypot(unit.dest.i - home.i, unit.dest.j - home.j) > VILLAGE_ACTIVITY_RADIUS)
-        )
-          continue
+        const anchor = collectiveAnchor(owner, unit)
+        const home = { id: `player-work:${unit.label}`, i: anchor.i, j: anchor.j, spaceId: anchor.spaceId ?? 'outside' }
+        if (!this.localWork(unit, home)) continue
         // Longer routes and interior orders continue in the ordinary runtime.
         if (observeVillage(this.context, home, VILLAGE_DETAIL_EXIT_RADIUS, [unit]).reason !== 'distant') continue
         // Settle the existing cohort before joining, so nobody receives work retroactively.

@@ -61,6 +61,20 @@ export function validatePlayerUnits(
   units.forEach((unit, unitIndex) => {
     validateEntityPosition(unit, size, `player ${playerIndex} unit ${unitIndex}`)
     validateSavedUnitOrders(unit)
+    if (unit.collectiveHome != null) {
+      const home = unit.collectiveHome
+      if (
+        !isObject(home) ||
+        !Number.isInteger(home.i) ||
+        !Number.isInteger(home.j) ||
+        Number(home.i) < 0 ||
+        Number(home.j) < 0 ||
+        Number(home.i) > MAX_MAP_EDGE ||
+        Number(home.j) > MAX_MAP_EDGE ||
+        (home.spaceId != null && (typeof home.spaceId !== 'string' || !home.spaceId))
+      )
+        fail('Invalid collective home.')
+    }
     if (unit.villageHome != null) {
       const home = unit.villageHome
       if (

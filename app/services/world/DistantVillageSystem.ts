@@ -1,3 +1,4 @@
+import { villageWorkNeedsLiveSearch } from '../../lib/units/villageSupplyTrips'
 import { isContinentWorld } from '../../config/continentWorlds'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { cancelEnergyWait, updateUnitEnergy } from '../../lib/units/unitEnergy'
@@ -60,6 +61,7 @@ export class DistantVillageSystem {
         if (unit.trainingTargetType || unit.action === 'train') return true
         return Boolean(
           unit.villageHome &&
+            !villageWorkNeedsLiveSearch(unit) &&
             !unit.followingHero &&
             unit.controlMode !== 'hero' &&
             !unit.campPatrolAnchor &&

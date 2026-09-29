@@ -1,10 +1,9 @@
 import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { advanceOfflineTrainingRequests } from './OfflineTrainingRequests'
-import { getBaseTerritory } from '../../lib/territory/baseTerritory'
 import { consumeVillagerMeals } from '../../lib/economy/villagerMeals'
 import { planOfflineCollectiveWork } from './OfflineCollectiveWork'
 import { regrowOfflineResources } from './OfflineWorldResources'
-import { produceAbstractVillage, planAbstractTraining } from './AbstractVillageEconomy'
+import { planAbstractTraining } from './AbstractVillageEconomy'
 import { planOfflineBuildings, restoreOfflineBuilders } from './OfflineWorldBuildingPlanner'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants/entities'
@@ -163,34 +162,19 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
       if (!options.runtimeOwnsTraining)
         advanceOfflineTrainingRequests(player, playerIndex, dayAt(cursor), cursor, next, MINUTE_MS, spatial, options)
       if (player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.human)
-        planOfflineCollectiveWork(player, options.autonomousResidents)
+        planOfflineCollectiveWork(player, options.autonomousResidents, {
+          resources: [...state.resources, ...(state.animals ?? []).filter(animal => animal.isDead)],
+          spatial,
+          rules: options,
+          playerIndex,
+        })
       for (const unit of player.units ?? []) {
         restoreOfflineUnitSleepHealth(unit, cursor, next)
         if (!isOfflineWorker(unit)) continue
         const efficiency = options.dailyFactors?.(playerIndex, dayAt(cursor)).workEfficiency ?? 1
         const milliseconds = getVillagerWorkingMinutes(unit, cursor, next) * MINUTE_MS * efficiency
-        if (
-          options.abstractVillages &&
-          !unit.resourceDelivery?.pickup &&
-          player.type === PLAYER_TYPES.ai &&
-          Boolean(unit.collectiveTask || unit.autonomousJob) &&
-          !!getBaseTerritory(unit.villageHome ?? unit, [player]) &&
-          player.buildings?.some(b => b.type === BUILDING_TYPES.townCenter && b.isBuilt && isLiving(b)) &&
-          unit.autonomousJob !== 'construction' &&
-          unit.work !== 'builder'
-        ) {
-          produceAbstractVillage(
-            state,
-            player,
-            unit,
-            milliseconds,
-            report,
-            options.abstractPotential,
-            options,
-            playerIndex
-          )
-          continue
-        }
+        // Loaded and detached villages harvest the same finite nodes. Visibility
+        // must never turn a depleted deposit into an unlimited regional supply.
         if (milliseconds > 0)
           advanceOfflineWorker(state, player, playerIndex, unit, milliseconds, dayAt(cursor), spatial, options, report)
         else

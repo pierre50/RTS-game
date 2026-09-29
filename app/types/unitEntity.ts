@@ -194,6 +194,7 @@ export interface UnitEntity extends EnergyEntity {
   work?: string | null
   actionFrameSequence?: number[] | null
   collectiveTask?: string | null
+  collectiveHome?: GridPosition & { spaceId?: string | null }
   autonomyBlockedJob?: VillagerAutonomyJob | null
   autonomousJob?: VillagerAutonomyJob | null
   exploringForAutonomy?: boolean

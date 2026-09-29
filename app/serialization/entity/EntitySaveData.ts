@@ -98,6 +98,7 @@ export type SerializableEntity = RuntimeEntityBase & {
   previousDest?: Destination | null
   previousWork?: string | null
   collectiveTask?: string | null
+  collectiveHome?: SaveEntityState['collectiveHome']
   autonomousJob?: SaveEntityState['autonomousJob']
   exploringForAutonomy?: boolean
   berrybushFullTextureName?: string
@@ -296,6 +297,7 @@ export function unitData(unit: SerializableEntity): SaveEntityState {
       'previousWork',
       'autonomousJob',
       'collectiveTask',
+      'collectiveHome',
       'offlineBuilderJob',
       'exploringForAutonomy',
       'realDest',

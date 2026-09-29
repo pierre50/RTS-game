@@ -828,6 +828,28 @@ test('closing the bag ends communication and releases the NPC exactly once', () 
   })
 })
 
+test('a villager on lunch break shows quest choices instead of sleep dialogue', () => {
+  withFakeDocument(() => {
+    const context = makeContext([])
+    context.dayNight = { state: { hour: 12, minute: 0 } }
+    const npc = {
+      type: 'Villager',
+      label: 'villager',
+      owner: { label: 'neutral-ai' },
+      shelterState: { reason: 'sleep', mealBreak: true },
+      sleepVisualState: null,
+    }
+    const quest = { id: 'quest', status: 'available', parameters: {}, owner: { name: 'Villager' } }
+    context.neutralQuests = { getQuest: () => quest, system: { definitions: new Map() }, dialogue: () => quest }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
+    const manager = new NpcOrdersManager({ context })
+    manager.open([npc], { ordersEnabled: false, chatterLine: 'lunch greeting' })
+    assert.equal(manager.questPanel.root.hidden, false)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'npcTopicsPrompt')
+    manager.close()
+  })
+})
+
 test('sleeping chief shows sleep dialogue without quest choices until the actual wake', () => {
   withFakeDocument(() => {
     const context = makeContext([])

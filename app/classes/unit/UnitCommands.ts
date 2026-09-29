@@ -81,7 +81,10 @@ export class UnitCommands {
       target = resolveResource(current)
     }
     if (!playerSeesTarget(unit.owner, target) && knownTarget(unit.owner, target, unit)) {
-      if (!immediate && !unit.assigningAutonomousJob) unit.collectiveTask = null
+      if (!immediate && !unit.assigningAutonomousJob) {
+        unit.collectiveTask = null
+        unit.collectiveHome = undefined
+      }
       applyWorkForAction(unit, work, action)
       setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(work) ?? null)
       if (routeToRememberedTarget(unit, target, action)) return true
@@ -105,7 +108,10 @@ export class UnitCommands {
       )
     }
     // A direct order takes ownership even when it repeats the current automatic task.
-    if (!immediate && !unit.assigningAutonomousJob) unit.collectiveTask = null
+    if (!immediate && !unit.assigningAutonomousJob) {
+      unit.collectiveTask = null
+      unit.collectiveHome = undefined
+    }
     if (this.isRedundantOrder(target, work, action)) return false
 
     const deliveryTransition = getDeliveryBeforeGatherJobSwitch(unit, target, work, action)

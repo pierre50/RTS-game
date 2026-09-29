@@ -150,3 +150,27 @@ test('scheduler reports catch-up counts without changing the number or order of 
     details: { deltaMs: 350, calls: 3, catchUpCalls: 2, mostRepeated: 'ai.step', maxRepeats: 3 },
   })
 })
+
+test('simplified sleep freezes callbacks and resumes without catch-up debt', () => {
+  const scheduler = schedulerFixture()
+  let moves = 0,
+    raid = 0
+  scheduler.add(() => moves++, 40, 'animal.step')
+  scheduler.addOneShot(() => raid++, 1000, 'raid', { interruptSleep: true })
+  scheduler._tick(20)
+  scheduler.suspended = true
+  scheduler._tick(7200)
+  assert.equal(scheduler.elapsedMs, 20)
+  assert.equal(scheduler.getSleepDeadlineMs(), 980)
+  scheduler.advanceSleepTime(980)
+  assert.equal(scheduler.getSleepDeadlineMs(), 0)
+  assert.equal(moves, 0)
+  assert.equal(raid, 0)
+  scheduler.suspended = false
+  scheduler._tick(20)
+  assert.equal(moves, 1)
+  assert.equal(raid, 1)
+  scheduler._tick(40)
+  assert.equal(moves, 2)
+  assert.equal(raid, 1)
+})

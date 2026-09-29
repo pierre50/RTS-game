@@ -1,3 +1,4 @@
+import { isVillageResourceWorker } from '../lib/units/villageSupplyTrips'
 import { flushTrainingRequests } from '../lib/training/trainingRequests'
 import { flushCollectiveVillageWork } from './CollectiveVillageWork'
 import { isUnitSuspended } from '../lib/units/unitSuspension'
@@ -174,7 +175,9 @@ export class VillagerAutonomySystem {
       state.attempts = 0
       state.progress = progress
     }
-    const obsoleteExploration = Boolean(unit.owner?.isPlayed && unit.exploringForAutonomy)
+    const obsoleteExploration = Boolean(
+      (unit.owner?.isPlayed || isVillageResourceWorker(unit)) && unit.exploringForAutonomy
+    )
     const invalid = hasInvalidTarget(unit)
     const missingTarget = Boolean(action && !unit.dest && !unit.blockedGatherApproach && !unit.path?.length)
     const stalled = now - state.lastProgressMs >= (unit.path?.length ? STALLED_MOVE_MS : STALLED_WORK_MS)

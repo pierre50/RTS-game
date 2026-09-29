@@ -1,4 +1,4 @@
-import { constructionCargoReserve } from '../economy/collectiveConstruction'
+import { belongsToSettlement, collectiveAnchor, constructionCargoReserve } from '../economy/collectiveConstruction'
 import { isDeliveryTargetRejected } from './resourceDeliveryRecovery'
 import { depositableResource } from '../economy/villagerProvisions'
 import { withinVillageActivity } from '../units/villageActivity'
@@ -195,6 +195,7 @@ export function findResourceDeliveryTarget(unit: UnitEntity): BuildingEntity | n
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit)) return null
   const owner = unit.owner
   if (!owner) return null
+  const home = unit.collectiveTask && unit.collectiveHome ? collectiveAnchor(owner, unit) : null
   const candidates = (owner.buildings ?? [])
     .flatMap(building => {
       if (building.owner !== owner) return []
@@ -205,7 +206,9 @@ export function findResourceDeliveryTarget(unit: UnitEntity): BuildingEntity | n
       if (building.type === BUILDING_TYPES.chest && !isOutsideSpaceId(getEntitySpaceId(building))) return []
       return [building]
     })
-    .filter(building => !isDeliveryTargetRejected(unit, building))
+    .filter(
+      building => (!home || belongsToSettlement(owner, home, building)) && !isDeliveryTargetRejected(unit, building)
+    )
   if (!candidates.length) return null
   const fullPocketCandidates = candidates.filter(building => buildingAcceptsAllUnitResources(building, unit))
   const preferredCandidates = fullPocketCandidates.length ? fullPocketCandidates : candidates

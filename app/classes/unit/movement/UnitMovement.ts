@@ -1,3 +1,4 @@
+import { isVillageResourceWorker } from '../../../lib/units/villageSupplyTrips'
 import { playerSeesTarget, observeTarget } from '../../../lib/units/playerTargetKnowledge'
 import { getVillagerExplorationSearch } from '../../../lib/units/autonomy/villagerExploration'
 import { canReachActionTarget, usesUnitContactAction } from '../../../lib/actions/contactActions'
@@ -245,7 +246,7 @@ export class UnitMovement {
 
   explore(): boolean {
     const unit = this.unit
-    if (unit.owner?.isPlayed && unit.type === UNIT_TYPES.villager) return false
+    if ((unit.owner?.isPlayed && unit.type === UNIT_TYPES.villager) || isVillageResourceWorker(unit)) return false
     const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (!map) return false
     const { grid } = map

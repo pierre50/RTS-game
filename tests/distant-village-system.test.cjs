@@ -161,3 +161,18 @@ test('one observed village keeps the shared economy detailed; unsafe orders are 
   f.service.destroy()
   assert.equal(f.rules.isUnitSuspended(f.worker), false)
 })
+
+test('distant factions cannot suspend a resource search or an outbound supply route', () => {
+  for (const patch of [
+    { autonomousJob: 'wood', action: null, dest: null },
+    { autonomyBlockedJob: 'wood' },
+    { exploringForAutonomy: true },
+    { action: 'chopwood', dest: { i: 100, j: 20, family: 'resource', type: 'Tree', quantity: 10 } },
+  ]) {
+    const f = fixture()
+    Object.assign(f.worker, patch)
+    f.update()
+    assert.equal(f.rules.isUnitSuspended(f.worker), false)
+    assert.equal(f.service.has(f.owner), false)
+  }
+})

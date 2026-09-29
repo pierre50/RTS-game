@@ -79,13 +79,12 @@ function rosterFactionsForCampaign(campaign: CampaignSave, now: number): Record<
     if (heroCiv && civ === heroCiv) continue
     const id = factionIdForCivilization(civ)
     const currentIndex = aiCivilizationIndex++
-    const initialScore = currentIndex % 2 === 0 ? FACTION_SCORE.neutral : FACTION_SCORE.hostile
     factions[id] = createUndiscoveredFaction({
       civilization: civ,
       color: factionColor(currentIndex),
       homeWorldId,
       id,
-      initialScore,
+      initialScore: FACTION_SCORE.neutral,
       now,
     })
   }

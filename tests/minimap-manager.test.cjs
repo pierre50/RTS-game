@@ -895,3 +895,25 @@ test('loading does not erase building observations before live entities have bee
   manager.updatePlayerMiniMapEvt()
   assert.deepEqual(menu.context.player.minimapBuildingMemory, memory)
 })
+
+test('an offscreen player gatherer stays on the minimap and its marker follows live travel', () => {
+  const menu = createMenu()
+  menu.context.player.views.isViewed = () => false
+  menu.context.player.views.isVisible = () => false
+  menu.context.controls.instanceInCamera = () => false
+  const worker = { type: 'Villager', position: { x: 10, y: 10 }, visible: false, renderable: false }
+  menu.context.player.units = [worker]
+  const context = menu.resourcesMinimap.context
+  const points = []
+  let markerPoint
+  context.translate = (x, y) => { markerPoint = [x, y] }
+  context.ellipse = () => points.push(markerPoint)
+  const manager = new (loadMinimapManager())(menu)
+  manager.activate()
+  assert.equal(points.length, 1)
+  const start = points[0]
+  worker.position = { x: 50, y: 80 }
+  manager.updatePlayerMiniMapEvt()
+  assert.equal(points.length, 2)
+  assert.notDeepEqual(points[1], start)
+})

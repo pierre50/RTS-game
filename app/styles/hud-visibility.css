@@ -1,3 +1,8 @@
+/* Black-screen sleep hides the entire HUD while keeping its progress overlay visible. */
+body:has(.time-skip-overlay--sleep) .game-hud {
+  display: none;
+}
+
 /* Any visible modal hides the game HUD until the last modal closes. */
 :is(.hero-status-hud, .topbar-daytime, .topbar-options) {
   opacity: 1;

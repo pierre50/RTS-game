@@ -164,3 +164,53 @@ test('combat wakes immediately; unsupported activities stay live and distant ord
   assert.equal(second.campBehavior.phase, 'return')
   assert.equal(second.dest, null)
 })
+
+test('sleep hands off old village checkpoints without replaying the night on wake', () => {
+  const { service, context, advances } = setup()
+  service.update()
+  context.scheduler.elapsedMs = 1200
+  service.beginSleep()
+  const settled = advances.length
+  assert.ok(settled > 0)
+  context.scheduler.elapsedMs += 8 * 60000
+  service.flush()
+  service.update()
+  assert.equal(advances.length, settled, 'live settlement must not run during sleep')
+  service.endSleep()
+  service.update()
+  service.flush()
+  assert.ok(
+    advances.slice(settled).every(advance => advance.ms === 0),
+    'sleep time must not be produced twice'
+  )
+  service.destroy()
+})
+
+test('AI supply trips outside the village stay live and are not recalled like combat pursuits', () => {
+  const { service, first, context, recalls, rules } = setup()
+  const tree = { family: 'resource', type: 'Tree', i: 150, j: 50, quantity: 100 }
+  first.dest = tree
+  service.update()
+  assert.equal(rules.isUnitSuspended(first), false)
+  assert.equal(first.dest, tree)
+  assert.equal(recalls.includes(first), false)
+  first.i = 150
+  context.scheduler.elapsedMs = 500
+  service.update()
+  assert.equal(first.dest, tree)
+  assert.equal(rules.isUnitSuspended(first), false)
+  first.action = 'delivery'
+  first.dest = { family: 'building', i: 51, j: 50 }
+  service.update()
+  assert.equal(first.action, 'delivery')
+  assert.equal(recalls.includes(first), false)
+})
+
+test('AI workers missing a resource target stay live to search beyond the local snapshot', () => {
+  const { service, first, rules } = setup()
+  first.dest = null
+  first.action = null
+  first.autonomyBlockedJob = 'wood'
+  service.update()
+  assert.equal(rules.isUnitSuspended(first), false)
+})

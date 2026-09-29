@@ -83,6 +83,10 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     this.restoreFactionExpeditions()
   }
 
+  interruptsSleep(): boolean {
+    return this.creationPending || this.factionRaidPending || this.raids.some(raid => livingRaidUnits(raid).length > 0)
+  }
+
   handleDailyWorldEvent({ day }: DailyWorldEvent): void {
     return handleDailyWorldEvent.call(this, { day })
   }
@@ -104,7 +108,8 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
         })
       },
       delayMs,
-      'tributeRaid.factionWindow'
+      'tributeRaid.factionWindow',
+      { interruptSleep: true }
     )
   }
 

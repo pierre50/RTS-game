@@ -104,7 +104,6 @@ export class BuildingPlacer {
     if (mouseBuilding.type === BUILDING_TYPES.smallWall) {
       return this.wallPlacementController.handleClick(cell, player)
     }
-    if (cell.inclined || cell.border) return
     if (this.canPlaceMouseBuilding(cell)) {
       if (isSowingPlacement(mouseBuilding.type ?? '')) {
         return this.placeWheatField(cell)
