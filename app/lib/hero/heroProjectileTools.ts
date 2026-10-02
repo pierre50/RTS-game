@@ -42,7 +42,6 @@ export function getHeroMaxArrowDistance(hero: UnitEntity, power = 1): number {
   debugLog(HERO_BOW_RANGE_DEBUG, '[hero-bow-range]', {
     unitLabel: hero.label,
     work: hero.work,
-    ownerAge: hero.owner?.age ?? 0,
     baseRange,
     rangePower: Number(rangePower.toFixed(2)),
     maxDistance: Number(maxDistance.toFixed(2)),
@@ -98,6 +97,7 @@ export function getHeroArrowSpawnPoint(hero: UnitEntity): Point {
 }
 
 export function finishHeroCatchingPoleThrowAnimation(hero: UnitEntity): void {
+  if (hero.isDead || hero.isDestroyed) return
   const sprite = hero.sprite
   const scheduler = hero.context?.scheduler
   if (!sprite?.gotoAndStop || !scheduler?.add) {
@@ -107,7 +107,13 @@ export function finishHeroCatchingPoleThrowAnimation(hero: UnitEntity): void {
   delete sprite.onComplete
   delete sprite.onFrameChange
   sprite.loop = false
-  const taskId = playSpriteFrameSequence(sprite, scheduler, {
+  const token = hero.visualAnimationToken
+  const sheet = hero.currentSheet
+  let taskId: number | null = null
+  taskId = playSpriteFrameSequence(sprite, scheduler, {
+    isCurrent: () =>
+      !hero.isDead && !hero.isDestroyed && hero.visualAnimationToken === token &&
+      hero.currentSheet === sheet && (taskId == null || hero.attackRecoveryAnimationTaskId === taskId),
     frameMs: lpcSlashFrameMs(),
     frames: HERO_CATCHING_POLE_THROW_RECOVERY_FRAMES,
     onComplete: () => finishHeroToolAnimation(hero),
@@ -121,6 +127,7 @@ export function finishHeroCatchingPoleThrowAnimation(hero: UnitEntity): void {
 }
 
 export function holdHeroCatchingPoleThrowFrame(hero: UnitEntity): void {
+  if (hero.isDead || hero.isDestroyed) return
   const sprite = hero.sprite
   if (!sprite?.gotoAndStop) return
   const releaseFrame = getHeroShootReleaseFrame('catchingPole')

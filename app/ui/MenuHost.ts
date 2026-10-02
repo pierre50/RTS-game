@@ -23,7 +23,6 @@ export interface MenuHost {
   topbar?: HTMLDivElement
   topbarStatusStack: HTMLDivElement
   resources: HTMLDivElement
-  age: HTMLDivElement
   dayTime: HTMLDivElement
   selection: RuntimeEntity | null
   showMessage(message: string, type?: string): void

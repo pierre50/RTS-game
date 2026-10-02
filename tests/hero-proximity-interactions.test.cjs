@@ -54,8 +54,8 @@ function loadHeroProximityInteractions(overrides = {}) {
         isTalkableNpc: (_hero, target) => target?.talkable === true,
       },
 
-      './heroCampfireSleep': {
-        isUsableFireCamp: (_hero, building) => building?.type === 'FireCamp' && building.reachable !== false,
+      './heroSleep': {
+        isUsableSleepTarget: (_hero, building) => ['FireCamp', 'CampBedroll'].includes(building?.type) && building.reachable !== false,
       },
       './heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
@@ -292,6 +292,28 @@ test('hero proximity interaction opens any reachable fire camp as fire usage', (
     owner: { label: 'other-player' },
     reachable: true,
     type: 'FireCamp',
+    x: 100,
+    y: 248,
+  }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: fireCamp }), {
+    action: 'open',
+    labelKey: 'heroInteractionOpenMenu',
+    target: fireCamp,
+  })
+})
+
+test('hero proximity interaction opens a reachable bed despite decoration filtering', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const fireCamp = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    owner: { label: 'other-player' },
+    reachable: true,
+    type: 'CampBedroll',
     x: 100,
     y: 248,
   }
@@ -710,4 +732,12 @@ test('dead animals offer E loot while living animals do not', () => {
   })
   assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: { ...animal, isDead: false } }), null)
   assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: { ...animal, isDestroyed: true } }), null)
+})
+
+test('nearby furniture offers its interaction menu', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const target = { type: 'CampChair', family: 'building', isBuilt: true, reachable: true }
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), {
+    action: 'open', labelKey: 'heroInteractionOpenMenu', target,
+  })
 })

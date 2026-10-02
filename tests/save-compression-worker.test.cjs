@@ -18,7 +18,7 @@ function prepare(input) {
       },
     }
     global.self = scope
-    loadTsModule('app/serialization/SaveCompression.worker.ts')
+    loadTsModule('app/serialization/SaveCompressionWorker.ts')
     scope.onmessage({ data: input })
   })
 }

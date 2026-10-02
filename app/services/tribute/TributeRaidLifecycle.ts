@@ -1,7 +1,7 @@
 import { setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import type { TributeRaidSystem } from '../TributeRaidSystem'
-import { findRaidTarget } from '../TributeRaidTargeting'
-import { getHostileRaidMessage, getTributePaidMessage } from '../TributeRaidText'
+import type { TributeRaidSystem } from './TributeRaidSystem'
+import { findRaidTarget } from './TributeRaidTargeting'
+import { getHostileRaidMessage, getTributePaidMessage } from './TributeRaidText'
 import { creditFactionRaidTribute, returnFactionRaidUnit } from './FactionRaidEconomy'
 import { livingRaidUnits, type TributeRaid, type TributeRaidOwner, type TributeRaidUnit } from './TributeRaidRules'
 type Host = Pick<

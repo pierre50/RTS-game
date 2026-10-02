@@ -1,3 +1,4 @@
+import { isStaticSettlement } from '../../config/settlementProfiles'
 import { flushNaturalGrowth } from '../NaturalGrowthQueue'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { VILLAGE_ACTIVITY_RADIUS } from '../../config/villageActivity'
@@ -6,9 +7,9 @@ import { consumeVillagerMeals } from '../../lib/economy/villagerMeals'
 import { getVillagerWorkingMinutes } from '../../lib/units/villagerSchedule'
 import { restoreOfflineUnitSleepHealth, updateUnitSleepHealth } from '../../lib/units/unitSleepHealth'
 import { updateUnitEnergy } from '../../lib/units/unitEnergy'
-import { hasHostileInHeroSight } from '../../lib/hero/heroCampfireSleep'
+import { hasHostileInHeroSight } from '../../lib/hero/heroSleep'
 import { advanceVillageWork } from './VillageWorkSimulation'
-import { planDistantVillageBuildings } from './DistantVillageEconomy'
+import { planDistantVillageBuildings } from './distantVillages/DistantVillageEconomy'
 import type { VillageActivitySystem } from '../VillageActivitySystem'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
@@ -87,6 +88,10 @@ export class SleepSimulation {
   }
 
   private advanceOwner(owner: PlayerLike, from: number, to: number): void {
+    if (isStaticSettlement(owner)) {
+      for (const unit of owner.units) unit.lastMealAt = calendarMinute(to)
+      return
+    }
     const hero = this.context.controls?.heroUnit
     const units = owner.units.filter(unit => !unit.isDead && !unit.isDestroyed)
     const workers = units.filter(

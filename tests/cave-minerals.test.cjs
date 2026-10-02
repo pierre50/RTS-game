@@ -141,12 +141,16 @@ test('partial mining and depletion survive JSON save/restore without duplicating
   assert.equal(runtime.created[2].label, runtime.created[0].label)
 })
 
-test('only heroes can mine cave nodes, retaining age restrictions and normal outdoor mining', () => {
+test('only heroes can mine cave nodes, retaining tool requirements and normal outdoor mining', () => {
   const runtime = loadMinerals(),
     room = space(definition())
   runtime.ensureCaveMinerals({ space: room }, room, blueprint)
   const [gold, iron] = runtime.created
-  const conditions = (type, age, target) => runtime.getResourceActionConditions({ type, owner: { age } }, target)
+  const conditions = (type, tier, target) =>
+    runtime.getResourceActionConditions(
+      { type, owner: { age: 0 }, inventory: { equipment: [tier >= 2 ? 'pickaxe_bronze' : 'pickaxe_ceramic'] } },
+      target
+    )
   assert.equal(conditions('Hero', 0, gold).minegold(), true)
   assert.equal(conditions('Villager', 2, gold).minegold(), false)
   assert.equal(conditions('Hero', 0, iron).mineiron(), false)

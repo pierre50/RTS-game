@@ -1,3 +1,5 @@
+import { hasConstructionWork } from '../lib/economy/constructionMaterials'
+import { isRpgVillage } from '../config/rpgVillages'
 import { consumeVillageWorkChange } from '../lib/units/villageWorkEvents'
 import { hasCollectiveVillageEvent, settleCollectiveVillageEvents } from './CollectiveVillageEvents'
 import { clearVillagerGathering, gatherIdleVillager, isVillagerGathering } from '../lib/units/villagerGathering'
@@ -9,7 +11,9 @@ import { UNIT_TYPES, ACTION_TYPES } from '../constants'
 import type { PlayerLike } from '../types/player'
 import type { BuildingEntity, VillagerAutonomyJob } from '../types/entities'
 
+/** @public Loaded by tests/collective-village-work.test.cjs (loadTsModule). */
 export function updateCollectiveVillage(owner: PlayerLike): number {
+  if (isRpgVillage(owner)) return 0
   if (!hasCollectiveVillageEvent(owner)) return 0
   const actions = dispatchCollectiveVillage(owner)
   // Our own assignments are effects of this event, not reasons to plan again next tick.
@@ -41,7 +45,7 @@ function dispatchCollectiveVillage(owner: PlayerLike): number {
         unit.collectiveTask ||
         (unit.inactif && !unit.autonomousJob) ||
         (unit.autonomousJob === 'construction' &&
-          owner.buildings.some(site => !site.isBuilt && site.constructionMaterials)) ||
+          owner.buildings.some(site => hasConstructionWork(site) && site.constructionMaterials)) ||
         owner.type === 'AI'
     )
   })
@@ -137,6 +141,7 @@ export function flushCollectiveVillageWork(
   owner: PlayerLike,
   now = owner.units?.[0]?.context?.scheduler?.elapsedMs ?? performance.now()
 ): number {
+  if (isRpgVillage(owner)) return 0
   const previous = dispatchState.get(owner)
   const notified = consumeVillageWorkChange(owner)
   if (previous && !notified && now - previous.checkedAt < 30000) return 0

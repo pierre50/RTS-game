@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/MapBlueprintDecoding.ts')
+const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/blueprint/MapBlueprintDecoding.ts')
 const { createLocalMapLayout } = loadTsModule('app/lib/localMapLayout.ts')
 function fixture() {
   const layout = createLocalMapLayout(40)

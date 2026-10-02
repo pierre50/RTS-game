@@ -1,7 +1,7 @@
 import { isSowingPlacement } from '../lib/buildings/campConstruction'
 import { createConstructionMaterials } from '../lib/economy/constructionMaterials'
 import { BuildingPlacementHelp } from '../ui/BuildingPlacementHelp'
-import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { Assets, Container, Sprite } from 'pixi.js'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { cartesianToIsometric, getTexture } from '../lib'
@@ -118,7 +118,7 @@ export class BuildingPlacer {
         mouseBuilding.type &&
         player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type, {
           alreadyPaid: Boolean(mouseBuilding.inventoryItem),
-          buildingAge: typeof mouseBuilding.buildingAge === 'number' ? mouseBuilding.buildingAge : player.age,
+          buildingLevel: typeof mouseBuilding.buildingLevel === 'number' ? mouseBuilding.buildingLevel : 0,
           spaceId: cell.spaceId,
           placementMirrored: mouseBuilding.placementMirrored === true,
         })
@@ -278,11 +278,11 @@ export class BuildingPlacer {
     const {
       context: { menu, player },
     } = controls
-    const age = (controls.mouseBuilding as MouseBuilding | null)?.buildingAge
+    const level = (controls.mouseBuilding as MouseBuilding | null)?.buildingLevel
     if (
       !player.buyBuilding?.(cell.i, cell.j, BUILDING_TYPES.farm, {
         spaceId: cell.spaceId,
-        ...(typeof age === 'number' ? { buildingAge: age } : {}),
+        ...(typeof level === 'number' ? { buildingLevel: level } : {}),
       })
     )
       return false

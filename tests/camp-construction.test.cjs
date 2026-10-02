@@ -17,11 +17,10 @@ const { buyPlayerBuilding } = loadTsModule('app/classes/players/PlayerBuildingPl
     '../../lib/entities/entityFade': {},
     '../../lib/mapSpaces': { getMapSpace: () => null },
     '../Resource': {},
-    '../../lib/objectives/ageObjectives': {},
   },
 })
 
-for (const type of ['Chest', 'FireCamp', 'Trap']) {
+for (const type of ['Chest', 'FireCamp', 'Trap', 'CampBrazier']) {
   test(`a lone hero places ${type} without payment, builds from the bag, and preserves prepaid items`, () => {
     const player = {
       age: 0,
@@ -81,4 +80,20 @@ test('a player can place multiple town centers on a map with another faction cen
   assert.equal(buyPlayerBuilding(player, 12, 12, 'TownCenter', { alreadyPaid: true }), true)
   assert.equal(player.buildings.length, 3)
   assert.equal(resident.buildings.length, 1)
+})
+
+test('brazier appearance is chosen once and survives save restoration', () => {
+  const { assignCampBrazierAppearance, isCampBuilding } = loadTsModule('app/lib/buildings/campConstruction.ts')
+  assert.equal(isCampBuilding('CampBrazier'), true)
+  for (const [roll, expected] of [
+    [0.1, 'CampBrazier'],
+    [0.9, 'CampTorchStand'],
+  ]) {
+    const building = { type: 'CampBrazier' }
+    assignCampBrazierAppearance(building, () => roll)
+    assert.equal(building.assetType, expected)
+    const restored = JSON.parse(JSON.stringify(building))
+    assignCampBrazierAppearance(restored, () => 1 - roll)
+    assert.equal(restored.assetType, expected)
+  }
 })

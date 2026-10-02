@@ -34,13 +34,9 @@ export const AI_DIFFICULTIES = {
 export { BUILDING_TRAINING_CAPACITY as AI_BUILDING_TRAINING_CAPACITY } from '../lib/training/trainingRules'
 export const AI_ABSTRACT_DAILY_RECRUITS = 2
 
-export const MAX_VILLAGER_PER_AGE = {
-  0: 50,
-  1: 50,
-  2: 50,
-}
+export const MAX_VILLAGERS = 50
 
-const BUILDING_CAPS = {
+export const MAX_BUILDINGS = {
   StoragePit: 4,
   Granary: 4,
   Barracks: 3,
@@ -52,8 +48,7 @@ const BUILDING_CAPS = {
   WatchTower: 3,
   Temple: 1,
 }
-export const MAX_BUILDING_BY_AGE = { 0: BUILDING_CAPS, 1: BUILDING_CAPS, 2: BUILDING_CAPS }
 
-export const MAX_INFANTRY_BY_AGE = { 0: 12, 1: 12, 2: 12 }
-export const MAX_ARCHER_BY_AGE = { 0: 8, 1: 8, 2: 8 }
-export const MAX_CAVALRY_BY_AGE = { 0: 5, 1: 5, 2: 5 }
+export const MAX_INFANTRY = 12
+export const MAX_ARCHERS = 8
+export const MAX_CAVALRY = 5

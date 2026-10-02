@@ -1,23 +1,22 @@
+import { getForgeTier, type ForgeUpgradeOwner } from './equipment/forgeUpgrades'
 import type { ContainerChild } from 'pixi.js'
 import type { RuntimeMap } from '../types/map'
 
-type PlayerAgeState = {
-  age?: number
-}
+type ProjectileEquipmentOwner = ForgeUpgradeOwner
 
 type RuntimeProjectileDisplay = ContainerChild & {
   attachToMapSpace?: () => void
 }
 
-const AGE_ARROW_PROJECTILES = ['ArrowCeramic', 'ArrowBronze', 'ArrowIron'] as const
+const MATERIAL_ARROW_PROJECTILES = ['ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron'] as const
 
-function getAgeArrowProjectile(player?: PlayerAgeState | null): string {
-  const age = Math.max(0, Math.floor(player?.age ?? 0))
-  return AGE_ARROW_PROJECTILES[Math.min(age, AGE_ARROW_PROJECTILES.length - 1)]
+function getForgeArrowProjectile(player?: ProjectileEquipmentOwner | null): string {
+  const tier = getForgeTier(player, 'arrows')
+  return MATERIAL_ARROW_PROJECTILES[Math.min(tier, MATERIAL_ARROW_PROJECTILES.length - 1)]
 }
 
-export function getEffectiveProjectileType(projectileType: string, player?: PlayerAgeState | null): string {
-  return projectileType === 'Arrow' ? getAgeArrowProjectile(player) : projectileType
+export function getEffectiveProjectileType(projectileType: string, player?: ProjectileEquipmentOwner | null): string {
+  return projectileType === 'Arrow' ? getForgeArrowProjectile(player) : projectileType
 }
 
 export function attachProjectileToMapSpace(projectile: RuntimeProjectileDisplay, map: RuntimeMap): void {

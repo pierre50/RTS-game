@@ -4,7 +4,8 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const wildlifeModule = loadTsModule('app/services/WildlifeStore.ts')
+const wildlifeModule = loadTsModule('app/services/wildlife/WildlifeStore.ts')
+const deferredVillages = loadTsModule('app/services/world/distantVillages/DeferredVillageStore.ts')
 const growthModule = loadTsModule('app/services/NaturalGrowthQueue.ts')
 const campRespawns = loadTsModule('app/lib/camps/campRespawnState.ts')
 const compactResources = loadTsModule('app/classes/resources/CompactResourceSet.ts')
@@ -40,14 +41,16 @@ function loadSaveSerializer() {
   })
   const module = { exports: {} }
   const mockRequire = id => {
+    if (id === '../services/world/distantVillages/DeferredVillageStore') return deferredVillages
+
     if (id === './entity/EntitySaveData')
       return loadTsModule('app/serialization/entity/EntitySaveData.ts', {
-        mocks: { '../../lib': mockRequire('../lib'), '../../services/WildlifeStore': wildlifeModule },
+        mocks: { '../../lib': mockRequire('../lib'), '../../services/wildlife/WildlifeStore': wildlifeModule },
       })
     if (id === '../lib/camps/campRespawnState') return campRespawns
     if (id === '../lib/units/villageActivity') return loadTsModule('app/lib/units/villageActivity.ts')
     if (id === '../services/NaturalGrowthQueue') return growthModule
-    if (id === '../services/WildlifeStore') return wildlifeModule
+    if (id === '../services/wildlife/WildlifeStore') return wildlifeModule
     if (id === '../classes/resources/CompactResourceSet') return compactResources
     if (id.endsWith('/playerTargetKnowledge')) return { exportTargetKnowledge: () => [] }
     if (id === './ResourceSaveData') return loadTsModule('app/serialization/ResourceSaveData.ts')
@@ -247,7 +250,7 @@ test('building saves include concurrent recruits and pending unit training order
 
 const { serializeGame } = loadSaveSerializer()
 
-test('new saves keep objectives but discard legacy technology and research state', () => {
+test('new saves discard legacy age objectives, technology and research state', () => {
   const context = makeContext({ allTechnologies: true })
   Object.assign(context.players[0], {
     completedObjectives: ['huntAnimal'],
@@ -264,7 +267,7 @@ test('new saves keep objectives but discard legacy technology and research state
     technology: { type: 'UpgradeFortification' },
   })
   const save = serializeGame(context)
-  assert.deepEqual(save.players[0].completedObjectives, ['huntAnimal'])
+  assert.equal(Object.hasOwn(save.players[0], 'completedObjectives'), false)
   for (const key of ['discoveredEquipment', 'technologies', 'researchTechnology', 'researchLoading']) {
     assert.equal(Object.hasOwn(save.players[0], key), false)
   }
@@ -558,7 +561,7 @@ test('serializes unit work orders, equipment state and build queues', () => {
       companionHorseColor: 'dark',
       followingHero: true,
       assetCiv: 'franks',
-      assetAge: 2,
+      assetLevel: 2,
       experience: { woodcutting: 15 },
       inventory: {
         equipment: ['round_shield_ceramic_slash'],
@@ -635,8 +638,8 @@ test('serializes production without obsolete research', () => {
         { horseColor: 'light', tamingStatus: 'tamed' },
       ],
       assetCiv: 'hellas',
-      assetAge: 1,
-      buildingAge: 0,
+      assetLevel: 1,
+      buildingLevel: 0,
       totalHitPoints: 600,
       assetType: 'TownCenter',
       inventory: { equipment: ['trap'], resources: { wood: 5 } },
@@ -664,8 +667,8 @@ test('serializes production without obsolete research', () => {
       { horseColor: 'light', tamingStatus: 'tamed' },
     ],
     assetCiv: 'hellas',
-    assetAge: 1,
-    buildingAge: 0,
+    assetLevel: 1,
+    buildingLevel: 0,
     totalHitPoints: 600,
     assetType: 'TownCenter',
     inventory: { equipment: ['trap'], resources: { wood: 5 } },
@@ -760,8 +763,11 @@ test('individual daily schedules survive saving and travel without sharing state
   const { applyPortableUnitState } = loadTsModule('app/screens/game/GameStateHelpers.ts')
   const context = makeContext()
   const dailySchedule = { wakeMinute: 370, workStartMinute: 430, workEndMinute: 1090, bedMinute: 1330 }
-  context.players[0].units = [{ type: 'Villager', i: 1, j: 1, dailySchedule, lastMealAt: 720 }]
+  context.players[0].units = [
+    { type: 'Villager', i: 1, j: 1, dailySchedule, lastMealAt: 720, homeHouseLabel: 'house-a' },
+  ]
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
+  assert.equal(saved.homeHouseLabel, undefined, 'retired house assignments are not saved')
   assert.deepEqual(saved.dailySchedule, dailySchedule)
   assert.equal(saved.lastMealAt, 720)
   const target = {}
@@ -1062,4 +1068,54 @@ test('collective trip origin survives serialization independently of the current
   assert.deepEqual(saved.collectiveHome, collectiveHome)
   assert.equal(saved.collectiveTask, 'wood')
   assert.equal(saved.i, 80)
+})
+
+test('forge upgrade families survive a full JSON save independently', () => {
+  const context = makeContext()
+  context.players[0].forgeUpgrades = { axes: 2, pickaxes: 3, weapons: 1, armor: 0 }
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+  assert.deepEqual(saved.players[0].forgeUpgrades, { axes: 2, pickaxes: 3, weapons: 1, armor: 0 })
+})
+
+test('renovation progress and delivered materials survive JSON saving with the intact interior', () => {
+  const context = makeContext()
+  const building = {
+    type: 'House',
+    label: 'renovated-house',
+    i: 1,
+    j: 1,
+    isBuilt: true,
+    buildingLevel: 0,
+    hitPoints: 60,
+    totalHitPoints: 75,
+    buildingUpgrade: { targetLevel: 1, hitPoints: 40, totalHitPoints: 125, constructionTime: 48 },
+    constructionMaterials: {
+      cost: { wood: 60, stone: 30, fiber: 4 },
+      consumed: { wood: 30 },
+      delivered: { stone: 10 },
+    },
+    interiorBuildings: [
+      { type: 'Chest', label: 'stored-chest', i: 2, j: 2, isBuilt: true, inventory: { resources: { gold: 20 } } },
+    ],
+  }
+  context.players[0].buildings = [building]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].buildings[0]
+  assert.deepEqual(saved.buildingUpgrade, building.buildingUpgrade)
+  assert.deepEqual(saved.constructionMaterials, building.constructionMaterials)
+  assert.equal(saved.isBuilt, true)
+  assert.equal(saved.hitPoints, 60)
+  assert.equal(saved.interiorBuildings[0].inventory.resources.gold, 20)
+})
+
+
+test('saving an unvisited deferred village preserves its full saved entities without materializing it', () => {
+  const context = makeContext()
+  const owner = context.players[0]
+  const state = { type: 'AI', label: 'unvisited', buildings: [], units: [{ label: 'remote-chief', type: 'Chief', i: 500, j: 500, hitPoints: 27 }], population: 1 }
+  const store = deferredVillages.installDeferredVillages(context)
+  store.add(owner, state, () => { throw new Error('saving must not create entities') }, () => {})
+  const saved = loadSaveSerializer().serializeGame(context)
+  assert.deepEqual(saved.players[0].units, state.units)
+  assert.equal(store.size, 1)
+  deferredVillages.clearDeferredVillages(context.map)
 })

@@ -17,7 +17,7 @@ const mocks = {
   },
 }
 const { advanceDistantVillageEconomy, planDistantVillageBuildings } = loadTsModule(
-  'app/services/world/DistantVillageEconomy.ts',
+  'app/services/world/distantVillages/DistantVillageEconomy.ts',
   { mocks, moduleCache }
 )
 const { setUnitSuspension } = loadTsModule('app/lib/units/unitSuspension.ts', { mocks, moduleCache })

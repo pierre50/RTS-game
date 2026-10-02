@@ -443,6 +443,13 @@ test('building interior assault damage stops at the entry threshold', () => {
   assert.equal(building.hitPoints, 20)
   assert.equal(result.damageDealt, 5)
   assert.equal(result.killed, false)
+  let destroyed = false
+  building.die = () => { destroyed = true }
+  const heroResult = applyCombatHit({ ...attacker, type: constants.UNIT_TYPES.hero }, building)
+  assert.equal(building.hitPoints, 0)
+  assert.equal(heroResult.damageDealt, 20)
+  assert.equal(heroResult.killed, true)
+  assert.equal(destroyed, true)
 })
 
 test('attackers route into an assault-ready building interior instead of retargeting', () => {
@@ -1972,4 +1979,32 @@ test('a player villager attacks immediately instead of passing through the gathe
   assert.equal(unit.dest, target)
   assert.equal(unit.collectiveTask, null)
   assert.equal(unit.autonomousJob, null)
+})
+
+test('archer finishes its last attack loop but ignores a replaced animation', () => {
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../lib': {}, '../Projectile': {},
+    '../../lib/combat/combatFeedback': {},
+  })
+  let orders = 0
+  const unit = {
+    action: 'attack', dest: {}, visualAnimationToken: 1, sprite: {},
+    affectNewDest() { orders++ },
+  }
+  const combat = new UnitCombat(unit)
+  combat.finishAttackAfterCurrentLoop()
+  unit.sprite.onLoop()
+  assert.equal(orders, 1)
+  assert.equal(unit.actionLocked, false)
+  combat.finishAttackAfterCurrentLoop()
+  const staleLoop = unit.sprite.onLoop
+  unit.visualAnimationToken++
+  const replacement = () => {}
+  unit.sprite.onLoop = replacement
+  staleLoop()
+  assert.equal(orders, 1)
+  assert.equal(unit.sprite.onLoop, replacement)
+  unit.isDead = true
+  staleLoop()
+  assert.equal(orders, 1)
 })

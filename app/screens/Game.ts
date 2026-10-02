@@ -15,7 +15,7 @@ import {
   loadPregeneratedInteriorBlueprint,
   loadPregeneratedWorldMapBlueprint,
   type WorldBlueprintFileCache,
-} from '../serialization/MapBlueprintLoader'
+} from '../serialization/blueprint/MapBlueprintLoader'
 import {
   activateBuildingInteriorSpace,
   deactivateBuildingInteriorSpace,
@@ -26,7 +26,6 @@ import {
   moveHeroPartyOutOfBuildingInteriorSpace,
   refreshMapSpaceEntityVisibility,
   routeUnitIntoBuildingInteriorSpaceAndMoveBack,
-  syncBuildingInteriorShelterOccupants,
   syncBuildingStableInteriorHorses,
   type BuildingInteriorRuntimeSpace,
 } from '../services/BuildingInteriorSpaceSystem'
@@ -208,7 +207,7 @@ export default class Game extends Container {
   async _loadRequiredWorldMapBlueprint(options: RequiredWorldBlueprintOptions) {
     const cacheKey =
       options.worldRegionId && options.worldId
-        ? `${options.worldId}:${options.size ?? 144}:${options.playerCiv ?? ''}:${options.worldRegionId}`
+        ? `${options.worldId}:${options.size ?? 144}:${options.playerCiv ?? ''}:${options.worldRegionId}:${Boolean(options.includePreparedSettlements)}`
         : null
     if (cacheKey) {
       const cached = this._worldRegionBlueprintCache.get(cacheKey)
@@ -322,7 +321,6 @@ export default class Game extends Container {
             random: () => context.map.random(),
           })
     const space = ensureBuildingInteriorSpace(context, building, blueprint)
-    syncBuildingInteriorShelterOccupants(context, space)
     await playBuildingInteriorDoorTransition(
       () => {
         if (hero) {

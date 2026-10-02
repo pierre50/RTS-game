@@ -175,10 +175,10 @@ test('dynamic unit equipment is not frozen into config during base stat normaliz
   assert.deepEqual(towerConfig.equipment, ['watch_tower_arrow'])
 })
 
-test('villager work equipment resolves material-specific stats by owner age', () => {
+test('villager work equipment resolves material-specific stats by forge upgrade', () => {
   const { getEntityWeaponPower } = loadEquipmentStats({
     workEquipment: {
-      woodcutter: age => (age >= 1 ? ['axe_copper'] : ['axe_ceramic']),
+      woodcutter: owner => (owner.forgeUpgrades?.axes >= 1 ? ['axe_copper'] : ['axe_ceramic']),
     },
   })
 
@@ -196,16 +196,16 @@ test('villager work equipment resolves material-specific stats by owner age', ()
       family: 'unit',
       type: 'Villager',
       work: 'woodcutter',
-      owner: { age: 1, config: {} },
+      owner: { age: 0, forgeUpgrades: { axes: 1, weapons: 1 }, config: {} },
     }),
     7
   )
 })
 
-test('infantry equipment resolves its sword material by owner age', () => {
+test('infantry equipment resolves its sword material by forge upgrade', () => {
   const { getEntityWeaponPower } = loadEquipmentStats({
     unitEquipment: {
-      Fantassin: age => (age >= 1 ? ['sword_copper'] : ['sword_ceramic']),
+      Fantassin: owner => (owner.forgeUpgrades?.weapons >= 1 ? ['sword_copper'] : ['sword_ceramic']),
     },
   })
 
@@ -221,7 +221,7 @@ test('infantry equipment resolves its sword material by owner age', () => {
     getEntityWeaponPower({
       family: 'unit',
       type: 'Fantassin',
-      owner: { age: 1, config: {} },
+      owner: { age: 0, forgeUpgrades: { axes: 1, weapons: 1 }, config: {} },
     }),
     8
   )
@@ -255,7 +255,8 @@ test('unit combat stats ignore non-work roles and still use unit equipment', () 
 test('infantry equipment stats unlock armor by level and cap effective combat armor', () => {
   const { getEntityWeaponPower, getUnitRuntimeCombatStats } = loadEquipmentStats({
     unitEquipment: {
-      Fantassin: (age, level) => {
+      Fantassin: (owner, level) => {
+        const age = owner.forgeUpgrades?.armor ?? 0
         const material = age >= 2 ? 'bronze' : age >= 1 ? 'copper' : 'ceramic'
         return [
           age >= 1 ? 'sword_copper' : 'sword_ceramic',
@@ -276,7 +277,7 @@ test('infantry equipment stats unlock armor by level and cap effective combat ar
   const makeUnit = (age, level) => ({
     type: 'Fantassin',
     level,
-    owner: { age, config: { units: { Fantassin: config } } },
+    owner: { age: 0, forgeUpgrades: { armor: age, weapons: age }, config: { units: { Fantassin: config } } },
   })
 
   assert.deepEqual(getUnitRuntimeCombatStats(makeUnit(0, 0), config), {
@@ -293,7 +294,7 @@ test('infantry equipment stats unlock armor by level and cap effective combat ar
       family: 'unit',
       type: 'Fantassin',
       level: 15,
-      owner: { age: 2, config: {} },
+      owner: { age: 0, forgeUpgrades: { armor: 2, weapons: 2 }, config: {} },
     }),
     8
   )

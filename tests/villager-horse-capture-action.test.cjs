@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadUnitActions(calls, captureHorse) {
   class HeroCatchingPoleThrow {
@@ -40,13 +41,16 @@ function loadUnitActions(calls, captureHorse) {
       localRequire(
         filename.includes('/unit/work/')
           ? request.replace(/^\.\.\/\.\.\/\.\.\//, '../../').replace(/^\.\.\/Unit/, './Unit')
-          : request
+          : request,
+        request,
+        filename
       )
     )
     return module.exports
   }
 
-  const localRequire = request => {
+  const moduleCache = new Map()
+  const localRequire = (request, originalRequest, importer) => {
     if (request.startsWith('../../lib/economy/'))
       return require('./helpers/loadTsModule.cjs').loadTsModule('app/lib/economy/' + request.split('/').pop() + '.ts')
     if (request === '../../lib/equipment/animalCorpseLoot') return {}
@@ -108,7 +112,7 @@ function loadUnitActions(calls, captureHorse) {
       }
     }
     if (request === '../HeroCatchingPoleThrow') return { HeroCatchingPoleThrow }
-    if (request === '../Projectile') return { Projectile: class {} }
+    if (request === '../Projectile' || request === '../../Projectile') return { Projectile: class {} }
     if (request === '../../lib/mapSpaces') {
       return {
         getEntityCell: (entity, map) => entity?.currentCell ?? map?.grid?.[entity?.i]?.[entity?.j] ?? null,
@@ -147,7 +151,7 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === '../../lib/entities/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
     if (request === '../../lib/entities/entityOwnerTransfer') return { transferEntityOwner: () => true }
-    if (request === '../../lib/buildings/buildingOccupancy') return { getBuildingShelterCapacity: () => 0 }
+    if (request === '../../lib/buildings/buildingOccupancy') return { refreshPopulationCapacity: () => 0 }
     if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === '../../lib/hero/heroProjectileTools') {
       return {
@@ -175,7 +179,7 @@ function loadUnitActions(calls, captureHorse) {
     if (request === './UnitManualHeroWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
     }
-    if (/^\.\/(?:work\/)?Unit(?:FarmingAction|WoodcuttingAction|BuildingAction|WorkSwing)$/.test(request)) {
+    if (/^\.\/(?:work\/)?Unit(?:FarmingAction|WoodcuttingAction|BuildingAction|WorkSwing|HuntAction)$/.test(request)) {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/work', path.basename(request) + '.ts'))
     }
     if (request === '../../lib/definedProperties') {
@@ -206,7 +210,8 @@ function loadUnitActions(calls, captureHorse) {
       return loadTsFile(path.join(__dirname, '../app/config/animalGatherLoot.ts'))
     if (request === '../../lib/resources/caveMinerals')
       return loadTsFile(path.join(__dirname, '../app/lib/resources/caveMinerals.ts'))
-    return require(request)
+    // Unmocked app modules load for real, resolved from the file that imports them.
+    return originalRequest.startsWith('.') ? requireFromTsFile(originalRequest, importer, {}, moduleCache) : require(request)
   }
 
   return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitActions.ts')).UnitActions

@@ -176,10 +176,9 @@ test('villager lamps do not fade out after villagers enter shelter', () => {
   assert.equal(system.fadingLights.size, 0)
 })
 
-test('military units and non-played villagers do not get implicit light', () => {
+test('non-played villagers do not get implicit light', () => {
   const system = createLightSystemHarness()
 
-  system.addEntityLights(createUnit({ type: 'Fantassin' }), 0, 0, 1, 1000)
   system.addEntityLights(createUnit({ owner: { isPlayed: false } }), 0, 0, 1, 1000)
 
   assert.equal(system.lights.length, 0)
@@ -412,4 +411,36 @@ test('lighting ticker runs once per frame when measurement returns undefined', (
   } finally {
     global.document = previousDocument
   }
+})
+
+test('player and AI infantry and bowmen reuse the villager lamp', () => {
+  for (const type of ['Fantassin', 'Bowman']) {
+    for (const owner of [{ isPlayed: true }, { type: 'AI', isPlayed: false }]) {
+      const system = createLightSystemHarness()
+      system.addEntityLights(createUnit({ type, owner }), 120, 80, 2, 1000)
+      assert.equal(system.lights.length, 1)
+      assert.equal(system.lights[0].radius, 105)
+      assert.equal(system.lights[0].color, '255,192,111')
+    }
+  }
+})
+
+test('bandits, sleeping soldiers and soldiers outside the camera have no implicit lamp', () => {
+  for (const overrides of [
+    { type: 'BanditSword' },
+    { type: 'BanditArcher' },
+    { type: 'Fantassin', owner: { type: 'Bandits' } },
+    { type: 'Bowman', owner: { type: 'AI', banditCampOwner: true } },
+    { type: 'Fantassin', sleepVisualState: 'sleeping' },
+    { type: 'Bowman', shelterState: { status: 'outside', reason: 'sleep', location: 'outside' } },
+    { type: 'Fantassin', isDead: true },
+  ]) {
+    const system = createLightSystemHarness()
+    system.addEntityLights(createUnit(overrides), 0, 0, 1, 1000)
+    assert.equal(system.lights.length, 0, JSON.stringify(overrides))
+  }
+  const system = createLightSystemHarness()
+  system.context.controls.instanceInCamera = () => false
+  system.addEntityLights(createUnit({ type: 'Fantassin' }), 0, 0, 1, 1000)
+  assert.equal(system.lights.length, 0)
 })

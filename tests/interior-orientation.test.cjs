@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { mirrorInteriorBlueprint } = loadTsModule('app/lib/buildings/interiorOrientation.ts')
 const { getInteriorWallGeometry } = loadTsModule('app/lib/terrain/interiorWallGeometry.ts')
 const catalog = require('../public/maps/interiors/cave/catalog.json')
-const { decodeInteriorPayload } = loadTsModule('app/serialization/InteriorBlueprintLoader.ts')
+const { decodeInteriorPayload } = loadTsModule('app/serialization/blueprint/InteriorBlueprintLoader.ts')
 
 test('reflection keeps cave floor, slopes, minerals, doors and walls aligned without mutating the catalog', () => {
   for (const payload of catalog.blueprints) {

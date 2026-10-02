@@ -204,6 +204,7 @@ export class Projectile extends Container {
 
     this.interval = this.context.scheduler.add(
       () => {
+        if (this.isDead || this.isDestroyed) return
         let currentSpeed = this.getCurrentSpeed()
         const traveledDistance = this.getTraveledDistance()
         if (this.maxDistance && traveledDistance >= this.maxDistance) {

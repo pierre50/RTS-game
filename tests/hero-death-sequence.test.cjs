@@ -7,6 +7,8 @@ test('death completion resolves only after the dying animation reaches its last 
     '../../lib': { updateInstanceVisibility() {} },
     '../../lib/entities/deathFlash': { runAfterDeathFlash: (_sprite, callback) => callback },
     '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback() {} },
+    '../../lib/hero/heroDefense': { cancelHeroDefense() {} },
+    '../../lib/hero/heroPowerCharge': { cancelHeroPowerCharge() {} },
     '../../lib/units/unitVisualTransition': { setUnitVisualSheet: () => 1, isUnitVisualAnimationCurrent: () => true },
   } })
   const unit = { sprite: {}, owner: { corpses: [] }, zIndex: 1 }

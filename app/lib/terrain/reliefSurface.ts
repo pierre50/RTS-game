@@ -1,3 +1,4 @@
+import { getFurnitureSurfaceLevel } from './furnitureSurface'
 import { CELL_HEIGHT, CELL_WIDTH } from '../../constants/gridGeometry'
 
 type ReliefCell = {
@@ -38,7 +39,7 @@ function terraceCoverage(offset: number): number {
  * Coordinates and elevations are logical terrain data, independent of rendering
  * and of which cell currently owns the moving entity.
  */
-export function getReliefLevelAtPoint(
+export function getTerrainReliefLevelAtPoint(
   map: ReliefMap | null | undefined,
   point: { x: number; y: number },
   fallback?: ReliefCell | null
@@ -72,6 +73,18 @@ export function getReliefLevelAtPoint(
     highest = terrace.height
   }
   return level
+}
+
+/** Visual support height includes furniture steps; terrain slope costs do not. */
+/** @public Loaded by tests/unit-relief-movement.test.cjs (loadTsModule). */
+export function getReliefLevelAtPoint(
+  map: ReliefMap | null | undefined,
+  point: { x: number; y: number },
+  fallback?: ReliefCell | null
+): number {
+  const i = point.x / CELL_WIDTH + point.y / CELL_HEIGHT
+  const j = point.y / CELL_HEIGHT - point.x / CELL_WIDTH
+  return getTerrainReliefLevelAtPoint(map, point, fallback) + getFurnitureSurfaceLevel(map?.grid, i, j, fallback)
 }
 
 /** Apply the sampled ground height once, using the caller's resolved map space. */

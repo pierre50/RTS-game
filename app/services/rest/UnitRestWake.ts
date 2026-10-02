@@ -1,3 +1,4 @@
+import { clearUnitSpacePortalRoute } from '../spacePortal/SpacePortalSystem'
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { ACTION_TYPES, FADE_DURATION_MS, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
@@ -6,14 +7,7 @@ import { clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator
 import { resumeStrictVillagerAutonomy, resumeVillagerStoredTask } from '../../lib/units/villagerTaskRecovery'
 import { getMinutesUntilVillagerWorkStarts, shouldVillagerWork } from '../../lib/units/villagerSchedule'
 import type { UnitEntity, UnitRestState } from '../../types/entities'
-import { getBuildingInteriorSpaceForUnit } from '../BuildingInteriorSpaceSystem'
-import {
-  getRestTransitionCell,
-  getRestTransitionDurationMs,
-  getShelterEntryCell,
-  isUsableShelter,
-} from './UnitRestRules'
-import { placeUnitAtCell } from './UnitRestState'
+import { getRestTransitionCell, getRestTransitionDurationMs } from './UnitRestRules'
 import { clearSleepingVisualState, playSleepingWakeVisual, setDetachedShadowsVisible } from './UnitSleepVisuals'
 
 type UnitWakeMode = 'resume' | 'order'
@@ -21,6 +15,7 @@ type UnitWakeMode = 'resume' | 'order'
 const GAME_MINUTE_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay / 60
 
 function restoreAwakeState(unit: UnitEntity, options: { clearShelterState?: boolean } = {}): void {
+  clearUnitSpacePortalRoute(unit)
   notifyVillageStateChanged(unit.owner)
   if (options.clearShelterState ?? true) unit.shelterState = null
   unit.actionLocked = false
@@ -79,6 +74,7 @@ function startUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
   unit.shelterState = {
     ...state,
     status: 'wakingUp',
+    restTarget: null,
     transitionTargetCell,
     transitionUntilMs: now + transitionDurationMs,
     startedAtMs: now,
@@ -93,7 +89,7 @@ function startUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
 
 export function startUnitWakeTransitionFromTask(unit: UnitEntity, task: ReturnType<typeof getRestReturnTask>): boolean {
   if (!task) return false
-  if (unit.context?.restTransitionsEnabled !== true) {
+  if (task.action === ACTION_TYPES.attack || unit.context?.restTransitionsEnabled !== true) {
     return resumeUnitReturnTask(unit, task)
   }
   startUnitWakeTransition(unit, {
@@ -145,32 +141,6 @@ function finishWakeVisual(unit: UnitEntity, onComplete?: () => void): void {
   onComplete?.()
 }
 
-function shouldWakeInsideInteriorSpace(unit: UnitEntity, mode: UnitWakeMode): boolean {
-  return mode === 'order' && Boolean(getBuildingInteriorSpaceForUnit(unit))
-}
-
-function prepareInsideWakePlacement(
-  unit: UnitEntity,
-  state: UnitRestState,
-  mode: UnitWakeMode,
-  force = false
-): boolean {
-  if (state.status !== 'inside') return true
-  const shelter = state.shelter
-  if (shouldWakeInsideInteriorSpace(unit, mode)) {
-    // The unit is already represented in the active interior space; let the
-    // caller route it to the space portal after the wake animation.
-    return true
-  }
-  if (isUsableShelter(shelter, unit.owner)) {
-    const targetCell = getShelterEntryCell(unit, shelter)
-    if (!targetCell && !force) return false
-    if (targetCell) placeUnitAtCell(unit, targetCell)
-    return true
-  }
-  return force
-}
-
 export function wakeUnit(
   unit: UnitEntity,
   options: { force?: boolean; mode?: UnitWakeMode; onComplete?: () => void } = {}
@@ -178,7 +148,6 @@ export function wakeUnit(
   const state = unit.shelterState
   if (!state) return
   const mode = options.mode ?? 'resume'
-  if (!prepareInsideWakePlacement(unit, state, mode, options.force)) return
   if (mode === 'order') {
     wakeWithoutPreviousActivity(unit, state, options.onComplete)
     return
@@ -190,7 +159,6 @@ export function wakeUnitInstant(unit: UnitEntity, options: { force?: boolean; mo
   const state = unit.shelterState
   if (!state) return
   const mode = options.mode ?? 'resume'
-  if (!prepareInsideWakePlacement(unit, state, mode, options.force)) return
 
   restoreAwakeState(unit)
   restoreAwakeVisual(unit)

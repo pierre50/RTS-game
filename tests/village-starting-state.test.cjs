@@ -5,7 +5,7 @@ const { applyVillageStartingState, villageStartProfiles, placeStartingHeroInVill
   'app/services/world/VillageStartingState.ts'
 )
 const { getPlayerResourceTotals } = loadTsModule('app/lib/resources/playerResourceTotals.ts')
-const { savedResourceOwner } = loadTsModule('app/services/world/OfflineWorldWork.ts')
+const { savedResourceOwner } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
 const { materializeInitialEconomy } = loadTsModule('app/services/world/WorldEconomy.ts')
 const buildings = require('../public/assets/data/gameplay/buildings.json')
 const units = require('../public/assets/data/gameplay/units.json')
@@ -23,7 +23,7 @@ test('civilization profiles leave neutral and bandit owners unchanged even when 
   const result = applyVillageStartingState(
     state,
     {
-      Hellas: { age: 0, buildings: { Granary: 1 }, units: {} },
+      Hellas: { buildingLevel: 0, buildings: { Granary: 1 }, units: {} },
     },
     terrain,
     rules
@@ -44,7 +44,7 @@ function fixture() {
         civ: 'Hellas',
         label: 'ai',
         factionId: 'civ-hellas',
-        age: 0,
+        buildingLevel: 0,
         population: 1,
         populationMax: 10,
         units: [{ type: 'Chief', label: 'chief', i: 27, j: 27, hitPoints: 45 }],
@@ -85,7 +85,7 @@ test('tutorial profile produces deterministic saved entities and physical stocks
   const before = structuredClone(state)
   const profiles = {
     Hellas: {
-      age: 0,
+      buildingLevel: 0,
       buildings: { StoragePit: 1, Granary: 1, Barracks: 1 },
       units: { Villager: 10, Fantassin: 3 },
       resourceBonus: { wood: 500, food: 60 },
@@ -97,7 +97,8 @@ test('tutorial profile produces deterministic saved entities and physical stocks
   assert.deepEqual(result.runtime, state.runtime)
   const player = result.players[0]
   assert.equal(player.population, 14)
-  assert.ok(player.populationMax >= player.population)
+  assert.equal(player.populationMax, player.buildings.filter(b => b.type === 'House').length * 2)
+  assert.ok(player.units.every(u => u.homeHouseLabel && u.homeBedLabel), 'every generated resident has a home and a bed')
   assert.equal(player.units.filter(u => u.type === 'Villager').length, 10)
   assert.ok(player.buildings.some(b => b.type === 'House'))
   assert.equal(getPlayerResourceTotals(savedResourceOwner(player, result.players)).wood, 500)
@@ -114,10 +115,11 @@ test('legacy levels use shared targets, including level three, and explicit prof
     const profiles = villageStartProfiles({ players: [{ civ: 'Hellas', civilizationLevel: level }] })
     const { state, terrain, rules } = fixture()
     const result = applyVillageStartingState(state, profiles, terrain, rules)
-    assert.equal(result.players[0].age, Math.min(2, level))
+    assert.equal(result.players[0].buildings[0].buildingLevel, level === 3 ? 1 : 0)
+    assert.equal('age' in result.players[0], false)
     assert.ok(result.players[0].units.some(u => u.type === 'Bowman'))
   }
-  const explicit = { age: 0, buildings: {}, units: { Villager: 4 } }
+  const explicit = { buildingLevel: 0, buildings: {}, units: { Villager: 4 } }
   assert.deepEqual(
     villageStartProfiles({ players: [{ civ: 'Hellas', civilizationLevel: 3 }], villageStarts: { Hellas: explicit } })
       .Hellas,
@@ -139,7 +141,7 @@ test('impossible required buildings fail without partially modifying the source'
   const { state, rules } = fixture()
   const before = structuredClone(state)
   assert.throws(
-    () => applyVillageStartingState(state, { Hellas: { age: 0, buildings: { Barracks: 1 }, units: {} } }, [], rules),
+    () => applyVillageStartingState(state, { Hellas: { buildingLevel: 0, buildings: { Barracks: 1 }, units: {} } }, [], rules),
     /No space/
   )
   assert.deepEqual(state, before)
@@ -224,7 +226,7 @@ test('fresh campaign boot restores profiles once and forwards them to remote vil
     _autosaveCampaign() {},
   }
   const profile = {
-    age: 0,
+    buildingLevel: 0,
     buildings: { Granary: 1, StoragePit: 1 },
     units: { Villager: 4 },
     resourceBonus: { wood: 100 },
@@ -313,7 +315,7 @@ test('starting buildings stay compact and relocate resources without losing thei
   const before = state.resources.length
   const generated = applyVillageStartingState(
     state,
-    { Hellas: { age: 0, buildings: { Barracks: 1 }, units: {} } },
+    { Hellas: { buildingLevel: 0, buildings: { Barracks: 1 }, units: {} } },
     terrain,
     rules
   )

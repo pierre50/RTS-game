@@ -1,3 +1,4 @@
+import { getHouseResidents } from '../../lib/housing/households'
 import { FAMILY_TYPES } from '../../constants'
 import { t } from '../../lib/lang'
 import type { BuildingEntity, RuntimeEntity } from '../../types/entities'
@@ -23,6 +24,12 @@ function getBuildingDisplayType(building: BuildingEntity): string {
 }
 
 export function getBuildingDisplayName(building: BuildingEntity): string {
+  if (building.type === 'House') {
+    const names = getHouseResidents(building.owner, building).map(unit => unit.name || t(unit.type ?? 'Villager'))
+    if (names.length === 1) return t('houseOfOne', { name: names[0] })
+    if (names.length > 1) return t('houseOfTwo', { first: names[0], second: names[1] })
+    return t('houseUnoccupied')
+  }
   return translateTypeKey(getBuildingDisplayType(building))
 }
 

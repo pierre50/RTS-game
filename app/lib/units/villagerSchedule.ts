@@ -1,3 +1,4 @@
+import { isChiefUnit } from '../chief'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 
@@ -11,6 +12,7 @@ export const VILLAGE_WAKE_COMPLETE_HOUR = VILLAGER_WAKE_HOUR + VILLAGER_SCHEDULE
 const VILLAGER_WAKE_WINDOW_START_MINUTE = VILLAGER_WAKE_HOUR * 60 - VILLAGER_SCHEDULE_VARIANCE_MINUTES
 
 export type VillagerSchedule = {
+  nightWatch?: 'early' | 'late'
   lunchStartMinute?: number
   lunchEndMinute?: number
   bedMinute: number
@@ -38,9 +40,11 @@ function minuteOfDay(context: Pick<GameContextLike, 'dayNight'> | null | undefin
   return hour * 60 + minute
 }
 
-export function getVillagerSchedule(unit: ScheduledVillager): Required<VillagerSchedule> {
+export function getVillagerSchedule(
+  unit: ScheduledVillager
+): Required<Omit<VillagerSchedule, 'nightWatch'>> & Pick<VillagerSchedule, 'nightWatch'> {
   if (unit.dailySchedule?.lunchStartMinute != null && unit.dailySchedule.lunchEndMinute != null)
-    return unit.dailySchedule as Required<VillagerSchedule>
+    return unit.dailySchedule as Required<Omit<VillagerSchedule, 'nightWatch'>> & Pick<VillagerSchedule, 'nightWatch'>
   const wakeMinute = VILLAGER_WAKE_HOUR * 60 + stableScheduleOffset(unit, 'wake')
   unit.dailySchedule ??= {
     bedMinute: VILLAGER_BED_HOUR * 60 + stableScheduleOffset(unit, 'bed'),
@@ -55,18 +59,65 @@ export function getVillagerSchedule(unit: ScheduledVillager): Required<VillagerS
   return Object.assign(unit.dailySchedule, { lunchStartMinute, lunchEndMinute })
 }
 
+export type DailyRoutinePhase = 'sleep' | 'morning' | 'work' | 'meal' | 'evening'
+
+/** Shared by live eligibility, activation and calendar deadlines; never replays transitions. */
+export function getDailyRoutine(
+  unit: ScheduledVillager,
+  calendarMinute: number
+): {
+  phase: DailyRoutinePhase
+  nextTransitionMinute: number
+} {
+  const schedule = getVillagerSchedule(unit)
+  const now = ((calendarMinute % 1440) + 1440) % 1440
+  const midnight = calendarMinute - now
+  const phase = getDailyRoutinePhase(unit, now)
+  const boundaries = [
+    schedule.wakeMinute,
+    schedule.workStartMinute,
+    schedule.lunchStartMinute,
+    schedule.lunchEndMinute,
+    schedule.workEndMinute,
+    schedule.bedMinute,
+    ...(schedule.nightWatch ? [120, 360, 1320] : []),
+  ]
+  const next = Math.min(...boundaries.filter(minute => minute > now))
+  return { phase, nextTransitionMinute: midnight + (Number.isFinite(next) ? next : 1440 + Math.min(...boundaries)) }
+}
+
+export function getDailyRoutinePhase(
+  unit: ScheduledVillager & Pick<Partial<UnitEntity>, 'context'>,
+  calendarMinute = minuteOfDay(unit.context)
+): DailyRoutinePhase {
+  const schedule = getVillagerSchedule(unit)
+  const now = ((calendarMinute % 1440) + 1440) % 1440
+  if (schedule.nightWatch && (now >= 1320 || now < 360)) {
+    const duty = schedule.nightWatch === 'early' ? now >= 1320 || now < 120 : now >= 120 && now < 360
+    return duty ? 'work' : 'sleep'
+  }
+  return !schedule.nightWatch && (now >= schedule.bedMinute || now < schedule.wakeMinute)
+    ? 'sleep'
+    : now < schedule.workStartMinute
+      ? 'morning'
+      : now >= schedule.workEndMinute
+        ? 'evening'
+        : now >= schedule.lunchStartMinute && now < schedule.lunchEndMinute
+          ? 'meal'
+          : 'work'
+}
+
 export function shouldVillagerReturnHome(unit: UnitEntity): boolean {
   const now = minuteOfDay(unit.context)
   const { workEndMinute } = getVillagerSchedule(unit)
   // Once the morning wake window starts, an already-awake villager must never begin a new
   // sleep trip just because its individual wake minute is still a few minutes away.
+  if (unit.dailySchedule?.nightWatch && shouldVillagerWork(unit)) return false
   return now >= workEndMinute || now < VILLAGER_WAKE_WINDOW_START_MINUTE
 }
 
 export function shouldVillagerBeAsleep(unit: UnitEntity): boolean {
-  const now = minuteOfDay(unit.context)
-  const { bedMinute, wakeMinute } = getVillagerSchedule(unit)
-  return now >= bedMinute || now < wakeMinute
+  return getDailyRoutinePhase(unit, minuteOfDay(unit.context)) === 'sleep'
 }
 
 export function getMinutesUntilVillagerBed(unit: UnitEntity): number {
@@ -92,8 +143,7 @@ export function shouldVillagerBeAwake(unit: UnitEntity): boolean {
 }
 
 export function shouldVillagerWork(unit: UnitEntity): boolean {
-  const now = minuteOfDay(unit.context)
-  return getVillagerWorkWindows(unit).some(([start, end]) => now >= start && now < end)
+  return getDailyRoutinePhase(unit, minuteOfDay(unit.context)) === 'work'
 }
 
 export function isVillagerSleepTime(context: Pick<GameContextLike, 'dayNight'> | null | undefined): boolean {
@@ -102,9 +152,7 @@ export function isVillagerSleepTime(context: Pick<GameContextLike, 'dayNight'> |
 }
 
 export function isVillagerLunchTime(unit: UnitEntity): boolean {
-  const now = minuteOfDay(unit.context)
-  const { lunchStartMinute, lunchEndMinute } = getVillagerSchedule(unit)
-  return now >= lunchStartMinute && now < lunchEndMinute
+  return getDailyRoutinePhase(unit, minuteOfDay(unit.context)) === 'meal'
 }
 
 /** The same work windows drive live task eligibility and elapsed-time simulation. */
@@ -124,4 +172,13 @@ export function getVillagerWorkingMinutes(unit: ScheduledVillager, from: number,
       minutes += Math.max(0, Math.min(to, day * 1440 + end) - Math.max(from, day * 1440 + start))
   }
   return minutes
+}
+
+export function isSoldierUnit(unit: Pick<UnitEntity, 'type'>): boolean {
+  return unit.type === 'Fantassin' || unit.type === 'Bowman'
+}
+
+/** Residents, leaders and soldiers share morning, meal, evening and sleep windows. */
+export function hasDailyRestSchedule(unit: Pick<UnitEntity, 'type' | 'isChief'>): boolean {
+  return unit.type === 'Villager' || isChiefUnit(unit) || isSoldierUnit(unit)
 }

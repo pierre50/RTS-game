@@ -149,7 +149,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
     '../lib/horses/stableHorses': {
       getStableHorses: building => building.stableHorses ?? [],
     },
-    './SpacePortalSystem': {
+    './spacePortal/SpacePortalSystem': {
       prepareUnitForSpaceTransfer: overrides.prepareUnitForSpaceTransfer ?? (() => {}),
       routeUnitThroughSpacePortal: () => false,
       transferUnitThroughSpacePortal: () => false,
@@ -457,7 +457,7 @@ test('runtime storage interiors create an indestructible default chest', () => {
   assert.deepEqual(building.inventory.resources, {})
 })
 
-test('runtime building interiors place the fire camp at the room center', () => {
+test('AI building interiors retain the fire camp at the room center', () => {
   const createdBuildings = []
   const { ensureBuildingInteriorSpace } = loadBuildingInteriorSpaceSystem({
     canPlaceBuildingAt: (grid, i, j) => {
@@ -493,7 +493,8 @@ test('runtime building interiors place the fire camp at the room center', () => 
       this.buildings.push(building)
       return building
     },
-    isPlayed: true,
+    type: 'AI',
+    isPlayed: false,
   }
   const building = {
     context,
@@ -1182,4 +1183,123 @@ test('mirrored interiors link the reflected outdoor door to the reflected room e
   assert.equal(space.exitPortal.targetCell, grid[5][5])
   assert.equal(ensureBuildingInteriorSpace(context, building, blueprint), space)
   assert.deepEqual(blueprint.exits, [{ i: 1, j: 2 }])
+})
+
+test('renovating building interiors expel living units while preserving stored horses', () => {
+  const calls = []
+  const outsideGrid = Array.from({ length: 4 }, (_, i) =>
+    Array.from({ length: 4 }, (_, j) => ({
+      border: false,
+      category: 'Land',
+      has: null,
+      i,
+      j,
+      solid: false,
+      terrainHidden: false,
+      waterBorder: false,
+    }))
+  )
+  const entryCell = outsideGrid[1][1]
+  const secondCell = outsideGrid[1][2]
+  const building = {
+    i: 1,
+    j: 1,
+    isBuilt: true,
+    label: 'town-center-1',
+    owner: {},
+    size: 3,
+    type: 'Stable',
+    stableHorses: [{ horseColor: 'brown' }],
+    horseAmount: 1,
+  }
+  const renderer = {
+    setActive: active => calls.push(['setActive', active]),
+  }
+  const container = { sortChildren: () => calls.push(['sortInterior']) }
+  const space = {
+    building,
+    container,
+    exteriorEntryCell: entryCell,
+    grid: [],
+    id: 'interior:town-center-1',
+    kind: 'interior',
+    renderer,
+    size: 15,
+  }
+  const outsideSpace = {
+    container: { sortChildren: () => calls.push(['sortOutside']) },
+    grid: outsideGrid,
+    id: 'outside',
+    kind: 'outside',
+  }
+  const context = {
+    map: {
+      activeSpaceId: space.id,
+      grid: outsideGrid,
+      spaces: new Map([
+        ['outside', outsideSpace],
+        [space.id, space],
+      ]),
+    },
+    players: [],
+  }
+  const villager = {
+    context,
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    label: 'villager-1',
+    owner: null,
+    shelterState: { status: 'inside', reason: 'sleep', shelter: building },
+    spaceId: space.id,
+    sprite: { stop: () => calls.push(['stopSprite', 'villager-1']) },
+    syncAppearanceLayers: sheet => calls.push(['syncAppearance', sheet]),
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+  const secondVillager = {
+    context,
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    label: 'villager-2',
+    spaceId: space.id,
+  }
+  const outsideVillager = { family: 'unit', isDead: false, isDestroyed: false, label: 'villager-3', spaceId: 'outside' }
+  context.players.push({ units: [villager, secondVillager, outsideVillager] })
+
+  const { expelBuildingInteriorOccupants } = loadBuildingInteriorSpaceSystem({
+    getCellsAroundPoint: (_i, _j, _grid, _radius, condition) => [entryCell, secondCell].filter(condition),
+    moveEntityToMapSpace: (_map, unit, targetSpace, cell) => {
+      calls.push(['move', unit.label, targetSpace.id, cell.i, cell.j])
+      unit.spaceId = targetSpace.id
+      unit.currentCell = cell
+      cell.has = unit
+      cell.solid = true
+    },
+    prepareUnitForSpaceTransfer: unit => calls.push(['prepare', unit.label]),
+    updateInstanceRenderVisibility: unit => calls.push(['renderVisibility', unit.label]),
+    updateInstanceVisibility: unit => calls.push(['visibility', unit.label]),
+  })
+
+  const evacuated = expelBuildingInteriorOccupants(context, building, { unitsOnly: true })
+  assert.deepEqual(building.stableHorses, [{ horseColor: 'brown' }])
+  assert.equal(building.horseAmount, 1)
+
+  assert.deepEqual(
+    evacuated.map(unit => unit.label),
+    ['villager-1', 'villager-2']
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'move'),
+    [
+      ['move', 'villager-1', 'outside', 1, 1],
+      ['move', 'villager-2', 'outside', 1, 2],
+    ]
+  )
+  assert.equal(villager.shelterState, null)
+  assert.equal(context.map.activeSpaceId, null)
+  assert.deepEqual(
+    calls.find(call => call[0] === 'setActive'),
+    ['setActive', false]
+  )
 })

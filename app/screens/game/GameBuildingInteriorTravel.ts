@@ -1,7 +1,4 @@
-import {
-  getBuildingInteriorPortalId,
-  isBuildingInteriorSupported,
-} from '../../lib/buildings/interiors'
+import { getBuildingInteriorPortalId, isBuildingInteriorSupported } from '../../lib/buildings/interiors'
 import { canUnitEnterBuildingInterior } from '../../lib/buildings/interiorAccess'
 import { BUILDING_TYPES } from '../../constants'
 import { t } from '../../lib/lang'
@@ -16,10 +13,7 @@ import { BuildingInteriorTransition } from '../../ui/BuildingInteriorTransition'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { CampaignSave, SerializedSave } from '../../types/save'
-import {
-  withDebugRevealDisabled,
-  worldStateWithCampaignClock,
-} from './GameStateHelpers'
+import { withDebugRevealDisabled, worldStateWithCampaignClock } from './GameStateHelpers'
 import {
   applyTravelPartyToRuntime,
   extractTravelParty,
@@ -27,10 +21,7 @@ import {
   type TravelPartyGame,
   type TravelPartyState,
 } from './GameTravelParty'
-import {
-  removeBuildingInteriorOccupants,
-  type BuildingInteriorOccupantState,
-} from './BuildingInteriorOccupants'
+import { removeBuildingInteriorOccupants, type BuildingInteriorOccupantState } from './BuildingInteriorOccupants'
 import {
   buildSessionParentStateFromInterior,
   commitBuildingInteriorCampaign,
@@ -174,7 +165,10 @@ export async function travelIntoBuildingInterior(
   const context = game._gameContext()
   const hero = context.controls.heroUnit
   if (!canUnitEnterBuildingInterior(hero, building)) {
-    context.menu?.showMessage?.(t('heroEnemyBuildingInteriorDefended'), 'warning')
+    context.menu?.showMessage?.(
+      t(building.buildingUpgrade ? 'buildingUpgradeEntryClosed' : 'heroEnemyBuildingInteriorDefended'),
+      'warning'
+    )
     return
   }
   if (hero?.mountedOnHorse && building.type !== BUILDING_TYPES.stable) {

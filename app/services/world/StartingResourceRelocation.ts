@@ -1,6 +1,6 @@
 import { NaturalResourcePlacement } from '../../lib/resources/naturalResourcePlacement'
 import type { SaveEntityState, SaveGridPoint } from '../../types/save'
-import type { OfflineTerrainCell, OfflineWorldSpatial } from './OfflineWorldSpatial'
+import type { OfflineTerrainCell, OfflineWorldSpatial } from './offline/OfflineWorldSpatial'
 
 export class StartingResourceRelocation {
   private readonly placement: NaturalResourcePlacement

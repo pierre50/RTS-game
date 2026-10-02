@@ -17,7 +17,7 @@ const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
 }
 
 // Mirrors the base equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
-// in lpc/equipment.ts: heroSword->age-scaled sword, hunter->bow) so inventory tool
+// in lpc/equipment.ts: heroSword->held sword, hunter->bow) so inventory tool
 // slots can render an icon. No entry for 'interact': bare hands.
 export const EQUIPPED_ITEM_WEAPON: Partial<Record<HeroEquippedItem, DynamicEquipmentKey>> = {
   sword: 'sword_ceramic',
@@ -28,7 +28,7 @@ function isEquipmentKey(value: string | null | undefined): value is string {
   return typeof value === 'string' && value.length > 0
 }
 
-export function getEquippedItemWeapon(tool: HeroEquippedItem, _age = 0, hero?: UnitEntity | null): string | undefined {
+export function getEquippedItemWeapon(tool: HeroEquippedItem, hero?: UnitEntity | null): string | undefined {
   const item =
     tool === 'sword'
       ? hero?.inventory?.activeWeapons?.melee
@@ -43,7 +43,7 @@ export function isHeroToolAvailable(
   tool: HeroEquippedItem | null | undefined
 ): boolean {
   if (!tool || tool === 'interact') return true
-  return Boolean(getEquippedItemWeapon(tool, hero?.owner?.age ?? 0, hero))
+  return Boolean(getEquippedItemWeapon(tool, hero))
 }
 
 export function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): string[] {

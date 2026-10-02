@@ -133,7 +133,7 @@ function createMap() {
   return map
 }
 
-test('shadow system renders the active interior shadow source inside the interior scene', () => {
+test('shadow system renders no shadows while a building interior is active', () => {
   const renders = []
   const { ShadowSystem } = loadShadowSystem()
   const context = createContext(renders)
@@ -151,19 +151,29 @@ test('shadow system renders the active interior shadow source inside the interio
     shadowRenderContainer: interiorScene,
     size: 0,
   })
-  interiorShadowLayer.addChild({ label: 'hero-shadow' })
+  interiorShadowLayer.addChild({ label: 'hero-shadow' }, { label: 'furniture-shadow' })
 
   const shadows = new ShadowSystem(context, map)
   shadows.update(16)
 
   assert.equal(shadows.layer.parent, interiorScene)
-  assert.equal(shadows.layer.visible, true)
-  assert.equal(shadows.sprite.x, 20)
-  assert.equal(shadows.sprite.y, 83)
-  assert.equal(renders.length, 1)
-  assert.equal(renders[0].container, interiorShadowLayer)
-  assert.equal(renders[0].transform.translateX, -320)
-  assert.equal(renders[0].transform.translateY, -200)
+  assert.equal(shadows.layer.visible, false)
+  assert.equal(renders.length, 0)
+})
+
+test('shadow system renders no shadows on an interior map', () => {
+  const renders = []
+  const { ShadowSystem } = loadShadowSystem()
+  const context = createContext(renders)
+  const map = createMap()
+  map.mapType = 'interior'
+  map.shadowLayer.addChild({ label: 'villager-shadow' })
+
+  const shadows = new ShadowSystem(context, map)
+  shadows.update(16)
+
+  assert.equal(shadows.layer.visible, false)
+  assert.equal(renders.length, 0)
 })
 
 test('shadow system returns to the outside shadow source when no interior is active', () => {

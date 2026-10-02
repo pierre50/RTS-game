@@ -1,7 +1,8 @@
+import { defaultSettlementType } from '../../config/settlementProfiles'
 import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { definedProperties } from '../../lib/definedProperties'
 import { playerColors } from '../../lib'
-import { BUILDING_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { expandLegacyFoodAmount, syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import { AI, Human } from '../players'
 import { ensureBanditCampOwner } from './BanditCampGeneration'
@@ -10,6 +11,7 @@ import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/Player'
 import type { MapGenerationContext, MapGenerationMap, MapSettlement } from './MapGenerationTypes'
+import { findHeroOnlyStart, shuffleSpawnIndexes } from './generation/PlayerStartPositions'
 
 const STARTING_CIVILIAN_GENDERS: Array<'male' | 'female'> = ['male', 'male', 'female', 'female']
 
@@ -20,69 +22,89 @@ function runtimeContext(context: MapGenerationContext): GameContextLike {
   return context as GameContextLike
 }
 
-export function applyStartingBonuses(
-  map: MapGenerationMap,
-  player: PlayerLike,
-  configuredAge: number | null = null
-): void {
-  const age = configuredAge == null ? map.startingAge : configuredAge
-  const startingAge = Math.max(0, Math.min(Number(age) || 0, 2))
-  player.age = startingAge
-}
-
 export function generatePlayers(
   map: MapGenerationMap,
   playersConfig: Array<PlayerOptions> | null = null
 ): PlayerLike[] {
   const context = runtimeContext(map.context)
-  const players: PlayerLike[] = []
   map.banditCampPositions = [...(map.banditCampPositions || [])]
   const settlementStarts = (map.settlements || []).filter(
     settlement => (settlement.kind === 'village' || settlement.kind === 'city') && settlement.local
   )
 
-  if (map.heroOnlyStart) {
-    const humanConfig = playersConfig?.find(player => player.isHuman) ?? playersConfig?.[0]
-    const humanStart = findHeroOnlyStart(map, settlementStarts, humanConfig)
-    players.push(createHumanPlayer(context, humanStart.i, humanStart.j, 0, humanConfig))
+  if (map.heroOnlyStart) return generateHeroOnlyPlayers(map, context, settlementStarts, playersConfig)
+  if (settlementStarts.length) return generateSettlementPlayers(map, context, settlementStarts, playersConfig)
+  return generateSpawnPlayers(map, context, playersConfig)
+}
 
-    if (!map.noAI) {
-      const humanCiv = humanConfig?.civ
-      for (const settlement of settlementStarts) {
-        const villageConfig = playersConfig?.find(player => player.civ === settlement.civ && player.isHuman === false)
-        if (humanCiv && settlement.civ === humanCiv && !villageConfig) continue
-        const position = settlement.local
-        const config = villageConfig ?? playersConfig?.find(player => player.civ === settlement.civ)
-        if (!position) continue
-        players.push(createAIPlayer(map, context, position.i, position.j, players.length, config))
-      }
-    }
-
-    applyAllStartingBonuses(map, players, playersConfig)
-
-    return players
+function heroOnlySettlementConfig(
+  settlement: MapSettlement,
+  villageConfig: PlayerOptions | undefined,
+  playersConfig: Array<PlayerOptions> | null
+) {
+  return {
+    ...(villageConfig ?? playersConfig?.find(player => player.civ === settlement.civ)),
+    civ: settlement.civ,
+    ...(settlement.settlementType ? { label: settlement.id } : {}),
+    settlementType:
+      settlement.settlementType ??
+      villageConfig?.settlementType ??
+      (settlement.kind === 'city' ? ('city' as const) : defaultSettlementType(settlement.civ ?? '')),
   }
+}
 
-  if (settlementStarts.length) {
-    const playerCount = Math.min(playersConfig?.length || settlementStarts.length, settlementStarts.length)
-    for (let i = 0; i < playerCount; i++) {
-      const settlement = settlementStarts[i]
-      const position = settlement.local
-      const config = playersConfig?.find(player => player.civ === settlement.civ) ?? playersConfig?.[i]
-      if (!position) continue
+function generateHeroOnlyPlayers(
+  map: MapGenerationMap,
+  context: GameContextLike,
+  settlementStarts: MapSettlement[],
+  playersConfig: Array<PlayerOptions> | null
+): PlayerLike[] {
+  const humanConfig = playersConfig?.find(player => player.isHuman) ?? playersConfig?.[0]
+  const humanStart = findHeroOnlyStart(map, settlementStarts, humanConfig)
+  const players: PlayerLike[] = [createHumanPlayer(context, humanStart.i, humanStart.j, 0, humanConfig)]
+  if (map.noAI) return players
 
-      if (config?.isHuman || (!playersConfig?.some(player => player.isHuman) && i === 0)) {
-        players.push(createHumanPlayer(context, position.i, position.j, i, config))
-      } else if (!map.noAI) {
-        players.push(createAIPlayer(map, context, position.i, position.j, i, config))
-      }
-    }
-
-    applyAllStartingBonuses(map, players, playersConfig)
-
-    return players
+  const humanCiv = humanConfig?.civ
+  for (const settlement of settlementStarts) {
+    const villageConfig = playersConfig?.find(player => player.civ === settlement.civ && player.isHuman === false)
+    if (humanCiv && settlement.civ === humanCiv && !villageConfig) continue
+    const position = settlement.local
+    const config = heroOnlySettlementConfig(settlement, villageConfig, playersConfig)
+    if (!position) continue
+    players.push(createAIPlayer(map, context, position.i, position.j, players.length, config))
   }
+  return players
+}
 
+function generateSettlementPlayers(
+  map: MapGenerationMap,
+  context: GameContextLike,
+  settlementStarts: MapSettlement[],
+  playersConfig: Array<PlayerOptions> | null
+): PlayerLike[] {
+  const players: PlayerLike[] = []
+  const playerCount = Math.min(playersConfig?.length || settlementStarts.length, settlementStarts.length)
+  for (let i = 0; i < playerCount; i++) {
+    const settlement = settlementStarts[i]
+    const position = settlement.local
+    const config = playersConfig?.find(player => player.civ === settlement.civ) ?? playersConfig?.[i]
+    if (!position) continue
+
+    if (config?.isHuman || (!playersConfig?.some(player => player.isHuman) && i === 0)) {
+      players.push(createHumanPlayer(context, position.i, position.j, i, config))
+    } else if (!map.noAI) {
+      players.push(createAIPlayer(map, context, position.i, position.j, i, config))
+    }
+  }
+  return players
+}
+
+function generateSpawnPlayers(
+  map: MapGenerationMap,
+  context: GameContextLike,
+  playersConfig: Array<PlayerOptions> | null
+): PlayerLike[] {
+  const players: PlayerLike[] = []
   const poses = shuffleSpawnIndexes(map)
   const playerCount = Math.min(playersConfig?.length || 1, map.playersPos.length)
   for (let i = 0; i < playerCount; i++) {
@@ -104,37 +126,7 @@ export function generatePlayers(
     })
   }
 
-  applyAllStartingBonuses(map, players, playersConfig)
-
   return players
-}
-
-function findHeroOnlyStart(
-  map: MapGenerationMap,
-  settlementStarts: MapSettlement[],
-  humanConfig: PlayerOptions | undefined
-): { i: number; j: number } {
-  const humanCiv = humanConfig?.civ
-  const matchingSettlement = humanCiv ? settlementStarts.find(settlement => settlement.civ === humanCiv)?.local : null
-
-  const center = Math.floor(map.size / 2)
-  const canUse = (i: number, j: number) => {
-    const cell = map.grid[i]?.[j]
-    return Boolean(cell && !cell.solid && !cell.has && !cell.border && !cell.waterBorder && cell.category !== 'Water')
-  }
-  if (matchingSettlement && canUse(matchingSettlement.i, matchingSettlement.j)) return matchingSettlement
-  for (let radius = 0; radius <= Math.max(8, Math.ceil(map.size / 2)); radius += 1) {
-    for (let di = -radius; di <= radius; di += 1) {
-      for (let dj = -radius; dj <= radius; dj += 1) {
-        if (Math.max(Math.abs(di), Math.abs(dj)) !== radius) continue
-        const i = center + di
-        const j = center + dj
-        if (canUse(i, j)) return { i, j }
-      }
-    }
-  }
-
-  throw new Error('Cannot place hero: map has no available land cell')
 }
 
 export function placePlayers(map: MapGenerationMap): void {
@@ -164,17 +156,6 @@ export function placePlayers(map: MapGenerationMap): void {
   }
 }
 
-function shuffleSpawnIndexes(map: MapGenerationMap): number[] {
-  const poses: number[] = []
-  const randoms = Array.from(Array(map.playersPos.length).keys())
-  for (let i = 0; i < map.playersPos.length; i++) {
-    const pos = map.randomItem(randoms)
-    poses.push(pos)
-    randoms.splice(randoms.indexOf(pos), 1)
-  }
-  return poses
-}
-
 function createHumanPlayer(
   context: GameContextLike,
   i: number,
@@ -187,7 +168,6 @@ function createHumanPlayer(
     definedProperties({
       i,
       j,
-      age: 0,
       civ: config?.civ ?? 'Hellas',
       color: config?.color ?? playerColors[playerIndex],
       diplomacy: config?.diplomacy ?? null,
@@ -216,7 +196,6 @@ function createAIPlayer(
     definedProperties({
       i,
       j,
-      age: 0,
       civ: config?.civ ?? 'Hellas',
       color: config?.color ?? playerColors[playerIndex],
       diplomacy: config?.diplomacy ?? null,
@@ -226,6 +205,9 @@ function createAIPlayer(
       team: config?.team ?? null,
       name: config?.name,
       difficulty: map.difficulty,
+      label: config?.label,
+      settlementType: config?.settlementType ?? defaultSettlementType(config?.civ ?? String(playerIndex)),
+      developmentMode: config?.developmentMode ?? 'static',
       civilizationLevel,
     }),
     context
@@ -233,10 +215,7 @@ function createAIPlayer(
 }
 
 function placeStartingUnits(map: MapGenerationMap, player: PlayerLike, towncenter: BuildingEntity): void {
-  const hasStartingLeader = player.type === PLAYER_TYPES.ai || player.isPlayed
   const startingCivilianCount = Math.max(map.startingUnits, STARTING_CIVILIAN_GENDERS.length)
-  const requiredStartingPopulation = startingCivilianCount + (hasStartingLeader ? 1 : 0)
-  player.populationMax = Math.max(player.populationMax, Math.min(POPULATION_MAX, requiredStartingPopulation))
   if (player.type === PLAYER_TYPES.ai) {
     towncenter.placeUnit?.(UNIT_TYPES.chief)
   } else if (player.isPlayed) {
@@ -250,14 +229,4 @@ function placeStartingUnits(map: MapGenerationMap, player: PlayerLike, towncente
       inventory: startingVillagerInventory(),
     })
   }
-}
-
-function applyAllStartingBonuses(
-  map: MapGenerationMap,
-  players: PlayerLike[],
-  playersConfig: PlayerOptions[] | null
-): void {
-  players
-    .filter(player => player.type !== PLAYER_TYPES.bandits)
-    .forEach((player, index) => applyStartingBonuses(map, player, playersConfig?.[index]?.age ?? null))
 }

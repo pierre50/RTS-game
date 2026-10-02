@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict')
 const path = require('node:path')
 const test = require('node:test')
+const beds = count => Array.from({ length: count }, (_, i) => ({ type: 'CampBedroll', isBuilt: true, label: `bed-${i}` }))
+const houses = count => beds(count).map((bed, i) => ({ type: 'House', label: `house-${i}`, isBuilt: true, interiorBuildings: [bed] }))
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadVillagerArrivalSystem() {
@@ -37,6 +39,7 @@ test('villager arrival growth is capped by population demand, housing and daily 
       population,
       populationMax,
       buildings: [
+        ...houses(populationMax),
         {
           type: 'TownCenter',
           isBuilt: true,
@@ -70,6 +73,7 @@ test('villager arrival requires free housing but no food reserve', () => {
       population,
       populationMax,
       buildings: [
+        ...houses(populationMax),
         {
           type: 'TownCenter',
           isBuilt: true,
@@ -112,7 +116,7 @@ test('daily villager arrival places villagers for a played village and reports t
     foodAvailable: 5000,
     population: 40,
     populationMax: 100,
-    buildings: [townCenter],
+    buildings: [townCenter, ...houses(100)],
   }
   const messages = []
   const context = {
@@ -149,6 +153,7 @@ test('daily villager arrival uses the same growth rules for AI without showing p
     population: 20,
     populationMax: 40,
     buildings: [
+      ...houses(40),
       {
         type: 'TownCenter',
         isBuilt: true,
@@ -176,26 +181,49 @@ test('daily villager arrival uses the same growth rules for AI without showing p
   assert.deepEqual(messages, [])
 })
 
-test('houses supply housing while the town center remains the arrival point', () => {
-  const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-  const { getBuildingShelterCapacity } = loadTsModule('app/lib/buildings/buildingOccupancy.ts')
+test('only beds add capacity; occupied beds count and the town center remains the arrival point', () => {
   const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
   let arrivals = 0
-  const center = { type: 'TownCenter', isBuilt: true,
-    placeUnit() { arrivals++; return true } }
-  const house = { type: 'House', isBuilt: true, placeUnit() { throw new Error('House must not spawn arrivals') } }
-  const player = { type: 'Human', population: 2, buildings: [center], populationMax: 0 }
+  const center = { type: 'TownCenter', isBuilt: true, placeUnit() { arrivals++; return true } }
+  const house = { type: 'House', label: 'house', isBuilt: true, interiorBuildings: [] }
+  const player = { type: 'Human', population: 2, buildings: [center, house], populationMax: 999 }
   const system = new VillagerArrivalSystem({ map: { random: () => 0.25 }, players: [player] })
-  const update = () => {
-    player.populationMax = player.buildings.reduce((sum, building) => sum + getBuildingShelterCapacity(building), 0)
-    system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
-  }
+  const update = () => system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
   update()
   assert.equal(arrivals, 0)
-  player.buildings.push(house)
+  assert.equal(player.populationMax, 0, 'stale house capacity must be discarded')
+  house.interiorBuildings = beds(3)
+  player.units = [{ shelterState: { restTarget: house.interiorBuildings[0], status: 'outside' } }]
   update()
   assert.equal(arrivals, 1)
+  assert.equal(player.populationMax, 3)
+  house.buildingUpgrade = { targetLevel: 1 }
+  update()
+  assert.equal(arrivals, 1)
+  assert.equal(player.population, 2, 'losing capacity never evicts inhabitants')
+  delete house.buildingUpgrade
   player.buildings = [house]
   update()
-  assert.equal(arrivals, 1)
+  assert.equal(arrivals, 1, 'beds cannot replace the arrival point')
+})
+
+
+test('a daily arrival receives its own home; spare beds in occupied homes do not attract arrivals', () => {
+  const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
+  const player = { label: 'player', type: 'Human', population: 1, units: [{ type: 'Villager', label: 'first' }], buildings: houses(2) }
+  player.buildings[0].interiorBuildings.push({ type: 'CampBedroll', label: 'spare-bed', isBuilt: true })
+  player.buildings.push({ type: 'TownCenter', isBuilt: true, placeUnit(type, extra) {
+    player.units.push({ type, ...extra, label: `arrival-${player.units.length}` })
+    player.population++
+    return true
+  } })
+  const system = new VillagerArrivalSystem({ map: { random: () => 0.25 }, players: [player] })
+  system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
+  assert.equal(player.units.length, 2)
+  assert.equal(player.units[0].homeHouseLabel, 'house-0')
+  assert.equal(player.units[1].homeHouseLabel, 'house-1')
+  assert.equal(player.units[1].homeBedLabel, 'bed-1')
+  system.handleDailyWorldEvent({ day: 3, previousDay: 2 })
+  assert.equal(player.units.length, 2)
+  assert.equal(player.populationMax, 3)
 })

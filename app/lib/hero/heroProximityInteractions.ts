@@ -1,5 +1,5 @@
 import { findNearestMountableHorse } from './heroMountTargets'
-import { ACTION_TYPES, BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
@@ -10,7 +10,7 @@ import { isNeutralPlayer } from '../playerState'
 import { instanceIsInActiveOrTeamSight } from '../grid/visibility'
 import { isStoredForeignStableHorse } from '../horses/stableHorseInteraction'
 import { isTalkableNpc } from '../npc/npcInteraction'
-import { isUsableFireCamp } from './heroCampfireSleep'
+import { isUsableSleepTarget } from './heroSleep'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
 type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'dismantleTrap'
@@ -24,7 +24,7 @@ export type HeroProximityInteraction =
     }
   | {
       action: 'enter'
-      labelKey: 'heroInteractionEnter' | 'heroInteractionForceEntry'
+      labelKey: 'heroInteractionEnter' | 'heroInteractionForceEntry' | 'buildingUpgradeEntryClosed'
       target: BuildingEntity
     }
   | {
@@ -149,7 +149,7 @@ export function resolveHeroNpcProximityInteraction(
 export function wakeOwnSleepingNpcForCommunication(hero: UnitEntity, target: UnitEntity): void {
   if (target.shelterState?.reason !== 'sleep' || target.sleepVisualState !== 'sleeping' || target.owner !== hero.owner)
     return
-  target.context?.unitRest?.wakeSleepingUnitForOrder(target)
+  target.context?.unitRest?.wakeRestingUnitForOrder(target)
 }
 
 export function resolveHeroProximityInteraction({
@@ -168,14 +168,19 @@ export function resolveHeroProximityInteraction({
   const openableBuilding = resolveFacingOpenableBuilding(hero, openEntityTarget)
   if (openableBuilding) return { action: 'open', labelKey: 'heroInteractionOpen', target: openableBuilding }
 
-  const fireCamp = openEntityTarget as BuildingEntity | null | undefined
-  if (isUsableFireCamp(hero, fireCamp)) return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: fireCamp }
+  const sleepTarget = openEntityTarget as BuildingEntity | null | undefined
+  if (isUsableSleepTarget(hero, sleepTarget))
+    return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: sleepTarget }
 
   const building = findBuildingInteriorEntryTarget(hero, buildings)
   if (building) {
     return {
       action: 'enter',
-      labelKey: canUnitEnterBuildingInterior(hero, building) ? 'heroInteractionEnter' : 'heroInteractionForceEntry',
+      labelKey: building.buildingUpgrade
+        ? 'buildingUpgradeEntryClosed'
+        : canUnitEnterBuildingInterior(hero, building)
+          ? 'heroInteractionEnter'
+          : 'heroInteractionForceEntry',
       target: building,
     }
   }
@@ -204,8 +209,7 @@ export function resolveHeroProximityInteraction({
     if (openEntityTarget.family === FAMILY_TYPES.building) {
       if (
         (openEntityTarget.type === BUILDING_TYPES.chest && !(openEntityTarget as BuildingEntity).isBuilt) ||
-        openEntityTarget.type === BUILDING_TYPES.trap ||
-        CAMP_DECORATION_BUILDING_TYPES.some(type => type === openEntityTarget.type)
+        openEntityTarget.type === BUILDING_TYPES.trap
       )
         return null
       return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: openEntityTarget }

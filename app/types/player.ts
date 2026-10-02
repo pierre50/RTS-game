@@ -1,10 +1,12 @@
+import type { ForgeUpgrades } from '../lib/equipment/forgeUpgrades'
+import type { SettlementType, DevelopmentMode } from '../config/settlementProfiles'
 import type { MinimapBuildingMemory, MinimapPreferences } from './minimap'
 import type { GameContextLike } from './context'
 import type { RuntimeCell } from './map'
 import type { AnimalEntity, RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
 import type { SaveDestination, SaveGridPoint, SaveReference } from './save'
 import type { AnimalConfig, BuildingConfig, EquipmentStats, ProjectileConfig, UnitConfig } from './config'
-import type { AssetAge } from './pixi'
+import type { AssetLevel } from './pixi'
 import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
 import type { HeroAppearanceConfig } from '../lib/lpc/heroAppearance'
 
@@ -43,7 +45,7 @@ export interface PlayerConfigLike {
 }
 
 export type UnitRestoreReferences = {
-  assetAge?: AssetAge
+  assetLevel?: AssetLevel
   dest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   realDest?: UnitEntity['realDest'] | SaveDestination | null
@@ -72,7 +74,7 @@ export interface PlayerLike {
   factionId?: string | null
   team?: number | null
   diplomacy?: PlayerDiplomacy | null
-  age: number
+  forgeUpgrades?: ForgeUpgrades
   cellViewed: number
   wood: number
   food: number
@@ -97,9 +99,7 @@ export interface PlayerLike {
   minimapPreferences?: MinimapPreferences
   views: VisionGridLike
   config: PlayerConfigLike
-  onAgeChange?: () => void
-  updatePopulationObjectives?: () => void
-  completedObjectives?: string[]
+  refreshCivilizationAppearance?: () => void
   selectedUnits: UnitEntity[]
   selectedUnit?: UnitEntity | null
   selectedBuilding?: BuildingEntity | null
@@ -114,7 +114,7 @@ export interface PlayerLike {
     i: number,
     j: number,
     type: string,
-    options?: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean }
+    options?: { alreadyPaid?: boolean; spaceId?: string; buildingLevel?: number; placementMirrored?: boolean }
   ) => boolean
   plantWheatField?: (i: number, j: number, options?: { spaceId?: string }) => boolean
   createBuilding: (
@@ -159,6 +159,9 @@ export interface PlayerLike {
   rememberEnemy?: (entity: RuntimeEntity) => void
   reportThreat?: (target: RuntimeEntity, attacker: RuntimeEntity) => void
   hasBuilt?: string[]
+  settlementType?: SettlementType
+  developmentMode?: DevelopmentMode
+  rpgRestockDay?: number
   civilizationLevel?: number
 }
 

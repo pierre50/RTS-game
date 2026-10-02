@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { prepareContent } = require('../tools/maps/prepared-content.cjs')
-const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/MapBlueprintDecoding.ts')
+const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/blueprint/MapBlueprintDecoding.ts')
 const root = path.join(__dirname, '../public/maps/worlds/world-4242')
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')))
 

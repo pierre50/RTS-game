@@ -17,14 +17,13 @@ import {
 } from './AIStrategyTraining'
 import {
   AI_DIFFICULTIES,
-  MAX_ARCHER_BY_AGE,
-  MAX_BUILDING_BY_AGE,
-  MAX_CAVALRY_BY_AGE,
-  MAX_INFANTRY_BY_AGE,
-  MAX_VILLAGER_PER_AGE,
+  MAX_ARCHERS,
+  MAX_BUILDINGS,
+  MAX_CAVALRY,
+  MAX_INFANTRY,
+  MAX_VILLAGERS,
 } from './config'
 import type {
-  AIAge,
   AIBuildingLike,
   AIDifficultyConfig,
   AIEntityLike,
@@ -34,7 +33,6 @@ import type {
   AIStrategySnapshot,
 } from './types'
 
-type AgeMap<T> = Record<AIAge, T>
 type BuildingListByType = Record<string, AIBuildingLike[]>
 type MilitaryOptions = Parameters<AIMilitary['handleActions']>[0]
 type MilitaryActionsResult = ReturnType<AIMilitary['handleActions']>
@@ -43,11 +41,11 @@ export class AIStrategy {
   ai: AIStrategyPlayerLike
   difficulty: string
   difficultyConfig: AIDifficultyConfig
-  maxVillagerPerAge: AgeMap<number>
-  maxBuildingByAge: AgeMap<Record<string, number>>
-  maxInfantryByAge: AgeMap<number>
-  maxArcherByAge: AgeMap<number>
-  maxCavalryByAge: AgeMap<number>
+  maxVillagers: number
+  maxBuildings: Record<string, number>
+  maxInfantry: number
+  maxArchers: number
+  maxCavalry: number
   military: AIMilitary
 
   constructor(ai: AIStrategyPlayerLike, difficulty: string = 'medium') {
@@ -55,21 +53,21 @@ export class AIStrategy {
     this.difficulty = difficulty
     this.difficultyConfig =
       (AI_DIFFICULTIES as Record<string, AIDifficultyConfig>)[difficulty] || AI_DIFFICULTIES.medium
-    this.maxVillagerPerAge = MAX_VILLAGER_PER_AGE
-    this.maxBuildingByAge = MAX_BUILDING_BY_AGE
-    this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
-    this.maxArcherByAge = MAX_ARCHER_BY_AGE
-    this.maxCavalryByAge = MAX_CAVALRY_BY_AGE
+    this.maxVillagers = MAX_VILLAGERS
+    this.maxBuildings = MAX_BUILDINGS
+    this.maxInfantry = MAX_INFANTRY
+    this.maxArchers = MAX_ARCHERS
+    this.maxCavalry = MAX_CAVALRY
     this.military = new AIMilitary(ai, this)
   }
 
   applyConfig(target: AIStrategyPlayerLike): void {
     target.difficultyConfig = this.difficultyConfig
-    target.maxVillagerPerAge = this.maxVillagerPerAge
-    target.maxBuildingByAge = this.maxBuildingByAge
-    target.maxInfantryByAge = this.maxInfantryByAge
-    target.maxArcherByAge = this.maxArcherByAge
-    target.maxCavalryByAge = this.maxCavalryByAge
+    target.maxVillagers = this.maxVillagers
+    target.maxBuildings = this.maxBuildings
+    target.maxInfantry = this.maxInfantry
+    target.maxArchers = this.maxArchers
+    target.maxCavalry = this.maxCavalry
   }
 
   getBestInfantryUnit(): string {

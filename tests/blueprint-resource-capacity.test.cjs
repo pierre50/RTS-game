@@ -13,7 +13,7 @@ function load(resources, packedMode = true) {
       '../../../constants': { PASSABLE_RESOURCE_TYPES: new Set() },
       '../../../lib/graphics/textures': { textureRefToString: value => value.sheet },
       '../../../lib/loadDiagnostics': { beginLoadTrace: () => ({ progress() {}, end() {} }) },
-      '../../../serialization/MapBlueprintDecoding': { TERRAIN_TYPES: ['Grass'] },
+      '../../../serialization/blueprint/MapBlueprintDecoding': { TERRAIN_TYPES: ['Grass'] },
       '../../cell/PackedCellRegistry': { getPackedCellStore: () => (packedMode ? packed : null) },
       '../../Resource': { Resource: { spawn: state => ({ ...state, family: 'resource' }) } },
       '../../resources/CompactResourceSet': { CompactResourceSet },

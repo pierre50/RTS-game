@@ -1,4 +1,5 @@
 import { pointInRectangle, updateInstanceRenderVisibility } from '../lib'
+import { traceRuntime } from '../lib/runtimeDiagnostics'
 import type { RenderableInstance } from '../lib/grid/visibility'
 import { rectangleIntersectsViewport } from '../lib/graphics/chunkCulling'
 import { getActiveMapSpace, OUTSIDE_SPACE_ID } from '../lib/mapSpaces'
@@ -388,7 +389,7 @@ export class CameraController {
       this.context.performance?.record('camera.visibleCellsSkip', 0)
       return
     }
-    if (activeSpace.isOutside) map.updateRenderChunks?.(viewport)
+    if (activeSpace.isOutside) traceRuntime('camera.renderChunks', () => map.updateRenderChunks?.(viewport))
 
     const startedAt = performance.now()
     // Share this snapshot only during the synchronous refresh. Individual entity
@@ -407,7 +408,7 @@ export class CameraController {
         stepY,
       } = reuseCells
         ? { cells: this.visibleCells, samples: 0, stepX: CELL_WIDTH / 2, stepY: CELL_HEIGHT / 2 }
-        : collectCameraCells(activeSpace, viewport, margin)
+        : traceRuntime('camera.collectCells', () => collectCameraCells(activeSpace, viewport, margin))
       if (this.canExploreCamera()) {
         const explore = () => exploreCameraCells(newVisible, activeSpace.origin, viewport, player.views!)
         const discovered = player.views.withSpace ? player.views.withSpace(activeSpace.id, explore) : explore()
@@ -423,7 +424,13 @@ export class CameraController {
       }
       // Include candidates from the previous view so departing objects are hidden.
       // Visibility updates also remove destroyed, distant and inactive-space objects.
-      for (const instance of this.renderCandidates) updateInstanceRenderVisibility(instance)
+      traceRuntime(
+        'camera.renderEntities',
+        () => {
+          for (const instance of this.renderCandidates) updateInstanceRenderVisibility(instance)
+        },
+        { candidates: this.renderCandidates.size, cells: newVisible.size }
+      )
 
       this.visibleCellsStats = {
         candidates: newVisible.size,

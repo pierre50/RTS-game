@@ -13,7 +13,7 @@ test('compiled compression worker starts and saves without window or document', 
   const compiler = webpack({
     mode: 'development',
     target: 'webworker',
-    entry: path.resolve('app/serialization/SaveCompression.worker.ts'),
+    entry: path.resolve('app/serialization/SaveCompressionWorker.ts'),
     output: { path: directory, filename: 'worker.js', publicPath: '' },
     devtool: false,
     resolve: { extensions: ['.ts', '.js'] },

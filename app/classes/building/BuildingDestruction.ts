@@ -1,3 +1,7 @@
+import { reconcileHouseholds } from '../../lib/housing/households'
+import { canHeroDemolishBuilding, getFurnitureContainer } from '../../lib/buildings/buildingDemolition'
+import { isInteriorFurniture } from '../../lib/buildings/interiorFurnitureCatalog'
+import { removeFurnitureSurface } from '../../lib/terrain/furnitureSurface'
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { definedProperties } from '../../lib/definedProperties'
 import { LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX, SOUND_CUES } from '../../constants'
@@ -10,7 +14,7 @@ import {
   type SpriteFragmentBurstGroundTarget,
   updateInstanceVisibility,
 } from '../../lib'
-import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getAdjacentWalls, isWall, updateWallTexture } from '../../lib/buildings/walls'
 import { getEntityMapSpace } from '../../lib/mapSpaces'
 import {
@@ -34,7 +38,9 @@ export class BuildingDestruction {
       building.i,
       building.j,
       space?.grid ?? building.context.map.grid,
-      building.size
+      building.size,
+      undefined,
+      building.type
     )
     const groundTargets: SpriteFragmentBurstGroundTarget[] = footprintCells.map(cell =>
       definedProperties({
@@ -76,9 +82,15 @@ export class BuildingDestruction {
     building.shadow = null
   }
 
-  die(): void {
+  die(demolition = false): void {
     const building = this.building
-    if (building.isDead || building.indestructible) return
+    if (building.isDead || building.isDestroyed) return
+    if (demolition ? !canHeroDemolishBuilding(building) : building.indestructible) return
+    if (demolition && isInteriorFurniture(building.type)) {
+      const container = getFurnitureContainer(building)
+      // A customized room must not regenerate removed preset decorations on reload.
+      if (container) container.interiorUnfurnished = true
+    }
     notifyVillageStateChanged(building.owner)
     const {
       context: { map, player, menu },
@@ -92,6 +104,7 @@ export class BuildingDestruction {
     if (building.constructionMaterials) building.constructionMaterials.delivered = {}
     building.cancelAllUnitTraining?.()
     expelBuildingInteriorOccupants(building.context, building)
+    delete building.buildingUpgrade
     building.isDead = true
     building.hasActiveBurningSound = false
     stopFlameAmbientSound(building)
@@ -104,7 +117,14 @@ export class BuildingDestruction {
       player.unselectAll()
     }
 
+    for (const unit of building.owner.units ?? []) {
+      if (unit.homeHouseLabel === building.label) {
+        delete unit.homeHouseLabel
+        delete unit.homeBedLabel
+      }
+    }
     this.removeOwnerReferences()
+    reconcileHouseholds(building.owner)
     this.destroyDecorations()
 
     // Fragments must not inherit the construction ghost's transparency or tint.
@@ -112,13 +132,21 @@ export class BuildingDestruction {
     this.spawnDestructionBurst()
     updateInstanceVisibility(building)
     this.clearDestroyedSprite()
-    getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
-      if (cell.has === building) {
-        cell.has = null
-        cell.solid = false
-      }
-      return true
-    })
+    getBuildingFootprintCells(
+      building.i,
+      building.j,
+      grid,
+      building.size,
+      (cell: RuntimeCell) => {
+        removeFurnitureSurface(cell, building)
+        if (cell.has === building) {
+          cell.has = null
+          cell.solid = false
+        }
+        return true
+      },
+      building.type
+    )
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), BUILDING_DESTRUCTION_CLEAR_MS)
     canUpdateMinimap(building, player) &&
@@ -130,16 +158,14 @@ export class BuildingDestruction {
   private removePopulationCapacity(): void {
     const building = this.building
     const { menu } = building.context
-    const populationCapacity = getBuildingShelterCapacity(building)
-    if (populationCapacity && building.populationCapacityApplied) {
-      building.owner.populationMax = Math.max(0, building.owner.populationMax - populationCapacity)
-      building.populationCapacityApplied = false
-      if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
+    refreshPopulationCapacity(building.owner)
+    if (building.owner.isPlayed) {
+      menu.updateTopbar?.()
+      if (building.owner.selectedBuilding?.displayPopulation)
         menu.updateInfo(
           MENU_INFO_IDS.populationText,
           building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
         )
-      }
     }
   }
 
@@ -180,10 +206,18 @@ export class BuildingDestruction {
       context: { map },
     } = building
     const space = getEntityMapSpace(building, map)
-    getBuildingFootprintCells(building.i, building.j, space?.grid ?? map.grid, building.size, (cell: RuntimeCell) => {
-      cell.corpses.delete(building)
-      return true
-    })
+    getBuildingFootprintCells(
+      building.i,
+      building.j,
+      space?.grid ?? map.grid,
+      building.size,
+      (cell: RuntimeCell) => {
+        removeFurnitureSurface(cell, building)
+        cell.corpses.delete(building)
+        return true
+      },
+      building.type
+    )
     building.isDestroyed = true
     building.parent?.removeChild(building)
     building.destroy({ children: true, texture: false })

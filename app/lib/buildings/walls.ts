@@ -14,7 +14,6 @@ const SHARED_WALL_SHEET = 'buildings/wall/level-1'
 export const WALL_CONSTRUCTION_FLAG_SHEET_ID = 'buildings/wall/construction-flag'
 
 export type WallOwner = {
-  age?: number
   civ?: string
   color?: string
   buildings?: Array<{ owner?: WallOwner; type?: string }>

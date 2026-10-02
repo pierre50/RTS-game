@@ -1,9 +1,11 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { planCollectiveTasks, settlementStockGoals, collectiveHarvestBudget } = loadTsModule(
-  'app/lib/economy/collectiveTasks.ts'
-)
+const moduleCache = new Map()
+const { planCollectiveTasks, collectiveHarvestBudget } = loadTsModule('app/lib/economy/collectiveTasks.ts', {
+  moduleCache,
+})
+const { settlementStockGoals } = loadTsModule('app/lib/economy/collectiveStock.ts', { moduleCache })
 const { allowsVillagerDeliveries, storageAcceptsResource } = loadTsModule('app/lib/resources/storagePolicy.ts')
 const { depositChestResources } = loadTsModule('app/lib/resources/playerResourceTotals.ts')
 function fixture(count = 6) {
@@ -165,7 +167,7 @@ test('automatic deliveries enforce depot roles and ignore legacy block flags', (
 })
 
 test('three days away replenish within full-capacity targets and never deposit into the town center', () => {
-  const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+  const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
   const { owner, center, pit } = fixture()
   const state = {
     world: { size: 40 },
@@ -207,7 +209,7 @@ test('three days away replenish within full-capacity targets and never deposit i
 })
 
 test('regional gathering without depots consumes only what fits and never banks future production', () => {
-  const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+  const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
   const { owner, units, center } = fixture(1)
   owner.type = 'AI'
   owner.buildings = [center]

@@ -1,5 +1,99 @@
 # Final map files
 
+## Settlement preparation (second pass)
+
+Terrain generation and settlement preparation are separate commands:
+
+```sh
+pnpm world:generate-1000
+pnpm world:prepare public/maps/worlds/world-test-1000
+pnpm world:prepare public/maps/worlds/world-test-1000 --check
+```
+
+Continent generation fixes each civilization's composition to three outposts,
+two villages and one city. Sites are assigned to civilizations offline and stay
+at least 72 cells apart. The second pass uses each site's explicit profile.
+Villages use their granary as the settlement anchor and contain no TownCenter;
+TownCenters are reserved for cities, while outposts use a FireCamp.
+At new-game loading, the chosen human civilization's six bases and authored wheat
+fields are omitted: only its hero is instantiated. The seven AI civilizations
+therefore have 42 settlements, with separate owners sharing civilization faction
+and color. Prepared games always use the hero-only start and have no size selector.
+
+`tools/prepare-world-settlements.cjs` also accepts one finalized `.map` file.
+`--out <directory>` writes preparations elsewhere. `--check` regenerates in memory
+and fails if an output is missing or differs; it never rewrites files. Invalid
+terrain, blocked entrances, overlapping entities, missing bandit caves and excessive
+depot stocks fail before publishing that map's output. Each output is replaced
+atomically. The world manifest registers their checksums. Source maps, terrain
+and existing game saves are untouched.
+
+The second pass reuses the shared civilization assignment, settlement profiles,
+village placement and bandit decoration/loot rules. It writes a deterministic
+`<map-name>.settlements.json` file with:
+
+- `format: "prepared-settlements"`, `version: 1`, map ID and final grid size;
+- `source.sha256` of the exact source map and `source.rulesSha256` of generation
+  code and configuration, so outdated preparations can be detected;
+- `settlements`, linking each site/civilization/profile to its prepared owner
+  and `resourceLabels` identifying its authored wheat fields;
+- `players`, containing exact building/unit positions, stable labels and depot inventories;
+- `banditCamps`, with fixed rosters, patrol anchors and outdoor chest loot or
+  `caveContent` linking loot to an existing cave (interior furnishing remains a separate concern);
+- the **complete replacement** `resources` and `animals` arrays. Village placement
+  can relocate resources and add wheat; these arrays must not be appended to the
+  original blueprint's resources;
+- `heroSpawns`, free connected starting positions for each civilization;
+- a validated count summary.
+
+Agriculture uses four 3×3 wheat patches per village and eight per city. Each patch
+starts with one to four young crops at frame zero, randomly scattered across its
+nine cells; the remaining crops use the loaded sprite's final frame. The variation
+is seeded so repeated preparation stays deterministic. Outposts have no authored wheat fields.
+
+All prepared units start idle, without saved movement orders or autonomous jobs.
+After the final building layout, `distribute-settlement-units.cjs` spreads civilians
+around homes and amenities, the first RPG workers near their authored fields, and
+soldiers around defensive/military buildings. Chiefs stay near the center. Positions
+are connected, within 30 cells of the base, leave a one-cell clearance around
+building footprints, avoid entrances and their immediate
+approaches, and prefer a two-cell gap between inhabitants. This runs offline only;
+new games restore these positions and existing saves retain their own positions.
+Population sizes still come from `app/config/settlementProfiles.ts`.
+
+New games consume the sidecar registered by the world-directory command in
+`manifest.json`. Loading verifies the source and sidecar checksums and the rules
+identifier recorded in the manifest. Use `--check` to compare against current
+generation code. Continent new games require a preparation; stale or unavailable
+files fail explicitly, without falling back to live generation.
+
+Preparation places wildlife after AI buildings, fields and inhabitants. The original
+blueprint population is preserved, and animals cannot affect settlement layouts.
+Settlement exclusion areas follow the actual buildings and fields, with two cells
+of clearance. Affected groups move together; old blueprints without herd IDs use
+compact same-species groups inferred from the shared generation radius and size.
+Placement prefers the original habitat, then another allowed habitat, within 128
+cells. Destinations must offer at least 96 connected walkable cells and a route
+12 cells away, accounting for cliffs, buildings, resources and settlement areas.
+Cave and camp clearings remain reserved. Preparation fails without dropping animals
+if no compatible destination fits the whole group.
+
+Existing stables receive a seeded random stock of tamed horses: 1–2 in outposts,
+1–3 in villages, and 3–5 in cities. No stable is added to a profile that lacks one.
+Rerun `world:prepare` to update an existing world's preparation.
+
+Prepared starts restore exact buildings, units, chests, wildlife and resources;
+they bypass live village/camp generation and initial resource relocation. Hero
+positions are reserved by the offline pass. The scripted player introduction
+(campfire and companion) remains a separate gameplay step.
+Saved games restore their own state and keep the original terrain resource
+baseline for resource deltas; they do not fetch or reapply initial preparations.
+Worlds without registered preparations retain their legacy loading path, except
+continents which require preparation. `--out` and single-file commands produce
+standalone files without registering them in a world manifest.
+
+## Terrain generation
+
 `blueprint.cjs` generates the source terrain and resources, then `local-blueprint.cjs`
 prepares the final local grid before writing the file. This final step converts
 coordinates, normalizes water topology, protects the five-cell coast buffer and

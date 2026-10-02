@@ -6,7 +6,8 @@ import { getBuildingAsset, type AssetOwner } from './graphics/assets'
 import { recolorCanvasByPalette, SOURCE_COLORS } from './graphics/colors'
 import { getTexture, type TextureRef } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
-import { getAppearanceAgeSheetOverride } from './lpc/appearanceLayers'
+import { resolveUnitForgeEquipment } from './equipment/forgeUpgrades'
+import { getMiningPickaxe } from './resources/miningEquipment'
 import { getUnitEquipmentTier } from './units/unitExperience'
 import type { Application, Sprite } from 'pixi.js'
 import type { UnitAppearanceLayerConfig } from '../types/config'
@@ -33,6 +34,8 @@ type PortraitSource = Pick<
   | 'type'
   | 'experience'
   | 'work'
+  | 'inventory'
+  | 'equipment'
 >
 
 function getUnitFacePortraitTexture(unit: PortraitSource): Texture | null {
@@ -67,10 +70,17 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   if (layer.workTypes?.length && (!unit.work || !layer.workTypes.includes(unit.work))) return null
 
   const sheetKey = SHEET_TYPES.walking
-  const ownerAge = Math.max(0, Math.floor(unit.owner?.age ?? 0))
-  const baseSheetId =
-    getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, sheetKey) ??
-    (layer[sheetKey as keyof UnitAppearanceLayerConfig] as string | undefined)
+  const sheetIdForLayer = layer[sheetKey as keyof UnitAppearanceLayerConfig] as string | undefined
+  const baseSheetId = layer.equipmentKey
+    ? sheetIdForLayer?.replace(/^equipments\/([^/]+)\//, (_match, key: string) => {
+        const equipment = key.startsWith('pickaxe_')
+          ? getMiningPickaxe(unit)
+          : unit.type === 'Hero'
+            ? key
+            : resolveUnitForgeEquipment(key, unit)
+        return `equipments/${equipment}/`
+      })
+    : sheetIdForLayer
   if (!baseSheetId) return null
 
   const playerColorVariant = unit.owner?.color ? layer.playerColorVariants?.[unit.owner.color] : undefined

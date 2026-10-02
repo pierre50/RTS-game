@@ -2,9 +2,9 @@ import { isTutorialActive } from '../tutorial/TutorialState'
 import { PLAYER_TYPES } from '../../constants'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotals'
-import { simulateOfflineWorld } from './OfflineWorldSimulation'
-import { isLiving, type OfflineTerrainCell } from './OfflineWorldSpatial'
-import { savedResourceOwner, type OfflineWorkRules } from './OfflineWorldWork'
+import { simulateOfflineWorld } from './offline/OfflineWorldSimulation'
+import { isLiving, type OfflineTerrainCell } from './offline/OfflineWorldSpatial'
+import { savedResourceOwner, type OfflineWorkRules } from './offline/OfflineWorldWork'
 import type { CampaignSave, RegionEconomySave, SerializedSave } from '../../types/save'
 
 export type EconomyRules = (state: SerializedSave) => OfflineWorkRules

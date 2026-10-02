@@ -23,7 +23,8 @@ export function getEntityFragmentGroundTargets(entity: RuntimeEntity): SpriteFra
     entity.j,
     grid,
     entity.size ?? 1,
-    cell => cell.has === entity
+    cell => cell.has === entity,
+    entity.type
   )
   if (footprintCells.length) return footprintCells.map(cellToFragmentGroundTarget)
 

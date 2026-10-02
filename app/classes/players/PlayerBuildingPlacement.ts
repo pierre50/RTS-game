@@ -1,7 +1,9 @@
-import { isCampBuilding, isSowingPlacement, WHEAT_PLOT_SIZE } from '../../lib/buildings/campConstruction'
+import { isBuildingTraversable } from '../../lib/buildings/buildingTraversal'
+import { isNearInteriorDoor, preservesInteriorPassages } from '../../lib/buildings/interiorFurniturePlacement'
+import { isBuildingAllowedInSpace, isSowingPlacement, WHEAT_PLOT_SIZE } from '../../lib/buildings/campConstruction'
 import { createConstructionMaterials } from '../../lib/economy/constructionMaterials'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
-import { getBuildingAge, getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
+import { getBuildingLevel, getPlayerBuildingConfig } from '../../lib/buildings/buildingLevel'
 import { BUILDING_TYPES } from '../../constants'
 import { canPlaceBuildingAt, getBuildingFootprintCells, hasBuildingPlacementClearance } from '../../lib'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
@@ -15,16 +17,16 @@ export function plantPlayerWheatField(
   player: Player,
   i: number,
   j: number,
-  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
+  options: { alreadyPaid?: boolean; spaceId?: string; buildingLevel?: number; placementMirrored?: boolean } = {}
 ) {
-  const buildingAge = getBuildingAge(options, player.age)
-  if (buildingAge > player.age) return false
+  const buildingLevel = getBuildingLevel(options)
+  if (buildingLevel > 0) return false
   const {
     context: { menu, map },
   } = player
   const space = getMapSpace(map, options.spaceId)
   const grid = space?.grid ?? map.grid
-  const config = getPlayerBuildingConfig(player, BUILDING_TYPES.farm, buildingAge)
+  const config = getPlayerBuildingConfig(player, BUILDING_TYPES.farm, buildingLevel)
   if (!config) return false
   const placementConfig = { ...config, size: WHEAT_PLOT_SIZE, type: BUILDING_TYPES.farm }
   const passageLookup = createReservedPassageCellLookup(player.context)
@@ -43,7 +45,7 @@ export function plantPlayerWheatField(
           j: cell.j,
           spaceId: cell.spaceId,
           type: BUILDING_TYPES.farm,
-          buildingAge,
+          buildingLevel,
           isBuilt: false,
           constructionMaterials: createConstructionMaterials({ wheat: 1 }),
         })
@@ -60,30 +62,39 @@ export function buyPlayerBuilding(
   i: number,
   j: number,
   type: string,
-  options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
+  options: { alreadyPaid?: boolean; spaceId?: string; buildingLevel?: number; placementMirrored?: boolean } = {}
 ) {
   if (isSowingPlacement(type)) return player.plantWheatField(i, j, options)
-  const buildingAge = getBuildingAge(options, player.age)
-  if (buildingAge > player.age) return false
+  const buildingLevel = getBuildingLevel(options)
+  if (buildingLevel > 0) return false
   const {
     context: { menu, map },
   } = player
   const space = getMapSpace(map, options.spaceId)
   const grid = space?.grid ?? map.grid
-  const config = getPlayerBuildingConfig(player, type, buildingAge)
+  const config = getPlayerBuildingConfig(player, type, buildingLevel)
   if (!config) return false
   const placementConfig = { ...config, type }
-  const interiorCamp = space?.kind === 'interior' && isCampBuilding(type)
+  if (!isBuildingAllowedInSpace(type, space)) return false
+  const interiorFurniture = space?.kind === 'interior'
+  const furnitureCell = grid[i]?.[j]
+  if (
+    interiorFurniture &&
+    furnitureCell &&
+    (isNearInteriorDoor(furnitureCell, [space?.entryCell, space?.exitCell]) ||
+      (!isBuildingTraversable(type) && !preservesInteriorPassages(grid, furnitureCell)))
+  )
+    return false
   const passageLookup = createReservedPassageCellLookup(player.context)
   const placementOptions = {
-    allowBorder: interiorCamp,
+    allowBorder: interiorFurniture,
     canUseCell: (cell: RuntimeCell) =>
-      !passageLookup.has(cell) && (!interiorCamp || (!cell.terrainHidden && !cell.has)),
+      !passageLookup.has(cell) && (!interiorFurniture || (!cell.terrainHidden && !cell.has)),
   }
   if (
     player.isBuildingEligible(type) &&
     canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
-    (interiorCamp || hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions))
+    (interiorFurniture || hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions))
   ) {
     player.spawnBuilding(
       definedProperties({
@@ -91,7 +102,9 @@ export function buyPlayerBuilding(
         j,
         spaceId: space?.id,
         type,
-        buildingAge,
+        buildingLevel,
+        ...(interiorFurniture ? { assetType: type } : {}),
+        interiorUnfurnished: player.type === 'Human' || Boolean(player.isPlayed),
         placementMirrored:
           options.placementMirrored ??
           (player.type === 'AI' && (!space || space.id === 'outside')

@@ -14,7 +14,7 @@ function fixture({ deferWake = false } = {}) {
   const wakeCallbacks = []
   const mocks = {
     '../../constants': {
-      ACTION_TYPES: { delivery: 'delivery' },
+      ACTION_TYPES: { delivery: 'delivery', attack: 'attack' },
       UNIT_TYPES: { villager: 'Villager' },
       SHEET_TYPES: { standing: 'standing' },
       FADE_DURATION_MS: 200,
@@ -27,6 +27,8 @@ function fixture({ deferWake = false } = {}) {
       updateInstanceVisibility: () => {},
     },
     '../../lib/mapSpaces': {
+      sameCellMapSpace: () => true,
+      getEntitySpaceId: unit => unit.spaceId ?? 'outside',
       getMapSpace: () => null,
       getEntityCell: () => null,
       getEntitySpaceMapLike: (_unit, map) => map,
@@ -44,6 +46,7 @@ function fixture({ deferWake = false } = {}) {
     },
     '../../lib/resources/resourceDelivery': { unitHasDeliverableResources: unit => Boolean(unit.carrying) },
     '../../lib/units/villagerSchedule': {
+      hasDailyRestSchedule: () => true,
       shouldVillagerBeAsleep: () => true,
       shouldVillagerWork: () => true,
       getMinutesUntilVillagerWorkStarts: () => 0,
@@ -60,6 +63,12 @@ function fixture({ deferWake = false } = {}) {
     '../../lib/buildings/interiors': { isBuildingInteriorSupported: building => Boolean(building.supported) },
     '../../lib/buildings/passageCells': {
       createReservedPassageCellLookup: () => ({ has: () => false, size: 0 }),
+    },
+    '../spacePortal/SpacePortalSystem': {
+      clearUnitSpacePortalRoute: unit => {
+        unit.spacePortalState = null
+      },
+      routeUnitThroughSpacePortal: () => false,
     },
     '../BuildingInteriorSpaceSystem': {
       ensureRuntimeBuildingInteriorSpace: () => null,
@@ -110,33 +119,14 @@ function sleepingState(patch = {}) {
   return { status: 'outside', reason: 'sleep', location: 'outside', shelter: null, targetCell: null, ...patch }
 }
 
-test('rest cell cleanup tolerates missing cells and never clears another occupant without an identifier', () => {
-  const { stateHelpers } = fixture()
-  assert.doesNotThrow(() => stateHelpers.clearUnitCell({}))
-  const other = {}
-  const cell = { has: other, solid: true }
-  stateHelpers.clearUnitCell({ currentCell: cell })
-  assert.equal(cell.has, other)
-  assert.equal(cell.solid, true)
-  stateHelpers.clearUnitCell({ label: 'same', currentCell: { has: { label: 'different' }, solid: true } })
-  const matching = { has: { label: 'same' }, solid: true }
-  stateHelpers.clearUnitCell({ label: 'same', currentCell: matching })
-  assert.equal(matching.has, null)
-  assert.equal(matching.solid, false)
-  const unit = { currentCell: cell }
-  cell.has = unit
-  stateHelpers.clearUnitCell(unit)
-  assert.equal(cell.has, null)
-})
-
-test('rest state retains the original work across delivery, shelter entry and outside fallback', () => {
+test('rest state retains the original work across delivery and rest fallback', () => {
   const { stateHelpers, lifecycle, unit } = fixture()
   const resource = { label: 'tree' }
   Object.assign(unit, { dest: resource, action: 'chopwood', work: 'woodcutter', autonomousJob: 'wood' })
   stateHelpers.rememberRestState(unit, sleepingState({ status: 'delivering' }))
   unit.dest = { label: 'chest' }
   unit.action = 'delivery'
-  lifecycle.enterShelterInstant(unit, { supported: true })
+  lifecycle.waitOutsideForSleep(unit)
   assert.equal(unit.shelterState.status, 'outside')
   assert.equal(unit.shelterState.previousDest, resource)
   assert.equal(unit.shelterState.previousAction, 'chopwood')
@@ -222,75 +212,11 @@ for (const restTransitionsEnabled of [false, true]) {
   })
 }
 
-test('blocked shelter exits defer waking unless forced or already inside an interior for an order', () => {
+test('combat resumes immediately after leaving a shelter even with rest transitions enabled', () => {
   const { lifecycle, unit, calls } = fixture()
-  const state = sleepingState({ status: 'inside', shelter: {} })
-  unit.shelterState = state
-  unit.sleepVisualState = 'sleeping'
-  lifecycle.wakeUnit(unit)
-  assert.equal(unit.shelterState, state)
-  assert.deepEqual(calls, [])
-  unit.spaceId = 'interior'
-  lifecycle.wakeUnit(unit, { mode: 'order' })
+  unit.context.restTransitionsEnabled = true
+  const task = { action: 'attack', dest: { label: 'enemy' }, work: 'attacker' }
+  assert.equal(lifecycle.startUnitWakeTransitionFromTask(unit, task), true)
   assert.equal(unit.shelterState, null)
-  assert.deepEqual(calls, [['wake']])
-  delete unit.spaceId
-  unit.shelterState = sleepingState({ status: 'inside', shelter: { isDestroyed: true } })
-  lifecycle.wakeUnitInstant(unit)
-  assert.ok(unit.shelterState)
-  lifecycle.wakeUnitInstant(unit, { force: true, mode: 'order' })
-  assert.equal(unit.shelterState, null)
-})
-
-test('instant waking places the unit at the available exit and resumes its stored task', () => {
-  const { lifecycle, unit, calls } = fixture()
-  const cell = {
-    i: 4,
-    j: 5,
-    z: 2,
-    place: occupant => {
-      cell.has = occupant
-    },
-  }
-  unit.shelterState = sleepingState({ status: 'inside', shelter: { entryCell: cell }, previousAction: 'farm' })
-  lifecycle.wakeUnitInstant(unit)
-  assert.equal(unit.currentCell, cell)
-  assert.equal(cell.has, unit)
-  assert.equal(cell.solid, true)
-  assert.equal(unit.x, 40)
-  assert.equal(unit.y, 50)
-  assert.equal(unit.shelterState, null)
-  assert.equal(calls.filter(c => c[0] === 'resume').length, 1)
-})
-
-test('a stale shelter fade cannot hide a unit that has already woken', () => {
-  const { lifecycle, unit, fades, calls } = fixture()
-  lifecycle.enterShelter(unit, {})
-  assert.equal(fades.length, 1)
-  lifecycle.wakeUnitInstant(unit, { force: true, mode: 'order' })
-  fades[0]()
-  assert.equal(unit.visible, true)
-  assert.equal(unit.alpha, 1)
-  assert.equal(
-    calls.some(c => c[0] === 'hide'),
-    false
-  )
-})
-
-test('shelter retry updates its target and timestamp but stops at the retry limit', () => {
-  const { lifecycle, unit, calls } = fixture()
-  const cell = { i: 2, j: 3 }
-  const state = sleepingState({ shelter: { entryCell: cell } })
-  assert.equal(lifecycle.retryShelterPath(unit, state), true)
-  assert.equal(state.targetCell, cell)
-  assert.equal(state.startedAtMs, 123)
-  assert.equal(state.retryCount, 1)
-  state.retryCount = 3
-  assert.equal(lifecycle.retryShelterPath(unit, state), false)
-  state.retryCount = 0
-  state.shelter.entryCell = null
-  assert.equal(lifecycle.retryShelterPath(unit, state), false)
-  state.shelter.isDestroyed = true
-  assert.equal(lifecycle.retryShelterPath(unit, state), false)
-  assert.equal(calls.filter(c => c[0] === 'send').length, 1)
+  assert.deepEqual(calls, [['resume', task]])
 })

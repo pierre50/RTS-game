@@ -1,6 +1,6 @@
 import { removeHeroInventoryItem } from '../../lib/equipment/heroInventory'
 import { createInventoryContents } from './InventoryContents'
-import { getPlayerBuildingConfig } from '../../lib/buildings/buildingAge'
+import { getPlayerBuildingConfig } from '../../lib/buildings/buildingLevel'
 import { Assets } from 'pixi.js'
 import {
   HERO_FIBER_BANDAGE_ITEM,
@@ -19,6 +19,8 @@ import {
   unequipHeroInventorySlot,
 } from '../../lib/equipment/equipmentLoot'
 import { getPlaceableInventoryBuildingType } from '../../lib/hero/placeableInventoryItems'
+import { isBuildingAllowedInSpace } from '../../lib/buildings/campConstruction'
+import { getActiveInteractionSpace } from '../../lib/mapSpaces'
 import { getUnitBagTitle } from '../../lib/resources/resourceDelivery'
 import { t } from '../../lib/lang'
 import { BUILDING_TYPES } from '../../constants'
@@ -86,10 +88,7 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
   )
 }
 
-function createBagDeleteAction(
-  host: InventoryEquipmentRendererHost,
-  remove: (mode: 'one' | 'all') => boolean
-) {
+function createBagDeleteAction(host: InventoryEquipmentRendererHost, remove: (mode: 'one' | 'all') => boolean) {
   return {
     label: t('inventoryDeleteAction'),
     icon: 'trash' as const,
@@ -116,17 +115,22 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
   const canEquip = Boolean(
     (equipmentSlot && (equipmentSlot !== 'helmetDecor' || hero?.inventory?.equipped?.helmet)) || weaponSlot
   )
-  const canPlace = Boolean(hero && placeableBuildingType)
+  const canPlaceTarget = Boolean(hero && placeableBuildingType)
+  const canPlace = Boolean(
+    hero &&
+      placeableBuildingType &&
+      isBuildingAllowedInSpace(placeableBuildingType, getActiveInteractionSpace(menu.context))
+  )
   const iconResource = BAG_ITEM_ICON_RESOURCES[item as keyof typeof BAG_ITEM_ICON_RESOURCES]
   const icon = iconResource
     ? createInventoryResourceIcon(iconResource)
     : placeableBuildingType
       ? createInventoryBuildingIcon(menu.context, placeableBuildingType)
       : undefined
-  const hasAction = canEquipTarget || canPlace || canUseConsumable
+  const hasAction = canEquipTarget || canPlaceTarget || canUseConsumable
   const actionLabel = canUseConsumable
     ? t('inventoryUseAction')
-    : canPlace
+    : canPlaceTarget
       ? t('inventoryPlaceAction')
       : t('inventoryEquipAction')
   const handleAction = (mode: 'one' | 'all'): void => {
@@ -136,8 +140,8 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
       host.close()
       return
     }
-    if (canPlace) {
-      if (!hero || !placeableBuildingType) return
+    if (canPlaceTarget) {
+      if (!canPlace || !hero || !placeableBuildingType) return
       const config = getPlayerBuildingConfig(menu.context.player, placeableBuildingType)
       if (!config) return
       const assets =

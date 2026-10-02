@@ -1,5 +1,5 @@
 import { isCampBuilding, isSowingPlacement, WHEAT_PLOT_SIZE } from '../lib/buildings/campConstruction'
-import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { Assets } from 'pixi.js'
 import { getBuildingAsset, getIconPath, getStableHorseAmount, storeStableHorse, STABLE_HORSE_CAPACITY } from '../lib'
 import { renderUnitTypeAvatar } from '../lib/avatar'
@@ -184,8 +184,8 @@ export class ActionSpecFactory {
       context: { controls, player },
     } = menu
     const owner = ownerOverride || player
-    const buildingAge = owner.age
-    const config = getPlayerBuildingConfig(owner, type, buildingAge)!
+    const buildingLevel = 0
+    const config = getPlayerBuildingConfig(owner, type, buildingLevel)!
     return {
       id: type,
       details: () => this.getBuildingDetails(type, config),
@@ -201,12 +201,12 @@ export class ActionSpecFactory {
         }
         const assets = isSowingPlacement(type)
           ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
-          : getBuildingAsset(type, { ...owner, age: buildingAge }, Assets)
+          : getBuildingAsset(type, { ...owner, level: buildingLevel }, Assets)
         const placeableBuilding: PlaceableBuildingConfig = {
           ...config,
           ...assets,
           type,
-          buildingAge,
+          buildingLevel,
           ...(isSowingPlacement(type) ? { size: WHEAT_PLOT_SIZE } : {}),
         }
         controls.setMouseBuilding?.(placeableBuilding)

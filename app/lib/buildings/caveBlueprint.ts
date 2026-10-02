@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { decodeInteriorPayload } from '../../serialization/InteriorBlueprintLoader'
+import { decodeInteriorPayload } from '../../serialization/blueprint/InteriorBlueprintLoader'
 import type { BuildingEntity } from '../../types/entities'
 import type { MapBlueprint } from '../../classes/map/MapGenerationTypes'
 

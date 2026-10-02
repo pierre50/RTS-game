@@ -68,9 +68,9 @@ function appendBuySlots(
 ): void {
   const heroGold = getHeroGold(hero)
   const marketOwner = building.owner ?? hero.owner
-  const marketStock = ensureMarketEquipmentStock(building, { age: marketOwner?.age, civilization: marketOwner?.civ })
+  const marketStock = ensureMarketEquipmentStock(building, { civilization: marketOwner?.civ })
   for (const offer of getMarketEquipmentOffers(
-    definedProperties({ age: Math.min(marketOwner?.age ?? 0, hero.owner?.age ?? 0), civilization: marketOwner?.civ }),
+    definedProperties({ civilization: marketOwner?.civ }),
     marketStock
   )) {
     const label = formatEquipmentStackLabel(offer.equipment, offer.count)
@@ -83,6 +83,8 @@ function appendBuySlots(
       equipment: offer.equipment,
       count: offer.count,
       mode: 'market-buy',
+      value: formatGold(offer.goldValue),
+      metaParts: [{ text: t('marketLotTotal', { gold: formatGold(totalGold) }), className: disabled ? 'inventory-cost-is-missing' : '' }],
       showValue: false,
 
       labelContext: 'market',
@@ -126,6 +128,8 @@ function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: M
       resource,
       amount,
       mode: 'market-sell',
+      value: formatGold(goldValue),
+      metaParts: [{ text: t('marketLotTotal', { gold: formatGold(totalGold) }) }],
       showValue: false,
 
       trailingAction: {
@@ -160,6 +164,8 @@ function appendSellEquipmentSlots(grid: HTMLDivElement, hero: UnitEntity, menu: 
       equipment: stack.equipment,
       count: stack.count,
       mode: 'market-sell',
+      value: formatGold(goldValue),
+      metaParts: [{ text: t('marketLotTotal', { gold: formatGold(totalGold) }) }],
 
       labelContext: 'market',
       trailingAction: {

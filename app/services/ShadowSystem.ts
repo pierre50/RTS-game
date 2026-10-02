@@ -5,6 +5,7 @@ import {
   getActiveMapSpace,
   getMapSpaceShadowLayer,
   getMapSpaceShadowRenderContainer,
+  mapSpaceRendersShadows,
 } from '../lib/mapSpaces'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeMap, RuntimeMapSpace } from '../types/map'
@@ -78,7 +79,12 @@ export class ShadowSystem {
       return
     }
     this.attachLayerTo(renderContainer)
-    if (!sourceLayer || !getShadowsEnabled() || sourceLayer.children.length === 0) {
+    if (
+      !sourceLayer ||
+      !getShadowsEnabled() ||
+      !mapSpaceRendersShadows(this.map, space) ||
+      sourceLayer.children.length === 0
+    ) {
       this.layer.visible = false
       return
     }

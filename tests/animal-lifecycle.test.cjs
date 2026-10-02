@@ -382,3 +382,22 @@ test('looting never changes the corpse frame or restarts its expiration timer', 
     assert.equal(animal.corpseMaterialDecayRemainingMs, 17000)
   }
 })
+
+test('animal death callback ignores destroyed animals and newer corpse animations', () => {
+  let decompositions = 0
+  const animal = {
+    altitude: 0, zIndex: 1, sprite: { gotoAndPlay() {} },
+    setTextures(sheet) { this.currentSheet = sheet }, syncShadow() {},
+    decompose() { decompositions++; this.currentSheet = 'corpseSheet' },
+  }
+  const lifecycle = new AnimalLifecycle(animal)
+  lifecycle.death()
+  const finish = animal.sprite.onComplete
+  finish()
+  finish()
+  assert.equal(decompositions, 1)
+  lifecycle.death()
+  animal.isDestroyed = true
+  animal.sprite.onComplete()
+  assert.equal(decompositions, 1)
+})

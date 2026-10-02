@@ -21,6 +21,7 @@ export type RoundedIsoFootprintSource = {
   x?: number
   y?: number
   size?: number
+  type?: string
 }
 
 export function getRoundedIsoShapePoints({ x = 0, y = 0, factor = 1 }: IsoShapeOptions = {}): IsoShapePoint[] {
@@ -73,12 +74,14 @@ export function getRoundedIsoFootprintPoints<TCell extends GridCell = GridCell>(
   if (size % 2 === 0 && Number.isFinite(entity.i ?? NaN) && Number.isFinite(entity.j ?? NaN) && grid) {
     const entityI = entity.i
     const entityJ = entity.j
-    if (entityI == null || entityJ == null) return getRoundedIsoShapePoints({ x: fallbackX, y: fallbackY, factor: size })
+    if (entityI == null || entityJ == null)
+      return getRoundedIsoShapePoints({ x: fallbackX, y: fallbackY, factor: size })
 
-    const cells = getBuildingFootprintCells(entityI, entityJ, grid, size)
+    const cells = getBuildingFootprintCells(entityI, entityJ, grid, size, undefined, entity.type)
     if (cells.length === size ** 2) {
-      const offset = (size - 1) / 2
-      const [x, y] = cartesianToIsometric(entityI + offset, entityJ + offset)
+      const centerI = cells.reduce((sum, cell) => sum + cell.i, 0) / cells.length
+      const centerJ = cells.reduce((sum, cell) => sum + cell.j, 0) / cells.length
+      const [x, y] = cartesianToIsometric(centerI, centerJ)
       return getRoundedIsoShapePoints({ x, y, factor: size })
     }
   }

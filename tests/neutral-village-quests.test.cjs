@@ -22,7 +22,7 @@ function fixture() {
   })
   let state = { version: 1, quests: [], trackedQuestId: null }
   const village = { label: 'village', name: 'Village', type: 'AI', diplomacy: 'neutral', units: [] }
-  const chief = {
+  const chief = { i: 0, j: 0,
     label: 'chief',
     name: 'Ari',
     owner: village,
@@ -32,7 +32,7 @@ function fixture() {
   }
   village.units.push(chief)
   const player = { label: 'human', isPlayed: true, isEnemy: () => false, units: [] }
-  const hero = { label: 'hero', owner: player, inventory: { resources: { wood: 20 } } }
+  const hero = { i: 0, j: 0, label: 'hero', owner: player, inventory: { resources: { wood: 20 } } }
   const context = {
     dayNight: { state: { day: 1 }, onDayChange(callback) { dayListeners.add(callback); return () => dayListeners.delete(callback) } },
     player,
@@ -583,20 +583,30 @@ test('a previously completed hunt continues without paying its resources twice',
   assert.equal(runtime.interact(chief, 'continue'), false)
 })
 
-test('meal breaks allow accepting and delivering quests at noon', () => {
-  const { runtime, chief, context } = fixture()
-  context.dayNight.state.hour = 12
-  context.dayNight.state.minute = 0
-  runtime.update()
-  chief.shelterState = { reason: 'sleep', status: 'outside', location: 'outside', mealBreak: true }
-  chief.sleepVisualState = null
-  assert.equal(runtime.accept(chief), true)
-  assert.equal(runtime.deliver(chief), true)
-})
+for (const [hour, mealBreak] of [
+  [6, false],
+  [12, true],
+  [19, false],
+]) {
+  test(`awake rest allows accepting and delivering quests at ${hour}:00`, () => {
+    const { runtime, chief, context } = fixture()
+    context.dayNight.state.hour = hour
+    context.dayNight.state.minute = 0
+    runtime.update()
+    chief.context = context
+    chief.dailySchedule = { wakeMinute: 350, workStartMinute: 410, bedMinute: 1320, workEndMinute: 1080 }
+    chief.shelterState = { reason: 'sleep', status: 'outside', location: 'outside', mealBreak }
+    chief.sleepVisualState = null
+    assert.equal(runtime.accept(chief), true)
+    assert.equal(runtime.deliver(chief), true)
+  })
+}
 
 test('sleep sessions block quests through preview and waking until the real wake completes', () => {
   for (const visual of ['sleeping', 'waking', null]) {
-    const { runtime, chief, hero } = fixture()
+    const { runtime, chief, hero, context } = fixture()
+    context.dayNight.state.hour = 2
+    chief.context = context
     runtime.update()
     chief.shelterState = { reason: 'sleep', status: 'outside', location: 'outside' }
     chief.sleepVisualState = visual
@@ -619,6 +629,8 @@ test('sleep sessions block quests through preview and waking until the real wake
 
 test('a sleeping tutorial chief cannot give ammunition or launch the raid on dialogue close', () => {
   const { runtime, chief, village, context, hero } = fixture()
+  context.dayNight.state.hour = 2
+  chief.context = context
   village.isPlayed = true
   runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
   const quest = runtime.getQuest(chief)
@@ -671,4 +683,47 @@ test('tracked minimap destination switches between objective area and the live r
   context.menu.updateCameraMiniMap = () => redraws++
   runtime.update(false)
   assert.equal(redraws, 1, 'quest polling refreshes the overlay even without camera movement')
+})
+
+
+test('offers prepare near the hero beyond the camera, never for remote chiefs', () => {
+  const { runtime, chief, hero, context } = fixture()
+  context.controls.instanceInCamera = () => false
+  chief.i = 500
+  chief.j = 0
+  runtime.update()
+  assert.equal(runtime.getQuest(chief), undefined)
+  hero.i = 421 // inside the existing 80-cell village activation radius
+  runtime.update(false)
+  assert.ok(runtime.getQuest(chief))
+  const id = runtime.getQuest(chief).id
+  hero.i = 0
+  runtime.update()
+  assert.equal(runtime.getQuest(chief).id, id)
+})
+
+test('nearby offers stop reading resources once all possible request quantities are covered', () => {
+  const { runtime, chief, context } = fixture()
+  let reads = 0
+  context.map.resources = new Set(['Tree', 'Stone', 'Berrybush'].map(type => ({ type, get quantity() { reads++; return 100 } })))
+  for (let i = 0; i < 1000; i++) context.map.resources.add({ type: 'Tree', get quantity() { throw new Error('unnecessary scan') } })
+  runtime.update()
+  assert.ok(runtime.getQuest(chief))
+  assert.equal(reads, 3)
+})
+
+
+test('a repeat offer becomes available on approaching a chief after a distant cooldown', () => {
+  const f = fixture()
+  f.runtime.update()
+  const previous = f.runtime.getQuest(f.chief)
+  previous.status = 'completed'
+  previous.completedDay = 1
+  previous.nextOfferDay = 3
+  f.hero.i = 500
+  f.nextDay(3)
+  assert.equal(f.runtime.getQuest(f.chief).id, previous.id)
+  f.hero.i = 0
+  f.runtime.update(false)
+  assert.notEqual(f.runtime.getQuest(f.chief).id, previous.id)
 })

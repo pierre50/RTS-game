@@ -18,7 +18,11 @@ type TrainingCancellationHost = {
 }
 
 function createRestoredTraineeExtra(trainee: TrainingTrainee): UnitCreationExtra {
-  const extra: UnitCreationExtra = {}
+  const extra: UnitCreationExtra = {
+    homeHouseLabel: trainee.homeHouseLabel,
+    homeBedLabel: trainee.homeBedLabel,
+    partnerLabel: trainee.partnerLabel,
+  }
   if (trainee.label) extra.label = trainee.label
   if (trainee.inventory) extra.inventory = structuredClone(trainee.inventory)
   if (trainee.hitPoints != null) extra.hitPoints = trainee.hitPoints

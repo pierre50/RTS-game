@@ -1,13 +1,26 @@
 const { loadTsModule } = require('./loadTsModule.cjs')
 const { buildingInterior } = require('../../tools/generate-interior-maps.cjs')
 const config = require('../../public/assets/data/gameplay/buildings.json')
-const { BUILDING_TYPES } = loadTsModule('app/constants/entities.ts')
+const constants = loadTsModule('app/constants/entities.ts')
+const placement = loadTsModule('app/lib/grid/placement.ts')
+const { getBuildingFootprintCells } = loadTsModule('app/lib/grid/cells.ts')
+const { isBuildingTraversable } = loadTsModule('app/lib/buildings/buildingTraversal.ts')
 const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/BuildingInteriorSpaceDecorations.ts', {
   mocks: {
-    '../../app/constants': { BUILDING_TYPES },
-    '../../constants': { BUILDING_TYPES },
+    '../../app/constants': constants,
+    '../../constants': constants,
     '../../app/lib/grid/placement': {
-      canPlaceBuildingAt: (grid, i, j) => {
+      canPlaceBuildingAt: (grid, i, j, config, options = {}) => {
+        if (config.type === 'CampBedroll') return placement.canPlaceBuildingAt(grid, i, j, config, options)
+        if (options.allowBorder) {
+          const size = config.size ?? 1
+          for (let x = i; x < i + size; x++)
+            for (let y = j; y < j + size; y++) {
+              const cell = grid[x]?.[y]
+              if (!cell || cell.solid || cell.has || cell.terrainHidden || !options.canUseCell(cell)) return false
+            }
+          return true
+        }
         const cell = grid[i]?.[j]
         return Boolean(cell && !cell.solid && !cell.has && !cell.border && !cell.terrainHidden)
       },
@@ -15,7 +28,7 @@ const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/Buildin
   },
 })
 
-function furnishInterior(type, saved, placementMirrored = false) {
+function furnishInterior(type, saved, placementMirrored = false, ownerOptions = {}, buildingOptions = {}) {
   const buildingSize = config[type].size
   const blueprint = buildingInterior({ buildingSize, size: buildingSize * 2 + 7, id: type, seed: 1 })
   const floor = Buffer.from(blueprint.floorMask, 'base64')
@@ -33,14 +46,21 @@ function furnishInterior(type, saved, placementMirrored = false) {
     }))
   )
   const owner = {
+    type: 'AI',
+    ...ownerOptions,
     buildings: [],
     config: { buildings: config },
     createBuilding(options) {
       const building = { ...options, isDestroyed: false }
       this.buildings.push(building)
-      const cell = grid[options.i][options.j]
-      cell.has = building
-      cell.solid = true
+      const cells =
+        options.type === 'CampBedroll'
+          ? getBuildingFootprintCells(options.i, options.j, grid, config[options.type].size, undefined, options.type)
+          : [grid[options.i][options.j]]
+      for (const cell of cells) {
+        cell.has = building
+        cell.solid = !isBuildingTraversable(options.type)
+      }
       return building
     },
   }
@@ -55,7 +75,7 @@ function furnishInterior(type, saved, placementMirrored = false) {
     exitCell: grid[exit.i][exit.j],
     walkableCells: cells,
     sleepCells: cells,
-    building: { type, owner, interiorBuildings: saved, placementMirrored },
+    building: { type, owner, interiorBuildings: saved, placementMirrored, ...buildingOptions },
   }
   const context = { map: { randomItem: items => items[0] } }
   ensureInteriorDefaultBuildings(context, space)

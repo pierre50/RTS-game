@@ -157,13 +157,7 @@ function findBowHuntTarget(hero: UnitEntity): RuntimeEntity | null {
 
 export function cancelHeroPowerCharge(hero: UnitEntity): void {
   if (hero.heroPowerChargeStart == null) return
-  const sprite = hero.sprite
   clearHeroPowerCharge(hero)
-  if (sprite) {
-    sprite.onComplete = undefined
-    sprite.onFrameChange = undefined
-    sprite.loop = true
-  }
   finishHeroToolAnimation(hero)
 }
 
@@ -257,7 +251,7 @@ export function beginHeroPowerChargeAt(
   tool: HeroPowerChargeTool = 'bow'
 ): boolean {
   const sprite = hero.sprite
-  if (!sprite || hero.actionLocked) return false
+  if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed) return false
   if (!hasEnergyToStartPowerCharge(hero)) return false
   hero.actionLocked = true
   const now = performance.now()
@@ -288,6 +282,10 @@ export function beginHeroPowerChargeAt(
 }
 
 export function releaseHeroPowerCharge(hero: UnitEntity, now = performance.now()): boolean {
+  if (hero.isDead || hero.isDestroyed) {
+    cancelHeroPowerCharge(hero)
+    return false
+  }
   if (hero.heroPowerChargeStart == null || hero.heroPowerReleaseQueued) return false
   drainHeroPowerChargeEnergy(hero, now)
   hero.heroPowerReleasePower = getHeroPowerChargeRatio(hero, now)

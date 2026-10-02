@@ -3,7 +3,7 @@ import {
   maintainWildlifeHome,
   outsideWildlifeHome,
   WILDLIFE_CALM_MS,
-} from '../../services/WildlifeHabitat'
+} from '../../services/wildlife/WildlifeHabitat'
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import {
   AmbientMovementController,

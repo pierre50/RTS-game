@@ -828,54 +828,59 @@ test('closing the bag ends communication and releases the NPC exactly once', () 
   })
 })
 
-test('a villager on lunch break shows quest choices instead of sleep dialogue', () => {
-  withFakeDocument(() => {
-    const context = makeContext([])
-    context.dayNight = { state: { hour: 12, minute: 0 } }
-    const npc = {
-      type: 'Villager',
-      label: 'villager',
-      owner: { label: 'neutral-ai' },
-      shelterState: { reason: 'sleep', mealBreak: true },
-      sleepVisualState: null,
-    }
-    const quest = { id: 'quest', status: 'available', parameters: {}, owner: { name: 'Villager' } }
-    context.neutralQuests = { getQuest: () => quest, system: { definitions: new Map() }, dialogue: () => quest }
-    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
-    const manager = new NpcOrdersManager({ context })
-    manager.open([npc], { ordersEnabled: false, chatterLine: 'lunch greeting' })
-    assert.equal(manager.questPanel.root.hidden, false)
-    assert.equal(manager.chatterContainer.children[0].textContent, 'npcTopicsPrompt')
-    manager.close()
+for (const [hour, status, mealBreak] of [
+  [6, 'outside', false],
+  [6, 'inside', false],
+  [6, 'wakingUp', false],
+  [12, 'outside', true],
+  [19, 'outside', false],
+]) {
+  test(`an awake resting villager shows quest choices at ${hour}:00 (${status})`, () => {
+    withFakeDocument(() => {
+      const context = makeContext([])
+      context.dayNight = { state: { hour, minute: 0 } }
+      const npc = {
+        type: 'Villager',
+        label: 'villager',
+        owner: { label: 'neutral-ai' },
+        context,
+        dailySchedule: { wakeMinute: 350, workStartMinute: 410, bedMinute: 1320, workEndMinute: 1080 },
+        shelterState: { reason: 'sleep', status, mealBreak },
+        sleepVisualState: null,
+      }
+      const quest = { id: 'quest', status: 'available', parameters: {}, owner: { name: 'Villager' } }
+      context.neutralQuests = { getQuest: () => quest, system: { definitions: new Map() }, dialogue: () => quest }
+      const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
+      const manager = new NpcOrdersManager({ context })
+      manager.open([npc], { ordersEnabled: false, chatterLine: 'rest greeting' })
+      assert.equal(manager.questPanel.root.hidden, false)
+      assert.equal(manager.chatterContainer.children[0].textContent, 'npcTopicsPrompt')
+      manager.close()
+    })
   })
-})
+}
 
-test('sleeping chief shows sleep dialogue without quest choices until the actual wake', () => {
+test('AI chief refuses night conversations and ends an audience at bedtime', () => {
   withFakeDocument(() => {
     const context = makeContext([])
-    const npc = {
-      type: 'Chief',
-      label: 'chief',
-      owner: { label: 'neutral-ai' },
-      shelterState: { reason: 'sleep' },
-      sleepVisualState: null,
-    }
-    const quest = { id: 'quest', status: 'available', parameters: {}, owner: { name: 'Chief' } }
-    context.neutralQuests = { getQuest: () => quest, system: { definitions: new Map() }, dialogue: () => quest }
+    context.dayNight = { state: { hour: 22, minute: 0 } }
+    const npc = { context, type: 'Chief', isChief: true, label: 'chief', owner: { type: 'AI', label: 'neutral-ai' },
+      dailySchedule: { wakeMinute: 360, workStartMinute: 420, bedMinute: 1320, workEndMinute: 1080, lunchStartMinute: 720, lunchEndMinute: 780 } }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
     const manager = new NpcOrdersManager({ context })
-    manager.open([npc], { ordersEnabled: false, chatterLine: 'quest greeting' })
-    assert.equal(manager.questPanel.root.hidden, true)
-    assert.equal(manager.chatterContainer.children[0].textContent, 'npcQuestSleeping')
+    manager.open([npc], { ordersEnabled: false })
+    assert.equal(manager.opened, false)
+    context.dayNight.state.hour = 7
     npc.sleepVisualState = 'waking'
-    npc.shelterState = null
-    manager.syncQuest()
-    assert.equal(manager.questPanel.root.hidden, true)
+    manager.open([npc], { ordersEnabled: false })
+    assert.equal(manager.opened, false)
     npc.sleepVisualState = null
+    manager.open([npc], { ordersEnabled: false })
+    assert.equal(manager.opened, true)
+    context.dayNight.state.hour = 22
     manager.syncQuest()
-    assert.equal(manager.questPanel.root.hidden, false)
-    assert.equal(manager.chatterContainer.children[0].textContent, 'npcTopicsPrompt')
-    manager.close()
+    assert.equal(manager.opened, false)
+    assert.deepEqual(manager.npcs, [])
   })
 })
 

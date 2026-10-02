@@ -9,9 +9,11 @@ export function drawMinimapMarker(
   point: { x: number; y: number },
   color: string,
   redraw: () => void,
-  selected = false
+  selected = false,
+  markerScale = 1
 ): void {
-  const size = 10 * MINIMAP_RESOLUTION_SCALE
+  const scale = MINIMAP_RESOLUTION_SCALE * markerScale
+  const size = 10 * scale
   context.save()
   context.beginPath()
   if (kind === 'home') context.rect(point.x - size / 2, point.y - size / 2, size, size)
@@ -19,7 +21,7 @@ export function drawMinimapMarker(
   context.fillStyle = color
   context.fill()
   context.strokeStyle = selected ? '#ffffff' : '#171a20'
-  context.lineWidth = 1.5 * MINIMAP_RESOLUTION_SCALE
+  context.lineWidth = 1.5 * scale
   context.stroke()
   let icon = icons.get(kind)
   if (!icon) {

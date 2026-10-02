@@ -15,7 +15,7 @@ function normalizeLang(lang: string | null): LangCode {
   return SUPPORTED_LANGS.some(({ code }) => code === lang) ? (lang as LangCode) : 'fr'
 }
 
-let currentLang = normalizeLang(localStorage.getItem(LANG_STORAGE_KEY))
+let currentLang = normalizeLang(typeof localStorage === 'undefined' ? null : localStorage.getItem(LANG_STORAGE_KEY))
 
 export function t(key: string, vars?: TranslationVars): string {
   const translations = TRANSLATIONS as TranslationMap

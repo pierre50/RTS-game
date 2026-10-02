@@ -1,9 +1,10 @@
+import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
 import type { ResourceAmount } from '../../types/common'
 import type { SavePlayerState, SaveGridPoint, SaveEntityState } from '../../types/save'
-import type { OfflineWorkRules } from './OfflineWorldWork'
-import type { OfflineWorldSpatial } from './OfflineWorldSpatial'
+import type { OfflineWorkRules } from './offline/OfflineWorldWork'
+import type { OfflineWorldSpatial } from './offline/OfflineWorldSpatial'
 
 /** Shared baseline for new runtime villages and never-visited campaign regions. */
 export function populateVillageBase(
@@ -11,7 +12,7 @@ export function populateVillageBase(
   index: number,
   anchor: SaveGridPoint,
   spatial: OfflineWorldSpatial,
-  rules: Pick<OfflineWorkRules, 'buildingConfig' | 'unitConfig' | 'buildingCapacity'>,
+  rules: Pick<OfflineWorkRules, 'buildingConfig' | 'unitConfig'>,
   resources: ResourceAmount,
   options: { heroOnly?: boolean; workers?: number } = {}
 ): void {
@@ -77,5 +78,5 @@ export function populateVillageBase(
     spatial.reserve(unit)
   }
   player.population = count
-  player.populationMax = options.heroOnly ? 1 : Math.max(count, rules.buildingCapacity(index, 'TownCenter'))
+  refreshPopulationCapacity(player)
 }

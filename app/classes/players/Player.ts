@@ -1,3 +1,7 @@
+import { reconcileHouseholds } from '../../lib/housing/households'
+import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
+import type { ForgeUpgrades } from '../../lib/equipment/forgeUpgrades'
+import type { SettlementType, DevelopmentMode } from '../../config/settlementProfiles'
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { Assets } from 'pixi.js'
 import { createPlayerData } from '../../config/playerConfig'
@@ -26,9 +30,8 @@ import { fadeIn } from '../../lib/entities/entityFade'
 import { playableColor } from '../../lib/graphics/playableColor'
 import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
-import { updatePopulationObjectives } from '../../lib/objectives/ageObjectives'
 import { isNeutralPlayer } from '../../lib/playerState'
-import { VisionGrid } from '../../services/VisionGrid'
+import { VisionGrid } from '../../services/visibility/VisionGrid'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
@@ -39,7 +42,7 @@ import { Building } from '../building/Building'
 import type { UnitSpawnOptions } from '../unit/Unit'
 import { buyPlayerBuilding, plantPlayerWheatField } from './PlayerBuildingPlacement'
 import { initializePlayerRelations, initializePlayerResources } from './PlayerInitialization'
-import { isBuildingEligible, onAgeChange } from './PlayerProgression'
+import { isBuildingEligible, refreshCivilizationAppearance } from './PlayerProgression'
 import { createPlayerUnit } from './PlayerUnitCreation'
 
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
@@ -50,6 +53,9 @@ export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
 }
 
 export class Player implements PlayerLike {
+  settlementType?: SettlementType
+  developmentMode?: DevelopmentMode
+  rpgRestockDay?: number
   family: string
   context: GameContextLike
   label: string
@@ -80,9 +86,8 @@ export class Player implements PlayerLike {
   selectedOther!: RuntimeEntity | null
   buildings: BuildingEntity[]
   population: number
-  completedObjectives: string[]
   cellViewed: number
-  age: number
+  forgeUpgrades: ForgeUpgrades
   lastUnderAttackAlertAt: number
   team!: number | null
   diplomacy!: Exclude<PlayerLike['diplomacy'], undefined>
@@ -112,12 +117,10 @@ export class Player implements PlayerLike {
     this.units = []
     this.buildings = []
     this.population = 0
-    this.completedObjectives = []
     this.cellViewed = 0
-    this.age = 0
+    this.forgeUpgrades = {}
     this.lastUnderAttackAlertAt = 0
     Object.assign(this, options)
-    this.completedObjectives = this.completedObjectives || []
     initializePlayerRelations(this, options)
 
     this.populationMax = this.populationMax || (map.instantMode ? POPULATION_MAX : 0)
@@ -215,16 +218,12 @@ export class Player implements PlayerLike {
     return building
   }
 
-  updatePopulationObjectives(): void {
-    updatePopulationObjectives(this)
-  }
-
   get villagerPopulation() {
     return this.units.filter(unit => unit.type === UNIT_TYPES.villager && !unit.isDead && !unit.isDestroyed).length
   }
 
-  onAgeChange() {
-    onAgeChange(this)
+  refreshCivilizationAppearance() {
+    refreshCivilizationAppearance(this)
   }
 
   otherPlayers() {
@@ -293,7 +292,7 @@ export class Player implements PlayerLike {
   plantWheatField(
     i: number,
     j: number,
-    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
+    options: { alreadyPaid?: boolean; spaceId?: string; buildingLevel?: number; placementMirrored?: boolean } = {}
   ) {
     return plantPlayerWheatField(this, i, j, options)
   }
@@ -302,7 +301,7 @@ export class Player implements PlayerLike {
     i: number,
     j: number,
     type: string,
-    options: { alreadyPaid?: boolean; spaceId?: string; buildingAge?: number; placementMirrored?: boolean } = {}
+    options: { alreadyPaid?: boolean; spaceId?: string; buildingLevel?: number; placementMirrored?: boolean } = {}
   ) {
     return buyPlayerBuilding(this, i, j, type, options)
   }
@@ -316,6 +315,10 @@ export class Player implements PlayerLike {
     const building = new Building({ ...options, owner: this }, context)
     addEntityToMapSpaceContainer(context.map, building)
     this.buildings.push(building)
+    if (!options.skipBuiltEffects) {
+      reconcileHouseholds(this)
+      refreshPopulationCapacity(this)
+    }
     updateWallAndNeighbours(building)
     canUpdateMinimap(building, context.player) &&
       context.menu.isMiniMapActive?.() !== false &&

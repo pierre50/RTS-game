@@ -22,7 +22,7 @@ function fixture() {
   const village = { type: 'AI', label: 'village', diplomacy: 'neutral', units: [], buildings: [] }
   const chief = { label: 'chief', type: 'Chief', hitPoints: 50, i: 5, j: 5, owner: village, inventory: {} }
   village.units.push(chief)
-  const hero = { inventory: { resources: {} } }
+  const hero = { i: 0, j: 0, inventory: { resources: {} } }
   const context = {
     player: { label: 'player', isEnemy: () => false, views: { isVisible: () => false } },
     players: [village, bandits], controls: { heroUnit: hero, instanceInCamera: () => false },

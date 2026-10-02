@@ -58,19 +58,19 @@ export class TimeSkipSystem {
   private pendingCancel: { silent?: boolean } | null = null
   private cancelPadIndex: number | null = null
   private cancelPressed = false
-  active: boolean
+  active = false
   context: GameContextLike
-  completedMessage: string | null
-  dayNightMaxDeltaMs: number | undefined
-  hours: number
-  onCancel: (() => void) | null
-  onComplete: (() => void) | null
-  overlay: TimeSkipOverlay | null
-  snapshot: TimeSkipSnapshot | null
-  startElapsedMs: number
-  suppressAudio: boolean
-  suppressCosmetics: boolean
-  targetElapsedMs: number
+  completedMessage: string | null = null
+  dayNightMaxDeltaMs: number | undefined = undefined
+  hours = 0
+  onCancel: (() => void) | null = null
+  onComplete: (() => void) | null = null
+  overlay: TimeSkipOverlay | null = null
+  snapshot: TimeSkipSnapshot | null = null
+  startElapsedMs = 0
+  suppressAudio = false
+  suppressCosmetics = false
+  targetElapsedMs = 0
   _onKeyDown: (evt: KeyboardEvent) => void
   _onTick: (ticker?: { deltaMS?: number; elapsedMS?: number }) => void
 
@@ -79,22 +79,6 @@ export class TimeSkipSystem {
     private sleep?: SleepSimulation
   ) {
     this.context = context
-    this.active = false
-    this.pendingStart = null
-    this.simulatingSleep = false
-    this.sleepStarted = false
-    this.pendingCancel = null
-    this.completedMessage = null
-    this.dayNightMaxDeltaMs = undefined
-    this.hours = 0
-    this.onCancel = null
-    this.onComplete = null
-    this.overlay = null
-    this.snapshot = null
-    this.startElapsedMs = 0
-    this.suppressAudio = false
-    this.suppressCosmetics = false
-    this.targetElapsedMs = 0
     this._onKeyDown = evt => this.onKeyDown(evt)
     this._onTick = () => this.onTick()
   }

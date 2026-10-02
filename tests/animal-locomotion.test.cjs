@@ -142,6 +142,7 @@ function createMovement(animalOverrides = {}, libOverrides = {}, energyOverrides
     // These locomotion scenarios use a synthetic square grid with flat ground.
     [path.join(__dirname, '../app/lib/terrain/reliefSurface.ts')]: {
       getReliefLevelAtPoint: () => 0,
+      getTerrainReliefLevelAtPoint: () => 0,
       syncEntityRelief: (_map, entity) => entity.applyReliefLift(0),
     },
     '../../lib': lib,

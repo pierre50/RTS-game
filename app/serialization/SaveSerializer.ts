@@ -1,3 +1,4 @@
+import { deferredVillageState } from '../services/world/distantVillages/DeferredVillageStore'
 import { CompactResourceSet, resourceReadValues } from '../classes/resources/CompactResourceSet'
 import { filterObject } from '../lib'
 import { serializeCampRespawnStates } from '../lib/camps/campRespawnState'
@@ -56,11 +57,13 @@ function cameraData(camera?: { x?: number; y?: number } | null) {
 }
 
 function playerData(player: SerializablePlayer) {
+  const deferred = deferredVillageState(player)
+  if (deferred) return deferred
   const data: SavePlayerState = definedProperties({
     targetKnowledge: exportTargetKnowledge(player),
     ...filterObject(player, [
       'label',
-      'age',
+
       'type',
       ...SERIALIZED_RESOURCE_NAMES,
       'civ',
@@ -73,10 +76,13 @@ function playerData(player: SerializablePlayer) {
       'diplomacy',
       'population',
       'populationMax',
+      'settlementType',
+      'developmentMode',
+      'rpgRestockDay',
       'offlineBuildingPlanDay',
       'abstractProductionRemainder',
       'offlineBuildingDecision',
-      'completedObjectives',
+      'forgeUpgrades',
       'cellViewed',
       'isPlayed',
       'hasBuilt',
@@ -89,7 +95,7 @@ function playerData(player: SerializablePlayer) {
     }),
     units: player.units.map(unitData),
     corpses: player.corpses.map(unitData),
-    ageRulesVersion: 1,
+
     villagerAssignments: summarizeVillagerAssignments(player.units),
     views: player.views.toJSON(),
     minimapBuildingMemory: player.minimapBuildingMemory?.map(entry => ({ ...entry })),
@@ -199,7 +205,6 @@ function serializeGameData(
       environment: context.map.environment,
       instantMode: context.map.instantMode,
       heroOnlyStart: context.map.heroOnlyStart,
-      startingAge: context.map.startingAge,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,
       startingResources: context.map.startingResources,

@@ -233,7 +233,7 @@ test('building farm spawns a mature wheat field instead of a building entity', (
   )
 })
 
-test('building towncenter refreshes objectives after dev-console spawn', () => {
+test('building towncenter refreshes the interface after dev-console spawn', () => {
   const { spawnBuilding } = loadSpawnActions()
   const calls = []
   const currentPlayer = {
@@ -260,7 +260,6 @@ test('building towncenter refreshes objectives after dev-console spawn', () => {
   assert.deepEqual(currentPlayer.hasBuilt, ['TownCenter'])
   assert.deepEqual(calls, [
     ['updateTexture', 'TownCenter'],
-    ['updatePopulationObjectives'],
     ['updateTopbar'],
     ['updatePlayerMiniMapEvt'],
   ])

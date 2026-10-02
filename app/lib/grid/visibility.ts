@@ -1,7 +1,7 @@
 import { CompactResourceSet, resolveResource } from '../../classes/resources/CompactResourceSet'
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
-import type { VisibilityEntity } from '../../services/UnitPerception'
-import { updateVisibility } from '../../services/UnitPerception'
+import type { VisibilityEntity } from '../../services/visibility/UnitPerception'
+import { updateVisibility } from '../../services/visibility/UnitPerception'
 import type { Bounds } from '../../types/geometry'
 import type { GridPosition, Point } from '../../types/grid'
 import { getEntityMapSpace, sameMapSpace } from '../mapSpaces'
@@ -167,8 +167,8 @@ export function instanceIsInPlayerSight(instance: RenderableInstance, player?: P
     const parent = (instance as RenderableInstance & { parent?: { grid?: Array<Array<GridPosition>> } | null }).parent
     const grid = space?.grid ?? parent?.grid
     if (!grid) return views.isVisible(instance.i, instance.j)
-    return getBuildingFootprintCells(instance.i, instance.j, grid, instance.size ?? 1).some(cell =>
-      views.isVisible(cell.i, cell.j)
+    return getBuildingFootprintCells(instance.i, instance.j, grid, instance.size ?? 1, undefined, instance.type).some(
+      cell => views.isVisible(cell.i, cell.j)
     )
   }
   return views.withSpace?.(instance.spaceId, checkVisible) ?? checkVisible()
@@ -218,7 +218,7 @@ export function instanceIsInActiveOrTeamSight(
       continue
     }
     if (
-      getBuildingFootprintCells(instance.i, instance.j, grid, instance.size ?? 1).some(cell =>
+      getBuildingFootprintCells(instance.i, instance.j, grid, instance.size ?? 1, undefined, instance.type).some(cell =>
         hasActiveViewerOtherThanSelf(instance, views, cell.i, cell.j)
       )
     ) {

@@ -1,3 +1,5 @@
+import { isLivingChief } from '../../lib/chief'
+import { ambientActivityArea, AMBIENT_CAMERA_MARGIN } from './AmbientActivityArea'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
@@ -10,7 +12,9 @@ export function observeVillage(
   context: GameContextLike,
   home: VillageHome,
   radius: number,
-  residents: UnitEntity[] = []
+  residents: UnitEntity[] = [],
+  cameraOnly = false,
+  cameraMargin = AMBIENT_CAMERA_MARGIN
 ): VillageObservation {
   const outsidePoint = (entity: UnitEntity) =>
     getEntitySpaceId(entity) === 'outside'
@@ -19,12 +23,15 @@ export function observeVillage(
   const hero =
     context.controls?.heroUnit ??
     context.players?.find(p => p.isPlayed)?.units?.find(u => u.controlMode === 'hero' || u.type === 'Hero')
-  if (hero && !hero.isDead && !hero.isDestroyed) {
+  if ((!cameraOnly || residents.some(isLivingChief)) && hero && !hero.isDead && !hero.isDestroyed) {
     const point = outsidePoint(hero)
     const distance = point ? Math.hypot(point.i - home.i, point.j - home.j) : Infinity
     if (distance <= radius) return { reason: 'hero', actor: hero.label, distance: Math.round(distance) }
   }
-  if ((context.map.activeSpaceId ?? 'outside') === 'outside') {
+  if (cameraOnly) {
+    const nearby = ambientActivityArea(context, cameraMargin)
+    if (nearby(home) || residents.some(nearby)) return { reason: 'camera' }
+  } else if ((context.map.activeSpaceId ?? 'outside') === 'outside') {
     const cell = context.map.grid?.[home.i]?.[home.j]
     if (cell && context.controls?.instanceInCamera?.(cell)) return { reason: 'camera' }
     for (const resident of residents) {

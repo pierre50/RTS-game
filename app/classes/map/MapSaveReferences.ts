@@ -1,3 +1,4 @@
+import { getDeferredVillages } from '../../services/world/distantVillages/DeferredVillageStore'
 import { CompactResourceSet } from '../resources/CompactResourceSet'
 import type { ContainerChild } from 'pixi.js'
 import type { RuntimeEntity } from '../../types/entities'
@@ -43,6 +44,7 @@ function getRuntimeEntityByLabel(map: MapGenerationMap, label: string): RuntimeE
   } else {
     for (const resource of map.resources ?? []) if (resource.label === label) return resource
   }
+  getDeferredVillages(map)?.wakeLabel(label)
   const child = map.getChildByLabel?.(label)
   if (child && isRuntimeEntity(child)) return child
   for (const player of map.context?.players ?? []) {

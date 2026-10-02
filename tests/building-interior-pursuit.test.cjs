@@ -38,7 +38,7 @@ function scenario({ buildingOwner = 'pursuer', hp = 100, capacity = 5 } = {}) {
   }
   const api = loadTsModule('engine/services/BuildingInteriorSpaceRoutes.ts', {
     mocks: {
-      '../../app/services/SpacePortalSystem': {
+      '../../app/services/spacePortal/SpacePortalSystem': {
         transferUnitThroughSpacePortal: (_ctx, unit, portal) => {
           unit.spaceId = portal.targetSpaceId
           return true
@@ -139,4 +139,18 @@ test('entering a third-party building does not mobilize its bystanders or contro
   s.context.players.push({ units: [bystander, controlled] })
   s.moveHeroPartyIntoBuildingInteriorSpace(s.context, s.hero, s.space)
   assert.deepEqual(s.routes.map(route => route.unit.label), ['guard'])
+})
+
+
+test('renovation refuses new entry and cancels an already pending entry without blocking exit', () => {
+  const s = scenario({ buildingOwner: 'hero' })
+  assert.equal(s.routeUnitIntoBuildingInteriorSpace(s.context, s.hero, s.space), true)
+  const pending = s.routes[0].options
+  assert.equal(pending.shouldContinue(), true)
+  s.space.building.buildingUpgrade = { targetLevel: 1 }
+  assert.equal(pending.shouldContinue(), false)
+  assert.equal(s.routeUnitIntoBuildingInteriorSpace(s.context, s.hero, s.space), false)
+  assert.equal(s.moveHeroPartyIntoBuildingInteriorSpace(s.context, s.hero, s.space), false)
+  s.hero.spaceId = s.space.id
+  assert.equal(s.routeUnitOutOfBuildingInteriorSpace(s.context, s.hero, s.space), true)
 })

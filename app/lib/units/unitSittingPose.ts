@@ -1,11 +1,11 @@
-import { SHEET_TYPES, UNIT_TYPES } from '../../constants'
+import { SHEET_TYPES } from '../../constants'
 import type { UnitEntity } from '../../types/entities'
-import { shouldVillagerBeAsleep, shouldVillagerWork } from './villagerSchedule'
+import { hasDailyRestSchedule, shouldVillagerBeAsleep, shouldVillagerWork } from './villagerSchedule'
 import { isHeroControlled } from './unitControl'
 
 function canSitDuringBreak(unit: UnitEntity): boolean {
   if (
-    unit.type !== UNIT_TYPES.villager ||
+    !hasDailyRestSchedule(unit) ||
     !unit.sittingSheet ||
     unit.isDead ||
     unit.isDestroyed ||

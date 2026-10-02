@@ -156,7 +156,7 @@ function loadControls(mockOverrides = {}) {
     '../constants': {
       CAMP_DECORATION_BUILDING_TYPES:
         require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
-      BUILDING_TYPES: { trap: 'Trap' },
+      BUILDING_TYPES: { chest: 'Chest', trap: 'Trap' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal' },

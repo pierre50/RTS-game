@@ -322,11 +322,13 @@ def hero_build_tasks() -> list[BuildTask]:
     ]
 
 
-def unit_build_tasks(unit: str) -> list[BuildTask]:
+def unit_build_tasks(unit: str, body: str = "male") -> list[BuildTask]:
     tasks = [
         (output_sheet, source_sheet, animation)
         for output_sheet, (source_sheet, animation, _equipment) in build_sheet_plan(unit, UNIT_JOBS[unit][0]).items()
     ]
+    if unit in {"chief", "infantry", "infantry_nohair"}:
+        tasks.append(("sitting", villager_sitting_sheet(body), "sit"))
     if unit in {"infantry", "infantry_nohair"}:
         tasks.append(("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"))
     return tasks
@@ -389,7 +391,7 @@ def build(
                 elif unit == "hero":
                     tasks = hero_build_tasks()
                 else:
-                    tasks = unit_build_tasks(unit)
+                    tasks = unit_build_tasks(unit, look.body)
                 variant_asset_path = f"{unit}/{variant_key}"
                 if variant_asset_path not in generated_set:
                     generated.append(variant_asset_path)
@@ -401,7 +403,10 @@ def build(
                     # recolorable piece, whether pixel-recolored or picked by filename, is
                     # baked in the same blue palette that changeSpriteColor's SOURCE_COLORS
                     # matches at runtime, so one bake per civ covers every player color.
-                    paths = resolve_layer_paths(source_root, layer_paths(look, animation, civ, "neutral"), animation)
+                    # Military equipment has no sitting source; resting units wear
+                    # their civilization's base outfit, just as residents do.
+                    pose_look = variant_look_for_civ("villager", civ_key, variant) if unit in {"chief", "infantry", "infantry_nohair"} and animation == "sit" else look
+                    paths = resolve_layer_paths(source_root, layer_paths(pose_look, animation, civ, "neutral"), animation)
                     relative_path = f"{unit}/{variant_key}/{relative_suffix}"
                     output_sheet = relative_suffix.rsplit("/", 1)[-1]
                     animation_speed = animation_speed_for(output_sheet)

@@ -18,6 +18,16 @@ import type { MenuHost } from '../MenuHost'
 import { createInventoryActionRow } from '../inventory/InventoryActionRow'
 import { inventoryCostMetaParts } from '../inventory/InventoryCostMeta'
 import { createInventoryEquipmentIcon } from '../inventory/InventoryItemIcons'
+import { createInventorySection } from '../inventory/InventorySection'
+import { canManageForge, canResearchForgeUpgrade, researchForgeUpgrade } from '../../lib/equipment/forgeResearch'
+import {
+  FORGE_FAMILIES,
+  FORGE_ICONS,
+  FORGE_MATERIALS,
+  getForgeTier,
+  getForgeUpgradeCost,
+  type ForgeFamily,
+} from '../../lib/equipment/forgeUpgrades'
 
 export class HeroForgeBody {
   craftPanel = document.createElement('div')
@@ -26,7 +36,7 @@ export class HeroForgeBody {
     private menu: MenuHost,
     private building: BuildingEntity
   ) {
-    this.craftPanel.className = 'forge-craft-body inventory-section-list'
+    this.craftPanel.className = 'forge-body'
     this.renderCraft()
   }
 
@@ -118,8 +128,87 @@ export class HeroForgeBody {
 
   renderCraft(): void {
     this.craftPanel.textContent = ''
-    for (const recipe of getAvailableHeroCraftRecipes(this.menu.context.player)) {
-      this.craftPanel.appendChild(this.createCraftButton(recipe))
+    const recipes = getAvailableHeroCraftRecipes(this.menu.context.player)
+    for (const [title, items] of [
+      ['forgeCategoryEquipment', recipes.filter(recipe => !recipe.iconResource && !recipe.id.startsWith('arrow_'))],
+      ['forgeCategoryConsumables', recipes.filter(recipe => recipe.iconResource)],
+      ['forgeCategoryArrows', recipes.filter(recipe => recipe.id.startsWith('arrow_'))],
+    ] as const) {
+      if (!items.length) continue
+      this.appendSection(t(title), grid => items.forEach(recipe => grid.appendChild(this.createCraftButton(recipe))))
     }
+    // Village upgrades follow the hero's own crafting; the scope notice opens them once.
+    const scope = t(
+      canManageForge(this.menu.context.player, this.building, this.menu.context.controls.heroUnit)
+        ? 'forgeUpgradeScope'
+        : 'forgeUpgradeRequiresCommand'
+    )
+    for (const [title, families, description] of [
+      ['forgeCategoryTools', FORGE_FAMILIES.slice(0, 3), scope],
+      ['forgeCategoryMilitary', FORGE_FAMILIES.slice(3), undefined],
+    ] as const) {
+      this.appendSection(
+        t(title),
+        grid => families.forEach(family => grid.appendChild(this.createUpgradeButton(family))),
+        description
+      )
+    }
+  }
+
+  private appendSection(title: string, renderItems: (grid: HTMLDivElement) => void, description?: string): void {
+    this.craftPanel.appendChild(
+      createInventorySection({
+        title,
+        description,
+        gridClassName: 'forge-craft-body inventory-section-list',
+        renderItems,
+      })
+    )
+  }
+
+  createUpgradeButton(family: ForgeFamily): HTMLElement {
+    const { player, controls } = this.menu.context
+    const tier = getForgeTier(player, family)
+    const maximum = tier === 3
+    const nextTier = Math.min(3, tier + 1)
+    const cost = getForgeUpgradeCost(family, nextTier)
+    const title = maximum ? t(`forgeFamily_${family}`) : t('forgeUpgradeTitle', {
+      current: t(`forgeMaterial_${FORGE_MATERIALS[tier]}`),
+      family: t(`forgeFamily_${family}`),
+      material: t(`forgeMaterial_${FORGE_MATERIALS[nextTier]}`),
+    })
+    const disabled = maximum || !canResearchForgeUpgrade(player, this.building, family, controls.heroUnit)
+    const { element, icon } = createInventoryActionRow(this.menu, {
+      id: `forge-upgrade-${family}`,
+      title,
+      description: t(`forgeEffect_${family}`),
+      badge: maximum ? t('forgeMaximum') : undefined,
+      meta: maximum ? t('forgeCurrentMaterial', { material: t(`forgeMaterial_${FORGE_MATERIALS[tier]}`) }) : '',
+      metaParts: maximum ? [] : inventoryCostMetaParts(cost, getPlayerResourceTotals(player, { includeHero: false })),
+      disabled,
+      trailingAction: {
+        label: t(maximum ? 'forgeMaximum' : 'forgeUpgradeAction'),
+        disabled,
+        title: !disabled || maximum ? undefined : t(
+          !this.canUse() ? 'forgeRequiresAccess'
+            : !canManageForge(player, this.building, controls.heroUnit) ? 'forgeUpgradeRequiresCommand'
+              : 'forgeResourcesMissing'
+        ),
+        onClick: () => {
+          if (!researchForgeUpgrade(player, this.building, family, nextTier, controls.heroUnit)) {
+            this.menu.showMessage(t('forgeUpgradeUnavailable'), 'warning')
+          } else {
+            this.menu.showMessage(t('forgeUpgradeSuccess', { item: title }), 'success')
+            this.menu.updateTopbar?.()
+          }
+          this.renderCraft()
+          this.craftPanel.querySelector<HTMLButtonElement>(`#forge-upgrade-${family} button`)?.focus()
+        },
+      },
+    })
+    icon.appendChild(
+      createInventoryEquipmentIcon(this.menu.context, `${FORGE_ICONS[family]}_${FORGE_MATERIALS[nextTier]}`, 'craft')
+    )
+    return element
   }
 }

@@ -1,4 +1,4 @@
-import { isObject, fail } from './SaveValidationPrimitives'
+import { isObject, fail } from './validation/SaveValidationPrimitives'
 
 /** Old campaigns have no journal. Present journals must be valid before entering the runtime. */
 export function validateQuestJournal(value: unknown): void {

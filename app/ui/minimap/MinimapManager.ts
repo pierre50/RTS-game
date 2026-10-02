@@ -7,6 +7,7 @@ import type { ResourceEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import { MinimapBuildingKnowledge } from './MinimapBuildingKnowledge'
+import { MinimapNaturalResources } from './MinimapNaturalResources'
 import { terrainColor } from './MinimapColors'
 import { drawMinimapEntities } from './MinimapEntityLayer'
 import { isMinimapMarkerHidden } from './MinimapFilters'
@@ -19,7 +20,7 @@ import {
   type MinimapDisplaySize,
 } from './MinimapTerrainSampling'
 import { withMinimapPlayerVision } from './MinimapVisibility'
-import { getMinimapZoom } from './MinimapZoom'
+import { getMinimapPlaceScale, getMinimapZoom } from './MinimapZoom'
 
 // Canvases default to the HTML intrinsic 300x150 raster; the world->pixel math below
 // (miniMapAlpha, the /234 reference in getMinimapFactor) is tuned to fill that box
@@ -31,6 +32,7 @@ const MAX_REMEMBERED_TERRAIN_SAMPLES = 131072
 
 export class MinimapManager {
   private readonly buildingKnowledge = new MinimapBuildingKnowledge()
+  private readonly naturalResources = new MinimapNaturalResources()
   private readonly geometry: MinimapGeometry
   menu: MinimapHostLike
   miniMapAlpha: number
@@ -340,7 +342,7 @@ export class MinimapManager {
     if (world.ready === false) return // Do not erase observations while saved entities are still being restored.
     const activeSpace = getActiveMapSpace(world)
     if (!observer || !activeSpace) return
-    const knownBuildings = this.buildingKnowledge.update(observer, owners, activeSpace, world.revealEverything)
+    const knownBuildings = world.revealEverything ? [] : this.buildingKnowledge.update(observer, owners, activeSpace)
     if (!this.canDraw()) return
     this.initMiniMap()
     const { map, player } = this.menu.context
@@ -352,9 +354,18 @@ export class MinimapManager {
     const redraw = () => this.updatePlayerMiniMap()
     const exitCell = getInteriorExitCell(map)
     if (exitCell && !isMinimapMarkerHidden(this.menu.context, 'exit')) {
-      drawMinimapMarker(context, 'exit', this.geometry.cellToMinimapPoint(exitCell, transform), '#27865c', redraw)
+      drawMinimapMarker(
+        context,
+        'exit',
+        this.geometry.cellToMinimapPoint(exitCell, transform),
+        '#27865c',
+        redraw,
+        false,
+        getMinimapPlaceScale(this.menu.context)
+      )
     }
     this.withMinimapViewSpace(player, () => {
+      this.naturalResources.draw(this.menu, this.geometry, transform, space.id, context)
       drawMinimapEntities(this.menu, this.geometry, knownBuildings, transform, space, context, redraw)
     })
   }

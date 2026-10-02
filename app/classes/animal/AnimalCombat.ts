@@ -1,4 +1,4 @@
-import { WILDLIFE_CALM_MS } from '../../services/WildlifeHabitat'
+import { WILDLIFE_CALM_MS } from '../../services/wildlife/WildlifeHabitat'
 import { showContactDebug } from '../../lib/contact/contactDebug'
 import { isContactTouching, getContactAimDegree } from '../../lib/contact/contactGeometry'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'

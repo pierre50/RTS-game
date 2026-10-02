@@ -152,12 +152,13 @@ test('stopping building flame ambient sound removes ticker and stops loop', () =
   assert.deepEqual(calls, [['removeTicker', true], ['stop']])
 })
 
-for (const [type, y, scale, radius] of [
+for (const [type, y, scale, radius, assetType] of [
   ['FireCamp', -9, 1, 500],
   ['CampBrazier', -44, 0.65, 420],
   ['CampTorchStand', -33, 0.5, 220],
+  ['CampBrazier', -33, 0.5, 220, 'CampTorchStand'],
 ]) {
-  test(`${type} has bowl-aligned animated flames and cleans up its ambient effect`, () => {
+  test(`${type}${assetType ? ` as ${assetType}` : ''} has bowl-aligned animated flames and cleans up its ambient effect`, () => {
     const bound = []
     const loops = []
     const callbacks = new Set()
@@ -228,6 +229,7 @@ for (const [type, y, scale, radius] of [
     )
     const building = {
       type,
+      assetType,
       isBuilt: true,
       reliefLift: -16,
       children: [],
@@ -246,7 +248,7 @@ for (const [type, y, scale, radius] of [
     const fire = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
     const smoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL)
     assert.equal(fire.y, y - 16)
-    assert.equal(smoke.y, y - 16 + 25 * scale)
+    assert.equal(smoke.y, fire.y)
     assert.equal(fire.scale.x, scale)
     assert.equal(smoke.scale.x, scale)
     assert.equal(fire.lightSource.radius, radius)
@@ -262,6 +264,7 @@ for (const [type, y, scale, radius] of [
     assert.equal(loops.length, 1)
     assert.equal(fire.y, y - 32)
     building.type = 'CampTable'
+    building.assetType = undefined
     syncBuildingCampfireDecoration(building)
     assert.equal(fire.destroyed, true)
     assert.equal(smoke.destroyed, true)

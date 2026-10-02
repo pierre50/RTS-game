@@ -29,6 +29,7 @@ type UnitRestStatus = 'delivering' | 'windingDown' | 'movingToRest' | 'inside' |
 export type UnitRestReason = 'sleep'
 type UnitSleepVisualState = 'sleeping' | 'waking'
 export type UnitRestState = {
+  restTarget?: BuildingEntity | null
   mealBreak?: boolean
   status: UnitRestStatus
   reason?: UnitRestReason
@@ -47,6 +48,10 @@ export type UnitRestState = {
 }
 
 export type UnitCreationExtra = {
+  homeHouseLabel?: string
+  homeBedLabel?: string
+  partnerLabel?: string
+
   label?: string
   inventory?: UnitEntity['inventory']
   name?: string
@@ -183,6 +188,9 @@ export interface EnergyEntity extends RuntimeEntityBase {
 
 export interface UnitEntity extends EnergyEntity {
   lastMealAt?: number
+  homeHouseLabel?: string
+  homeBedLabel?: string
+  partnerLabel?: string
   dailySchedule?: VillagerSchedule
   sprite?: AnimatedSprite
   shadow?: AnimatedSprite | null
@@ -210,6 +218,8 @@ export interface UnitEntity extends EnergyEntity {
   banditCampPatrolTaskId?: number | null
   shelterState?: UnitRestState | null
   suspendedRestState?: UnitRestState | null
+  /** Manual hero sleep reservation, independent from NPC schedules. */
+  heroSleepTarget?: BuildingEntity | null
   sleepVisualState?: UnitSleepVisualState | null
   visualAnimationToken?: number
   automaticParryActiveUntil?: number | null
@@ -317,7 +327,7 @@ export interface UnitEntity extends EnergyEntity {
   isChief?: boolean
   controlMode?: UnitControlMode
   assetCiv?: string
-  assetAge?: number
+  assetLevel?: number
   totalQuantity?: number
   category?: string
   appearance?: UnitAppearanceConfig

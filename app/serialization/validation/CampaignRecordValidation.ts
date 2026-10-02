@@ -1,8 +1,8 @@
 import type { CampaignSave, LoadedGameConfig } from '../../types/save'
 import { CAMPAIGN_SAVE_FORMAT } from '../CampaignSave'
 import { validateQuestJournal } from '../QuestSave'
-import { fail, isObject, validateOptionalFiniteNumber } from '../SaveValidationPrimitives'
-import { validateWorldEconomy } from '../WorldEconomyValidation'
+import { fail, isObject, validateOptionalFiniteNumber } from './SaveValidationPrimitives'
+import { validateWorldEconomy } from './WorldEconomyValidation'
 export function validateCampaignRecord(data: CampaignSave, config: LoadedGameConfig): void {
   if (data.version !== 1) fail('Invalid save file: campaign version is unsupported.')
   if (data.format !== CAMPAIGN_SAVE_FORMAT) fail('Invalid save file: campaign format is invalid.')

@@ -1,3 +1,5 @@
+import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isDistantOwner } from '../../lib/units/villageActivity'
 import { BUILDING_TYPES, FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
 import { SOUND_CUES } from '../../constants/sounds'
 import { playAudibleSoundCue } from '../../lib/audio/sound'
@@ -11,7 +13,7 @@ import { isTrapObservedBySight, TRAP_PREY_TYPES } from '../../lib/buildings/trap
 import type { AnimalEntity, BuildingEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike, VisionChangeEvent } from '../../types/context'
-import type { DailyWorldEvent, DailyWorldEventHandler } from '../DailyWorldEventTypes'
+import type { DailyWorldEvent, DailyWorldEventHandler } from '../dailyEvents/DailyWorldEventTypes'
 
 type TrapPreyType = (typeof TRAP_PREY_TYPES)[number]
 
@@ -155,6 +157,7 @@ export class TrapHarvestSystem implements DailyWorldEventHandler {
 
     let filled = false
     for (const player of players) {
+      if (isStaticSettlement(player) && isDistantOwner(player)) continue
       let playerFilled = 0
       for (const building of player.buildings ?? []) {
         if (!isTrap(building)) continue

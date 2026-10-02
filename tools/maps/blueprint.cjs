@@ -10,7 +10,7 @@ const { runtimeNeutralResources, runtimeBiomeTrees } = require('./headless-loade
 const { buildHeadlessMap, createResourceScope } = require('./headless-map.cjs')
 const { finalizeRelief } = require('./relief.cjs')
 const { finalizeBlueprintPayload } = require('./local-blueprint.cjs')
-const { addVillageGroves } = require('./village-groves.cjs')
+const { addVillageGroves } = require('./settlements/village-groves.cjs')
 
 function encode(array) {
   return Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64')

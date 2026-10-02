@@ -1,19 +1,20 @@
-import { UNIT_TYPES } from '../../constants'
+import { isRestTargetAvailable } from './UnitRestShelter'
+import { cancelSleepingWakeVisual, clearSleepingVisualState } from './UnitSleepVisuals'
+import { sameCellMapSpace } from '../../lib/mapSpaces'
+import { routeUnitToRestTarget } from './UnitRestRoute'
+import { SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import { unitHasDeliverableResources } from '../../lib/resources/resourceDelivery'
-import { shouldVillagerBeAsleep } from '../../lib/units/villagerSchedule'
-import type { UnitEntity, UnitRestReason, UnitRestState } from '../../types/entities'
+import { hasDailyRestSchedule, shouldVillagerBeAsleep } from '../../lib/units/villagerSchedule'
+import type { BuildingEntity, UnitEntity, UnitRestReason } from '../../types/entities'
 import {
   canSleepWithoutRestSite,
   canStartSleepRest,
   getNearestRestSite,
   getRestTransitionCell,
   getRestTransitionDurationMs,
-  getShelterEntryCell,
-  isUsableShelter,
-  REST_MAX_RETRIES,
   type UnitRestSite,
 } from './UnitRestRules'
-import { enterShelterInstant, putRestingUnitToSleep, sleepOutside, waitOutsideForSleep } from './UnitRestSleep'
+import { putRestingUnitToSleep, sleepOutside, waitOutsideForSleep } from './UnitRestSleep'
 import { placeUnitAtCell, rememberRestState } from './UnitRestState'
 
 type RestTransitionOptions = {
@@ -21,7 +22,12 @@ type RestTransitionOptions = {
 }
 
 function isCurrentOutsideRestSite(unit: UnitEntity, site: UnitRestSite): boolean {
-  return site.location === 'outside' && site.targetCell.i === unit.i && site.targetCell.j === unit.j
+  return (
+    !site.restTarget &&
+    sameCellMapSpace(unit, site.targetCell) &&
+    site.targetCell.i === unit.i &&
+    site.targetCell.j === unit.j
+  )
 }
 
 export function sendUnitToRestSite(
@@ -30,6 +36,7 @@ export function sendUnitToRestSite(
   restSite: UnitRestSite,
   options: RestTransitionOptions = {}
 ): boolean {
+  if (restSite.restTarget && !isRestTargetAvailable(unit, restSite.restTarget)) return false
   const transition = options.transition ?? unit.context?.restTransitionsEnabled === true
   const transitionTargetCell = transition ? getRestTransitionCell(unit, restSite) : null
   const now = unit.context?.scheduler?.elapsedMs ?? 0
@@ -38,6 +45,7 @@ export function sendUnitToRestSite(
     reason,
     location: restSite.location,
     shelter: restSite.shelter,
+    restTarget: restSite.restTarget,
     targetCell: restSite.targetCell,
     transitionTargetCell,
     transitionUntilMs: transition ? now + getRestTransitionDurationMs(unit, 'windingDown') : now,
@@ -45,12 +53,15 @@ export function sendUnitToRestSite(
     startedAtMs: now,
     retryCount: 0,
   })
+  cancelSleepingWakeVisual(unit)
+  clearSleepingVisualState(unit)
+  unit.setTextures?.(SHEET_TYPES.standing)
   unit.actionLocked = false
-  unit.sendToEvt?.(transitionTargetCell ?? restSite.targetCell, null, {
-    forceRepath: true,
-    preserveAutonomy: true,
-    allowPassageStop: restSite.location === 'shelter' && !transitionTargetCell,
-  })
+  if (transitionTargetCell) unit.sendToEvt?.(transitionTargetCell, null, { forceRepath: true, preserveAutonomy: true })
+  else if (!routeUnitToRestTarget(unit, unit.shelterState!)) {
+    waitOutsideForSleep(unit)
+    return false
+  }
   return true
 }
 
@@ -81,14 +92,14 @@ export function sendUnitToRest(unit: UnitEntity, reason: UnitRestReason, options
     }
     return false
   }
-  if (unit.type === UNIT_TYPES.villager && isCurrentOutsideRestSite(unit, restSite)) {
+  if (hasDailyRestSchedule(unit) && isCurrentOutsideRestSite(unit, restSite)) {
     waitOutsideForSleep(unit)
     if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
     return true
   }
   return sendUnitToRestSite(unit, reason, restSite, {
     ...options,
-    transition: unit.type === UNIT_TYPES.villager ? false : options.transition,
+    transition: hasDailyRestSchedule(unit) ? false : options.transition,
   })
 }
 
@@ -105,10 +116,10 @@ export function continueRestAfterDelivery(unit: UnitEntity): boolean {
   return sendUnitToRestSite(unit, 'sleep', restSite, { transition: false })
 }
 
-export function rerouteRestUnit(unit: UnitEntity): boolean {
+export function rerouteRestUnit(unit: UnitEntity, excludedTarget?: BuildingEntity | null): boolean {
   const state = unit.shelterState
   if (!state?.reason) return false
-  const restSite = getNearestRestSite(unit)
+  const restSite = getNearestRestSite(unit, excludedTarget)
   if (!restSite || isCurrentOutsideRestSite(unit, restSite)) {
     waitOutsideForSleep(unit)
     if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
@@ -118,45 +129,28 @@ export function rerouteRestUnit(unit: UnitEntity): boolean {
   return sendUnitToRestSite(unit, state.reason, restSite, { transition: false })
 }
 
-export function settleUnitRestForTimeJump(unit: UnitEntity, sleep: boolean): boolean {
-  if (!unit.shelterState && !sendUnitToRest(unit, 'sleep', { transition: false })) return false
+export function settleUnitRestForTimeJump(unit: UnitEntity, sleep: boolean, refreshSite = false): boolean {
+  if (unit.shelterState?.restTarget && !isRestTargetAvailable(unit, unit.shelterState.restTarget)) refreshSite = true
+  if (!unit.shelterState || refreshSite) {
+    if (!canStartSleepRest(unit)) return false
+    const site = getNearestRestSite(unit)
+    if (site) {
+      rememberRestState(unit, { status: 'movingToRest', reason: 'sleep', ...site })
+      placeUnitAtCell(unit, site.targetCell)
+    }
+    waitOutsideForSleep(unit, { instant: true })
+  }
   const state = unit.shelterState
   if (!state) return false
-  if (state.status === 'movingToRest' && isUsableShelter(state.shelter, unit.owner)) {
-    enterShelterInstant(unit, state.shelter)
-  } else if (state.status === 'movingToRest') {
-    if (state.location === 'outside' && state.targetCell) placeUnitAtCell(unit, state.targetCell)
-    waitOutsideForSleep(unit)
+  if (state.status === 'movingToRest') {
+    if (state.targetCell) placeUnitAtCell(unit, state.targetCell)
+    waitOutsideForSleep(unit, { instant: true })
   }
   if (sleep) putRestingUnitToSleep(unit, { instant: true })
   return true
 }
 
-export function retryShelterPath(unit: UnitEntity, state: UnitRestState): boolean {
-  if (!state.shelter || !isUsableShelter(state.shelter, unit.owner)) return false
-  const retryCount = state.retryCount ?? 0
-  if (retryCount >= REST_MAX_RETRIES) return false
-  const nextCell = getShelterEntryCell(unit, state.shelter)
-  if (!nextCell) return false
-  state.targetCell = nextCell
-  state.retryCount = retryCount + 1
-  state.startedAtMs = unit.context?.scheduler?.elapsedMs ?? state.startedAtMs ?? 0
-  unit.sendToEvt?.(nextCell, null, {
-    forceRepath: true,
-    preserveAutonomy: true,
-    allowPassageStop: true,
-  })
-  return true
-}
-
-export {
-  enterShelter,
-  enterShelterInstant,
-  putRestingUnitToSleep,
-  sleepOutside,
-  sleepOutsideAtCellInstant,
-  waitOutsideForSleep,
-} from './UnitRestSleep'
+export { putRestingUnitToSleep, sleepOutside, waitOutsideForSleep } from './UnitRestSleep'
 export type { SleepOutsideVisualMode, TimedUnitRestState } from './UnitRestSleep'
 export {
   finishUnitWakeTransition,

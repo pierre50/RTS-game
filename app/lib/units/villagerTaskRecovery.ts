@@ -1,3 +1,4 @@
+import { isRpgVillager } from '../../config/rpgVillages'
 import { canRecoverAnimalLootForDelivery } from '../equipment/animalCorpseLoot'
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { getEntityCell } from '../mapSpaces'
@@ -175,6 +176,7 @@ export function resumeVillagerJobIntent(
   task: VillagerStoredTask | null | undefined = null,
   options: Pick<ResumeStoredTaskOptions, 'clearMotion' | 'preserveAutonomy'> = {}
 ): boolean {
+  if (isRpgVillager(unit)) return false
   const autonomousJob = getStoredTaskAutonomyJob(unit, task)
 
   if (options.clearMotion ?? true) clearMotionForStoredTask(unit)
@@ -199,6 +201,7 @@ export function resumeVillagerStoredTask(
   if (options.exploreWhenNoTarget !== false && options.fallbackToAutonomy !== false) {
     return resumeVillagerJobIntent(unit, task, options)
   }
+  if (isRpgVillager(unit)) return false
   const autonomousJob = getStoredTaskAutonomyJob(unit, task)
   if (options.clearMotion ?? true) clearMotionForStoredTask(unit)
   if (task.work) unit.work = task.work

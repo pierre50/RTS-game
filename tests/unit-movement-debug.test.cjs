@@ -129,7 +129,7 @@ test('hunt diagnostics respect activation, range and time limits and serialize e
   api.debugHuntRangeCheck(actor, 'hunt', target, 4, 3.456)
   let value = debug.mock.calls.at(-1).arguments[1]
   assert.equal(value.targetType, 'Deer')
-  assert.equal(value.ownerAge, 0)
+  assert.equal('ownerAge' in value, false)
   assert.equal(value.distanceToTarget, 3.46)
   assert.equal(value.inRange, true)
   time(1100)
@@ -141,7 +141,7 @@ test('hunt diagnostics respect activation, range and time limits and serialize e
   value = debug.mock.calls.at(-1).arguments[1]
   assert.equal(value.targetType, 'cell')
   assert.equal(value.targetLabel, undefined)
-  assert.equal(value.ownerAge, 2)
+  assert.equal('ownerAge' in value, false)
   assert.equal(value.inRange, false)
   window.localStorage = undefined
   api.debugHuntRangeCheck(actor, 'hunt', target, 4, 3)

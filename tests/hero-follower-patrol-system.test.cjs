@@ -11,7 +11,7 @@ const constants = {
 }
 
 function loadSystem(scheduleCalls) {
-  return loadTsModule('app/services/HeroFollowerPatrolSystem.ts', {
+  return loadTsModule('app/services/patrol/HeroFollowerPatrolSystem.ts', {
     mocks: {
       '../constants': constants,
       '../lib/mapSpaces': {

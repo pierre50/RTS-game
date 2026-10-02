@@ -198,7 +198,7 @@ export class InventoryManager {
 
   getActiveWeaponEquipment(tool: HeroEquippedItem): string | undefined {
     const hero = this.menu.context.controls.heroUnit
-    return getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0, hero)
+    return getEquippedItemWeapon(tool, hero)
   }
 
   isActiveWeaponAvailable(tool: HeroEquippedItem): boolean {

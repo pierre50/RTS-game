@@ -110,7 +110,16 @@ export function finishUnitTraining(
     }
     return false
   }
-  if (!runtime.placeUnit(type, extra, { consumePopulationSlot: !trainee })) {
+  const placementExtra = trainee
+    ? {
+        ...extra,
+        label: trainee.label,
+        homeHouseLabel: trainee.homeHouseLabel,
+        homeBedLabel: trainee.homeBedLabel,
+        partnerLabel: trainee.partnerLabel,
+      }
+    : extra
+  if (!runtime.placeUnit(type, placementExtra, { consumePopulationSlot: !trainee })) {
     if (trainee) {
       runtime.finishTrainingEntryPlacementFailed(trainee)
       runtime.updatePlayedQueueInterface(type)

@@ -116,9 +116,7 @@ function resolveHeroGatherAction(
 const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
   {
     action: 'gather',
-    matches: target =>
-      (isForageResource(target) && !isDepletedBerrybush(target)) ||
-      resourceKind(target) === 'Wheat',
+    matches: target => (isForageResource(target) && !isDepletedBerrybush(target)) || resourceKind(target) === 'Wheat',
     resolve: (hero, target) => {
       if (resourceKind(target) === 'Wheat') {
         return resolveHeroGatherAction(hero, target, ACTION_TYPES.farm, WORK_TYPES.farmer)
@@ -150,7 +148,11 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
     matches: target => {
       if (target.family !== FAMILY_TYPES.building) return false
       const building = target as BuildingEntity
-      return !building.isBuilt || (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)
+      return (
+        Boolean(building.buildingUpgrade) ||
+        !building.isBuilt ||
+        (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)
+      )
     },
     resolve: (hero, target) =>
       getActionCondition(hero, target, ACTION_TYPES.build)

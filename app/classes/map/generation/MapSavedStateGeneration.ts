@@ -1,9 +1,10 @@
+import { clearDeferredVillages } from '../../../services/world/distantVillages/DeferredVillageStore'
 import { FAMILY_TYPES } from '../../../constants'
 import { traceLoad } from '../../../lib/loadDiagnostics'
 import { groupPlayersInteriorBuildings, isDerivedInteriorHorse } from '../../../serialization/InteriorBuildingSave'
 import { resourceData } from '../../../serialization/ResourceSaveData'
 import { clearNaturalGrowth } from '../../../services/NaturalGrowthQueue'
-import { clearWildlifeStore } from '../../../services/WildlifeStore'
+import { clearWildlifeStore } from '../../../services/wildlife/WildlifeStore'
 import { Cell } from '../../cell'
 import { getPackedCellStore } from '../../cell/PackedCellRegistry'
 import { AI, Gaia } from '../../players'
@@ -63,11 +64,12 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
   menu?.init?.()
   if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
 
-  restoreSavedEntities(map, players, animals, context)
+  restoreSavedEntities(map, players, animals, context, runtime?.dayNightElapsedMs ?? 0)
   finishSavedStateRestore(map, { bakeTerrain: true })
 }
 
 export function clearGeneratedGameplayState(map: MapGenerationMap): void {
+  clearDeferredVillages(map)
   clearWildlifeStore(map)
   clearNaturalGrowth(map)
   // Stop provisional AI tasks before swapping in the saved village roster.
@@ -190,7 +192,7 @@ function* savedStateRestoreSteps(map: MapGenerationMap, data: SavedGameData) {
     label: 'restoringEntities',
     progress: 0.7,
     run: () => {
-      traceLoad('save.restoreEntities', () => restoreSavedEntities(map, players, animals, context))
+      traceLoad('save.restoreEntities', () => restoreSavedEntities(map, players, animals, context, runtime?.dayNightElapsedMs ?? 0))
       finishSavedStateRestore(map)
     },
   }

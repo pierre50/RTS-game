@@ -1,14 +1,14 @@
-import { PLAYER_TYPES, SOUND_CUES, SHEET_TYPES } from '../../constants'
+import { PLAYER_TYPES, SHEET_TYPES } from '../../constants'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
-import { isValidCondition, playSoundCue } from '../../lib'
+import { isValidCondition } from '../../lib'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Condition } from '../../lib/combat'
 
-type PlayerAgeOwner = PlayerLike & { context: GameContextLike }
+type PlayerAppearanceOwner = PlayerLike & { context: GameContextLike }
 
-export function onAgeChange(player: PlayerAgeOwner): void {
+export function refreshCivilizationAppearance(player: PlayerAppearanceOwner): void {
   const {
     context: { players, menu },
   } = player
@@ -19,9 +19,6 @@ export function onAgeChange(player: PlayerAgeOwner): void {
     return true
   }
 
-  if (player.isPlayed) {
-    playSoundCue(SOUND_CUES.player.ageAdvance)
-  }
   for (const unit of player.units ?? []) {
     if (unit.isDead || unit.isDestroyed) continue
     refreshUnitEquipmentStats(unit)

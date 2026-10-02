@@ -14,8 +14,6 @@ export type AIResourceAmount = Partial<Record<AICostResourceName, number>>
 
 type AIPhase = 'economy' | 'military_build'
 
-export type AIAge = 0 | 1 | 2
-
 export type EnemyMemoryOptions = {
   family?: string | null
   freshWithin?: number
@@ -168,16 +166,15 @@ export type AIStrategyPlayerLike = {
   stone: number
   copper: number
   iron: number
-  age: AIAge
   phase: AIPhase
   population: number
   populationMax: number
   difficultyConfig: AIDifficultyConfig
-  maxVillagerPerAge: Record<AIAge, number>
-  maxBuildingByAge: Record<AIAge, Record<string, number>>
-  maxInfantryByAge: Record<AIAge, number>
-  maxArcherByAge: Record<AIAge, number>
-  maxCavalryByAge: Record<AIAge, number>
+  maxVillagers: number
+  maxBuildings: Record<string, number>
+  maxInfantry: number
+  maxArchers: number
+  maxCavalry: number
   config: {
     units: Record<string, AIEntityConfig>
     buildings: Record<string, AIEntityConfig>
@@ -296,7 +293,6 @@ export type AIStrategySnapshot = {
   markets: AIBuildingLike[]
   watchTowers: AIBuildingLike[]
   temples: AIBuildingLike[]
-  notBuiltHouses: AIBuildingLike[]
 }
 
 export type AIWorkerTargets = {

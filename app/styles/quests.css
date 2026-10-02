@@ -41,21 +41,6 @@
 .quest-giver {
   opacity: 0.75;
 }
-.quest-age-objectives {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-8);
-  padding: 0;
-  list-style: none;
-}
-.quest-age-objective {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-gap-10);
-}
-.quest-age-objective.is-acquired {
-  color: var(--msg-success-color);
-}
 .quest-empty {
   grid-column: 1 / -1;
   align-self: center;

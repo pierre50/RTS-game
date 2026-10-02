@@ -159,7 +159,7 @@ export function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
       withinVillageActivity(unit, building) &&
       building.owner === unit.owner &&
       isAliveEntity(building) &&
-      (!building.isBuilt || (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)) &&
+      (building.buildingUpgrade || !building.isBuilt || (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)) &&
       unit.getActionCondition?.(building, ACTION_TYPES.build)
   )
 }

@@ -1,8 +1,8 @@
 import { CELL_DEPTH, RELIEF_MOVEMENT_SAMPLE_DISTANCE, RELIEF_SLOPE_WALK_SPEED } from '../../constants/relief'
-import { getReliefLevelAtPoint } from './reliefSurface'
+import { getTerrainReliefLevelAtPoint } from './reliefSurface'
 
-type ReliefMap = Parameters<typeof getReliefLevelAtPoint>[0]
-type ReliefCell = Parameters<typeof getReliefLevelAtPoint>[2]
+type ReliefMap = Parameters<typeof getTerrainReliefLevelAtPoint>[0]
+type ReliefCell = Parameters<typeof getTerrainReliefLevelAtPoint>[2]
 type Point = { x: number; y: number }
 
 function segmentCost(distance: number, dx: number, dy: number, rise: number): number {
@@ -29,7 +29,7 @@ export function getReliefMovementDistance(
   const dx = (to.x - from.x) / total
   const dy = (to.y - from.y) / total
   const heightAt = (distance: number): number =>
-    getReliefLevelAtPoint(map, { x: from.x + dx * distance, y: from.y + dy * distance }, fallback) * CELL_DEPTH
+    getTerrainReliefLevelAtPoint(map, { x: from.x + dx * distance, y: from.y + dy * distance }, fallback) * CELL_DEPTH
   let distance = 0
   let height = heightAt(0)
   let remaining = budget

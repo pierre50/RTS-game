@@ -1,5 +1,5 @@
-import { getBuildingAge } from '../buildings/buildingAge'
-import type { AssetAge } from '../../types/pixi'
+import { getBuildingLevel } from '../buildings/buildingLevel'
+import type { AssetLevel } from '../../types/pixi'
 import type { ConfigValue } from '../../types/config'
 import type { TextureRef } from './textures'
 import { civilizationAssetSlug } from '../civilizationAlias'
@@ -47,12 +47,16 @@ const DECO_BUILDING_ASSETS: Record<string, BuildingAsset> = {
   Trap: staticDecoBuildingAsset(15),
   Chest: staticDecoBuildingAsset(16),
   InteriorMirroredChest: { ...staticDecoBuildingAsset(16), mirrored: true },
+  CampHide: staticDecoBuildingAsset(17),
+  CampRug: staticDecoBuildingAsset(18),
+  CampFur: staticDecoBuildingAsset(41),
   CampBedroll: staticDecoBuildingAsset(19),
   CampTable: staticDecoBuildingAsset(21),
   CampWorkbench: staticDecoBuildingAsset(22),
   CampForge: staticDecoBuildingAsset(24),
   CampAlchemyTable: staticDecoBuildingAsset(25),
   CampSupplyShelf: staticDecoBuildingAsset(26),
+  InteriorMirroredSupplyShelf: { ...staticDecoBuildingAsset(26), mirrored: true },
   CampBookcase: staticDecoBuildingAsset(27),
   CampArrowBasket: staticDecoBuildingAsset(28),
   CampAppleBasket: staticDecoBuildingAsset(29),
@@ -73,7 +77,7 @@ const DECO_BUILDING_ASSETS: Record<string, BuildingAsset> = {
 }
 
 export type AssetOwner = {
-  age: number
+  level?: number
   civ?: string
 }
 
@@ -86,11 +90,10 @@ const INTERFACE_ICON_SHEETS: Record<string, string> = {
 }
 
 export type BuildingWithAssetOwner = {
-  buildingAge?: number
-  assetAge?: AssetAge
+  buildingLevel?: number
+  assetLevel?: AssetLevel
   assetCiv?: string
   owner: {
-    age: number
     civ?: string
   }
 }
@@ -123,22 +126,23 @@ export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetC
   if (decoAsset) return decoAsset
 
   const path = assets.cache.get(civilizationAssetSlug(owner.civ))?.buildings ?? assets.cache.get('hellas').buildings
-  const assetAt = (age: number) => path[age]?.[type]
-  const fallbackAges = [owner.age, owner.age - 1, owner.age - 2, 0, owner.age + 1, owner.age + 2, owner.age + 3]
+  const assetAt = (level: number) => path[level]?.[type]
+  const level = owner.level ?? 0
+  const fallbackLevels = [level, level - 1, level - 2, 0, level + 1, level + 2]
 
-  for (const age of fallbackAges) {
-    if (age < 0) continue
-    const asset = assetAt(age)
+  for (const level of fallbackLevels) {
+    if (level < 0) continue
+    const asset = assetAt(level)
     if (asset) return asset
   }
 
-  throw new Error(`Missing building asset for ${owner.civ || 'default'} ${type} at age ${owner.age}`)
+  throw new Error(`Missing building asset for ${owner.civ || 'default'} ${type} at level ${owner.level}`)
 }
 
 export function getBuildingAssetOwner(building: BuildingWithAssetOwner): AssetOwner {
-  const age = getBuildingAge(building, building.owner.age)
+  const level = getBuildingLevel(building)
   return {
     civ: building.assetCiv || building.owner.civ || '',
-    age,
+    level,
   }
 }

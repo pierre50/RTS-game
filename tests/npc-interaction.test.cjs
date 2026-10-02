@@ -20,6 +20,7 @@ function loadModule(relativePath, mocks) {
       setUnitOverheadIndicator: (unit, type) => unit.context?.calls?.push(['indicator', unit.label, type]),
     },
     '../units/villagerSchedule': {
+      getDailyRoutinePhase: loadTsModule('app/lib/units/villagerSchedule.ts').getDailyRoutinePhase,
       isVillagerSleepTime: context => {
         const hour = context?.dayNight?.state?.hour ?? 12
         return hour >= 18 || hour < 8
@@ -138,6 +139,7 @@ const constants = {
     gaia: 'Gaia',
   },
   UNIT_TYPES: {
+    chief: 'Chief',
     bowman: 'Bowman',
     infantry: 'Fantassin',
     priest: 'Priest',
@@ -1024,7 +1026,7 @@ for (const isChief of [true, false])
       context: {
         unitRest: {
           previewSleepingUnitWake: unit => calls.push(['previewWake', unit.label]),
-          wakeSleepingUnitForOrder: unit => {
+          wakeRestingUnitForOrder: unit => {
             calls.push(['wakeForOrder', unit.label])
             return true
           },
@@ -2148,4 +2150,22 @@ test('closing a conversation never replaces an attack with the previous job', ()
   releaseIfStillLooking([npc])
   assert.equal(npc.dest, enemy)
   assert.equal(npc.previousDest, null)
+})
+
+test('AI chief is unavailable for talking or noticing throughout his sleep window', () => {
+  const hero = { owner: { isEnemy: () => false } }
+  const target = makeCommAlly({ type: 'Chief', isChief: true, owner: { type: 'AI' },
+    dailySchedule: { bedMinute: 1320, wakeMinute: 370, workStartMinute: 420, workEndMinute: 1080, lunchStartMinute: 720, lunchEndMinute: 780 },
+    context: { dayNight: { state: { hour: 22, minute: 0 } } },
+  })
+  const { isTalkableNpc, noticeNpc } = loadNpcInteraction(target)
+  assert.equal(isTalkableNpc(hero, target), false)
+  noticeNpc(target, hero, false)
+  assert.notEqual(target.lookingAtHero, true)
+  target.context.dayNight.state = { hour: 6, minute: 9 }
+  assert.equal(isTalkableNpc(hero, target), false)
+  target.context.dayNight.state.minute = 10
+  assert.equal(isTalkableNpc(hero, target), true)
+  target.sleepVisualState = 'waking'
+  assert.equal(isTalkableNpc(hero, target), false)
 })

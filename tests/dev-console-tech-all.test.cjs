@@ -145,37 +145,6 @@ test('hero invincible command reports when no active hero exists', () => {
   })
 })
 
-test('setAge refreshes existing unit equipment visuals', () => {
-  const { setAge } = loadPlayerActions()
-  const calls = []
-  const player = {
-    age: 0,
-    technologies: [],
-    units: [
-      {
-        calls,
-        currentSheet: 'walking',
-        setTextures: sheet => calls.push(['setTextures', sheet]),
-      },
-      {
-        calls,
-        isDead: true,
-        setTextures: sheet => calls.push(['deadSetTextures', sheet]),
-      },
-    ],
-    buildings: [],
-    techs: {},
-  }
-  const context = {
-    player,
-    menu: {
-      updateActionTarget: () => calls.push(['updateActionTarget']),
-      updateTopbar: () => calls.push(['updateTopbar']),
-    },
-  }
-
-  const result = setAge(context, 1)
-
-  assert.deepEqual(result, { ok: true, message: 'Age set to 1' })
-  assert.deepEqual(calls, [['refreshUnitEquipmentStats'], ['setTextures', 'walking'], ['updateActionTarget'], ['updateTopbar']])
+test('the obsolete age command is no longer exposed', () => {
+  assert.equal(loadPlayerActions().setAge, undefined)
 })

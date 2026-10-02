@@ -2,10 +2,13 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-const { canHeroSleepAtFireCamp, getHeroCampfireSleepBlockedReason } = loadTsModule(
-  'app/lib/hero/heroCampfireSleep.ts',
+const { canHeroSleepAtTarget, getHeroSleepBlockedReason } = loadTsModule(
+  'app/lib/hero/heroSleep.ts',
   {
     mocks: {
+      '../../services/rest/UnitRestState': {},
+      '../mapSpaces': { sameMapSpace: (a, b) => a.spaceId === b.spaceId },
+      '../terrain/reliefSurface': {},
       '../../constants': {
         BUILDING_TYPES: { fireCamp: 'FireCamp' },
         FAMILY_TYPES: { animal: 'animal' },
@@ -33,8 +36,8 @@ test('campfire sleep identifies each blocker without inventing a hostile', () =>
     [{}, { ...camp, isBuilt: false }, 'heroCampfireSleepNotBuilt'],
     [{ reachable: false }, camp, 'heroCampfireSleepTooFar'],
   ]) {
-    assert.equal(getHeroCampfireSleepBlockedReason(hero, building), reason)
-    assert.equal(canHeroSleepAtFireCamp(hero, building), false)
+    assert.equal(getHeroSleepBlockedReason(hero, building), reason)
+    assert.equal(canHeroSleepAtTarget(hero, building), false)
   }
 })
 
@@ -42,13 +45,13 @@ test('foreign ownership alone does not prevent sleep; a living hostile does', ()
   const enemy = {}
   const hero = { owner: { isEnemy: owner => owner === enemy }, nearby: [] }
   const camp = { type: 'FireCamp', isBuilt: true, owner: enemy }
-  assert.equal(getHeroCampfireSleepBlockedReason(hero, camp), null)
-  assert.equal(canHeroSleepAtFireCamp(hero, camp), true)
+  assert.equal(getHeroSleepBlockedReason(hero, camp), null)
+  assert.equal(canHeroSleepAtTarget(hero, camp), true)
   hero.nearby = [{ owner: enemy }]
-  assert.equal(getHeroCampfireSleepBlockedReason(hero, camp), 'heroCampfireSleepBlockedDescription')
-  assert.equal(canHeroSleepAtFireCamp(hero, camp), false)
+  assert.equal(getHeroSleepBlockedReason(hero, camp), 'heroCampfireSleepBlockedDescription')
+  assert.equal(canHeroSleepAtTarget(hero, camp), false)
   hero.nearby[0].isDead = true
-  assert.equal(canHeroSleepAtFireCamp(hero, camp), true)
+  assert.equal(canHeroSleepAtTarget(hero, camp), true)
 })
 
 test('peaceful wildlife does not block sleep even when its owner is an enemy', () => {
@@ -59,7 +62,7 @@ test('peaceful wildlife does not block sleep even when its owner is an enemy', (
   for (const [type, config] of Object.entries(animals)) {
     if (config.strategy !== 'runaway') continue
     hero.nearby = [{ ...config, type, family: 'animal', owner: wildlife }]
-    assert.equal(canHeroSleepAtFireCamp(hero, camp), true, type)
+    assert.equal(canHeroSleepAtTarget(hero, camp), true, type)
   }
   assert.equal(animals.BlackGrouse.strategy, 'runaway')
 })
@@ -70,9 +73,9 @@ test('aggressive or attacking wildlife blocks sleep, but dead animals do not', (
   for (const behavior of [{ strategy: 'attack' }, { strategy: 'runaway', action: 'attack' }]) {
     const animal = { ...behavior, family: 'animal', owner: {} }
     hero.nearby = [animal]
-    assert.equal(canHeroSleepAtFireCamp(hero, camp), false)
+    assert.equal(canHeroSleepAtTarget(hero, camp), false)
     animal.isDead = true
-    assert.equal(canHeroSleepAtFireCamp(hero, camp), true)
+    assert.equal(canHeroSleepAtTarget(hero, camp), true)
   }
 })
 
@@ -81,8 +84,11 @@ test('hero sleeps through the shared NPC wake window and synchronizes sleepers b
   let options
   let targetHour
   const calls = []
-  const { sleepHeroAtFireCamp } = loadTsModule('app/lib/hero/heroCampfireSleep.ts', {
+  const { sleepHeroAtTarget } = loadTsModule('app/lib/hero/heroSleep.ts', {
     mocks: {
+      '../../services/rest/UnitRestState': {},
+      '../mapSpaces': { sameMapSpace: (a, b) => a.spaceId === b.spaceId },
+      '../terrain/reliefSurface': {},
       '../../services/TimeSkipSystem': { getHoursUntilNextMorning: (_hour, _minute, target) => {
         targetHour = target
         return target + 1
@@ -103,7 +109,7 @@ test('hero sleeps through the shared NPC wake window and synchronizes sleepers b
     unitRest: { synchronizeAfterTimeJump: () => calls.push('wake-npcs') },
     autosave: () => calls.push('save'),
   } }
-  assert.equal(sleepHeroAtFireCamp(hero, { type: 'FireCamp', isBuilt: true }), true)
+  assert.equal(sleepHeroAtTarget(hero, { type: 'FireCamp', isBuilt: true }), true)
   assert.equal(targetHour, VILLAGE_WAKE_COMPLETE_HOUR)
   assert.equal(Math.round(targetHour * 60), 380)
   for (let index = 0; index < 500; index++) {

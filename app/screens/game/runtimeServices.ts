@@ -1,20 +1,20 @@
 import { SleepSimulation } from '../../services/world/SleepSimulation'
 import { VillageActivitySystem } from '../../services/VillageActivitySystem'
-import { WildlifeSystem } from '../../services/WildlifeSystem'
+import { WildlifeSystem } from '../../services/wildlife/WildlifeSystem'
 import { NeutralVillageQuests } from '../../services/quests/NeutralVillageQuests'
 import type { ContainerChild } from 'pixi.js'
 import { BuildingInteriorEntryMarkerSystem } from '../../services/buildingInterior/BuildingInteriorEntryMarkerSystem'
 import { CampPatrolSystem } from '../../services/patrol/CampPatrolSystem'
-import { DailyWorldEventSystem } from '../../services/DailyWorldEventSystem'
+import { DailyWorldEventSystem } from '../../services/dailyEvents/DailyWorldEventSystem'
 import { DayNightSystem } from '../../services/DayNightSystem'
 import { InteriorExitMarkerSystem } from '../../services/InteriorExitMarkerSystem'
-import { HeroFollowerPatrolSystem } from '../../services/HeroFollowerPatrolSystem'
+import { HeroFollowerPatrolSystem } from '../../services/patrol/HeroFollowerPatrolSystem'
 import { IdleUnitPatrolSystem } from '../../services/IdleUnitPatrolSystem'
 import { VillagerAutonomySystem } from '../../services/VillagerAutonomySystem'
 import { LightSystem } from '../../services/lighting/LightSystem'
 import { ShadowSystem } from '../../services/ShadowSystem'
 import { TimeSkipSystem } from '../../services/TimeSkipSystem'
-import { TributeRaidSystem } from '../../services/TributeRaidSystem'
+import { TributeRaidSystem } from '../../services/tribute/TributeRaidSystem'
 import { UnitEnergyRegenSystem } from '../../services/UnitEnergyRegenSystem'
 import { UnitRestSystem } from '../../services/rest/UnitRestSystem'
 import { WeatherSystem } from '../../services/weather/WeatherSystem'
@@ -98,7 +98,7 @@ export function createRuntimeServices(
   }
 
   const dailyWorldEvents = new DailyWorldEventSystem(context)
-  const unitRest = new UnitRestSystem(context)
+  const unitRest = new UnitRestSystem(context, true)
   context.unitRest = unitRest
 
   const tributeRaids = new TributeRaidSystem(context)

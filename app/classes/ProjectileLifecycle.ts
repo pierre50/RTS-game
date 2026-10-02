@@ -62,15 +62,20 @@ function stopProjectileStep(projectile: LifecycleProjectile): void {
 
 function scheduleProjectileFade(projectile: LifecycleProjectile, taskName: string): void {
   projectile.timeoutId = projectile.context.scheduler.addOneShot(
-    () => fadeOutThenClear(projectile, FADE_DURATION_MS),
+    () => {
+      if (!projectile.isDestroyed) fadeOutThenClear(projectile, FADE_DURATION_MS)
+    },
     ARROW_GROUND_TIME * 1000,
     taskName
   )
 }
 
 export function destroyProjectile(projectile: LifecycleProjectile): void {
+  if (projectile.isDestroyed) return
   projectile.createImpactEffect(projectile.x, projectile.y)
   projectile.isDead = true
+  projectile.isDestroyed = true
+  projectile.stopTimeout()
   stopProjectileStep(projectile)
   projectile.destroy({ children: true, texture: false })
 }
@@ -131,6 +136,7 @@ export function stopProjectileTimeout(projectile: LifecycleProjectile): void {
 export function clearProjectile(projectile: LifecycleProjectile): void {
   if (projectile.isDestroyed) return
   projectile.isDestroyed = true
+  stopProjectileStep(projectile)
   projectile.stopTimeout()
   if (projectile.treeAnchor) {
     projectile.treeAnchor = null

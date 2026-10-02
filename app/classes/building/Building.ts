@@ -1,5 +1,5 @@
 import type { CaveDefinition } from '../../types/cave'
-import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
+import { getBuildingLevel, getBuildingConfigForLevel } from '../../lib/buildings/buildingLevel'
 import type { AnimatedSprite, Graphics, Sprite, Texture } from 'pixi.js'
 import { CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { canUpdateMinimap } from '../../lib'
@@ -52,8 +52,8 @@ type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandS
 export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   cave?: CaveDefinition
   placementMirrored?: boolean
-  buildingAge?: number
-  assetAge?: number
+  buildingLevel?: number
+  assetLevel?: number
   trainingQueue?: SavedTrainingEntry[]
   trainingRequests?: BuildingEntity['trainingRequests']
   reservePolicy?: BuildingEntity['reservePolicy']
@@ -64,6 +64,7 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   type: string
   spaceId?: string
   constructionMaterials?: BuildingEntity['constructionMaterials']
+  buildingUpgrade?: BuildingEntity['buildingUpgrade']
   inventory?: BuildingEntity['inventory']
   marketStock?: string[]
   horseAmount?: number
@@ -99,7 +100,6 @@ export class Building extends Instance implements BuildingEntity {
   intervalId: SchedulerTaskId | null
   attackIntervalId: SchedulerTaskId | null
   declare sprite: BuildingSprite
-  populationCapacityApplied!: boolean
   isBuilt?: boolean
   quantity?: number
   totalQuantity?: number
@@ -109,7 +109,7 @@ export class Building extends Instance implements BuildingEntity {
   mountingDays?: number
   interface!: EntityInterfaceLike
   placementMirrored = false
-  buildingAge!: number
+  buildingLevel!: number
   assetType?: string
   textureName?: string
   useSpriteShadow?: boolean
@@ -137,6 +137,7 @@ export class Building extends Instance implements BuildingEntity {
     equipment?: string[]
   }
   constructionMaterials?: BuildingEntity['constructionMaterials']
+  buildingUpgrade?: BuildingEntity['buildingUpgrade']
   marketStock?: string[]
   visualSettingsCleanup: (() => void) | null
 
@@ -172,13 +173,12 @@ export class Building extends Instance implements BuildingEntity {
     this.visualSettingsCleanup = null
 
     this.assignProperties(options)
-    this.buildingAge = getBuildingAge(options, this.owner.age)
-    this.assignProperties(getBuildingConfigForAge(this.owner.config.buildings[this.type], this.buildingAge))
+    this.buildingLevel = getBuildingLevel(options)
+    this.assignProperties(getBuildingConfigForLevel(this.owner.config.buildings[this.type], this.buildingLevel))
     // Enforce this after saved options and config so existing decorations are protected too.
     if (CAMP_DECORATION_BUILDING_TYPES.some(type => type === this.type)) this.indestructible = true
     this.stableHorses = stableHorsesFromOptions(options)
     this.horseAmount = this.stableHorses.length
-    this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
 
     this.intervalId = null
     this.attackIntervalId = null
@@ -360,6 +360,10 @@ export class Building extends Instance implements BuildingEntity {
 
   override resume(): void {
     return this.buildingLifecycle.resume()
+  }
+
+  demolish(): void {
+    this.buildingLifecycle.die(true)
   }
 
   override die(): void {

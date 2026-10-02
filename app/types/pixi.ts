@@ -5,7 +5,7 @@ export type InteractiveSprite = AnimatedSprite & {
   onComplete?: () => void
 }
 
-export type AssetAge = number | string | null | undefined
+export type AssetLevel = number | string | null | undefined
 
 export type HitAreaLike = object | null
 

@@ -10,7 +10,7 @@ import { getStableHorses } from '../../app/lib/horses/stableHorses'
 import { getStableInteriorHorseIndex } from '../../app/lib/horses/stableInteriorHorseIdentity'
 import { spookWildHorse } from '../../app/lib/horses/wildHorseBehavior'
 import { getEntitySpaceId, getMapSpace, moveEntityToMapSpace, OUTSIDE_SPACE_ID } from '../../app/lib/mapSpaces'
-import { prepareUnitForSpaceTransfer } from '../../app/services/SpacePortalSystem'
+import { prepareUnitForSpaceTransfer } from '../../app/services/spacePortal/SpacePortalSystem'
 import type { GameContextLike } from '../../app/types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../app/types/entities'
 import type { RuntimeCell, RuntimeMapSpace } from '../../app/types/map'
@@ -128,7 +128,11 @@ function createReleasedStableHorse(
   return entity
 }
 
-export function expelBuildingInteriorOccupants(context: GameContextLike, building: BuildingEntity): RuntimeEntity[] {
+export function expelBuildingInteriorOccupants(
+  context: GameContextLike,
+  building: BuildingEntity,
+  options: { unitsOnly?: boolean } = {}
+): RuntimeEntity[] {
   const space = getBuildingInteriorSpaceForBuilding(context, building)
   const outsideSpace = getMapSpace(context.map, OUTSIDE_SPACE_ID)
   if (!outsideSpace) return []
@@ -143,6 +147,7 @@ export function expelBuildingInteriorOccupants(context: GameContextLike, buildin
   const stableHorseRecords = building.type === BUILDING_TYPES.stable ? [...getStableHorses(building)] : []
   let releasedStableHorses = 0
   for (const entity of collectBuildingInteriorOccupants(context, building, space)) {
+    if (options.unitsOnly && entity.family !== FAMILY_TYPES.unit) continue
     const cell = findExteriorEvacuationCell(context, anchor, building.size ?? 1, entity, claimedCells)
     if (!cell) continue
     if (entity.family === FAMILY_TYPES.unit) {
@@ -165,16 +170,17 @@ export function expelBuildingInteriorOccupants(context: GameContextLike, buildin
     expelled.push(entity)
   }
 
-  releaseRemainingHorses(
-    context,
-    building,
-    outsideSpace,
-    anchor,
-    stableHorseRecords.slice(releasedStableHorses),
-    claimedCells,
-    expelled
-  )
-  finishEvacuation(context, building, space)
+  if (!options.unitsOnly)
+    releaseRemainingHorses(
+      context,
+      building,
+      outsideSpace,
+      anchor,
+      stableHorseRecords.slice(releasedStableHorses),
+      claimedCells,
+      expelled
+    )
+  finishEvacuation(context, building, space, options.unitsOnly)
   return expelled
 }
 
@@ -208,9 +214,10 @@ function releaseRemainingHorses(
 function finishEvacuation(
   context: GameContextLike,
   building: BuildingEntity,
-  space: BuildingInteriorRuntimeSpace | null
+  space: BuildingInteriorRuntimeSpace | null,
+  preserveHorses = false
 ): void {
-  if (building.type === BUILDING_TYPES.stable) {
+  if (!preserveHorses && building.type === BUILDING_TYPES.stable) {
     building.stableHorses = []
     building.horseAmount = 0
   }

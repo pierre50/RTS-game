@@ -1,3 +1,4 @@
+import { getRestTravelPathLength } from './UnitRestRoute'
 import { CELL_HEIGHT, CELL_WIDTH, STEP_TIME, UNIT_TYPES } from '../../constants'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import {
@@ -88,14 +89,10 @@ export function canResumeVillagerReturnTaskBeforeRest(
   return travelMs + usefulWorkMs <= remainingWorkMs
 }
 
-export function canReachShelterBeforeBed(unit: UnitEntity, targetCell: RuntimeCell): boolean {
-  if (!isVillager(unit)) return true
-  if (shouldVillagerBeAsleep(unit)) return true
-  const remainingMs = getMinutesUntilVillagerBed(unit) * GAME_MINUTE_MS
-  // Even an unobstructed diagonal route must cover this many cells.
-  const minimumCells = Math.max(Math.abs(unit.i - targetCell.i), Math.abs(unit.j - targetCell.j))
-  const minimumMs = estimatePathTravelMs(unit, minimumCells)
-  if (minimumMs == null || minimumMs > remainingMs) return false
-  const travelMs = estimateTravelMsToCell(unit, targetCell)
-  return travelMs != null && travelMs <= remainingMs
+export function canReachRestBeforeBed(unit: UnitEntity, targetCell: RuntimeCell): boolean {
+  const pathLength = getRestTravelPathLength(unit, targetCell)
+  if (pathLength == null) return false
+  if (!isVillager(unit) || shouldVillagerBeAsleep(unit)) return true
+  const travelMs = estimatePathTravelMs(unit, pathLength)
+  return travelMs != null && travelMs <= getMinutesUntilVillagerBed(unit) * GAME_MINUTE_MS
 }

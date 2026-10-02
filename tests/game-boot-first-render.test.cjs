@@ -25,7 +25,7 @@ for (const mode of ['new', 'continue']) {
         '../../ui/TutorialPrologue': {},
         '../../lib/lang': { t: key => key },
         '../../lib': { Modal: class {} },
-        '../../serialization/SaveValidator': { validateSaveData: value => value },
+        '../../serialization/validation/SaveValidator': { validateSaveData: value => value },
         '../../serialization/CampaignSave': {
           isCampaignSave: () => true,
           getCurrentWorldState: value => value.worlds.home.state,

@@ -101,7 +101,7 @@ test('saved-game loading keeps its screen through runtime cleanup and restoratio
       '../../services/tutorial/TutorialVillageMigration': { migrateTutorialVillageOwner() {} },
       '../../lib/lang': { t: key => key },
       '../../lib': { Modal: class {} },
-      '../../serialization/SaveValidator': { validateSaveData: value => value },
+      '../../serialization/validation/SaveValidator': { validateSaveData: value => value },
       '../../serialization/CampaignSave': {
         isCampaignSave: () => true,
         getCurrentWorldState: () => state,

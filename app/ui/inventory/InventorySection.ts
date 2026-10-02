@@ -4,6 +4,7 @@ type InventorySectionOptions = {
   action?: HTMLElement
   showItemCount?: boolean
   className?: string
+  description?: string
   emptyText?: string
   gridClassName?: string
   title: string
@@ -43,6 +44,13 @@ export function createInventorySection(options: InventorySectionOptions): HTMLEl
     block.appendChild(header)
   } else {
     block.appendChild(title)
+  }
+
+  if (options.description) {
+    const description = document.createElement('p')
+    description.className = 'inventory-section-description'
+    description.textContent = options.description
+    block.appendChild(description)
   }
 
   if (grid.childElementCount || !options.emptyText) {

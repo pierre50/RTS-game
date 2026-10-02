@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { advanceOfflineTrainingRequests } = loadTsModule('app/services/world/OfflineTrainingRequests.ts', {
+const { advanceOfflineTrainingRequests } = loadTsModule('app/services/world/offline/OfflineTrainingRequests.ts', {
   mocks: {
     '../../lib/chief': { playerNeedsChiefForCommand: () => false, hasLivingChief: () => true },
     '../../lib/units/villagerSchedule': { getVillagerWorkingMinutes: (_unit, from, to) => to - from },

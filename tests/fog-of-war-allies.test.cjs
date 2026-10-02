@@ -10,7 +10,7 @@ function loadFogOfWar() {
       UNIT_TYPES: { chief: 'Chief', hero: 'Hero' },
     },
   }
-  return loadTsModule('app/services/UnitPerception.ts', { mocks })
+  return loadTsModule('app/services/visibility/UnitPerception.ts', { mocks })
 }
 
 function createViews(size = 2) {

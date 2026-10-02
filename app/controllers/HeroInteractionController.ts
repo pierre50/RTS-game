@@ -64,13 +64,10 @@ export class HeroInteractionController {
     const player = this.host.context.player
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
-      if (
-        (building.type === BUILDING_TYPES.chest && !building.isBuilt) ||
-        building.type === BUILDING_TYPES.trap ||
-        CAMP_DECORATION_BUILDING_TYPES.some(type => type === building.type)
-      )
+      if ((building.type === BUILDING_TYPES.chest && !building.isBuilt) || building.type === BUILDING_TYPES.trap)
         return false
-      if (player) transferNeutralEntityToPlayer(building, player, { player })
+      if (player && !CAMP_DECORATION_BUILDING_TYPES.some(type => type === building.type))
+        transferNeutralEntityToPlayer(building, player, { player })
       if (menu?.openHeroBuildingMenu?.(building)) {
         player?.unselectAll?.()
         building.select?.()
@@ -95,8 +92,7 @@ export class HeroInteractionController {
     }
 
     // Living characters only support communication; living animals use their dedicated interactions.
-    if (target.family === FAMILY_TYPES.unit || (target.family === FAMILY_TYPES.animal && !target.isDead))
-      return false
+    if (target.family === FAMILY_TYPES.unit || (target.family === FAMILY_TYPES.animal && !target.isDead)) return false
 
     return Boolean(menu?.openEntityInfoModal?.(target))
   }

@@ -1,4 +1,4 @@
-export type DialogueChoice = {
+type DialogueChoice = {
   id: string
   label: string
   /** Missing nextId ends the conversation. */

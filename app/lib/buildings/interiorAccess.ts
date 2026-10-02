@@ -32,7 +32,7 @@ export function canUnitEnterBuildingInterior(
   unit: UnitEntity | null | undefined,
   building: BuildingEntity | null | undefined
 ): boolean {
-  return !isEnemyBuildingInteriorDefended(unit, building)
+  return !building?.buildingUpgrade && !isEnemyBuildingInteriorDefended(unit, building)
 }
 
 function isHostileUnit(source: UnitEntity | null | undefined, unit: UnitEntity | null | undefined): boolean {
@@ -56,11 +56,7 @@ export function hasEnemyInsideBuildingInterior(
   building: BuildingEntity | null | undefined
 ): boolean {
   if (!source || !building) return false
-  const players = source.context?.players?.length
-    ? source.context.players
-    : building.owner
-      ? [building.owner]
-      : []
+  const players = source.context?.players?.length ? source.context.players : building.owner ? [building.owner] : []
   for (const player of players) {
     for (const unit of player.units ?? []) {
       if (!isHostileUnit(source, unit)) continue
@@ -106,7 +102,7 @@ export function canUnitEnterBuildingInteriorForAssault(
 ): boolean {
   if (!source || !building || building.isDead || building.isDestroyed || (building.hitPoints ?? 0) <= 0) return false
   if (!isBuildingInteriorSupported(building)) return false
-  if (isEnemyBuildingInteriorDefended(source, building)) return false
+  if (!canUnitEnterBuildingInterior(source, building)) return false
   if (!hasEnemyInsideBuildingInterior(source, building)) return false
   return !hasOutsideEnemyNearBuildingAssault(source, building)
 }

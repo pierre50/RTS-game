@@ -9,6 +9,8 @@ export type MinimapBuildingMemory = {
   size: number
   color: string
   ownerKey: string
+  settlementId?: string
+  settlementKind?: 'village' | 'city' | 'outpost'
   town: boolean
 }
 

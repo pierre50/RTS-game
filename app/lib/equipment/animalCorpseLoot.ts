@@ -42,7 +42,7 @@ export function initializeAnimalCorpseLoot(animal: AnimalLootSource, random?: ()
   animal.inventory = { resources }
 }
 
-export function syncAnimalLootQuantity(animal: AnimalLootSource): void {
+function syncAnimalLootQuantity(animal: AnimalLootSource): void {
   animal.quantity = animal.inventory?.resources?.meat ?? 0
   animal.updateTexture?.()
 }

@@ -1,3 +1,4 @@
+import { isStaticSettlement } from '../../config/settlementProfiles'
 import { isCampPaused } from '../../lib/units/campActivity'
 import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
@@ -53,6 +54,7 @@ export function collectRestUnits(context: GameContextLike): RestUnitBuckets {
     villagers: [],
   }
   for (const player of context.players ?? []) {
+    if (isStaticSettlement(player) && isDistantOwner(player)) continue
     for (const unit of player.units ?? []) {
       if (isCampPaused(unit)) continue
       if (unit.isDead || unit.isDestroyed || ((player.isPlayed || isDistantOwner(player)) && isUnitSuspended(unit)))

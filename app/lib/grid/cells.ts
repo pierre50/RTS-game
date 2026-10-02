@@ -1,5 +1,6 @@
 import type { Grid, GridCell, GridPosition, GridZone } from '../../types/grid'
 import { isFootprintBuildable } from './buildingFootprint'
+import { BUILDING_TYPES } from '../../constants/entities'
 
 type CellCondition<TCell extends GridCell> = (cell: TCell) => boolean | void
 type SparseGrid<TCell extends GridCell> = Array<Array<TCell | undefined> | undefined>
@@ -139,11 +140,13 @@ export function getBuildingFootprintCells<TCell extends GridCell>(
   startY: number,
   grid: Grid<TCell>,
   size = 1,
-  callback?: CellCondition<TCell>
+  callback?: CellCondition<TCell>,
+  buildingType?: string
 ): TCell[] {
   const result: TCell[] = []
   const footprintSize = Math.max(1, Math.floor(size))
-  const before = Math.floor((footprintSize - 1) / 2)
+  // The bed's anchor is at its front: its ground surface lies behind it.
+  const before = buildingType === BUILDING_TYPES.campBedroll ? footprintSize - 1 : Math.floor((footprintSize - 1) / 2)
   const after = footprintSize - before - 1
 
   for (let i = startX - before; i <= startX + after; i++) {

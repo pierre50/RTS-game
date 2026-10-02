@@ -1,10 +1,12 @@
+import { heroHomeButton } from './hero-building/HeroHomeButton'
+import { getBuildingAssetOwner } from '../lib/graphics/assets'
+import { createHeroBuildingUpgrade } from './hero-building/HeroBuildingUpgrade'
 import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
 import { createHeroDepotReservesBody } from './hero-building/HeroDepotReservesBody'
 import { createHeroTrainingBody } from './hero-building/HeroTrainingBody'
-import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { BUILDING_TYPES, SOUND_CUES } from '../constants'
 import type { Modal } from '../lib'
 import { playAudibleSoundCue } from '../lib/audio/sound'
-import { playUiSound } from '../lib/audio/uiSound'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import type { BuildingEntity } from '../types/entities'
@@ -13,22 +15,18 @@ import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
 import { createInspectionModal, setInspectionWindowSize } from './InspectionPanel'
 import { InteractionPanel } from './InteractionPanel'
 import type { MenuHost } from './MenuHost'
-import { buttonMeta, buttonTitle } from './hero-building/HeroBuildingButtonText'
+import { createHeroBuildingActionButton } from './hero-building/HeroBuildingActionButton'
 import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
 import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
 import { heroBuildingStructureSignature } from './hero-building/HeroBuildingStructureSignature'
-import { heroCampfireSleepButton } from './hero-building/HeroCampfireSleepButton'
+import { heroSleepButton } from './hero-building/HeroSleepButton'
 import { HeroForgeBody } from './hero-building/HeroForgeBody'
 import { canHeroTradeAtMarket, createHeroMarketBody } from './hero-building/HeroMarketBody'
 import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
 
-function isBuildingEntity(value: unknown): value is BuildingEntity {
-  return Boolean(value && (value as BuildingEntity).family === FAMILY_TYPES.building)
-}
-
-function isFireCamp(building: BuildingEntity): boolean {
-  return building.type === BUILDING_TYPES.fireCamp
+function isSleepTarget(building: BuildingEntity): boolean {
+  return building.type === BUILDING_TYPES.fireCamp || building.type === BUILDING_TYPES.campBedroll
 }
 
 export class HeroBuildingMenuManager {
@@ -206,12 +204,14 @@ export class HeroBuildingMenuManager {
 
   getBuildingActionMenuItems(building: BuildingEntity): MenuButtonSpec[] {
     const items = this.menu.getActionMenuItems(building)
-    if (!isFireCamp(building)) return items
-    return [this.getCampfireSleepButton(building), ...items]
+    if (building.type === BUILDING_TYPES.house && building.owner === this.menu.context.controls.heroUnit?.owner)
+      return [heroHomeButton(this.menu, building, () => this.refresh()), ...items]
+    if (!isSleepTarget(building)) return items
+    return [this.getSleepButton(building), ...items]
   }
 
-  getCampfireSleepButton(building: BuildingEntity): MenuButtonSpec {
-    return heroCampfireSleepButton(this.menu, building, () => this.close())
+  getSleepButton(building: BuildingEntity): MenuButtonSpec {
+    return heroSleepButton(this.menu, building, () => this.close())
   }
 
   render(): void {
@@ -221,12 +221,7 @@ export class HeroBuildingMenuManager {
       building.type === BUILDING_TYPES.market && canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit)
     const inventoryMode =
       this.marketOpen || building.type === BUILDING_TYPES.chest || building.type === BUILDING_TYPES.forge
-    const managementMode =
-      inventoryMode ||
-      (building.isBuilt &&
-        building.owner?.label === this.menu.context.player.label &&
-        (['StoragePit', 'Granary'].includes(building.type) ||
-          (building.units ?? []).some(type => isTraineeTrainingType(building, type))))
+    const managementMode = inventoryMode || this.isManagedBuilding(building)
     setInspectionWindowSize(this.modal, managementMode ? 'large' : 'small')
     this.modal?._panel?.classList.toggle('interaction-panel', !inventoryMode)
     this.modal?._panel?.classList.toggle('inventory-transfer-modal', inventoryMode)
@@ -238,13 +233,15 @@ export class HeroBuildingMenuManager {
     const rendered = renderBuildingAvatar(
       this.menu.context.app,
       building.type,
-      building.owner ?? this.menu.context.player,
+      getBuildingAssetOwner({ ...building, owner: building.owner ?? this.menu.context.player }),
       this.infoAvatarCanvas
     )
     this.infoAvatarWrap.classList.toggle('hidden', !rendered)
     const items = this.stack[this.stack.length - 1] || []
     this.renderInfo()
     this.body.replaceChildren()
+    const upgrade = createHeroBuildingUpgrade(this.menu, building, () => this.refresh())
+    if (upgrade) this.body.appendChild(upgrade)
     this.backButton.textContent = '<'
     this.backButton.classList.toggle('is-visible', !this.marketOpen && this.stack.length > 1)
     if (this.renderContainerBody(building)) {
@@ -252,22 +249,31 @@ export class HeroBuildingMenuManager {
       this.updateProgress()
       return
     }
-    items
-      .filter(button => !button.hide || !button.hide())
-      .forEach(button => {
-        const trainingEntries = building.trainingQueue
-          ?.map((entry, index) => ({ entry, index }))
-          .filter(({ entry }) => entry.type === button.id)
-        if (trainingEntries?.length) {
-          for (const { index } of trainingEntries) {
-            this.body.appendChild(this.createButton(building, button, { trainingIndex: index }))
-          }
-          return
-        }
-        this.body.appendChild(this.createButton(building, button))
-      })
+    items.filter(button => !button.hide || !button.hide()).forEach(button => this.appendActionButton(building, button))
     this.body.classList.toggle('is-empty', !this.body.children.length)
     this.updateProgress()
+  }
+
+  isManagedBuilding(building: BuildingEntity): boolean {
+    return Boolean(
+      building.isBuilt &&
+        building.owner?.label === this.menu.context.player.label &&
+        (['StoragePit', 'Granary'].includes(building.type) ||
+          (building.units ?? []).some(type => isTraineeTrainingType(building, type)))
+    )
+  }
+
+  appendActionButton(building: BuildingEntity, button: MenuButtonSpec): void {
+    const trainingEntries = building.trainingQueue
+      ?.map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => entry.type === button.id)
+    if (trainingEntries?.length) {
+      for (const { index } of trainingEntries) {
+        this.body.appendChild(this.createButton(building, button, { trainingIndex: index }))
+      }
+      return
+    }
+    this.body.appendChild(this.createButton(building, button))
   }
 
   renderContainerBody(building: BuildingEntity): boolean {
@@ -327,78 +333,13 @@ export class HeroBuildingMenuManager {
     button: MenuButtonSpec,
     options: { trainingIndex?: number } = {}
   ): HTMLButtonElement {
-    const element = document.createElement('button')
-    element.type = 'button'
-    element.className = 'ui-btn ui-action-row'
-    element.id = button.id ? `hero-${button.id}${options.trainingIndex == null ? '' : `-${options.trainingIndex}`}` : ''
-    if (button.id) element.dataset.actionId = button.id
-    if (options.trainingIndex != null) element.dataset.trainingIndex = String(options.trainingIndex)
-    if (!button.icon && !button.onCreate) element.classList.add('is-text-only')
-    if (button.id?.startsWith('stableDebug')) element.classList.add('hero-building-menu-debug')
-    const disabled = button.disabled?.() ?? false
-    element.disabled = disabled
-
-    const icon = document.createElement('span')
-    icon.className = 'hero-building-menu-icon'
-    let nestedPointerHandled = false
-    if (button.onCreate) {
-      button.onCreate(building, icon)
-      icon.addEventListener('pointerup', () => {
-        nestedPointerHandled = true
-        setTimeout(() => {
-          nestedPointerHandled = false
-        })
-      })
-    } else {
-      const iconSrc = typeof button.icon === 'function' ? button.icon() : button.icon
-      if (iconSrc) {
-        const image = this.menu.createActionIcon(iconSrc)
-        icon.appendChild(image)
-      }
-    }
-
-    const label = document.createElement('span')
-    label.className = 'hero-building-menu-label'
-    label.textContent = buttonTitle(button)
-
-    const meta = document.createElement('span')
-    meta.className = 'hero-building-menu-meta'
-    meta.textContent = buttonMeta(button, { hideMeta: options.trainingIndex != null })
-
-    const status = document.createElement('span')
-    status.className = 'hero-building-menu-status'
-    const statusText = document.createElement('span')
-    statusText.className = 'hero-building-menu-status-text'
-    status.appendChild(statusText)
-
-    if (icon.childElementCount > 0) element.appendChild(icon)
-    element.appendChild(label)
-    element.appendChild(meta)
-    element.appendChild(status)
-
-    element.addEventListener('click', evt => {
-      if (button.disabled?.()) return
-      if (button.onCreate) {
-        if (!nestedPointerHandled && button.onClick) {
-          playUiSound(SOUND_CUES.ui.menuClick)
-          button.onClick(building, evt)
-        }
-        this.refresh()
-        return
-      }
-      playUiSound(SOUND_CUES.ui.menuClick)
-      if (button.children) {
-        this.stack.push(button.children)
+    return createHeroBuildingActionButton(this.menu, building, button, options, {
+      refresh: () => this.refresh(),
+      openChildren: children => {
+        this.stack.push(children)
         this.render()
-        return
-      }
-      if (button.onClick && isBuildingEntity(building)) {
-        button.onClick(building, evt)
-        this.refresh()
-      }
+      },
     })
-
-    return element
   }
 
   updateProgress(): void {

@@ -1,12 +1,13 @@
 import type { VillagerAutonomyJob } from '../../types/entities'
 
 export type NpcAudience = 'ownChief' | 'ownPeer' | 'foreignChief' | 'visitor'
-export type NpcRoutinePhase = 'morning' | 'evening' | 'work' | 'idle'
+export type NpcRoutinePhase = 'morning' | 'evening' | 'work' | 'idle' | 'meal'
 type Lines = [string, ...string[]]
 type ForeignAudience = Extract<NpcAudience, 'foreignChief' | 'visitor'>
 type RelationVariants = 'wary' | 'friendly'
 type RoutineLines = {
   lunch: Lines
+  guard: Record<'morning' | 'evening' | 'work' | 'meal' | 'nightWatch' | 'relief' | 'offDuty', Lines>
   foreignRest: Record<RelationVariants, Record<'morning' | 'evening', Record<ForeignAudience, Lines>>>
   foreignChiefGreeting: Record<RelationVariants, Record<ForeignAudience, Lines>>
   rest: Record<'morning' | 'evening', Record<NpcAudience, Lines>>
@@ -19,6 +20,15 @@ type RoutineLines = {
 // {address} only addresses the speaker's own chief; foreign leaders receive a separate greeting.
 export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
   fr: {
+    guard: {
+      morning: ['Je prends mon petit-déjeuner avant de reprendre mon poste{address}.'],
+      evening: ['Je profite d’un moment de repos avant la nuit{address}.'],
+      work: ['Je veille sur le village{address}. Je garde l’œil ouvert.'],
+      meal: ['Je prends une pause pour manger avant de reprendre la garde{address}.'],
+      nightWatch: ['C’est mon tour de garde{address}. Je veille pendant que le village dort.'],
+      relief: ['La garde de nuit est terminée{address}. Je prends un moment de repos.'],
+      offDuty: ['Je me repose entre deux tours de garde{address}.'],
+    },
     lunch: [
       'Je prends le temps de manger un morceau. Je reprendrai le travail après le repas{address}.',
       'Une petite pause pour déjeuner, et je m’y remets{address}.',
@@ -165,6 +175,7 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
       ],
     },
     chief: {
+      meal: ['Je prends le temps de déjeuner avant de reprendre les affaires du village.'],
       morning: [
         'Je prends un moment avant de m’occuper du village.',
         'Le village se réveille. Les affaires attendront encore un peu.',
@@ -201,6 +212,15 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
     },
   },
   en: {
+    guard: {
+      morning: ['I am having breakfast before returning to my post{address}.'],
+      evening: ['I am taking a quiet break before nightfall{address}.'],
+      work: ['I am watching over the village{address}. I am keeping my eyes open.'],
+      meal: ['I am taking a meal break before returning to guard duty{address}.'],
+      nightWatch: ['It is my watch{address}. I keep guard while the village sleeps.'],
+      relief: ['The night watch is over{address}. I am taking a moment to rest.'],
+      offDuty: ['I am resting between watches{address}.'],
+    },
     lunch: [
       'I am having a bite to eat. I will get back to work after lunch{address}.',
       'Just taking a short lunch break, then back to work{address}.',
@@ -347,6 +367,7 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
       ],
     },
     chief: {
+      meal: ['I am taking a lunch break before returning to village affairs.'],
       morning: [
         'I am taking a moment before tending to the village.',
         'The village is waking up. Business can wait a little longer.',

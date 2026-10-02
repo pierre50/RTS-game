@@ -3,26 +3,21 @@ import { isActionTouchingTarget } from '../../lib/actions/contactActions'
 import { takeAnimalLootForDelivery } from '../../lib/equipment/animalCorpseLoot'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, SOUND_CUES } from '../../constants'
 import {
-  BOW_SHOOT_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
-  HUNTING_PROJECTILE,
-  getHuntingAimPoint,
   onSpriteLoopAtFrame,
-  playerCanSeeInstance,
   showHealingFeedback,
   syncMovedActionTarget,
   showResourceGainFeedback,
 } from '../../lib'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
-import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
-import { Projectile } from '../Projectile'
 import { stopManualHeroAction } from './UnitManualHeroWork'
+import { handleUnitHuntAction } from './work/UnitHuntAction'
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -95,100 +90,33 @@ export class UnitDirectedActions {
         return
       }
       if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
-        if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
-        this.playSound(unit.sounds?.heal)
-        const beforeHitPoints = dest.hitPoints ?? 0
-        dest.hitPoints = Math.min(
-          beforeHitPoints + (unit.healing ?? 0) + getHealingXpBonus(unit),
-          dest.totalHitPoints ?? 0
-        )
-        const healedAmount = (dest.hitPoints ?? 0) - beforeHitPoints
-        if (healedAmount > 0 && feedbackTarget !== dest) {
-          showHealingFeedback(dest)
-          feedbackTarget = dest
-        }
-        grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
-        if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
-          syncEntityHealthDisplay(dest, { menu, player })
-        }
+        if (this.healTarget(dest, feedbackTarget !== dest, { menu, player })) feedbackTarget = dest
       }
     }
   }
 
-  handleHuntAction(): void {
+  private healTarget(
+    dest: RuntimeEntity,
+    allowFeedback: boolean,
+    display: Parameters<typeof syncEntityHealthDisplay>[1]
+  ): boolean {
     const unit = this.unit
-    const map = unit.context?.map
-    const player = unit.owner
-    const sprite = unit.sprite
-    if (!sprite) return
-    if (!unit.getActionCondition?.(unit.dest)) {
-      unit.affectNewDest?.()
-      return
+    if (!spendOrWaitForEnergy(unit, unit.action, dest)) return false
+    this.playSound(unit.sounds?.heal)
+    const beforeHitPoints = dest.hitPoints ?? 0
+    dest.hitPoints = Math.min(beforeHitPoints + (unit.healing ?? 0) + getHealingXpBonus(unit), dest.totalHitPoints ?? 0)
+    const healedAmount = (dest.hitPoints ?? 0) - beforeHitPoints
+    const showFeedback = healedAmount > 0 && allowFeedback
+    if (showFeedback) showHealingFeedback(dest)
+    grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
+    if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
+      syncEntityHealthDisplay(dest, display)
     }
-    const huntDest = isRuntimeEntity(unit.dest) ? unit.dest : null
-    if (!huntDest) {
-      unit.affectNewDest?.()
-      return
-    }
-    if (huntDest.isDead) {
-      if (isHeroControlled(unit)) {
-        stopManualHeroAction(unit)
-        return
-      }
-      if (unit.followAssist?.action === ACTION_TYPES.hunt) {
-        unit.followAssist = null
-        unit.stop?.()
-        return
-      }
-      unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(huntDest)
-      return
-    }
-    unit.setTextures?.(SHEET_TYPES.action)
-    sprite.onLoop = () => {
-      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-      if (!unit.getActionCondition?.(dest)) {
-        if (dest && (dest.hitPoints ?? 0) <= 0) {
-          dest.die?.()
-          if (isHeroControlled(unit)) {
-            stopManualHeroAction(unit)
-            return
-          }
-          if (unit.followAssist?.action === ACTION_TYPES.hunt) {
-            unit.followAssist = null
-            unit.stop?.()
-            return
-          }
-          unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(dest)
-          return
-        }
-        unit.affectNewDest?.()
-        return
-      }
-      if (!unit.isUnitAtDest?.(unit.action, dest)) {
-        if (unit.context?.map?.revealEverything || (dest && playerCanSeeInstance(dest, player))) {
-          unit.sendToEvt?.(dest ?? null, ACTION_TYPES.hunt, { forceRepath: true })
-        } else {
-          unit.stop?.()
-        }
-        return
-      }
-      syncMovedActionTarget(unit, dest)
-    }
-    onSpriteLoopAtFrame(sprite, BOW_SHOOT_RELEASE_FRAME, () => {
-      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-      if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
-      if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
-      const projectile = new Projectile(
-        {
-          owner: unit,
-          target: dest,
-          type: HUNTING_PROJECTILE,
-          destination: getHuntingAimPoint(unit, dest),
-        },
-        unit.context!
-      )
-      attachProjectileToMapSpace(projectile, map)
-    })
+    return showFeedback
+  }
+
+  handleHuntAction(): void {
+    handleUnitHuntAction(this.unit)
   }
 
   getWorkSound(key: string, fallback: CommandSound = null): CommandSound {

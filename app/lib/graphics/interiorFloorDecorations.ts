@@ -1,3 +1,4 @@
+import { usesInteriorPreset } from '../buildings/interiorFurnitureCatalog'
 import { Assets, Sprite, type ContainerChild } from 'pixi.js'
 import { getInteriorFloorDecorations } from '../buildings/interiorFloorDecorations'
 import { getInteriorRoomCenter } from '../buildings/interiorFurniturePlacement'
@@ -7,7 +8,12 @@ import type { RuntimeCell } from '../../types/map'
 
 export function addInteriorFloorDecorations(
   space: {
-    building: { type: string; placementMirrored?: boolean }
+    building: {
+      type: string
+      placementMirrored?: boolean
+      interiorUnfurnished?: boolean
+      owner?: { type?: string; isPlayed?: boolean } | null
+    }
     grid: RuntimeCell[][]
     walkableCells: RuntimeCell[]
     sleepCells: RuntimeCell[]
@@ -15,6 +21,7 @@ export function addInteriorFloorDecorations(
   },
   layer: { addChild(child: ContainerChild): unknown }
 ): void {
+  if (!usesInteriorPreset(space.building)) return
   const decorations = getInteriorFloorDecorations(space.building.type)
   if (!decorations.length) return
   const center = getInteriorRoomCenter(space)

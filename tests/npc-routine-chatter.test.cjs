@@ -112,7 +112,7 @@ test('a chief speaks for their village instead of offering a worker greeting', (
       for (const chief of [true, false]) {
         for (const [hour, phase] of [
           [6, 'morning'],
-          [12, 'work'],
+          [12, 'meal'],
           [19, 'evening'],
           [23, 'idle'],
         ]) {
@@ -155,7 +155,7 @@ test('sleep overrides routines and only an own chief gets a chief-addressed wake
     }
 })
 
-test('idle, unsupported jobs, non-villagers and missing heroes have usable fallback lines', () => {
+test('idle, unsupported jobs, unscheduled units and missing heroes have usable fallback lines', () => {
   language = 'fr'
   choice = 0
   for (const job of [null, 'future-job']) {
@@ -164,7 +164,7 @@ test('idle, unsupported jobs, non-villagers and missing heroes have usable fallb
     assert.ok(pick(unit, undefined))
   }
   const { unit, hero } = scenario({ hour: 6, minute: 30 })
-  unit.type = 'Fantassin'
+  unit.type = 'Priest'
   assert.equal(pick(unit, hero), 'Que puis-je faire pour vous, chef ?')
 })
 
@@ -250,7 +250,7 @@ test('foreign chiefs adapt their greeting to relations throughout their daily ro
       const audience = chief ? 'foreignChief' : 'visitor'
       for (const [hour, phase] of [
         [6, 'morning'],
-        [12, 'work'],
+        [12, 'meal'],
         [19, 'evening'],
         [23, 'idle'],
       ]) {
@@ -340,4 +340,62 @@ test('a blocked resource task explains its failure instead of claiming to be wor
   language = 'en'
   assert.match(pick(unit, hero), /cannot find stone/)
   language = 'fr'
+})
+
+for (const type of ['Fantassin', 'Bowman']) {
+  test(`${type} describes daily breaks and both night watches in French and English`, () => {
+    choice = 0
+    for (language of ['fr', 'en']) {
+      for (const own of [true, false]) {
+        for (const chief of [true, false]) {
+          for (const [hour, minute, shift, expectedPhase] of [
+            [6, 30, undefined, 'morning'],
+            [10, 0, undefined, 'work'],
+            [12, 30, undefined, 'meal'],
+            [19, 0, undefined, 'evening'],
+            [22, 0, 'early', 'nightWatch'],
+            [1, 59, 'early', 'nightWatch'],
+            [2, 0, 'early', 'offDuty'],
+            [1, 59, 'late', 'offDuty'],
+            [2, 0, 'late', 'nightWatch'],
+            [5, 59, 'late', 'nightWatch'],
+            [6, 0, 'early', 'relief'],
+            [6, 0, 'late', 'relief'],
+          ]) {
+            const { unit, hero } = scenario({ own, chief, hour, minute })
+            unit.type = type
+            unit.dailySchedule.nightWatch = shift
+            const address = own && chief ? (language === 'en' ? ', chief' : ', chef') : ''
+            const catalog = NPC_ROUTINE_LINES[language]
+            let expected = catalog.guard[expectedPhase][0].replace('{address}', address)
+            if (!own && ['work', 'nightWatch'].includes(expectedPhase)) {
+              expected += ` ${catalog.foreignWork.neutral[chief ? 'foreignChief' : 'visitor'][0]}`
+            }
+            assert.equal(pick(unit, hero), expected, `${language} ${type} ${shift} ${hour}:${minute}`)
+          }
+        }
+      }
+    }
+  })
+}
+
+test('a guard still asleep at a shift boundary uses sleep chatter until waking', () => {
+  language = 'en'
+  choice = 0
+  const { unit, hero } = scenario({ hour: 2 })
+  unit.type = 'Fantassin'
+  unit.dailySchedule.nightWatch = 'late'
+  unit.shelterState = { reason: 'sleep', status: 'outside' }
+  unit.sleepVisualState = 'sleeping'
+  assert.match(pick(unit, hero), /^Zzz/)
+  unit.sleepVisualState = null
+  assert.equal(pick(unit, hero), NPC_ROUTINE_LINES.en.guard.nightWatch[0].replace('{address}', ', chief'))
+})
+
+test('a chief on a meal break describes lunch instead of village work', () => {
+  choice = 0
+  for (language of ['fr', 'en']) {
+    const { unit, hero } = scenario({ speakerChief: true, hour: 12, minute: 30 })
+    assert.equal(pick(unit, hero), `${NPC_ROUTINE_LINES[language].chief.meal[0]} ${NPC_ROUTINE_LINES[language].chiefGreeting.ownChief[0]}`)
+  }
 })

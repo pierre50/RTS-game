@@ -1,5 +1,5 @@
 import type { CaveDefinition } from '../types/cave'
-import { fail, isObject } from './SaveValidationPrimitives'
+import { fail, isObject } from './validation/SaveValidationPrimitives'
 
 export function validateCaveDefinition(value: unknown): asserts value is CaveDefinition {
   if (

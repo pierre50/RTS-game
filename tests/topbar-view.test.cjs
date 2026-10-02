@@ -60,7 +60,7 @@ function withFakeDocument(fn) {
   }
 }
 
-test('topbar displays and themes all civilization ages', () => {
+test('topbar theme stays stable regardless of legacy age', () => {
   withFakeDocument(() => {
     const { TopbarView } = loadModule('app/ui/TopbarView.ts', {
       './utils/resourceIcons': {
@@ -90,14 +90,12 @@ test('topbar displays and themes all civilization ages', () => {
     const topbar = new TopbarView(menu)
     topbar.build()
 
-    for (const [age, label] of [
-      [0, 'stoneAge'],
-      [1, 'bronzeAge'],
-      [2, 'ironAge'],
-    ]) {
+    for (const age of [0, 1, 2]) {
       player.age = age
       topbar.update()
-      assert.equal(menu.gameHud.classList.contains(`ui-age-${age}`), true)
+      assert.equal(menu.gameHud.classList.contains('ui-theme-default'), true)
+      assert.equal(menu.gameHud.classList.contains('ui-age-1'), false)
+      assert.equal(menu.gameHud.classList.contains('ui-age-2'), false)
     }
     assert.equal(menu.icons.wood, 'wood.png')
     assert.equal(menu.gameHud.children.length, 2)

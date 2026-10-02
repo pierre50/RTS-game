@@ -21,8 +21,27 @@ export function isLivingChief(unit: ChiefLike | null | undefined): boolean {
   return !unit.isDead && !unit.isDestroyed && (unit.hitPoints ?? 1) > 0
 }
 
-export function hasLivingChief(player: { units?: ChiefLike[] } | null | undefined): boolean {
-  return Boolean(player?.units?.some(unit => isLivingChief(unit)))
+type ChiefOwner = {
+  units?: ChiefLike[]
+  type?: string
+  factionId?: string | null
+  civ?: string
+  context?: { players?: ChiefOwner[] }
+}
+
+export function hasLivingChief(player: ChiefOwner | null | undefined): boolean {
+  if (player?.units?.some(isLivingChief)) return true
+  if (player?.type !== PLAYER_TYPES.ai) return false
+  const faction = player.factionId ?? player.civ
+  return Boolean(
+    faction &&
+      player.context?.players?.some(
+        owner =>
+          owner.type === PLAYER_TYPES.ai &&
+          (owner.factionId ?? owner.civ) === faction &&
+          owner.units?.some(isLivingChief)
+      )
+  )
 }
 
 export function heroCanCommand(hero: UnitEntity | null | undefined): boolean {

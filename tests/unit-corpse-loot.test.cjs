@@ -94,6 +94,8 @@ test('death rolls once, and corpse inspection and pickup never refill the loot',
       '../../lib/entities/entityHealthDisplay': {},
       '../../lib/units/unitVisualTransition': {},
       '../../services/rest/UnitSleepVisuals': { clearSleepingVisualState() {} },
+      '../../lib/hero/heroDefense': { cancelHeroDefense() {} },
+      '../../lib/hero/heroPowerCharge': { cancelHeroPowerCharge() {} },
     },
   })
   const lifecycle = new UnitLifecycle(unit)

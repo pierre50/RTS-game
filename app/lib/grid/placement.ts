@@ -1,6 +1,8 @@
 import type { ContainerChild } from 'pixi.js'
 import { instancesDistance } from '../maths'
 import { FAMILY_TYPES, LABEL_TYPES } from '../../constants'
+import { BUILDING_TYPES } from '../../constants/entities'
+import { isInteriorFurniture } from '../buildings/interiorFurnitureCatalog'
 import { getBuildingFootprintCells, getRandomZoneInGridWithCondition, getZoneInGridWithCondition } from './cells'
 import type { Grid, GridCell, GridInstanceLike, GridPosition, GridZone } from '../../types/grid'
 
@@ -95,8 +97,23 @@ function getPlacementFootprintCells<TCell extends GridCell>(
   building: BuildingPlacement
 ): { cells: TCell[]; expectedCells: number } {
   const size = Math.max(1, Math.floor(building.size ?? 1))
-  const cells = getBuildingFootprintCells(i, j, grid, size)
-  const expectedCells = size ** 2
+  const cells = getBuildingFootprintCells(i, j, grid, size, undefined, building.type)
+  let expectedCells = size ** 2
+  // Furniture sprites can extend beyond their logical cell, in either
+  // orientation. Keep a conservative one-cell margin around the anchor
+  // in addition to the reserved footprint (the bed, for example, is 2x2).
+  if (building.type && building.type !== BUILDING_TYPES.campBedroll && isInteriorFurniture(building.type)) {
+    const before = Math.floor((size - 1) / 2)
+    const after = size - before - 1
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        if (di >= -before && di <= after && dj >= -before && dj <= after) continue
+        expectedCells++
+        const cell = grid[i + di]?.[j + dj]
+        if (cell) cells.push(cell)
+      }
+    }
+  }
   return { cells, expectedCells }
 }
 

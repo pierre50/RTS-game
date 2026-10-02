@@ -1,3 +1,4 @@
+import { isAiChiefResting } from '../units/chiefAvailability'
 import { heroCanCommand } from '../chief'
 import { ACTION_TYPES, CELL_WIDTH, FAMILY_TYPES, PLAYER_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { findInstancesInSight } from '../grid/visibility'
@@ -42,14 +43,26 @@ function isFighting(target: UnitEntity): boolean {
 }
 
 function isFriendlyAvailable(hero: UnitEntity, target: UnitEntity): boolean {
-  if (target === hero || target.isDead || target.isDestroyed) return false
+  if (
+    target === hero ||
+    target.isDead ||
+    target.isDestroyed ||
+    isAiChiefResting(target, target.context ?? hero.context)
+  )
+    return false
   if (target.family !== FAMILY_TYPES.unit) return false
   if (target.owner !== hero.owner && !isNeutralPlayer(target.owner)) return false
   return !isFighting(target)
 }
 
 function isCommEligible(hero: UnitEntity, target: UnitEntity): boolean {
-  if (target.isDead || target.isDestroyed || isFighting(target)) return false
+  if (
+    target.isDead ||
+    target.isDestroyed ||
+    isFighting(target) ||
+    isAiChiefResting(target, target.context ?? hero.context)
+  )
+    return false
   if (target.lookingAtHero) return true
   return isFriendlyAvailable(hero, target)
 }
@@ -68,7 +81,8 @@ function isForeignTalkableNpc(hero: UnitEntity, target: UnitEntity): boolean {
 export function isTalkableNpc(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (target === hero || target.family !== FAMILY_TYPES.unit) return false
   const unit = target as UnitEntity
-  if (unit.isDead || unit.isDestroyed || isFighting(unit)) return false
+  if (unit.isDead || unit.isDestroyed || isFighting(unit) || isAiChiefResting(unit, unit.context ?? hero.context))
+    return false
   return unit.owner === hero.owner || isNeutralPlayer(unit.owner) || isForeignTalkableNpc(hero, unit)
 }
 
@@ -79,7 +93,14 @@ function claimNeutralCommGroup(hero: UnitEntity, group: UnitEntity[]): void {
 }
 
 export function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true): void {
-  if (target.lookingAtHero || target.isDead || target.isDestroyed || isFighting(target)) return
+  if (
+    target.lookingAtHero ||
+    target.isDead ||
+    target.isDestroyed ||
+    isFighting(target) ||
+    isAiChiefResting(target, target.context ?? hero.context)
+  )
+    return
   const sleeping = target.shelterState?.reason === 'sleep' && target.sleepVisualState === 'sleeping'
   const sprite = target.sprite
   if (sprite && !sleeping) {
@@ -97,7 +118,7 @@ export function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice 
   target.degree = getInstanceDegree(target, hero.x, hero.y)
   if (sleeping && target.owner === hero.owner && heroCanCommand(hero)) {
     // Their chief talking to them is a real wake, not a peek — foreign sleepers stay asleep.
-    target.context?.unitRest?.wakeSleepingUnitForOrder(target)
+    target.context?.unitRest?.wakeRestingUnitForOrder(target)
   } else if (!sleeping) {
     target.setTextures?.(SHEET_TYPES.standing)
   }

@@ -1,3 +1,4 @@
+import type { ForgeUpgradeOwner } from './forgeUpgrades'
 import { getMiningPickaxe, type MiningActor } from '../resources/miningEquipment'
 import { Assets } from 'pixi.js'
 import { FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
@@ -36,7 +37,7 @@ type EquipmentEntityLike = {
   experience?: UnitEntity['experience']
   family?: string
   inventory?: UnitEntity['inventory']
-  owner?: Pick<PlayerLike, 'age' | 'civ' | 'config'> | null
+  owner?: Pick<PlayerLike, 'civ' | 'config' | 'forgeUpgrades'> | null
   type?: string
   work?: string | null
 }
@@ -230,15 +231,15 @@ export function getEquipmentCombatStats(
 export function getUnitEquipment(
   unitType: string,
   config?: Pick<UnitConfig, 'equipment'>,
-  age = 0,
+  owner: ForgeUpgradeOwner = {},
   level = 0,
   civilization?: string
 ): string[] {
-  return config?.equipment ? [...config.equipment] : dynamicEquipmentForUnit(unitType, age, level, civilization)
+  return config?.equipment ? [...config.equipment] : dynamicEquipmentForUnit(unitType, owner, level, civilization)
 }
 
-export function getUnitWorkEquipment(work: string | null | undefined, age = 0, unit?: MiningActor): string[] {
-  return dynamicEquipmentForWork(work, age).map(item =>
+export function getUnitWorkEquipment(work: string | null | undefined, unit?: MiningActor): string[] {
+  return dynamicEquipmentForWork(work, unit?.type === 'Hero' ? {} : (unit?.owner ?? {})).map(item =>
     unit && item.startsWith('pickaxe_') ? getMiningPickaxe(unit) : item
   )
 }
@@ -247,12 +248,14 @@ function getUnitEffectiveCombatStats(
   unitType: string,
   config: Pick<UnitConfig, 'category' | 'equipment' | CombatStatKey>,
   work?: string | null,
-  age = 0,
+  owner: ForgeUpgradeOwner = {},
   level = 0,
   civilization?: string
 ): EquipmentCombatStats {
-  const workEquipment = work ? getUnitWorkEquipment(work, age) : []
-  const equipment = workEquipment.length ? workEquipment : getUnitEquipment(unitType, config, age, level, civilization)
+  const workEquipment = work ? dynamicEquipmentForWork(work, owner) : []
+  const equipment = workEquipment.length
+    ? workEquipment
+    : getUnitEquipment(unitType, config, owner, level, civilization)
   if (equipment.length) return capUnitEquipmentArmor(getEquipmentCombatStats(equipment))
 
   return {
@@ -297,7 +300,7 @@ export function getUnitRuntimeCombatStats(unit: UnitEntity, config: UnitConfig):
     unit.type,
     config,
     unit.work,
-    unit.owner?.age,
+    unit.owner ?? {},
     getUnitEquipmentTier(unit, config.category),
     unit.owner?.civ
   )
@@ -320,7 +323,7 @@ export function isUnitMeleeWeaponEquipped(unit: UnitEntity): boolean {
   const equipment = getUnitEquipment(
     unit.type,
     config,
-    unit.owner?.age,
+    unit.owner ?? {},
     getUnitEquipmentTier(unit, config?.category),
     unit.owner?.civ
   )
@@ -359,7 +362,7 @@ export function refreshUnitEquipmentStats(unit: UnitEntity): void {
     unit.type,
     config,
     useWorkEquipment ? unit.work : undefined,
-    unit.owner?.age,
+    unit.owner ?? {},
     getUnitEquipmentTier(unit, config.category),
     unit.owner?.civ
   )
@@ -374,7 +377,7 @@ export function refreshUnitEquipmentStats(unit: UnitEntity): void {
 setLevelUpRefreshHandler(refreshUnitEquipmentStats)
 
 export function getUnitCombatRange(unit: UnitEntity): number | undefined {
-  const age = unit.owner?.age ?? 0
+  const owner = unit.owner ?? {}
   const config = unit.owner?.config.units[unit.type]
 
   if (usesHeroInventoryEquipment(unit)) {
@@ -386,20 +389,19 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
   if (explicitRange != null) return explicitRange
 
   if (unit.work) {
-    const workEquipment = getUnitWorkEquipment(unit.work, age, unit)
+    const workEquipment = getUnitWorkEquipment(unit.work, unit)
     const workRange = getWeaponRangeFromEquipment(workEquipment)
     if (workRange != null) return workRange
   }
 
   const level = getUnitEquipmentTier(unit, config?.category)
-  const unitEquipment = getUnitEquipment(unit.type, config, age, level, unit.owner?.civ)
+  const unitEquipment = getUnitEquipment(unit.type, config, owner, level, unit.owner?.civ)
   return getWeaponRangeFromEquipment(unitEquipment)
 }
 
 function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
   if (usesHeroInventoryEquipment(entity)) return getHeroInventoryCombatEquipment(entity)
-  if (entity.type === UNIT_TYPES.villager && entity.work)
-    return getUnitWorkEquipment(entity.work, entity.owner?.age, entity)
+  if (entity.type === UNIT_TYPES.villager && entity.work) return getUnitWorkEquipment(entity.work, entity)
   if (Array.isArray(entity.equipment)) return [...entity.equipment]
 
   const config =
@@ -416,7 +418,7 @@ function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
   return entity.type
     ? dynamicEquipmentForUnit(
         entity.type,
-        entity.owner?.age,
+        entity.owner ?? {},
         getUnitEquipmentTier(entity as UnitEntity, config?.category),
         entity.owner?.civ
       )

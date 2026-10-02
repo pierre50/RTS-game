@@ -33,6 +33,7 @@ test('chests no longer expose delivery toggles, including old blocked chests', (
     const chest = {
       type: 'Chest',
       family: 'building',
+      isBuilt: true,
       label: 'camp',
       owner,
       spaceId: 'outside',

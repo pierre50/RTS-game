@@ -46,7 +46,7 @@ test('mining contact uses the carried pickaxe instead of the age default', () =>
 })
 
 test('offline iron gathering uses the saved pickaxe', () => {
-  const { offlineResourceWork } = loadTsModule('app/services/world/OfflineWorldWork.ts')
+  const { offlineResourceWork } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
   const player = { age: 0 }
   const resource = { type: 'Iron', quantity: 20, hitPoints: 20 }
   const worker = { type: 'Villager', autonomousJob: 'iron', inventory: { equipment: ['pickaxe_bronze'] } }

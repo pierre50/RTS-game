@@ -21,7 +21,6 @@ export {
   healAll,
   killEntities,
   listGlobalPlayers,
-  setAge,
   setCiv,
   setGameSpeed,
   setPopMax,

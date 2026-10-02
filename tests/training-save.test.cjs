@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const { serializeTrainingQueue } = loadTsModule('app/serialization/TrainingSave.ts')
-const { validatePlayerTraining } = loadTsModule('app/serialization/TrainingSaveValidation.ts')
+const { validatePlayerTraining } = loadTsModule('app/serialization/validation/TrainingSaveValidation.ts')
 const config = { units: { Villager: {}, Fantassin: { cost: { food: 35 } } } }
 
 function entry(label, end = 12) {
@@ -14,6 +14,9 @@ function entry(label, end = 12) {
       label,
       i: 1,
       j: 1,
+      homeHouseLabel: 'home',
+      homeBedLabel: `bed-${label}`,
+      partnerLabel: `partner-${label}`,
       name: label,
       gender: 'female',
       hitPoints: 21,
@@ -126,6 +129,9 @@ test('same-type concurrent training survives repeated saves and finishes indepen
   restored.advance(12)
   assert.equal(restored.placed.length, 1)
   assert.equal(restored.placed[0].extra.name, 'Aline')
+  assert.equal(restored.placed[0].extra.homeHouseLabel, 'home')
+  assert.equal(restored.placed[0].extra.homeBedLabel, 'bed-Aline')
+  assert.equal(restored.placed[0].extra.partnerLabel, 'partner-Aline')
   assert.equal(restored.placed[0].options.consumePopulationSlot, false)
   assert.equal(restored.building.owner.population, 2)
   assert.equal(restored.building.trainingUnit.name, 'Brune')
@@ -168,6 +174,7 @@ test('restored cancellation refunds each paid cost once and retains recruits whe
   assert.deepEqual(restored.refunds, [{ food: 35 }, { food: 35 }])
   assert.equal(restored.placed[0].type, 'Villager')
   assert.equal(restored.placed[0].extra.label, 'Aline')
+  assert.equal(restored.placed[0].extra.homeHouseLabel, 'home')
   assert.equal(restored.placed[0].extra.hitPoints, 21)
   assert.deepEqual(restored.placed[0].extra.inventory, { resources: { food: 2 } })
   assert.equal(restored.callbacks.size, 0)

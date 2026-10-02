@@ -18,7 +18,7 @@ for (const { edge } of CONTINENT_WORLD_PRESETS) {
         '../../services/tutorial/TutorialVillage': {},
         '../../lib/lang': { t: key => key },
         '../../lib': {},
-        '../../serialization/SaveValidator': {},
+        '../../serialization/validation/SaveValidator': {},
         '../../serialization/CampaignSave': {},
         '../../lib/audio/settings': { getGameSpeed: () => 1 },
         '../../ui/GameLoadingScreen': {
@@ -54,6 +54,7 @@ for (const { edge } of CONTINENT_WORLD_PRESETS) {
       async _bootFromConfig(config, options) {
         assert.equal(config.worldId, `world-test-${edge}`)
         assert.equal(options.startPaused, true)
+        assert.equal(options.deferInitialSave, true)
         assert.equal(options.startingSetup, undefined)
         events.push('boot')
       },
@@ -123,7 +124,7 @@ for (const skip of [false, true]) {
         },
         '../../lib/lang': { t: key => key },
         '../../lib': { Modal: class {} },
-        '../../serialization/SaveValidator': {},
+        '../../serialization/validation/SaveValidator': {},
         '../../serialization/CampaignSave': {},
         '../../lib/audio/settings': { getGameSpeed: () => 1 },
         '../../ui/GameLoadingScreen': {},
@@ -149,6 +150,7 @@ for (const skip of [false, true]) {
       async _yieldToBrowser() {},
       async _bootFromConfig(_config, options) {
         assert.equal(options.startPaused, true)
+        assert.equal(options.deferInitialSave, false)
         events.push('loading')
         choose(skip)
         const setup = await options.startingSetup
@@ -189,7 +191,7 @@ test('tutorial defeat prepares a normal camp under black and starts it after rev
       '../../services/tutorial/TutorialVillage': {},
       '../../lib/lang': { t: key => key },
       '../../lib': {},
-      '../../serialization/SaveValidator': {},
+      '../../serialization/validation/SaveValidator': {},
       '../../serialization/CampaignSave': {},
       '../../lib/audio/settings': { getGameSpeed: () => 1 },
       '../../ui/GameLoadingScreen': {},
@@ -213,6 +215,7 @@ test('tutorial defeat prepares a normal camp under black and starts it after rev
     },
     async _bootFromConfig(config, options) {
       assert.equal(options.startPaused, true)
+      assert.equal(options.deferInitialSave, true)
       assert.equal(this._campaignSave, null)
       assert.equal(config.heroOnlyStart, true)
       assert.equal(config.villageStarts, undefined)
@@ -247,7 +250,7 @@ test('normal death restores the last saved world and clock under one fade before
       '../../services/tutorial/TutorialVillageMigration': { migrateTutorialVillageOwner() {} },
       '../../lib/lang': { t: key => key },
       '../../lib': {},
-      '../../serialization/SaveValidator': { validateSaveData: value => value },
+      '../../serialization/validation/SaveValidator': { validateSaveData: value => value },
       '../../serialization/CampaignSave': {
         isCampaignSave: () => true,
         getCurrentWorldState: save => save.worlds[save.currentWorldId].state,

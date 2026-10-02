@@ -63,7 +63,7 @@ for (const asynchronous of [false, true])
             '../../players': { Gaia, AI: class {} },
             '../../../lib': { getGaiaAnimals: gaia => gaia.animals },
             '../MapSaveRestore': { restoreCaveOccupants() {}, restorePlayerInteriors() {} },
-            '../../../services/UnitPerception': {},
+            '../../../services/visibility/UnitPerception': {},
             './MapOfflineWorldSimulation': {
               applyOfflineWorldSimulation(_map, data) {
                 if (!offline) return

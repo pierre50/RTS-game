@@ -1,3 +1,4 @@
+import { isBuildingTraversable } from './buildingTraversal'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
 const NEIGHBORS = [
@@ -12,7 +13,14 @@ const NEIGHBORS = [
 ] as const
 
 function isOpen(cell: RuntimeCell | undefined): cell is RuntimeCell {
-  return Boolean(cell && !cell.solid && !cell.has && !cell.border && !cell.terrainHidden && cell.category !== 'Water')
+  return Boolean(
+    cell &&
+      !cell.solid &&
+      (!cell.has || isBuildingTraversable(cell.has.type)) &&
+      !cell.border &&
+      !cell.terrainHidden &&
+      cell.category !== 'Water'
+  )
 }
 
 /** Keep the existing floor component connected, including access around furniture. */

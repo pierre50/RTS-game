@@ -119,7 +119,7 @@ test('a partial bag cannot reserve materials already carried by another builder'
 })
 
 test('offline planning uses the same project assignments and bounded loads', () => {
-  const { planOfflineCollectiveWork } = loadTsModule('app/services/world/OfflineCollectiveWork.ts', { moduleCache })
+  const { planOfflineCollectiveWork } = loadTsModule('app/services/world/offline/OfflineCollectiveWork.ts', { moduleCache })
   const { owner, units, sites } = fixture([{ wood: 100 }, { stone: 80 }])
   planOfflineCollectiveWork(owner)
   assert.equal(units.filter(unit => unit.collectiveTask === 'wood').length, 6)

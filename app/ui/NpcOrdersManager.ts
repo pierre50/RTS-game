@@ -1,3 +1,4 @@
+import { isAiChiefResting } from '../lib/units/chiefAvailability'
 import type { DialogueSequence } from '../types/dialogue'
 import { heroCanCommand } from '../lib/chief'
 import { createNpcGroupSummary } from './NpcGroupSummary'
@@ -145,6 +146,8 @@ export class NpcOrdersManager {
 
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
     if (this.scriptedReplyActive) return
+    npcs = npcs.filter(npc => !isAiChiefResting(npc, this.menu.context))
+    if (!npcs.length) return
     const dialogue =
       options.dialogue ??
       (options.scriptedReply
@@ -416,6 +419,11 @@ export class NpcOrdersManager {
   }
 
   syncQuest(): void {
+    if (this.opened && this.npcs.some(npc => isAiChiefResting(npc, this.menu.context))) {
+      this.scriptedReplyActive = false
+      this.close()
+      return
+    }
     if (this.opened && !this.scriptedReplyActive) this.questPanel.update(this.npcs.length === 1 ? this.npcs[0] : null)
     this.syncExitButtonVisibility()
   }

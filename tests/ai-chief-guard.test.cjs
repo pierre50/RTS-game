@@ -11,11 +11,15 @@ test('an obsolete AI cannot remove a restored player and death is idempotent', (
   const restored = { label: 'restored' }
   const players = [restored]
   const ai = Object.create(AI.prototype)
-  Object.assign(ai, { _stepTaskId: 42, context: { players, scheduler: { remove: id => removed.push(id) } } })
+  Object.assign(ai, {
+    _stepTaskId: 42,
+    _chiefEscortTaskId: 43,
+    context: { players, scheduler: { remove: id => removed.push(id) } },
+  })
   ai.die()
   ai.die()
   assert.deepEqual(players, [restored])
-  assert.deepEqual(removed, [42])
+  assert.deepEqual(removed, [42, 43])
   players.unshift(ai)
   ai.die()
   assert.deepEqual(players, [restored])
@@ -46,7 +50,9 @@ function loadAI() {
     new Function('module', 'exports', 'require', moduleCode)(tsModule, tsModule.exports, localRequire)
     return tsModule.exports
   }
-  const defenseMocks = { '../../ai/AITheftDefense': { handleInteriorTheftDefense: () => false, isInteriorTheftDefender: () => false } }
+  const defenseMocks = {
+    '../../ai/AITheftDefense': { handleInteriorTheftDefense: () => false, isInteriorTheftDefender: () => false },
+  }
   const localRequire = request => {
     if (defenseMocks[request]) return defenseMocks[request]
     if (request.endsWith('/playerTargetKnowledge'))
@@ -215,4 +221,60 @@ test('hostile ai chief does not greet the hero diplomatically', () => {
 
   assert.equal(ai.handleChiefGuard([forum]), 0)
   assert.deepEqual(calls, [])
+})
+
+test('a faction keeps one chief across its AI owners and elects only one successor', () => {
+  const a = createAi(),
+    b = createAi()
+  const chiefs = [a, b].map((owner, i) => ({ type: 'Chief', label: `chief${i}`, owner }))
+  for (const [i, owner] of [a, b].entries()) {
+    owner.type = 'AI'
+    owner.factionId = 'shared'
+    owner.units = [chiefs[i]]
+    owner.context.players = [a, b]
+  }
+  a.refreshChiefSuccession([])
+  assert.equal(chiefs[0].type, 'Chief')
+  assert.equal(chiefs[1].type, 'Villager')
+  chiefs[0].isDead = true
+  const candidate = { type: 'Villager', label: 'candidate', owner: a }
+  a.units.push(candidate)
+  a.getNow = b.getNow = () => 0
+  a.refreshChiefSuccession([candidate])
+  b.refreshChiefSuccession([chiefs[1]])
+  a.getNow = b.getNow = () => 180001
+  b.refreshChiefSuccession([chiefs[1]])
+  a.refreshChiefSuccession([candidate])
+  assert.equal(candidate.isChief, true)
+  assert.equal(chiefs[1].isChief, false)
+})
+
+test('rest and interior movement take precedence over chief patrol', () => {
+  const ai = createAi({ hero: { i: 6, j: 0, owner: {} } })
+  const calls = []
+  for (const rest of [{ shelterState: { status: 'inside' } }, { actionLocked: true }, { spaceId: 'interior:forum' }]) {
+    ai.getLivingChiefs = () => [{ type: 'Chief', i: 0, j: 0, ...rest, sendTo: target => calls.push(target) }]
+    assert.equal(ai.handleChiefGuard([{ i: 0, j: 0, isBuilt: true }]), 0)
+  }
+  assert.deepEqual(calls, [])
+})
+
+test('chief patrol waits 30 to 60 seconds between destinations', () => {
+  const ai = createAi()
+  ai.context.map.randomRange = (min, max) => {
+    assert.deepEqual([min, max], [30000, 60000])
+    return 45000
+  }
+  ai.getLivingChiefs = () => [
+    {
+      label: 'chief',
+      type: 'Chief',
+      i: 0,
+      j: 0,
+      inactif: true,
+      context: { dayNight: { state: { hour: 10, minute: 0 } } },
+    },
+  ]
+  ai.handleChiefGuard([{ i: 0, j: 0, isBuilt: true }])
+  assert.equal(ai.chiefWanderReadyAt.get('chief'), 45000)
 })

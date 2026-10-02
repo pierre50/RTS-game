@@ -14,7 +14,6 @@ import {
   listGlobalPlayers,
   performanceReport,
   setFpsCapDebug,
-  setAge,
   setCiv,
   setGameSpeed,
   toggleHeroInvincible,
@@ -193,13 +192,6 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
 }
 
 function registerGameplayCommands(registry: DevCommandRegistry): void {
-  registry.register({
-    name: 'age',
-    usage: 'age <0-2>',
-    describe: 'Set player age',
-    complete: () => ['0', '1', '2', '3'],
-    run: ([value], context) => setAge(context, value),
-  })
 
   registry.register({
     name: 'nextday',

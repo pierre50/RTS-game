@@ -53,6 +53,11 @@ export function getAmbientAnimalProfile(type: string): AmbientAnimalProfile {
   return AMBIENT_ANIMAL_PROFILES[type] ?? DEFAULT_AMBIENT_ANIMAL_PROFILE
 }
 
+/** @public Loaded by tools/maps/settlements/settlement-animals.cjs (loadGenerationTs). */
+export function getAnimalHabitatWeight(type: string, biome: string): number {
+  return ANIMAL_HABITAT_WEIGHTS[biome]?.[type] ?? 1
+}
+
 export function pickAmbientAnimalType(options: {
   animals: Record<string, unknown>
   biome: string
@@ -66,10 +71,9 @@ export function pickAmbientAnimalType(options: {
     return !dangerousAnimalTypes.has(type) || !options.isInPlayerStartSafeZone(20)
   })
   const types = availableTypes.length ? availableTypes : Object.keys(options.animals)
-  const habitatMultipliers = ANIMAL_HABITAT_WEIGHTS[options.biome] ?? {}
   const weightedEntries: Array<[string, number]> = types.map(type => [
     type,
-    getAmbientAnimalProfile(type).weight * (habitatMultipliers[type] ?? 1),
+    getAmbientAnimalProfile(type).weight * getAnimalHabitatWeight(type, options.biome),
   ])
 
   return pickWeightedItem(options.random, weightedEntries)

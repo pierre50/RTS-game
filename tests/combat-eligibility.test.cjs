@@ -131,6 +131,19 @@ test('attack eligibility and the shared guard reject unusable targets and orders
   assert.equal(getActionCondition({ ...fighter, isDead: true }, enemy, 'attack'), false)
 })
 
+test('hero can attack enemy buildings regardless of interior access or remaining health', () => {
+  const hero = source({ type: U.hero, weaponPower: 10 })
+  for (const hitPoints of [100, 20, 1]) {
+    const target = building({ owner: { label: 'enemy' }, hitPoints })
+    assert.equal(getActionCondition(hero, target, 'attack'), true)
+    assert.equal(getActionCondition(hero, { ...target, indestructible: true }, 'attack'), false)
+    assert.equal(getActionCondition(hero, { ...target, isDead: true }, 'attack'), false)
+  }
+  assert.equal(getActionCondition(hero, building(), 'attack'), false)
+  assert.equal(getActionCondition(hero, building({ owner: { label: 'neutral' } }), 'attack'), false)
+  assert.equal(getActionCondition(hero, building({ owner: { label: 'enemy' }, hitPoints: 0 }), 'attack'), false)
+})
+
 test('hero can build and repair non-hostile buildings without extending villager permissions', () => {
   for (const label of ['ally', 'friendly-village', 'neutral-village', 'enemy']) {
     for (const isBuilt of [false, true]) {

@@ -1,4 +1,6 @@
-import { isCampBuilding } from '../lib/buildings/campConstruction'
+import { isBuildingTraversable } from '../lib/buildings/buildingTraversal'
+import { isNearInteriorDoor, preservesInteriorPassages } from '../lib/buildings/interiorFurniturePlacement'
+import { isBuildingAllowedInSpace, isCampBuilding } from '../lib/buildings/campConstruction'
 import { heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import type { Container } from 'pixi.js'
 import { canPlaceBuildingAt, getBuildingFootprintCells, hasBuildingPlacementClearance } from '../lib'
@@ -39,7 +41,8 @@ export class BuildingPlacementRules {
     const grid = space?.grid ?? map.grid
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
-    const interiorCamp = space?.kind === 'interior' && isCampBuilding(mouseBuilding.type)
+    if (!isBuildingAllowedInSpace(mouseBuilding.type, space)) return false
+    const interiorFurniture = space?.kind === 'interior'
     if (!isCampBuilding(mouseBuilding.type) && playerNeedsChiefForCommand(player) && !heroCanCommand(controls.heroUnit))
       return false
     if (
@@ -49,18 +52,26 @@ export class BuildingPlacementRules {
       return false
     }
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
+    const furnitureCell = cell
+    if (
+      interiorFurniture &&
+      furnitureCell &&
+      (isNearInteriorDoor(furnitureCell, [space?.entryCell, space?.exitCell]) ||
+        (!isBuildingTraversable(mouseBuilding.type) && !preservesInteriorPassages(grid, furnitureCell)))
+    )
+      return false
     const passageLookup = createReservedPassageCellLookup(controls.context)
     const placementOptions = {
-      allowBorder: interiorCamp,
+      allowBorder: interiorFurniture,
       requireVisible: true,
       requireExplored: true,
       isExplored: (candidate: RuntimeCell) => this.isExploredForPlacement(candidate, player),
       canUseCell: (candidate: RuntimeCell) =>
-        !passageLookup.has(candidate) && (!interiorCamp || (!candidate.terrainHidden && !candidate.has)),
+        !passageLookup.has(candidate) && (!interiorFurniture || (!candidate.terrainHidden && !candidate.has)),
     }
     return (
       canPlaceBuildingAt(grid, cell.i, cell.j, mouseBuilding, placementOptions) &&
-      (interiorCamp || hasBuildingPlacementClearance(grid, cell.i, cell.j, mouseBuilding, placementOptions))
+      (interiorFurniture || hasBuildingPlacementClearance(grid, cell.i, cell.j, mouseBuilding, placementOptions))
     )
   }
   doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
@@ -69,9 +80,14 @@ export class BuildingPlacementRules {
     if (!sameCellMapSpace(hero, cell)) return false
     const size = typeof building.size === 'number' ? building.size : 1
     const space = getMapSpace(this.controls.context.map, cell.spaceId)
-    return getBuildingFootprintCells(cell.i, cell.j, space?.grid ?? this.controls.context.map.grid, size).some(
-      footprintCell => footprintCell.i === hero.i && footprintCell.j === hero.j
-    )
+    return getBuildingFootprintCells(
+      cell.i,
+      cell.j,
+      space?.grid ?? this.controls.context.map.grid,
+      size,
+      undefined,
+      building.type
+    ).some(footprintCell => footprintCell.i === hero.i && footprintCell.j === hero.j)
   }
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     if (

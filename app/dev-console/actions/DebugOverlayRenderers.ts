@@ -25,10 +25,10 @@ export type AiDebugPlayer = DevPlayer & {
   population?: number
   populationMax?: number
   stepDelay?: number
-  maxVillagerPerAge: Record<number, number>
-  maxInfantryByAge: Record<number, number>
-  maxArcherByAge: Record<number, number>
-  maxCavalryByAge: Record<number, number>
+  maxVillagers: number
+  maxInfantry: Record<number, number>
+  maxArchers: Record<number, number>
+  maxCavalry: Record<number, number>
   difficultyConfig: { popCapMultiplier: number; defenseRecallThreshold: number; defensePowerRatio: number }
   enemyUnitMemory: { size: number }
   enemyBuildingMemory: { size: number }
@@ -113,10 +113,10 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
     const threats = ai.getActiveThreats()
     const enemyUnits = ai.enemyUnitMemory.size
     const enemyBuildings = ai.enemyBuildingMemory.size
-    const maxVil = Math.floor(ai.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
-    const maxInf = ai.maxInfantryByAge[ai.age]
-    const maxArc = ai.maxArcherByAge[ai.age]
-    const maxCav = ai.maxCavalryByAge[ai.age]
+    const maxVil = Math.floor(ai.maxVillagers * ai.difficultyConfig.popCapMultiplier)
+    const maxInf = ai.maxInfantry
+    const maxArc = ai.maxArchers
+    const maxCav = ai.maxCavalry
     const workerSnapshot = ai.economy.getWorkerSnapshot(villagers)
     const workerTargets = ai.economy.getResourceTargets(villagers.length)
     const demand = ai.strategy.getEconomicDemand()
@@ -128,7 +128,7 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
       ai.scout && !ai.scout.isDead ? (ai.scout.inactif ? 'idle' : ai.scout.dest ? 'moving' : 'active') : 'none'
 
     lines.push(`AI [${idx}] ${ai.label} (${ai.difficulty})`)
-    lines.push(`Phase ${ai.phase} | Age ${ai.age} | Pop ${ai.population}/${ai.populationMax} | Step ${ai.stepDelay}ms`)
+    lines.push(`Phase ${ai.phase} | Pop ${ai.population}/${ai.populationMax} | Step ${ai.stepDelay}ms`)
     lines.push(
       `Res W:${ai.wood} F:${ai.food} S:${ai.stone} G:${ai.gold} | Demand W:${demand.wood} F:${demand.food} S:${demand.stone} G:${demand.gold}`
     )

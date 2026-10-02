@@ -54,12 +54,15 @@ export function applyPortableUnitState(
   { keepAlive = false }: { keepAlive?: boolean } = {}
 ): void {
   assignDefined(target, {
-    assetAge: source.assetAge,
+    assetLevel: source.assetLevel,
     assetCiv: source.assetCiv,
     appearanceVariants: cloneRecord((source as { appearanceVariants?: Record<string, string> }).appearanceVariants),
     controlMode: source.controlMode,
     degree: source.degree,
     dailySchedule: cloneRecord(source.dailySchedule),
+    homeHouseLabel: source.homeHouseLabel,
+    homeBedLabel: source.homeBedLabel,
+    partnerLabel: source.partnerLabel,
     lastMealAt: source.lastMealAt,
     energy: source.energy,
     experience: cloneRecord(source.experience),
@@ -99,7 +102,6 @@ export function applyMapConfig(map: RuntimeMap, config: GameConfig = {}): void {
   map.heroOnlyStart = Boolean(config.heroOnlyStart ?? config.humanStartsWithoutBase)
   map.worldId = config.worldId ?? DEFAULT_WORLD_ID
   map.worldRegionId = config.worldRegionId ?? null
-  if (config.startingAge != null) map.startingAge = Number(config.startingAge)
   if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
   if (config.revealTerrain !== undefined) map.revealTerrain = config.revealTerrain
   if (config.startingResources) map.startingResources = config.startingResources

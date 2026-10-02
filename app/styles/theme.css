@@ -1,7 +1,4 @@
-.game-hud.ui-age-0,
-.game-hud.ui-age-1,
-.game-hud.ui-age-2,
-.game-hud.ui-age-3 {
+.game-hud.ui-theme-default {
   --ui-bar-bg: var(--main-primary-color);
   --ui-bar-border: var(--panel-border);
   --ui-slot-border: var(--border-slot);

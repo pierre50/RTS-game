@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { planOfflineBuildings, restoreOfflineBuilders } = loadTsModule(
-  'app/services/world/OfflineWorldBuildingPlanner.ts'
+  'app/services/world/offline/OfflineWorldBuildingPlanner.ts'
 )
 const { advanceCampaignEconomy, encodeEconomyTerrain, materializeInitialEconomy } = loadTsModule(
   'app/services/world/WorldEconomy.ts'

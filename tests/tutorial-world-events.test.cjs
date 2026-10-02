@@ -16,7 +16,7 @@ test('daily handlers stay suspended during the tutorial while remote clocks are 
   let active = true
   let checkpoints = 0
   let events = 0
-  const { DailyWorldEventSystem } = loadTsModule('app/services/DailyWorldEventSystem.ts', {
+  const { DailyWorldEventSystem } = loadTsModule('app/services/dailyEvents/DailyWorldEventSystem.ts', {
     mocks: {
       './DailyWorldReport': {
         DailyWorldReport: class {
@@ -47,14 +47,8 @@ test('daily handlers stay suspended during the tutorial while remote clocks are 
 test('day changes do not add housing or storage alerts to the daily report', () => {
   const entries = []
   let flushes = 0
-  const { DailyWorldEventSystem } = loadTsModule('app/services/DailyWorldEventSystem.ts', {
+  const { DailyWorldEventSystem } = loadTsModule('app/services/dailyEvents/DailyWorldEventSystem.ts', {
     mocks: {
-      '../lib/world/regionAlerts': {
-        getActiveColonyAlerts: () => [
-          { regionId: 'village', type: 'populationCapped' },
-          { regionId: 'village', type: 'storageFull' },
-        ],
-      },
       './DailyWorldReport': {
         DailyWorldReport: class {
           add(entry) {

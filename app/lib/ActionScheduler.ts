@@ -1,3 +1,5 @@
+import { traceRuntime } from './runtimeDiagnostics'
+
 export type SchedulerOptions = {
   /** A calendar deadline that must interrupt simplified sleep. */
   interruptSleep?: boolean
@@ -196,10 +198,10 @@ export class ActionScheduler {
     const performanceMonitor = this._getPerformance()
     try {
       if (!performanceMonitor) {
-        task.callback()
+        traceRuntime(`scheduler.${task.name}`, task.callback)
         return
       }
-      performanceMonitor.measureSampled(task.name, task.callback)
+      traceRuntime(`scheduler.${task.name}`, () => performanceMonitor.measureSampled(task.name, task.callback))
     } catch (error) {
       // A throwing task must not stop the tick loop: _tasks is a Map, so an
       // uncaught error here would silently freeze every task registered

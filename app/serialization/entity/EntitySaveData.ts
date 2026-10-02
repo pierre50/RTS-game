@@ -2,7 +2,7 @@ import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from
 import { definedProperties } from '../../lib/definedProperties'
 import type { DepotReservePolicy } from '../../lib/economy/depotReserves'
 import type { VillageHome } from '../../lib/units/villageActivity'
-import { getWildlifeStore } from '../../services/WildlifeStore'
+import { getWildlifeStore } from '../../services/wildlife/WildlifeStore'
 import type { CampBehavior } from '../../types/camp'
 import type { CaveDefinition } from '../../types/cave'
 import type { ResourceAmount } from '../../types/common'
@@ -15,7 +15,7 @@ import type {
   UnitEntity,
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { AssetAge } from '../../types/pixi'
+import type { AssetLevel } from '../../types/pixi'
 import type { SaveEntityState, SaveReference } from '../../types/save'
 import type { TrainingEntry, TrainingRequest } from '../../types/training'
 import { isDerivedInteriorHorse } from '../InteriorBuildingSave'
@@ -30,12 +30,18 @@ type SpriteState = { currentFrame?: number; loop?: boolean }
 export type SerializableEntity = RuntimeEntityBase & {
   wildlife?: SaveEntityState['wildlife']
   lastMealAt?: number
+  homeHouseLabel?: string
+  homeBedLabel?: string
+  partnerLabel?: string
+  heroHomeResident?: { label: string; name?: string }
+  plannedBedLabels?: string[]
   dailySchedule?: UnitEntity['dailySchedule']
   offlineBuilderJob?: SaveEntityState['offlineBuilderJob']
   resourceDeliveryState?: UnitEntity['resourceDeliveryState']
   cave?: CaveDefinition
   placementMirrored?: boolean
-  buildingAge?: number
+  buildingLevel?: number
+  interiorUnfurnished?: boolean
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string
   trainingTargetType?: string | null
@@ -46,7 +52,7 @@ export type SerializableEntity = RuntimeEntityBase & {
   offlineWork?: SaveEntityState['offlineWork']
   shelterState?: { previousWork?: string | null; previousAutonomousJob?: SaveEntityState['autonomousJob'] } | null
   action?: string | null
-  assetAge?: AssetAge
+  assetLevel?: AssetLevel
   assetCiv?: string
   assetType?: string
   blockedGatherApproach?: { target: { label?: string; i: number; j: number }; action: string } | null
@@ -75,6 +81,7 @@ export type SerializableEntity = RuntimeEntityBase & {
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string }>
   constructionMaterials?: SaveEntityState['constructionMaterials']
+  buildingUpgrade?: SaveEntityState['buildingUpgrade']
   inventory?: {
     resources?: ResourceAmount
     equipment?: string[]
@@ -291,6 +298,9 @@ export function unitData(unit: SerializableEntity): SaveEntityState {
       'totalEnergy',
       'lastEnergySpentAt',
       'dailySchedule',
+      'homeHouseLabel',
+      'homeBedLabel',
+      'partnerLabel',
       'lastMealAt',
       'path',
       'work',
@@ -316,7 +326,7 @@ export function unitData(unit: SerializableEntity): SaveEntityState {
       'followingHero',
       'pendingRescueThanks',
       'assetCiv',
-      'assetAge',
+      'assetLevel',
       'assetType',
       'mountedOnHorse',
       'horseColor',
@@ -362,6 +372,9 @@ export function buildingData(building: SerializableEntity): SaveEntityState {
       'type',
       'spaceId',
       'interiorBuildings',
+      'interiorUnfurnished',
+      'plannedBedLabels',
+      'heroHomeResident',
       'interiorPortalId',
       'cave',
       'queue',
@@ -374,8 +387,8 @@ export function buildingData(building: SerializableEntity): SaveEntityState {
       'hitPoints',
       'quantity',
       'assetCiv',
-      'assetAge',
-      'buildingAge',
+      'assetLevel',
+      'buildingLevel',
       'placementMirrored',
       'totalHitPoints',
       'assetType',
@@ -383,6 +396,7 @@ export function buildingData(building: SerializableEntity): SaveEntityState {
       'stableHorses',
       'containedAnimalType',
       'constructionMaterials',
+      'buildingUpgrade',
       'inventory',
       'marketStock',
       'indestructible',

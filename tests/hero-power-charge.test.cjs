@@ -2227,3 +2227,78 @@ for (const state of ['finished', 'no-energy']) {
     assert.equal(building.hitPoints, 10)
   })
 }
+
+for (const action of ['cancelHeroPowerCharge', 'releaseHeroPowerCharge', 'cancelHeroDefense', 'releaseHeroDefense', 'cancelHeroActiveToolAction']) {
+  test(`${action} preserves death playback after a lethal hit`, () => {
+    const tools = loadHeroTools()
+    const { hero, projectiles } = makeHero()
+    if (action.includes('Defense')) tools.beginHeroDefense(hero, 'sword')
+    else tools.triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 })
+    hero.isDead = true
+    hero.hitPoints = 0
+    hero.currentSheet = 'dyingSheet'
+    hero.sprite.loop = false
+    hero.sprite.gotoAndPlay(1)
+    let deathFinished = false
+    const finishDeath = () => { deathFinished = true }
+    hero.sprite.onComplete = finishDeath
+    tools[action](hero)
+    assert.equal(hero.sprite.loop, false)
+    assert.equal(hero.sprite.onComplete, finishDeath)
+    assert.equal(hero.currentSheet, 'dyingSheet')
+    assert.equal(hero.sprite.currentFrame, 1)
+    assert.equal(hero.sprite.playing, true)
+    assert.equal(projectiles.length, 0)
+    hero.sprite.onComplete()
+    assert.equal(deathFinished, true)
+  })
+}
+
+test('pending defense reverse and fallback cannot stop or loop death playback', () => {
+  const { beginHeroDefense, releaseHeroDefense } = loadHeroTools()
+  const { hero } = makeHero()
+  const tasks = new Map()
+  let nextId = 1
+  const add = callback => { const id = nextId++; tasks.set(id, callback); return id }
+  hero.context.scheduler = { add, addOneShot: add, remove: id => tasks.delete(id) }
+  beginHeroDefense(hero, 'sword')
+  hero.sprite.currentFrame = 2
+  releaseHeroDefense(hero)
+  const callbacks = [...tasks.values()]
+  assert.equal(callbacks.length, 2)
+  hero.isDead = true
+  hero.currentSheet = 'dyingSheet'
+  hero.sprite.loop = false
+  hero.sprite.gotoAndPlay(1)
+  const finishDeath = () => {}
+  hero.sprite.onComplete = finishDeath
+  for (const callback of callbacks.reverse()) callback()
+  assert.equal(tasks.size, 0)
+  assert.equal(hero.sprite.currentFrame, 1)
+  assert.equal(hero.sprite.playing, true)
+  assert.equal(hero.sprite.loop, false)
+  assert.equal(hero.sprite.onComplete, finishDeath)
+  assert.equal(hero.currentSheet, 'dyingSheet')
+})
+
+test('catching pole returning after hero death leaves the death animation intact', () => {
+  const { triggerToolAttackAt, releaseHeroPowerCharge } = loadHeroTools()
+  const { hero, projectiles, scheduled } = makeHero()
+  hero.inventory.activeWeapons.melee = 'catchingPole'
+  triggerToolAttackAt(hero, 'sword', { x: 120, y: 0 })
+  releaseHeroPowerCharge(hero)
+  hero.sprite.currentFrame = 5
+  hero.sprite.onFrameChange(5)
+  assert.equal(projectiles.length, 1)
+  hero.isDead = true
+  hero.currentSheet = 'dyingSheet'
+  hero.sprite.loop = false
+  hero.sprite.gotoAndPlay(1)
+  const finishDeath = () => {}
+  hero.sprite.onComplete = finishDeath
+  projectiles[0].options.onThrowResolved()
+  assert.equal(hero.sprite.currentFrame, 1)
+  assert.equal(hero.sprite.playing, true)
+  assert.equal(hero.sprite.onComplete, finishDeath)
+  assert.equal([...scheduled.values()].some(task => task.taskName === 'hero.catchingPoleThrowRecovery'), false)
+})

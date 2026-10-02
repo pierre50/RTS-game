@@ -5,7 +5,7 @@ const path = require('node:path')
 const { planCaves } = require('../tools/caves/placement.cjs')
 const { connectingCells, isClearing, MAP_PADDING } = require('../tools/caves/sites.cjs')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/MapBlueprintDecoding.ts')
+const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/blueprint/MapBlueprintDecoding.ts')
 
 function map(campCount = 1) {
   return {

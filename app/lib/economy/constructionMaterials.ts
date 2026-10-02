@@ -5,11 +5,30 @@ export type ConstructionMaterials = {
   delivered: ResourceAmount
   consumed: ResourceAmount
 }
+export type BuildingUpgrade = {
+  targetLevel: number
+  hitPoints: number
+  totalHitPoints: number
+  constructionTime: number
+}
 export type MaterialSite = {
+  buildingUpgrade?: BuildingUpgrade
+  isDead?: boolean
+  isDestroyed?: boolean
   constructionMaterials?: ConstructionMaterials
   hitPoints?: number
   totalHitPoints?: number
   isBuilt?: boolean
+}
+/** Renovation work is independent of the health and availability of the building. */
+export function constructionWorkSite(site: MaterialSite): MaterialSite {
+  return site.buildingUpgrade ? { ...site, ...site.buildingUpgrade, isBuilt: false, buildingUpgrade: undefined } : site
+}
+export function hasConstructionWork(site: MaterialSite): boolean {
+  return (!site.isBuilt || Boolean(site.buildingUpgrade)) && !site.isDead && !site.isDestroyed
+}
+export function constructionWorkPoints(site: MaterialSite): number {
+  return site.buildingUpgrade?.hitPoints ?? site.hitPoints ?? 1
 }
 const FOOD = ['food', 'berry', 'wheat', 'meat'] as const
 
@@ -32,6 +51,7 @@ export function createConstructionMaterials(cost: ResourceAmount = {}): Construc
 }
 
 export function remainingConstructionMaterials(site: MaterialSite): ResourceAmount {
+  site = constructionWorkSite(site)
   const result: ResourceAmount = {}
   const state = site.constructionMaterials
   if (!state || site.isBuilt) return result // Legacy sites were paid for when placed.
@@ -49,6 +69,7 @@ export function advanceMaterialConstruction(
   requestedHP: number,
   stores: ResourceAmount[] = []
 ): number {
+  site = constructionWorkSite(site)
   stores = [...new Set(stores)]
   const before = site.hitPoints ?? 1
   const total = site.totalHitPoints ?? 0
@@ -90,6 +111,7 @@ export function advanceMaterialConstruction(
 
 /** Report missing alternatives only when none of the carried ingredients can advance the site. */
 export function missingConstructionMaterialsForNextPoint(site: MaterialSite, bag: ResourceAmount = {}): ResourceAmount {
+  site = constructionWorkSite(site)
   if (!site.constructionMaterials || site.isBuilt) return {}
   const preview = { ...site, constructionMaterials: structuredClone(site.constructionMaterials) }
   if (advanceMaterialConstruction(preview, (site.hitPoints ?? 1) + 1, [{ ...bag }]) > (site.hitPoints ?? 1)) return {}

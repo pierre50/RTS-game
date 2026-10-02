@@ -31,7 +31,7 @@ for (const entering of [true, false]) {
           '../../app/constants': { ACTION_TYPES: { attack: 'attack' } },
           '../../app/lib/buildings/interiorAccess': { canUnitEnterBuildingInterior: () => true },
           '../../app/lib/mapSpaces': { sameMapSpace: (a, b) => a.spaceId === b.spaceId },
-          '../../app/services/SpacePortalSystem': {
+          '../../app/services/spacePortal/SpacePortalSystem': {
             transferUnitThroughSpacePortal: () => {
               hero.spaceId = target
               return true

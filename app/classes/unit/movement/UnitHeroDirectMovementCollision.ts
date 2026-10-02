@@ -1,3 +1,4 @@
+import { isBuildingTraversable } from '../../../lib/buildings/buildingTraversal'
 import { CELL_HEIGHT, FAMILY_TYPES, PASSABLE_RESOURCE_TYPES } from '../../../constants'
 import {
   cartesianToIsometric,
@@ -26,24 +27,25 @@ const HERO_TERRAIN_COLLISION_PADDING_BY_KIND: Record<HeroTerrainCollisionKind, n
   wall: HERO_DIRECT_MOVE_COLLISION_PADDING,
 }
 
-function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
+function blocksHeroDirectMove(entity: HeroDirectMoveBlocker | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
   if (entity.family === FAMILY_TYPES.animal) return true
   if (entity.family === FAMILY_TYPES.unit) {
     return !entity.isDead
   }
   if (entity.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(entity.type)) return false
-  return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
+  if (entity.family === FAMILY_TYPES.building) return !isBuildingTraversable(entity.type)
+  return entity.family === FAMILY_TYPES.resource
 }
 
 export function blocksHeroDirectMoveWithRoundedFootprint(
   entity: HeroDirectMoveBlocker | null | undefined
 ): boolean {
   if (!entity) return false
-  if (entity.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(entity.type)) return false
-  if (entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource) return true
   if (entity.family === 'terrain') return (entity.collisionPoints?.length ?? 0) >= 3
-  return false
+  return (
+    (entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource) && blocksHeroDirectMove(entity)
+  )
 }
 
 export function blocksHeroDirectMoveWithSoftBody(entity: HeroDirectMoveBlocker | null | undefined): boolean {

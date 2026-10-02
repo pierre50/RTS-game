@@ -46,3 +46,12 @@ export function resourceData(resource: ResourceSaveSource): SaveEntityState {
   if (resource.berrybushFullTextureName != null) data.berrybushFullTextureName = resource.berrybushFullTextureName
   return data
 }
+
+/** Saved wheat without a growth frame has always meant mature; explicit young frames win. */
+export function restoredResourceState<T extends { type: string; currentFrame?: number; startsMature?: boolean }>(
+  state: T
+): T & { startsMature?: boolean } {
+  return state.type === 'Wheat' && state.currentFrame == null && state.startsMature == null
+    ? { ...state, startsMature: true }
+    : state
+}

@@ -1,3 +1,4 @@
+import { isRpgVillage, isRpgVillager } from '../config/rpgVillages'
 import { isVillageResourceWorker } from '../lib/units/villageSupplyTrips'
 import { flushTrainingRequests } from '../lib/training/trainingRequests'
 import { flushCollectiveVillageWork } from './CollectiveVillageWork'
@@ -102,7 +103,7 @@ export class VillagerAutonomySystem {
     if (now === this.lastScanMs) return
     this.lastScanMs = now
     for (const player of this.context.players ?? []) {
-      if (player.isPlayed || player.type === 'AI') {
+      if (!isRpgVillage(player) && (player.isPlayed || player.type === 'AI')) {
         flushTrainingRequests(player, this.context)
         flushCollectiveVillageWork(player, now)
       }
@@ -138,7 +139,7 @@ export class VillagerAutonomySystem {
   }
 
   private check(unit: UnitEntity, now: number, canRecover: boolean): boolean {
-    if (isUnitSuspended(unit)) return false
+    if (isRpgVillager(unit) || isUnitSuspended(unit)) return false
     this.observeWalking(unit, now)
     const job = unit.autonomousJob
     if (

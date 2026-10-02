@@ -1,9 +1,6 @@
 import { createResourceIconMaps } from './utils/resourceIcons'
 import type { MenuHost } from './MenuHost'
 
-import { AGE_LABEL_KEYS } from '../lib/objectives/ageRules'
-type ResourcePlayer = { age?: number }
-
 export class TopbarView {
   menu: MenuHost
   optionsEl: HTMLDivElement | null
@@ -20,7 +17,6 @@ export class TopbarView {
     menu.infoIcons = resourceIcons.infoIcons
 
     menu.topbarStatusStack = document.createElement('div')
-    menu.age = document.createElement('div')
     menu.dayTime = document.createElement('div')
     menu.resources = document.createElement('div')
 
@@ -35,7 +31,7 @@ export class TopbarView {
   }
 
   update(): void {
-    this.updateAgeTheme()
+    this.updateTheme()
     this.updateDayTime()
   }
 
@@ -48,19 +44,8 @@ export class TopbarView {
     else this.menu.dayTime.classList.add('hidden')
   }
 
-  updateAgeTheme(): void {
-    this.menu.gameHud.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
-    this.menu.gameHud.classList.add(`ui-age-${this.getClampedAge()}`)
-  }
-
-  private getClampedAge(): number {
-    const {
-      menu: {
-        context: { player },
-      },
-    } = this
-    const age = Math.floor((player as ResourcePlayer | null)?.age ?? 0)
-    return Math.max(0, Math.min(age, AGE_LABEL_KEYS.length - 1))
+  updateTheme(): void {
+    this.menu.gameHud.classList.add('ui-theme-default')
   }
 
   destroy(): void {

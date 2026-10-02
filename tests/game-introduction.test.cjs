@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function fixture(gender = 'male') {
+function fixture(gender = 'male', realWake = false) {
   let wakeComplete
   const tasks = new Map()
   let nextId = 0
@@ -24,6 +24,11 @@ function fixture(gender = 'male') {
       return id
     },
   }
+  const visuals = realWake
+    ? loadTsModule('app/services/rest/UnitSleepVisuals.ts', {
+        mocks: { '../../lib/entities/entityFade': { cancelFade() {} } },
+      })
+    : null
   const api = loadTsModule('app/services/introduction/GameIntroduction.ts', {
     mocks: {
       '../../lib/lpc': { ensureAndRefreshBakedLpcUnitAssets: async () => {} },
@@ -31,9 +36,11 @@ function fixture(gender = 'male') {
       '../../lib/maths': { getInstanceDegree: () => 90 },
       '../rest/UnitSleepVisuals': {
         setSleepingOutsideFinalVisual(unit) {
+          if (visuals) return visuals.setSleepingOutsideFinalVisual(unit)
           unit.sleepVisualState = 'sleeping'
         },
         playSleepingWakeVisual(unit, callback) {
+          if (visuals) return visuals.playSleepingWakeVisual(unit, callback)
           unit.sleepVisualState = 'waking'
           wakeComplete = () => {
             unit.sleepVisualState = null
@@ -52,10 +59,25 @@ function fixture(gender = 'male') {
     },
   })
   const hero = { label: 'hero', i: 5, j: 5, x: 5, y: 5, gender, stop() {} }
+  if (realWake) {
+    hero.context = { scheduler }
+    hero.sprite = {
+      textures: ['sleep-0', 'sleep-1', 'sleep-2'],
+      currentFrame: 0,
+      gotoAndStop(frame) {
+        this.currentFrame = frame
+      },
+      stop() {},
+    }
+    hero.setTextures = sheet => {
+      hero.currentSheet = sheet
+    }
+  }
   const grid = Array.from({ length: 12 }, (_, i) =>
     Array.from({ length: 12 }, (_, j) => ({ i, j, z: 0, category: 'Land', solid: false, has: null }))
   )
   grid[5][5].has = hero
+  let saveCount = 0
   let saved
   let dialogue
   let opened = 0
@@ -117,6 +139,7 @@ function fixture(gender = 'male') {
       context.paused = value
     },
     autosave() {
+      saveCount++
       saved = structuredClone({
         campaign: host._campaignSave,
         journal,
@@ -138,10 +161,28 @@ function fixture(gender = 'male') {
       wakeComplete()
     },
     getSaved: () => saved,
+    getSaveCount: () => saveCount,
     getDialogue: () => dialogue,
     getOpened: () => opened,
   }
 }
+
+test('approach runs the real wake animation, opens dialogue and releases the hero', async () => {
+  const f = fixture('male', true)
+  await f.prepareGameIntroduction(f.host)
+  f.showGameIntroduction(f.host)
+  f.startGameIntroduction(f.host)
+  for (let tick = 0; tick < 8; tick++) f.tick()
+  assert.equal(f.getOpened(), 1)
+  assert.equal(f.host._campaignSave.introduction.phase, 'dialogue')
+  assert.equal(f.getSaveCount(), 1, 'no checkpoint capture during approach or wake')
+  assert.equal(f.context.controls.heroUnit.sleepVisualState, null)
+  f.getDialogue().dialogue.onComplete()
+  assert.equal(f.context.controls.inputEnabled, true)
+  assert.equal(f.context.controls.heroUnit.actionLocked, undefined)
+  assert.equal(f.host._campaignSave.introduction.status, 'completed')
+  assert.equal(f.getSaveCount(), 2)
+})
 
 for (const gender of ['male', 'female'])
   test(`new game creates one allied companion opposite to ${gender}, and one camp without a chest`, async () => {
@@ -288,7 +329,7 @@ test('companion approaches along a clear straight corridor after the hero spawn 
   }
 })
 
-test('camp conversation follows one path and persists each step before promoting the hero', async () => {
+test('camp conversation keeps steps in memory and only persists at completion', async () => {
   const f = fixture()
   await f.prepareGameIntroduction(f.host)
   f.host._campaignSave.introduction.phase = 'dialogue'
@@ -302,7 +343,8 @@ test('camp conversation follows one path and persists each step before promoting
     const answer = sequence.nodes.find(node => node.id === topic)
     assert.equal(answer.choices[0].nextId, sequence.nodes[sequence.nodes.indexOf(answer) + 1]?.id)
     sequence.onNodeChanged(topic)
-    assert.equal(f.getSaved().campaign.introduction.dialogueNodeId, topic)
+    assert.equal(f.host._campaignSave.introduction.dialogueNodeId, topic)
+    assert.equal(f.getSaveCount(), 1)
     assert.equal(f.context.controls.heroUnit.isChief, false)
     assert.equal(f.context.menu.hudSuppressed, true)
     assert.equal(f.host._campaignSave.introduction.status, 'prepared')
@@ -343,4 +385,23 @@ test('starting provisions cover three daily meals and are not refilled by introd
       12 - day * 4
     )
   }
+})
+
+test('preparing the camp waits for its sole initial save before returning', async () => {
+  const f = fixture()
+  let release
+  f.host.autosave = () =>
+    new Promise(resolve => {
+      release = resolve
+    })
+  let complete = false
+  const preparing = f.prepareGameIntroduction(f.host).then(() => {
+    complete = true
+  })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(typeof release, 'function')
+  assert.equal(complete, false)
+  release({ key: 'save_0' })
+  await preparing
+  assert.equal(f.host._initialSaveFailed, false)
 })

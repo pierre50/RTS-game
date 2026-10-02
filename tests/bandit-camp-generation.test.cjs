@@ -3,6 +3,21 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadBanditCampGeneration(furnishBanditCave = () => {}, uniqueCandidates = false, respawnStates = []) {
+  const gridHelpers = {
+    canPlaceBuildingAt: () => true,
+    getPlainCellsAroundPoint: (i, j, _grid, distance, predicate) => {
+      if (uniqueCandidates && distance >= 2)
+        return Array.from({ length: 10 }, (_, index) => ({
+          i: i + index - 5,
+          j: j + distance,
+          category: 'Land',
+          solid: false,
+          has: null,
+        })).filter(predicate)
+      const cell = { i, j, category: 'Land', solid: false, has: null }
+      return predicate(cell) ? [cell] : []
+    },
+  }
   return loadTsModule('app/classes/map/BanditCampGeneration.ts', {
     mocks: {
       '../../lib/camps/campRespawnState': { campRespawnStates: () => respawnStates },
@@ -14,21 +29,9 @@ function loadBanditCampGeneration(furnishBanditCave = () => {}, uniqueCandidates
           }
         },
       },
-      '../../lib': {
-        canPlaceBuildingAt: () => true,
-        getPlainCellsAroundPoint: (i, j, _grid, _distance, predicate) => {
-          if (uniqueCandidates && _distance >= 2)
-            return Array.from({ length: 10 }, (_, index) => ({
-              i: i + index - 5,
-              j: j + _distance,
-              category: 'Land',
-              solid: false,
-              has: null,
-            })).filter(predicate)
-          const cell = { i, j, category: 'Land', solid: false, has: null }
-          return predicate(cell) ? [cell] : []
-        },
-      },
+      '../../lib': gridHelpers,
+      '../../../lib/grid/placement': gridHelpers,
+      '../../../lib/grid/cells': gridHelpers,
       '../../lib/units/unitExperience': {
         getUnitOverallLevel: () => 0,
       },

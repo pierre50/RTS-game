@@ -63,7 +63,7 @@ const ENERGY_REGEN_BONUS_PER_LEVEL = 0.02 // +2% energy regen rate per overall l
 
 // Palier d'équipement : piste indépendante du niveau de combat, réservée aux unités soldat
 // (Fantassin/Archer). Alimentée par le même XP de combat (melee/ranged/defense) mais avec une
-// courbe plate au lieu de la courbe accélérée du niveau — l'age du joueur plafonne la progression.
+// courbe plate indépendante : le niveau débloque les pièces, la forge choisit leur matériau.
 const EQUIPMENT_TIER_XP_PER_LEVEL = 200
 
 export const WORK_XP_CATEGORY: Record<string, string> = {

@@ -52,7 +52,7 @@ test('sitting never interrupts orders, movement, combat, sleep, mounted units or
     { visible: false },
     { shelterState: { status: 'movingToRest' } },
     { shelterState: { status: 'inside' } },
-    { type: 'Fantassin' },
+    { type: 'BanditSword' },
     { sittingSheet: undefined },
   ]) {
     assert.equal(getUnitRestVisualSheet(villager(12, state), 'standingSheet'), 'standingSheet', JSON.stringify(state))
@@ -177,4 +177,19 @@ test('sitting remains frozen in each real direction, including east, and walking
   unit.walkingSheet = { data: { animationSpeed: 0.2 }, textures: { '000.png': 'step' } }
   setUnitTexture('walkingSheet', unit)
   assert.equal(sprite.playing, true)
+})
+
+test('chiefs and promoted villagers sit during all three breaks inside their town center', () => {
+  for (const type of ['Chief', 'Villager']) {
+    for (const hour of [6, 12, 19]) {
+      const chief = villager(hour, { type, isChief: true, shelterState: { status: 'inside', reason: 'sleep' } })
+      assert.equal(getUnitRestVisualSheet(chief, 'standingSheet'), 'sittingSheet')
+    }
+  }
+})
+
+test('infantry and archers sit during the three daily pauses', () => {
+  for (const type of ['Fantassin', 'Bowman'])
+    for (const hour of [6, 12, 19])
+      assert.equal(getUnitRestVisualSheet(villager(hour, { type }), 'standingSheet'), 'sittingSheet')
 })

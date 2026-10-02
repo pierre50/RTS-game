@@ -2,8 +2,8 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { findStoragePitSite, needsStoragePit } = loadTsModule('app/lib/grid/storagePitPlacement.ts')
-const { planOfflineBuildings } = loadTsModule('app/services/world/OfflineWorldBuildingPlanner.ts')
-const { OfflineWorldSpatial } = loadTsModule('app/services/world/OfflineWorldSpatial.ts')
+const { planOfflineBuildings } = loadTsModule('app/services/world/offline/OfflineWorldBuildingPlanner.ts')
+const { OfflineWorldSpatial } = loadTsModule('app/services/world/offline/OfflineWorldSpatial.ts')
 const { handleAIBuildingActions } = loadTsModule('app/ai/AIStrategyBuilding.ts', {
   mocks: {
     '../lib': { canAfford: () => true, getPositionInGridAroundInstance: () => null },

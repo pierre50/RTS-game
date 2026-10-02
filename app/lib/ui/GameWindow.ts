@@ -1,15 +1,48 @@
-import { getControlActionForKeyboardEvent, getGamepadEnabled } from '../audio/settings'
-import { getActiveGamepad } from '../input/gamepad'
 import { consumeGamepadButtons } from '../input/gamepadConsumption'
 import { LANG_CHANGE_EVENT, t } from '../lang'
 import { availableCommands, type Command } from './GameWindowCommands'
+import {
+  findRetainedWindowItem,
+  getClickedWindowRow,
+  getWindowItemForTarget,
+  getWindowNavigationPoint,
+  getWindowTabScope,
+  hasSteppableWindowField,
+  isReplacedWindowSelection,
+  isWindowItemCandidate,
+  isWindowTabInScope,
+  lostWindowSelectionFocus,
+  markWindowSelection,
+  preferActiveWindowTab,
+  renderWindowDetails,
+  unmarkWindowSelection,
+  WINDOW_ITEMS,
+} from './GameWindowElements'
 import { renderCommandFooter } from './GameWindowFooter'
-import { adjustWindowField, enhanceWindowForms, getWindowField } from './GameWindowForms'
+import { adjustWindowField, enhanceWindowForms } from './GameWindowForms'
+import {
+  EDITABLE_FIELD,
+  findEnabledPadCommand,
+  findLiveCommand,
+  getHoldProgress,
+  getKeyConfirmationChoice,
+  getPadConfirmationChoice,
+  getWindowGamepad,
+  hasHeldDirectionalCommand,
+  hasWindowKeyModifier,
+  isEditingWindowField,
+  isHoldComplete,
+  isInventoryToggleKey,
+  isNativeButtonActivation,
+  isPadButtonBound,
+  isUnboundWindowKey,
+  keepsFieldKey,
+  readWindowKeyIntent,
+  type ConfirmationChoice,
+  type WindowHold,
+  type WindowKeyIntent,
+} from './GameWindowInput'
 import { findDirectionalTarget, GameWindowPadState } from './GameWindowNavigation'
-
-const HOLD_DURATION_MS = 850
-const ROW = '.inventory-action-row'
-const GLOBAL_ACTION = '[data-window-action], .entity-delete-building-button'
 
 /** Shared selection, detail panel and input-aware footer. Domain actions stay with their owners. */
 export class GameWindow {
@@ -26,8 +59,8 @@ export class GameWindow {
   private mode: 'keyboard' | 'gamepad' = 'keyboard'
   private hadGamepad = false
   private confirmation: Command | null = null
-  private holding: { command: Command; since: number } | null = null
-  private keyboardHolding: { command: Command; since: number } | null = null
+  private holding: WindowHold | null = null
+  private keyboardHolding: WindowHold | null = null
   private disposed = false
   private queued = false
 
@@ -76,18 +109,8 @@ export class GameWindow {
   }
 
   private items(): HTMLElement[] {
-    return [
-      ...this.panel.querySelectorAll<HTMLElement>(
-        `${ROW}, button, input:not([type=hidden]), select:not([hidden]), [data-window-field], [role="button"]`
-      ),
-    ].filter(
-      element =>
-        !this.footer.contains(element) &&
-        !this.details.contains(element) &&
-        !element.matches('.modal-close, .window-choice-arrow') &&
-        !element.closest('.inventory-row-actions') &&
-        !element.matches(GLOBAL_ACTION) &&
-        this.visible(element)
+    return [...this.panel.querySelectorAll<HTMLElement>(WINDOW_ITEMS)].filter(
+      element => isWindowItemCandidate(element, this.footer, this.details) && this.visible(element)
     )
   }
 
@@ -102,44 +125,25 @@ export class GameWindow {
 
   private refresh(): void {
     enhanceWindowForms(this.panel)
-    const items = this.items()
-    const next =
-      items.find(item => item === this.selected) ??
-      items.find(item => this.selectedId && item.id === this.selectedId) ??
-      items[Math.min(this.selectedIndex, items.length - 1)] ??
-      null
-    this.select(next, false)
+    this.select(findRetainedWindowItem(this.items(), this.selected, this.selectedId, this.selectedIndex), false)
   }
 
   private select(element: HTMLElement | null, focus: boolean): void {
-    const restoreFocus = Boolean(
-      element &&
-        this.selected &&
-        !this.selected.isConnected &&
-        document.activeElement === document.body &&
-        this.isTopmost()
-    )
-    const replacedSelection = Boolean(
-      element && this.selected && element !== this.selected && element.id && element.id === this.selectedId
-    )
+    const restoreFocus = lostWindowSelectionFocus(element, this.selected) && this.isTopmost()
+    const replacedSelection = isReplacedWindowSelection(element, this.selected, this.selectedId)
     if (element !== this.selected) {
       if (element?.id !== this.selectedId) {
         this.holding = null
         this.cancelKeyboardHold()
         this.confirmation = null
       }
-      this.selected?.classList.remove('is-window-selected')
-      if (this.selected?.matches(ROW)) this.selected.tabIndex = -1
+      unmarkWindowSelection(this.selected)
       this.selected = element
     }
     if (element) {
       this.selectedId = element.id
       this.selectedIndex = this.items().indexOf(element)
-      element.classList.add('is-window-selected')
-      if (element.matches(ROW)) {
-        element.tabIndex = 0
-        element.setAttribute('role', 'group')
-      }
+      markWindowSelection(element)
       if (replacedSelection) element.scrollIntoView({ block: 'nearest', inline: 'nearest' })
       if (focus || restoreFocus) {
         element.focus({ preventScroll: true })
@@ -151,21 +155,7 @@ export class GameWindow {
   }
 
   private renderDetails(): void {
-    const row = this.selected?.matches(`${ROW}:not(.inventory-action-row--no-icon)`) ? this.selected : null
-    const texts = row
-      ? [
-          ...row.querySelectorAll<HTMLElement>(
-            '.inventory-action-row-label, .inventory-action-row-description, .inventory-action-row-meta, .inventory-action-row-value, .inventory-action-row-badge'
-          ),
-        ]
-          .map(element => element.textContent?.trim())
-          .filter(Boolean)
-      : []
-    const disabled = row?.querySelector<HTMLButtonElement>('.inventory-row-action-button:disabled[title]')
-    if (disabled?.title) texts.push(disabled.title)
-    const text = texts.join(' · ')
-    this.details.hidden = !text
-    if (this.details.textContent !== text) this.details.textContent = text
+    renderWindowDetails(this.details, this.selected)
   }
 
   private renderCommands(): void {
@@ -261,8 +251,7 @@ export class GameWindow {
     if (!this.footer.contains(event.target as Node)) this.setMode('keyboard')
   }
   private onFocus = (event: FocusEvent): void => {
-    const target = event.target as HTMLElement
-    const item = target.closest<HTMLElement>('[data-window-field]') ?? target.closest<HTMLElement>(ROW) ?? target
+    const item = getWindowItemForTarget(event.target as HTMLElement)
     if (this.items().includes(item) && item !== this.selected) this.select(item, false)
   }
   private onClick = (event: MouseEvent): void => {
@@ -270,8 +259,8 @@ export class GameWindow {
     const target = event.target as HTMLElement
     const choice = target.closest<HTMLElement>('[data-window-field]')
     if (choice) this.select(choice, true)
-    const row = target.closest<HTMLElement>(ROW)
-    if (row && !target.closest('.inventory-row-actions')) this.select(row, true)
+    const row = getClickedWindowRow(target)
+    if (row) this.select(row, true)
     this.scheduleRefresh()
   }
 
@@ -283,35 +272,28 @@ export class GameWindow {
   }
 
   private move(dx: number, dy: number): void {
-    const field = getWindowField(this.selected)
-    if (dx && field && (field instanceof HTMLSelectElement || field.type === 'range' || field.type === 'checkbox')) {
+    if (dx && hasSteppableWindowField(this.selected)) {
       adjustWindowField(this.selected, dx)
       this.scheduleRefresh()
       return
     }
     const items = this.items()
     const index = findDirectionalTarget(
-      items.map(item => {
-        // Fields have different widths; vertical navigation follows their rows.
-        const rect = (dy ? item.closest('.config-row') ?? item : item).getBoundingClientRect()
-        return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
-      }),
+      items.map(item => getWindowNavigationPoint(item, Boolean(dy))),
       items.indexOf(this.selected!),
       dx,
       dy
     )
-    let next = items[index] ?? null
-    if (dy < 0 && next?.matches('.ui-tab') && !this.selected?.matches('.ui-tab')) {
-      next = items.find(item => item.matches('.ui-tab[aria-selected="true"]')) ?? next
-    }
+    let next: HTMLElement | null = items[index] ?? null
+    if (dy < 0) next = preferActiveWindowTab(items, next, this.selected)
     if (dx && this.selected?.matches('.ui-tab') && next?.matches('.ui-tab')) next.click()
     this.select(next, true)
   }
 
   private switchPanel(direction: number): void {
-    const scope = this.selected?.closest?.('.settings-device-tabs') ?? this.panel
+    const scope = getWindowTabScope(this.selected, this.panel)
     const tabs = [...scope.querySelectorAll<HTMLButtonElement>('.ui-tab')].filter(
-      tab => !tab.disabled && this.visible(tab) && (scope !== this.panel || !tab.closest?.('.settings-device-tabs'))
+      tab => !tab.disabled && this.visible(tab) && isWindowTabInScope(tab, scope, this.panel)
     )
     if (tabs.length) {
       const index = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true')
@@ -330,68 +312,60 @@ export class GameWindow {
   }
 
   private onKey = (event: KeyboardEvent): void => {
-    if (!this.isTopmost() || event.defaultPrevented) return
-    const target = event.target as HTMLElement
-    if (target.closest('.is-listening')) return
-    if (
-      target.closest(
-        'input:not([type=range]):not([type=checkbox]), textarea, [contenteditable]:not([contenteditable="false"])'
-      )
-    ) {
-      this.cancelKeyboardHold()
-      this.setMode('keyboard')
-      // Single-line fields keep horizontal caret movement; vertical arrows navigate the window.
-      const verticalNavigation = target.matches('input') && ['ArrowUp', 'ArrowDown'].includes(event.key)
-      if (!verticalNavigation && !['Escape', 'PageUp', 'PageDown'].includes(event.key)) return
-    }
-    this.setMode('keyboard')
-    if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) {
-      this.cancelKeyboardHold()
-      return
-    }
-    if (event.key.toLowerCase() !== 'x') this.cancelKeyboardHold()
-    if (getControlActionForKeyboardEvent(event) === 'inventory' && this.panel.classList.contains('inventory-panel')) {
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      if (!event.repeat) this.dismiss()
-      return
-    }
-    const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key]
-    const commandKey =
-      event.shiftKey && ['enter', 'x'].includes(event.key.toLowerCase()) ? `Shift+${event.key}` : event.key
-    const command = this.commands.find(item => item.key.toLowerCase() === commandKey.toLowerCase())
-    const page = event.key === 'PageUp' ? -1 : event.key === 'PageDown' ? 1 : 0
-    if (!direction && !command && !page && !(this.confirmation && ['Enter', 'Escape'].includes(event.key))) {
+    if (!this.isTopmost() || event.defaultPrevented || !this.acceptsWindowKey(event)) return
+    if (this.toggleInventoryFromKey(event)) return
+    const intent = readWindowKeyIntent(event, this.commands)
+    if (isUnboundWindowKey(intent, event.key, Boolean(this.confirmation))) {
       if (event.key !== 'Tab') event.stopImmediatePropagation()
       return
     }
-    // Native keyboard activation of a focused command remains available.
-    if (
-      !this.confirmation &&
-      event.key === 'Enter' &&
-      !event.shiftKey &&
-      document.activeElement instanceof HTMLButtonElement &&
-      document.activeElement !== this.selected
-    ) {
+    if (!this.confirmation && isNativeButtonActivation(event, this.selected)) {
       event.stopImmediatePropagation()
       return
     }
     event.preventDefault()
     event.stopImmediatePropagation()
-    if (this.confirmation) {
-      if (!event.repeat && (event.key === 'Enter' || event.key === 'Escape')) {
-        this.footer
-          .querySelector<HTMLButtonElement>(`[data-command="${event.key === 'Enter' ? 'confirm' : 'cancel'}"]`)
-          ?.click()
-      }
-      return
+    if (this.confirmation) this.answerConfirmation(getKeyConfirmationChoice(event))
+    else this.runKeyIntent(intent, event.repeat)
+  }
+
+  /** Rebinding prompts and text fields keep their keys; modifier chords never reach window commands. */
+  private acceptsWindowKey(event: KeyboardEvent): boolean {
+    const target = event.target as HTMLElement
+    if (target.closest('.is-listening')) return false
+    if (target.closest(EDITABLE_FIELD)) {
+      this.cancelKeyboardHold()
+      this.setMode('keyboard')
+      if (keepsFieldKey(target, event.key)) return false
     }
+    this.setMode('keyboard')
+    if (hasWindowKeyModifier(event)) {
+      this.cancelKeyboardHold()
+      return false
+    }
+    if (event.key.toLowerCase() !== 'x') this.cancelKeyboardHold()
+    return true
+  }
+
+  private toggleInventoryFromKey(event: KeyboardEvent): boolean {
+    if (!isInventoryToggleKey(event, this.panel)) return false
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    if (!event.repeat) this.dismiss()
+    return true
+  }
+
+  private runKeyIntent({ direction, command, page }: WindowKeyIntent, repeat: boolean): void {
     if (direction) this.move(direction[0], direction[1])
     else if (page) this.switchPanel(page)
-    else if (command && !event.repeat) {
+    else if (command && !repeat) {
       if (command.danger && !command.disabled) this.keyboardHolding = { command, since: performance.now() }
       else this.execute(command)
     }
+  }
+
+  private answerConfirmation(choice: ConfirmationChoice): void {
+    if (choice) this.footer.querySelector<HTMLButtonElement>(`[data-command="${choice}"]`)?.click()
   }
 
   private cancelKeyboardHold = (): void => {
@@ -405,16 +379,13 @@ export class GameWindow {
   private advanceKeyboardHold(now: number): void {
     const held = this.keyboardHolding
     if (!held) return
-    const current = this.commands.find(command => command.id === held.command.id)
-    const editing = document.activeElement?.closest(
-      'input:not([type=range]):not([type=checkbox]), textarea, [contenteditable]:not([contenteditable="false"])'
-    )
-    if (!this.isTopmost() || this.confirmation || editing || !current || current.disabled) {
+    const current = findLiveCommand(this.commands, held.command)
+    if (!this.isTopmost() || this.confirmation || isEditingWindowField() || !current) {
       this.cancelKeyboardHold()
       return
     }
-    this.footer.style.setProperty('--hold-progress', `${Math.min(100, ((now - held.since) / HOLD_DURATION_MS) * 100)}%`)
-    if (now - held.since >= HOLD_DURATION_MS) {
+    this.footer.style.setProperty('--hold-progress', getHoldProgress(held, now))
+    if (isHoldComplete(held, now)) {
       this.cancelKeyboardHold()
       current.run()
       this.scheduleRefresh()
@@ -422,10 +393,7 @@ export class GameWindow {
   }
 
   private getGamepad(): Gamepad | null {
-    // Settings must remain navigable after the gameplay gamepad option is turned off.
-    return getGamepadEnabled() || !this.panel.closest('.inventory-panel, .inventory-transfer-modal, .interaction-panel')
-      ? getActiveGamepad()
-      : null
+    return getWindowGamepad(this.panel)
   }
 
   private poll = (now: number): void => {
@@ -441,42 +409,7 @@ export class GameWindow {
       return
     }
     if (pad && this.isTopmost()) {
-      const { pressed, direction } = this.padState.read(pad, now)
-      if (pressed.length || direction) this.setMode('gamepad')
-      if (this.confirmation) {
-        if (pressed.includes(0) || pressed.includes(1)) {
-          this.footer
-            .querySelector<HTMLButtonElement>(`[data-command="${pressed.includes(1) ? 'cancel' : 'confirm'}"]`)
-            ?.click()
-        }
-      } else {
-        const bound = (index: number) => this.commands.some(command => command.pad === index)
-        const directionalCommand = this.commands.some(
-          command => command.pad >= 12 && command.pad <= 15 && pad.buttons[command.pad]?.pressed
-        )
-        if (direction && !directionalCommand) this.move(...direction)
-        if (pressed.includes(4) && !bound(4)) this.switchPanel(-1)
-        if (pressed.includes(5) && !bound(5)) this.switchPanel(1)
-        for (const index of pressed) {
-          const command = this.commands.find(item => item.pad === index)
-          if (!command || command.disabled) continue
-          if (command.danger) this.holding = { command, since: now }
-          else this.execute(command)
-        }
-        if (this.holding) {
-          const held = this.holding
-          if (!pad.buttons[held.command.pad]?.pressed) this.holding = null
-          else if (now - held.since >= HOLD_DURATION_MS) {
-            this.holding = null
-            const current = this.commands.find(command => command.id === held.command.id)
-            if (current && !current.disabled) current.run()
-          }
-          this.footer.style.setProperty(
-            '--hold-progress',
-            `${Math.min(100, ((now - held.since) / HOLD_DURATION_MS) * 100)}%`
-          )
-        }
-      }
+      this.readGamepad(pad, now)
     } else {
       this.padState.reset()
       this.holding = null
@@ -485,6 +418,36 @@ export class GameWindow {
     this.advanceKeyboardHold(now)
     this.footer.classList.toggle('is-holding', Boolean(this.holding || this.keyboardHolding))
     if (!this.disposed) this.frame = requestAnimationFrame(this.poll)
+  }
+
+  private readGamepad(pad: Gamepad, now: number): void {
+    const { pressed, direction } = this.padState.read(pad, now)
+    if (pressed.length || direction) this.setMode('gamepad')
+    if (this.confirmation) {
+      this.answerConfirmation(getPadConfirmationChoice(pressed))
+      return
+    }
+    if (direction && !hasHeldDirectionalCommand(this.commands, pad)) this.move(...direction)
+    if (pressed.includes(4) && !isPadButtonBound(this.commands, 4)) this.switchPanel(-1)
+    if (pressed.includes(5) && !isPadButtonBound(this.commands, 5)) this.switchPanel(1)
+    for (const index of pressed) {
+      const command = findEnabledPadCommand(this.commands, index)
+      if (!command) continue
+      if (command.danger) this.holding = { command, since: now }
+      else this.execute(command)
+    }
+    this.advancePadHold(pad, now)
+  }
+
+  private advancePadHold(pad: Gamepad, now: number): void {
+    const held = this.holding
+    if (!held) return
+    if (!pad.buttons[held.command.pad]?.pressed) this.holding = null
+    else if (isHoldComplete(held, now)) {
+      this.holding = null
+      findLiveCommand(this.commands, held.command)?.run()
+    }
+    this.footer.style.setProperty('--hold-progress', getHoldProgress(held, now))
   }
 
   destroy(): void {

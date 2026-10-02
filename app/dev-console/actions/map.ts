@@ -1,19 +1,6 @@
-import { getGaiaAnimals } from '../../lib'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { getDevMapSpace, normalize, normalizeToggle } from './shared'
-
-function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
-  const { map, controls } = context
-
-  getGaiaAnimals(map.gaia).forEach(animal => {
-    const cell = map.grid[animal.i]?.[animal.j]
-    cell?.updateVisible()
-  })
-
-  controls?.cameraController?.visibleCells?.clear()
-  controls?.updateVisibleCells?.()
-}
 
 export function toggleFog(context: DevConsoleContext, value: string): CommandResult {
   const { map, menu, players } = context
@@ -22,20 +9,12 @@ export function toggleFog(context: DevConsoleContext, value: string): CommandRes
   map.revealEverything = !showFog
   // This debug toggle now controls minimap knowledge only; the main view follows the camera.
 
-  map.terrainChunkManager?.invalidateAll()
-
   const minimapActive = menu.isMiniMapActive?.() !== false
   if (!showFog) {
     if (minimapActive) menu.revealTerrainMinimap?.()
-    map.resources.forEach(resource => {
-      const cell = map.grid[resource.i]?.[resource.j]
-      cell?.updateVisible()
-    })
   } else if (minimapActive) {
     menu.rebuildTerrainMiniMapFromViews?.()
   }
-
-  refreshAnimalsAndCameraVisibility(context)
 
   if (minimapActive) {
     menu.updateResourcesMiniMapEvt?.()

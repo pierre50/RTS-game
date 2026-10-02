@@ -9,6 +9,8 @@ import type { MinimapGeometry } from './MinimapGeometry'
 import { type MinimapTransform } from './MinimapGeometry'
 import { drawMinimapMarker } from './MinimapMarkers'
 import { drawMinimapUnitMarker } from './MinimapUnitMarkers'
+import { getMinimapMarkerScale, getMinimapPlaceScale, showMinimapDetails } from './MinimapZoom'
+import { minimapDebugLandmarks } from './MinimapDebugLandmarks'
 
 export function drawMinimapEntities(
   menu: MinimapHostLike,
@@ -20,7 +22,32 @@ export function drawMinimapEntities(
   redraw: () => void
 ): void {
   const { map, player, players, controls } = menu.context
+  const details = showMinimapDetails(menu.context)
+  const markerScale = getMinimapPlaceScale(menu.context)
+  const unitScale = getMinimapMarkerScale(menu.context)
+  if (map.revealEverything) {
+    for (const marker of minimapDebugLandmarks(players, player, space.id)) {
+      if (
+        isMinimapMarkerHidden(menu.context, marker.ownerKey) ||
+        (marker.kind === 'cave' && isMinimapMarkerHidden(menu.context, 'caves'))
+      )
+        continue
+      drawMinimapMarker(
+        context,
+        marker.kind,
+        {
+          x: geometry.toMinimapX(marker.x, transform),
+          y: geometry.toMinimapY(marker.y, transform),
+        },
+        marker.color,
+        redraw,
+        false,
+        markerScale
+      )
+    }
+  }
   for (const owner of players) {
+    if (map.revealEverything && owner !== player) continue
     for (const building of owner.buildings) {
       const cave = building.type === BUILDING_TYPES.cave
       const camp = owner.type === PLAYER_TYPES.bandits && building.type === BUILDING_TYPES.fireCamp
@@ -38,14 +65,15 @@ export function drawMinimapEntities(
       if (
         owner !== player &&
         !map.revealEverything &&
-        !getBuildingFootprintCells(building.i, building.j, space.grid, building.size).some(cell =>
-          player?.views?.isViewed(cell.i, cell.j)
+        !getBuildingFootprintCells(building.i, building.j, space.grid, building.size, undefined, building.type).some(
+          cell => player?.views?.isViewed(cell.i, cell.j)
         )
       )
         continue
       const point = geometry.instanceToMinimapPoint(building, transform)
       if (owner === player && !cave && !ownBase) {
-        if (point) drawMinimapUnitMarker(context, 'building', point, owner.colorHex, building.selected)
+        if (details && point)
+          drawMinimapUnitMarker(context, 'building', point, owner.colorHex, building.selected, 0, unitScale)
         continue
       }
       const kind = camp
@@ -56,11 +84,25 @@ export function drawMinimapEntities(
             ? 'village'
             : 'home'
       if (point) {
-        drawMinimapMarker(context, kind, point, cave ? '#8f8f8f' : owner.colorHex, redraw, building.selected)
+        drawMinimapMarker(
+          context,
+          kind,
+          point,
+          cave ? '#8f8f8f' : owner.colorHex,
+          redraw,
+          building.selected,
+          markerScale
+        )
       }
     }
   }
+  const settlements = new Map<string, (typeof knownBuildings)[number]>()
   for (const building of knownBuildings) {
+    const key = building.settlementId ?? building.ownerKey
+    const previous = settlements.get(key)
+    if (!previous || (building.town && !previous.town)) settlements.set(key, building)
+  }
+  for (const building of map.revealEverything ? [] : settlements.values()) {
     if (isMinimapMarkerHidden(menu.context, building.ownerKey)) continue
     const point = {
       x: geometry.toMinimapX(building.x, transform),
@@ -68,13 +110,12 @@ export function drawMinimapEntities(
     }
     context.save()
     context.filter = building.visible ? 'none' : 'brightness(55%)'
-    if (building.town) drawMinimapMarker(context, 'home', point, building.color, redraw)
-    else drawMinimapUnitMarker(context, 'building', point, building.color)
+    drawMinimapMarker(context, building.settlementKind ?? 'village', point, building.color, redraw, false, markerScale)
     context.restore()
   }
   const hero = controls.heroUnit
   for (const owner of players) {
-    if (owner !== player && owner.type !== PLAYER_TYPES.ai && owner.type !== PLAYER_TYPES.bandits) continue
+    if (!details || owner !== player) continue
     if (isMinimapMarkerHidden(menu.context, owner === player ? 'self' : minimapOwnerKey(owner))) continue
     for (const unit of owner.units) {
       if (unit === hero || getEntitySpaceId(unit) !== space.id || unit.shelterState?.status === 'inside') continue
@@ -86,7 +127,9 @@ export function drawMinimapEntities(
         unit.type === UNIT_TYPES.villager ? 'villager' : 'troop',
         point,
         owner.colorHex,
-        unit.selected
+        unit.selected,
+        0,
+        unitScale
       )
     }
   }
@@ -99,7 +142,8 @@ export function drawMinimapEntities(
         point,
         hero.owner?.colorHex ?? player?.colorHex ?? '#ffffff',
         false,
-        hero.degree
+        hero.degree,
+        unitScale
       )
   }
 }

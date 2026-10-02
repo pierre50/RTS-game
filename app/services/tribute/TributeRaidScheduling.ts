@@ -1,5 +1,5 @@
-import type { DailyWorldEvent } from '../DailyWorldEventSystem'
-import type { TributeRaidSystem } from '../TributeRaidSystem'
+import type { DailyWorldEvent } from '../dailyEvents/DailyWorldEventSystem'
+import type { TributeRaidSystem } from './TributeRaidSystem'
 import { selectFactionRaidArmy } from './FactionRaidEconomy'
 import {
   BANDIT_RAID_FIRST_DAY,

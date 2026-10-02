@@ -56,6 +56,7 @@ export type GameWorldBootHost = {
   _createUiRuntime(): void
   _gameContext(): GameContextLike
   _loadRequiredWorldMapBlueprint(options: {
+    includePreparedSettlements?: boolean
     playerCiv?: string | null
     size?: number
     worldId: string
@@ -95,6 +96,8 @@ export function measure<T>(game: GameWorldBootHost, name: string, callback: () =
 }
 
 export type NewGameBootOptions = {
+  /** The introduction will persist the fully prepared camp before revealing it. */
+  deferInitialSave?: boolean
   /** Keep simulation suspended until the opening has been revealed. */
   startPaused?: boolean
   dayNightElapsedMs?: number | null

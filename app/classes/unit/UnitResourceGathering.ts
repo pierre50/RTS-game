@@ -1,3 +1,4 @@
+import { getForgeGatherBonus } from '../../lib/equipment/forgeUpgrades'
 import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
 import { collectiveHarvestBudget } from '../../lib/economy/collectiveTasks'
 import { getWorkGatherAmount, getResourceGatherSwings } from '../../lib/economy/workRules'
@@ -100,7 +101,11 @@ export function isFarmHarvestTarget(
 }
 
 export function getGatherAmount(unit: UnitEntity): number {
-  return getWorkGatherAmount(unit.gatherAmount, unit.work ?? '', getGatherXpBonus(unit))
+  return getWorkGatherAmount(
+    unit.gatherAmount,
+    unit.work ?? '',
+    getGatherXpBonus(unit) + getForgeGatherBonus(unit.owner, unit.work ?? '', unit.type)
+  )
 }
 
 export function addGatheredResource(unit: UnitEntity, loadingType: string, amount: number): number {

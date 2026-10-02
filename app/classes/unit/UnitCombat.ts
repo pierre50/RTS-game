@@ -55,7 +55,7 @@ function isSlashingMeleeEquipment(item: string): boolean {
 function getMeleeImpactEquipment(unit: UnitEntity): string[] {
   if (Array.isArray(unit.equipment) && unit.equipment.length) return unit.equipment
   return unit.work && typeof getUnitWorkEquipment === 'function'
-    ? getUnitWorkEquipment(unit.work, unit.owner?.age, unit)
+    ? getUnitWorkEquipment(unit.work, unit)
     : []
 }
 
@@ -149,6 +149,7 @@ export class UnitCombat {
 
   finishAttackAfterCurrentLoop() {
     const unit = this.unit
+    if (unit.isDead || unit.isDestroyed) return
     const sprite = unit.sprite
     if (!sprite) {
       unit.affectNewDest?.()
@@ -157,7 +158,14 @@ export class UnitCombat {
 
     unit.actionLocked = true
     sprite.onFrameChange = undefined
+    const token = unit.visualAnimationToken
+    const action = unit.action
+    const dest = unit.dest
     sprite.onLoop = () => {
+      if (
+        unit.isDead || unit.isDestroyed || unit.visualAnimationToken !== token ||
+        unit.action !== action || unit.dest !== dest
+      ) return
       sprite.onLoop = undefined
       unit.actionLocked = false
       const hadPendingOrder = unit.flushPendingOrder?.()

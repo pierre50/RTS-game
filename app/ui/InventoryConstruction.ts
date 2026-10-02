@@ -1,12 +1,13 @@
+import { INTERIOR_FURNITURE_CATEGORIES, isInteriorFurniture } from '../lib/buildings/interiorFurnitureCatalog'
 import { createInventorySectionTitle } from './inventory/InventorySection'
-import { isCampBuilding, isSowingPlacement } from '../lib/buildings/campConstruction'
+import { isSowingPlacement } from '../lib/buildings/campConstruction'
 import { getActiveInteractionSpace } from '../lib/mapSpaces'
-import { formatActionCost } from './ActionDetailsFactory'
+import { inventoryDeliveryMetaParts } from './inventory/InventoryCostMeta'
 import { t } from '../lib/lang'
 import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES } from '../constants'
 import { renderBuildingAvatar, renderTextureRefAvatar } from '../lib/avatar'
 import { getReservedGameplayHotkeys } from '../lib/audio/settings'
-import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { createInventoryActionRow } from './inventory/InventoryActionRow'
 import type { RuntimeEntity } from '../types/entities'
 import type { MenuButtonSpec, MenuDetails, MenuDetailsSource } from '../types/ui'
@@ -16,7 +17,10 @@ const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
 const HIDDEN_HERO_CONSTRUCTION_BUILDINGS = new Set<string>([BUILDING_TYPES.cave, ...CAMP_DECORATION_BUILDING_TYPES])
 
 const CONSTRUCTION_CATEGORIES: ReadonlyArray<{ titleKey: string; types: readonly string[] }> = [
-  { titleKey: 'constructionCategoryCamp', types: [BUILDING_TYPES.fireCamp, BUILDING_TYPES.chest, BUILDING_TYPES.trap] },
+  {
+    titleKey: 'constructionCategoryCamp',
+    types: [BUILDING_TYPES.fireCamp, BUILDING_TYPES.campBrazier, BUILDING_TYPES.chest, BUILDING_TYPES.trap],
+  },
   {
     titleKey: 'constructionCategoryVillage',
     types: [BUILDING_TYPES.townCenter, BUILDING_TYPES.house, BUILDING_TYPES.temple],
@@ -45,16 +49,27 @@ type InventoryConstructionHost = {
 }
 
 function isHeroConstructionBuildingType(type: string): boolean {
-  return !HIDDEN_HERO_CONSTRUCTION_BUILDINGS.has(type)
+  return type === BUILDING_TYPES.campBrazier || !HIDDEN_HERO_CONSTRUCTION_BUILDINGS.has(type)
 }
 
 export function getInventoryConstructionButtons(menu: MenuHost): MenuButtonSpec[] {
   const { player } = menu.context
   const interior = getActiveInteractionSpace(menu.context)?.kind === 'interior'
   return Object.keys(player.config.buildings)
-    .filter(isHeroConstructionBuildingType)
-    .filter(type => !interior || isCampBuilding(type))
+    .filter(type => (interior ? isInteriorFurniture(type) : isHeroConstructionBuildingType(type)))
     .map(type => menu.getActionBuildingButton(type))
+}
+
+function groupConstructionButtons(buttons: MenuButtonSpec[], interior: boolean) {
+  const categories = interior ? INTERIOR_FURNITURE_CATEGORIES : CONSTRUCTION_CATEGORIES
+  const groups = categories.map(category => ({ titleKey: category.titleKey, buttons: [] as MenuButtonSpec[] }))
+  for (const button of buttons) {
+    const index = categories.findIndex(category => category.types.includes(button.id || ''))
+    // Outside, buildings missing from the catalogue still show under Village.
+    const group = groups[index] ?? groups.find(candidate => candidate.titleKey === 'constructionCategoryVillage')
+    group?.buttons.push(button)
+  }
+  return groups.filter(group => group.buttons.length)
 }
 
 export function renderInventoryConstruction(host: InventoryConstructionHost): void {
@@ -68,20 +83,14 @@ export function renderInventoryConstruction(host: InventoryConstructionHost): vo
   help.textContent = t('constructionPlacementHelp')
   host.constructionPanel.appendChild(help)
 
+  const interior = getActiveInteractionSpace(host.menu.context)?.kind === 'interior'
   const usedKeys = new Set<string>(getReservedGameplayHotkeys())
   const buttons = getInventoryConstructionButtons(host.menu).filter(button => !button.hide || !button.hide())
-  const knownTypes = new Set(CONSTRUCTION_CATEGORIES.flatMap(category => category.types))
-  for (const category of CONSTRUCTION_CATEGORIES) {
-    const categoryButtons = buttons.filter(
-      button =>
-        category.types.includes(button.id || '') ||
-        (category.titleKey === 'constructionCategoryVillage' && !knownTypes.has(button.id || ''))
-    )
-    if (!categoryButtons.length) continue
+  for (const group of groupConstructionButtons(buttons, interior)) {
     const section = document.createElement('section')
     section.className = 'inventory-section'
-    section.appendChild(createInventorySectionTitle(t(category.titleKey)))
-    for (const button of categoryButtons) {
+    section.appendChild(createInventorySectionTitle(t(group.titleKey)))
+    for (const button of group.buttons) {
       const hotkey = host.menu.assignActionHotkey(button.id || '', usedKeys)
       const actionButton = createInventoryConstructionActionButton(host, button)
       const element = createInventoryConstructionRow(host, selection, actionButton, buttons.indexOf(button), hotkey)
@@ -126,12 +135,12 @@ function createInventoryConstructionRow(
   const disabled = button.disabled?.(selection) ?? false
   const details = resolveMenuDetails(button.details)
   const { player } = host.menu.context
-  const config = button.id ? getPlayerBuildingConfig(player, button.id, player.age) : undefined
+  const config = button.id ? getPlayerBuildingConfig(player, button.id) : undefined
   const sowing = isSowingPlacement(button.id ?? '')
   const costMetaParts = config?.cost
     ? sowing
       ? [{ text: t('constructionSowingCost'), className: '' }]
-      : [{ text: t('constructionMaterialsCost', { cost: formatActionCost(config.cost) }), className: '' }]
+      : inventoryDeliveryMetaParts(config.cost)
     : []
   const detailsCostPrefix = t('detailsCost', { cost: '' }).trim().toLowerCase()
   const detailsHpPrefix = t('detailsBuildingHP', { value: '' }).trim().toLowerCase()

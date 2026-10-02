@@ -1,15 +1,12 @@
-import { VillageScheduleGate } from '../../lib/units/VillageScheduleGate'
+import { isDistantOwner } from '../../lib/units/villageActivity'
+import { configureVillageNightWatch } from '../../lib/units/villageNightWatch'
+import { sameMapSpace } from '../../lib/mapSpaces'
+import { VillageScheduleGate } from '../../lib/units/villageScheduleGate'
 import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
-import {
-  isVillagerLunchTime,
-  shouldVillagerBeAsleep,
-  shouldVillagerBeAwake,
-  shouldVillagerReturnHome,
-  shouldVillagerWork,
-} from '../../lib/units/villagerSchedule'
+import { hasDailyRestSchedule } from '../../lib/units/villagerSchedule'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import { assignAvailableShelters } from './UnitRestAvailableShelters'
+import { assignAvailableBeds } from './UnitRestAvailableBeds'
 import {
   findHeroRestAlertTarget,
   findPropagatedRestAlertSleepers,
@@ -17,13 +14,8 @@ import {
   handleUnitDanger,
   reactUnitToDanger,
 } from './UnitRestDanger'
-import {
-  putRestingUnitToSleep,
-  sendUnitToRest,
-  settleUnitRestForTimeJump,
-  wakeUnit,
-  wakeUnitInstant,
-} from './UnitRestLifecycle'
+import { putRestingUnitToSleep, sendUnitToRest, wakeUnit } from './UnitRestLifecycle'
+import { canClaimPendingBed, needsUnitRestChecks, shouldUnitSleep } from './UnitRestPhase'
 import {
   canUseUnitRest,
   clearExpiredUnitRestAlert,
@@ -40,8 +32,7 @@ import {
   wakeRestingUnitAtExit,
   type RestUnitBuckets,
 } from './UnitRestRuntimeHelpers'
-import { isShelterUnsafe } from './UnitRestShelter'
-import { waitOutsideForSleep } from './UnitRestSleep'
+import { updateScheduledUnitRest } from './UnitRestScheduledUpdate'
 import {
   evacuateUnitsFromShelter,
   evacuateUnitsIfShelterUnsafe,
@@ -50,6 +41,7 @@ import {
   updateMovingRestUnit,
   wakeRestingUnitInstant,
 } from './UnitRestStateTransitions'
+import { synchronizeVillageRestUnits } from './UnitRestVillageSync'
 import { playSleepingWakeVisual } from './UnitSleepVisuals'
 
 export class UnitRestSystem {
@@ -58,118 +50,62 @@ export class UnitRestSystem {
   private schedule = new VillageScheduleGate()
   private activeRest = false
   private cachedUnits: RestUnitBuckets | null = null
-  private pendingShelters = new Set<BuildingEntity>()
+  private pendingBeds = new Set<BuildingEntity>()
 
-  constructor(context: GameContextLike) {
+  constructor(context: GameContextLike, synchronize = false) {
     this.context = context
     this.taskId = null
     this.taskId = context.scheduler.add(() => this.update(false), REST_CHECK_INTERVAL_MS, 'unit.rest')
     // Reconcile restored evening rest states once; pending notifications are not saved.
     for (const player of context.players ?? []) {
-      for (const building of player.buildings ?? []) this.notifyShelterAvailable(building)
+      for (const building of player.buildings ?? []) this.notifyBedAvailable(building)
     }
-    this.update()
+    if (synchronize) this.synchronizeAfterTimeJump()
+    else this.update()
   }
 
   update(force = true): void {
     const reschedule = force || this.schedule.due(this.context)
-    if (!reschedule && !this.activeRest && !this.pendingShelters.size) return
-    if (reschedule || !this.cachedUnits) this.cachedUnits = this.collectUnits()
-    const { livingUnits, restUnits } = this.cachedUnits
+    if (!reschedule && !this.activeRest && !this.pendingBeds.size) return
+    const { livingUnits, restUnits } = this.refreshRoster(reschedule)
     if (!livingUnits.length) {
-      this.pendingShelters.clear()
+      this.pendingBeds.clear()
       this.activeRest = false
       this.schedule.settle(this.context)
       return
     }
-
-    for (const unit of restUnits) clearExpiredUnitRestAlert(unit)
-    if (isSleepTime(this.context)) this.updateRestAlerts(restUnits)
-    this.updateAvailableShelters()
-    for (const unit of restUnits) this.updateScheduledRest(unit)
-    this.updateSleepingOutsideVisuals(restUnits)
-    this.activeRest = restUnits.some(unit => this.needsRestChecks(unit))
+    this.updateRestUnits(restUnits)
     if (reschedule) this.schedule.settle(this.context)
   }
 
-  notifyShelterAvailable(building: BuildingEntity): void {
-    if (!isShelterUnsafe(building)) this.pendingShelters.add(building)
+  private refreshRoster(reschedule: boolean): RestUnitBuckets {
+    if (reschedule)
+      for (const owner of this.context.players ?? []) if (!isDistantOwner(owner)) configureVillageNightWatch(owner)
+    if (reschedule || !this.cachedUnits) this.cachedUnits = this.collectUnits()
+    return this.cachedUnits
   }
 
-  private updateAvailableShelters(): void {
-    assignAvailableShelters(this.pendingShelters, unit => this.shouldReturnHome(unit) && !this.shouldSleep(unit))
+  private updateRestUnits(restUnits: UnitEntity[]): void {
+    for (const unit of restUnits) clearExpiredUnitRestAlert(unit)
+    if (isSleepTime(this.context) || restUnits.some(unit => unit.shelterState)) this.updateRestAlerts(restUnits)
+    this.updateAvailableBeds()
+    for (const unit of restUnits) updateScheduledUnitRest(this.context, unit)
+    this.updateSleepingOutsideVisuals(restUnits)
+    this.activeRest = restUnits.some(unit => needsUnitRestChecks(this.context, unit))
   }
 
-  private needsRestChecks(unit: UnitEntity): boolean {
-    return Boolean(
-      unit.shelterState ||
-        unit.suspendedRestState ||
-        this.shouldReturnHome(unit) ||
-        (isVillager(unit) && isVillagerLunchTime(unit))
-    )
+  notifyBedAvailable(building: BuildingEntity): void {
+    if (building.type === 'CampBedroll' && building.isBuilt && !building.isDead && !building.isDestroyed) this.pendingBeds.add(building)
   }
 
-  private shouldReturnHome(unit: UnitEntity): boolean {
-    return isVillager(unit) ? shouldVillagerReturnHome(unit) : isSleepTime(this.context)
+  private updateAvailableBeds(): void {
+    assignAvailableBeds(this.pendingBeds, unit => canClaimPendingBed(this.context, unit))
   }
 
-  private shouldSleep(unit: UnitEntity): boolean {
-    return isVillager(unit) ? shouldVillagerBeAsleep(unit) : isSleepTime(this.context)
-  }
-
-  private shouldWake(unit: UnitEntity): boolean {
-    return isVillager(unit) ? shouldVillagerBeAwake(unit) : !isSleepTime(this.context)
-  }
-
-  private restoreInterruptedSleep(unit: UnitEntity): boolean {
-    const suspended = unit.suspendedRestState
-    if (!suspended || isUnitRestWakeLocked(unit) || unit.lookingAtHero || !this.shouldReturnHome(unit)) return false
-    unit.suspendedRestState = null
-    unit.shelterState = suspended
-    if (this.shouldSleep(unit)) putRestingUnitToSleep(unit)
-    return true
-  }
-
-  private updateScheduledRest(unit: UnitEntity): void {
-    if (isVillager(unit) && isVillagerLunchTime(unit)) {
-      // Eat near the workplace, retaining the task for the normal resume path.
-      if (!unit.shelterState && !unit.lookingAtHero && shouldRest(unit)) waitOutsideForSleep(unit)
-      else if (unit.shelterState) this.updateRestingUnit(unit)
-      if (unit.shelterState) unit.shelterState.mealBreak = true
-      return
-    }
-    if (unit.shelterState?.mealBreak && shouldVillagerWork(unit)) {
-      wakeUnitInstant(unit)
-      return
-    }
-    const shouldReturnHome = this.shouldReturnHome(unit)
-    if (this.shouldWake(unit) && !shouldReturnHome) {
-      unit.suspendedRestState = null
-      if (unit.shelterState && unit.shelterState.status !== 'wakingUp') this.wakeRestingUnit(unit)
-      else if (unit.shelterState) this.updateRestingUnit(unit)
-      return
-    }
-
-    if (!unit.shelterState) {
-      if (this.restoreInterruptedSleep(unit)) return
-      if (shouldReturnHome && shouldRest(unit) && sendUnitToRest(unit, 'sleep')) {
-        this.updateRestingUnit(unit)
-      }
-      return
-    }
-
-    this.updateRestingUnit(unit)
-    const state = unit.shelterState
-    if (
-      state?.reason === 'sleep' &&
-      (state.status === 'inside' || state.status === 'outside') &&
-      this.shouldSleep(unit) &&
-      unit.sleepVisualState !== 'sleeping' &&
-      !isUnitRestWakeLocked(unit) &&
-      !unit.lookingAtHero
-    ) {
-      putRestingUnitToSleep(unit)
-    }
+  /** Reconcile only the returning base, before any suspended walking order resumes. */
+  synchronizeVillageRest(units: UnitEntity[]): void {
+    synchronizeVillageRestUnits(this.context, units)
+    this.cachedUnits = null
   }
 
   private collectUnits(): RestUnitBuckets {
@@ -220,6 +156,27 @@ export class UnitRestSystem {
     }
   }
 
+  interruptRestForCombat(unit: UnitEntity, target: RuntimeEntity): boolean {
+    if (!unit.shelterState || unit.isDead || unit.isDestroyed) return false
+    markUnitRestAlert(unit, target)
+    wakeUnit(unit, {
+      force: true,
+      mode: 'order',
+      onComplete: () => {
+        if (unit.isDead || unit.isDestroyed || target.isDead || target.isDestroyed) return
+        if (!sameMapSpace(unit, target) && this.context.routeInteriorUnitToExit) {
+          this.context.routeInteriorUnitToExit(unit, {
+            dest: target,
+            action: 'attack',
+            work: 'attacker',
+            autonomousJob: null,
+          })
+        } else unit.sendToEvt?.(target, 'attack')
+      },
+    })
+    return true
+  }
+
   handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
     return handleUnitDanger(unit, attacker)
   }
@@ -234,8 +191,8 @@ export class UnitRestSystem {
     return isUnitRestWakeLocked(unit)
   }
 
-  wakeSleepingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean {
-    if (unit.shelterState?.reason !== 'sleep' || unit.sleepVisualState !== 'sleeping') return false
+  wakeRestingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean {
+    if (unit.shelterState?.reason !== 'sleep') return false
     // Keeps the unit up for a while after a talk-triggered wake with no follow-up order, instead
     // of it dozing back off mid-conversation on the next sleep tick.
     delayUnitRestAfterActivity(unit)
@@ -250,9 +207,9 @@ export class UnitRestSystem {
   restoreSleepingUnitVisual(unit: UnitEntity): void {
     if (unit.shelterState?.reason !== 'sleep') return
     // Evening waiting uses the same rest reason as sleep: resume the phase due now.
-    if (this.shouldSleep(unit)) putRestingUnitToSleep(unit)
+    if (shouldUnitSleep(this.context, unit)) putRestingUnitToSleep(unit)
     else {
-      this.updateScheduledRest(unit)
+      updateScheduledUnitRest(this.context, unit)
       syncUnitSittingPose(unit)
     }
   }
@@ -264,20 +221,18 @@ export class UnitRestSystem {
   synchronizeAfterTimeJump(): void {
     const { livingUnits, restUnits } = this.collectUnits()
     if (!livingUnits.length) return
+    this.synchronizeVillageRest(restUnits)
 
     for (const unit of restUnits) {
-      if (isVillager(unit)) {
-        if (isVillagerLunchTime(unit)) this.updateScheduledRest(unit)
-        else if (shouldVillagerBeAwake(unit)) wakeRestingUnitInstant(this.context, unit)
-        else settleUnitRestForTimeJump(unit, shouldVillagerBeAsleep(unit))
-      } else if (isSleepTime(this.context)) {
+      if (hasDailyRestSchedule(unit)) continue
+      if (isSleepTime(this.context)) {
         settleSleepState(unit)
       } else {
         wakeRestingUnitInstant(this.context, unit)
       }
     }
     this.updateSleepingOutsideVisuals(restUnits)
-    this.activeRest = restUnits.some(unit => this.needsRestChecks(unit))
+    this.activeRest = restUnits.some(unit => needsUnitRestChecks(this.context, unit))
     this.cachedUnits = { livingUnits, restUnits, villagers: restUnits.filter(isVillager) }
     this.schedule.settle(this.context)
   }
@@ -327,7 +282,7 @@ export class UnitRestSystem {
 
   destroy(): void {
     this.cachedUnits = null
-    this.pendingShelters.clear()
+    this.pendingBeds.clear()
     if (this.taskId != null) {
       this.context.scheduler.remove(this.taskId)
       this.taskId = null

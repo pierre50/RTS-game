@@ -8,7 +8,7 @@ const { CampLeashController } = loadTsModule('app/services/patrol/CampLeashContr
     '../../lib/units/playerTargetKnowledge': { playerSeesTarget: (_owner, target) => target.visible !== false },
     '../../lib/combat/combatFeedback': { cancelPendingAggression() {} },
     '../../lib/buildings/passageCells': { canUnitUseCellAsIdleDestination: () => true },
-    '../SpacePortalSystem': {
+    '../spacePortal/SpacePortalSystem': {
       clearUnitSpacePortalRoute(unit) {
         unit.spacePortalState = null
       },

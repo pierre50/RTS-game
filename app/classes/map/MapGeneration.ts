@@ -1,4 +1,4 @@
-import { installWildlifeStore } from '../../services/WildlifeStore'
+import { installWildlifeStore } from '../../services/wildlife/WildlifeStore'
 import { beginLoadTrace } from '../../lib/loadDiagnostics'
 import { getPackedCellStore } from '../cell/PackedCellRegistry'
 import { takePreparedAnimals } from './generation/PreparedMapContent'
@@ -12,7 +12,6 @@ import type { AnimalOptions } from '../animal/Animal'
 import type { GameContextLike } from '../../types/context'
 import { placeBanditCamps } from './BanditCampGeneration'
 import {
-  applyStartingBonuses as applyPlayerStartingBonuses,
   generatePlayers as generateMapPlayers,
   placePlayers as placeMapPlayers,
 } from './MapPlayerGeneration'
@@ -234,9 +233,6 @@ export class MapGeneration {
     }
   }
 
-  applyStartingBonuses(player: PlayerLike, configuredAge: number | null = null): void {
-    applyPlayerStartingBonuses(this.map, player, configuredAge)
-  }
 
   ensureNeutralPlayer(position: { i: number; j: number }): PlayerLike {
     return ensureNeutralPlayer(this.map.context as GameContextLike, position)

@@ -1,3 +1,4 @@
+import { resolveUnitForgeEquipment } from '../../../lib/equipment/forgeUpgrades'
 import { getMiningPickaxe } from '../../../lib/resources/miningEquipment'
 import { definedProperties } from '../../../lib/definedProperties'
 import { Assets } from 'pixi.js'
@@ -9,7 +10,7 @@ import {
   applyActionFrameSequence,
   getConfiguredActionFrameSequence,
 } from '../../../lib/animations/actionFrameSequences'
-import { getAppearanceAgeSheetOverride, getAppearanceLayerZIndex } from '../../../lib/lpc/appearanceLayers'
+import { getAppearanceLayerZIndex } from '../../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../../lib/lpc/equipment'
 import type { DynamicEquipmentKey } from '../../../lib/lpc/equipmentData'
 import { loadDynamicEquipmentAssetQueued } from '../../../lib/lpc/lazyEquipmentAssets'
@@ -40,9 +41,13 @@ function shouldRequestMissingEquipmentLayer(unit: UnitRuntimeHost): boolean {
 
 function requestMissingEquipmentLayer(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer): void {
   if (!shouldRequestMissingEquipmentLayer(unit)) return
-  const equipmentKey = (layer.equipmentKey?.startsWith('pickaxe_') ? getMiningPickaxe(unit) : layer.equipmentKey) as
-    | DynamicEquipmentKey
-    | undefined
+  const equipmentKey = (
+    layer.equipmentKey?.startsWith('pickaxe_')
+      ? getMiningPickaxe(unit)
+      : layer.equipmentKey
+        ? resolveUnitForgeEquipment(layer.equipmentKey, unit)
+        : undefined
+  ) as DynamicEquipmentKey | undefined
   if (!equipmentKey) return
   const request = loadDynamicEquipmentAssetQueued(
     equipmentKey,
@@ -97,12 +102,7 @@ function isLayerEnabled(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, ac
   const unitLevel = getUnitEquipmentTier(unit)
   const isLayerEnabledForLevel =
     unitLevel >= (layer.minLevel ?? 0) && unitLevel <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
-  return (
-    isLayerEnabledForWork &&
-    isLayerEnabledForCivilization &&
-    isLayerEnabledForLevel &&
-    Math.max(0, Math.floor(unit.owner?.age ?? 0)) >= (layer.minAge ?? 0)
-  )
+  return isLayerEnabledForWork && isLayerEnabledForCivilization && isLayerEnabledForLevel
 }
 
 function isLayerHidden(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, sheet: string) {
@@ -116,7 +116,9 @@ function isLayerHidden(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, she
     sheet === SHEET_TYPES.action &&
     typeof layer.hideOnOrAfterFrame === 'number' &&
     unit.sprite.currentFrame >= layer.hideOnOrAfterFrame
-  const equipmentKey = layer.equipmentKey
+  const equipmentKey =
+    layer.equipmentKey &&
+    (unit.type === 'Hero' ? layer.equipmentKey : resolveUnitForgeEquipment(layer.equipmentKey, unit))
   const isLootedCorpseEquipment =
     unit.isDead &&
     Array.isArray(unit.lootEquipment) &&
@@ -157,8 +159,6 @@ function getLayerSheet(
     ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[visualSheet]
     : undefined
   const workSheetOverride = unit.work ? layer.workSheetOverrides?.[unit.work]?.[visualSheet] : undefined
-  const ownerAge = Math.max(0, Math.floor(unit.owner?.age ?? 0))
-  const ageSheetOverride = getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, visualSheet)
   const mountedSheetOverride =
     unit.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
       ? layer.mountedSheet
@@ -167,13 +167,19 @@ function getLayerSheet(
     actionWorkSheetOverride ??
     workSheetOverride ??
     mountedSheetOverride ??
-    ageSheetOverride ??
     (visualSheet === SHOOTING_SHEET_KEY
       ? layer.shootingSheet
       : (layer[visualSheet as keyof RuntimeAppearanceLayer] as string | undefined))
+  const equipmentSheetId =
+    unit.type !== 'Hero' && layer.equipmentKey
+      ? baseSheetId?.replace(
+          /^equipments\/([^/]+)\//,
+          (_match, key: string) => `equipments/${resolveUnitForgeEquipment(key, unit)}/`
+        )
+      : baseSheetId
   const workSheetId = layer.equipmentKey?.startsWith('pickaxe_')
-    ? baseSheetId?.replace(/^equipments\/pickaxe_[^/]+\//, `equipments/${getMiningPickaxe(unit)}/`)
-    : baseSheetId
+    ? equipmentSheetId?.replace(/^equipments\/pickaxe_[^/]+\//, `equipments/${getMiningPickaxe(unit)}/`)
+    : equipmentSheetId
   return { baseSheetId: workSheetId, mountedSheetOverride }
 }
 

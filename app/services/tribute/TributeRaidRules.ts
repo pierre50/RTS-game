@@ -97,7 +97,7 @@ export function isFactionRaidHourAllowed(hour: number, minute = 0): boolean {
   return time >= FACTION_RAID_START_HOUR && time < FACTION_RAID_END_HOUR
 }
 
-export function getRaidUnitTypes(count: number, kind: TributeRaidKind, playerAge: number): string[] {
+export function getRaidUnitTypes(count: number, kind: TributeRaidKind): string[] {
   if (kind === 'faction') {
     const types = [UNIT_TYPES.chief]
     for (let index = 1; index < count; index++) {
@@ -108,7 +108,7 @@ export function getRaidUnitTypes(count: number, kind: TributeRaidKind, playerAge
 
   const types = [UNIT_TYPES.banditChief]
   for (let index = 1; index < count; index++) {
-    const useArcher = index % 3 === 0 || playerAge >= 2
+    const useArcher = index % 3 === 0
     types.push(useArcher ? UNIT_TYPES.banditArcher : UNIT_TYPES.banditSword)
   }
   return types

@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-function setup() {
+function setup(developmentMode) {
   const moduleCache = new Map()
   const advances = []
   const recalls = []
@@ -36,6 +36,7 @@ function setup() {
   const owner = {
     label: 'ai',
     type: 'AI',
+    developmentMode,
     units: [],
     buildings: [
       { label: 'a', type: 'TownCenter', i: 50, j: 50, isBuilt: true },
@@ -91,6 +92,21 @@ function setup() {
   const service = new VillageActivitySystem(context)
   return { service, rules, context, owner, human, first, second, advances, recalls }
 }
+test('fixed settlements are suspended before the first simulation tick and wake near the camera', () => {
+  const f = setup('static')
+  assert.equal(f.context.scheduler.elapsedMs, 0)
+  assert.equal(f.rules.isDistantOwner(f.owner), true)
+  assert.equal(f.rules.isUnitSuspended(f.first), true)
+  assert.equal(f.rules.isUnitSuspended(f.second), true)
+  f.human.units[0] = { i: 52, j: 50, controlMode: 'hero' }
+  f.context.controls = {
+    getViewportMetrics: () => ({ visibleLeft: -100, visibleTop: 1500, visibleWidth: 200, visibleHeight: 200 }),
+  }
+  f.service.update()
+  assert.equal(f.rules.isUnitSuspended(f.first), false)
+  assert.equal(f.first.resumed, true)
+  assert.deepEqual(f.advances, [])
+})
 test('homes are stable per town center, not per faction; destroyed centers reassign their residents', () => {
   const { service, first, second, owner, context } = setup()
   assert.notEqual(first.villageHome.id, second.villageHome.id)
@@ -213,4 +229,46 @@ test('AI workers missing a resource target stay live to search beyond the local 
   first.autonomyBlockedJob = 'wood'
   service.update()
   assert.equal(rules.isUnitSuspended(first), false)
+})
+
+test('static village activation has one shared camera hysteresis for all residents', () => {
+  const f = setup('static')
+  f.first.i = 50
+  f.first.j = 60 // Outside both camera margins, but still a resident of the observed base.
+  let left = 250
+  f.context.controls = {
+    getViewportMetrics: () => ({ visibleLeft: left, visibleTop: 1500, visibleWidth: 100, visibleHeight: 200 }),
+  }
+  const update = () => {
+    f.context.scheduler.elapsedMs += 3000
+    f.service.update()
+  }
+  update()
+  assert.equal(f.rules.isDistantOwner(f.owner), false)
+  assert.equal(f.rules.isUnitSuspended(f.first), false, 'the active base owns activity, not each resident viewport')
+  left = 350
+  update()
+  assert.equal(f.rules.isDistantOwner(f.owner), false, 'remain active within the outer margin')
+  left = 500
+  update()
+  assert.equal(f.rules.isDistantOwner(f.owner), true)
+  left = 350
+  update()
+  assert.equal(f.rules.isDistantOwner(f.owner), true, 'outer margin alone cannot wake the base')
+  left = 250
+  update()
+  assert.equal(f.rules.isDistantOwner(f.owner), false)
+})
+
+test('an active static owner never puts a second base into legacy economic sleep', () => {
+  const f = setup('static')
+  f.context.controls = {
+    getViewportMetrics: () => ({ visibleLeft: -100, visibleTop: 1500, visibleWidth: 200, visibleHeight: 200 }),
+  }
+  f.service.update()
+  assert.equal(f.rules.isDistantOwner(f.owner), false)
+  assert.equal(f.rules.isUnitSuspended(f.second), false)
+  f.context.scheduler.elapsedMs += 600000
+  f.service.flush()
+  assert.deepEqual(f.advances, [])
 })

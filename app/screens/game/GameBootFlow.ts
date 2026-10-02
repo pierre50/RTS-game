@@ -1,3 +1,4 @@
+import { freezeLegacySettlements } from '../../services/world/SettlementMigration'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import { isContinentWorld } from '../../config/continentWorlds'
 import { migrateTutorialVillageOwner } from '../../services/tutorial/TutorialVillageMigration'
@@ -7,7 +8,7 @@ import { tutorialVillageConfig } from '../../services/tutorial/TutorialVillage'
 import type { Application } from 'pixi.js'
 import { t } from '../../lib/lang'
 import { Modal } from '../../lib'
-import { validateSaveData } from '../../serialization/SaveValidator'
+import { validateSaveData } from '../../serialization/validation/SaveValidator'
 import { createInitialCampaignSave, getCurrentWorldState, isCampaignSave } from '../../serialization/CampaignSave'
 import { getGameSpeed } from '../../lib/audio/settings'
 import { GameLoadingScreen } from '../../ui/GameLoadingScreen'
@@ -77,7 +78,10 @@ function currentCampaignWorld(game: GameBootFlowHost): SerializedSave {
     structuredClone(getCurrentWorldState(game._restartSaveData)),
     game._campaignSave?.clock?.dayNightElapsedMs
   )
-  if (game._campaignSave) migrateTutorialVillageOwner(game._campaignSave, state)
+  if (game._campaignSave) {
+    migrateTutorialVillageOwner(game._campaignSave, state)
+    freezeLegacySettlements(game._campaignSave, state)
+  }
   return state
 }
 
@@ -185,6 +189,7 @@ export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
     await game._bootFromConfig(prologue ? { ...game.config, heroStartVillage: undefined } : game.config, {
       startingSetup,
       startPaused: Boolean(prologue) || continentStart,
+      deferInitialSave: continentStart && Boolean(game._prepareIntroduction),
     })
     const skipTutorial = await choice
     if (!continentStart && game._prepareTutorial && !skipTutorial) await game._prepareTutorial()
@@ -239,7 +244,7 @@ export async function recoverGameAfterDefeat(game: GameBootFlowHost, tutorialEnd
         game._restartSaveData = null
         await game._bootFromConfig(
           { ...config!, heroOnlyStart: true, heroStartVillage: undefined, villageStarts: undefined },
-          { startPaused: true }
+          { startPaused: true, deferInitialSave: Boolean(game._prepareIntroduction) }
         )
         await game._prepareIntroduction?.()
       } else {

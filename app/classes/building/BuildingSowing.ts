@@ -1,7 +1,6 @@
 import { Resource } from '../Resource'
 import { addEntityToMapSpaceContainer, getEntityMapSpace } from '../../lib/mapSpaces'
 import { sownWheatOptions } from '../../lib/resources/wheatSowing'
-import { AGE_OBJECTIVES, completeAgeObjective } from '../../lib/objectives/ageObjectives'
 import type { BuildingControllerHost } from './BuildingTypes'
 
 /** Replace just this completed sowing tile, leaving the remaining parcel pending. */
@@ -30,6 +29,5 @@ export function finishSowingTile(building: BuildingControllerHost): void {
   owner.foundedWheats?.add(wheat)
   owner.foundedResources?.Wheat?.add(wheat)
   cell.updateVisible()
-  completeAgeObjective(owner, AGE_OBJECTIVES.createWheatField)
   if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
 }

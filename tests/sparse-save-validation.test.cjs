@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const { localToGrid } = loadTsModule('app/lib/localMapLayout.ts')
-const { validateSaveData } = loadTsModule('app/serialization/SaveValidator.ts', {
+const { validateSaveData } = loadTsModule('app/serialization/validation/SaveValidator.ts', {
   mocks: {
     'pixi.js': {
       Assets: {

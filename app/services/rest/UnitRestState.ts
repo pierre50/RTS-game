@@ -1,10 +1,11 @@
+import { isBuildingTraversable } from '../../lib/buildings/buildingTraversal'
 import { cartesianToIsometric, getInstanceZIndex, updateInstanceVisibility } from '../../lib'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { getEntitySpaceMapLike, getMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import type { RuntimeEntity, UnitEntity, UnitRestState } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
-export type RuntimeMapWithBuckets = RuntimeMap & {
+type RuntimeMapWithBuckets = RuntimeMap & {
   addChild?: (child: UnitEntity) => void
   removeFromInstanceBucket?: (entity: RuntimeEntity) => void
   addToInstanceBucket?: (entity: RuntimeEntity) => void
@@ -28,7 +29,7 @@ export function rememberRestState(
   return restState
 }
 
-export function clearUnitCell(unit: UnitEntity): void {
+function clearUnitCell(unit: UnitEntity): void {
   const cell = unit.currentCell
   if (cell && (cell.has === unit || (unit.label != null && cell.has?.label === unit.label))) {
     cell.has = null
@@ -48,11 +49,19 @@ export function stopUnitForRest(unit: UnitEntity): void {
 
 export function placeUnitAtCell(unit: UnitEntity, cell: RuntimeCell): void {
   const map = unit.context?.map as RuntimeMapWithBuckets | undefined
+  const furniture = cell.has?.family === 'building' && isBuildingTraversable(cell.has.type) ? cell.has : null
+  const restoreFurniture = () => {
+    if (furniture) {
+      cell.has = furniture
+      cell.solid = false
+    }
+  }
   const oldI = unit.i
   const oldJ = unit.j
   const space = map ? getMapSpace(map, cell.spaceId) : null
   if (map && space) {
     moveEntityToMapSpace(map, unit, space, cell)
+    restoreFurniture()
     updateInstanceVisibility(unit)
     return
   }
@@ -67,6 +76,7 @@ export function placeUnitAtCell(unit: UnitEntity, cell: RuntimeCell): void {
   unit.currentCell = cell
   cell.place(unit)
   cell.solid = true
+  restoreFurniture()
   map?.addChild?.(unit)
   map?.addToInstanceBucket?.(unit)
   map?.updateInstanceBucket?.(unit, oldI, oldJ)

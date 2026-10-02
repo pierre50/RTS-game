@@ -51,16 +51,16 @@ function loadEquipmentMarket() {
           'centurion_plumage',
           'cape_solid',
         ],
-        dynamicEquipmentForUnit: (unitType, age, _level, civilization) => {
-          if (unitType === 'Chief') return [age >= 2 ? 'sword_iron' : 'sword_ceramic']
+        dynamicEquipmentForUnit: (unitType, owner, _level, civilization) => {
+          if (unitType === 'Chief') return [owner.forgeUpgrades.weapons >= 3 ? 'sword_iron' : 'sword_ceramic']
           if (unitType === 'Fantassin' && civilization === 'Hellas') return ['helmet_barbuta_iron', 'centurion_crest']
           if (unitType === 'Fantassin' && civilization === 'Latium')
             return ['helmet_legion_bronze', 'centurion_plumage']
-          if (unitType === 'Bowman') return [age >= 1 ? 'bow_recurve' : 'bow', 'quiver', 'arrow_copper']
+          if (unitType === 'Bowman') return [owner.forgeUpgrades.arrows >= 2 ? 'bow_recurve' : 'bow', 'quiver', 'arrow_copper']
           return []
         },
-        dynamicEquipmentForWork: (work, age) => {
-          if (work === 'woodcutter') return [age >= 2 ? 'axe_iron' : 'axe_ceramic']
+        dynamicEquipmentForWork: (work, owner) => {
+          if (work === 'woodcutter') return [owner.forgeUpgrades.axes >= 3 ? 'axe_iron' : 'axe_ceramic']
           return []
         },
       },

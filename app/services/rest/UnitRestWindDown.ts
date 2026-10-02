@@ -1,11 +1,12 @@
+import { routeUnitToRestTarget } from './UnitRestRoute'
 import type { UnitEntity } from '../../types/entities'
 import type { TimedUnitRestState } from './UnitRestLifecycle'
 import {
-canUseUnitRest,
-getRestTransitionCell,
-getRestTransitionDurationMs,
-isSleepTime,
-REST_ORDER_GRACE_MS,
+  canUseUnitRest,
+  getRestTransitionCell,
+  getRestTransitionDurationMs,
+  isSleepTime,
+  REST_ORDER_GRACE_MS,
 } from './UnitRestRules'
 
 export function hasPendingRestOrder(
@@ -24,11 +25,7 @@ function moveUnitToRestSite(unit: UnitEntity, state: TimedUnitRestState): void {
   state.transitionUntilMs = undefined
   state.startedAtMs = unit.context?.scheduler?.elapsedMs ?? state.startedAtMs ?? 0
   state.retryCount = 0
-  unit.sendToEvt?.(state.targetCell ?? null, null, {
-    forceRepath: true,
-    preserveAutonomy: true,
-    allowPassageStop: state.location === 'shelter',
-  })
+  routeUnitToRestTarget(unit, state)
 }
 
 export function hasFailedTransitionPath(
@@ -66,6 +63,7 @@ export function updateWindingDownRestUnit(unit: UnitEntity, state: TimedUnitRest
     const restSite = {
       location: state.location,
       shelter: state.shelter ?? null,
+      restTarget: state.restTarget,
       targetCell: state.targetCell!,
     }
     const nextCell = getRestTransitionCell(unit, restSite)

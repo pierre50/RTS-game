@@ -15,6 +15,7 @@ type TrainingLoadUnit = {
   isDestroyed?: boolean
 }
 type TrainingLoadBuilding = {
+  buildingUpgrade?: unknown
   trainingQueue?: readonly unknown[]
   queue?: readonly string[]
   loading?: number | null
@@ -32,7 +33,7 @@ export function isTraineeTrainingType(building: BuildingEntity, type: string | u
 }
 
 export function canUnitTrainInto(building: BuildingEntity, unit: UnitEntity, type: string | undefined): boolean {
-  if (!type || !building.units?.includes(type)) return false
+  if (building.buildingUpgrade || !type || !building.units?.includes(type)) return false
   if (building.type === BUILDING_TYPES.stable) {
     return unit.type !== UNIT_TYPES.villager && !unit.mountedOnHorse && unit.type === type
   }
@@ -64,7 +65,7 @@ export function hasBuildingTrainingCapacity(
   building: TrainingLoadBuilding,
   options?: BuildingTrainingLoadOptions
 ): boolean {
-  return getBuildingTrainingLoad(building, options) < BUILDING_TRAINING_CAPACITY
+  return !building.buildingUpgrade && getBuildingTrainingLoad(building, options) < BUILDING_TRAINING_CAPACITY
 }
 
 export function getMissingResourceNames(

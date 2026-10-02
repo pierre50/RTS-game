@@ -1,3 +1,6 @@
+import { canHeroDemolishBuilding } from '../../lib/buildings/buildingDemolition'
+import { isInteriorFurniture } from '../../lib/buildings/interiorFurnitureCatalog'
+import { getBuildingBedCount, refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getEntityDescription } from './EntityDescription'
 import { BUILDING_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
 import { getIconPath } from '../../lib'
@@ -10,30 +13,6 @@ import type { BuildingEntity, EntityInfoRenderOptions } from '../../types/entiti
 import type { BuildingConfig } from '../../types/config'
 import type { MenuLike } from '../../types/context'
 
-const DEFAULT_STORAGE_CHEST_LABEL_SUFFIX = ':default:storage-chest'
-
-function isOwnedByHeroTeam(building: BuildingEntity): boolean {
-  const heroOwner = building.context?.controls?.heroUnit?.owner
-  if (!heroOwner || !building.owner) return false
-  if (building.owner === heroOwner) return true
-  return typeof heroOwner.team === 'number' && heroOwner.team === building.owner.team
-}
-
-function isDefaultStorageChest(building: BuildingEntity): boolean {
-  return building.type === BUILDING_TYPES.chest && building.label?.endsWith(DEFAULT_STORAGE_CHEST_LABEL_SUFFIX)
-}
-
-function canHeroDeleteBuildingInfoTarget(building: BuildingEntity): boolean {
-  return (
-    isOwnedByHeroTeam(building) &&
-    building.type !== BUILDING_TYPES.trap &&
-    !isDefaultStorageChest(building) &&
-    !building.indestructible &&
-    !building.isDead &&
-    !building.isDestroyed
-  )
-}
-
 export class BuildingInterface {
   building: BuildingEntity
 
@@ -44,7 +23,12 @@ export class BuildingInterface {
   renderInfo(element: HTMLElement, data: BuildingConfig, options?: EntityInfoRenderOptions): void {
     const building = this.building
     this.setDefaultInterface(element, data, options)
-    if (building.displayPopulation && building.owner?.isPlayed && building.isBuilt) {
+    if (
+      building.type !== BUILDING_TYPES.house &&
+      building.displayPopulation &&
+      building.owner?.isPlayed &&
+      building.isBuilt
+    ) {
       element.appendChild(this.getPopulationElement())
     }
     if (building.type === BUILDING_TYPES.stable && building.isBuilt) {
@@ -70,7 +54,7 @@ export class BuildingInterface {
       }
       element.appendChild(status)
     }
-    if (canHeroDeleteBuildingInfoTarget(building)) {
+    if (canHeroDemolishBuilding(building)) {
       ;(options?.actionsContainer ?? element).appendChild(this.getDeleteBuildingButton())
     }
   }
@@ -78,6 +62,7 @@ export class BuildingInterface {
   getPopulationElement(): HTMLDivElement {
     const building = this.building
     const owner = building.owner!
+    refreshPopulationCapacity(owner)
     const populationDiv = document.createElement('div')
     populationDiv.classList.add(MENU_INFO_IDS.population)
     populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
@@ -85,6 +70,15 @@ export class BuildingInterface {
     populationSpan.classList.add(MENU_INFO_IDS.populationText)
     populationSpan.textContent = owner.population + '/' + Math.min(POPULATION_MAX, owner.populationMax)
     populationDiv.appendChild(populationSpan)
+    populationDiv.title = t('populationBedsDescription')
+    if (building.type === BUILDING_TYPES.house) {
+      const beds = document.createElement('div')
+      beds.className = 'house-bed-count'
+      beds.textContent = t(building.buildingUpgrade ? 'houseBedsUnavailable' : 'houseBedsCount', {
+        count: getBuildingBedCount(building, owner),
+      })
+      populationDiv.appendChild(beds)
+    }
     return populationDiv
   }
 
@@ -131,18 +125,18 @@ export class BuildingInterface {
     button.textContent = t(
       !building.isBuilt
         ? 'cancelBuildingConstruction'
-        : building.type === BUILDING_TYPES.fireCamp || building.type === BUILDING_TYPES.chest
+        : isInteriorFurniture(building.type)
           ? 'removeBuildingObject'
           : 'demolishBuilding'
     )
     if (building.type === BUILDING_TYPES.chest) button.textContent = t('windowRemoveChest')
     button.addEventListener('click', () => {
-      if (!canHeroDeleteBuildingInfoTarget(building)) return
+      if (!canHeroDemolishBuilding(building)) return
       const menu = building.context?.menu
       menu?.playUiClick?.()
       menu?.closeEntityInfoModal?.()
       menu?.closeHeroBuildingMenu?.()
-      building.die?.()
+      building.demolish?.()
     })
     return button
   }
@@ -151,6 +145,7 @@ export class BuildingInterface {
     const building = this.building
     const menu = (building.context as { menu: MenuLike }).menu
     const owner = building.owner!
+    refreshPopulationCapacity(owner)
     const factionName = owner.factionId ? building.context?.getCampaignFactions?.()?.[owner.factionId]?.name : null
     const ownerDisplayName = factionName || (owner.type === PLAYER_TYPES.bandits ? owner.name : null)
     appendBaseEntityInfo(

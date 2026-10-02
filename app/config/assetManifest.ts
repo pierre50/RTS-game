@@ -70,9 +70,10 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'water-surface-filter': 'assets/border/water-surface-filter/texture.json',
   },
   graphics: {
+    'buildings/age-0': 'assets/graphics/buildings/texture.json',
+    'buildings/age-1/image': 'assets/graphics/buildings/age-1/texture.png',
+    'buildings/age-2/image': 'assets/graphics/buildings/age-2/texture.png',
     ...toTextureBundle('assets/graphics', [
-      'buildings/age-0',
-      'buildings/age-1',
       'buildings/wall/dithered',
       'resources/berrybush',
       'resources/wildgrass',
@@ -103,20 +104,16 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     ]),
     ...toBuildingShadowBundle([
       'buildings/cave',
-      'buildings/age-0',
-      'buildings/age-1',
       'buildings/wall/dithered',
       'buildings/wall/construction-flag',
       'buildings/wall/level-1',
       'resources/minerals',
     ]),
-    'buildings/age-0/shadow': 'assets/graphics/buildings/age-0/texture_shadow.json',
-    'buildings/age-1/shadow': 'assets/graphics/buildings/age-1/texture_shadow.json',
+    'buildings/age-0/shadow': 'assets/graphics/buildings/texture_shadow.json',
     'resources/minerals/shadow': 'assets/graphics/resources/minerals/texture_shadow.json',
   },
   sounds: {
     ...toOggSoundFolderBundle('ui', ['button-selected', 'attack-warning']),
-    ...toOggSoundFolderBundle('player', ['next-age-reached']),
     ...toOggSoundFolderBundle('hero', ['heartbeat']),
     ...toOggSoundFolderBundle('combat', [
       'attack-swipe',

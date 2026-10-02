@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadHeroMarketBody() {
+function loadHeroMarketBody(overrides = {}) {
   return loadTsModule('app/ui/hero-building/HeroMarketBody.ts', {
     mocks: {
       '../../constants': {
@@ -51,6 +51,7 @@ function loadHeroMarketBody() {
       '../inventory/InventorySection': {
         createInventorySection: () => ({ tagName: 'section' }),
       },
+      ...overrides,
       '../inventory/InventoryDetails': {
         createEquipmentRowInfo: equipment => ({
           title: equipment,
@@ -153,4 +154,59 @@ test('hero market blocks hostile, wary and enemy markets', () => {
     createHeroMarketBody({ owner: { label: 'wary', factionId: 'tribe' } }, menu, () => {}),
     null
   )
+})
+
+
+test('market tiles show unit transaction prices and lot totals, with unaffordable purchases marked', () => {
+  const rows = []
+  const makeRow = options => {
+    rows.push(options)
+    return { element: { setAttribute() {} } }
+  }
+  const { createHeroMarketBody } = loadHeroMarketBody({
+    '../../lib/lang': { t: (key, params) => `${key}:${params?.gold ?? ''}` },
+    '../../lib/equipment/equipmentLoot': {
+      formatEquipmentStackLabel: item => item,
+      getEquipmentStacks: () => [{ equipment: 'sword', count: 2 }],
+    },
+    '../../lib/equipment/equipmentMarket': {
+      getHeroGold: hero => hero.inventory.resources.gold,
+      ensureMarketEquipmentStock: () => [],
+      getMarketEquipmentOffers: () => [{ equipment: 'sword', count: 3, goldValue: 20 }],
+      getEquipmentResaleGoldValue: () => 8,
+      getResourceGoldValue: () => 2,
+    },
+    '../inventory/InventoryItemRows': {
+      createInventoryEquipmentRow: (_context, _menu, options) => makeRow(options),
+      createInventoryResourceRow: (_menu, options) => makeRow(options),
+    },
+    '../inventory/InventorySection': {
+      createInventorySection: options => {
+        options.renderItems({ appendChild() {} })
+        return {}
+      },
+    },
+  })
+  const restore = installMockDocument()
+  const owner = { label: 'player' }
+  const hero = { owner, inventory: { resources: { gold: 19, wood: 5 }, equipment: [] } }
+  const menu = { context: { controls: { heroUnit: hero } } }
+  try {
+    createHeroMarketBody({ owner }, menu, () => {})
+    assert.deepEqual(rows.map(row => row.value), [
+      '20 gold', '2 gold', '8 gold',
+    ])
+    assert.deepEqual(rows.map(row => row.metaParts[0].text), [
+      'marketLotTotal:60 gold', 'marketLotTotal:10 gold', 'marketLotTotal:16 gold',
+    ])
+    assert.equal(rows[0].disabled, true)
+    assert.equal(rows[0].metaParts[0].className, 'inventory-cost-is-missing')
+    hero.inventory.resources.gold = 20
+    rows.length = 0
+    createHeroMarketBody({ owner }, menu, () => {})
+    assert.equal(rows[0].disabled, false)
+    assert.equal(rows[0].metaParts[0].className, '')
+  } finally {
+    restore()
+  }
 })

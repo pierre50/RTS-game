@@ -16,7 +16,7 @@ function fixture() {
     populationMax: 1,
     units: [{ type: 'Villager', label: 'builder', autonomousJob: 'construction', i: 8, j: 8 }],
     buildings: [
-      { type: 'House', label: 'house', i: 12, j: 12, isBuilt: false, hitPoints: 95 },
+      { type: 'House', label: 'house', i: 12, j: 12, isBuilt: false, hitPoints: 95, interiorBuildings: Array.from({ length: 6 }, () => ({ type: 'CampBedroll', isBuilt: true })) },
       { type: 'TownCenter', i: 4, j: 4, isBuilt: true, inventory: { resources: { wheat: 1000 } } },
     ],
   }

@@ -9,6 +9,8 @@ type InventoryItemRowMenu = MenuHost | GameContextLike['menu']
 
 type BaseInventoryItemRowOptions = {
   showValue?: boolean
+  value?: string
+  metaParts?: Parameters<typeof createInventoryActionRow>[1]['metaParts']
   ariaLabel?: string
   badge?: string
   className?: string
@@ -85,7 +87,8 @@ function createItemRow(menu: InventoryItemRowMenu, options: BaseInventoryItemRow
     title: options.title ?? info.title,
     description: getRowDescription(options, info.description),
     meta: options.meta ?? info.meta,
-    value: options.showValue !== false && info.goldValue > 0 ? formatGold(info.goldValue) : undefined,
+    metaParts: options.metaParts,
+    value: options.value ?? (options.showValue !== false && info.goldValue > 0 ? formatGold(info.goldValue) : undefined),
     quantity,
     playClick: options.playClick,
     secondaryAction: options.secondaryAction,

@@ -34,9 +34,3 @@ export function nextAvailablePlayerColor(currentColor: string, used: Set<string>
   }
   return currentColor
 }
-
-export function randomAvailablePlayerColor(used: Set<string>): string {
-  const available = PLAYER_COLORS.filter(color => !used.has(color.name))
-  const choices = available.length ? available : PLAYER_COLORS
-  return choices[Math.floor(Math.random() * choices.length)].name
-}

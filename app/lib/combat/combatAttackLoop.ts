@@ -11,6 +11,7 @@ import { debugLog } from '../debug'
 const ATTACK_LOOP_DEBUG = false
 const ATTACK_LOOP_DEBUG_THROTTLE_MS = 250
 const lastAttackLoopDebugAt = new WeakMap<object, number>()
+const recoveryGenerations = new WeakMap<object, number>()
 
 function getActorLabel(attacker: AttackFrameActor): string {
   const target = attacker as { family?: string; label?: string; type?: string }
@@ -147,6 +148,7 @@ function getAttackRecoveryMs(attacker: AttackFrameActor): number {
 }
 
 export function clearCombatAttackRecovery(attacker: AttackRecoveryHandle): void {
+  recoveryGenerations.set(attacker, (recoveryGenerations.get(attacker) ?? 0) + 1)
   const hadRecovery = attacker.attackRecoveryTaskId != null || attacker.attackRecoveryAnimationTaskId != null
   if (attacker.attackRecoveryTaskId != null) {
     attacker.context?.scheduler?.remove?.(attacker.attackRecoveryTaskId)
@@ -171,8 +173,8 @@ function finishAttackRecovery(
   attacker.attackRecoveryTaskId = null
   actor.actionLocked = false
 
-  if (attacker.flushPendingOrder?.()) return
   if (actor.isDead || actor.isDestroyed) return
+  if (attacker.flushPendingOrder?.()) return
   if ((actor.action ?? null) !== actionAtAttack) return
 
   const target = getRuntimeEntity(attacker.dest)
@@ -196,21 +198,29 @@ function beginAttackRecovery(
   const sprite = attacker.sprite
   const actor = getAttackLoopActorState(attacker)
   const actionAtAttack = attacker.action ?? null
+  clearCombatAttackRecovery(attacker)
+  const generation = recoveryGenerations.get(attacker)
   let animationComplete = !sprite || !('onLoop' in sprite)
   let timerComplete = false
   let taskId: number | null = null
-  const isCurrentRecovery = (): boolean => taskId == null || attacker.attackRecoveryTaskId === taskId
+  const isCurrentRecovery = (): boolean =>
+    !actor.isDead &&
+    !actor.isDestroyed &&
+    recoveryGenerations.get(attacker) === generation &&
+    (attacker.action ?? null) === actionAtAttack &&
+    attacker.dest === targetAtAttack &&
+    (taskId == null || attacker.attackRecoveryTaskId === taskId)
   const finishIfReady = (): void => {
     if (!timerComplete || !animationComplete) return
     finishAttackRecovery(attacker, callbacks, actionAtAttack, targetAtAttack, taskId)
   }
   const markAnimationComplete = (): void => {
+    if (animationComplete || !isCurrentRecovery()) return
     animationComplete = true
     callbacks.prepareRecoverySheet?.()
     finishIfReady()
   }
 
-  clearCombatAttackRecovery(attacker)
   actor.actionLocked = true
   clearAttackCallbacks()
 
@@ -218,8 +228,8 @@ function beginAttackRecovery(
     callbacks.playRecoveryAnimation?.(callbacks.releaseFrame, markAnimationComplete) === true
   if (!customRecoveryAnimation && sprite && 'onLoop' in sprite) {
     sprite.onLoop = () => {
-      sprite.onLoop = undefined
       if (!isCurrentRecovery()) return
+      sprite.onLoop = undefined
       markAnimationComplete()
     }
   }
@@ -250,7 +260,7 @@ function resolveReadyAttackTarget(
 ): AttackLoopReadiness {
   const actor = getAttackLoopActorState(attacker)
   const target = getRuntimeEntity(attacker.dest)
-  if (actor.actionLocked) return { status: 'not-ready' }
+  if (actor.isDead || actor.isDestroyed || actor.actionLocked) return { status: 'not-ready' }
 
   if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
     debugAttackLoop(attacker, 'target-unavailable', {
@@ -339,6 +349,9 @@ export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: Atta
         target: getTargetLabel(readyTarget),
       })
       const shouldRecover = callbacks.onReadyToAttack(readyTarget) !== false
+      if (actor.isDead || actor.isDestroyed || attacker.action !== actionAtWindup || attacker.dest !== targetAtWindup) {
+        return
+      }
       if (shouldRecover) beginAttackRecovery(attacker, callbacks, readyTarget, clearAttackCallbacks)
     } catch {
       if (actor.family === 'animal') {

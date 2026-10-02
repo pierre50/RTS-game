@@ -1,5 +1,5 @@
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
-import type { TributeRaidSystem } from '../TributeRaidSystem'
+import type { TributeRaidSystem } from './TributeRaidSystem'
 import { FACTION_RAID_START_HOUR, isFactionRaidHourAllowed } from './TributeRaidRules'
 type Host = Pick<TributeRaidSystem, 'context'>
 export function getDelayUntilFactionRaidWindowMs(this: Host): number | null {

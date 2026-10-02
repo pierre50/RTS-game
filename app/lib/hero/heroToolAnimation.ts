@@ -106,7 +106,7 @@ export function playHeroToolAnimation(
   options: HeroToolAnimationOptions = {}
 ): void {
   const sprite = hero.sprite
-  if (!sprite || hero.actionLocked) return
+  if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed) return
 
   hero.actionLocked = true
   sprite.loop = false
@@ -149,6 +149,8 @@ export function finishHeroToolAnimation(hero: UnitEntity, { restoreStanding = tr
     hero.context?.scheduler?.remove?.(hero.attackRecoveryAnimationTaskId)
     hero.attackRecoveryAnimationTaskId = null
   }
+  // Late input releases and recovery callbacks must leave death playback intact.
+  if (hero.isDead || hero.isDestroyed) return
   if (sprite) {
     sprite.onComplete = undefined
     sprite.onFrameChange = undefined

@@ -153,6 +153,9 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
         : bakedUnitAlias(resolvedBakedUnit, variant, 'action')
     unit.assets = {
       standingSheet: walking,
+      ...(['chief', 'infantry', 'infantry_nohair'].includes(resolvedBakedUnit)
+        ? { sittingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'sitting') }
+        : {}),
       walkingSheet: walking,
       actionSheet,
       dyingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'dying'),

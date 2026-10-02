@@ -19,6 +19,7 @@ export function createHeroTrainingBody(
     element.type = 'button'
     element.id = id
     element.className = 'ui-btn'
+    element.disabled = Boolean(building.buildingUpgrade)
     element.textContent = label
     element.addEventListener('click', () => {
       run()

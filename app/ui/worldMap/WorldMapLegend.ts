@@ -1,4 +1,4 @@
-import { minimapMarkerIcon, type MinimapMarkerKind } from '../minimap/MinimapMarkerIcons'
+import { minimapMarkerIcon, settlementMarkerKind, type MinimapMarkerKind } from '../minimap/MinimapMarkerIcons'
 import { getInteriorExitCell } from '../../lib/buildings/interiorExits'
 import { playerRelation } from '../../lib/combat/playerRelation'
 import { isPlayerEliminated } from '../../lib/playerState'
@@ -131,7 +131,7 @@ export function createWorldMapLegend(
       if (entries.has(key)) continue
       entries.set(key, {
         key,
-        icon: player.isPlayed ? 'hero' : player.type === PLAYER_TYPES.bandits ? 'camp' : 'village',
+        icon: player.isPlayed ? 'hero' : player.type === PLAYER_TYPES.bandits ? 'camp' : settlementMarkerKind(player),
         color: player.colorHex ?? worldMapPlayerColor(menu, player) ?? '#6ee37a',
         name: player.isPlayed
           ? t('you')

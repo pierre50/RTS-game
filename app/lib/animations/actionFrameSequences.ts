@@ -42,7 +42,6 @@ type ActionFrameSequenceContext = {
     activeWeapons?: Partial<Record<string, string>>
     equipped?: Partial<Record<string, string>>
   } | null
-  owner?: { age?: number | null } | null
   work?: string | null
 }
 

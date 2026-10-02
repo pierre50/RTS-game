@@ -1,5 +1,6 @@
 import { BUILDING_TYPES } from '../../../constants'
-import { canPlaceBuildingAt, getPlainCellsAroundPoint } from '../../../lib'
+import { canPlaceBuildingAt } from '../../../lib/grid/placement'
+import { getPlainCellsAroundPoint } from '../../../lib/grid/cells'
 import { expandLegacyFoodAmount } from '../../../lib/resources/playerResourceTotals'
 import type { ResourceAmount } from '../../../types/common'
 import type { BuildingEntity } from '../../../types/entities'

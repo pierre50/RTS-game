@@ -19,7 +19,7 @@ function fixture() {
       },
     },
   }
-  const { DistantVillageSystem } = loadTsModule('app/services/world/DistantVillageSystem.ts', { mocks, moduleCache })
+  const { DistantVillageSystem } = loadTsModule('app/services/world/distantVillages/DistantVillageSystem.ts', { mocks, moduleCache })
   const rules = {
     ...loadTsModule('app/lib/units/villageActivity.ts', { mocks, moduleCache }),
     ...loadTsModule('app/lib/units/unitSuspension.ts', { mocks, moduleCache }),
@@ -175,4 +175,129 @@ test('distant factions cannot suspend a resource search or an outbound supply ro
     assert.equal(f.rules.isUnitSuspended(f.worker), false)
     assert.equal(f.service.has(f.owner), false)
   }
+})
+
+test('all fixed settlements freeze together during the opening without daily planning', () => {
+  const f = fixture()
+  f.context.isTutorialActive = () => true
+  for (let index = 0; index < 8; index++) {
+    const owner = { ...f.owner, label: `fixed-${index}`, developmentMode: 'static', units: [] }
+    owner.units.push({ ...f.worker, owner })
+    f.candidates.push({ home: f.candidates[0].home, owner, observed: index === 7 })
+  }
+  f.update()
+  for (const candidate of f.candidates.slice(1)) {
+    assert.equal(f.rules.isDistantOwner(candidate.owner), !candidate.observed)
+    assert.equal(f.rules.isUnitSuspended(candidate.owner.units[0]), !candidate.observed)
+  }
+  assert.equal(f.rules.isDistantOwner(f.owner), false, 'dynamic tutorial factions keep their existing behavior')
+  assert.deepEqual(f.plans, [])
+  assert.deepEqual(f.advances, [])
+})
+
+test('static outposts freeze on any map and wake for combat without economic catch-up', () => {
+  const f = fixture()
+  f.context.map.worldId = 'ordinary-region'
+  f.owner.developmentMode = 'static'
+  f.worker.type = 'Fantassin'
+  f.worker.action = null
+  f.update()
+  assert.ok(f.rules.isUnitSuspended(f.worker))
+  f.context.scheduler.elapsedMs = 100000
+  f.rules.planDistantVillages(f.context)
+  f.update()
+  f.service.flush()
+  assert.deepEqual(f.advances, [])
+  assert.deepEqual(f.plans, [])
+  assert.equal(f.owner.productions, 0)
+  f.rules.wakeUnitSimulation(f.worker)
+  assert.equal(f.rules.isUnitSuspended(f.worker), false)
+  assert.deepEqual(f.advances, [])
+  f.worker.action = 'attack'
+  f.update()
+  assert.equal(f.service.has(f.owner), false)
+})
+
+test('RPG sleep advances rest without economic simulation or legacy work, even across days and saves', () => {
+  const f = fixture()
+  f.owner.developmentMode = 'static'
+  const update = () => f.service.update(f.candidates, () => assert.fail('no legacy work preparation'))
+  update()
+  assert.ok(f.rules.isUnitSuspended(f.worker))
+  for (let day = 2; day <= 12; day++) {
+    f.context.dayNight.state.day = day
+    f.context.scheduler.elapsedMs += 600000
+    f.rules.planDistantVillages(f.context)
+    update()
+    f.service.flush()
+  }
+  f.candidates[0].observed = true
+  update()
+  assert.equal(f.rules.isUnitSuspended(f.worker), false)
+  assert.deepEqual(f.advances, [])
+  assert.deepEqual(f.plans, [])
+  assert.equal(f.owner.productions, 0)
+  f.service.destroy()
+})
+
+test('static village wake reconciles rest before resuming any old walking order', () => {
+  const f = fixture()
+  f.owner.developmentMode = 'static'
+  f.worker.dest = { i: 21, j: 20 }
+  f.worker.sendToEvt = () => assert.fail('sleeping residents must not resume yesterday walking order')
+  let reconciled = false
+  f.context.unitRest = {
+    synchronizeVillageRest(units) {
+      assert.equal(f.rules.isUnitSuspended(f.worker), false)
+      assert.deepEqual(units, [f.worker])
+      f.worker.shelterState = { status: 'inside' }
+      reconciled = true
+    },
+  }
+  f.update()
+  f.rules.wakeUnitSimulation(f.worker)
+  assert.equal(reconciled, true)
+})
+
+test('destroying the activity system does not create house interiors to reconcile rest', () => {
+  const f = fixture()
+  f.owner.developmentMode = 'static'
+  f.context.unitRest = {
+    synchronizeVillageRest() {
+      assert.fail('no rest catch-up during teardown')
+    },
+  }
+  f.update()
+  f.service.destroy()
+  assert.equal(f.rules.isUnitSuspended(f.worker), false)
+})
+
+test('static rest catch-up is committed once across save flushes and activation', () => {
+  const f = fixture()
+  const { DAY_NIGHT_CONFIG } = loadTsModule('app/config/gameplay.ts')
+  const hour = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
+  f.owner.developmentMode = 'static'
+  Object.assign(f.worker, {
+    hitPoints: 1,
+    totalHitPoints: 80,
+    dailySchedule: {
+      wakeMinute: 360,
+      workStartMinute: 420,
+      lunchStartMinute: 720,
+      lunchEndMinute: 780,
+      workEndMinute: 1080,
+      bedMinute: 1320,
+    },
+  })
+  f.context.scheduler.elapsedMs = (22 - DAY_NIGHT_CONFIG.startHour) * hour
+  f.update()
+  f.context.scheduler.elapsedMs += hour
+  f.service.flush()
+  assert.equal(f.worker.hitPoints, 11)
+  f.service.flush()
+  assert.equal(f.worker.hitPoints, 11)
+  f.candidates[0].observed = true
+  f.update()
+  assert.equal(f.worker.hitPoints, 11)
+  assert.deepEqual(f.advances, [])
 })

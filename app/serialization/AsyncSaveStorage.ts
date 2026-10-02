@@ -46,7 +46,7 @@ export function writeElectronSave(
           retained.push(zone)
         else zones.push([zone, entries])
       }
-      worker = new Worker(new URL('./SaveCompression.worker.ts', import.meta.url))
+      worker = new Worker(new URL('./SaveCompressionWorker.ts', import.meta.url))
       const raw = await new Promise<string>((resolve, reject) => {
         startupTimeout = setTimeout(() => reject(new Error('SAVE_WORKER_START_TIMEOUT')), 30000)
         worker!.onmessageerror = () => reject(new Error('SAVE_WORKER_MESSAGE_FAILED'))

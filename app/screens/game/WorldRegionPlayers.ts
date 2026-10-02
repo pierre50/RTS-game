@@ -1,4 +1,5 @@
 import { CIVILIZATIONS } from '../../config/civilizations'
+import { isContinentWorld } from '../../config/continentWorlds'
 import { playerColors } from '../../lib/graphics/playerColorData'
 import { playableColor } from '../../lib/graphics/playableColor'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
@@ -40,7 +41,7 @@ function configForCivilization(options: {
   return {
     ...(isHuman ? human : {}),
     civ,
-    color: isHuman ? humanColor : (factionColor === humanColor ? fallbackColor : factionColor),
+    color: isHuman ? humanColor : factionColor === humanColor ? fallbackColor : factionColor,
     factionId: isHuman ? (human.factionId ?? faction?.id ?? fallbackFactionId) : (faction?.id ?? fallbackFactionId),
     gender: isHuman ? human.gender : 'male',
     isHuman,
@@ -55,9 +56,10 @@ export function buildWorldRegionPlayerConfigs(
   factions: Record<string, FactionSave> | undefined
 ): WorldRegionPlayerConfig[] {
   const human = humanPlayerConfig(config)
-  const settlements = (blueprint.settlements || []).filter(
+  const sites = (blueprint.settlements || []).filter(
     settlement => (settlement.kind === 'village' || settlement.kind === 'city') && settlement.civ
   )
+  const settlements = sites.filter((site, index) => sites.findIndex(other => other.civ === site.civ) === index)
   if (!settlements.length) return (config.players as WorldRegionPlayerConfig[] | undefined) || [human]
 
   const humanCiv = human.civ ?? CIVILIZATIONS[0]?.value ?? settlements[0]?.civ ?? 'Hellas'
@@ -76,11 +78,20 @@ export function buildWorldRegionPlayerConfigs(
     // A guest hero is a separate owner, even when sharing the host's civilization.
     const host = players.find(player => player.civ === config.heroStartVillage)
     if (!host) throw new Error(`Missing host village ${config.heroStartVillage}`)
+    // The tutorial village is the hero's home, so its NPCs wear the selected
+    // color even though a separate AI owner runs their daily routines.
+    if (!isContinentWorld(config.worldId)) host.color = playableColor(human.color)
     for (const player of players) player.isHuman = false
-    return [configForCivilization({
-      civ: humanCiv, faction: factionForCivilization(factions, humanCiv), human,
-      index: players.length, isHuman: true,
-    }), ...players]
+    return [
+      configForCivilization({
+        civ: humanCiv,
+        faction: factionForCivilization(factions, humanCiv),
+        human,
+        index: players.length,
+        isHuman: true,
+      }),
+      ...players,
+    ]
   }
 
   if (players.some(player => player.isHuman)) return players

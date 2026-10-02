@@ -11,7 +11,11 @@ export function migrateTutorialVillageOwner(campaign: CampaignSave, state: Seria
   const oldLabel = player.label
   const guestLabel = `${oldLabel}:guest`
   if (state.players.some(owner => owner.label === guestLabel)) throw new Error('Duplicate tutorial guest owner')
-  const village = { ...player, type: 'AI', isPlayed: false, isHuman: false,
+  const village = {
+    ...player,
+    type: 'AI',
+    isPlayed: false,
+    isHuman: false,
     units: player.units.filter(unit => unit !== hero),
     population: player.units.length - 1,
   }
@@ -20,7 +24,7 @@ export function migrateTutorialVillageOwner(campaign: CampaignSave, state: Seria
   player.buildings = []
   player.corpses = []
   player.population = 1
-  player.populationMax = 1
+  player.populationMax = 0
   player.selectedBuildingLabel = undefined
   player.villagerAssignments = undefined
   state.players.push(village)

@@ -102,6 +102,7 @@ export class UnitCommands {
       }
       return false
     }
+    if (action === ACTION_TYPES.attack && unit.context?.unitRest?.interruptRestForCombat?.(unit, target)) return true
     if (unit.actionLocked) {
       return unit.queueOrder?.(() =>
         this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps)
@@ -151,6 +152,7 @@ export class UnitCommands {
   sendToWithCell(target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) {
     const unit = this.unit
     const map = unit.context?.map
+    if (action === ACTION_TYPES.attack && unit.context?.unitRest?.interruptRestForCombat?.(unit, target)) return true
     if (unit.actionLocked) {
       return unit.queueOrder?.(() => this.sendToWithCell(target, arrivalCell, action))
     }

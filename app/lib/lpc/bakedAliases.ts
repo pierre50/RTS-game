@@ -135,6 +135,7 @@ export function bakedLogicalAliases(unit: BakedUnitType, variant: string): strin
 
   return [
     ...UNIT_SHEETS.map(sheet => bakedUnitAlias(unit, variant, sheet)),
+    ...(['chief', 'infantry', 'infantry_nohair'].includes(unit) ? [bakedUnitAlias(unit, variant, 'sitting')] : []),
     ...(unit === 'infantry' || unit === 'infantry_nohair'
       ? RANGED_INFANTRY_ACTION_SHEETS.map(sheet => bakedUnitActionAlias(unit, variant, sheet))
       : []),

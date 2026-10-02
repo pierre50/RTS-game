@@ -2,7 +2,7 @@ import type { Modal } from '../../lib'
 import type { TributeRaidUnit } from './TributeRaidRules'
 import { canAfford, payCost } from '../../lib'
 import { livingRaidUnits, type TributeRaid } from './TributeRaidRules'
-import type { TributeRaidSystem } from '../TributeRaidSystem'
+import type { TributeRaidSystem } from './TributeRaidSystem'
 import {
   getLocalTributeRefusedMessage,
   getLocalTributeTargetMessage,
@@ -11,7 +11,7 @@ import {
   getTributePayLabel,
   getTributeRefuseLabel,
   getTributeTitle,
-} from '../TributeRaidText'
+} from './TributeRaidText'
 
 type TributeModalView = {
   createChiefContent: (chief: TributeRaidUnit) => HTMLElement

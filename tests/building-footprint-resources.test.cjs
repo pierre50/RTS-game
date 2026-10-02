@@ -17,7 +17,7 @@ const { occupyBuildingFootprint } = loadTsModule('app/classes/building/BuildingS
 })
 
 test('player building footprints preserve perception but never discover terrain', () => {
-  const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+  const { VisionGrid } = loadTsModule('app/services/visibility/VisionGrid.ts')
   for (const isChief of [undefined, false, true]) {
     const views = new VisionGrid(4)
     const player = { isPlayed: true, units: [], views, cellViewed: 0 }
@@ -82,7 +82,7 @@ test('building footprint destroys wheat and every wildgrass type before occupyin
 
 
 test('AI building footprints still discover their own terrain', () => {
-  const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+  const { VisionGrid } = loadTsModule('app/services/visibility/VisionGrid.ts')
   const owner = { isPlayed: false, views: new VisionGrid(4), cellViewed: 0 }
   const cell = { i: 2, j: 2, corpses: new Set(), updateVisible() {} }
   const grid = Array.from({ length: 5 }, () => [])

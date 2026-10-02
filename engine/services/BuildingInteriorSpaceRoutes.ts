@@ -5,8 +5,8 @@ import { canUnitEnterBuildingInterior } from '../../app/lib/buildings/interiorAc
 import { createReservedPassageCellLookup } from '../../app/lib/buildings/passageCells'
 import { getEntitySpaceId, sameMapSpace } from '../../app/lib/mapSpaces'
 import { applyBuildingInteriorIdleFacing } from '../../app/services/buildingInterior/InteriorIdleFacing'
-import type { SpacePortalRouteOptions } from '../../app/services/SpacePortalSystem'
-import { routeUnitThroughSpacePortal, transferUnitThroughSpacePortal } from '../../app/services/SpacePortalSystem'
+import type { SpacePortalRouteOptions } from '../../app/services/spacePortal/SpacePortalSystem'
+import { routeUnitThroughSpacePortal, transferUnitThroughSpacePortal } from '../../app/services/spacePortal/SpacePortalSystem'
 import type { GameContextLike } from '../../app/types/context'
 import type { UnitEntity } from '../../app/types/entities'
 import type { RuntimeCell } from '../../app/types/map'
@@ -53,6 +53,7 @@ function moveUnitIntoBuildingInteriorSpace(
   unit: UnitEntity,
   space: BuildingInteriorRuntimeSpace
 ): boolean {
+  if (space.building.buildingUpgrade) return false
   return transferUnitThroughSpacePortal(context, unit, space.entryPortal)
 }
 
@@ -61,7 +62,10 @@ export function routeUnitIntoBuildingInteriorSpace(
   unit: UnitEntity,
   space: BuildingInteriorRuntimeSpace
 ): boolean {
-  return routeUnitThroughSpacePortal(context, unit, space.entryPortal)
+  if (space.building.buildingUpgrade) return false
+  return routeUnitThroughSpacePortal(context, unit, space.entryPortal, {
+    shouldContinue: () => canUnitEnterBuildingInterior(unit, space.building),
+  })
 }
 
 export function routeUnitIntoBuildingInteriorSpaceAndMoveBack(
@@ -69,8 +73,10 @@ export function routeUnitIntoBuildingInteriorSpaceAndMoveBack(
   unit: UnitEntity,
   space: BuildingInteriorRuntimeSpace
 ): boolean {
+  if (space.building.buildingUpgrade) return false
   const passageLookup = createReservedPassageCellLookup(context)
   return routeUnitThroughSpacePortal(context, unit, space.entryPortal, {
+    shouldContinue: () => canUnitEnterBuildingInterior(unit, space.building),
     onTransferred: () => {
       const preferredCell = space.idleCells[0] ?? space.entryCell
       const targetCell = findFreeCellNear(space, preferredCell, unit, passageLookup)

@@ -70,7 +70,7 @@ function loadGame({
       },
     },
     '../lib/audio/uiSound': { stopAllUiSounds() {} },
-    '../serialization/SaveValidator': { validateSaveData() {} },
+    '../serialization/validation/SaveValidator': { validateSaveData() {} },
     '../serialization/SaveStorage': { save: () => ({}) },
     '../serialization/SaveSerializer': { serializeGame: () => ({}) },
     '../serialization/CampaignSave': {
@@ -89,7 +89,7 @@ function loadGame({
       returnToParentWorld: campaign => campaign,
       updateCurrentWorldState: campaign => campaign,
     },
-    '../serialization/MapBlueprintLoader': {
+    '../serialization/blueprint/MapBlueprintLoader': {
       MapBlueprintLoadError,
       loadPregeneratedWorldMapBlueprint:
         loadPregeneratedWorldMapBlueprint ||
@@ -150,13 +150,13 @@ function loadGame({
         destroy() {}
       },
     },
-    '../services/DailyWorldEventSystem': {
+    '../services/dailyEvents/DailyWorldEventSystem': {
       DailyWorldEventSystem: class DailyWorldEventSystem {
         register() {}
         destroy() {}
       },
     },
-    '../services/TributeRaidSystem': {
+    '../services/tribute/TributeRaidSystem': {
       TributeRaidSystem: class TributeRaidSystem {
         destroy() {}
       },
@@ -289,8 +289,8 @@ function loadGame({
     '../../lib/equipment/equipmentStats': mocks['../lib/equipment/equipmentStats'],
     '../../lib/audio/settings': mocks['../lib/audio/settings'],
     '../../serialization/CampaignSave': mocks['../serialization/CampaignSave'],
-    '../../serialization/MapBlueprintLoader': mocks['../serialization/MapBlueprintLoader'],
-    '../../serialization/SaveValidator': mocks['../serialization/SaveValidator'],
+    '../../serialization/blueprint/MapBlueprintLoader': mocks['../serialization/blueprint/MapBlueprintLoader'],
+    '../../serialization/validation/SaveValidator': mocks['../serialization/validation/SaveValidator'],
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
     '../../ui/GameLoadingScreen': mocks['../ui/GameLoadingScreen'],
     '../../ui/BuildingInteriorTransition': mocks['../ui/BuildingInteriorTransition'],
@@ -298,8 +298,8 @@ function loadGame({
     '../../services/lighting/LightSystem': mocks['../services/lighting/LightSystem'],
     '../../services/ShadowSystem': mocks['../services/ShadowSystem'],
     '../../services/DayNightSystem': mocks['../services/DayNightSystem'],
-    '../../services/DailyWorldEventSystem': mocks['../services/DailyWorldEventSystem'],
-    '../../services/TributeRaidSystem': mocks['../services/TributeRaidSystem'],
+    '../../services/dailyEvents/DailyWorldEventSystem': mocks['../services/dailyEvents/DailyWorldEventSystem'],
+    '../../services/tribute/TributeRaidSystem': mocks['../services/tribute/TributeRaidSystem'],
     '../../services/patrol/CampPatrolSystem': mocks['../services/patrol/CampPatrolSystem'],
     '../../services/rest/UnitRestSystem': mocks['../services/rest/UnitRestSystem'],
   })
@@ -711,10 +711,14 @@ test('pause applies to live units, buildings, gaia animals and corpses once', ()
   assert.equal(calls.filter(([, label]) => label === 'shared-corpse').length, 1)
 })
 
-test('Escape opens the in-game pause menu', () => {
-  const previousWindow = global.window
-  const previousDocument = global.document
-  const listeners = new Map()
+// The in-game window listeners start a gamepad poll loop on requestAnimationFrame.
+function installGameWindowGlobals(listeners) {
+  const previous = {
+    window: global.window,
+    document: global.document,
+    requestAnimationFrame: global.requestAnimationFrame,
+    cancelAnimationFrame: global.cancelAnimationFrame,
+  }
   global.window = {
     addEventListener: (type, handler) => listeners.set(type, handler),
     removeEventListener() {},
@@ -724,6 +728,14 @@ test('Escape opens the in-game pause menu', () => {
     removeEventListener() {},
     querySelector: () => null,
   }
+  global.requestAnimationFrame = () => 0
+  global.cancelAnimationFrame = () => {}
+  return () => Object.assign(global, previous)
+}
+
+test('Escape opens the in-game pause menu', () => {
+  const listeners = new Map()
+  const restoreGlobals = installGameWindowGlobals(listeners)
 
   try {
     const Game = loadGame()
@@ -746,24 +758,13 @@ test('Escape opens the in-game pause menu', () => {
     assert.equal(pauseCalls, 0)
     assert.equal(preventDefaultCalls, 1)
   } finally {
-    global.window = previousWindow
-    global.document = previousDocument
+    restoreGlobals()
   }
 })
 
 test('Escape does not open the in-game menu after another handler consumes it', () => {
-  const previousWindow = global.window
-  const previousDocument = global.document
   const listeners = new Map()
-  global.window = {
-    addEventListener: (type, handler) => listeners.set(type, handler),
-    removeEventListener() {},
-  }
-  global.document = {
-    addEventListener() {},
-    removeEventListener() {},
-    querySelector: () => null,
-  }
+  const restoreGlobals = installGameWindowGlobals(listeners)
 
   try {
     const Game = loadGame()
@@ -781,7 +782,6 @@ test('Escape does not open the in-game menu after another handler consumes it', 
 
     assert.equal(openCalls, 0)
   } finally {
-    global.window = previousWindow
-    global.document = previousDocument
+    restoreGlobals()
   }
 })

@@ -8,10 +8,10 @@ const { spawnSync } = require('node:child_process')
 const { loadGenerationTs } = require('./load-generation-ts.cjs')
 const { createLocalMapLayout, localToGrid } = loadGenerationTs('app/lib/localMapLayout.ts')
 const { CONTINENT_WORLD_SEED } = loadGenerationTs('app/config/continentWorlds.ts')
-const { planContinentVillageSlots } = require('./continent-villages.cjs')
-const { encodePreparedTerrain } = loadGenerationTs('app/serialization/PreparedTerrainCodec.ts')
+const { planContinentVillageSlots } = require('./settlements/continent-villages.cjs')
+const { encodePreparedTerrain } = loadGenerationTs('app/serialization/blueprint/PreparedTerrainCodec.ts')
 const { generateLargeContent } = require('./large-content.cjs')
-const { addVillageGroves } = require('./village-groves.cjs')
+const { addVillageGroves } = require('./settlements/village-groves.cjs')
 const { normalizeLargeCoast } = require('./large-coast.cjs')
 const { planContinentCaves, CAVE_LAND_CELLS } = require('../caves/continent-placement.cjs')
 const { MACRO_TERRAIN_CODE_TO_TYPE, TERRAIN_INDEX } = require('./config.cjs')
@@ -41,6 +41,7 @@ async function main() {
     console.log(`${worldId}: coast cleanup filled ${coastCleanup.added} cells in ${coastCleanup.passes} passes`)
     const region = { x: 0, y: 0 }
     const settlements = planContinentVillageSlots({
+      composition: true,
       terrain,
       biomeCodes,
       size,
@@ -98,7 +99,7 @@ async function main() {
       preparedContentVersion: 2,
       generation: {
         version: 5,
-        villagePlacement: { version: 1, mode: 'biome-slots', placed: settlements.length },
+        villagePlacement: { version: 2, mode: 'civilization-settlements', placed: settlements.length },
         generator: 'macro-continent',
         coastCleanup,
         seed,

@@ -3,13 +3,13 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function setup() {
-  const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+  const { VisionGrid } = loadTsModule('app/services/visibility/VisionGrid.ts')
   const grid = Array.from({ length: 21 }, (_, i) => Array.from({ length: 21 }, (_, j) => ({ i, j, has: null })))
   const space = { id: 'outside', size: 20, grid }
   const human = { label: 'human', type: 'Human', views: new VisionGrid(20), units: [] }
   const gaia = { label: 'gaia', type: 'Gaia', views: new VisionGrid(20), cellViewed: 0 }
   const observations = []
-  const { updateVisibility } = loadTsModule('app/services/UnitPerception.ts', {
+  const { updateVisibility } = loadTsModule('app/services/visibility/UnitPerception.ts', {
     mocks: {
       '../lib/chief': { heroCanCommand: () => true },
       '../lib/mapSpaces': { OUTSIDE_SPACE_ID: 'outside', getMapSpace: () => space },

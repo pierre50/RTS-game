@@ -77,7 +77,7 @@ test('concurrent withdrawals conserve scarce stocks and respect bag capacity', (
   assert.equal(stock.wood, 0)
 })
 test('offline builders fetch depot materials before using them at the site', () => {
-  const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+  const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
   const { owner, pit, site } = fixture()
   const state = { camera: { x: 0, y: 0 }, world: { size: 30 }, players: [owner], resources: [], animals: [] }
   const options = {

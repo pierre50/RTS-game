@@ -1,4 +1,4 @@
-import { markWildlifeDeath } from '../../services/WildlifeStore'
+import { markWildlifeDeath } from '../../services/wildlife/WildlifeStore'
 import { initializeAnimalCorpseLoot } from '../../lib/equipment/animalCorpseLoot'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
@@ -150,6 +150,7 @@ export class AnimalLifecycle {
       loop: false,
     })
     animal.sprite.onComplete = runAfterDeathFlash(animal.sprite, () => {
+      if (animal.isDestroyed || animal.currentSheet !== SHEET_TYPES.dying) return
       animal.decompose()
     })
   }
@@ -222,6 +223,7 @@ export class AnimalLifecycle {
     } = animal
     animal.stopTimeout()
     animal.stopInterval()
+    clearCombatAttackRecovery(animal)
     this.stopDeathFall()
     animal.animalBehavior.stop()
     animal.isDestroyed = true

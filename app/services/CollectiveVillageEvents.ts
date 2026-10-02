@@ -17,6 +17,7 @@ import { villagerAutonomySuspension } from '../lib/units/autonomy/villagerAutono
 /** Observe semantic changes, not footsteps, animation frames or individual resource increments.
  * The existing monitor collects them together; only a changed event snapshot requests a new plan.
  */
+/** @public Loaded by tests/autonomy-recovery-regressions.test.cjs (loadTsModule). */
 export function collectiveVillageEventSnapshot(owner: PlayerLike): string {
   const members = (owner.units ?? []).filter(
     unit => unit.type === UNIT_TYPES.villager && !unit.isDead && !unit.isDestroyed
@@ -78,11 +79,12 @@ export function collectiveVillageEventSnapshot(owner: PlayerLike): string {
     ]
   })
   return JSON.stringify([
-    owner.age,
+
     (owner.buildings ?? []).map(building => [
       building.label,
       building.type,
       building.isBuilt,
+      building.buildingUpgrade?.targetLevel,
       building.isDead,
       building.isDestroyed,
       building.reservePolicy,

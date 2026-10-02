@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadBuildingVisuals() {
+function loadBuildingVisuals(libMocks = {}) {
   const calls = []
   class Texture {
     constructor(options = {}) {
@@ -94,6 +94,11 @@ function loadBuildingVisuals() {
           AnimatedSprite,
           Assets: { cache: { has: () => false, get: () => null } },
           Graphics,
+          Polygon: class Polygon {
+            constructor(points) {
+              this.points = points
+            }
+          },
           Rectangle,
           Sprite,
           Texture,
@@ -114,14 +119,68 @@ function loadBuildingVisuals() {
           isEntityInActiveMapSpace: building =>
             (building.context?.map?.activeSpaceId ?? 'outside') === (building.spaceId ?? 'outside'),
           parseTextureRef: () => ({ frame: 0 }),
+          ...libMocks,
         },
         '../../lib/audio/settings': { getShadowsEnabled: () => true },
       },
     }),
     calls,
     Texture,
+    Sprite,
   }
 }
+
+test('renovation reveals the target level with its anchor and orientation without changing completed stats', () => {
+  for (const color of ['blue', 'red']) {
+    for (const placementMirrored of [false, true]) {
+      let targetTexture
+      const { syncBuildingConstructionReveal, clearBuildingConstructionReveal, Texture, Sprite } = loadBuildingVisuals({
+        getBuildingAssetOwner: building => ({ civ: building.assetCiv, level: building.buildingLevel }),
+        getBuildingAsset: (type, owner) => {
+          assert.equal(type, 'House')
+          assert.deepEqual(owner, { civ: 'nord', level: 1 })
+          return { images: { final: 'house-level-1' }, mirrored: true }
+        },
+        getTexture: ref => {
+          assert.equal(ref, 'house-level-1')
+          return targetTexture
+        },
+        textureRefToString: ref => ref,
+      })
+      targetTexture = new Texture({
+        width: 120,
+        height: 160,
+        defaultAnchor: { x: 0.4, y: 0.9 },
+        hitArea: [0, 0, 20, 0, 10, 30],
+      })
+      const building = {
+        type: 'House',
+        assetCiv: 'nord',
+        buildingLevel: 0,
+        size: 2,
+        buildingUpgrade: { targetLevel: 1 },
+        owner: { color },
+        placementMirrored,
+        sprite: new Sprite(new Texture()),
+        addChild() {},
+      }
+      for (const progress of [1, 50, 90]) {
+        syncBuildingConstructionReveal(building, progress)
+        assert.equal(building.sprite.texture, targetTexture)
+        assert.equal(building.constructionGhostBorder.texture, targetTexture)
+        assert.equal(building.constructionRevealSprite.texture, targetTexture)
+        assert.equal(building.constructionRevealSprite.anchor.y, 0.9)
+        assert.equal(building.constructionRevealSprite.scale.x, placementMirrored ? 1 : -1)
+        assert.equal(building.constructionRevealMask.lastRect.height, (160 * progress) / 100 + 2)
+        assert.deepEqual(building.sprite.hitArea.points, targetTexture.hitArea)
+        assert.equal(building.buildingLevel, 0)
+      }
+      clearBuildingConstructionReveal(building)
+      assert.equal(building.sprite.constructionGhostSourceTexture, undefined)
+      assert.equal(building.constructionRevealSprite, null)
+    }
+  }
+})
 
 test('construction reveal sprite is recolored to the building owner color', () => {
   const { calls, syncBuildingConstructionReveal, Texture } = loadBuildingVisuals()

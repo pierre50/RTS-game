@@ -198,6 +198,10 @@ function reverseHeroDefenseAnimation(hero: UnitEntity): void {
   sprite.loop = false
   sprite.stop()
   const step = () => {
+    if (hero.isDead || hero.isDestroyed) {
+      finishHeroDefenseRelease(hero)
+      return
+    }
     const nextFrame = Math.max(0, Math.floor(sprite.currentFrame) - 1)
     sprite.gotoAndStop(nextFrame)
     hero.syncAppearanceLayers?.(SHEET_TYPES.action)
@@ -230,7 +234,7 @@ function showHeroDefenseFlash(hero: UnitEntity): void {
 
 export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null | undefined): boolean {
   const sprite = hero.sprite
-  if (!sprite || hero.actionLocked || !canHeroDefendWithTool(tool)) return false
+  if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed || !canHeroDefendWithTool(tool)) return false
   if (hero.heroDefenseEnergyExhausted) return false
   if (!hasEnergyToStartDefense(hero)) {
     hero.heroDefenseEnergyExhausted = true
@@ -276,6 +280,10 @@ export function aimHeroDefenseAt(hero: UnitEntity, destination: Point): boolean 
 }
 
 export function releaseHeroDefense(hero: UnitEntity): boolean {
+  if (hero.isDead || hero.isDestroyed) {
+    cancelHeroDefense(hero)
+    return false
+  }
   if (
     !hero.heroDefenseActive &&
     hero.heroDefenseReverseTaskId == null &&
@@ -307,11 +315,5 @@ export function cancelHeroDefense(
   stopHeroDefenseReleaseFallback(hero)
   clearHeroDefense(hero)
   hero.heroDefenseEnergyExhausted = energyExhausted
-  const sprite = hero.sprite
-  if (sprite) {
-    sprite.onComplete = undefined
-    sprite.onFrameChange = undefined
-    sprite.loop = true
-  }
   finishHeroToolAnimation(hero, { restoreStanding })
 }

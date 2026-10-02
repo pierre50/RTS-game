@@ -1,4 +1,4 @@
-import { createPackedBlueprintGrid } from '../../serialization/PackedBlueprintGrid'
+import { createPackedBlueprintGrid } from '../../serialization/blueprint/PackedBlueprintGrid'
 import { CELL_DEPTH, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
 import { createDeterministicCellVariantPicker } from '../../lib/random'
 import { textureRefToString } from '../../lib/graphics/textures'

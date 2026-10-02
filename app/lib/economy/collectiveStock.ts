@@ -16,7 +16,7 @@ import {
 } from './depotReserves'
 import { personalFoodReserve } from './villagerProvisions'
 
-export function settlementPopulation(
+function settlementPopulation(
   owner: Owner & { units?: CollectiveMember[]; population?: number },
   anchor: Point
 ): number {

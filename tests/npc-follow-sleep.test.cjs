@@ -63,7 +63,7 @@ test('follow me wakes a sleeping villager before enabling follow', () => {
     type: 'Villager',
     context: {
       unitRest: {
-        wakeSleepingUnitForOrder: (unit, onComplete) => {
+        wakeRestingUnitForOrder: (unit, onComplete) => {
           calls.push(['wake', unit.label, typeof onComplete])
           onComplete?.()
           return true
@@ -78,5 +78,37 @@ test('follow me wakes a sleeping villager before enabling follow', () => {
   startFollowingHero(villager)
 
   assert.equal(villager.followingHero, true)
-  assert.deepEqual(calls, [['wake', 'villager-1', 'function']])
+  assert.deepEqual(calls, [['wake', 'villager-1', 'function'], ['stop']])
 })
+
+for (const status of ['outside', 'inside', 'wakingUp']) {
+  test(`follow replaces a ${status} rest plan after it is released`, () => {
+    const { startFollowingHero } = loadNpcGoToDispatch()
+    let finishWake
+    let stopped = false
+    const unit = {
+      shelterState: { reason: 'sleep', status },
+      suspendedRestState: { previousDest: { i: 9, j: 9 } },
+      context: {
+        unitRest: {
+          wakeRestingUnitForOrder: (target, done) => {
+            assert.equal(target.followingHero, false)
+            finishWake = done
+            return true
+          },
+        },
+      },
+      stop() {
+        stopped = true
+      },
+    }
+    startFollowingHero(unit)
+    assert.equal(unit.followingHero, false)
+    assert.equal(stopped, false)
+    unit.shelterState = null
+    finishWake()
+    assert.equal(unit.followingHero, true)
+    assert.equal(unit.suspendedRestState, null)
+    assert.equal(stopped, true)
+  })
+}

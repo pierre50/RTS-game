@@ -15,7 +15,7 @@ function loadBuildingInterface() {
   const module = { exports: {} }
   const mocks = {
     '../../constants': {
-      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', stable: 'Stable', trap: 'Trap' },
+      BUILDING_TYPES: { house: 'House', chest: 'Chest', fireCamp: 'FireCamp', stable: 'Stable', trap: 'Trap' },
       MENU_INFO_IDS: {
         civ: 'civ',
         hitPoints: 'hit-points',
@@ -37,7 +37,7 @@ function loadBuildingInterface() {
       },
       isHorseColor: value => ['dark', 'light'].includes(value),
     },
-    '../../lib/lang': { t: key => key },
+    '../../lib/lang': { t: (key, values) => values?.count == null ? key : `${key}:${values.count}` },
     '../../lib/horses/stableHorses': {
       getStableHorseAmount: building => building.stableHorses?.length ?? 0,
       getStableHorses: building => building.stableHorses ?? [],
@@ -240,7 +240,7 @@ test('hero team building info renders a demolish button that destroys the buildi
           },
         },
       },
-      die: () => {
+      demolish: () => {
         died = true
       },
     }
@@ -278,7 +278,7 @@ test('foreign team building info does not render the delete button', () => {
         controls: { heroUnit: { owner: { isPlayed: true, civ: 'Hellas', team: 2 } } },
         menu: {},
       },
-      die: () => {},
+      demolish: () => {},
     }
 
     new BuildingInterface(building).renderInfo(element, {})
@@ -303,7 +303,7 @@ test('hero team trap info does not render the delete button', () => {
         controls: { heroUnit: { owner: heroOwner } },
         menu: {},
       },
-      die: () => {},
+      demolish: () => {},
     }
 
     new BuildingInterface(building).renderInfo(element, {})
@@ -328,11 +328,57 @@ test('original interior storage chest info does not render the delete button', (
         controls: { heroUnit: { owner: heroOwner } },
         menu: {},
       },
-      die: () => {},
+      demolish: () => {},
     }
 
     new BuildingInterface(building).renderInfo(element, {})
 
     assert.equal(element.querySelector('.entity-delete-building-button'), null)
+  })
+})
+
+test('house population information shows real beds and marks renovation unavailability', () => {
+  const previous = global.document
+  global.document = { createElement: tag => new MockElement(tag) }
+  try {
+    const { BuildingInterface } = loadBuildingInterface()
+    const owner = { label: 'village', population: 3, populationMax: 99, buildings: [] }
+    const house = { type: 'House', label: 'house', owner, isBuilt: true, interiorBuildings: [
+      { type: 'CampBedroll', isBuilt: true }, { type: 'CampBedroll', isBuilt: true },
+    ] }
+    owner.buildings.push(house)
+    const view = new BuildingInterface(house)
+    let element = view.getPopulationElement()
+    assert.equal(element.children[1].textContent, '3/2')
+    assert.equal(element.children[2].textContent, 'houseBedsCount:2')
+    house.buildingUpgrade = { targetLevel: 1 }
+    element = view.getPopulationElement()
+    assert.equal(element.children[1].textContent, '3/0')
+    assert.equal(element.children[2].textContent, 'houseBedsUnavailable:2')
+    delete house.buildingUpgrade
+    assert.equal(view.getPopulationElement().children[1].textContent, '3/2')
+  } finally { global.document = previous }
+})
+
+test('own indestructible furniture exposes removal and rechecks ownership on click', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const owner = { isPlayed: true, civ: 'Hellas' }
+    let removed = 0
+    const building = {
+      type: 'CampChair', owner, isBuilt: true, indestructible: true,
+      context: { controls: { heroUnit: { owner } }, menu: {} },
+      demolish: () => removed++,
+    }
+    const element = document.createElement('div')
+    new BuildingInterface(building).renderInfo(element, {})
+    const button = element.querySelector('.entity-delete-building-button')
+    assert.ok(button)
+    assert.equal(button.textContent, 'removeBuildingObject')
+    button.dispatch('click')
+    assert.equal(removed, 1)
+    building.owner = { team: owner.team }
+    button.dispatch('click')
+    assert.equal(removed, 1)
   })
 })

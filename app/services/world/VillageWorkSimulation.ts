@@ -1,5 +1,5 @@
 import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
-import { simulateOfflineWorld } from './OfflineWorldSimulation'
+import { simulateOfflineWorld } from './offline/OfflineWorldSimulation'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { Assets } from 'pixi.js'
 import { VILLAGE_ACTIVITY_RADIUS, VILLAGE_PATH_MARGIN } from '../../config/villageActivity'
@@ -7,8 +7,8 @@ import { offlineWorkCycleMs } from '../../lib/economy/configuredWorkTiming'
 import { ensureOutsideMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import { withinVillageActivity, type VillageHome } from '../../lib/units/villageActivity'
 import { knowsEconomicTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
-import { OfflineWorldSpatial, type OfflineTerrainCell } from './OfflineWorldSpatial'
-import { advanceOfflineWorker, type OfflineWorldReport } from './OfflineWorldWork'
+import { OfflineWorldSpatial, type OfflineTerrainCell } from './offline/OfflineWorldSpatial'
+import { advanceOfflineWorker, type OfflineWorldReport } from './offline/OfflineWorldWork'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -31,8 +31,9 @@ const FIELDS = [
   'isChief',
   'inactif',
   'villageHome',
-  'buildingAge',
+  'buildingLevel',
   'constructionMaterials',
+  'buildingUpgrade',
   'reservePolicy',
   'inventory',
   'equipment',
@@ -42,7 +43,7 @@ const FIELDS = [
   'collectiveTask',
   'collectiveHome',
   'offlineWork',
-  'age',
+
   'isNaturalResource',
   'controlMode',
   'action',
@@ -154,7 +155,8 @@ export function advanceVillageWork(
     type: owner.type,
     label: owner.label,
     civ: owner.civ,
-    age: owner.age,
+
+    forgeUpgrades: owner.forgeUpgrades,
     units: copies,
     buildings: savedBuildings,
   }
@@ -183,7 +185,6 @@ export function advanceVillageWork(
   const rules = {
     unitConfig: (_index: number, type: string) => owner.config?.units?.[type] ?? {},
     buildingConfig: (_index: number, type: string) => owner.config?.buildings?.[type] ?? {},
-    buildingCapacity: () => 0,
     cycleMs: (_index: number, work: string, action?: string) =>
       offlineWorkCycleMs(owner.config?.units?.Villager ?? {}, work, action),
     wheatMatureFrame: Math.max(0, Object.keys(wheat?.textures ?? {}).length - 1),
@@ -252,6 +253,12 @@ function commitVillageWork(
     const building = buildings[index]
     building.inventory = copy.inventory
     building.constructionMaterials = copy.constructionMaterials
+    if (building.buildingUpgrade) {
+      if (copy.buildingUpgrade) building.buildingUpgrade = copy.buildingUpgrade
+      else if (copy.buildingLevel === building.buildingUpgrade.targetLevel)
+        building.buildingUpgrade.hitPoints = building.buildingUpgrade.totalHitPoints
+      building.updateHitPoints?.('build')
+    }
     if (
       fromElapsedMs != null &&
       copy.hitPoints != null &&

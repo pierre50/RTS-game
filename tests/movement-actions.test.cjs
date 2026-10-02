@@ -173,12 +173,14 @@ function loadModule(relativePath, mocks) {
       localRequire(
         tsFilename.includes('/unit/work/')
           ? request.replace(/^\.\.\/\.\.\/\.\.\//, '../../').replace(/^\.\.\/Unit/, './Unit')
-          : request
+          : request,
+        request,
+        tsFilename
       )
     )
     return module.exports
   }
-  const localRequire = request => {
+  const localRequire = (request, originalRequest = request, importer = filename) => {
     if (request.endsWith('/grid/visibility')) {
       return { updateInstanceRenderVisibility: mocks['../../lib']?.updateInstanceRenderVisibility ?? (() => {}) }
     }
@@ -444,8 +446,8 @@ function loadModule(relativePath, mocks) {
     if (request === './movement/UnitMovementRouting' || request === './UnitMovementRouting') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRouting.ts'))
     }
-    if (request === './UnitMovementRoutingRuntime') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRoutingRuntime.ts'))
+    if (/^\.\/Unit(?:MovementRoutingRuntime|BlockedApproach|MoveOrderAdmission|MovementPassage)$/.test(request)) {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement', request.slice(2) + '.ts'))
     }
     if (request === './movement/UnitPathMovement' || request === './UnitPathMovement') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitPathMovement.ts'))
@@ -490,10 +492,20 @@ function loadModule(relativePath, mocks) {
         dependencyModules
       )
     }
+    if (request.endsWith('/buildings/buildingTraversal')) {
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/buildings/buildingTraversal.ts'),
+        filename,
+        mocks,
+        dependencyModules
+      )
+    }
     if (request.endsWith('/units/villagerAutonomyTargeting')) {
       return requireFromTsFile(path.join(__dirname, '../app/lib/units/villagerAutonomyTargeting.ts'), filename, mocks)
     }
-    return requireFromTsFile(request, filename, mocks, dependencyModules)
+    if (Object.hasOwn(mocks, request)) return mocks[request]
+    // Unmocked app modules load for real, resolved from the file that imports them.
+    return requireFromTsFile(originalRequest, importer, mocks, dependencyModules)
   }
   return loadTsFile(filename)
 }
@@ -1319,7 +1331,7 @@ test('bandit-owned units cannot convert surrendered enemies into the bandit team
   assert.deepEqual(calls, [])
 })
 
-test('converted buildings keep their source civilization and age assets', () => {
+test('converted buildings keep their source civilization and their own level assets', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -1339,13 +1351,12 @@ test('converted buildings keep their source civilization and age assets', () => 
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
       showConversionFeedback: (target, color) => calls.push(['showConversionFeedback', target.type, color]),
-      updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.assetCiv, target.assetAge]),
+      updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.assetCiv, target.assetLevel]),
     },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = {
-    age: 1,
     buildings: [],
     civ: 'Kemet',
     color: 'red',
@@ -1354,7 +1365,6 @@ test('converted buildings keep their source civilization and age assets', () => 
     populationMax: 0,
   }
   const newOwner = {
-    age: 3,
     buildings: [],
     civ: 'Hellas',
     color: 'blue',
@@ -1364,8 +1374,9 @@ test('converted buildings keep their source civilization and age assets', () => 
     populationMax: 0,
   }
   const target = {
+    assetLevel: 1,
     family: constants.FAMILY_TYPES.building,
-    finalTexture: () => calls.push(['finalTexture', target.assetCiv, target.assetAge, target.assetType]),
+    finalTexture: () => calls.push(['finalTexture', target.assetCiv, target.assetLevel, target.assetType]),
     isBuilt: true,
     owner: oldOwner,
     queue: ['old-unit'],
@@ -1394,7 +1405,7 @@ test('converted buildings keep their source civilization and age assets', () => 
   assert.equal(converted, true)
   assert.equal(target.owner, newOwner)
   assert.equal(target.assetCiv, 'Kemet')
-  assert.equal(target.assetAge, 1)
+  assert.equal(target.assetLevel, 1)
   assert.equal(target.assetType, 'TownCenter')
   assert.deepEqual(
     calls.filter(([name]) => name === 'finalTexture'),

@@ -1,5 +1,8 @@
+import { getVacantHomeCount, reconcileHouseholds } from '../../lib/housing/households'
+import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
+import { isStaticSettlement } from '../../config/settlementProfiles'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../../constants'
-import type { DailyWorldEvent, DailyWorldEventHandler } from '../DailyWorldEventTypes'
+import type { DailyWorldEvent, DailyWorldEventHandler } from '../dailyEvents/DailyWorldEventTypes'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitCreationExtra } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -27,15 +30,18 @@ export class VillagerArrivalSystem implements DailyWorldEventHandler {
   handleDailyWorldEvent(event: DailyWorldEvent): void {
     for (const player of this.context.players ?? []) {
       if (!this.canGrow(player)) continue
+      reconcileHouseholds(player)
+      refreshPopulationCapacity(player)
       const targetArrivals = calculateVillagerArrivals({
         population: player.population,
         populationMax: player.populationMax,
       })
-      if (targetArrivals > 0) this.placeArrivals(event, player, targetArrivals)
+      if (targetArrivals > 0) this.placeArrivals(event, player, Math.min(targetArrivals, getVacantHomeCount(player)))
     }
   }
 
   private canGrow(player: PlayerLike): boolean {
+    if (isStaticSettlement(player)) return false
     return player.type === PLAYER_TYPES.human || player.type === PLAYER_TYPES.ai
   }
 
@@ -57,6 +63,7 @@ export class VillagerArrivalSystem implements DailyWorldEventHandler {
     let arrived = 0
     for (let index = 0; index < targetArrivals; index++) {
       if (this.tryPlaceArrival(buildings, index)) {
+        reconcileHouseholds(player)
         arrived++
       }
     }

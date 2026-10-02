@@ -9,14 +9,22 @@ test('saved entity restore places every cave occupant before resuming any unit o
   const record = { label: 'villager', caveOrders: { dest: 'target' } }
   const { restoreSavedEntities } = loadTsModule('app/classes/map/generation/MapSavedStateGeneration.ts', {
     mocks: {
-      '../../Resource': {}, '../../players': { Gaia: class {} }, '../../cell': {},
+      '../../Resource': {},
+      '../../players': { Gaia: class {} },
+      '../../cell': {},
       '../../../lib': { getGaiaAnimals: () => [] },
-      '../../../services/UnitPerception': { rehydrateAIKnowledge() {} },
+      '../../../services/visibility/UnitPerception': { rehydrateAIKnowledge() {} },
       './MapOfflineWorldSimulation': {},
       '../MapSaveRestore': {
-        restorePlayerEntitiesFromSave() {}, restorePlayerInteriors() {}, restorePlayerViews() {},
-        restoreBuildingAssignments() {}, restoreAIState() {}, restoreSelection() {},
-        restoreCaveOccupants() { placed = true },
+        restorePlayerEntitiesFromSave() {},
+        restorePlayerInteriors() {},
+        restorePlayerViews() {},
+        restoreBuildingAssignments() {},
+        restoreAIState() {},
+        restoreSelection() {},
+        restoreCaveOccupants() {
+          placed = true
+        },
         processUnit(unit, map, saved) {
           assert.equal(placed, true)
           assert.equal(saved, record)
@@ -26,7 +34,9 @@ test('saved entity restore places every cave occupant before resuming any unit o
     },
   })
   const context = { players: [{ units: [{ label: 'villager' }] }] }
-  restoreSavedEntities({ context }, [{ units: [record] }], [], context)
+  const map = { context }
+  context.map = map
+  restoreSavedEntities(map, [{ units: [record] }], [], context)
   assert.deepEqual(processed, ['villager'])
 })
 
@@ -57,7 +67,11 @@ test('restores cave occupants after the neutral owner and its saved interior hav
       { buildings: [{ cave }], units: [], corpses: [] },
     ],
   }
-  restoreCaveOccupants(context, [{ units: [{ label: 'hero', cavePosition: { caveId: cave.id, i: 31, j: 32 } }] }, {}], () => space)
+  restoreCaveOccupants(
+    context,
+    [{ units: [{ label: 'hero', cavePosition: { caveId: cave.id, i: 31, j: 32 } }] }, {}],
+    () => space
+  )
   assert.deepEqual(moves, ['hero'])
   assert.equal(unit.spaceId, space.id)
   assert.deepEqual([unit.i, unit.j], [31, 32])
@@ -72,4 +86,62 @@ test('invalid cave choices, duplicate identities and missing occupant destinatio
   assert.throws(() =>
     validateCaveOccupantReferences([{ units: [{ cavePosition: { caveId: 'missing', i: 2, j: 3 } }] }])
   )
+})
+
+test('deferred village creation resolves references, then daily rest, before starting saved orders', () => {
+  const calls = []
+  let activate
+  const saved = { type: 'AI', units: [{ label: 'worker' }], buildings: [] }
+  const unit = { label: 'worker' }
+  const owner = { type: 'AI', units: [], buildings: [] }
+  const context = {
+    players: [owner],
+    unitRest: {
+      synchronizeVillageRest(units) {
+        assert.deepEqual(calls, ['references'])
+        assert.deepEqual(units, [unit])
+        calls.push('rest')
+        unit.shelterState = { status: 'inside' }
+      },
+    },
+  }
+  const map = { context }
+  context.map = map
+  const { restoreSavedEntities } = loadTsModule('app/classes/map/generation/MapSavedEntities.ts', {
+    mocks: {
+      '../../Resource': {},
+      '../../players': { Gaia: class {} },
+      '../../../lib': { getGaiaAnimals: () => [] },
+      '../../../services/visibility/UnitPerception': { rehydrateAIKnowledge() {} },
+      '../../../services/world/distantVillages/DeferredVillageStore': {
+        canDeferVillage: () => true,
+        installDeferredVillages: () => ({
+          size: 1,
+          has: () => true,
+          update() {},
+          add(_owner, _saved, restore) {
+            activate = restore
+          },
+        }),
+      },
+      '../MapSaveRestore': {
+        restorePlayerEntitiesFromSave(player) {
+          player.units = [unit]
+        },
+        restorePlayerInteriors() {},
+        restorePlayerViews() {},
+        restoreBuildingAssignments() {},
+        restoreAIState() {},
+        restoreSelection() {},
+        restoreCaveOccupants() {},
+        processUnit(_unit, _map, _saved, options) {
+          assert.equal(options?.resume, false, 'sleeping residents must not resume obsolete routes')
+          calls.push('references')
+        },
+      },
+    },
+  })
+  restoreSavedEntities(map, [saved], [], context)
+  activate(saved)
+  assert.deepEqual(calls, ['references', 'rest'])
 })

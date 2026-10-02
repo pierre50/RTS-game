@@ -5,7 +5,7 @@ const { collectiveNeeds, collectiveWorkerClaims, villageFoodReserve } = loadTsMo
   'app/lib/economy/collectiveNeeds.ts'
 )
 const { releaseCollectiveWorker } = loadTsModule('app/ai/AICollectiveWorkers.ts')
-const { planOfflineCollectiveWork } = loadTsModule('app/services/world/OfflineCollectiveWork.ts')
+const { planOfflineCollectiveWork } = loadTsModule('app/services/world/offline/OfflineCollectiveWork.ts')
 
 test('food is reserved first and one small deficit does not mobilize the entire village', () => {
   const claims = collectiveWorkerClaims(5, { wood: 20, stone: 10 }, { food: 0 }, 5)

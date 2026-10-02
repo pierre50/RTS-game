@@ -8,7 +8,11 @@ const { getResourceActionConditions, isWheatMature } = loadTsModule('app/lib/com
     '../horses/horseTaming': { isWildHorse: horse => horse.tamingStatus !== 'tamed' },
   },
 })
-const villager = () => ({ type: U.villager, owner: { age: 2 } })
+const villager = () => ({
+  type: U.villager,
+  owner: { age: 0, forgeUpgrades: { pickaxes: 2 } },
+  inventory: { equipment: ['pickaxe_bronze'] },
+})
 const available = { quantity: 5, hitPoints: 10, isDead: false }
 const allowed = (action, source, target) => Boolean(getResourceActionConditions(source, target)[action]?.())
 
@@ -17,7 +21,7 @@ test('villagers can hunt from the first age without technologies', () => {
   assert.equal(allowed('hunt', source, { ...available, family: F.animal, type: 'Deer' }), true)
 })
 
-test('gathering respects worker, resource, stock and age requirements', () => {
+test('gathering respects worker, resource, stock and tool requirements', () => {
   for (const [action, type] of [
     ['forageberry', R.berrybush],
     ['chopwood', R.tree],
@@ -44,7 +48,11 @@ test('iron mining requires at least a bronze work pickaxe for heroes and village
   const iron = { ...available, type: R.iron }
   for (const age of [0, 1, 2, 3]) {
     for (const type of [U.villager, U.hero]) {
-      assert.equal(allowed('mineiron', { type, owner: { age } }, iron), age >= 1)
+      assert.equal(allowed('mineiron', { type, owner: { age } }, iron), false)
+      assert.equal(
+        allowed('mineiron', { type, owner: { age }, inventory: { equipment: ['pickaxe_bronze'] } }, iron),
+        true
+      )
     }
   }
 })

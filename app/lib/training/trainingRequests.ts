@@ -1,4 +1,4 @@
-import { VillageScheduleGate } from '../units/VillageScheduleGate'
+import { VillageScheduleGate } from '../units/villageScheduleGate'
 import { notifyVillageStateChanged } from '../units/villageStateEvents'
 import type { GameContextLike } from '../../types/context'
 import { getStableHorseAmount } from '../horses/stableHorses'
@@ -12,7 +12,13 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
 export function requestBuildingTraining(building: BuildingEntity, type: string, count: number): boolean {
-  if (!building.isBuilt || building.isDead || building.isDestroyed || !isTraineeTrainingType(building, type))
+  if (
+    !building.isBuilt ||
+    building.buildingUpgrade ||
+    building.isDead ||
+    building.isDestroyed ||
+    !isTraineeTrainingType(building, type)
+  )
     return false
   if (!Number.isSafeInteger(count) || count <= 0) return false
   building.trainingRequests ??= []
@@ -53,10 +59,18 @@ function availableRecruit(unit: UnitEntity): boolean {
   )
 }
 
+/** @public Loaded by tests/training-requests.test.cjs (loadTsModule). */
 export function dispatchTrainingRequests(owner: PlayerLike): void {
   if (playerNeedsChiefForCommand(owner) && !hasLivingChief(owner)) return
   for (const building of owner.buildings ?? []) {
-    if (!building.isBuilt || building.isDead || building.isDestroyed || !building.trainingRequests?.length) continue
+    if (
+      !building.isBuilt ||
+      building.buildingUpgrade ||
+      building.isDead ||
+      building.isDestroyed ||
+      !building.trainingRequests?.length
+    )
+      continue
     const candidates = owner.units
       .filter(availableRecruit)
       .sort((a, b) => Math.hypot(a.i - building.i, a.j - building.j) - Math.hypot(b.i - building.i, b.j - building.j))

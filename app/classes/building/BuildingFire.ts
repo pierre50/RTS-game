@@ -136,7 +136,7 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
   const existing = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
   const existingSmoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL)
 
-  const profile = getDecorationFlameProfile(building.type)
+  const profile = getDecorationFlameProfile(building.assetType || building.type)
   if (!profile) {
     existing?.destroy({ children: true })
     existingSmoke?.destroy({ children: true })
@@ -148,7 +148,7 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
   const smokeTextures = getBuildingFireFrames('light', 'smoke')
   if (!fireTextures.length || !smokeTextures.length) return
   const flameY = profile.y + (building.reliefLift ?? 0)
-  const smokeY = flameY + 25 * profile.scale
+  const smokeY = flameY
 
   if (existing instanceof AnimatedSprite) {
     existing.textures = fireTextures

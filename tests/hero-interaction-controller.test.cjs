@@ -7,7 +7,7 @@ function loadHeroInteractionController(calls) {
     mocks: {
       '../constants': {
         CAMP_DECORATION_BUILDING_TYPES: loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
-        BUILDING_TYPES: { chest: 'Chest', trap: 'Trap' },
+        BUILDING_TYPES: { chest: 'Chest', trap: 'Trap', campBedroll: 'CampBedroll' },
         FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
@@ -80,12 +80,22 @@ test('living npc direct interaction still opens communication', () => {
   const { calls, controller } = createController(target)
 
   assert.equal(controller.openHeroEntityInteraction(target), true)
-  assert.deepEqual(calls, [['wakeNpc', target], ['openNpcOrders', [target]]])
+  assert.deepEqual(calls, [
+    ['wakeNpc', target],
+    ['openNpcOrders', [target]],
+  ])
 })
 
 test('neutral chest direct interaction claims it before opening', () => {
   const neutral = { diplomacy: 'neutral', label: 'neutral', type: 'Gaia' }
-  const target = { family: 'building', isBuilt: true, isDead: false, isDestroyed: false, label: 'chest', owner: neutral }
+  const target = {
+    family: 'building',
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    label: 'chest',
+    owner: neutral,
+  }
   const { calls, controller } = createController(target)
 
   assert.equal(controller.openHeroEntityInteraction(target), true)
@@ -145,4 +155,23 @@ test('direct inspection never opens or claims a trap', () => {
     assert.deepEqual(calls, [])
     assert.equal(target.owner, owner)
   }
+})
+
+test('furniture direct interaction opens its menu', () => {
+  const decorations = loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES
+  for (const type of decorations) {
+    const target = { family: 'building', type, isBuilt: true, owner: {} }
+    const { calls, controller } = createController(target)
+    assert.equal(controller.openHeroEntityInteraction(target), true, type)
+    assert.deepEqual(calls, [['openHeroBuildingMenu', target]], type)
+  }
+})
+
+test('opening neutral furniture never claims it to unlock demolition', () => {
+  const owner = { type: 'Gaia', diplomacy: 'neutral', label: 'neutral' }
+  const target = { family: 'building', type: 'CampChair', isBuilt: true, owner }
+  const { calls, controller } = createController(target)
+  assert.equal(controller.openHeroEntityInteraction(target), true)
+  assert.equal(target.owner, owner)
+  assert.deepEqual(calls, [['openHeroBuildingMenu', target]])
 })

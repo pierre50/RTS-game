@@ -38,6 +38,7 @@ export function playReverseSlashRecovery(
 ): boolean {
   const sprite = unit.sprite
   const scheduler = unit.context?.scheduler
+  if (unit.isDead || unit.isDestroyed) return true
   if (!sprite?.gotoAndStop || !scheduler?.add) return false
 
   const latestFrame = Math.min(Math.floor(sprite.currentFrame), releaseFrame)
@@ -45,6 +46,9 @@ export function playReverseSlashRecovery(
   const frames = buildFrameRange(startFrame, stopFrame).slice(0, -1)
   logHeroSlashFrame(unit, 'recovery:start', { frames, latestFrame, releaseFrame, startFrame, stopFrame })
   let completed = false
+  const token = unit.visualAnimationToken
+  const sheet = unit.currentSheet
+  let taskId: number | null = null
   const finish = (): void => {
     if (completed) return
     completed = true
@@ -53,7 +57,10 @@ export function playReverseSlashRecovery(
     onComplete()
   }
 
-  const taskId = playSpriteFrameSequence(sprite, scheduler, {
+  taskId = playSpriteFrameSequence(sprite, scheduler, {
+    isCurrent: () =>
+      !unit.isDead && !unit.isDestroyed && unit.visualAnimationToken === token &&
+      unit.currentSheet === sheet && (taskId == null || unit.attackRecoveryAnimationTaskId === taskId),
     frameMs,
     frames,
     onComplete: finish,
@@ -65,10 +72,6 @@ export function playReverseSlashRecovery(
     taskName: 'combat.slashReverseRecovery',
   })
 
-  unit.attackRecoveryAnimationTaskId = taskId
-  if (unit.isDead || unit.isDestroyed) {
-    if (taskId != null) scheduler.remove(taskId)
-    finish()
-  }
+  unit.attackRecoveryAnimationTaskId = completed ? null : taskId
   return true
 }

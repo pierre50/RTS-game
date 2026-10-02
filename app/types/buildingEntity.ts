@@ -1,3 +1,4 @@
+import type { BuildingUpgrade } from '../lib/economy/constructionMaterials'
 import type { DepotReservePolicy } from '../lib/economy/depotReserves'
 import type { TrainingRequest } from './training'
 import type { ConstructionMaterials } from '../lib/economy/constructionMaterials'
@@ -5,7 +6,7 @@ import type { CaveDefinition } from './cave'
 import type { Container } from 'pixi.js'
 import type { ConfigValue } from './config'
 import type { ResourceAmount } from './common'
-import type { AssetAge } from './pixi'
+import type { AssetLevel } from './pixi'
 import type { RuntimeEntityBase } from './entityBase'
 import type { RuntimeEntity } from './entityRuntime'
 import type { UnitCreationExtra, UnitEntity } from './unitEntity'
@@ -15,10 +16,16 @@ import type { TrainingEntry, TrainingTrainee } from './training'
 import type { SaveEntityState } from './save'
 
 export interface BuildingEntity extends RuntimeEntityBase {
+  scanForInitialTarget?: () => void
+  heroHomeResident?: { label: string; name?: string }
+  plannedBedLabels?: string[]
+  demolish?: () => void
   constructionMaterials?: ConstructionMaterials
+  buildingUpgrade?: BuildingUpgrade
   reservePolicy?: DepotReservePolicy
   placementMirrored?: boolean
-  buildingAge?: number
+  buildingLevel?: number
+  interiorUnfurnished?: boolean
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string
   isBuilt?: boolean
@@ -59,7 +66,6 @@ export interface BuildingEntity extends RuntimeEntityBase {
   spriteShadowAnchor?: { x?: number; y?: number }
   finalTexture?: () => void
   shelterCapacity?: number
-  populationCapacityApplied?: boolean
   constructionTime?: number
   cave?: CaveDefinition
   indestructible?: boolean
@@ -76,7 +82,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   attackAction?: (target: RuntimeEntity) => void
   visibleCells?: Set<number>
   assetCiv?: string
-  assetAge?: AssetAge
+  assetLevel?: AssetLevel
 }
 
 export interface PlaceableBuildingConfig {

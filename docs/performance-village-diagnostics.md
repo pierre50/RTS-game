@@ -80,3 +80,64 @@ bursts. Test both uninterrupted sleep and Escape/gamepad cancellation, including
 a night crossing 06:00. In-game frame-time improvements still need measurement
 on the affected save; automated tests verify clocks, healing, ownership and
 resumption rather than GPU performance.
+
+
+## Chargement différé des villages et offres de quête
+
+Les propriétaires IA sans interaction en cours peuvent conserver leurs bâtiments,
+habitants et intérieurs sous forme de données sauvegardées. Le chargement ne crée
+pas leurs objets `Unit`/`Building`. Les empreintes des bâtiments sont réservées
+sans sprites ni contrôleurs. La caméra avec sa marge, un héros à moins de 80 cases,
+ou une référence explicite à une entité provoquent la matérialisation. Une quête
+acceptée, un combat ou un compagnon empêchent la mise en attente au chargement.
+Après matérialisation, le système de suspension existant reprend la gestion du
+village lorsqu'il s'éloigne ; cette étape ne détruit pas les entités déjà visitées.
+
+`DeferredVillageStore` conserve les données faisant autorité jusqu'au réveil.
+La sauvegarde les inclut même si le village n'a jamais été visité. Les villages
+dynamiques avancent avec la simulation économique sur données et prélèvent les
+ressources locales finies ; le moteur de croissance des ressources reste unique.
+Les villages fixes conservent leur règle de réapprovisionnement, sans croissance
+économique ajoutée. Les événements `village.deferred` et `village.materialized`
+permettent de vérifier respectivement le nombre d'IA différées et leur réveil.
+
+Les offres des chefs se préparent à moins de 80 cases du héros, y compris au-delà
+de la caméra. Les intérieurs utilisent la position de leur sortie extérieure.
+Le choix des demandes parcourt les ressources une seule fois et s'arrête dès que
+les trois ressources couvrent les 15 unités maximales d'une demande. Les quêtes
+déjà acceptées continuent à être entretenues indépendamment de la proximité.
+
+### Remise à l’heure des routines à l’activation
+
+Les horaires individuels fournissent désormais une phase commune (sommeil, matin,
+travail, repas, soirée) et la prochaine échéance. La remise à l’heure des villages
+statiques **et dynamiques** intervient avant la reprise des anciennes destinations.
+Les villageois sont placés directement dans leur logement disponible ; chefs et
+soldats conservent leurs règles de forum, de feu et d’escorte. Les attaques, ordres
+prioritaires, conversations et alertes empêchent une nouvelle mise au repos.
+Les transitions ordinaires d’un village observé restent animées.
+
+Un saut d’heure applique seulement l’état courant, sans rejouer les déplacements
+intermédiaires. Les maisons sont attribuées en une passe par propriétaire. La santé
+récupérée pendant le sommeil des villages statiques est calculée sur l’intervalle
+écoulé ; les villages suspendus valident leur échéance au flush de sauvegarde et au
+réveil, sans recompter le même intervalle. Les villages dynamiques continuent à
+utiliser leur simulation économique existante pour cette récupération.
+
+Cela supprime les recherches de chemin du coucher lors de l’activation, mais ne
+rend pas gratuite la création des entités et des intérieurs. Le coût total d’une
+première visite reste à mesurer dans le jeu, notamment après téléportation.
+
+### Rondes de nuit des garnisons IA
+
+Les soldats ordinaires des avant-postes, villages et villes sont répartis entre
+les tours de 22 h–2 h et 2 h–6 h. Les deux gardes du chef restent exclus. Le tour
+est porté par `dailySchedule.nightWatch`, sauvegardé et réappliqué au chargement.
+Les mêmes horaires servent au repos visible et à la récupération de santé hors
+écran. Les trajets locaux de ronde peuvent être interrompus à la relève ; les
+combats et les ordres prioritaires gardent leurs règles habituelles.
+
+Les rondes utilisent le système de visites existant, exclusivement à l’extérieur,
+dans un rayon de 12/18/24 cases selon le type de village. Il lance au plus un
+nouveau trajet par passage de 3 secondes et ignore les propriétaires suspendus.
+Aucun déplacement de patrouille n’est simulé pour les villages lointains.

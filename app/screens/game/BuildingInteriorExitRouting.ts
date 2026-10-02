@@ -7,8 +7,8 @@ import {
 } from '../../services/BuildingInteriorSpaceSystem'
 import { startUnitWakeTransitionFromTask } from '../../services/rest/UnitRestLifecycle'
 import { isSleepTime } from '../../services/rest/UnitRestRules'
-import { shouldVillagerWork } from '../../lib/units/villagerSchedule'
-import { UNIT_TYPES } from '../../constants'
+import { hasDailyRestSchedule, shouldVillagerWork } from '../../lib/units/villagerSchedule'
+import { ACTION_TYPES } from '../../constants'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -29,8 +29,13 @@ const INTERIOR_OCCUPANT_EXIT_CHECK_INTERVAL_MS = 500
 const INTERIOR_OCCUPANT_EXIT_ORDER_GRACE_MS = 2500
 const INTERIOR_OCCUPANT_EXIT_MAX_RETRIES = 3
 
-function shouldUnitRemainAtRest(context: GameContextLike, unit: UnitEntity): boolean {
-  return unit.type === UNIT_TYPES.villager ? !shouldVillagerWork(unit) : isSleepTime(context)
+function shouldUnitRemainAtRest(
+  context: GameContextLike,
+  unit: UnitEntity,
+  returnTask = unit.interiorExitState?.returnTask
+): boolean {
+  if (returnTask?.action === ACTION_TYPES.attack) return false
+  return hasDailyRestSchedule(unit) ? !shouldVillagerWork(unit) : isSleepTime(context)
 }
 
 function stateLabels(states: Array<Pick<SaveEntityState, 'label'> | null | undefined>): Set<string> {
@@ -282,12 +287,13 @@ export function routeInteriorUnitToExit(
       startedAtMs: context.scheduler?.elapsedMs ?? 0,
       targetCell: space.exitCell,
     }
+    if (returnTask) unit.interiorExitState.returnTask = returnTask
     if (!shouldUnitRemainAtRest(context, unit)) routeRuntimeInteriorExit(game, unit, space)
     if (!unit.interiorExitState) return
     scheduleInteriorOccupantExitCheck(game, unit)
     return
   }
-  if (shouldUnitRemainAtRest(context, unit) || !canRouteInteriorOccupantToExit(game, unit)) return
+  if (shouldUnitRemainAtRest(context, unit, returnTask) || !canRouteInteriorOccupantToExit(game, unit)) return
   const targetCell = getInteriorExitCell(context.map)
   if (
     targetCell &&

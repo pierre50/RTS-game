@@ -299,7 +299,6 @@ export function spawnBuilding(
   owner.hasBuilt ??= []
   if (!owner.hasBuilt.includes(type)) owner.hasBuilt.push(type)
   ;(building as { updateTexture?: () => void }).updateTexture?.()
-  owner.updatePopulationObjectives?.()
   menu.updateTopbar()
   if (menu.isMiniMapActive?.() !== false) menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: formatSpawnMessage(type, 1, ownerIndex, playerIndex != null) }

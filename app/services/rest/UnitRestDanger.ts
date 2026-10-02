@@ -1,3 +1,4 @@
+import { hasDailyRestSchedule } from '../../lib/units/villagerSchedule'
 import { ACTION_TYPES, UNIT_TYPES } from '../../constants'
 import { evaluateCombatMorale } from '../../lib/combat'
 import { findInstancesInSight } from '../../lib/grid/visibility'
@@ -61,17 +62,17 @@ export function reactUnitToDanger(unit: UnitEntity, attacker: RuntimeEntity): vo
 
 export function handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
   if (!isActiveThreat(attacker)) return false
-  const shouldVillagerReact = isVillager(unit) && canUseUnitRest(unit)
+  const shouldReact = hasDailyRestSchedule(unit) && canUseUnitRest(unit)
   if (unit.shelterState?.reason === 'sleep') {
     markUnitRestAlert(unit, attacker)
     wakeUnit(unit, {
       force: true,
       mode: 'order',
-      onComplete: shouldVillagerReact ? () => reactUnitToDanger(unit, attacker) : undefined,
+      onComplete: shouldReact ? () => reactUnitToDanger(unit, attacker) : undefined,
     })
-    return shouldVillagerReact
+    return shouldReact
   }
-  if (!shouldVillagerReact) return false
+  if (!shouldReact) return false
   reactUnitToDanger(unit, attacker)
   return true
 }
@@ -83,7 +84,7 @@ export function handleShelterAttack(building: BuildingEntity, attacker: RuntimeE
   for (const unit of building.owner?.units ?? []) {
     if (unit.isDead || unit.isDestroyed) continue
     const state = unit.shelterState
-    if (state?.shelter !== building) continue
+    if (state?.shelter !== building && state?.restTarget !== building) continue
     if (unit.action === ACTION_TYPES.attack && sameTarget(unit.dest as RuntimeEntity | null | undefined, attacker)) {
       markUnitRestAlert(unit, attacker)
       handled = true

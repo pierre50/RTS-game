@@ -8,10 +8,7 @@ import {
   type HeroAppearanceConfig,
   type HeroHairColor,
 } from '../lib/lpc/heroAppearance'
-import {
-  createHeroAppearanceControls,
-  createHeroPreview,
-} from './PlayerSetupHeroAppearance'
+import { createHeroAppearanceControls, createHeroPreview } from './PlayerSetupHeroAppearance'
 import {
   PLAYER_COLORS,
   firstAvailablePlayerColor,
@@ -19,7 +16,6 @@ import {
   nextAvailablePlayerColor,
   nextPlayerColor,
   normalizePlayerColor,
-  randomAvailablePlayerColor,
 } from './PlayerSetupColors'
 import type { PlayerSetupConfig } from '../types/save'
 
@@ -27,11 +23,10 @@ type PlayerSetupPanelOptions = {
   players?: PlayerSetupConfig[]
   maxPlayers?: number
   onChange?: ((players: PlayerSetupConfig[]) => void) | null
-  showAge?: boolean
   simplified?: boolean
 }
 
-export type PlayerSetupConfigWithAge = PlayerSetupConfig & {
+export type PlayerSetupEntry = PlayerSetupConfig & {
   civ: string
   color: string
   gender: 'male' | 'female'
@@ -39,15 +34,9 @@ export type PlayerSetupConfigWithAge = PlayerSetupConfig & {
   isHuman: boolean
   name: string
   team: number | null
-  age?: number
   civilizationLevel?: number
 }
 
-const AGES = [
-  { label: () => t('stoneAge'), value: 0 },
-  { label: () => t('bronzeAge'), value: 1 },
-  { label: () => t('ironAge'), value: 2 },
-]
 
 const GENDERS = [
   { label: () => t('genderMale'), value: 'male' },
@@ -61,10 +50,9 @@ const CIVS = CIVILIZATIONS.map(civ => ({ label: () => t(civ.labelKey), value: ci
 
 export class PlayerSetupPanel {
   onChange: ((players: PlayerSetupConfig[]) => void) | null
-  showAge: boolean
   simplified: boolean
   maxPlayers: number
-  players: PlayerSetupConfigWithAge[]
+  players: PlayerSetupEntry[]
   element: HTMLDivElement
   playerTableEl!: HTMLDivElement
   playerCountRow!: HTMLDivElement
@@ -72,21 +60,15 @@ export class PlayerSetupPanel {
   humanControlsEl!: HTMLDivElement
   simplifiedExtraControls: HTMLElement[] = []
   heroPreviewRequestId = 0
-  randomHumanColor = false
 
-  constructor({ players, maxPlayers, onChange = null, showAge = false, simplified = false }: PlayerSetupPanelOptions) {
+  constructor({ players, maxPlayers, onChange = null, simplified = false }: PlayerSetupPanelOptions) {
     this.onChange = onChange
-    this.showAge = showAge
     this.simplified = simplified
     this.maxPlayers = Math.max(MIN_PLAYERS, Math.min(maxPlayers || 2, MAX_PLAYERS))
     this.players = (players?.length ? players : this._createDefaultPlayers()).map(player =>
       this._normalizePlayer(player)
     )
-    if (this.showAge) {
-      this.players.forEach(player => {
-        player.age = Math.max(0, Math.min(Number(player.age) || 0, 2))
-      })
-    }
+
     // Simplified lobby is the adventure start: the played hero arrives alone.
     if (this.simplified) this._keepOnlyHumanPlayer()
     this._clampPlayers()
@@ -101,7 +83,7 @@ export class PlayerSetupPanel {
     } else {
       this.element.className = 'player-setup-panel'
       this.playerTableEl = document.createElement('div')
-      this.playerTableEl.className = `player-table${this.showAge ? ' player-table--with-age' : ''}`
+      this.playerTableEl.className = 'player-table'
       this.playerCountRow = this._createPlayerCountSelect()
       this.element.appendChild(this.playerCountRow)
       this.element.appendChild(this.playerTableEl)
@@ -115,7 +97,7 @@ export class PlayerSetupPanel {
     this.humanControlsEl.appendChild(control)
   }
 
-  _createDefaultPlayers(): PlayerSetupConfigWithAge[] {
+  _createDefaultPlayers(): PlayerSetupEntry[] {
     const humanCiv = this._randomCiv()
     const humanGender = 'male'
     const aiCiv = this._randomCiv()
@@ -123,7 +105,7 @@ export class PlayerSetupPanel {
     return [
       {
         name: randomPlayerNameForCivilization(humanCiv, humanGender),
-        color: 'blue',
+        color: PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)].name,
         civ: humanCiv,
         gender: humanGender,
         heroAppearance: defaultHeroAppearance(humanCiv, humanGender),
@@ -142,7 +124,7 @@ export class PlayerSetupPanel {
     ]
   }
 
-  _normalizePlayer(player: PlayerSetupConfig): PlayerSetupConfigWithAge {
+  _normalizePlayer(player: PlayerSetupConfig): PlayerSetupEntry {
     const civ = player.civ || this._randomCiv()
     const gender = player.gender === 'female' ? 'female' : 'male'
     const shouldGenerateHumanName = player.isHuman === true && (!player.name || player.name === t('you'))
@@ -154,8 +136,8 @@ export class PlayerSetupPanel {
       heroAppearance: normalizeHeroAppearance(player.heroAppearance, civ, gender),
       team: typeof player.team === 'number' ? player.team : null,
       isHuman: player.isHuman === true,
-      ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 2)) } : {}),
-      civilizationLevel: Math.max(0, Math.min(Number(player.civilizationLevel) || 0, 3)),
+      developmentMode: player.developmentMode ?? 'static',
+      civilizationLevel: player.civilizationLevel,
     }
   }
 
@@ -163,16 +145,8 @@ export class PlayerSetupPanel {
     this.onChange?.(this.getPlayers())
   }
 
-  getPlayers(resolveRandomColor = false): PlayerSetupConfig[] {
-    const players = this.players.map(player => ({ ...player }))
-    if (resolveRandomColor && this.randomHumanColor) {
-      const used = new Set(players.filter(player => !player.isHuman).map(player => player.color))
-      players.filter(player => player.isHuman).forEach(player => {
-        player.color = randomAvailablePlayerColor(used)
-        used.add(player.color)
-      })
-    }
-    return players
+  getPlayers(): PlayerSetupConfig[] {
+    return this.players.map(player => ({ ...player }))
   }
 
   setMaxPlayers(maxPlayers: number): void {
@@ -221,11 +195,11 @@ export class PlayerSetupPanel {
     return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Hellas'
   }
 
-  _shouldRegeneratePlayerName(player: PlayerSetupConfigWithAge): boolean {
+  _shouldRegeneratePlayerName(player: PlayerSetupEntry): boolean {
     return player.isHuman && (player.name === t('you') || isGeneratedPlayerName(player.name))
   }
 
-  _refreshGeneratedPlayerName(player: PlayerSetupConfigWithAge): void {
+  _refreshGeneratedPlayerName(player: PlayerSetupEntry): void {
     if (!this._shouldRegeneratePlayerName(player)) return
     player.name = randomPlayerNameForCivilization(player.civ, player.gender)
   }
@@ -300,7 +274,6 @@ export class PlayerSetupPanel {
       team: null,
       isHuman: false,
       civilizationLevel: 0,
-      ...(this.showAge ? { age: 0 } : {}),
     })
   }
 
@@ -334,7 +307,6 @@ export class PlayerSetupPanel {
   _cycleColor(playerIndex: number): void {
     const player = this.players[playerIndex]
     if (!player) return
-    if (player.isHuman) this.randomHumanColor = false
     player.color = player.isHuman
       ? nextPlayerColor(player.color)
       : nextAvailablePlayerColor(player.color, this._usedColors())
@@ -356,7 +328,6 @@ export class PlayerSetupPanel {
     const header = document.createElement('div')
     header.className = 'player-table-header'
     const headers = [t('colName'), t('colCiv'), t('genderLabel')]
-    if (this.showAge) headers.push(t('colAge'))
     headers.push(t('colTeam'), t('colColor'))
     headers.forEach(text => {
       const cell = document.createElement('div')
@@ -408,25 +379,7 @@ export class PlayerSetupPanel {
       genderCell.appendChild(genderSelect)
       row.appendChild(genderCell)
 
-      if (this.showAge) {
-        const ageCell = document.createElement('div')
-        ageCell.className = 'player-age'
-        const ageSelect = document.createElement('select')
-        ageSelect.className = 'ui-select'
-        AGES.forEach(age => {
-          const opt = document.createElement('option')
-          opt.value = String(age.value)
-          opt.textContent = age.label()
-          if (age.value === player.age) opt.selected = true
-          ageSelect.appendChild(opt)
-        })
-        ageSelect.onchange = (evt: Event) => {
-          this.players[index].age = Number((evt.target as HTMLSelectElement).value)
-          this._emitChange()
-        }
-        ageCell.appendChild(ageSelect)
-        row.appendChild(ageCell)
-      }
+
 
       const teamCell = document.createElement('div')
       teamCell.className = 'player-team'
@@ -451,7 +404,6 @@ export class PlayerSetupPanel {
       swatch.addEventListener('pointerdown', playClickSound)
       swatch.addEventListener('click', () => this._cycleColor(index))
       colorCell.appendChild(swatch)
-      if (player.isHuman) colorCell.appendChild(this._createRandomColorControl())
       row.appendChild(colorCell)
 
       this.playerTableEl.appendChild(row)
@@ -537,26 +489,11 @@ export class PlayerSetupPanel {
     swatch.addEventListener('pointerdown', playClickSound)
     swatch.addEventListener('click', () => this._cycleColor(0))
     colorRow.appendChild(swatch)
-    colorRow.appendChild(this._createRandomColorControl())
     this.humanControlsEl.appendChild(colorRow)
 
     this.simplifiedExtraControls.forEach(control => {
       this.humanControlsEl.appendChild(control)
     })
-  }
-
-  _createRandomColorControl(): HTMLLabelElement {
-    const label = document.createElement('label')
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.checked = this.randomHumanColor
-    checkbox.addEventListener('change', () => {
-      this.randomHumanColor = checkbox.checked
-      this._emitChange()
-    })
-    label.appendChild(checkbox)
-    label.appendChild(document.createTextNode(t('randomPlayerColor')))
-    return label
   }
 
   _createPlayerCountSelect(): HTMLDivElement {

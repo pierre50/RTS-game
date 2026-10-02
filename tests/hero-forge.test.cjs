@@ -4,7 +4,20 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 test('forge crafts into the hero bag and rechecks proximity, construction and destruction on click', () => {
   const previousDocument = global.document
-  global.document = { createElement: () => ({ appendChild() {}, textContent: '' }) }
+  global.document = {
+    createElement: () => ({
+      appendChild() {},
+      append() {},
+      textContent: '',
+      dataset: {},
+      classList: { toggle() {}, add() {} },
+      setAttribute() {},
+      addEventListener() {},
+      querySelector() {
+        return null
+      },
+    }),
+  }
   let reachable = true
   const rows = []
   const { HeroForgeBody } = loadTsModule('app/ui/hero-building/HeroForgeBody.ts', {
@@ -66,5 +79,94 @@ test('forge remains exterior and uses its atlas sprite across ages and civilizat
         frame: 10,
       })
     }
+  }
+})
+
+test('forge stacks crafting and six next-tier village upgrades in sections', () => {
+  const previousDocument = global.document
+  const element = () => ({
+    children: [],
+    dataset: {},
+    classList: { toggle() {}, add() {} },
+    set textContent(value) {
+      this.text = value
+      this.children = []
+    },
+    get textContent() {
+      return this.text ?? ''
+    },
+    appendChild(child) {
+      this.children.push(child)
+    },
+    append(...children) {
+      this.children.push(...children)
+    },
+    setAttribute() {},
+    addEventListener(name, handler) {
+      this[name] = handler
+    },
+    querySelector() {
+      return null
+    },
+  })
+  global.document = { createElement: element }
+  const rows = []
+  const { HeroForgeBody } = loadTsModule('app/ui/hero-building/HeroForgeBody.ts', {
+    mocks: {
+      '../../lib/avatar': {},
+      '../../lib/lang': { t: (key, args) => `${key}${args ? JSON.stringify(args) : ''}` },
+      '../../lib/graphics/assets': { getIconPath: () => '' },
+      '../../lib/hero/placeableInventoryItems': { getPlaceableInventoryBuildingType: () => null },
+      '../../lib/hero/heroActionRange': { isHeroInteractionTargetReachable: () => true },
+      '../../lib/resources/playerResourceTotals': {
+        getPlayerResourceTotals: () => ({ wood: 500, copper: 500, iron: 500 }),
+      },
+      '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
+      '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => element() },
+      '../inventory/InventoryActionRow': {
+        createInventoryActionRow: (_, options) => {
+          rows.push(options)
+          return { element: element(), icon: element() }
+        },
+      },
+      '../../lib/equipment/forgeResearch': {
+        canManageForge: () => true,
+        canResearchForgeUpgrade: (player, _forge, family) => (player.forgeUpgrades[family] ?? 0) < 3,
+        researchForgeUpgrade: (player, _forge, family, tier) => {
+          player.forgeUpgrades[family] = tier
+          return true
+        },
+      },
+    },
+  })
+  try {
+    const menu = { context: { player: { forgeUpgrades: {} }, controls: { heroUnit: {} } }, showMessage() {} }
+    const forge = { type: 'Forge', isBuilt: true }
+    const body = new HeroForgeBody(menu, forge)
+    const upgrades = () => rows.filter(row => row.id.startsWith('forge-upgrade-'))
+    assert.equal(body.craftPanel.children.length, 5, 'three crafting and two upgrade sections')
+    assert.ok(rows.some(row => row.id === 'craft-arrow_ceramic'))
+    assert.equal(upgrades().length, 6)
+    const [title, scope] = body.craftPanel.children[3].children
+    assert.equal(title.text, 'forgeCategoryTools')
+    assert.equal(scope.text, 'forgeUpgradeScope')
+    let axes = rows.find(row => row.id === 'forge-upgrade-axes')
+    assert.match(axes.title, /forgeMaterial_copper/)
+    axes.trailingAction.onClick()
+    axes = rows.findLast(row => row.id === 'forge-upgrade-axes')
+    assert.match(axes.title, /forgeMaterial_bronze/)
+    axes.trailingAction.onClick()
+    axes = rows.findLast(row => row.id === 'forge-upgrade-axes')
+    assert.match(axes.title, /forgeMaterial_iron/)
+    axes.trailingAction.onClick()
+    axes = rows.findLast(row => row.id === 'forge-upgrade-axes')
+    assert.equal(axes.disabled, true)
+    assert.equal(axes.badge, 'forgeMaximum')
+    assert.equal(rows.findLast(row => row.id === 'forge-upgrade-weapons').disabled, false)
+    rows.length = 0
+    new HeroForgeBody(menu, forge)
+    assert.equal(upgrades().length, 6, 'a fresh body lists upgrades without switching panels')
+  } finally {
+    global.document = previousDocument
   }
 })

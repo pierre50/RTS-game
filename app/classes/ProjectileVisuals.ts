@@ -9,6 +9,7 @@ import {
 import { bindAnimatedSpriteToTicker, getAnimationFrames, getMirroredHalfArcFrameIndex } from '../lib/entities/spriteTextures'
 import { LABEL_TYPES } from '../constants'
 import { getShadowsEnabled } from '../lib/audio/settings'
+import { getEntityMapSpace, mapSpaceRendersShadows } from '../lib/mapSpaces'
 import type { GameContextLike } from '../types/context'
 import type { Point } from '../types/grid'
 import {
@@ -49,6 +50,7 @@ export type RuntimeProjectileVisual = {
   projectileScale?: number
   rotateSprite?: boolean
   size: number
+  spaceId?: string
   spawnOrigin: Point
   sprite?: ProjectileSprite
   spriteBaseAngle?: number
@@ -72,6 +74,11 @@ export type EmbeddedMaskKind = 'ground' | 'tree'
 
 const EMBED_DEPTH_JITTER = 3
 
+function projectileShadowVisible(projectile: RuntimeProjectileVisual): boolean {
+  const map = projectile.context.map
+  return getShadowsEnabled() && mapSpaceRendersShadows(map, getEntityMapSpace(projectile, map))
+}
+
 export function createShadowSprite(projectile: RuntimeProjectileVisual, source: ProjectileSprite): ProjectileSprite {
   const shadow = new AnimatedSprite(source.textures as Texture[]) as ProjectileSprite
   bindAnimatedSpriteToTicker(shadow, projectile.context.app)
@@ -80,7 +87,7 @@ export function createShadowSprite(projectile: RuntimeProjectileVisual, source: 
   shadow.roundPixels = true
   shadow.tint = 0x000000
   shadow.alpha = PROJECTILE_SHADOW_ALPHA
-  shadow.visible = getShadowsEnabled()
+  shadow.visible = projectileShadowVisible(projectile)
   shadow.animationSpeed = source.animationSpeed
   shadow.loop = source.loop
   shadow.anchor.set(source.anchor.x, source.anchor.y)
@@ -235,7 +242,7 @@ export function updateTrajectoryVisual(projectile: RuntimeProjectileVisual): voi
 
 export function updateShadowVisual(projectile: RuntimeProjectileVisual, progress: number): void {
   if (!projectile.shadow || !projectile.sprite) return
-  projectile.shadow.visible = getShadowsEnabled()
+  projectile.shadow.visible = projectileShadowVisible(projectile)
   if (!projectile.shadow.visible) return
 
   const groundX = projectile.groundOrigin.x + (projectile.destinationPoint.x - projectile.groundOrigin.x) * progress

@@ -3,13 +3,19 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const gameplay = loadTsModule('app/config/gameplay.ts')
 // These clock-boundary scenarios begin at 08:00 independently of the new-game start time.
-const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts', {
+const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts', {
   mocks: { '../../config/gameplay': { ...gameplay, DAY_NIGHT_CONFIG: { ...gameplay.DAY_NIGHT_CONFIG, startHour: 8 } } },
 })
 
 const HOUR = 60000
 const DAY = 24 * HOUR
 const villager = (extra = {}) => ({ type: 'Villager', label: 'worker', i: 10, j: 10, ...extra })
+const setBedCapacity = (player, count) => {
+  player.buildings[0].interiorBuildings = []
+  player.buildings = player.buildings.filter(b => !b.label?.startsWith('housing-'))
+  player.buildings.push(...Array.from({ length: count }, (_, i) => ({ type: 'House', label: `housing-${i}`, i: 25, j: i % 25, isBuilt: true,
+    interiorBuildings: [{ type: 'CampBedroll', label: `bed-${i}`, isBuilt: true }] })))
+}
 const node = (type, extra = {}) => ({ type, label: 'node', i: 10, j: 12, quantity: 100, totalQuantity: 100, ...extra })
 
 function fixture() {
@@ -27,7 +33,7 @@ function fixture() {
         populationMax: 1,
         units: [villager()],
         buildings: [
-          { type: 'TownCenter', i: 6, j: 6, label: 'center', isBuilt: true, inventory: { resources: { wheat: 100 } } },
+          { type: 'TownCenter', i: 6, j: 6, label: 'center', isBuilt: true, interiorBuildings: [{ type: 'CampBedroll', isBuilt: true }], inventory: { resources: { wheat: 100 } } },
           { type: 'StoragePit', i: 6, j: 12, label: 'pit', isBuilt: true, inventory: { resources: {} } },
           { type: 'Granary', i: 6, j: 16, label: 'grain', isBuilt: true, inventory: { resources: {} } },
         ],
@@ -182,7 +188,7 @@ test('tree felling consumes work before wood can be gathered', () => {
   assert.equal(state.resources[0].quantity, 100)
 })
 
-test('construction follows saved queues and grants housing once per completion', () => {
+test('construction follows saved queues and never grants housing for empty houses', () => {
   const { state, options, player } = fixture()
   const house = { type: 'House', label: 'house', i: 15, j: 15, hitPoints: 70, isBuilt: false }
   const second = { ...house, label: 'second-house', i: 22, j: 22 }
@@ -192,24 +198,25 @@ test('construction follows saved queues and grants housing once per completion',
   assert.equal(report.buildingsCompleted, 2)
   assert.equal(house.hitPoints, 96)
   assert.equal(second.isBuilt, true)
-  assert.equal(player.populationMax, 11)
+  assert.equal(player.populationMax, 1)
   const again = simulateOfflineWorld(state, { ...options, fromElapsedMs: 2 * HOUR, toElapsedMs: 3 * HOUR })
   assert.equal(again.buildingsCompleted, 0)
-  assert.equal(player.populationMax, 11)
+  assert.equal(player.populationMax, 1)
 })
 
 test('arrivals require housing but no food and villagers continue eating scheduled meals', () => {
   const { state, options, player } = fixture()
   player.buildings[0].inventory.resources.wheat = 0
   player.buildings[2].inventory.resources.wheat = 100
-  player.populationMax = 3
+  setBedCapacity(player, 3)
   const report = simulateOfflineWorld(state, { ...options, toElapsedMs: 2 * DAY })
   assert.equal(report.arrivals, 2)
+  assert.ok(player.units.every(u => u.homeHouseLabel && u.homeBedLabel))
   assert.equal(report.foodConsumed, 14)
   assert.equal(player.population, 3)
   assert.equal(new Set(player.units.map(unit => `${unit.i}:${unit.j}`)).size, 3)
   const starving = fixture()
-  starving.player.populationMax = 10
+  setBedCapacity(starving.player, 10)
   starving.player.buildings[0].inventory.resources.wheat = 0
   starving.player.buildings[2].inventory.resources.wheat = 2
   const hunger = simulateOfflineWorld(starving.state, starving.options)
@@ -228,7 +235,7 @@ test('travelling followers do not consume food and arrivals leave hero inventori
     inventory: { resources: { wheat: 10000 } },
   })
   player.population = 3 // Resident, travelling follower and hero.
-  player.populationMax = 20
+  setBedCapacity(player, 20)
   player.buildings[0].inventory.resources.wheat = 0
   player.units[0].inventory = { resources: { wheat: 4 } }
   const report = simulateOfflineWorld(state, options)
@@ -296,20 +303,20 @@ test('food workers preserve exhausted berry bushes for daily regrowth and harves
   assert.equal(state.resources[0].quantity, 1)
 })
 
-test('offline iron mining requires the Bronze Age and explored resources', () => {
+test('offline iron mining requires bronze pickaxes and explored resources', () => {
   const { state, options, player } = fixture()
   player.units[0].autonomousJob = 'iron'
   state.resources = [node('Iron')]
   player.age = 0
   assert.deepEqual(simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR }).gathered, {})
-  player.age = 2
+  player.forgeUpgrades = { pickaxes: 2 }
   assert.deepEqual(simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR, isKnown: () => false }).gathered, {})
   assert.ok(simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR }).gathered.iron > 0)
 })
 
 test('arrivals are skipped when all land cells are occupied or missing', () => {
   const { state, options, player } = fixture()
-  player.populationMax = 100
+  setBedCapacity(player, 100)
   options.terrain = [[{ category: 'Water' }], [null]]
   const report = simulateOfflineWorld(state, options)
   assert.equal(report.arrivals, 0)
@@ -494,7 +501,7 @@ test('wildlife walks are deterministic across split absences and leave tamed or 
   const { state, options, player } = fixture()
   player.units = []
   player.population = 0
-  player.populationMax = 0
+  setBedCapacity(player, 0)
   state.animals = [
     { type: 'Hare', label: 'walker', i: 25, j: 25 },
     { type: 'Horse', label: 'tamed', i: 26, j: 25, tamingStatus: 'tamed' },
@@ -516,7 +523,7 @@ test('combined daily events and training produce the same save across one long a
   const { state, options, player } = fixture()
   player.units = []
   player.population = 2
-  player.populationMax = 2
+  setBedCapacity(player, 2)
   player.buildings.push(
     trainingBuilding(),
     { type: 'Market', label: 'market', i: 25, j: 5, isBuilt: true, marketStock: [] },
@@ -534,7 +541,7 @@ test('combined daily events and training produce the same save across one long a
 test('offline wildlife cannot walk onto water, missing terrain or occupied cells', () => {
   const { state, options, player } = fixture()
   player.units = []
-  player.populationMax = 0
+  setBedCapacity(player, 0)
   state.animals = [{ type: 'Hare', label: 'hare', i: 25, j: 25 }]
   options.animalConfig = () => ({ ambientMovement: true })
   for (let i = 23; i <= 27; i++)
@@ -551,14 +558,14 @@ test('offline construction uses the saved building tier instead of the owners ne
   for (const age of [0, 1]) {
     const { state, options, player } = fixture()
     player.age = 1
-    const house = { type: 'House', label: 'house', i: 14, j: 14, isBuilt: false, hitPoints: 1, buildingAge: age }
+    const house = { type: 'House', label: 'house', i: 14, j: 14, isBuilt: false, hitPoints: 1, buildingLevel: age }
     player.buildings.push(house)
     Object.assign(player.units[0], { autonomousJob: 'construction', buildQueue: ['house'] })
     options.buildingConfig = () => ({
       size: 2,
       constructionTime: 48,
       totalHitPoints: 75,
-      ageStats: { 0: { totalHitPoints: 75 }, 1: { totalHitPoints: 125 } },
+      levelStats: { 0: { totalHitPoints: 75 }, 1: { totalHitPoints: 125 } },
     })
     simulateOfflineWorld(state, options)
     assert.equal(house.isBuilt, true)
@@ -594,7 +601,7 @@ test('returning to a map restores only night sleep health for villagers and sold
 })
 
 test('the configured world clock charges upkeep once at its actual next dawn', () => {
-  const liveSimulation = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+  const liveSimulation = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
   const { state, options, player } = fixture()
   player.units[0].dailySchedule = {
     wakeMinute: 360,
@@ -625,8 +632,8 @@ test('the configured world clock charges upkeep once at its actual next dawn', (
 })
 
 test('offline center completion preserves other factions centers and lets both finish', () => {
-  const { advanceOfflineWorker } = loadTsModule('app/services/world/OfflineWorldWork.ts')
-  const { OfflineWorldSpatial } = loadTsModule('app/services/world/OfflineWorldSpatial.ts')
+  const { advanceOfflineWorker } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
+  const { OfflineWorldSpatial } = loadTsModule('app/services/world/offline/OfflineWorldSpatial.ts')
   const { state, options, player } = fixture()
   const center = { type: 'TownCenter', i: 14, j: 14, label: 'winner', isBuilt: false, hitPoints: 1 }
   player.buildings = [center]
@@ -662,7 +669,7 @@ test('offline center completion preserves other factions centers and lets both f
   assert.equal(spatial.entity('loser'), rivalCenter)
   assert.equal(spatial.naturalCell({ i: 21, j: 22 }), false)
   assert.equal(report.buildingsCompleted, 2)
-  assert.equal(rival.populationMax, 1 + options.buildingCapacity(1, 'TownCenter'))
+  assert.equal(rival.populationMax, 0)
 })
 
 test('shared-map mode leaves daily consumption, resource regrowth and training to the runtime', () => {
@@ -730,7 +737,7 @@ test('daily events never remove resources from unattended depot or personal ches
   const { state, options, player } = fixture()
   player.units = []
   player.population = 0
-  player.populationMax = 0
+  setBedCapacity(player, 0)
   player.buildings[1].inventory.resources = { wood: 100, stone: 50 }
   player.buildings[2].inventory.resources = { wheat: 100, meat: 20 }
   player.buildings.push({
@@ -754,7 +761,7 @@ test('daily events never remove resources from unattended depot or personal ches
 test('offline recruitment keeps five training places and advances a saved queue of ten requests', () => {
   const { state, options, player } = fixture()
   player.population = 10
-  player.populationMax = 10
+  setBedCapacity(player, 10)
   player.units = Array.from({ length: 10 }, (_, index) =>
     villager({ label: `recruit-${index}`, i: 10 + index, inventory: { resources: { wheat: 12 } } })
   )
@@ -786,7 +793,7 @@ test('offline recruitment keeps five training places and advances a saved queue 
 function trainingFixture(recruits, requests, duration = 2) {
   const f = fixture()
   f.player.population = recruits
-  f.player.populationMax = recruits
+  setBedCapacity(f.player, recruits)
   f.player.units = Array.from({ length: recruits }, (_, index) =>
     villager({
       label: `recruit-${index}`,

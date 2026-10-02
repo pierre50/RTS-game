@@ -29,7 +29,7 @@ test('tutorial days freeze remote economies without catching up after completion
   assert.notDeepEqual(restored.economy.regions.remote.initialState.resources, original.resources)
 })
 const { materializeInitialEconomy } = loadTsModule('app/services/world/WorldEconomy.ts')
-const { validateWorldEconomy } = loadTsModule('app/serialization/WorldEconomyValidation.ts')
+const { validateWorldEconomy } = loadTsModule('app/serialization/validation/WorldEconomyValidation.ts')
 const { worldEconomyFactors } = loadTsModule('app/config/worldEconomyBalance.ts')
 const rules = () => ({
   unitConfig: () => ({ speed: 1.5, totalHitPoints: 18, gatherAmount: { woodcutter: 1, forager: 1 } }),
@@ -77,7 +77,7 @@ function fixture() {
           },
         ],
         buildings: [
-          { type: 'TownCenter', label: 'center', i: 6, j: 6, isBuilt: true, inventory: { resources: {} } },
+          { type: 'TownCenter', label: 'center', i: 6, j: 6, isBuilt: true, interiorBuildings: Array.from({ length: 10 }, (_, index) => ({ type: 'CampBedroll', label: `bed-${index}`, i: 4 + Math.floor(index / 3), j: 4 + index % 3, isBuilt: true })), inventory: { resources: {} } },
           { type: 'Granary', label: 'granary', i: 3, j: 3, isBuilt: true, inventory: { resources: { wheat: 300 } } },
           { type: 'StoragePit', label: 'pit', i: 3, j: 6, isBuilt: true, inventory: { resources: {} } },
         ],
@@ -221,7 +221,7 @@ test('abstract snapshots validate without a human or a full fog grid; corrupt me
   const config = {
     resources: { Tree: {} },
     units: { Villager: {} },
-    buildings: { TownCenter: {}, Granary: {}, StoragePit: {} },
+    buildings: { TownCenter: {}, Granary: {}, StoragePit: {}, CampBedroll: {} },
   }
   assert.doesNotThrow(() => validateWorldEconomy(campaign, config))
   const invalid = structuredClone(campaign)

@@ -1,7 +1,10 @@
+import { getForgeBuildMultiplier } from '../../../lib/equipment/forgeUpgrades'
 import { notifyVillageWorkChanged } from '../../../lib/units/villageWorkEvents'
 import { t } from '../../../lib/lang'
 import {
   advanceMaterialConstruction,
+  constructionWorkSite,
+  constructionWorkPoints,
   missingConstructionMaterialsForNextPoint,
 } from '../../../lib/economy/constructionMaterials'
 import { advanceConstruction as advanceConstructionProgress } from '../../../lib/economy/workRules'
@@ -41,7 +44,7 @@ function buildImpact(runtime: UnitResourceActions, workTickFrame: number): void 
     return
   }
   if (!dest) return
-  if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
+  if (dest.buildingUpgrade || (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
     if (!runtime.ensureWorkContact(dest)) return
     if (blockUnfundedBuild(runtime)) return
     if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
@@ -64,19 +67,22 @@ function advanceConstruction(runtime: UnitResourceActions, dest: BuildingEntity)
   const unit = runtime.unit
   const menu = unit.context?.menu
   const player = unit.owner
-  const beforeHitPoints = dest.hitPoints ?? 0
+  const site = constructionWorkSite(dest)
+  const beforeHitPoints = constructionWorkPoints(dest)
   const requested = advanceConstructionProgress(
     beforeHitPoints,
-    dest.totalHitPoints ?? 0,
-    dest.constructionTime ?? 1,
-    getBuildRateXpMultiplier(unit)
+    site.totalHitPoints ?? 0,
+    dest.buildingUpgrade?.constructionTime ?? dest.constructionTime ?? 1,
+    getBuildRateXpMultiplier(unit) * getForgeBuildMultiplier(unit.owner, unit.type)
   )
-  dest.hitPoints = advanceMaterialConstruction(dest, requested, [unit.inventory?.resources ?? {}])
-  if (dest.hitPoints === beforeHitPoints) return
+  const next = advanceMaterialConstruction(dest, requested, [unit.inventory?.resources ?? {}])
+  if (next === beforeHitPoints) return
+  if (dest.buildingUpgrade) dest.buildingUpgrade.hitPoints = next
+  else dest.hitPoints = next
   notifyVillageWorkChanged(unit.owner)
   spawnWorkImpactFragments(unit, dest)
   runtime.playSound(runtime.getWorkSound('build', SOUND_CUES.villager.buildLoop))
-  showHitPointGainFeedback(dest, (dest.hitPoints ?? 0) - beforeHitPoints)
+  if (!dest.buildingUpgrade) showHitPointGainFeedback(dest, next - beforeHitPoints)
   grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
   if (shouldSyncBuildHealthDisplay(dest)) {
     syncEntityHealthDisplay(dest, definedProperties({ menu, player, forceInfo: unit.owner?.isPlayed }))

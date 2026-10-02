@@ -1,3 +1,4 @@
+import { FORGE_FAMILIES } from './forgeUpgrades'
 import { UNIT_TYPES, type RESOURCE_STORAGE_NAMES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import {
@@ -16,7 +17,6 @@ export type MarketEquipmentOffer = {
 }
 
 export type MarketEquipmentOfferOptions = {
-  age?: number
   civilization?: string
 }
 
@@ -142,11 +142,12 @@ export function getResourceGoldValue(resource: keyof ResourceAmount): number {
 function getMarketEquipmentKeys(options: MarketEquipmentOfferOptions = {}): DynamicEquipmentKey[] {
   const { civilization } = options
   const equipment = new Set<string>()
-  for (const age of [0, 1, 2]) {
-    dynamicEquipmentForWork('heroSword', age).forEach(item => equipment.add(item))
-    dynamicEquipmentForWork('stoneminer', age).forEach(item => equipment.add(item))
+  for (const tier of [0, 1, 2, 3]) {
+    const owner = { forgeUpgrades: Object.fromEntries(FORGE_FAMILIES.map(family => [family, tier])) }
+    dynamicEquipmentForWork('heroSword', owner).forEach(item => equipment.add(item))
+    dynamicEquipmentForWork('stoneminer', owner).forEach(item => equipment.add(item))
     for (const unitType of [UNIT_TYPES.chief, UNIT_TYPES.infantry, UNIT_TYPES.bowman, UNIT_TYPES.priest]) {
-      dynamicEquipmentForUnit(unitType, age, Number.POSITIVE_INFINITY, civilization).forEach(item =>
+      dynamicEquipmentForUnit(unitType, owner, Number.POSITIVE_INFINITY, civilization).forEach(item =>
         equipment.add(item)
       )
     }

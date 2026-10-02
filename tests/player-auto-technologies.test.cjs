@@ -155,7 +155,7 @@ function loadPlayer(overrides = {}) {
     }
     if (request === '../../lib/audio/uiSound') return { playUiSound: overrides.playUiSound ?? (() => {}) }
     if (request === '../../lib/lang') return { t: key => key }
-    if (request === '../../services/VisionGrid') return { VisionGrid: class {} }
+    if (request === '../../services/visibility/VisionGrid') return { VisionGrid: class {} }
     if (request === '../../lib/buildings/walls') {
       return {
         refreshOwnerWalls: () => {},
@@ -224,63 +224,12 @@ test('unit creation passes unit gender to random civilization names', () => {
   assert.equal(legacy.appearanceVariants.gender, 'female')
 })
 
-test('population objectives follow living villagers without granting technologies', () => {
+test('population counts living villagers without age objectives', () => {
   const Player = loadPlayer()
-  const messages = []
-  const player = {
-    age: 0,
-    technologies: [],
-    completedObjectives: [],
-    techs: {
-      Village: {
-        key: 'technologies',
-        conditions: [{ key: 'villagerPopulation', op: '>=', value: 20 }],
-      },
-    },
-    units: Array.from({ length: 20 }, (_, index) => ({
-      type: 'Villager',
-      isDead: index === 3,
-      isDestroyed: false,
-    })),
-    buildings: [],
-    context: {
-      controls: { heroUnit: { type: 'Hero', isChief: true } },
-      menu: {
-        showMessage: (message, type) => messages.push([message, type]),
-        updateActionTarget: () => messages.push(['action-target']),
-        updateTopbar: () => messages.push(['topbar']),
-        syncObjectiveProgress: () => messages.push(['tech-progress']),
-      },
-    },
-    isPlayed: true,
-    updateConfig: () => {},
-  }
+  const player = { units: [{ type: 'Villager' }, { type: 'Villager', isDead: true }, { type: 'Hero' }] }
   Object.setPrototypeOf(player, Player.prototype)
-
-  assert.equal(player.villagerPopulation, 19)
-  assert.equal(player.updatePopulationObjectives(), undefined)
-  player.units[3].isDead = false
-
-  assert.equal(player.villagerPopulation, 20)
-  assert.equal(player.updatePopulationObjectives(), undefined)
-  assert.deepEqual(player.completedObjectives, ['reachVillage'])
-  assert.deepEqual(player.technologies, [])
-  assert.deepEqual(messages, [
-    ['Objectif accompli : Village : atteindre 20 villageois', 'success'],
-    ['action-target'],
-    ['topbar'],
-    ['tech-progress'],
-  ])
-  player.isPlayed = false
-  player.units = Array.from({ length: 49 }, () => ({ type: 'Villager' }))
-  player.updatePopulationObjectives()
-  assert.deepEqual(player.completedObjectives, ['reachVillage'])
-  player.units.push({ type: 'Villager' })
-  player.updatePopulationObjectives()
-  assert.deepEqual(player.completedObjectives, ['reachVillage', 'reachTown'])
-  player.units = Array.from({ length: 100 }, () => ({ type: 'Villager' }))
-  player.updatePopulationObjectives()
-  assert.deepEqual(player.completedObjectives, ['reachVillage', 'reachTown'])
+  assert.equal(player.villagerPopulation, 1)
+  assert.equal(player.updatePopulationObjectives, undefined)
 })
 
 test('building prerequisites still apply without tech all', () => {
@@ -335,20 +284,20 @@ test('existing buildings keep their construction age and HP when their owner adv
     autoTechnologyByAge: false,
     buildings: [
       {
-        buildingAge: 1,
+        buildingLevel: 1,
         totalHitPoints: 125,
         hitPoints: 70,
-        assetAge: 1,
+        assetLevel: 1,
         assetCiv: 'Kemet',
         finalTexture() {
-          calls.push(['captured', this.assetCiv, this.assetAge])
+          calls.push(['captured', this.assetCiv, this.assetLevel])
         },
         isBuilt: true,
         isDead: false,
       },
       {
         finalTexture() {
-          calls.push(['native', this.assetCiv, this.assetAge])
+          calls.push(['native', this.assetCiv, this.assetLevel])
         },
         isBuilt: true,
         isDead: false,
@@ -363,14 +312,14 @@ test('existing buildings keep their construction age and HP when their owner adv
   player.context.players = [player]
   Object.setPrototypeOf(player, Player.prototype)
 
-  player.onAgeChange()
+  player.refreshCivilizationAppearance()
 
-  assert.equal(player.buildings[0].assetAge, 1)
-  assert.equal(player.buildings[0].buildingAge, 1)
+  assert.equal(player.buildings[0].assetLevel, 1)
+  assert.equal(player.buildings[0].buildingLevel, 1)
   assert.equal(player.buildings[0].totalHitPoints, 125)
   assert.equal(player.buildings[0].hitPoints, 70)
   assert.equal(player.buildings[0].assetCiv, 'Kemet')
-  assert.equal(player.buildings[1].assetAge, undefined)
+  assert.equal(player.buildings[1].assetLevel, undefined)
   assert.deepEqual(calls, [
     ['captured', 'Kemet', 1],
     ['native', undefined, undefined],
@@ -444,7 +393,7 @@ test('missing building definitions reject purchases and wheat fields before any 
   assert.equal(player.plantWheatField(0, 0), false)
 })
 
-test('placing a town center waits for finished construction before completing the objective', () => {
+test('placing a town center orders construction without age objectives', () => {
   const Player = loadPlayer()
   const messages = []
   const player = {
@@ -482,10 +431,8 @@ test('placing a town center waits for finished construction before completing th
   assert.equal(player.completedObjectives.includes('buildTownCenter'), false)
   assert.ok(messages.some(message => message[0] === 'hero-build-order' && message[1] === 'TownCenter'))
   player.buildings[0].isBuilt = true
-  player.updatePopulationObjectives = Player.prototype.updatePopulationObjectives
-  player.updatePopulationObjectives()
-  assert.equal(player.completedObjectives.includes('buildTownCenter'), true)
-  assert.ok(messages.some(message => message[0] === 'Objectif accompli : Colonie : construire un forum'))
+  assert.deepEqual(player.completedObjectives, [])
+  assert.equal(messages.some(message => String(message[0]).includes('Objectif accompli')), false)
 })
 
 test('player initialization normalizes relations and retains restored resource overrides', () => {

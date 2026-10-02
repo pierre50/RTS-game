@@ -59,7 +59,6 @@ export default class Menu implements MenuLike {
   topbar!: HTMLDivElement
   topbarStatusStack!: HTMLDivElement
   resources!: HTMLDivElement
-  age!: HTMLDivElement
   dayTime!: HTMLDivElement
   updatePlayerMiniMap: (owner: PlayerLike) => void
   updateResourcesMiniMap: () => void
@@ -153,8 +152,8 @@ export default class Menu implements MenuLike {
     }
   }
 
-  updateAgeTheme(): void {
-    this.topbarView.updateAgeTheme()
+  updateTheme(): void {
+    this.topbarView.updateTheme()
   }
 
   showMessage(message: string, type = 'error'): void {
@@ -333,9 +332,6 @@ export default class Menu implements MenuLike {
   }
   setEquippedItem(item: HeroEquippedItem | null): void {
     return this.inventoryManager.render(item)
-  }
-  syncObjectiveProgress(): void {
-    return this.heroBuildingMenuManager.syncLiveState()
   }
   setEquippedTool(tool: HeroEquippedItem | null): void {
     return this.setEquippedItem(tool)

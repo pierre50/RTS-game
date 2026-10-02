@@ -5,8 +5,8 @@ const {
   MapBlueprintLoadError,
   loadPregeneratedInteriorBlueprint: interior,
   loadPregeneratedWorldMapBlueprint: world,
-} = loadTsModule('app/serialization/MapBlueprintLoader.ts')
-const { toGrid } = loadTsModule('app/serialization/MapBlueprintDecoding.ts')
+} = loadTsModule('app/serialization/blueprint/MapBlueprintLoader.ts')
+const { toGrid } = loadTsModule('app/serialization/blueprint/MapBlueprintDecoding.ts')
 const encoded = values => Buffer.from(values).toString('base64')
 const terrain = encoded([0, 6, 99, 1])
 const relief = encoded([0, 255, 1, 2])

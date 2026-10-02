@@ -20,7 +20,7 @@ function scenario({ capacity = 5, hostile = true } = {}) {
     mocks: {
       '../lib/units/playerTargetKnowledge': { playerSeesTarget: () => visible },
       '../../engine/services/BuildingInteriorSpaceLookup': { getBuildingInteriorSpaceForUnit: () => space },
-      '../services/SpacePortalSystem': {
+      '../services/spacePortal/SpacePortalSystem': {
         clearUnitSpacePortalRoute: unit => {
           unit.spacePortalState = null
         },

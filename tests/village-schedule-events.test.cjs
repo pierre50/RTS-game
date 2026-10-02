@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const moduleCache = new Map()
 const { notifyVillageStateChanged } = loadTsModule('app/lib/units/villageStateEvents.ts', { moduleCache })
-const { VillageScheduleGate } = loadTsModule('app/lib/units/VillageScheduleGate.ts', { moduleCache })
+const { VillageScheduleGate } = loadTsModule('app/lib/units/villageScheduleGate.ts', { moduleCache })
 const { flushTrainingRequests } = loadTsModule('app/lib/training/trainingRequests.ts', { moduleCache })
 const { VillagerUpkeepSystem } = loadTsModule('app/services/world/VillagerUpkeepSystem.ts', { moduleCache })
 function fixture() {
@@ -112,4 +112,30 @@ test('waiting recruitment does not rescan unchanged units and resumes when a rec
   flushTrainingRequests(owner, context)
   assert.equal(unit.dest, building)
   assert.equal(unit.action, 'train')
+})
+
+test('static village sleep invalidates cached schedules and skips its units until wake', () => {
+  const { setDistantOwner } = loadTsModule('app/lib/units/villageActivity.ts', { moduleCache })
+  const { owner, context } = fixture()
+  owner.developmentMode = 'static'
+  const gate = new VillageScheduleGate()
+  gate.settle(context)
+  assert.equal(gate.due(context), false)
+  setDistantOwner(owner, () => {})
+  assert.equal(gate.due(context), true)
+  const units = owner.units
+  Object.defineProperty(owner, 'units', {
+    configurable: true,
+    get() {
+      throw new Error('sleeping roster read')
+    },
+  })
+  gate.settle(context)
+  assert.equal(gate.due(context), false)
+  setDistantOwner(owner)
+  assert.equal(gate.due(context), true)
+  Object.defineProperty(owner, 'units', { value: units, configurable: true })
+  gate.settle(context)
+  context.dayNight.state.hour = 12
+  assert.equal(gate.due(context), true)
 })

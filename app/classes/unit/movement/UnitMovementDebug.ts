@@ -162,7 +162,6 @@ export function debugHuntRangeCheck(
     unitLabel: unit.label,
     action,
     work: unit.work,
-    ownerAge: unit.owner?.age ?? 0,
     targetType: isRuntimeEntity(dest) ? dest.type : 'cell',
     targetLabel: isRuntimeEntity(dest) ? dest.label : undefined,
     rangeCells: effectiveRange,

@@ -45,7 +45,6 @@ test('live AI construction varies orientation while respecting explicit and huma
       '../../lib/entities/entityFade': {},
       '../../lib/mapSpaces': { getMapSpace: () => null },
       '../Resource': {},
-      '../../lib/objectives/ageObjectives': {},
     },
   })
   const grid = Array.from({ length: 30 }, () => Array.from({ length: 30 }, () => ({ category: 'Land' })))

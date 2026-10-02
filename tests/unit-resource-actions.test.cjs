@@ -157,9 +157,7 @@ test('delivery helper reports failure when a full bag cannot be delivered', () =
   assert.deepEqual(calls, [])
 })
 
-for (const [type, age, action] of [
-  ['Iron', 0, 'mineiron'],
-]) {
+for (const [type, age, action] of [['Iron', 0, 'mineiron']]) {
   test(`locked ${type} swings without resources, XP or depletion and warns only once`, () => {
     const constants = loadTsModule('app/lib/constants.ts')
     const { onSpriteLoopAtFrame, SLASH_IMPACT_FRAME } = loadTsModule('app/lib/graphics.ts', {
@@ -230,9 +228,9 @@ for (const [type, age, action] of [
     actions.startGathering = () => {
       gathering = true
     }
-    unit.owner.age++
+    unit.inventory.equipment = ['pickaxe_bronze']
     actions.startMiningResource(action)
-    assert.equal(gathering, true, 'reaching the required age restores normal gathering')
+    assert.equal(gathering, true, 'obtaining a bronze pickaxe restores normal gathering')
   })
 }
 

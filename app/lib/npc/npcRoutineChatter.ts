@@ -4,7 +4,8 @@ import { heroCanCommand, isChiefUnit } from '../chief'
 import { getLang } from '../lang'
 import { pickRandomItem } from '../random'
 import { getVillagerAssignedJob } from '../units/villagerAssignments'
-import { getVillagerSchedule, isVillagerLunchTime } from '../units/villagerSchedule'
+import { getDailyRoutinePhase, hasDailyRestSchedule, isSoldierUnit } from '../units/villagerSchedule'
+import { isNightWatchDuty } from '../units/villageNightWatch'
 import {
   getForeignNpcMood,
   pickForeignNpcChatterLine,
@@ -13,18 +14,7 @@ import {
   pickNpcGreetingLine,
   pickNpcSleepingChatterLine,
 } from './npcChatter'
-import { NPC_ROUTINE_LINES, type NpcAudience, type NpcRoutinePhase } from './npcRoutineLines'
-
-function routinePhase(unit: UnitEntity): NpcRoutinePhase {
-  if (unit.type !== UNIT_TYPES.villager && !isChiefUnit(unit)) return 'idle'
-  const { hour = 12, minute = 0 } = unit.context?.dayNight?.state ?? {}
-  const now = hour * 60 + minute
-  const { wakeMinute, workStartMinute, workEndMinute, bedMinute } = getVillagerSchedule(unit)
-  if (now >= wakeMinute && now < workStartMinute) return 'morning'
-  if (now >= workEndMinute && now < bedMinute) return 'evening'
-  if (now >= workStartMinute && now < workEndMinute) return 'work'
-  return 'idle'
-}
+import { NPC_ROUTINE_LINES, type NpcAudience } from './npcRoutineLines'
 
 function audienceFor(unit: UnitEntity, hero: UnitEntity | null | undefined): NpcAudience {
   const own = Boolean(hero?.owner && unit.owner === hero.owner)
@@ -47,17 +37,30 @@ export function pickNpcRoutineChatterLine(
       : pickForeignNpcSleepingChatterLine()
   }
   const lines = NPC_ROUTINE_LINES[getLang() === 'en' ? 'en' : 'fr']
-  if (unit.type === UNIT_TYPES.villager && !isChiefUnit(unit) && isVillagerLunchTime(unit)) {
-    const address = audience === 'ownChief' ? (getLang() === 'en' ? ', chief' : ', chef') : ''
+  const phase = hasDailyRestSchedule(unit) ? getDailyRoutinePhase(unit) : 'idle'
+  const address = audience === 'ownChief' ? (getLang() === 'en' ? ', chief' : ', chef') : ''
+  if (unit.type === UNIT_TYPES.villager && !isChiefUnit(unit) && phase === 'meal') {
     return pickRandomItem(lines.lunch).replace('{address}', address)
   }
-  const phase = routinePhase(unit)
   const foreign = audience === 'foreignChief' || audience === 'visitor'
   const mood = getForeignNpcMood(unit)
   if (isChiefUnit(unit)) {
     const greeting =
       foreign && mood !== 'neutral' ? lines.foreignChiefGreeting[mood][audience] : lines.chiefGreeting[audience]
-    return `${pickRandomItem(lines.chief[phase])} ${pickRandomItem(greeting)}`
+    return `${pickRandomItem(lines.chief[phase === 'sleep' ? 'idle' : phase])} ${pickRandomItem(greeting)}`
+  }
+  if (isSoldierUnit(unit)) {
+    const { hour = 12, minute = 0 } = unit.context?.dayNight?.state ?? {}
+    const duty = isNightWatchDuty(unit, hour * 60 + minute)
+    const guardPhase = duty
+      ? 'nightWatch'
+      : phase === 'morning' && unit.dailySchedule?.nightWatch
+        ? 'relief'
+        : phase === 'sleep' || phase === 'idle'
+          ? 'offDuty'
+          : phase
+    const line = pickRandomItem(lines.guard[guardPhase]).replace('{address}', address)
+    return foreign && phase === 'work' ? `${line} ${pickRandomItem(lines.foreignWork[mood][audience])}` : line
   }
   if (phase === 'morning' || phase === 'evening') {
     const rest = foreign && mood !== 'neutral' ? lines.foreignRest[mood][phase][audience] : lines.rest[phase][audience]

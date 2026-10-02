@@ -69,7 +69,6 @@ export type BuildingControllerHost = Omit<
     flameSoundStopped?: boolean
     mountingDays?: number
     visibilityTimeout?: ReturnType<typeof setTimeout>
-    populationCapacityApplied?: boolean
     visualSettingsCleanup?: (() => void) | null
     bindSpriteInteractions(): void
     startAttackInterval(callback: () => void, interval: number): void

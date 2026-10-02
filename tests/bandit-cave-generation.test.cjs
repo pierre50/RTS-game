@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const catalog = require('../public/maps/interiors/cave/catalog.json')
-const { decodeInteriorPayload } = loadTsModule('app/serialization/InteriorBlueprintLoader.ts')
+const { decodeInteriorPayload } = loadTsModule('app/serialization/blueprint/InteriorBlueprintLoader.ts')
 const types = {
   chest: 'Chest',
   fireCamp: 'FireCamp',

@@ -1,21 +1,13 @@
-import { FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
-import { forgetInstanceRenderCandidate } from '../../lib/grid/cameraRenderTracking'
+import { BUILDING_TYPES, SHEET_TYPES } from '../../constants'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
-import { getEntityCell } from '../../lib/mapSpaces'
+import { getEntityCell, getEntitySpaceMapLike, sameCellMapSpace } from '../../lib/mapSpaces'
+import { getBedRestPoint } from '../../lib/terrain/furnitureSurface'
+import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { findRestCellAroundPoint } from './UnitRestShelter'
-import { isBuildingInteriorSupported } from '../../lib/buildings/interiors'
-import { cancelFade, fadeOut } from '../../lib/entities/entityFade'
+import { cancelFade } from '../../lib/entities/entityFade'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import type { BuildingEntity, UnitEntity, UnitRestReason, UnitRestState } from '../../types/entities'
-import type { RuntimeCell } from '../../types/map'
-import { ensureRuntimeBuildingInteriorSpace, moveUnitToBuildingInteriorSleep } from '../BuildingInteriorSpaceSystem'
-import {
-  clearUnitCell,
-  placeUnitAtCell,
-  rememberRestState,
-  stopUnitForRest,
-  type RuntimeMapWithBuckets,
-} from './UnitRestState'
+import type { UnitEntity, UnitRestReason, UnitRestState } from '../../types/entities'
+import { placeUnitAtCell, rememberRestState, stopUnitForRest } from './UnitRestState'
 import {
   cancelSleepingWakeVisual,
   clearSleepingVisualState,
@@ -27,42 +19,6 @@ import {
 export type TimedUnitRestState = UnitRestState & { hiddenAt?: number }
 
 export type SleepOutsideVisualMode = 'animate' | 'finalFrame'
-
-function hideUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void {
-  const state = unit.shelterState
-  if (state?.status !== 'inside' || state.shelter !== shelter) return
-  const map = unit.context?.map as RuntimeMapWithBuckets | undefined
-  if (unit.context) {
-    const space = ensureRuntimeBuildingInteriorSpace(unit.context, shelter)
-    if (space && moveUnitToBuildingInteriorSleep(unit.context, unit, space, { mode: 'route' })) return
-  }
-  if (isBuildingInteriorSupported(shelter)) {
-    sleepOutside(unit, state.reason)
-    return
-  }
-  clearUnitCell(unit)
-  map?.removeFromInstanceBucket?.(unit)
-  setDetachedShadowsVisible(unit, false)
-  unit.alpha = 0
-  unit.visible = false
-  forgetInstanceRenderCandidate(unit)
-}
-
-function prepareUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void {
-  rememberRestState(unit, {
-    status: 'inside',
-    reason: unit.shelterState?.reason ?? 'sleep',
-    location: 'shelter',
-    shelter,
-    targetCell: null,
-  })
-  markShelterEnteredAt(unit)
-  stopUnitForRest(unit)
-  unit.dest = null
-  unit.action = null
-  unit.actionLocked = true
-  clearUnitOverheadIndicator(unit)
-}
 
 function leavePassageBeforeRest(unit: UnitEntity, reason: UnitRestReason, instant = false): boolean {
   const passages = createReservedPassageCellLookup(unit.context)
@@ -96,10 +52,22 @@ function leavePassageBeforeRest(unit: UnitEntity, reason: UnitRestReason, instan
   return true
 }
 
-export function waitOutsideForSleep(unit: UnitEntity): void {
-  if (leavePassageBeforeRest(unit, 'sleep')) return
+function settledRestTarget(unit: UnitEntity) {
+  const state = unit.shelterState
+  const cell = state?.targetCell
+  if (!state?.restTarget || !cell || !sameCellMapSpace(unit, cell) || unit.i !== cell.i || unit.j !== cell.j)
+    return { location: 'outside' as const, shelter: null, restTarget: null, targetCell: null }
+  if (state.restTarget.type === BUILDING_TYPES.campBedroll) {
+    Object.assign(unit, getBedRestPoint(state.restTarget))
+    syncEntityRelief(getEntitySpaceMapLike(unit, unit.context?.map), unit)
+  }
+  return { location: state.location, shelter: state.shelter, restTarget: state.restTarget, targetCell: cell }
+}
+
+export function waitOutsideForSleep(unit: UnitEntity, options: { instant?: boolean } = {}): void {
+  if (leavePassageBeforeRest(unit, 'sleep', options.instant)) return
   cancelSleepingWakeVisual(unit)
-  rememberRestState(unit, { status: 'outside', reason: 'sleep', location: 'outside', shelter: null, targetCell: null })
+  rememberRestState(unit, { status: 'outside', reason: 'sleep', ...settledRestTarget(unit) })
   stopUnitForRest(unit)
   unit.dest = null
   unit.action = null
@@ -118,7 +86,7 @@ export function sleepOutside(
 ): void {
   if (leavePassageBeforeRest(unit, reason, options.visual === 'finalFrame')) return
   cancelSleepingWakeVisual(unit)
-  rememberRestState(unit, { status: 'outside', reason, location: 'outside', shelter: null, targetCell: null })
+  rememberRestState(unit, { status: 'outside', reason, ...settledRestTarget(unit) })
   cancelFade(unit)
   unit.alpha = 1
   unit.visible = true
@@ -133,24 +101,6 @@ export function sleepOutside(
     playSleepingOutsideVisual(unit)
   }
   setUnitOverheadIndicator(unit, 'sleep')
-}
-
-function markShelterEnteredAt(unit: UnitEntity): void {
-  const state = unit.shelterState as TimedUnitRestState | null | undefined
-  if (!state) return
-  state.hiddenAt = unit.context?.scheduler?.elapsedMs ?? 0
-}
-
-export function enterShelter(unit: UnitEntity, shelter: BuildingEntity): void {
-  prepareUnitInsideShelter(unit, shelter)
-  fadeOut(unit, FADE_DURATION_MS, () => hideUnitInsideShelter(unit, shelter))
-}
-
-export function enterShelterInstant(unit: UnitEntity, shelter: BuildingEntity): void {
-  cancelSleepingWakeVisual(unit)
-  prepareUnitInsideShelter(unit, shelter)
-  cancelFade(unit)
-  hideUnitInsideShelter(unit, shelter)
 }
 
 export function putRestingUnitToSleep(unit: UnitEntity, options: { instant?: boolean } = {}): boolean {
@@ -169,13 +119,4 @@ export function putRestingUnitToSleep(unit: UnitEntity, options: { instant?: boo
     return true
   }
   return false
-}
-
-export function sleepOutsideAtCellInstant(
-  unit: UnitEntity,
-  cell: RuntimeCell,
-  reason: UnitRestReason = unit.shelterState?.reason ?? 'sleep'
-): void {
-  placeUnitAtCell(unit, cell)
-  sleepOutside(unit, reason, { visual: 'finalFrame' })
 }

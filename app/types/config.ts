@@ -20,10 +20,8 @@ export type UnitAppearanceLayerConfig = {
   workTypes?: string[]
   civilizations?: string[]
   hideWhenEquippedSlots?: readonly HeroEquipmentSlot[]
-  minAge?: number
   minLevel?: number
   maxLevel?: number
-  ageSheetOverrides?: Record<string, Partial<Record<string, string>>>
   workSheetOverrides?: Record<string, Partial<Record<string, string>>>
   actionWorkSheetOverrides?: Record<string, Partial<Record<string, string>>>
   playerColorVariants?: Record<string, string>
@@ -112,10 +110,15 @@ export type EquipmentStats = {
   pierceArmor?: number
 }
 
-type BuildingAgeStats = { cost?: ResourceAmount; totalHitPoints?: number }
+type BuildingLevelStats = {
+  cost?: ResourceAmount
+  totalHitPoints?: number
+  shelterCapacity?: number
+  constructionTime?: number
+}
 
 export interface BuildingConfig extends EntityConfig {
-  ageStats?: Record<string, BuildingAgeStats>
+  levelStats?: Record<string, BuildingLevelStats>
   totalHitPoints?: number
   indestructible?: boolean
   providesVision?: boolean

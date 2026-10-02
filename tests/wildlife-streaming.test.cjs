@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const cache = new Map()
 const { setDistantOwner } = loadTsModule('app/lib/units/villageActivity.ts', { moduleCache: cache })
 const { setUnitSuspension } = loadTsModule('app/lib/units/unitSuspension.ts', { moduleCache: cache })
-const wildlife = loadTsModule('app/services/WildlifeStore.ts', { moduleCache: cache })
+const wildlife = loadTsModule('app/services/wildlife/WildlifeStore.ts', { moduleCache: cache })
 const serialize = animal =>
   Object.fromEntries(
     Object.entries(animal).filter(
@@ -12,7 +12,7 @@ const serialize = animal =>
         !['owner', 'context', 'parent', 'currentCell', 'destroyedDisplay'].includes(key) && typeof value !== 'function'
     )
   )
-const { WildlifeSystem } = loadTsModule('app/services/WildlifeSystem.ts', {
+const { WildlifeSystem } = loadTsModule('app/services/wildlife/WildlifeSystem.ts', {
   moduleCache: cache,
   mocks: {
     '../constants': {
@@ -20,7 +20,8 @@ const { WildlifeSystem } = loadTsModule('app/services/WildlifeSystem.ts', {
       FAMILY_TYPES: { building: 'building', animal: 'animal', unit: 'unit' },
       SHEET_TYPES: { standing: 'standingSheet', corpse: 'corpseSheet' },
     },
-    '../lib': { isometricToCartesian: (x, y) => [x, y] },
+    '../lib': { isometricToCartesian: (x, y) => [x / 32, y / 32] },
+    '../../lib/maths': { cartesianToIsometric: (i, j) => [i * 32, j * 32] },
     '../serialization/SaveSerializer': { serializeWildAnimal: animal => structuredClone(serialize(animal)) },
   },
 })
@@ -54,7 +55,15 @@ function fixture(states, scheduler) {
   const context = {
     map: { grid, seed: 1, removeFromInstanceBucket() {} },
     players: [],
-    controls: { heroUnit: hero },
+    controls: {
+      heroUnit: hero,
+      getViewportMetrics: () => ({
+        visibleLeft: hero.i * 32 - 32,
+        visibleTop: hero.j * 32 - 32,
+        visibleWidth: 64,
+        visibleHeight: 64,
+      }),
+    },
     scheduler: scheduler ?? {
       elapsedMs: 0,
       add(fn) {
@@ -165,11 +174,14 @@ test('sleep and wake preserve identity and wounds; active interactions remain re
   assert.equal(f.context.map.gaia.animals[0].label, 'deer')
   assert.equal(f.context.map.gaia.animals[0].hitPoints, 3)
 })
-test('workers wake wildlife without the hero; activation is bounded per update', () => {
+test('workers do not wake wildlife; camera activation is bounded per update', () => {
   const f = fixture(
     Array.from({ length: 40 }, (_, i) => ({ type: 'Deer', i: 200 + (i % 8), j: 200 + Math.floor(i / 8) }))
   )
   f.context.players = [{ units: [{ i: 200, j: 200 }], buildings: [] }]
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 0)
+  Object.assign(f.hero, { i: 200, j: 200 })
   f.system.update()
   assert.equal(f.context.map.gaia.animals.length, 16)
   f.system.update()
@@ -250,47 +262,28 @@ test('explicit outside space participates in wildlife streaming', () => {
   assert.equal(wildlife.isWildlife({ type: 'Deer', spaceId: 'outside' }), true)
   assert.equal(wildlife.isWildlife({ type: 'Deer', spaceId: 'cave' }), false)
   const f = fixture([{ label: 'deer-outside', type: 'Deer', i: 200, j: 200, spaceId: 'outside' }])
-  f.context.players = [{ units: [{ i: 200, j: 200, spaceId: 'outside' }], buildings: [] }]
+  Object.assign(f.hero, { i: 200, j: 200 })
   f.system.update()
   assert.equal(f.context.map.gaia.animals.length, 1)
 })
 
-test('a displaced survivor stays simulated until home, without creating a replacement', () => {
+test('a displaced survivor sleeps on the spot and resumes only near the camera', () => {
   const f = fixture([{ label: 'deer', type: 'Deer', i: 12, j: 12 }])
   const animal = f.context.map.gaia.animals[0]
   animal.i = 70
-  f.hero.i = 500
-  f.hero.j = 500
-  f.context.dayNight.state.day = 10
-  f.system.handleDailyWorldEvent({ day: 10, previousDay: 9 })
-  f.system.update()
-  assert.equal(f.context.map.gaia.animals.length, 1)
-  assert.equal(f.store.pending.size, 0)
-  assert.equal(f.store.entries.size, 1)
-  assert.equal(animal.wildlife.homeI, 12)
-  animal.i = 12
+  Object.assign(f.hero, { i: 500, j: 500 })
   f.system.update()
   assert.equal(f.context.map.gaia.animals.length, 0)
-})
-
-test('loading an offscreen displaced animal resumes it at its actual position', () => {
-  const f = fixture([
-    {
-      label: 'lost',
-      type: 'Deer',
-      i: 250,
-      j: 200,
-      hitPoints: 3,
-      wildlife: { homeI: 200, homeJ: 200, generation: 0, returnAfterMs: 10000 },
-    },
-  ])
-  const animal = f.context.map.gaia.animals[0]
-  assert.equal(animal.i, 250)
-  assert.equal(animal.hitPoints, 3)
-  assert.equal(animal.wildlife.returnAfterMs, 10000)
+  const state = f.store.entries.get('deer').state
+  assert.equal(state.i, 70)
+  assert.equal(state.wildlife.homeI, 12)
   assert.equal(f.store.pending.size, 0)
-  animal.wildlife.homeI = 205
-  assert.equal(f.store.entries.get('lost').state.wildlife.homeI, 205)
+  const reloaded = fixture([state])
+  assert.equal(reloaded.context.map.gaia.animals.length, 0)
+  Object.assign(reloaded.hero, { i: 70, j: 12 })
+  reloaded.system.update()
+  assert.equal(reloaded.context.map.gaia.animals[0].i, 70)
+  assert.equal(reloaded.context.map.gaia.animals[0].wildlife.homeI, 12)
 })
 
 test('blocked renewal retries on the next daily event, including across a save reload', () => {
@@ -363,14 +356,16 @@ function distantFixture() {
   const worker = { i: 200, j: 200, owner }
   owner.units.push(worker)
   f.context.players = [owner]
+  Object.assign(f.hero, { i: 200, j: 200 })
   f.system.update()
   assert.equal(f.context.map.gaia.animals.length, 1)
+  Object.assign(f.hero, { i: 10, j: 10 })
   setDistantOwner(owner, () => {})
   setUnitSuspension(worker, { reason: 'distant-work', wake() {} })
   return { ...f, owner, worker }
 }
 
-test('a distant village releases nearby fauna and wakes it when detailed work resumes', () => {
+test('resuming detailed village work does not wake offscreen fauna', () => {
   const f = distantFixture()
   f.system.update()
   assert.equal(f.context.map.gaia.animals.length, 0)
@@ -378,30 +373,50 @@ test('a distant village releases nearby fauna and wakes it when detailed work re
   setDistantOwner(f.owner)
   setUnitSuspension(f.worker)
   f.system.update()
-  assert.equal(f.context.map.gaia.animals[0].label, 'remote-deer')
+  assert.equal(f.context.map.gaia.animals.length, 0)
 })
 
-test('live workers, hero, camera and player ownership still activate distant wildlife', () => {
-  for (const reason of ['worker', 'hero', 'camera', 'player']) {
+test('workers, buildings, player ownership and an offscreen hero never activate wildlife', () => {
+  for (const reason of ['worker', 'building', 'hero', 'player']) {
     const f = distantFixture()
-    f.system.update()
+    f.context.controls.getViewportMetrics = () => ({
+      visibleLeft: 0,
+      visibleTop: 0,
+      visibleWidth: 64,
+      visibleHeight: 64,
+    })
     if (reason === 'worker') setUnitSuspension(f.worker)
+    if (reason === 'building') setDistantOwner(f.owner)
     if (reason === 'hero') Object.assign(f.hero, { i: 200, j: 200 })
-    if (reason === 'camera')
-      f.context.controls.getViewportMetrics = () => ({
-        visibleLeft: 190,
-        visibleTop: 190,
-        visibleWidth: 20,
-        visibleHeight: 20,
-      })
     if (reason === 'player') f.owner.isPlayed = true
     f.system.update()
-    assert.equal(f.context.map.gaia.animals.length, 1, reason)
+    assert.equal(f.context.map.gaia.animals.length, 0, reason)
   }
 })
 
-test('distant status never removes hunted, fighting, fleeing, selected or returning animals', () => {
-  for (const reason of ['target', 'previousTarget', 'attack', 'flee', 'selected', 'returning', 'airborne']) {
+test('camera uses the AI margin and a wider exit margin without boundary churn', () => {
+  const f = fixture([{ label: 'edge', type: 'Deer', i: 20, j: 10 }])
+  assert.equal(f.context.map.gaia.animals.length, 0)
+  f.hero.i = 11 // 256 pixels beyond the right viewport edge
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 1)
+  f.hero.i = 8 // still within the 384 pixel exit margin
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 1)
+  f.hero.i = 6
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 0)
+})
+
+test('interior cameras do not activate outdoor wildlife', () => {
+  const f = fixture([{ label: 'deer', type: 'Deer', i: 12, j: 12 }])
+  f.context.map.activeSpaceId = 'cave'
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 0)
+})
+
+test('distant status never removes hunted, fighting, fleeing or selected animals', () => {
+  for (const reason of ['target', 'previousTarget', 'attack', 'flee', 'selected']) {
     const f = distantFixture()
     const animal = f.context.map.gaia.animals[0]
     if (reason === 'target') f.worker.dest = animal
@@ -409,11 +424,31 @@ test('distant status never removes hunted, fighting, fleeing, selected or return
     if (reason === 'attack') animal.action = 'attack'
     if (reason === 'flee') animal.isFleeing = true
     if (reason === 'selected') animal.selected = true
-    if (reason === 'returning') animal.i += 12
-    if (reason === 'airborne') animal.altitude = 4
     f.system.update()
     assert.equal(f.context.map.gaia.animals[0], animal, reason)
   }
+})
+
+test('ending a hunt releases its offscreen target; dead hunters do not pin fauna', () => {
+  for (const end of ['cleared', 'dead', 'destroyed']) {
+    const f = distantFixture()
+    const animal = f.context.map.gaia.animals[0]
+    f.worker.dest = animal
+    f.system.update()
+    assert.equal(f.context.map.gaia.animals[0], animal)
+    if (end === 'cleared') f.worker.dest = null
+    if (end === 'dead') f.worker.isDead = true
+    if (end === 'destroyed') f.worker.isDestroyed = true
+    f.system.update()
+    assert.equal(f.context.map.gaia.animals.length, 0, end)
+  }
+})
+
+test('idle airborne wildlife also sleeps outside the camera', () => {
+  const f = distantFixture()
+  f.context.map.gaia.animals[0].altitude = 4
+  f.system.update()
+  assert.equal(f.context.map.gaia.animals.length, 0)
 })
 
 test('dormant village sight still prevents replacements spawning in sight', () => {
@@ -444,11 +479,11 @@ test('wildlife activity reports dormant anchors and why remaining animals are ac
   const event = events.find(event => event.name === 'wildlife.activity')
   assert.equal(event.details.active, 0)
   assert.equal(event.details.records, 1)
-  assert.equal(event.details.dormantAnchors, 2)
+  assert.equal(event.details.dormantAnchors, 3)
   f.hero.i = 200
   f.hero.j = 200
   f.system.update()
   f.context.scheduler.elapsedMs = 10000
   f.system.update()
-  assert.equal(events.at(-1).details.hero, 1)
+  assert.equal(events.at(-1).details.camera, 1)
 })

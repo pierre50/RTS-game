@@ -48,7 +48,6 @@ export function createPlayerUnit(
     updateInstanceVisibility(unit)
     fadeIn(unit, FADE_DURATION_MS)
   }
-  this.updatePopulationObjectives()
   notifyVillageStateChanged(this)
   return unit
 }

@@ -106,7 +106,7 @@ test('whole-map appearance reset and visibility do not allocate empty cell state
 })
 
 test('packed blueprint rows preserve holes, array iteration, edits and JSON serialization', () => {
-  const { createPackedBlueprintGrid } = loadTsModule('app/serialization/PackedBlueprintGrid.ts')
+  const { createPackedBlueprintGrid } = loadTsModule('app/serialization/blueprint/PackedBlueprintGrid.ts')
   const values = new Uint8Array([0, 255, 2, 1])
   const grid = createPackedBlueprintGrid(
     values,
@@ -142,7 +142,7 @@ test('pausing a packed world visits changed cells and preserves ground corpse ti
 })
 
 test('large finalized blueprints keep decoded terrain compact and preserve outside holes', async () => {
-  const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/MapBlueprintDecoding.ts')
+  const { decodeMapBlueprintPayload } = loadTsModule('app/serialization/blueprint/MapBlueprintDecoding.ts')
   const stride = 1501
   const types = Buffer.alloc(stride * stride, 255)
   const heights = Buffer.alloc(types.length)

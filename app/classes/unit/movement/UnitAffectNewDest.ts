@@ -1,3 +1,5 @@
+import type { BuildingUpgrade } from '../../../lib/economy/constructionMaterials'
+import { isRpgVillager } from '../../../config/rpgVillages'
 import { notifyVillageStateChanged } from '../../../lib/units/villageStateEvents'
 import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { scheduleVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
@@ -17,6 +19,7 @@ import type { RuntimeCell } from '../../../types/map'
 
 type BuildTarget = RuntimeEntity & {
   isBuilt?: boolean
+  buildingUpgrade?: BuildingUpgrade
   totalHitPoints?: number
 }
 
@@ -29,6 +32,7 @@ function isCompletedBuildTarget(unit: UnitEntity): boolean {
   return Boolean(
     unit.action === ACTION_TYPES.build &&
       isBuildTarget(dest) &&
+      !dest.buildingUpgrade &&
       (dest.isBuilt || ((dest.hitPoints ?? 0) >= (dest.totalHitPoints ?? 0) && (dest.totalHitPoints ?? 0) > 0))
   )
 }
@@ -42,6 +46,14 @@ export function affectNewDest(unit: UnitEntity): void {
   }
   if (isHeroControlled(unit)) {
     handleHeroDestination(unit)
+    return
+  }
+  if (isRpgVillager(unit) && !unit.combatMode && !['attack', 'flee', 'delivery', 'train'].includes(unit.action)) {
+    unit.autonomousJob = null
+    unit.previousDest = null
+    unit.previousWork = null
+    unit.stop?.()
+    unit.work = null
     return
   }
   const dest = isRuntimeEntity(unit.dest) ? unit.dest : null

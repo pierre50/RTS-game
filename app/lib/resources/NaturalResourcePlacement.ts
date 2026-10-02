@@ -6,6 +6,9 @@ type PlacementAccess = {
   reachable(from: SaveGridPoint, to: SaveGridPoint): boolean
 }
 
+// Relocation is a local operation, even on a million-cell continent.
+const RELOCATION_RADIUS = 64
+
 const spacedTypes = new Set<string>(SPACED_RESOURCE_TYPES)
 const key = (point: SaveGridPoint) => `${point.i}:${point.j}`
 const family = (resource: SaveEntityState) => `${resource.type}:${resource.textureName ?? ''}`
@@ -35,7 +38,7 @@ export class NaturalResourcePlacement {
     for (const resource of resources) {
       this.resources.set(key(resource), resource)
       let density = this.density.get(family(resource))
-      if (!density) this.density.set(family(resource), density = new Map())
+      if (!density) this.density.set(family(resource), (density = new Map()))
       const radius = resource.type === 'Tree' ? 7 : 5
       for (let di = -radius; di <= radius; di++) {
         for (let dj = -radius; dj <= radius; dj++) {
@@ -69,26 +72,41 @@ export class NaturalResourcePlacement {
     if (cached) return cached
     const density = this.density.get(family(resource))
     const scored: Array<SaveGridPoint & { score: number }> = []
-    this.terrain.forEach((row, i) => row.forEach((cell, j) => {
-      const point = { i, j }
-      if (!this.suitable(point, resource) || !this.spatial.reachable(center, point)) return
-      // Small overlapping circular patches provide an organic fallback where the
-      // original forest or deposit has been cleared completely.
-      let patch = 0
-      const tileI = Math.floor(i / 12)
-      const tileJ = Math.floor(j / 12)
-      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
-        const seed = `${poolKey}:${tileI + di}:${tileJ + dj}`
-        const ci = (tileI + di) * 12 + noise(`${seed}:i`) * 12
-        const cj = (tileJ + dj) * 12 + noise(`${seed}:j`) * 12
-        patch += Math.max(0, 1 - Math.hypot(i - ci, j - cj) / 7)
+    for (
+      let i = Math.max(0, center.i - RELOCATION_RADIUS);
+      i <= Math.min(this.terrain.length - 1, center.i + RELOCATION_RADIUS);
+      i++
+    ) {
+      const row = this.terrain[i]
+      if (!row) continue
+      for (
+        let j = Math.max(0, center.j - RELOCATION_RADIUS);
+        j <= Math.min(row.length - 1, center.j + RELOCATION_RADIUS);
+        j++
+      ) {
+        const point = { i, j }
+        if (Math.hypot(i - center.i, j - center.j) > RELOCATION_RADIUS) continue
+        const cell = row[j]
+        if (!cell || !this.suitable(point, resource) || !this.spatial.reachable(center, point)) continue
+        // Small overlapping circular patches provide an organic fallback where the
+        // original forest or deposit has been cleared completely.
+        let patch = 0
+        const tileI = Math.floor(i / 12)
+        const tileJ = Math.floor(j / 12)
+        for (let di = -1; di <= 1; di++)
+          for (let dj = -1; dj <= 1; dj++) {
+            const seed = `${poolKey}:${tileI + di}:${tileJ + dj}`
+            const ci = (tileI + di) * 12 + noise(`${seed}:i`) * 12
+            const cj = (tileJ + dj) * 12 + noise(`${seed}:j`) * 12
+            patch += Math.max(0, 1 - Math.hypot(i - ci, j - cj) / 7)
+          }
+        const matchingTerrain = !sourceType || cell?.type === sourceType ? 1 : 0.15
+        const affinity = 0.02 + (density?.get(key(point)) ?? 0) * 3 + patch * patch
+        const distance = Math.hypot(i - center.i, j - center.j)
+        const weight = (affinity * matchingTerrain) / (1 + distance / 45)
+        scored.push({ ...point, score: -Math.log(noise(`${poolKey}:${i}:${j}:pick`)) / weight })
       }
-      const matchingTerrain = !sourceType || cell?.type === sourceType ? 1 : 0.15
-      const affinity = 0.02 + (density?.get(key(point)) ?? 0) * 3 + patch * patch
-      const distance = Math.hypot(i - center.i, j - center.j)
-      const weight = affinity * matchingTerrain / (1 + distance / 45)
-      scored.push({ ...point, score: -Math.log(noise(`${poolKey}:${i}:${j}:pick`)) / weight })
-    }))
+    }
     scored.sort((a, b) => a.score - b.score)
     const points = scored.map(({ i, j }) => ({ i, j }))
     this.pools.set(poolKey, points)
@@ -97,10 +115,11 @@ export class NaturalResourcePlacement {
 
   canPlace(resource: SaveEntityState, point: SaveGridPoint, spacing = 3): boolean {
     if (!this.suitable(point, resource)) return false
-    for (let di = -spacing; di <= spacing; di++) for (let dj = -spacing; dj <= spacing; dj++) {
-      const nearby = this.resources.get(key({ i: point.i + di, j: point.j + dj }))
-      if (nearby && nearby !== resource && spacedTypes.has(nearby.type)) return false
-    }
+    for (let di = -spacing; di <= spacing; di++)
+      for (let dj = -spacing; dj <= spacing; dj++) {
+        const nearby = this.resources.get(key({ i: point.i + di, j: point.j + dj }))
+        if (nearby && nearby !== resource && spacedTypes.has(nearby.type)) return false
+      }
     return true
   }
 

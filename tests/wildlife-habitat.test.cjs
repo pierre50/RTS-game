@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { maintainWildlifeHome, habitatCells } = loadTsModule('app/services/WildlifeHabitat.ts')
+const { maintainWildlifeHome, habitatCells } = loadTsModule('app/services/wildlife/WildlifeHabitat.ts')
 
 function fixture() {
   const grid = Array.from({ length: 100 }, (_, i) =>

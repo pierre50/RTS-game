@@ -1,3 +1,5 @@
+import { isStaticSettlement } from '../../config/settlementProfiles'
+import { traceRuntime } from '../../lib/runtimeDiagnostics'
 import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
 import { isDistantOwner } from '../../lib/units/villageActivity'
 import { handleInteriorTheftDefense, isInteriorTheftDefender } from '../../ai/AITheftDefense'
@@ -13,6 +15,8 @@ import { AI_ABSTRACT_DAILY_RECRUITS } from '../../ai/config'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { AIThreatManager, type EnemyMemory, type StoredThreat, type ThreatProfile } from '../../ai/AIThreatManager'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
+import { updateChiefEscorts } from '../../ai/AIChiefEscort'
+import { isChiefEscort } from '../../lib/units/chiefEscort'
 import { isChiefUnit, isLivingChief } from '../../lib/chief'
 import {
   cleanupAITrackingSets,
@@ -20,13 +24,14 @@ import {
   handleAIChiefGuard,
   handleAIVisibleEnemyDefense,
   refreshAIChiefSuccession,
+  type AIVillageDefenseResult,
 } from './AIPlayerBehavior'
 import type {
-  AIAge,
   AIBuildingLike,
   AIEntityLike,
   AIStrategyPlayerLike,
   AIStrategySnapshot,
+  AIVillagerActionOptions,
   EnemyMemoryOptions,
 } from '../../ai/types'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
@@ -44,13 +49,17 @@ type StrategySnapshotState = {
   archerUnit: AIStrategySnapshot['archerUnit']
   cavalry: AIStrategySnapshot['cavalry']
   maxCavalry: AIStrategySnapshot['maxCavalry']
-  notBuiltHouses: AIStrategySnapshot['notBuiltHouses']
 }
+
+type AIStepLimits = Omit<StrategySnapshotState, 'map' | 'villagers' | 'infantry' | 'archers' | 'cavalry'>
+type AIStepForces = Pick<StrategySnapshotState, 'villagers' | 'infantry' | 'archers' | 'cavalry'> & {
+  military: AIEntityLike[]
+}
+type AIStepBuildings = Pick<AIVillagerActionOptions, 'towncenters' | 'storagepits' | 'farms' | 'notBuiltBuildings'>
 
 const DEBUG = false
 
 export class AI extends Player {
-  declare age: AIAge
   foundedTrees!: Set<RuntimeEntity>
   foundedBerrybushs!: Set<RuntimeEntity>
   foundedWheats!: Set<RuntimeEntity>
@@ -76,12 +85,13 @@ export class AI extends Player {
   difficultyConfig!: AIStrategyPlayerLike['difficultyConfig']
   chiefLossDetectedAt!: number | null
   chiefWanderReadyAt!: Map<string, number>
-  maxVillagerPerAge!: AIStrategyPlayerLike['maxVillagerPerAge']
-  maxBuildingByAge!: AIStrategyPlayerLike['maxBuildingByAge']
-  maxInfantryByAge!: AIStrategyPlayerLike['maxInfantryByAge']
-  maxArcherByAge!: AIStrategyPlayerLike['maxArcherByAge']
-  maxCavalryByAge!: AIStrategyPlayerLike['maxCavalryByAge']
+  maxVillagers!: AIStrategyPlayerLike['maxVillagers']
+  maxBuildings!: AIStrategyPlayerLike['maxBuildings']
+  maxInfantry!: AIStrategyPlayerLike['maxInfantry']
+  maxArchers!: AIStrategyPlayerLike['maxArchers']
+  maxCavalry!: AIStrategyPlayerLike['maxCavalry']
   _stepTaskId!: SchedulerTaskId | null
+  private _chiefEscortTaskId?: SchedulerTaskId | null
 
   constructor({ ...props }: PlayerOptions, context: GameContextLike) {
     super({ ...props, isPlayed: false, type: props.type ?? PLAYER_TYPES.ai }, context)
@@ -197,10 +207,24 @@ export class AI extends Player {
 
   private measureAIStage<T>(stage: string, callback: () => T): T {
     const monitor = this.context.performance
-    return monitor ? monitor.measure(`ai.${stage}`, callback) : callback()
+    return traceRuntime(
+      `ai.${stage}`,
+      () => (monitor ? monitor.measure(`ai.${stage}`, callback) : callback()),
+      { owner: this.label, civ: this.civ, units: this.units.length, buildings: this.buildings.length },
+      `ai.${this.label}.${stage}`
+    )
   }
 
   _scheduleStep() {
+    this._chiefEscortTaskId = this.context.scheduler.add(
+      () => {
+        if (this.context.paused || this.context.map.ready === false || isDistantOwner(this)) return
+        updateChiefEscorts(this.units, this.context)
+      },
+      750,
+      'ai.chiefEscort',
+      { stagger: true, maxRunsPerTick: 1 }
+    )
     this._stepTaskId = this.context.scheduler.add(
       () => {
         const started = performance.now()
@@ -230,10 +254,7 @@ export class AI extends Player {
 
   hasNotReachBuildingLimit(buildingType: string, buildings: AIEntityLike[]) {
     const currentBuildings = buildings || []
-    return (
-      !this.maxBuildingByAge[this.age as AIAge][buildingType] ||
-      currentBuildings.length < this.maxBuildingByAge[this.age as AIAge][buildingType]
-    )
+    return !this.maxBuildings[buildingType] || currentBuildings.length < this.maxBuildings[buildingType]
   }
 
   buildingsByTypes(types: string[]): AIBuildingLike[] {
@@ -265,7 +286,6 @@ export class AI extends Player {
       markets: this.buildingsByTypes([BUILDING_TYPES.market]),
       watchTowers: this.buildingsByTypes([BUILDING_TYPES.watchTower]),
       temples: this.buildingsByTypes([BUILDING_TYPES.temple]),
-      notBuiltHouses: state.notBuiltHouses,
     }
   }
 
@@ -317,82 +337,23 @@ export class AI extends Player {
   step() {
     const { map, paused } = this.context
     if (paused || map.ready === false || isDistantOwner(this)) return 0
-    this.measureAIStage('knowledge', () => {
-      for (const resources of Object.values(this.foundedResources)) resources.clear()
-      this.foundedAnimals.clear()
-      this.foundedDeadAnimals.clear()
-      for (const resource of [...villageResources(this, this.getNow()), ...villageAnimals(this)]) {
-        if (resource.isDestroyed || !knowsEconomicTarget(this, resource)) continue
-        knownTarget(this, resource)
-        if (resource.family === 'resource') this.foundedResources[resource.type]?.add(resource)
-        else if (resource.isDead) this.foundedDeadAnimals.add(resource)
-        else this.foundedAnimals.add(resource)
-      }
-    })
+    this.measureAIStage('knowledge', () => this.refreshEconomicKnowledge())
 
-    let actions = 0
-
-    const maxVillagers = Math.floor(this.maxVillagerPerAge[this.age as AIAge] * this.difficultyConfig.popCapMultiplier)
-    const maxInfantry = this.maxInfantryByAge[this.age as AIAge]
-    const maxArcher = this.maxArcherByAge[this.age as AIAge]
-    const maxCavalry = this.maxCavalryByAge[this.age as AIAge]
-    const infantryUnit = this.getBestInfantryUnit()
-    const archerUnit = this.getBestArcherUnit()
-
+    const limits = this.getStepLimits()
     if (DEBUG) {
       console.log('----Step started')
       console.log(
-        `Age: ${this.age}, Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.populationMax}`
+        `Wood: ${this.wood}, Food: ${this.food}, Stone: ${this.stone}, Gold: ${this.gold}, Population: ${this.population}/${this.populationMax}`
       )
     }
 
     const interiorTheftDefenseActive = this.measureAIStage('interiorDefense', () => handleInteriorTheftDefense(this))
     const allVillagers = this.getLivingUnitsByType(UNIT_TYPES.villager)
-    actions += this.refreshChiefSuccession(allVillagers)
-    const villagers = allVillagers.filter(
-      villager => !isChiefUnit(villager) && !isInteriorTheftDefender(villager) && !hasInteriorCombatRoute(villager)
-    )
-    const { infantry, archers, cavalry } = classifyMilitaryUnits(this.units as AIEntityLike[])
-    const military = [...infantry, ...archers, ...cavalry]
-    const militaryPower = this.strategy.military.getGroupCombatPower(military)
-
-    if (DEBUG)
-      console.log(
-        `Villagers: ${villagers.length}/${maxVillagers}, Fantassin: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Power: ${Math.round(militaryPower)}`
-      )
-
-    const previousPhase = this.phase
-    this.strategy.updatePhase(villagers.length)
-    if (DEBUG && previousPhase !== this.phase) console.log(`Phase: ${previousPhase} → ${this.phase}`)
-    if (DEBUG) console.log(`Phase: ${this.phase}`)
-
-    const towncenters = this.buildingsByTypes([BUILDING_TYPES.townCenter])
-    const storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit])
-    const houses = this.buildingsByTypes([BUILDING_TYPES.house])
-    const granarys = this.buildingsByTypes([BUILDING_TYPES.granary])
-    const barracks = this.buildingsByTypes([BUILDING_TYPES.barracks])
-    const markets = this.buildingsByTypes([BUILDING_TYPES.market])
-    const farms = [...this.foundedWheats]
-    if (DEBUG)
-      console.log(
-        `Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets.length}`
-      )
-
-    const notBuiltBuildings = (this.buildings as AIBuildingLike[])
-      .filter(b => !b.isBuilt || ((b.hitPoints ?? 0) > 0 && (b.hitPoints ?? 0) < (b.totalHitPoints ?? 1)))
-      .sort((a, b) => (a.type === BUILDING_TYPES.house ? -1 : b.type === BUILDING_TYPES.house ? 1 : 0))
-    const notBuiltHouses = notBuiltBuildings.filter(b => b.type === BUILDING_TYPES.house)
-
-    const RETREAT_HP_RATIO = 0.3
-    const waitingMilitary = military.filter(
-      c =>
-        c.inactif &&
-        !hasInteriorCombatRoute(c) &&
-        c.action !== ACTION_TYPES.attack &&
-        (c.hitPoints ?? 0) >= (c.totalHitPoints ?? 1) * RETREAT_HP_RATIO
-    )
-
-    if (DEBUG) console.log(`Waiting Military: ${waitingMilitary.length}`)
+    let actions = this.refreshChiefSuccession(allVillagers)
+    const forces = this.getStepForces(allVillagers, limits)
+    this.updateStepPhase(forces.villagers.length)
+    const buildings = this.getStepBuildings()
+    const waitingMilitary = this.getWaitingMilitary(forces.military)
 
     // Player losing condition
     if (isPlayerEliminated(this)) {
@@ -408,31 +369,147 @@ export class AI extends Player {
       this.cleanupThreats()
     })
 
+    const defense = this.runDefenseStages(forces, buildings.towncenters, waitingMilitary, interiorTheftDefenseActive)
+    actions += defense.actions
+    if (defense.active || isStaticSettlement(this)) return actions
+
+    actions += this.runDevelopmentStages(map, limits, forces, buildings, waitingMilitary)
+
+    if (DEBUG) console.log('----Step ended')
+    return actions
+  }
+
+  private refreshEconomicKnowledge(): void {
+    for (const resources of Object.values(this.foundedResources)) resources.clear()
+    this.foundedAnimals.clear()
+    this.foundedDeadAnimals.clear()
+    for (const resource of [...villageResources(this, this.getNow()), ...villageAnimals(this)]) {
+      if (resource.isDestroyed || !knowsEconomicTarget(this, resource)) continue
+      knownTarget(this, resource)
+      if (resource.family === 'resource') this.foundedResources[resource.type]?.add(resource)
+      else if (resource.isDead) this.foundedDeadAnimals.add(resource)
+      else this.foundedAnimals.add(resource)
+    }
+  }
+
+  private getStepLimits(): AIStepLimits {
+    return {
+      maxVillagers: Math.floor(this.maxVillagers * this.difficultyConfig.popCapMultiplier),
+      maxInfantry: this.maxInfantry,
+      maxArcher: this.maxArchers,
+      maxCavalry: this.maxCavalry,
+      infantryUnit: this.getBestInfantryUnit(),
+      archerUnit: this.getBestArcherUnit(),
+    }
+  }
+
+  private classifyMilitary() {
+    return classifyMilitaryUnits(this.units.filter(unit => !isChiefEscort(unit)) as AIEntityLike[])
+  }
+
+  private getStepForces(allVillagers: AIEntityLike[], limits: AIStepLimits): AIStepForces {
+    const villagers = allVillagers.filter(
+      villager => !isChiefUnit(villager) && !isInteriorTheftDefender(villager) && !hasInteriorCombatRoute(villager)
+    )
+    const { infantry, archers, cavalry } = this.classifyMilitary()
+    const military = [...infantry, ...archers, ...cavalry]
+    const militaryPower = this.strategy.military.getGroupCombatPower(military)
+
+    if (DEBUG)
+      console.log(
+        `Villagers: ${villagers.length}/${limits.maxVillagers}, Fantassin: ${infantry.length}/${limits.maxInfantry} (${limits.infantryUnit}), Archers: ${archers.length}/${limits.maxArcher} (${limits.archerUnit}), Cavalry: ${cavalry.length}/${limits.maxCavalry}, Power: ${Math.round(militaryPower)}`
+      )
+    return { villagers, infantry, archers, cavalry, military }
+  }
+
+  private updateStepPhase(villagerCount: number): void {
+    const previousPhase = this.phase
+    this.strategy.updatePhase(villagerCount)
+    if (DEBUG && previousPhase !== this.phase) console.log(`Phase: ${previousPhase} → ${this.phase}`)
+    if (DEBUG) console.log(`Phase: ${this.phase}`)
+  }
+
+  private getStepBuildings(): AIStepBuildings {
+    const towncenters = this.buildingsByTypes([
+      BUILDING_TYPES.townCenter,
+      ...(this.settlementType === 'outpost' ? ['FireCamp'] : []),
+    ])
+    const storagepits = this.buildingsByTypes([BUILDING_TYPES.storagePit])
+    const houses = this.buildingsByTypes([BUILDING_TYPES.house])
+    const granarys = this.buildingsByTypes([BUILDING_TYPES.granary])
+    const barracks = this.buildingsByTypes([BUILDING_TYPES.barracks])
+    const markets = this.buildingsByTypes([BUILDING_TYPES.market])
+    const farms = [...this.foundedWheats]
+    if (DEBUG)
+      console.log(
+        `Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets.length}`
+      )
+
+    const notBuiltBuildings = (isStaticSettlement(this) ? [] : (this.buildings as AIBuildingLike[]))
+      .filter(b => !b.isBuilt || ((b.hitPoints ?? 0) > 0 && (b.hitPoints ?? 0) < (b.totalHitPoints ?? 1)))
+      .sort((a, b) => (a.type === BUILDING_TYPES.house ? -1 : b.type === BUILDING_TYPES.house ? 1 : 0))
+    return { towncenters, storagepits, farms, notBuiltBuildings }
+  }
+
+  private getWaitingMilitary(military: AIEntityLike[]): AIEntityLike[] {
+    const RETREAT_HP_RATIO = 0.3
+    const waitingMilitary = military.filter(
+      c =>
+        c.inactif &&
+        !hasInteriorCombatRoute(c) &&
+        c.action !== ACTION_TYPES.attack &&
+        (c.hitPoints ?? 0) >= (c.totalHitPoints ?? 1) * RETREAT_HP_RATIO
+    )
+
+    if (DEBUG) console.log(`Waiting Military: ${waitingMilitary.length}`)
+    return waitingMilitary
+  }
+
+  private runDefenseStages(
+    forces: AIStepForces,
+    towncenters: AIBuildingLike[],
+    waitingMilitary: AIEntityLike[],
+    interiorTheftDefenseActive: boolean
+  ): AIVillageDefenseResult {
     const visibleEnemyDefense = interiorTheftDefenseActive
       ? { active: false, actions: 0 }
-      : this.measureAIStage('defense', () => this.handleVisibleEnemyDefense({ villagers, military, towncenters }))
-    actions += visibleEnemyDefense.actions
-    if (visibleEnemyDefense.active) return actions
+      : this.measureAIStage('defense', () =>
+          this.handleVisibleEnemyDefense({
+            villagers: isStaticSettlement(this) ? [] : forces.villagers,
+            military: forces.military,
+            towncenters,
+          })
+        )
+    if (visibleEnemyDefense.active) return visibleEnemyDefense
 
+    let actions = visibleEnemyDefense.actions
     actions += this.measureAIStage('threats', () =>
       this.handleThreatResponses({
-        villagers,
+        villagers: isStaticSettlement(this) ? [] : forces.villagers,
         waitingMilitary,
         debug: DEBUG,
       })
     )
     actions += this.measureAIStage('chiefGuard', () => this.handleChiefGuard(towncenters))
+    return { actions, active: false }
+  }
 
+  private runDevelopmentStages(
+    map: StrategySnapshotState['map'],
+    limits: AIStepLimits,
+    forces: AIStepForces,
+    buildings: AIStepBuildings,
+    waitingMilitary: AIEntityLike[]
+  ): number {
     const refreshedWaitingMilitary = waitingMilitary.filter(u => u.inactif && u.action !== ACTION_TYPES.attack)
-
-    actions += this.measureAIStage('economy', () =>
+    let actions = this.measureAIStage('economy', () =>
       this.economy.handleVillagerActions({
-        villagers,
+        villagers: forces.villagers,
         map,
-        farms,
-        notBuiltBuildings,
-        storagepits,
-        towncenters,
+        farms: buildings.farms,
+        notBuiltBuildings: buildings.notBuiltBuildings,
+        storagepits: buildings.storagepits,
+        towncenters: buildings.towncenters,
         debug: DEBUG,
       })
     )
@@ -447,17 +524,11 @@ export class AI extends Player {
     const strategySnapshot = this.measureAIStage('strategySnapshot', () =>
       this.getStrategySnapshot({
         map,
-        villagers,
-        maxVillagers,
-        infantry,
-        maxInfantry,
-        infantryUnit,
-        archers,
-        maxArcher,
-        archerUnit,
-        cavalry,
-        maxCavalry,
-        notBuiltHouses,
+        villagers: forces.villagers,
+        infantry: forces.infantry,
+        archers: forces.archers,
+        cavalry: forces.cavalry,
+        ...limits,
       })
     )
 
@@ -465,13 +536,12 @@ export class AI extends Player {
     actions += this.measureAIStage('buildingPlacement', () =>
       this.strategy.handleBuildingActions(strategySnapshot, DEBUG)
     )
-
-    if (DEBUG) console.log('----Step ended')
     return actions
   }
 
   /** Daily recruitment uses the live training system, which owns paid trainees. */
   planDistantProduction(): void {
+    if (isStaticSettlement(this)) return
     this.refreshChiefSuccession(this.getLivingUnitsByType(UNIT_TYPES.villager))
     const villagers = this.getLivingUnitsByType(UNIT_TYPES.villager).filter(unit => !isChiefUnit(unit))
     this.strategy.updatePhase(villagers.length)
@@ -481,20 +551,11 @@ export class AI extends Player {
     const recruits = villagers
       .filter(unit => unit.work !== 'builder' && unit.autonomousJob !== 'construction' && !unit.trainingTargetType)
       .slice(0, budget)
-    const { infantry, archers, cavalry } = classifyMilitaryUnits(this.units as AIEntityLike[])
     const snapshot = this.getStrategySnapshot({
       map: this.context.map,
       villagers: recruits,
-      maxVillagers: Math.floor(this.maxVillagerPerAge[this.age] * this.difficultyConfig.popCapMultiplier),
-      infantry,
-      archers,
-      cavalry,
-      maxInfantry: this.maxInfantryByAge[this.age],
-      maxArcher: this.maxArcherByAge[this.age],
-      maxCavalry: this.maxCavalryByAge[this.age],
-      infantryUnit: this.getBestInfantryUnit(),
-      archerUnit: this.getBestArcherUnit(),
-      notBuiltHouses: this.buildings.filter(building => building.type === BUILDING_TYPES.house && !building.isBuilt),
+      ...this.classifyMilitary(),
+      ...this.getStepLimits(),
     })
     this.strategy.handleProductionActions(snapshot, false)
   }
@@ -505,6 +566,8 @@ export class AI extends Player {
     } = this
     if (this._stepTaskId != null) this.context.scheduler.remove(this._stepTaskId)
     this._stepTaskId = null
+    if (this._chiefEscortTaskId != null) this.context.scheduler.remove(this._chiefEscortTaskId)
+    this._chiefEscortTaskId = null
     const index = players.indexOf(this)
     if (index !== -1) players.splice(index, 1)
   }

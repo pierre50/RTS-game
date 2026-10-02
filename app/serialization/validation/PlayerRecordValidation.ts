@@ -1,12 +1,15 @@
+import { nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
+import { migrateLegacyProgression } from '../LegacyProgressionMigration'
+import { FORGE_FAMILIES } from '../../lib/equipment/forgeUpgrades'
 import { PLAYER_TYPES } from '../../constants'
 import { validateTargetKnowledge } from '../../lib/units/playerTargetKnowledge'
-import type { LoadedGameConfig, SaveEntityState } from '../../types/save'
+import type { LoadedGameConfig, SaveEntityState, SavePlayerState } from '../../types/save'
 import { validateCaveDefinition } from '../CaveSave'
-import { validateDepotReservePolicy } from '../DepotReserveValidation'
+import { validateDepotReservePolicy } from './DepotReserveValidation'
 import { normalizeSavedInteriorBuildings, savedBuildingsWithInteriors } from '../InteriorBuildingSave'
-import { validateMinimapBuildingMemory, validateMinimapPreferences } from '../MinimapMemoryValidation'
+import { validateMinimapBuildingMemory, validateMinimapPreferences } from './MinimapMemoryValidation'
 import { validateSavedHorseTamingStatus } from '../SaveAnimalState'
-import { validatePlayerCorpses, validatePlayerUnits } from '../SaveUnitValidators'
+import { validatePlayerCorpses, validatePlayerUnits } from './SaveUnitValidators'
 import {
   fail,
   isObject,
@@ -14,9 +17,9 @@ import {
   validateEntityPosition,
   validateOptionalBoolean,
   validateOptionalFiniteNumber,
-} from '../SaveValidationPrimitives'
-import { validatePlayerViews } from '../SaveViewValidation'
-import { validatePlayerTraining } from '../TrainingSaveValidation'
+} from './SaveValidationPrimitives'
+import { validatePlayerViews } from './SaveViewValidation'
+import { validatePlayerTraining } from './TrainingSaveValidation'
 
 function validateAIState(aiState: unknown, playerIndex: number): void {
   if (aiState == null) return
@@ -54,6 +57,19 @@ export function validatePlayerRecord(
   }
   if (player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.bandits) validateAIState(player.aiState, index)
 
+  if (player.forgeUpgrades != null) {
+    if (!isObject(player.forgeUpgrades)) fail('Invalid save file: forge upgrades must be an object.')
+    for (const [family, tier] of Object.entries(player.forgeUpgrades)) {
+      if (
+        !FORGE_FAMILIES.includes(family as (typeof FORGE_FAMILIES)[number]) ||
+        typeof tier !== 'number' ||
+        !Number.isInteger(tier) ||
+        tier < 0 ||
+        tier > 3
+      )
+        fail('Invalid save file: invalid forge upgrade.')
+    }
+  }
   validateTargetKnowledge(player.targetKnowledge)
   validateMinimapBuildingMemory(player.minimapBuildingMemory)
   validateMinimapPreferences(player.minimapPreferences)
@@ -66,6 +82,7 @@ export function validatePlayerRecord(
     if (!isObject(building)) fail('Invalid save file: building is invalid.')
     if (building.interiorBuildings != null) validateArray(building.interiorBuildings, 'interior buildings')
   }
+  migrateLegacyProgression(player as SavePlayerState)
   normalizeSavedInteriorBuildings(player as { label?: string; buildings?: SaveEntityState[] })
   const normalizedBuildings = player.buildings as SaveEntityState[]
   validateArray(units, `player ${index} units`)
@@ -97,6 +114,21 @@ function validatePlayerBuildings(
     validateEntityPosition(building, size, `player ${playerIndex} building ${buildingIndex}`)
     validateOptionalBoolean((building as SaveEntityState).placementMirrored, 'building mirror')
     validateDepotReservePolicy(building.reservePolicy, String(building.type))
+    if (
+      building.heroHomeResident != null &&
+      (!isObject(building.heroHomeResident) ||
+        typeof building.heroHomeResident.label !== 'string' ||
+        !building.heroHomeResident.label ||
+        (building.heroHomeResident.name != null && typeof building.heroHomeResident.name !== 'string'))
+    )
+      fail('Invalid hero home resident.')
+    if (
+      building.plannedBedLabels != null &&
+      (!Array.isArray(building.plannedBedLabels) ||
+        building.plannedBedLabels.some(label => typeof label !== 'string' || !label) ||
+        new Set(building.plannedBedLabels).size !== building.plannedBedLabels.length)
+    )
+      fail('Invalid planned bed identities.')
     if (building.constructionMaterials != null) {
       const materials = building.constructionMaterials
       if (!isObject(materials)) fail('Invalid construction materials.')
@@ -124,10 +156,37 @@ function validatePlayerBuildings(
       fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an unsupported type.`)
     }
     if (
-      building.buildingAge != null &&
-      (typeof building.buildingAge !== 'number' || !Number.isInteger(building.buildingAge) || building.buildingAge < 0)
+      building.buildingLevel != null &&
+      (typeof building.buildingLevel !== 'number' ||
+        !Number.isInteger(building.buildingLevel) ||
+        building.buildingLevel < 0)
     ) {
-      fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an invalid building age.`)
+      fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an invalid building level.`)
+    }
+    if (building.buildingUpgrade != null) {
+      const upgrade = building.buildingUpgrade
+      if (
+        !isObject(upgrade) ||
+        !building.isBuilt ||
+        building.isDead ||
+        building.isDestroyed ||
+        !building.constructionMaterials
+      )
+        fail('Invalid building upgrade state.')
+      if (
+        upgrade.targetLevel !==
+        nextBuildingUpgrade(config.buildings[building.type], Number(building.buildingLevel ?? 0))
+      )
+        fail('Invalid building upgrade tier.')
+      for (const key of ['hitPoints', 'totalHitPoints', 'constructionTime'])
+        if (typeof upgrade[key] !== 'number' || !Number.isFinite(upgrade[key]) || Number(upgrade[key]) <= 0)
+          fail('Invalid building upgrade progress.')
+      if (
+        Number(upgrade.hitPoints) < 1 ||
+        Number(upgrade.totalHitPoints) <= 1 ||
+        Number(upgrade.hitPoints) > Number(upgrade.totalHitPoints)
+      )
+        fail('Invalid building upgrade progress.')
     }
     if (building.cave != null) {
       if (building.type !== 'Cave') fail('Invalid cave building type.')

@@ -1,12 +1,14 @@
+import type { ForgeUpgrades } from '../lib/equipment/forgeUpgrades'
+import type { BuildingUpgrade } from '../lib/economy/constructionMaterials'
 export type ActionProps = {
   buildingTypes?: string[]
   trainingType?: string
 }
 
 export type CombatOwnerLike = {
+  forgeUpgrades?: ForgeUpgrades
   label?: string
   isPlayed?: boolean
-  age?: number
   civ?: string
   config?: unknown
   diplomacy?: string | null
@@ -40,6 +42,7 @@ export type CombatEntity = {
   devInvincible?: boolean
   indestructible?: boolean
   isBuilt?: boolean
+  buildingUpgrade?: BuildingUpgrade
   isDead?: boolean
   isDestroyed?: boolean
   isUsedBy?: unknown

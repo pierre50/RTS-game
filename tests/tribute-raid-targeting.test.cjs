@@ -47,7 +47,7 @@ const constants = {
 }
 
 function loadTributeRaidTargeting() {
-  return loadTsModule('app/services/TributeRaidTargeting.ts', {
+  return loadTsModule('app/services/tribute/TributeRaidTargeting.ts', {
     mocks: {
       '../constants': constants,
       '../lib/chief': {
@@ -93,7 +93,7 @@ function loadTributeRaidSpawning() {
 }
 
 function loadTributeRaidText() {
-  return loadTsModule('app/services/TributeRaidText.ts', {
+  return loadTsModule('app/services/tribute/TributeRaidText.ts', {
     mocks: {
       '../lib/lang': {
         t: (key, vars) => {
@@ -117,16 +117,17 @@ function loadTributeRaidText() {
   })
 }
 
+const factionRaidEconomyMock = {
+  selectFactionRaidArmy: () => ({ units: [{}, {}] }),
+  commitFactionRaidArmy: () => true,
+  returnFactionRaidUnit: () => true,
+}
+
 function loadTributeRaidSystem(overrides = {}) {
-  return loadTsModule('app/services/TributeRaidSystem.ts', {
+  return loadTsModule('app/services/tribute/TributeRaidSystem.ts', {
     mocks: {
       '../lib/units/playerTargetKnowledge': { playerSeesTarget: () => true },
-      './tribute/FactionRaidEconomy': {
-        selectFactionRaidArmy: () => ({ units: [{ type: 'Fantassin' }, { type: 'Bowman' }] }),
-        commitFactionRaidArmy: () => true,
-        returnFactionRaidUnit: () => true,
-      },
-      './FactionRaidEconomy': { selectFactionRaidArmy: () => ({ units: [{}, {}] }) },
+      './FactionRaidEconomy': factionRaidEconomyMock,
       '../classes/players/Player': {
         Player: class Player {
           constructor(options) {
@@ -166,13 +167,13 @@ function loadTributeRaidSystem(overrides = {}) {
       '../ui/EntityInfoContent': {
         createTitledEntityInfoContent: () => ({ appendChild: () => {} }),
       },
-      './tribute/TributeRaidRules': loadTributeRaidRules(),
+      './TributeRaidRules': loadTributeRaidRules(),
       './TributeRaidText': loadTributeRaidText(),
       './TributeRaidTargeting': {
         findRaidTarget: () => null,
         hasActiveBanditCampPresence: () => false,
       },
-      './tribute/TributeRaidSpawning': {
+      './TributeRaidSpawning': {
         findTributeRaidSpawnCells: () => [],
         removeTributeRaidUnitFromRuntime: () => {},
       },
@@ -194,7 +195,8 @@ test('faction spawning preserves recruited types and only commits a complete gro
   const removed = []
   const target = { i: 10, j: 10, owner: {} }
   const { TributeRaidSystem } = loadTributeRaidSystem({
-    './tribute/FactionRaidEconomy': {
+    './FactionRaidEconomy': {
+      ...factionRaidEconomyMock,
       commitFactionRaidArmy: () => {
         committed++
         return true
@@ -806,10 +808,14 @@ test('raid balance keeps limits, military exclusions and rounded tribute amounts
   }
   system.context.dayNight = { state: { day: 10 } }
   assert.equal(system.getLivingPlayerMilitaryCount(), 2)
-  assert.equal(system.getBanditRaidSize(), 5)
-  assert.equal(system.getFactionRaidSize({ relationScore: -50 }), 6)
-  assert.deepEqual(system.getFactionTributeCost({ relationScore: -50 }), { food: 160, gold: 110 })
+  assert.equal(system.getBanditRaidSize(), 4)
+  assert.equal(system.getFactionRaidSize({ relationScore: -50 }), 5)
+  assert.deepEqual(system.getFactionTributeCost({ relationScore: -50 }), { food: 140, gold: 100 })
   system.context.player.age = 100
+  assert.equal(system.getBanditRaidSize(), 4, 'obsolete age does not increase raid size')
+  assert.equal(system.getFactionRaidSize({ relationScore: -100 }), 7)
+  system.context.dayNight.state.day = 100
+  system.context.player.units = Array.from({ length: 30 }, () => ({ type: 'Fantassin' }))
   assert.equal(system.getBanditRaidSize(), 7)
   assert.equal(system.getFactionRaidSize({ relationScore: -100 }), 9)
 })
@@ -878,7 +884,8 @@ test('tutorial faction raid starts at night without an economic army and attacks
   const target = { label: 'hero', i: 10, j: 10, owner: {} }
   const { TributeRaidSystem } = loadTributeRaidSystem({
     './TributeRaidTargeting': { findRaidTarget: () => target },
-    './tribute/FactionRaidEconomy': {
+    './FactionRaidEconomy': {
+      ...factionRaidEconomyMock,
       commitFactionRaidArmy: () => assert.fail('Scripted army must not drain world economy'),
     },
   })
@@ -967,7 +974,8 @@ function deferredRaidFixture(kind = 'bandit') {
   const tasks = new Map()
   const { TributeRaidSystem } = loadTributeRaidSystem({
     './TributeRaidTargeting': { findRaidTarget: context => context.controls.heroUnit },
-    './tribute/FactionRaidEconomy': {
+    './FactionRaidEconomy': {
+      ...factionRaidEconomyMock,
       commitFactionRaidArmy: () => {
         committed++
         return true

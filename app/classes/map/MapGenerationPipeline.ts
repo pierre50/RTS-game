@@ -2,7 +2,7 @@ import { Gaia } from '../players'
 import { placeCave } from './generation/CaveGeneration'
 import { updateInstanceVisibility } from '../../lib'
 import { getEnvironmentTerrainParams } from '../../constants'
-import { rehydrateAIKnowledge } from '../../services/UnitPerception'
+import { rehydrateAIKnowledge } from '../../services/visibility/UnitPerception'
 import type { GameContextLike } from '../../types/context'
 import type { GenerationTimer, MapGenerationMap, ProgressCallback, GenerateMapOptions } from './MapGenerationTypes'
 

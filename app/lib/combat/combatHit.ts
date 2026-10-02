@@ -5,11 +5,9 @@ import { spawnCombatBuildingImpactFragments } from '../entities/combatBuildingIm
 import { spawnCombatBloodImpact } from '../entities/combatBloodImpact'
 import { getBuildingInteriorAssaultMinimumHitPoints } from '../buildings/interiorAccess'
 import { t } from '../lang'
-import { AGE_OBJECTIVES, completeAgeObjective } from '../objectives/ageObjectives'
 import { attemptAutomaticParry } from './parry'
 import { CRITICAL_HIT_MULTIPLIER, getCriticalHitChance, grantUnitXp, XP_KILL_BONUS } from '../units/unitExperience'
-import { FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../constants'
-import { isTamedHorse } from '../horses/horseTaming'
+import { FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { handleCompanionHorseDamage } from './companionHorseCombat'
 import type { MenuLike } from '../../types/context'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -60,6 +58,8 @@ function rollCriticalHit(attacker: RuntimeEntity, xpCategory?: string | null): b
 }
 
 function getInteriorAssaultHitPointFloor(source: CombatEntity, target: RuntimeEntity): number | null {
+  // The hero may keep striking after entry opens; only NPC assaults stop at the doorway threshold.
+  if (source.type === UNIT_TYPES.hero) return null
   return getBuildingInteriorAssaultMinimumHitPoints(source as UnitEntity, target)
 }
 
@@ -170,16 +170,6 @@ export function applyCombatHit(
     if (!companionHorseHandled) target.isAttacked?.(attacker, hitDirection)
   }
   if (killed) {
-    if (
-      attacker.type === UNIT_TYPES.hero &&
-      beforeHitPoints > 0 &&
-      damageDealt > 0 &&
-      target.family === FAMILY_TYPES.animal &&
-      (!target.owner || target.owner.type === PLAYER_TYPES.gaia) &&
-      !isTamedHorse(target)
-    ) {
-      completeAgeObjective(attacker.owner, AGE_OBJECTIVES.huntAnimal)
-    }
     if (grantKillXp && xpUnit && xpCategory) grantUnitXp(xpUnit, xpCategory, XP_KILL_BONUS)
     target.die?.()
   }

@@ -120,7 +120,7 @@
 .game-window
   .inventory-section-list
   .inventory-action-row:not(.inventory-action-row--no-icon)
-  > :not(.inventory-action-row-icon) {
+  > :not(.inventory-action-row-icon):not(.market-slot > .inventory-action-row-value) {
   display: none;
 }
 .game-window .inventory-action-row-icon {
@@ -136,7 +136,7 @@
 }
 /* Share unavailable-action styling without dimming focus, costs or quantity badges. */
 .game-window
-  :is(.market-buy-slot, .inventory-construction-row, .inventory-craft-row):has(.inventory-row-action-button:disabled)
+  .inventory-action-row:has(.inventory-row-action-button:disabled):not(:has(.inventory-row-action-button:enabled))
   .inventory-action-row-icon
   > :not(.inventory-quantity-badge) {
   filter: var(--window-unavailable-icon-filter);
@@ -209,7 +209,7 @@
   color: var(--main-text-color);
   font-size: var(--font-size-sm);
   line-height: 1.45;
-  max-height: 100px;
+  max-height: min(180px, 28vh);
   overflow: auto;
   background: var(--window-details-bg);
 }
@@ -549,4 +549,41 @@ body:has(.modal) .building-placement-help {
   justify-content: center;
   margin-right: var(--ui-gap-6);
   text-shadow: none;
+}
+
+/* Prices stay visible in the grid; status colors remain legible in the details. */
+.game-window .inventory-section-list .market-slot > .inventory-action-row-value {
+  display: block;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 1;
+  margin: 0;
+  padding: 2px 4px;
+  max-width: calc(100% - 8px);
+  border: 1px solid var(--window-line);
+  background: var(--window-quantity-bg);
+  line-height: 1.2;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  color: var(--main-accent-hover);
+  text-align: center;
+}
+.game-window .market-buy-slot:has(.inventory-row-action-button:disabled) > .inventory-action-row-value,
+.game-window .game-window-details .inventory-cost-is-missing {
+  color: var(--text-color-danger);
+}
+.game-window .game-window-details .inventory-cost-is-available {
+  color: inherit;
+}
+
+.game-window-detail-line {
+  display: block;
+}
+.game-window-detail-line + .game-window-detail-line {
+  margin-top: 3px;
+}
+.game-window-detail-title {
+  font-weight: bold;
+  color: var(--main-accent-hover);
 }

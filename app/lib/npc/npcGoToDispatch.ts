@@ -33,22 +33,19 @@ export function keepNpcHere(target: UnitEntity): void {
 }
 
 export function startFollowingHero(target: UnitEntity): void {
-  const wasSleeping = target.shelterState?.reason === 'sleep'
   resetNpcDirectives(target)
   target.previousDest = null
   target.autonomousJob = null
   target.collectiveTask = null
   target.work = null
-  if (wasSleeping) {
-    const waking =
-      target.context?.unitRest?.wakeSleepingUnitForOrder(target, () => {
-        target.followingHero = true
-      }) ?? false
-    if (!waking) target.followingHero = true
-    return
+  const follow = () => {
+    // Following replaces the old rest/work plan, including after a wake animation.
+    target.suspendedRestState = null
+    target.followingHero = true
+    target.stop?.()
   }
-  target.followingHero = true
-  target.stop?.()
+  if (target.context?.unitRest?.wakeRestingUnitForOrder(target, follow)) return
+  follow()
 }
 
 function hasSameOwner(source: UnitEntity, target: RuntimeEntity): boolean {

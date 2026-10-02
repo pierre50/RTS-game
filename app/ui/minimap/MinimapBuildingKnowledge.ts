@@ -1,6 +1,8 @@
 import { BUILDING_TYPES, PLAYER_TYPES } from '../../constants'
 import { getBuildingFootprintCells } from '../../lib/grid/cells'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
+import { cartesianToIsometric } from '../../lib/maths'
+import { deferredVillageBuildings } from '../../services/world/distantVillages/DeferredVillageStore'
 import type { MinimapBuildingMemory } from '../../types/minimap'
 import type { RuntimeMapSpace } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
@@ -18,10 +20,10 @@ export class MinimapBuildingKnowledge {
       saved.filter(entry => entry.spaceId === space.id).map(entry => [entry.id, { ...entry, visible: false }])
     )
     return withMinimapPlayerVision(player, space.id, () => {
-      const visible = (building: { i: number; j: number; size?: number }) =>
+      const visible = (building: { i: number; j: number; size?: number; type?: string }) =>
         reveal ||
-        getBuildingFootprintCells(building.i, building.j, space.grid, building.size).some(cell =>
-          player.views?.isVisible?.(cell.i, cell.j)
+        getBuildingFootprintCells(building.i, building.j, space.grid, building.size, undefined, building.type).some(
+          cell => player.views?.isVisible?.(cell.i, cell.j)
         )
       // A visible location is checked against the live buildings below. Hidden ones
       // retain their last observed owner and position even after destruction.
@@ -31,10 +33,16 @@ export class MinimapBuildingKnowledge {
       }
       for (const owner of owners) {
         if (owner === player || owner.type !== PLAYER_TYPES.ai) continue
-        for (const building of owner.buildings) {
+        const deferred = deferredVillageBuildings(owner)
+        const buildings = deferred
+          ? deferred.map(building => {
+              const [x, y] = cartesianToIsometric(building.i, building.j)
+              return { building, position: { x, y } }
+            })
+          : owner.buildings.map(building => ({ building, position: getMinimapDrawPosition(building) }))
+        for (const { building, position } of buildings) {
           if (building.type === BUILDING_TYPES.cave || getEntitySpaceId(building) !== space.id) continue
           if (!visible(building) || building.isDead || building.isDestroyed) continue
-          const position = getMinimapDrawPosition(building)
           if (!position) continue
           const { x, y } = position
           const id = building.label || `${minimapOwnerKey(owner)}:${building.type}:${building.i}:${building.j}`
@@ -48,6 +56,8 @@ export class MinimapBuildingKnowledge {
             size: building.size ?? 1,
             color: owner.colorHex,
             ownerKey: minimapOwnerKey(owner),
+            settlementId: owner.label ?? minimapOwnerKey(owner),
+            settlementKind: owner.settlementType ?? 'village',
             town: building.type === BUILDING_TYPES.townCenter,
             visible: true,
           })

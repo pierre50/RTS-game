@@ -3,7 +3,7 @@ import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { ResourceAmount } from '../../types/common'
 import type { FactionSave } from '../../types/save'
 import { FACTION_RAID_MIN_HATE, FACTION_RAID_INTERVAL_DAYS, roundTributeCost } from './TributeRaidRules'
-import type { TributeRaidSystem } from '../TributeRaidSystem'
+import type { TributeRaidSystem } from './TributeRaidSystem'
 import { selectFactionRaidArmy } from './FactionRaidEconomy'
 
 export function isBaseWorld(runtime: TributeRaidSystem): boolean {
@@ -35,39 +35,32 @@ export function findAngryKnownFaction(
 }
 
 export function getBanditRaidSize(runtime: TributeRaidSystem): number {
-  const player = runtime.context.player
   const day = runtime.context.dayNight?.state?.day ?? 1
-  const ageBonus = Math.max(0, player?.age ?? 0)
-  return Math.max(2, Math.min(7, 2 + ageBonus + Math.floor(day / 5)))
+  return Math.max(2, Math.min(7, 2 + Math.floor(day / 5)))
 }
 
 export function getFactionRaidSize(runtime: TributeRaidSystem, faction: FactionSave): number {
-  const player = runtime.context.player
   const militaryCount = runtime.getLivingPlayerMilitaryCount()
   const hateBonus = Math.max(0, Math.floor(Math.abs(Math.min(0, faction.relationScore)) / 25))
-  const ageBonus = Math.max(0, player?.age ?? 0)
   const randomBonus = Math.floor((runtime.context.map.random?.() ?? Math.random()) * 3)
-  return Math.max(2, Math.min(9, 2 + Math.floor(militaryCount / 2) + hateBonus + ageBonus + randomBonus))
+  return Math.max(2, Math.min(9, 2 + Math.floor(militaryCount / 2) + hateBonus + randomBonus))
 }
 
 export function getBanditTributeCost(runtime: TributeRaidSystem): ResourceAmount {
   const day = runtime.context.dayNight?.state?.day ?? 1
-  const age = runtime.context.player?.age ?? 0
   return roundTributeCost({
-    food: 40 + day * 5 + age * 20,
-    gold: 25 + day * 4 + age * 15,
+    food: 40 + day * 5,
+    gold: 25 + day * 4,
   })
 }
 
 export function getFactionTributeCost(runtime: TributeRaidSystem, faction: FactionSave): ResourceAmount {
-  const player = runtime.context.player
   const day = runtime.context.dayNight?.state?.day ?? 1
-  const age = player?.age ?? 0
   const hate = Math.max(0, Math.abs(Math.min(0, faction.relationScore)))
   const soldiers = runtime.getLivingPlayerMilitaryCount()
   return roundTributeCost({
-    food: 45 + day * 4 + age * 20 + soldiers * 8 + Math.floor(hate * 0.8),
-    gold: 25 + day * 3 + age * 18 + soldiers * 5 + Math.floor(hate * 0.6),
+    food: 45 + day * 4 + soldiers * 8 + Math.floor(hate * 0.8),
+    gold: 25 + day * 3 + soldiers * 5 + Math.floor(hate * 0.6),
   })
 }
 

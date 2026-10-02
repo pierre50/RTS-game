@@ -352,3 +352,58 @@ test('melee can lock its direction during windup while ranged attacks keep track
     assert.equal(facingUpdates, trackTargetOnRelease ? 2 : 1)
   }
 })
+
+for (const family of ['unit', 'animal']) {
+  for (const invalidate of ['death', 'destroy', 'cancel', 'new-target']) {
+    test(`${family} ignores old recovery callbacks after ${invalidate}`, () => {
+      const { runAttackLoopOnFrame, clearCombatAttackRecovery } = loadCombatAttackLoop()
+      const { attacker } = makeAttackLoopSubject()
+      attacker.family = family
+      attacker.attackRecoveryMs = 100
+      let timer, finishAnimation
+      attacker.context = { scheduler: {
+        addOneShot(callback) { timer = callback; return 42 }, remove() {},
+      } }
+      const calls = []
+      runAttackLoopOnFrame(attacker, {
+        releaseFrame: 1,
+        prepareAttackSheet() {},
+        prepareRecoverySheet: () => calls.push('visual'),
+        playRecoveryAnimation: (_frame, done) => { finishAnimation = done; return true },
+        onOutOfRange() {}, onTargetUnavailable: () => calls.push('target'), onReadyToAttack() {},
+      })
+      attacker.sprite.onFrameChange(1)
+      if (invalidate === 'death') attacker.isDead = true
+      if (invalidate === 'destroy') attacker.isDestroyed = true
+      if (invalidate === 'cancel') clearCombatAttackRecovery(attacker)
+      if (invalidate === 'new-target') attacker.dest = { family: 'unit' }
+      attacker.flushPendingOrder = () => calls.push('order')
+      const newCallback = () => {}
+      attacker.sprite.onComplete = newCallback
+      attacker.sprite.loop = false
+      finishAnimation()
+      timer()
+      assert.deepEqual(calls, [])
+      assert.equal(attacker.sprite.onComplete, newCallback)
+      assert.equal(attacker.sprite.loop, false)
+    })
+  }
+}
+
+test('an obsolete loop callback cannot erase its replacement', () => {
+  const { runAttackLoopOnFrame, clearCombatAttackRecovery } = loadCombatAttackLoop()
+  const { attacker } = makeAttackLoopSubject()
+  attacker.attackRecoveryMs = 100
+  const callbacks = {
+    releaseFrame: 1, prepareAttackSheet() {}, prepareRecoverySheet() {},
+    onOutOfRange() {}, onTargetUnavailable() {}, onReadyToAttack() {},
+  }
+  runAttackLoopOnFrame(attacker, callbacks)
+  attacker.sprite.onFrameChange(1)
+  const oldLoop = attacker.sprite.onLoop
+  clearCombatAttackRecovery(attacker)
+  const newLoop = () => {}
+  attacker.sprite.onLoop = newLoop
+  oldLoop()
+  assert.equal(attacker.sprite.onLoop, newLoop)
+})

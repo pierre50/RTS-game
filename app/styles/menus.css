@@ -392,10 +392,6 @@
   transition: background-color var(--ui-transition-fast);
 }
 
-.player-table--with-age .player-table-header,
-.player-table--with-age .player-row {
-  grid-template-columns: minmax(96px, 1fr) 120px 100px 120px 48px 48px;
-}
 
 .player-row--odd {
   background: var(--surface-row-subtle);
@@ -420,9 +416,6 @@
   width: 100%;
 }
 
-.player-age .ui-select {
-  width: 100%;
-}
 
 .team-cycle,
 .color-swatch {
@@ -608,11 +601,6 @@
     min-width: 460px;
   }
 
-  .player-table--with-age .player-table-header,
-  .player-table--with-age .player-row {
-    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(96px, 1fr) minmax(132px, 1fr) 56px 56px;
-    min-width: 580px;
-  }
 
   .button-group,
   .modal-menu,

@@ -78,7 +78,7 @@ const mocks = {
     },
   },
   '../players': { Gaia: class {} },
-  '../../services/UnitPerception': { rehydrateAIKnowledge() {} },
+  '../../services/visibility/UnitPerception': { rehydrateAIKnowledge() {} },
 }
 const { MapTerrain } = loadTsModule('app/classes/map/terrain/MapTerrain.ts', { mocks })
 const { MapTerrainBake } = loadTsModule('app/classes/map/terrain/MapTerrainBake.ts', { mocks })

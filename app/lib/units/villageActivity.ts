@@ -1,3 +1,4 @@
+import { notifyVillageStateChanged } from './villageStateEvents'
 import { VILLAGE_ACTIVITY_RADIUS } from '../../config/villageActivity'
 import type { UnitEntity } from '../../types/entities'
 import type { GridPosition } from '../../types/grid'
@@ -5,8 +6,10 @@ import type { GridPosition } from '../../types/grid'
 // Ownership is runtime-only. Saves flush to ordinary entity data first.
 const distantOwners = new WeakMap<object, () => void>()
 export function setDistantOwner(owner: object, wake?: () => void): void {
+  const wasDistant = distantOwners.has(owner)
   if (wake) distantOwners.set(owner, wake)
   else distantOwners.delete(owner)
+  if (wasDistant !== Boolean(wake)) notifyVillageStateChanged(owner)
 }
 export function isDistantOwner(owner: object): boolean {
   return distantOwners.has(owner)

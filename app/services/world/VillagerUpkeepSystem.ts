@@ -1,4 +1,7 @@
-import { VillageScheduleGate, villageCalendarMinute } from '../../lib/units/VillageScheduleGate'
+import { isRpgVillager } from '../../config/rpgVillages'
+import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isUnitSuspended } from '../../lib/units/unitSuspension'
+import { VillageScheduleGate, villageCalendarMinute } from '../../lib/units/villageScheduleGate'
 import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
 import { flushVillageSimulation } from '../../lib/units/villageActivity'
 import { consumeVillagerMeals } from '../../lib/economy/villagerMeals'
@@ -26,6 +29,10 @@ export class VillagerUpkeepSystem {
     let flushed = false
     for (const player of this.context.players ?? []) {
       for (const unit of player.units ?? []) {
+        if (isRpgVillager(unit) || (isStaticSettlement(player) && isUnitSuspended(unit))) {
+          unit.lastMealAt = now
+          continue
+        }
         const meal = consumeVillagerMeals(unit, from, now, unit.lastMealAt == null, () => {
           if (!flushed) {
             flushed = true

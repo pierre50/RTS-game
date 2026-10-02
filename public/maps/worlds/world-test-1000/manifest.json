@@ -8,8 +8,8 @@
   "regionsHigh": 1,
   "settlements": [
     {
-      "id": "village-slot-0",
-      "kind": "village",
+      "id": "Hellas:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "temperate",
@@ -24,11 +24,14 @@
       "world": {
         "i": 662,
         "j": 276
-      }
+      },
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "settlementType": "city"
     },
     {
-      "id": "village-slot-1",
-      "kind": "village",
+      "id": "Latium:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "temperate",
@@ -43,11 +46,14 @@
       "world": {
         "i": 246,
         "j": 180
-      }
+      },
+      "civ": "Latium",
+      "playerIndex": 1,
+      "settlementType": "city"
     },
     {
-      "id": "village-slot-2",
-      "kind": "village",
+      "id": "Kemet:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "desert",
@@ -62,11 +68,14 @@
       "world": {
         "i": 854,
         "j": 628
-      }
+      },
+      "civ": "Kemet",
+      "playerIndex": 2,
+      "settlementType": "city"
     },
     {
-      "id": "village-slot-3",
-      "kind": "village",
+      "id": "Sumeria:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "steppe",
@@ -81,11 +90,14 @@
       "world": {
         "i": 350,
         "j": 900
-      }
+      },
+      "civ": "Sumeria",
+      "playerIndex": 3,
+      "settlementType": "city"
     },
     {
-      "id": "village-slot-4",
-      "kind": "village",
+      "id": "Xia:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "steppe",
@@ -100,11 +112,14 @@
       "world": {
         "i": 606,
         "j": 836
-      }
+      },
+      "civ": "Xia",
+      "playerIndex": 4,
+      "settlementType": "city"
     },
     {
-      "id": "village-slot-5",
-      "kind": "village",
+      "id": "Nord:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "blackforest",
@@ -119,11 +134,14 @@
       "world": {
         "i": 110,
         "j": 548
-      }
+      },
+      "civ": "Nord",
+      "playerIndex": 6,
+      "settlementType": "city"
     },
     {
-      "id": "village-slot-6",
-      "kind": "village",
+      "id": "Alba:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "blackforest",
@@ -138,11 +156,14 @@
       "world": {
         "i": 414,
         "j": 484
-      }
+      },
+      "civ": "Alba",
+      "playerIndex": 5,
+      "settlementType": "city"
     },
     {
-      "id": "village-slot-7",
-      "kind": "village",
+      "id": "Nobatia:city",
+      "kind": "city",
       "radius": 18,
       "importance": 1,
       "biome": "desert",
@@ -157,7 +178,890 @@
       "world": {
         "i": 894,
         "j": 164
-      }
+      },
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "settlementType": "city"
+    },
+    {
+      "id": "Hellas:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 736,
+        "j": 976
+      },
+      "world": {
+        "i": 606,
+        "j": 260
+      },
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "settlementType": "village"
+    },
+    {
+      "id": "Latium:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 384,
+        "j": 720
+      },
+      "world": {
+        "i": 302,
+        "j": 164
+      },
+      "civ": "Latium",
+      "playerIndex": 1,
+      "settlementType": "village"
+    },
+    {
+      "id": "Kemet:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1104,
+        "j": 992
+      },
+      "world": {
+        "i": 798,
+        "j": 612
+      },
+      "civ": "Kemet",
+      "playerIndex": 2,
+      "settlementType": "village"
+    },
+    {
+      "id": "Sumeria:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 800,
+        "j": 480
+      },
+      "world": {
+        "i": 390,
+        "j": 820
+      },
+      "civ": "Sumeria",
+      "playerIndex": 3,
+      "settlementType": "village"
+    },
+    {
+      "id": "Xia:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1088,
+        "j": 736
+      },
+      "world": {
+        "i": 662,
+        "j": 852
+      },
+      "civ": "Xia",
+      "playerIndex": 4,
+      "settlementType": "village"
+    },
+    {
+      "id": "Nord:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 384,
+        "j": 416
+      },
+      "world": {
+        "i": 150,
+        "j": 468
+      },
+      "civ": "Nord",
+      "playerIndex": 6,
+      "settlementType": "village"
+    },
+    {
+      "id": "Alba:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 576,
+        "j": 672
+      },
+      "world": {
+        "i": 374,
+        "j": 404
+      },
+      "civ": "Alba",
+      "playerIndex": 5,
+      "settlementType": "village"
+    },
+    {
+      "id": "Nobatia:village-1",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 976,
+        "j": 1232
+      },
+      "world": {
+        "i": 854,
+        "j": 244
+      },
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "settlementType": "village"
+    },
+    {
+      "id": "Hellas:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 800,
+        "j": 928
+      },
+      "world": {
+        "i": 614,
+        "j": 372
+      },
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "settlementType": "village"
+    },
+    {
+      "id": "Latium:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 416,
+        "j": 640
+      },
+      "world": {
+        "i": 278,
+        "j": 276
+      },
+      "civ": "Latium",
+      "playerIndex": 1,
+      "settlementType": "village"
+    },
+    {
+      "id": "Kemet:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1152,
+        "j": 1120
+      },
+      "world": {
+        "i": 886,
+        "j": 532
+      },
+      "civ": "Kemet",
+      "playerIndex": 2,
+      "settlementType": "village"
+    },
+    {
+      "id": "Sumeria:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 720,
+        "j": 416
+      },
+      "world": {
+        "i": 318,
+        "j": 804
+      },
+      "civ": "Sumeria",
+      "playerIndex": 3,
+      "settlementType": "village"
+    },
+    {
+      "id": "Xia:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 944,
+        "j": 672
+      },
+      "world": {
+        "i": 558,
+        "j": 772
+      },
+      "civ": "Xia",
+      "playerIndex": 4,
+      "settlementType": "village"
+    },
+    {
+      "id": "Nord:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 464,
+        "j": 416
+      },
+      "world": {
+        "i": 190,
+        "j": 548
+      },
+      "civ": "Nord",
+      "playerIndex": 6,
+      "settlementType": "village"
+    },
+    {
+      "id": "Alba:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 656,
+        "j": 752
+      },
+      "world": {
+        "i": 454,
+        "j": 404
+      },
+      "civ": "Alba",
+      "playerIndex": 5,
+      "settlementType": "village"
+    },
+    {
+      "id": "Nobatia:village-2",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 896,
+        "j": 1200
+      },
+      "world": {
+        "i": 798,
+        "j": 196
+      },
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "settlementType": "village"
+    },
+    {
+      "id": "Hellas:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 880,
+        "j": 1008
+      },
+      "world": {
+        "i": 694,
+        "j": 372
+      },
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Latium:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 352,
+        "j": 576
+      },
+      "world": {
+        "i": 214,
+        "j": 276
+      },
+      "civ": "Latium",
+      "playerIndex": 1,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Kemet:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1024,
+        "j": 992
+      },
+      "world": {
+        "i": 758,
+        "j": 532
+      },
+      "civ": "Kemet",
+      "playerIndex": 2,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Sumeria:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 672,
+        "j": 352
+      },
+      "world": {
+        "i": 262,
+        "j": 820
+      },
+      "civ": "Sumeria",
+      "playerIndex": 3,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Xia:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1008,
+        "j": 768
+      },
+      "world": {
+        "i": 638,
+        "j": 740
+      },
+      "civ": "Xia",
+      "playerIndex": 4,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Nord:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 320,
+        "j": 464
+      },
+      "world": {
+        "i": 142,
+        "j": 356
+      },
+      "civ": "Nord",
+      "playerIndex": 6,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Alba:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 656,
+        "j": 576
+      },
+      "world": {
+        "i": 366,
+        "j": 580
+      },
+      "civ": "Alba",
+      "playerIndex": 5,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Nobatia:outpost-3",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 960,
+        "j": 1152
+      },
+      "world": {
+        "i": 806,
+        "j": 308
+      },
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Hellas:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 864,
+        "j": 1088
+      },
+      "world": {
+        "i": 726,
+        "j": 276
+      },
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Latium:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 480,
+        "j": 688
+      },
+      "world": {
+        "i": 334,
+        "j": 292
+      },
+      "civ": "Latium",
+      "playerIndex": 1,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Kemet:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1088,
+        "j": 912
+      },
+      "world": {
+        "i": 750,
+        "j": 676
+      },
+      "civ": "Kemet",
+      "playerIndex": 2,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Sumeria:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 720,
+        "j": 512
+      },
+      "world": {
+        "i": 366,
+        "j": 708
+      },
+      "civ": "Sumeria",
+      "playerIndex": 3,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Xia:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 928,
+        "j": 752
+      },
+      "world": {
+        "i": 590,
+        "j": 676
+      },
+      "civ": "Xia",
+      "playerIndex": 4,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Nord:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 480,
+        "j": 496
+      },
+      "world": {
+        "i": 238,
+        "j": 484
+      },
+      "civ": "Nord",
+      "playerIndex": 6,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Alba:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 752,
+        "j": 640
+      },
+      "world": {
+        "i": 446,
+        "j": 612
+      },
+      "civ": "Alba",
+      "playerIndex": 5,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Nobatia:outpost-4",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 976,
+        "j": 1072
+      },
+      "world": {
+        "i": 774,
+        "j": 404
+      },
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Hellas:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 656,
+        "j": 1008
+      },
+      "world": {
+        "i": 582,
+        "j": 148
+      },
+      "civ": "Hellas",
+      "playerIndex": 0,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Latium:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 432,
+        "j": 560
+      },
+      "world": {
+        "i": 246,
+        "j": 372
+      },
+      "civ": "Latium",
+      "playerIndex": 1,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Kemet:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 1008,
+        "j": 912
+      },
+      "world": {
+        "i": 710,
+        "j": 596
+      },
+      "civ": "Kemet",
+      "playerIndex": 2,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Sumeria:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 848,
+        "j": 544
+      },
+      "world": {
+        "i": 446,
+        "j": 804
+      },
+      "civ": "Sumeria",
+      "playerIndex": 3,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Xia:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "steppe",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 896,
+        "j": 608
+      },
+      "world": {
+        "i": 502,
+        "j": 788
+      },
+      "civ": "Xia",
+      "playerIndex": 4,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Nord:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "blackforest",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 544,
+        "j": 432
+      },
+      "world": {
+        "i": 238,
+        "j": 612
+      },
+      "civ": "Nord",
+      "playerIndex": 6,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Alba:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "temperate",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 576,
+        "j": 752
+      },
+      "world": {
+        "i": 414,
+        "j": 324
+      },
+      "civ": "Alba",
+      "playerIndex": 5,
+      "settlementType": "outpost"
+    },
+    {
+      "id": "Nobatia:outpost-5",
+      "kind": "village",
+      "radius": 18,
+      "importance": 1,
+      "biome": "desert",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 944,
+        "j": 960
+      },
+      "world": {
+        "i": 702,
+        "j": 484
+      },
+      "civ": "Nobatia",
+      "playerIndex": 7,
+      "settlementType": "outpost"
     },
     {
       "id": "world-test-1000-r0-0:camp-1",
@@ -167,12 +1071,12 @@
         "y": 0
       },
       "local": {
-        "i": 529,
-        "j": 455
+        "i": 459,
+        "j": 603
       },
       "world": {
-        "i": 242,
-        "j": 574
+        "i": 281,
+        "j": 356
       },
       "strength": 7
     },
@@ -184,12 +1088,12 @@
         "y": 0
       },
       "local": {
-        "i": 970,
-        "j": 750
+        "i": 629,
+        "j": 383
       },
       "world": {
-        "i": 610,
-        "j": 720
+        "i": 256,
+        "j": 746
       },
       "strength": 6
     },
@@ -201,12 +1105,12 @@
         "y": 0
       },
       "local": {
-        "i": 902,
-        "j": 649
+        "i": 697,
+        "j": 873
       },
       "world": {
-        "i": 525,
-        "j": 753
+        "i": 535,
+        "j": 324
       },
       "strength": 8
     },
@@ -218,12 +1122,12 @@
         "y": 0
       },
       "local": {
-        "i": 619,
-        "j": 296
+        "i": 437,
+        "j": 384
       },
       "world": {
-        "i": 207,
-        "j": 823
+        "i": 160,
+        "j": 553
       },
       "strength": 5
     },
@@ -235,12 +1139,12 @@
         "y": 0
       },
       "local": {
-        "i": 457,
-        "j": 577
+        "i": 594,
+        "j": 469
       },
       "world": {
-        "i": 267,
-        "j": 380
+        "i": 281,
+        "j": 625
       },
       "strength": 6
     },
@@ -252,12 +1156,12 @@
         "y": 0
       },
       "local": {
-        "i": 480,
-        "j": 662
+        "i": 896,
+        "j": 936
       },
       "world": {
-        "i": 321,
-        "j": 318
+        "i": 666,
+        "j": 460
       },
       "strength": 8
     },
@@ -269,12 +1173,12 @@
         "y": 0
       },
       "local": {
-        "i": 802,
-        "j": 741
+        "i": 972,
+        "j": 825
       },
       "world": {
-        "i": 521,
-        "j": 561
+        "i": 648,
+        "j": 647
       },
       "strength": 7
     },
@@ -286,51 +1190,17 @@
         "y": 0
       },
       "local": {
-        "i": 967,
-        "j": 978
+        "i": 623,
+        "j": 649
       },
       "world": {
-        "i": 722,
-        "j": 489
+        "i": 386,
+        "j": 474
       },
       "strength": 5
     },
     {
       "id": "world-test-1000-r0-0:camp-9",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 960,
-        "j": 1126
-      },
-      "world": {
-        "i": 793,
-        "j": 334
-      },
-      "strength": 5
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-10",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 1185,
-        "j": 994
-      },
-      "world": {
-        "i": 839,
-        "j": 691
-      },
-      "strength": 5
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-11",
       "kind": "banditCamp",
       "region": {
         "x": 0,
@@ -347,6 +1217,40 @@
       "strength": 2
     },
     {
+      "id": "world-test-1000-r0-0:camp-10",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 990,
+        "j": 652
+      },
+      "world": {
+        "i": 571,
+        "j": 838
+      },
+      "strength": 2
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-11",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 852,
+        "j": 855
+      },
+      "world": {
+        "i": 603,
+        "j": 497
+      },
+      "strength": 2
+    },
+    {
       "id": "world-test-1000-r0-0:camp-12",
       "kind": "banditCamp",
       "region": {
@@ -354,12 +1258,12 @@
         "y": 0
       },
       "local": {
-        "i": 632,
-        "j": 1000
+        "i": 804,
+        "j": 583
       },
       "world": {
-        "i": 566,
-        "j": 132
+        "i": 443,
+        "j": 721
       },
       "strength": 4
     },
@@ -371,85 +1275,17 @@
         "y": 0
       },
       "local": {
-        "i": 385,
-        "j": 424
+        "i": 374,
+        "j": 525
       },
       "world": {
-        "i": 154,
-        "j": 461
+        "i": 199,
+        "j": 349
       },
       "strength": 3
     },
     {
       "id": "world-test-1000-r0-0:camp-14",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 855,
-        "j": 871
-      },
-      "world": {
-        "i": 613,
-        "j": 484
-      },
-      "strength": 3
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-15",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 667,
-        "j": 535
-      },
-      "world": {
-        "i": 351,
-        "j": 632
-      },
-      "strength": 3
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-16",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 887,
-        "j": 1034
-      },
-      "world": {
-        "i": 710,
-        "j": 353
-      },
-      "strength": 4
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-17",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 703,
-        "j": 851
-      },
-      "world": {
-        "i": 527,
-        "j": 352
-      },
-      "strength": 2
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-18",
       "kind": "banditCamp",
       "region": {
         "x": 0,
@@ -463,6 +1299,74 @@
         "i": 682,
         "j": 927
       },
+      "strength": 3
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-15",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 508,
+        "j": 453
+      },
+      "world": {
+        "i": 230,
+        "j": 555
+      },
+      "strength": 3
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-16",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 865,
+        "j": 734
+      },
+      "world": {
+        "i": 549,
+        "j": 631
+      },
+      "strength": 4
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-17",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 698,
+        "j": 571
+      },
+      "world": {
+        "i": 384,
+        "j": 627
+      },
+      "strength": 2
+    },
+    {
+      "id": "world-test-1000-r0-0:camp-18",
+      "kind": "banditCamp",
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "local": {
+        "i": 518,
+        "j": 706
+      },
+      "world": {
+        "i": 362,
+        "j": 312
+      },
       "strength": 4
     },
     {
@@ -473,12 +1377,12 @@
         "y": 0
       },
       "local": {
-        "i": 1098,
-        "j": 865
+        "i": 756,
+        "j": 1014
       },
       "world": {
-        "i": 731,
-        "j": 733
+        "i": 635,
+        "j": 242
       },
       "strength": 4
     },
@@ -490,12 +1394,12 @@
         "y": 0
       },
       "local": {
-        "i": 746,
-        "j": 555
+        "i": 628,
+        "j": 1037
       },
       "world": {
-        "i": 400,
-        "j": 691
+        "i": 582,
+        "j": 91
       },
       "strength": 4
     },
@@ -507,46 +1411,12 @@
         "y": 0
       },
       "local": {
-        "i": 609,
-        "j": 747
+        "i": 933,
+        "j": 1226
       },
       "world": {
-        "i": 428,
-        "j": 362
-      },
-      "strength": 2
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-22",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 1093,
-        "j": 996
-      },
-      "world": {
-        "i": 794,
-        "j": 597
-      },
-      "strength": 2
-    },
-    {
-      "id": "world-test-1000-r0-0:camp-23",
-      "kind": "banditCamp",
-      "region": {
-        "x": 0,
-        "y": 0
-      },
-      "local": {
-        "i": 294,
-        "j": 494
-      },
-      "world": {
-        "i": 144,
-        "j": 300
+        "i": 829,
+        "j": 207
       },
       "strength": 2
     }
@@ -562,11 +1432,11 @@
         "y": 0
       },
       "seed": 5000,
-      "spawns": 8,
+      "spawns": 48,
       "settlements": [
         {
-          "id": "village-slot-0",
-          "kind": "village",
+          "id": "Hellas:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "temperate",
@@ -581,11 +1451,14 @@
           "world": {
             "i": 662,
             "j": 276
-          }
+          },
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "settlementType": "city"
         },
         {
-          "id": "village-slot-1",
-          "kind": "village",
+          "id": "Latium:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "temperate",
@@ -600,11 +1473,14 @@
           "world": {
             "i": 246,
             "j": 180
-          }
+          },
+          "civ": "Latium",
+          "playerIndex": 1,
+          "settlementType": "city"
         },
         {
-          "id": "village-slot-2",
-          "kind": "village",
+          "id": "Kemet:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "desert",
@@ -619,11 +1495,14 @@
           "world": {
             "i": 854,
             "j": 628
-          }
+          },
+          "civ": "Kemet",
+          "playerIndex": 2,
+          "settlementType": "city"
         },
         {
-          "id": "village-slot-3",
-          "kind": "village",
+          "id": "Sumeria:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "steppe",
@@ -638,11 +1517,14 @@
           "world": {
             "i": 350,
             "j": 900
-          }
+          },
+          "civ": "Sumeria",
+          "playerIndex": 3,
+          "settlementType": "city"
         },
         {
-          "id": "village-slot-4",
-          "kind": "village",
+          "id": "Xia:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "steppe",
@@ -657,11 +1539,14 @@
           "world": {
             "i": 606,
             "j": 836
-          }
+          },
+          "civ": "Xia",
+          "playerIndex": 4,
+          "settlementType": "city"
         },
         {
-          "id": "village-slot-5",
-          "kind": "village",
+          "id": "Nord:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "blackforest",
@@ -676,11 +1561,14 @@
           "world": {
             "i": 110,
             "j": 548
-          }
+          },
+          "civ": "Nord",
+          "playerIndex": 6,
+          "settlementType": "city"
         },
         {
-          "id": "village-slot-6",
-          "kind": "village",
+          "id": "Alba:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "blackforest",
@@ -695,11 +1583,14 @@
           "world": {
             "i": 414,
             "j": 484
-          }
+          },
+          "civ": "Alba",
+          "playerIndex": 5,
+          "settlementType": "city"
         },
         {
-          "id": "village-slot-7",
-          "kind": "village",
+          "id": "Nobatia:city",
+          "kind": "city",
           "radius": 18,
           "importance": 1,
           "biome": "desert",
@@ -714,7 +1605,890 @@
           "world": {
             "i": 894,
             "j": 164
-          }
+          },
+          "civ": "Nobatia",
+          "playerIndex": 7,
+          "settlementType": "city"
+        },
+        {
+          "id": "Hellas:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 736,
+            "j": 976
+          },
+          "world": {
+            "i": 606,
+            "j": 260
+          },
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "settlementType": "village"
+        },
+        {
+          "id": "Latium:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 384,
+            "j": 720
+          },
+          "world": {
+            "i": 302,
+            "j": 164
+          },
+          "civ": "Latium",
+          "playerIndex": 1,
+          "settlementType": "village"
+        },
+        {
+          "id": "Kemet:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1104,
+            "j": 992
+          },
+          "world": {
+            "i": 798,
+            "j": 612
+          },
+          "civ": "Kemet",
+          "playerIndex": 2,
+          "settlementType": "village"
+        },
+        {
+          "id": "Sumeria:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 800,
+            "j": 480
+          },
+          "world": {
+            "i": 390,
+            "j": 820
+          },
+          "civ": "Sumeria",
+          "playerIndex": 3,
+          "settlementType": "village"
+        },
+        {
+          "id": "Xia:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1088,
+            "j": 736
+          },
+          "world": {
+            "i": 662,
+            "j": 852
+          },
+          "civ": "Xia",
+          "playerIndex": 4,
+          "settlementType": "village"
+        },
+        {
+          "id": "Nord:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 384,
+            "j": 416
+          },
+          "world": {
+            "i": 150,
+            "j": 468
+          },
+          "civ": "Nord",
+          "playerIndex": 6,
+          "settlementType": "village"
+        },
+        {
+          "id": "Alba:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 576,
+            "j": 672
+          },
+          "world": {
+            "i": 374,
+            "j": 404
+          },
+          "civ": "Alba",
+          "playerIndex": 5,
+          "settlementType": "village"
+        },
+        {
+          "id": "Nobatia:village-1",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 976,
+            "j": 1232
+          },
+          "world": {
+            "i": 854,
+            "j": 244
+          },
+          "civ": "Nobatia",
+          "playerIndex": 7,
+          "settlementType": "village"
+        },
+        {
+          "id": "Hellas:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 800,
+            "j": 928
+          },
+          "world": {
+            "i": 614,
+            "j": 372
+          },
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "settlementType": "village"
+        },
+        {
+          "id": "Latium:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 416,
+            "j": 640
+          },
+          "world": {
+            "i": 278,
+            "j": 276
+          },
+          "civ": "Latium",
+          "playerIndex": 1,
+          "settlementType": "village"
+        },
+        {
+          "id": "Kemet:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1152,
+            "j": 1120
+          },
+          "world": {
+            "i": 886,
+            "j": 532
+          },
+          "civ": "Kemet",
+          "playerIndex": 2,
+          "settlementType": "village"
+        },
+        {
+          "id": "Sumeria:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 720,
+            "j": 416
+          },
+          "world": {
+            "i": 318,
+            "j": 804
+          },
+          "civ": "Sumeria",
+          "playerIndex": 3,
+          "settlementType": "village"
+        },
+        {
+          "id": "Xia:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 944,
+            "j": 672
+          },
+          "world": {
+            "i": 558,
+            "j": 772
+          },
+          "civ": "Xia",
+          "playerIndex": 4,
+          "settlementType": "village"
+        },
+        {
+          "id": "Nord:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 464,
+            "j": 416
+          },
+          "world": {
+            "i": 190,
+            "j": 548
+          },
+          "civ": "Nord",
+          "playerIndex": 6,
+          "settlementType": "village"
+        },
+        {
+          "id": "Alba:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 656,
+            "j": 752
+          },
+          "world": {
+            "i": 454,
+            "j": 404
+          },
+          "civ": "Alba",
+          "playerIndex": 5,
+          "settlementType": "village"
+        },
+        {
+          "id": "Nobatia:village-2",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 896,
+            "j": 1200
+          },
+          "world": {
+            "i": 798,
+            "j": 196
+          },
+          "civ": "Nobatia",
+          "playerIndex": 7,
+          "settlementType": "village"
+        },
+        {
+          "id": "Hellas:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 880,
+            "j": 1008
+          },
+          "world": {
+            "i": 694,
+            "j": 372
+          },
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Latium:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 352,
+            "j": 576
+          },
+          "world": {
+            "i": 214,
+            "j": 276
+          },
+          "civ": "Latium",
+          "playerIndex": 1,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Kemet:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1024,
+            "j": 992
+          },
+          "world": {
+            "i": 758,
+            "j": 532
+          },
+          "civ": "Kemet",
+          "playerIndex": 2,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Sumeria:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 672,
+            "j": 352
+          },
+          "world": {
+            "i": 262,
+            "j": 820
+          },
+          "civ": "Sumeria",
+          "playerIndex": 3,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Xia:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1008,
+            "j": 768
+          },
+          "world": {
+            "i": 638,
+            "j": 740
+          },
+          "civ": "Xia",
+          "playerIndex": 4,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Nord:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 320,
+            "j": 464
+          },
+          "world": {
+            "i": 142,
+            "j": 356
+          },
+          "civ": "Nord",
+          "playerIndex": 6,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Alba:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 656,
+            "j": 576
+          },
+          "world": {
+            "i": 366,
+            "j": 580
+          },
+          "civ": "Alba",
+          "playerIndex": 5,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Nobatia:outpost-3",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 960,
+            "j": 1152
+          },
+          "world": {
+            "i": 806,
+            "j": 308
+          },
+          "civ": "Nobatia",
+          "playerIndex": 7,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Hellas:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 864,
+            "j": 1088
+          },
+          "world": {
+            "i": 726,
+            "j": 276
+          },
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Latium:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 480,
+            "j": 688
+          },
+          "world": {
+            "i": 334,
+            "j": 292
+          },
+          "civ": "Latium",
+          "playerIndex": 1,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Kemet:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1088,
+            "j": 912
+          },
+          "world": {
+            "i": 750,
+            "j": 676
+          },
+          "civ": "Kemet",
+          "playerIndex": 2,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Sumeria:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 720,
+            "j": 512
+          },
+          "world": {
+            "i": 366,
+            "j": 708
+          },
+          "civ": "Sumeria",
+          "playerIndex": 3,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Xia:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 928,
+            "j": 752
+          },
+          "world": {
+            "i": 590,
+            "j": 676
+          },
+          "civ": "Xia",
+          "playerIndex": 4,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Nord:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 480,
+            "j": 496
+          },
+          "world": {
+            "i": 238,
+            "j": 484
+          },
+          "civ": "Nord",
+          "playerIndex": 6,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Alba:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 752,
+            "j": 640
+          },
+          "world": {
+            "i": 446,
+            "j": 612
+          },
+          "civ": "Alba",
+          "playerIndex": 5,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Nobatia:outpost-4",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 976,
+            "j": 1072
+          },
+          "world": {
+            "i": 774,
+            "j": 404
+          },
+          "civ": "Nobatia",
+          "playerIndex": 7,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Hellas:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 656,
+            "j": 1008
+          },
+          "world": {
+            "i": 582,
+            "j": 148
+          },
+          "civ": "Hellas",
+          "playerIndex": 0,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Latium:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 432,
+            "j": 560
+          },
+          "world": {
+            "i": 246,
+            "j": 372
+          },
+          "civ": "Latium",
+          "playerIndex": 1,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Kemet:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 1008,
+            "j": 912
+          },
+          "world": {
+            "i": 710,
+            "j": 596
+          },
+          "civ": "Kemet",
+          "playerIndex": 2,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Sumeria:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 848,
+            "j": 544
+          },
+          "world": {
+            "i": 446,
+            "j": 804
+          },
+          "civ": "Sumeria",
+          "playerIndex": 3,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Xia:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "steppe",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 896,
+            "j": 608
+          },
+          "world": {
+            "i": 502,
+            "j": 788
+          },
+          "civ": "Xia",
+          "playerIndex": 4,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Nord:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "blackforest",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 544,
+            "j": 432
+          },
+          "world": {
+            "i": 238,
+            "j": 612
+          },
+          "civ": "Nord",
+          "playerIndex": 6,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Alba:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "temperate",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 576,
+            "j": 752
+          },
+          "world": {
+            "i": 414,
+            "j": 324
+          },
+          "civ": "Alba",
+          "playerIndex": 5,
+          "settlementType": "outpost"
+        },
+        {
+          "id": "Nobatia:outpost-5",
+          "kind": "village",
+          "radius": 18,
+          "importance": 1,
+          "biome": "desert",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 944,
+            "j": 960
+          },
+          "world": {
+            "i": 702,
+            "j": 484
+          },
+          "civ": "Nobatia",
+          "playerIndex": 7,
+          "settlementType": "outpost"
         },
         {
           "id": "world-test-1000-r0-0:camp-1",
@@ -724,12 +2498,12 @@
             "y": 0
           },
           "local": {
-            "i": 529,
-            "j": 455
+            "i": 459,
+            "j": 603
           },
           "world": {
-            "i": 242,
-            "j": 574
+            "i": 281,
+            "j": 356
           },
           "strength": 7
         },
@@ -741,12 +2515,12 @@
             "y": 0
           },
           "local": {
-            "i": 970,
-            "j": 750
+            "i": 629,
+            "j": 383
           },
           "world": {
-            "i": 610,
-            "j": 720
+            "i": 256,
+            "j": 746
           },
           "strength": 6
         },
@@ -758,12 +2532,12 @@
             "y": 0
           },
           "local": {
-            "i": 902,
-            "j": 649
+            "i": 697,
+            "j": 873
           },
           "world": {
-            "i": 525,
-            "j": 753
+            "i": 535,
+            "j": 324
           },
           "strength": 8
         },
@@ -775,12 +2549,12 @@
             "y": 0
           },
           "local": {
-            "i": 619,
-            "j": 296
+            "i": 437,
+            "j": 384
           },
           "world": {
-            "i": 207,
-            "j": 823
+            "i": 160,
+            "j": 553
           },
           "strength": 5
         },
@@ -792,12 +2566,12 @@
             "y": 0
           },
           "local": {
-            "i": 457,
-            "j": 577
+            "i": 594,
+            "j": 469
           },
           "world": {
-            "i": 267,
-            "j": 380
+            "i": 281,
+            "j": 625
           },
           "strength": 6
         },
@@ -809,12 +2583,12 @@
             "y": 0
           },
           "local": {
-            "i": 480,
-            "j": 662
+            "i": 896,
+            "j": 936
           },
           "world": {
-            "i": 321,
-            "j": 318
+            "i": 666,
+            "j": 460
           },
           "strength": 8
         },
@@ -826,12 +2600,12 @@
             "y": 0
           },
           "local": {
-            "i": 802,
-            "j": 741
+            "i": 972,
+            "j": 825
           },
           "world": {
-            "i": 521,
-            "j": 561
+            "i": 648,
+            "j": 647
           },
           "strength": 7
         },
@@ -843,51 +2617,17 @@
             "y": 0
           },
           "local": {
-            "i": 967,
-            "j": 978
+            "i": 623,
+            "j": 649
           },
           "world": {
-            "i": 722,
-            "j": 489
+            "i": 386,
+            "j": 474
           },
           "strength": 5
         },
         {
           "id": "world-test-1000-r0-0:camp-9",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 960,
-            "j": 1126
-          },
-          "world": {
-            "i": 793,
-            "j": 334
-          },
-          "strength": 5
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-10",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 1185,
-            "j": 994
-          },
-          "world": {
-            "i": 839,
-            "j": 691
-          },
-          "strength": 5
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-11",
           "kind": "banditCamp",
           "region": {
             "x": 0,
@@ -904,6 +2644,40 @@
           "strength": 2
         },
         {
+          "id": "world-test-1000-r0-0:camp-10",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 990,
+            "j": 652
+          },
+          "world": {
+            "i": 571,
+            "j": 838
+          },
+          "strength": 2
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-11",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 852,
+            "j": 855
+          },
+          "world": {
+            "i": 603,
+            "j": 497
+          },
+          "strength": 2
+        },
+        {
           "id": "world-test-1000-r0-0:camp-12",
           "kind": "banditCamp",
           "region": {
@@ -911,12 +2685,12 @@
             "y": 0
           },
           "local": {
-            "i": 632,
-            "j": 1000
+            "i": 804,
+            "j": 583
           },
           "world": {
-            "i": 566,
-            "j": 132
+            "i": 443,
+            "j": 721
           },
           "strength": 4
         },
@@ -928,85 +2702,17 @@
             "y": 0
           },
           "local": {
-            "i": 385,
-            "j": 424
+            "i": 374,
+            "j": 525
           },
           "world": {
-            "i": 154,
-            "j": 461
+            "i": 199,
+            "j": 349
           },
           "strength": 3
         },
         {
           "id": "world-test-1000-r0-0:camp-14",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 855,
-            "j": 871
-          },
-          "world": {
-            "i": 613,
-            "j": 484
-          },
-          "strength": 3
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-15",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 667,
-            "j": 535
-          },
-          "world": {
-            "i": 351,
-            "j": 632
-          },
-          "strength": 3
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-16",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 887,
-            "j": 1034
-          },
-          "world": {
-            "i": 710,
-            "j": 353
-          },
-          "strength": 4
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-17",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 703,
-            "j": 851
-          },
-          "world": {
-            "i": 527,
-            "j": 352
-          },
-          "strength": 2
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-18",
           "kind": "banditCamp",
           "region": {
             "x": 0,
@@ -1020,6 +2726,74 @@
             "i": 682,
             "j": 927
           },
+          "strength": 3
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-15",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 508,
+            "j": 453
+          },
+          "world": {
+            "i": 230,
+            "j": 555
+          },
+          "strength": 3
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-16",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 865,
+            "j": 734
+          },
+          "world": {
+            "i": 549,
+            "j": 631
+          },
+          "strength": 4
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-17",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 698,
+            "j": 571
+          },
+          "world": {
+            "i": 384,
+            "j": 627
+          },
+          "strength": 2
+        },
+        {
+          "id": "world-test-1000-r0-0:camp-18",
+          "kind": "banditCamp",
+          "region": {
+            "x": 0,
+            "y": 0
+          },
+          "local": {
+            "i": 518,
+            "j": 706
+          },
+          "world": {
+            "i": 362,
+            "j": 312
+          },
           "strength": 4
         },
         {
@@ -1030,12 +2804,12 @@
             "y": 0
           },
           "local": {
-            "i": 1098,
-            "j": 865
+            "i": 756,
+            "j": 1014
           },
           "world": {
-            "i": 731,
-            "j": 733
+            "i": 635,
+            "j": 242
           },
           "strength": 4
         },
@@ -1047,12 +2821,12 @@
             "y": 0
           },
           "local": {
-            "i": 746,
-            "j": 555
+            "i": 628,
+            "j": 1037
           },
           "world": {
-            "i": 400,
-            "j": 691
+            "i": 582,
+            "j": 91
           },
           "strength": 4
         },
@@ -1064,50 +2838,22 @@
             "y": 0
           },
           "local": {
-            "i": 609,
-            "j": 747
+            "i": 933,
+            "j": 1226
           },
           "world": {
-            "i": 428,
-            "j": 362
-          },
-          "strength": 2
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-22",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 1093,
-            "j": 996
-          },
-          "world": {
-            "i": 794,
-            "j": 597
-          },
-          "strength": 2
-        },
-        {
-          "id": "world-test-1000-r0-0:camp-23",
-          "kind": "banditCamp",
-          "region": {
-            "x": 0,
-            "y": 0
-          },
-          "local": {
-            "i": 294,
-            "j": 494
-          },
-          "world": {
-            "i": 144,
-            "j": 300
+            "i": 829,
+            "j": 207
           },
           "strength": 2
         }
-      ]
+      ],
+      "preparedSettlements": {
+        "path": "world-test-1000-r0-0.settlements.json",
+        "sha256": "14d534549e8b3f9c568a506f36a5624dcff542a3dd6057ff4d06d90e14deb02f",
+        "sourceSha256": "d6f8787c063debc37a3ab350ec8ae78d8dac8ba4ddd2ea519d9a17d52c38da77",
+        "rulesSha256": "1ebbb23c6e4405009410aca1949fd1f408d9d62d2f93f5b63abeba1c491625c0"
+      }
     }
   ]
 }

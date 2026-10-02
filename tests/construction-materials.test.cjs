@@ -10,7 +10,7 @@ const {
 const { constructionStores } = loadTsModule('app/lib/economy/constructionStores.ts')
 const { planCollectiveTasks } = loadTsModule('app/lib/economy/collectiveTasks.ts')
 const { consumeVillageFood } = loadTsModule('app/lib/economy/villageFood.ts')
-const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
 const site = (type = 'House', cost = { wood: 40, stone: 10 }) => ({
   type,
   label: 'site',

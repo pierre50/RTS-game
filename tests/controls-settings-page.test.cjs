@@ -48,7 +48,7 @@ test('controls use separate devices, collapse secondary groups, and keep every b
   global.document = { createElement: element, createTextNode: text => ({ ...element('text'), textContent: text }) }
   let connected = false
   try {
-    const { buildControlsPage } = loadTsModule('app/ui/modals/ControlsSettings.ts', {
+    const { buildControlsPage } = loadTsModule('app/ui/modals/controlsSettings.ts', {
       mocks: {
         '@pixi/sound': { sound: {} },
         '../../lib/input/gamepad': { getActiveGamepad: () => (connected ? {} : null) },

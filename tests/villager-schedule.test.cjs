@@ -61,3 +61,33 @@ test('lunch interrupts work at the saved boundaries and upgrades old schedules',
   }
   assert.deepEqual(getVillagerSchedule(JSON.parse(JSON.stringify(unit))), schedule)
 })
+
+test('all scheduled roles resolve the current phase and next boundary across multiple days', () => {
+  const { getDailyRoutine } = loadTsModule('app/lib/units/villagerSchedule.ts')
+  for (const type of ['Villager', 'Chief', 'Fantassin', 'Bowman']) {
+    const unit = {
+      type,
+      i: 0,
+      j: 0,
+      dailySchedule: {
+        wakeMinute: 360,
+        workStartMinute: 420,
+        lunchStartMinute: 720,
+        lunchEndMinute: 780,
+        workEndMinute: 1080,
+        bedMinute: 1320,
+      },
+    }
+    for (const [minute, phase, next] of [
+      [0, 'sleep', 360],
+      [360, 'morning', 420],
+      [420, 'work', 720],
+      [720, 'meal', 780],
+      [780, 'work', 1080],
+      [1080, 'evening', 1320],
+      [1320, 'sleep', 1800],
+    ]) {
+      assert.deepEqual(getDailyRoutine(unit, 3 * 1440 + minute), { phase, nextTransitionMinute: 3 * 1440 + next })
+    }
+  }
+})

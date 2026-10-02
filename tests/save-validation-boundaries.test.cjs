@@ -8,7 +8,7 @@ const config = {
   animals: { Deer: { totalHitPoints: 10, totalQuantity: 20 } },
 }
 let loadedConfig = config
-const { validateSaveData } = loadTsModule('app/serialization/SaveValidator.ts', {
+const { validateSaveData } = loadTsModule('app/serialization/validation/SaveValidator.ts', {
   mocks: {
     'pixi.js': { Assets: { cache: { get: () => loadedConfig } } },
     '../lib/horses/horseTaming': { isHorseTamingStatus: value => ['wild', 'tamed'].includes(value) },
@@ -470,15 +470,15 @@ test('save validation accepts runtime bandit unit types', () => {
   assert.equal(validateSaveData(data), data)
 })
 
-test('building age validation accepts legacy saves and rejects invalid explicit tiers', () => {
+test('building level validation accepts legacy saves and rejects invalid explicit tiers', () => {
   for (const age of [-1, 0.5, '1', Infinity, NaN]) {
     rejects(data => {
-      data.players[0].buildings = [{ type: 'House', i: 0, j: 0, buildingAge: age }]
-    }, /building age/)
+      data.players[0].buildings = [{ type: 'House', i: 0, j: 0, buildingLevel: age }]
+    }, /building level/)
   }
   for (const age of [undefined, 0, 1, 2]) {
     const data = save()
-    data.players[0].buildings = [{ type: 'House', i: 0, j: 0, ...(age == null ? {} : { buildingAge: age }) }]
+    data.players[0].buildings = [{ type: 'House', i: 0, j: 0, ...(age == null ? {} : { buildingLevel: age }) }]
     assert.doesNotThrow(() => validateSaveData(data))
   }
 })
@@ -604,5 +604,66 @@ test('collective trip origins accept saved points and reject malformed coordinat
   ]) {
     data.players[0].units[0].collectiveHome = collectiveHome
     assert.throws(() => validateSaveData(data), /collective home/)
+  }
+})
+
+test('save validation migrates legacy metals once and rejects invalid forge tiers', () => {
+  const data = save()
+  data.players[0].age = 1
+  data.players[0].ageRulesVersion = 1
+  validateSaveData(data)
+  assert.deepEqual(Object.values(data.players[0].forgeUpgrades), Array(6).fill(2))
+  data.players[0].forgeUpgrades.axes = 3
+  data.players[0].forgeUpgrades.weapons = 0
+  validateSaveData(data)
+  assert.equal(data.players[0].forgeUpgrades.axes, 3)
+  assert.equal(data.players[0].forgeUpgrades.weapons, 0)
+  for (const invalid of [[], 2, { axes: -1 }, { armor: 4 }, { arrows: 1.5 }, { weapons: '2' }, { unknown: 1 }]) {
+    rejects(saved => {
+      saved.players[0].forgeUpgrades = invalid
+    }, /forge upgrade/)
+  }
+})
+
+test('save validation accepts active renovation and rejects invalid upgrade state', () => {
+  const previous = loadedConfig
+  loadedConfig = { ...config, buildings: { House: require('../public/assets/data/gameplay/buildings.json').House } }
+  const building = {
+    type: 'House',
+    i: 0,
+    j: 0,
+    buildingLevel: 0,
+    isBuilt: true,
+    constructionMaterials: { cost: { wood: 60, stone: 30, fiber: 4 }, delivered: {}, consumed: { wood: 10 } },
+    buildingUpgrade: { targetLevel: 1, hitPoints: 10, totalHitPoints: 125, constructionTime: 48 },
+  }
+  try {
+    const data = save()
+    data.players[0].buildings = [structuredClone(building)]
+    assert.doesNotThrow(() => validateSaveData(data))
+    const ageTwo = structuredClone(building)
+    ageTwo.buildingLevel = 1
+    ageTwo.buildingUpgrade.targetLevel = 2
+    ageTwo.buildingUpgrade.totalHitPoints = 188
+    ageTwo.constructionMaterials.cost = { wood: 90, stone: 45, fiber: 6 }
+    data.players[0].buildings = [ageTwo]
+    assert.doesNotThrow(() => validateSaveData(data))
+    for (const mutate of [
+      b => (b.isBuilt = false),
+      b => (b.isDead = true),
+      b => (b.buildingUpgrade.targetLevel = 2),
+      b => (b.buildingUpgrade.hitPoints = NaN),
+      b => (b.buildingUpgrade.hitPoints = 126),
+      b => (b.buildingUpgrade.constructionTime = 0),
+      b => delete b.constructionMaterials,
+    ]) {
+      const invalid = save()
+      const entry = structuredClone(building)
+      mutate(entry)
+      invalid.players[0].buildings = [entry]
+      assert.throws(() => validateSaveData(invalid), /upgrade/)
+    }
+  } finally {
+    loadedConfig = previous
   }
 })

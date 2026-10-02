@@ -1,15 +1,19 @@
-import { Assets, Graphics, Rectangle, Sprite, Texture, type Filter } from 'pixi.js'
+import { AnimatedSprite, Assets, Graphics, Polygon, Rectangle, Sprite, Texture, type Filter } from 'pixi.js'
 import { ColorOverlayFilter, OutlineFilter } from 'pixi-filters'
 import { FADE_DURATION_MS, LABEL_TYPES } from '../../constants'
 import {
   attachEntityShadowsToMapSpace,
   changeSpriteColorDirectly,
+  getBuildingAsset,
+  getBuildingAssetOwner,
   getEntityMapPoint,
   getHexColor,
+  getTexture,
   getTextureByFrame,
   getTextureSheet,
   isEntityInActiveMapSpace,
   parseTextureRef,
+  textureRefToString,
 } from '../../lib'
 import { getShadowsEnabled } from '../../lib/audio/settings'
 import { fadeIn } from '../../lib/entities/entityFade'
@@ -84,6 +88,27 @@ function syncBuildingConstructionBorder(building: BuildingControllerHost, textur
 
 export function applyBuildingConstructionGhost(building: BuildingControllerHost): void {
   const sprite = building.sprite as ConstructionGhostSprite
+  if (building.buildingUpgrade) {
+    const assets = getBuildingAsset(
+      building.assetType || building.type,
+      { ...getBuildingAssetOwner(building), level: building.buildingUpgrade.targetLevel },
+      Assets
+    )
+    const textureRef = assets.images?.final
+    if (!textureRef) throw new Error(`Missing upgrade texture for building: ${building.type}`)
+    const texture = getTexture(textureRef, Assets)
+    if (building.sprite instanceof AnimatedSprite) building.sprite.stop()
+    sprite.texture = texture
+    building.textureName = textureRefToString(textureRef)
+    if (!texture.defaultAnchor) throw new Error(`Missing anchor for building texture: ${building.textureName}`)
+    sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+    sprite.scale.x =
+      Math.abs(sprite.scale.x) * (Boolean(assets.mirrored) !== Boolean(building.placementMirrored) ? -1 : 1)
+    const hitArea = (texture as Texture & { hitArea?: number[] }).hitArea
+    sprite.hitArea = hitArea
+      ? new Polygon(hitArea)
+      : new Polygon([-32 * building.size, 0, 0, -16 * building.size, 32 * building.size, 0, 0, 16 * building.size])
+  }
   const ownerColor = building.owner.color ?? ''
   const ghostTint = getConstructionGhostTint(ownerColor)
   const sourceTexture =
@@ -190,6 +215,9 @@ export function clearBuildingConstructionReveal(building: BuildingControllerHost
     delete sprite.constructionGhostBaseFilters
   }
   delete sprite.constructionGhostFilter
+  delete sprite.constructionGhostColor
+  delete sprite.constructionGhostSourceTexture
+  delete sprite.constructionGhostTexture
 }
 
 function fadeInBuildingShadow(building: BuildingControllerHost): void {

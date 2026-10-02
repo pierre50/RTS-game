@@ -6,6 +6,11 @@ const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks = {}) {
+  mocks = {
+    '../../lib/hero/heroDefense': { cancelHeroDefense() {} },
+    '../../lib/hero/heroPowerCharge': { cancelHeroPowerCharge() {} },
+    ...mocks,
+  }
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -232,7 +237,18 @@ test('stale unit death callbacks do not decompose after another visual transitio
 
 test('unit die clears pending combat recovery before playing dying animation', () => {
   const calls = []
+  const cancelledHeroActions = []
   const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {
+    '../../lib/hero/heroDefense': { cancelHeroDefense(unit) {
+      assert.equal(unit.isDead, true)
+      assert.notEqual(unit.currentSheet, 'dyingSheet')
+      cancelledHeroActions.push('defense')
+    } },
+    '../../lib/hero/heroPowerCharge': { cancelHeroPowerCharge(unit) {
+      assert.equal(unit.isDead, true)
+      assert.notEqual(unit.currentSheet, 'dyingSheet')
+      cancelledHeroActions.push('charge')
+    } },
     '../../constants': {
       CORPSE_TIME: 60,
       FADE_DURATION_MS: 2000,
@@ -298,6 +314,7 @@ test('unit die clears pending combat recovery before playing dying animation', (
 
   new UnitLifecycle(unit).die()
 
+  assert.deepEqual(cancelledHeroActions, ['charge', 'defense'])
   assert.equal(unit.isDead, true)
   assert.equal(unit.attackRecoveryTaskId, null)
   assert.equal(unit.attackRecoveryAnimationTaskId, null)
@@ -315,4 +332,23 @@ test('unit die clears pending combat recovery before playing dying animation', (
   ])
   assert.ok(calls.some(call => call[0] === 'setTextures' && call[1] === 'dyingSheet'))
   assert.ok(calls.some(call => call[0] === 'gotoAndPlay' && call[1] === 0))
+})
+
+test('invalidated frame sequences leave death frames intact and never complete', () => {
+  const { playSpriteFrameSequence } = loadModule('app/lib/entities/spriteAnimation.ts')
+  let tick
+  let valid = true
+  let finished = false
+  const removed = []
+  const sprite = { currentFrame: 0, gotoAndStop(frame) { this.currentFrame = frame } }
+  playSpriteFrameSequence(sprite, {
+    add(callback) { tick = callback; return 19 }, remove(id) { removed.push(id) },
+  }, { frames: [3, 2, 1], frameMs: 50, isCurrent: () => valid, onComplete() { finished = true } })
+  valid = false
+  sprite.currentFrame = 5
+  tick()
+  tick()
+  assert.equal(sprite.currentFrame, 5)
+  assert.equal(finished, false)
+  assert.deepEqual(removed, [19])
 })

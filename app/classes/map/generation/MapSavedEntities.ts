@@ -1,10 +1,15 @@
+import { reconcileHouseholds } from '../../../lib/housing/households'
+import { installDeferredVillages, canDeferVillage } from '../../../services/world/distantVillages/DeferredVillageStore'
+import { advanceDeferredVillage } from '../../../services/world/distantVillages/DeferredVillageEconomy'
+import type { SavePlayerState } from '../../../types/save'
+import { restoredResourceState } from '../../../serialization/ResourceSaveData'
 import { getPopulationCapacityFromBuildings } from '../../../lib/buildings/buildingOccupancy'
-import { FAMILY_TYPES, PASSABLE_RESOURCE_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../../../constants'
+import { FAMILY_TYPES, PASSABLE_RESOURCE_TYPES, PLAYER_TYPES } from '../../../constants'
 import { getGaiaAnimals } from '../../../lib'
-import { AGE_RULES_VERSION, migrateSavedAge } from '../../../lib/objectives/ageRules'
+import { migrateLegacyProgression } from '../../../serialization/LegacyProgressionMigration'
 
-import { rehydrateAIKnowledge } from '../../../services/UnitPerception'
-import { installWildlifeStore, isWildlife } from '../../../services/WildlifeStore'
+import { rehydrateAIKnowledge } from '../../../services/visibility/UnitPerception'
+import { installWildlifeStore, isWildlife } from '../../../services/wildlife/WildlifeStore'
 import type { GameContextLike } from '../../../types/context'
 import type { ResourceEntity } from '../../../types/entities'
 import type { PlayerLike } from '../../../types/player'
@@ -50,11 +55,7 @@ function createResourceFromState(
   resource: ResourceOptions & { isDead?: boolean; isDestroyed?: boolean },
   map: MapGenerationMap
 ): ResourceEntity {
-  const resourceState =
-    resource.type === RESOURCE_TYPES.wheat && resource.currentFrame == null && resource.startsMature == null
-      ? { ...resource, startsMature: true }
-      : resource
-  return Resource.spawn(resourceState, runtimeContext(map))
+  return Resource.spawn(restoredResourceState(resource), runtimeContext(map))
 }
 
 export function restoreSavedPlayers(
@@ -69,8 +70,8 @@ export function restoreSavedPlayers(
   }
   const context = runtimeContext(map)
   map.context.players = players.map((player: SavedPlayer) => {
-    player.age = migrateSavedAge(player.age, player.ageRulesVersion)
-    player.ageRulesVersion = AGE_RULES_VERSION
+    if (player.type === PLAYER_TYPES.ai) player.developmentMode ??= 'static'
+    migrateLegacyProgression(player)
     const PlayerClass = classMap[player.type] ?? Player
     const restoredPlayer = new PlayerClass(
       {
@@ -84,8 +85,13 @@ export function restoreSavedPlayers(
       },
       context
     )
-    if (!map.instantMode && [PLAYER_TYPES.human, PLAYER_TYPES.ai].includes(player.type)) {
-      player.populationMax = getPopulationCapacityFromBuildings(player.buildings ?? [], restoredPlayer.config.buildings)
+    if (
+      !map.instantMode &&
+      player.settlementType !== 'outpost' &&
+      [PLAYER_TYPES.human, PLAYER_TYPES.ai].includes(player.type)
+    ) {
+      reconcileHouseholds(player)
+      player.populationMax = getPopulationCapacityFromBuildings(player.buildings ?? [], player)
       restoredPlayer.populationMax = player.populationMax
     }
     if (player.isPlayed) map.context.player = restoredPlayer
@@ -131,9 +137,52 @@ export function restoreSavedEntities(
   map: MapGenerationMap,
   players: SavedPlayer[],
   animals: SaveEntityState[],
-  context: GameContextLike
+  context: GameContextLike,
+  elapsedMs?: number
 ): void {
-  map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index], true))
+  const deferred = installDeferredVillages(context, elapsedMs)
+  const deferredOwners = new Set<PlayerLike>()
+  // Register every owner before resolving any saved cross-reference.
+  map.context.players.forEach((player, index) => {
+    const saved = players[index] as SavePlayerState
+    if (canDeferVillage(context, saved)) {
+      deferredOwners.add(player)
+      deferred.add(
+        player,
+        saved,
+        state => {
+          Object.assign(
+            player,
+            Object.fromEntries(
+              Object.entries(state).filter(
+                ([key]) => !['units', 'buildings', 'corpses', 'views', 'aiState', 'targetKnowledge'].includes(key)
+              )
+            )
+          )
+          restorePlayerEntitiesFromSave(player, state as SavedPlayer, true)
+          restorePlayerInteriors(player)
+          restorePlayerViews(player, map)
+          restoreBuildingAssignments(player, state.buildings ?? [], map)
+          rehydrateAIKnowledge(player, map)
+          restoreAIState(player, state as SavedPlayer, map)
+          const units = new Map(state.units?.map(unit => [unit.label, unit]))
+          player.units.forEach(unit => processUnit(unit, map, units.get(unit.label), { resume: false }))
+          const alreadyResting = new Set(player.units.filter(unit => unit.shelterState))
+          context.unitRest?.synchronizeVillageRest?.(player.units)
+          player.units.forEach(unit => {
+            if (!unit.shelterState && !alreadyResting.has(unit)) processUnit(unit, map, units.get(unit.label))
+          })
+        },
+        (state, from, to) =>
+          advanceDeferredVillage(context, player, state, from, to, resource => {
+            map.resources.add(createResourceFromState(resource, map))
+          })
+      )
+    }
+  })
+  map.context.players.forEach((player, index) => {
+    if (!deferredOwners.has(player)) restorePlayerEntitiesFromSave(player, players[index], true)
+  })
   map.context.players.forEach(restorePlayerInteriors)
   const gaia = map.gaia instanceof Gaia ? map.gaia : null
   const wildlife = installWildlifeStore(map, animals.filter(isWildlife), `wildlife:${map.seed ?? 0}`)
@@ -167,8 +216,14 @@ export function restoreSavedEntities(
     .filter(animal => !animal.isDestroyed)
     .forEach(animal => processUnit(animal, map))
 
-  restoreCaveOccupants(context, players)
+  restoreCaveOccupants(
+    context,
+    players.map((saved, index) =>
+      deferred.has(map.context.players[index]) ? { ...saved, units: [], buildings: [], corpses: [] } : saved
+    )
+  )
   map.context.players.forEach((player, index) => {
+    if (deferred.has(player)) return
     const savedPlayer = players[index]
     restorePlayerViews(player, map)
     restoreBuildingAssignments(player, savedPlayer?.buildings || [], map)
@@ -178,4 +233,10 @@ export function restoreSavedEntities(
     player.units.forEach(unit => processUnit(unit, map, savedUnitsByLabel.get(unit.label)))
     restoreSelection(player, savedPlayer, map)
   })
+  let remaining: number
+  do {
+    remaining = deferred.size
+    deferred.update()
+  } while (deferred.size < remaining)
+  context.performance?.markEvent?.('village.deferred', { owners: deferred.size })
 }

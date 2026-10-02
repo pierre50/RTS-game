@@ -67,15 +67,18 @@ interface TributeRaidSystemLike {
 }
 
 interface UnitRestSystemLike {
-  notifyShelterAvailable?(building: BuildingEntity): void
+  interruptRestForCombat?(unit: UnitEntity, target: RuntimeEntity): boolean
+  wakeRestingUnitsInstant?(units: UnitEntity[]): void
+  notifyBedAvailable?(building: BuildingEntity): void
   handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
   handleShelterAttack?(building: BuildingEntity, attacker: RuntimeEntity | null | undefined): boolean
   evacuateUnitsFromShelter(building: BuildingEntity, options?: { force?: boolean }): void
   evacuateUnitsIfShelterUnsafe(building: BuildingEntity): void
   sendUnitToSleep(unit: UnitEntity): boolean
   synchronizeAfterTimeJump?(): void
+  synchronizeVillageRest?(units: UnitEntity[]): void
   isRestWakeLockActive(unit: UnitEntity): boolean
-  wakeSleepingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean
+  wakeRestingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean
   previewSleepingUnitWake(unit: UnitEntity): void
   restoreSleepingUnitVisual(unit: UnitEntity): void
 }
@@ -173,7 +176,6 @@ export interface MenuLike {
   closeInventory?(): void
   isInventoryOpen?(): boolean
   refreshInventory?(): void
-  syncObjectiveProgress?(): void
   setEquippedItem?(item: HeroEquippedItem | null): void
   setEquippedTool?(tool: HeroEquippedItem | null): void
   setHeroStatusTarget?(hero: UnitEntity | null): void

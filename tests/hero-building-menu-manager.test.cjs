@@ -18,6 +18,10 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   })
   const module = { exports: {} }
   const mocks = {
+    './hero-building/HeroBuildingUpgrade': { createHeroBuildingUpgrade: () => null },
+    '../lib/graphics/assets': {
+      getBuildingAssetOwner: building => ({ ...building.owner, age: building.buildingLevel ?? building.owner.age }),
+    },
     './hero-building/HeroForgeBody': {
       HeroForgeBody: class {
         constructor() {
@@ -34,6 +38,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
         currentPopulationReserveDays: 2,
         newVillagerReserveDays: 3,
       },
+      PLAYER_TYPES: { ai: 'AI' },
       FAMILY_TYPES: { building: 'building' },
       UNIT_TYPES: { chief: 'Chief', priest: 'Priest', villager: 'Villager' },
       BUILDING_TYPES: {
@@ -42,6 +47,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
         forge: 'Forge',
         chest: 'Chest',
         fireCamp: 'FireCamp',
+        campBedroll: 'CampBedroll',
         market: 'Market',
         trap: 'Trap',
       },
@@ -53,12 +59,12 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     '../lib/hero/heroActionRange': {
       isHeroInteractionTargetReachable: () => reachable,
     },
-    '../lib/hero/heroCampfireSleep': {
-      canHeroSleepAtFireCamp: hero => hero?.canSleepAtCampfire !== false,
+    '../lib/hero/heroSleep': {
+      canHeroSleepAtTarget: hero => hero?.canSleepAtCampfire !== false,
       getHostileInHeroSight: hero => hero?.hostile,
-      getHeroCampfireSleepBlockedReason: hero =>
+      getHeroSleepBlockedReason: hero =>
         hero?.sleepBlockedReason ?? (hero?.canSleepAtCampfire === false ? 'heroCampfireSleepBlockedDescription' : null),
-      sleepHeroAtFireCamp: (hero, building) => {
+      sleepHeroAtTarget: (hero, building) => {
         campfireSleepCalls.push({ hero, building })
         return hero?.canSleepAtCampfire !== false
       },
@@ -470,6 +476,38 @@ test('hero building menu adds a sleep button for fire camps', () => {
   }
 })
 
+test('hero building menu adds a sleep button for beds', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    manager.menu.getActionMenuItems = () => []
+    const hero = { family: 'unit', canSleepAtCampfire: true }
+    const building = {
+      family: 'building',
+      owner: player,
+      type: 'CampBedroll',
+      label: 'campfire-1',
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      interface: { info() {} },
+    }
+    manager.menu.context.controls.heroUnit = hero
+
+    assert.equal(manager.open(building), true)
+
+    const button = manager.body.children[0]
+    assert.equal(button.id, 'hero-heroCampfireSleep')
+    assert.equal(button.dataset.actionId, 'heroCampfireSleep')
+    assert.equal(button.disabled, false)
+
+    button.dispatch('click')
+
+    assert.deepEqual(manager.constructor.__campfireSleepCalls, [{ hero, building }])
+  } finally {
+    restoreDocument()
+  }
+})
+
 test('hero building menu disables campfire sleep while blocked', () => {
   const { manager, player, restoreDocument } = createManager()
   try {
@@ -501,7 +539,7 @@ test('campfire details report the actual reason sleep is unavailable', () => {
   try {
     const hero = { canSleepAtCampfire: false, sleepBlockedReason: 'heroCampfireSleepTooFar' }
     manager.menu.context.controls.heroUnit = hero
-    const button = manager.getCampfireSleepButton({ type: 'FireCamp', isBuilt: true })
+    const button = manager.getSleepButton({ type: 'FireCamp', isBuilt: true })
     assert.equal(button.details().description, 'heroCampfireSleepTooFar')
     hero.sleepBlockedReason = 'heroCampfireSleepNotBuilt'
     assert.equal(button.details().description, 'heroCampfireSleepNotBuilt')

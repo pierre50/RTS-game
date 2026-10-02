@@ -31,7 +31,7 @@ test('region loads cache only requested maps within one session', async () => {
   const data = fixture()
   global.fetch = data.fetch
   try {
-    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/MapBlueprintLoader.ts')
+    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/blueprint/MapBlueprintLoader.ts')
     const cache = new Map()
     const options = { size: 2, worldId: 'test' }
     const [a, b] = await Promise.all([
@@ -61,7 +61,7 @@ test('failed requested map fetches are evicted and can be retried', async () => 
   const data = fixture()
   global.fetch = data.fetch
   try {
-    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/MapBlueprintLoader.ts')
+    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/blueprint/MapBlueprintLoader.ts')
     const options = { size: 2, worldId: 'test', worldRegionId: 'a' }
     const cache = new Map()
     data.fail('a.map')
@@ -79,7 +79,7 @@ test('failed requested map fetches are evicted and can be retried', async () => 
 })
 
 test('world blueprint selection uses the chosen civilization village', () => {
-  const { selectWorldMap } = loadTsModule('app/serialization/WorldMapBlueprintSelection.ts')
+  const { selectWorldMap } = loadTsModule('app/serialization/blueprint/WorldMapBlueprintSelection.ts')
   const manifest = {
     maps: [
       {
@@ -110,7 +110,7 @@ test('a missing neighboring map does not prevent loading the current map', async
   data.fail('b.map')
   global.fetch = data.fetch
   try {
-    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/MapBlueprintLoader.ts')
+    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/blueprint/MapBlueprintLoader.ts')
     const result = await load({ size: 2, worldId: 'test', worldRegionId: 'a' })
     assert.equal(result.worldRegionId, 'a')
     assert.deepEqual(data.requests, ['maps/worlds/test/manifest.json', 'maps/worlds/test/maps/a.map'])

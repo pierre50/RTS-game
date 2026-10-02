@@ -2,14 +2,13 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { setReserveShare, reserveAmounts } = loadTsModule('app/lib/economy/depotReserves.ts')
-const {
-  settlementStockGoals,
-  planCollectiveTasks,
-  collectiveHarvestBudget,
-  settlementDepotPolicy,
-  setSettlementDepotPolicy,
-} = loadTsModule('app/lib/economy/collectiveTasks.ts')
-const { validateDepotReservePolicy } = loadTsModule('app/serialization/DepotReserveValidation.ts')
+const moduleCache = new Map()
+const { planCollectiveTasks, collectiveHarvestBudget, settlementDepotPolicy, setSettlementDepotPolicy } = loadTsModule(
+  'app/lib/economy/collectiveTasks.ts',
+  { moduleCache }
+)
+const { settlementStockGoals } = loadTsModule('app/lib/economy/collectiveStock.ts', { moduleCache })
+const { validateDepotReservePolicy } = loadTsModule('app/serialization/validation/DepotReserveValidation.ts')
 function fixture() {
   const center = { type: 'TownCenter', i: 10, j: 10, label: 'tc', isBuilt: true }
   const pit = {
@@ -128,7 +127,7 @@ test('save validation accepts all-zero policies and rejects invalid totals, shar
     assert.throws(() => validateDepotReservePolicy(policy, 'Granary'), /Invalid depot/)
 })
 
-const { offlineResourceWork } = loadTsModule('app/services/world/OfflineWorldWork.ts')
+const { offlineResourceWork } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
 test('offline gathering selects the requested food and animal material', () => {
   const unit = { type: 'Villager', autonomousJob: 'food', collectiveTask: 'berry' }
   assert.equal(offlineResourceWork({}, unit, { type: 'Berrybush', quantity: 30 }, 3), 'forager')

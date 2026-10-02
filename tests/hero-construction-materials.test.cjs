@@ -246,3 +246,70 @@ test('an exhausted builder really stops, collects stone and returns to the same 
   assert.equal(site.hitPoints, site.totalHitPoints)
   assert.deepEqual(site.constructionMaterials.consumed, { wood: 1, stone: 1 })
 })
+
+test('live builder advances renovation with its cargo without changing building health', () => {
+  const f = fixture({ wood: 20 }, { wood: 100 })
+  Object.assign(f.site, {
+    isBuilt: true,
+    hitPoints: 75,
+    totalHitPoints: 75,
+    buildingUpgrade: { targetLevel: 1, hitPoints: 1, totalHitPoints: 101, constructionTime: 101 },
+  })
+  let updates = 0
+  f.site.updateHitPoints = () => updates++
+  f.start()
+  f.runtime.impact()
+  assert.equal(f.site.buildingUpgrade.hitPoints, 2)
+  assert.equal(f.site.hitPoints, 75)
+  assert.equal(f.site.isBuilt, true)
+  assert.equal(f.unit.inventory.resources.wood, 19)
+  assert.equal(updates, 1)
+})
+
+test('every interior furnishing completes through hero work and applies its final appearance once', () => {
+  const definitions = require('../public/assets/data/gameplay/buildings.json')
+  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts')
+  for (const type of INTERIOR_FURNITURE_TYPES) {
+    const config = definitions[type]
+    const f = fixture({ ...config.cost }, config.cost, {
+      'pixi.js': { AnimatedSprite: class {} },
+      '../../lib': { getPercentage: (hp, total) => (hp * 100) / total, updateInstanceVisibility() {} },
+      './BuildingSowing': {},
+      './BuildingDestruction': {},
+      './BuildingFinalTexture': {},
+      './BuildingFire': { updateBuildingFireDamage() {} },
+      './BuildingVisuals': { clearBuildingConstructionReveal() {}, syncBuildingConstructionReveal() {} },
+    })
+    let completed = 0
+    let textures = 0
+    Object.assign(f.site, {
+      type,
+      isBuilt: false,
+      indestructible: type.startsWith('Camp'),
+      totalHitPoints: config.totalHitPoints,
+      constructionTime: config.constructionTime,
+      owner: { hasBuilt: [] },
+      context: { menu: {} },
+      finalTexture: () => textures++,
+      onBuilt: () => completed++,
+      updateShadow() {},
+      scanForInitialTarget() {},
+    })
+    const { BuildingLifecycle } = f.load('app/classes/building/BuildingLifecycle.ts')
+    const lifecycle = new BuildingLifecycle(f.site)
+    f.site.updateHitPoints = action => lifecycle.updateHitPoints(action)
+    f.site.updateTexture = () => lifecycle.updateTexture()
+    f.start()
+    for (let impact = 0; impact < 100 && !f.site.isBuilt; impact++) f.runtime.impact()
+    assert.equal(f.site.isBuilt, true, `${type}: construction must finish`)
+    assert.equal(f.site.hitPoints, config.totalHitPoints, type)
+    assert.equal(completed, 1, `${type}: completion effects`)
+    assert.equal(textures, 1, `${type}: final appearance`)
+    assert.deepEqual(f.site.constructionMaterials.consumed, config.cost, type)
+    if (f.site.indestructible) {
+      f.site.hitPoints--
+      lifecycle.updateHitPoints('attack')
+      assert.equal(f.site.hitPoints, config.totalHitPoints, `${type}: preset protection remains effective`)
+    }
+  }
+})

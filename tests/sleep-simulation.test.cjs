@@ -6,7 +6,7 @@ function fixture(startHour = 22) {
   const calls = []
   const { SleepSimulation } = loadTsModule('app/services/world/SleepSimulation.ts', {
     mocks: {
-      '../../lib/hero/heroCampfireSleep': { hasHostileInHeroSight: hero => Boolean(hero.hostile) },
+      '../../lib/hero/heroSleep': { hasHostileInHeroSight: hero => Boolean(hero.hostile) },
       '../../lib/units/unitEnergy': { updateUnitEnergy() {} },
       '../../lib/units/unitHealth': { notifyHeroHealthChanged() {} },
       './DistantVillageEconomy': {

@@ -6,12 +6,12 @@ const { depositChestResources, getPlayerResourceTotals, withdrawChestResources }
 )
 const { storageAcceptsResource } = loadTsModule('app/lib/resources/storagePolicy.ts')
 const { populateVillageBase } = loadTsModule('app/services/world/VillageBaseState.ts')
-const { OfflineWorldSpatial } = loadTsModule('app/services/world/OfflineWorldSpatial.ts')
+const { OfflineWorldSpatial } = loadTsModule('app/services/world/offline/OfflineWorldSpatial.ts')
 const { applyVillageStartingState } = loadTsModule('app/services/world/VillageStartingState.ts')
 const { advanceCampaignEconomy, encodeEconomyTerrain, materializeInitialEconomy, captureEconomyRegion } = loadTsModule(
   'app/services/world/WorldEconomy.ts'
 )
-const { savedResourceOwner } = loadTsModule('app/services/world/OfflineWorldWork.ts')
+const { savedResourceOwner } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
 const buildings = require('../public/assets/data/gameplay/buildings.json')
 const units = require('../public/assets/data/gameplay/units.json')
 const rules = {

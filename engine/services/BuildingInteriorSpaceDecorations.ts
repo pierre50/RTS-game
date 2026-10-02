@@ -1,3 +1,4 @@
+import { usesInteriorPreset } from '../../app/lib/buildings/interiorFurnitureCatalog'
 import { BUILDING_TYPES } from '../../app/constants'
 import {
   findInteriorDecorationCell,
@@ -30,6 +31,15 @@ function findInteriorDefaultBuildingCell(
     if (!cell) return false
     if (cell.terrainHidden || isNearInteriorDoor(cell, [space.entryCell, space.exitCell])) return false
     if (!preservesInteriorPassages(space.grid, cell)) return false
+    if (options.allowBorderPlacement && type === BUILDING_TYPES.campBedroll) {
+      return canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig, {
+        allowBorder: true,
+        canUseCell: footprintCell =>
+          !footprintCell.terrainHidden &&
+          !footprintCell.has &&
+          !isNearInteriorDoor(footprintCell, [space.entryCell, space.exitCell]),
+      })
+    }
     if (!options.allowBorderPlacement) return canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig)
     if (Math.floor(placementSize) !== 1) return canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig)
     return (
@@ -121,10 +131,17 @@ function getInteriorDefaultBuildingPreferredCell(
 
 export function ensureInteriorDefaultBuildings(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
   if (space.defaultBuildingsPlaced) return
+  // Prepared furniture belongs to the room even if its owner changed before the first visit.
+  if (space.building.plannedBedLabels) space.building.interiorUnfurnished ??= false
+  delete space.building.plannedBedLabels
   const saved = space.building.interiorBuildings
   if (saved) {
     const owner = space.building.owner
     if (!owner) throw new Error('Cannot restore building interior without an owner')
+    const houseBeds =
+      space.building.type === BUILDING_TYPES.house && usesInteriorPreset(space.building)
+        ? getBuildingInteriorDecorationLayout(space.building).filter(item => item.type === BUILDING_TYPES.campBedroll)
+        : []
     for (const building of saved) {
       // Retire the old automatically generated cave props, keeping player-placed contents.
       if (space.building.type === BUILDING_TYPES.cave && building.label?.startsWith(`${space.id}:default:`)) continue
@@ -140,7 +157,20 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
         : owner
       if (!contentOwner) throw new Error(`Missing interior owner: ${building.interiorOwner}`)
       let position = { i: building.i, j: building.j }
-      const savedCell = space.grid[building.i]?.[building.j]
+      const defaultBed = houseBeds.find(item => building.label === `${space.id}:default:${item.key}`)
+      if (defaultBed) {
+        const preferred = getInteriorDefaultBuildingPreferredCell(space, defaultBed, getInteriorRoomCenter(space))
+        const relocated = findInteriorDefaultBuildingCell(
+          context,
+          space,
+          building.type,
+          preferred,
+          new Set(),
+          defaultBed
+        )
+        if (relocated) position = { i: relocated.i, j: relocated.j }
+      }
+      const savedCell = space.grid[position.i]?.[position.j]
       if (
         savedCell.terrainHidden ||
         savedCell.solid ||
@@ -170,7 +200,10 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
       })
     }
     delete space.building.interiorBuildings
-    if (![BUILDING_TYPES.granary, BUILDING_TYPES.storagePit, BUILDING_TYPES.stable].includes(space.building.type)) {
+    if (
+      !usesInteriorPreset(space.building) ||
+      ![BUILDING_TYPES.granary, BUILDING_TYPES.storagePit, BUILDING_TYPES.stable].includes(space.building.type)
+    ) {
       space.defaultBuildingsPlaced = true
       return
     }
@@ -186,6 +219,14 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
   if (space.entryCell) blockedCells.add(interiorCellKey(space.entryCell))
 
   for (const item of getBuildingInteriorDecorationLayout(space.building)) {
+    if (
+      !usesInteriorPreset(space.building) &&
+      !(
+        item.key === 'storage-chest' &&
+        [BUILDING_TYPES.granary, BUILDING_TYPES.storagePit].includes(space.building.type)
+      )
+    )
+      continue
     if (saved && !item.key.startsWith('depot-light-') && !item.key.startsWith('stable-light-')) continue
     const label = `${space.id}:default:${item.key}`
     if (owner.buildings.some(building => building.label === label && !building.isDestroyed)) continue

@@ -1,3 +1,6 @@
+import { getDeferredVillages } from './world/distantVillages/DeferredVillageStore'
+import { AMBIENT_CAMERA_MARGIN, AMBIENT_CAMERA_EXIT_MARGIN } from './world/AmbientActivityArea'
+import { isStaticSettlement } from '../config/settlementProfiles'
 import { isVillageSupplyTrip, villageWorkNeedsLiveSearch } from '../lib/units/villageSupplyTrips'
 import { observeVillage } from './world/VillageObservation'
 import { PlayerWorkActivitySystem } from './world/PlayerWorkActivitySystem'
@@ -20,7 +23,7 @@ import { setUnitSuspension } from '../lib/units/unitSuspension'
 import { shouldVillagerWork } from '../lib/units/villagerSchedule'
 import { CampLeashController } from './patrol/CampLeashController'
 import { advanceVillageWork } from './world/VillageWorkSimulation'
-import { DistantVillageSystem } from './world/DistantVillageSystem'
+import { DistantVillageSystem } from './world/distantVillages/DistantVillageSystem'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -42,7 +45,19 @@ export class VillageActivitySystem {
     this.distant = new DistantVillageSystem(context)
     this.playerWork = new PlayerWorkActivitySystem(context)
     if (context.editor) return
+    getDeferredVillages(this.context.map)?.update()
     this.reconcile()
+    // Freeze fixed settlements before the first AI/autonomy tick can issue orders.
+    this.distant.update(
+      [...this.villages.values()]
+        .filter(village => isStaticSettlement(village.owner))
+        .map(village => ({
+          home: village.home,
+          owner: village.owner,
+          observed: this.observation(village).reason !== 'distant',
+        })),
+      () => {}
+    )
     registerVillageFlush(context, () => this.flush())
     this.task = context.scheduler.add(() => this.update(), 500, 'village.activity')
   }
@@ -52,7 +67,11 @@ export class VillageActivitySystem {
     for (const owner of this.context.players ?? []) {
       if (owner.isPlayed || owner.type !== 'AI') continue
       const centers = (owner.buildings ?? []).filter(
-        b => b.type === 'TownCenter' && !b.isDead && !b.isDestroyed && getEntitySpaceId(b) === 'outside'
+        b =>
+          (b.type === 'TownCenter' || (owner.settlementType === 'outpost' && b.type === 'FireCamp')) &&
+          !b.isDead &&
+          !b.isDestroyed &&
+          getEntitySpaceId(b) === 'outside'
       )
       for (const center of centers) {
         const id = `${owner.label}:${center.label}`
@@ -100,6 +119,9 @@ export class VillageActivitySystem {
   }
 
   private supported(village: Village): boolean {
+    // Static settlements are owned exclusively by DistantVillageSystem. Never
+    // fall back to the legacy per-village economic suspension for their workers.
+    if (isStaticSettlement(village.owner)) return false
     return (
       village.units.some(unit => unit.type === 'Villager') &&
       village.units.every(unit =>
@@ -126,13 +148,21 @@ export class VillageActivitySystem {
   }
 
   private observation(village: Village) {
-    const radius =
-      village.simplified || this.distant.has(village.owner) ? VILLAGE_DETAIL_ENTER_RADIUS : VILLAGE_DETAIL_EXIT_RADIUS
-    return observeVillage(this.context, village.home, radius, village.units)
+    const sleeping = village.simplified || this.distant.has(village.owner)
+    const radius = sleeping ? VILLAGE_DETAIL_ENTER_RADIUS : VILLAGE_DETAIL_EXIT_RADIUS
+    return observeVillage(
+      this.context,
+      village.home,
+      radius,
+      village.units,
+      isStaticSettlement(village.owner),
+      sleeping ? AMBIENT_CAMERA_MARGIN : AMBIENT_CAMERA_EXIT_MARGIN
+    )
   }
 
   private advance(village: Village): void {
     if (!village.simplified) return
+    if (isStaticSettlement(village.owner)) return
     const now = this.context.scheduler.elapsedMs
     const elapsed = Math.max(0, now - village.since)
     const run = () =>
@@ -177,6 +207,7 @@ export class VillageActivitySystem {
 
   update(): void {
     if (this.sleeping) return
+    getDeferredVillages(this.context.map)?.update()
     this.playerWork.update()
     const now = this.context.scheduler.elapsedMs
     if (now >= this.refreshAt) {

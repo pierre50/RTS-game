@@ -11,6 +11,7 @@ type PlaySpriteAnimationOptions = {
 type FrameSequenceSprite = Pick<AnimatedSprite, 'currentFrame' | 'gotoAndStop'>
 
 type PlaySpriteFrameSequenceOptions = {
+  isCurrent?: () => boolean
   frameMs: number
   frames: number[]
   onComplete?: () => void
@@ -44,8 +45,9 @@ export function buildFrameRange(fromFrame: number, toFrame: number): number[] {
 export function playSpriteFrameSequence(
   sprite: FrameSequenceSprite,
   scheduler: Pick<SchedulerLike, 'add' | 'remove'>,
-  { frameMs, frames, onComplete, onFrame, taskName = 'sprite.frameSequence' }: PlaySpriteFrameSequenceOptions
+  { frameMs, frames, isCurrent = () => true, onComplete, onFrame, taskName = 'sprite.frameSequence' }: PlaySpriteFrameSequenceOptions
 ): SchedulerTaskId | null {
+  if (!isCurrent()) return null
   const normalizedFrames = frames.map(frame => Math.max(0, Math.floor(frame))).filter(Number.isFinite)
   if (!normalizedFrames.length) {
     onComplete?.()
@@ -54,12 +56,14 @@ export function playSpriteFrameSequence(
 
   let index = 0
   let taskId: SchedulerTaskId | null = null
+  let stopped = false
   const applyFrame = (): void => {
     const frame = normalizedFrames[index]
     sprite.gotoAndStop(frame)
     onFrame?.(frame, index)
   }
   const finish = (): void => {
+    stopped = true
     if (taskId != null) scheduler.remove(taskId)
     onComplete?.()
   }
@@ -72,6 +76,12 @@ export function playSpriteFrameSequence(
 
   taskId = scheduler.add(
     () => {
+      if (stopped) return
+      if (!isCurrent()) {
+        stopped = true
+        if (taskId != null) scheduler.remove(taskId)
+        return
+      }
       index += 1
       applyFrame()
       if (index >= normalizedFrames.length - 1) finish()

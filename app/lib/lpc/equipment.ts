@@ -1,3 +1,4 @@
+import { resolveForgeEquipment, type ForgeUpgradeOwner } from '../equipment/forgeUpgrades'
 import { definedProperties } from '../definedProperties'
 import { SHEET_TYPES } from '../../constants'
 import { lpcAnimationSpeedForSheet } from './animationSpeeds'
@@ -26,7 +27,6 @@ import {
   WEARABLE_EQUIPMENT_Z_INDEX,
   WEARABLE_SHOOTING_EQUIPMENT_KEYS,
   isEquipmentEnabledForCivilization,
-  type AgeEquipmentOverrides,
   type DynamicEquipmentAlias,
   type DynamicEquipmentAsset,
   type DynamicEquipmentKey,
@@ -56,18 +56,6 @@ function equipmentSheets(equipment: DynamicEquipmentKey, layer: EquipmentLayer):
   return EQUIPMENT_SHEET_OVERRIDES[equipment]?.[layer] ?? EQUIPMENT_SHEETS
 }
 
-function equipmentForAge(equipment: DynamicEquipmentKey, ageEquipment: AgeEquipmentOverrides | undefined, age = 0) {
-  const ownerAge = Math.max(0, Math.floor(age))
-  if (!ageEquipment) return equipment
-  const exact = ageEquipment[ownerAge]
-  if (exact) return exact
-  const fallbackAge = Object.keys(ageEquipment)
-    .map(Number)
-    .filter(age => age <= ownerAge)
-    .sort((a, b) => b - a)[0]
-  return fallbackAge == null ? equipment : (ageEquipment[fallbackAge] ?? equipment)
-}
-
 function unitEquipmentEntry(definition: UnitEquipmentDefinition): UnitEquipmentEntry {
   return typeof definition === 'string' ? { equipment: definition } : definition
 }
@@ -81,42 +69,10 @@ function isEquipmentUnlocked(entry: Pick<UnitEquipmentEntry, 'minLevel' | 'maxLe
   return level >= (entry.minLevel ?? 0) && level <= (entry.maxLevel ?? Number.POSITIVE_INFINITY)
 }
 
-function ageSheetOverrides(layer: EquipmentLayer, ageEquipment?: AgeEquipmentOverrides) {
-  if (!ageEquipment) return undefined
-  return Object.fromEntries(
-    Object.entries(ageEquipment).flatMap(([age, equipment]) => {
-      if (!equipment) return []
-      const sheets = equipmentSheets(equipment, layer)
-      return [
-        [
-          age,
-          {
-            ...(sheets.includes('walking') ? { standingSheet: equipmentAlias(equipment, layer, 'walking') } : {}),
-            ...(sheets.includes('walking') ? { walkingSheet: equipmentAlias(equipment, layer, 'walking') } : {}),
-            ...(sheets.includes('action') ? { actionSheet: equipmentAlias(equipment, layer, 'action') } : {}),
-            ...(WEARABLE_SHOOTING_EQUIPMENT_KEYS.has(equipment)
-              ? {
-                  shootingSheet: equipmentAlias(
-                    equipment,
-                    layer,
-                    ACTION_BACKED_SHOOTING_EQUIPMENT_KEYS.has(equipment) ? 'action' : EQUIPMENT_SHOOTING_SHEET
-                  ),
-                }
-              : {}),
-            ...(sheets.includes('dying') ? { dyingSheet: equipmentAlias(equipment, layer, 'dying') } : {}),
-            ...(sheets.includes('corpse') ? { corpseSheet: equipmentAlias(equipment, layer, 'corpse') } : {}),
-          },
-        ],
-      ]
-    })
-  )
-}
-
 function layerConfig(
   equipment: DynamicEquipmentKey,
   layer: EquipmentLayer,
-  options: EquipmentOptions = {},
-  ageEquipment?: AgeEquipmentOverrides
+  options: EquipmentOptions = {}
 ): UnitAppearanceLayerConfig {
   const sheets = equipmentSheets(equipment, layer)
   const walkingSheet = sheets.includes('walking') ? equipmentAlias(equipment, layer, 'walking') : undefined
@@ -140,7 +96,6 @@ function layerConfig(
         ? BACK_WORN_DEATH_Z_INDEX
         : undefined,
     ...options,
-    ageSheetOverrides: ageSheetOverrides(layer, ageEquipment),
     appearanceVariantKey: GENDERED_EQUIPMENT_KEYS.has(equipment) ? 'gender' : undefined,
     palette: PLAYER_COLORED_EQUIPMENT_KEYS.has(equipment) ? 'player' : undefined,
     mountedCut: MOUNTED_UNCUT_EQUIPMENT_KEYS.has(equipment) ? false : options.mountedCut,
@@ -164,11 +119,10 @@ function layerConfig(
 
 function equipmentLayerConfigs(
   equipment: DynamicEquipmentKey,
-  options: EquipmentOptions = {},
-  ageEquipment?: AgeEquipmentOverrides
+  options: EquipmentOptions = {}
 ): UnitAppearanceLayerConfig[] {
   const layers = EQUIPMENT_LAYER_OVERRIDES[equipment] ?? EQUIPMENT_LAYERS
-  return layers.map(layer => layerConfig(equipment, layer, options, ageEquipment))
+  return layers.map(layer => layerConfig(equipment, layer, options))
 }
 
 function dynamicEquipmentLogicalAliases(): DynamicEquipmentAlias[] {
@@ -228,19 +182,15 @@ export function dynamicEquipmentAliases(): DynamicEquipmentAlias[] {
 
 export function dynamicEquipmentLayersForUnit(unitType: string, civilization?: string): UnitAppearanceLayerConfig[] {
   return (UNIT_EQUIPMENT[unitType] ?? []).flatMap(definition => {
-    const { equipment, ageEquipment, civilizations, minLevel, maxLevel, options } = unitEquipmentEntry(definition)
+    const { equipment, civilizations, minLevel, maxLevel, options } = unitEquipmentEntry(definition)
     if (!isEquipmentEnabledForCivilization({ civilizations }, civilization)) return []
-    return equipmentLayerConfigs(
-      equipment,
-      definedProperties({ ...options, civilizations, minLevel, maxLevel }),
-      ageEquipment
-    )
+    return equipmentLayerConfigs(equipment, definedProperties({ ...options, civilizations, minLevel, maxLevel }))
   })
 }
 
 export function dynamicEquipmentLayersForVillager(): UnitAppearanceLayerConfig[] {
-  return VILLAGER_WORK_EQUIPMENT.flatMap(({ workType, equipment, ageEquipment, minAge, options }) =>
-    equipmentLayerConfigs(equipment, definedProperties({ ...options, workTypes: [workType], minAge }), ageEquipment)
+  return VILLAGER_WORK_EQUIPMENT.flatMap(({ workType, equipment, options }) =>
+    equipmentLayerConfigs(equipment, definedProperties({ ...options, workTypes: [workType] }))
   )
 }
 
@@ -251,18 +201,23 @@ export function dynamicEquipmentLayersForEquipment(equipment: readonly string[])
   })
 }
 
-export function dynamicEquipmentForUnit(unitType: string, age = 0, level = 0, civilization?: string): string[] {
+export function dynamicEquipmentForUnit(
+  unitType: string,
+  owner: ForgeUpgradeOwner = {},
+  level = 0,
+  civilization?: string
+): string[] {
   return (UNIT_EQUIPMENT[unitType] ?? []).flatMap(definition => {
-    const { equipment, ageEquipment, civilizations, minLevel, maxLevel } = unitEquipmentEntry(definition)
+    const { equipment, civilizations, minLevel, maxLevel } = unitEquipmentEntry(definition)
     if (!isEquipmentEnabledForCivilization({ civilizations }, civilization)) return []
     if (!isEquipmentUnlocked({ minLevel, maxLevel }, level)) return []
-    return equipmentForAge(equipment, ageEquipment, age)
+    return resolveForgeEquipment(equipment, owner)
   })
 }
 
-export function dynamicEquipmentForWork(workType: string | null | undefined, age = 0): string[] {
+export function dynamicEquipmentForWork(workType: string | null | undefined, owner: ForgeUpgradeOwner = {}): string[] {
   if (!workType) return []
-  return VILLAGER_WORK_EQUIPMENT.filter(
-    ({ workType: equipmentWork, minAge }) => equipmentWork === workType && age >= (minAge ?? 0)
-  ).map(({ equipment, ageEquipment }) => equipmentForAge(equipment, ageEquipment, age))
+  return VILLAGER_WORK_EQUIPMENT.filter(({ workType: equipmentWork }) => equipmentWork === workType).map(
+    ({ equipment }) => resolveForgeEquipment(equipment, owner)
+  )
 }

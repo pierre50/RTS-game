@@ -6,6 +6,7 @@ function loadBuildingInteriorOccupants(overrides = {}) {
   return loadTsModule('app/screens/game/BuildingInteriorOccupants.ts', {
     mocks: {
       '../../constants': {
+        ACTION_TYPES: { attack: 'attack' },
         BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
         UNIT_TYPES: { villager: 'Villager' },
       },
@@ -25,10 +26,14 @@ function loadBuildingInteriorOccupants(overrides = {}) {
         getFreeLandCellAroundInstance: instance => ({ i: instance.i, j: instance.j }),
       },
       '../../lib/equipment/equipmentStats': { refreshUnitEquipmentStats: () => {} },
-      '../../services/rest/UnitRestLifecycle': { sleepOutside: () => {}, ...overrides.unitRestLifecycle },
+      '../../services/rest/UnitRestLifecycle': {
+        sendUnitToRest: (unit, reason) =>
+          overrides.unitRestLifecycle?.sleepOutside?.(unit, reason, { visual: 'animate' }),
+        settleUnitRestForTimeJump: () => {},
+        ...overrides.unitRestLifecycle,
+      },
       '../../services/rest/UnitRestRules': {
         canUseUnitRest: unit => !unit.isDead && !unit.isDestroyed && !unit.followingHero && unit.type !== 'Hero',
-        getNearestShelter: unit => (unit.nextSleepShelter ? { shelter: unit.nextSleepShelter, targetCell: {} } : null),
         isSleepTime: context => context.dayNight?.state?.hour >= 18,
       },
       './GameStateHelpers': { applyPortableUnitState: () => {} },
@@ -41,6 +46,7 @@ function loadBuildingInteriorTravel(overrides = {}) {
   return loadTsModule('app/screens/game/GameBuildingInteriorTravel.ts', {
     mocks: {
       '../../constants': {
+        ACTION_TYPES: { attack: 'attack' },
         BUILDING_TYPES: {
           campBucket: 'CampBucket',
           campCrate: 'CampCrate',
@@ -100,7 +106,7 @@ function loadBuildingInteriorTravel(overrides = {}) {
             },
           })),
       },
-      '../../serialization/MapBlueprintLoader': {
+      '../../serialization/blueprint/MapBlueprintLoader': {
         loadPregeneratedInteriorBlueprint:
           overrides.loadPregeneratedInteriorBlueprint ?? (async () => ({ id: 'test-interior' })),
       },
@@ -151,7 +157,6 @@ function loadBuildingInteriorTravel(overrides = {}) {
       './BuildingInteriorOccupants': {
         addInteriorOccupantsToRuntime: overrides.addInteriorOccupantsToRuntime ?? (() => []),
         extractBuildingInteriorOccupants: overrides.extractBuildingInteriorOccupants ?? (() => []),
-        extractBuildingInteriorSleepArrivals: overrides.extractBuildingInteriorSleepArrivals ?? (() => []),
         removeBuildingInteriorOccupants:
           overrides.removeBuildingInteriorOccupants ??
           ((state, occupants) => {
@@ -1956,85 +1961,6 @@ test('runtime followers on a building footprint are not transferred as passive o
   assert.deepEqual(occupants, [])
 })
 
-test('rest-capable units whose next sleep target is the town center are queued as interior night arrivals', () => {
-  const { extractBuildingInteriorSleepArrivals } = loadBuildingInteriorOccupants()
-  const townCenter = { i: 5, j: 5, label: 'tc-1', size: 3, type: 'TownCenter' }
-  const otherHouse = { i: 1, j: 1, label: 'house-1', size: 2, type: 'House' }
-  const state = {
-    players: [
-      {
-        isPlayed: true,
-        units: [
-          { i: 2, j: 2, label: 'future-sleeper', type: 'Villager' },
-          { i: 2, j: 3, label: 'other-sleeper', type: 'Villager' },
-          { i: 2, j: 4, label: 'follower', followingHero: true, type: 'Villager' },
-          { i: 2, j: 5, label: 'soldier', type: 'Fantassin' },
-        ],
-      },
-    ],
-  }
-  const runtimeUnits = [
-    { label: 'future-sleeper', nextSleepShelter: townCenter },
-    { label: 'other-sleeper', nextSleepShelter: otherHouse },
-    { label: 'follower', nextSleepShelter: townCenter },
-    { label: 'soldier', nextSleepShelter: townCenter },
-  ]
-
-  const arrivals = extractBuildingInteriorSleepArrivals(state, townCenter, { hero: null, followers: [] }, runtimeUnits)
-
-  assert.deepEqual(
-    arrivals.map(unit => [unit.label, unit.sleepInInterior]),
-    [
-      ['future-sleeper', true],
-      ['soldier', true],
-    ]
-  )
-})
-
-test('runtime followers are not queued as interior night arrivals', () => {
-  const { extractBuildingInteriorSleepArrivals } = loadBuildingInteriorOccupants()
-  const townCenter = { i: 5, j: 5, label: 'tc-1', size: 3, type: 'TownCenter' }
-  const state = {
-    players: [
-      {
-        isPlayed: true,
-        units: [{ i: 2, j: 2, label: 'runtime-follower', type: 'Villager' }],
-      },
-    ],
-  }
-  const runtimeUnits = [{ label: 'runtime-follower', followingHero: true, nextSleepShelter: townCenter }]
-
-  const arrivals = extractBuildingInteriorSleepArrivals(state, townCenter, { hero: null, followers: [] }, runtimeUnits)
-
-  assert.deepEqual(arrivals, [])
-})
-
-test('interior night arrivals respect the target building sleep capacity', () => {
-  const { extractBuildingInteriorSleepArrivals } = loadBuildingInteriorOccupants()
-  const house = { i: 5, j: 5, label: 'house-1', size: 2, type: 'House' }
-  const state = {
-    players: [
-      {
-        isPlayed: true,
-        units: Array.from({ length: 7 }, (_, index) => ({
-          i: 2,
-          j: index,
-          label: `sleeper-${index}`,
-          type: 'Villager',
-        })),
-      },
-    ],
-  }
-  const runtimeUnits = state.players[0].units.map(unit => ({ label: unit.label, nextSleepShelter: house }))
-
-  const arrivals = extractBuildingInteriorSleepArrivals(state, house, { hero: null, followers: [] }, runtimeUnits)
-
-  assert.deepEqual(
-    arrivals.map(unit => unit.label),
-    ['sleeper-0', 'sleeper-1', 'sleeper-2', 'sleeper-3', 'sleeper-4']
-  )
-})
-
 test('transferred building occupants and queued sleepers are removed from the parent save', () => {
   const { removeBuildingInteriorOccupants } = loadBuildingInteriorOccupants()
   const state = {
@@ -2131,115 +2057,6 @@ test('scheduled interior sleep arrivals can wait for the scheduler and report sa
   assert.equal(createdUnits[0].j, 3)
 })
 
-test('interior sleepers enter through the exit before walking to a sleep spot', () => {
-  const sleepOutsideCalls = []
-  const { addInteriorOccupantsToRuntime } = loadBuildingInteriorOccupants({
-    unitRestLifecycle: {
-      sleepOutside: (unit, reason, options) => {
-        unit.shelterState = { status: 'outside', reason }
-        sleepOutsideCalls.push([unit.label, reason, options])
-      },
-    },
-  })
-  const grid = Array.from({ length: 3 }, (_, i) =>
-    Array.from({ length: 3 }, (_, j) => ({ i, j, category: 'Dirt', solid: false, terrainHidden: false }))
-  )
-  const sent = []
-  const player = {
-    buildings: [],
-    units: [],
-    createUnit(options) {
-      const unit = {
-        ...options,
-        context: { scheduler: { elapsedMs: 1200 } },
-        label: options.label,
-        sendToEvt: (target, action, sendOptions) => sent.push([target, action, sendOptions]),
-      }
-      this.units.push(unit)
-      grid[options.i][options.j].has = unit
-      grid[options.i][options.j].solid = true
-      return unit
-    },
-  }
-  const game = {
-    _gameContext() {
-      return {
-        map: { grid, interiorExits: [{ i: 2, j: 2 }], mapType: 'interior', random: () => 0, size: 2 },
-        player,
-      }
-    },
-  }
-
-  const [sleeper] = addInteriorOccupantsToRuntime(
-    game,
-    [{ i: 1, j: 1, label: 'sleeper', sleepInInterior: true, type: 'Villager' }],
-    {
-      i: 2,
-      j: 2,
-    },
-    { sleepVisual: 'animate' }
-  )
-
-  assert.equal(sleeper.i, 2)
-  assert.equal(sleeper.j, 2)
-  assert.deepEqual(sent, [[grid[0][0], null, { forceRepath: true, preserveAutonomy: true }]])
-  assert.equal(sleeper.shelterState.status, 'movingToRest')
-  assert.equal(sleeper.shelterState.targetCell, grid[0][0])
-  assert.deepEqual(sleepOutsideCalls, [])
-})
-
-test('interior sleepers already sheltered spawn asleep at their sleep spot', () => {
-  const sleepOutsideCalls = []
-  const { addInteriorOccupantsToRuntime } = loadBuildingInteriorOccupants({
-    unitRestLifecycle: {
-      sleepOutside: (unit, reason, options) => {
-        unit.shelterState = { status: 'outside', reason }
-        sleepOutsideCalls.push([unit.label, reason, options])
-      },
-    },
-  })
-  const grid = Array.from({ length: 3 }, (_, i) =>
-    Array.from({ length: 3 }, (_, j) => ({ i, j, category: 'Dirt', solid: false, terrainHidden: false }))
-  )
-  const sent = []
-  const player = {
-    buildings: [],
-    units: [],
-    createUnit(options) {
-      const unit = {
-        ...options,
-        context: { scheduler: { elapsedMs: 1200 } },
-        label: options.label,
-        sendToEvt: (target, action, sendOptions) => sent.push([target, action, sendOptions]),
-      }
-      this.units.push(unit)
-      grid[options.i][options.j].has = unit
-      grid[options.i][options.j].solid = true
-      return unit
-    },
-  }
-  const game = {
-    _gameContext() {
-      return {
-        map: { grid, interiorExits: [{ i: 2, j: 2 }], mapType: 'interior', random: () => 0, size: 2 },
-        player,
-      }
-    },
-  }
-
-  const [sleeper] = addInteriorOccupantsToRuntime(
-    game,
-    [{ i: 1, j: 1, label: 'sleeper', sleepInInterior: true, type: 'Villager' }],
-    { i: 2, j: 2 }
-  )
-
-  assert.equal(sleeper.i, 0)
-  assert.equal(sleeper.j, 0)
-  assert.deepEqual(sent, [])
-  assert.equal(sleeper.shelterState.status, 'outside')
-  assert.deepEqual(sleepOutsideCalls, [['sleeper', 'sleep', { visual: 'finalFrame' }]])
-})
-
 test('awake interior occupants spawn on the interior exit cell when it is free', () => {
   const { addInteriorOccupantsToRuntime } = loadBuildingInteriorOccupants()
   const player = {
@@ -2312,42 +2129,57 @@ test('interior occupants preserve gendered appearance before initialization', ()
   assert.equal(created[0].label, 'occupant-1')
 })
 
-test('interior sleepers use the exit cell before heading away to sleep', () => {
-  const { addInteriorOccupantsToRuntime } = loadBuildingInteriorOccupants({
-    unitRestLifecycle: {
-      sleepOutside: () => {},
+test('an interior soldier replaces a queued rest exit with combat and leaves during the night', () => {
+  const space = { id: 'building-space', exitCell: { i: 2, j: 2 } }
+  const routed = []
+  const context = { dayNight: { state: { hour: 23 } } }
+  const unit = {
+    context,
+    type: 'Fantassin',
+    spaceId: space.id,
+    interiorExitState: { returnTask: null, retryCount: 0 },
+  }
+  const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
+    getBuildingInteriorSpaceForUnit: () => space,
+    routeUnitOutOfBuildingInteriorSpace: (_context, exiting) => {
+      routed.push(exiting)
+      return true
     },
   })
-  const grid = Array.from({ length: 3 }, (_, i) =>
-    Array.from({ length: 3 }, (_, j) => ({ i, j, category: 'Dirt', solid: false, terrainHidden: false }))
-  )
-  const player = {
-    buildings: [],
-    units: [],
-    createUnit(options) {
-      const unit = { ...options, label: options.label, context: { scheduler: { elapsedMs: 0 } }, sendToEvt() {} }
-      this.units.push(unit)
-      grid[options.i][options.j].has = unit
-      grid[options.i][options.j].solid = true
-      return unit
-    },
-  }
-  const game = {
-    _gameContext() {
-      return {
-        map: { grid, interiorExits: [{ i: 2, j: 2 }], mapType: 'interior', random: () => 0, size: 2 },
-        player,
-      }
-    },
-  }
-
-  const [sleeper] = addInteriorOccupantsToRuntime(
-    game,
-    [{ i: 1, j: 1, label: 'sleeper', sleepInInterior: true, type: 'Villager' }],
-    { i: 2, j: 2 },
-    { sleepVisual: 'animate' }
-  )
-
-  assert.deepEqual([sleeper.i, sleeper.j], [2, 2])
-  assert.notDeepEqual([sleeper.shelterState.targetCell.i, sleeper.shelterState.targetCell.j], [2, 2])
+  const task = { action: 'attack', dest: { label: 'enemy' }, work: 'attacker' }
+  routeInteriorUnitToExit({ _gameContext: () => context }, unit, task)
+  assert.deepEqual(routed, [unit])
+  assert.equal(unit.interiorExitState.returnTask, task)
 })
+
+for (const instant of [false, true]) {
+  test(`restored interior sleepers delegate to rest target selection (instant=${instant})`, () => {
+    const calls = []
+    const { addInteriorOccupantsToRuntime } = loadBuildingInteriorOccupants({
+      unitRestLifecycle: {
+        sendUnitToRest: (unit, reason, options) => calls.push(['route', unit.label, reason, options]),
+        settleUnitRestForTimeJump: (unit, sleep, refresh) => calls.push(['settle', unit.label, sleep, refresh]),
+      },
+    })
+    const player = {
+      units: [],
+      createUnit(options) {
+        const unit = { ...options }
+        this.units.push(unit)
+        return unit
+      },
+    }
+    const game = { _gameContext: () => ({ player, map: { random: () => 0 } }) }
+    const [unit] = addInteriorOccupantsToRuntime(
+      game,
+      [{ label: 'sleeper', type: 'Villager', sleepInInterior: true }],
+      { i: 7, j: 11 },
+      { sleepVisual: instant ? 'finalFrame' : 'animate' }
+    )
+    assert.deepEqual([unit.i, unit.j], [7, 11])
+    assert.deepEqual(
+      calls,
+      instant ? [['settle', 'sleeper', true, true]] : [['route', 'sleeper', 'sleep', { transition: false }]]
+    )
+  })
+}

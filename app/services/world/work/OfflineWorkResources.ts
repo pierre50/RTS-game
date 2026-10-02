@@ -21,7 +21,7 @@ import type { ResourceAmount } from '../../../types/common'
 import type { AnimalConfig, BuildingConfig, UnitConfig } from '../../../types/config'
 import type { UnitEntity } from '../../../types/entities'
 import type { SaveEntityState, SaveGridPoint, SavePlayerState } from '../../../types/save'
-import { distance, entityKey, isLiving, type OfflineWorldSpatial } from '../OfflineWorldSpatial'
+import { distance, entityKey, isLiving, type OfflineWorldSpatial } from '../offline/OfflineWorldSpatial'
 
 export type OfflineWorkRules = {
   /** Enables detached village recruitment; gathering always consumes real resources. */
@@ -31,7 +31,6 @@ export type OfflineWorkRules = {
   animalConfig?(type: string): AnimalConfig
   unitConfig(playerIndex: number, type: string): UnitConfig
   buildingConfig(playerIndex: number, type: string): BuildingConfig
-  buildingCapacity(playerIndex: number, type: string): number
   cycleMs(playerIndex: number, work: string, action?: string): number
   wheatMatureFrame: number
   isKnown?(playerIndex: number, resource: SaveEntityState): boolean

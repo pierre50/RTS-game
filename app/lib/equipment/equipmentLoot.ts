@@ -86,7 +86,7 @@ export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
     : getUnitEquipment(
         unit.type,
         config,
-        unit.owner?.age,
+        unit.owner ?? {},
         getUnitEquipmentTier(unit, config?.category),
         unit.owner?.civ
       )

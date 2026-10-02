@@ -1,7 +1,7 @@
 import { ACTION_TYPES, WORK_TYPES } from '../../constants'
 import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
-import type { TributeRaidSystem } from '../TributeRaidSystem'
+import type { TributeRaidSystem } from './TributeRaidSystem'
 import { RAID_APPROACH_RANGE, getRaidCellDistance, livingRaidUnits, type TributeRaid } from './TributeRaidRules'
 type Host = Pick<
   TributeRaidSystem,

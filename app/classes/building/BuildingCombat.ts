@@ -1,29 +1,9 @@
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, getActionCondition, instancesDistance } from '../../lib'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { Projectile } from '../Projectile'
 import type { RuntimeEntity } from '../../types/entities'
 import type { BuildingControllerHost } from './BuildingTypes'
-
-type BuildingCombatRangeByAge = Partial<Record<number, number>>
-
-const BUILDING_RANGED_ATTACK_RANGES_BY_AGE: Record<string, BuildingCombatRangeByAge> = {
-  [BUILDING_TYPES.watchTower]: {
-    1: 6,
-  },
-}
-
-function getBuildingCombatRange(building: BuildingControllerHost): number | undefined {
-  const map = BUILDING_RANGED_ATTACK_RANGES_BY_AGE[building.type]
-  if (!map) return building.range
-
-  const ownerAge = building.owner?.age ?? 0
-  for (let currentAge = ownerAge; currentAge >= 0; currentAge--) {
-    const ageRange = map[currentAge]
-    if (typeof ageRange === 'number') return ageRange
-  }
-  return building.range
-}
 
 export class BuildingCombat {
   building: BuildingControllerHost
@@ -35,7 +15,7 @@ export class BuildingCombat {
   attackAction(target: RuntimeEntity): void {
     const building = this.building
     const map = building.context.map
-    const range = getBuildingCombatRange(building)
+    const range = building.range
     if (!building.isBuilt || building.isDead || !range || !building.projectile) return
     const projectileType = building.projectile
     building.startAttackInterval(() => {
@@ -55,7 +35,7 @@ export class BuildingCombat {
   detect(instance: RuntimeEntity): void {
     const building = this.building
     if (building.context.editor) return
-    const range = getBuildingCombatRange(building)
+    const range = building.range
     if (!range) return
 
     const actionOk = getActionCondition(building, instance, ACTION_TYPES.attack)
@@ -79,7 +59,7 @@ export class BuildingCombat {
   // instant-build path (constructed directly with isBuilt: true, e.g. map generation).
   scanForInitialTarget(): void {
     const building = this.building
-    const range = getBuildingCombatRange(building)
+    const range = building.range
     if (!range || !building.projectile) return
     const candidates = findInstancesInSight<BuildingControllerHost, RuntimeEntity>(
       building,
@@ -94,7 +74,7 @@ export class BuildingCombat {
   isAttacked(instance: RuntimeEntity): void {
     const building = this.building
     if (building.context.editor) return
-    const range = getBuildingCombatRange(building)
+    const range = building.range
     if (building.isDead || !getActionCondition(building, instance, ACTION_TYPES.attack)) return
     building.owner.reportThreat?.(building, instance)
     building.context.unitRest?.handleShelterAttack?.(building, instance)

@@ -1,3 +1,6 @@
+import type { BuildingUpgrade } from '../lib/economy/constructionMaterials'
+import type { ForgeUpgrades } from '../lib/equipment/forgeUpgrades'
+import type { SettlementType, DevelopmentMode } from '../config/settlementProfiles'
 import type { DepotReservePolicy } from '../lib/economy/depotReserves'
 import type { TrainingRequest } from './training'
 import type { ConstructionMaterials } from '../lib/economy/constructionMaterials'
@@ -13,7 +16,7 @@ import type { HeroEquippedItem } from './heroTools'
 import type { ResourceAmount } from './common'
 import type { AnimalConfig, BuildingConfig, ConfigValue, ResourceConfig, UnitConfig } from './config'
 import type { FogSpriteMemory } from './fog'
-import type { AssetAge } from './pixi'
+import type { AssetLevel } from './pixi'
 import type { SerializedVisionGrid } from './vision'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
 import type { VillagerAutonomyJob } from './entities'
@@ -32,6 +35,7 @@ export type SaveEntityState = {
   collectiveTask?: string | null
   collectiveHome?: { i: number; j: number; spaceId?: string | null }
   constructionMaterials?: ConstructionMaterials
+  buildingUpgrade?: BuildingUpgrade
   wildlife?: {
     homeI: number
     homeJ: number
@@ -63,13 +67,19 @@ export type SaveEntityState = {
   cavePosition?: { caveId: string; i: number; j: number }
   cave?: CaveDefinition
   placementMirrored?: boolean
-  buildingAge?: number
+  buildingLevel?: number
+  homeHouseLabel?: string
+  homeBedLabel?: string
+  partnerLabel?: string
+  heroHomeResident?: { label: string; name?: string }
+  plannedBedLabels?: string[]
+  interiorUnfurnished?: boolean
   interiorBuildings?: SaveEntityState[]
   interiorPortalId?: string
   interiorOwner?: string
   offlineWork?: { target: string; milliseconds: number }
   action?: string | null
-  assetAge?: AssetAge
+  assetLevel?: AssetLevel
   assetCiv?: string
   assetType?: string
   autonomousJob?: VillagerAutonomyJob | null
@@ -195,12 +205,12 @@ export type SavedAIState = {
 }
 
 export type SavePlayerState = PlayerSetupConfig & {
+  rpgRestockDay?: number
   abstractProductionRemainder?: Record<string, number>
   offlineBuildingDecision?: string
   offlineBuildingPlanDay?: number
   targetKnowledge?: TargetObservation[]
-  age?: number
-  ageRulesVersion?: number
+  forgeUpgrades?: ForgeUpgrades
   buildings?: SaveEntityState[]
   cellViewed?: number
   colorHex?: string
@@ -212,7 +222,6 @@ export type SavePlayerState = PlayerSetupConfig & {
   wheat?: number
   gold?: number
   iron?: number
-  completedObjectives?: string[]
   // Legacy discovery data is accepted on load but no longer used or saved.
   discoveredEquipment?: string[]
   discoveredResources?: string[]
@@ -451,15 +460,19 @@ export type GameConfig = {
   revealTerrain?: boolean
   seed?: string | number
   size?: number
-  startingAge?: number
   startingResources?: ResourceAmount
   worldId?: string | null
   worldRegionId?: string | null
 }
 
 export type VillageStartProfile = {
+  buildingLevel: number
+  forgeUpgrades?: ForgeUpgrades
+  settlementType?: SettlementType
+  developmentMode?: DevelopmentMode
+  /** Exact stock per depot, bounded by its capacity. */
+  depotStocks?: Record<string, ResourceAmount>
   wheatFields?: number
-  age: number
   buildings: Record<string, number>
   units: Record<string, number>
   resourceBonus?: ResourceAmount
@@ -467,6 +480,8 @@ export type VillageStartProfile = {
 }
 
 export type PlayerSetupConfig = {
+  settlementType?: SettlementType
+  developmentMode?: DevelopmentMode
   civ?: string
   civilizationLevel?: number
   color?: string

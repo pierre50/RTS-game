@@ -88,7 +88,6 @@ export interface RuntimeMap {
   revealTerrain: boolean
   showResources?: boolean
   waterOverlayPaused?: boolean
-  startingAge?: number
   resourceDensity?: string
   difficulty?: string
   positionsCount?: number

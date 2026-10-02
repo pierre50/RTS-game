@@ -1,3 +1,4 @@
+import { isRpgVillager } from '../../../config/rpgVillages'
 import { unitSuspensionReason } from '../unitSuspension'
 import { ACTION_TYPES } from '../../../constants'
 import { shouldVillagerWork } from '../villagerSchedule'
@@ -13,6 +14,7 @@ export function hasPriorityCombat(unit: UnitEntity): boolean {
 }
 
 export function villagerAutonomySuspension(unit: UnitEntity, reconsiderDeposit = false): string | null {
+  if (isRpgVillager(unit)) return 'rpg-village'
   const simulation = unitSuspensionReason(unit)
   if (simulation) return simulation
   if (unit.isDead || unit.isDestroyed) return 'unavailable'

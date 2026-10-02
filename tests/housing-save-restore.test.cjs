@@ -9,8 +9,8 @@ class RestoredPlayer {
 const { restoreSavedPlayers } = loadTsModule('app/classes/map/generation/MapSavedEntities.ts', {
   mocks: {
     '../../../lib': {},
-    '../../../services/UnitPerception': {},
-    '../../../services/WildlifeStore': {},
+    '../../../services/visibility/UnitPerception': {},
+    '../../../services/wildlife/WildlifeStore': {},
     '../../cell/PackedCellRegistry': {},
     '../../Resource': {},
     '../../ResourceTexture': {},

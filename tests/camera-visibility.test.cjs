@@ -416,7 +416,7 @@ test('local camera bounds do not apply to interiors', () => {
 function createExplorationCamera(zoom = 1) {
   const CameraController = loadCameraController(zoom)
   const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-  const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+  const { VisionGrid } = loadTsModule('app/services/visibility/VisionGrid.ts')
   const size = 30
   const grid = Array.from({ length: size + 1 }, (_, i) =>
     Array.from({ length: size + 1 }, (_, j) => ({
@@ -520,7 +520,7 @@ test('zoom changes the explored footprint and sub-cell movement reuses camera ca
 function createLiveCameraScene() {
   const { forgetInstanceRenderCandidate } = loadTsModule('app/lib/grid/cameraRenderTracking.ts')
   const { updateInstanceRenderVisibility } = loadTsModule('app/lib/grid/visibility.ts', {
-    mocks: { '../../services/UnitPerception': { updateVisibility() {} } },
+    mocks: { '../../services/visibility/UnitPerception': { updateVisibility() {} } },
   })
   let checks = 0
   const CameraController = loadCameraController(1, instance => {

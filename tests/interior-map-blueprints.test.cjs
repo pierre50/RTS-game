@@ -130,7 +130,7 @@ test('interior blueprint loader selects by building size while keeping type-spec
   const restoreFetch = installInteriorMapFetch(path.join(ROOT, 'public/maps/interiors'))
 
   try {
-    const { loadPregeneratedInteriorBlueprint } = loadTsModule('app/serialization/MapBlueprintLoader.ts', {
+    const { loadPregeneratedInteriorBlueprint } = loadTsModule('app/serialization/blueprint/MapBlueprintLoader.ts', {
       mocks: {
         '../constants': { DEFAULT_ENVIRONMENT_ID: 'temperate' },
       },

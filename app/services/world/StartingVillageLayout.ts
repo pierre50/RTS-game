@@ -1,8 +1,8 @@
 import { storagePitResources, storagePitSiteScore } from '../../lib/grid/storagePitPlacement'
 import { StartingResourceRelocation } from './StartingResourceRelocation'
 import { planVillageDistricts, type VillageDistrictPlan } from './VillageDistrictPlan'
-import { OfflineWorldSpatial, type OfflineTerrainCell } from './OfflineWorldSpatial'
-import type { OfflineWorkRules } from './OfflineWorldWork'
+import { OfflineWorldSpatial, type OfflineTerrainCell } from './offline/OfflineWorldSpatial'
+import type { OfflineWorkRules } from './offline/OfflineWorldWork'
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../types/save'
 
 /** Initial layouts use runtime-sized footprints and a free circulation ring, rather
@@ -101,6 +101,10 @@ export class StartingVillageLayout {
         return nearest(['StoragePit', 'Market'], plan.square)
       case 'Market':
         return plan.square
+      case 'CampBrazier': {
+        const districts = [plan.square, ...plan.homes, plan.defence, plan.farms, ...plan.towers]
+        return districts[count % districts.length]
+      }
       case 'FireCamp':
         return count ? plan.homes[0] : plan.square
       case 'Barracks':

@@ -1,3 +1,4 @@
+import type { PreparedSettlements } from '../../types/preparedSettlements'
 import type { BanditCampPlacement } from '../../types/camp'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import type { PlacedCave } from '../../types/cave'
@@ -38,7 +39,6 @@ export type MapGenerationMap = RuntimeMap & {
   generationTimings?: Record<string, number>
   difficulty: string
   chanceOfSets: number
-  startingAge: number
   instanceBuckets: Array<Array<Set<RuntimeEntity>>> | null
   pregeneratedBlueprintId?: string | null
   pregeneratedResourcesLoaded?: boolean
@@ -120,6 +120,7 @@ type BlueprintResource = {
 }
 
 export type MapSettlement = {
+  settlementType?: 'outpost' | 'village' | 'city'
   id: string
   kind: 'village' | 'city' | 'banditCamp'
   world?: GridPosition
@@ -134,6 +135,7 @@ export type MapSettlement = {
 }
 
 export type MapBlueprint = {
+  preparedSettlements?: PreparedSettlements
   packedTerrain?: { types: Uint8Array; heights: Int8Array }
   caves?: PlacedCave[]
   terrainAppearance?: PreparedTerrainCell[]

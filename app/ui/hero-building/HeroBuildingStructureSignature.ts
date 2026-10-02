@@ -9,13 +9,20 @@ export function heroBuildingStructureSignature(manager: HeroBuildingMenuManager)
   if (!building) return ''
   const level = manager.stack[manager.stack.length - 1] || []
   return [
+    building.buildingLevel,
+    building.isBuilt,
+    building.buildingUpgrade ? JSON.stringify(building.buildingUpgrade) : '',
+    JSON.stringify(building.constructionMaterials),
     ['StoragePit', 'Granary'].includes(building.type) && building.owner
       ? JSON.stringify(settlementDepotPolicy(building.owner, building))
       : '',
     building.type === BUILDING_TYPES.forge
       ? JSON.stringify([
-          manager.menu.context.player.age,
+          manager.menu.context.player.forgeUpgrades,
+          building.owner?.label,
+          manager.menu.context.controls.heroUnit?.isChief,
           building.isBuilt,
+          getPlayerResourceTotals(manager.menu.context.player, { includeHero: false }),
           getPlayerResourceTotals(manager.menu.context.player, { hero: manager.menu.context.controls.heroUnit }),
         ])
       : '',

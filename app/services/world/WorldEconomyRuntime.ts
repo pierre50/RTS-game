@@ -1,16 +1,17 @@
+import { reconcileHouseholds } from '../../lib/housing/households'
 import { isContinentWorld } from '../../config/continentWorlds'
 import { isLargeMapIsolationTest } from '../../config/largeMapTest'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import { Assets } from 'pixi.js'
 import { worldEconomyFactors } from '../../config/worldEconomyBalance'
 import { createPlayerData } from '../../config/playerConfig'
-import { getBuildingShelterCapacity, getPopulationCapacityFromBuildings } from '../../lib/buildings/buildingOccupancy'
+import { getPopulationCapacityFromBuildings } from '../../lib/buildings/buildingOccupancy'
 import { populateVillageBase } from './VillageBaseState'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import { createSquareLocalBlueprint } from '../../classes/map/generation/LocalMapBlueprint'
 import { offlineWorkCycleMs } from '../../lib/economy/configuredWorkTiming'
 import { serializeGame } from '../../serialization/SaveSerializer'
-import { OfflineWorldSpatial } from './OfflineWorldSpatial'
+import { OfflineWorldSpatial } from './offline/OfflineWorldSpatial'
 import { applyVillageStartingState } from './VillageStartingState'
 import {
   advanceCampaignEconomy,
@@ -25,14 +26,16 @@ import type { PlayerConfigLike } from '../../types/player'
 import type { GameContextLike } from '../../types/context'
 import type { CampaignSave, RegionEconomySave, SerializedSave, VillageStartProfile } from '../../types/save'
 import type { ResourceConfig } from '../../types/config'
-import type { OfflineWorkRules } from './OfflineWorldWork'
+import type { OfflineWorkRules } from './offline/OfflineWorldWork'
 
 export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
   const base = Assets.cache.get('config') as PlayerConfigLike & { resources: Record<string, ResourceConfig> }
   const configs = state.players.map(player => createPlayerData(base, player.civ ?? 'Hellas'))
-  state.players.forEach((player, index) => {
+  state.players.forEach(player => {
     if (!['Human', 'AI'].includes(player.type)) return
-    player.populationMax = getPopulationCapacityFromBuildings(player.buildings ?? [], configs[index].buildings)
+    if (player.settlementType === 'outpost') return
+    reconcileHouseholds(player)
+    player.populationMax = getPopulationCapacityFromBuildings(player.buildings ?? [], player)
   })
   const wheat = base.resources.Wheat
   const sheet = typeof wheat?.assets === 'string' ? Assets.cache.get(wheat.assets) : null
@@ -54,10 +57,6 @@ export function economyRulesFor(state: SerializedSave): OfflineWorkRules {
     unitConfig: (index, type) => configs[index]?.units[type] ?? {},
     buildingConfig: (index, type) => configs[index]?.buildings[type] ?? {},
     animalConfig: type => base.animals?.[type] ?? {},
-    buildingCapacity: (index, type) => {
-      const config = configs[index]?.buildings[type]
-      return getBuildingShelterCapacity({ type, ...config })
-    },
     wheatMatureFrame: Math.max(0, Object.keys(sheet?.textures ?? {}).length - 1),
     cycleMs: (index, work, action) => {
       const key = `${index}:${work}:${action ?? ''}`
@@ -134,8 +133,9 @@ function seedRegion(
       name: faction?.name ?? settlement.civ,
       color: faction?.color,
       type: 'AI',
+      settlementType: settlement.kind === 'city' ? 'city' : undefined,
+      developmentMode: 'static',
       isPlayed: false,
-      age: 0,
       units: [],
       buildings: [],
     })
@@ -148,7 +148,6 @@ function seedRegion(
       {
         buildingConfig: (_i, type) => config.buildings[type] ?? {},
         unitConfig: (_i, type) => config.units[type] ?? {},
-        buildingCapacity: (_i, type) => getBuildingShelterCapacity({ type, ...config.buildings[type] }),
       },
       context.map.startingResources ?? { wood: 200, food: 200, stone: 150 }
     )

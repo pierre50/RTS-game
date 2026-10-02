@@ -163,7 +163,7 @@ test('back-worn equipment lifts above body on death sheets', () => {
   assert.equal(getAppearanceLayerZIndex({ layer: capeFront, sheet: constants.SHEET_TYPES.corpse }), 12)
 })
 
-test('villager and hero work tools follow civilization metal age', () => {
+test('villager and hero work tools follow forge research', () => {
   const { dynamicEquipmentForWork, dynamicEquipmentLayersForVillager } = loadModule('app/lib/lpc/equipment.ts', {
     '../../constants': constants,
   })
@@ -182,22 +182,52 @@ test('villager and hero work tools follow civilization metal age', () => {
   assert.equal(woodcutterFront?.walkingSheet, 'equipments/axe_ceramic/front/walking')
   assert.equal(woodcutterFront?.appearanceVariantKey, 'gender')
   assert.equal(woodcutterFront?.actionWorkSheetOverrides?.['attacker:attack'], undefined)
-  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/axe_bronze/front/walking')
-  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/axe_bronze/front/action')
   assert.equal(builderFront?.walkingSheet, 'equipments/hammer_ceramic/front/walking')
   assert.equal(builderFront?.appearanceVariantKey, 'gender')
-  assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/hammer_bronze/front/action')
-  assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/hammer_bronze/front/action')
-  assert.equal(builderFront?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/hammer_iron/front/action')
   assert.equal(farmerFront?.minAge, undefined)
 
-  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 0), ['scythe_ceramic'])
-  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 1), ['scythe_bronze'])
-  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.horseCapture, 0), ['longstick'])
-  assert.deepEqual(dynamicEquipmentForWork('heroSword', 0), ['sword_ceramic'])
-  assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_bronze'])
-  assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_bronze'])
-  assert.deepEqual(dynamicEquipmentForWork('heroSword', 2), ['sword_iron'])
+  assert.deepEqual(
+    dynamicEquipmentForWork(constants.WORK_TYPES.farmer, {
+      forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 },
+    }),
+    ['scythe_ceramic']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForWork(constants.WORK_TYPES.farmer, {
+      forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 },
+    }),
+    ['scythe_ceramic']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForWork(constants.WORK_TYPES.horseCapture, {
+      forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 },
+    }),
+    ['longstick']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForWork('heroSword', {
+      forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 },
+    }),
+    ['sword_ceramic']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForWork('heroSword', {
+      forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 },
+    }),
+    ['sword_bronze']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForWork('heroSword', {
+      forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 },
+    }),
+    ['sword_bronze']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForWork('heroSword', {
+      forgeUpgrades: { axes: 3, pickaxes: 3, hammers: 3, weapons: 3, armor: 3, arrows: 3 },
+    }),
+    ['sword_iron']
+  )
 })
 
 test('catchingPole inventory equipment renders through the longstick visual layers', () => {
@@ -769,80 +799,237 @@ test('appearance layers tolerate units whose main sprite is not ready during res
   assert.equal(unit.appearanceLayerSprites.size, 0)
 })
 
-test('infantry equipment layers unlock by level and switch metal by civilization age', () => {
+test('infantry equipment layers unlock by level and switch metal by forge research', () => {
   const { dynamicEquipmentForUnit, dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
     '../../constants': constants,
   })
 
-  assert.deepEqual(dynamicEquipmentForUnit('Chief', 0, 0), ['sword_ceramic'])
-  assert.deepEqual(dynamicEquipmentForUnit('Chief', 1, 0), ['sword_bronze'])
-  assert.deepEqual(dynamicEquipmentForUnit('Chief', 1, 0), ['sword_bronze'])
-  assert.deepEqual(dynamicEquipmentForUnit('Chief', 2, 0), ['sword_iron'])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 0, 0), ['sword_ceramic'])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 0, 2), ['sword_ceramic', 'armor_leather'])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 15), [
-    'sword_bronze',
-    'shoulder_legion_bronze',
-    'bracers_bronze',
-    'round_shield_bronze_slash',
-    'armor_mail_bronze',
-    'leg_armor_bronze',
-    'cape_solid',
-    'helmet_barbuta_bronze',
-  ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 15), [
-    'sword_iron',
-    'shoulder_legion_iron',
-    'bracers_iron',
-    'round_shield_iron_slash',
-    'armor_mail_iron',
-    'leg_armor_iron',
-    'cape_solid',
-    'helmet_barbuta_iron',
-  ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 16), [
-    'sword_bronze',
-    'shoulder_legion_bronze',
-    'bracers_bronze',
-    'round_shield_bronze_slash',
-    'armor_mail_bronze',
-    'leg_armor_bronze',
-    'cape_solid',
-    'helmet_barbuta_bronze',
-    'centurion_crest',
-  ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 18), [
-    'sword_bronze',
-    'shoulder_legion_bronze',
-    'bracers_bronze',
-    'round_shield_bronze_slash',
-    'armor_legion_bronze',
-    'leg_armor_bronze',
-    'cape_solid',
-    'helmet_barbuta_bronze',
-    'centurion_crest',
-  ])
-  assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 1, 20), [
-    'sword_bronze',
-    'shoulder_legion_bronze',
-    'bracers_bronze',
-    'round_shield_bronze_slash',
-    'armor_legion_bronze',
-    'leg_armor_bronze',
-    'cape_solid',
-    'helmet_barbuta_bronze',
-    'centurion_crest',
-  ])
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Latium').includes('helmet_legion_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Latium').includes('centurion_plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Sumeria').includes('helmet_nasal_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Sumeria').includes('legion_plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Kemet').includes('helmet_bascinet_round_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Xia').includes('plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Alba').includes('helmet_wings'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Nord').includes('helmet_norman_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Nord').includes('upward_horns_white'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 1, 20, 'Nobatia').includes('helmet_nasal_bronze'), true)
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Chief',
+      { forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 } },
+      0
+    ),
+    ['sword_ceramic']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Chief',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      0
+    ),
+    ['sword_bronze']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Chief',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      0
+    ),
+    ['sword_bronze']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Chief',
+      { forgeUpgrades: { axes: 3, pickaxes: 3, hammers: 3, weapons: 3, armor: 3, arrows: 3 } },
+      0
+    ),
+    ['sword_iron']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 } },
+      0
+    ),
+    ['sword_ceramic']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 } },
+      2
+    ),
+    ['sword_ceramic', 'armor_leather']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      15
+    ),
+    [
+      'sword_bronze',
+      'shoulder_legion_bronze',
+      'bracers_bronze',
+      'round_shield_bronze_slash',
+      'armor_mail_bronze',
+      'leg_armor_bronze',
+      'cape_solid',
+      'helmet_barbuta_bronze',
+    ]
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 3, pickaxes: 3, hammers: 3, weapons: 3, armor: 3, arrows: 3 } },
+      15
+    ),
+    [
+      'sword_iron',
+      'shoulder_legion_iron',
+      'bracers_iron',
+      'round_shield_iron_slash',
+      'armor_mail_iron',
+      'leg_armor_iron',
+      'cape_solid',
+      'helmet_barbuta_iron',
+    ]
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      16
+    ),
+    [
+      'sword_bronze',
+      'shoulder_legion_bronze',
+      'bracers_bronze',
+      'round_shield_bronze_slash',
+      'armor_mail_bronze',
+      'leg_armor_bronze',
+      'cape_solid',
+      'helmet_barbuta_bronze',
+      'centurion_crest',
+    ]
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      18
+    ),
+    [
+      'sword_bronze',
+      'shoulder_legion_bronze',
+      'bracers_bronze',
+      'round_shield_bronze_slash',
+      'armor_legion_bronze',
+      'leg_armor_bronze',
+      'cape_solid',
+      'helmet_barbuta_bronze',
+      'centurion_crest',
+    ]
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20
+    ),
+    [
+      'sword_bronze',
+      'shoulder_legion_bronze',
+      'bracers_bronze',
+      'round_shield_bronze_slash',
+      'armor_legion_bronze',
+      'leg_armor_bronze',
+      'cape_solid',
+      'helmet_barbuta_bronze',
+      'centurion_crest',
+    ]
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Latium'
+    ).includes('helmet_legion_bronze'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Latium'
+    ).includes('centurion_plumage'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Sumeria'
+    ).includes('helmet_nasal_bronze'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Sumeria'
+    ).includes('legion_plumage'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Kemet'
+    ).includes('helmet_bascinet_round_bronze'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Xia'
+    ).includes('plumage'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Alba'
+    ).includes('helmet_wings'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Nord'
+    ).includes('helmet_norman_bronze'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Nord'
+    ).includes('upward_horns_white'),
+    true
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Fantassin',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20,
+      'Nobatia'
+    ).includes('helmet_nasal_bronze'),
+    true
+  )
 
   const layers = dynamicEquipmentLayersForUnit('Fantassin')
   const sword = layers.find(layer => layer.walkingSheet === 'equipments/sword_ceramic/front/walking')
@@ -870,20 +1057,13 @@ test('infantry equipment layers unlock by level and switch metal by civilization
   assert.equal(mail?.mountedCut, undefined)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.maxLevel, 17)
-  assert.equal(mail?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
-  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
   assert.equal(pointed?.zIndex, 11)
   assert.equal(pointed?.mountedCut, false)
   assert.equal(pointed?.minLevel, 6)
   assert.equal(pointed?.maxLevel, 14)
-  assert.equal(pointed?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/helmet_pointed_bronze/front/walking')
-  assert.equal(pointed?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/helmet_pointed_iron/front/walking')
   assert.equal(barbuta?.minLevel, 15)
-  assert.equal(barbuta?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/helmet_barbuta_bronze/front/action')
   assert.equal(bracers?.minLevel, 5)
   assert.equal(bracers?.mountedCut, undefined)
-  assert.equal(bracers?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/bracers_bronze/front/walking')
-  assert.equal(bracers?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/bracers_iron/front/walking')
   assert.equal(cape?.minLevel, 14)
   assert.equal(cape?.palette, 'player')
   assert.equal(crest, undefined)
@@ -912,33 +1092,82 @@ test('archer equipment follows soldier armor progression without shield', () => 
     }
   )
 
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 0, 0), ['quiver', 'bow', 'arrow_ceramic'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_recurve', 'arrow_bronze'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_recurve', 'arrow_bronze'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 15), [
-    'quiver',
-    'bow_recurve',
-    'arrow_bronze',
-    'shoulder_legion_bronze',
-    'bracers_bronze',
-    'armor_mail_bronze',
-    'leg_armor_bronze',
-    'cape_solid',
-    'helmet_barbuta_bronze',
-  ])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 2, 15), [
-    'quiver',
-    'bow_recurve',
-    'arrow_iron',
-    'shoulder_legion_iron',
-    'bracers_iron',
-    'armor_mail_iron',
-    'leg_armor_iron',
-    'cape_solid',
-    'helmet_barbuta_iron',
-  ])
-  assert.equal(dynamicEquipmentForUnit('Bowman', 1, 20).includes('round_shield_bronze_slash'), false)
-  assert.equal(dynamicEquipmentForUnit('Bowman', 2, 20).includes('round_shield_iron_slash'), false)
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Bowman',
+      { forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 } },
+      0
+    ),
+    ['quiver', 'bow', 'arrow_ceramic']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Bowman',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      0
+    ),
+    ['quiver', 'bow_recurve', 'arrow_bronze']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Bowman',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      0
+    ),
+    ['quiver', 'bow_recurve', 'arrow_bronze']
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Bowman',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      15
+    ),
+    [
+      'quiver',
+      'bow_recurve',
+      'arrow_bronze',
+      'shoulder_legion_bronze',
+      'bracers_bronze',
+      'armor_mail_bronze',
+      'leg_armor_bronze',
+      'cape_solid',
+      'helmet_barbuta_bronze',
+    ]
+  )
+  assert.deepEqual(
+    dynamicEquipmentForUnit(
+      'Bowman',
+      { forgeUpgrades: { axes: 3, pickaxes: 3, hammers: 3, weapons: 3, armor: 3, arrows: 3 } },
+      15
+    ),
+    [
+      'quiver',
+      'bow_recurve',
+      'arrow_iron',
+      'shoulder_legion_iron',
+      'bracers_iron',
+      'armor_mail_iron',
+      'leg_armor_iron',
+      'cape_solid',
+      'helmet_barbuta_iron',
+    ]
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Bowman',
+      { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
+      20
+    ).includes('round_shield_bronze_slash'),
+    false
+  )
+  assert.equal(
+    dynamicEquipmentForUnit(
+      'Bowman',
+      { forgeUpgrades: { axes: 3, pickaxes: 3, hammers: 3, weapons: 3, armor: 3, arrows: 3 } },
+      20
+    ).includes('round_shield_iron_slash'),
+    false
+  )
 
   const layers = dynamicEquipmentLayersForUnit('Bowman')
   const bow = layers.find(layer => layer.walkingSheet === 'equipments/bow/front/walking')
@@ -946,28 +1175,16 @@ test('archer equipment follows soldier armor progression without shield', () => 
   const quiver = layers.find(layer => layer.walkingSheet === 'equipments/quiver/back/walking')
   const mail = layers.find(layer => layer.walkingSheet === 'equipments/armor_mail_ceramic/front/walking')
   const shield = layers.find(layer => layer.walkingSheet === 'equipments/round_shield_ceramic_slash/front/walking')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/bow_recurve/front/walking')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/bow_recurve/front/action')
   assert.equal(bow?.shootingSheet, 'equipments/bow/front/action')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/bow_recurve/front/action')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/bow_recurve/front/action')
   assert.equal(bow?.mountedCut, false)
   assert.equal(arrow?.walkingSheet, undefined)
   assert.equal(arrow?.shootingSheet, 'equipments/arrow_ceramic/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/arrow_iron/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['2']?.shootingSheet, 'equipments/arrow_iron/front/action')
   assert.equal(arrow?.mountedCut, false)
   assert.equal(arrow?.hideOnOrAfterFrame, 9)
   assert.equal(quiver?.shootingSheet, 'equipments/quiver/back/action')
   assert.equal(quiver?.mountedCut, false)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.mountedCut, undefined)
-  assert.equal(mail?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
-  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
   assert.equal(shield, undefined)
 
   const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/weapon/arrow'))
@@ -1039,18 +1256,27 @@ test('a converted villager keeps its original body and gender after save and loa
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
     './equipment': {
-      dynamicEquipmentAssets: () => [], dynamicEquipmentLayersForEquipment: () => [],
-      dynamicEquipmentLayersForUnit: () => [], dynamicEquipmentLayersForVillager: () => [],
+      dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForEquipment: () => [],
+      dynamicEquipmentLayersForUnit: () => [],
+      dynamicEquipmentLayersForVillager: () => [],
     },
     '../chief': { isChiefUnit: () => false },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: () => true }, load: async () => {} } },
   })
-  const saved = JSON.parse(JSON.stringify({ type: 'Villager', assetCiv: 'Kemet',
-    owner: { civ: 'Hellas', label: 'player' }, appearanceVariants: { gender: 'female' },
-    label: 'converted-villager', i: 2, j: 3,
-  }))
+  const saved = JSON.parse(
+    JSON.stringify({
+      type: 'Villager',
+      assetCiv: 'Kemet',
+      owner: { civ: 'Hellas', label: 'player' },
+      appearanceVariants: { gender: 'female' },
+      label: 'converted-villager',
+      i: 2,
+      j: 3,
+    })
+  )
   assert.equal(applyBakedLpcUnitAssets(saved), true)
   assert.equal(saved.assets.standingSheet, 'units/villager/kemet/female/body/walking')
   assert.deepEqual(saved.appearanceVariants, { gender: 'female' })
@@ -1080,9 +1306,14 @@ test('chiefs keep their civilization and gender when switching to combat and bac
     for (const gender of ['male', 'female']) {
       for (const type of ['Chief', 'Villager']) {
         const unit = {
-          ...structuredClone(configs[type]), type, isChief: true,
+          ...structuredClone(configs[type]),
+          type,
+          isChief: true,
           owner: { civ, label: 'neutral-owner' },
-          appearanceVariants: { gender }, label: 'defender', i: 1, j: 2,
+          appearanceVariants: { gender },
+          label: 'defender',
+          i: 1,
+          j: 2,
         }
         assert.equal(applyBakedLpcUnitAssets(unit), true)
         for (const work of ['attacker', 'default']) {
@@ -1113,8 +1344,12 @@ test('baked sprites honor saved unit gender when appearance variants are absent'
     'pixi.js': { Assets: { cache: { has: () => true } } },
   })
   const unit = {
-    type: 'Chief', gender: 'female', owner: { civ: 'Kemet', label: 'neutral-owner' },
-    label: 'defender', i: 1, j: 2,
+    type: 'Chief',
+    gender: 'female',
+    owner: { civ: 'Kemet', label: 'neutral-owner' },
+    label: 'defender',
+    i: 1,
+    j: 2,
   }
   assert.equal(applyBakedLpcUnitAssets(unit), true)
   assert.equal(unit.assets.walkingSheet, 'units/chief/kemet/female/walking')

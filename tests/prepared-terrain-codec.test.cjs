@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { encodePreparedTerrain: encode, decodePreparedTerrain: decode } = loadTsModule(
-  require.resolve('../app/serialization/PreparedTerrainCodec.ts')
+  require.resolve('../app/serialization/blueprint/PreparedTerrainCodec.ts')
 )
 
 test('terrain codec round-trips all visual fields and respects buffer slices', () => {

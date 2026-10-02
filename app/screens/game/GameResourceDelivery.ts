@@ -1,34 +1,33 @@
-import { readyConstructionSite } from '../../lib/economy/collectiveTasks'
-import { isResourceDeliveryStalled, rejectDeliveryTarget } from '../../lib/resources/resourceDeliveryRecovery'
-import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
 import { hasPriorityCombat } from '../../lib/units/autonomy/villagerAutonomyAvailability'
 import { automaticDepositAmount } from '../../lib/resources/resourceDelivery'
 import { withdrawDepotResources } from '../../lib/economy/depotPickup'
 import { ACTION_TYPES, BUILDING_TYPES, SOUND_CUES } from '../../constants'
 import { getBuildingInteriorBlueprintType } from '../../lib/buildings/interiors'
 import { createInventoryContainer, moveInventoryResource } from '../../lib/inventory/inventoryContainers'
-import { getEntitySpaceId, sameMapSpace } from '../../lib/mapSpaces'
+import { sameMapSpace } from '../../lib/mapSpaces'
 import { syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import { playAudibleSoundCue } from '../../lib/audio/sound'
-import { resumeVillagerJobIntent } from '../../lib/units/villagerTaskRecovery'
 
 import {
-  findResourceDeliveryTarget,
   buildingAcceptsInventoryResource,
   getBuildingStorageRemaining,
   unitHasDeliverableResourcesForBuilding,
 } from '../../lib/resources/resourceDelivery'
-import { canResumeVillagerReturnTaskBeforeRest } from '../../services/rest/UnitRestRules'
 import {
   ensureBuildingInteriorSpace,
   getBuildingInteriorSpaceForUnit,
   routeUnitIntoBuildingInteriorSpace,
   routeUnitOutOfBuildingInteriorSpace,
 } from '../../services/BuildingInteriorSpaceSystem'
-import { continueRestAfterDelivery, sendUnitToRest } from '../../services/rest/UnitRestLifecycle'
 import type { GameContextLike } from '../../types/context'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import {
+  clearResourceDeliveryState,
+  finishResourceDelivery,
+  stopResourceDelivery,
+} from './delivery/ResourceDeliveryCompletion'
+import { updateResourceDeliveryState } from './delivery/ResourceDeliveryPhases'
 
 const RESOURCE_DELIVERY_CHECK_INTERVAL_MS = 250
 
@@ -56,12 +55,6 @@ function findInteriorStorageChest(spaceId: string, owner: BuildingEntity['owner'
         building.label === label && building.type === BUILDING_TYPES.chest && !building.isDead && !building.isDestroyed
     ) ?? null
   )
-}
-
-function clearResourceDeliveryState(unit: UnitEntity): void {
-  const taskId = unit.resourceDeliveryState?.taskId
-  if (taskId != null) unit.context?.scheduler?.remove(taskId)
-  unit.resourceDeliveryState = null
 }
 
 function scheduleResourceDeliveryUpdate(context: GameContextLike, unit: UnitEntity): void {
@@ -95,119 +88,6 @@ function depositUnitResourcesIntoChest(unit: UnitEntity, building: BuildingEntit
   }
   if (unit.context?.controls?.heroUnit === unit) unit.context.menu?.refreshInventory?.()
   return moved > 0
-}
-
-function finishResourceDelivery(context: GameContextLike, unit: UnitEntity): void {
-  const returnTask = unit.resourceDeliveryState?.returnTask ?? null
-
-  clearResourceDeliveryState(unit)
-  context.menu?.refreshInventory?.()
-  if (unit.followingHero || hasPriorityCombat(unit)) return
-  if (unit.shelterState?.status === 'delivering' && continueRestAfterDelivery(unit)) {
-    return
-  }
-  if (!canResumeVillagerReturnTaskBeforeRest(unit, returnTask) && sendUnitToRest(unit, 'sleep')) {
-    return
-  }
-  if (returnTask?.action === ACTION_TYPES.takemeat) {
-    const nextDepot = findResourceDeliveryTarget(unit)
-    if (nextDepot && unit.sendToDelivery?.(nextDepot, returnTask)) return
-  }
-  const site = unit.owner && !unit.followingHero && !hasPriorityCombat(unit) && readyConstructionSite(unit.owner, unit)
-  if (site) {
-    unit.collectiveTask = 'construction'
-    unit.sendToBuilding?.(site as BuildingEntity)
-    return
-  }
-  const resumed = resumeVillagerJobIntent(unit, returnTask)
-
-  if (!resumed) unit.stop?.()
-}
-
-function stopResourceDelivery(context: GameContextLike, unit: UnitEntity): void {
-  clearResourceDeliveryState(unit)
-  unit.stop?.()
-  context.menu?.refreshInventory?.()
-}
-
-function recoverStalledDelivery(context: GameContextLike, unit: UnitEntity): void {
-  const state = unit.resourceDeliveryState
-  if (!state?.building) return
-  rejectDeliveryTarget(unit, state.building)
-  const returnTask = state.returnTask ?? null
-  clearResourceDeliveryState(unit)
-  // Stop must not immediately resume the same autonomous order.
-  unit.autonomousJob = null
-  unit.stop?.()
-  unit.work = null
-  if (state.pickup) unit.collectiveTask ??= returnTask?.autonomousJob ?? 'food'
-  if (!unit.collectiveTask) {
-    const next = findResourceDeliveryTarget(unit)
-    if (!next || unit.sendToDelivery?.(next, returnTask) !== true) resumeVillagerJobIntent(unit, returnTask)
-  }
-  notifyVillageWorkChanged(unit.owner)
-  context.menu?.refreshInventory?.()
-}
-
-function updateResourceDeliveryState(context: GameContextLike, unit: UnitEntity): void {
-  const state = unit.resourceDeliveryState
-  if (!state) return
-  if (unit.followingHero || hasPriorityCombat(unit)) {
-    clearResourceDeliveryState(unit)
-    return
-  }
-  const building = state.building
-  const chest = state.chest
-  if (!building || unit.isDead || unit.isDestroyed || building.isDead || building.isDestroyed) {
-    finishResourceDelivery(context, unit)
-    return
-  }
-  if (!state.pickup && state.phase !== 'leaving' && !unitHasDeliverableResourcesForBuilding(unit, building)) {
-    finishResourceDelivery(context, unit)
-    return
-  }
-
-  if (state.phase !== 'leaving' && isResourceDeliveryStalled(unit, context.scheduler.elapsedMs ?? performance.now())) {
-    recoverStalledDelivery(context, unit)
-    return
-  }
-
-  if (state.phase === 'toBuilding') {
-    if (!unit.spacePortalState && (unit.dest !== building || unit.action !== ACTION_TYPES.delivery)) {
-      unit.sendToEvt?.(building, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })
-    }
-    return
-  }
-
-  if (!chest) {
-    stopResourceDelivery(context, unit)
-    return
-  }
-
-  if (state.phase === 'entering') {
-    const space = getBuildingInteriorSpaceForUnit(unit)
-    if ((!space || space.id !== state.spaceId) && !unit.spacePortalState) {
-      if (unit.dest !== building || unit.action !== ACTION_TYPES.delivery) {
-        unit.sendToEvt?.(building, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })
-      }
-    }
-    if (!space || space.id !== state.spaceId) return
-    state.phase = 'toChest'
-
-    unit.sendToEvt?.(chest, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })
-    return
-  }
-
-  if (state.phase === 'toChest') {
-    if (unit.dest !== chest || unit.action !== ACTION_TYPES.delivery) {
-      unit.sendToEvt?.(chest, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })
-    }
-    return
-  }
-
-  if (state.phase === 'leaving' && getEntitySpaceId(unit) !== state.spaceId) {
-    finishResourceDelivery(context, unit)
-  }
 }
 
 function updateResourceDeliveryUnits(context: GameContextLike): void {
@@ -284,11 +164,43 @@ export async function routeUnitResourceDelivery(
   return routeUnitIntoBuildingInteriorSpace(context, unit, space)
 }
 
-export function handleResourceDeliveryAction(context: GameContextLike, unit: UnitEntity): boolean {
-  if (unit.followingHero || hasPriorityCombat(unit)) return false
+function deliveryActionTarget(unit: UnitEntity): BuildingEntity | null {
+  if (unit.followingHero || hasPriorityCombat(unit)) return null
   const target = isBuildingEntity(unit.dest) ? unit.dest : null
-  if (!target || unit.action !== ACTION_TYPES.delivery || unit.isDead || unit.isDestroyed) return false
-  if (target.isDead || target.isDestroyed || !sameMapSpace(unit, target)) return false
+  if (!target || unit.action !== ACTION_TYPES.delivery || unit.isDead || unit.isDestroyed) return null
+  if (target.isDead || target.isDestroyed || !sameMapSpace(unit, target)) return null
+  return target
+}
+
+function exchangeAtInteriorChest(
+  context: GameContextLike,
+  unit: UnitEntity,
+  state: NonNullable<UnitEntity['resourceDeliveryState']>,
+  building: BuildingEntity,
+  chest: BuildingEntity
+): void {
+  if (state.pickup) {
+    withdrawDepotResources(unit, chest.inventory?.resources ?? {}, state.pickup)
+    state.pickup = {}
+    syncPlayerResourceFieldsFromChests(building.owner)
+  } else depositUnitResourcesIntoChest(unit, building, chest)
+  state.phase = 'leaving'
+
+  const space = getBuildingInteriorSpaceForUnit(unit)
+  if (
+    !routeUnitOutOfBuildingInteriorSpace(context, unit, space, {
+      onTransferred: () => {
+        finishResourceDelivery(context, unit)
+      },
+    })
+  ) {
+    finishResourceDelivery(context, unit)
+  }
+}
+
+export function handleResourceDeliveryAction(context: GameContextLike, unit: UnitEntity): boolean {
+  const target = deliveryActionTarget(unit)
+  if (!target) return false
   // Action callbacks can outlive the movement that scheduled them.
   if (unit.spacePortalState || !unit.isUnitAtDest?.(ACTION_TYPES.delivery, target)) {
     if (!unit.spacePortalState && !unit.path?.length) {
@@ -300,23 +212,7 @@ export function handleResourceDeliveryAction(context: GameContextLike, unit: Uni
   const state = unit.resourceDeliveryState
   if (state?.phase === 'leaving') return false
   if (state?.phase === 'toChest' && state.chest === target && state.building) {
-    if (state.pickup) {
-      withdrawDepotResources(unit, target.inventory?.resources ?? {}, state.pickup)
-      state.pickup = {}
-      syncPlayerResourceFieldsFromChests(state.building.owner)
-    } else depositUnitResourcesIntoChest(unit, state.building, target)
-    state.phase = 'leaving'
-
-    const space = getBuildingInteriorSpaceForUnit(unit)
-    if (
-      !routeUnitOutOfBuildingInteriorSpace(context, unit, space, {
-        onTransferred: () => {
-          finishResourceDelivery(context, unit)
-        },
-      })
-    ) {
-      finishResourceDelivery(context, unit)
-    }
+    exchangeAtInteriorChest(context, unit, state, state.building, target)
     return true
   }
 

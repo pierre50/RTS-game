@@ -295,3 +295,52 @@ test('blueprint deltas skip untouched resources and round-trip harvest, deletion
     /CORRUPT/
   )
 })
+
+test('anonymous authored resources reuse blueprint identity without hiding edits or named replacements', () => {
+  const { resourceData } = loadTsModule('app/serialization/ResourceSaveData.ts')
+  const { resources, add, created } = setup(10, 100)
+  for (let i = 0; i < 4; i++) add(i, 1)
+  resources.sealBlueprintBaseline()
+  const delta = resources.deltaFromFullSave(
+    [
+      { i: 0, j: 1, type: 'Tree', quantity: 100 },
+      { i: 1, j: 1, type: 'Tree', quantity: 40 },
+      { i: 2, j: 1, type: 'Tree', label: 'replacement', quantity: 100 },
+      { i: 5, j: 1, type: 'Tree', quantity: 100 },
+    ],
+    resourceData
+  )
+  assert.equal(created(), 0)
+  assert.deepEqual(delta.resourceDelta.removed, [2, 3])
+  assert.equal(delta.resourceDelta.updated.length, 1)
+  assert.equal(delta.resourceDelta.updated[0].state.quantity, 40)
+  assert.equal(delta.resourceDelta.updated[0].state.label, 'test-world:101')
+  assert.equal(delta.resources.length, 2)
+  resources.restoreDelta(delta.resourceDelta, delta.resources, () => {})
+  assert.equal(resources.atCell(1).quantity, 100)
+  assert.equal(resources.atCell(101).quantity, 40)
+  assert.equal(resources.byLabel('replacement').quantity, 100)
+  assert.equal(resources.hasAtCell(301), false)
+  assert.equal([...resourceReadValues(resources)].find(r => r.i === 5 && r.j === 1).quantity, 100)
+})
+
+test('delta restoration starts authored wheat mature but preserves explicit saved growth frames', () => {
+  const { resourceData } = loadTsModule('app/serialization/ResourceSaveData.ts')
+  const { resources, add } = setup(10, 100)
+  add(1, 1)
+  resources.sealBlueprintBaseline()
+  const delta = resources.saveDelta(resourceData)
+  resources.restoreDelta(
+    delta.resourceDelta,
+    [
+      { i: 2, j: 1, type: 'Wheat', label: 'mature', quantity: 10 },
+      { i: 3, j: 1, type: 'Wheat', label: 'young', quantity: 10, currentFrame: 0 },
+      { i: 4, j: 1, type: 'Wheat', label: 'growing', quantity: 10, currentFrame: 1 },
+    ],
+    () => {}
+  )
+  assert.equal(resources.byLabel('mature').startsMature, true)
+  assert.equal(resources.byLabel('young').startsMature, undefined)
+  assert.equal(resources.byLabel('young').currentFrame, 0)
+  assert.equal(resources.byLabel('growing').currentFrame, 1)
+})

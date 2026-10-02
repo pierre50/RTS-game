@@ -1,3 +1,4 @@
+import { reconcileHouseholds } from '../../lib/housing/households'
 import { resourceReadValues } from '../resources/CompactResourceSet'
 import { restoreLegacyStaticKnowledge, restoreTargetKnowledge } from '../../lib/units/playerTargetKnowledge'
 import { getEntitySpaceGrid } from '../../lib/mapSpaces'
@@ -32,7 +33,12 @@ type RestoringMobileEntity = (UnitEntity | AnimalEntity) & {
   work?: string | null
 }
 
-export function processUnit(unit: RestoringMobileEntity, context: MapGenerationMap, saved?: SaveEntityState): void {
+export function processUnit(
+  unit: RestoringMobileEntity,
+  context: MapGenerationMap,
+  saved?: SaveEntityState,
+  options: { resume?: boolean } = {}
+): void {
   const restoringUnit = unit as RestoringMobileEntity
   const grid = getEntitySpaceGrid(unit, context) ?? context.grid
   const orders = saved?.caveOrders ?? unit
@@ -67,19 +73,21 @@ export function processUnit(unit: RestoringMobileEntity, context: MapGenerationM
       unit.path = []
       unit.setDest?.(dest)
       unit.action = savedAction
-      if (savedAction === 'train' && !context.context.dayNight) return
-      const restoredPath = savedPath.map(cell => grid[cell.i]?.[cell.j]).filter(Boolean)
-      if (restoredPath.length) {
-        unit.setPath?.(restoredPath)
-      } else if (savedAction && unit.getAction) {
-        unit.getAction(savedAction)
-      } else if (unit.exploringForAutonomy && unit.autonomousJob && unit.sendToEvt) {
-        unit.sendToEvt(dest, null, { forceRepath: true, preserveAutonomy: true })
-      } else {
-        const destEntity = isRuntimeDestination(dest) ? dest : null
-        unit.commonSendTo && destEntity
-          ? unit.commonSendTo(destEntity, unit.work ?? '', savedAction ?? null, true, true, true)
-          : unit.sendTo?.(dest, savedAction ?? undefined)
+      if (options.resume !== false) {
+        if (savedAction === 'train' && !context.context.dayNight) return
+        const restoredPath = savedPath.map(cell => grid[cell.i]?.[cell.j]).filter(Boolean)
+        if (restoredPath.length) {
+          unit.setPath?.(restoredPath)
+        } else if (savedAction && unit.getAction) {
+          unit.getAction(savedAction)
+        } else if (unit.exploringForAutonomy && unit.autonomousJob && unit.sendToEvt) {
+          unit.sendToEvt(dest, null, { forceRepath: true, preserveAutonomy: true })
+        } else {
+          const destEntity = isRuntimeDestination(dest) ? dest : null
+          unit.commonSendTo && destEntity
+            ? unit.commonSendTo(destEntity, unit.work ?? '', savedAction ?? null, true, true, true)
+            : unit.sendTo?.(dest, savedAction ?? undefined)
+        }
       }
     } else {
       unit.stop?.()
@@ -131,6 +139,7 @@ export function restorePlayerEntitiesFromSave(
 
   // Old saves stored food as one pooled amount per bag; spread it across berry/meat/wheat so it stays visible/spendable.
   for (const entity of [...player.buildings, ...player.units, ...player.corpses]) migrateLegacyFoodInventory(entity)
+  reconcileHouseholds(player)
   syncPlayerResourceFieldsFromChests(player)
 }
 
@@ -193,5 +202,6 @@ export function restorePlayerInteriors(player: PlayerLike): void {
   for (const building of [...player.buildings]) {
     if (building.interiorBuildings && building.context) ensureRuntimeBuildingInteriorSpace(building.context, building)
   }
+  reconcileHouseholds(player)
   syncPlayerResourceFieldsFromChests(player)
 }

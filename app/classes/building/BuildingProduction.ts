@@ -289,6 +289,7 @@ export class BuildingProduction {
   ): boolean {
     const building = this.building
     const { menu } = building.context
+    if (building.buildingUpgrade) return false
     if (traineeTraining && !alreadyPaid && !force) {
       return false
     }

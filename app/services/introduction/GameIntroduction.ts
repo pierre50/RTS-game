@@ -2,7 +2,7 @@ import { assignVillageFoundingQuests } from '../quests/VillageFoundingQuests'
 import { QuestSystem } from '../quests/QuestSystem'
 import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { createCampIntroductionDialogue } from './CampIntroductionDialogue'
-import { refreshPlayerVisibility } from '../UnitPerception'
+import { refreshPlayerVisibility } from '../visibility/UnitPerception'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
 import { BUILDING_TYPES, UNIT_TYPES, SHEET_TYPES } from '../../constants'
 import { getInstanceDegree } from '../../lib/maths'
@@ -10,11 +10,13 @@ import { ensureAndRefreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { setSleepingOutsideFinalVisual, playSleepingWakeVisual } from '../rest/UnitSleepVisuals'
 import { setUnitOverheadIndicator, clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { findIntroductionPlacement } from './IntroductionPlacement'
+import { traceLoad } from '../../lib/loadDiagnostics'
 import type { GameContextLike } from '../../types/context'
 import type { CampaignSave } from '../../types/save'
 
 type IntroductionHost = {
   _campaignSave: CampaignSave | null
+  _initialSaveFailed?: boolean
   _gameContext(): GameContextLike
   autosave(): unknown
   togglePause(paused: boolean, options?: { silent?: boolean }): void
@@ -76,7 +78,9 @@ export async function prepareGameIntroduction(host: IntroductionHost): Promise<v
     companionLabel: companion.label,
     campfireLabel: camp.label,
   }
-  host.autosave()
+  // Capture the complete camp once, under the loading screen, before its animation starts.
+  const saved = await host.autosave()
+  host._initialSaveFailed = saved === null
 }
 
 const pendingStarts = new WeakMap<IntroductionHost, () => void>()
@@ -120,18 +124,17 @@ export function showGameIntroduction(host: IntroductionHost): void {
     host._campaignSave?.currentWorldId === state.worldId &&
     !hero.isDestroyed &&
     !companion.isDestroyed
-  const savePhase = (phase: 'approaching' | 'waking' | 'dialogue') => {
+  const setPhase = (phase: 'approaching' | 'waking' | 'dialogue') => {
     const current = host._campaignSave?.introduction
     if (current) current.phase = phase
-    host.autosave()
   }
-  const openDialogue = () => {
+  const openDialogueNow = () => {
     if (!isCurrent()) return
     hero.degree = getInstanceDegree(hero, companion.x, companion.y)
     companion.degree = getInstanceDegree(companion, hero.x, hero.y)
     hero.setTextures?.(SHEET_TYPES.standing)
     companion.setTextures?.(SHEET_TYPES.standing)
-    savePhase('dialogue')
+    setPhase('dialogue')
     host.togglePause(false, { silent: true })
     context.menu?.closeNpcOrders?.()
     context.menu?.openNpcOrders?.([companion], {
@@ -141,7 +144,6 @@ export function showGameIntroduction(host: IntroductionHost): void {
         onNodeChanged: nodeId => {
           if (!isCurrent()) return
           host._campaignSave!.introduction!.dialogueNodeId = nodeId
-          host.autosave()
         },
         onComplete: () => {
           if (!isCurrent()) return
@@ -166,6 +168,7 @@ export function showGameIntroduction(host: IntroductionHost): void {
       }),
     })
   }
+  const openDialogue = () => traceLoad('introduction.dialogue', openDialogueNow)
   if (!state.phase || state.phase === 'dialogue') {
     pendingStarts.set(host, openDialogue)
     return
@@ -176,8 +179,8 @@ export function showGameIntroduction(host: IntroductionHost): void {
     if (!isCurrent()) return
     companion.stop?.()
     clearUnitOverheadIndicator(hero, { fade: false })
-    savePhase('waking')
-    playSleepingWakeVisual(hero, openDialogue)
+    setPhase('waking')
+    traceLoad('introduction.wakeVisual', () => playSleepingWakeVisual(hero, openDialogue))
   }
   pendingStarts.set(host, () => {
     if (!isCurrent()) return

@@ -5,7 +5,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function fixture() {
   const messages = []
   const player = { isPlayed: true, label: 'p1' }
-  const { DailyWorldReport } = loadTsModule('app/services/DailyWorldReport.ts', {
+  const { DailyWorldReport } = loadTsModule('app/services/dailyEvents/DailyWorldReport.ts', {
     mocks: {
       '../lib/lang': {
         t: (key, vars = {}) =>
@@ -68,24 +68,4 @@ test('simultaneous arrival and colony alert only notify the arrival', () => {
   report.add({ type: 'colony-alert', player, alert: { regionId: 'village', type: 'storageFull' } })
   report.flush()
   assert.deepEqual(messages, [['1 new villager', 'info']])
-})
-
-test('empty food stocks do not produce colony alerts or daily notifications', () => {
-  const { getActiveColonyAlerts } = loadTsModule('app/lib/world/regionAlerts.ts')
-  const { report, player, messages } = fixture()
-  const alerts = getActiveColonyAlerts({
-    player: { ...player, factionId: 'own' },
-    getCampaignEconomy: () => ({
-      regions: {
-        village: {
-          regionId: 'village',
-          summaries: { own: { population: 10, populationMax: 20, stocks: {}, buildings: {}, idleWorkers: 0 } },
-        },
-      },
-    }),
-  })
-  assert.deepEqual(alerts, [])
-  for (const alert of alerts) report.add({ type: 'colony-alert', player, alert })
-  report.flush()
-  assert.deepEqual(messages, [])
 })

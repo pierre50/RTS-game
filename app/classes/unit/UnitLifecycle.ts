@@ -1,3 +1,4 @@
+import { reconcileHouseholds } from '../../lib/housing/households'
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
@@ -11,6 +12,8 @@ import { addUnitCorpseLootResources } from '../../lib/equipment/unitCorpseLoot'
 import { getEntityHitPointsText } from '../../lib/entities/entityHealthDisplay'
 import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import { clearSleepingVisualState } from '../../services/rest/UnitSleepVisuals'
+import { cancelHeroDefense } from '../../lib/hero/heroDefense'
+import { cancelHeroPowerCharge } from '../../lib/hero/heroPowerCharge'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
@@ -63,7 +66,9 @@ export class UnitLifecycle {
     })
     unit.zIndex = (unit.zIndex ?? 0) - 1
     let finishDeath!: () => void
-    unit.deathAnimationComplete = new Promise<void>(resolve => { finishDeath = resolve })
+    unit.deathAnimationComplete = new Promise<void>(resolve => {
+      finishDeath = resolve
+    })
     sprite.onComplete = runAfterDeathFlash(sprite, () => {
       if (!isUnitVisualAnimationCurrent(unit, token)) return
       updateInstanceVisibility(unit)
@@ -104,6 +109,9 @@ export class UnitLifecycle {
     unit.path = []
     unit.action = null
     unit.isDead = true
+    reconcileHouseholds(unit.owner)
+    cancelHeroPowerCharge(unit)
+    cancelHeroDefense(unit)
     initializeUnitCorpseLootEquipment(unit)
     addUnitCorpseLootResources(unit)
     unit.removeHealthBar?.()
@@ -135,6 +143,7 @@ export class UnitLifecycle {
 
   clear() {
     const unit = this.unit
+    clearCombatAttackRecovery(unit)
     const map = unit.context?.map
     clearEntityVisualFeedback(unit)
     unit.isDestroyed = true

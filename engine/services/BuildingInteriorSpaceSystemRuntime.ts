@@ -21,7 +21,7 @@ import {
   isBlueprintExitCell,
   isInteriorFloorCell,
   maskValue,
-  sortCellsForSleep,
+  sortInteriorIdleCells,
 } from './BuildingInteriorSpaceLayout'
 import {
   getBuildingInteriorSpaceForBuilding,
@@ -46,11 +46,6 @@ export {
   routeUnitIntoBuildingInteriorSpaceAndMoveBack,
   routeUnitOutOfBuildingInteriorSpace,
 } from './BuildingInteriorSpaceRoutes'
-export {
-  moveUnitToBuildingInteriorSleep,
-  settleUnitAtBuildingInteriorSleepCell,
-  syncBuildingInteriorShelterOccupants,
-} from './BuildingInteriorSpaceSleep'
 export type { BuildingInteriorRuntimeSpace } from './BuildingInteriorSpaceTypes'
 export {
   activateBuildingInteriorSpace,
@@ -126,7 +121,7 @@ function buildInteriorSpaceCells(
   addInteriorWalls(blueprint, renderer.entityLayer)
 
   if (!exitCell) exitCell = grid[center]?.[center] ?? walkableCells[0] ?? null
-  const idleCells = sortCellsForSleep(
+  const idleCells = sortInteriorIdleCells(
     walkableCells.filter(cell => cell !== exitCell),
     exitCell,
     center

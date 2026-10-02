@@ -151,7 +151,7 @@ function savedGeneration(AI = class {}) {
       '../../Resource': { Resource: class {} },
       '../../players': { Gaia, AI },
       '../../../lib': { getGaiaAnimals: gaia => gaia.animals },
-      '../../../services/UnitPerception': {},
+      '../../../services/visibility/UnitPerception': {},
       '../../cell': {
         Cell: class {
           constructor(options) {
@@ -229,6 +229,7 @@ test('loading a 1000 seed save restores the same assigned civilization sites as 
   const manifest = require('../public/maps/worlds/world-test-1000/manifest.json')
   const { assignContinentVillages } = loadTsModule('app/lib/campaign/continentVillagePlacement.ts')
   const source = { id: 'continent', size: manifest.regionMapSize, settlements: manifest.settlements, worldManifest: manifest }
+  const sourceSettlements = structuredClone(source.settlements)
   const expected = assignContinentVillages(source)
   let generated
   const map = {
@@ -246,5 +247,7 @@ test('loading a 1000 seed save restores the same assigned civilization sites as 
   }, { world: { worldId: 'world-test-1000', size: 999 }, players: [] })
   assert.deepEqual(generated.settlements, expected.settlements)
   assert.deepEqual(generated.worldManifest.settlements, expected.settlements)
-  assert.ok(source.settlements.filter(site => site.kind === 'village').every(site => !site.civ))
+  // Prepared worlds ship settlements with civilizations already assigned; booting must not rewrite the cached source.
+  assert.deepEqual(source.settlements, sourceSettlements, 'cached blueprint settlements stay untouched')
+  assert.ok(generated.settlements.filter(site => site.kind === 'village').every(site => site.civ))
 })

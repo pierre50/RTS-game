@@ -13,18 +13,3 @@ export function getAppearanceLayerZIndex({
   }
   return layer.zIndex
 }
-
-export function getAppearanceAgeSheetOverride(
-  overrides: UnitAppearanceLayerConfig['ageSheetOverrides'] | undefined,
-  ownerAge: number,
-  sheet: string
-): string | undefined {
-  if (!overrides) return undefined
-  const exact = overrides[String(ownerAge)]?.[sheet]
-  if (exact) return exact
-  const fallbackAge = Object.keys(overrides)
-    .map(Number)
-    .filter(age => age <= ownerAge)
-    .sort((a, b) => b - a)[0]
-  return fallbackAge == null ? undefined : overrides[String(fallbackAge)]?.[sheet]
-}

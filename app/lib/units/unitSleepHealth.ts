@@ -3,7 +3,7 @@ import { UNIT_TYPES } from '../../constants/entities'
 import type { UnitEntity } from '../../types/entities'
 import type { SaveEntityState } from '../../types/save'
 import { notifyHeroHealthChanged } from './unitHealth'
-import { getVillagerSchedule } from './villagerSchedule'
+import { getVillagerSchedule, hasDailyRestSchedule } from './villagerSchedule'
 
 const HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
 const FULL_HEALTH_SLEEP_MS = 8 * HOUR_MS
@@ -43,15 +43,22 @@ export function restoreOfflineUnitSleepHealth(
   // The hero only rests through explicit sleep, never an NPC's offline schedule.
   if (unit.type === UNIT_TYPES.hero || unit.controlMode === 'hero' || unit.followingHero || unit.trainingTargetType)
     return
-  const { bedMinute, wakeMinute } =
-    unit.type === UNIT_TYPES.villager ? getVillagerSchedule(unit) : { bedMinute: 18 * 60, wakeMinute: 6 * 60 }
-  const dayMinutes = DAY_NIGHT_CONFIG.hoursPerDay * 60
+  const schedule = hasDailyRestSchedule(unit)
+    ? getVillagerSchedule(unit)
+    : { bedMinute: 1080, wakeMinute: 360, nightWatch: undefined }
+  const windows =
+    schedule.nightWatch === 'early'
+      ? [[120, 360]]
+      : schedule.nightWatch === 'late'
+        ? [
+            [0, 120],
+            [1320, 1440],
+          ]
+        : [[schedule.bedMinute, 1440 + schedule.wakeMinute]]
   let sleepMinutes = 0
-  for (let day = Math.floor(fromMinute / dayMinutes) - 1; day <= Math.floor(toMinute / dayMinutes); day++) {
-    sleepMinutes += Math.max(
-      0,
-      Math.min(toMinute, (day + 1) * dayMinutes + wakeMinute) - Math.max(fromMinute, day * dayMinutes + bedMinute)
-    )
+  for (let day = Math.floor(fromMinute / 1440) - 1; day <= Math.floor(toMinute / 1440); day++) {
+    for (const [start, end] of windows)
+      sleepMinutes += Math.max(0, Math.min(toMinute, day * 1440 + end) - Math.max(fromMinute, day * 1440 + start))
   }
   restoreUnitSleepHealth(unit, (sleepMinutes * HOUR_MS) / 60)
 }

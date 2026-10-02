@@ -1,6 +1,5 @@
-import { POPULATION_MAX, SHEET_TYPES } from '../../constants'
+import { POPULATION_MAX } from '../../constants'
 import { capitalizeFirstLetter } from '../../lib'
-import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/audio/settings'
 import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { CommandResult } from '../DevCommandRegistry'
@@ -11,16 +10,8 @@ import type { FactionSave } from '../../types/save'
 
 type DevPlayerState = DevPlayer & {
   enemyPlayers?: () => DevPlayerState[]
-  onAgeChange?: () => void
+  refreshCivilizationAppearance?: () => void
   populationMax?: number
-}
-
-function refreshPlayerUnitEquipmentVisuals(player: DevPlayer): void {
-  for (const unit of player.units ?? []) {
-    if (unit.isDead || unit.isDestroyed) continue
-    refreshUnitEquipmentStats(unit)
-    unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
-  }
 }
 
 function formatFactionRelation(faction: FactionSave): string {
@@ -70,25 +61,12 @@ export function listGlobalPlayers(context: DevConsoleContext): CommandResult {
   return { ok: true, message: lines.length ? lines.join('\n') : 'No global players found' }
 }
 
-export function setAge(context: DevConsoleContext, value: string): CommandResult {
-  const age = Number(value)
-  if (!Number.isInteger(age) || age < 0 || age > 2) return { ok: false, message: 'Age must be between 0 and 2' }
-  context.player.age = age
-  const player = context.player as DevPlayerState
-  player.age = age
-  player.onAgeChange?.()
-  refreshPlayerUnitEquipmentVisuals(player)
-  context.menu.updateActionTarget?.()
-  context.menu.updateTopbar()
-  return { ok: true, message: `Age set to ${age}` }
-}
-
 export function setCiv(context: DevConsoleContext, value: string): CommandResult {
   const civ = value ? capitalizeFirstLetter(value.toLowerCase()) : ''
   if (!civ) return { ok: false, message: 'Usage: civ <name>' }
   context.player.civ = civ
   void preloadBakedLpcUnitsForPlayers([context.player])
-  ;(context.player as DevPlayerState).onAgeChange?.()
+  ;(context.player as DevPlayerState).refreshCivilizationAppearance?.()
   context.menu.updateActionTarget?.()
   return { ok: true, message: `Civilization set to ${civ}` }
 }

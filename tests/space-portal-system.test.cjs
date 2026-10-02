@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadSpacePortalSystem(options = {}) {
-  return loadTsModule('app/services/SpacePortalSystem.ts', {
+  return loadTsModule('app/services/spacePortal/SpacePortalSystem.ts', {
     mocks: {
       '../lib/audio/sound': {
         playAudibleSoundCue: options.playAudibleSoundCue ?? (() => {}),

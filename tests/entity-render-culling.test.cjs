@@ -48,7 +48,7 @@ function bindSprite(sprite) {
 
 const { updateInstanceRenderVisibility, updateInstanceVisibility } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
-  '../../services/UnitPerception': { updateVisibility: () => {} },
+  '../../services/visibility/UnitPerception': { updateVisibility: () => {} },
   '../units/insightDetection': { getInsightDetectionRange: (_instance, _target, range) => range },
   './cells': { getBuildingFootprintCells: (i, j) => [{ i, j }] },
 })

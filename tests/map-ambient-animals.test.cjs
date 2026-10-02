@@ -3,6 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const preparedContent = loadTsModule('app/classes/map/generation/PreparedMapContent.ts')
+const constants = loadTsModule('app/constants/index.ts')
 
 class MockGaia {}
 
@@ -49,11 +50,11 @@ function loadMapGeneration() {
       getBuildingFootprintRadius: () => 1,
       getPlainCellsAroundPoint: () => [],
     },
-    '../../services/UnitPerception': { rehydrateAIKnowledge: () => {} },
+    '../../services/visibility/UnitPerception': { rehydrateAIKnowledge: () => {} },
     '../../ai/config': {
-      MAX_BUILDING_BY_AGE: {},
-      MAX_INFANTRY_BY_AGE: {},
-      MAX_ARCHER_BY_AGE: {},
+      MAX_BUILDINGS: {},
+      MAX_INFANTRY: {},
+      MAX_ARCHERS: {},
     },
     '../../ai/unitGroups': {
       getBestUnitFromTechs: () => null,
@@ -67,11 +68,7 @@ function loadMapGeneration() {
       getIdealSpawnRangeForMapSize: () => ({ minSpawns: 1, maxSpawns: 2 }),
     },
     '../../constants': {
-      BUILDING_TYPES: {},
-      FAMILY_TYPES: {},
-      LABEL_TYPES: {},
-      RESOURCE_TYPES: {},
-      UNIT_TYPES: {},
+      ...constants,
       WATER_BORDER_PLACEMENT_CLEARANCE: 2,
       ANIMAL_PLAYER_SAFE_DIST: 14,
       AMBIENT_ANIMAL_CHANCE: 0.0015,

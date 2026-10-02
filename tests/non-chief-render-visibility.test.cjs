@@ -5,7 +5,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 test('camera rendering is independent of chief status and gameplay perception', () => {
   const { updateInstanceRenderVisibility, instanceIsInPlayerSight } = loadTsModule('app/lib/grid/visibility.ts', {
     mocks: {
-      '../../services/UnitPerception': { updateVisibility() {} },
+      '../../services/visibility/UnitPerception': { updateVisibility() {} },
       './screenBounds': {
         getRenderablePosition: instance => instance,
         getVisibilityRuntimeMap: instance => instance.context.map,

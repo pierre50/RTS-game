@@ -1,5 +1,6 @@
+import { countResidentHouseholds } from '../lib/housing/households'
 import { storageResourcesForAI } from './AIStrategyResources'
-import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { BUILDING_TYPES } from '../constants'
 import { villageBuildingNeeds } from './AIDevelopmentPolicy'
 import { canAfford, getBuildingPlacementSearchSize, getPositionInGridAroundInstance, instancesDistance } from '../lib'
@@ -21,7 +22,7 @@ type BuildActionBuyer = (
   condition: boolean,
   buildingType: string,
   positionCallback: () => AIGridPosition | null,
-  preserveAgeReserve?: boolean
+  preserveDevelopmentReserve?: boolean
 ) => boolean
 type PlacementConditionFactory = (
   ...conditions: Array<(cell: AIGridPosition) => boolean>
@@ -117,7 +118,6 @@ function buyCoreInfrastructure(options: {
   granarys: AIBuildingLike[]
   map: AIStrategySnapshot['map']
   markets: AIBuildingLike[]
-  notBuiltHouses: AIBuildingLike[]
   otherPlayers: AIStrategySnapshot['otherPlayers']
   placementCondition: PlacementConditionFactory
   storagepits: AIBuildingLike[]
@@ -132,7 +132,6 @@ function buyCoreInfrastructure(options: {
     granarys,
     map,
     markets,
-    notBuiltHouses,
     otherPlayers,
     placementCondition,
     storagepits,
@@ -146,8 +145,8 @@ function buyCoreInfrastructure(options: {
   const needs = villageBuildingNeeds({
     storagePitNeeded: needsStoragePit(storageResources, ai.buildings),
     population: ai.population,
+    residentHouseholds: countResidentHouseholds(ai),
     populationMax: ai.populationMax,
-    age: ai.age,
     phase: ai.phase,
     desiredBarracks,
     buildings: [
@@ -155,7 +154,7 @@ function buyCoreInfrastructure(options: {
       ...granarys,
       ...markets,
       ...storagepits,
-      ...notBuiltHouses,
+      ...ai.buildings.filter(building => building.type === BUILDING_TYPES.house),
       ...temples,
       ...ai.buildings.filter(building => building.type === BUILDING_TYPES.forge),
     ],
@@ -287,7 +286,6 @@ export function handleAIBuildingActions(
     stables,
     watchTowers,
     temples,
-    notBuiltHouses,
   } = snapshot
 
   const anchor = towncenters[0] || ai.getHomeAnchor() || snapshot.villagers[0]
@@ -322,12 +320,12 @@ export function handleAIBuildingActions(
     (...conditions: Array<(cell: AIGridPosition) => boolean>) =>
     (cell: GridCell) =>
       avoidsReservedPassages(cell) && conditions.every(condition => condition(cell as AIGridPosition))
-  const ageUpReserve = {}
+  const developmentReserve = {}
   const buy = (
     condition: boolean,
     buildingType: string,
     positionCallback: () => AIGridPosition | null,
-    preserveAgeReserve: boolean = true
+    preserveDevelopmentReserve: boolean = true
   ) =>
     buyAIBuildingIfNeeded(
       strategy,
@@ -335,7 +333,7 @@ export function handleAIBuildingActions(
       buildingType,
       buildingsByType,
       positionCallback,
-      preserveAgeReserve ? ageUpReserve : {},
+      preserveDevelopmentReserve ? developmentReserve : {},
       debug
     )
 
@@ -350,7 +348,6 @@ export function handleAIBuildingActions(
     granarys,
     map,
     markets,
-    notBuiltHouses,
     otherPlayers,
     placementCondition,
     storagepits,
@@ -378,7 +375,7 @@ export function handleAIBuildingActions(
           false,
           placementCondition()
         ),
-      ageUpReserve,
+      developmentReserve,
       debug
     )
   )

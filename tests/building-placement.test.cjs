@@ -18,7 +18,7 @@ function loadPlacementModule() {
       return { instancesDistance: () => 0 }
     }
     if (request === '../../constants') {
-      return { FAMILY_TYPES: { building: 'building' }, LABEL_TYPES: {} }
+      return { BUILDING_TYPES: { campBedroll: 'CampBedroll' }, FAMILY_TYPES: { building: 'building' }, LABEL_TYPES: {} }
     }
     if (request === './cells') {
       const getPlainCellsAroundPoint = (startX, startY, grid, dist = 0) => {
@@ -42,24 +42,8 @@ function loadPlacementModule() {
       }
       return {
         getPlainCellsAroundPoint,
-        getBuildingFootprintCells(startX, startY, grid, size = 1) {
-          const result = []
-          const footprintSize = Math.max(1, Math.floor(size))
-          const before = Math.floor((footprintSize - 1) / 2)
-          const after = footprintSize - before - 1
-
-          for (let i = startX - before; i <= startX + after; i++) {
-            const row = grid[i]
-            if (!row) continue
-
-            for (let j = startY - before; j <= startY + after; j++) {
-              const cell = row[j]
-              if (cell) result.push(cell)
-            }
-          }
-
-          return result
-        },
+        getBuildingFootprintCells:
+          require('./helpers/loadTsModule.cjs').loadTsModule('app/lib/grid/cells.ts').getBuildingFootprintCells,
         getBuildingFootprintRadius(size) {
           return Math.floor((size - 1) / 2)
         },
@@ -71,7 +55,7 @@ function loadPlacementModule() {
         },
       }
     }
-    return requireFromTsFile(request, filename, mocks)
+    return requireFromTsFile(request, filename, {})
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -100,6 +84,83 @@ function createGrid(size, factory) {
 const { canPlaceBuildingAt, hasBuildingPlacementClearance } = loadPlacementModule()
 const barracks = { type: 'Barracks', size: 3 }
 const tower = { type: 'WatchTower', size: 2 }
+
+test('every catalogue furnishing rejects neighbouring walls in both orientations', () => {
+  const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts')
+  const configs = require('../public/assets/data/gameplay/buildings.json')
+  for (const type of INTERIOR_FURNITURE_TYPES) {
+    if (type === 'CampBedroll') continue
+    assert.ok(configs[type], `missing furniture config: ${type}`)
+    for (const placementMirrored of [false, true]) {
+      const building = { ...configs[type], type, placementMirrored }
+      const options = { allowBorder: true }
+      for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+          if (!di && !dj) continue
+          const grid = createGrid(5, (i, j) => createCell(i, j))
+          assert.equal(canPlaceBuildingAt(grid, 2, 2, building, options), true, type)
+          grid[2 + di][2 + dj].solid = true
+          assert.equal(canPlaceBuildingAt(grid, 2, 2, building, options), false, `${type}: wall ${di},${dj}`)
+          grid[2 + di][2 + dj].solid = false
+          grid[2 + di][2 + dj].category = 'Water'
+          assert.equal(canPlaceBuildingAt(grid, 2, 2, building, options), false, `${type}: void ${di},${dj}`)
+        }
+      }
+      const grid = createGrid(5, (i, j) => createCell(i, j))
+      for (const [i, j] of [
+        [0, 2],
+        [4, 2],
+        [2, 0],
+        [2, 4],
+      ]) {
+        assert.equal(canPlaceBuildingAt(grid, i, j, building, options), false, `${type}: missing floor`)
+      }
+    }
+  }
+})
+
+test('furniture margin uses interior floor and passage restrictions without changing other buildings', () => {
+  const grid = createGrid(5, (i, j) => createCell(i, j))
+  const options = { allowBorder: true, canUseCell: cell => !cell.terrainHidden && !cell.reservedPassage }
+  grid[1][2].terrainHidden = true
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, { type: 'CampTable', size: 1 }, options), false)
+  grid[1][2].terrainHidden = false
+  grid[1][2].reservedPassage = true
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, { type: 'CampRug', size: 1 }, options), false)
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, { type: 'Trap', size: 1 }, options), true)
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, tower, options), true)
+})
+
+test('bed placement checks the rear artwork against walls even when interior borders are allowed', () => {
+  const bed = { type: 'CampBedroll', size: 2 }
+  for (const placementMirrored of [false, true]) {
+    for (const [i, j] of [
+      [1, 1],
+      [1, 2],
+      [2, 1],
+    ]) {
+      const grid = createGrid(5, (i, j) => createCell(i, j))
+      const options = { allowBorder: true }
+      grid[2][2].border = true
+      assert.equal(canPlaceBuildingAt(grid, 2, 2, { ...bed, placementMirrored }, options), true)
+      grid[i][j].solid = true
+      assert.equal(canPlaceBuildingAt(grid, 2, 2, { ...bed, placementMirrored }, options), false)
+      grid[i][j].solid = false
+      grid[i][j].z = 1
+      assert.equal(canPlaceBuildingAt(grid, 2, 2, { ...bed, placementMirrored }, options), false)
+    }
+  }
+})
+
+test('bed rear support must exist and pass the caller placement restrictions', () => {
+  const grid = createGrid(5, (i, j) => createCell(i, j))
+  const bed = { type: 'CampBedroll', size: 2 }
+  assert.equal(canPlaceBuildingAt(grid, 0, 2, bed), false)
+  assert.equal(canPlaceBuildingAt(grid, 2, 0, bed), false)
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, bed, { canUseCell: cell => cell !== grid[1][2] }), false)
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, { type: 'CampTable', size: 1 }), true)
+})
 
 test('building placement is rejected when any footprint cell is unexplored', () => {
   const grid = createGrid(5, (i, j) => createCell(i, j))

@@ -17,11 +17,6 @@ function loadHorseCapture(calls) {
   const localRequire = request => {
     if (request === '../constants')
       return { BUILDING_TYPES: { stable: 'Stable' }, UNIT_TYPES: { hero: 'Hero' }, STEP_TIME: 20 }
-    if (request === '../objectives/ageObjectives')
-      return {
-        AGE_OBJECTIVES: { tameHorse: 'tameHorse' },
-        completeAgeObjective: (player, objective) => calls.push(['objective', player, objective]),
-      }
     if (request === './stableHorses') {
       return {
         canStoreStableHorse: building => (building.stableHorses?.length ?? 0) < 5,
@@ -108,7 +103,7 @@ test('owner-contact routing waits for the owner timeout before failing', () => {
 })
 
 for (const unitType of ['Hero', 'Villager']) {
-  test(`${unitType} captured horses enter a stable, but only the hero completes an objective`, () => {
+  test(`${unitType} captured horses enter a stable without age objectives`, () => {
     const calls = []
     const storageCell = { i: 12, j: 10 }
     calls.storageCell = storageCell
@@ -175,7 +170,7 @@ for (const unitType of ['Hero', 'Villager']) {
     assert.deepEqual(stable.stableHorses, [{ horseColor: 'brown' }])
     assert.deepEqual(
       calls.filter(call => call[0] === 'objective'),
-      unitType === 'Hero' ? [['objective', owner.owner, 'tameHorse']] : []
+      []
     )
     assert.equal(
       calls.some(call => call[0] === 'horse.clear'),

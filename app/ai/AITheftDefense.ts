@@ -4,7 +4,7 @@ import { hasInteriorCombatCapacity } from '../lib/buildings/interiorCombatCapaci
 import { getEntitySpaceId, sameMapSpace } from '../lib/mapSpaces'
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
 import { getBuildingInteriorSpaceForUnit } from '../../engine/services/BuildingInteriorSpaceLookup'
-import { clearUnitSpacePortalRoute, routeUnitThroughSpacePortal } from '../services/SpacePortalSystem'
+import { clearUnitSpacePortalRoute, routeUnitThroughSpacePortal } from '../services/spacePortal/SpacePortalSystem'
 import type { BuildingInteriorRuntimeSpace } from '../../engine/services/BuildingInteriorSpaceTypes'
 import type { UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'

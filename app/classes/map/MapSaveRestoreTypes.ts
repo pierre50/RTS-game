@@ -1,11 +1,14 @@
+import type { ForgeUpgrades } from '../../lib/equipment/forgeUpgrades'
+import type { SettlementType, DevelopmentMode } from '../../config/settlementProfiles'
 import type { TargetObservation } from '../../lib/units/playerTargetKnowledge'
 import type { SaveEntityState, SavedAIState } from '../../types/save'
 
 export type SavedPlayer = {
+  settlementType?: SettlementType
+  developmentMode?: DevelopmentMode
   populationMax?: number
   targetKnowledge?: TargetObservation[]
-  age?: number
-  ageRulesVersion?: number
+  forgeUpgrades?: ForgeUpgrades
   label?: string
   factionId?: string
   name?: string

@@ -147,7 +147,7 @@ test('region restore places the saved chest in its room even when exterior cell 
 })
 
 test('offline meals consume carried provisions without remotely draining a chest', () => {
-  const { simulateOfflineWorld } = loadTsModule('app/services/world/OfflineWorldSimulation.ts')
+  const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
   const player = {
     label: 'human',
     type: 'Human',

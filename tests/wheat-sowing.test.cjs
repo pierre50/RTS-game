@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const definitions = require('../public/assets/data/gameplay/buildings.json')
-const { advanceOfflineWorker } = loadTsModule('app/services/world/OfflineWorldWork.ts')
+const { advanceOfflineWorker } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
 
 function fixture() {
   const sites = Array.from({ length: 16 }, (_, n) => ({
@@ -63,7 +63,7 @@ test('five grains sow exactly five tiles; empty tiles survive reload and resume 
   assert.equal(f.unit.inventory.resources.wheat, 0)
   assert.equal(f.unit.inventory.resources.berry, 12)
   assert.ok(f.state.resources.every(tile => tile.type === 'Wheat' && tile.currentFrame === 0))
-  assert.deepEqual(f.player.completedObjectives, ['createWheatField'])
+  assert.equal(f.player.completedObjectives, undefined)
   const state = JSON.parse(JSON.stringify(f.state))
   f = { state, player: state.players[0], unit: state.players[0].units[0] }
   f.unit.inventory.resources.wheat = 11
@@ -87,7 +87,6 @@ test('live sowing replaces only the completed site and begins wheat growth at fr
         },
       },
       '../../lib/mapSpaces': { getEntityMapSpace: () => null, addEntityToMapSpaceContainer() {} },
-      '../../lib/objectives/ageObjectives': { AGE_OBJECTIVES: { createWheatField: 'sow' }, completeAgeObjective() {} },
     },
   })
   const cell = { solid: true, updateVisible() {} }

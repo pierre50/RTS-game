@@ -61,7 +61,7 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
           RESOURCE_STORAGE_NAMES: ['wood'],
         },
         '../../lib': { getBuildingAsset: () => ({}) },
-        '../../lib/buildings/buildingAge': { getPlayerBuildingConfig: () => null },
+        '../../lib/buildings/buildingLevel': { getPlayerBuildingConfig: () => null },
         '../../lib/equipment/equipmentLoot': {
           equipHeroInventoryItem: (equippedHero, item) => {
             calls.push(['equipHeroInventoryItem', equippedHero, item])
@@ -138,6 +138,84 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
     assert.equal(hero.inventory.resources.wood, undefined)
     assert.equal(calls.filter(([name]) => name === 'renderTools').length, 6)
     assert.equal(calls.some(([name]) => name === 'close'), false)
+  } finally {
+    if (previousDocument) global.document = previousDocument
+    else delete global.document
+  }
+})
+
+test('a looted trap can be placed from the bag outside but not inside a building or cave', () => {
+  let placeAction = null
+  let space = { kind: 'interior' }
+  const mouseBuildings = []
+  const hero = { inventory: { equipment: ['trap'], resources: {}, equipped: {}, equippedCounts: {} } }
+  const menu = {
+    context: {
+      app: {},
+      controls: {
+        heroUnit: hero,
+        removeMouseBuilding: () => {},
+        setMouseBuilding: building => mouseBuildings.push(building),
+      },
+      player: {},
+      performance: {},
+    },
+  }
+  const host = { close: () => {}, lootedEquipmentPanel: makeElement(), menu, renderTools: () => {} }
+  const previousDocument = global.document
+  global.document = { createElement: () => makeElement() }
+
+  try {
+    const { renderInventoryLootedEquipment } = loadTsModule('app/ui/inventory/InventoryEquipmentRenderer.ts', {
+      mocks: {
+        '../../constants': { BUILDING_TYPES: { farm: 'farm' }, RESOURCE_STORAGE_NAMES: [] },
+        '../../lib': { getBuildingAsset: () => ({}) },
+        '../../lib/buildings/buildingLevel': { getPlayerBuildingConfig: () => ({ size: 1 }) },
+        '../../lib/equipment/equipmentLoot': {
+          getEquipmentSlot: () => null,
+          getEquipmentStacks: bag => (bag.length ? [{ equipment: 'trap', count: bag.length }] : []),
+          getHeroEquipmentSlotLabelKey: slot => slot,
+          getHeroEquippedItemCount: () => 0,
+          getWeaponSlot: () => null,
+          HERO_EQUIPMENT_SLOTS: [],
+        },
+        '../../lib/hero/heroCrafting': { getHeroConsumableHealing: () => 0 },
+        '../../lib/hero/placeableInventoryItems': {
+          getPlaceableInventoryBuildingType: item => (item === 'trap' ? 'Trap' : null),
+        },
+        '../../lib/mapSpaces': { getActiveInteractionSpace: () => space },
+        '../../lib/lang': { t: key => key },
+        './InventoryItemIcons': { createInventoryBuildingIcon: () => makeElement() },
+        './InventoryItemRows': {
+          createInventoryEquipmentRow: (_context, _menu, options) => {
+            placeAction = options.trailingAction
+            return { element: makeElement(), icon: makeElement() }
+          },
+        },
+        './InventorySection': {
+          createInventorySection: options => {
+            const grid = makeElement()
+            options.renderItems(grid)
+            return grid
+          },
+        },
+        'pixi.js': { Assets: {} },
+      },
+    })
+
+    renderInventoryLootedEquipment(host)
+    assert.equal(placeAction.label, 'inventoryPlaceAction')
+    assert.equal(placeAction.disabled, true)
+    placeAction.onAction('one')
+    assert.deepEqual(mouseBuildings, [])
+
+    space = { kind: 'outside' }
+    renderInventoryLootedEquipment(host)
+    assert.equal(placeAction.disabled, false)
+    placeAction.onAction('one')
+    assert.equal(mouseBuildings.length, 1)
+    assert.equal(mouseBuildings[0].type, 'Trap')
+    assert.equal(mouseBuildings[0].inventoryItem, 'trap')
   } finally {
     if (previousDocument) global.document = previousDocument
     else delete global.document

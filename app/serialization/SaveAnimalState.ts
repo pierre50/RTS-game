@@ -7,7 +7,7 @@ import {
   validateOptionalBoolean,
   validateAnimalPath,
   validateOptionalGridDestination,
-} from './SaveValidationPrimitives'
+} from './validation/SaveValidationPrimitives'
 
 const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
 const ANIMAL_SHEETS = new Set<string>(Object.values(SHEET_TYPES))

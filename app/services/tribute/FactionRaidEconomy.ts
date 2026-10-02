@@ -1,11 +1,11 @@
 import { decodeEconomyTerrain, summarizeEconomy } from '../world/WorldEconomy'
 import { UNIT_TYPES } from '../../constants/entities'
-import { isLiving, OfflineWorldSpatial } from '../world/OfflineWorldSpatial'
+import { isLiving, OfflineWorldSpatial } from '../world/offline/OfflineWorldSpatial'
 import type { GameContextLike } from '../../types/context'
 import type { FactionExpeditionSave, SaveEntityState } from '../../types/save'
 import type { TributeRaidUnit } from './TributeRaidRules'
 import { depositChestResources } from '../../lib/resources/playerResourceTotals'
-import { savedResourceOwner } from '../world/OfflineWorldWork'
+import { savedResourceOwner } from '../world/offline/OfflineWorldWork'
 
 export function creditFactionRaidTribute(context: GameContextLike, expedition: FactionExpeditionSave): void {
   const source = factionArmySource(context, expedition.regionId, expedition.playerLabel)

@@ -5,13 +5,11 @@ import { getInteriorMapSizeForBuildingSize } from '../../app/lib/buildings/inter
 import type { ReservedPassageCellLookup } from '../../app/lib/buildings/passageCells'
 import {
   canUnitUseCellAsIdleDestination,
-  createReservedPassageCellLookup,
   isRuntimeMapSpacePassageCell,
 } from '../../app/lib/buildings/passageCells'
 import { getCellsAroundPoint } from '../../app/lib/grid/cells'
 import type { BuildingEntity, UnitEntity } from '../../app/types/entities'
 import type { RuntimeCell, RuntimeMapSpace } from '../../app/types/map'
-import type { BuildingInteriorRuntimeSpace } from './BuildingInteriorSpaceTypes'
 
 function getDefaultInteriorMapSize(building: BuildingEntity): number {
   return getInteriorMapSizeForBuildingSize(building.size)
@@ -81,15 +79,7 @@ export function findFreeCellNear(
   return null
 }
 
-export function findSleepCell(space: BuildingInteriorRuntimeSpace, unit: UnitEntity): RuntimeCell | null {
-  const passageLookup = createReservedPassageCellLookup(unit.context)
-  for (const cell of space.sleepCells) {
-    if (isCellAvailableForUnit(space, cell, unit, passageLookup)) return cell
-  }
-  return findFreeCellNear(space, space.entryCell, unit, passageLookup)
-}
-
-export function sortCellsForSleep(cells: RuntimeCell[], exitCell: RuntimeCell | null, center: number): RuntimeCell[] {
+export function sortInteriorIdleCells(cells: RuntimeCell[], exitCell: RuntimeCell | null, center: number): RuntimeCell[] {
   return [...cells].sort((a, b) => {
     const aExit = exitCell ? Math.abs(a.i - exitCell.i) + Math.abs(a.j - exitCell.j) : 0
     const bExit = exitCell ? Math.abs(b.i - exitCell.i) + Math.abs(b.j - exitCell.j) : 0

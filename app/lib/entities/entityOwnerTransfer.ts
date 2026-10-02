@@ -1,7 +1,8 @@
+import { reconcileHouseholds } from '../housing/households'
 import { isLivingBuilding, nearestPlayerForBuilding } from './ownerTransferRecipients'
 import { FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import { isBanditOwner } from '../combat/bandits'
-import { getBuildingShelterCapacity } from '../buildings/buildingOccupancy'
+import { refreshPopulationCapacity } from '../buildings/buildingOccupancy'
 import { getBuildingInteriorPortalId } from '../buildings/interiors'
 import { updateInstanceVisibility } from '../grid/visibility'
 import { syncEntityHealthDisplay } from './entityHealthDisplay'
@@ -107,7 +108,7 @@ export function transferEntityOwner(
 
   clearConvertedEntityRuntimeState(target)
   target.assetCiv = target.assetCiv || oldOwner.civ
-  target.assetAge = target.assetAge ?? oldOwner.age
+  target.assetLevel = target.assetLevel ?? 0
   // Interior locations must survive ownership changes, including subsequent captures.
   if (target.family === FAMILY_TYPES.building)
     target.interiorPortalId = getBuildingInteriorPortalId(target as BuildingEntity)
@@ -115,6 +116,8 @@ export function transferEntityOwner(
   if (target.family === FAMILY_TYPES.unit) transferUnitMembership(target, oldOwner, newOwner)
   else transferBuildingMembership(target, oldOwner, newOwner, menu)
 
+  reconcileHouseholds(oldOwner)
+  reconcileHouseholds(newOwner)
   refreshTransferredEntityUI(target, oldOwner, newOwner, menu, player, options)
   return true
 }
@@ -165,7 +168,6 @@ function transferUnitMembership(target: ConvertibleEntity, oldOwner: PlayerLike,
   addToOwnerList(newOwner, 'units', target)
   oldOwner.population = Math.max(0, oldOwner.population - 1)
   newOwner.population += 1
-  newOwner.updatePopulationObjectives?.()
   target.setTextures?.(SHEET_TYPES.standing)
 }
 
@@ -178,11 +180,8 @@ function transferBuildingMembership(
   target.assetType = target.assetType || target.type
   removeFromOwnerList(oldOwner, 'buildings', target)
   addToOwnerList(newOwner, 'buildings', target)
-  const populationCapacity = getBuildingShelterCapacity(target)
-  if (populationCapacity && target.populationCapacityApplied) {
-    oldOwner.populationMax = Math.max(0, oldOwner.populationMax - populationCapacity)
-    newOwner.populationMax += populationCapacity
-  }
+  refreshPopulationCapacity(oldOwner)
+  refreshPopulationCapacity(newOwner)
   target.queue = []
   target.loading = null
   target.finalTexture?.()

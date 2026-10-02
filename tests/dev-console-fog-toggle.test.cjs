@@ -121,3 +121,25 @@ test('fog on rebuilds terrain minimap from explored cells', () => {
   assert.equal(terrainRevealCalls, 0)
   assert.equal(terrainRebuildCalls, 1)
 })
+
+test('debug fog does not visit resources, animals, terrain rendering or camera streaming', () => {
+  const { toggleFog } = loadMapActions()
+  const forbidden = () => assert.fail('fog must only refresh the minimap')
+  const context = {
+    map: {
+      revealEverything: false,
+      resources: { forEach: forbidden },
+      terrainChunkManager: { invalidateAll: forbidden },
+      get gaia() {
+        return forbidden()
+      },
+    },
+    controls: { updateVisibleCells: forbidden },
+    menu: {},
+    players: [],
+  }
+  toggleFog(context, 'off')
+  assert.equal(context.map.revealEverything, true)
+  toggleFog(context, 'on')
+  assert.equal(context.map.revealEverything, false)
+})

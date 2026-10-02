@@ -2,23 +2,25 @@ import { MINIMAP_RESOLUTION_SCALE as SCALE } from './MinimapGeometry'
 
 type MarkerKind = 'villager' | 'troop' | 'building' | 'hero'
 
-/** Fixed screen sizes keep individual units readable at every map zoom. */
+/** Scale shapes, selection rings and outlines together with the minimap zoom. */
 export function drawMinimapUnitMarker(
   context: CanvasRenderingContext2D,
   kind: MarkerKind,
   point: { x: number; y: number },
   color: string,
   selected = false,
-  degree = 0
+  degree = 0,
+  markerScale = 1
 ): void {
-  const radius = (kind === 'hero' ? 6 : kind === 'villager' ? 1.8 : 3) * SCALE
+  const scale = SCALE * markerScale
+  const radius = (kind === 'hero' ? 7 : kind === 'villager' ? 1.8 : 3) * scale
   context.save()
   context.translate(point.x, point.y)
   if (selected) {
     context.beginPath()
-    context.ellipse(0, 0, radius + 2 * SCALE, radius + 2 * SCALE, 0, 0, Math.PI * 2)
+    context.ellipse(0, 0, radius + 2 * scale, radius + 2 * scale, 0, 0, Math.PI * 2)
     context.strokeStyle = '#ffffff'
-    context.lineWidth = SCALE
+    context.lineWidth = scale
     context.stroke()
   }
   context.beginPath()
@@ -43,7 +45,7 @@ export function drawMinimapUnitMarker(
   context.fillStyle = color
   context.fill()
   context.strokeStyle = kind === 'hero' || selected ? '#ffffff' : '#171a20'
-  context.lineWidth = (kind === 'hero' ? 1.5 : 0.8) * SCALE
+  context.lineWidth = (kind === 'hero' ? 1.5 : 0.8) * scale
   context.stroke()
   context.restore()
 }

@@ -23,6 +23,7 @@ reports/health-logs/
 !tools/maps/**
 
 !tools/finalize-world-maps.cjs
+!tools/prepare-world-settlements.cjs
 
 !tools/generate-cave-maps.cjs
 !tools/caves/

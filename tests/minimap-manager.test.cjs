@@ -73,12 +73,20 @@ function createCanvas() {
     labels: [],
     paths: [],
     rotations: [],
-    moveTo(...args) { this.paths.push(args) },
+    moveTo(...args) {
+      this.paths.push(args)
+    },
     lineTo() {},
     closePath() {},
-    rect(...args) { this.rectangles.push(args) },
-    rotate(angle) { this.rotations.push(angle) },
-    strokeRect(...args) { this.strokes.push(args) },
+    rect(...args) {
+      this.rectangles.push(args)
+    },
+    rotate(angle) {
+      this.rotations.push(angle)
+    },
+    strokeRect(...args) {
+      this.strokes.push(args)
+    },
     strokeText() {},
     fillText(...args) {
       this.labels.push(args)
@@ -94,7 +102,9 @@ function createCanvas() {
     clears: 0,
     clearedRects: [],
     fills: [],
-    fillRect(...args) { this.fills.push(args) },
+    fillRect(...args) {
+      this.fills.push(args)
+    },
     translate() {},
     drawImage(...args) {
       this.images.push(args)
@@ -569,14 +579,14 @@ test('discovered towns and caves render with owner and grey backgrounds, and leg
   }
   const manager = new MinimapManager(menu)
   manager.activate()
-  assert.deepEqual(colors, ['#00f', '#8f8f8f', '#00f', '#f00', '#f00', '#00f'])
+  assert.deepEqual(colors, ['#00f', '#8f8f8f', '#00f', '#f00', '#00f'])
   assert.equal(menu.resourcesMinimap.context.images.length, 4)
-  assert.equal(menu.resourcesMinimap.context.images[3][0].src, 'assets/icons/minimap/home.svg')
+  assert.equal(menu.resourcesMinimap.context.images[3][0].src, 'assets/icons/minimap/village.svg')
   colors.length = 0
   menu.context.player.views.isViewed = () => true
   menu.context.player.views.isVisible = () => true
   manager.updateTerrainMiniMap(2, 1)
-  assert.deepEqual(colors, ['#00f', '#8f8f8f', '#00f', '#f00', '#f00', '#f00', '#00f'])
+  assert.deepEqual(colors, ['#00f', '#8f8f8f', '#00f', '#f00', '#00f'])
   hiddenMarkers.add('caves')
   hiddenMarkers.add('AI')
   colors.length = 0
@@ -585,7 +595,7 @@ test('discovered towns and caves render with owner and grey backgrounds, and leg
   hiddenMarkers.clear()
   colors.length = 0
   manager.updatePlayerMiniMapEvt()
-  assert.deepEqual(colors, ['#00f', '#8f8f8f', '#00f', '#f00', '#f00', '#f00', '#00f'])
+  assert.deepEqual(colors, ['#00f', '#8f8f8f', '#00f', '#f00', '#00f'])
 })
 
 test('bandit camp markers follow live campfires, discovery, filters and destruction', () => {
@@ -621,7 +631,9 @@ test('bandit camp markers follow live campfires, discovery, filters and destruct
 })
 
 test('surviving AI buildings remain known independently of cleared camps', () => {
-  const menu = createMenu({ revealEverything: true })
+  const menu = createMenu()
+  menu.context.player.views.isViewed = () => true
+  menu.context.player.views.isVisible = () => true
   const building = (type, i) => ({ type, i, j: 1, size: 1, position: { x: i * 10, y: 10 } })
   const ai = { type: 'AI', colorHex: '#f00', buildings: [building('TownCenter', 1)], units: [{ hitPoints: 10 }] }
   const firstGuard = { hitPoints: 10, campPatrolAnchor: { i: 1, j: 1 } }
@@ -641,17 +653,17 @@ test('surviving AI buildings remain known independently of cleared camps', () =>
     manager.updatePlayerMiniMapEvt()
     return images.map(image => image[0].src.split('/').pop())
   }
-  assert.deepEqual(redraw(), ['camp.svg', 'camp.svg', 'home.svg'])
+  assert.deepEqual(redraw(), ['camp.svg', 'camp.svg', 'village.svg'])
   firstGuard.isDead = true
-  assert.deepEqual(redraw(), ['camp.svg', 'home.svg'])
+  assert.deepEqual(redraw(), ['camp.svg', 'village.svg'])
   ai.units[0].combatMode = 'flee'
-  assert.deepEqual(redraw(), ['camp.svg', 'home.svg'])
+  assert.deepEqual(redraw(), ['camp.svg', 'village.svg'])
   bandits.units = [] // Dead or converted guards no longer belong to the bandit owner.
-  assert.deepEqual(redraw(), ['home.svg'])
+  assert.deepEqual(redraw(), ['village.svg'])
   manager.deactivate()
   images.length = 0
   manager.activate()
-  assert.equal(images[0][0].src, 'assets/icons/minimap/home.svg')
+  assert.equal(images[0][0].src, 'assets/icons/minimap/village.svg')
 })
 
 test('resizing the open minimap adjusts terrain detail and releases its observer on close', t => {
@@ -742,18 +754,21 @@ test('completed player base appears through fog and its filter is independent of
   assert.deepEqual(redraw(), ['hero'])
 })
 
-
 test('own markers show buildings below units and hide dead, sheltered and other-space units', () => {
   const hiddenMarkers = new Set()
   const menu = createMenu()
+  menu.context.player.minimapPreferences = { zoom: 3, hiddenMarkers: [] }
   const position = { x: 10, y: 10 }
   const unit = (type, extra = {}) => ({ type, position, ...extra })
   const hero = unit('Hero', { degree: 270, owner: menu.context.player })
   menu.context.controls.heroUnit = hero
   menu.context.player.buildings = [{ type: 'House', position, selected: true }]
   menu.context.player.units = [
-    unit('Villager'), unit('Fantassin', { selected: true }), hero,
-    unit('Villager', { isDead: true }), unit('Bowman', { isDestroyed: true }),
+    unit('Villager'),
+    unit('Fantassin', { selected: true }),
+    hero,
+    unit('Villager', { isDead: true }),
+    unit('Bowman', { isDestroyed: true }),
     unit('Villager', { shelterState: { status: 'inside' } }),
     unit('Villager', { spaceId: 'interior:house' }),
   ]
@@ -773,7 +788,6 @@ test('own markers show buildings below units and hide dead, sheltered and other-
   assert.deepEqual(kinds, [])
 })
 
-
 test('terrain colors stay unchanged when building vision changes and unknown terrain stays hidden', () => {
   const menu = createMenu()
   let visible = true
@@ -785,7 +799,10 @@ test('terrain colors stay unchanged when building vision changes and unknown ter
   manager.activate()
   visible = false
   manager.refreshMiniMap()
-  assert.deepEqual(context.diamonds.map(draw => draw[4]), ['#647B2F', '#647B2F'])
+  assert.deepEqual(
+    context.diamonds.map(draw => draw[4]),
+    ['#647B2F', '#647B2F']
+  )
   const count = context.diamonds.length
   manager.updateTerrainMiniMap(0, 0)
   assert.equal(context.diamonds.length, count)
@@ -795,8 +812,10 @@ test('camera shading clears the viewport without an outline or terrain repaint',
   const { menu, manager } = createLocalMinimap()
   const transform = manager.geometry.getMinimapTransform()
   menu.context.controls.getViewportMetrics = () => ({
-    visibleLeft: transform.originX + 20, visibleTop: transform.originY + 30,
-    visibleWidth: 80, visibleHeight: 60,
+    visibleLeft: transform.originX + 20,
+    visibleTop: transform.originY + 30,
+    visibleWidth: 80,
+    visibleHeight: 60,
   })
   manager.updateCameraMiniMapEvt()
   const shading = menu.cameraMinimap.context
@@ -809,14 +828,15 @@ test('camera shading clears the viewport without an outline or terrain repaint',
   assertClose(height, 60 / transform.factor)
   const terrainDraws = menu.terrainMinimap.context.diamonds.length
   menu.context.controls.getViewportMetrics = () => ({
-    visibleLeft: transform.originX + 40, visibleTop: transform.originY + 30,
-    visibleWidth: 80, visibleHeight: 60,
+    visibleLeft: transform.originX + 40,
+    visibleTop: transform.originY + 30,
+    visibleWidth: 80,
+    visibleHeight: 60,
   })
   manager.updateCameraMiniMapEvt()
   assertClose(shading.clearedRects.at(-1)[0], manager.geometry.toMinimapX(40, transform))
   assert.equal(menu.terrainMinimap.context.diamonds.length, terrainDraws)
 })
-
 
 test('AI units disappear outside vision and building memories survive hidden destruction, even with minimap closed', () => {
   const hiddenMarkers = new Set()
@@ -825,14 +845,21 @@ test('AI units disappear outside vision and building memories survive hidden des
   menu.context.player.views.isViewed = () => true
   menu.context.player.views.isVisible = () => visible
   const house = { label: 'house', type: 'House', i: 1, j: 1, size: 1, position: { x: 10, y: 10 } }
-  const ai = { type: 'AI', colorHex: '#f00', buildings: [house], units: [
-    { type: 'Villager', i: 1, j: 1, position: { x: 10, y: 10 } },
-    { type: 'Fantassin', i: 1, j: 1, position: { x: 15, y: 10 } },
-  ] }
+  const ai = {
+    type: 'AI',
+    colorHex: '#f00',
+    buildings: [house],
+    units: [
+      { type: 'Villager', i: 1, j: 1, position: { x: 10, y: 10 } },
+      { type: 'Fantassin', i: 1, j: 1, position: { x: 15, y: 10 } },
+    ],
+  }
   menu.context.players.push(ai)
   const context = menu.resourcesMinimap.context
   const draws = []
-  context.fill = function () { draws.push([this.fillStyle, this.filter]) }
+  context.fill = function () {
+    draws.push([this.fillStyle, this.filter])
+  }
   const manager = new (loadMinimapManager({ hiddenMarkers }))(menu)
   manager.activate()
   assert.deepEqual(draws, []) // Exploring terrain alone reveals no new enemy building.
@@ -851,7 +878,7 @@ test('AI units disappear outside vision and building memories survive hidden des
   hiddenMarkers.clear()
   visible = true
   manager.updatePlayerMiniMapEvt()
-  assert.equal(draws.length, 2) // Old building cleared; only the two visible units remain.
+  assert.equal(draws.length, 0) // The old site clears; foreign units never appear.
   draws.length = 0
   visible = false
   manager.updatePlayerMiniMapEvt()
@@ -860,18 +887,41 @@ test('AI units disappear outside vision and building memories survive hidden des
 
 test('loaded building memories stay dark without a live building and clear only after revisiting', () => {
   const menu = createMenu()
-  menu.context.player.minimapBuildingMemory = JSON.parse(JSON.stringify([{
-    id: 'destroyed', spaceId: 'outside', x: 10, y: 10, i: 1, j: 1, size: 1,
-    color: '#f00', ownerKey: 'AI', town: false,
-  }, {
-    id: 'room', spaceId: 'interior:house', x: 10, y: 10, i: 1, j: 1, size: 1,
-    color: '#f00', ownerKey: 'AI', town: false,
-  }]))
+  menu.context.player.minimapBuildingMemory = JSON.parse(
+    JSON.stringify([
+      {
+        id: 'destroyed',
+        spaceId: 'outside',
+        x: 10,
+        y: 10,
+        i: 1,
+        j: 1,
+        size: 1,
+        color: '#f00',
+        ownerKey: 'AI',
+        town: false,
+      },
+      {
+        id: 'room',
+        spaceId: 'interior:house',
+        x: 10,
+        y: 10,
+        i: 1,
+        j: 1,
+        size: 1,
+        color: '#f00',
+        ownerKey: 'AI',
+        town: false,
+      },
+    ])
+  )
   let visible = false
   menu.context.player.views.isVisible = () => visible
   const context = menu.resourcesMinimap.context
   const draws = []
-  context.fill = function () { draws.push(this.filter) }
+  context.fill = function () {
+    draws.push(this.filter)
+  }
   const manager = new (loadMinimapManager())(menu)
   manager.activate()
   assert.deepEqual(draws, ['brightness(55%)'])
@@ -880,16 +930,19 @@ test('loaded building memories stay dark without a live building and clear only 
   visible = true
   manager.updatePlayerMiniMapEvt()
   assert.deepEqual(draws, [])
-  assert.deepEqual(menu.context.player.minimapBuildingMemory.map(entry => entry.id), ['room'])
+  assert.deepEqual(
+    menu.context.player.minimapBuildingMemory.map(entry => entry.id),
+    ['room']
+  )
 })
-
 
 test('loading does not erase building observations before live entities have been restored', () => {
   const menu = createMenu()
   menu.context.map.ready = false
   menu.context.player.views.isVisible = () => true
-  const memory = [{ id: 'house', spaceId: 'outside', x: 10, y: 10, i: 1, j: 1, size: 1,
-    color: '#f00', ownerKey: 'AI', town: false }]
+  const memory = [
+    { id: 'house', spaceId: 'outside', x: 10, y: 10, i: 1, j: 1, size: 1, color: '#f00', ownerKey: 'AI', town: false },
+  ]
   menu.context.player.minimapBuildingMemory = memory
   const manager = new (loadMinimapManager())(menu)
   manager.updatePlayerMiniMapEvt()
@@ -898,6 +951,7 @@ test('loading does not erase building observations before live entities have bee
 
 test('an offscreen player gatherer stays on the minimap and its marker follows live travel', () => {
   const menu = createMenu()
+  menu.context.player.minimapPreferences = { zoom: 3, hiddenMarkers: [] }
   menu.context.player.views.isViewed = () => false
   menu.context.player.views.isVisible = () => false
   menu.context.controls.instanceInCamera = () => false
@@ -906,7 +960,9 @@ test('an offscreen player gatherer stays on the minimap and its marker follows l
   const context = menu.resourcesMinimap.context
   const points = []
   let markerPoint
-  context.translate = (x, y) => { markerPoint = [x, y] }
+  context.translate = (x, y) => {
+    markerPoint = [x, y]
+  }
   context.ellipse = () => points.push(markerPoint)
   const manager = new (loadMinimapManager())(menu)
   manager.activate()
@@ -916,4 +972,70 @@ test('an offscreen player gatherer stays on the minimap and its marker follows l
   manager.updatePlayerMiniMapEvt()
   assert.equal(points.length, 2)
   assert.notDeepEqual(points[1], start)
+})
+
+test('debug fog draws one settlement icon and no foreign units or building details, without changing memory', () => {
+  const hiddenMarkers = new Set()
+  const menu = createMenu({ revealEverything: true })
+  const house = { type: 'House', i: 1, j: 1, position: { x: 10, y: 10 } }
+  const unit = { type: 'Villager', i: 1, j: 1, position: { x: 10, y: 10 } }
+  menu.context.players.push({
+    type: 'AI',
+    settlementType: 'city',
+    colorHex: '#f00',
+    buildings: [house, { ...house, i: 2 }],
+    units: [unit],
+  })
+  const memory = [
+    { id: 'previous', spaceId: 'outside', x: 0, y: 0, i: 0, j: 0, size: 1, town: false, color: '#f00', ownerKey: 'AI' },
+  ]
+  menu.context.player.minimapBuildingMemory = memory
+  const manager = new (loadMinimapManager({ hiddenMarkers }))(menu)
+  manager.activate()
+  const ctx = menu.resourcesMinimap.context
+  assert.deepEqual(
+    ctx.images.map(image => image[0].src.split('/').pop()),
+    ['city.svg']
+  )
+  assert.equal(ctx.ellipses.length, 1)
+  assert.equal(ctx.rectangles.length, 0)
+  assert.equal(menu.context.player.minimapBuildingMemory, memory)
+  hiddenMarkers.add('AI')
+  ctx.images.length = 0
+  manager.updatePlayerMiniMapEvt()
+  assert.deepEqual(ctx.images, [])
+})
+
+test('AI sites remain single icons at every zoom while only personal details expand', () => {
+  const menu = createMenu()
+  menu.context.player.views.isVisible = () => true
+  const position = { x: 10, y: 10 }
+  menu.context.player.buildings = [{ type: 'House', i: 1, j: 1, position }]
+  menu.context.player.units = [{ type: 'Villager', i: 1, j: 1, position }]
+  menu.context.players.push({
+    label: 'city',
+    type: 'AI',
+    settlementType: 'city',
+    colorHex: '#f00',
+    buildings: [
+      { label: 'house1', type: 'House', i: 1, j: 1, position },
+      { label: 'house2', type: 'House', i: 2, j: 1, position },
+    ],
+    units: [{ type: 'Villager', i: 1, j: 1, position }],
+  })
+  const manager = new (loadMinimapManager())(menu)
+  const ctx = menu.resourcesMinimap.context
+  for (const zoom of [1, 1.5, 2, 3, 4]) {
+    menu.context.player.minimapPreferences = { zoom, hiddenMarkers: [] }
+    ctx.images.length = 0
+    ctx.rectangles.length = 0
+    ctx.ellipses.length = 0
+    manager.activate()
+    assert.deepEqual(
+      ctx.images.map(image => image[0].src.split('/').pop()),
+      ['city.svg']
+    )
+    assert.equal(ctx.rectangles.length, zoom >= 3 ? 1 : 0)
+    assert.equal(ctx.ellipses.length, zoom >= 3 ? 2 : 1)
+  }
 })

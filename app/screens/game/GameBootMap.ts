@@ -30,6 +30,7 @@ export async function prepareBootMap(game: GameWorldBootHost, config: GameConfig
   await game._updateLoading('readingMap', 0.03)
   const loadedBlueprint = await measureAsync(game, 'boot.loadMapBlueprint', () =>
     game._loadRequiredWorldMapBlueprint({
+      includePreparedSettlements: true,
       size: map.size,
       playerCiv: config.heroStartVillage ?? human.civ,
       worldId,
@@ -40,6 +41,10 @@ export async function prepareBootMap(game: GameWorldBootHost, config: GameConfig
     isContinentWorld(config.worldId) ? assignContinentVillages(loadedBlueprint) : loadedBlueprint,
     config
   )
+  if (blueprint.preparedSettlements) {
+    config = { ...config, heroOnlyStart: true, heroStartVillage: undefined, villageStarts: undefined }
+    map.heroOnlyStart = true
+  }
   if (isolationTest)
     console.info('[load] Continent isolation test: hero with authored camps and wildlife, no rival civilizations')
   if (blueprint.environment) map.environment = blueprint.environment
@@ -65,6 +70,8 @@ export async function prepareBootMap(game: GameWorldBootHost, config: GameConfig
   if (options.startingSetup) {
     config = { ...config, ...(await measureAsync(game, 'boot.waitForStartingSetup', () => options.startingSetup!)) }
     config = isolateLargeMapConfig(config)
+    if (blueprint.preparedSettlements)
+      config = { ...config, heroOnlyStart: true, heroStartVillage: undefined, villageStarts: undefined }
     map.heroOnlyStart = Boolean(config.heroOnlyStart)
   }
   await game._updateLoading('generatingPlayers', 0.27)

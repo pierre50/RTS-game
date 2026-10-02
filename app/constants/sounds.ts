@@ -4,9 +4,6 @@ export const SOUND_CUES = {
     menuClick: 'button-selected',
     underAttack: 'attack-warning',
   },
-  player: {
-    ageAdvance: 'next-age-reached',
-  },
   hero: {
     heartbeat: 'heartbeat',
     footstepGrass: [

@@ -112,7 +112,7 @@ test('blocked sites retry without consuming the cooldown; pauses and editor mode
 })
 
 test('save validation rejects invalid cooldowns, duplicate sites and oversized rosters', () => {
-  const { validateRuntimeState } = loadTsModule('app/serialization/SaveRuntimeValidation.ts', {
+  const { validateRuntimeState } = loadTsModule('app/serialization/validation/SaveRuntimeValidation.ts', {
     mocks: { './SaveEntityValidators': { validateWorldPursuers() {} } },
   })
   const camp = { id: 'camp:1:1', i: 1, j: 1, unitTypes: ['BanditSword'], generation: 0, clearedAtMs: 1000 }

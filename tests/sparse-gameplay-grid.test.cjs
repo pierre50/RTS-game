@@ -191,7 +191,7 @@ test('instance buckets cover sparse local map rows beyond the first row length',
   const { createRuntimeMapSpaceBuckets, ensureOutsideMapSpace, addEntityToRuntimeMapSpaceBucket } =
     loadTsModule('app/lib/mapSpaces.ts')
   const { findInstancesInSight } = loadTsModule('app/lib/grid/visibility.ts', {
-    mocks: { '../../services/UnitPerception': { updateVisibility() {} } },
+    mocks: { '../../services/visibility/UnitPerception': { updateVisibility() {} } },
   })
   const map = {
     grid, size: 219, spaces: new Map(), instanceBuckets: createRuntimeMapSpaceBuckets(grid, 219),

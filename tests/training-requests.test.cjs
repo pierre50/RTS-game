@@ -168,3 +168,17 @@ test('cancelling an incoming request releases only its recruit and does not over
   assert.equal(other.action, 'attack')
   assert.equal(building.trainingRequests.length, 0)
 })
+
+
+test('renovation blocks recruitment and dispatch until the building reopens', () => {
+  const { owner, building } = fixture(1)
+  building.buildingUpgrade = { targetLevel: 1 }
+  assert.equal(requestBuildingTraining(building, 'Fantassin', 1), false)
+  assert.equal(building.trainingRequests, undefined)
+  building.trainingRequests = [{ type: 'Fantassin' }]
+  dispatchTrainingRequests(owner)
+  assert.equal(owner.units[0].trainingTargetType, undefined)
+  delete building.buildingUpgrade
+  dispatchTrainingRequests(owner)
+  assert.equal(owner.units[0].trainingTargetType, 'Fantassin')
+})

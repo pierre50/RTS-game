@@ -3,7 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
-const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { requireFromTsFile, loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -23,7 +23,7 @@ function loadModule(relativePath, mocks) {
 
 function loadDisplayName(t = key => key) {
   return loadModule('app/ui/utils/entityDisplayName.ts', {
-    '../../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
+    '../../constants': { ...loadTsModule('app/constants/entities.ts'), FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
     '../../lib/lang': { t },
   })
 }
@@ -60,4 +60,23 @@ test('animal display names use translated type instead of technical instance nam
   const { getEntityDisplayName } = loadDisplayName(key => (key === 'Boar' ? 'Sanglier' : key))
 
   assert.equal(getEntityDisplayName({ family: 'animal', type: 'Boar', name: 'Mmmmm' }), 'Sanglier')
+})
+
+
+test('houses display the names of their household, including an absent hero', () => {
+  const { getEntityDisplayName } = loadDisplayName((key, vars) => {
+    if (key === 'houseOfOne') return `Maison de ${vars.name}`
+    if (key === 'houseOfTwo') return `Maison de ${vars.first} et ${vars.second}`
+    return 'Maison inoccupée'
+  })
+  const owner = { units: [] }
+  const house = { family: 'building', type: 'House', label: 'home', owner }
+  assert.equal(getEntityDisplayName(house), 'Maison inoccupée')
+  owner.units.push({ label: 'a', name: 'Alice', homeHouseLabel: 'home' })
+  assert.equal(getEntityDisplayName(house), 'Maison de Alice')
+  owner.units.push({ label: 'b', name: 'Bob', homeHouseLabel: 'home' })
+  assert.equal(getEntityDisplayName(house), 'Maison de Alice et Bob')
+  owner.units = []
+  house.heroHomeResident = { label: 'hero', name: 'Alex' }
+  assert.equal(getEntityDisplayName(house), 'Maison de Alex')
 })

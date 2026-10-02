@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+const { VisionGrid } = loadTsModule('app/services/visibility/VisionGrid.ts')
 const knowledge = loadTsModule('app/lib/units/playerTargetKnowledge.ts')
 function scene() {
   const owner = { units: [], buildings: [], views: new VisionGrid(32) }

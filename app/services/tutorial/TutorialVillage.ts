@@ -1,4 +1,4 @@
-import { MAX_BUILDING_BY_AGE } from '../../ai/config'
+import { SETTLEMENT_PROFILES } from '../../config/settlementProfiles'
 import type { GameConfig } from '../../types/save'
 
 /** New-game setup only: materialize the tutorial through the existing village generator. */
@@ -12,24 +12,8 @@ export function tutorialVillageConfig(config: GameConfig): GameConfig {
     villageStarts: {
       ...config.villageStarts,
       [civ]: {
-        age: 0,
-        wheatFields: 5,
-        buildings: {
-          ...MAX_BUILDING_BY_AGE[0],
-          Granary: 2,
-          StoragePit: 2,
-          TownCenter: 1,
-          Barracks: 1,
-          ArcheryRange: 1,
-          House: 6,
-          WatchTower: 2,
-          FireCamp: 2,
-          CampCrate: 2,
-          CampJarLarge: 1,
-          CampBucket: 1,
-          CampDryingRack: 1,
-        },
-        units: { Chief: 1, Villager: 12, Fantassin: 4 },
+        ...SETTLEMENT_PROFILES.village,
+        buildings: { ...SETTLEMENT_PROFILES.village.buildings, FireCamp: 1, CampCrate: 1, CampBucket: 1 },
       },
     },
   }

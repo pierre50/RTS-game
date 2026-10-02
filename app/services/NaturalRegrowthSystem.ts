@@ -9,7 +9,7 @@ import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { ResourceEntity } from '../types/entities'
 import type { SaveEntityState } from '../types/save'
 import { NATURAL_REGROWTH_CONFIG, NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../config/gameplay'
-import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
+import type { DailyWorldEvent, DailyWorldEventHandler } from './dailyEvents/DailyWorldEventTypes'
 
 function resumeIdleAutonomousVillagersAfterRegrowth(context: GameContextLike): void {
   if (isVillagerSleepTime(context)) return

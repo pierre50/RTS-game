@@ -1,3 +1,5 @@
+import type { ForgeUpgrades } from '../equipment/forgeUpgrades'
+import { hasConstructionWork } from './constructionMaterials'
 import { constructionAssignment } from './constructionAssignments'
 import { VILLAGE_ACTIVITY_RADIUS } from '../../config/villageActivity'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants'
@@ -40,9 +42,9 @@ export type CollectiveSite = Point &
   }
 
 export type Owner = {
+  forgeUpgrades?: ForgeUpgrades
   units?: CollectiveMember[]
   population?: number
-  age?: number
   label?: string
   populationMax?: number
   buildings?: CollectiveSite[]
@@ -62,7 +64,7 @@ export function collectiveAnchor(owner: Owner, unit: CollectiveMember): Collecti
     (owner.buildings ?? [])
       .filter(
         site =>
-          !site.isBuilt &&
+          hasConstructionWork(site) &&
           !site.isDead &&
           !site.isDestroyed &&
           (site.spaceId ?? 'outside') === (point.spaceId ?? 'outside') &&
@@ -99,7 +101,7 @@ export function activeConstructionSite(owner: Owner, unit: CollectiveMember): Co
   const assigned = constructionAssignment(unit)?.site
   if (assigned && owner.buildings?.includes(assigned) && belongsToSettlement(owner, anchor, assigned)) return assigned
   return owner.buildings?.find(
-    site => !site.isBuilt && !site.isDead && !site.isDestroyed && belongsToSettlement(owner, anchor, site)
+    site => hasConstructionWork(site) && !site.isDead && !site.isDestroyed && belongsToSettlement(owner, anchor, site)
   )
 }
 
@@ -122,7 +124,10 @@ export function constructionCargoReserve(owner: Owner, unit: CollectiveMember, r
   const anchor = collectiveAnchor(owner, unit)
   return (owner.buildings ?? []).reduce(
     (total, project) =>
-      !project.isBuilt && !project.isDead && !project.isDestroyed && belongsToSettlement(owner, anchor, project)
+      hasConstructionWork(project) &&
+      !project.isDead &&
+      !project.isDestroyed &&
+      belongsToSettlement(owner, anchor, project)
         ? total + (remainingConstructionMaterials(project)[resource] ?? 0)
         : total,
     0

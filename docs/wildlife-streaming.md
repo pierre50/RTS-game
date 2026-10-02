@@ -9,13 +9,12 @@ lists are deliberately not repopulated during loading.
 
 `WildlifeStore` indexes plain persistent animal records in 32-cell zones.
 `WildlifeSystem` checks nearby zones every 250 ms and creates at most 16 animals
-per update. Activation follows the camera, hero, and live outdoor units/buildings,
-with a minimum radius of 32 cells. Suspended NPC units and buildings belonging to
-an abstract distant faction no longer activate wildlife. Live workers (including
-trainees), player units, the hero and camera still activate it. Dormant anchors
-retain their sight exclusion for replacements, and existing interaction/return
-pins remain in force. Sleep uses an extra 16-cell margin to prevent
-repeated creation at the boundary. Camera zoom can increase the activation radius.
+per update. Activation follows only the outdoor camera, using the same 256-world-pixel
+margin as ambient village activity. A 384-pixel exit margin avoids repeated
+wake/sleep at the edge. Nearby units, buildings and an offscreen hero do not
+activate wildlife, regardless of ownership or village simulation mode. Their
+sight still excludes replacement spawns. Direct unit targets and ongoing
+interactions keep existing animals active. Camera zoom changes the active area.
 
 Streaming reconciliation runs at most once per frame during fast-forward or a
 stall, retaining the fractional interval remainder. Pending renewal work stays
@@ -25,9 +24,9 @@ compact resources, since only units and buildings can be threats.
 
 Distant animals keep identity, position and health but do not walk or own display
 objects or behavior timers. Combat, fleeing, selection and direct unit targets
-keep an animal active. Displaced survivors also remain active until they return;
-loading a displaced dormant record resumes it at its saved position, in the same
-16-animal activation batches. Tamed companions and trap prey stay outside this
+keep an animal active. Displaced survivors sleep at their current position once their interaction ends;
+being away from home does not keep them active or wake them on load. They resume
+returning when the camera reaches them again. Tamed companions and trap prey stay outside this
 system. Saved encounter participants are restored before resolving unit targets.
 
 Each original animal provides one persistent population slot and an eight-cell
@@ -63,9 +62,9 @@ is closed.
 Saves include dormant records plus current active state once per identity.
 Startup logs `[wildlife]` with record, active and pending-renewal counts.
 Every five game seconds, `wildlife.activity` records active/persistent counts,
-dormant anchors, new activations and retained animals by reason (interaction,
-return home, units, buildings, hero or camera). Reasons are exclusive, with
-interaction and return taking precedence over proximity.
+dormant anchors, new activations and retained animals by reason (interaction or
+camera). Reasons are exclusive, with interaction taking precedence over camera
+proximity. Legacy unit/building/hero/return reason counters remain zero.
 
 ## Resources
 

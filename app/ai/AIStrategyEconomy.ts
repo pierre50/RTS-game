@@ -1,6 +1,6 @@
 import { remainingConstructionMaterials } from '../lib/economy/constructionMaterials'
 import { villageFoodReserve } from '../lib/economy/collectiveNeeds'
-import { getPlayerBuildingConfig } from '../lib/buildings/buildingAge'
+import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { BUILDING_TYPES } from '../constants'
 import { getPlayerResourceTotals, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import type { AIStrategy } from './AIStrategy'

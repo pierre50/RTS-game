@@ -1,8 +1,8 @@
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { TYPE_ACTION } from '../../constants/entities'
 import { getVillagerSchedule } from '../../lib/units/villagerSchedule'
-import { distance, isLiving, OfflineWorldSpatial, type OfflineTerrainCell } from './OfflineWorldSpatial'
-import { offlineResourceWork, stopOfflineTask, type OfflineWorkRules } from './OfflineWorldWork'
+import { distance, isLiving, OfflineWorldSpatial, type OfflineTerrainCell } from './offline/OfflineWorldSpatial'
+import { offlineResourceWork, stopOfflineTask, type OfflineWorkRules } from './offline/OfflineWorldWork'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
 
 /** Only used when materializing an unvisited village, never for a saved return trip. */
@@ -16,7 +16,8 @@ export function placeInitialVillageUnits(
   const spatial = new OfflineWorldSpatial(
     terrain,
     state,
-    (building, index) => Number(rules.buildingConfig(index, building.type).size) || 2
+    (building, index) => Number(rules.buildingConfig(index, building.type).size) || 2,
+    { accessRadius: 32 }
   )
   const minutes =
     (((state.runtime?.dayNightElapsedMs ?? 0) / DAY_NIGHT_CONFIG.dayLengthMs) * 1440 +
@@ -24,9 +25,22 @@ export function placeInitialVillageUnits(
     1440
   const assigned = new Map<SaveEntityState, number>()
   for (const player of state.players) {
-    if ((!options.includePlayed && (player.type !== 'AI' || player.isPlayed)) || !player.factionId || !factions.has(player.factionId)) continue
+    if (
+      (!options.includePlayed && (player.type !== 'AI' || player.isPlayed)) ||
+      !player.factionId ||
+      !factions.has(player.factionId)
+    )
+      continue
     const buildings = (player.buildings ?? []).filter(b => isLiving(b) && (!b.spaceId || b.spaceId === 'outside'))
-    const center = buildings.find(b => b.type === 'TownCenter' && b.isBuilt)
+    const center = buildings.find(
+      b =>
+        b.type ===
+          (player.settlementType === 'outpost'
+            ? 'FireCamp'
+            : player.settlementType === 'village'
+              ? 'Granary'
+              : 'TownCenter') && b.isBuilt
+    )
     if (!center) continue
     for (const unit of player.units ?? []) {
       if (
@@ -58,11 +72,12 @@ export function placeInitialVillageUnits(
             ? ['House', 'TownCenter']
             : unit.type === 'Chief'
               ? ['TownCenter']
-              : ['Barracks', 'ArcheryRange', 'Stable', 'WatchTower', 'TownCenter']
+              : ['Barracks', 'ArcheryRange', 'Stable', 'WatchTower', 'TownCenter', 'FireCamp']
         targets = buildings.filter(b => b.isBuilt && types.includes(b.type))
         const preferred = targets.filter(b => b.type !== 'TownCenter')
         if (preferred.length) targets = preferred
       }
+      if (!targets.length) targets = [center]
       targets.sort(
         (a, b) => (assigned.get(a) ?? 0) - (assigned.get(b) ?? 0) || distance(center, a) - distance(center, b)
       )

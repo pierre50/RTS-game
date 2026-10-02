@@ -209,6 +209,14 @@ export function getMapSpaceShadowLayer(
   return resolved.shadowLayer ?? (resolved.id === OUTSIDE_SPACE_ID ? (map.shadowLayer ?? null) : null)
 }
 
+/** Building interiors never render shadows, whatever casts them. */
+export function mapSpaceRendersShadows(
+  map: RuntimeMap | null | undefined,
+  space: RuntimeMapSpace | null | undefined = getActiveMapSpace(map)
+): boolean {
+  return map?.mapType !== 'interior' && space?.kind !== 'interior'
+}
+
 export function getMapSpaceShadowRenderContainer(
   map: RuntimeMap | null | undefined,
   space: RuntimeMapSpace | null | undefined = getActiveMapSpace(map)

@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { VisionGrid } = loadTsModule('app/services/VisionGrid.ts')
+const { VisionGrid } = loadTsModule('app/services/visibility/VisionGrid.ts')
 
 test('stores explored cells compactly and notifies only on first discovery', () => {
   const discovered = []
@@ -135,7 +135,7 @@ test('full reveal handles partial edge chunks and sparse viewer references round
 })
 
 test('compact save validation rejects malformed chunks, dimensions and viewer positions', () => {
-  const { validatePlayerViews } = loadTsModule('app/serialization/SaveViewValidation.ts')
+  const { validatePlayerViews } = loadTsModule('app/serialization/validation/SaveViewValidation.ts')
   const grid = new VisionGrid(64)
   grid.setViewed(64, 64)
   const valid = grid.toJSON()

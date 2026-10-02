@@ -20,7 +20,7 @@ import {
   CAMERA_ZOOM_PRESETS,
 } from '../../lib/audio/settings'
 import { ModalTabs } from '../Tabs'
-import { buildControlsPage } from './ControlsSettings'
+import { buildControlsPage } from './controlsSettings'
 
 type SettingsTab = 'game' | 'graphics' | 'controls'
 type SettingsContentOptions = {

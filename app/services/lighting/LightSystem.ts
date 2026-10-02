@@ -1,3 +1,5 @@
+import { isBanditUnit } from '../../lib/combat/bandits'
+import { isSoldierUnit } from '../../lib/units/villagerSchedule'
 import { Container, Sprite, Texture } from 'pixi.js'
 import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, FADE_DURATION_MS, FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import { getInstanceScreenBounds } from '../../lib/grid/visibility'
@@ -45,7 +47,7 @@ const LIGHT_FADE_OUT_MS = FADE_DURATION_MS * 0.35
 const HERO_LIGHT_RADIUS = 320
 const HERO_LIGHT_CENTER_OFFSET_Y = -22
 const HERO_LIGHT_VERTICAL_SCALE = 0.76
-const PLAYED_UNIT_LIGHT: EntityLightSourceConfig = {
+const UNIT_LAMP_LIGHT: EntityLightSourceConfig = {
   color: '#ffc06f',
   flicker: 0.05,
   intensity: 0.82,
@@ -83,12 +85,14 @@ function isLightSourceConfig(value: unknown): value is EntityLightSourceConfig {
   return Boolean(value && typeof value === 'object')
 }
 
-function isPlayedUnit(unit: RuntimeEntity): unit is UnitEntity {
-  return unit.family === FAMILY_TYPES.unit && unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true
+function isLampCarryingUnit(unit: RuntimeEntity): unit is UnitEntity {
+  if (unit.family !== FAMILY_TYPES.unit) return false
+  const carriesLamp = (unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true) || isSoldierUnit(unit)
+  return carriesLamp && !isBanditUnit(unit as UnitEntity)
 }
 
 function shouldUseUnitLight(unit: RuntimeEntity): boolean {
-  if (!isPlayedUnit(unit)) return false
+  if (!isLampCarryingUnit(unit)) return false
   if (isSleepingUnitLightSuppressed(unit)) return false
   return !(unit.shelterState?.status === 'outside' && unit.shelterState.reason === 'sleep')
 }
@@ -329,9 +333,10 @@ export class LightSystem {
     zoom: number,
     now: number
   ): void {
-    if (!isPlayedUnit(instance) || !shouldUseUnitLight(instance) || isLightSourceConfig(instance.lightSource)) return
+    if (!isLampCarryingUnit(instance) || !shouldUseUnitLight(instance) || isLightSourceConfig(instance.lightSource))
+      return
     const unit = instance
-    this.addConfiguredLightSource(unit, PLAYED_UNIT_LIGHT, 0, 0, visibleLeft, visibleTop, zoom, now, {
+    this.addConfiguredLightSource(unit, UNIT_LAMP_LIGHT, 0, 0, visibleLeft, visibleTop, zoom, now, {
       key: `unit:${unit.label}`,
       shouldFadeWhenMissing: () => shouldFadeMissingUnitLight(unit),
     })

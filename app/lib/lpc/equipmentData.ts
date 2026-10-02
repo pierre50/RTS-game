@@ -118,13 +118,11 @@ export type EquipmentOptions = Pick<
   | 'hideForActions'
   | 'hideOnOrAfterFrame'
   | 'actionFrameSequence'
-  | 'minAge'
   | 'minLevel'
   | 'maxLevel'
   | 'mountedCut'
   | 'actionWorkSheetOverrides'
 >
-export type AgeEquipmentOverrides = Partial<Record<number, DynamicEquipmentKey>>
 
 export const EQUIPMENT_LAYER_Z_INDEX: Record<EquipmentLayer, number> = {
   back: 8,
@@ -527,7 +525,6 @@ export const DYNAMIC_EQUIPMENT_KEYS = [
 
 export type UnitEquipmentEntry = {
   equipment: DynamicEquipmentKey
-  ageEquipment?: AgeEquipmentOverrides
   civilizations?: string[]
   minLevel?: number
   maxLevel?: number
@@ -536,10 +533,6 @@ export type UnitEquipmentEntry = {
 
 export type UnitEquipmentDefinition = DynamicEquipmentKey | UnitEquipmentEntry
 
-const metalAgeEquipment = (bronze: DynamicEquipmentKey, iron: DynamicEquipmentKey): AgeEquipmentOverrides => ({
-  1: bronze,
-  2: iron,
-})
 const DEFAULT_CIVILIZATION = 'Hellas'
 const HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME = 9
 
@@ -559,17 +552,14 @@ const SOLDIER_EARLY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   { equipment: 'armor_leather', minLevel: 2, maxLevel: 9 },
   {
     equipment: 'shoulder_legion_ceramic',
-    ageEquipment: metalAgeEquipment('shoulder_legion_bronze', 'shoulder_legion_iron'),
     minLevel: 4,
   },
   {
     equipment: 'bracers_ceramic',
-    ageEquipment: metalAgeEquipment('bracers_bronze', 'bracers_iron'),
     minLevel: 5,
   },
   {
     equipment: 'helmet_pointed_ceramic',
-    ageEquipment: metalAgeEquipment('helmet_pointed_bronze', 'helmet_pointed_iron'),
     minLevel: 6,
     maxLevel: 14,
   },
@@ -578,31 +568,26 @@ const SOLDIER_EARLY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
 const SOLDIER_CIVILIZATION_HELMET_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   {
     equipment: 'helmet_barbuta_ceramic',
-    ageEquipment: metalAgeEquipment('helmet_barbuta_bronze', 'helmet_barbuta_iron'),
     civilizations: ['Hellas'],
     minLevel: 15,
   },
   {
     equipment: 'helmet_legion_ceramic',
-    ageEquipment: metalAgeEquipment('helmet_legion_bronze', 'helmet_legion_iron'),
     civilizations: ['Latium'],
     minLevel: 15,
   },
   {
     equipment: 'helmet_nasal_ceramic',
-    ageEquipment: metalAgeEquipment('helmet_nasal_bronze', 'helmet_nasal_iron'),
     civilizations: ['Sumeria', 'Nobatia'],
     minLevel: 15,
   },
   {
     equipment: 'helmet_bascinet_round_ceramic',
-    ageEquipment: metalAgeEquipment('helmet_bascinet_round_bronze', 'helmet_bascinet_round_iron'),
     civilizations: ['Kemet', 'Xia', 'Alba'],
     minLevel: 15,
   },
   {
     equipment: 'helmet_norman_ceramic',
-    ageEquipment: metalAgeEquipment('helmet_norman_bronze', 'helmet_norman_iron'),
     civilizations: ['Nord'],
     minLevel: 15,
   },
@@ -620,18 +605,15 @@ const SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT: readonly UnitEquipmentDefinitio
 const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   {
     equipment: 'armor_mail_ceramic',
-    ageEquipment: metalAgeEquipment('armor_mail_bronze', 'armor_mail_iron'),
     minLevel: 10,
     maxLevel: 17,
   },
   {
     equipment: 'armor_legion_ceramic',
-    ageEquipment: metalAgeEquipment('armor_legion_bronze', 'armor_legion_iron'),
     minLevel: 18,
   },
   {
     equipment: 'leg_armor_ceramic',
-    ageEquipment: metalAgeEquipment('leg_armor_bronze', 'leg_armor_iron'),
     minLevel: 12,
   },
   { equipment: 'cape_solid', minLevel: 14 },
@@ -640,23 +622,21 @@ const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
 ]
 
 export const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>> = {
-  [UNIT_TYPES.chief]: [{ equipment: 'sword_ceramic', ageEquipment: metalAgeEquipment('sword_bronze', 'sword_iron') }],
+  [UNIT_TYPES.chief]: [{ equipment: 'sword_ceramic' }],
   [UNIT_TYPES.infantry]: [
-    { equipment: 'sword_ceramic', ageEquipment: metalAgeEquipment('sword_bronze', 'sword_iron') },
+    { equipment: 'sword_ceramic' },
     ...SOLDIER_EARLY_ARMOR_EQUIPMENT,
     {
       equipment: 'round_shield_ceramic_slash',
-      ageEquipment: metalAgeEquipment('round_shield_bronze_slash', 'round_shield_iron_slash'),
       minLevel: 8,
     },
     ...SOLDIER_HEAVY_ARMOR_EQUIPMENT,
   ],
   [UNIT_TYPES.bowman]: [
     'quiver',
-    { equipment: 'bow', ageEquipment: { 1: 'bow_recurve' } },
+    'bow',
     {
       equipment: 'arrow_ceramic',
-      ageEquipment: metalAgeEquipment('arrow_bronze', 'arrow_iron'),
       options: { hideOnOrAfterFrame: HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME },
     },
     ...SOLDIER_EARLY_ARMOR_EQUIPMENT,
@@ -686,39 +666,31 @@ export const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefini
 export const VILLAGER_WORK_EQUIPMENT: readonly {
   workType: string
   equipment: DynamicEquipmentKey
-  ageEquipment?: AgeEquipmentOverrides
-  minAge?: number
   options?: EquipmentOptions
 }[] = [
   {
     workType: WORK_TYPES.woodcutter,
     equipment: 'axe_ceramic',
-    ageEquipment: metalAgeEquipment('axe_bronze', 'axe_iron'),
   },
   {
     workType: WORK_TYPES.stoneminer,
     equipment: 'pickaxe_ceramic',
-    ageEquipment: metalAgeEquipment('pickaxe_bronze', 'pickaxe_iron'),
   },
   {
     workType: WORK_TYPES.goldminer,
     equipment: 'pickaxe_ceramic',
-    ageEquipment: metalAgeEquipment('pickaxe_bronze', 'pickaxe_iron'),
   },
   {
     workType: WORK_TYPES.builder,
     equipment: 'hammer_ceramic',
-    ageEquipment: metalAgeEquipment('hammer_bronze', 'hammer_iron'),
   },
   {
     workType: 'heroSword',
     equipment: 'sword_ceramic',
-    ageEquipment: metalAgeEquipment('sword_bronze', 'sword_iron'),
   },
   {
     workType: WORK_TYPES.farmer,
     equipment: 'scythe_ceramic',
-    ageEquipment: metalAgeEquipment('scythe_bronze', 'scythe_iron'),
   },
   {
     workType: WORK_TYPES.horseCapture,
@@ -732,13 +704,11 @@ export const VILLAGER_WORK_EQUIPMENT: readonly {
   {
     workType: WORK_TYPES.hunter,
     equipment: 'bow',
-    ageEquipment: { 1: 'bow_recurve' },
     options: { hideForActions: [ACTION_TYPES.takemeat] },
   },
   {
     workType: WORK_TYPES.hunter,
     equipment: 'arrow_ceramic',
-    ageEquipment: metalAgeEquipment('arrow_bronze', 'arrow_iron'),
     options: {
       hideForActions: [ACTION_TYPES.takemeat],
       hideOnOrAfterFrame: HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME,

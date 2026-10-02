@@ -100,7 +100,7 @@ export const GAMEPAD_BINDING_GROUPS: { key: string; actions: GamepadBindingActio
   { key: 'placementHelp', actions: ['placementPlace', 'placementMirror', 'placementCancel'] },
   { key: 'inventory', actions: ['inventoryTransferOne', 'inventoryTransferAll'] },
 ]
-export type GamepadButtonBinding = `Button${number}`
+type GamepadButtonBinding = `Button${number}`
 export type GamepadButtonBindings = Record<GamepadBindingAction, GamepadButtonBinding>
 
 const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
@@ -347,6 +347,7 @@ export function getGamepadBindings(): GamepadButtonBindings {
   return { ..._gamepadBindings }
 }
 
+/** @public Loaded by tests/control-key-bindings.test.cjs (babel loader). */
 export function getGamepadButtonLabel(binding: GamepadButtonBinding): string {
   return GAMEPAD_BUTTON_LABELS[binding] ?? binding.replace('Button', 'Button ')
 }
@@ -355,6 +356,7 @@ export function getGamepadButtonIndex(action: GamepadBindingAction): number {
   return Number(_gamepadBindings[action].replace('Button', ''))
 }
 
+/** @public Loaded by tests/control-key-bindings.test.cjs (babel loader). */
 export function setGamepadBindingFromButtonIndex(action: GamepadBindingAction, index: number): void {
   if (!Number.isInteger(index) || index < 0) return
   _gamepadBindings = { ..._gamepadBindings, [action]: `Button${index}` as GamepadButtonBinding }
@@ -437,6 +439,7 @@ function setKeyBinding(action: ControlBindingAction, key: string): void {
   localStorage.setItem(KEY_BINDINGS_KEY, JSON.stringify(_keyBindings))
 }
 
+/** @public Loaded by tests/control-key-bindings.test.cjs (babel loader). */
 export function setKeyBindingFromKeyboardEvent(action: ControlBindingAction, evt: KeyboardEvent): void {
   setKeyBinding(action, getControlKeyFromKeyboardEvent(evt))
 }

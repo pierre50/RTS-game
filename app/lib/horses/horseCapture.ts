@@ -1,5 +1,4 @@
-import { BUILDING_TYPES, STEP_TIME, UNIT_TYPES } from '../constants'
-import { AGE_OBJECTIVES, completeAgeObjective } from '../objectives/ageObjectives'
+import { BUILDING_TYPES, STEP_TIME } from '../constants'
 import { canStoreStableHorse, storeStableHorse } from './stableHorses'
 import { instancesDistance } from '../maths'
 import { instanceContactInstance } from '../grid/movement'
@@ -195,7 +194,6 @@ function routeCapturedHorseWithOwnerToStable({
       taskName: `${taskName}.route`,
       isRouteValid,
       onStored: () => {
-        if (owner.type === UNIT_TYPES.hero) completeAgeObjective(owner.owner, AGE_OBJECTIVES.tameHorse)
         onStored()
         clear()
       },

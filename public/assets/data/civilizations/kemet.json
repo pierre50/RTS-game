@@ -170,6 +170,104 @@
             "frame": 7
           }
         }
+      },
+      "Forge": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-1",
+            "frame": 10
+          }
+        }
+      }
+    },
+    "2": {
+      "TownCenter": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 8
+          }
+        }
+      },
+      "Barracks": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 1
+          }
+        }
+      },
+      "House": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 3
+          }
+        }
+      },
+      "Granary": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 2
+          }
+        }
+      },
+      "StoragePit": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 6
+          }
+        }
+      },
+      "Temple": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 7
+          }
+        }
+      },
+      "Stable": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 5
+          }
+        }
+      },
+      "ArcheryRange": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 0
+          }
+        }
+      },
+      "Market": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 4
+          }
+        }
+      },
+      "WatchTower": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 9
+          }
+        }
+      },
+      "Forge": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-2",
+            "frame": 10
+          }
+        }
       }
     }
   }

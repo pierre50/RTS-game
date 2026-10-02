@@ -142,7 +142,7 @@ export function applyTravelPartyToRuntime(
         i: cell.i,
         j: cell.j,
         assetCiv: followerState.assetCiv,
-        assetAge: followerState.assetAge,
+        assetLevel: followerState.assetLevel,
         appearanceVariants: followerState.appearanceVariants
           ? { ...followerState.appearanceVariants }
           : followerState.gender

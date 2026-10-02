@@ -1247,6 +1247,102 @@
         "x": 0.5,
         "y": 0.86
       }
+    },
+    "000_graphics_units_chief_nobatia_female_sitting.png": {
+      "frame": {
+        "x": 3380,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "001_graphics_units_chief_nobatia_female_sitting.png": {
+      "frame": {
+        "x": 3445,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "002_graphics_units_chief_nobatia_female_sitting.png": {
+      "frame": {
+        "x": 3510,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "003_graphics_units_chief_nobatia_female_sitting.png": {
+      "frame": {
+        "x": 3575,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
     }
   },
   "meta": {
@@ -1255,7 +1351,7 @@
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 3379,
+      "w": 3639,
       "h": 64
     },
     "scale": 1

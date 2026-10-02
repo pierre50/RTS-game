@@ -1,5 +1,5 @@
-import { isObject } from './SaveValidationPrimitives'
-import { fail } from './MapBlueprintErrors'
+import { isObject } from './validation/SaveValidationPrimitives'
+import { fail } from './blueprint/MapBlueprintErrors'
 import type { BanditCampPlacement } from '../types/camp'
 
 export function decodeBanditCampPlacements(

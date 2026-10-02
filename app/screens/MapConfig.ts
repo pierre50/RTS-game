@@ -29,7 +29,6 @@ export default class MapConfig {
 
     this.config = definedProperties({
       size: 144,
-      startingAge: 0,
       revealEverything: false,
       revealTerrain: false,
       instantMode: false,
@@ -104,7 +103,7 @@ export default class MapConfig {
 
   _startGame(): void {
     this.destroy()
-    this.onPlay({ ...this.config, players: this.playerSetupPanel.getPlayers(true) })
+    this.onPlay({ ...this.config, players: this.playerSetupPanel.getPlayers() })
   }
 
   _handleKeyDown(evt: KeyboardEvent): void {

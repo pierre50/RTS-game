@@ -104,7 +104,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
 ]
 
-export function getAvailableHeroCraftRecipes(_player: Pick<PlayerLike, 'age'>): readonly HeroCraftRecipe[] {
+export function getAvailableHeroCraftRecipes(_player?: unknown): readonly HeroCraftRecipe[] {
   return HERO_CRAFT_RECIPES
 }
 

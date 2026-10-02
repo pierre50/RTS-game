@@ -1,16 +1,26 @@
-import { adjustFactionRelation } from "../../lib/combat/factions"
+import { adjustFactionRelation } from '../../lib/combat/factions'
 import type Game from '../Game'
 
 export function changeGameFactionRelation(this: Game, factionId: string, delta: number): void {
-    const campaign = this._campaignSave
-    const faction = campaign?.factions?.[factionId]
-    if (!campaign || !faction) return
-    this._campaignSave = {
-      ...campaign,
-      factions: {
-        ...(campaign.factions ?? {}),
-        [factionId]: adjustFactionRelation(faction, delta, Date.now()),
-      },
-    }
-    this._restartSaveData = structuredClone(this._campaignSave)
+  const campaign = this._campaignSave
+  const faction = campaign?.factions?.[factionId]
+  if (!campaign || !faction) return
+  this._campaignSave = {
+    ...campaign,
+    factions: {
+      ...(campaign.factions ?? {}),
+      [factionId]: adjustFactionRelation(faction, delta, Date.now()),
+    },
   }
+  this._restartSaveData = structuredClone(this._campaignSave)
+  // Existing vision does not emit detection events when diplomacy changes.
+  if (faction.relationState !== 'hostile' && this._campaignSave.factions?.[factionId]?.relationState === 'hostile') {
+    for (const player of this.context.players) {
+      for (const building of player.buildings) {
+        if (building.isBuilt && !building.isDead && !building.isDestroyed && building.range) {
+          building.scanForInitialTarget?.()
+        }
+      }
+    }
+  }
+}

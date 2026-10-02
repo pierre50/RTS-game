@@ -73,7 +73,7 @@ function makeTarget(extra = {}) {
   return { hitPoints: 20, totalHitPoints: 20, ...extra }
 }
 
-test('hunting completes only on a fresh wild animal kill, not injury or a tamed horse', () => {
+test('hunting no longer records age objectives', () => {
   const { applyCombatHit } = loadCombatHit({ rawDamage: 6 })
   const owner = { age: 0, completedObjectives: [] }
   const attacker = { owner, type: 'Hero' }
@@ -85,9 +85,9 @@ test('hunting completes only on a fresh wild animal kill, not injury or a tamed 
   applyCombatHit(attacker, makeTarget({ family: 'animal', type: 'Horse', tamingStatus: 'tamed', hitPoints: 1 }))
   assert.deepEqual(owner.completedObjectives, [])
   applyCombatHit(attacker, animal)
-  assert.deepEqual(owner.completedObjectives, ['huntAnimal'])
+  assert.deepEqual(owner.completedObjectives, [])
   applyCombatHit(attacker, animal)
-  assert.deepEqual(owner.completedObjectives, ['huntAnimal'])
+  assert.deepEqual(owner.completedObjectives, [])
 })
 
 test('a non-melee hit deals damage and grants the attacker xp as before', () => {

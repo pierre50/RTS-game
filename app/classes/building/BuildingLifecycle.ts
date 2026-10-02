@@ -1,10 +1,14 @@
+import { reconcileHouseholds } from '../../lib/housing/households'
+import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
+import { completeBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
+import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { finishSowingTile } from './BuildingSowing'
 import { AnimatedSprite } from 'pixi.js'
 import { wakeDistantOwner } from '../../lib/units/villageActivity'
 import { ACTION_TYPES, LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX } from '../../constants'
 import { getPercentage, updateInstanceVisibility } from '../../lib'
-import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { BuildingDestruction } from './BuildingDestruction'
 import { applyBuildingFinalTexture } from './BuildingFinalTexture'
 import {
@@ -36,6 +40,14 @@ export class BuildingLifecycle {
     const {
       context: { menu },
     } = building
+    if (building.buildingUpgrade) {
+      syncBuildingConstructionReveal(
+        building,
+        getPercentage(building.buildingUpgrade.hitPoints, building.buildingUpgrade.totalHitPoints)
+      )
+      building.updateShadow()
+      return
+    }
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
     if (building.type === 'Farm' && percentage >= 100) {
       finishSowingTile(building)
@@ -62,7 +74,7 @@ export class BuildingLifecycle {
       updateInstanceVisibility(building)
       if (!wasBuilt) {
         building.scanForInitialTarget()
-        building.context.unitRest?.notifyShelterAvailable?.(building)
+        building.context.unitRest?.notifyBedAvailable?.(building)
       }
     }
     building.updateShadow()
@@ -83,20 +95,18 @@ export class BuildingLifecycle {
   onBuilt(): void {
     const building = this.building
     if (building.isDead || building.isDestroyed) return
-    building.owner.updatePopulationObjectives?.()
     const {
       context: { menu },
     } = building
-    const populationCapacity = getBuildingShelterCapacity(building)
-    if (populationCapacity && !building.populationCapacityApplied) {
-      building.owner.populationMax += populationCapacity
-      building.populationCapacityApplied = true
-      if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
+    reconcileHouseholds(building.owner)
+    refreshPopulationCapacity(building.owner, building)
+    if (building.owner.isPlayed) {
+      menu.updateTopbar?.()
+      if (building.owner.selectedBuilding?.displayPopulation)
         menu.updateInfo(
           MENU_INFO_IDS.populationText,
           building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
         )
-      }
     }
     if (building.owner.isPlayed && building.selected) {
       menu.setActionTarget(building)
@@ -106,7 +116,8 @@ export class BuildingLifecycle {
   updateHitPoints(action: string): void {
     const building = this.building
     if (action === ACTION_TYPES.attack) wakeDistantOwner(building.owner)
-    if (building.indestructible) {
+    // Invulnerability must not skip construction progress or its completion effects.
+    if (building.indestructible && action !== ACTION_TYPES.build) {
       building.hitPoints = building.totalHitPoints
       return
     }
@@ -118,7 +129,17 @@ export class BuildingLifecycle {
     if (building.hitPoints <= 0) {
       building.die()
     }
-    if (action === ACTION_TYPES.build && !building.isBuilt) {
+    if (action === ACTION_TYPES.build && building.buildingUpgrade && !building.isDead) {
+      if (completeBuildingUpgrade(building, building.owner.config.buildings[building.type])) {
+        refreshPopulationCapacity(building.owner)
+        building.finalTexture()
+        syncEntityHealthDisplay(building, { menu: building.context.menu, player: building.owner })
+        building.context.unitRest?.notifyBedAvailable?.(building)
+        notifyVillageWorkChanged(building.owner)
+        notifyVillageStateChanged(building.owner)
+        building.context.menu.updateTopbar?.()
+      } else building.updateTexture()
+    } else if (action === ACTION_TYPES.build && !building.isBuilt) {
       building.updateTexture()
     } else if (
       (action === ACTION_TYPES.attack && building.isBuilt) ||
@@ -169,8 +190,8 @@ export class BuildingLifecycle {
     playableDeco?.play?.()
   }
 
-  die(): void {
-    new BuildingDestruction(this.building).die()
+  die(demolition = false): void {
+    new BuildingDestruction(this.building).die(demolition)
   }
 
   clear(): void {

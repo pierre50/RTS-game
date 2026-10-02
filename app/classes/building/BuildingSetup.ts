@@ -1,6 +1,9 @@
+import { registerFurnitureSurface } from '../../lib/terrain/furnitureSurface'
+import { isBuildingTraversable } from '../../lib/buildings/buildingTraversal'
+import { assignCampBrazierAppearance } from '../../lib/buildings/campConstruction'
 import { ownerSharesVision } from '../../lib/units/playerVisionAccess'
 import { Assets, Polygon, Sprite } from 'pixi.js'
-import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
+import { FAMILY_TYPES, LABEL_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
 import {
   attachEntityShadowsToMapSpace,
   cartesianToIsometric,
@@ -71,6 +74,7 @@ export function setupBuildingTransform(building: Building): void {
 }
 
 export function createInitialBuildingSprite(building: Building): void {
+  assignCampBrazierAppearance(building)
   const spriteSheet = getInitialBuildingTextureRef(building) ?? getBuildingTextureNameWithSize(building.size)
   building.textureName = textureRefToString(spriteSheet!)
   const texture = getTexture(spriteSheet!, Assets) as BuildingTexture
@@ -100,25 +104,33 @@ export function occupyBuildingFootprint(building: Building): void {
     updatesOutsideWorldVision &&
     building.providesVision !== false &&
     ownerSharesVision(building.owner, building.context)
-  getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
-    if (cell.has?.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(cell.has.type)) {
-      cell.has.die?.(true)
-    }
-    clearCellTerrainSet(cell)
-    for (const corpse of cell.corpses) {
-      typeof corpse.clear === 'function' && corpse.clear()
-    }
-    cell.has = building
-    cell.solid = building.type !== BUILDING_TYPES.farm
-    if (providesOutsideWorldVision) {
-      building.owner.views.addViewer(cell.i, cell.j, building)
-      if (building.owner !== player && building.owner.views.setViewed(cell.i, cell.j)) {
-        building.owner.cellViewed++
+  getBuildingFootprintCells(
+    building.i,
+    building.j,
+    grid,
+    building.size,
+    (cell: RuntimeCell) => {
+      if (cell.has?.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(cell.has.type)) {
+        cell.has.die?.(true)
       }
-    }
-    cell.updateVisible()
-    return true
-  })
+      clearCellTerrainSet(cell)
+      for (const corpse of cell.corpses) {
+        typeof corpse.clear === 'function' && corpse.clear()
+      }
+      registerFurnitureSurface(cell, building)
+      cell.has = building
+      cell.solid = !isBuildingTraversable(building.type)
+      if (providesOutsideWorldVision) {
+        building.owner.views.addViewer(cell.i, cell.j, building)
+        if (building.owner !== player && building.owner.views.setViewed(cell.i, cell.j)) {
+          building.owner.cellViewed++
+        }
+      }
+      cell.updateVisible()
+      return true
+    },
+    building.type
+  )
 }
 
 export function attachInitialBuildingVisuals(building: Building): void {
@@ -142,4 +154,5 @@ export function activateBuiltBuilding(building: Building): void {
   })
   building.finalTexture()
   building.onBuilt()
+  if (building.buildingUpgrade) building.updateTexture()
 }

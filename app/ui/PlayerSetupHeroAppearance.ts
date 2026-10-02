@@ -9,7 +9,7 @@ import {
   normalizeHeroAppearanceGender,
   type HeroHairColor,
 } from '../lib/lpc/heroAppearance'
-import type { PlayerSetupConfigWithAge } from './PlayerSetupPanel'
+import type { PlayerSetupEntry } from './PlayerSetupPanel'
 
 const HERO_PREVIEW_SIZE = 96
 const HERO_FRAME_SIZE = 64
@@ -24,19 +24,19 @@ type HeroAppearanceHost = {
   _setHeroHairStyle(playerIndex: number, hairStyle: string): void
 }
 
-function heroPreviewSrc(player: PlayerSetupConfigWithAge): string {
+function heroPreviewSrc(player: PlayerSetupEntry): string {
   const civ = civilizationAssetSlug(player.civ)
   const gender = player.gender === 'female' ? 'female' : 'male'
   return `assets/graphics/units/hero/${civ}/${gender}/texture.png`
 }
 
-function heroHairPreviewSrc(player: PlayerSetupConfigWithAge): string {
+function heroHairPreviewSrc(player: PlayerSetupEntry): string {
   const gender = normalizeHeroAppearanceGender(player.gender)
   const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
   return `assets/graphics/hero/hair/${appearance.hairStyle}/${gender}/texture.png`
 }
 
-function heroHairPreviewJsonSrc(player: PlayerSetupConfigWithAge): string {
+function heroHairPreviewJsonSrc(player: PlayerSetupEntry): string {
   const gender = normalizeHeroAppearanceGender(player.gender)
   const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
   return `assets/graphics/hero/hair/${appearance.hairStyle}/${gender}/texture.json`
@@ -46,7 +46,7 @@ function drawHeroPreviewFrame(
   ctx: CanvasRenderingContext2D,
   frame: HTMLCanvasElement,
   canvas: HTMLCanvasElement,
-  player: PlayerSetupConfigWithAge
+  player: PlayerSetupEntry
 ): void {
   renderUnitHeadCanvasAvatar(frame, canvas, player.color)
 }
@@ -54,7 +54,7 @@ function drawHeroPreviewFrame(
 function drawHeroHairPreview(
   host: HeroAppearanceHost,
   frameCtx: CanvasRenderingContext2D,
-  player: PlayerSetupConfigWithAge,
+  player: PlayerSetupEntry,
   onDone: () => void
 ): void {
   const img = new Image()
@@ -95,7 +95,7 @@ function drawHeroHairPreview(
 function renderHeroPreview(
   host: HeroAppearanceHost,
   canvas: HTMLCanvasElement,
-  player: PlayerSetupConfigWithAge
+  player: PlayerSetupEntry
 ): void {
   const requestId = ++host.heroPreviewRequestId
   const img = new Image()
@@ -140,7 +140,7 @@ function renderHeroPreview(
   img.src = heroPreviewSrc(player)
 }
 
-export function createHeroPreview(host: HeroAppearanceHost, player: PlayerSetupConfigWithAge): HTMLDivElement {
+export function createHeroPreview(host: HeroAppearanceHost, player: PlayerSetupEntry): HTMLDivElement {
   const row = document.createElement('div')
   row.className = 'config-row hero-avatar-row'
 
@@ -174,7 +174,7 @@ function humanizeAppearanceValue(value: string): string {
 
 export function createHeroAppearanceControls(
   host: HeroAppearanceHost,
-  player: PlayerSetupConfigWithAge
+  player: PlayerSetupEntry
 ): HTMLDivElement {
   const group = document.createElement('div')
   group.className = 'hero-appearance-controls'

@@ -48,7 +48,7 @@ export const getActionCondition = (
         (source.type === UNIT_TYPES.hero && isFriendlyTarget(source, target))) &&
       target.family === FAMILY_TYPES.building &&
       (target.hitPoints ?? 0) > 0 &&
-      (!target.isBuilt || (target.hitPoints ?? 0) < (target.totalHitPoints ?? 0)) &&
+      (Boolean(target.buildingUpgrade) || !target.isBuilt || (target.hitPoints ?? 0) < (target.totalHitPoints ?? 0)) &&
       !target.isDead,
     attack: () =>
       Boolean(
@@ -60,6 +60,7 @@ export const getActionCondition = (
           (source.family !== FAMILY_TYPES.animal || target.family !== FAMILY_TYPES.building) &&
           [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') &&
           (target.family !== FAMILY_TYPES.building ||
+            source.type === UNIT_TYPES.hero ||
             shouldAttackBuildingForInteriorAccess(source as UnitEntity, target as BuildingEntity)) &&
           (target.hitPoints ?? 0) > 0 &&
           !target.isDead

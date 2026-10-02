@@ -20,7 +20,7 @@ for (const color of playerColors) {
       { kind: 'city', civ: 'Latium' },
       ...Array.from({ length: 12 }, () => ({ kind: 'village', civ: 'Kemet' })),
     ] }
-    const config = { heroStartVillage: 'Hellas', players: [{ civ: 'Hellas', color, isHuman: true }] }
+    const config = { worldId: 'world-test-1000', heroStartVillage: 'Hellas', players: [{ civ: 'Hellas', color, isHuman: true }] }
     for (const factions of [undefined, { host: { id: 'host', civilization: 'Hellas', color } }]) {
       const players = buildWorldRegionPlayerConfigs(config, blueprint, factions)
       assert.equal(players.filter(player => player.isHuman).length, 1)
@@ -28,6 +28,21 @@ for (const color of playerColors) {
       for (const player of players.filter(player => !player.isHuman)) assert.notEqual(player.color, color)
       assert.deepEqual(buildWorldRegionPlayerConfigs(config, blueprint, factions), players)
     }
+  })
+
+  test(`tutorial NPCs share the hero's selected ${color} while other villages keep distinct colors`, () => {
+    const config = { heroStartVillage: 'Hellas', players: [{ civ: 'Hellas', color, isHuman: true }] }
+    const blueprint = { settlements: [
+      { kind: 'village', civ: 'Hellas' },
+      { kind: 'village', civ: 'Kemet' },
+    ] }
+    const players = buildWorldRegionPlayerConfigs(config, blueprint)
+    const hero = players.find(player => player.isHuman)
+    const host = players.find(player => !player.isHuman && player.civ === 'Hellas')
+    assert.equal(hero.color, color)
+    assert.equal(host.color, color)
+    assert.equal(host.isHuman, false)
+    assert.notEqual(players.find(player => player.civ === 'Kemet').color, color)
   })
 
   test(`campaign repairs saved AI colors matching ${color} without changing bandits`, () => {

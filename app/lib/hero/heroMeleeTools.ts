@@ -126,7 +126,7 @@ function hasAxeEquipment(equipment: readonly string[]): boolean {
 
 function getHeroMeleeImpactSound(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): CommandSound {
   if (tool === 'sword') return SOUND_CUES.unit.swordAttack
-  if (target.family === FAMILY_TYPES.unit && hasAxeEquipment(getUnitWorkEquipment(hero.work, hero.owner?.age, hero))) {
+  if (target.family === FAMILY_TYPES.unit && hasAxeEquipment(getUnitWorkEquipment(hero.work, hero))) {
     return SOUND_CUES.unit.swordAttack
   }
   return hero.sounds?.hit

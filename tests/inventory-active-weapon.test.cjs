@@ -13,14 +13,14 @@ const { code } = babel.transformSync(fs.readFileSync(filename, 'utf8'), {
 const loaded = { exports: {} }
 new Function('module', 'exports', 'require', code)(loaded, loaded.exports, request =>
   request === '../lib/hero/heroTools'
-    ? { getEquippedItemWeapon: (_tool, _age, hero) => hero.inventory.activeWeapons.ranged }
+    ? { getEquippedItemWeapon: (_tool, hero) => hero.inventory.activeWeapons.ranged }
     : {}
 )
 
 test('inventory shows an equipped bow without arrows and keeps it visible after ammunition runs out', () => {
   const hero = { inventory: { activeWeapons: { ranged: 'bow' }, equipped: {} } }
   const manager = Object.create(loaded.exports.InventoryManager.prototype)
-  manager.menu = { context: { controls: { heroUnit: hero }, player: { age: 0 } } }
+  manager.menu = { context: { controls: { heroUnit: hero } } }
   assert.equal(manager.getActiveWeaponEquipment('bow'), 'bow')
   hero.inventory.equipped.arrow = 'arrow_wood'
   assert.equal(manager.getActiveWeaponEquipment('bow'), 'bow')

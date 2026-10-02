@@ -1,6 +1,10 @@
+import { refreshPopulationCapacity } from '../../../lib/buildings/buildingOccupancy'
+import { completeBuildingUpgrade } from '../../../lib/buildings/buildingUpgrade'
+import { constructionWorkPoints } from '../../../lib/economy/constructionMaterials'
+import { getForgeBuildMultiplier, getForgeGatherBonus } from '../../../lib/equipment/forgeUpgrades'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../../config/gameplay'
 import { RESOURCE_TYPES } from '../../../constants/entities'
-import { getBuildingAge, getBuildingConfigForAge } from '../../../lib/buildings/buildingAge'
+import { getBuildingLevel, getBuildingConfigForLevel } from '../../../lib/buildings/buildingLevel'
 import { collectiveHarvestBudget } from '../../../lib/economy/collectiveTasks'
 import { advanceMaterialConstruction } from '../../../lib/economy/constructionMaterials'
 import {
@@ -19,7 +23,7 @@ import type { ResourceAmount } from '../../../types/common'
 import type { UnitConfig } from '../../../types/config'
 import type { UnitEntity } from '../../../types/entities'
 import type { SaveEntityState, SavePlayerState, SerializedSave } from '../../../types/save'
-import { type OfflineWorldSpatial } from '.././OfflineWorldSpatial'
+import { type OfflineWorldSpatial } from '../offline/OfflineWorldSpatial'
 import type { OfflineWorkRules, OfflineWorldReport } from './OfflineWorkResources'
 import {
   corpseResource,
@@ -49,24 +53,37 @@ type WorkStep = {
 type StepResult = { budget: number; status: 'wait' | 'skip' | 'next' }
 export function buildOffline(step: WorkStep, budget: number): StepResult {
   const { state, player, playerIndex, unit, target, spatial, rules, report, cycle } = step
-  const buildingConfig = getBuildingConfigForAge(
+  const buildingConfig = getBuildingConfigForLevel(
     rules.buildingConfig(playerIndex, target.type),
-    getBuildingAge(target, player.age ?? 0)
+    target.buildingUpgrade?.targetLevel ?? getBuildingLevel(target)
   )
-  const total = target.totalHitPoints ?? Number(buildingConfig.totalHitPoints)
+  const total = target.buildingUpgrade?.totalHitPoints ?? target.totalHitPoints ?? Number(buildingConfig.totalHitPoints)
   const constructionTime = Number(buildingConfig.constructionTime)
   if (!(total > 0) || !(constructionTime > 0)) return { budget, status: 'skip' }
-  const multiplier = getBuildRateXpMultiplier(unit)
+  const multiplier = getBuildRateXpMultiplier(unit) * getForgeBuildMultiplier(player, unit.type)
   const gain = getConstructionGain(total, constructionTime, multiplier)
   if (!gain) return { budget, status: 'skip' }
-  const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - (target.hitPoints ?? 1)) / gain))
-  target.totalHitPoints = total
-  target.hitPoints = advanceMaterialConstruction(
+  const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - constructionWorkPoints(target)) / gain))
+  if (!target.buildingUpgrade) target.totalHitPoints = total
+  const next = advanceMaterialConstruction(
     target,
-    advanceConstruction(target.hitPoints ?? 1, total, constructionTime, multiplier, impacts),
+    advanceConstruction(constructionWorkPoints(target), total, constructionTime, multiplier, impacts),
     [unit.inventory?.resources ?? {}]
   )
   budget -= impacts * cycle
+  if (target.buildingUpgrade) {
+    target.buildingUpgrade.hitPoints = next
+    if (completeBuildingUpgrade(target, rules.buildingConfig(playerIndex, target.type))) {
+      refreshPopulationCapacity(player)
+      report.buildingsCompleted++
+      if (unit.buildQueue) unit.buildQueue = unit.buildQueue.filter(label => label !== target.label)
+      delete unit.offlineWork
+      stopOfflineTask(unit)
+      return { budget, status: 'next' }
+    }
+    return { budget, status: 'wait' }
+  }
+  target.hitPoints = next
   if (target.hitPoints >= total) {
     target.isBuilt = true
     if (target.type === 'Farm') {
@@ -75,8 +92,6 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
       const wheat = sownWheatOptions(target)
       state.resources.push(wheat)
       spatial.reserve(wheat)
-      player.completedObjectives ??= []
-      if (!player.completedObjectives.includes('createWheatField')) player.completedObjectives.push('createWheatField')
       if (unit.buildQueue) unit.buildQueue = unit.buildQueue.filter(label => label !== target.label)
       delete unit.offlineWork
       stopOfflineTask(unit)
@@ -84,7 +99,7 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
     }
     player.hasBuilt ??= []
     if (!player.hasBuilt.includes(target.type)) player.hasBuilt.push(target.type)
-    player.populationMax = (player.populationMax ?? 0) + rules.buildingCapacity(playerIndex, target.type)
+    refreshPopulationCapacity(player)
     report.buildingsCompleted++
     if (unit.buildQueue) unit.buildQueue = unit.buildQueue.filter(label => label !== target.label)
     delete unit.offlineWork
@@ -98,7 +113,11 @@ export function gatherOffline(step: WorkStep, budget: number): StepResult {
   const { state, player, unit, target, day, spatial, report, config, cycle, work, depot, stored } = step
 
   const gatherAmounts = config.gatherAmount as Record<string, number> | undefined
-  const gain = getWorkGatherAmount(gatherAmounts, work, getGatherXpBonus({ experience: unit.experience, work }))
+  const gain = getWorkGatherAmount(
+    gatherAmounts,
+    work,
+    getGatherXpBonus({ experience: unit.experience, work }) + getForgeGatherBonus(player, work, unit.type)
+  )
   const swings = getResourceGatherSwings(stored)
   const carry = getUnitResourceGatherCapacity(unit as unknown as UnitEntity)
   if (carry <= 0) return { budget, status: 'skip' }

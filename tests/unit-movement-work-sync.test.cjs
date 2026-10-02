@@ -193,8 +193,8 @@ function loadUnitMovement(calls) {
     }
     if (request === './ManualMoveState')
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/ManualMoveState.ts'))
-    if (request === './UnitMovementRoutingRuntime') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRoutingRuntime.ts'))
+    if (/^\.\/Unit(?:MovementRoutingRuntime|BlockedApproach|MoveOrderAdmission|MovementPassage)$/.test(request)) {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement', request.slice(2) + '.ts'))
     }
     if (request === './movement/UnitPathMovement' || request === './UnitPathMovement') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitPathMovement.ts'))
@@ -338,4 +338,28 @@ test('reissuing hunt after rest restarts a stationary walking animation instead 
   const movement = new UnitMovement(unit)
   movement.sendToEvt(target, 'hunt')
   assert.ok(calls.some(([event, action]) => event === 'getAction' && action === 'hunt'))
+})
+
+test('attack orders interrupt rest before the action lock can queue them', () => {
+  const calls = []
+  const { UnitMovement, constants } = loadUnitMovement(calls)
+  constants.ACTION_TYPES.attack = 'attack'
+  const unit = makeUnit(constants, calls)
+  unit.type = 'Fantassin'
+  unit.actionLocked = true
+  unit.shelterState = { status: 'outside', reason: 'sleep' }
+  unit.queueOrder = () => {
+    throw new Error('combat must not wait for the break to end')
+  }
+  const target = { family: 'unit', label: 'enemy', i: 0, j: 0, x: 0, y: 0 }
+  unit.context.unitRest = {
+    interruptRestForCombat: (soldier, enemy) => {
+      assert.equal(soldier, unit)
+      assert.equal(enemy, target)
+      calls.push(['interruptRest'])
+      return true
+    },
+  }
+  assert.equal(new UnitMovement(unit).sendToEvt(target, 'attack'), true)
+  assert.deepEqual(calls, [['interruptRest']])
 })
