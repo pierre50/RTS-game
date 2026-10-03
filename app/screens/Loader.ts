@@ -2,7 +2,6 @@ import { Assets, Container } from 'pixi.js'
 import { t } from '../lib/lang'
 import { ASSET_BUNDLES, ASSET_LOAD_SEQUENCE } from '../config/assetManifest'
 import { registerAnimalSheetAliases } from '../lib/animals/aliases'
-import { registerBuildingSpritesheets } from '../lib/buildings/buildingSpritesheets'
 import type { AnimalConfigMap } from '../lib/animals/aliases'
 import type { UnitConfig } from '../types/config'
 import type { SpritesheetLike } from '../types/pixi'
@@ -35,7 +34,6 @@ export default class LoaderScreen extends Container {
       this.loadingDiv.innerHTML = t(messageKey)
       await Assets.loadBundle(bundle)
       if (bundle === 'graphics') {
-        await registerBuildingSpritesheets()
         registerProjectileSheetAliases()
       }
     }

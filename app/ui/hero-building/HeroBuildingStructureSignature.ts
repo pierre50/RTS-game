@@ -16,7 +16,7 @@ export function heroBuildingStructureSignature(manager: HeroBuildingMenuManager)
     ['StoragePit', 'Granary'].includes(building.type) && building.owner
       ? JSON.stringify(settlementDepotPolicy(building.owner, building))
       : '',
-    building.type === BUILDING_TYPES.forge
+    building.type === BUILDING_TYPES.forge || building.type === BUILDING_TYPES.fireCamp
       ? JSON.stringify([
           manager.menu.context.player.forgeUpgrades,
           building.owner?.label,

@@ -1,4 +1,4 @@
-import { AnimatedSprite, Assets, Graphics, Polygon, Rectangle, Sprite, Texture, type Filter } from 'pixi.js'
+import { AnimatedSprite, Assets, Graphics, Polygon, Rectangle, Sprite, Text, Texture, type Filter } from 'pixi.js'
 import { ColorOverlayFilter, OutlineFilter } from 'pixi-filters'
 import { FADE_DURATION_MS, LABEL_TYPES } from '../../constants'
 import {
@@ -194,9 +194,33 @@ export function syncBuildingConstructionReveal(building: BuildingControllerHost,
   mask.clear()
   mask.rect(bounds.x - 2, top, bounds.width + 4, visibleHeight + 2)
   mask.fill({ color: 0xffffff })
+
+  if (!building.constructionProgressText) {
+    const text = new Text({
+      text: '',
+      style: {
+        fontFamily: 'm6x11, system-ui, sans-serif',
+        fontSize: 20,
+        fontWeight: 'bold',
+        fill: 0xffffff,
+        stroke: { color: 0x000000, width: 3 },
+      },
+    })
+    text.label = 'construction-progress'
+    text.eventMode = 'none'
+    text.anchor.set(0.5, 0.5)
+    text.roundPixels = true
+    building.constructionProgressText = text
+    building.addChild(text)
+  }
+  building.constructionProgressText.text = `${Math.floor(Math.max(0, Math.min(100, percentage)))}%`
+  building.constructionProgressText.position.set(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
 }
 
 export function clearBuildingConstructionReveal(building: BuildingControllerHost): void {
+  building.constructionProgressText?.parent?.removeChild(building.constructionProgressText)
+  building.constructionProgressText?.destroy()
+  building.constructionProgressText = null
   building.constructionGhostBorder?.parent?.removeChild(building.constructionGhostBorder)
   building.constructionGhostBorder?.destroy({ children: true })
   building.constructionGhostBorder = null

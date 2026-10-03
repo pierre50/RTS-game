@@ -4,6 +4,8 @@ import { getPlayerBuildingConfig } from '../../lib/buildings/buildingLevel'
 import { Assets } from 'pixi.js'
 import {
   HERO_FIBER_BANDAGE_ITEM,
+  HERO_GRILLED_MEAT_ITEM,
+  HERO_CRAFT_RECIPES,
   HERO_HEALING_POULTICE_ITEM,
   HERO_POISON_VIAL_ITEM,
   getHeroConsumableHealing,
@@ -33,6 +35,7 @@ import type { HeroEquippedItem } from '../../types/heroTools'
 import type { HeroWeaponSlot } from '../../types/entities'
 
 const BAG_ITEM_ICON_RESOURCES = {
+  [HERO_GRILLED_MEAT_ITEM]: 'meat',
   [HERO_HEALING_POULTICE_ITEM]: 'herb',
   [HERO_POISON_VIAL_ITEM]: 'toxicHerb',
   [HERO_FIBER_BANDAGE_ITEM]: 'fiber',
@@ -106,6 +109,7 @@ function createBagDeleteAction(host: InventoryEquipmentRendererHost, remove: (mo
 function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: string, count: number): HTMLElement {
   const { menu } = host
   const hero = menu.context.controls.heroUnit
+  const recipe = HERO_CRAFT_RECIPES.find(recipe => recipe.outputEquipment === item)
   const equipmentSlot = getEquipmentSlot(item)
   const weaponSlot = getWeaponSlot(item)
   const placeableBuildingType = getPlaceableInventoryBuildingType(item)
@@ -167,8 +171,9 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
   }
   const { element } = createInventoryEquipmentRow(menu.context, menu, {
     id: `inventory-equipment-${item}`,
-    title: placeableBuildingType ? t(placeableBuildingType) : undefined,
     equipment: item,
+    title: recipe ? t(recipe.labelKey) : placeableBuildingType ? t(placeableBuildingType) : undefined,
+    description: recipe?.descriptionKey ? t(recipe.descriptionKey) : undefined,
     count,
     icon,
     secondaryAction: createBagDeleteAction(host, mode =>

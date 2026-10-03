@@ -180,7 +180,6 @@ for (const scenario of destructionCases) {
           },
           getBuildingFootprintRadius: () => 0,
           getHeroDistanceSoundVolume: () => 0,
-          getBuildingTextureNameWithSize: () => ({ sheet: 'buildings/construction/size-2', frame: 0 }),
           getPercentage: () => 0,
           getTexture: textureRef => ({ textureRef }),
           getTextureByFrame: () => ({}),

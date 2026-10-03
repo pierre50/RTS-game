@@ -1,32 +1,8 @@
 {
   "frames": {
-    "000_graphics_buildings_age-0_archery-range.png": {
+    "000_graphics_buildings_rustic_barracks.png": {
       "frame": {
         "x": 0,
-        "y": 0,
-        "w": 169,
-        "h": 130
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 169,
-        "h": 130
-      },
-      "sourceSize": {
-        "w": 169,
-        "h": 130
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.65
-      }
-    },
-    "001_graphics_buildings_age-0_barracks.png": {
-      "frame": {
-        "x": 187,
         "y": 0,
         "w": 182,
         "h": 139
@@ -48,9 +24,9 @@
         "y": 0.7
       }
     },
-    "002_graphics_buildings_age-0_granary.png": {
+    "001_graphics_buildings_rustic_granary.png": {
       "frame": {
-        "x": 387,
+        "x": 200,
         "y": 0,
         "w": 141,
         "h": 112
@@ -72,9 +48,9 @@
         "y": 0.7
       }
     },
-    "003_graphics_buildings_age-0_house.png": {
+    "002_graphics_buildings_rustic_house.png": {
       "frame": {
-        "x": 546,
+        "x": 359,
         "y": 0,
         "w": 122,
         "h": 106
@@ -96,10 +72,202 @@
         "y": 0.5
       }
     },
-    "004_graphics_buildings_age-0_market.png": {
+    "003_graphics_buildings_rustic_stable.png": {
+      "frame": {
+        "x": 499,
+        "y": 0,
+        "w": 157,
+        "h": 124
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 157,
+        "h": 124
+      },
+      "sourceSize": {
+        "w": 157,
+        "h": 124
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "004_graphics_buildings_rustic_temple.png": {
+      "frame": {
+        "x": 674,
+        "y": 0,
+        "w": 130,
+        "h": 138
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 130,
+        "h": 138
+      },
+      "sourceSize": {
+        "w": 130,
+        "h": 138
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "005_graphics_buildings_rustic_town-center.png": {
+      "frame": {
+        "x": 822,
+        "y": 0,
+        "w": 161,
+        "h": 134
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 161,
+        "h": 134
+      },
+      "sourceSize": {
+        "w": 161,
+        "h": 134
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "006_graphics_buildings_rustic_watch-tower.png": {
+      "frame": {
+        "x": 1001,
+        "y": 0,
+        "w": 93,
+        "h": 129
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 93,
+        "h": 129
+      },
+      "sourceSize": {
+        "w": 93,
+        "h": 129
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "007_graphics_buildings_village_archery-range.png": {
+      "frame": {
+        "x": 0,
+        "y": 141,
+        "w": 169,
+        "h": 130
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 169,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 169,
+        "h": 130
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "008_graphics_buildings_village_barracks.png": {
+      "frame": {
+        "x": 187,
+        "y": 141,
+        "w": 182,
+        "h": 139
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 182,
+        "h": 139
+      },
+      "sourceSize": {
+        "w": 182,
+        "h": 139
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "009_graphics_buildings_village_granary.png": {
+      "frame": {
+        "x": 387,
+        "y": 141,
+        "w": 141,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 141,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 141,
+        "h": 112
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "010_graphics_buildings_village_house.png": {
+      "frame": {
+        "x": 546,
+        "y": 141,
+        "w": 122,
+        "h": 106
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 122,
+        "h": 106
+      },
+      "sourceSize": {
+        "w": 122,
+        "h": 106
+      },
+      "anchor": {
+        "x": 0.45,
+        "y": 0.5
+      }
+    },
+    "011_graphics_buildings_village_market.png": {
       "frame": {
         "x": 686,
-        "y": 0,
+        "y": 141,
         "w": 174,
         "h": 104
       },
@@ -120,10 +288,10 @@
         "y": 0.75
       }
     },
-    "005_graphics_buildings_age-0_stable.png": {
+    "012_graphics_buildings_village_stable.png": {
       "frame": {
         "x": 878,
-        "y": 0,
+        "y": 141,
         "w": 157,
         "h": 124
       },
@@ -144,10 +312,10 @@
         "y": 0.65
       }
     },
-    "006_graphics_buildings_age-0_storage-pit.png": {
+    "013_graphics_buildings_village_storage-pit.png": {
       "frame": {
         "x": 1053,
-        "y": 0,
+        "y": 141,
         "w": 128,
         "h": 106
       },
@@ -168,10 +336,10 @@
         "y": 0.65
       }
     },
-    "007_graphics_buildings_age-0_temple.png": {
+    "014_graphics_buildings_village_temple.png": {
       "frame": {
         "x": 1199,
-        "y": 0,
+        "y": 141,
         "w": 130,
         "h": 138
       },
@@ -192,10 +360,10 @@
         "y": 0.7
       }
     },
-    "008_graphics_buildings_age-0_town-center.png": {
+    "015_graphics_buildings_village_town-center.png": {
       "frame": {
         "x": 1347,
-        "y": 0,
+        "y": 141,
         "w": 161,
         "h": 134
       },
@@ -216,10 +384,10 @@
         "y": 0.7
       }
     },
-    "009_graphics_buildings_age-0_watch-tower.png": {
+    "016_graphics_buildings_village_watch-tower.png": {
       "frame": {
         "x": 1526,
-        "y": 0,
+        "y": 141,
         "w": 93,
         "h": 129
       },
@@ -240,10 +408,274 @@
         "y": 0.7
       }
     },
-    "010_graphics_buildings_age-0_forge.png": {
+    "017_graphics_buildings_village_forge.png": {
       "frame": {
         "x": 1637,
+        "y": 141,
+        "w": 170,
+        "h": 134
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
         "y": 0,
+        "w": 170,
+        "h": 134
+      },
+      "sourceSize": {
+        "w": 170,
+        "h": 134
+      },
+      "anchor": {
+        "x": 0.55,
+        "y": 0.65
+      }
+    },
+    "018_graphics_buildings_upgraded_archery-range.png": {
+      "frame": {
+        "x": 0,
+        "y": 282,
+        "w": 169,
+        "h": 130
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 169,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 169,
+        "h": 130
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "019_graphics_buildings_upgraded_barracks.png": {
+      "frame": {
+        "x": 187,
+        "y": 282,
+        "w": 182,
+        "h": 139
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 182,
+        "h": 139
+      },
+      "sourceSize": {
+        "w": 182,
+        "h": 139
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "020_graphics_buildings_upgraded_granary.png": {
+      "frame": {
+        "x": 387,
+        "y": 282,
+        "w": 141,
+        "h": 112
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 141,
+        "h": 112
+      },
+      "sourceSize": {
+        "w": 141,
+        "h": 112
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "021_graphics_buildings_upgraded_house.png": {
+      "frame": {
+        "x": 546,
+        "y": 282,
+        "w": 122,
+        "h": 106
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 122,
+        "h": 106
+      },
+      "sourceSize": {
+        "w": 122,
+        "h": 106
+      },
+      "anchor": {
+        "x": 0.45,
+        "y": 0.5
+      }
+    },
+    "022_graphics_buildings_upgraded_market.png": {
+      "frame": {
+        "x": 686,
+        "y": 282,
+        "w": 174,
+        "h": 104
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 174,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 174,
+        "h": 104
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      }
+    },
+    "023_graphics_buildings_upgraded_stable.png": {
+      "frame": {
+        "x": 878,
+        "y": 282,
+        "w": 157,
+        "h": 124
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 157,
+        "h": 124
+      },
+      "sourceSize": {
+        "w": 157,
+        "h": 124
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "024_graphics_buildings_upgraded_storage-pit.png": {
+      "frame": {
+        "x": 1053,
+        "y": 282,
+        "w": 128,
+        "h": 106
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 106
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 106
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "025_graphics_buildings_upgraded_temple.png": {
+      "frame": {
+        "x": 1199,
+        "y": 282,
+        "w": 130,
+        "h": 138
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 130,
+        "h": 138
+      },
+      "sourceSize": {
+        "w": 130,
+        "h": 138
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "026_graphics_buildings_upgraded_town-center.png": {
+      "frame": {
+        "x": 1347,
+        "y": 282,
+        "w": 161,
+        "h": 134
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 161,
+        "h": 134
+      },
+      "sourceSize": {
+        "w": 161,
+        "h": 134
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "027_graphics_buildings_upgraded_watch-tower.png": {
+      "frame": {
+        "x": 1526,
+        "y": 282,
+        "w": 93,
+        "h": 129
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 93,
+        "h": 129
+      },
+      "sourceSize": {
+        "w": 93,
+        "h": 129
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "028_graphics_buildings_upgraded_forge.png": {
+      "frame": {
+        "x": 1637,
+        "y": 282,
         "w": 170,
         "h": 134
       },
@@ -266,13 +698,13 @@
     }
   },
   "meta": {
-    "app": "merge_building_age_atlases.py",
+    "app": "pack_building_atlas.py",
     "version": "1.0.0",
-    "image": "age-0/texture.png",
+    "image": "texture.png",
     "format": "RGBA8888",
     "size": {
       "w": 1807,
-      "h": 139
+      "h": 421
     },
     "scale": 1
   }

@@ -4,88 +4,88 @@
       "TownCenter": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 8
+            "sheet": "buildings",
+            "frame": 5
           }
         }
       },
       "Barracks": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 1
+            "sheet": "buildings",
+            "frame": 0
           }
         }
       },
       "House": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 3
+            "sheet": "buildings",
+            "frame": 2
           }
         }
       },
       "Granary": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 2
+            "sheet": "buildings",
+            "frame": 1
           }
         }
       },
       "StoragePit": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 6
+            "sheet": "buildings",
+            "frame": 13
           }
         }
       },
       "Temple": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 7
+            "sheet": "buildings",
+            "frame": 4
           }
         }
       },
       "Stable": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 5
+            "sheet": "buildings",
+            "frame": 3
           }
         }
       },
       "ArcheryRange": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 0
+            "sheet": "buildings",
+            "frame": 7
           }
         }
       },
       "Market": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 4
+            "sheet": "buildings",
+            "frame": 11
           }
         }
       },
       "WatchTower": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 9
+            "sheet": "buildings",
+            "frame": 6
           }
         }
       },
       "Forge": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0",
-            "frame": 10
+            "sheet": "buildings",
+            "frame": 17
           }
         }
       }
@@ -94,88 +94,88 @@
       "WatchTower": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 9
+            "sheet": "buildings",
+            "frame": 16
           }
         }
       },
       "Market": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 4
+            "sheet": "buildings",
+            "frame": 11
           }
         }
       },
       "Stable": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 5
+            "sheet": "buildings",
+            "frame": 12
           }
         }
       },
       "ArcheryRange": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 0
+            "sheet": "buildings",
+            "frame": 7
           }
         }
       },
       "Barracks": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 1
+            "sheet": "buildings",
+            "frame": 8
           }
         }
       },
       "TownCenter": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 8
+            "sheet": "buildings",
+            "frame": 15
           }
         }
       },
       "Granary": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 2
+            "sheet": "buildings",
+            "frame": 9
           }
         }
       },
       "House": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 3
+            "sheet": "buildings",
+            "frame": 10
           }
         }
       },
       "StoragePit": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 6
+            "sheet": "buildings",
+            "frame": 13
           }
         }
       },
       "Temple": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 7
+            "sheet": "buildings",
+            "frame": 14
           }
         }
       },
       "Forge": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1",
-            "frame": 10
+            "sheet": "buildings",
+            "frame": 17
           }
         }
       }
@@ -184,88 +184,88 @@
       "TownCenter": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 8
+            "sheet": "buildings",
+            "frame": 26
           }
         }
       },
       "Barracks": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 1
+            "sheet": "buildings",
+            "frame": 19
           }
         }
       },
       "House": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 3
+            "sheet": "buildings",
+            "frame": 21
           }
         }
       },
       "Granary": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 2
+            "sheet": "buildings",
+            "frame": 20
           }
         }
       },
       "StoragePit": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 6
+            "sheet": "buildings",
+            "frame": 24
           }
         }
       },
       "Temple": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 7
+            "sheet": "buildings",
+            "frame": 25
           }
         }
       },
       "Stable": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 5
+            "sheet": "buildings",
+            "frame": 23
           }
         }
       },
       "ArcheryRange": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 0
+            "sheet": "buildings",
+            "frame": 18
           }
         }
       },
       "Market": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 4
+            "sheet": "buildings",
+            "frame": 22
           }
         }
       },
       "WatchTower": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 9
+            "sheet": "buildings",
+            "frame": 27
           }
         }
       },
       "Forge": {
         "images": {
           "final": {
-            "sheet": "buildings/age-2",
-            "frame": 10
+            "sheet": "buildings",
+            "frame": 28
           }
         }
       }

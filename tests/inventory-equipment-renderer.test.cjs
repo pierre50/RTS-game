@@ -69,7 +69,7 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
             return true
           },
           getEquipmentSlot: () => null,
-          getEquipmentStacks: bag => bag.length ? [{ equipment: 'sword_bronze', count: bag.length }] : [],
+          getEquipmentStacks: bag => (bag.length ? [{ equipment: 'sword_bronze', count: bag.length }] : []),
           getHeroEquipmentSlotLabelKey: slot => slot,
           getHeroEquippedItemCount: () => 0,
           getWeaponSlot: () => 'melee',
@@ -77,6 +77,7 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
           unequipHeroInventorySlot: () => false,
         },
         '../../lib/hero/heroCrafting': {
+          HERO_CRAFT_RECIPES: [],
           getHeroConsumableHealing: () => 0,
           useHeroConsumableItem: () => false,
         },
@@ -137,7 +138,10 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
     deleteResourceAction.onAction('all')
     assert.equal(hero.inventory.resources.wood, undefined)
     assert.equal(calls.filter(([name]) => name === 'renderTools').length, 6)
-    assert.equal(calls.some(([name]) => name === 'close'), false)
+    assert.equal(
+      calls.some(([name]) => name === 'close'),
+      false
+    )
   } finally {
     if (previousDocument) global.document = previousDocument
     else delete global.document
@@ -179,7 +183,7 @@ test('a looted trap can be placed from the bag outside but not inside a building
           getWeaponSlot: () => null,
           HERO_EQUIPMENT_SLOTS: [],
         },
-        '../../lib/hero/heroCrafting': { getHeroConsumableHealing: () => 0 },
+        '../../lib/hero/heroCrafting': { HERO_CRAFT_RECIPES: [], getHeroConsumableHealing: () => 0 },
         '../../lib/hero/placeableInventoryItems': {
           getPlaceableInventoryBuildingType: item => (item === 'trap' ? 'Trap' : null),
         },

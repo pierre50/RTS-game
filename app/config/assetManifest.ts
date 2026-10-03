@@ -70,17 +70,12 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'water-surface-filter': 'assets/border/water-surface-filter/texture.json',
   },
   graphics: {
-    'buildings/age-0': 'assets/graphics/buildings/texture.json',
-    'buildings/age-1/image': 'assets/graphics/buildings/age-1/texture.png',
-    'buildings/age-2/image': 'assets/graphics/buildings/age-2/texture.png',
+    buildings: 'assets/graphics/buildings/texture.json',
     ...toTextureBundle('assets/graphics', [
       'buildings/wall/dithered',
       'resources/berrybush',
       'resources/wildgrass',
       'projectiles',
-      'buildings/construction/size-2',
-      'buildings/construction/size-3',
-      'buildings/construction/size-5',
       'units/rider-legs',
       'effects/fire',
       'effects/smoke',
@@ -109,7 +104,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/wall/level-1',
       'resources/minerals',
     ]),
-    'buildings/age-0/shadow': 'assets/graphics/buildings/texture_shadow.json',
+    'buildings/shadow': 'assets/graphics/buildings/texture_shadow.json',
     'resources/minerals/shadow': 'assets/graphics/resources/minerals/texture_shadow.json',
   },
   sounds: {

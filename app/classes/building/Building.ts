@@ -1,6 +1,6 @@
 import type { CaveDefinition } from '../../types/cave'
 import { getBuildingLevel, getBuildingConfigForLevel } from '../../lib/buildings/buildingLevel'
-import type { AnimatedSprite, Graphics, Sprite, Texture } from 'pixi.js'
+import type { AnimatedSprite, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import { CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { canUpdateMinimap } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
@@ -96,6 +96,7 @@ export class Building extends Instance implements BuildingEntity {
   shadowWasVisible: boolean
   constructionRevealSprite: Sprite | null
   constructionRevealMask: Graphics | null
+  constructionProgressText: Text | null
   constructionGhostBorder: Sprite | null
   intervalId: SchedulerTaskId | null
   attackIntervalId: SchedulerTaskId | null
@@ -169,6 +170,7 @@ export class Building extends Instance implements BuildingEntity {
     this.shadowWasVisible = false
     this.constructionRevealSprite = null
     this.constructionRevealMask = null
+    this.constructionProgressText = null
     this.constructionGhostBorder = null
     this.visualSettingsCleanup = null
 

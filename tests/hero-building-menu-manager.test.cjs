@@ -22,6 +22,13 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     '../lib/graphics/assets': {
       getBuildingAssetOwner: building => ({ ...building.owner, age: building.buildingLevel ?? building.owner.age }),
     },
+    './hero-building/HeroCampfireBody': {
+      HeroCampfireBody: class {
+        constructor() {
+          this.craftPanel = global.document.createElement('campfire-craft')
+        }
+      },
+    },
     './hero-building/HeroForgeBody': {
       HeroForgeBody: class {
         constructor() {
@@ -463,7 +470,11 @@ test('hero building menu adds a sleep button for fire camps', () => {
 
     assert.equal(manager.open(building), true)
 
-    const button = manager.body.children[0]
+    if (building.type === 'FireCamp') {
+      assert.equal(manager.body.children[0].tagName, 'campfire-craft')
+      assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
+    }
+    const button = manager.body.children.find(child => child.id === 'hero-heroCampfireSleep')
     assert.equal(button.id, 'hero-heroCampfireSleep')
     assert.equal(button.dataset.actionId, 'heroCampfireSleep')
     assert.equal(button.disabled, false)
@@ -495,7 +506,11 @@ test('hero building menu adds a sleep button for beds', () => {
 
     assert.equal(manager.open(building), true)
 
-    const button = manager.body.children[0]
+    if (building.type === 'FireCamp') {
+      assert.equal(manager.body.children[0].tagName, 'campfire-craft')
+      assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
+    }
+    const button = manager.body.children.find(child => child.id === 'hero-heroCampfireSleep')
     assert.equal(button.id, 'hero-heroCampfireSleep')
     assert.equal(button.dataset.actionId, 'heroCampfireSleep')
     assert.equal(button.disabled, false)
@@ -526,7 +541,11 @@ test('hero building menu disables campfire sleep while blocked', () => {
 
     assert.equal(manager.open(building), true)
 
-    const button = manager.body.children[0]
+    if (building.type === 'FireCamp') {
+      assert.equal(manager.body.children[0].tagName, 'campfire-craft')
+      assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
+    }
+    const button = manager.body.children.find(child => child.id === 'hero-heroCampfireSleep')
     assert.equal(button.id, 'hero-heroCampfireSleep')
     assert.equal(button.disabled, true)
   } finally {

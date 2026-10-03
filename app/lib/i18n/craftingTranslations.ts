@@ -1,4 +1,10 @@
 export const EN_CRAFTING_TRANSLATIONS = {
+  campfireCooking: 'Cooking',
+  campfirePotions: 'Potions and remedies',
+  campfireCook: 'Cook',
+  campfirePrepare: 'Prepare',
+  craftGrilledMeat: 'Grilled meat',
+  craftGrilledMeatDescription: 'Cook a meal that restores 12 hit points when consumed from the bag.',
   forgeCategoryTools: 'Village tools',
   forgeCategoryMilitary: 'Village military equipment',
   forgeCategoryEquipment: 'Personal equipment',
@@ -62,6 +68,12 @@ export const EN_CRAFTING_TRANSLATIONS = {
 }
 
 export const FR_CRAFTING_TRANSLATIONS = {
+  campfireCooking: 'Cuisine',
+  campfirePotions: 'Potions et soins',
+  campfireCook: 'Cuisiner',
+  campfirePrepare: 'Préparer',
+  craftGrilledMeat: 'Viande grillée',
+  craftGrilledMeatDescription: 'Prépare un repas qui rend 12 points de vie en le consommant depuis le sac.',
   forgeCategoryTools: 'Outils du village',
   forgeCategoryMilitary: 'Équipement militaire du village',
   forgeCategoryEquipment: 'Équipement personnel',

@@ -144,10 +144,10 @@ test('forge stacks crafting and six next-tier village upgrades in sections', () 
     const forge = { type: 'Forge', isBuilt: true }
     const body = new HeroForgeBody(menu, forge)
     const upgrades = () => rows.filter(row => row.id.startsWith('forge-upgrade-'))
-    assert.equal(body.craftPanel.children.length, 5, 'three crafting and two upgrade sections')
+    assert.equal(body.craftPanel.children.length, 4, 'two crafting and two upgrade sections')
     assert.ok(rows.some(row => row.id === 'craft-arrow_ceramic'))
     assert.equal(upgrades().length, 6)
-    const [title, scope] = body.craftPanel.children[3].children
+    const [title, scope] = body.craftPanel.children[2].children
     assert.equal(title.text, 'forgeCategoryTools')
     assert.equal(scope.text, 'forgeUpgradeScope')
     let axes = rows.find(row => row.id === 'forge-upgrade-axes')
@@ -166,6 +166,74 @@ test('forge stacks crafting and six next-tier village upgrades in sections', () 
     rows.length = 0
     new HeroForgeBody(menu, forge)
     assert.equal(upgrades().length, 6, 'a fresh body lists upgrades without switching panels')
+  } finally {
+    global.document = previousDocument
+  }
+})
+
+test('campfire prepares consumables into the hero bag and rechecks proximity, construction and destruction on click', () => {
+  const previousDocument = global.document
+  global.document = {
+    createElement: () => ({
+      appendChild() {},
+      append() {},
+      textContent: '',
+      dataset: {},
+      classList: { toggle() {}, add() {} },
+      setAttribute() {},
+      addEventListener() {},
+      querySelector() {
+        return null
+      },
+    }),
+  }
+  let reachable = true
+  const rows = []
+  const { HeroCampfireBody } = loadTsModule('app/ui/hero-building/HeroCampfireBody.ts', {
+    mocks: {
+      '../../lib/avatar': {},
+      '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
+      '../../lib/graphics/assets': { getIconPath: () => '' },
+      '../../lib/hero/heroActionRange': { isHeroInteractionTargetReachable: () => reachable },
+      '../../lib/hero/placeableInventoryItems': { getPlaceableInventoryBuildingType: () => null },
+      '../../lib/lang': { t: key => key },
+      '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => ({}) },
+      '../inventory/InventoryActionRow': {
+        createInventoryActionRow: (_, options) => {
+          rows.push(options)
+          return { element: {}, icon: { appendChild() {} } }
+        },
+      },
+      '../equipment/equipmentLoot': {
+        addHeroInventoryItem: (hero, item) => hero.inventory.equipment.push(item),
+        removeHeroInventoryItem: () => false,
+      },
+    },
+  })
+  try {
+    const hero = { type: 'Hero', inventory: { resources: { herb: 4, fiber: 2 }, equipment: [] } }
+    const menu = { context: { player: { age: 0 }, controls: { heroUnit: hero } }, showMessage() {}, updateTopbar() {} }
+    const forge = { type: 'FireCamp', isBuilt: true }
+    new HeroCampfireBody(menu, forge)
+    const arrows = rows.find(row => row.id === 'craft-healing_poultice')
+    assert.equal(arrows.disabled, false)
+    assert.equal(arrows.trailingAction.label, 'campfirePrepare')
+    assert.equal(rows.find(row => row.id === 'craft-grilled_meat').trailingAction.label, 'campfireCook')
+    assert.equal(
+      rows.some(row => row.id === 'craft-arrow_ceramic'),
+      false
+    )
+    arrows.trailingAction.onClick()
+    assert.equal(hero.inventory.equipment.length, 1)
+    assert.deepEqual(hero.inventory.resources, { herb: 2, fiber: 1 })
+    for (const state of ['distant', 'unfinished', 'destroyed']) {
+      reachable = state !== 'distant'
+      forge.isBuilt = state !== 'unfinished'
+      forge.isDestroyed = state === 'destroyed'
+      arrows.trailingAction.onClick()
+      assert.equal(hero.inventory.equipment.length, 1)
+      assert.deepEqual(hero.inventory.resources, { herb: 2, fiber: 1 })
+    }
   } finally {
     global.document = previousDocument
   }

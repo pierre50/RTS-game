@@ -204,3 +204,30 @@ test('camp installations are construction options, not craft recipes', () => {
     assert.equal(definitions[type].inventoryItem, undefined)
   }
 })
+
+test('campfire recipes are separate from forge equipment and ammunition', () => {
+  const { getAvailableHeroCraftRecipes } = loadCrafting()
+  const campfire = getAvailableHeroCraftRecipes({}, 'campfire')
+  const forge = getAvailableHeroCraftRecipes({}, 'forge')
+  assert.deepEqual(
+    campfire.map(recipe => recipe.id),
+    ['grilled_meat', 'healing_poultice', 'poison_vial', 'fiber_bandage']
+  )
+  assert.ok(forge.length > 0)
+  assert.ok(forge.every(recipe => recipe.category === 'equipment' || recipe.category === 'arrows'))
+  assert.ok(campfire.every(recipe => !forge.some(other => other.id === recipe.id)))
+})
+
+test('grilled meat costs two meat and can be consumed once to heal without exceeding maximum health', () => {
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe, useHeroConsumableItem } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(recipe => recipe.id === 'grilled_meat')
+  const hero = { type: 'Hero', hitPoints: 25, totalHitPoints: 30, inventory: { resources: { meat: 2 }, equipment: [] } }
+  assert.equal(craftHeroRecipe({}, hero, recipe), true)
+  assert.deepEqual(hero.inventory.resources, {})
+  assert.deepEqual(hero.inventory.equipment, ['grilled_meat'])
+  assert.equal(craftHeroRecipe({}, hero, recipe), false)
+  assert.equal(useHeroConsumableItem(hero, 'grilled_meat'), true)
+  assert.equal(hero.hitPoints, 30)
+  assert.deepEqual(hero.inventory.equipment, [])
+  assert.equal(useHeroConsumableItem(hero, 'grilled_meat'), false)
+})

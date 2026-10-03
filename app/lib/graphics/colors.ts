@@ -12,7 +12,7 @@ type PlayerColor = (typeof colors)[number]
 // pixel to the nearest of 64 fixed colors in scripts/retro_palette/aap-64.hex,
 // which remaps player_blue's shades to a different set of hex values (e.g.
 // #3C49AD and #466AC9 both collapse to #285CC4). These are that post-snap set,
-// verified against the actual units and buildings/age-0 textures.
+// verified against the actual unit and building textures.
 export const SOURCE_COLORS = [0x6dccff, 0x55b1f1, 0x4097ea, 0x105da2, 0x1476c0, 0x07487c, 0x03315f, 0x001b40]
 
 const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
@@ -39,8 +39,6 @@ const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
 
 const NAMED_SOURCE_PALETTES: Record<string, readonly number[]> = LPC_RUNTIME_SOURCE_PALETTES
 const NAMED_TARGET_PALETTES: Record<string, readonly number[]> = LPC_RUNTIME_PALETTES
-
-
 
 export type RecolorableTexture = Texture & {
   frame: {

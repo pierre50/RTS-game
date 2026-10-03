@@ -12,9 +12,9 @@ import {
   getBuildingAssetOwner,
   getEntityMapSpace,
   getBuildingFootprintCells,
-  getBuildingTextureNameWithSize,
   getGroundReliefLevel,
   getInstanceZIndex,
+  getPercentage,
   getReliefLiftPixels,
   getTexture,
   STABLE_HORSE_CAPACITY,
@@ -22,7 +22,7 @@ import {
   textureRefToString,
   updateInstanceVisibility,
 } from '../../lib'
-import { applyBuildingConstructionGhost } from './BuildingVisuals'
+import { applyBuildingConstructionGhost, syncBuildingConstructionReveal } from './BuildingVisuals'
 import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import type { Building, BuildingOptions } from './Building'
 import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
@@ -30,13 +30,6 @@ import type { RuntimeCell } from '../../types/map'
 import type { Texture } from 'pixi.js'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
-
-function getInitialBuildingTextureRef(building: Building) {
-  if (!building.isBuilt) {
-    return getBuildingAsset(building.assetType || building.type, getBuildingAssetOwner(building), Assets).images?.final
-  }
-  return getBuildingTextureNameWithSize(building.size)
-}
 
 export function stableHorsesFromOptions(
   options: BuildingOptions
@@ -75,9 +68,11 @@ export function setupBuildingTransform(building: Building): void {
 
 export function createInitialBuildingSprite(building: Building): void {
   assignCampBrazierAppearance(building)
-  const spriteSheet = getInitialBuildingTextureRef(building) ?? getBuildingTextureNameWithSize(building.size)
-  building.textureName = textureRefToString(spriteSheet!)
-  const texture = getTexture(spriteSheet!, Assets) as BuildingTexture
+  const assets = getBuildingAsset(building.assetType || building.type, getBuildingAssetOwner(building), Assets)
+  const spriteSheet = assets.images?.final
+  if (!spriteSheet) throw new Error(`Missing final texture for building: ${building.assetType || building.type}`)
+  building.textureName = textureRefToString(spriteSheet)
+  const texture = getTexture(spriteSheet, Assets) as BuildingTexture
   building.sprite = Sprite.from(texture)
   const interactiveSprite = building.sprite as Sprite & { updateAnchor?: boolean }
   interactiveSprite.updateAnchor = true
@@ -88,7 +83,6 @@ export function createInitialBuildingSprite(building: Building): void {
   if (texture.defaultAnchor) building.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
   building.sprite.position.y = building.reliefLift ?? 0
   if (!building.isBuilt) {
-    const assets = getBuildingAsset(building.assetType || building.type, getBuildingAssetOwner(building), Assets)
     building.sprite.scale.x = Boolean(assets.mirrored) !== Boolean(building.placementMirrored) ? -1 : 1
     applyBuildingConstructionGhost(building)
   }
@@ -139,7 +133,9 @@ export function attachInitialBuildingVisuals(building: Building): void {
   building.bindSpriteInteractions()
   attachEntityShadowsToMapSpace(building.context.map, building)
   building.addChild(building.sprite)
-  if (!building.isBuilt) applyBuildingConstructionGhost(building)
+  if (!building.isBuilt) {
+    syncBuildingConstructionReveal(building, getPercentage(building.hitPoints, building.totalHitPoints))
+  }
   building.buildingTrainingPreview = new BuildingTrainingPreview(building)
   building.buildingTrainingPreview.update()
   if (building.shouldKeepHealthBarVisible()) building.drawHealthBar()

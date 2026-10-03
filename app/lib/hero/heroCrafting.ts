@@ -5,6 +5,8 @@ import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
 export type HeroCraftRecipe = {
+  station: 'forge' | 'campfire'
+  category: 'equipment' | 'arrows' | 'cooking' | 'potions'
   descriptionKey?: string
   iconResource?: keyof ResourceAmount
   id: string
@@ -20,15 +22,30 @@ export const HERO_CAMPFIRE_ITEM = 'campfire'
 export const HERO_HEALING_POULTICE_ITEM = 'healing_poultice'
 export const HERO_POISON_VIAL_ITEM = 'poison_vial'
 export const HERO_FIBER_BANDAGE_ITEM = 'fiber_bandage'
+export const HERO_GRILLED_MEAT_ITEM = 'grilled_meat'
 
 const HERO_CONSUMABLE_HEALING: Record<string, number> = {
+  [HERO_GRILLED_MEAT_ITEM]: 12,
   [HERO_HEALING_POULTICE_ITEM]: 18,
   [HERO_FIBER_BANDAGE_ITEM]: 8,
 }
 
 export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   {
+    id: HERO_GRILLED_MEAT_ITEM,
+    station: 'campfire',
+    category: 'cooking',
+    labelKey: 'craftGrilledMeat',
+    descriptionKey: 'craftGrilledMeatDescription',
+    iconResource: 'meat',
+    outputEquipment: HERO_GRILLED_MEAT_ITEM,
+    outputCount: 1,
+    cost: { meat: 2 },
+  },
+  {
     id: 'bow',
+    station: 'forge',
+    category: 'equipment',
     labelKey: 'craftBow',
     descriptionKey: 'craftBowDescription',
     outputEquipment: 'bow',
@@ -37,6 +54,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: 'catchingPole',
+    station: 'forge',
+    category: 'equipment',
     labelKey: 'craftCatchingPole',
     descriptionKey: 'craftCatchingPoleDescription',
     outputEquipment: 'catchingPole',
@@ -45,6 +64,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: HERO_HEALING_POULTICE_ITEM,
+    station: 'campfire',
+    category: 'potions',
     labelKey: 'craftHealingPoultice',
     descriptionKey: 'craftHealingPoulticeDescription',
     iconResource: 'herb',
@@ -54,6 +75,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: HERO_POISON_VIAL_ITEM,
+    station: 'campfire',
+    category: 'potions',
     labelKey: 'craftPoisonVial',
     descriptionKey: 'craftPoisonVialDescription',
     iconResource: 'toxicHerb',
@@ -63,6 +86,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: HERO_FIBER_BANDAGE_ITEM,
+    station: 'campfire',
+    category: 'potions',
     labelKey: 'craftFiberBandage',
     descriptionKey: 'craftFiberBandageDescription',
     iconResource: 'fiber',
@@ -72,6 +97,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: 'arrow_ceramic',
+    station: 'forge',
+    category: 'arrows',
     labelKey: 'craftArrowCeramic',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_ceramic',
@@ -80,6 +107,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: 'arrow_copper',
+    station: 'forge',
+    category: 'arrows',
     labelKey: 'craftArrowCopper',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_copper',
@@ -88,6 +117,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: 'arrow_bronze',
+    station: 'forge',
+    category: 'arrows',
     labelKey: 'craftArrowBronze',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_bronze',
@@ -96,6 +127,8 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
   {
     id: 'arrow_iron',
+    station: 'forge',
+    category: 'arrows',
     labelKey: 'craftArrowIron',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_iron',
@@ -104,8 +137,11 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
 ]
 
-export function getAvailableHeroCraftRecipes(_player?: unknown): readonly HeroCraftRecipe[] {
-  return HERO_CRAFT_RECIPES
+export function getAvailableHeroCraftRecipes(
+  _player?: unknown,
+  station?: HeroCraftRecipe['station']
+): readonly HeroCraftRecipe[] {
+  return station ? HERO_CRAFT_RECIPES.filter(recipe => recipe.station === station) : HERO_CRAFT_RECIPES
 }
 
 export function getMissingCraftResources(

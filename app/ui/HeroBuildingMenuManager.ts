@@ -20,6 +20,7 @@ import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingCon
 import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
 import { heroBuildingStructureSignature } from './hero-building/HeroBuildingStructureSignature'
 import { heroSleepButton } from './hero-building/HeroSleepButton'
+import { HeroCampfireBody } from './hero-building/HeroCampfireBody'
 import { HeroForgeBody } from './hero-building/HeroForgeBody'
 import { canHeroTradeAtMarket, createHeroMarketBody } from './hero-building/HeroMarketBody'
 import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
@@ -192,7 +193,8 @@ export class HeroBuildingMenuManager {
     if (
       this.building?.type !== BUILDING_TYPES.chest &&
       this.building?.type !== BUILDING_TYPES.market &&
-      this.building?.type !== BUILDING_TYPES.forge
+      this.building?.type !== BUILDING_TYPES.forge &&
+      this.building?.type !== BUILDING_TYPES.fireCamp
     )
       return
     this.syncLiveState()
@@ -220,7 +222,10 @@ export class HeroBuildingMenuManager {
     this.marketOpen =
       building.type === BUILDING_TYPES.market && canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit)
     const inventoryMode =
-      this.marketOpen || building.type === BUILDING_TYPES.chest || building.type === BUILDING_TYPES.forge
+      this.marketOpen ||
+      building.type === BUILDING_TYPES.chest ||
+      building.type === BUILDING_TYPES.forge ||
+      building.type === BUILDING_TYPES.fireCamp
     const managementMode = inventoryMode || this.isManagedBuilding(building)
     setInspectionWindowSize(this.modal, managementMode ? 'large' : 'small')
     this.modal?._panel?.classList.toggle('interaction-panel', !inventoryMode)
@@ -288,6 +293,11 @@ export class HeroBuildingMenuManager {
       this.transferPanel = null
       this.body.appendChild(training)
       return true
+    }
+    if (building.type === BUILDING_TYPES.fireCamp && building.isBuilt) {
+      this.transferPanel = null
+      this.body.appendChild(new HeroCampfireBody(this.menu, building).craftPanel)
+      return false
     }
     if (building.type === BUILDING_TYPES.forge && building.isBuilt) {
       this.transferPanel = null

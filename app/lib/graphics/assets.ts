@@ -105,21 +105,6 @@ export function getIconPath(name: string): string {
   return `assets/interface/${sheet}/${index}.png`
 }
 
-export function getBuildingTextureNameWithSize(size: number): TextureRef | undefined {
-  switch (size) {
-    case 1:
-      return { sheet: 'buildings/construction/size-2', frame: 0 }
-    case 2:
-      return { sheet: 'buildings/construction/size-2', frame: 0 }
-    case 3:
-      return { sheet: 'buildings/construction/size-3', frame: 0 }
-    case 5:
-      return { sheet: 'buildings/construction/size-5', frame: 0 }
-    default:
-      return { sheet: 'buildings/construction/size-3', frame: 0 }
-  }
-}
-
 export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetCacheLike): BuildingAsset {
   if (type === 'Farm') return { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
   const decoAsset = DECO_BUILDING_ASSETS[type]

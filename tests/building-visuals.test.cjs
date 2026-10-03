@@ -55,6 +55,12 @@ function loadBuildingVisuals(libMocks = {}) {
     }
   }
 
+  class Text extends Sprite {
+    constructor(options) {
+      super()
+      Object.assign(this, options)
+    }
+  }
   class AnimatedSprite extends Sprite {}
   class Graphics {
     clear() {
@@ -102,6 +108,7 @@ function loadBuildingVisuals(libMocks = {}) {
           Rectangle,
           Sprite,
           Texture,
+          Text,
         },
         'pixi-filters': { ColorOverlayFilter, OutlineFilter },
         '../../constants': { LABEL_TYPES: { shadow: 'shadow' } },
