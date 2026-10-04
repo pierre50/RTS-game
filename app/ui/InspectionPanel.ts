@@ -1,4 +1,5 @@
 import { Modal } from '../lib'
+import { attachInspectionHeader } from './InspectionHeader'
 import { isHeroInteractionSessionInRange } from '../lib/hero/heroActionRange'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
@@ -14,10 +15,10 @@ type InspectionModalOptions = {
   }
   title: string
   content: HTMLElement
+  headerContent?: HTMLElement
   panelClass?: string
   inspection?: boolean
   interaction?: boolean
-  showCloseButton?: boolean
   dismissible?: boolean
   onClose: () => void
 }
@@ -47,29 +48,32 @@ export function createInspectionModal({
   proximity,
   title,
   content,
+  headerContent,
   panelClass,
   inspection = true,
   interaction = false,
-  showCloseButton = true,
   dismissible = true,
   onClose,
 }: InspectionModalOptions): Modal {
+  let disposeHeader: (() => void) | undefined
   let task: SchedulerTaskId | undefined
   const cleanup = () => {
+    disposeHeader?.()
     if (task !== undefined) proximity?.context.scheduler.remove(task)
     task = undefined
   }
   const modal = new Modal({
     title,
     content,
+    headerContent,
     gameWindow: true,
     dismissible,
-    showCloseButton,
     onClose: () => {
       cleanup()
       onClose()
     },
   })
+  if (!headerContent && content && modal._panel) disposeHeader = attachInspectionHeader(modal._panel, content)
   const close = modal.close.bind(modal)
   modal.close = () => {
     cleanup()

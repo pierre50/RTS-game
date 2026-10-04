@@ -52,7 +52,7 @@ export class PauseMenu {
     }
 
     const content = document.createElement('div')
-    content.className = 'modal-menu'
+    content.className = 'modal-menu pause-menu'
 
     const modal = new Modal({
       title: t('menuBtn'),
@@ -61,6 +61,13 @@ export class PauseMenu {
     })
 
     this.modal = modal
+    modal._panel?.classList.add('pause-panel')
+    content.appendChild(
+      this._btn(t('continueGame'), () => {
+        modal.close()
+        resumeIfNeeded()
+      })
+    )
 
     const saveButton = this._btn(t('save'), async () => {
       if (saveButton.disabled) return

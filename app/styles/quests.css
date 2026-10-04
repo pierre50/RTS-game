@@ -31,8 +31,7 @@
   overflow-wrap: anywhere;
 }
 .quest-list-item[aria-current='true'] {
-  outline: 2px solid currentColor;
-  outline-offset: -2px;
+  outline: none;
 }
 .quest-details {
   line-height: 1.6;
@@ -83,4 +82,51 @@
   vertical-align: middle;
   text-shadow: none;
   transform: translateY(-4px);
+}
+
+.game-window.quest-journal-panel {
+  width: min(900px, calc(100vw - 32px));
+}
+.game-window .quest-journal {
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 1.35fr);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.game-window .quest-list,
+.game-window .quest-details {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ui-gap-18);
+}
+.game-window .quest-details {
+  border-left: 1px solid var(--window-line);
+}
+.game-window .quest-list-item {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+.game-window .quest-details h2 {
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-lg);
+}
+.game-window .quest-details p,
+.game-window .quest-details li {
+  font-size: var(--font-size-sm);
+}
+@media (max-width: 640px) {
+  .game-window .quest-journal {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+  .game-window .quest-list {
+    max-height: 25dvh;
+  }
+  .game-window .quest-details {
+    border-left: 0;
+    border-top: 1px solid var(--window-line);
+  }
+}
+.game-window .quest-list-item {
+  width: 100%;
 }

@@ -1,4 +1,11 @@
 export const EN_MINIMAP_TRANSLATIONS = {
+  minimapLegendPlayers: 'Players',
+  minimapLegendSymbols: 'Map symbols',
+  minimapLegendCamp: 'Bandit camp',
+  minimapLegendHero: 'Hero',
+  minimapLegendVillagers: 'Villagers',
+  minimapLegendTroops: 'Troops',
+  minimapSymbolBuildings: 'Buildings',
   minimapZoomIn: 'Zoom in',
   minimapZoomOut: 'Zoom out',
   minimapMarkerShapes: '➤ Hero · ● Villagers · ▲ Troops · ■ Buildings',
@@ -28,6 +35,13 @@ export const EN_MINIMAP_TRANSLATIONS = {
 }
 
 export const FR_MINIMAP_TRANSLATIONS = {
+  minimapLegendPlayers: 'Joueurs',
+  minimapLegendSymbols: 'Symboles de la carte',
+  minimapLegendCamp: 'Camp de bandits',
+  minimapLegendHero: 'Héros',
+  minimapLegendVillagers: 'Villageois',
+  minimapLegendTroops: 'Troupes',
+  minimapSymbolBuildings: 'Bâtiments',
   minimapZoomIn: 'Zoomer',
   minimapZoomOut: 'Dézoomer',
   minimapMarkerShapes: '➤ Héros · ● Villageois · ▲ Troupes · ■ Bâtiments',

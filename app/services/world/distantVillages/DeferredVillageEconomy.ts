@@ -1,3 +1,9 @@
+import { BUILDING_TYPES } from '../../../constants/entities'
+import {
+  replenishMarketGold,
+  resetMarketEquipmentStock,
+  MARKET_RESTOCK_INTERVAL_DAYS,
+} from '../../../lib/equipment/equipmentMarket'
 import { configureVillageNightWatch } from '../../../lib/units/villageNightWatch'
 import { DAY_NIGHT_CONFIG } from '../../../config/gameplay'
 import { restoreOfflineUnitSleepHealth } from '../../../lib/units/unitSleepHealth'
@@ -34,6 +40,21 @@ export function advanceDeferredVillage(
         DAY_NIGHT_CONFIG.startHour * 60 + from / minuteMs,
         DAY_NIGHT_CONFIG.startHour * 60 + to / minuteMs
       )
+    const dayAt = (elapsed: number) =>
+      Math.max(
+        1,
+        Math.floor(
+          (DAY_NIGHT_CONFIG.startHour + elapsed / minuteMs / 60 - DAY_NIGHT_CONFIG.newDayHour) /
+            DAY_NIGHT_CONFIG.hoursPerDay
+        ) + 1
+      )
+    for (let day = dayAt(from) + 1; day <= dayAt(to); day++) {
+      for (const market of player.buildings ?? []) {
+        if (market.type !== BUILDING_TYPES.market || !market.isBuilt || market.isDead || market.isDestroyed) continue
+        replenishMarketGold(market)
+        if (day % MARKET_RESTOCK_INTERVAL_DAYS === 0) resetMarketEquipmentStock(market, { civilization: player.civ })
+      }
+    }
     // The supply helper only reads saved inventories/ownership, never entity methods.
     const supplies = { ...player, ...savedResourceOwner(player), units: player.units ?? [] } as unknown as PlayerLike
     replenishRpgVillage(supplies, context.dayNight?.state.day ?? 1)

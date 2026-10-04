@@ -17,6 +17,7 @@ const { completeBuildingUpgrade, nextBuildingUpgrade } = load('app/lib/buildings
 const { startBuildingUpgrade, canStartBuildingUpgrade } = load('app/classes/building/BuildingUpgrade.ts')
 const {
   advanceMaterialConstruction,
+  applyConstructionWork,
   remainingConstructionMaterials,
   missingConstructionMaterialsForNextPoint,
   hasConstructionWork,
@@ -80,10 +81,10 @@ test('materials constrain independent renovation progress and completion applies
   const { owner, hero, building, chest } = fixture()
   startBuildingUpgrade(building, hero)
   const work = building.buildingUpgrade
-  assert.equal(advanceMaterialConstruction(building, work.totalHitPoints, []), 1)
+  assert.equal(advanceMaterialConstruction(building, work.totalHitPoints, []), 0)
   const bag = { wood: 60 }
-  work.hitPoints = advanceMaterialConstruction(building, work.totalHitPoints, [bag])
-  assert.ok(work.hitPoints > 1 && work.hitPoints < work.totalHitPoints)
+  applyConstructionWork(building, advanceMaterialConstruction(building, work.totalHitPoints, [bag]))
+  assert.ok(work.constructionProgress > 0 && work.constructionProgress < 1)
   assert.equal(completeBuildingUpgrade(building, definitions.House), false)
   assert.deepEqual(remainingConstructionMaterials(building), { stone: 30, fiber: 4 })
   assert.deepEqual(missingConstructionMaterialsForNextPoint(building, {}), { stone: 30, fiber: 4 })
@@ -91,7 +92,7 @@ test('materials constrain independent renovation progress and completion applies
   // Combat damage during renovation does not reset construction progress.
   building.hitPoints = 40
   Object.assign(bag, { stone: 30, fiber: 4 })
-  work.hitPoints = advanceMaterialConstruction(building, work.totalHitPoints, [bag])
+  applyConstructionWork(building, advanceMaterialConstruction(building, work.totalHitPoints, [bag]))
   assert.equal(completeBuildingUpgrade(building, definitions.House), true)
   assert.equal(building.buildingLevel, 1)
   assert.equal(building.totalHitPoints, 125)
@@ -125,7 +126,7 @@ test('all eleven atlas buildings can renovate from level 1 to 2 and stop at the 
     assert.deepEqual(remainingConstructionMaterials(building), target.cost)
     assert.equal(completeBuildingUpgrade(building, config), false)
     const materials = { ...target.cost }
-    building.buildingUpgrade.hitPoints = advanceMaterialConstruction(building, target.totalHitPoints, [materials])
+    applyConstructionWork(building, advanceMaterialConstruction(building, target.totalHitPoints, [materials]))
     assert.equal(completeBuildingUpgrade(building, config), true, type)
     assert.equal(building.buildingLevel, 2)
     assert.equal(building.totalHitPoints, target.totalHitPoints)
@@ -194,6 +195,63 @@ test('offline construction completes renovation without recreating the building 
   assert.equal(owner.populationMax, 0)
   assert.equal(building.interiorBuildings[0], chest)
   assert.equal(report.buildingsCompleted, 1)
+})
+
+test('offline construction finishes damaged sites by work progress and preserves the damage', () => {
+  const { buildOffline } = load('app/services/world/work/OfflineWorkImpacts.ts')
+  const target = {
+    type: 'House',
+    label: 'site',
+    isBuilt: false,
+    hitPoints: 31,
+    totalHitPoints: 101,
+    constructionProgress: 0.5,
+  }
+  const unit = { type: 'Villager', buildQueue: ['site'] }
+  const report = { buildingsCompleted: 0 }
+  const result = buildOffline(
+    {
+      state: {},
+      player: {},
+      playerIndex: 0,
+      unit,
+      target,
+      spatial: {},
+      report,
+      cycle: 1,
+      rules: { buildingConfig: () => ({ totalHitPoints: 101, constructionTime: 101 }) },
+    },
+    1000
+  )
+  assert.equal(result.status, 'next')
+  assert.equal(target.isBuilt, true)
+  assert.equal(target.constructionProgress, 1)
+  assert.equal(target.hitPoints, 81)
+  assert.equal(report.buildingsCompleted, 1)
+})
+
+test('offline repairs wait for full health while keeping construction complete', () => {
+  const { buildOffline } = load('app/services/world/work/OfflineWorkImpacts.ts')
+  const target = { type: 'House', isBuilt: true, hitPoints: 10, totalHitPoints: 20, constructionProgress: 1 }
+  const report = { buildingsCompleted: 0 }
+  const result = buildOffline(
+    {
+      state: {},
+      player: {},
+      playerIndex: 0,
+      unit: { type: 'Villager' },
+      target,
+      spatial: {},
+      report,
+      cycle: 1,
+      rules: { buildingConfig: () => ({ totalHitPoints: 20, constructionTime: 20 }) },
+    },
+    1
+  )
+  assert.equal(result.status, 'wait')
+  assert.equal(target.hitPoints, 11)
+  assert.equal(target.constructionProgress, 1)
+  assert.equal(report.buildingsCompleted, 0)
 })
 
 test('upgrade row displays construction costs, starts an unfunded project and then shows progress', () => {
@@ -303,7 +361,7 @@ test('renovation closes entry before expelling units and reopens it on completio
   assert.equal(startBuildingUpgrade(building, hero), true)
   assert.equal(expelled, true)
   assert.equal(hasBuildingTrainingCapacity(building), false)
-  building.buildingUpgrade.hitPoints = building.buildingUpgrade.totalHitPoints
+  building.buildingUpgrade.constructionProgress = 1
   assert.equal(completeBuildingUpgrade(building, definitions.House), true)
   assert.equal(canUnitEnterBuildingInterior(hero, building), true)
   assert.equal(hasBuildingTrainingCapacity(building), true)

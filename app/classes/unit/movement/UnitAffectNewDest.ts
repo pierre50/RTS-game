@@ -1,3 +1,4 @@
+import { constructionProgress } from '../../../lib/economy/constructionMaterials'
 import type { BuildingUpgrade } from '../../../lib/economy/constructionMaterials'
 import { isRpgVillager } from '../../../config/rpgVillages'
 import { notifyVillageStateChanged } from '../../../lib/units/villageStateEvents'
@@ -18,6 +19,7 @@ import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
 
 type BuildTarget = RuntimeEntity & {
+  constructionProgress?: number
   isBuilt?: boolean
   buildingUpgrade?: BuildingUpgrade
   totalHitPoints?: number
@@ -33,7 +35,7 @@ function isCompletedBuildTarget(unit: UnitEntity): boolean {
     unit.action === ACTION_TYPES.build &&
       isBuildTarget(dest) &&
       !dest.buildingUpgrade &&
-      (dest.isBuilt || ((dest.hitPoints ?? 0) >= (dest.totalHitPoints ?? 0) && (dest.totalHitPoints ?? 0) > 0))
+      (dest.isBuilt || constructionProgress(dest) >= 1)
   )
 }
 

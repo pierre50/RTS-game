@@ -1,6 +1,7 @@
 import { AnimatedSprite, Assets, Graphics, Polygon, Rectangle, Sprite, Text, Texture, type Filter } from 'pixi.js'
 import { ColorOverlayFilter, OutlineFilter } from 'pixi-filters'
 import { FADE_DURATION_MS, LABEL_TYPES } from '../../constants'
+import { BUILDING_TYPES } from '../../constants/entities'
 import {
   attachEntityShadowsToMapSpace,
   changeSpriteColorDirectly,
@@ -194,6 +195,13 @@ export function syncBuildingConstructionReveal(building: BuildingControllerHost,
   mask.clear()
   mask.rect(bounds.x - 2, top, bounds.width + 4, visibleHeight + 2)
   mask.fill({ color: 0xffffff })
+
+  if (building.type === BUILDING_TYPES.farm) {
+    building.constructionProgressText?.parent?.removeChild(building.constructionProgressText)
+    building.constructionProgressText?.destroy()
+    building.constructionProgressText = null
+    return
+  }
 
   if (!building.constructionProgressText) {
     const text = new Text({

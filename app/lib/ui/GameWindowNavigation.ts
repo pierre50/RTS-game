@@ -1,6 +1,6 @@
 /** Spatial navigation follows the rendered grid, including responsive column counts. */
 export function findDirectionalTarget(
-  rectangles: { x: number; y: number }[],
+  rectangles: { x: number; y: number; left?: number; right?: number }[],
   current: number,
   dx: number,
   dy: number
@@ -10,6 +10,16 @@ export function findDirectionalTarget(
   let best = current
   let distance = Infinity
   rectangles.forEach((point, index) => {
+    // Up/down stay in the current column. Stacked mobile columns still overlap.
+    if (
+      dy &&
+      origin.left !== undefined &&
+      origin.right !== undefined &&
+      point.left !== undefined &&
+      point.right !== undefined &&
+      (point.right <= origin.left || point.left >= origin.right)
+    )
+      return
     const x = point.x - origin.x
     const y = point.y - origin.y
     const forward = x * dx + y * dy

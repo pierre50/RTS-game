@@ -131,6 +131,12 @@ export class QuestJournalManager {
         const definition = this.system.definitions.get(quest.definitionId)
         button.textContent = `${state?.trackedQuestId === quest.id ? '◆ ' : ''}${definition ? this.label(definition.title, quest) : t('questUnavailable')}`
         if (quest.unread) button.appendChild(createQuestMarker())
+        button.addEventListener('focus', () => {
+          if (this.selectedId === quest.id) return
+          this.selectedId = quest.id
+          this.render()
+          this.sync()
+        })
         button.addEventListener('click', () => {
           this.selectedId = quest.id
           this.render()
@@ -158,6 +164,7 @@ export class QuestJournalManager {
       const follow = document.createElement('button')
       follow.type = 'button'
       follow.className = 'ui-btn'
+      follow.setAttribute('data-window-action', 'quest-track')
       const tracked = state?.trackedQuestId === quest.id
       follow.textContent = t(tracked ? 'questUntrack' : 'questTrack')
       follow.addEventListener('click', () => {

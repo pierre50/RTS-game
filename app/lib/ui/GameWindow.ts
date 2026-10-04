@@ -42,6 +42,7 @@ import {
   type WindowHold,
   type WindowKeyIntent,
 } from './GameWindowInput'
+import { scrollWindowInformation } from './GameWindowScroll'
 import { findDirectionalTarget, GameWindowPadState } from './GameWindowNavigation'
 
 /** Shared selection, detail panel and input-aware footer. Domain actions stay with their owners. */
@@ -57,6 +58,7 @@ export class GameWindow {
   private commands: Command[] = []
   private signature = ''
   private mode: 'keyboard' | 'gamepad' = 'keyboard'
+  private lastScrollAt = 0
   private hadGamepad = false
   private confirmation: Command | null = null
   private holding: WindowHold | null = null
@@ -183,6 +185,8 @@ export class GameWindow {
             pad: 0,
             glyph: 'A',
             danger: false,
+            hold: false,
+            confirm: false,
             run: () => {
               const command = this.commands.find(item => item.id === this.confirmation?.id)
               this.confirmation = null
@@ -204,13 +208,19 @@ export class GameWindow {
           },
         ]
       : this.commands
-    const multiplePanels = this.panel.querySelectorAll('.inventory-section, .ui-tab:not([hidden])').length > 1
     const signature = JSON.stringify([
-      multiplePanels,
       this.mode,
       Boolean(this.items().length),
       this.confirmation?.label,
-      commands.map(({ id, label, key, pad, disabled }) => [id, label, key, pad, disabled]),
+      commands.map(({ id, label, key, pad, disabled, description, hold }) => [
+        id,
+        label,
+        key,
+        pad,
+        disabled,
+        description,
+        hold,
+      ]),
     ])
     // Keep DOM focus on footer buttons through live resource/health refreshes.
     if (signature === this.signature) return
@@ -220,8 +230,6 @@ export class GameWindow {
       mode: this.mode,
       confirmation: this.confirmation,
       commands,
-      hasItems: Boolean(this.items().length),
-      multiplePanels,
       restoreSelectionFocus: () => this.selected?.focus({ preventScroll: true }),
       execute: command => this.execute(command),
       resolveCommand: command => (this.confirmation ? command : this.commands.find(item => item.id === command.id)),
@@ -230,7 +238,7 @@ export class GameWindow {
 
   private execute(command: Command): void {
     if (command.disabled) return
-    if (command.danger) {
+    if (command.danger || command.confirm || command.hold) {
       this.confirmation = command
       this.renderCommands()
     } else {
@@ -266,7 +274,6 @@ export class GameWindow {
 
   private onFieldChange = (): void => {
     this.footer.setAttribute('aria-label', t('windowCommands'))
-    this.panel.querySelector('.modal-close')?.setAttribute('aria-label', t('close'))
     this.signature = ''
     this.scheduleRefresh()
   }
@@ -278,6 +285,10 @@ export class GameWindow {
       return
     }
     const items = this.items()
+    if (!items.length && dy) {
+      scrollWindowInformation(this.panel, dy * 48)
+      return
+    }
     const index = findDirectionalTarget(
       items.map(item => getWindowNavigationPoint(item, Boolean(dy))),
       items.indexOf(this.selected!),
@@ -302,13 +313,6 @@ export class GameWindow {
       this.select(tab, true)
       return
     }
-    const sections = [...this.panel.querySelectorAll<HTMLElement>('.inventory-section')].filter(section =>
-      this.visible(section)
-    )
-    if (!sections.length) return
-    const index = sections.indexOf(this.selected?.closest('.inventory-section') as HTMLElement)
-    const section = sections[(Math.max(0, index) + direction + sections.length) % sections.length]
-    this.select(this.items().find(item => section.contains(item)) ?? null, true)
   }
 
   private onKey = (event: KeyboardEvent): void => {
@@ -359,7 +363,7 @@ export class GameWindow {
     if (direction) this.move(direction[0], direction[1])
     else if (page) this.switchPanel(page)
     else if (command && !repeat) {
-      if (command.danger && !command.disabled) this.keyboardHolding = { command, since: performance.now() }
+      if (command.hold && !command.disabled) this.keyboardHolding = { command, since: performance.now() }
       else this.execute(command)
     }
   }
@@ -422,7 +426,11 @@ export class GameWindow {
 
   private readGamepad(pad: Gamepad, now: number): void {
     const { pressed, direction } = this.padState.read(pad, now)
-    if (pressed.length || direction) this.setMode('gamepad')
+    const readAxis = pad.axes[3] ?? 0
+    const elapsed = Math.min(50, Math.max(0, now - (this.lastScrollAt || now)))
+    this.lastScrollAt = now
+    if (pressed.length || direction || Math.abs(readAxis) > 0.35) this.setMode('gamepad')
+    if (!this.confirmation && Math.abs(readAxis) > 0.35) scrollWindowInformation(this.panel, readAxis * elapsed * 0.65)
     if (this.confirmation) {
       this.answerConfirmation(getPadConfirmationChoice(pressed))
       return
@@ -431,10 +439,11 @@ export class GameWindow {
     if (pressed.includes(4) && !isPadButtonBound(this.commands, 4)) this.switchPanel(-1)
     if (pressed.includes(5) && !isPadButtonBound(this.commands, 5)) this.switchPanel(1)
     for (const index of pressed) {
-      const command = findEnabledPadCommand(this.commands, index)
+      const command = findEnabledPadCommand(this.commands, index, pad)
       if (!command) continue
-      if (command.danger) this.holding = { command, since: now }
+      if (command.hold) this.holding = { command, since: now }
       else this.execute(command)
+      if (this.confirmation) break
     }
     this.advancePadHold(pad, now)
   }

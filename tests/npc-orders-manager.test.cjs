@@ -46,6 +46,7 @@ function makeFakeElement() {
       },
     },
     children: [],
+    dataset: {},
     textContent: '',
     disabled: false,
     hidden: false,
@@ -75,8 +76,7 @@ function makeFakeElement() {
 }
 
 class FakeModal {
-  constructor({ title, content, onClose, showCloseButton }) {
-    this.showCloseButton = showCloseButton
+  constructor({ title, content, onClose }) {
     this.title = title
     this.content = content
     this.onClose = onClose
@@ -757,7 +757,6 @@ test('every conversation keeps a working exit outside conditional menus', () => 
     for (const scenario of scenarios) {
       manager.open(scenario.npcs, scenario.options)
       if (scenario.submenu) manager.buttons.get(scenario.submenu).click()
-      assert.equal(manager.modal.showCloseButton, false)
       assert.equal(manager.choicesContainer.children.at(-1), manager.exitButton)
       assert.equal(manager.exitButton.hidden, false)
       assert.equal(manager.exitButton.disabled, false)
@@ -790,7 +789,6 @@ test('scripted introduction requires its reply and cannot be replaced or dismiss
     })
     assert.equal(manager.modal._panel.classList.contains('npc-orders-panel'), true)
     assert.equal(manager.modal._panel.classList.contains('inspection-panel'), true)
-    assert.equal(manager.modal.showCloseButton, false)
     manager.close()
     assert.equal(manager.opened, true)
     manager.open([npc], { chatterLine: 'Other' })
@@ -798,6 +796,52 @@ test('scripted introduction requires its reply and cannot be replaced or dismiss
     manager.scriptedReplyPanel.children[0].click()
     assert.equal(answered, 1)
     assert.equal(manager.opened, false)
+  })
+})
+
+test('all introduction steps hide and block unrelated NPC actions until the final reply', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.controls.heroUnit = { label: 'hero' }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const { createCampIntroductionDialogue } = loadModule('app/services/introduction/CampIntroductionDialogue.ts', {
+      '../../lib/lang': { t: key => key },
+    })
+    const manager = new NpcOrdersManager({ context })
+    const npc = { type: 'Villager', label: 'companion', owner: context.player }
+    let completed = 0
+    manager.open([npc], {
+      dialogue: createCampIntroductionDialogue({
+        onNodeChanged() {},
+        onComplete() {
+          completed++
+          manager.close()
+        },
+      }),
+    })
+    for (let step = 0; step < 7; step++) {
+      manager.syncQuest()
+      assert.equal(manager.buttonsContainer.hidden, true)
+      assert.equal(manager.questPanel.root.hidden, true)
+      assert.equal(manager.debugContainer.hidden, true)
+      assert.equal(manager.exitButton.hidden, true)
+      assert.equal(manager.scriptedReplyPanel.hidden, false)
+      assert.equal(manager.scriptedReplyPanel.children.length, 1)
+      assert.equal(manager.scriptedReplyPanel.children[0].dataset.windowLabel, 'windowReply')
+      const before = calls.length
+      for (const id of ['follow', 'stay', 'goto', 'bag']) manager.buttons.get(id).click()
+      assert.equal(calls.length, before)
+      assert.equal(manager.bagModal, undefined)
+      assert.equal(manager.opened, true)
+      manager.scriptedReplyPanel.children[0].click()
+    }
+    assert.equal(completed, 1)
+    assert.equal(manager.opened, false)
+    manager.open([npc])
+    assert.equal(manager.buttonsContainer.hidden, false)
+    assert.equal(manager.scriptedReplyPanel.hidden, true)
+    assert.equal(manager.exitButton.hidden, false)
   })
 })
 

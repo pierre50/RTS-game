@@ -2,17 +2,23 @@
   animation: ui-panel-enter var(--ui-transition-panel) both;
 }
 
+.ui-progress,
+.hero-status-bar {
+  box-sizing: border-box;
+}
+
+.ui-progress:not(.hit-points-bar) {
+  border: var(--ui-control-border);
+}
+
 .ui-progress {
   overflow: hidden;
   background: var(--form-surface-color);
-  border: var(--border-slot);
-  box-shadow: var(--ui-inset-shadow);
 }
 
 .ui-progress__fill {
   height: 100%;
   background: var(--status-progress-background);
-  box-shadow: var(--status-progress-inset-shadow);
 }
 
 .ui-tabs {
@@ -57,6 +63,30 @@
   color: var(--main-accent-color);
   background: var(--main-primary-color);
   border-bottom: none;
-  box-shadow: none;
+
   padding-bottom: var(--ui-gap-10);
+}
+
+/* Shared level badge for the hero HUD and unit identities. */
+.level-tag {
+  display: inline-block;
+  flex: none;
+  padding: var(--level-tag-padding);
+  color: var(--level-tag-color);
+  background: var(--level-tag-background);
+  border: var(--level-tag-border-width) solid var(--level-tag-border-color);
+  font-family: var(--level-tag-font-family);
+  font-size: var(--level-tag-font-size);
+  font-style: normal;
+  text-transform: var(--level-tag-text-transform);
+  letter-spacing: 0;
+  text-shadow: none;
+  font-weight: var(--level-tag-font-weight);
+  line-height: var(--level-tag-line-height);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.modal-title > .level-tag,
+.entity-info-header .level-tag {
+  margin-left: var(--level-tag-gap);
 }

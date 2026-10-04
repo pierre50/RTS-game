@@ -5,6 +5,7 @@ const {
   createConstructionMaterials,
   constructionBagNeeds,
   advanceMaterialConstruction,
+  applyConstructionWork,
   remainingConstructionMaterials,
 } = loadTsModule('app/lib/economy/constructionMaterials.ts')
 const { constructionStores } = loadTsModule('app/lib/economy/constructionStores.ts')
@@ -33,12 +34,12 @@ const center = (i, stock) => ({
 test('construction progresses in proportion to supplied materials, with exact final costs', () => {
   const building = site()
   const stock = { wood: 20, stone: 5 }
-  building.hitPoints = advanceMaterialConstruction(building, 101, [stock])
+  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [stock]))
   assert.equal(building.hitPoints, 51)
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 20, stone: 5 })
-  assert.equal(advanceMaterialConstruction(building, 101, [stock]), 51)
+  assert.equal(advanceMaterialConstruction(building, 101, [stock]), 50.5)
   Object.assign(stock, { wood: 20, stone: 5 })
-  building.hitPoints = advanceMaterialConstruction(building, 101, [stock])
+  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [stock]))
   assert.equal(building.hitPoints, 101)
   assert.deepEqual(stock, { wood: 0, stone: 0 })
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 40, stone: 10 })
@@ -48,10 +49,10 @@ test('a builder keeps unused ingredients and consumes only each hit fraction', (
   const building = site('TownCenter', { wood: 100 })
   building.totalHitPoints = 501
   const bag = { wood: 20, stone: 7 }
-  building.hitPoints = advanceMaterialConstruction(building, 6, [bag])
+  applyConstructionWork(building, advanceMaterialConstruction(building, 5, [bag]))
   assert.deepEqual(bag, { wood: 19, stone: 7 })
   assert.deepEqual(building.constructionMaterials.delivered, {})
-  building.hitPoints = advanceMaterialConstruction(building, 501, [bag])
+  applyConstructionWork(building, advanceMaterialConstruction(building, 501, [bag]))
   assert.equal(building.hitPoints, 101)
   assert.equal(bag.wood, 0)
   assert.equal(bag.stone, 7)
@@ -68,13 +69,13 @@ test('old deposited materials remain usable without taking new materials from a 
 test('wood and stone independently advance their share, without substituting for each other', () => {
   const building = site('House', { wood: 100, stone: 100 })
   const bag = { wood: 120 }
-  building.hitPoints = advanceMaterialConstruction(building, 101, [bag])
+  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [bag]))
   assert.equal(building.hitPoints, 51)
   assert.equal(bag.wood, 20)
-  assert.equal(advanceMaterialConstruction(building, 101, [bag]), 51)
+  assert.equal(advanceMaterialConstruction(building, 101, [bag]), 50.5)
   assert.deepEqual(constructionBagNeeds(building, bag, 10), { stone: 10 })
   bag.stone = 100
-  building.hitPoints = advanceMaterialConstruction(building, 101, [bag])
+  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [bag]))
   assert.equal(building.hitPoints, 101)
   assert.deepEqual(bag, { wood: 20, stone: 0 })
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 100, stone: 100 })
@@ -84,7 +85,7 @@ test('many small hits consume exactly the recipe even after a reload', () => {
   let building = site('House', { wood: 17, stone: 3 })
   const bag = { wood: 20, stone: 10 }
   for (let hp = 2; hp <= 101; hp++) {
-    building.hitPoints = advanceMaterialConstruction(building, hp, [bag])
+    applyConstructionWork(building, advanceMaterialConstruction(building, hp, [bag]))
     if (hp === 50) building = JSON.parse(JSON.stringify(building))
   }
   assert.equal(building.hitPoints, 101)
@@ -99,10 +100,10 @@ test('construction never charges legacy prepaid sites again', () => {
 
 test('materials survive reload and repairing damage does not charge consumed materials again', () => {
   let building = site()
-  building.hitPoints = advanceMaterialConstruction(building, 51, [{ wood: 40, stone: 10 }])
+  applyConstructionWork(building, advanceMaterialConstruction(building, 50.5, [{ wood: 40, stone: 10 }]))
   building = JSON.parse(JSON.stringify(building))
   building.hitPoints = 11
-  assert.equal(advanceMaterialConstruction(building, 51), 51)
+  assert.equal(advanceMaterialConstruction(building, 50.5), 50.5)
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 25 })
 })
 
@@ -214,7 +215,7 @@ test('the synthetic chest of a communal depot remains shared, while a house ches
 test('one shared inventory reference cannot be charged or counted twice', () => {
   const building = site('House', { wood: 10 })
   const stock = { wood: 5 }
-  assert.equal(advanceMaterialConstruction(building, 101, [stock, stock]), 51)
+  assert.equal(advanceMaterialConstruction(building, 101, [stock, stock]), 50.5)
   assert.equal(building.constructionMaterials.consumed.wood, 5)
   assert.equal(stock.wood, 0)
 })

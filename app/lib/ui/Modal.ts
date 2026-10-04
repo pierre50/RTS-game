@@ -1,7 +1,6 @@
 import { t } from '../lang'
 import { GameWindow } from './GameWindow'
 import { uuidv4 } from '../maths'
-import { playClickSound } from '../audio/uiSound'
 
 export class Modal {
   private dismissible: boolean
@@ -17,24 +16,24 @@ export class Modal {
   constructor({
     title,
     content,
+    headerContent,
     onClose,
     dismissible = true,
-    showCloseButton = true,
     gameWindow = true,
   }: {
     gameWindow?: boolean
     title?: string
     content?: Node
+    headerContent?: Node
     onClose?: () => void
     dismissible?: boolean
-    showCloseButton?: boolean
   } = {}) {
     this.dismissible = dismissible
     this._id = uuidv4()
     this._onClose = onClose
     this._previousActiveElement = document.activeElement
     this._onKeyDown = this._handleKeyDown.bind(this)
-    this._build(title, content, showCloseButton)
+    this._build(title, content, headerContent)
     if (gameWindow && this._panel)
       this.gameWindow = new GameWindow(
         this._panel,
@@ -44,7 +43,7 @@ export class Modal {
       )
   }
 
-  _build(title?: string, content?: Node, showCloseButton = true): void {
+  _build(title?: string, content?: Node, headerContent?: Node): void {
     const backdrop = document.createElement('div')
     this._backdrop = backdrop
     backdrop.id = this._id
@@ -76,17 +75,11 @@ export class Modal {
       panel.setAttribute('aria-label', t('dialog'))
     }
 
-    if (showCloseButton) {
-      const closeBtn = document.createElement('button')
-      closeBtn.type = 'button'
-      closeBtn.className = 'modal-close ui-btn'
-      closeBtn.textContent = '✕'
-      closeBtn.setAttribute('aria-label', t('close'))
-      closeBtn.addEventListener('pointerdown', playClickSound)
-      closeBtn.addEventListener('click', () => this._dismiss())
-      if (this.dismissible) header.appendChild(closeBtn)
+    if (headerContent) {
+      header.classList.add('modal-header--with-summary')
+      panel.classList.add('has-entity-summary')
+      header.appendChild(headerContent)
     }
-
     panel.appendChild(header)
     if (content) panel.appendChild(content)
 

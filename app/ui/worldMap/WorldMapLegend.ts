@@ -1,4 +1,4 @@
-import { minimapMarkerIcon, settlementMarkerKind, type MinimapMarkerKind } from '../minimap/MinimapMarkerIcons'
+import { minimapMarkerIcon, type MinimapMarkerKind } from '../minimap/MinimapMarkerIcons'
 import { getInteriorExitCell } from '../../lib/buildings/interiorExits'
 import { playerRelation } from '../../lib/combat/playerRelation'
 import { isPlayerEliminated } from '../../lib/playerState'
@@ -111,7 +111,8 @@ function legendDedupeKey(entry: WorldMapLegendEntry): string {
 export function createWorldMapLegend(
   menu: MenuHost,
   manifest: MacroWorldManifest,
-  interactive = false
+  interactive = false,
+  markerLegend?: HTMLElement
 ): HTMLElement | null {
   const entries = new Map<string, WorldMapLegendEntry>()
   const dedupeKeys = new Set<string>()
@@ -131,7 +132,6 @@ export function createWorldMapLegend(
       if (entries.has(key)) continue
       entries.set(key, {
         key,
-        icon: player.isPlayed ? 'hero' : player.type === PLAYER_TYPES.bandits ? 'camp' : settlementMarkerKind(player),
         color: player.colorHex ?? worldMapPlayerColor(menu, player) ?? '#6ee37a',
         name: player.isPlayed
           ? t('you')
@@ -173,7 +173,7 @@ export function createWorldMapLegend(
   legend.className = 'worldmap-legend'
   const title = document.createElement('div')
   title.className = 'worldmap-legend-title'
-  title.textContent = t(interactive ? 'minimapMapLegend' : 'worldMapLegend')
+  title.textContent = t(interactive ? 'minimapLegendPlayers' : 'worldMapLegend')
   legend.appendChild(title)
 
   const sortedEntries = [...entries.values()].sort((a, b) => Number(b.self === true) - Number(a.self === true))
@@ -197,7 +197,7 @@ export function createWorldMapLegend(
     }
     const swatch = document.createElement('span')
     swatch.className = 'worldmap-legend-swatch'
-    swatch.classList.toggle('bandits', entry.variant === 'bandits')
+    swatch.classList.toggle('bandits', !interactive && entry.variant === 'bandits')
     swatch.style.backgroundColor = entry.color
     const name = document.createElement('span')
     name.className = 'worldmap-legend-name'
@@ -214,7 +214,7 @@ export function createWorldMapLegend(
       swatch.appendChild(icon)
     }
     row.append(swatch, name, relation)
-    legend.appendChild(row)
+    ;(entry.icon && entry.key !== 'caves' && markerLegend ? markerLegend : legend).appendChild(row)
   }
 
   return legend

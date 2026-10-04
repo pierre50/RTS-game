@@ -156,6 +156,7 @@ export function planOfflineBuildings(
           placementMirrored: generatedBuildingMirrored(type, position, player.civ ?? index, p => spatial.available(p)),
           isBuilt: false,
           constructionMaterials: createConstructionMaterials(config.cost),
+          constructionProgress: 0,
           hitPoints: 1,
           totalHitPoints: Number(config.totalHitPoints),
         }

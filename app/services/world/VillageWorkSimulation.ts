@@ -32,6 +32,7 @@ const FIELDS = [
   'inactif',
   'villageHome',
   'buildingLevel',
+  'constructionProgress',
   'constructionMaterials',
   'buildingUpgrade',
   'reservePolicy',
@@ -252,17 +253,19 @@ function commitVillageWork(
   savedBuildings.forEach((copy, index) => {
     const building = buildings[index]
     building.inventory = copy.inventory
+    const progressChanged = building.constructionProgress !== copy.constructionProgress
+    building.constructionProgress = copy.constructionProgress
     building.constructionMaterials = copy.constructionMaterials
     if (building.buildingUpgrade) {
       if (copy.buildingUpgrade) building.buildingUpgrade = copy.buildingUpgrade
       else if (copy.buildingLevel === building.buildingUpgrade.targetLevel)
-        building.buildingUpgrade.hitPoints = building.buildingUpgrade.totalHitPoints
+        building.buildingUpgrade.constructionProgress = 1
       building.updateHitPoints?.('build')
     }
     if (
       fromElapsedMs != null &&
       copy.hitPoints != null &&
-      (copy.hitPoints !== building.hitPoints || (copy.isBuilt && !building.isBuilt))
+      (progressChanged || copy.hitPoints !== building.hitPoints || (copy.isBuilt && !building.isBuilt))
     ) {
       building.hitPoints = copy.hitPoints
       building.updateHitPoints?.('build')

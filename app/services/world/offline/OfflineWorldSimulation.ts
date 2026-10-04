@@ -1,3 +1,4 @@
+import { initializeConstructionProgress } from '../../../lib/economy/constructionMaterials'
 import { getVacantHomeCount, reconcileHouseholds } from '../../../lib/housing/households'
 import { refreshPopulationCapacity } from '../../../lib/buildings/buildingOccupancy'
 import { configureVillageNightWatch } from '../../../lib/units/villageNightWatch'
@@ -147,7 +148,10 @@ export function simulateOfflineWorld(state: SerializedSave, options: SimulationO
     state.config?.mapType === 'interior'
   )
     return report
-  for (const owner of state.players) configureVillageNightWatch(owner)
+  for (const owner of state.players) {
+    configureVillageNightWatch(owner)
+    for (const building of savedBuildingsWithInteriors(owner.buildings ?? [])) initializeConstructionProgress(building)
+  }
   report.elapsedMs = toElapsedMs - fromElapsedMs
   const spatial = new OfflineWorldSpatial(
     options.terrain,

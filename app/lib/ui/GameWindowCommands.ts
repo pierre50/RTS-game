@@ -7,9 +7,13 @@ export type Command = {
   label: string
   key: string
   pad: number
+  padModifier?: number
   glyph: string
   disabled?: boolean
   danger?: boolean
+  hold?: boolean
+  confirm?: boolean
+  description?: string
   run: () => void
 }
 const ROW = '.inventory-action-row'
@@ -30,11 +34,12 @@ function buttonCommand(button: HTMLButtonElement, id: string, key: string, pad: 
     glyph: getGamepadGlyph(pad),
     label:
       button.dataset.windowLabel ||
-      button.querySelector('.hero-building-menu-label')?.textContent?.trim() ||
+      button.querySelector('.hero-building-menu-label, .nested-button-menu-label')?.textContent?.trim() ||
       button.textContent?.trim() ||
       button.getAttribute('aria-label') ||
       '',
     disabled: button.disabled,
+    description: button.title,
     danger: button.matches('.entity-delete-building-button, .inventory-row-action-button--delete'),
     run: () => {
       if (button.isConnected && !button.disabled) button.click()
@@ -84,6 +89,18 @@ export function availableCommands(host: CommandHost): Command[] {
     (row instanceof HTMLButtonElement ? row : null)
   if (primary) {
     commands.push(buttonCommand(primary, 'primary', 'Enter', 0))
+    if (primary.dataset.craftMax === 'true') {
+      commands.push({
+        ...buttonCommand(primary, 'craft-max', 'Shift+Enter', 0),
+        padModifier: 6,
+        glyph: `${getGamepadGlyph(6)} + ${getGamepadGlyph(0)}`,
+        label: t('craftMaximum'),
+        run: () => {
+          if (primary.isConnected && !primary.disabled)
+            primary.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
+        },
+      })
+    }
     if (primary.dataset.inventoryTransferSlot === 'true') {
       commands.push({
         ...buttonCommand(primary, 'stack', 'Shift+Enter', 2),
@@ -112,11 +129,33 @@ export function availableCommands(host: CommandHost): Command[] {
   const section = row?.closest('.inventory-section')
   const all = section?.querySelector<HTMLButtonElement>('.inventory-transfer-all-button')
   if (all) commands.push(buttonCommand(all, 'all', 'R', 7))
-  for (const button of host.panel.querySelectorAll<HTMLButtonElement>(GLOBAL_ACTION)) {
-    if (button.closest('[hidden], .hidden, [aria-hidden="true"]')) continue
-    const danger = button.matches('.entity-delete-building-button')
-    commands.push(buttonCommand(button, danger ? 'remove' : 'deliveries', danger ? 'X' : 'V', danger ? 3 : 6))
+  const globalButtons = [...host.panel.querySelectorAll<HTMLButtonElement>(GLOBAL_ACTION)].filter(
+    button => !button.closest('[hidden], .hidden, [aria-hidden="true"]')
+  )
+  const removal = globalButtons.filter(button => button.matches('.entity-delete-building-button'))
+  for (const button of globalButtons) {
+    if (button.matches('.entity-delete-building-button')) continue
+    const action = button.dataset.windowAction
+    if (action === 'sleep' || action === 'home') {
+      commands.push({
+        ...buttonCommand(button, action, 'X', 2),
+        confirm: action === 'sleep',
+      })
+    } else if (action === 'upgrade') {
+      const hasSecondaryAction = globalButtons.some(candidate =>
+        ['sleep', 'home'].includes(candidate.dataset.windowAction ?? '')
+      )
+      commands.push({
+        ...buttonCommand(button, action, 'U', 2),
+        ...(hasSecondaryAction ? { padModifier: 6, glyph: `${getGamepadGlyph(6)} + ${getGamepadGlyph(2)}` } : {}),
+      })
+    } else if (action === 'quest-track') {
+      commands.push(buttonCommand(button, action, 'X', 2))
+    } else {
+      commands.push(buttonCommand(button, 'deliveries', 'V', 6))
+    }
   }
+  removal.forEach((button, index) => commands.push(buttonCommand(button, `remove-${index}`, 'Y', 3)))
   if (host.panel.querySelectorAll('.ui-tab').length > 1) {
     for (const direction of [-1, 1])
       commands.push({

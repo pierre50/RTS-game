@@ -20,6 +20,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   heroHomeResident?: { label: string; name?: string }
   plannedBedLabels?: string[]
   demolish?: () => void
+  constructionProgress?: number
   constructionMaterials?: ConstructionMaterials
   buildingUpgrade?: BuildingUpgrade
   reservePolicy?: DepotReservePolicy
@@ -74,6 +75,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
     resources?: ResourceAmount
     equipment?: string[]
   }
+  marketGold?: number
   marketStock?: string[]
   updateHitPoints?: (action: string) => void
   units?: string[]

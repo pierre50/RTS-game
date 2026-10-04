@@ -433,9 +433,16 @@ test('depots and stables have separated lights in both orientations and retrofit
 })
 
 for (const type of Object.keys(expectedFurniture)) {
-  test(`${type}: hero interiors only retain the depot chest and never retrofit preset lights`, () => {
+  test(`${type}: hero interiors provide basic furnishings without extra decoration`, () => {
     const fresh = furnishInterior(type, undefined, false, { type: 'Human', isPlayed: true })
-    const expected = ['Granary', 'StoragePit'].includes(type) ? ['Chest'] : []
+    const expected =
+      type === 'House'
+        ? ['FireCamp', 'CampBedroll', 'CampBedroll']
+        : type === 'TownCenter'
+          ? ['FireCamp']
+          : ['Granary', 'StoragePit'].includes(type)
+            ? ['Chest']
+            : []
     assert.deepEqual(
       fresh.owner.buildings.map(item => item.type),
       expected
@@ -448,6 +455,26 @@ for (const type of Object.keys(expectedFurniture)) {
     )
   })
 }
+
+test('hero house beds and fires use the AI positions in both building orientations', () => {
+  for (const type of ['House', 'TownCenter']) {
+    for (const mirrored of [false, true]) {
+      const ai = furnishInterior(type, undefined, mirrored)
+      const human = furnishInterior(type, undefined, mirrored, { type: 'Human', isPlayed: true })
+      for (const item of human.owner.buildings) {
+        const reference = ai.owner.buildings.find(building => building.label === item.label)
+        assert.ok(reference)
+        assert.deepEqual(
+          [item.i, item.j, item.placementMirrored],
+          [reference.i, reference.j, reference.placementMirrored]
+        )
+      }
+      const count = human.owner.buildings.length
+      ensureInteriorDefaultBuildings(human.context, human.space)
+      assert.equal(human.owner.buildings.length, count)
+    }
+  }
+})
 
 test('hero rooms preserve manually placed furniture and chest contents on reload', () => {
   const saved = [

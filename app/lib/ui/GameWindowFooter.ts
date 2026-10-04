@@ -5,8 +5,6 @@ type FooterOptions = {
   mode: 'keyboard' | 'gamepad'
   confirmation: Command | null
   commands: Command[]
-  hasItems: boolean
-  multiplePanels: boolean
   restoreSelectionFocus: () => void
   execute: (command: Command) => void
   resolveCommand: (command: Command) => Command | undefined
@@ -16,8 +14,6 @@ export function renderCommandFooter({
   mode,
   confirmation,
   commands,
-  hasItems,
-  multiplePanels,
   restoreSelectionFocus,
   execute,
   resolveCommand,
@@ -29,15 +25,12 @@ export function renderCommandFooter({
     question.className = 'game-window-confirmation'
     question.textContent = `${confirmation.label} ?`
     footer.appendChild(question)
-  }
-  if (!confirmation && hasItems) {
-    const navigation = document.createElement('span')
-    navigation.className = 'game-window-navigation'
-    navigation.textContent = mode === 'gamepad' ? `✥ ${t('windowNavigation')}` : `↑ ↓ ← → ${t('windowNavigation')}`
-    if (multiplePanels)
-      navigation.textContent +=
-        mode === 'gamepad' ? ` · LB / RB ${t('windowPanels')}` : ` · Page ↑ / ↓ ${t('windowPanels')}`
-    footer.appendChild(navigation)
+    if (confirmation.description) {
+      const description = document.createElement('span')
+      description.className = 'game-window-action-reason'
+      description.textContent = confirmation.description
+      footer.appendChild(description)
+    }
   }
   for (const command of commands) {
     const button = document.createElement('button')
@@ -45,6 +38,7 @@ export function renderCommandFooter({
     button.className = 'game-window-command'
     button.dataset.command = command.id
     button.disabled = command.disabled ?? false
+    if (command.description) button.title = command.description
     button.classList.toggle('is-danger', Boolean(command.danger))
     const key = document.createElement('kbd')
     key.textContent =
@@ -55,7 +49,7 @@ export function renderCommandFooter({
           ] ?? command.key)
     key.dataset.pad = String(command.pad)
     const label = document.createElement('span')
-    label.textContent = `${command.label}${command.danger ? ` · ${t('windowHold')}` : ''}`
+    label.textContent = `${command.label}${command.hold ? ` · ${t('windowHold')}` : ''}`
     button.append(key, label)
     button.addEventListener('click', () => {
       // Resolve fresh handlers: live refreshes may have replaced the source button.
@@ -63,6 +57,12 @@ export function renderCommandFooter({
       if (current) execute(current)
     })
     footer.appendChild(button)
+    if (command.disabled && command.description && ['sleep', 'home'].includes(command.id)) {
+      const reason = document.createElement('span')
+      reason.className = 'game-window-action-reason'
+      reason.textContent = command.description
+      footer.appendChild(reason)
+    }
     if (focusedCommand === command.id) button.focus({ preventScroll: true })
   }
   if (confirmation) footer.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true })

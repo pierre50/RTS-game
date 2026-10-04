@@ -8,7 +8,6 @@ export type BindingEditor<A extends string> = {
   hasConflict(action: A): boolean
   keyboard?(action: A, event: KeyboardEvent): Change
   gamepad?(action: A, index: number): Change
-  reset(): void
   refreshAll(): void
 }
 
@@ -133,16 +132,6 @@ export function buildBindingRows<A extends string>(parent: HTMLElement, editor: 
     row.append(label, button)
     parent.appendChild(row)
   }
-  const reset = document.createElement('button')
-  reset.type = 'button'
-  reset.className = 'settings-reset-button ui-btn'
-  reset.textContent = t('controlsResetSection')
-  reset.addEventListener('click', () => {
-    stop()
-    editor.reset()
-    editor.refreshAll()
-  })
-  parent.appendChild(reset)
   refresh()
   return refresh
 }

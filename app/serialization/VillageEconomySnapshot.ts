@@ -12,6 +12,7 @@ const ENTITY_FIELDS = [
   'size',
   'hitPoints',
   'totalHitPoints',
+  'constructionProgress',
   'constructionMaterials',
   'buildingUpgrade',
   'reservePolicy',

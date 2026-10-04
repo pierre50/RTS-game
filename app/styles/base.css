@@ -48,12 +48,6 @@ img {
   font-family: var(--font-family-display);
 }
 
-button:focus-visible,
-select:focus-visible,
-input:focus-visible {
-  outline: none;
-}
-
 @keyframes ui-panel-enter {
   from {
     opacity: 0;
@@ -80,7 +74,6 @@ input:focus-visible {
   background-color: var(--form-surface-color);
   border: 1px solid var(--border-accent-subtle);
   border-radius: var(--main-border-radius);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -92,7 +85,6 @@ input:focus-visible {
 
 ::-webkit-scrollbar-thumb:active {
   background-color: var(--main-accent-color);
-  box-shadow: var(--ui-scrollbar-active-shadow);
 }
 
 ::-webkit-scrollbar-corner {

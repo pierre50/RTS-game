@@ -48,7 +48,8 @@ export const EN_CRAFTING_TRANSLATIONS = {
   craftArrowCopper: 'Copper arrows',
   craftArrowBronze: 'Bronze arrows',
   craftArrowIron: 'Iron arrows',
-  craftArrowDescription: "Crafts 20 arrows for the hero's bow. Advanced materials make better ammunition.",
+  craftMaximum: 'Craft maximum',
+  craftArrowDescription: "Crafts one arrow for the hero's bow. Advanced materials make better ammunition.",
   craftCampfire: 'Campfire',
   craftCampfireDescription:
     'Crafts a campfire that can be placed from the bag. The hero can sleep there to skip the night until morning.',
@@ -119,8 +120,9 @@ export const FR_CRAFTING_TRANSLATIONS = {
   craftArrowCopper: 'Flèches en cuivre',
   craftArrowBronze: 'Flèches en bronze',
   craftArrowIron: 'Flèches en fer',
+  craftMaximum: 'Fabriquer le maximum',
   craftArrowDescription:
-    'Fabrique 20 flèches pour l’arc du héros. Les matériaux plus avancés donnent de meilleures munitions.',
+    'Fabrique une flèche pour l’arc du héros. Les matériaux plus avancés donnent de meilleures munitions.',
   craftCampfire: 'Feu de camp',
   craftCampfireDescription:
     'Fabrique un feu de camp à poser depuis le sac. Le héros peut y dormir pour passer la nuit jusqu’au matin.',

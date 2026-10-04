@@ -5,6 +5,7 @@ import {
   canCraftHeroRecipe,
   craftHeroRecipe,
   getMissingCraftResources,
+  getMaxHeroCraftCount,
   type HeroCraftRecipe,
 } from '../../lib/hero/heroCrafting'
 import { isHeroInteractionTargetReachable } from '../../lib/hero/heroActionRange'
@@ -71,6 +72,7 @@ export abstract class HeroCraftingBody {
       className: 'inventory-craft-row',
       disabled,
       title: t(recipe.labelKey),
+      quantity: recipe.outputCount,
       description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
       meta: '',
       metaParts: this.getCraftCostMetaParts(recipe.cost, hero),
@@ -83,22 +85,25 @@ export abstract class HeroCraftingBody {
               ? 'campfirePrepare'
               : 'inventoryTabCraft'
         ),
-        onClick: () => {
+        onClick: event => {
           if (!hero || !this.canUse()) return
-          if (!craftHeroRecipe(player, hero, recipe)) {
+          const count = (event as MouseEvent)?.shiftKey ? getMaxHeroCraftCount(player, recipe, hero) : 1
+          if (!craftHeroRecipe(player, hero, recipe, count)) {
             this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
             this.renderCraft()
             return
           }
           this.menu.updateTopbar?.()
           this.menu.showMessage(
-            t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount }),
+            t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount * count }),
             'success'
           )
           this.renderCraft()
         },
       },
     })
+    const action = element.querySelector<HTMLButtonElement>('.inventory-row-action-button')
+    if (action) action.dataset.craftMax = 'true'
     const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
     if (recipe.iconResource) {
       const resourceIcon = document.createElement('img')

@@ -1,5 +1,9 @@
 import { addHeroInventoryItem, removeHeroInventoryItem } from '../equipment/equipmentLoot'
-import { getMissingPlayerResources, withdrawChestResources } from '../resources/playerResourceTotals'
+import {
+  getMissingPlayerResources,
+  getPlayerResourceTotals,
+  withdrawChestResources,
+} from '../resources/playerResourceTotals'
 import type { ResourceAmount } from '../../types/common'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -102,7 +106,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     labelKey: 'craftArrowCeramic',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_ceramic',
-    outputCount: 20,
+    outputCount: 1,
     cost: { wood: 5, feather: 2, stone: 2 },
   },
   {
@@ -112,7 +116,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     labelKey: 'craftArrowCopper',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_copper',
-    outputCount: 20,
+    outputCount: 1,
     cost: { wood: 5, feather: 2, copper: 2 },
   },
   {
@@ -122,7 +126,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     labelKey: 'craftArrowBronze',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_bronze',
-    outputCount: 20,
+    outputCount: 1,
     cost: { wood: 5, feather: 2, copper: 3 },
   },
   {
@@ -132,7 +136,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     labelKey: 'craftArrowIron',
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_iron',
-    outputCount: 20,
+    outputCount: 1,
     cost: { wood: 5, feather: 2, iron: 2 },
   },
 ]
@@ -156,15 +160,26 @@ export function canCraftHeroRecipe(player: PlayerLike, recipe: HeroCraftRecipe, 
   return Object.keys(getMissingCraftResources(player, recipe.cost, hero)).length === 0
 }
 
+export function getMaxHeroCraftCount(player: PlayerLike, recipe: HeroCraftRecipe, hero?: UnitEntity | null): number {
+  if (!hero) return 0
+  const totals = getPlayerResourceTotals(player, { hero })
+  const limits = (Object.entries(recipe.cost) as [keyof ResourceAmount, number][])
+    .filter(([, amount]) => amount > 0)
+    .map(([resource, amount]) => Math.floor((totals[resource] ?? 0) / amount))
+  return limits.length ? Math.max(0, Math.min(...limits)) : 1
+}
+
 export function craftHeroRecipe(
   player: PlayerLike,
   hero: UnitEntity | null | undefined,
-  recipe: HeroCraftRecipe
+  recipe: HeroCraftRecipe,
+  count = 1
 ): boolean {
-  if (!hero || !canCraftHeroRecipe(player, recipe, hero)) return false
-  if (!withdrawChestResources(player, recipe.cost, { hero })) return false
+  if (!hero || !Number.isSafeInteger(count) || count < 1) return false
+  const cost = Object.fromEntries(Object.entries(recipe.cost).map(([resource, amount]) => [resource, amount * count]))
+  if (!withdrawChestResources(player, cost, { hero })) return false
 
-  for (let i = 0; i < recipe.outputCount; i++) {
+  for (let i = 0; i < recipe.outputCount * count; i++) {
     addHeroInventoryItem(hero, recipe.outputEquipment)
   }
   return true

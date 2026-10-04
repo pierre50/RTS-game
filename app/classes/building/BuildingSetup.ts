@@ -1,3 +1,4 @@
+import { constructionProgressPercentage } from '../../lib/economy/constructionMaterials'
 import { registerFurnitureSurface } from '../../lib/terrain/furnitureSurface'
 import { isBuildingTraversable } from '../../lib/buildings/buildingTraversal'
 import { assignCampBrazierAppearance } from '../../lib/buildings/campConstruction'
@@ -14,7 +15,6 @@ import {
   getBuildingFootprintCells,
   getGroundReliefLevel,
   getInstanceZIndex,
-  getPercentage,
   getReliefLiftPixels,
   getTexture,
   STABLE_HORSE_CAPACITY,
@@ -134,7 +134,7 @@ export function attachInitialBuildingVisuals(building: Building): void {
   attachEntityShadowsToMapSpace(building.context.map, building)
   building.addChild(building.sprite)
   if (!building.isBuilt) {
-    syncBuildingConstructionReveal(building, getPercentage(building.hitPoints, building.totalHitPoints))
+    syncBuildingConstructionReveal(building, constructionProgressPercentage(building))
   }
   building.buildingTrainingPreview = new BuildingTrainingPreview(building)
   building.buildingTrainingPreview.update()

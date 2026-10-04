@@ -114,7 +114,7 @@ test('manual save waits for publication and reports the real failure without sho
     }
     const menu = new PauseMenu({ context, showMessage: (...args) => messages.push(args) })
     menu.open()
-    const button = modalOptions.content.children[0]
+    const button = modalOptions.content.children.find(child => child.innerText === 'save')
     const pending = button.dispatch('click')
     assert.equal(button.disabled, true)
     assert.equal(closed, 0)

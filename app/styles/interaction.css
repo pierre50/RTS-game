@@ -18,9 +18,7 @@
   padding: var(--ui-gap-24);
   overflow: auto;
   overscroll-behavior: contain;
-  border: var(--panel-border);
-  border-radius: var(--main-border-radius);
-  box-shadow: var(--ui-outset-shadow);
+
   background: var(--main-primary-color);
 }
 
@@ -57,7 +55,6 @@
   min-height: 0;
   border: 0;
   background: transparent;
-  box-shadow: none;
 }
 
 .interaction-panel .entity-info-wrapper {
@@ -172,9 +169,10 @@
   width: min(620px, 100%);
 }
 
-.interaction-panel .interaction-panel-content:not(
-  :has(.interaction-actions button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))
-) {
+.interaction-panel
+  .interaction-panel-content:not(
+    :has(.interaction-actions button:not([hidden]):not(.hero-building-menu-nav:not(.is-visible)))
+  ) {
   grid-template-columns: minmax(0, 1fr);
 }
 

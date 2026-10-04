@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadHeroBuildingMenuManager({ reachable = true } = {}) {
+function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => null } = {}) {
   const transferPanels = []
   const audibleSoundCues = []
   const campfireSleepCalls = []
@@ -18,7 +18,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   })
   const module = { exports: {} }
   const mocks = {
-    './hero-building/HeroBuildingUpgrade': { createHeroBuildingUpgrade: () => null },
+    './hero-building/HeroBuildingUpgrade': { createHeroBuildingUpgrade: createUpgrade },
     '../lib/graphics/assets': {
       getBuildingAssetOwner: building => ({ ...building.owner, age: building.buildingLevel ?? building.owner.age }),
     },
@@ -62,6 +62,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     },
     '../lib/avatar': {
       renderBuildingAvatar: () => false,
+      renderUnitTypeAvatar: () => false,
     },
     '../lib/hero/heroActionRange': {
       isHeroInteractionTargetReachable: () => reachable,
@@ -90,7 +91,8 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
       THEFT_SUBJECT_TYPES: { chest: 'chest' },
     },
     './InspectionPanel': {
-      createInspectionModal: () => ({
+      createInspectionModal: options => ({
+        ...options,
         _panel: global.document.createElement('div'),
         _backdrop: global.document.createElement('div'),
         close() {},
@@ -211,9 +213,9 @@ function installMockDocument() {
   }
 }
 
-function createManager({ reachable = true } = {}) {
+function createManager({ reachable = true, createUpgrade } = {}) {
   const restoreDocument = installMockDocument()
-  const HeroBuildingMenuManager = loadHeroBuildingMenuManager({ reachable })
+  const HeroBuildingMenuManager = loadHeroBuildingMenuManager({ reachable, createUpgrade })
   const player = { isPlayed: true }
   const manager = new HeroBuildingMenuManager({
     context: {
@@ -472,11 +474,17 @@ test('hero building menu adds a sleep button for fire camps', () => {
 
     if (building.type === 'FireCamp') {
       assert.equal(manager.body.children[0].tagName, 'campfire-craft')
+      assert.equal(manager.modal._panel.classList.contains('crafting-workshop'), true)
       assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
     }
-    const button = manager.body.children.find(child => child.id === 'hero-heroCampfireSleep')
+    const button = manager.layout.secondaryActions.children.find(child => child.id === 'hero-heroCampfireSleep')
     assert.equal(button.id, 'hero-heroCampfireSleep')
     assert.equal(button.dataset.actionId, 'heroCampfireSleep')
+    assert.equal(button.dataset.windowAction, 'sleep')
+    assert.equal(
+      manager.body.children.some(child => child.id === button.id),
+      false
+    )
     assert.equal(button.disabled, false)
 
     button.dispatch('click')
@@ -508,11 +516,17 @@ test('hero building menu adds a sleep button for beds', () => {
 
     if (building.type === 'FireCamp') {
       assert.equal(manager.body.children[0].tagName, 'campfire-craft')
+      assert.equal(manager.modal._panel.classList.contains('crafting-workshop'), true)
       assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
     }
-    const button = manager.body.children.find(child => child.id === 'hero-heroCampfireSleep')
+    const button = manager.layout.secondaryActions.children.find(child => child.id === 'hero-heroCampfireSleep')
     assert.equal(button.id, 'hero-heroCampfireSleep')
     assert.equal(button.dataset.actionId, 'heroCampfireSleep')
+    assert.equal(button.dataset.windowAction, 'sleep')
+    assert.equal(
+      manager.body.children.some(child => child.id === button.id),
+      false
+    )
     assert.equal(button.disabled, false)
 
     button.dispatch('click')
@@ -543,9 +557,10 @@ test('hero building menu disables campfire sleep while blocked', () => {
 
     if (building.type === 'FireCamp') {
       assert.equal(manager.body.children[0].tagName, 'campfire-craft')
+      assert.equal(manager.modal._panel.classList.contains('crafting-workshop'), true)
       assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
     }
-    const button = manager.body.children.find(child => child.id === 'hero-heroCampfireSleep')
+    const button = manager.layout.secondaryActions.children.find(child => child.id === 'hero-heroCampfireSleep')
     assert.equal(button.id, 'hero-heroCampfireSleep')
     assert.equal(button.disabled, true)
   } finally {
@@ -686,6 +701,7 @@ test('forge opens the crafting body and refuses unfinished or unreachable forges
     const forge = { type: 'Forge', family: 'building', owner: player, isBuilt: true }
     assert.equal(manager.open(forge), true)
     assert.equal(manager.body.children.at(-1).tagName, 'forge-craft')
+    assert.equal(manager.modal._panel.classList.contains('crafting-workshop'), true)
     assert.equal(manager.modal._panel.classList.contains('inventory-transfer-modal'), true)
     assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
     assert.equal(manager.modal._panel.classList.contains('interaction-panel'), false)
@@ -726,18 +742,20 @@ test('military and temple E panels add one recruit per click beyond capacity and
       player.buildings.push(building)
       manager.open(building)
       let panel = manager.body.children[0]
-      const buttons = panel.children.filter(child => child.tagName === 'button')
+      const buttons = panel.children[0].children.filter(child => child.tagName === 'button')
       assert.equal(buttons.length, 1)
       assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
       for (let index = 0; index < 10; index++)
-        manager.body.children[0].children.find(child => child.id === `training-add-${unitType}`).dispatch('click')
+        manager.body.children[0].children[0].children
+          .find(child => child.id === `training-add-${unitType}`)
+          .dispatch('click')
       assert.equal(building.trainingRequests.length, 10)
       assert.equal(
         building.trainingRequests.every(request => request.type === unitType),
         true
       )
       panel = manager.body.children[0]
-      const row = panel.children.find(child => child.className === 'hero-training-entry')
+      const row = panel.children[1].children.find(child => child.className === 'hero-training-entry')
       const cancel = row.children.find(child => child.id === `training-remove-${unitType}`)
       cancel.dispatch('click')
       assert.equal(building.trainingRequests.length, 9)
@@ -780,8 +798,10 @@ test('E depot panels allocate building capacity without a total amount control',
         amounts.reduce((sum, n) => sum + n, 0),
         building.reservePolicy.target
       )
-      panel.children.find(child => child.textContent === 'depotReserveDisable').dispatch('click')
-      assert.deepEqual(building.reservePolicy.shares, {})
+      assert.equal(
+        panel.children.some(child => child.id === 'depot-reserve-disable'),
+        false
+      )
     } finally {
       restoreDocument()
     }
@@ -814,7 +834,7 @@ test('training panel lists each named recruit with remaining time and its own ca
     }
     player.buildings.push(building)
     manager.open(building)
-    const rows = manager.body.children[0].children.filter(child => child.dataset.trainingIndex != null)
+    const rows = manager.body.children[0].children[1].children.filter(child => child.dataset.trainingIndex != null)
     assert.equal(rows.length, 2)
     assert.match(rows[0].children[0].textContent, /Aline/)
     assert.match(rows[1].children[0].textContent, /Brune/)
@@ -822,6 +842,48 @@ test('training panel lists each named recruit with remaining time and its own ca
     assert.equal(rows[1].children[1].children[0].textContent, '6 jours restants')
     rows[1].children[2].dispatch('click')
     assert.deepEqual(cancelled, ['b'])
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('building upgrade opens a separate review sheet and restores the building on cancel or validation', () => {
+  let validations = 0
+  const { manager, player, restoreDocument } = createManager({
+    createUpgrade: (_menu, _building, refresh) => {
+      const row = document.createElement('div')
+      row.className = 'building-upgrade-row'
+      row.addEventListener('validate', () => {
+        validations++
+        refresh()
+      })
+      return row
+    },
+  })
+  try {
+    const building = { family: 'building', type: 'Forge', owner: player, isBuilt: true, interface: { info() {} } }
+    assert.equal(manager.open(building), true)
+    const action = manager.body.children.find(child => child.dataset.windowAction === 'upgrade')
+    assert.ok(action)
+    assert.equal(
+      manager.body.children.some(child => child.className === 'building-upgrade-row'),
+      false
+    )
+    action.dispatch('click')
+    assert.equal(validations, 0)
+    assert.equal(manager.modal._backdrop.hidden, true)
+    assert.equal(manager.upgradeModal.panelClass, 'building-upgrade-sheet')
+    manager.upgradeModal.onClose()
+    assert.equal(manager.upgradeModal, undefined)
+    assert.equal(manager.modal._backdrop.hidden, false)
+    action.dispatch('click')
+    manager.upgradeModal.content.children[0].dispatch('validate')
+    assert.equal(validations, 1)
+    assert.equal(manager.upgradeModal, undefined)
+    assert.equal(manager.modal._backdrop.hidden, false)
+    action.dispatch('click')
+    manager.close()
+    assert.equal(manager.upgradeModal, undefined)
   } finally {
     restoreDocument()
   }

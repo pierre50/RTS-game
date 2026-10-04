@@ -47,6 +47,7 @@ export function plantPlayerWheatField(
           type: BUILDING_TYPES.farm,
           buildingLevel,
           isBuilt: false,
+          constructionProgress: 0,
           constructionMaterials: createConstructionMaterials({ wheat: 1 }),
         })
       )
@@ -114,6 +115,7 @@ export function buyPlayerBuilding(
               })
             : false),
         isBuilt: Boolean(map.instantMode),
+        constructionProgress: map.instantMode ? 1 : 0,
         constructionMaterials:
           options.alreadyPaid || map.instantMode ? undefined : createConstructionMaterials(config.cost),
       })

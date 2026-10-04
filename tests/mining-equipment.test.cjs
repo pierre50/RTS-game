@@ -64,7 +64,7 @@ test('bronze and iron pickaxes can be bought at an age-zero market', () => {
   // The purchase must fit the inventory as well as the gold budget.
   hero.inventory.resources.gold = offers.find(offer => offer.equipment === 'pickaxe_bronze').goldValue
   const stock = ['pickaxe_bronze']
-  assert.equal(buyMarketEquipment(hero, 'pickaxe_bronze', 1, stock), 1)
+  assert.equal(buyMarketEquipment(hero, {}, 'pickaxe_bronze', 1, stock), 1)
   assert.equal(canMineIronResource(hero, { type: 'Iron' }), true)
 })
 

@@ -43,7 +43,7 @@
   background: var(--main-primary-color);
   border: var(--panel-border);
   border-radius: var(--main-border-radius);
-  box-shadow: 0 2px 0 rgb(0 0 0 / 0.2);
+
   transition:
     background-color var(--ui-transition-panel),
     border-color var(--ui-transition-panel);
@@ -57,7 +57,6 @@
   max-width: 100%;
   padding: var(--ui-gap-6) var(--ui-gap-10);
 }
-
 
 .topbar-daytime {
   position: fixed;
@@ -119,7 +118,6 @@
   min-height: var(--topbar-menu-height);
   padding: 0;
   border: var(--panel-border);
-  box-shadow: 0 2px 0 rgb(0 0 0 / 0.2);
 }
 
 .topbar-options-menu-icon {
@@ -146,7 +144,7 @@
   grid-gap: var(--ui-gap-5);
   color: var(--ui-text-color);
   text-shadow: var(--ui-plain-text-shadow);
-  border-top: var(--ui-bar-border);
+  border-top: var(--panel-border);
   transition:
     background-color var(--ui-transition-panel),
     color var(--ui-transition-panel),
@@ -189,9 +187,6 @@
   background: rgba(5, 7, 18, 0.78);
   border: 1px solid rgba(207, 216, 255, 0.28);
   border-radius: var(--main-border-radius);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 8px 22px rgba(0, 0, 0, 0.35);
 }
 
 .hero-interaction-prompt.hidden {
@@ -202,9 +197,6 @@
   color: #ffd7d7;
   background: rgba(80, 8, 18, 0.88);
   border-color: rgba(255, 82, 82, 0.68);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 8px 22px rgba(60, 0, 8, 0.45);
 }
 
 .hero-status-frame {
@@ -220,7 +212,6 @@
   overflow: hidden;
   background: #000;
   border: 1px solid #000;
-  box-shadow: none;
 }
 
 .unit-avatar-frame {
@@ -271,13 +262,7 @@
   white-space: nowrap;
 }
 
-.hero-status-level {
-  flex: none;
-  color: var(--main-accent-color);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  white-space: nowrap;
-}
+
 
 .hero-status-value {
   position: absolute;
@@ -300,7 +285,6 @@
   position: relative;
   height: 18px;
   overflow: hidden;
-  border: 2px solid var(--status-health-border);
   background: linear-gradient(
     90deg,
     var(--status-progress-bottom) 0%,
@@ -308,14 +292,13 @@
     var(--status-health-bottom) var(--hero-health-percent),
     var(--status-health-top) 100%
   );
-  box-shadow: var(--status-health-inset-shadow);
 }
 
 .hero-status-fill {
   width: 100%;
   height: 100%;
   background: var(--status-progress-background);
-  box-shadow: var(--status-progress-inset-shadow);
+
   transition: width var(--ui-transition-fast);
 }
 
@@ -447,7 +430,6 @@
   width: 100%;
   height: 18px;
   overflow: hidden;
-  border: 2px solid var(--status-health-border);
   background: linear-gradient(
     90deg,
     var(--status-progress-bottom) 0%,
@@ -455,7 +437,6 @@
     var(--status-health-bottom) var(--entity-hit-points-percent, 100%),
     var(--status-health-top) 100%
   );
-  box-shadow: var(--status-health-inset-shadow);
 }
 
 .selection-info .hit-points-fill {
@@ -536,7 +517,6 @@
   border: 1px solid var(--border-divider-subtle);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.18);
 }
 
 .selection-info .stable-horse-avatar.filled {
@@ -692,10 +672,8 @@
   text-transform: none;
   letter-spacing: 0;
   background: rgba(0, 0, 0, 0.18);
-  border: 0;
   border-radius: var(--main-border-radius);
   opacity: 1;
-  box-shadow: none;
 }
 
 .inventory-action-row--no-icon {
@@ -787,7 +765,6 @@
   background: var(--surface-black-solid);
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.68);
 }
 
 .inventory-action-row-label {
@@ -919,7 +896,6 @@
   border-color: rgba(255, 255, 255, 0.14);
   filter: grayscale(0.65);
   opacity: 1;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.36);
 }
 
 .action-menu-minimap-page {
@@ -948,9 +924,6 @@
   max-width: 480px;
 }
 
-/* The character-sheet view always lists all 9 XP categories (see EntityInfoRenderOptions.showAllXp),
-   so unlike the compact side-HUD/modal/NPC-orders views it can't fit that list into the absolute-positioned
-   corner reserved for a couple of earned-only rows — lay both blocks out in normal flow instead. */
 .action-menu-info-page .infos,
 .action-menu-info-page .unit-xp {
   position: static;
@@ -1077,7 +1050,6 @@
   height: 10px;
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
 .worldmap-legend-swatch.bandits {
@@ -1138,7 +1110,6 @@
 }
 
 .inventory-slot.active {
-  border-color: var(--main-accent-color);
   background: var(--surface-black-solid);
 }
 
@@ -1243,9 +1214,12 @@
   text-shadow: var(--text-shadow-ui);
 }
 
+.market-section > .inventory-section-header {
+  flex-wrap: wrap;
+}
+
 .market-title {
-  padding-bottom: 2px;
-  border-bottom: var(--ui-slot-border);
+  margin: 0;
 }
 
 .market-grid {
@@ -1272,33 +1246,6 @@
   font-size: var(--font-size-sm);
   font-style: italic;
   opacity: 0.85;
-}
-
-.npc-orders-chatter-line.is-typing {
-  position: relative;
-  padding-right: 0.7ch;
-}
-
-.npc-orders-chatter-line.is-typing::after {
-  content: '▌';
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-left: var(--ui-gap-4);
-  opacity: 0.55;
-  transform: translateX(100%);
-  animation: npc-orders-chatter-cursor 0.8s steps(2, jump-none) infinite;
-}
-
-@keyframes npc-orders-chatter-cursor {
-  0%,
-  50% {
-    opacity: 0;
-  }
-  51%,
-  100% {
-    opacity: 0.55;
-  }
 }
 
 .npc-orders-options,
@@ -1371,9 +1318,7 @@
   width: min(620px, calc(100vw - 24px));
   max-height: min(720px, calc(100dvh - 96px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
   background: var(--main-primary-color);
-  border: var(--panel-border);
   border-radius: var(--main-border-radius);
-  box-shadow: var(--ui-outset-shadow);
 }
 
 .inspection-panel-backdrop {
@@ -1702,7 +1647,7 @@ body.hero-cursor-hidden {
   border-radius: var(--main-border-radius);
   border-width: 2px;
   border-style: outset;
-  box-shadow: var(--msg-inset-shadow);
+
   animation: msg-fade 3s ease forwards;
 }
 
@@ -1733,7 +1678,6 @@ body.hero-cursor-hidden {
     overflow: hidden;
     gap: var(--ui-gap-6);
   }
-
 
   .topbar-villagers {
     min-width: 34px;
@@ -1991,7 +1935,7 @@ body.hero-cursor-hidden {
   box-sizing: border-box;
   width: 100%;
   min-height: 34px;
-  border: 0;
+  border: var(--ui-control-border-width) var(--ui-control-border-style) transparent;
   padding: 5px 6px;
   background: transparent;
   color: inherit;
@@ -2002,7 +1946,7 @@ body.hero-cursor-hidden {
 .minimap-legend-toggle:hover,
 .minimap-legend-toggle:focus-visible {
   background: #ffffff12;
-  outline: 1px solid #ffffff55;
+  outline: none;
 }
 .minimap-legend-toggle.is-hidden {
   opacity: 0.45;
@@ -2051,12 +1995,7 @@ body.hero-cursor-hidden {
   height: 20px;
 }
 
-.minimap-shape-legend {
-  font-size: var(--font-size-sm);
-  line-height: 1.6;
-  color: var(--main-accent-hover);
-  padding-top: var(--ui-gap-8);
-}
+
 
 .depot-reserves {
   display: grid;
@@ -2098,12 +2037,7 @@ body.hero-cursor-hidden {
 }
 
 .construction-help {
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 16px;
   line-height: 1.5;
   text-shadow: none;
@@ -2124,7 +2058,7 @@ body.hero-cursor-hidden {
   flex-wrap: wrap;
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid var(--ui-border, #555c80);
+  border-top: 1px solid var(--window-line);
 }
 .hero-training-entry > span:first-child {
   flex: 1;
@@ -2152,4 +2086,49 @@ body.hero-cursor-hidden {
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-18);
+}
+
+/* Owner colors and map symbols convey separate information. */
+.minimap-legend-toggle > .worldmap-legend-swatch:not(.minimap-legend-marker) {
+  justify-self: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: none;
+}
+.minimap-map-column {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  max-width: var(--inventory-map-preview-max);
+}
+.minimap-shape-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  gap: 2px var(--ui-gap-8);
+  padding-top: var(--ui-gap-8);
+  font-size: var(--font-size-xs);
+  color: var(--main-text-color);
+}
+.minimap-shape-legend > .worldmap-legend-title {
+  grid-column: 1 / -1;
+}
+.minimap-symbol-row {
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  min-height: 28px;
+  padding: 2px 6px;
+  box-sizing: border-box;
+}
+.minimap-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--main-accent-hover);
+}
+.minimap-symbol > img {
+  width: 20px;
+  height: 20px;
 }

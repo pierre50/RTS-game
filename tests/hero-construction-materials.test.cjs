@@ -79,7 +79,7 @@ test('wood alone advances construction without a missing-stone alert', () => {
   f.start()
   assert.equal(f.calls.messages.length, 0)
   f.runtime.impact()
-  assert.equal(f.site.hitPoints, 2)
+  assert.equal(f.site.hitPoints, 1 + 100 / 101)
   assert.equal(f.unit.inventory.resources.wood, 18)
   assert.deepEqual(f.site.constructionMaterials.delivered, {})
   assert.equal(f.calls.sound, 1)
@@ -95,18 +95,21 @@ test('materials are checked again at impact and when the next swing begins', () 
   f.unit.inventory.resources.wood = 1
   f.start()
   f.runtime.impact()
-  assert.equal(f.site.hitPoints, 2)
+  assert.equal(f.site.hitPoints, 1 + 100 / 101)
+  // Finish the fraction of work already paid for by the first ingredient.
+  f.runtime.impact()
+  assert.equal(f.site.constructionProgress, 0.01)
   const animations = f.calls.animation
   f.start()
   assert.equal(f.calls.animation, animations)
-  assert.equal(f.calls.sound, 1)
+  assert.equal(f.calls.sound, 2)
 })
 test('legacy paid construction and repairs still allow work without charging materials again', () => {
   const f = fixture()
   delete f.site.constructionMaterials
   f.start()
   f.runtime.impact()
-  assert.equal(f.site.hitPoints, 2)
+  assert.equal(f.site.hitPoints, 1 + 100 / 101)
   assert.equal(f.calls.messages.length, 0)
 })
 
@@ -218,7 +221,7 @@ test('an exhausted builder really stops, collects stone and returns to the same 
   unit.context.dayNight = { state: { hour: 10, minute: 0 } }
   flushCollectiveVillageWork(owner, 0)
   f.start()
-  for (let i = 0; i < 50; i++) f.runtime.impact()
+  for (let i = 0; i < 51; i++) f.runtime.impact()
   assert.equal(site.hitPoints, 51)
   assert.equal(unit.inventory.resources.wood, 0)
   // Discard earlier progress notifications: the blocked action must wake planning itself.
@@ -242,7 +245,7 @@ test('an exhausted builder really stops, collects stone and returns to the same 
   assert.deepEqual(orders, ['stone', 'construction'])
   assert.equal(unit.dest, site)
   f.start()
-  for (let i = 0; i < 50; i++) f.runtime.impact()
+  for (let i = 0; i < 51; i++) f.runtime.impact()
   assert.equal(site.hitPoints, site.totalHitPoints)
   assert.deepEqual(site.constructionMaterials.consumed, { wood: 1, stone: 1 })
 })
@@ -259,7 +262,7 @@ test('live builder advances renovation with its cargo without changing building 
   f.site.updateHitPoints = () => updates++
   f.start()
   f.runtime.impact()
-  assert.equal(f.site.buildingUpgrade.hitPoints, 2)
+  assert.equal(f.site.buildingUpgrade.constructionProgress, 1 / 101)
   assert.equal(f.site.hitPoints, 75)
   assert.equal(f.site.isBuilt, true)
   assert.equal(f.unit.inventory.resources.wood, 19)

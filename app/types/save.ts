@@ -34,6 +34,7 @@ type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValu
 export type SaveEntityState = {
   collectiveTask?: string | null
   collectiveHome?: { i: number; j: number; spaceId?: string | null }
+  constructionProgress?: number
   constructionMaterials?: ConstructionMaterials
   buildingUpgrade?: BuildingUpgrade
   wildlife?: {
@@ -145,6 +146,7 @@ export type SaveEntityState = {
   trainingExtra?: SavedTrainingExtra
   loop?: boolean
   lootEquipment?: string[]
+  marketGold?: number
   marketStock?: string[]
   mountedOnHorse?: boolean
   name?: string

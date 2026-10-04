@@ -1,4 +1,8 @@
 /* Shared game windows: only the body scrolls; commands stay within reach. */
+/* Layout rules must never reveal actions hidden by the current dialogue state. */
+.game-window [hidden] {
+  display: none !important;
+}
 .modal-panel.game-window {
   gap: 0;
   overflow: hidden;
@@ -10,15 +14,17 @@
 .game-window > .modal-header {
   padding: var(--ui-gap-16) var(--window-padding-x);
   margin: 0;
-  border-bottom: 1px solid var(--window-line);
+  border-bottom: 0;
 }
-.game-window > :where(:not(.modal-header):not(.game-window-footer):not(.game-window-details)) {
+.game-window > :where(:not(.modal-header):not(.game-window-footer):not(.game-window-details):not(.home-btn)) {
   box-sizing: border-box;
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
   padding: var(--ui-gap-18) var(--window-padding-x);
+  /* Hidden bodies take their separator with them, leaving only the footer rule. */
+  border-top: 1px solid var(--window-line);
 }
 .game-window .entity-info-wrapper {
   align-items: flex-start;
@@ -34,7 +40,6 @@
   min-height: 0;
   border: 0;
   background: transparent;
-  box-shadow: none;
 }
 .game-window .hit-points-display {
   width: min(200px, 100%);
@@ -80,16 +85,17 @@
 .game-window .inventory-section-title {
   font-size: var(--font-size-base);
   margin: 0 0 var(--ui-gap-12);
+  margin-bottom: var(--ui-gap-8);
 }
 .game-window .inventory-section-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ui-gap-8);
   align-content: start;
 }
 .game-window .inventory-transfer-panel > .inventory-section {
   padding: var(--ui-gap-12);
-  border: 1px solid var(--window-line);
+  border: 0;
   background: var(--window-section-bg);
 }
 .game-window .inventory-transfer-panel .inventory-section-list,
@@ -103,28 +109,31 @@
   background: transparent;
 }
 .game-window .inventory-section-list .inventory-action-row:not(.inventory-action-row--no-icon) {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-rows: auto;
   align-items: center;
+  gap: 8px;
   position: relative;
   width: 100%;
   min-width: 0;
-  min-height: 88px;
-  padding: 7px;
-  aspect-ratio: 1;
-  border: 1px solid var(--window-line);
+  min-height: 44px;
+  padding: 6px 10px;
+  aspect-ratio: auto;
+  text-align: left;
   background: var(--window-slot-bg);
   cursor: pointer;
 }
 .game-window
   .inventory-section-list
   .inventory-action-row:not(.inventory-action-row--no-icon)
-  > :not(.inventory-action-row-icon):not(.market-slot > .inventory-action-row-value) {
+  > :not(.inventory-action-row-icon):not(.inventory-action-row-label):not(.market-slot > .inventory-action-row-value) {
   display: none;
 }
 .game-window .inventory-action-row-icon {
-  --inventory-row-icon-size: 56px;
+  --inventory-row-icon-size: 30px;
+  grid-row: 1;
+  grid-column: 1;
   border: 0;
   background: transparent;
 }
@@ -145,8 +154,8 @@
   background: var(--window-slot-hover-bg);
 }
 .game-window .is-window-selected {
-  outline: 2px solid var(--main-accent-hover);
-  outline-offset: -2px;
+  outline: none;
+
   background-color: var(--window-selected-bg);
 }
 .game-window .inventory-section-count,
@@ -168,7 +177,9 @@
   pointer-events: none;
 }
 .game-window .hero-market-wallet {
-  grid-column: 1 / -1;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  text-align: right;
   color: var(--main-accent-hover);
 }
 .game-window .interaction-secondary-actions {
@@ -223,7 +234,7 @@
   align-items: center;
   gap: var(--ui-gap-8) var(--ui-gap-16);
   padding: var(--ui-gap-12) var(--ui-gap-18);
-  border-top: 2px solid var(--window-line);
+  border-top: 1px solid var(--window-line);
   overflow: visible;
   background: var(--main-primary-color);
 }
@@ -234,7 +245,7 @@
   gap: var(--ui-gap-8);
   padding: 7px var(--ui-gap-5);
   min-height: 40px;
-  border: 0;
+  border: var(--ui-control-border-width) var(--ui-control-border-style) transparent;
   color: var(--main-text-color);
   background: transparent;
   font: inherit;
@@ -245,7 +256,7 @@
 .game-window-command:hover:not(:disabled),
 .game-window-command:focus-visible {
   color: var(--main-accent-hover);
-  outline: 1px solid currentColor;
+  outline: none;
 }
 .game-window-command:disabled {
   opacity: 0.4;
@@ -415,7 +426,7 @@ kbd.gamepad-key[data-pad='3'] {
   }
 }
 
-/* Tabs share one flat bar. Gold marks the open page; the outline marks keyboard focus. */
+/* Tabs share one flat bar; border colors mark the active page and keyboard focus. */
 .game-window .modal-tabs-header .ui-tabs {
   gap: var(--ui-gap-8);
 }
@@ -424,7 +435,7 @@ kbd.gamepad-key[data-pad='3'] {
   padding: var(--ui-gap-10) var(--ui-gap-12);
   border: 0;
   border-bottom: 3px solid transparent;
-  box-shadow: none;
+
   background: transparent;
   color: var(--main-text-color);
 }
@@ -435,10 +446,6 @@ kbd.gamepad-key[data-pad='3'] {
 }
 .game-window .modal-tabs-header .ui-tab:hover {
   background: var(--window-tab-hover-bg);
-}
-.game-window .modal-tabs-header .ui-tab:focus-visible {
-  outline: 1px solid var(--main-accent-hover);
-  outline-offset: -5px;
 }
 
 .building-placement-help {
@@ -459,7 +466,6 @@ kbd.gamepad-key[data-pad='3'] {
   border: 1px solid var(--window-line);
   background: var(--main-primary-color);
   color: var(--main-text-color);
-  box-shadow: var(--window-help-shadow);
 }
 .building-placement-help > span {
   color: var(--main-accent-hover);
@@ -517,7 +523,7 @@ body:has(.modal) .building-placement-help {
   max-height: 100%;
 }
 .modal-panel.game-window.inspection-window--small {
-  width: min(620px, 100%);
+  width: min(780px, 100%);
   height: auto;
   max-height: min(720px, 100%);
 }
@@ -554,20 +560,22 @@ body:has(.modal) .building-placement-help {
 /* Prices stay visible in the grid; status colors remain legible in the details. */
 .game-window .inventory-section-list .market-slot > .inventory-action-row-value {
   display: block;
-  position: absolute;
-  top: 4px;
-  left: 4px;
+  position: static;
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  justify-self: end;
   z-index: 1;
   margin: 0;
-  padding: 2px 4px;
-  max-width: calc(100% - 8px);
-  border: 1px solid var(--window-line);
-  background: var(--window-quantity-bg);
+  padding: 0;
+  max-width: none;
+  border: 0;
+  background: transparent;
   line-height: 1.2;
   white-space: nowrap;
   font-size: var(--font-size-sm);
   color: var(--main-accent-hover);
-  text-align: center;
+  text-align: right;
 }
 .game-window .market-buy-slot:has(.inventory-row-action-button:disabled) > .inventory-action-row-value,
 .game-window .game-window-details .inventory-cost-is-missing {
@@ -586,4 +594,612 @@ body:has(.modal) .building-placement-help {
 .game-window-detail-title {
   font-weight: bold;
   color: var(--main-accent-hover);
+}
+
+/* Recipe workshops reuse GameWindow selection, details and live commands.
+   Only forge/campfire opt in; inventories retain their existing presentation. */
+.modal-panel.game-window.crafting-workshop {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(860px, calc(100vw - 32px));
+  height: auto;
+  max-height: min(680px, calc(100dvh - 32px));
+}
+.game-window.crafting-workshop > .modal-header,
+.game-window.crafting-workshop > .game-window-footer {
+  grid-column: 1 / -1;
+}
+.game-window.crafting-workshop > .interaction-panel-content {
+  grid-column: 1;
+  grid-row: 2;
+  padding: var(--ui-gap-16);
+}
+.game-window.crafting-workshop > .game-window-details {
+  grid-column: 2;
+  grid-row: 2;
+  max-height: none;
+  min-height: 0;
+  padding: var(--ui-gap-24);
+  border-top: 0;
+  border-left: 1px solid var(--window-line);
+  font-size: var(--font-size-base);
+}
+.game-window.crafting-workshop .interaction-actions {
+  padding-left: 0;
+  border-left: 0;
+}
+.game-window.crafting-workshop .inventory-section-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+.game-window.crafting-workshop .inventory-section-list .inventory-action-row:not(.inventory-action-row--no-icon) {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-items: center;
+  justify-content: start;
+  gap: var(--ui-gap-12);
+  min-height: 44px;
+  padding: 6px 10px;
+  aspect-ratio: auto;
+  text-align: left;
+}
+.game-window.crafting-workshop
+  .interaction-actions
+  .inventory-section
+  .inventory-section-list
+  .inventory-action-row:not(.inventory-action-row--no-icon)
+  > .inventory-action-row-label {
+  display: block;
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-base);
+}
+.game-window.crafting-workshop .inventory-action-row-icon {
+  --inventory-row-icon-size: 30px;
+  grid-column: 1;
+  grid-row: 1;
+}
+.game-window.crafting-workshop .game-window-detail-title {
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--ui-gap-18);
+}
+.game-window.crafting-workshop .game-window-detail-line + .game-window-detail-line {
+  margin-top: var(--ui-gap-12);
+}
+.game-window.crafting-workshop .inventory-section-description {
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+.game-window.crafting-workshop .hero-building-menu-body > .ui-action-row {
+  width: 100%;
+  margin-top: var(--ui-gap-16);
+}
+@media (max-width: 640px) {
+  .modal-panel.game-window.crafting-workshop {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+  .game-window.crafting-workshop > .game-window-details {
+    grid-column: 1;
+    grid-row: 3;
+    max-height: 25dvh;
+    padding: var(--ui-gap-12) var(--ui-gap-16);
+    border-left: 0;
+    border-top: 1px solid var(--window-line);
+  }
+  .game-window.crafting-workshop > .game-window-footer {
+    grid-row: 4;
+  }
+}
+
+.game-window-action-reason {
+  flex-basis: 100%;
+  font-size: var(--font-size-sm);
+  color: var(--color-stone-muted);
+}
+
+/* Lists share their geometry across crafting, transfer and equipment screens. */
+.game-window
+  .inventory-section-list
+  .inventory-action-row:not(.inventory-action-row--no-icon)
+  > .inventory-action-row-label {
+  display: block;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+  text-align: left;
+  white-space: normal;
+  font-size: var(--font-size-sm);
+}
+.game-window .inventory-section-list .inventory-action-row > .inventory-action-row-value {
+  grid-column: 3;
+  grid-row: 1;
+}
+.game-window.crafting-workshop .forge-body {
+  gap: var(--ui-gap-12);
+}
+.game-window.crafting-workshop .inventory-action-row-label {
+  justify-self: start;
+  text-align: left;
+}
+@media (pointer: coarse) {
+  .game-window-command {
+    min-height: 44px;
+  }
+}
+
+.game-window .inventory-action-row-icon > :is(.inventory-arrow-icon, .inventory-tool-icon) {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 56px;
+  height: 56px;
+  transform: scale(0.535714);
+  transform-origin: top left;
+}
+
+/* Show ammunition independently of quantity badges, including in the detail pane. */
+.game-window-detail-avatar {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--ui-gap-12);
+}
+.game-window-detail-avatar .inventory-arrow-icon {
+  width: 56px;
+  height: 56px;
+  transform: rotate(-30deg) scale(1.1);
+  transform-origin: center;
+}
+
+/* The live health bar shares the title row for units and buildings. */
+.game-window > .modal-header--with-summary {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) minmax(72px, 120px);
+  gap: 6px 16px;
+  align-items: center;
+  padding: 12px var(--window-padding-x);
+}
+.modal-header--with-summary > .modal-title {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.game-window .modal-entity-summary,
+.game-window .modal-entity-summary-info {
+  display: contents;
+}
+.game-window .modal-entity-summary > .unit-avatar-frame {
+  width: 48px;
+  height: 48px;
+  grid-column: 1;
+  grid-row: 1 / 4;
+  align-self: start;
+}
+.game-window .modal-entity-summary-info > .entity-info-header {
+  grid-column: 2 / 4;
+  grid-row: 2;
+  font-size: var(--font-size-sm);
+}
+.game-window .modal-entity-summary-info > .hit-points-display {
+  grid-column: 3;
+  grid-row: 1;
+  width: 100%;
+  margin: 0;
+  align-self: center;
+}
+.game-window .modal-entity-summary-info > .entity-description {
+  grid-column: 2 / 4;
+  grid-row: 3;
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.35;
+}
+.game-window.has-entity-summary > .interaction-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* Header-only building inspections retain footer commands without an empty body. */
+.game-window.has-entity-summary
+  > .interaction-panel-content:has(.hero-building-menu-body.is-empty):not(
+    :has(
+      .entity-info-modal > *,
+      .hero-building-menu-nav.is-visible,
+      .interaction-secondary-actions > :not([data-window-action]):not(.entity-delete-building-button)
+    )
+  ) {
+  display: none;
+}
+.game-window.has-entity-summary
+  .interaction-information:has(> .entity-info-wrapper:only-child > .entity-info-modal:only-child:empty),
+.game-window.has-entity-summary .interaction-information:has(> .entity-info-modal:only-child:empty) {
+  display: none;
+}
+.game-window.has-entity-summary .interaction-actions {
+  box-sizing: border-box;
+  width: 100%;
+  padding-left: 0;
+  border-left: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+/* Building upgrades are selectable rows; their explanation is shown in details. */
+.game-window .building-actions-list .inventory-action-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 10px;
+}
+.game-window
+  .building-actions-list
+  .inventory-action-row
+  > :not(.inventory-action-row-icon):not(.inventory-action-row-label) {
+  display: none;
+}
+.game-window .building-actions-list .inventory-action-row-label {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: left;
+}
+@media (max-width: 480px) {
+  .game-window > .modal-header--with-summary {
+    grid-template-columns: 32px minmax(0, 1fr) 72px;
+    gap: 6px 8px;
+  }
+  .game-window .modal-entity-summary > .unit-avatar-frame {
+    width: 32px;
+    height: 32px;
+  }
+}
+/* Collapse the portrait track when an entity has no avatar. */
+.game-window > .modal-header--with-summary:not(:has(.unit-avatar-frame)) {
+  grid-template-columns: 0 minmax(0, 1fr) minmax(72px, 120px);
+  column-gap: 8px;
+}
+.modal-entity-summary[hidden] {
+  display: none;
+}
+.game-window.has-entity-summary .unit-inventory-screen > .entity-info-wrapper:has(> .entity-info-modal:empty),
+.game-window.has-entity-summary .unit-inventory-screen > .entity-info-modal:empty {
+  display: none;
+}
+
+/* An empty identity block must never hide sibling dialogue or quest content. */
+.game-window.has-entity-summary
+  .npc-orders-info:has(> .entity-info-wrapper:only-child > .entity-info-modal:only-child:empty) {
+  display: none;
+}
+
+/* Catalogue layout shared by construction and interior furnishings. */
+.modal-panel.game-window.window-catalog {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.window-catalog > .modal-header,
+.window-catalog > .game-window-footer {
+  grid-column: 1 / -1;
+}
+.window-catalog > .inventory-content {
+  grid-column: 1;
+  grid-row: 2;
+}
+.game-window.window-catalog > .game-window-details {
+  grid-column: 2;
+  grid-row: 2;
+  max-height: none;
+  min-height: 0;
+  border-top: 0;
+  border-left: 1px solid var(--window-line);
+  padding: var(--ui-gap-18);
+}
+.game-window .construction-help {
+  margin: 0 0 var(--ui-gap-12);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  color: var(--color-stone-muted);
+}
+
+/* Plain actions use the same compact rhythm as item rows. */
+.game-window :is(.npc-orders-options, .npc-quest-options, .modal-menu) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+}
+.game-window :is(.npc-orders-options, .npc-quest-options, .modal-menu) > button {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: normal;
+}
+.game-window.pause-panel {
+  width: min(460px, calc(100vw - 32px));
+}
+.game-window.has-entity-summary.npc-orders-panel > .interaction-panel-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--ui-gap-18);
+}
+.game-window.npc-orders-panel .interaction-actions {
+  border-left: 0;
+  padding-left: var(--ui-gap-18);
+}
+.game-window.npc-orders-panel .npc-orders-chatter-line {
+  line-height: 1.5;
+}
+.game-window .nested-button-menu-detail {
+  font-size: var(--font-size-sm);
+  color: var(--color-stone-muted);
+}
+
+/* Facts remain readable tables, without repeating portraits or oversized cards. */
+.game-window .entity-info-modal .infos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px 16px;
+  position: static;
+}
+.game-window .entity-info-modal .infos > .info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+.game-window .entity-info-modal .unit-xp {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 6px 20px;
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+.game-window .unit-xp > .info {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--window-line);
+}
+.game-window .action-menu-info-page > .entity-info-wrapper {
+  align-items: start;
+  gap: 20px;
+}
+.game-window .depot-reserve-row {
+  min-height: 44px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--window-line);
+}
+.game-window .minimap-zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.game-window .minimap-zoom-controls button {
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (max-width: 640px) {
+  .modal-panel.game-window.window-catalog {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+  .game-window.window-catalog > .game-window-details {
+    grid-column: 1;
+    grid-row: 3;
+    max-height: 25dvh;
+    border-left: 0;
+    border-top: 1px solid var(--window-line);
+  }
+  .window-catalog > .game-window-footer {
+    grid-row: 4;
+  }
+  .game-window.has-entity-summary.npc-orders-panel > .interaction-panel-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .game-window.npc-orders-panel .interaction-actions {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+.game-window .hero-training-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: var(--ui-gap-18);
+}
+.game-window .hero-training-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.game-window .hero-training-queue {
+  border-left: 1px solid var(--window-line);
+  padding-left: var(--ui-gap-18);
+}
+.game-window .hero-training-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 10px;
+  text-align: left;
+  white-space: normal;
+  width: 100%;
+}
+.game-window .hero-training-choice canvas {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+.game-window .hero-training-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.game-window .hero-training-entry .hero-building-menu-status {
+  grid-column: 1;
+}
+.game-window .hero-training-entry button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 44px;
+}
+.game-window .hero-training-entry:has(.is-window-selected) {
+  background: var(--window-selected-bg);
+}
+@media (max-width: 640px) {
+  .game-window .hero-training-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .game-window .hero-training-queue {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--window-line);
+    padding-top: 12px;
+  }
+}
+
+.game-window-detail-avatar > img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.game-window .hero-building-menu-body > button.ui-action-row:not([data-window-action]) {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 10px;
+  text-align: left;
+}
+.game-window .hero-building-menu-body > button.ui-action-row > .hero-building-menu-meta {
+  display: none;
+}
+.game-window .hero-building-menu-body > button.ui-action-row > .hero-building-menu-icon {
+  width: 32px;
+  height: 32px;
+  grid-column: 1;
+  grid-row: 1;
+}
+.game-window .hero-building-menu-body > button.ui-action-row > .hero-building-menu-label {
+  grid-column: 2;
+  grid-row: 1;
+}
+.game-window .hero-building-menu-body > button.ui-action-row.is-text-only > .hero-building-menu-label {
+  grid-column: 1 / 3;
+}
+.game-window .hero-building-menu-body > button.ui-action-row > .hero-building-menu-status {
+  grid-column: 3;
+  grid-row: 1;
+  position: static;
+}
+
+.game-window .entity-info-modal .infos > .info::before {
+  content: attr(aria-label);
+  flex: 1;
+  white-space: normal;
+}
+.game-window .entity-info-modal .infos > .info > img {
+  order: -1;
+}
+
+/* Action rows share the same border geometry and state colors. */
+.game-window :is(.ui-btn, .ui-action-row, .inventory-action-row, .quest-list-item).is-window-selected,
+.game-window .inventory-section-list .inventory-action-row.is-window-selected,
+.game-window :is(.ui-btn, .ui-action-row, .inventory-action-row, .quest-list-item):focus-visible {
+  background: var(--window-selected-bg);
+
+  outline: none;
+}
+
+.game-window .interaction-actions > .npc-orders-exit {
+  text-align: left;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+.game-window .modal-entity-summary-info > .entity-info-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+}
+.game-window .modal-entity-summary-info > .entity-info-header > .type {
+  order: 2;
+  margin-left: auto;
+}
+.game-window .modal-entity-summary-info .infos {
+  display: flex;
+  flex-wrap: wrap;
+  order: 1;
+  gap: 6px 16px;
+  margin: 0;
+}
+.game-window .modal-entity-summary-info .infos:empty {
+  display: none;
+}
+.game-window .modal-entity-summary-info .infos > .info {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 6px;
+}
+.game-window .modal-entity-summary-info .infos > .info::before {
+  content: none;
+}
+
+/* Spacing separates content groups; repeated horizontal rules add no information. */
+.game-window .interaction-secondary-actions:not(:empty),
+.game-window .base-report-section + .base-report-section,
+.game-window .hero-training-entry,
+.game-window .entity-info-modal .unit-xp {
+  border-top: 0;
+}
+
+/* A building's upgrade is reviewed on its own sheet before validation. */
+.game-window.building-upgrade-sheet > .game-window-details {
+  display: none;
+}
+.game-window.building-upgrade-sheet .building-upgrade-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 16px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+.building-upgrade-sheet .building-upgrade-row > .inventory-action-row-icon {
+  --inventory-row-icon-size: 64px;
+  grid-column: 1;
+  grid-row: 1;
+}
+.building-upgrade-sheet .building-upgrade-row > .inventory-action-row-label {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  color: var(--main-accent-hover);
+}
+.building-upgrade-sheet
+  .building-upgrade-row
+  > :is(.inventory-action-row-description, .inventory-action-row-meta, .inventory-action-row-badge) {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  white-space: normal;
+  line-height: 1.5;
 }

@@ -58,15 +58,5 @@ export function createHeroDepotReservesBody(
     row.appendChild(amount)
     panel.appendChild(row)
   }
-  const disable = document.createElement('button')
-  disable.type = 'button'
-  disable.id = 'depot-reserve-disable'
-  disable.className = 'ui-btn'
-  disable.textContent = t('depotReserveDisable')
-  disable.addEventListener('click', () => {
-    setSettlementDepotPolicy(owner, building, { ...policy, shares: {} })
-    refresh()
-  })
-  panel.appendChild(disable)
   return panel
 }

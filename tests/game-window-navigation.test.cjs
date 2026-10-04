@@ -75,3 +75,74 @@ test('dpad and stick repeat navigation without repeating actions', () => {
   assert.deepEqual(state.read(pad([], [0, -0.8]), 440).direction, [0, -1])
   assert.equal(state.read(pad([], [0.2, 0.2]), 460).direction, null)
 })
+
+test('up/down stay in the same list, while horizontal navigation can change columns', () => {
+  const columns = [
+    { x: 50, y: 50, left: 0, right: 100 },
+    { x: 50, y: 100, left: 0, right: 100 },
+    { x: 180, y: 50, left: 130, right: 230 },
+    { x: 180, y: 100, left: 130, right: 230 },
+    { x: 180, y: 150, left: 130, right: 230 },
+  ]
+  assert.equal(findDirectionalTarget(columns, 1, 0, 1), 1)
+  assert.equal(findDirectionalTarget(columns, 1, 1, 0), 3)
+  assert.equal(findDirectionalTarget(columns, 4, 0, -1), 3)
+  assert.equal(findDirectionalTarget(columns, 0, 0, 1), 1)
+})
+
+test('right-stick reading prefers details, skips hidden pages, and can scroll a read-only body', () => {
+  const { scrollWindowInformation } = loadTsModule('app/lib/ui/GameWindowScroll.ts')
+  const area = (hidden, height = 400) => ({
+    scrollTop: 0,
+    scrollHeight: height,
+    clientHeight: 100,
+    closest: () => hidden,
+    getClientRects: () => [1],
+  })
+  const hidden = area(true)
+  const details = area(false)
+  const body = area(false)
+  const panel = { querySelectorAll: () => [hidden, details, body] }
+  assert.equal(scrollWindowInformation(panel, 30), true)
+  assert.equal(details.scrollTop, 30)
+  assert.equal(body.scrollTop, 0)
+  assert.equal(hidden.scrollTop, 0)
+  details.scrollHeight = 100
+  assert.equal(scrollWindowInformation(panel, 40), true)
+  assert.equal(body.scrollTop, 40)
+})
+
+test('construction tab reaches the left catalogue even when the tab is above right-side details', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: { '@pixi/sound': { sound: {} }, './GameWindowForms': { getWindowField: () => null } },
+  })
+  const strip = { getBoundingClientRect: () => ({ x: 0, y: 0, width: 800, height: 40 }) }
+  const tab = {
+    getBoundingClientRect: () => ({ x: 600, y: 0, width: 180, height: 40 }),
+    closest: selector => (selector === '.ui-tabs' ? strip : null),
+    matches: selector => selector === '.ui-tab' || selector === '.ui-tab[aria-selected="true"]',
+  }
+  const row = y => ({
+    getBoundingClientRect: () => ({ x: 20, y, width: 340, height: 44 }),
+    closest: () => null,
+    matches: () => false,
+  })
+  const first = row(80),
+    second = row(140)
+  const window = Object.create(GameWindow.prototype)
+  Object.assign(window, {
+    selected: tab,
+    items: () => [tab, first, second],
+    select(next) {
+      this.selected = next
+    },
+  })
+  window.move(0, 1)
+  assert.equal(window.selected, first)
+  window.move(0, 1)
+  assert.equal(window.selected, second)
+  window.move(0, -1)
+  assert.equal(window.selected, first)
+  window.move(0, -1)
+  assert.equal(window.selected, tab)
+})

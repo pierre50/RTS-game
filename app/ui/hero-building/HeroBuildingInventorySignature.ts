@@ -10,7 +10,7 @@ export function getHeroBuildingInteractiveInventorySignature(
   hero: UnitEntity | null | undefined
 ): string {
   if (building.type === BUILDING_TYPES.market) {
-    return [building.marketStock?.join(',') || '', ...inventorySignature(hero)].join('|')
+    return [building.marketGold ?? '', building.marketStock?.join(',') || '', ...inventorySignature(hero)].join('|')
   }
   if (building.type === BUILDING_TYPES.chest) {
     return [

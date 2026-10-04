@@ -3,6 +3,7 @@ import { notifyVillageWorkChanged } from '../../../lib/units/villageWorkEvents'
 import { t } from '../../../lib/lang'
 import {
   advanceMaterialConstruction,
+  applyConstructionWork,
   constructionWorkSite,
   constructionWorkPoints,
   missingConstructionMaterialsForNextPoint,
@@ -44,7 +45,7 @@ function buildImpact(runtime: UnitResourceActions, workTickFrame: number): void 
     return
   }
   if (!dest) return
-  if (dest.buildingUpgrade || (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
+  if (!dest.isBuilt || dest.buildingUpgrade || (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
     if (!runtime.ensureWorkContact(dest)) return
     if (blockUnfundedBuild(runtime)) return
     if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
@@ -68,21 +69,21 @@ function advanceConstruction(runtime: UnitResourceActions, dest: BuildingEntity)
   const menu = unit.context?.menu
   const player = unit.owner
   const site = constructionWorkSite(dest)
-  const beforeHitPoints = constructionWorkPoints(dest)
+  const beforeWork = constructionWorkPoints(dest)
   const requested = advanceConstructionProgress(
-    beforeHitPoints,
+    beforeWork,
     site.totalHitPoints ?? 0,
     dest.buildingUpgrade?.constructionTime ?? dest.constructionTime ?? 1,
     getBuildRateXpMultiplier(unit) * getForgeBuildMultiplier(unit.owner, unit.type)
   )
   const next = advanceMaterialConstruction(dest, requested, [unit.inventory?.resources ?? {}])
-  if (next === beforeHitPoints) return
-  if (dest.buildingUpgrade) dest.buildingUpgrade.hitPoints = next
-  else dest.hitPoints = next
+  if (next === beforeWork) return
+  const healthBefore = dest.hitPoints ?? 0
+  applyConstructionWork(dest, next)
   notifyVillageWorkChanged(unit.owner)
   spawnWorkImpactFragments(unit, dest)
   runtime.playSound(runtime.getWorkSound('build', SOUND_CUES.villager.buildLoop))
-  if (!dest.buildingUpgrade) showHitPointGainFeedback(dest, next - beforeHitPoints)
+  if (!dest.buildingUpgrade) showHitPointGainFeedback(dest, (dest.hitPoints ?? 0) - healthBefore)
   grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
   if (shouldSyncBuildHealthDisplay(dest)) {
     syncEntityHealthDisplay(dest, definedProperties({ menu, player, forceInfo: unit.owner?.isPlayed }))

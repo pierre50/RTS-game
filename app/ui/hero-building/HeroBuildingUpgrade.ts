@@ -2,7 +2,7 @@ import { getBuildingTrainingLoad } from '../../lib/buildings/buildingTraining'
 import { getBuildingLevel, getBuildingConfigForLevel } from '../../lib/buildings/buildingLevel'
 import { nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
 import { canStartBuildingUpgrade, startBuildingUpgrade } from '../../classes/building/BuildingUpgrade'
-import { remainingConstructionMaterials } from '../../lib/economy/constructionMaterials'
+import { remainingConstructionMaterials, constructionProgressPercentage } from '../../lib/economy/constructionMaterials'
 import { renderBuildingAvatar } from '../../lib/avatar'
 import { t } from '../../lib/lang'
 import type { BuildingEntity } from '../../types/entities'
@@ -23,9 +23,7 @@ export function createHeroBuildingUpgrade(
   const next = upgrade?.targetLevel ?? nextBuildingUpgrade(config, current)
   const maximum = next == null
   const targetConfig = getBuildingConfigForLevel(config, next ?? current)
-  const progress = upgrade
-    ? Math.min(99, Math.floor((100 * (upgrade.hitPoints - 1)) / (upgrade.totalHitPoints - 1)))
-    : 0
+  const progress = upgrade ? Math.min(99, Math.floor(constructionProgressPercentage(building))) : 0
   const disabled = Boolean(upgrade) || maximum || !canStartBuildingUpgrade(building, menu.context.controls.heroUnit)
   const title = t(upgrade ? 'buildingUpgradeProgress' : maximum ? 'buildingUpgradeMaximum' : 'buildingUpgradeTitle', {
     level: (next ?? current) + 1,

@@ -34,7 +34,7 @@ export function startBuildingUpgrade(building: BuildingEntity, hero?: UnitEntity
   const config = getBuildingConfigForLevel(building.owner.config.buildings[building.type], targetLevel)
   building.buildingUpgrade = {
     targetLevel,
-    hitPoints: 1,
+    constructionProgress: 0,
     totalHitPoints: config.totalHitPoints ?? 1,
     constructionTime: config.constructionTime ?? 1,
   }

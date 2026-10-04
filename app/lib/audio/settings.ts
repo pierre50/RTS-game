@@ -50,7 +50,6 @@ export type ControlBindingAction =
   | 'heroDismountHorse'
   | 'quests'
   | 'inventory'
-  | 'pause'
 
 export type ControlKeyBindings = Record<ControlBindingAction, string>
 
@@ -122,7 +121,6 @@ const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroDismountHorse: 'Shift',
   quests: 'j',
   inventory: 'i',
-  pause: 'p',
 }
 
 const DEFAULT_GAMEPAD_BINDINGS: GamepadButtonBindings = {
@@ -169,7 +167,6 @@ const GAMEPAD_BUTTON_LABELS: Record<GamepadButtonBinding, string> = {
 }
 
 export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingAction[] }[] = [
-  { key: 'controlsGroupCamera', actions: ['cameraUp', 'cameraDown', 'cameraLeft', 'cameraRight'] },
   {
     key: 'controlsGroupHero',
     actions: [
@@ -189,7 +186,6 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
       'inventory',
     ],
   },
-  { key: 'controlsGroupGame', actions: ['pause'] },
 ]
 
 const CONTROL_BINDING_ACTIONS = Object.keys(DEFAULT_KEY_BINDINGS) as ControlBindingAction[]

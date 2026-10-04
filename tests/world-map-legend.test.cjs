@@ -16,7 +16,11 @@ function element() {
     children: [],
     style: {},
     classes: new Set(),
-    classList: { toggle() {} },
+    classList: { toggle() {}, add() {} },
+    setAttribute() {},
+    addEventListener(type, callback) {
+      this[type] = callback
+    },
     append(...children) {
       this.children.push(...children)
     },
@@ -119,4 +123,30 @@ test('campaign color overrides stale regional colors and cached hex colors', () 
     'faction-B': { id: 'faction-B', civilization: 'B', color: 'green' },
   })
   assert.equal(settlementPlayerColor(menu, { kind: 'city', civ: 'B' }), '#4b6b2b')
+})
+
+test('interactive legend uses owner dots and keeps the cave filter beside players', t => {
+  const original = globalThis.document
+  globalThis.document = { createElement: element }
+  t.after(() => {
+    globalThis.document = original
+  })
+  const owner = { isPlayed: true, label: 'hero', colorHex: '#ff0000' }
+  const menu = host([owner, { label: 'ally', name: 'Alba', colorHex: '#00ffff', settlementType: 'city' }])
+  menu.context.player = owner
+  let redraws = 0
+  menu.updateCameraMiniMap = () => redraws++
+  const symbols = element()
+  const legend = createWorldMapLegend(menu, {}, true, symbols)
+  const players = legend.children.slice(1, 3)
+  assert.equal(players.length, 2)
+  assert.ok(players.every(row => row.children[0].children.length === 0))
+  assert.equal(symbols.children.length, 0)
+  const cave = legend.children[3]
+  assert.equal(cave.children[1].textContent, 'Cave')
+  players[1].click()
+  assert.ok(owner.minimapPreferences.hiddenMarkers.includes('ally'))
+  cave.click()
+  assert.ok(owner.minimapPreferences.hiddenMarkers.includes('caves'))
+  assert.equal(redraws, 2)
 })

@@ -14,27 +14,34 @@
 
   /* Palette issue du décor */
   --color-black-deep: #050716;
-  --color-black-blue: #0c1028;
 
   /* Must match STATUS_EXPRESSION_COLORS['!']/STATUS_EXPRESSION_STROKE in app/lib/entities/statusBubble.ts */
   --quest-marker-color: #ffd747;
   --quest-marker-stroke-color: #20140b;
 
   --color-blue-control: #283568;
-  --color-blue-bright: #5366a8;
 
   --color-stone-muted: #6d7190;
 
   /* Bordures très contrastées */
   --border-light-color: #cfd8ff;
-  --border-side-color: #8d9be0;
   --border-bottom-color: #31385f;
 
-  --border-btn: 2px solid var(--border-light-color);
+  --ui-control-border-width: 2px;
+  --ui-control-border-style: solid;
+  --ui-control-border-default: var(--color-stone-muted);
+  --ui-control-border-hover: var(--main-accent-color);
+  --ui-control-border-focus: var(--main-accent-hover);
+  --ui-control-border-active: var(--main-accent-hover);
+  --ui-control-border: var(--ui-control-border-width) var(--ui-control-border-style) var(--ui-control-border-default);
   --border-slot: 2px solid var(--border-bottom-color);
   --panel-border: 2px solid var(--border-light-color);
 
-  --main-box-shadow: 4px 4px 0 var(--color-black-deep);
+  /* Separate from control borders: keep the interlaced corners at their native size. */
+  --modal-border-image: url('../../public/assets/border/modal-interlaced.svg');
+  --modal-border-width: 24px;
+  --modal-border-slice: 24;
+  --modal-border: var(--modal-border-width) solid transparent;
 
   /* =========================================================
      CONSOLE
@@ -61,8 +68,6 @@
   --msg-warning-border: rgba(214, 169, 74, 0.8);
 
   --msg-padding: 8px 20px;
-
-  --msg-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -1px 0 rgba(49, 56, 95, 0.9);
 
   /* =========================================================
      TYPOGRAPHIE
@@ -129,9 +134,6 @@
     radial-gradient(circle at 50% 90%, rgba(231, 198, 106, 0.08), transparent 40%),
     linear-gradient(180deg, var(--menu-backdrop-start) 0%, var(--menu-backdrop-end) 100%);
 
-  --home-button-focus-color: var(--main-accent-hover);
-  --home-button-focus-ring: rgba(231, 198, 106, 0.42);
-
   /* =========================================================
      ORIENTATION
      ========================================================= */
@@ -146,28 +148,32 @@
   --status-energy-color: #2f8cff;
   --status-energy-text-color: #dbe7ff;
 
-  --status-health-border: #190712;
   --status-health-top: #d85e62;
   --status-health-bottom: #84263e;
-  --status-health-highlight: rgba(255, 180, 168, 0.22);
-  --status-health-shadow: rgba(0, 0, 0, 0.68);
+
+  --level-tag-color: var(--main-accent-color);
+  --level-tag-background: color-mix(in srgb, var(--main-accent-color) 14%, var(--main-primary-color));
+  --level-tag-border-color: color-mix(in srgb, var(--main-accent-color) 65%, var(--main-primary-color));
+  --level-tag-border-width: 1px;
+  --level-tag-font-size: var(--font-size-xs);
+  --level-tag-font-family: var(--font-family-ui);
+  --level-tag-font-weight: 700;
+  --level-tag-line-height: 1;
+  --level-tag-text-transform: uppercase;
+  --level-tag-padding: 2px 6px;
+  --level-tag-gap: var(--ui-gap-8);
+
+  --loading-progress-fill: #e8e8e4;
+  --loading-progress-track: transparent;
 
   --status-progress-top: #68b891;
   --status-progress-bottom: #286b63;
-  --status-progress-highlight: rgba(178, 255, 229, 0.18);
-  --status-progress-shadow: rgba(0, 0, 0, 0.62);
 
   --status-progress-background: linear-gradient(
     180deg,
     var(--status-progress-top) 0%,
     var(--status-progress-bottom) 100%
   );
-
-  --status-health-inset-shadow:
-    inset 1px 1px 0 var(--status-health-highlight), inset -1px -1px 0 var(--status-health-shadow);
-
-  --status-progress-inset-shadow:
-    inset 1px 1px 0 var(--status-progress-highlight), inset -1px -1px 0 var(--status-progress-shadow);
 
   /* =========================================================
      ESPACEMENTS
@@ -222,40 +228,13 @@
      RENDU UI
      ========================================================= */
 
-  --ui-inset-shadow:
-    inset 0 2px 0 var(--color-black-deep), inset 2px 0 0 var(--color-black-blue),
-    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--color-blue-bright);
-
-  /*
-   * Liseré clair façon fenêtre JRPG, sombre en bas pour le relief.
-   * Le contraste est volontairement dur.
-   */
-  --ui-outset-shadow:
-    inset 0 2px 0 var(--text-color-white), inset 2px 0 0 var(--border-side-color),
-    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--color-black-deep);
-
-  --ui-button-shadow-raised:
-    inset 0 2px 0 var(--text-color-white), inset 2px 0 0 var(--border-side-color),
-    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--color-black-deep), 4px 4px 0 var(--color-black-deep);
-
-  --ui-button-shadow-pressed:
-    inset 0 2px 0 var(--color-black-deep), inset 2px 0 0 var(--color-black-deep),
-    inset -2px 0 0 var(--border-bottom-color), inset 0 -2px 0 var(--border-light-color);
-
-  --ui-scrollbar-active-shadow:
-    inset 0 2px 0 var(--color-black-deep), inset 2px 0 0 var(--color-black-deep),
-    inset -1px 0 0 var(--border-bottom-color), inset 0 -1px 0 var(--border-light-color);
   --ui-scrollbar-thumb-hover-bg: rgba(231, 198, 106, 0.5);
-
-  --ui-control-focus-ring: rgba(231, 198, 106, 0.34);
 
   /* =========================================================
      BARS / SLOTS
      ========================================================= */
 
   --ui-bar-bg: var(--color-blue-control);
-
-  --ui-bar-border: var(--panel-border);
 
   --ui-slot-border: var(--border-slot);
 
@@ -264,9 +243,6 @@
   --ui-text-shadow: var(--text-shadow-ui);
 
   --ui-plain-text-shadow: var(--text-shadow-ui);
-
-  --world-map-player-color: #6ee37a;
-  --world-map-unexplored-color: #2d3136;
 
   --ui-map-shadow-dark: var(--color-black-deep);
   --ui-map-shadow-light: rgba(207, 216, 255, 0.18);
@@ -293,7 +269,7 @@
   --window-tab-active-bg: rgba(179, 188, 239, 0.1);
   --window-tab-hover-bg: rgba(179, 188, 239, 0.16);
   --window-backdrop: rgba(5, 7, 18, 0.35);
-  --window-help-shadow: 0 4px 12px #0008;
+
   --window-padding-x: 22px;
   --window-avatar-size: 64px;
   --window-bag-min-height: 240px;
@@ -306,6 +282,4 @@
 
   --debug-overlay-bg: rgba(5, 7, 18, 0.97);
   --debug-overlay-border: rgba(207, 216, 255, 0.28);
-
-  --debug-overlay-shadow: 4px 4px 0 #000000;
 }

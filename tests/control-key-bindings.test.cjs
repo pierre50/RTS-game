@@ -281,3 +281,18 @@ test('keyboard swaps recognize physical digit aliases and keep unrelated keys', 
     restore()
   }
 })
+
+test('standalone pause binding is removed, including saved shortcuts', () => {
+  const { settings, restore } = loadSettings({ controls_key_bindings: JSON.stringify({ pause: 'p' }) })
+  try {
+    assert.equal(settings.getKeyBindings().pause, undefined)
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyP', key: 'p' }), null)
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyP', key: 'P' }), null)
+    assert.equal(
+      settings.CONTROL_BINDING_GROUPS.some(group => group.actions.includes('pause')),
+      false
+    )
+  } finally {
+    restore()
+  }
+})

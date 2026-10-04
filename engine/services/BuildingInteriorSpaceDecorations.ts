@@ -139,7 +139,7 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
     const owner = space.building.owner
     if (!owner) throw new Error('Cannot restore building interior without an owner')
     const houseBeds =
-      space.building.type === BUILDING_TYPES.house && usesInteriorPreset(space.building)
+      space.building.type === BUILDING_TYPES.house
         ? getBuildingInteriorDecorationLayout(space.building).filter(item => item.type === BUILDING_TYPES.campBedroll)
         : []
     for (const building of saved) {
@@ -219,8 +219,13 @@ export function ensureInteriorDefaultBuildings(context: GameContextLike, space: 
   if (space.entryCell) blockedCells.add(interiorCellKey(space.entryCell))
 
   for (const item of getBuildingInteriorDecorationLayout(space.building)) {
+    const isBasicFurnishing =
+      (space.building.type === BUILDING_TYPES.house && item.type === BUILDING_TYPES.campBedroll) ||
+      ([BUILDING_TYPES.house, BUILDING_TYPES.townCenter].includes(space.building.type) &&
+        item.type === BUILDING_TYPES.fireCamp)
     if (
       !usesInteriorPreset(space.building) &&
+      !isBasicFurnishing &&
       !(
         item.key === 'storage-chest' &&
         [BUILDING_TYPES.granary, BUILDING_TYPES.storagePit].includes(space.building.type)

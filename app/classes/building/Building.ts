@@ -1,3 +1,4 @@
+import { initializeConstructionProgress } from '../../lib/economy/constructionMaterials'
 import type { CaveDefinition } from '../../types/cave'
 import { getBuildingLevel, getBuildingConfigForLevel } from '../../lib/buildings/buildingLevel'
 import type { AnimatedSprite, Graphics, Sprite, Text, Texture } from 'pixi.js'
@@ -63,9 +64,11 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   j: number
   type: string
   spaceId?: string
+  constructionProgress?: number
   constructionMaterials?: BuildingEntity['constructionMaterials']
   buildingUpgrade?: BuildingEntity['buildingUpgrade']
   inventory?: BuildingEntity['inventory']
+  marketGold?: number
   marketStock?: string[]
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
@@ -137,8 +140,10 @@ export class Building extends Instance implements BuildingEntity {
     resources?: ResourceAmount
     equipment?: string[]
   }
+  constructionProgress?: number
   constructionMaterials?: BuildingEntity['constructionMaterials']
   buildingUpgrade?: BuildingEntity['buildingUpgrade']
+  marketGold?: number
   marketStock?: string[]
   visualSettingsCleanup: (() => void) | null
 
@@ -196,6 +201,8 @@ export class Building extends Instance implements BuildingEntity {
 
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = Math.min(this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1), this.totalHitPoints)
+
+    initializeConstructionProgress(this)
 
     setupBuildingTransform(this)
     createInitialBuildingSprite(this)

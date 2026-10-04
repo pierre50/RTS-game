@@ -1,3 +1,4 @@
+import { t } from '../lib/lang'
 import { heroHomeButton } from './hero-building/HeroHomeButton'
 import { getBuildingAssetOwner } from '../lib/graphics/assets'
 import { createHeroBuildingUpgrade } from './hero-building/HeroBuildingUpgrade'
@@ -19,6 +20,7 @@ import { createHeroBuildingActionButton } from './hero-building/HeroBuildingActi
 import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
 import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
 import { heroBuildingStructureSignature } from './hero-building/HeroBuildingStructureSignature'
+import { buttonMeta } from './hero-building/HeroBuildingButtonText'
 import { heroSleepButton } from './hero-building/HeroSleepButton'
 import { HeroCampfireBody } from './hero-building/HeroCampfireBody'
 import { HeroForgeBody } from './hero-building/HeroForgeBody'
@@ -41,6 +43,7 @@ export class HeroBuildingMenuManager {
   body: HTMLDivElement
   backButton: HTMLButtonElement
   modal?: Modal
+  private upgradeModal?: Modal
   marketOpen = false
   building: BuildingEntity | null
   stack: MenuButtonSpec[][]
@@ -131,6 +134,7 @@ export class HeroBuildingMenuManager {
 
   close(): void {
     if (!this.opened && !this.modal) return
+    this.closeUpgrade()
     const modal = this.modal
     this.modal = undefined
     const building = this.building
@@ -148,6 +152,34 @@ export class HeroBuildingMenuManager {
       building.unselect?.()
       player.selectedBuilding = null
     }
+  }
+
+  private closeUpgrade(): void {
+    const modal = this.upgradeModal
+    this.upgradeModal = undefined
+    modal?.close()
+    if (this.modal?._backdrop) this.modal._backdrop.hidden = false
+  }
+
+  private openUpgrade(building: BuildingEntity): void {
+    if (this.upgradeModal || this.building !== building) return
+    const upgrade = createHeroBuildingUpgrade(this.menu, building, () => {
+      this.closeUpgrade()
+      this.refresh()
+    })
+    if (!upgrade) return
+    const content = document.createElement('div')
+    content.className = 'building-upgrade-sheet-content'
+    content.appendChild(upgrade)
+    this.upgradeModal = createInspectionModal({
+      title: getBuildingDisplayName(building),
+      content,
+      panelClass: 'building-upgrade-sheet',
+      size: 'small',
+      proximity: { context: this.menu.context, targets: () => [building] },
+      onClose: () => this.closeUpgrade(),
+    })
+    if (this.modal?._backdrop) this.modal._backdrop.hidden = true
   }
 
   back(): void {
@@ -230,6 +262,10 @@ export class HeroBuildingMenuManager {
     setInspectionWindowSize(this.modal, managementMode ? 'large' : 'small')
     this.modal?._panel?.classList.toggle('interaction-panel', !inventoryMode)
     this.modal?._panel?.classList.toggle('inventory-transfer-modal', inventoryMode)
+    this.modal?._panel?.classList.toggle(
+      'crafting-workshop',
+      Boolean(building.isBuilt && (building.type === BUILDING_TYPES.forge || building.type === BUILDING_TYPES.fireCamp))
+    )
     this.panel.classList.toggle('market-trade-screen', this.marketOpen)
     // Only re-extracted on open/refresh (structure changes), not on every
     // syncLiveState() tick — renderInfo() alone runs far more often (e.g. on
@@ -246,7 +282,14 @@ export class HeroBuildingMenuManager {
     this.renderInfo()
     this.body.replaceChildren()
     const upgrade = createHeroBuildingUpgrade(this.menu, building, () => this.refresh())
-    if (upgrade) this.body.appendChild(upgrade)
+    if (upgrade) {
+      const action = document.createElement('button')
+      action.type = 'button'
+      action.dataset.windowAction = 'upgrade'
+      action.textContent = t('forgeUpgradeAction')
+      action.addEventListener('click', () => this.openUpgrade(building))
+      this.body.appendChild(action)
+    }
     this.backButton.textContent = '<'
     this.backButton.classList.toggle('is-visible', !this.marketOpen && this.stack.length > 1)
     if (this.renderContainerBody(building)) {
@@ -254,8 +297,14 @@ export class HeroBuildingMenuManager {
       this.updateProgress()
       return
     }
-    items.filter(button => !button.hide || !button.hide()).forEach(button => this.appendActionButton(building, button))
-    this.body.classList.toggle('is-empty', !this.body.children.length)
+    items
+      .filter(button => !['heroCampfireSleep', 'heroSetHome'].includes(button.id ?? ''))
+      .filter(button => !button.hide || !button.hide())
+      .forEach(button => this.appendActionButton(building, button))
+    this.body.classList.toggle(
+      'is-empty',
+      !Array.from(this.body.children).some(child => !(child as HTMLElement).dataset.windowAction)
+    )
     this.updateProgress()
   }
 
@@ -335,6 +384,15 @@ export class HeroBuildingMenuManager {
         ...TITLED_ENTITY_INFO_OPTIONS,
         actionsContainer: this.layout.secondaryActions,
       })
+    }
+    if (building) {
+      for (const spec of this.getBuildingActionMenuItems(building)) {
+        if (!['heroCampfireSleep', 'heroSetHome'].includes(spec.id ?? '') || spec.hide?.()) continue
+        const button = this.createButton(building, spec)
+        button.dataset.windowAction = spec.id === 'heroCampfireSleep' ? 'sleep' : 'home'
+        button.title = buttonMeta(spec)
+        this.layout.secondaryActions.appendChild(button)
+      }
     }
   }
 

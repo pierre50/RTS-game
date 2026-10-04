@@ -56,12 +56,6 @@
     linear-gradient(135deg, rgba(32, 42, 85, 0.96) 0%, rgba(12, 16, 40, 0.98) 100%);
   border: var(--panel-border);
   border-radius: var(--main-border-radius);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.55),
-    inset 2px 0 0 rgba(141, 155, 224, 0.5),
-    inset -2px 0 0 rgba(49, 56, 95, 0.72),
-    inset 0 -2px 0 rgba(5, 7, 18, 0.88),
-    var(--main-box-shadow);
 }
 
 .menu-panel--home {
@@ -69,7 +63,6 @@
   padding: var(--menu-home-padding);
   background: transparent;
   border: 0;
-  box-shadow: none;
 }
 
 .menu-panel--home .button-group {
@@ -392,7 +385,6 @@
   transition: background-color var(--ui-transition-fast);
 }
 
-
 .player-row--odd {
   background: var(--surface-row-subtle);
 }
@@ -416,7 +408,6 @@
   width: 100%;
 }
 
-
 .team-cycle,
 .color-swatch {
   min-width: var(--ui-control-height-compact);
@@ -427,7 +418,6 @@
 
 .color-swatch {
   background-image: none;
-  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.4);
 }
 
 .hero-avatar-row {
@@ -448,7 +438,6 @@
   border: 1px solid #000;
   border-radius: var(--main-border-radius);
   background: #000;
-  box-shadow: none;
 }
 
 .hero-avatar-preview-frame canvas {
@@ -491,7 +480,6 @@
 .team-cycle:focus,
 .team-cycle:hover {
   background-color: var(--surface-accent-medium);
-  border-color: var(--main-accent-color);
   outline: none;
 }
 
@@ -600,7 +588,6 @@
     grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(96px, 1fr) 56px 56px;
     min-width: 460px;
   }
-
 
   .button-group,
   .modal-menu,
@@ -741,18 +728,10 @@
   }
 }
 
-.settings-device-tabs,
 .settings-device-page {
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-12);
-}
-.settings-device-tabs > .ui-tabs {
-  display: flex;
-  gap: var(--ui-gap-8);
-}
-.settings-device-tabs > .ui-tabs .ui-tab {
-  flex: 1;
 }
 .settings-controls-section {
   gap: 0;
@@ -764,14 +743,11 @@
 .settings-section-toggle {
   width: 100%;
   padding: var(--ui-gap-12) 0;
-  border: 0;
+  border: var(--ui-control-border-width) var(--ui-control-border-style) transparent;
   background: transparent;
   color: var(--main-accent-color);
   font: inherit;
   text-align: left;
-}
-.settings-section-toggle:focus-visible {
-  outline: 1px solid var(--main-accent-color);
 }
 .settings-section-body {
   display: flex;

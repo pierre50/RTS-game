@@ -23,6 +23,21 @@ export type MarketEquipmentOfferOptions = {
 type ResourceStorageName = (typeof RESOURCE_STORAGE_NAMES)[number]
 
 export const MARKET_RESTOCK_INTERVAL_DAYS = 3
+export const MARKET_INITIAL_GOLD = 1000
+export const MARKET_DAILY_GOLD = 200
+
+type MarketWallet = Pick<BuildingEntity, 'marketGold'>
+
+export function getMarketGold(market: MarketWallet): number {
+  const gold = market.marketGold
+  market.marketGold = gold == null || !Number.isFinite(gold) ? MARKET_INITIAL_GOLD : Math.max(0, Math.floor(gold))
+  return market.marketGold
+}
+
+export function replenishMarketGold(market: MarketWallet): void {
+  const gold = getMarketGold(market)
+  if (gold < MARKET_INITIAL_GOLD) market.marketGold = Math.min(MARKET_INITIAL_GOLD, gold + MARKET_DAILY_GOLD)
+}
 
 const METAL_TIER_GOLD_VALUES: Record<string, number> = {
   ceramic: 45,
@@ -217,6 +232,7 @@ export function getEquipmentResaleGoldValue(equipment: string): number {
 
 export function buyMarketEquipment(
   hero: UnitEntity | null | undefined,
+  market: MarketWallet,
   equipment: string,
   requestedCount = 1,
   stock?: string[]
@@ -231,16 +247,22 @@ export function buyMarketEquipment(
   if (count <= 0) return 0
   if (!addHeroInventoryItem(hero, equipment, count)) return 0
   if (stock && removeFromMarketStock(stock, equipment, count) !== count) return 0
+  market.marketGold = getMarketGold(market) + goldValue * count
   inventory.resources!.gold = gold - goldValue * count
   if (inventory.resources!.gold <= 0) delete inventory.resources!.gold
   return count
 }
 
-export function sellHeroEquipment(hero: UnitEntity | null | undefined, equipment: string, count = 1): number {
+export function sellHeroEquipment(
+  hero: UnitEntity | null | undefined,
+  market: MarketWallet,
+  equipment: string,
+  count = 1
+): number {
   if (!hero) return 0
   const goldValue = getEquipmentResaleGoldValue(equipment)
   if (goldValue <= 0) return 0
-  const amount = Math.max(1, Math.floor(count))
+  const amount = Math.min(Math.max(1, Math.floor(count)), Math.floor(getMarketGold(market) / goldValue))
   let sold = 0
   for (let index = 0; index < amount; index++) {
     if (!removeHeroInventoryItem(hero, equipment)) break
@@ -248,12 +270,14 @@ export function sellHeroEquipment(hero: UnitEntity | null | undefined, equipment
   }
   if (sold <= 0) return 0
   const inventory = getHeroInventory(hero)
+  market.marketGold = getMarketGold(market) - sold * goldValue
   inventory.resources!.gold = (inventory.resources!.gold ?? 0) + sold * goldValue
   return sold
 }
 
 export function sellHeroResource(
   hero: UnitEntity | null | undefined,
+  market: MarketWallet,
   resource: keyof ResourceAmount,
   requestedAmount?: number
 ): number {
@@ -263,10 +287,14 @@ export function sellHeroResource(
   const inventory = getHeroInventory(hero)
   const resources = inventory.resources!
   const available = Math.max(0, Math.floor(resources[resource] ?? 0))
-  const amount = requestedAmount == null ? available : Math.min(available, Math.max(0, Math.floor(requestedAmount)))
+  const amount = Math.min(
+    requestedAmount == null ? available : Math.min(available, Math.max(0, Math.floor(requestedAmount))),
+    Math.floor(getMarketGold(market) / goldValue)
+  )
   if (amount <= 0) return 0
   resources[resource] = available - amount
   if ((resources[resource] ?? 0) <= 0) delete resources[resource]
+  market.marketGold = getMarketGold(market) - amount * goldValue
   resources.gold = (resources.gold ?? 0) + amount * goldValue
   return amount
 }

@@ -1,6 +1,10 @@
 import { refreshPopulationCapacity } from '../../../lib/buildings/buildingOccupancy'
 import { completeBuildingUpgrade } from '../../../lib/buildings/buildingUpgrade'
-import { constructionWorkPoints } from '../../../lib/economy/constructionMaterials'
+import {
+  constructionWorkPoints,
+  applyConstructionWork,
+  constructionProgress,
+} from '../../../lib/economy/constructionMaterials'
 import { getForgeBuildMultiplier, getForgeGatherBonus } from '../../../lib/equipment/forgeUpgrades'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../../config/gameplay'
 import { RESOURCE_TYPES } from '../../../constants/entities'
@@ -63,16 +67,16 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
   const multiplier = getBuildRateXpMultiplier(unit) * getForgeBuildMultiplier(player, unit.type)
   const gain = getConstructionGain(total, constructionTime, multiplier)
   if (!gain) return { budget, status: 'skip' }
-  const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - constructionWorkPoints(target)) / gain))
   if (!target.buildingUpgrade) target.totalHitPoints = total
+  const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - constructionWorkPoints(target)) / gain))
   const next = advanceMaterialConstruction(
     target,
     advanceConstruction(constructionWorkPoints(target), total, constructionTime, multiplier, impacts),
     [unit.inventory?.resources ?? {}]
   )
   budget -= impacts * cycle
+  applyConstructionWork(target, next)
   if (target.buildingUpgrade) {
-    target.buildingUpgrade.hitPoints = next
     if (completeBuildingUpgrade(target, rules.buildingConfig(playerIndex, target.type))) {
       refreshPopulationCapacity(player)
       report.buildingsCompleted++
@@ -83,8 +87,7 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
     }
     return { budget, status: 'wait' }
   }
-  target.hitPoints = next
-  if (target.hitPoints >= total) {
+  if (target.isBuilt ? (target.hitPoints ?? 0) >= total : constructionProgress(target) >= 1) {
     target.isBuilt = true
     if (target.type === 'Farm') {
       spatial.releaseBuilding(target)

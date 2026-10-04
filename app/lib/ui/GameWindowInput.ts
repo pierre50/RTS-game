@@ -79,8 +79,11 @@ export function hasHeldDirectionalCommand(commands: Command[], pad: Gamepad): bo
   return commands.some(command => command.pad >= 12 && command.pad <= 15 && pad.buttons[command.pad]?.pressed)
 }
 
-export function findEnabledPadCommand(commands: Command[], index: number): Command | null {
-  const command = commands.find(item => item.pad === index)
+export function findEnabledPadCommand(commands: Command[], index: number, pad?: Gamepad): Command | null {
+  const command =
+    commands.find(
+      item => item.pad === index && item.padModifier !== undefined && pad?.buttons[item.padModifier]?.pressed
+    ) ?? commands.find(item => item.pad === index && item.padModifier === undefined)
   return command && !command.disabled ? command : null
 }
 

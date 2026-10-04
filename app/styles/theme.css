@@ -1,6 +1,5 @@
 .game-hud.ui-theme-default {
   --ui-bar-bg: var(--main-primary-color);
-  --ui-bar-border: var(--panel-border);
   --ui-slot-border: var(--border-slot);
   --ui-text-color: var(--main-text-color);
   --ui-text-shadow: var(--text-shadow-ui);

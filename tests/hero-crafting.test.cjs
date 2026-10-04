@@ -67,10 +67,10 @@ test('hero arrow craft recipes spend hero bag resources and add arrows to the he
 
   assert.equal(craftHeroRecipe(player, hero, recipe), true)
   assert.deepEqual(hero.inventory.resources, { wood: 3, feather: 1, copper: 1 })
-  assert.equal(hero.inventory.equipment.length, 20)
+  assert.equal(hero.inventory.equipment.length, 1)
   assert(hero.inventory.equipment.every(item => item === 'arrow_copper'))
   for (let i = 0; i < 20; i++) assert.equal(craftHeroRecipe(player, hero, recipe), false)
-  assert.equal(hero.inventory.equipment.length, 20)
+  assert.equal(hero.inventory.equipment.length, 1)
   assert.deepEqual(hero.inventory.resources, { wood: 3, feather: 1, copper: 1 })
 })
 
@@ -230,4 +230,20 @@ test('grilled meat costs two meat and can be consumed once to heal without excee
   assert.equal(hero.hitPoints, 30)
   assert.deepEqual(hero.inventory.equipment, [])
   assert.equal(useHeroConsumableItem(hero, 'grilled_meat'), false)
+})
+
+test('maximum craft uses the limiting resource and spends all batches atomically', () => {
+  const { HERO_CRAFT_RECIPES, getMaxHeroCraftCount, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'arrow_copper')
+  const player = {}
+  const hero = { type: 'Hero', inventory: { resources: { wood: 27, feather: 7, copper: 12 }, equipment: [] } }
+  assert.equal(getMaxHeroCraftCount(player, recipe, hero), 3)
+  assert.equal(craftHeroRecipe(player, hero, recipe, 6), false)
+  assert.deepEqual(hero.inventory.resources, { wood: 27, feather: 7, copper: 12 })
+  assert.equal(craftHeroRecipe(player, hero, recipe, 3), true)
+  assert.deepEqual(hero.inventory.resources, { wood: 12, feather: 1, copper: 6 })
+  assert.deepEqual(hero.inventory.equipment, Array(3).fill('arrow_copper'))
+  assert.equal(getMaxHeroCraftCount(player, recipe, hero), 0)
+  for (const count of [0, -1, 1.5, Infinity, NaN]) assert.equal(craftHeroRecipe(player, hero, recipe, count), false)
+  assert.equal(getMaxHeroCraftCount(player, recipe, null), 0)
 })

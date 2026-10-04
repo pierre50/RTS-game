@@ -26,20 +26,13 @@ export class HeroForgeBody extends HeroCraftingBody {
       if (!items.length) continue
       this.appendSection(t(title), grid => items.forEach(recipe => grid.appendChild(this.createCraftButton(recipe))))
     }
-    // Village upgrades follow the hero's own crafting; the scope notice opens them once.
-    const scope = t(
-      canManageForge(this.menu.context.player, this.building, this.menu.context.controls.heroUnit)
-        ? 'forgeUpgradeScope'
-        : 'forgeUpgradeRequiresCommand'
-    )
-    for (const [title, families, description] of [
-      ['forgeCategoryTools', FORGE_FAMILIES.slice(0, 3), scope],
-      ['forgeCategoryMilitary', FORGE_FAMILIES.slice(3), undefined],
+    for (const [title, families] of [
+      ['forgeCategoryTools', FORGE_FAMILIES.slice(0, 3)],
+      ['forgeCategoryMilitary', FORGE_FAMILIES.slice(3)],
     ] as const) {
       this.appendSection(
         t(title),
-        grid => families.forEach(family => grid.appendChild(this.createUpgradeButton(family))),
-        description
+        grid => families.forEach(family => grid.appendChild(this.createUpgradeButton(family)))
       )
     }
   }

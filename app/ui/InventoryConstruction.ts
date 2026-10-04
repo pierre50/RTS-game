@@ -78,11 +78,6 @@ export function renderInventoryConstruction(host: InventoryConstructionHost): vo
   host.menu.clearActionHotkeys()
   if (!selection) return
 
-  const help = document.createElement('p')
-  help.className = 'construction-help'
-  help.textContent = t('constructionPlacementHelp')
-  host.constructionPanel.appendChild(help)
-
   const interior = getActiveInteractionSpace(host.menu.context)?.kind === 'interior'
   const usedKeys = new Set<string>(getReservedGameplayHotkeys())
   const buttons = getInventoryConstructionButtons(host.menu).filter(button => !button.hide || !button.hide())
@@ -90,12 +85,15 @@ export function renderInventoryConstruction(host: InventoryConstructionHost): vo
     const section = document.createElement('section')
     section.className = 'inventory-section'
     section.appendChild(createInventorySectionTitle(t(group.titleKey)))
+    const list = document.createElement('div')
+    list.className = 'inventory-section-list'
+    section.appendChild(list)
     for (const button of group.buttons) {
       const hotkey = host.menu.assignActionHotkey(button.id || '', usedKeys)
       const actionButton = createInventoryConstructionActionButton(host, button)
       const element = createInventoryConstructionRow(host, selection, actionButton, buttons.indexOf(button), hotkey)
-      section.appendChild(element)
-      bindConstructionHotkey(host, selection, button, hotkey)
+      list.appendChild(element)
+      bindConstructionHotkey(host, selection, actionButton, hotkey)
     }
     host.constructionPanel.appendChild(section)
   }
@@ -110,6 +108,13 @@ function createInventoryConstructionActionButton(
     onClick: (target, evt) => {
       evt?.preventDefault?.()
       evt?.stopPropagation?.()
+      // Keyboard and gamepad activation have no pointer position of their own.
+      if (!evt || ('detail' in evt && evt.detail === 0)) {
+        const { controls, gamebox } = host.menu.context
+        const rect = gamebox.getBoundingClientRect()
+        controls.mouse.x = rect.left + rect.width / 2
+        controls.mouse.y = rect.top + rect.height / 2
+      }
       button.onClick?.(target, evt)
       if (host.menu.context.controls.mouseBuilding) host.close()
     },
@@ -197,6 +202,5 @@ function bindConstructionHotkey(
   host.menu.setActionHotkey(hotkey, () => {
     host.menu.playUiClick()
     button.onClick!(selection, null)
-    if (host.menu.context.controls.mouseBuilding) host.close()
   })
 }

@@ -1,3 +1,4 @@
+import { renderUnitTypeAvatar } from '../../lib/avatar'
 import { t } from '../../lib/lang'
 import { formatTrainingEntryTimeRemaining } from '../../lib/buildings/trainingTimeRemaining'
 import { BUILDING_TRAINING_CAPACITY, isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
@@ -14,6 +15,20 @@ export function createHeroTrainingBody(
   if (!building.isBuilt || !types.length || building.owner?.label !== menu.context.player.label) return null
   const panel = document.createElement('div')
   panel.className = 'hero-training-panel'
+  const choices = document.createElement('section')
+  choices.className = 'hero-training-choices'
+  const queue = document.createElement('section')
+  queue.className = 'hero-training-queue'
+  for (const [section, key] of [
+    [choices, 'windowTrainingChoices'],
+    [queue, 'windowTrainingQueue'],
+  ] as const) {
+    const heading = document.createElement('h3')
+    heading.className = 'inventory-section-title'
+    heading.textContent = t(key)
+    section.appendChild(heading)
+    panel.appendChild(section)
+  }
   const button = (id: string, label: string, run: () => void) => {
     const element = document.createElement('button')
     element.type = 'button'
@@ -35,13 +50,16 @@ export function createHeroTrainingBody(
       (building.trainingRequests?.filter(request => request.traineeLabel).length ?? 0),
     max: BUILDING_TRAINING_CAPACITY,
   })
-  panel.appendChild(summary)
+  queue.appendChild(summary)
   for (const type of types) {
-    panel.appendChild(
-      button(`training-add-${type}`, t('buildingTrainingRecruit', { type: t(type) }), () => {
-        requestBuildingTraining(building, type, 1)
-      })
-    )
+    const recruit = button(`training-add-${type}`, t('buildingTrainingRecruit', { type: t(type) }), () => {
+      requestBuildingTraining(building, type, 1)
+    })
+    recruit.classList.add('hero-training-choice')
+    const avatar = document.createElement('canvas')
+    avatar.width = avatar.height = 64
+    if (building.owner && renderUnitTypeAvatar(menu.context.app, type, building.owner, avatar)) recruit.prepend(avatar)
+    choices.appendChild(recruit)
     const waiting = building.trainingRequests?.filter(request => request.type === type && !request.traineeLabel) ?? []
     if (waiting.length) {
       const row = document.createElement('div')
@@ -54,7 +72,7 @@ export function createHeroTrainingBody(
           cancelBuildingTrainingRequest(building, waiting[waiting.length - 1])
         })
       )
-      panel.appendChild(row)
+      queue.appendChild(row)
     }
   }
   for (const request of building.trainingRequests ?? []) {
@@ -70,7 +88,7 @@ export function createHeroTrainingBody(
         cancelBuildingTrainingRequest(building, request)
       })
     )
-    panel.appendChild(row)
+    queue.appendChild(row)
   }
   building.trainingQueue?.forEach((entry, index) => {
     const row = document.createElement('div')
@@ -92,7 +110,7 @@ export function createHeroTrainingBody(
         building.cancelTrainingEntry?.(entry.trainee.label)
       })
     )
-    panel.appendChild(row)
+    queue.appendChild(row)
   })
   return panel
 }

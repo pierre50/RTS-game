@@ -5,7 +5,7 @@ import { debounce, isPlayedHeroDefeated } from '../../lib'
 import { clearAllCombatFeedback } from '../../lib/combat/combatFeedback'
 import { isGameplaySoundSuppressed, setGameplaySoundSuppressed } from '../../lib/audio/sound'
 import { stopAllUiSounds } from '../../lib/audio/uiSound'
-import { getCameraZoom, getControlActionForKeyboardEvent } from '../../lib/audio/settings'
+import { getCameraZoom } from '../../lib/audio/settings'
 import { collectPausableInstances } from './pausableRuntime'
 import type { Application, Container } from 'pixi.js'
 import type { RuntimeMap } from '../../types/map'
@@ -106,10 +106,6 @@ function handleGameKeydown(game: GameRuntimeLifecycleHost, evt: KeyboardEvent): 
     game.context.menu?.pauseMenu?.open()
     return
   }
-  if (getControlActionForKeyboardEvent(evt) !== 'pause') return
-  if (game.context.defeat) return
-  if (document.querySelector('.modal')) return
-  game.context.paused ? game.context.resume() : game.context.pause()
 }
 
 export function removeGameWindowListeners(game: GameRuntimeLifecycleHost): void {

@@ -6,6 +6,7 @@ import {
   ensureMarketEquipmentStock,
   getEquipmentResaleGoldValue,
   getHeroGold,
+  getMarketGold,
   getMarketEquipmentOffers,
   getResourceGoldValue,
   sellHeroEquipment,
@@ -47,18 +48,6 @@ function handleMarketChange(menu: MenuHost, onChange: () => void): void {
   onChange()
 }
 
-function getMarketActionLabel(action: 'buy' | 'sell', goldValue: number, count: number): string {
-  const key =
-    action === 'buy'
-      ? count > 1
-        ? 'marketBuyActionEach'
-        : 'marketBuyAction'
-      : count > 1
-        ? 'marketSellActionEach'
-        : 'marketSellAction'
-  return t(key, { gold: formatGold(goldValue) })
-}
-
 function appendBuySlots(
   grid: HTMLDivElement,
   building: BuildingEntity,
@@ -69,10 +58,7 @@ function appendBuySlots(
   const heroGold = getHeroGold(hero)
   const marketOwner = building.owner ?? hero.owner
   const marketStock = ensureMarketEquipmentStock(building, { civilization: marketOwner?.civ })
-  for (const offer of getMarketEquipmentOffers(
-    definedProperties({ civilization: marketOwner?.civ }),
-    marketStock
-  )) {
+  for (const offer of getMarketEquipmentOffers(definedProperties({ civilization: marketOwner?.civ }), marketStock)) {
     const label = formatEquipmentStackLabel(offer.equipment, offer.count)
     const totalGold = offer.goldValue * offer.count
     const disabled = heroGold < offer.goldValue
@@ -83,19 +69,19 @@ function appendBuySlots(
       equipment: offer.equipment,
       count: offer.count,
       mode: 'market-buy',
-      value: formatGold(offer.goldValue),
-      metaParts: [{ text: t('marketLotTotal', { gold: formatGold(totalGold) }), className: disabled ? 'inventory-cost-is-missing' : '' }],
+      value: t('marketUnitPrice', { gold: formatGold(offer.goldValue) }),
+      description: '',
       showValue: false,
 
       labelContext: 'market',
       trailingAction: {
         ariaLabel: t('marketBuyItem', { item: label, gold: String(totalGold) }),
         disabled,
-        label: getMarketActionLabel('buy', offer.goldValue, offer.count),
+        label: t('marketBuyTitle'),
         title: disabled ? t('windowInsufficientGold') : undefined,
         onAction: mode => {
           const amountToBuy = mode === 'one' ? 1 : offer.count
-          const bought = buyMarketEquipment(hero, offer.equipment, amountToBuy, marketStock)
+          const bought = buyMarketEquipment(hero, building, offer.equipment, amountToBuy, marketStock)
           if (bought <= 0) return
           menu.showMessage(
             t('marketBoughtItem', {
@@ -113,7 +99,13 @@ function appendBuySlots(
   }
 }
 
-function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: MenuHost, onChange: () => void): void {
+function appendSellResourceSlots(
+  grid: HTMLDivElement,
+  building: BuildingEntity,
+  hero: UnitEntity,
+  menu: MenuHost,
+  onChange: () => void
+): void {
   const resources = hero.inventory?.resources ?? {}
   for (const resource of RESOURCE_STORAGE_NAMES) {
     if (resource === 'gold') continue
@@ -121,23 +113,27 @@ function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: M
     const goldValue = getResourceGoldValue(resource)
     if (amount <= 0 || goldValue <= 0) continue
     const label = `${t(resource)} x${amount}`
+    const disabled = getMarketGold(building) < goldValue
     const totalGold = goldValue * amount
     const { element } = createInventoryResourceRow(menu, {
       id: `market-sell-resource-${resource}`,
       className: 'inventory-loot-slot market-slot market-sell-slot',
+      disabled,
       resource,
       amount,
+      meta: '',
       mode: 'market-sell',
-      value: formatGold(goldValue),
-      metaParts: [{ text: t('marketLotTotal', { gold: formatGold(totalGold) }) }],
+      value: t('marketUnitPrice', { gold: formatGold(goldValue) }),
       showValue: false,
 
       trailingAction: {
         ariaLabel: t('marketSellItem', { item: label, gold: String(totalGold) }),
-        label: getMarketActionLabel('sell', goldValue, amount),
+        label: t('marketSellTitle'),
+        disabled,
+        title: disabled ? t('marketInsufficientGold') : undefined,
         onAction: mode => {
           const amountToSell = mode === 'one' ? 1 : undefined
-          const sold = sellHeroResource(hero, resource, amountToSell)
+          const sold = sellHeroResource(hero, building, resource, amountToSell)
           if (sold <= 0) return
           menu.showMessage(
             t('marketSoldItem', { item: `${t(resource)} x${sold}`, gold: String(goldValue * sold) }),
@@ -152,28 +148,38 @@ function appendSellResourceSlots(grid: HTMLDivElement, hero: UnitEntity, menu: M
   }
 }
 
-function appendSellEquipmentSlots(grid: HTMLDivElement, hero: UnitEntity, menu: MenuHost, onChange: () => void): void {
+function appendSellEquipmentSlots(
+  grid: HTMLDivElement,
+  building: BuildingEntity,
+  hero: UnitEntity,
+  menu: MenuHost,
+  onChange: () => void
+): void {
   for (const stack of getEquipmentStacks(hero.inventory?.equipment ?? [])) {
     const goldValue = getEquipmentResaleGoldValue(stack.equipment)
     if (goldValue <= 0) continue
     const label = formatEquipmentStackLabel(stack.equipment, stack.count)
+    const disabled = getMarketGold(building) < goldValue
     const totalGold = goldValue * stack.count
     const { element } = createInventoryEquipmentRow(menu.context, menu, {
       id: `market-sell-equipment-${stack.equipment}`,
       className: 'inventory-loot-slot market-slot market-sell-slot',
+      disabled,
       equipment: stack.equipment,
+      description: '',
       count: stack.count,
       mode: 'market-sell',
-      value: formatGold(goldValue),
-      metaParts: [{ text: t('marketLotTotal', { gold: formatGold(totalGold) }) }],
+      value: t('marketUnitPrice', { gold: formatGold(goldValue) }),
 
       labelContext: 'market',
       trailingAction: {
         ariaLabel: t('marketSellItem', { item: label, gold: String(totalGold) }),
-        label: getMarketActionLabel('sell', goldValue, stack.count),
+        label: t('marketSellTitle'),
+        disabled,
+        title: disabled ? t('marketInsufficientGold') : undefined,
         onAction: mode => {
           const amountToSell = mode === 'one' ? 1 : stack.count
-          const sold = sellHeroEquipment(hero, stack.equipment, amountToSell)
+          const sold = sellHeroEquipment(hero, building, stack.equipment, amountToSell)
           if (sold <= 0) return
           menu.showMessage(
             t('marketSoldItem', {
@@ -205,14 +211,20 @@ export function createHeroMarketBody(
 
   const wallet = document.createElement('div')
   wallet.className = 'hero-market-wallet'
-  wallet.textContent = t('marketHeroGold', { gold: String(getHeroGold(hero)) })
-  panel.appendChild(wallet)
+  wallet.textContent = formatGold(getHeroGold(hero))
+  wallet.setAttribute('aria-label', t('marketHeroGold', { gold: String(getHeroGold(hero)) }))
+
+  const marketWallet = document.createElement('div')
+  marketWallet.className = 'hero-market-wallet'
+  marketWallet.textContent = formatGold(getMarketGold(building))
+  marketWallet.setAttribute('aria-label', t('marketAvailableGold', { gold: formatGold(getMarketGold(building)) }))
 
   panel.appendChild(
     createInventorySection({
       className: 'market-section',
       gridClassName: 'inventory-section-list market-grid',
       title: t('marketStockTitle'),
+      action: marketWallet,
       titleClassName: 'market-title',
       renderItems: grid => appendBuySlots(grid, building, hero, menu, onChange),
     })
@@ -229,10 +241,11 @@ export function createHeroMarketBody(
       emptyText: t('marketSellBagEmpty'),
       gridClassName: 'inventory-section-list market-grid',
       title: t('inventoryYourBag'),
+      action: wallet,
       titleClassName: 'market-title',
       renderItems: grid => {
-        appendSellResourceSlots(grid, hero, menu, onChange)
-        appendSellEquipmentSlots(grid, hero, menu, onChange)
+        appendSellResourceSlots(grid, building, hero, menu, onChange)
+        appendSellEquipmentSlots(grid, building, hero, menu, onChange)
       },
     })
   )

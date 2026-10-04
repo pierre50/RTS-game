@@ -198,7 +198,6 @@ export class NpcOrdersManager {
     if (soloTarget && hasInfo) {
       this.infoContainer.appendChild(
         createTitledEntityInfoContent(this.menu.context.app, soloTarget, {
-          showAllXp: true,
           hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit),
         })
       )
@@ -210,7 +209,7 @@ export class NpcOrdersManager {
     // commandable) shows the same panel with the buttons hidden rather than a whole
     // separate window.
     const isOwnGroup = npcs.every(npc => npc.owner?.isPlayed === true)
-    const ordersEnabled = (options.ordersEnabled ?? true) && isOwnGroup
+    const ordersEnabled = !dialogue && (options.ordersEnabled ?? true) && isOwnGroup
     this.ordersEnabled = ordersEnabled
     this.buttonsContainer.hidden = !ordersEnabled
     this.orderMenu.syncVisibility()
@@ -261,7 +260,6 @@ export class NpcOrdersManager {
       content: this.panel,
       panelClass: 'npc-orders-panel',
       interaction: true,
-      showCloseButton: false,
       dismissible: !dialogue,
       onClose: () => this.close(),
     })
@@ -276,6 +274,7 @@ export class NpcOrdersManager {
       button.type = 'button'
       button.className = 'ui-btn'
       button.textContent = choice.label
+      button.dataset.windowLabel = t('windowReply')
       button.addEventListener('click', () => {
         if (!this.scriptedReplyActive || revision !== this.dialogueRevision) return
         ++this.dialogueRevision
@@ -305,7 +304,6 @@ export class NpcOrdersManager {
     if (target.interface?.info) {
       this.infoContainer.appendChild(
         createTitledEntityInfoContent(this.menu.context.app, target, {
-          showAllXp: true,
           hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit),
         })
       )
@@ -413,6 +411,7 @@ export class NpcOrdersManager {
   }
 
   private canShowOrder(spec: NpcOrderSpec): boolean {
+    if (this.scriptedReplyActive) return false
     if (spec.id === 'follow') return this.npcs.some(npc => npc.followingHero !== true)
     if (spec.id === 'stay') return this.npcs.some(npc => npc.followingHero === true)
     return true
@@ -439,7 +438,12 @@ export class NpcOrdersManager {
   }
 
   private canShowBagButton(): boolean {
-    return this.ordersEnabled && this.npcs.length === 1 && Boolean(this.menu.context.controls.heroUnit)
+    return (
+      !this.scriptedReplyActive &&
+      this.ordersEnabled &&
+      this.npcs.length === 1 &&
+      Boolean(this.menu.context.controls.heroUnit)
+    )
   }
 
   private openBag(): void {
@@ -462,7 +466,7 @@ export class NpcOrdersManager {
   }
 
   private runOrder(spec: NpcOrderSpec): void {
-    if (!this.npcs.length) return
+    if (this.scriptedReplyActive || !this.ordersEnabled || !this.npcs.length) return
     playUiSound(SOUND_CUES.ui.menuClick)
     const npcs = this.npcs
     if (spec.startsPicking) {

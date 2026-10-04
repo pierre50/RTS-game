@@ -1,3 +1,4 @@
+import { constructionProgress } from '../economy/constructionMaterials'
 import type { BuildingConfig } from '../../types/config'
 import type { SaveEntityState } from '../../types/save'
 import { getBuildingConfigForLevel } from './buildingLevel'
@@ -26,7 +27,7 @@ export function completeBuildingUpgrade(
   config: BuildingConfig
 ): boolean {
   const upgrade = building.buildingUpgrade
-  if (!upgrade || upgrade.hitPoints < upgrade.totalHitPoints || building.isDead || building.isDestroyed) return false
+  if (!upgrade || constructionProgress(building) < 1 || building.isDead || building.isDestroyed) return false
   const previous = getBuildingConfigForLevel(config, building.buildingLevel ?? 0)
   const next = getBuildingConfigForLevel(config, upgrade.targetLevel)
   const oldTotal = building.totalHitPoints ?? previous.totalHitPoints ?? 1

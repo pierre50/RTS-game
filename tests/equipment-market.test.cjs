@@ -90,7 +90,7 @@ test('market equipment purchase spends hero gold and adds the item', () => {
   const { buyMarketEquipment } = loadEquipmentMarket()
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 500 } } }
 
-  assert.equal(buyMarketEquipment(hero, 'sword_ceramic'), 1)
+  assert.equal(buyMarketEquipment(hero, {}, 'sword_ceramic'), 1)
 
   assert.deepEqual(hero.inventory.equipment, ['sword_ceramic'])
   assert.equal(hero.inventory.resources.gold, 315)
@@ -100,13 +100,13 @@ test('repeated market purchases and sales cannot exceed the available stock or i
   const { buyMarketEquipment, sellHeroEquipment } = loadEquipmentMarket()
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 500 } } }
   const stock = ['sword_ceramic']
-  assert.equal(buyMarketEquipment(hero, 'sword_ceramic', 1, stock), 1)
-  for (let i = 0; i < 20; i++) assert.equal(buyMarketEquipment(hero, 'sword_ceramic', 1, stock), 0)
+  assert.equal(buyMarketEquipment(hero, {}, 'sword_ceramic', 1, stock), 1)
+  for (let i = 0; i < 20; i++) assert.equal(buyMarketEquipment(hero, {}, 'sword_ceramic', 1, stock), 0)
   assert.deepEqual(hero.inventory.equipment, ['sword_ceramic'])
   assert.equal(hero.inventory.resources.gold, 315)
-  assert.equal(sellHeroEquipment(hero, 'sword_ceramic'), 1)
+  assert.equal(sellHeroEquipment(hero, {}, 'sword_ceramic'), 1)
   const gold = hero.inventory.resources.gold
-  for (let i = 0; i < 20; i++) assert.equal(sellHeroEquipment(hero, 'sword_ceramic'), 0)
+  for (let i = 0; i < 20; i++) assert.equal(sellHeroEquipment(hero, {}, 'sword_ceramic'), 0)
   assert.deepEqual(hero.inventory.equipment, [])
   assert.equal(hero.inventory.resources.gold, gold)
 })
@@ -122,7 +122,7 @@ test('market equipment retains civilization selection but is independent of age'
     assert.equal(keys(0).includes('axe_iron'), false)
   }
   const hero = { owner: { age: 0 }, inventory: { equipment: [], resources: { gold: 1000 } } }
-  assert.equal(buyMarketEquipment(hero, 'sword_iron'), 1)
+  assert.equal(buyMarketEquipment(hero, {}, 'sword_iron'), 1)
 })
 
 test('arrow material increases unit prices, stock offers and resale proceeds', () => {
@@ -147,10 +147,10 @@ test('arrow material increases unit prices, stock offers and resale proceeds', (
   for (const [index, arrow] of arrows.entries()) {
     const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 100 } } }
     const stock = [arrow, arrow]
-    assert.equal(buyMarketEquipment(hero, arrow, 2, stock), 2)
+    assert.equal(buyMarketEquipment(hero, {}, arrow, 2, stock), 2)
     assert.equal(hero.inventory.resources.gold, 100 - prices[index] * 2)
     assert.deepEqual(stock, [])
-    assert.equal(sellHeroEquipment(hero, arrow, 2), 2)
+    assert.equal(sellHeroEquipment(hero, {}, arrow, 2), 2)
     assert.equal(hero.inventory.resources.gold, 100 - prices[index] * 2 + resalePrices[index] * 2)
     assert.deepEqual(hero.inventory.equipment, [])
   }
@@ -164,8 +164,8 @@ test('market offers arrow stacks but buys one or all like chest transfers', () =
   assert.equal(arrowOffer.count, 20)
 
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 150 } } }
-  assert.equal(buyMarketEquipment(hero, 'arrow_copper'), 1)
-  assert.equal(buyMarketEquipment(hero, 'arrow_copper', arrowOffer.count), 20)
+  assert.equal(buyMarketEquipment(hero, {}, 'arrow_copper'), 1)
+  assert.equal(buyMarketEquipment(hero, {}, 'arrow_copper', arrowOffer.count), 20)
 
   assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 21)
   assert.equal(hero.inventory.resources.gold, 24)
@@ -183,7 +183,7 @@ test('market purchase consumes stock quantities', () => {
     ).count,
     20
   )
-  assert.equal(buyMarketEquipment(hero, 'arrow_copper', 7, stock), 7)
+  assert.equal(buyMarketEquipment(hero, {}, 'arrow_copper', 7, stock), 7)
 
   assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 7)
   assert.equal(stock.filter(item => item === 'arrow_copper').length, 13)
@@ -195,7 +195,7 @@ test('market stack purchase is capped by available gold', () => {
   const { buyMarketEquipment } = loadEquipmentMarket()
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 7 } } }
 
-  assert.equal(buyMarketEquipment(hero, 'arrow_copper', 20), 1)
+  assert.equal(buyMarketEquipment(hero, {}, 'arrow_copper', 20), 1)
 
   assert.deepEqual(hero.inventory.equipment, ['arrow_copper'])
   assert.deepEqual(hero.inventory.resources, { gold: 1 })
@@ -205,7 +205,7 @@ test('market equipment purchase fails when gold is missing', () => {
   const { buyMarketEquipment } = loadEquipmentMarket()
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 399 } } }
 
-  assert.equal(buyMarketEquipment(hero, 'sword_iron'), 0)
+  assert.equal(buyMarketEquipment(hero, {}, 'sword_iron'), 0)
 
   assert.deepEqual(hero.inventory.equipment, [])
 })
@@ -214,8 +214,8 @@ test('market sales credit gold for bag equipment and resources', () => {
   const { sellHeroEquipment, sellHeroResource } = loadEquipmentMarket()
   const hero = { owner: { age: 2 }, inventory: { equipment: ['bow', 'bow'], resources: { wood: 5, gold: 2 } } }
 
-  assert.equal(sellHeroEquipment(hero, 'bow', 2), 2)
-  assert.equal(sellHeroResource(hero, 'wood', 3), 3)
+  assert.equal(sellHeroEquipment(hero, {}, 'bow', 2), 2)
+  assert.equal(sellHeroResource(hero, {}, 'wood', 3), 3)
 
   assert.deepEqual(hero.inventory.equipment, [])
   assert.deepEqual(hero.inventory.resources, { wood: 2, gold: 131 })
@@ -226,7 +226,7 @@ test('market sells gathered feathers as a rare resource', () => {
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { feather: 3, gold: 1 } } }
 
   assert.equal(getResourceGoldValue('feather'), 4)
-  assert.equal(sellHeroResource(hero, 'feather'), 3)
+  assert.equal(sellHeroResource(hero, {}, 'feather'), 3)
 
   assert.deepEqual(hero.inventory.resources, { gold: 13 })
 })
@@ -236,7 +236,7 @@ test('market sells gathered leather as a valuable animal resource', () => {
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { leather: 2, gold: 1 } } }
 
   assert.equal(getResourceGoldValue('leather'), 6)
-  assert.equal(sellHeroResource(hero, 'leather'), 2)
+  assert.equal(sellHeroResource(hero, {}, 'leather'), 2)
 
   assert.deepEqual(hero.inventory.resources, { gold: 13 })
 })
@@ -246,7 +246,7 @@ test('market sells gathered sinew as a prized animal resource', () => {
   const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { sinew: 2, gold: 1 } } }
 
   assert.equal(getResourceGoldValue('sinew'), 8)
-  assert.equal(sellHeroResource(hero, 'sinew'), 2)
+  assert.equal(sellHeroResource(hero, {}, 'sinew'), 2)
 
   assert.deepEqual(hero.inventory.resources, { gold: 17 })
 })
@@ -261,9 +261,50 @@ test('market sells gathered plant resources', () => {
   assert.equal(getResourceGoldValue('herb'), 3)
   assert.equal(getResourceGoldValue('toxicHerb'), 5)
   assert.equal(getResourceGoldValue('fiber'), 2)
-  assert.equal(sellHeroResource(hero, 'herb', 2), 2)
-  assert.equal(sellHeroResource(hero, 'toxicHerb', 2), 2)
-  assert.equal(sellHeroResource(hero, 'fiber', 2), 2)
+  assert.equal(sellHeroResource(hero, {}, 'herb', 2), 2)
+  assert.equal(sellHeroResource(hero, {}, 'toxicHerb', 2), 2)
+  assert.equal(sellHeroResource(hero, {}, 'fiber', 2), 2)
 
   assert.deepEqual(hero.inventory.resources, { gold: 20 })
+})
+
+test('sales share a finite merchant wallet and buying funds further sales', () => {
+  const { sellHeroResource, sellHeroEquipment, buyMarketEquipment, getEquipmentGoldValue } = loadEquipmentMarket()
+  const hero = { inventory: { equipment: ['bow', 'bow'], resources: { wood: 100, gold: 1000 } } }
+  const market = { marketGold: 5 }
+  assert.equal(sellHeroResource(hero, market, 'wood'), 5)
+  assert.equal(market.marketGold, 0)
+  assert.equal(hero.inventory.resources.wood, 95)
+  assert.equal(sellHeroEquipment(hero, market, 'bow'), 0)
+  assert.deepEqual(hero.inventory.equipment, ['bow', 'bow'])
+  assert.equal(buyMarketEquipment(hero, market, 'arrow_copper', 2, ['arrow_copper', 'arrow_copper']), 2)
+  assert.equal(market.marketGold, 2 * getEquipmentGoldValue('arrow_copper'))
+  assert.equal(sellHeroResource(hero, market, 'wood'), 12)
+  assert.equal(market.marketGold, 0)
+  assert.equal(hero.inventory.resources.gold, 1005)
+})
+
+test('equipment sales stop before exceeding merchant gold', () => {
+  const { sellHeroEquipment, getEquipmentResaleGoldValue } = loadEquipmentMarket()
+  const value = getEquipmentResaleGoldValue('bow')
+  const market = { marketGold: value + 1 }
+  const hero = { inventory: { equipment: ['bow', 'bow'], resources: {} } }
+  assert.equal(sellHeroEquipment(hero, market, 'bow', 2), 1)
+  assert.equal(market.marketGold, 1)
+  assert.deepEqual(hero.inventory.equipment, ['bow'])
+})
+
+test('daily gold recovery preserves empty saves and does not discard purchase proceeds', () => {
+  const { getMarketGold, replenishMarketGold, MARKET_INITIAL_GOLD, MARKET_DAILY_GOLD } = loadEquipmentMarket()
+  assert.equal(getMarketGold({}), MARKET_INITIAL_GOLD)
+  const market = JSON.parse(JSON.stringify({ marketGold: 0 }))
+  assert.equal(getMarketGold(market), 0)
+  replenishMarketGold(market)
+  assert.equal(market.marketGold, MARKET_DAILY_GOLD)
+  market.marketGold = MARKET_INITIAL_GOLD - 1
+  replenishMarketGold(market)
+  assert.equal(market.marketGold, MARKET_INITIAL_GOLD)
+  market.marketGold += 500
+  replenishMarketGold(market)
+  assert.equal(market.marketGold, MARKET_INITIAL_GOLD + 500)
 })

@@ -641,6 +641,22 @@ test('save validation accepts active renovation and rejects invalid upgrade stat
     const data = save()
     data.players[0].buildings = [structuredClone(building)]
     assert.doesNotThrow(() => validateSaveData(data))
+    const modern = structuredClone(building)
+    modern.constructionProgress = 1
+    modern.buildingUpgrade.constructionProgress = 0
+    delete modern.buildingUpgrade.hitPoints
+    data.players[0].buildings = [modern]
+    assert.doesNotThrow(() => validateSaveData(data))
+    for (const progress of [-1, 1.1, NaN, Infinity, '0']) {
+      modern.buildingUpgrade.constructionProgress = progress
+      assert.throws(() => validateSaveData(data), /progress/)
+    }
+    modern.buildingUpgrade.constructionProgress = 0.5
+    for (const progress of [-1, 1.1, NaN, Infinity, '0']) {
+      modern.constructionProgress = progress
+      data.players[0].buildings = [modern]
+      assert.throws(() => validateSaveData(data), /progress/)
+    }
     const ageTwo = structuredClone(building)
     ageTwo.buildingLevel = 1
     ageTwo.buildingUpgrade.targetLevel = 2

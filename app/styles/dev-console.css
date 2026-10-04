@@ -19,7 +19,6 @@
   background: var(--debug-overlay-bg);
   border: 1px solid var(--debug-overlay-border);
   border-radius: 3px;
-  box-shadow: var(--debug-overlay-shadow);
 }
 
 #debug-perf {

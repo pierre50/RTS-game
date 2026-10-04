@@ -20,9 +20,9 @@ import {
   CAMERA_ZOOM_PRESETS,
 } from '../../lib/audio/settings'
 import { ModalTabs } from '../Tabs'
-import { buildControlsPage } from './controlsSettings'
+import { buildControlsPages } from './controlsSettings'
 
-type SettingsTab = 'game' | 'graphics' | 'controls'
+type SettingsTab = 'game' | 'graphics' | 'keyboard' | 'gamepad'
 type SettingsContentOptions = {
   onLangChange?: () => void
   onSpeedChange?: (v: number) => void
@@ -73,8 +73,6 @@ function createSettingsTabs({
   gamePanel.className = 'config-form'
   const graphicsPanel = document.createElement('div')
   graphicsPanel.className = 'config-form'
-  const controlsPanel = document.createElement('div')
-  controlsPanel.className = 'config-form'
 
   gamePanel.appendChild(
     buildSelectRow(
@@ -132,17 +130,15 @@ function createSettingsTabs({
 
   graphicsPanel.appendChild(buildCheckboxRow(t('bloodEffects'), getBloodEffectsEnabled(), setBloodEffectsEnabled))
 
-  const activateControls = buildControlsPage(controlsPanel)
+  const { keyboard, gamepad } = buildControlsPages()
 
   return new ModalTabs<SettingsTab>(
     [
       { id: 'game', label: t('settingsTabGame'), page: gamePanel },
       { id: 'graphics', label: t('settingsTabGraphics'), page: graphicsPanel },
-      { id: 'controls', label: t('settingsTabControls'), page: controlsPanel },
+      { id: 'keyboard', label: t('controlsKeyboardMouse'), page: keyboard },
+      { id: 'gamepad', label: t('controlsGroupGamepad'), page: gamepad },
     ],
-    'game',
-    id => {
-      if (id === 'controls') activateControls()
-    }
+    'game'
   )
 }

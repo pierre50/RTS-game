@@ -1040,11 +1040,20 @@ test('saving retains construction accounting and collective task ownership', () 
   const context = makeContext()
   const materials = { cost: { wood: 40 }, delivered: { wood: 12 }, consumed: { wood: 8 } }
   context.players[0].buildings = [
-    { type: 'House', i: 1, j: 1, isBuilt: false, hitPoints: 21, constructionMaterials: materials },
+    {
+      type: 'House',
+      i: 1,
+      j: 1,
+      isBuilt: false,
+      hitPoints: 21,
+      constructionProgress: 0.4,
+      constructionMaterials: materials,
+    },
   ]
   context.players[0].units = [{ type: 'Villager', i: 2, j: 1, collectiveTask: 'wood', autonomousJob: 'wood' }]
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
   assert.deepEqual(saved.players[0].buildings[0].constructionMaterials, materials)
+  assert.equal(saved.players[0].buildings[0].constructionProgress, 0.4)
   assert.equal(saved.players[0].units[0].collectiveTask, 'wood')
 })
 
@@ -1118,4 +1127,13 @@ test('saving an unvisited deferred village preserves its full saved entities wit
   assert.deepEqual(saved.players[0].units, state.units)
   assert.equal(store.size, 1)
   deferredVillages.clearDeferredVillages(context.map)
+})
+
+test('market wallets preserve zero and purchase proceeds in saved buildings', () => {
+  const context = makeContext()
+  context.players[0].buildings = [0, 325, 1800].map((marketGold, index) => ({
+    type: 'Market', label: `market-${index}`, i: 1, j: 1, isBuilt: true, marketGold, marketStock: [],
+  }))
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+  assert.deepEqual(saved.players[0].buildings.map(building => building.marketGold), [0, 325, 1800])
 })

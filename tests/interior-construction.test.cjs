@@ -239,11 +239,20 @@ test('interior construction lists furniture sections only and starts placement',
       },
     })
     const { menu, controls } = fixture()
+    const hotkeys = new Map()
+    controls.mouse = { x: 0, y: 0 }
+    menu.context.gamebox = {
+      getBoundingClientRect: () => ({ left: 80, top: 40, width: 1000, height: 600 }),
+    }
     menu.clearActionHotkeys = () => {}
-    menu.assignActionHotkey = () => null
+    menu.assignActionHotkey = id => id
+    menu.setActionHotkey = (key, action) => hotkeys.set(key, action)
+    menu.playUiClick = () => {}
+    let previewPointer
     menu.getActionBuildingButton = type => ({
       id: type,
       onClick: () => {
+        previewPointer = { ...controls.mouse }
         controls.mouseBuilding = { type }
       },
     })
@@ -270,6 +279,17 @@ test('interior construction lists furniture sections only and starts placement',
     assert.ok(sections.length > 1)
     rows.find(row => row.id === 'CampTable').trailingAction.onClick({})
     assert.equal(controls.mouseBuilding.type, 'CampTable')
+    assert.equal(closed, true)
+    const place = rows.find(row => row.id === 'CampTable').trailingAction.onClick
+    place({ detail: 0 })
+    assert.deepEqual(previewPointer, { x: 580, y: 340 }, 'center before creating the keyboard preview')
+    controls.mouse = { x: 200, y: 150 }
+    place({ detail: 1 })
+    assert.deepEqual(previewPointer, { x: 200, y: 150 }, 'mouse placement retains the pointer position')
+    controls.mouse = { x: 0, y: 0 }
+    closed = false
+    hotkeys.get('CampTable')()
+    assert.deepEqual(previewPointer, { x: 580, y: 340 }, 'construction shortcuts also center the preview')
     assert.equal(closed, true)
   } finally {
     global.document = previousDocument

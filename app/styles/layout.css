@@ -60,11 +60,13 @@
 }
 
 .game-loading__track {
+  background: var(--loading-progress-track);
   height: 22px;
   padding: 3px;
 }
 
 .game-loading__progress {
+  background: var(--loading-progress-fill);
   width: var(--game-loading-progress);
   transition: width var(--ui-transition-progress);
 }
@@ -174,14 +176,24 @@
   width: min(560px, 100%);
   padding: var(--modal-panel-padding-y) var(--modal-panel-padding-x);
   background: var(--main-primary-color);
-  border: var(--panel-border);
-  border-radius: var(--main-border-radius);
+  border: var(--modal-border);
+  border-image: var(--modal-border-image) var(--modal-border-slice) stretch;
+  border-radius: 0;
   min-width: 280px;
   max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: auto;
 }
 
-.modal-panel.settings-panel,
+.modal-panel.settings-panel {
+  width: min(1000px, 100%);
+}
+
+.settings-panel .modal-tabs-header .ui-tab {
+  flex: 1 1 auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .modal-panel.lobby-modal-panel {
   width: min(760px, 100%);
 }
@@ -232,13 +244,11 @@
   box-sizing: border-box;
   min-width: 0;
   min-height: 44px;
-  box-shadow: var(--ui-outset-shadow);
 }
 
 .modal-tabs-header .ui-tab.active {
   border-bottom: 2px solid transparent;
   padding-bottom: var(--ui-gap-8);
-  box-shadow: none;
 }
 
 .modal-tabs-header .ui-tab:not(.active) {
@@ -253,31 +263,6 @@
   letter-spacing: 1px;
   color: var(--main-accent-hover);
   text-shadow: var(--text-shadow-ui);
-}
-
-.modal-close.ui-btn {
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-  width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  font-size: 18px;
-  line-height: 1;
-  letter-spacing: 0;
-  text-shadow: 1px 1px 0 #050716;
-  box-shadow: var(--ui-outset-shadow);
-  flex-shrink: 0;
-}
-
-.modal-tabs-header .modal-close {
-  height: auto;
-}
-
-.modal-close.ui-btn:not(:disabled, .disabled, [aria-disabled='true']):active {
-  box-shadow: var(--ui-button-shadow-pressed);
-  transform: none;
 }
 
 .bar {
@@ -319,7 +304,6 @@
   color: var(--main-text-color);
   background: var(--surface-black-light);
   border: var(--panel-border);
-  box-shadow: var(--main-box-shadow);
 }
 
 .orientation-guard-icon {
@@ -330,7 +314,7 @@
   justify-content: center;
   font-size: var(--font-size-display);
   line-height: 1;
-  border: var(--border-btn);
+  border: var(--ui-control-border);
   background: var(--surface-white-faint);
 }
 

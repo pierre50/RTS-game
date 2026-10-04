@@ -21,6 +21,7 @@ function loadHeroMarketBody(overrides = {}) {
         buyMarketEquipment: () => false,
         ensureMarketEquipmentStock: () => [],
         getEquipmentGoldValue: () => 0,
+        getMarketGold: () => 1000,
         getHeroGold: hero => hero?.inventory?.resources?.gold ?? 0,
         getMarketEquipmentOffers: () => [],
         getResourceGoldValue: () => 0,
@@ -79,6 +80,7 @@ function installMockDocument() {
         className: '',
         dataset: {},
         textContent: '',
+        setAttribute() {},
         appendChild(child) {
           this.children.push(child)
           return child
@@ -156,9 +158,9 @@ test('hero market blocks hostile, wary and enemy markets', () => {
   )
 })
 
-
-test('market tiles show unit transaction prices and lot totals, with unaffordable purchases marked', () => {
+test('market rows show unit price tags without repeated lot totals', () => {
   const rows = []
+  const sections = []
   const makeRow = options => {
     rows.push(options)
     return { element: { setAttribute() {} } }
@@ -170,6 +172,7 @@ test('market tiles show unit transaction prices and lot totals, with unaffordabl
       getEquipmentStacks: () => [{ equipment: 'sword', count: 2 }],
     },
     '../../lib/equipment/equipmentMarket': {
+      getMarketGold: () => 1000,
       getHeroGold: hero => hero.inventory.resources.gold,
       ensureMarketEquipmentStock: () => [],
       getMarketEquipmentOffers: () => [{ equipment: 'sword', count: 3, goldValue: 20 }],
@@ -182,6 +185,7 @@ test('market tiles show unit transaction prices and lot totals, with unaffordabl
     },
     '../inventory/InventorySection': {
       createInventorySection: options => {
+        sections.push(options)
         options.renderItems({ appendChild() {} })
         return {}
       },
@@ -193,19 +197,20 @@ test('market tiles show unit transaction prices and lot totals, with unaffordabl
   const menu = { context: { controls: { heroUnit: hero } } }
   try {
     createHeroMarketBody({ owner }, menu, () => {})
-    assert.deepEqual(rows.map(row => row.value), [
-      '20 gold', '2 gold', '8 gold',
-    ])
-    assert.deepEqual(rows.map(row => row.metaParts[0].text), [
-      'marketLotTotal:60 gold', 'marketLotTotal:10 gold', 'marketLotTotal:16 gold',
-    ])
+    assert.deepEqual(
+      rows.map(row => row.value),
+      ['marketUnitPrice:20 gold', 'marketUnitPrice:2 gold', 'marketUnitPrice:8 gold']
+    )
+    assert.equal(sections[0].action.textContent, '1000 gold')
+    assert.equal(sections[1].action.textContent, '19 gold')
+    assert.ok(rows.every(row => row.metaParts === undefined))
+    assert.equal(rows[0].description, '')
+    assert.equal(rows[2].description, '')
     assert.equal(rows[0].disabled, true)
-    assert.equal(rows[0].metaParts[0].className, 'inventory-cost-is-missing')
     hero.inventory.resources.gold = 20
     rows.length = 0
     createHeroMarketBody({ owner }, menu, () => {})
     assert.equal(rows[0].disabled, false)
-    assert.equal(rows[0].metaParts[0].className, '')
   } finally {
     restore()
   }

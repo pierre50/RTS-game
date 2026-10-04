@@ -32,7 +32,7 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
       '../inventory/InventoryActionRow': {
         createInventoryActionRow: (_, options) => {
           rows.push(options)
-          return { element: {}, icon: { appendChild() {} } }
+          return { element: { querySelector: () => null }, icon: { appendChild() {} } }
         },
       },
       '../equipment/equipmentLoot': {
@@ -49,16 +49,23 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
     const arrows = rows.find(row => row.id === 'craft-arrow_ceramic')
     assert.equal(arrows.disabled, false)
     arrows.trailingAction.onClick()
-    assert.equal(hero.inventory.equipment.length, 20)
+    assert.equal(hero.inventory.equipment.length, 1)
     assert.deepEqual(hero.inventory.resources, { wood: 5, feather: 2, stone: 2 })
     for (const state of ['distant', 'unfinished', 'destroyed']) {
       reachable = state !== 'distant'
       forge.isBuilt = state !== 'unfinished'
       forge.isDestroyed = state === 'destroyed'
       arrows.trailingAction.onClick()
-      assert.equal(hero.inventory.equipment.length, 20)
+      assert.equal(hero.inventory.equipment.length, 1)
       assert.deepEqual(hero.inventory.resources, { wood: 5, feather: 2, stone: 2 })
     }
+    reachable = true
+    forge.isBuilt = true
+    forge.isDestroyed = false
+    hero.inventory.resources = { wood: 17, feather: 8, stone: 6 }
+    arrows.trailingAction.onClick({ shiftKey: true })
+    assert.equal(hero.inventory.equipment.length, 4)
+    assert.deepEqual(hero.inventory.resources, { wood: 2, feather: 2 })
   } finally {
     global.document = previousDocument
   }
@@ -147,9 +154,9 @@ test('forge stacks crafting and six next-tier village upgrades in sections', () 
     assert.equal(body.craftPanel.children.length, 4, 'two crafting and two upgrade sections')
     assert.ok(rows.some(row => row.id === 'craft-arrow_ceramic'))
     assert.equal(upgrades().length, 6)
-    const [title, scope] = body.craftPanel.children[2].children
+    const [title] = body.craftPanel.children[2].children
     assert.equal(title.text, 'forgeCategoryTools')
-    assert.equal(scope.text, 'forgeUpgradeScope')
+    assert.equal(body.craftPanel.children[2].children.length, 2, 'only category title and upgrade list')
     let axes = rows.find(row => row.id === 'forge-upgrade-axes')
     assert.match(axes.title, /forgeMaterial_copper/)
     axes.trailingAction.onClick()
@@ -201,7 +208,7 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
       '../inventory/InventoryActionRow': {
         createInventoryActionRow: (_, options) => {
           rows.push(options)
-          return { element: {}, icon: { appendChild() {} } }
+          return { element: { querySelector: () => null }, icon: { appendChild() {} } }
         },
       },
       '../equipment/equipmentLoot': {

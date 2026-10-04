@@ -1,3 +1,4 @@
+import { constructionProgressPercentage } from '../../lib/economy/constructionMaterials'
 import { reconcileHouseholds } from '../../lib/housing/households'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import { completeBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
@@ -41,14 +42,11 @@ export class BuildingLifecycle {
       context: { menu },
     } = building
     if (building.buildingUpgrade) {
-      syncBuildingConstructionReveal(
-        building,
-        getPercentage(building.buildingUpgrade.hitPoints, building.buildingUpgrade.totalHitPoints)
-      )
+      syncBuildingConstructionReveal(building, constructionProgressPercentage(building))
       building.updateShadow()
       return
     }
-    const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
+    const percentage = constructionProgressPercentage(building)
     if (building.type === 'Farm' && percentage >= 100) {
       finishSowingTile(building)
       return

@@ -7,44 +7,11 @@ import {
   hasHeroInventoryEquipment,
 } from '../../lib/equipment/equipmentStats'
 import type { EquipmentCombatStats } from '../../lib/equipment/equipmentStats'
-import {
-  formatXpProgressText,
-  getUnitEquipmentTier,
-  getUnitExperienceEntries,
-  getUnitOverallLevel,
-  getXpInfoId,
-  XP_CATEGORIES,
-} from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
+import { getUnitOverallLevel } from '../../lib/units/unitExperience'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
-
-const ARCHER_XP_CATEGORIES = [XP_CATEGORIES.ranged, XP_CATEGORIES.defense]
-const INFANTRY_XP_CATEGORIES = [XP_CATEGORIES.melee, XP_CATEGORIES.defense]
-const PRIEST_XP_CATEGORIES = [XP_CATEGORIES.healing]
-const VILLAGER_HIDDEN_XP_CATEGORIES = new Set([
-  XP_CATEGORIES.ranged,
-  XP_CATEGORIES.melee,
-  XP_CATEGORIES.defense,
-  XP_CATEGORIES.healing,
-])
-
-function unitSupportsExperience(unit: UnitEntity): boolean {
-  return unit.type !== UNIT_TYPES.villager
-}
-
-function getFocusedXpCategories(unit: UnitEntity, data: UnitConfig): string[] | null {
-  if (unit.type === UNIT_TYPES.priest) return PRIEST_XP_CATEGORIES
-  if (data.category === 'Archer') return ARCHER_XP_CATEGORIES
-  if (data.category === 'Fantassin') return INFANTRY_XP_CATEGORIES
-  return null
-}
-
-function shouldShowGenericXpCategory(unit: UnitEntity, category: string): boolean {
-  if (category === XP_CATEGORIES.healing && unit.type !== UNIT_TYPES.priest) return false
-  return unit.type !== UNIT_TYPES.villager || !VILLAGER_HIDDEN_XP_CATEGORIES.has(category)
-}
 
 export class UnitInterface {
   unit: UnitEntity
@@ -57,7 +24,6 @@ export class UnitInterface {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
     const showStats = !options?.hideStats
-    const showExperience = unitSupportsExperience(unit) && unit.owner === unit.context?.player
     appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, showStats ? unit.hitPoints : undefined, showStats ? unit.totalHitPoints : undefined, {
       hideType: Boolean(options?.hideIdentity && !unit.name),
     })
@@ -69,17 +35,12 @@ export class UnitInterface {
 
     if (!showStats) return
 
-    if (showExperience) {
-      // A single glanceable global level, then per-category rows that explain where
-      // that level came from.
-      element.appendChild(createInfoText('unit-level', `${t('unitLevelLabel')} ${getUnitOverallLevel(unit)}`))
-
-      // Independent from the level above: only soldier units (Fantassin/Archer) progress
-      // through this track, gating equipment unlocks instead of reflex/energy/defense.
-      const equipmentTier = getUnitEquipmentTier(unit)
-      if (equipmentTier > 0) {
-        element.appendChild(createInfoText('unit-equipment-tier', `${t('equipmentTierLabel')} ${equipmentTier}`))
-      }
+    const level = createInfoText('unit-level-tag', `${t('levelShort')} ${getUnitOverallLevel(unit)}`)
+    level.classList.add('level-tag')
+    if (options?.hideIdentity) element.appendChild(level)
+    else {
+      const name = element.querySelector<HTMLElement>(`.${MENU_INFO_IDS.name}`)
+      ;(name ?? element.querySelector('.entity-info-header'))?.appendChild(level)
     }
 
     const infosDiv = document.createElement('div')
@@ -137,31 +98,6 @@ export class UnitInterface {
     }
 
     element.appendChild(infosDiv)
-
-    const focusedXpCategories = showExperience ? getFocusedXpCategories(unit, data) : null
-    const xpEntries = showExperience
-      ? focusedXpCategories
-        ? focusedXpCategories.map(category => ({
-            category,
-            ...getUnitExperienceEntries(unit, { includeZero: true }).find(entry => entry.category === category),
-          }))
-        : getUnitExperienceEntries(unit, { includeZero: options?.showAllXp }).filter(entry =>
-            shouldShowGenericXpCategory(unit, entry.category)
-          )
-      : []
-    if (xpEntries.length) {
-      const xpDiv = document.createElement('div')
-      xpDiv.classList.add('unit-xp')
-      for (const entry of xpEntries) {
-        const row = document.createElement('div')
-        row.classList.add('info')
-        const labelKey = `xp${entry.category.charAt(0).toUpperCase()}${entry.category.slice(1)}`
-        row.appendChild(createInfoText('unit-xp-label', t(labelKey)))
-        row.appendChild(createInfoText(getXpInfoId(entry.category), formatXpProgressText(unit, entry.category)))
-        xpDiv.appendChild(row)
-      }
-      element.appendChild(xpDiv)
-    }
 
   }
 }

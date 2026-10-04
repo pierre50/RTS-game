@@ -102,3 +102,19 @@ test('static saved residents recover only the sleep overlap in successive catch-
   advanceDeferredVillage(f.context, f.owner, f.state, 16 * hour, 16 * hour, () => {})
   assert.equal(unit.hitPoints, 21)
 })
+
+for (const mode of ['static', 'dynamic']) {
+  test(`dormant ${mode} market recovers gold over successive days without resetting its wallet`, () => {
+    const f = fixture(mode)
+    const day = gameplay.DAY_NIGHT_CONFIG.dayLengthMs
+    f.state.buildings.push({ type: 'Market', label: 'market', i: 30, j: 30, isBuilt: true, marketGold: 0, marketStock: [] })
+    const market = () => f.state.buildings.find(building => building.label === 'market')
+    advanceDeferredVillage(f.context, f.owner, f.state, 0, day, () => {})
+    assert.equal(market().marketGold, 200)
+    advanceDeferredVillage(f.context, f.owner, f.state, day, 2 * day, () => {})
+    assert.equal(market().marketGold, 400)
+    assert.ok(market().marketStock.length > 0)
+    advanceDeferredVillage(f.context, f.owner, f.state, 2 * day, 2 * day, () => {})
+    assert.equal(market().marketGold, 400)
+  })
+}

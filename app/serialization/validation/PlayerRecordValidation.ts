@@ -129,6 +129,14 @@ function validatePlayerBuildings(
         new Set(building.plannedBedLabels).size !== building.plannedBedLabels.length)
     )
       fail('Invalid planned bed identities.')
+    if (
+      building.constructionProgress != null &&
+      (typeof building.constructionProgress !== 'number' ||
+        !Number.isFinite(building.constructionProgress) ||
+        building.constructionProgress < 0 ||
+        building.constructionProgress > 1)
+    )
+      fail('Invalid construction progress.')
     if (building.constructionMaterials != null) {
       const materials = building.constructionMaterials
       if (!isObject(materials)) fail('Invalid construction materials.')
@@ -178,15 +186,25 @@ function validatePlayerBuildings(
         nextBuildingUpgrade(config.buildings[building.type], Number(building.buildingLevel ?? 0))
       )
         fail('Invalid building upgrade tier.')
-      for (const key of ['hitPoints', 'totalHitPoints', 'constructionTime'])
+      for (const key of ['totalHitPoints', 'constructionTime'])
         if (typeof upgrade[key] !== 'number' || !Number.isFinite(upgrade[key]) || Number(upgrade[key]) <= 0)
           fail('Invalid building upgrade progress.')
-      if (
-        Number(upgrade.hitPoints) < 1 ||
-        Number(upgrade.totalHitPoints) <= 1 ||
-        Number(upgrade.hitPoints) > Number(upgrade.totalHitPoints)
-      )
+      if (upgrade.constructionProgress != null) {
+        if (
+          typeof upgrade.constructionProgress !== 'number' ||
+          !Number.isFinite(upgrade.constructionProgress) ||
+          upgrade.constructionProgress < 0 ||
+          upgrade.constructionProgress > 1
+        )
+          fail('Invalid building upgrade progress.')
+      } else if (
+        typeof upgrade.hitPoints !== 'number' ||
+        !Number.isFinite(upgrade.hitPoints) ||
+        upgrade.hitPoints < 1 ||
+        upgrade.hitPoints > Number(upgrade.totalHitPoints)
+      ) {
         fail('Invalid building upgrade progress.')
+      }
     }
     if (building.cave != null) {
       if (building.type !== 'Cave') fail('Invalid cave building type.')

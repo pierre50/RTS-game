@@ -50,6 +50,7 @@ export class InventoryManager {
   lootedEquipmentPanel: HTMLDivElement
   minimapLayout: HTMLDivElement
   minimapLegend: HTMLDivElement
+  minimapSymbols: HTMLDivElement
   slots: Map<HeroEquippedItem, HTMLElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
@@ -88,6 +89,8 @@ export class InventoryManager {
     this.minimapLayout.className = 'minimap-panel-layout'
     this.minimapLegend = document.createElement('div')
     this.minimapLegend.className = 'minimap-legend'
+    this.minimapSymbols = document.createElement('div')
+    this.minimapSymbols.className = 'minimap-shape-legend'
 
     this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
@@ -108,7 +111,10 @@ export class InventoryManager {
     this.toolsPanel.appendChild(this.lootedEquipmentPanel)
 
     this.panel.appendChild(this.modalTabs.element)
-    this.minimapLayout.append(menu.minimapWrap, this.minimapLegend)
+    const mapColumn = document.createElement('div')
+    mapColumn.className = 'minimap-map-column'
+    mapColumn.append(menu.minimapWrap, this.minimapSymbols)
+    this.minimapLayout.append(mapColumn, this.minimapLegend)
     this.minimapPanel.appendChild(this.minimapLayout)
   }
 
@@ -161,6 +167,7 @@ export class InventoryManager {
 
   showTab(tab: ActionMenuTab): void {
     this.activeTab = tab
+    this.modal?._panel?.classList.toggle('window-catalog', tab === 'construction')
     this.modalTabs.setActive(tab, { emit: false })
 
     if (tab === 'minimap') {
@@ -189,11 +196,11 @@ export class InventoryManager {
     this.infoPanel.replaceChildren()
     const entity = this.menu.context.controls.heroUnit || this.menu.selection
     if (!entity?.interface?.info) return
-    this.infoPanel.appendChild(createEntityInfoContent(this.menu.context.app, entity, { showAllXp: true }))
+    this.infoPanel.appendChild(createEntityInfoContent(this.menu.context.app, entity))
   }
 
   renderMinimapLegend(): void {
-    renderMinimapLegend(this.minimapLegend, this.menu)
+    renderMinimapLegend(this.minimapLegend, this.menu, this.minimapSymbols)
   }
 
   getActiveWeaponEquipment(tool: HeroEquippedItem): string | undefined {

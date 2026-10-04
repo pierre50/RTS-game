@@ -213,3 +213,133 @@ test('panel shortcuts stay within controls device tabs when focus is inside cont
   instance.switchPanel(1)
   assert.equal(clicked, 'game')
 })
+
+test('building actions expose direct sleep and removal with confirmation', () => {
+  const previousButton = global.HTMLButtonElement
+  global.HTMLButtonElement = class {}
+  try {
+    const { availableCommands } = loadTsModule('app/lib/ui/GameWindowCommands.ts', {
+      mocks: {
+        '../lang': { t: key => key },
+        '../audio/settings': {},
+        './GameWindowForms': { getWindowField: () => null },
+      },
+    })
+    let sleeping = 0
+    const button = (action, remove = false) => ({
+      dataset: { windowAction: action },
+      title: 'Until morning',
+      textContent: action,
+      disabled: false,
+      isConnected: true,
+      querySelector: () => null,
+      closest: () => null,
+      matches: selector => remove && selector.includes('.entity-delete-building-button'),
+      click: () => sleeping++,
+    })
+    const sleep = button('sleep')
+    const removal = button('remove', true)
+    const host = {
+      getSelected: () => null,
+      panel: { querySelectorAll: selector => (selector === '.ui-tab' ? [] : [sleep, removal]) },
+      dismissible: true,
+      dismiss() {},
+      scheduleRefresh() {},
+      switchPanel() {},
+    }
+    let result = availableCommands(host)
+    const command = result.find(c => c.id === 'sleep')
+    assert.equal(command.pad, 2)
+    assert.equal(command.key, 'X')
+    assert.equal(command.confirm, true)
+    assert.equal(command.hold, undefined)
+    assert.equal(command.danger, false)
+    assert.equal(
+      result.some(c => c.id.startsWith('remove')),
+      true
+    )
+    assert.equal(new Set(result.map(c => c.pad)).size, result.length)
+    sleep.disabled = true
+    result = availableCommands(host)
+    assert.equal(result.find(c => c.id === 'sleep').disabled, true)
+    assert.equal(result.find(c => c.id === 'sleep').description, 'Until morning')
+    result.find(c => c.id === 'sleep').run()
+    assert.equal(sleeping, 0)
+    assert.equal(result.find(c => c.id === 'remove-0').danger, true)
+    assert.equal(result.find(c => c.id === 'remove-0').pad, 3)
+    assert.equal(result.find(c => c.id === 'remove-0').key, 'Y')
+    assert.equal(
+      result.some(c => c.id === 'other-actions'),
+      false
+    )
+    sleep.dataset.windowAction = 'home'
+    assert.equal(availableCommands(host).find(c => c.id === 'home').confirm, false)
+    const upgrade = button('upgrade')
+    host.panel.querySelectorAll = selector => (selector === '.ui-tab' ? [] : [upgrade, sleep, removal])
+    let upgradeCommand = availableCommands(host).find(c => c.id === 'upgrade')
+    assert.equal(upgradeCommand.key, 'U')
+    assert.equal(upgradeCommand.pad, 2)
+    assert.equal(upgradeCommand.padModifier, 6, 'home retains its direct secondary action')
+    host.panel.querySelectorAll = selector => (selector === '.ui-tab' ? [] : [upgrade, removal])
+    upgradeCommand = availableCommands(host).find(c => c.id === 'upgrade')
+    assert.equal(upgradeCommand.padModifier, undefined)
+  } finally {
+    global.HTMLButtonElement = previousButton
+  }
+})
+
+test('keyboard and gamepad request confirmation immediately without starting a hold', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
+  })
+  for (const command of [
+    { id: 'sleep', pad: 2, confirm: true },
+    { id: 'remove', pad: 3, danger: true },
+  ]) {
+    const instance = Object.create(GameWindow.prototype)
+    instance.renderCommands = () => {}
+    instance.scheduleRefresh = () => {}
+    instance.commands = [{ ...command, run: () => assert.fail('must wait for confirmation') }]
+    instance.runKeyIntent({ command: instance.commands[0] }, false)
+    assert.equal(instance.confirmation.id, command.id)
+    assert.equal(instance.keyboardHolding, undefined)
+    instance.confirmation = null
+    instance.padState = { read: () => ({ pressed: [command.pad], direction: null }) }
+    instance.setMode = () => {}
+    instance.readGamepad({ buttons: [], axes: [] }, 0)
+    assert.equal(instance.confirmation.id, command.id)
+    assert.equal(instance.holding, undefined)
+  }
+})
+
+test('shoulder buttons do not treat recipe categories as tabs', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
+  })
+  const instance = Object.create(GameWindow.prototype)
+  instance.panel = {
+    querySelectorAll: selector => {
+      assert.equal(selector, '.ui-tab')
+      return []
+    },
+  }
+  instance.selected = { closest: () => null }
+  instance.select = () => assert.fail('recipe selection must not change')
+  instance.switchPanel(1)
+})
+
+test('craft gamepad combination takes precedence without also crafting one item', () => {
+  const { findEnabledPadCommand } = loadTsModule('app/lib/ui/GameWindowInput.ts', {
+    mocks: { '../audio/settings': {} },
+  })
+  const primary = { id: 'primary', pad: 0 }
+  const maximum = { id: 'craft-max', pad: 0, padModifier: 6 }
+  const commands = [primary, maximum]
+  const pad = { buttons: Array.from({ length: 17 }, () => ({ pressed: false })) }
+  assert.equal(findEnabledPadCommand(commands, 0, pad), primary)
+  pad.buttons[6].pressed = true
+  assert.equal(findEnabledPadCommand(commands, 0, pad), maximum)
+  assert.equal(findEnabledPadCommand(commands, 6, pad), null)
+  maximum.disabled = true
+  assert.equal(findEnabledPadCommand(commands, 0, pad), null)
+})

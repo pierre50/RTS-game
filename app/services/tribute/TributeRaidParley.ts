@@ -19,7 +19,6 @@ type TributeModalView = {
     title: string
     content: HTMLElement
     panelClass: string
-    showCloseButton?: boolean
     onClose: () => void
   }) => Modal
 }
@@ -86,7 +85,6 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
     title: getTributeTitle(raid),
     content,
     panelClass: 'bandit-tribute-modal npc-orders-panel interaction-panel',
-    showCloseButton: false,
     onClose: () => {
       raid.modal = null
       if (!resolved && raid.phase === 'parley') runtime.makeRaidHostile(raid)

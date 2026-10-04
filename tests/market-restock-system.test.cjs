@@ -53,8 +53,19 @@ test('market restock resets built market stock on interval days only', () => {
   assert.equal(market.marketStock.filter(item => item === 'arrow_copper').length, 20)
   assert.equal(market.marketStock.includes('axe_ceramic'), false)
   assert.equal(market.marketStock.includes('quiver'), false)
-  assert.deepEqual(menuRefreshes, ['refresh'])
+  assert.deepEqual(menuRefreshes, ['refresh', 'refresh'])
   assert.deepEqual(reportEntries, [
     { count: 1, player: system.context.players[0], type: 'market-restocked' },
   ])
+})
+
+test('daily money recovery includes distant static AI markets and ignores ruined markets', () => {
+  const { MarketRestockSystem } = loadMarketRestockSystem()
+  const market = { type: 'Market', isBuilt: true, marketGold: 0, marketStock: [] }
+  const ruined = { ...market, isDestroyed: true }
+  const system = new MarketRestockSystem({ players: [{ developmentMode: 'static', villageActivity: 'distant', buildings: [market, ruined] }] })
+  system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
+  assert.equal(market.marketGold, 200)
+  assert.equal(ruined.marketGold, 0)
+  assert.deepEqual(market.marketStock, [])
 })

@@ -14,10 +14,8 @@ import {
   rebindKeyboardKey,
   type GamepadBindingAction,
 } from '../../lib/audio/settings'
-import { getActiveGamepad } from '../../lib/input/gamepad'
 import { createGamepadKey } from '../../lib/input/gamepadGlyph'
 import { t } from '../../lib/lang'
-import { ModalTabs } from '../Tabs'
 import { buildCheckboxRow } from '../utils/formUtils'
 import { buildBindingRows } from './controlsBindings'
 
@@ -53,11 +51,10 @@ function help(parent: HTMLElement, key: string): void {
   parent.appendChild(text)
 }
 
-export function buildControlsPage(panel: HTMLDivElement): () => void {
-  let deviceChosen = false
+export function buildControlsPages(): { keyboard: HTMLDivElement; gamepad: HTMLDivElement } {
   const keyboard = document.createElement('div')
   const gamepad = document.createElement('div')
-  keyboard.className = gamepad.className = 'settings-device-page'
+  keyboard.className = gamepad.className = 'config-form settings-device-page'
   const refreshers: (() => void)[] = []
   const refreshAll = () => refreshers.forEach(refresh => refresh())
   help(keyboard, 'controlsKeyboardHelp')
@@ -77,9 +74,6 @@ export function buildControlsPage(panel: HTMLDivElement): () => void {
             canSwap: Boolean(change.swapped),
             apply: () => rebindKeyboardKey(action, event),
           }
-        },
-        reset: () => {
-          resetKeyBindings(group.actions)
         },
         refreshAll,
       })
@@ -116,30 +110,23 @@ export function buildControlsPage(panel: HTMLDivElement): () => void {
             apply: () => rebindGamepadButton(action, index),
           }
         },
-        reset: () => {
-          resetGamepadBindings(group.actions)
-        },
         refreshAll,
       })
     )
   }
-  const tabs = new ModalTabs(
-    [
-      { id: 'keyboard', label: t('controlsKeyboardMouse'), page: keyboard },
-      { id: 'gamepad', label: t('controlsGroupGamepad'), page: gamepad },
-    ],
-    getGamepadEnabled() && getActiveGamepad() ? 'gamepad' : 'keyboard',
-    () => {
-      deviceChosen = true
-    }
-  )
-  tabs.tabs.element.setAttribute('aria-label', t('settingsTabControls'))
-  const scope = document.createElement('div')
-  scope.className = 'settings-device-tabs'
-  scope.append(tabs.tabs.element, tabs.element)
-  panel.appendChild(scope)
-  return () => {
-    if (!deviceChosen)
-      tabs.setActive(getGamepadEnabled() && getActiveGamepad() ? 'gamepad' : 'keyboard', { emit: false })
+  for (const [page, resetBindings] of [
+    [keyboard, resetKeyBindings],
+    [gamepad, resetGamepadBindings],
+  ] as const) {
+    const reset = document.createElement('button')
+    reset.type = 'button'
+    reset.className = 'settings-reset-button ui-btn'
+    reset.textContent = t('controlsResetAll')
+    reset.addEventListener('click', () => {
+      resetBindings()
+      refreshAll()
+    })
+    page.appendChild(reset)
   }
+  return { keyboard, gamepad }
 }

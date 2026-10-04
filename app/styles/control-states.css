@@ -1,0 +1,115 @@
+/* State colors are defined here only. Geometry belongs to each control component.
+   Game-window scope matches layout specificity without !important or extra rings. */
+:is(
+    .ui-btn,
+    .home-btn,
+    .ui-input,
+    .ui-select,
+    .window-choice,
+    .ui-range,
+    .ui-checkbox,
+    .ui-tab,
+    .ui-action-row,
+    .quest-list-item,
+    .game-window-command,
+    .minimap-legend-toggle,
+    .settings-section-toggle
+  ):not(:disabled, .disabled, [aria-disabled='true']):hover,
+.game-window
+  :is(
+    .ui-btn,
+    .home-btn,
+    .ui-input,
+    .ui-select,
+    .window-choice,
+    .ui-range,
+    .ui-checkbox,
+    .ui-tab,
+    .ui-action-row,
+    .quest-list-item,
+    .game-window-command,
+    .minimap-legend-toggle,
+    .settings-section-toggle
+  ):not(:disabled, .disabled, [aria-disabled='true']):hover {
+  border-color: var(--ui-control-border-hover);
+  outline: none;
+}
+:is(
+  .ui-btn,
+  .home-btn,
+  .ui-input,
+  .ui-select,
+  .window-choice,
+  .ui-range,
+  .ui-checkbox,
+  .ui-tab,
+  .ui-action-row,
+  .quest-list-item,
+  .game-window-command,
+  .minimap-legend-toggle,
+  .settings-section-toggle
+):is(:focus-visible, .is-window-selected, .is-menu-focused, .is-active, [aria-current='true']),
+.game-window
+  :is(
+    .ui-btn,
+    .home-btn,
+    .ui-input,
+    .ui-select,
+    .window-choice,
+    .ui-range,
+    .ui-checkbox,
+    .ui-tab,
+    .ui-action-row,
+    .quest-list-item,
+    .game-window-command,
+    .minimap-legend-toggle,
+    .settings-section-toggle
+  ):is(:focus-visible, .is-window-selected, .is-menu-focused, .is-active, [aria-current='true']) {
+  border-color: var(--ui-control-border-focus);
+  outline: none;
+}
+:is(
+    .ui-btn,
+    .home-btn,
+    .ui-input,
+    .ui-select,
+    .window-choice,
+    .ui-range,
+    .ui-checkbox,
+    .ui-tab,
+    .ui-action-row,
+    .quest-list-item,
+    .game-window-command,
+    .minimap-legend-toggle,
+    .settings-section-toggle
+  ):not(:disabled, .disabled, [aria-disabled='true']):active,
+.game-window
+  :is(
+    .ui-btn,
+    .home-btn,
+    .ui-input,
+    .ui-select,
+    .window-choice,
+    .ui-range,
+    .ui-checkbox,
+    .ui-tab,
+    .ui-action-row,
+    .quest-list-item,
+    .game-window-command,
+    .minimap-legend-toggle,
+    .settings-section-toggle
+  ):not(:disabled, .disabled, [aria-disabled='true']):active {
+  border-color: var(--ui-control-border-active);
+  outline: none;
+}
+.ui-input:focus,
+.ui-select:focus,
+.menu-panel--home .home-btn:focus {
+  border-color: var(--ui-control-border-focus);
+}
+.ui-range::-webkit-slider-thumb:active {
+  border-color: var(--ui-control-border-active);
+}
+.ui-range::-moz-range-thumb:active {
+  border-color: var(--ui-control-border-active);
+}

@@ -1,9 +1,8 @@
-import { isStaticSettlement } from '../../config/settlementProfiles'
-import { isDistantOwner } from '../../lib/units/villageActivity'
 import { BUILDING_TYPES } from '../../constants'
 import {
   MARKET_RESTOCK_INTERVAL_DAYS,
   resetMarketEquipmentStock,
+  replenishMarketGold,
   type MarketEquipmentOfferOptions,
 } from '../../lib/equipment/equipmentMarket'
 import type { GameContextLike } from '../../types/context'
@@ -18,7 +17,6 @@ function shouldRestockMarket(day: number): boolean {
 function marketOfferOptions(market: BuildingEntity, player: PlayerLike): MarketEquipmentOfferOptions {
   const owner = market.owner ?? player
   return {
-
     civilization: owner.civ,
   }
 }
@@ -31,21 +29,25 @@ export class MarketRestockSystem implements DailyWorldEventHandler {
   }
 
   handleDailyWorldEvent(event: DailyWorldEvent): void {
-    if (!shouldRestockMarket(event.day)) return
+    if (event.day <= 0) return
 
-    let restockedPlayedMarket = false
+    let marketChanged = false
     for (const player of this.context.players ?? []) {
-      if (isStaticSettlement(player) && isDistantOwner(player)) continue
       let restocked = 0
       for (const market of this.getRestockableMarkets(player)) {
-        resetMarketEquipmentStock(market, marketOfferOptions(market, player))
-        restocked++
-        restockedPlayedMarket ||= Boolean(player.isPlayed)
+        const previousGold = market.marketGold
+        replenishMarketGold(market)
+        marketChanged ||= market.marketGold !== previousGold
+        if (shouldRestockMarket(event.day)) {
+          resetMarketEquipmentStock(market, marketOfferOptions(market, player))
+          restocked++
+          marketChanged = true
+        }
       }
       if (restocked > 0) event.report?.add({ count: restocked, player, type: 'market-restocked' })
     }
 
-    if (restockedPlayedMarket) {
+    if (marketChanged) {
       this.context.menu?.refreshHeroBuildingMenu?.()
     }
   }
