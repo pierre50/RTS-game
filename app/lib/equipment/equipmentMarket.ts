@@ -23,8 +23,8 @@ export type MarketEquipmentOfferOptions = {
 type ResourceStorageName = (typeof RESOURCE_STORAGE_NAMES)[number]
 
 export const MARKET_RESTOCK_INTERVAL_DAYS = 3
-export const MARKET_INITIAL_GOLD = 1000
-export const MARKET_DAILY_GOLD = 200
+const MARKET_INITIAL_GOLD = 1000
+const MARKET_DAILY_GOLD = 200
 
 type MarketWallet = Pick<BuildingEntity, 'marketGold'>
 

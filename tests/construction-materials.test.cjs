@@ -126,7 +126,9 @@ test('collective work protects the first project and accounts for cargo already 
   const plan = planCollectiveTasks(owner, [a, b])
   assert.equal(plan.get(a).job, 'construction')
   assert.equal(plan.get(a).site, first)
-  assert.ok(![...plan.values()].some(task => task.job === 'stone' || task.job === 'wood'))
+  assert.ok(![...plan.values()].some(task => task.job === 'wood'), 'in-flight cargo covers the first project')
+  assert.equal(plan.get(b).job, 'stone')
+  assert.equal(plan.get(b).site, second, 'other workers can supply the second project')
 })
 
 test('camp meals consume carried food and leave the personal chest untouched', () => {

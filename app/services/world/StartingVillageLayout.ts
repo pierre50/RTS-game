@@ -1,3 +1,4 @@
+import { BUILDING_INTERIOR_TYPES } from '../../lib/buildings/interiorProfiles'
 import { storagePitResources, storagePitSiteScore } from '../../lib/grid/storagePitPlacement'
 import { StartingResourceRelocation } from './StartingResourceRelocation'
 import { planVillageDistricts, type VillageDistrictPlan } from './VillageDistrictPlan'
@@ -14,6 +15,7 @@ export class StartingVillageLayout {
   private readonly protectedResources = new Set<SaveEntityState>()
   private readonly clearableTypes: Set<string>
   private readonly districts = new Map<SaveEntityState, VillageDistrictPlan>()
+  private readonly entrances = new Set<string>()
   private readonly placed = new Map<SaveEntityState, SaveEntityState[]>()
   private readonly farmSites = new Map<SaveEntityState, SaveGridPoint[]>()
 
@@ -24,6 +26,7 @@ export class StartingVillageLayout {
       (building, index) => Number(rules.buildingConfig(index, building.type).size) || 2,
       { protectVillageAccess: false, exactBuildingFootprints: true }
     )
+    for (const owner of state.players) for (const building of owner.buildings ?? []) this.reserveEntrance(building)
     this.movableResources = state.resources.filter(
       resource =>
         !resource.isDestroyed && resource.type !== 'Wheat' && (!resource.spaceId || resource.spaceId === 'outside')
@@ -33,6 +36,7 @@ export class StartingVillageLayout {
   }
 
   reserveBuilding(building: SaveEntityState): void {
+    this.reserveEntrance(building)
     const size = Math.max(1, Math.floor(building.size ?? 1))
     const before = Math.floor((size - 1) / 2)
     const after = size - before - 1
@@ -55,7 +59,7 @@ export class StartingVillageLayout {
             let free = true
             for (let i = candidate.i - 1; i <= candidate.i + 1 && free; i++)
               for (let j = candidate.j - 1; j <= candidate.j + 1; j++)
-                if (!this.spatial.naturalCell({ i, j }, this.clearableTypes)) {
+                if (this.entrances.has(`${i}:${j}`) || !this.spatial.naturalCell({ i, j }, this.clearableTypes)) {
                   free = false
                   break
                 }
@@ -82,7 +86,7 @@ export class StartingVillageLayout {
     const buildings = this.placed.get(center)!
     const count = buildings.filter(building => building.type === type).length
     const nearest = (types: string[], fallback: SaveGridPoint) =>
-      buildings.find(building => types.includes(building.type)) ?? fallback
+      [center, ...buildings].find(building => types.includes(building.type)) ?? fallback
     switch (type) {
       case 'Farm':
         return nearest(['Granary'], this.farmSites.get(center)![0] ?? plan.farms)
@@ -146,12 +150,16 @@ export class StartingVillageLayout {
     const deposits = type === 'StoragePit' ? storagePitResources(this.movableResources, center) : []
     const protectedResources = [...this.protectedResources]
     const lots: Array<{ point: SaveGridPoint; score: number }> = []
-    const before = Math.floor((size - 1) / 2) + 1
-    const after = size - (before - 1)
+    const clearance = type === 'Farm' ? 0 : 1
+    const before = Math.floor((size - 1) / 2) + clearance
+    const after = size - Math.floor((size - 1) / 2) - 1 + clearance
     for (let di = -24; di <= 24; di++) {
       for (let dj = -24; dj <= 24; dj++) {
         const candidate = { i: center.i + di, j: center.j + dj }
         if (!this.spatial.reachable(center, candidate)) continue
+        if (this.blocksEntrance(candidate, size)) continue
+        if (type === 'WatchTower' && distance(candidate, center) < 10) continue
+        if (type === 'Farm' && !this.nearGranary(center, candidate, size)) continue
         if (
           protectedResources.some(
             resource =>
@@ -169,6 +177,13 @@ export class StartingVillageLayout {
         let breathingRoom = 0
         for (let i = candidate.i - before; i <= candidate.i + after && free; i++) {
           for (let j = candidate.j - before; j <= candidate.j + after; j++) {
+            // Diagonal neighbors do not obstruct the one-cell circulation along house walls.
+            if (
+              type === 'House' &&
+              (i === candidate.i - before || i === candidate.i + after) &&
+              (j === candidate.j - before || j === candidate.j + after)
+            )
+              continue
             if (!this.spatial.naturalCell({ i, j }, this.clearableTypes)) {
               free = false
               break
@@ -210,6 +225,42 @@ export class StartingVillageLayout {
       for (const resource of deposits) if (distance(point, resource) <= 10) this.protectedResources.add(resource)
     }
     return point
+  }
+
+  private blocksEntrance(point: SaveGridPoint, size: number): boolean {
+    const before = Math.floor((size - 1) / 2)
+    const after = size - before - 1
+    for (let i = point.i - before; i <= point.i + after; i++)
+      for (let j = point.j - before; j <= point.j + after; j++) if (this.entrances.has(`${i}:${j}`)) return true
+    return false
+  }
+
+  private reserveEntrance(building: SaveEntityState): void {
+    if (!BUILDING_INTERIOR_TYPES.has(building.type)) return
+    for (let step = 0; step <= 1; step++) {
+      const i = building.i + (building.placementMirrored ? 2 + step : 1)
+      const j = building.j + (building.placementMirrored ? 1 : 2 + step)
+      this.entrances.add(`${i}:${j}`)
+    }
+  }
+
+  private nearGranary(center: SaveEntityState, point: SaveGridPoint, size: number): boolean {
+    const granaries = [center, ...(this.placed.get(center) ?? [])].filter(b => b.type === 'Granary')
+    if (!granaries.length) return true
+    const radius = (size - 1) / 2
+    return [-radius, radius].every(di =>
+      [-radius, radius].every(dj =>
+        granaries.some(granary => {
+          const edge = ((granary.size ?? 3) - 1) / 2
+          return (
+            Math.hypot(
+              Math.max(0, Math.abs(point.i + di - granary.i) - edge),
+              Math.max(0, Math.abs(point.j + dj - granary.j) - edge)
+            ) <= 7
+          )
+        })
+      )
+    )
   }
 
   private relocateResources(

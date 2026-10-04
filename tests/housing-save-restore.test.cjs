@@ -19,21 +19,21 @@ const { restoreSavedPlayers } = loadTsModule('app/classes/map/generation/MapSave
     '../../players': { Human: RestoredPlayer, AI: RestoredPlayer, Player: RestoredPlayer } },
 })
 
-test('loading derives housing from completed houses without changing the population', () => {
+test('loading derives housing from saved beds in completed houses without changing the population', () => {
   const player = { type: 'Human', isPlayed: true, population: 8, populationMax: 25, buildings: [
     { type: 'TownCenter', isBuilt: true },
-    { type: 'House', isBuilt: true },
+    { type: 'House', label: 'house', isBuilt: true, interiorBuildings: Array.from({ length: 2 }, (_, index) => ({ type: 'CampBedroll', label: `bed-${index}`, isBuilt: true })) },
     { type: 'House', isBuilt: false },
     { type: 'House', isBuilt: true, isDead: true },
   ] }
   const context = { app: {}, gamebox: {}, map: {}, scheduler: {} }
   const map = { context }
   restoreSavedPlayers(map, [player])
-  assert.equal(context.player.populationMax, 5)
-  assert.equal(player.populationMax, 5)
+  assert.equal(context.player.populationMax, 2)
+  assert.equal(player.populationMax, 2)
   assert.equal(context.player.population, 8)
   restoreSavedPlayers(map, [player])
-  assert.equal(context.player.populationMax, 5)
+  assert.equal(context.player.populationMax, 2)
   player.buildings = [player.buildings[0]]
   restoreSavedPlayers(map, [player])
   assert.equal(context.player.populationMax, 0)
@@ -55,8 +55,9 @@ test('remote economy uses the same housing capacity as the active village', () =
   const player = { type: 'AI', population: 8, populationMax: 15,
     buildings: [{ type: 'TownCenter', isBuilt: true }, { type: 'House', isBuilt: true }] }
   const rules = economyRulesFor({ players: [player], resources: [] })
-  assert.equal(player.populationMax, 5)
+  assert.equal(player.populationMax, 2)
   assert.equal(player.population, 8)
-  assert.equal(rules.buildingCapacity(0, 'TownCenter'), 0)
-  assert.equal(rules.buildingCapacity(0, 'House'), 5)
+  const { getPopulationCapacityFromBuildings } = loadTsModule('app/lib/buildings/buildingOccupancy.ts')
+  assert.equal(getPopulationCapacityFromBuildings(player.buildings, player), 2)
+  assert.equal(rules.buildingCapacity, undefined, 'capacity comes from beds, not a fixed house quota')
 })

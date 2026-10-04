@@ -3,7 +3,7 @@ import { refreshPopulationCapacity } from '../../../lib/buildings/buildingOccupa
 import { depositChestResources, getPlayerResourceTotals } from '../../../lib/resources/playerResourceTotals'
 import { getStorageCapacity } from '../../../lib/resources/storagePolicy'
 import { savedResourceOwner } from '../offline/OfflineWorldWork'
-import { addStartingHouses, addStartingUnits, startingPopulation } from './StartingPopulation'
+import { addStartingHouses, addStartingUnits, placeStartingResidents, startingPopulation } from './StartingPopulation'
 import {
   addMissingBuildings,
   addStartingBuilding,
@@ -37,7 +37,7 @@ export function populateStartingVillage(setup: StartingVillageSetup, profile: Vi
   for (const [type, count] of Object.entries(profile.buildings).sort(
     ([a], [b]) => buildingPlacementOrder(a) - buildingPlacementOrder(b)
   ))
-    addMissingBuildings(village, type, count)
+    if (!type.startsWith('Camp')) addMissingBuildings(village, type, count)
   const units = (player.units ??= [])
   const population = startingPopulation(village, units)
   const outpost = profile.settlementType === 'outpost'
@@ -47,6 +47,8 @@ export function populateStartingVillage(setup: StartingVillageSetup, profile: Vi
     addStartingHouses(village)
     reconcileHouseholds(player)
   }
+  for (const [type, count] of Object.entries(profile.buildings))
+    if (type.startsWith('Camp')) addMissingBuildings(village, type, count)
   player.population = population
   refreshPopulationCapacity(player)
   addStartingWalls(
@@ -56,6 +58,7 @@ export function populateStartingVillage(setup: StartingVillageSetup, profile: Vi
     village.spatial,
     (type, point) => addStartingBuilding(village, type, point)
   )
+  if (!outpost) placeStartingResidents(village)
   fillStartingDepots(village)
   depositStartingBonus(village)
   Object.assign(

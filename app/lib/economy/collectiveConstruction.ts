@@ -121,7 +121,7 @@ export function readyConstructionSite(owner: Owner, unit: CollectiveMember): Col
 export function constructionCargoReserve(owner: Owner, unit: CollectiveMember, resource: keyof ResourceAmount): number {
   const site = activeConstructionSite(owner, unit)
   if (!site) return 0
-  const anchor = collectiveAnchor(owner, unit)
+  const anchor = collectiveAnchor(owner, site)
   return (owner.buildings ?? []).reduce(
     (total, project) =>
       hasConstructionWork(project) &&

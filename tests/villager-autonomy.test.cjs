@@ -327,6 +327,7 @@ test('copper and iron autonomy target only the requested ore and issue the match
   })
   const copperMiner = createVillager(owner)
   const ironMiner = createVillager(owner)
+  ironMiner.inventory = { equipment: ['pickaxe_bronze'] }
 
   assert.equal(assignVillagerAutonomy(copperMiner, 'copper'), true)
   assert.equal(copperMiner.dest, copper)
@@ -339,7 +340,7 @@ test('copper and iron autonomy target only the requested ore and issue the match
   assert.equal(ironMiner.autonomousJob, 'iron')
 })
 
-test('iron autonomy is blocked until the Bronze Age', () => {
+test('iron autonomy requires a bronze pickaxe regardless of the legacy age', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const iron = {
     family: constants.FAMILY_TYPES.resource,
@@ -362,6 +363,8 @@ test('iron autonomy is blocked until the Bronze Age', () => {
   assert.equal(assignVillagerAutonomy(ironMiner, 'iron'), false)
   assert.equal(ironMiner.dest, null)
   owner.age = 2
+  assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), false)
+  owner.forgeUpgrades = { pickaxes: 2 }
   assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), true)
   assert.equal(assignVillagerAutonomy(ironMiner, 'iron'), true)
   assert.equal(ironMiner.dest, iron)
@@ -1098,7 +1101,7 @@ test('zero-health mineral records remain harvestable until depleted or destroyed
   for (const job of ['stone', 'gold', 'copper', 'iron']) {
     const type = constants.RESOURCE_TYPES[job]
     const mineral = { family: 'resource', type, label: job, i: 3, j: 4, hitPoints: 0, quantity: 23 }
-    const owner = createOwner({ foundedResources: { [type]: new Set([mineral]) } })
+    const owner = createOwner({ forgeUpgrades: { pickaxes: 2 }, foundedResources: { [type]: new Set([mineral]) } })
     const worker = createVillager(owner)
     assert.equal(hasVillagerAutonomyTarget(worker, job), true, job)
     assert.equal(assignVillagerAutonomy(worker, job), true, job)

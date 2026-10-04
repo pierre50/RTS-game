@@ -727,59 +727,28 @@ test('runtime building interior activation refreshes both interior and exterior 
   assert.deepEqual(renderUpdates, ['outside-villager', 'inside-villager', 'outside-villager', 'inside-villager'])
 })
 
-test('runtime interior sleep fallback never settles a unit on the exit passage cell', () => {
-  const grid = Array.from({ length: 3 }, (_, i) =>
-    Array.from({ length: 3 }, (_, j) => ({
-      border: false,
-      category: 'Land',
-      has: null,
-      i,
-      j,
-      solid: false,
-      terrainHidden: false,
-      waterBorder: false,
-    }))
-  )
-  const exitCell = grid[1][1]
-  exitCell.spaceId = 'interior:test'
-  const fallbackCell = grid[0][1]
-  fallbackCell.spaceId = 'interior:test'
-  const building = { label: 'house-1', owner: { units: [] }, type: 'House' }
-  const context = { map: { spaces: new Map() } }
-  const space = {
-    building,
-    entryCell: exitCell,
-    exitCell,
-    grid,
-    id: 'interior:test',
-    portals: [{ sourceCell: exitCell, targetCell: null }],
-    sleepCells: [],
-    size: 2,
-  }
-  context.map.spaces.set(space.id, space)
-  const unit = {
-    context,
-    currentCell: exitCell,
-    i: exitCell.i,
-    j: exitCell.j,
-    label: 'villager-1',
-    shelterState: { reason: 'sleep', shelter: building, status: 'inside' },
-  }
-  const { moveUnitToBuildingInteriorSleep } = loadBuildingInteriorSpaceSystem({
-    getCellsAroundPoint: (_i, _j, _grid, _radius, condition) => [exitCell, fallbackCell].filter(condition),
-    moveEntityToMapSpace: (_map, targetUnit, _space, cell) => {
-      targetUnit.currentCell = cell
-      targetUnit.i = cell.i
-      targetUnit.j = cell.j
-      cell.has = targetUnit
-      cell.solid = true
+test('runtime interior sleep refuses exit passages and sleeps only on a free resting cell', () => {
+  const exit = { i: 1, j: 1 }
+  const rest = { i: 0, j: 1 }
+  let sleeping = 0
+  const { putRestingUnitToSleep } = require('./helpers/loadTsModule.cjs').loadTsModule('app/services/rest/UnitRestSleep.ts', {
+    mocks: {
+      '../../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set([exit]) },
+      '../../lib/mapSpaces': { getEntityCell: unit => unit.currentCell },
+      './UnitRestShelter': {},
+      './UnitRestState': {},
+      '../../lib/entities/entityFade': {},
+      '../../lib/entities/overheadIndicator': { setUnitOverheadIndicator() {} },
+      './UnitSleepVisuals': { setSleepingOutsideFinalVisual: () => sleeping++ },
     },
   })
-
-  assert.equal(moveUnitToBuildingInteriorSleep(context, unit, space), true)
-
-  assert.equal(unit.currentCell, fallbackCell)
-  assert.equal(exitCell.has, null)
+  const unit = { context: {}, currentCell: exit, shelterState: { reason: 'sleep', status: 'inside' } }
+  assert.equal(putRestingUnitToSleep(unit, { instant: true }), false)
+  assert.equal(sleeping, 0)
+  unit.currentCell = rest
+  assert.equal(putRestingUnitToSleep(unit, { instant: true }), true)
+  assert.equal(sleeping, 1)
+  assert.equal(unit.actionLocked, true)
 })
 
 test('interior idle facing gives villagers at the back varied standing angles', () => {

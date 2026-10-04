@@ -1,6 +1,8 @@
+import { isFighting, isCommEligible } from './npcAvailability'
+export { isTalkableNpc } from './npcAvailability'
 import { isAiChiefResting } from '../units/chiefAvailability'
 import { heroCanCommand } from '../chief'
-import { ACTION_TYPES, CELL_WIDTH, FAMILY_TYPES, PLAYER_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
+import { ACTION_TYPES, CELL_WIDTH, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { findInstancesInSight } from '../grid/visibility'
 import { getCellsInCellRadius } from '../grid/cells'
 import { angleDelta, getInstanceDegree } from '../maths'
@@ -8,7 +10,6 @@ import { playAudibleSoundCue, playSelectionSound } from '../audio/sound'
 import { sendNpcGroupToTarget as sendNpcGroupToTargetDispatch } from './npcGoToDispatch'
 import { getEntitySpaceMapLike } from '../mapSpaces'
 import { transferNeutralEntityToPlayer } from '../entities/entityOwnerTransfer'
-import { isNeutralPlayer } from '../playerState'
 export { updateNpcFollow } from './npcFollow'
 export { keepNpcHere, resolveHoverTarget, startFollowingHero } from './npcGoToDispatch'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -34,56 +35,6 @@ function worldDistance(a: Partial<Point>, b: Partial<Point>): number {
 
 function isRuntimeEntityDest(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
-}
-
-// A unit mid-fight is the only thing that can't be interrupted — everything else (idle, walking,
-// gathering, building) is fair game.
-function isFighting(target: UnitEntity): boolean {
-  return target.action === ACTION_TYPES.attack
-}
-
-function isFriendlyAvailable(hero: UnitEntity, target: UnitEntity): boolean {
-  if (
-    target === hero ||
-    target.isDead ||
-    target.isDestroyed ||
-    isAiChiefResting(target, target.context ?? hero.context)
-  )
-    return false
-  if (target.family !== FAMILY_TYPES.unit) return false
-  if (target.owner !== hero.owner && !isNeutralPlayer(target.owner)) return false
-  return !isFighting(target)
-}
-
-function isCommEligible(hero: UnitEntity, target: UnitEntity): boolean {
-  if (
-    target.isDead ||
-    target.isDestroyed ||
-    isFighting(target) ||
-    isAiChiefResting(target, target.context ?? hero.context)
-  )
-    return false
-  if (target.lookingAtHero) return true
-  return isFriendlyAvailable(hero, target)
-}
-
-function isForeignTalkableNpc(hero: UnitEntity, target: UnitEntity): boolean {
-  const heroOwner = hero.owner
-  const targetOwner = target.owner
-  if (!heroOwner || !targetOwner || targetOwner === heroOwner) return false
-  if (targetOwner.type !== PLAYER_TYPES.ai) return false
-  if (heroOwner.isEnemy?.(targetOwner)) return false
-  if (targetOwner.isEnemy?.(heroOwner)) return false
-  return true
-}
-
-// Friendly and non-hostile living characters can talk while working, but never during combat.
-export function isTalkableNpc(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (target === hero || target.family !== FAMILY_TYPES.unit) return false
-  const unit = target as UnitEntity
-  if (unit.isDead || unit.isDestroyed || isFighting(unit) || isAiChiefResting(unit, unit.context ?? hero.context))
-    return false
-  return unit.owner === hero.owner || isNeutralPlayer(unit.owner) || isForeignTalkableNpc(hero, unit)
 }
 
 function claimNeutralCommGroup(hero: UnitEntity, group: UnitEntity[]): void {

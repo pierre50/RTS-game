@@ -61,11 +61,12 @@ test('construction advances identically in individual impacts and catch-up, incl
   f.player.buildings.push(building)
   Object.assign(f.worker, { work: 'builder', autonomousJob: 'construction', experience: { building: 600 } })
   f.spatial.entity = () => building
-  let expected = 1
+  let expected = 0
   for (let impact = 0; impact < 10; impact++)
     expected = advanceConstruction(expected, 100, 25, getBuildRateXpMultiplier(f.worker))
   advanceOfflineWorker(f.state, f.player, 0, f.worker, 10000, 1, f.spatial, f.rules, f.report)
-  assert.equal(building.hitPoints, expected)
+  assert.equal(building.constructionProgress, expected / 100)
+  assert.equal(building.hitPoints, 1 + (expected / 100) * 99)
   assert.ok(expected > 41, 'saved experience must affect distant construction too')
 })
 

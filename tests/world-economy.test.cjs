@@ -78,6 +78,8 @@ function fixture() {
         ],
         buildings: [
           { type: 'TownCenter', label: 'center', i: 6, j: 6, isBuilt: true, interiorBuildings: Array.from({ length: 10 }, (_, index) => ({ type: 'CampBedroll', label: `bed-${index}`, i: 4 + Math.floor(index / 3), j: 4 + index % 3, isBuilt: true })), inventory: { resources: {} } },
+          { type: 'House', label: 'worker-home', i: 18, j: 18, isBuilt: true, interiorBuildings: [{ type: 'CampBedroll', label: 'worker-bed', i: 1, j: 1, isBuilt: true }] },
+          { type: 'House', label: 'vacant-home', i: 15, j: 15, isBuilt: true, interiorBuildings: [{ type: 'CampBedroll', label: 'vacant-bed', i: 1, j: 1, isBuilt: true }] },
           { type: 'Granary', label: 'granary', i: 3, j: 3, isBuilt: true, inventory: { resources: { wheat: 300 } } },
           { type: 'StoragePit', label: 'pit', i: 3, j: 6, isBuilt: true, inventory: { resources: {} } },
         ],
@@ -221,7 +223,7 @@ test('abstract snapshots validate without a human or a full fog grid; corrupt me
   const config = {
     resources: { Tree: {} },
     units: { Villager: {} },
-    buildings: { TownCenter: {}, Granary: {}, StoragePit: {}, CampBedroll: {} },
+    buildings: { House: {}, TownCenter: {}, Granary: {}, StoragePit: {}, CampBedroll: {} },
   }
   assert.doesNotThrow(() => validateWorldEconomy(campaign, config))
   const invalid = structuredClone(campaign)

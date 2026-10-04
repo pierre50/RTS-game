@@ -132,8 +132,6 @@ export const EN_TRANSLATIONS = {
   houseUnoccupied: 'Unoccupied house',
   heroSetHome: 'Make this your home',
   heroCurrentHome: 'Your home',
-  heroSetHomeDescription: 'Move into this unoccupied house. Your previous home will become available.',
-  heroSetHomeUnavailable: 'Choose a completed, unoccupied house that is not being renovated.',
   houseBedsCount: 'Beds in this house: {count}',
   houseBedsUnavailable: 'Beds in this house: {count} — unavailable during renovation',
   buildingUpgradeDescription:

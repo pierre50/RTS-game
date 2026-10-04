@@ -8,6 +8,7 @@ function element(tag) {
     tag,
     children: [],
     style: {},
+    dataset: {},
     events: {},
     attributes: {},
     classList: {
@@ -52,11 +53,13 @@ test('minimap contains only map legend, toggles caves and factions, and keeps fi
     updateCameraMiniMap: () => redraws++,
   }
   const container = element('div')
-  renderMinimapLegend(container, menu)
-  assert.equal(container.children.length, 3)
-  assert.equal(container.children[2].textContent, 'minimapMarkerShapes')
+  const symbols = element('div')
+  renderMinimapLegend(container, menu, symbols)
+  assert.equal(container.children.length, 2)
+  assert.equal(symbols.children[0].textContent, 'minimapLegendSymbols')
+  assert.equal(symbols.children.length, 5)
   const legend = container.children[1]
-  assert.equal(legend.children[0].textContent, 'minimapMapLegend')
+  assert.equal(legend.children[0].textContent, 'minimapLegendPlayers')
   assert.deepEqual(
     legend.children.slice(1).map(row => row.children[1].textContent),
     ['you', 'Other', 'Cave']
@@ -71,7 +74,7 @@ test('minimap contains only map legend, toggles caves and factions, and keeps fi
   assert.equal(isMinimapMarkerHidden(menu.context, 'Other'), false)
   legend.children[2].events.click()
   assert.equal(isMinimapMarkerHidden(menu.context, 'Other'), true)
-  renderMinimapLegend(container, menu)
+  renderMinimapLegend(container, menu, symbols)
   const reopened = container.children[1].children[3]
   assert.equal(reopened.classList.contains('is-hidden'), true)
   reopened.events.click()
@@ -131,7 +134,8 @@ test('minimap legend uses live owners and colors even for a guest sharing the ho
     updateCameraMiniMap() {},
   }
   const container = element('div')
-  renderMinimapLegend(container, menu)
+  const symbols = element('div')
+  renderMinimapLegend(container, menu, symbols)
   const rows = container.children[1].children.slice(1)
   assert.deepEqual(
     rows.map(row => row.children[1].textContent),
@@ -161,11 +165,12 @@ test('AI faction filters remain available for remembered buildings while cleared
   const bandits = { type: 'Bandits', units: [{ hitPoints: 10 }], buildings: [{ type: 'FireCamp' }] }
   const menu = { context: { players: [ai, bandits], map: {} } }
   const container = element('div')
-  renderMinimapLegend(container, menu)
+  const symbols = element('div')
+  renderMinimapLegend(container, menu, symbols)
   assert.equal(container.children[1].children.length, 4)
   ai.units[0].isDead = true
   bandits.units = []
-  renderMinimapLegend(container, menu)
+  renderMinimapLegend(container, menu, symbols)
   assert.deepEqual(
     container.children[1].children.slice(1).map(row => row.children[1].textContent),
     ['Hellas', 'Cave']
@@ -188,9 +193,10 @@ test('minimap relation follows current faction diplomacy on reopen instead of th
     context: { player: own, players: [own, ai], map: {}, getCampaignFactions: () => ({ village: faction }) },
   }
   const container = element('div')
+  const symbols = element('div')
   for (const relation of ['friendly', 'wary', 'hostile', 'allied', 'neutral']) {
     faction.relationState = relation
-    renderMinimapLegend(container, menu)
+    renderMinimapLegend(container, menu, symbols)
     const label = container.children[1].children[2].children[2]
     assert.equal(label.className, `worldmap-legend-relation ${relation}`)
     assert.equal(label.textContent, `worldMapRelation${relation[0].toUpperCase()}${relation.slice(1)}`)
@@ -221,15 +227,16 @@ test('legend shares marker icons and shows a separate base only while a complete
     updateCameraMiniMap() {},
   }
   const container = element('div')
+  const symbols = element('div')
   const rows = () => container.children[1].children.slice(1)
-  renderMinimapLegend(container, menu)
+  renderMinimapLegend(container, menu, symbols)
   assert.deepEqual(
-    rows().map(row => row.children[0].children[0].src),
-    ['hero', 'village', 'camp', 'cave'].map(kind => `assets/icons/minimap/${kind}.svg`)
+    rows().map(row => row.children[0].children[0]?.src ?? null),
+    [null, null, null, 'assets/icons/minimap/cave.svg']
   )
   center.isBuilt = true
-  renderMinimapLegend(container, menu)
-  const base = rows().find(row => row.children[1].textContent === 'minimapPlayerBase')
+  renderMinimapLegend(container, menu, symbols)
+  const base = symbols.children.slice(1).find(row => row.children[1].textContent === 'minimapPlayerBase')
   assert.ok(base)
   assert.equal(base.children[0].children[0].src, 'assets/icons/minimap/home.svg')
   assert.equal(base.children[0].style.backgroundColor, player.colorHex)
@@ -237,6 +244,6 @@ test('legend shares marker icons and shows a separate base only while a complete
   assert.equal(isMinimapMarkerHidden(menu.context, 'base'), true)
   assert.equal(isMinimapMarkerHidden(menu.context, 'self'), false)
   center.isDestroyed = true
-  renderMinimapLegend(container, menu)
-  assert.ok(!rows().some(row => row.children[1].textContent === 'minimapPlayerBase'))
+  renderMinimapLegend(container, menu, symbols)
+  assert.ok(!symbols.children.slice(1).some(row => row.children[1].textContent === 'minimapPlayerBase'))
 })

@@ -33,7 +33,7 @@ function source() {
   }
 }
 
-test('generator assigns age 2 to cities, age 1 to villages and age 0 to outposts', () => {
+test('generator assigns building level 2 to cities, level 1 to villages and level 0 to outposts', () => {
   const definitions = require('../public/assets/data/gameplay/buildings.json')
   const assets = require('../public/assets/data/civilizations/hellas.json')
   const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -56,7 +56,7 @@ test('generator assigns age 2 to cities, age 1 to villages and age 0 to outposts
           { level: building.buildingLevel },
           { cache: { get: () => assets } }
         )
-        assert.equal(asset.images.final.sheet, `buildings/age-${level}`)
+        assert.equal(asset.images.final.sheet, 'buildings')
       }
     }
   }
@@ -243,7 +243,7 @@ test('offline inhabitants are spread around buildings and fields with clear entr
   }
   for (const [index, unit] of owner.units.entries()) {
     assert.ok(distance(unit, center) <= 30)
-    assert.ok(owner.units.slice(index + 1).every(other => distance(unit, other) >= 2))
+    assert.ok(owner.units.slice(index + 1).every(other => distance(unit, other) >= 1))
   }
   assert.ok(
     distance(

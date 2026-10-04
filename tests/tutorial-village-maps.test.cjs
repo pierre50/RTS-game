@@ -95,7 +95,7 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.map'))) {
           placed.filter(building => building.type === 'Forge' && building.isBuilt).length,
           config.villageStarts[settlement.civ].buildings.Forge ?? 0
         )
-        const center = placed.find(b => b.type === 'TownCenter')
+        const center = placed.find(b => b.type === 'TownCenter') ?? placed.find(b => b.type === 'Granary')
         const distance = (a, b) => Math.hypot(a.i - b.i, a.j - b.j)
         const fields = generated.resources.filter(r => r.type === 'Wheat' && r.label?.startsWith('start:'))
         for (const field of fields) {

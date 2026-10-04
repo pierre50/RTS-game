@@ -407,7 +407,8 @@ test('mounting preserves the reserved horse and soldier stats through offline co
   const soldier = player.units.find(unit => unit.label === 'recruit-0')
   assert.equal(soldier.mountedOnHorse, true)
   assert.equal(soldier.horseColor, 'black')
-  assert.equal(soldier.hitPoints, 14)
+  // The final quarter-hour of the soldier's night watch restores 18 * 9 / 480 health.
+  assert.equal(soldier.hitPoints, 14 + 18 * 9 / 480)
   assert.equal(soldier.speed, 2.4)
   assert.deepEqual(soldier.experience, { attack: 20 })
   assert.deepEqual(stable.stableHorses, [])

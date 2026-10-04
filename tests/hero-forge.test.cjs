@@ -71,7 +71,7 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
   }
 })
 
-test('forge remains exterior and uses its atlas sprite across ages and civilizations', () => {
+test('forge remains exterior and uses its atlas sprite across levels and civilizations', () => {
   const { isBuildingInteriorSupported } = loadTsModule('app/lib/buildings/interiors.ts')
   const { getBuildingAsset } = loadTsModule('app/lib/graphics/assets.ts')
   const fs = require('node:fs')
@@ -80,10 +80,10 @@ test('forge remains exterior and uses its atlas sprite across ages and civilizat
   assert.equal(isBuildingInteriorSupported({ type: 'Forge', isBuilt: true }), false)
   for (const filename of fs.readdirSync(directory).filter(name => name.endsWith('.json'))) {
     const data = JSON.parse(fs.readFileSync(path.join(directory, filename), 'utf8'))
-    for (const age of [0, 1, 2]) {
-      assert.deepEqual(getBuildingAsset('Forge', { age }, { cache: { get: () => data } }).images.final, {
-        sheet: 'buildings/age-0',
-        frame: 10,
+    for (const level of [0, 1, 2]) {
+      assert.deepEqual(getBuildingAsset('Forge', { level }, { cache: { get: () => data } }).images.final, {
+        sheet: 'buildings',
+        frame: level === 2 ? 28 : 17,
       })
     }
   }

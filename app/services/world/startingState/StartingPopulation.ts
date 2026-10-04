@@ -17,9 +17,21 @@ export function startingPopulation({ buildings, profile }: StartingVillage, unit
 }
 
 export function addStartingHouses(village: StartingVillage): void {
+  const residents = (village.player.units ?? []).filter(isLiving)
+  // Houses must not compete with the temporary spawn positions of their own residents.
+  for (const unit of residents) village.spatial.release(unit)
   const required = countResidentHouseholds(village.player)
   while (village.buildings.filter(b => b.type === 'House' && b.isBuilt && isLiving(b)).length < required)
     addStartingBuilding(village, 'House')
+}
+
+export function placeStartingResidents(village: StartingVillage): void {
+  const residents = (village.player.units ?? []).filter(isLiving)
+  for (const unit of residents) {
+    const point = village.spatial.findNear(unit, 24)
+    if (!point) throw new Error(`No safe home arrival for ${unit.label}`)
+    village.spatial.move(unit, point)
+  }
 }
 
 export function addStartingUnits(village: StartingVillage, units: SaveEntityState[]): void {

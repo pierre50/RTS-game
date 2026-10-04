@@ -91,7 +91,7 @@ export const LOADING_XP_CATEGORY: Record<string, string> = {
   ...Object.fromEntries(getLoadingXpEntries([LOADING_TYPES.meat], XP_CATEGORIES.hunting)),
 }
 
-export type XpProgress = {
+type XpProgress = {
   level: number
   current: number
   next: number | null

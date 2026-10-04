@@ -193,6 +193,8 @@ function loadGameResourceDelivery(overrides = {}) {
 function loadUnitRestRules(overrides = {}) {
   return loadTsModule('app/services/rest/UnitRestRules.ts', {
     mocks: {
+      '../BuildingInteriorSpaceSystem': {},
+      '../spacePortal/SpacePortalSystem': {},
       '../../constants': {
         ACTION_TYPES: { attack: 'attack' },
         BUILDING_TYPES: {},

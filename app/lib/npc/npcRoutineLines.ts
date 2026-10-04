@@ -1,7 +1,7 @@
 import type { VillagerAutonomyJob } from '../../types/entities'
 
 export type NpcAudience = 'ownChief' | 'ownPeer' | 'foreignChief' | 'visitor'
-export type NpcRoutinePhase = 'morning' | 'evening' | 'work' | 'idle' | 'meal'
+type NpcRoutinePhase = 'morning' | 'evening' | 'work' | 'idle' | 'meal'
 type Lines = [string, ...string[]]
 type ForeignAudience = Extract<NpcAudience, 'foreignChief' | 'visitor'>
 type RelationVariants = 'wary' | 'friendly'

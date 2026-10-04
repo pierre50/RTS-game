@@ -77,7 +77,7 @@ test('profile, ten offline days, first arrival and saved return preserve economy
   })
   state = applyVillageStartingState(
     state,
-    { Hellas: { age: 0, buildings: { Granary: 1, StoragePit: 1 }, units: { Villager: 8 }, wallRadius: 22 } },
+    { Hellas: { buildingLevel: 0, buildings: { Granary: 1, StoragePit: 1 }, units: { Villager: 8 }, wallRadius: 22 } },
     terrain,
     rules
   )

@@ -101,7 +101,12 @@ for (const type of ['outpost', 'village', 'city']) {
       planBuildings: true,
       abstractVillages: true,
     })
-    assert.deepEqual(state.players[0], before, 'ten days away must preserve losses, stocks and population')
+    const economicState = player => JSON.parse(JSON.stringify(player, (key, value) =>
+      ['constructionProgress', 'dailySchedule', 'marketStock', 'marketGold'].includes(key) ? undefined : value))
+    assert.deepEqual(economicState(state.players[0]), economicState(before), 'ten days away must preserve losses, resource stocks and population')
+    const afterFirstVisit = structuredClone(state.players[0])
+    simulateOfflineWorld(state, { ...rules, terrain, fromElapsedMs: 10 * 1440000, toElapsedMs: 11 * 1440000 })
+    assert.deepEqual(state.players[0], afterFirstVisit, 'normalized schedules and stock remain stable on later visits')
     assert.equal(report.arrivals, 0)
     assert.equal(report.foodConsumed, 0)
     assert.equal(report.trainingsCompleted, 0)

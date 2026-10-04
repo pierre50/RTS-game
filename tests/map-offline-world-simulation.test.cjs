@@ -16,7 +16,8 @@ function fixture() {
     populationMax: 1,
     units: [{ type: 'Villager', label: 'builder', autonomousJob: 'construction', i: 8, j: 8 }],
     buildings: [
-      { type: 'House', label: 'house', i: 12, j: 12, isBuilt: false, hitPoints: 95, interiorBuildings: Array.from({ length: 6 }, () => ({ type: 'CampBedroll', isBuilt: true })) },
+      { type: 'House', label: 'house', i: 12, j: 12, isBuilt: false, hitPoints: 95, interiorBuildings: Array.from({ length: 6 }, (_, index) => ({ type: 'CampBedroll', label: `bed-${index}`, isBuilt: true })) },
+      { type: 'House', label: 'vacant-home', i: 15, j: 15, isBuilt: true, interiorBuildings: [{ type: 'CampBedroll', label: 'vacant-bed', isBuilt: true }] },
       { type: 'TownCenter', i: 4, j: 4, isBuilt: true, inventory: { resources: { wheat: 1000 } } },
     ],
   }
@@ -50,7 +51,7 @@ test('map restoration advances the save on generated terrain and synchronizes po
   const { data, player, runtimePlayer, map } = fixture()
   applyOfflineWorldSimulation(map, data)
   assert.equal(player.buildings[0].isBuilt, true)
-  assert.equal(runtimePlayer.populationMax, 6)
+  assert.equal(runtimePlayer.populationMax, 7)
   assert.equal(player.units.length, 2)
   assert.equal(runtimePlayer.population, 2)
   assert.equal(data.runtime.offlineFromElapsedMs, undefined)

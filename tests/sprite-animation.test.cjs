@@ -102,6 +102,7 @@ test('unit death starts the dying animation through the shared helper', () => {
   const calls = []
   const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {
     '../../constants': {
+      ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
       CORPSE_TIME: 60,
       FADE_DURATION_MS: 2000,
       MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
@@ -171,6 +172,7 @@ test('stale unit death callbacks do not decompose after another visual transitio
   const calls = []
   const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {
     '../../constants': {
+      ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
       CORPSE_TIME: 60,
       FADE_DURATION_MS: 2000,
       MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
@@ -250,6 +252,7 @@ test('unit die clears pending combat recovery before playing dying animation', (
       cancelledHeroActions.push('charge')
     } },
     '../../constants': {
+      ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
       CORPSE_TIME: 60,
       FADE_DURATION_MS: 2000,
       MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },

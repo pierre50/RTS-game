@@ -1,10 +1,9 @@
+import { renderHeroBuildingBody } from './hero-building/HeroBuildingBody'
 import { t } from '../lib/lang'
 import { heroHomeButton } from './hero-building/HeroHomeButton'
 import { getBuildingAssetOwner } from '../lib/graphics/assets'
 import { createHeroBuildingUpgrade } from './hero-building/HeroBuildingUpgrade'
 import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
-import { createHeroDepotReservesBody } from './hero-building/HeroDepotReservesBody'
-import { createHeroTrainingBody } from './hero-building/HeroTrainingBody'
 import { BUILDING_TYPES, SOUND_CUES } from '../constants'
 import type { Modal } from '../lib'
 import { playAudibleSoundCue } from '../lib/audio/sound'
@@ -17,14 +16,11 @@ import { createInspectionModal, setInspectionWindowSize } from './InspectionPane
 import { InteractionPanel } from './InteractionPanel'
 import type { MenuHost } from './MenuHost'
 import { createHeroBuildingActionButton } from './hero-building/HeroBuildingActionButton'
-import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
 import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
 import { heroBuildingStructureSignature } from './hero-building/HeroBuildingStructureSignature'
 import { buttonMeta } from './hero-building/HeroBuildingButtonText'
 import { heroSleepButton } from './hero-building/HeroSleepButton'
-import { HeroCampfireBody } from './hero-building/HeroCampfireBody'
-import { HeroForgeBody } from './hero-building/HeroForgeBody'
-import { canHeroTradeAtMarket, createHeroMarketBody } from './hero-building/HeroMarketBody'
+import { canHeroTradeAtMarket } from './hero-building/HeroMarketBody'
 import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
 
@@ -331,48 +327,7 @@ export class HeroBuildingMenuManager {
   }
 
   renderContainerBody(building: BuildingEntity): boolean {
-    const reserves = createHeroDepotReservesBody(building, this.menu, () => this.render())
-    if (reserves) {
-      this.transferPanel = null
-      this.body.appendChild(reserves)
-      return true
-    }
-    const training = createHeroTrainingBody(building, this.menu, () => this.refresh())
-    if (training) {
-      this.transferPanel = null
-      this.body.appendChild(training)
-      return true
-    }
-    if (building.type === BUILDING_TYPES.fireCamp && building.isBuilt) {
-      this.transferPanel = null
-      this.body.appendChild(new HeroCampfireBody(this.menu, building).craftPanel)
-      return false
-    }
-    if (building.type === BUILDING_TYPES.forge && building.isBuilt) {
-      this.transferPanel = null
-      this.body.appendChild(new HeroForgeBody(this.menu, building).craftPanel)
-      return true
-    }
-
-    if (building.type === BUILDING_TYPES.market) {
-      if (!this.marketOpen) return false
-      const marketBody = createHeroMarketBody(building, this.menu, () => {
-        this.structureSignature = this.getStructureSignature()
-        this.render()
-      })
-      if (!marketBody) return false
-      this.transferPanel = null
-      this.body.appendChild(marketBody)
-      return true
-    }
-
-    this.transferPanel = createHeroBuildingContainerBody(building, this.menu, () => {
-      this.structureSignature = this.getStructureSignature()
-      this.renderInfo()
-    })
-    if (!this.transferPanel) return false
-    this.body.appendChild(this.transferPanel.element)
-    return true
+    return renderHeroBuildingBody(this, building)
   }
 
   renderInfo(): void {

@@ -47,6 +47,7 @@ function fixture(count = 6) {
 }
 test('reserve goals use the capacity of each completed depot', () => {
   const { owner, units, pit, granary } = fixture(1)
+  owner.forgeUpgrades = { pickaxes: 2 }
   const goals = settlementStockGoals(owner, units[0])
   assert.deepEqual(goals, { wood: 150, stone: 90, gold: 30, copper: 15, iron: 15, wheat: 300, food: 8 })
   owner.buildings.push({ ...pit, label: 'second' })

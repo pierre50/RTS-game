@@ -138,7 +138,8 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
       getBuildingDisplayName: building => building.type || 'building',
     },
   }
-  mocks['./HeroMarketBody'] = mocks['./hero-building/HeroMarketBody']
+  for (const name of ['HeroMarketBody', 'HeroCampfireBody', 'HeroForgeBody'])
+    mocks[`./${name}`] = mocks[`./hero-building/${name}`]
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

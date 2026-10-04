@@ -1,11 +1,17 @@
-import { isBanditUnit } from '../../lib/combat/bandits'
-import { isSoldierUnit } from '../../lib/units/villagerSchedule'
+import {
+  isLightSourceConfig,
+  normalizeLightColor,
+  isLampCarryingUnit,
+  shouldUseUnitLight,
+  shouldFadeMissingUnitLight,
+  isSleepingUnitLightSuppressed,
+} from './LightSourcePolicy'
 import { Container, Sprite, Texture } from 'pixi.js'
-import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, FADE_DURATION_MS, FAMILY_TYPES, UNIT_TYPES } from '../../constants'
+import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, FADE_DURATION_MS } from '../../constants'
 import { getInstanceScreenBounds } from '../../lib/grid/visibility'
 import { OUTSIDE_SPACE_ID, getActiveMapSpace, getEntityMapPoint } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
-import type { EntityLightSourceConfig, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { EntityLightSourceConfig, RuntimeEntity } from '../../types/entities'
 import type { RuntimeMapSpace } from '../../types/map'
 
 type ScreenRect = { height: number; width: number; x: number; y: number }
@@ -55,7 +61,6 @@ const UNIT_LAMP_LIGHT: EntityLightSourceConfig = {
   radius: 210,
   verticalScale: 0.7,
 }
-const DEFAULT_ENTITY_LIGHT_COLOR = '255,172,76'
 const DEFAULT_ENTITY_LIGHT_FLICKER = 0.08
 const DEFAULT_ENTITY_LIGHT_INTENSITY = 1.02
 const DEFAULT_ENTITY_LIGHT_RADIUS = 190
@@ -71,38 +76,6 @@ function clamp(value: number, min: number, max: number): number {
 
 function lerp(current: number, target: number, amount: number): number {
   return current + (target - current) * clamp(amount, 0, 1)
-}
-
-function normalizeLightColor(color?: string): string {
-  if (!color) return DEFAULT_ENTITY_LIGHT_COLOR
-  const hex = color.trim().match(/^#?([0-9a-f]{6})$/i)
-  if (!hex) return color
-  const value = Number.parseInt(hex[1], 16)
-  return `${(value >> 16) & 255},${(value >> 8) & 255},${value & 255}`
-}
-
-function isLightSourceConfig(value: unknown): value is EntityLightSourceConfig {
-  return Boolean(value && typeof value === 'object')
-}
-
-function isLampCarryingUnit(unit: RuntimeEntity): unit is UnitEntity {
-  if (unit.family !== FAMILY_TYPES.unit) return false
-  const carriesLamp = (unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true) || isSoldierUnit(unit)
-  return carriesLamp && !isBanditUnit(unit as UnitEntity)
-}
-
-function shouldUseUnitLight(unit: RuntimeEntity): boolean {
-  if (!isLampCarryingUnit(unit)) return false
-  if (isSleepingUnitLightSuppressed(unit)) return false
-  return !(unit.shelterState?.status === 'outside' && unit.shelterState.reason === 'sleep')
-}
-
-function shouldFadeMissingUnitLight(unit: UnitEntity): boolean {
-  return unit.shelterState?.location !== 'shelter'
-}
-
-function isSleepingUnitLightSuppressed(instance: RuntimeEntity): boolean {
-  return Boolean(instance.family === FAMILY_TYPES.unit && (instance as UnitEntity).sleepVisualState === 'sleeping')
 }
 
 export class LightSystem {

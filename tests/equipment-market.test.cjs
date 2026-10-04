@@ -295,16 +295,16 @@ test('equipment sales stop before exceeding merchant gold', () => {
 })
 
 test('daily gold recovery preserves empty saves and does not discard purchase proceeds', () => {
-  const { getMarketGold, replenishMarketGold, MARKET_INITIAL_GOLD, MARKET_DAILY_GOLD } = loadEquipmentMarket()
-  assert.equal(getMarketGold({}), MARKET_INITIAL_GOLD)
+  const { getMarketGold, replenishMarketGold } = loadEquipmentMarket()
+  assert.equal(getMarketGold({}), 1000)
   const market = JSON.parse(JSON.stringify({ marketGold: 0 }))
   assert.equal(getMarketGold(market), 0)
   replenishMarketGold(market)
-  assert.equal(market.marketGold, MARKET_DAILY_GOLD)
-  market.marketGold = MARKET_INITIAL_GOLD - 1
+  assert.equal(market.marketGold, 200)
+  market.marketGold = 1000 - 1
   replenishMarketGold(market)
-  assert.equal(market.marketGold, MARKET_INITIAL_GOLD)
+  assert.equal(market.marketGold, 1000)
   market.marketGold += 500
   replenishMarketGold(market)
-  assert.equal(market.marketGold, MARKET_INITIAL_GOLD + 500)
+  assert.equal(market.marketGold, 1000 + 500)
 })

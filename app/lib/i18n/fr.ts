@@ -134,8 +134,6 @@ export const FR_TRANSLATIONS = {
   houseUnoccupied: 'Maison inoccupée',
   heroSetHome: 'Définir comme votre maison',
   heroCurrentHome: 'Votre maison',
-  heroSetHomeDescription: 'Installez-vous dans cette maison inoccupée. Votre ancien logement sera libéré.',
-  heroSetHomeUnavailable: 'Choisissez une maison achevée, inoccupée et sans travaux.',
   houseBedsCount: 'Lits dans cette maison : {count}',
   houseBedsUnavailable: 'Lits dans cette maison : {count} — indisponibles pendant les travaux',
   buildingUpgradeDescription:

@@ -1,22 +1,12 @@
+import { TimeSkipCancelInput } from '../ui/timeSkip/TimeSkipCancelInput'
+import { createTimeSkipOverlay, updateTimeSkipOverlay, type TimeSkipOverlay } from '../ui/timeSkip/TimeSkipOverlay'
 import type { SleepSimulation } from './world/SleepSimulation'
 import { DAY_NIGHT_CONFIG } from '../config/gameplay'
 import { isGameplaySoundSuppressed, setGameplaySoundSuppressed } from '../lib/audio/sound'
-import { getGamepadEnabled } from '../lib/audio/settings'
-import { getActiveGamepad } from '../lib/input/gamepad'
-import { consumeGamepadButtons, getConsumedGamepadButtons } from '../lib/input/gamepadConsumption'
-import { createGamepadKey } from '../lib/input/gamepadGlyph'
-import { t } from '../lib/lang'
 import type { GameContextLike } from '../types/context'
 
 const FAST_FORWARD_SPEED = 72
 const FAST_FORWARD_DAY_NIGHT_MAX_DELTA_MS = 1000
-
-type TimeSkipOverlay = {
-  gamepadHint: HTMLElement
-  fill: HTMLElement
-  label: HTMLElement
-  root: HTMLElement
-}
 
 type TimeSkipSnapshot = {
   previousSchedulerSuspended: boolean
@@ -40,24 +30,14 @@ export type TimeSkipStartResult = {
   message: string
 }
 
-export function getHoursUntilNextMorning(hour: number, minute = 0, targetHour = 6): number {
-  const currentHour = hour + minute / 60
-  const normalizedTargetHour =
-    ((targetHour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) % DAY_NIGHT_CONFIG.hoursPerDay
-  const hoursUntilTarget =
-    currentHour < normalizedTargetHour
-      ? normalizedTargetHour - currentHour
-      : DAY_NIGHT_CONFIG.hoursPerDay - currentHour + normalizedTargetHour
-  return hoursUntilTarget || DAY_NIGHT_CONFIG.hoursPerDay
-}
+export { getHoursUntilNextMorning } from './timeSkip/TimeSkipClock'
 
 export class TimeSkipSystem {
   simulatingSleep = false
   private pendingStart: TimeSkipStartOptions | null = null
   private sleepStarted = false
   private pendingCancel: { silent?: boolean } | null = null
-  private cancelPadIndex: number | null = null
-  private cancelPressed = false
+  private readonly cancelInput = new TimeSkipCancelInput()
   active = false
   context: GameContextLike
   completedMessage: string | null = null
@@ -111,9 +91,7 @@ export class TimeSkipSystem {
       previousSoundSuppressed: isGameplaySoundSuppressed(),
       previousTickerSpeed: this.context.app.ticker.speed ?? 1,
     }
-    const pad = getGamepadEnabled() ? getActiveGamepad() : null
-    this.cancelPadIndex = pad?.index ?? null
-    this.cancelPressed = Boolean(pad?.buttons[1]?.pressed)
+    this.cancelInput.reset()
     this.overlay = this.createOverlay(hours, options.fadeToBlack)
     this.context.controls?.stopKeyboardMove?.()
     if (options.fadeToBlack && this.overlay) this.pendingStart = options
@@ -217,13 +195,7 @@ export class TimeSkipSystem {
   }
 
   private pollGamepadCancel(): boolean {
-    const pad = getGamepadEnabled() ? getActiveGamepad() : null
-    const pressed = Boolean(pad?.buttons[1]?.pressed)
-    const cancel = pad && pad.index === this.cancelPadIndex && pressed && !this.cancelPressed
-    this.cancelPadIndex = pad?.index ?? null
-    this.cancelPressed = pressed
-    if (!cancel || getConsumedGamepadButtons(pad).has(1)) return false
-    consumeGamepadButtons(pad)
+    if (!this.cancelInput.poll()) return false
     this.cancel()
     return true
   }
@@ -290,62 +262,10 @@ export class TimeSkipSystem {
   }
 
   private createOverlay(hours: number, fadeToBlack = false): TimeSkipOverlay | null {
-    if (typeof document === 'undefined') return null
-    const overlay = document.createElement('div')
-    overlay.className = fadeToBlack ? 'time-skip-overlay time-skip-overlay--sleep' : 'time-skip-overlay'
-
-    const panel = document.createElement('div')
-    panel.className = 'time-skip-overlay__panel'
-
-    const label = document.createElement('div')
-    label.className = 'time-skip-overlay__label'
-
-    const track = document.createElement('div')
-    track.className = 'time-skip-overlay__track'
-
-    const fill = document.createElement('div')
-    fill.className = 'time-skip-overlay__fill'
-    fill.style.width = '0%'
-
-    const hints = document.createElement('div')
-    hints.className = 'time-skip-overlay__controls'
-    const keyboardHint = document.createElement('span')
-    const key = document.createElement('kbd')
-    key.textContent = 'Esc'
-    const keyboardLabel = document.createElement('span')
-    keyboardLabel.textContent = t('cancel')
-    keyboardHint.appendChild(key)
-    keyboardHint.appendChild(keyboardLabel)
-    const gamepadHint = document.createElement('span')
-    const gamepadLabel = document.createElement('span')
-    gamepadLabel.textContent = t('cancel')
-    gamepadHint.appendChild(createGamepadKey(1))
-    gamepadHint.appendChild(gamepadLabel)
-    hints.appendChild(keyboardHint)
-    hints.appendChild(gamepadHint)
-
-    track.appendChild(fill)
-    panel.appendChild(label)
-    panel.appendChild(track)
-    panel.appendChild(hints)
-    overlay.appendChild(panel)
-    this.context.gamebox.appendChild(overlay)
-
-    const result = { fill, label, gamepadHint, root: overlay }
-    this.updateOverlayElement(result, 0, hours)
-    return result
+    return createTimeSkipOverlay(this.context.gamebox, hours, fadeToBlack)
   }
 
   private updateOverlay(): void {
-    this.updateOverlayElement(this.overlay, this.getProgress(), this.getRemainingHours())
-  }
-
-  private updateOverlayElement(overlay: TimeSkipOverlay | null, progress: number, remainingHours: number): void {
-    if (!overlay) return
-    overlay.gamepadHint.hidden = !(getGamepadEnabled() && getActiveGamepad())
-    const percent = `${Math.round(Math.max(0, Math.min(100, progress * 100)))}%`
-    const unit = remainingHours === 1 ? 'hour' : 'hours'
-    overlay.label.textContent = `Waiting... ${remainingHours} ${unit} remaining`
-    overlay.fill.style.width = percent
+    updateTimeSkipOverlay(this.overlay, this.getProgress(), this.getRemainingHours())
   }
 }

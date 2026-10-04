@@ -115,7 +115,7 @@ test('legacy levels use shared targets, including level three, and explicit prof
     const profiles = villageStartProfiles({ players: [{ civ: 'Hellas', civilizationLevel: level }] })
     const { state, terrain, rules } = fixture()
     const result = applyVillageStartingState(state, profiles, terrain, rules)
-    assert.equal(result.players[0].buildings[0].buildingLevel, level === 3 ? 1 : 0)
+    assert.equal(result.players[0].buildings[0].buildingLevel, level - 1)
     assert.equal('age' in result.players[0], false)
     assert.ok(result.players[0].units.some(u => u.type === 'Bowman'))
   }
@@ -265,8 +265,8 @@ test('new tutorial configuration reuses village generation with one chief and wo
   const generated = applyVillageStartingState(state, villageStartProfiles(config), terrain, rules, { skipPlayed: true })
   assert.deepEqual(generated.players[1], state.players[1])
   const village = generated.players[0]
-  assert.equal(generated.resources.filter(r => r.type === 'Wheat').length, config.villageStarts.Hellas.wheatFields)
-  const center = village.buildings.find(b => b.type === 'TownCenter')
+  assert.equal(generated.resources.filter(r => r.type === 'Wheat').length, config.villageStarts.Hellas.wheatFields * 9)
+  const center = village.buildings.find(b => b.type === 'Granary')
   assert.ok(
     generated.resources
       .filter(r => r.type === 'Wheat')
@@ -274,18 +274,18 @@ test('new tutorial configuration reuses village generation with one chief and wo
     'fields stay in a nearby agricultural district'
   )
   assert.ok(
-    generated.resources.filter(r => r.type === 'Wheat').every(r => r.quantity > 0 && r.currentFrame === undefined)
+    generated.resources.filter(r => r.type === 'Wheat').every(r => r.quantity > 0 && (r.currentFrame === undefined || r.currentFrame === 0))
   )
   assert.equal(village.units.filter(u => u.type === 'Hero').length, 0)
   assert.equal(village.units.filter(u => u.type === 'Chief').length, 1)
-  assert.equal(village.units.filter(u => u.type === 'Villager').length, 12)
-  assert.equal(village.units.filter(u => u.type === 'Fantassin').length, 4)
+  assert.equal(village.units.filter(u => u.type === 'Villager').length, config.villageStarts.Hellas.units.Villager)
+  assert.equal(village.units.filter(u => u.type === 'Fantassin').length, config.villageStarts.Hellas.units.Fantassin)
   assert.ok(
     village.units
       .filter(u => u.type === 'Villager')
       .every(
         u =>
-          !u.autonomousJob &&
+          ['food', 'wood'].includes(u.autonomousJob) &&
           u.inventory.resources.meat === 6 &&
           u.inventory.resources.berry === 6 &&
           !u.inventory.resources.wheat

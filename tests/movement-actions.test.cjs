@@ -5039,10 +5039,11 @@ test('hero building health bar refreshes while construction progresses', () => {
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.build)
 
-  assert.equal(building.hitPoints, 2)
+  assert.equal(building.constructionProgress, 0.1)
+  assert.equal(building.hitPoints, 1.9)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
-    ['hitPointGain', constants.FAMILY_TYPES.building, 1],
+    ['hitPointGain', constants.FAMILY_TYPES.building, 1.9 - 1],
     ['drawHealthBar'],
     ['updateHitPoints', constants.ACTION_TYPES.build],
   ])
@@ -5114,10 +5115,11 @@ test('building work waits for the hammer animation release frame', () => {
 
   buildTick()
 
-  assert.equal(building.hitPoints, 2)
+  assert.equal(building.constructionProgress, 0.1)
+  assert.equal(building.hitPoints, 1.9)
   assert.deepEqual(
     calls.filter(([type]) => type === 'hitPointGain'),
-    [['hitPointGain', constants.FAMILY_TYPES.building, 1]]
+    [['hitPointGain', constants.FAMILY_TYPES.building, 1.9 - 1]]
   )
 })
 

@@ -767,7 +767,7 @@ test('individual daily schedules survive saving and travel without sharing state
     { type: 'Villager', i: 1, j: 1, dailySchedule, lastMealAt: 720, homeHouseLabel: 'house-a' },
   ]
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
-  assert.equal(saved.homeHouseLabel, undefined, 'retired house assignments are not saved')
+  assert.equal(saved.homeHouseLabel, 'house-a', 'household assignments survive saving')
   assert.deepEqual(saved.dailySchedule, dailySchedule)
   assert.equal(saved.lastMealAt, 720)
   const target = {}

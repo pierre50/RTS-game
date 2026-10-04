@@ -36,6 +36,7 @@ function loadRuntimeServices() {
       '../../services/InteriorExitMarkerSystem': { InteriorExitMarkerSystem: service('interiorExitMarker') },
       '../../services/lighting/LightSystem': { LightSystem: service('lights') },
       '../../services/ShadowSystem': { ShadowSystem: service('shadows') },
+      '../../services/world/SleepSimulation': { SleepSimulation: service('sleepSimulation') },
       '../../services/TimeSkipSystem': { TimeSkipSystem: service('timeSkip') },
       '../../services/tribute/TributeRaidSystem': { TributeRaidSystem: service('tributeRaids') },
       '../../services/UnitEnergyRegenSystem': { UnitEnergyRegenSystem: service('unitEnergyRegen') },

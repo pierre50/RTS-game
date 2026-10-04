@@ -6,7 +6,7 @@ function loadMapSaveRestore() {
   return loadTsModule('app/classes/map/MapSaveRestore.ts', {
     mocks: {
       '../../../engine/services/BuildingInteriorSpaceSystemRuntime': { ensureRuntimeBuildingInteriorSpace() {} },
-      '../../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit' }, PLAYER_TYPES: { ai: 'AI' } },
+      '../../constants': { ...loadTsModule('app/constants/index.ts'), FAMILY_TYPES: { building: 'building', unit: 'unit' }, PLAYER_TYPES: { ai: 'AI' } },
       '../../lib/playerState': { isAIControlledPlayer: () => false },
       '../../lib/resources/playerResourceTotals': {
         expandLegacyFoodAmount: resources => resources,
@@ -163,12 +163,12 @@ test('restoring player entities preserves saved unit types instead of applying n
   }
 
   restorePlayerEntitiesFromSave(player, {
-    buildings: [{ i: 1, j: 2, type: 'House' }],
+    buildings: [{ i: 1, j: 2, type: 'House', interiorUnfurnished: true }],
     units: [{ i: 3, j: 4, type: 'Villager' }],
     corpses: [{ i: 5, j: 6, type: 'Fantassin', currentSheet: 'corpse' }],
   })
 
-  assert.deepEqual(player.buildings, [{ i: 1, j: 2, type: 'House', skipBuiltEffects: true, deferTrainingResume: true }])
+  assert.deepEqual(player.buildings, [{ i: 1, j: 2, type: 'House', interiorUnfurnished: true, skipBuiltEffects: true, deferTrainingResume: true }])
   assert.equal(player.units[0].type, 'Villager')
   assert.equal(player.corpses[0].type, 'Fantassin')
   assert.equal(createUnitCalls[0].options.suppressCreateSound, true)

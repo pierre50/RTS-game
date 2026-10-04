@@ -5,7 +5,8 @@ const path = require('node:path')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { preparedSettlementState } = loadTsModule('app/serialization/PreparedSettlementState.ts')
 const { buildWorldRegionPlayerConfigs } = loadTsModule('app/screens/game/WorldRegionPlayers.ts')
-const { getHouseBedLabels, countResidentHouseholds } = loadTsModule('app/lib/housing/households.ts')
+const { countResidentHouseholds } = loadTsModule('app/lib/housing/households.ts')
+const { getHouseBedLabels } = loadTsModule('app/lib/housing/householdBeds.ts')
 const { CIVILIZATIONS } = loadTsModule('app/config/civilizations.ts')
 class Human {
   constructor(options) {

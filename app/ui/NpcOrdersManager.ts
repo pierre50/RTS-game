@@ -1,3 +1,5 @@
+import { openNpcInventory, closeNpcInventory } from './npc/NpcInventory'
+import { cycleNpcDebugLevel, updateNpcDebugControls } from './npc/NpcDebugControls'
 import { isAiChiefResting } from '../lib/units/chiefAvailability'
 import type { DialogueSequence } from '../types/dialogue'
 import { heroCanCommand } from '../lib/chief'
@@ -7,11 +9,8 @@ import type { Modal } from '../lib'
 import { NpcQuestPanel } from './NpcQuestPanel'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/audio/uiSound'
-import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/units/unitExperience'
-import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
-import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { getUnitGender } from '../lib/units/unitIdentity'
-import { SOUND_CUES, UNIT_TYPES } from '../constants'
+import { SOUND_CUES } from '../constants'
 import {
   noticeNpc,
   keepNpcHere,
@@ -24,7 +23,7 @@ import { createInspectionModal, setInspectionMode, setModalTitle } from './Inspe
 import { pickNpcRescueThanksLine } from '../lib/npc/npcChatter'
 import { pickNpcRoutineChatterLine } from '../lib/npc/npcRoutineChatter'
 import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
-import { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
+import type { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
@@ -295,35 +294,13 @@ export class NpcOrdersManager {
   }
 
   private async cycleDebugLevel(target: UnitEntity): Promise<void> {
-    const currentLevel = getUnitEquipmentLevel(target)
-    const nextLevel = Math.min(XP_MAX_LEVEL, currentLevel + 1)
-    setUnitDebugLevel(target, nextLevel)
-    refreshUnitEquipmentStats(target)
-    await ensureAndRefreshBakedLpcUnitAssets(target)
-    this.infoContainer.replaceChildren()
-    if (target.interface?.info) {
-      this.infoContainer.appendChild(
-        createTitledEntityInfoContent(this.menu.context.app, target, {
-          hideStats: !heroCanCommand(this.menu.context.controls?.heroUnit),
-        })
-      )
-    }
+    await cycleNpcDebugLevel(this.menu, target, this.infoContainer)
     this.updateDebugControls(target)
     this.menu.updateHeroStatus?.(target)
   }
 
   private updateDebugControls(target: UnitEntity | null): void {
-    const showDebug = Boolean(
-      heroCanCommand(this.menu.context.controls?.heroUnit) && target && target.type !== UNIT_TYPES.villager
-    )
-    this.debugContainer.hidden = !showDebug
-    if (!target) return
-    if (!showDebug) return
-    const currentLevel = getUnitEquipmentLevel(target)
-    const isMaxLevel = currentLevel >= XP_MAX_LEVEL
-    const nextLevel = Math.min(XP_MAX_LEVEL, currentLevel + 1)
-    this.debugLevelButton.disabled = isMaxLevel
-    this.debugLevelButton.textContent = isMaxLevel ? 'Debug niveau max' : `Debug niveau ${nextLevel}`
+    updateNpcDebugControls(this.menu, target, this.debugContainer, this.debugLevelButton)
   }
 
   close(keepFrozen = false): void {
@@ -447,22 +424,11 @@ export class NpcOrdersManager {
   }
 
   private openBag(): void {
-    if (this.bagModal || !this.canShowBagButton()) return
-    playUiSound(SOUND_CUES.ui.menuClick)
-    this.orderMenu.reset()
-    this.buttonsContainer.hidden = true
-    this.bagScreen = new UnitInventoryScreen(this.menu, this.npcs[0])
-    this.bagModal = this.bagScreen.open(() => this.close())
-    if (this.modal?._backdrop) this.modal._backdrop.hidden = true
+    openNpcInventory(this, this.canShowBagButton())
   }
 
   private closeBag(): void {
-    const bagModal = this.bagModal
-    this.bagModal = undefined
-    bagModal?.close()
-    if (this.modal?._backdrop) this.modal._backdrop.hidden = false
-    this.bagScreen = null
-    this.buttonsContainer.hidden = !this.ordersEnabled
+    closeNpcInventory(this)
   }
 
   private runOrder(spec: NpcOrderSpec): void {

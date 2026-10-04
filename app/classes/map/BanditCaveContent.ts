@@ -64,7 +64,12 @@ export function furnishBanditCaveContent(
     BUILDING_TYPES.campJarLarge,
     BUILDING_TYPES.campAnimalBones,
   ]
-  const placed: RuntimeCell[] = []
+  const placed = owner.buildings
+    .filter(building => building.label?.startsWith(`${space.id}:bandit:${campIndex}:`))
+    .flatMap(building => {
+      const cell = space.grid[building.i]?.[building.j]
+      return cell ? [cell] : []
+    })
   const entry = space.entryCell
   const candidates = [...space.walkableCells].sort(
     (a, b) =>

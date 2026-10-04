@@ -667,7 +667,7 @@ test('debug level button cycles a solo unit level without closing communication'
 
     manager.open([npc])
     manager.debugLevelButton.click()
-    await Promise.resolve()
+    await new Promise(resolve => setImmediate(resolve))
 
     assert.equal(manager.opened, true)
     assert.equal(npc.debugLevel, 2)

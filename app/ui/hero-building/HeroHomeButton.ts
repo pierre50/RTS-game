@@ -15,7 +15,6 @@ export function heroHomeButton(menu: MenuHost, house: BuildingEntity, refresh: (
     disabled: () => !available(),
     details: () => ({
       title: t(menu.context.controls.heroUnit?.homeHouseLabel === house.label ? 'heroCurrentHome' : 'heroSetHome'),
-      description: t(available() ? 'heroSetHomeDescription' : 'heroSetHomeUnavailable'),
     }),
     onClick: () => {
       const hero = menu.context.controls.heroUnit

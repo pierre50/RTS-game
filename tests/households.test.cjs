@@ -156,7 +156,7 @@ test('prepared bed identities survive a runtime owner label change', () => {
   const bed = resident.homeBedLabel
   const house = owner.buildings.find(b => b.label === resident.homeHouseLabel)
   owner.label = 'runtime-owner'
-  assert.equal(`${homes.householdSpaceId(owner, house)}:default:bedroll-1`, bed)
+  assert.equal(`${loadTsModule('app/serialization/InteriorBuildingSave.ts').interiorSaveSpaceId(owner.label, house)}:default:bedroll-1`, bed)
   homes.reconcileHouseholds(owner)
   assert.equal(resident.homeBedLabel, bed)
 })
