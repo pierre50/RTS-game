@@ -1,4 +1,4 @@
-import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { getRandomUnitName } from '../../config/name'
 import { FADE_DURATION_MS, UNIT_TYPES } from '../../constants'

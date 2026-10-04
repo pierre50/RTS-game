@@ -1,0 +1,393 @@
+import type { VillageHome } from '../../lib/units/village/villageActivity'
+import type { CampBehavior } from '../camp'
+import type { VillagerSchedule } from '../../lib/units/village/villagerSchedule'
+import type { AnimatedSprite } from 'pixi.js'
+import type { ActionProps } from '../combat'
+import type { CombatBehaviorConfig, ConfigValue, UnitAppearanceConfig } from '../config'
+import type { ResourceAmount } from '../common'
+import type { GridPosition, Point } from '../grid'
+import type { RuntimeCell } from '../map'
+import type { SpritesheetLike } from '../pixi'
+import type { UnitSounds } from '../sounds'
+import type { RuntimeEntityBase } from './entityBase'
+import type { BuildingEntity } from './buildingEntity'
+import type { RuntimeEntity } from './entityRuntime'
+import type { HeroCivilTool, HeroContextAction } from '../heroTools'
+import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
+
+export type VillagerAutonomyJob =
+  | 'food'
+  | 'wood'
+  | 'stone'
+  | 'gold'
+  | 'copper'
+  | 'iron'
+  | 'construction'
+  | 'horseCapture'
+type UnitRestLocation = 'shelter' | 'outside'
+type UnitRestStatus = 'delivering' | 'windingDown' | 'movingToRest' | 'inside' | 'outside' | 'wakingUp'
+export type UnitRestReason = 'sleep'
+type UnitSleepVisualState = 'sleeping' | 'waking'
+export type UnitRestState = {
+  restTarget?: BuildingEntity | null
+  mealBreak?: boolean
+  status: UnitRestStatus
+  reason?: UnitRestReason
+  location: UnitRestLocation
+  shelter?: BuildingEntity | null
+  targetCell?: RuntimeCell | null
+  transitionTargetCell?: RuntimeCell | null
+  transitionUntilMs?: number
+  transitionStep?: number
+  startedAtMs?: number
+  retryCount?: number
+  previousDest?: RuntimeEntity | RuntimeCell | null
+  previousWork?: string | null
+  previousAction?: string | null
+  previousAutonomousJob?: VillagerAutonomyJob | null
+}
+
+export type UnitCreationExtra = {
+  homeHouseLabel?: string
+  homeBedLabel?: string
+  partnerLabel?: string
+
+  label?: string
+  inventory?: UnitEntity['inventory']
+  name?: string
+  gender?: 'male' | 'female'
+  isChief?: boolean
+  handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
+  handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
+  mountedOnHorse?: boolean
+  horseColor?: string
+  companionHorseColor?: string | null
+  hitPoints?: number
+  speed?: number
+  experience?: Record<string, number>
+  appearanceVariants?: Record<string, string>
+}
+
+export type UnitCommandOptions = Record<string, ConfigValue | RuntimeEntity | RuntimeCell | undefined>
+export type UnitSendToOptions = {
+  forceRepath?: boolean
+  allowBlockedGatherApproach?: boolean
+  preserveAutonomy?: boolean
+  allowPassageStop?: boolean
+}
+
+interface UnitPendingOrder {
+  execute?: () => void
+  dest?: RuntimeEntity | RuntimeCell | null
+  action?: string | null
+}
+
+interface UnitBlockedGatherApproach {
+  target: RuntimeEntity
+  action: string
+}
+
+interface UnitGatherProgressState {
+  action?: string | null
+  gatherEvery: number
+  loadingType: string
+  progress: number
+  target: RuntimeEntity
+}
+
+interface UnitFollowAssistState {
+  action: string
+  target?: RuntimeEntity | null
+  targetLabel?: string
+}
+
+interface UnitRealDest {
+  i: number
+  j: number
+  x: number
+  y: number
+  label: string
+}
+
+type UnitInteriorExitState = {
+  returnTask?: UnitResourceDeliveryReturnTask | null
+  targetCell?: RuntimeCell | null
+  startedAtMs?: number
+  retryCount?: number
+  taskId?: number | null
+}
+
+type UnitSpacePortalState = {
+  combatTarget?: UnitEntity | undefined
+  shouldContinue?: (() => boolean) | undefined
+  canTransfer?: (() => boolean) | undefined
+  onTransferred?: (() => void) | null
+  portalId: string
+  sourceCell?: RuntimeCell | null
+  sourceSpaceId: string
+  startedAtMs?: number
+  targetCell?: RuntimeCell | null
+  targetSpaceId: string
+  taskId?: number | null
+}
+
+export type UnitResourceDeliveryReturnTask = {
+  action?: string | null
+  autonomousJob?: VillagerAutonomyJob | null
+  dest?: RuntimeEntity | RuntimeCell | null
+  work?: string | null
+}
+
+type UnitResourceDeliveryState = {
+  pickup?: ResourceAmount
+  building?: BuildingEntity | null
+  chest?: BuildingEntity | null
+  phase: 'toBuilding' | 'entering' | 'toChest' | 'leaving'
+  returnTask?: UnitResourceDeliveryReturnTask | null
+  spaceId?: string | null
+  taskId?: number | null
+}
+
+export interface EnergyEntity extends RuntimeEntityBase {
+  action?: string | null
+  dest?: RuntimeEntity | RuntimeCell | null
+  path?: RuntimeCell[]
+  speed?: number
+  mountedOnHorse?: boolean
+  energy?: number
+  totalEnergy?: number
+  energyRegenRate?: number
+  energyRegenDelay?: number
+  energyRegenMultiplier?: number
+  lastEnergySpentAt?: number
+  energyCosts?: Partial<Record<string, number>>
+  waitingForEnergyAction?: string | null
+  waitingForEnergyTarget?: RuntimeEntity | null
+  energyWaitTaskId?: number | null
+  attackRecoveryMs?: number
+  attackRecoveryTaskId?: number | null
+  attackRecoveryAnimationTaskId?: number | null
+  combatBehavior?: CombatBehaviorConfig
+  combatBehaviorPreset?: string
+  combatMoraleRoll?: number
+  combatMode?: 'attack' | 'recover' | 'flee' | null
+  combatRecoveryOrbitDirection?: 1 | -1
+  lastCombatRecoveryMoveAt?: number | null
+  actionLocked?: boolean
+  stop?: () => void
+  sendTo?: (
+    target: RuntimeEntity | RuntimeCell,
+    action?: string,
+    options?: { forceRepath?: boolean; allowPassageStop?: boolean }
+  ) => void
+  sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
+  startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
+  stopInterval?: () => void
+  setTextures?: (sheet: string) => void
+}
+
+export interface UnitEntity extends EnergyEntity {
+  lastMealAt?: number
+  homeHouseLabel?: string
+  homeBedLabel?: string
+  partnerLabel?: string
+  dailySchedule?: VillagerSchedule
+  sprite?: AnimatedSprite
+  shadow?: AnimatedSprite | null
+  syncShadow?: () => void
+  syncAppearanceLayers?: (sheet: string) => void
+  inactif?: boolean
+  sounds?: UnitSounds
+  gender?: 'male' | 'female'
+  work?: string | null
+  actionFrameSequence?: number[] | null
+  collectiveTask?: string | null
+  collectiveHome?: GridPosition & { spaceId?: string | null }
+  autonomyBlockedJob?: VillagerAutonomyJob | null
+  autonomousJob?: VillagerAutonomyJob | null
+  exploringForAutonomy?: boolean
+  assigningAutonomousJob?: boolean
+  offlineWork?: { target: string; milliseconds: number }
+  villageHome?: VillageHome
+  campBehavior?: CampBehavior
+  campPatrolAnchor?: GridPosition | null
+  campPatrolTaskId?: number | null
+  heroFollowerPatrolTaskId?: number | null
+  idlePatrolTaskId?: number | null
+  banditCampAnchor?: GridPosition | null
+  banditCampPatrolTaskId?: number | null
+  shelterState?: UnitRestState | null
+  suspendedRestState?: UnitRestState | null
+  /** Manual hero sleep reservation, independent from NPC schedules. */
+  heroSleepTarget?: BuildingEntity | null
+  sleepVisualState?: UnitSleepVisualState | null
+  visualAnimationToken?: number
+  automaticParryActiveUntil?: number | null
+  automaticParryVisualTaskId?: number | null
+  automaticParryVisualToken?: number | null
+  restWakeLockUntilMs?: number | null
+  restAlertTargetLabel?: string | null
+  interiorExitState?: UnitInteriorExitState | null
+  spacePortalState?: UnitSpacePortalState | null
+  resourceDeliveryState?: UnitResourceDeliveryState | null
+  queue?: string[]
+  buyUnit?: (type: string) => void
+  cancelUnits?: (type: string) => void
+  trainingTargetType?: string | null
+  trainingRetryTaskId?: number | null
+  realDest?: UnitRealDest | null
+  previousDest?: RuntimeEntity | RuntimeCell | null
+  previousWork?: string | null
+  hasPath?: () => boolean
+  moveDirect?: (
+    dirX: number,
+    dirY: number,
+    distance: number,
+    options?: { facingDirX?: number; facingDirY?: number }
+  ) => boolean
+  applyReliefLift?: (level: number) => void
+  pendingOrder?: UnitPendingOrder | null
+  blockedGatherApproach?: UnitBlockedGatherApproach | null
+  gatherProgressState?: UnitGatherProgressState | null
+  buildQueue?: BuildingEntity[]
+  isDirectMoving?: boolean
+  requestedMoveSpeedFactor?: number
+  degree?: number
+  huntRange?: number
+  visibleCells?: Set<number>
+  lookingAtHero?: boolean
+  followingHero?: boolean
+  pendingRescueThanks?: boolean
+  isCrouching?: boolean
+  followAssist?: UnitFollowAssistState | null
+  followAssistIntent?: UnitFollowAssistState | null
+  currentSheet?: string
+  currentFrame?: number
+  horseColor?: string
+  companionHorseColor?: string | null
+  removeMountedHorseSprite?: () => void
+  syncMountedHorseSprite?: () => void
+  syncMountedRiderPosition?: () => void
+  heroPowerChargeStart?: number | null
+  heroPowerChargeRatio?: number
+  heroPowerChargeDestination?: Point | null
+  heroPowerChargeTarget?: RuntimeEntity | null
+  heroPowerChargeTool?: 'bow' | 'catchingPole' | 'sword'
+  heroPowerReleaseQueued?: boolean
+  heroPowerReleasePower?: number
+  heroPowerChargeFacingDegree?: number | null
+  heroPowerChargeVisualLocked?: boolean
+  heroPowerChargeLastEnergyAt?: number
+  heroCatchingPoleThrow?: { clearCatchingPoleThrow: (options?: { releaseHorse?: boolean }) => void } | null
+  heroDefenseStart?: number | null
+  heroDefenseLastEnergyAt?: number
+  heroDefenseActive?: boolean
+  heroDefenseVisualLocked?: boolean
+  heroDefenseEnergyExhausted?: boolean
+  heroDefenseReverseTaskId?: number | null
+  heroDefenseReleaseFallbackTaskId?: number | null
+  showHeroDefenseFlash?: () => void
+  lastParrySuccessAt?: number
+  parryStreak?: number
+  contextAction?: HeroContextAction | null
+  inventory?: {
+    resources?: ResourceAmount
+    equipment?: string[]
+    equipped?: Partial<Record<HeroEquipmentSlot, string>>
+    equippedCounts?: Partial<Record<HeroEquipmentSlot, number>>
+    activeWeapons?: Partial<Record<HeroWeaponSlot, string>>
+  }
+  lootEquipment?: string[]
+  sheetDirectionCounts?: Record<string, number>
+  sheetDirectionOrders?: Record<string, string[]>
+  actionSheet?: SpritesheetLike | null
+  walkingSheet?: SpritesheetLike | null
+  standingSheet?: SpritesheetLike | null
+  sittingSheet?: SpritesheetLike | null
+  corpseSheet?: SpritesheetLike | null
+  dyingSheet?: SpritesheetLike | null
+  loop?: boolean
+  eventMode?: string
+  showBuildings?: boolean
+  equipment?: string[]
+  weaponPower?: number
+  meleeArmor?: number
+  pierceArmor?: number
+  range?: number
+  projectile?: string
+  healing?: number
+  conversionChants?: number
+  experience?: Record<string, number>
+  gatheringRate?: Record<string, number>
+  gatherAmount?: Record<string, number>
+  contextActionEnergyCosts?: Partial<Record<HeroContextAction, number>>
+  toolLevels?: Partial<Record<HeroCivilTool, number>>
+  assets?: Record<string, string>
+  allAssets?: Record<string, Record<string, string>>
+  isChief?: boolean
+  controlMode?: UnitControlMode
+  assetCiv?: string
+  assetLevel?: number
+  totalQuantity?: number
+  category?: string
+  appearance?: UnitAppearanceConfig
+  appearanceVariants?: Record<string, string>
+  spriteScale?: number
+  unitCombat?: {
+    handleAttackAction: () => void
+  }
+  stop?: () => void
+  setDest?: (dest: RuntimeEntity | RuntimeCell | null) => void
+  setPath?: (path: RuntimeCell[]) => void
+  sendTo(target: RuntimeCell | RuntimeEntity, action?: string): void
+  commonSendTo?: (
+    target: RuntimeEntity,
+    work: string,
+    action: string | null,
+    keepPrevious: boolean | UnitCommandOptions,
+    immediate?: boolean,
+    preserveBuildQueue?: boolean
+  ) => void
+  sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
+  sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
+  sendToDelivery?: (
+    target?: BuildingEntity | null,
+    returnTaskOverride?: UnitResourceDeliveryReturnTask | null
+  ) => boolean | void
+  sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined
+  sendToAttack(target: RuntimeEntity, options?: UnitCommandOptions): void
+  sendToConvert(target: RuntimeEntity): void
+  sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): void
+  sendToHunt(target: RuntimeEntity, immediate?: boolean): void
+  sendToCaptureHorse?(target: RuntimeEntity, immediate?: boolean): boolean | void
+  sendToFarm(target: RuntimeEntity, immediate?: boolean): void
+  sendToTree?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToBerrybush?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToStone?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToGold?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToCopper?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToIron?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  affectNewDest?: () => void
+  isUnitAtDest?: (action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined) => boolean
+  destHasMoved?: () => boolean
+  moveToPath?: () => void
+  getAction?: (name: string) => void
+  getActionCondition?: (
+    target: object | null | undefined,
+    action?: string,
+    props?: ActionProps | UnitCreationExtra
+  ) => boolean
+  startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
+  stopInterval?: () => void
+  handleChangeDest?: () => void
+  queueOrder?: (orderOrDest: (() => void) | RuntimeEntity | RuntimeCell, action?: string | null) => boolean
+  flushPendingOrder?: () => boolean
+  goBackToPrevious?: () => void
+  continueBuildingQueue?: () => boolean
+  handleAffectNewDestHunter?: () => boolean
+  handleSetDest?: (dest: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
+  handleIsAttacked?: (instance: RuntimeEntity, unit: UnitEntity) => boolean
+  clear?: () => void
+  explore?: () => boolean
+  visibilityTimeout?: number | ReturnType<typeof setTimeout>
+}

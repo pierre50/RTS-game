@@ -1,5 +1,5 @@
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
-import { getUnitRestVisualSheet } from '../../lib/units/unitSittingPose'
+import { getUnitRestVisualSheet } from '../../lib/units/visuals/unitSittingPose'
 import type { AnimatedSprite } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import { canUpdateMinimap } from '../../lib'
@@ -7,7 +7,7 @@ import { Instance } from '../Instance'
 import './UnitRuntimeShape'
 import { resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/units/unitEnergy'
 import { watchBanditStep } from './UnitBanditDebug'
-import { syncUnitAppearanceLayers } from './UnitAppearanceLayers'
+import { syncUnitAppearanceLayers } from './appearance/UnitAppearanceLayers'
 import { handleUnitIsAttacked, stopUnit } from './UnitStateHandlers'
 import {
   applyUnitSpawnConfiguration,
@@ -31,7 +31,7 @@ import {
   resumeUnitVisuals,
   syncUnitShadow,
   syncUnitVisualSettings,
-} from './UnitVisualState'
+} from './appearance/UnitVisualState'
 import { flushUnitPendingOrder, handleUnitChangeDest, queueUnitPendingOrder, setUnitDestination } from './UnitOrders'
 import {
   clearMountedRiderMask as clearMountedRiderMaskVisual,
@@ -48,7 +48,7 @@ import {
   syncMountedRiderLegsSprite as syncMountedRiderLegsSpriteVisual,
   syncMountedRiderPosition as syncMountedRiderPositionVisual,
   updateMountedRiderMask as updateMountedRiderMaskVisual,
-} from './UnitMountedVisuals'
+} from './appearance/UnitMountedVisuals'
 import type {
   BuildingEntity,
   EntityInfoRenderOptions,

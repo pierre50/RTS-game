@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { furnishInterior, ensureInteriorDefaultBuildings } = require('./helpers/interiorFurnitureFixture.cjs')
 const atlas = require('../public/assets/graphics/structures/decorations/texture.json')
 const { getBuildingAsset } = loadTsModule('app/lib/graphics/assets.ts')
-const { preservesInteriorPassages } = loadTsModule('app/lib/buildings/interiorFurniturePlacement.ts')
+const { preservesInteriorPassages } = loadTsModule('app/lib/buildings/furniture/interiorFurniturePlacement.ts')
 
 const expectedFurniture = {
   House: [
@@ -202,7 +202,7 @@ test('real placement rules keep generated house beds separated along the back wa
     'engine/services/BuildingInteriorSpaceDecorations.ts'
   )
   const { getBuildingFootprintCells } = loadTsModule('app/lib/grid/cells.ts')
-  const { getInteriorRoomCenter } = loadTsModule('app/lib/buildings/interiorFurniturePlacement.ts')
+  const { getInteriorRoomCenter } = loadTsModule('app/lib/buildings/furniture/interiorFurniturePlacement.ts')
   for (const mirrored of [false, true]) {
     const { owner, space, context } = furnishInterior('House', undefined, mirrored)
     owner.buildings = []
@@ -488,9 +488,9 @@ test('hero rooms preserve manually placed furniture and chest contents on reload
 })
 
 test('catalogue covers every preset furnishing and all floor decoration frames', () => {
-  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts')
-  const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/interiorDecorations.ts')
-  const { getInteriorFloorDecorations } = loadTsModule('app/lib/buildings/interiorFloorDecorations.ts')
+  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/furniture/interiorFurnitureCatalog.ts')
+  const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/furniture/interiorDecorations.ts')
+  const { getInteriorFloorDecorations } = loadTsModule('app/lib/buildings/furniture/interiorFloorDecorations.ts')
   for (const type of Object.keys(expectedFurniture)) {
     for (const item of getBuildingInteriorDecorationLayout({ type }))
       assert.ok(INTERIOR_FURNITURE_TYPES.includes(item.type))
@@ -503,7 +503,7 @@ test('catalogue covers every preset furnishing and all floor decoration frames',
 })
 
 test('interior preset policy persists independently from current ownership', () => {
-  const { usesInteriorPreset } = loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts')
+  const { usesInteriorPreset } = loadTsModule('app/lib/buildings/furniture/interiorFurnitureCatalog.ts')
   assert.equal(usesInteriorPreset({ interiorUnfurnished: true, owner: { type: 'AI' } }), false)
   assert.equal(usesInteriorPreset({ interiorUnfurnished: false, owner: { type: 'Human' } }), true)
 })

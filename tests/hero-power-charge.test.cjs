@@ -452,10 +452,10 @@ function loadHeroTools(overrides = {}) {
     if (request === './hero/heroPowerCharge') {
       return loadTsFile(path.join(__dirname, '../app/lib/hero/heroPowerCharge.ts'))
     }
-    if (request === './units/actionVisualSheet') {
-      return loadTsFile(path.join(__dirname, '../app/lib/units/actionVisualSheet.ts'))
+    if (request === './units/visuals/actionVisualSheet') {
+      return loadTsFile(path.join(__dirname, '../app/lib/units/visuals/actionVisualSheet.ts'))
     }
-    if (request === './units/unitWorkAppearance') {
+    if (request === './units/visuals/unitWorkAppearance') {
       return {
         applyUnitWorkAssets: (unit, work, options = {}) => {
           const assets = unit.allAssets?.[work]

@@ -1,4 +1,4 @@
-import { isVillageResourceWorker } from '../../../lib/units/villageSupplyTrips'
+import { isVillageResourceWorker } from '../../../lib/units/village/villageSupplyTrips'
 import { playerSeesTarget, observeTarget } from '../../../lib/units/playerTargetKnowledge'
 import { getVillagerExplorationSearch } from '../../../lib/units/autonomy/villagerExploration'
 import { canReachActionTarget, usesUnitContactAction } from '../../../lib/actions/contactActions'

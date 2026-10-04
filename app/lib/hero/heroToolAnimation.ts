@@ -1,7 +1,7 @@
 import { SHEET_TYPES } from '../constants'
 import { onSpriteLoopAtFrame } from '../graphics'
 import { logHeroSlashFrame, playReverseSlashRecovery } from '../entities/slashRecoveryAnimation'
-import { resetUnitCrouchPose } from '../units/unitCrouchPose'
+import { resetUnitCrouchPose } from '../units/visuals/unitCrouchPose'
 import type { UnitEntity } from '../../types/entities'
 
 const HERO_SWORD_POWER_FLASH_MS = 180
@@ -142,7 +142,10 @@ export function playHeroToolAnimation(
   })
 }
 
-export function finishHeroToolAnimation(hero: UnitEntity, { restoreStanding = true }: { restoreStanding?: boolean } = {}): void {
+export function finishHeroToolAnimation(
+  hero: UnitEntity,
+  { restoreStanding = true }: { restoreStanding?: boolean } = {}
+): void {
   const sprite = hero.sprite
   logHeroSlashFrame(hero, 'tool:finish:start')
   if (hero.attackRecoveryAnimationTaskId != null) {

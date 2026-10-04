@@ -61,7 +61,9 @@ export function getFoodSourceScore(
   const saturationPenalty = 1 + slot * (type === 'berry' || type === 'carcass' ? 0.25 : 0.12)
   const killPenalty = type === 'hunt' ? 1 + (source.hitPoints || 0) / Math.max(4 * hunterCount, 1) / 12 : 1
   const renewableBonus = type === 'farm' ? 1.08 : 1
-  return (rate * quantityFactor * renewableBonus) / (travelPenalty * workerTravelPenalty * saturationPenalty * killPenalty)
+  return (
+    (rate * quantityFactor * renewableBonus) / (travelPenalty * workerTravelPenalty * saturationPenalty * killPenalty)
+  )
 }
 
 export function getFoodWorkerTargets(
@@ -84,7 +86,8 @@ export function getFoodWorkerTargets(
       retainedSlots[type] = Math.max(0, (retainedSlots[type] || 0) - 1)
       opportunities.push({
         type,
-        score: getFoodSourceScore(ai, type, source, dropSites, slot, hunterCount, sources.workerPositions) * retentionBonus,
+        score:
+          getFoodSourceScore(ai, type, source, dropSites, slot, hunterCount, sources.workerPositions) * retentionBonus,
       })
     }
   }

@@ -5,7 +5,14 @@ import { getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { PlayerLike } from '../types/player'
 import type { CombatEntity, UnitTextureInstance } from '../lib'
-import { drawInstanceEnergyBar, drawInstanceHealthBar, drawInstanceHeroPowerBar, removeInstanceHudBar, isTeamHealthBarRestricted, isHeroTeamUnit } from './InstanceHudBars'
+import {
+  drawInstanceEnergyBar,
+  drawInstanceHealthBar,
+  drawInstanceHeroPowerBar,
+  removeInstanceHudBar,
+  isTeamHealthBarRestricted,
+  isHeroTeamUnit,
+} from './InstanceHudBars'
 
 export class Instance extends Container {
   context: GameContextLike
@@ -36,26 +43,18 @@ export class Instance extends Container {
   shouldKeepHealthBarVisible(): boolean {
     if (isTeamHealthBarRestricted(this)) return false
     const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
-    const showForFamily =
-      this.family === FAMILY_TYPES.unit ||
-      this.family === FAMILY_TYPES.animal
+    const showForFamily = this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.animal
     const showForHeroTeam = isHeroTeamUnit(this)
     const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
     return Boolean(
-      showForFamily &&
-        (showEntityBars || showForHeroTeam) &&
-        !isHeroUnit &&
-        !this.isDead &&
-        !this.isDestroyed
+      showForFamily && (showEntityBars || showForHeroTeam) && !isHeroUnit && !this.isDead && !this.isDestroyed
     )
   }
 
   shouldKeepEnergyBarVisible(): boolean {
     const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
     const showForFamily =
-      this.family === FAMILY_TYPES.unit ||
-      this.family === FAMILY_TYPES.building ||
-      this.family === FAMILY_TYPES.animal
+      this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building || this.family === FAMILY_TYPES.animal
     const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
     return Boolean(showForFamily && showEntityBars && !isHeroUnit && !this.isDead && !this.isDestroyed)
   }

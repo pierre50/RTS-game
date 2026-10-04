@@ -3,7 +3,7 @@ import { sendUnitToRestSite } from './UnitRestLifecycle'
 import { restDistance } from './UnitRestMath'
 import { shouldRest } from './UnitRestRules'
 import { getRestTargetSite, isRestTargetAvailable } from './UnitRestShelter'
-import { hasDailyRestSchedule } from '../../lib/units/villagerSchedule'
+import { hasDailyRestSchedule } from '../../lib/units/village/villagerSchedule'
 
 export function assignAvailableBeds(beds: Set<BuildingEntity>, isEveningRest: (unit: UnitEntity) => boolean): void {
   for (const building of beds) {

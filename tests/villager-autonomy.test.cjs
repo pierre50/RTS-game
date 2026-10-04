@@ -73,7 +73,7 @@ const constants = {
 }
 
 function loadVillagerAutonomy() {
-  return loadModule('app/lib/units/villagerAutonomy.ts', {
+  return loadModule('app/lib/units/autonomy/villagerAutonomy.ts', {
     '../playerTargetKnowledge': {
       knowsEconomicTarget: () => false,
       rememberedStaticTargets: () => [],
@@ -915,15 +915,15 @@ test('construction autonomy repairs own damaged completed buildings', () => {
 
 test('runtime reconciliation resumes real food selection after restore and resource depletion', () => {
   const autonomy = loadVillagerAutonomy()
-  const recovery = loadModule('app/lib/units/villagerTaskRecovery.ts', {
+  const recovery = loadModule('app/lib/units/autonomy/villagerTaskRecovery.ts', {
     './villagerAutonomy': autonomy,
     './villagerAutonomyTargeting': { getAutonomyJobForWork: () => null },
   })
   const { VillagerAutonomySystem } = loadModule('app/services/VillagerAutonomySystem.ts', {
     '../constants': constants,
-    '../lib/units/villagerAutonomy': autonomy,
-    '../lib/units/villagerTaskRecovery': recovery,
-    '../lib/units/villagerAutonomyTargeting': { markVillagerAutonomyTargetRejected() {} },
+    '../lib/units/autonomy/villagerAutonomy': autonomy,
+    '../lib/units/autonomy/villagerTaskRecovery': recovery,
+    '../lib/units/autonomy/villagerAutonomyTargeting': { markVillagerAutonomyTargetRejected() {} },
   })
   const owner = createOwner()
   const berries = { family: 'resource', type: 'Berrybush', label: 'berries-1', i: 2, j: 2, quantity: 10 }

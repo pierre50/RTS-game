@@ -1,5 +1,5 @@
 import { getForgeBuildMultiplier } from '../../../lib/equipment/forgeUpgrades'
-import { notifyVillageWorkChanged } from '../../../lib/units/villageWorkEvents'
+import { notifyVillageWorkChanged } from '../../../lib/units/village/villageWorkEvents'
 import { t } from '../../../lib/lang'
 import {
   advanceMaterialConstruction,
@@ -18,7 +18,7 @@ import { isHeroControlled } from '../../../lib/units/unitControl'
 import { spendOrWaitForEnergy } from '../../../lib/units/unitEnergy'
 import { getBuildRateXpMultiplier, grantUnitXp, XP_BUILD_TICK, XP_CATEGORIES } from '../../../lib/units/unitExperience'
 import type { BuildingEntity } from '../../../types/entities'
-import { shouldSyncBuildHealthDisplay } from '../UnitBuildVisuals'
+import { shouldSyncBuildHealthDisplay } from '../appearance/UnitBuildVisuals'
 import { stopManualHeroAction } from '../UnitManualHeroWork'
 import { isBuildingEntity } from '../UnitResourceGathering'
 import { finishWorkSwing, getWorkAnimationReleaseFrame } from './UnitWorkSwing'

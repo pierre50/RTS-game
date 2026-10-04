@@ -143,8 +143,7 @@ export function getLockedMoveSpeedFactor(move: MoveVector, facing: MoveVector): 
     return HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR + (1 - HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR) * alignment
   }
   return (
-    HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR +
-    (HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR - UNIT_WALK_SPEED_FACTOR) * alignment
+    HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR + (HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR - UNIT_WALK_SPEED_FACTOR) * alignment
   )
 }
 
@@ -192,7 +191,12 @@ export function findCompanionHorseSpawnCell(
   radiusLimit = COMPANION_HORSE_CALL_MAX_RADIUS,
   options: { minRadius?: number; viewport?: ViewportMetrics | null } = {}
 ): RuntimeCell | null {
-  return findCompanionHorseSpawnCellNear(hero, getEntitySpaceGrid(hero, hero.context?.map) ?? undefined, radiusLimit, options)
+  return findCompanionHorseSpawnCellNear(
+    hero,
+    getEntitySpaceGrid(hero, hero.context?.map) ?? undefined,
+    radiusLimit,
+    options
+  )
 }
 
 export function findCompanionHorseSpawnCellNear(
@@ -220,7 +224,13 @@ export function findCompanionHorseSpawnCellNear(
   for (let radius = minRadius; radius <= radiusLimit; radius++) {
     for (let di = -radius; di <= radius; di++) {
       const djAbs = radius - Math.abs(di)
-      const offsets: Array<[number, number]> = djAbs === 0 ? [[di, 0]] : [[di, djAbs], [di, -djAbs]]
+      const offsets: Array<[number, number]> =
+        djAbs === 0
+          ? [[di, 0]]
+          : [
+              [di, djAbs],
+              [di, -djAbs],
+            ]
       for (const [oi, oj] of offsets) {
         const cell = grid[origin.i + oi]?.[origin.j + oj]
         if (!isFreeHorseCell(cell)) continue

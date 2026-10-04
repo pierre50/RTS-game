@@ -10,7 +10,7 @@ import {
   TYPE_ACTION,
   WORK_TYPES,
 } from '../constants'
-import { getActionVisualSheetKey } from '../units/actionVisualSheet'
+import { getActionVisualSheetKey } from '../units/visuals/actionVisualSheet'
 import { getActionCondition, isWheatMature } from '../combat'
 import { findInstancesInSight } from '../grid/visibility'
 import { t } from '../lang'

@@ -4,7 +4,7 @@ import {
   resetMarketEquipmentStock,
   MARKET_RESTOCK_INTERVAL_DAYS,
 } from '../../../lib/equipment/equipmentMarket'
-import { configureVillageNightWatch } from '../../../lib/units/villageNightWatch'
+import { configureVillageNightWatch } from '../../../lib/units/village/villageNightWatch'
 import { DAY_NIGHT_CONFIG } from '../../../config/gameplay'
 import { restoreOfflineUnitSleepHealth } from '../../../lib/units/unitSleepHealth'
 import { getDeferredVillages } from './DeferredVillageStore'

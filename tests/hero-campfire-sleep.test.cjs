@@ -80,7 +80,7 @@ test('aggressive or attacking wildlife blocks sleep, but dead animals do not', (
 })
 
 test('hero sleeps through the shared NPC wake window and synchronizes sleepers before waking', () => {
-  const { VILLAGE_WAKE_COMPLETE_HOUR, getVillagerSchedule } = loadTsModule('app/lib/units/villagerSchedule.ts')
+  const { VILLAGE_WAKE_COMPLETE_HOUR, getVillagerSchedule } = loadTsModule('app/lib/units/village/villagerSchedule.ts')
   let options
   let targetHour
   const calls = []

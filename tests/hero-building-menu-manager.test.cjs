@@ -90,7 +90,7 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
       applyTheftConsequences: event => theftConsequences.push(event),
       THEFT_SUBJECT_TYPES: { chest: 'chest' },
     },
-    './InspectionPanel': {
+    './inspection/InspectionPanel': {
       createInspectionModal: options => ({
         ...options,
         _panel: global.document.createElement('div'),
@@ -103,7 +103,7 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
         modal._panel.classList.toggle('inspection-window--large', size === 'large')
       },
     },
-    './EntityInfoContent': {
+    './inspection/EntityInfoContent': {
       TITLED_ENTITY_INFO_OPTIONS: {},
     },
     './inventory/InventoryTransferPanel': {

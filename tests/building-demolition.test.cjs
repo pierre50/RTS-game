@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { canHeroDemolishBuilding } = loadTsModule('app/lib/buildings/buildingDemolition.ts')
-const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts')
+const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/furniture/interiorFurnitureCatalog.ts')
 function fixture(type = 'CampBedroll', parentType = 'House') {
   const owner = { label: 'player', team: 1, population: 3, populationMax: 1, buildings: [] }
   const parent = { type: parentType, label: 'house', interiorPortalId: 'room', isBuilt: true, owner }

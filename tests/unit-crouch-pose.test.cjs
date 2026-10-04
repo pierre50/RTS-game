@@ -13,7 +13,7 @@ class Mesh {
     this.destroyOptions = options
   }
 }
-const { applyUnitCrouchPose, resetUnitCrouchPose } = loadTsModule('app/lib/units/unitCrouchPose.ts', {
+const { applyUnitCrouchPose, resetUnitCrouchPose } = loadTsModule('app/lib/units/visuals/unitCrouchPose.ts', {
   mocks: {
     'pixi.js': { MeshSimple: Mesh },
     '../../constants': { SHEET_TYPES: { walking: 'walking', standing: 'standing' } },

@@ -3,7 +3,11 @@ import type { DynamicEquipmentKey, EquipmentLayer, EquipmentLoadSheet } from './
 const EQUIPMENT_BASE_ALIAS = 'equipments'
 const EQUIPMENT_BASE_URL = 'assets/graphics/equipments'
 
-export function equipmentAlias(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentLoadSheet): string {
+export function equipmentAlias(
+  equipment: DynamicEquipmentKey,
+  layer: EquipmentLayer,
+  sheet: EquipmentLoadSheet
+): string {
   return `${EQUIPMENT_BASE_ALIAS}/${equipment}/${layer}/${sheet}`
 }
 

@@ -40,7 +40,8 @@ function loadCombatBehavior() {
       },
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -219,7 +220,10 @@ test('combat recovery hold mode waits without moving', () => {
   enterCombatRecovery(unit, target)
 
   assert.equal(unit.combatMode, 'recover')
-  assert.equal(calls.some(([type]) => type === 'sendTo'), false)
+  assert.equal(
+    calls.some(([type]) => type === 'sendTo'),
+    false
+  )
   assert.ok(calls.some(([type]) => type === 'setTextures'))
 })
 
@@ -253,4 +257,86 @@ test('combat morale roll is stable per labelled unit and supports overrides', ()
   assert.equal(getCombatMoraleRoll({ combatMoraleRoll: -3 }), 0)
   assert.equal(getCombatMoraleRoll({ combatMoraleRoll: 2 }), 1)
   assert.equal(getCombatMoraleRoll({ type: 'Bandit2' }), 1)
+})
+
+test('recovery stops cleanly when its target or route is unavailable', () => {
+  const api = loadCombatBehavior()
+  assert.equal(api.updateCombatRecoveryMovement({}), false)
+  for (const target of [null, { isDead: true }, { isDestroyed: true }])
+    assert.equal(api.updateCombatRecoveryMovement({ combatMode: 'recover' }, target), false)
+  const { unit, target, calls } = createRecoveryFixture()
+  unit.combatMode = 'recover'
+  unit.path = [{}]
+  assert.equal(api.updateCombatRecoveryMovement(unit, target), false)
+  unit.path = []
+  unit.lastCombatRecoveryMoveAt = 0
+  assert.equal(api.updateCombatRecoveryMovement(unit, target), false)
+  unit.context.map = null
+  assert.equal(api.updateCombatRecoveryMovement(unit, target, true), false)
+  assert.ok(calls.some(([event]) => event === 'sprite.stop'))
+  delete unit.sprite
+  delete unit.context
+  assert.equal(api.updateCombatRecoveryMovement(unit, target, true), false)
+})
+test('retreat recovery rejects occupied, water, border and unreachable cells', () => {
+  const api = loadCombatBehavior()
+  const { unit, target, calls } = createRecoveryFixture()
+  unit.combatBehavior.recoveryMode = 'retreat'
+  unit.x = target.x
+  unit.y = target.y
+  unit.i = target.i
+  unit.j = target.j
+  delete unit.label
+  delete unit.type
+  const grid = unit.context.map.grid
+  grid.flat().forEach((cell, i) => {
+    Object.assign(
+      cell,
+      [
+        { solid: true },
+        { border: true },
+        { border: true, waterBorder: true, solid: true },
+        { category: 'Water' },
+        { unreachable: true },
+      ][i % 5]
+    )
+  })
+  api.enterCombatRecovery(unit, target)
+  assert.equal(
+    calls.some(([event]) => event === 'sendTo'),
+    false
+  )
+  const safe = grid[5][8]
+  Object.assign(safe, { solid: true, has: unit, border: false, category: 'Grass', unreachable: false })
+  unit.label = 'odd'
+  unit.type = ''
+  delete unit.combatRecoveryOrbitDirection
+  assert.equal(api.updateCombatRecoveryMovement(unit, target, true), true)
+  assert.equal(calls.at(-1)[1], safe)
+})
+test('combat mode transitions clear recovery timers and use safe defaults', () => {
+  const api = loadCombatBehavior()
+  const unit = { combatMode: 'recover', lastCombatRecoveryMoveAt: 3 }
+  api.exitCombatRecovery(unit)
+  assert.equal(unit.combatMode, null)
+  assert.equal(unit.lastCombatRecoveryMoveAt, null)
+  api.exitCombatRecovery({})
+  api.markCombatFlee(unit)
+  assert.equal(unit.combatMode, 'flee')
+  api.markCombatAttack(unit)
+  assert.equal(unit.combatMode, 'flee')
+  unit.action = 'attack'
+  api.markCombatAttack(unit)
+  assert.equal(unit.combatMode, 'attack')
+  assert.equal(api.isCombatRecoveryReadyToReengage({}), true)
+  assert.equal(api.isCombatRecoveryReadyToReengage({ totalEnergy: 10 }), false)
+  const roll = api.getCombatMoraleRoll({ label: 'anonymous' })
+  assert.ok(roll >= 0 && roll <= 1)
+  const previous = global.performance
+  delete global.performance
+  try {
+    assert.equal(api.updateCombatRecoveryMovement({ combatMode: 'recover' }, { family: 'unit' }, true), false)
+  } finally {
+    global.performance = previous
+  }
 })

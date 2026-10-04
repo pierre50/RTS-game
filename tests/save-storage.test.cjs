@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const LZString = require('lz-string')
 
-function loadSaveStorage(storage, electronSaves) {
+function loadSaveStorage(storage, electronSaves, mocks = {}) {
   global.window = { electronSaves }
   global.localStorage = storage
   return loadTsModule('app/serialization/SaveStorage.ts', {
@@ -11,6 +11,7 @@ function loadSaveStorage(storage, electronSaves) {
       './SaveSerializer': { serializeGameForPersistence: () => ({}) },
       './CampaignSave': { createInitialCampaignSave: data => data, updateCurrentWorldState: (_campaign, data) => data },
       '../lib/debug': { debugLog: () => {} },
+      ...mocks,
     },
   })
 }
@@ -206,4 +207,68 @@ test('Electron storage accepts both success protocols and surfaces detailed writ
     }
     assert.throws(() => loadSaveStorage(broken).saveRecord(minimalSaveRecord()), /STORAGE_FULL/)
   }
+})
+
+test('async browser saves use the normal backend and recover after storage failure', async t => {
+  t.mock.method(console, 'info', () => {})
+  const storage = makeMemoryStorage()
+  const api = loadSaveStorage(storage)
+  const saved = await api.saveRecordAsync(minimalSaveRecord())
+  assert.deepEqual(api.loadSave(saved.key), minimalSaveRecord())
+  const autosave = await api.autosaveRecordAsync(minimalSaveRecord())
+  assert.equal(autosave.key, 'save_0')
+})
+test('incomplete Electron bridges require restart and autosave reports the error', async t => {
+  t.mock.method(console, 'warn', () => {})
+  const methods = ['begin', 'batch', 'batchNative', 'commit', 'abort']
+  for (let count = 0; count < methods.length; count++) {
+    const bridge = Object.fromEntries(methods.slice(0, count).map(key => [key, async () => {}]))
+    const api = loadSaveStorage(makeMemoryStorage(), bridge)
+    await assert.rejects(api.saveRecordAsync(minimalSaveRecord()), /SAVE_RESTART_ELECTRON_REQUIRED/)
+    let failure
+    assert.equal(
+      await api.autosaveRecordAsync(minimalSaveRecord(), undefined, undefined, error => {
+        failure = error
+      }),
+      null
+    )
+    assert.match(failure.message, /SAVE_RESTART_ELECTRON_REQUIRED/)
+  }
+})
+test('async Electron saves serialize writes, preserve replacements and recover after a rejected transaction', async t => {
+  t.mock.method(console, 'warn', () => {})
+  const storage = makeMemoryStorage({
+    saves_index: JSON.stringify(
+      Array.from({ length: 10 }, (_, i) => ({ key: `save_${i + 1}`, name: 'saved', date: i }))
+    ),
+  })
+  const bridge = {
+    getIndex: () => storage.getItem('saves_index'),
+    getItem: () => null,
+    begin() {},
+    batch() {},
+    batchNative() {},
+    commit() {},
+    abort() {},
+  }
+  const calls = []
+  let reject = true
+  const api = loadSaveStorage(storage, bridge, {
+    './AsyncSaveStorage': {
+      writeElectronSave: async (_bridge, key, _data, index) => {
+        calls.push({ key, index: JSON.parse(index) })
+        if (reject) throw 'transaction rejected'
+      },
+    },
+  })
+  await assert.rejects(api.saveRecordAsync(minimalSaveRecord()), /MAX_SAVES_REACHED/)
+  assert.equal(await api.autosaveRecordAsync(minimalSaveRecord()), null)
+  reject = false
+  const replaced = await api.saveRecordAsync(minimalSaveRecord(), { key: 'save_1', name: 'replacement' })
+  assert.deepEqual(replaced, { key: 'save_1', name: 'replacement' })
+  assert.equal(calls.at(-1).index.length, 10)
+  storage.setItem('saves_index', '[]')
+  const created = await api.saveRecordAsync(minimalSaveRecord())
+  assert.ok(created.key.startsWith('save_'))
+  assert.equal(calls.at(-1).index[0].name, created.name)
 })

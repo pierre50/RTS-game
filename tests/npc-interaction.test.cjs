@@ -19,8 +19,8 @@ function loadModule(relativePath, mocks) {
       clearUnitOverheadIndicator: unit => unit.context?.calls?.push(['clearIndicator', unit.label]),
       setUnitOverheadIndicator: (unit, type) => unit.context?.calls?.push(['indicator', unit.label, type]),
     },
-    '../units/villagerSchedule': {
-      getDailyRoutinePhase: loadTsModule('app/lib/units/villagerSchedule.ts').getDailyRoutinePhase,
+    '../units/village/villagerSchedule': {
+      getDailyRoutinePhase: loadTsModule('app/lib/units/village/villagerSchedule.ts').getDailyRoutinePhase,
       isVillagerSleepTime: context => {
         const hour = context?.dayNight?.state?.hour ?? 12
         return hour >= 18 || hour < 8
@@ -55,7 +55,7 @@ function loadModule(relativePath, mocks) {
         return pick(cells)
       },
     },
-    './units/unitCrouchPose': {
+    './units/visuals/unitCrouchPose': {
       applyUnitCrouchPose: () => {},
       resetUnitCrouchPose: () => {},
     },
@@ -1670,7 +1670,7 @@ test('stationary followers copy the hero crouch pose without needing to move', (
       getInstanceDegree: () => 0,
       isometricToCartesian: () => [0, 0],
     },
-    './units/unitCrouchPose': {
+    './units/visuals/unitCrouchPose': {
       applyUnitCrouchPose: (unit, active) => {
         unit.isCrouching = active
       },

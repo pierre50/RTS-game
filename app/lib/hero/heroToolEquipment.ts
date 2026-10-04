@@ -2,7 +2,7 @@ import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { refreshBakedLpcUnitAssets } from '../lpc/baked'
 import type { DynamicEquipmentKey } from '../lpc/equipment'
 import { refreshUnitEquipmentStats } from '../equipment/equipmentStats'
-import { applyUnitActionFrameSequence } from '../units/unitWorkAppearance'
+import { applyUnitActionFrameSequence } from '../units/visuals/unitWorkAppearance'
 import type { UnitEntity } from '../../types/entities'
 import type { HeroEquippedItem } from '../../types/heroTools'
 

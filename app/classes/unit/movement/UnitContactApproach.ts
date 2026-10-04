@@ -2,7 +2,7 @@ import { isHeroControlled } from '../../../lib/units/unitControl'
 import {
   markVillagerAutonomyTargetRejected,
   isVillagerWorkTargetRejected,
-} from '../../../lib/units/villagerAutonomyTargeting'
+} from '../../../lib/units/autonomy/villagerAutonomyTargeting'
 import { STEP_TIME, ACTION_TYPES, UNIT_TYPES } from '../../../constants'
 import { CONTACT_APPROACH, GATHER_CONTACT_STALL } from '../../../config/contactProfiles'
 import { startContactApproach } from '../../../lib/contact/contactApproach'

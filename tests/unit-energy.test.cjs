@@ -62,7 +62,8 @@ function loadUnitEnergy() {
     './miningActions': { getMiningActions: () => ['minestone', 'minegold'] },
     './unitControl': { isHeroControlled: unit => unit.controlMode === 'arpg' },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   module.exports.__fatigueFeedbackCalls = fatigueFeedbackCalls
   module.exports.__combatBehaviorCalls = combatBehaviorCalls
@@ -225,7 +226,10 @@ test('npc takemeat fatigue resumes on a dead animal carcass', () => {
 
   assert.equal(unit.waitingForEnergyAction, null)
   assert.deepEqual(calls.at(-1), ['sendToEvt', carcass, 'takemeat', { forceRepath: true }])
-  assert.equal(calls.some(call => call[0] === 'stop'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'stop'),
+    false
+  )
 })
 
 test('cancelling an energy wait clears the scheduled resume', () => {
@@ -419,4 +423,113 @@ test('low energy progressively slows movement except while mounted', () => {
   assert.equal(getEnergyMoveSpeedMultiplier({ energy: 0, totalEnergy: 10 }), 0.55)
   assert.equal(getEnergyMoveSpeedMultiplier({ energy: 2, totalEnergy: 10 }), 0.73)
   assert.equal(getEnergyMoveSpeedMultiplier({ energy: 0, mountedOnHorse: true, totalEnergy: 10 }), 1)
+})
+
+test('energy initializes missing values, clamps limits and permits free actions', () => {
+  const api = loadUnitEnergy()
+  const unit = { totalEnergy: -1, energy: 20, energyRegenRate: -2, energyRegenDelay: -1, energyRegenMultiplier: -1 }
+  api.ensureUnitEnergy(unit)
+  assert.equal(unit.energy, 0)
+  assert.equal(unit.totalEnergy, 0)
+  assert.equal(unit.energyRegenRate, 0)
+  assert.equal(unit.energyRegenDelay, 0)
+  assert.equal(unit.energyRegenMultiplier, 0)
+  assert.equal(api.getActionEnergyCost({}, null), 0)
+  assert.equal(api.hasEnergyForAction({}, null), true)
+  assert.equal(api.spendEnergyForAction({}, null), true)
+  assert.equal(api.drainEnergyAmount({}, -1), true)
+  assert.equal(api.getEnergyMoveSpeedMultiplier({}), 1)
+  assert.equal(api.getEnergyMoveSpeedMultiplier({ totalEnergy: 10 }), 1)
+})
+test('energy drain empties insufficient reserves, reports failure and updates the bar', () => {
+  const api = loadUnitEnergy()
+  let draws = 0
+  const unit = { totalEnergy: 5, energy: 2, drawEnergyBar: () => draws++ }
+  assert.equal(api.drainEnergyAmount(unit, 3), false)
+  assert.equal(unit.energy, 0)
+  assert.equal(unit.lastEnergySpentAt, 0)
+  assert.equal(draws, 1)
+  unit.energy = 5
+  assert.equal(api.drainEnergyAmount(unit, 2), true)
+  assert.equal(unit.energy, 3)
+  unit.energyRegenRate = 0
+  api.updateUnitEnergy(unit)
+  assert.equal(unit.energy, 3)
+  assert.equal(draws, 2)
+})
+test('difficulty multiplier only applies against a played hostile owner', () => {
+  const { getActionEnergyCost } = loadUnitEnergy()
+  const played = { label: 'human', isPlayed: true }
+  for (const dest of [null, 'target', {}, { family: 'unit' }, { family: 'unit', owner: { label: 'ai' } }])
+    assert.equal(getActionEnergyCost({ dest }, 'attack'), 2)
+  for (const owner of [undefined, played, { label: 'human' }, { label: 'ally' }])
+    assert.equal(getActionEnergyCost({ owner, dest: { family: 'unit', owner: played } }, 'attack'), 2)
+  const enemy = { label: 'enemy' }
+  played.isEnemy = owner => owner === enemy
+  assert.equal(
+    getActionEnergyCost(
+      { owner: enemy, dest: { family: 'unit', owner: played }, context: { map: { difficulty: 'easy' } } },
+      'attack'
+    ),
+    4
+  )
+})
+test('energy wait without a scheduler resumes via legacy movement or stops for a lost target', () => {
+  const api = loadUnitEnergy()
+  for (const [action, target, resumes] of [
+    ['build', { family: 'building' }, true],
+    ['takemeat', { family: 'animal', isDead: true }, true],
+    ['attack', { family: 'unit', isDead: true }, false],
+    ['build', { family: 'building', isDestroyed: true }, false],
+    ['build', null, false],
+    [null, null, false],
+  ]) {
+    let tick
+    const calls = []
+    const unit = {
+      totalEnergy: 1,
+      energy: 0,
+      energyRegenRate: 10,
+      energyRegenDelay: 0,
+      dest: target,
+      sprite: { stop: () => calls.push('sprite') },
+      startInterval: callback => {
+        tick = callback
+      },
+      sendTo: (...args) => calls.push(args),
+      stop: () => calls.push('stop'),
+    }
+    api.waitForEnergy(unit, action)
+    tick()
+    assert.equal(unit.waitingForEnergyAction, null)
+    if (resumes) assert.deepEqual(calls.at(-1), [target, action, { forceRepath: true }])
+    else assert.equal(calls.at(-1), 'stop')
+  }
+})
+test('energy wait cancellation removes scheduled work and a stale callback cannot resume an action', () => {
+  const api = loadUnitEnergy()
+  let tick
+  const removed = []
+  const unit = {
+    totalEnergy: 2,
+    energy: 0,
+    energyRegenRate: 0,
+    context: {
+      scheduler: {
+        add: fn => {
+          tick = fn
+          return 7
+        },
+        remove: id => removed.push(id),
+      },
+    },
+  }
+  api.waitForEnergy(unit, 'attack', { family: 'unit' })
+  assert.equal(api.resumeEnergyWaitIfReady(unit), false)
+  api.cancelEnergyWait(unit)
+  assert.deepEqual(removed, [7])
+  tick()
+  assert.equal(api.resumeEnergyWaitIfReady(unit), false)
+  api.cancelEnergyWait({})
+  api.cancelEnergyWait({ energyWaitTaskId: 3 })
 })

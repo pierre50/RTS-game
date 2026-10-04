@@ -12,7 +12,7 @@ const { completeOfflineTraining } = load('app/services/world/offline/OfflineWorl
 const { getWorkCycleMs } = load('app/lib/economy/workTiming.ts')
 const { getUnitSpritesheetAnimationSpeed } = load('app/lib/entities/spriteTextures.ts')
 const { getConfiguredActionFrameSequence } = load('app/lib/animations/actionFrameSequences.ts')
-const { getVillagerWorkingMinutes, shouldVillagerWork } = load('app/lib/units/villagerSchedule.ts')
+const { getVillagerWorkingMinutes, shouldVillagerWork } = load('app/lib/units/village/villagerSchedule.ts')
 
 function fixture() {
   const worker = { type: 'Villager', label: 'worker', i: 0, j: 0, work: 'woodcutter', autonomousJob: 'wood' }

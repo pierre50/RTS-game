@@ -1,7 +1,7 @@
-import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import type { RuntimeCell } from '../../types/map'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
-import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
+import { syncUnitSittingPose } from '../../lib/units/visuals/unitSittingPose'
 
 type UnitOrderHost = UnitEntity & {
   stop: () => void

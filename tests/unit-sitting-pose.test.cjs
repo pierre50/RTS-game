@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-const { getUnitRestVisualSheet, syncUnitSittingPose } = loadTsModule('app/lib/units/unitSittingPose.ts', {
+const { getUnitRestVisualSheet, syncUnitSittingPose } = loadTsModule('app/lib/units/visuals/unitSittingPose.ts', {
   mocks: { './unitControl': { isHeroControlled: unit => unit.controlMode === 'hero' } },
 })
 

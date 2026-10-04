@@ -57,7 +57,7 @@ function loadUnitMovement(calls) {
         filename,
         mocks
       )
-    if (request === '../../lib/units/villagerAutonomyTargeting')
+    if (request === '../../lib/units/autonomy/villagerAutonomyTargeting')
       return { isVillagerWorkTargetRejected: () => false, markVillagerAutonomyTargetRejected: () => {} }
     if (request === '../../lib/actions/contactActions')
       return {
@@ -145,13 +145,13 @@ function loadUnitMovement(calls) {
       return { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 }
     if (request === '../../lib/units/unitLocomotion')
       return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
-    if (request === '../../lib/units/unitCrouchPose') {
+    if (request === '../../lib/units/visuals/unitCrouchPose') {
       return {
         applyUnitCrouchPose: () => {},
         resetUnitCrouchPose: () => {},
       }
     }
-    if (request === '../../lib/units/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
+    if (request === '../../lib/units/visuals/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
     if (request.endsWith('/terrain/reliefSurface') || request.endsWith('/terrain/reliefMovement')) {
       return requireFromTsFile(
         path.join(__dirname, '../app/lib/terrain', request.split('/').at(-1) + '.ts'),
@@ -224,8 +224,8 @@ function loadUnitMovement(calls) {
     if (request === './movement/UnitAffectNewDest' || request === './UnitAffectNewDest') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitAffectNewDest.ts'))
     }
-    if (request.endsWith('/units/villagerAutonomyTargeting')) {
-      return requireFromTsFile(path.join(__dirname, '../app/lib/units/villagerAutonomyTargeting.ts'), filename, mocks)
+    if (request.endsWith('/units/autonomy/villagerAutonomyTargeting')) {
+      return requireFromTsFile(path.join(__dirname, '../app/lib/units/autonomy/villagerAutonomyTargeting.ts'), filename, mocks)
     }
     return requireFromTsFile(originalRequest, parentFilename, mocks)
   }

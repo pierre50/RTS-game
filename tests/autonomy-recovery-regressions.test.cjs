@@ -5,8 +5,8 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const options = {
   moduleCache: new Map(),
   mocks: {
-    './autonomy/villagerKnownTargets': { knownConstructionTargets: unit => unit.owner.buildings },
-    './unitSpriteAssets': { applyUnitActivitySpritesheets() {} },
+    './villagerKnownTargets': { knownConstructionTargets: unit => unit.owner.buildings },
+    '../visuals/unitSpriteAssets': { applyUnitActivitySpritesheets() {} },
     '../grid/queries': { getClosestInstanceWithPath: (_unit, candidates) => ({ instance: candidates[0] }) },
     '../../lib/audio/sound': { playAudibleSoundCue() {} },
     '../BuildingInteriorSpaceSystem': {},
@@ -17,15 +17,15 @@ const options = {
   },
 }
 const load = path => loadTsModule(path, options)
-const { assignVillagerAutonomy } = load('app/lib/units/villagerAutonomy.ts')
-const { markVillagerAutonomyTargetRejected } = load('app/lib/units/villagerAutonomyTargeting.ts')
+const { assignVillagerAutonomy } = load('app/lib/units/autonomy/villagerAutonomy.ts')
+const { markVillagerAutonomyTargetRejected } = load('app/lib/units/autonomy/villagerAutonomyTargeting.ts')
 const { ResourceDeliverySystem } = load('app/screens/game/GameResourceDelivery.ts')
 const { planCollectiveTasks } = load('app/lib/economy/collectiveTasks.ts')
 const { collectiveVillageEventSnapshot, settleCollectiveVillageEvents, hasCollectiveVillageEvent } = load(
   'app/services/CollectiveVillageEvents.ts'
 )
 const { isDeliveryTargetRejected } = load('app/lib/resources/resourceDeliveryRecovery.ts')
-const { consumeVillageWorkChange } = load('app/lib/units/villageWorkEvents.ts')
+const { consumeVillageWorkChange } = load('app/lib/units/village/villageWorkEvents.ts')
 
 test('construction tries a farther site after a refused route, including on subsequent retries', () => {
   const near = { type: 'House', label: 'blocked', i: 1, j: 0 }

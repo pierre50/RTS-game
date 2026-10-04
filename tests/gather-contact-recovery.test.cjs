@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-const targeting = loadTsModule('app/lib/units/villagerAutonomyTargeting.ts', {
+const targeting = loadTsModule('app/lib/units/autonomy/villagerAutonomyTargeting.ts', {
   mocks: {
     '../buildings/passageCells': {},
     '../grid/movement': {},
@@ -10,7 +10,7 @@ const targeting = loadTsModule('app/lib/units/villagerAutonomyTargeting.ts', {
 })
 const { tryStartUnitContactApproach } = loadTsModule('app/classes/unit/movement/UnitContactApproach.ts', {
   mocks: {
-    '../../../lib/units/villagerAutonomyTargeting': targeting,
+    '../../../lib/units/autonomy/villagerAutonomyTargeting': targeting,
     '../../../lib/units/unitControl': { isHeroControlled: () => false },
     '../../../lib/mapSpaces': { sameMapSpace: () => true },
     '../../../lib/actions/contactActions': {
@@ -145,7 +145,7 @@ test('classic group gathering selects another accessible resource and excludes t
   const taken = new Set()
   const { affectNewDest } = loadTsModule('app/classes/unit/movement/UnitAffectNewDest.ts', {
     mocks: {
-      '../../../lib/units/villagerAutonomyTargeting': targeting,
+      '../../../lib/units/autonomy/villagerAutonomyTargeting': targeting,
       './playerTargetKnowledge': {
         playerSeesTarget: () => true,
         observeTarget() {},
@@ -219,7 +219,7 @@ test('without another reachable resource, classic gathering stops instead of ret
   let stopped = 0
   const { affectNewDest } = loadTsModule('app/classes/unit/movement/UnitAffectNewDest.ts', {
     mocks: {
-      '../../../lib/units/villagerAutonomyTargeting': targeting,
+      '../../../lib/units/autonomy/villagerAutonomyTargeting': targeting,
       './playerTargetKnowledge': {
         playerSeesTarget: () => true,
         observeTarget() {},

@@ -3,7 +3,7 @@ import { placeUnitAtCell, stopUnitForRest } from '../../services/rest/UnitRestSt
 import { getEntitySpaceGrid, getEntitySpaceMapLike, sameMapSpace } from '../mapSpaces'
 import { getBedRestPoint } from '../terrain/furnitureSurface'
 import { syncEntityRelief } from '../terrain/reliefSurface'
-import { VILLAGE_WAKE_COMPLETE_HOUR } from '../units/villagerSchedule'
+import { VILLAGE_WAKE_COMPLETE_HOUR } from '../units/village/villagerSchedule'
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { getHoursUntilNextMorning } from '../../services/TimeSkipSystem'
 import { playSleepingOutsideVisual, playSleepingWakeVisual } from '../../services/rest/UnitSleepVisuals'

@@ -15,12 +15,7 @@ import {
 
 type TributeModalView = {
   createChiefContent: (chief: TributeRaidUnit) => HTMLElement
-  createModal: (options: {
-    title: string
-    content: HTMLElement
-    panelClass: string
-    onClose: () => void
-  }) => Modal
+  createModal: (options: { title: string; content: HTMLElement; panelClass: string; onClose: () => void }) => Modal
 }
 
 export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, view: TributeModalView): void {

@@ -42,7 +42,11 @@ export function findReachableFleeCell<TCell extends GridCell>(
     range,
   }: ReachableFleeCellOptions<TCell>
 ): TCell | null {
-  if (preferredCell && isCellAllowed(preferredCell) && getInstancePath(instance, preferredCell.i, preferredCell.j, map).length) {
+  if (
+    preferredCell &&
+    isCellAllowed(preferredCell) &&
+    getInstancePath(instance, preferredCell.i, preferredCell.j, map).length
+  ) {
     return preferredCell
   }
 

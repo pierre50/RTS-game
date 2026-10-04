@@ -1,4 +1,4 @@
-import { notifyVillageStateChanged } from '../units/villageStateEvents'
+import { notifyVillageStateChanged } from '../units/village/villageStateEvents'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import { hasIronMiningPickaxe } from '../resources/miningEquipment'

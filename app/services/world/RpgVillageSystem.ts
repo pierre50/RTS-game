@@ -6,10 +6,10 @@ import {
   RPG_VILLAGE_DECISION_MS,
   RPG_VILLAGE_WORKERS,
 } from '../../config/rpgVillages'
-import { isDistantOwner } from '../../lib/units/villageActivity'
+import { isDistantOwner } from '../../lib/units/village/villageActivity'
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
-import { canUnitStartAmbientWalk } from '../../lib/units/walkAround'
-import { shouldVillagerWork } from '../../lib/units/villagerSchedule'
+import { canUnitStartAmbientWalk } from '../../lib/units/autonomy/walkAround'
+import { shouldVillagerWork } from '../../lib/units/village/villagerSchedule'
 import { cancelVillagerExplorationResume } from '../../lib/units/autonomy/villagerExploration'
 import { canUnitUseCellAsIdleDestination } from '../../lib/buildings/passageCells'
 import { replenishRpgVillage } from './RpgVillageSupplies'

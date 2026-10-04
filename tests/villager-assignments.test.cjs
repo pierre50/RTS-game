@@ -39,7 +39,7 @@ const constants = {
 }
 
 test('summarizes villager resource assignments, sleep and movement', () => {
-  const { summarizeVillagerAssignments } = loadModule('app/lib/units/villagerAssignments.ts', {
+  const { summarizeVillagerAssignments } = loadModule('app/lib/units/autonomy/villagerAssignments.ts', {
     '../constants': constants,
   })
 

@@ -111,7 +111,7 @@ function withFakeDocument(fn) {
 test('resource info modal title uses translated resource type instead of technical resource name', () => {
   withFakeDocument(() => {
     let capturedTitle = null
-    const { EntityInfoModalManager } = loadModule('app/ui/EntityInfoModalManager.ts', {
+    const { EntityInfoModalManager } = loadModule('app/ui/inspection/EntityInfoModalManager.ts', {
       './inventory/UnitInventoryScreen': {},
       './inventory/AnimalInventoryScreen': {},
       '../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
@@ -157,7 +157,7 @@ test('resource info modal title uses translated resource type instead of technic
 
 test('entity info modal syncs live resource health without reopening', () => {
   withFakeDocument(() => {
-    const { EntityInfoModalManager } = loadModule('app/ui/EntityInfoModalManager.ts', {
+    const { EntityInfoModalManager } = loadModule('app/ui/inspection/EntityInfoModalManager.ts', {
       './inventory/UnitInventoryScreen': {},
       './inventory/AnimalInventoryScreen': {},
       '../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },

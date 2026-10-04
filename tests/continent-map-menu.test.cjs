@@ -21,7 +21,7 @@ test('map menu selects the matching continent blueprint and resets normal size',
           return {}
         },
       },
-      '../ui/PlayerSetupPanel': {
+      '../ui/setup/PlayerSetupPanel': {
         PlayerSetupPanel: class {
           element = {}
           appendSimplifiedControl() {}

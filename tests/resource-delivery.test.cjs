@@ -88,11 +88,11 @@ function loadGameResourceDelivery(overrides = {}) {
         getEntitySpaceId: overrides.getEntitySpaceId ?? (unit => unit.spaceId ?? 'outside'),
         sameMapSpace: (a, b) => (a.spaceId ?? 'outside') === (b.spaceId ?? 'outside'),
       },
-      '../../lib/units/villagerAutonomy': {
+      '../../lib/units/autonomy/villagerAutonomy': {
         assignVillagerAutonomy: overrides.assignVillagerAutonomy ?? (() => false),
         resumeVillagerAutonomy: () => false,
       },
-      '../../lib/units/villagerAutonomyTargeting': {
+      '../../lib/units/autonomy/villagerAutonomyTargeting': {
         getAutonomyJobForWork: work => {
           if (work === 'woodcutter') return 'wood'
           if (work === 'stoneminer') return 'stone'
@@ -100,7 +100,7 @@ function loadGameResourceDelivery(overrides = {}) {
           return null
         },
       },
-      '../../lib/units/villagerTaskRecovery': {
+      '../../lib/units/autonomy/villagerTaskRecovery': {
         resumeVillagerJobIntent:
           overrides.resumeVillagerJobIntent ??
           ((unit, task) => {
@@ -234,8 +234,8 @@ function loadUnitRestRules(overrides = {}) {
       '../../lib/units/unitControl': {
         isHeroControlled: () => false,
       },
-      '../../lib/units/villagerSchedule': requireFromTsFile(
-        '../../lib/units/villagerSchedule',
+      '../../lib/units/village/villagerSchedule': requireFromTsFile(
+        '../../lib/units/village/villagerSchedule',
         path.join(__dirname, '..', 'app/services/rest/UnitRestRules.ts'),
         {}
       ),
@@ -1176,7 +1176,7 @@ test('a full bag without a depot does not send the worker to a campfire or town 
   const { sendUnitToDelivery } = loadTsModule('app/classes/unit/UnitResourceDeliveryCommands.ts', {
     mocks: {
       '../../lib': {},
-      '../../lib/units/unitWorkAppearance': { applyUnitWorkAssets() {} },
+      '../../lib/units/visuals/unitWorkAppearance': { applyUnitWorkAssets() {} },
       '../../lib/resources/resourceDelivery': {
         findResourceDeliveryTarget: () => null,
         isUnitResourceCarryFull: () => true,
@@ -1283,7 +1283,7 @@ test('a collective gatherer brings resources home instead of supplying an unrela
 
 test('automatic return to construction retains the collective trip after the building command clears it', () => {
   const { sendUnitToDelivery } = loadTsModule('app/classes/unit/UnitResourceDeliveryCommands.ts', {
-    mocks: { '../../lib': {}, '../../lib/units/unitWorkAppearance': { applyUnitWorkAssets() {} } },
+    mocks: { '../../lib': {}, '../../lib/units/visuals/unitWorkAppearance': { applyUnitWorkAssets() {} } },
   })
   const site = {
     type: 'House',

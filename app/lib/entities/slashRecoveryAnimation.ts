@@ -59,8 +59,11 @@ export function playReverseSlashRecovery(
 
   taskId = playSpriteFrameSequence(sprite, scheduler, {
     isCurrent: () =>
-      !unit.isDead && !unit.isDestroyed && unit.visualAnimationToken === token &&
-      unit.currentSheet === sheet && (taskId == null || unit.attackRecoveryAnimationTaskId === taskId),
+      !unit.isDead &&
+      !unit.isDestroyed &&
+      unit.visualAnimationToken === token &&
+      unit.currentSheet === sheet &&
+      (taskId == null || unit.attackRecoveryAnimationTaskId === taskId),
     frameMs,
     frames,
     onComplete: finish,

@@ -297,7 +297,7 @@ test('quest dialogue hides unavailable deliveries and closes after acceptance an
   t.after(() => {
     global.document = previous
   })
-  const { NpcQuestPanel } = loadTsModule('app/ui/NpcQuestPanel.ts')
+  const { NpcQuestPanel } = loadTsModule('app/ui/quests/NpcQuestPanel.ts')
   const f = fixture()
   f.hero.inventory.resources.wood = 0
   let closed = 0

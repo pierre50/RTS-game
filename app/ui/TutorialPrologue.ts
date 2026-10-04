@@ -1,4 +1,4 @@
-import { SpokenTextReveal } from './SpokenTextReveal'
+import { SpokenTextReveal } from './quests/SpokenTextReveal'
 import { t } from '../lib/lang'
 
 const FADE_MS = 650

@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadUnitVisualTransition() {
-  return loadTsModule('app/lib/units/unitVisualTransition.ts')
+  return loadTsModule('app/lib/units/visuals/unitVisualTransition.ts')
 }
 
 function createSprite() {

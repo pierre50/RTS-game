@@ -79,7 +79,6 @@ export function collectiveVillageEventSnapshot(owner: PlayerLike): string {
     ]
   })
   return JSON.stringify([
-
     (owner.buildings ?? []).map(building => [
       building.label,
       building.type,

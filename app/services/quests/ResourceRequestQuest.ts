@@ -10,9 +10,7 @@ export const resourceRequestQuest: QuestDefinition = {
     {
       id: 'delivery',
       readyDialogue: { key: 'questResourceReady' },
-      objectives: [
-        resourceDeliveryObjective('deliver'),
-      ],
+      objectives: [resourceDeliveryObjective('deliver')],
       interactions: [
         {
           id: 'deliver',

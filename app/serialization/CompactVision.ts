@@ -91,7 +91,10 @@ export class ExplorationSaveChunks {
         for (let shift = 0; shift < 8; shift++) {
           if (!(byte & (1 << shift))) continue
           const bit = byteIndex * 8 + shift
-          callback(chunk.i * VISION_CHUNK_SIZE + Math.floor(bit / VISION_CHUNK_SIZE), chunk.j * VISION_CHUNK_SIZE + bit % VISION_CHUNK_SIZE)
+          callback(
+            chunk.i * VISION_CHUNK_SIZE + Math.floor(bit / VISION_CHUNK_SIZE),
+            chunk.j * VISION_CHUNK_SIZE + (bit % VISION_CHUNK_SIZE)
+          )
         }
       }
     }
@@ -100,7 +103,7 @@ export class ExplorationSaveChunks {
   has(i: number, j: number): boolean {
     const chunk = this.chunks.get(`${Math.floor(i / VISION_CHUNK_SIZE)}:${Math.floor(j / VISION_CHUNK_SIZE)}`)
     const bit = (i % VISION_CHUNK_SIZE) * VISION_CHUNK_SIZE + (j % VISION_CHUNK_SIZE)
-    return Boolean(chunk && (chunk.bytes[bit >> 3] & (1 << (bit & 7))))
+    return Boolean(chunk && chunk.bytes[bit >> 3] & (1 << (bit & 7)))
   }
 
   restore(chunks: Array<{ i: number; j: number; bytes: Uint8Array }>): void {

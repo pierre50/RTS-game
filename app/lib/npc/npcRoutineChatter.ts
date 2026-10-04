@@ -3,9 +3,9 @@ import type { UnitEntity } from '../../types/entities'
 import { heroCanCommand, isChiefUnit } from '../chief'
 import { getLang } from '../lang'
 import { pickRandomItem } from '../random'
-import { getVillagerAssignedJob } from '../units/villagerAssignments'
-import { getDailyRoutinePhase, hasDailyRestSchedule, isSoldierUnit } from '../units/villagerSchedule'
-import { isNightWatchDuty } from '../units/villageNightWatch'
+import { getVillagerAssignedJob } from '../units/autonomy/villagerAssignments'
+import { getDailyRoutinePhase, hasDailyRestSchedule, isSoldierUnit } from '../units/village/villagerSchedule'
+import { isNightWatchDuty } from '../units/village/villageNightWatch'
 import {
   getForeignNpcMood,
   pickForeignNpcChatterLine,

@@ -89,12 +89,19 @@ export class AIThreatManager {
     if (target.owner?.label !== this.player.label) {
       const hero = this.player.context.controls?.heroUnit
       const anchor = this.getHomeAnchor()
-      if (target !== hero || heroCanCommand(hero) || !this.player.factionId ||
-        target.owner?.factionId !== this.player.factionId || !anchor ||
+      if (
+        target !== hero ||
+        heroCanCommand(hero) ||
+        !this.player.factionId ||
+        target.owner?.factionId !== this.player.factionId ||
+        !anchor ||
         (target.spaceId ?? 'outside') !== (anchor.spaceId ?? 'outside') ||
-        Math.abs(target.i - anchor.i) + Math.abs(target.j - anchor.j) > (this.player.difficultyConfig.homeThreatRadius ?? 18) ||
+        Math.abs(target.i - anchor.i) + Math.abs(target.j - anchor.j) >
+          (this.player.difficultyConfig.homeThreatRadius ?? 18) ||
         !this.player.isEnemy(attacker.owner) ||
-        !playerSeesTarget(this.player as unknown as PlayerLike, attacker)) return
+        !playerSeesTarget(this.player as unknown as PlayerLike, attacker)
+      )
+        return
     }
 
     const now = this.player.getNow()

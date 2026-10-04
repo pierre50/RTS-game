@@ -78,7 +78,12 @@ export function createInventoryResourceRow(
   return parts
 }
 
-function createItemRow(menu: InventoryItemRowMenu, options: BaseInventoryItemRowOptions, info: InventoryItemRowParts['info'], quantity: number): InventoryItemRowParts {
+function createItemRow(
+  menu: InventoryItemRowMenu,
+  options: BaseInventoryItemRowOptions,
+  info: InventoryItemRowParts['info'],
+  quantity: number
+): InventoryItemRowParts {
   const row = createInventoryActionRow(menu, {
     id: options.id,
     badge: options.badge,
@@ -88,7 +93,8 @@ function createItemRow(menu: InventoryItemRowMenu, options: BaseInventoryItemRow
     description: getRowDescription(options, info.description),
     meta: options.meta ?? info.meta,
     metaParts: options.metaParts,
-    value: options.value ?? (options.showValue !== false && info.goldValue > 0 ? formatGold(info.goldValue) : undefined),
+    value:
+      options.value ?? (options.showValue !== false && info.goldValue > 0 ? formatGold(info.goldValue) : undefined),
     quantity,
     playClick: options.playClick,
     secondaryAction: options.secondaryAction,

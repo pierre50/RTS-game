@@ -1,5 +1,5 @@
 import { isBuildingTraversable } from '../../lib/buildings/buildingTraversal'
-import { isNearInteriorDoor, preservesInteriorPassages } from '../../lib/buildings/interiorFurniturePlacement'
+import { isNearInteriorDoor, preservesInteriorPassages } from '../../lib/buildings/furniture/interiorFurniturePlacement'
 import { isBuildingAllowedInSpace, isSowingPlacement, WHEAT_PLOT_SIZE } from '../../lib/buildings/campConstruction'
 import { createConstructionMaterials } from '../../lib/economy/constructionMaterials'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'

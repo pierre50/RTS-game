@@ -14,7 +14,7 @@ function loadUnitInitialization() {
       '../../lib/lpc': { applyBakedLpcUnitAssets() {} },
       '../../lib/audio/settings': {},
       '../../lib/units/unitEnergy': { ensureUnitEnergy() {} },
-      '../../lib/units/unitWorkAppearance': {},
+      '../../lib/units/visuals/unitWorkAppearance': {},
       '../../ui/entity/UnitInterface': {},
       './UnitActions': {},
       './UnitCombat': {},

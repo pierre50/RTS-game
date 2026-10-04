@@ -7,9 +7,7 @@ import { DISPLAY_SCALE, getScreenBrightness, onVisualSettingsChange } from './li
 const DEFAULT_MAX_FPS = 60
 
 TextureStyle.defaultOptions.scaleMode = 'nearest'
-
 ;(Error as typeof Error & { stackTraceLimit: number }).stackTraceLimit = Infinity
-
 ;(async () => {
   const gamebox = document.getElementById('game')
   if (!gamebox) {
@@ -33,10 +31,7 @@ TextureStyle.defaultOptions.scaleMode = 'nearest'
 
   function resizeRenderer(): void {
     const { width, height } = getGameViewSize()
-    app.renderer.resize(
-      Math.round(width * DISPLAY_SCALE),
-      Math.round(height * DISPLAY_SCALE)
-    )
+    app.renderer.resize(Math.round(width * DISPLAY_SCALE), Math.round(height * DISPLAY_SCALE))
     applyCanvasLayout(app.canvas, width, height)
   }
 

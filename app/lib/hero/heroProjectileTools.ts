@@ -112,8 +112,11 @@ export function finishHeroCatchingPoleThrowAnimation(hero: UnitEntity): void {
   let taskId: number | null = null
   taskId = playSpriteFrameSequence(sprite, scheduler, {
     isCurrent: () =>
-      !hero.isDead && !hero.isDestroyed && hero.visualAnimationToken === token &&
-      hero.currentSheet === sheet && (taskId == null || hero.attackRecoveryAnimationTaskId === taskId),
+      !hero.isDead &&
+      !hero.isDestroyed &&
+      hero.visualAnimationToken === token &&
+      hero.currentSheet === sheet &&
+      (taskId == null || hero.attackRecoveryAnimationTaskId === taskId),
     frameMs: lpcSlashFrameMs(),
     frames: HERO_CATCHING_POLE_THROW_RECOVERY_FRAMES,
     onComplete: () => finishHeroToolAnimation(hero),

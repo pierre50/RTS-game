@@ -5,7 +5,7 @@ import {
   cancelUnitVisualAnimation,
   isUnitVisualAnimationCurrent,
   setUnitVisualSheet,
-} from '../../lib/units/unitVisualTransition'
+} from '../../lib/units/visuals/unitVisualTransition'
 import type { SchedulerTaskId } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 

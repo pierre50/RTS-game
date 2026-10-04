@@ -1,7 +1,7 @@
 import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from '../../lib'
 import { definedProperties } from '../../lib/definedProperties'
 import type { DepotReservePolicy } from '../../lib/economy/depotReserves'
-import type { VillageHome } from '../../lib/units/villageActivity'
+import type { VillageHome } from '../../lib/units/village/villageActivity'
 import { getWildlifeStore } from '../../services/wildlife/WildlifeStore'
 import type { CampBehavior } from '../../types/camp'
 import type { CaveDefinition } from '../../types/cave'

@@ -30,9 +30,8 @@ export class HeroForgeBody extends HeroCraftingBody {
       ['forgeCategoryTools', FORGE_FAMILIES.slice(0, 3)],
       ['forgeCategoryMilitary', FORGE_FAMILIES.slice(3)],
     ] as const) {
-      this.appendSection(
-        t(title),
-        grid => families.forEach(family => grid.appendChild(this.createUpgradeButton(family)))
+      this.appendSection(t(title), grid =>
+        families.forEach(family => grid.appendChild(this.createUpgradeButton(family)))
       )
     }
   }

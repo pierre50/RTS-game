@@ -2,7 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const cache = new Map()
-const { setDistantOwner } = loadTsModule('app/lib/units/villageActivity.ts', { moduleCache: cache })
+const { setDistantOwner } = loadTsModule('app/lib/units/village/villageActivity.ts', { moduleCache: cache })
 const { setUnitSuspension } = loadTsModule('app/lib/units/unitSuspension.ts', { moduleCache: cache })
 const wildlife = loadTsModule('app/services/wildlife/WildlifeStore.ts', { moduleCache: cache })
 const serialize = animal =>

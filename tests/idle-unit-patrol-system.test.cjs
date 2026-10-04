@@ -53,7 +53,7 @@ function harness({ types = ['Villager'], buildings = ['House'], ai = false, inte
   const { IdleUnitPatrolSystem } = loadTsModule('app/services/IdleUnitPatrolSystem.ts', {
     mocks: {
       '../lib/units/unitSuspension': { isUnitSuspended: unit => unit.suspended },
-      '../lib/units/villageActivity': { isDistantOwner: player => player.distant },
+      '../lib/units/village/villageActivity': { isDistantOwner: player => player.distant },
       '../lib/buildings/passageCells': {
         canUnitUseCellAsIdleDestination: (_u, cell) =>
           !cell.solid && !cell.has && !owner.buildings.some(b => b.entry === cell),
@@ -332,7 +332,7 @@ test('night watch stays outside in its village zone, with one staggered departur
     ai: true,
     interior: true,
   })
-  const { configureVillageNightWatch } = loadTsModule('app/lib/units/villageNightWatch.ts')
+  const { configureVillageNightWatch } = loadTsModule('app/lib/units/village/villageNightWatch.ts')
   configureVillageNightWatch(h.owner)
   h.context.dayNight.state.hour = 0
   h.tick(30000)

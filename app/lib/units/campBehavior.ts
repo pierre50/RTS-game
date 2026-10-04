@@ -1,4 +1,4 @@
-import { villageHome, withinVillageActivity } from './villageActivity'
+import { villageHome, withinVillageActivity } from './village/villageActivity'
 import { getEntitySpaceId } from '../mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeMapSpace } from '../../types/map'

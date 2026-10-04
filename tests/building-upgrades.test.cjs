@@ -22,7 +22,7 @@ const {
   missingConstructionMaterialsForNextPoint,
   hasConstructionWork,
 } = load('app/lib/economy/constructionMaterials.ts')
-const { consumeVillageWorkChange } = load('app/lib/units/villageWorkEvents.ts')
+const { consumeVillageWorkChange } = load('app/lib/units/village/villageWorkEvents.ts')
 function fixture() {
   const owner = { label: 'village', age: 0, populationMax: 5, config: { buildings: definitions } }
   const hero = { owner, type: 'Hero', hitPoints: 45, isChief: true }

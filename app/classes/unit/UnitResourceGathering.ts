@@ -1,5 +1,5 @@
 import { getForgeGatherBonus } from '../../lib/equipment/forgeUpgrades'
-import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
+import { notifyVillageWorkChanged } from '../../lib/units/village/villageWorkEvents'
 import { collectiveHarvestBudget } from '../../lib/economy/collectiveTasks'
 import { getWorkGatherAmount, getResourceGatherSwings } from '../../lib/economy/workRules'
 import {

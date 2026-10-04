@@ -78,7 +78,7 @@ function loadUnitResourceActions(overrides = {}) {
         grantUnitXp: () => {},
       },
       '../../lib/lang': { t: key => key },
-      './UnitBuildVisuals': { shouldSyncBuildHealthDisplay: () => false },
+      './appearance/UnitBuildVisuals': { shouldSyncBuildHealthDisplay: () => false },
       './UnitGatherVisualDebug': { logGatherVisualState: () => {} },
       './UnitManualHeroWork': {
         finishManualHeroWorkSwing: () => {},

@@ -7,7 +7,7 @@ import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit, isLivingChief } from '../../
 import { getPositionInGridAroundInstance } from '../../lib/grid/placement'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { instancesDistance } from '../../lib/maths'
-import { shouldVillagerWork } from '../../lib/units/villagerSchedule'
+import { shouldVillagerWork } from '../../lib/units/village/villagerSchedule'
 import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'

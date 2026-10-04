@@ -2,7 +2,7 @@ import { BUILDING_TYPES, UNIT_TYPES, MOUNTED_HORSE_SPEED_BONUS } from '../../../
 import { BUILDING_TRAINING_CAPACITY } from '../../../lib/buildings/buildingTraining'
 import { getTrainingDurationDays } from '../../../lib/training/trainingRules'
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../../lib/chief'
-import { getVillagerWorkingMinutes } from '../../../lib/units/villagerSchedule'
+import { getVillagerWorkingMinutes } from '../../../lib/units/village/villagerSchedule'
 import { consumeStableHorse, getStableHorseAmount } from '../../../lib/horses/stableHorses'
 import type { BuildingEntity } from '../../../types/entities'
 import type { SaveEntityState, SavePlayerState } from '../../../types/save'

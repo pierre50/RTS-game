@@ -2,7 +2,7 @@ import type { ContainerChild } from 'pixi.js'
 import { instancesDistance } from '../maths'
 import { FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import { BUILDING_TYPES } from '../../constants/entities'
-import { isInteriorFurniture } from '../buildings/interiorFurnitureCatalog'
+import { isInteriorFurniture } from '../buildings/furniture/interiorFurnitureCatalog'
 import { getBuildingFootprintCells, getRandomZoneInGridWithCondition, getZoneInGridWithCondition } from './cells'
 import type { Grid, GridCell, GridInstanceLike, GridPosition, GridZone } from '../../types/grid'
 

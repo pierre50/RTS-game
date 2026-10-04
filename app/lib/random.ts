@@ -56,7 +56,9 @@ export function getDeterministicCellVariant<T>(items: T[] = [], i: number, j: nu
   return items[getDeterministicCellVariantIndex(i, j, items.length, seed)]
 }
 
-export function createDeterministicCellVariantPicker(seed: SeedValue = 0): <T>(items: T[] | undefined, i: number, j: number) => T | null {
+export function createDeterministicCellVariantPicker(
+  seed: SeedValue = 0
+): <T>(items: T[] | undefined, i: number, j: number) => T | null {
   const seedHash = hashSeed(seed)
   return <T>(items: T[] = [], i: number, j: number): T | null => {
     if (!Array.isArray(items) || !items.length) return null

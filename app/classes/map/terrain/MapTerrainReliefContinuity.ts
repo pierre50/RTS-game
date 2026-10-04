@@ -7,7 +7,11 @@ type NeighborFlags = Record<NeighborName, boolean>
 type ReliefBounds = { min: number; max: number }
 type ReliefBoundsResolver = (cell: TerrainCell) => ReliefBounds
 
-function createLevelBoundsResolver(map: TerrainMap, dist: Int16Array, levelBounds: ReliefLevelBounds | null): ReliefBoundsResolver {
+function createLevelBoundsResolver(
+  map: TerrainMap,
+  dist: Int16Array,
+  levelBounds: ReliefLevelBounds | null
+): ReliefBoundsResolver {
   const n = map.size + 1
   return (cell: TerrainCell): ReliefBounds => {
     const index = cell.i * n + cell.j
@@ -195,7 +199,8 @@ function enforceHeightSteps(
 
         const high = cell.z >= neighbor.z ? cell : neighbor
         const low = high === cell ? neighbor : cell
-        changed = enforceOneHeightStepPair(map, high, low, protectedCells, getLevelBounds, depressionUpperBounds, n) || changed
+        changed =
+          enforceOneHeightStepPair(map, high, low, protectedCells, getLevelBounds, depressionUpperBounds, n) || changed
       }
     }
   }

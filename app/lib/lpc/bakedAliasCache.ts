@@ -1,12 +1,7 @@
 import { Assets } from 'pixi.js'
 import { dynamicEquipmentAliases, dynamicEquipmentAsset } from './equipment'
 import { lpcAnimationSpeedForAlias, lpcAnimationSpeedForSheet } from './animationSpeeds'
-import {
-  bakedLogicalAliases,
-  bakedVariantAtlasAlias,
-  bakedVariantAtlasSrc,
-  type BakedUnitType,
-} from './bakedAliases'
+import { bakedLogicalAliases, bakedVariantAtlasAlias, bakedVariantAtlasSrc, type BakedUnitType } from './bakedAliases'
 import type { SpritesheetLike } from '../../types/pixi'
 import type { DynamicEquipmentKey } from './equipmentData'
 

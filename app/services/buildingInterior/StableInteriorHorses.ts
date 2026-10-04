@@ -1,4 +1,4 @@
-import { interiorCellKey } from '../../lib/buildings/interiorDecorations'
+import { interiorCellKey } from '../../lib/buildings/furniture/interiorDecorations'
 import { HORSE_TAMING_STATUS } from '../../lib/horses/horseTaming'
 import {
   getStableInteriorHorseLabel,

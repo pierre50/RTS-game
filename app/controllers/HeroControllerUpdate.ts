@@ -17,13 +17,13 @@ import {
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import { updateHeroCursor } from '../lib/hero/heroCursor'
-import { applyUnitCrouchPose } from '../lib/units/unitCrouchPose'
+import { applyUnitCrouchPose } from '../lib/units/visuals/unitCrouchPose'
 import { resolveNpcGoToCursorState } from '../lib/npc/npcGoToCursor'
 import { resolveHoverTarget, updateNpcFollow } from '../lib/npc/npcInteraction'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/units/unitEnergy'
 import { composeMoveSpeedFactor, getUnitWalkSpeedFactor, isUnitWalkSpeedFactor } from '../lib/units/unitLocomotion'
-import { applyUnitWalkingAnimationSpeed } from '../lib/units/unitWalkingAnimation'
+import { applyUnitWalkingAnimationSpeed } from '../lib/units/visuals/unitWalkingAnimation'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import {

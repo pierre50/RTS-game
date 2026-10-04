@@ -3,7 +3,7 @@ import { UNIT_TYPES } from '../../constants/entities'
 import type { UnitEntity } from '../../types/entities'
 import type { SaveEntityState } from '../../types/save'
 import { notifyHeroHealthChanged } from './unitHealth'
-import { getVillagerSchedule, hasDailyRestSchedule } from './villagerSchedule'
+import { getVillagerSchedule, hasDailyRestSchedule } from './village/villagerSchedule'
 
 const HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
 const FULL_HEALTH_SLEEP_MS = 8 * HOUR_MS

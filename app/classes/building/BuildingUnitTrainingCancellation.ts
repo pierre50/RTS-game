@@ -1,4 +1,4 @@
-import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { BUILDING_TYPES } from '../../constants'
 import { refundCost } from '../../lib'
 import { HORSE_TAMING_STATUS } from '../../lib/horses/horseTaming'

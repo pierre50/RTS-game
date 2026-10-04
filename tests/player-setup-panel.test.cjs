@@ -7,7 +7,7 @@ function loadModule(filename, mocks = {}) {
   return loadTsModule(filename, { mocks })
 }
 
-const { PlayerSetupPanel } = loadModule(path.join(__dirname, '../app/ui/PlayerSetupPanel.ts'), {
+const { PlayerSetupPanel } = loadModule(path.join(__dirname, '../app/ui/setup/PlayerSetupPanel.ts'), {
   '../lib/avatar': {
     getUnitFacePortraitTexture: () => null,
   },

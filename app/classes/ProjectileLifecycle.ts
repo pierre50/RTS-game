@@ -116,7 +116,10 @@ export function stickProjectileInTree(projectile: LifecycleProjectile, tree: Res
   projectile.treeAnchor = tree
   const jitterX = randomRange(-TREE_STICK_JITTER, TREE_STICK_JITTER)
   projectile.parent?.removeChild(projectile)
-  projectile.position.set(projectile.x - tree.x + jitterX, projectile.y - tree.y + getReliefOffset(tree) - TREE_STICK_HEIGHT)
+  projectile.position.set(
+    projectile.x - tree.x + jitterX,
+    projectile.y - tree.y + getReliefOffset(tree) - TREE_STICK_HEIGHT
+  )
   tree.addChild?.(projectile as unknown as Parameters<NonNullable<ResourceEntity['addChild']>>[0])
   projectile.once('destroyed', () => {
     projectile.isDestroyed = true

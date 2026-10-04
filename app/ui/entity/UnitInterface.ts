@@ -24,9 +24,16 @@ export class UnitInterface {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
     const showStats = !options?.hideStats
-    appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, showStats ? unit.hitPoints : undefined, showStats ? unit.totalHitPoints : undefined, {
-      hideType: Boolean(options?.hideIdentity && !unit.name),
-    })
+    appendBaseEntityInfo(
+      element,
+      t(unit.owner!.civ!),
+      typeText,
+      showStats ? unit.hitPoints : undefined,
+      showStats ? unit.totalHitPoints : undefined,
+      {
+        hideType: Boolean(options?.hideIdentity && !unit.name),
+      }
+    )
     if (unit.name && !options?.hideIdentity) {
       const nameElement = createInfoText(MENU_INFO_IDS.name, unit.name)
       const header = element.querySelector('.entity-info-header')
@@ -98,6 +105,5 @@ export class UnitInterface {
     }
 
     element.appendChild(infosDiv)
-
   }
 }

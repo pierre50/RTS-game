@@ -1,20 +1,20 @@
 import { reconcileHouseholds } from '../../lib/housing/households'
-import { configureVillageNightWatch } from '../../lib/units/villageNightWatch'
+import { configureVillageNightWatch } from '../../lib/units/village/villageNightWatch'
 import { settleChiefEscortAtPost } from './ChiefEscortPlacement'
 import { SHEET_TYPES } from '../../constants'
-import { setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
+import { setUnitVisualSheet } from '../../lib/units/visuals/unitVisualTransition'
 import { waitOutsideForSleep } from './UnitRestSleep'
 import { getChiefAudienceBuilding, isChiefEscort } from '../../lib/units/chiefEscort'
 import { isChiefUnit } from '../../lib/chief'
 import { clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
+import { syncUnitSittingPose } from '../../lib/units/visuals/unitSittingPose'
 import {
   isSoldierUnit,
   isVillagerLunchTime,
   shouldVillagerBeAsleep,
   shouldVillagerReturnHome,
   shouldVillagerWork,
-} from '../../lib/units/villagerSchedule'
+} from '../../lib/units/village/villagerSchedule'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 import { putRestingUnitToSleep, settleUnitRestForTimeJump } from './UnitRestLifecycle'

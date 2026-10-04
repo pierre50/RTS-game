@@ -158,7 +158,7 @@ function workHarness(action, target, hero = false) {
         sendVillagerToDeliveryIfFull: () => false,
       },
       './UnitGatherVisualDebug': { logGatherVisualState: () => {} },
-      './UnitBuildVisuals': { shouldSyncBuildHealthDisplay: () => false },
+      './appearance/UnitBuildVisuals': { shouldSyncBuildHealthDisplay: () => false },
     },
   })
   const actions = new UnitResourceActions(unit)
@@ -591,8 +591,8 @@ test('NPC sword approach reaches contact before the real attack loop, and interr
       '../../lib/buildings/interiorAccess': {},
       '../../services/BuildingInteriorSpaceSystem': {},
       '../../lib/projectiles': {},
-      '../../lib/units/unitWorkAppearance': {},
-      '../../lib/units/unitVisualTransition': {
+      '../../lib/units/visuals/unitWorkAppearance': {},
+      '../../lib/units/visuals/unitVisualTransition': {
         setUnitVisualSheet: unit => {
           unit.sprite.currentFrame = 0
         },

@@ -182,9 +182,7 @@ function getOrbitDirection(unit: EnergyEntity): 1 | -1 {
   if (unit.combatRecoveryOrbitDirection === 1 || unit.combatRecoveryOrbitDirection === -1) {
     return unit.combatRecoveryOrbitDirection
   }
-  const seed = `${unit.label ?? ''}${unit.type ?? ''}`
-    .split('')
-    .reduce((total, char) => total + char.charCodeAt(0), 0)
+  const seed = `${unit.label ?? ''}${unit.type ?? ''}`.split('').reduce((total, char) => total + char.charCodeAt(0), 0)
   unit.combatRecoveryOrbitDirection = seed % 2 === 0 ? 1 : -1
   return unit.combatRecoveryOrbitDirection
 }
@@ -226,7 +224,8 @@ function getDesiredRecoveryPoint(
 ): { x: number; y: number; distanceCells: number } {
   const radial = getRecoveryVector(unit, target)
   const direction = getOrbitDirection(unit)
-  const tangent = behavior.recoveryMode === 'orbit' ? { x: -radial.y * direction, y: radial.x * direction } : { x: 0, y: 0 }
+  const tangent =
+    behavior.recoveryMode === 'orbit' ? { x: -radial.y * direction, y: radial.x * direction } : { x: 0, y: 0 }
   const currentDistanceCells = Math.hypot(unit.x - target.x, unit.y - target.y) / CELL_WORLD_DISTANCE
   const targetDistanceCells =
     behavior.recoveryMode === 'retreat'
@@ -256,13 +255,9 @@ function scoreRecoveryCell(
 ): number {
   const targetDistanceCells = Math.hypot(cell.i - target.i, cell.j - target.j)
   const tooClosePenalty =
-    targetDistanceCells < behavior.recoveryMinDistance
-      ? (behavior.recoveryMinDistance - targetDistanceCells) * 8
-      : 0
+    targetDistanceCells < behavior.recoveryMinDistance ? (behavior.recoveryMinDistance - targetDistanceCells) * 8 : 0
   const tooFarPenalty =
-    targetDistanceCells > behavior.recoveryMaxDistance
-      ? (targetDistanceCells - behavior.recoveryMaxDistance) * 4
-      : 0
+    targetDistanceCells > behavior.recoveryMaxDistance ? (targetDistanceCells - behavior.recoveryMaxDistance) * 4 : 0
   const desiredPenalty = Math.hypot(cell.x - desired.x, cell.y - desired.y) / CELL_WORLD_DISTANCE
   const bandPenalty = Math.abs(targetDistanceCells - desired.distanceCells) * 0.65
   const pathPenalty = path.length * 0.12
@@ -279,8 +274,12 @@ function findCombatRecoveryCell(
   if (!map) return null
   const desired = getDesiredRecoveryPoint(unit, target, behavior)
   const passageLookup = createReservedPassageCellLookup(unit.context)
-  const candidates = getCellsAroundPoint(target.i, target.j, map.grid, behavior.recoverySearchRadius, cell =>
-    isOpenRecoveryCell(unit, cell) && !passageLookup.has(cell)
+  const candidates = getCellsAroundPoint(
+    target.i,
+    target.j,
+    map.grid,
+    behavior.recoverySearchRadius,
+    cell => isOpenRecoveryCell(unit, cell) && !passageLookup.has(cell)
   )
 
   let best: RecoveryCandidate | null = null

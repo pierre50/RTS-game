@@ -1,10 +1,10 @@
 import { constructionProgress } from '../../../lib/economy/constructionMaterials'
 import type { BuildingUpgrade } from '../../../lib/economy/constructionMaterials'
 import { isRpgVillager } from '../../../config/rpgVillages'
-import { notifyVillageStateChanged } from '../../../lib/units/villageStateEvents'
+import { notifyVillageStateChanged } from '../../../lib/units/village/villageStateEvents'
 import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { scheduleVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
-import { isVillagerWorkTargetRejected } from '../../../lib/units/villagerAutonomyTargeting'
+import { isVillagerWorkTargetRejected } from '../../../lib/units/autonomy/villagerAutonomyTargeting'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../../constants'
 import {
   findInstancesInSight,

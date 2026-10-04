@@ -48,4 +48,3 @@ export function findNearestMountableHorse(
 
   return candidates.sort((a, b) => getEntityDistance(hero, a) - getEntityDistance(hero, b))[0] ?? null
 }
-

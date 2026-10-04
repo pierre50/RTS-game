@@ -1,6 +1,6 @@
 import { isCampPaused } from '../lib/units/campActivity'
 import { updateUnitEnergy } from '../lib'
-import { isDistantOwner } from '../lib/units/villageActivity'
+import { isDistantOwner } from '../lib/units/village/villageActivity'
 import { isUnitSuspended } from '../lib/units/unitSuspension'
 import { updateUnitSleepHealth } from '../lib/units/unitSleepHealth'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'

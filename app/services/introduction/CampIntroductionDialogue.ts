@@ -24,8 +24,12 @@ export function createCampIntroductionDialogue(options: {
   return {
     nodes,
     // The old question hub resumes at the practical part of the conversation.
-    startId: options.nodeId === 'questions' ? 'next'
-      : nodes.some(node => node.id === options.nodeId) ? options.nodeId! : 'wake',
+    startId:
+      options.nodeId === 'questions'
+        ? 'next'
+        : nodes.some(node => node.id === options.nodeId)
+          ? options.nodeId!
+          : 'wake',
     onNodeChanged: options.onNodeChanged,
     onComplete: options.onComplete,
   }

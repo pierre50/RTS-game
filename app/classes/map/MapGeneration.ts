@@ -11,10 +11,7 @@ import type { PlayerOptions } from '../players/Player'
 import type { AnimalOptions } from '../animal/Animal'
 import type { GameContextLike } from '../../types/context'
 import { placeBanditCamps } from './BanditCampGeneration'
-import {
-  generatePlayers as generateMapPlayers,
-  placePlayers as placeMapPlayers,
-} from './MapPlayerGeneration'
+import { generatePlayers as generateMapPlayers, placePlayers as placeMapPlayers } from './MapPlayerGeneration'
 import {
   canPlaceAmbientAnimalAt,
   generateAmbientAnimalSets,
@@ -232,7 +229,6 @@ export class MapGeneration {
       ) => this.prepareBaseTerrain(context, timer, onProgress),
     }
   }
-
 
   ensureNeutralPlayer(position: { i: number; j: number }): PlayerLike {
     return ensureNeutralPlayer(this.map.context as GameContextLike, position)

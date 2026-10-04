@@ -136,7 +136,7 @@ test('appearance layers use harvest art for taking meat instead of hunter shooti
     ['hair/shooting', { data: { animationSpeed: 0.3 }, textures: { frame: { id: 'shooting' } } }],
   ])
 
-  const { syncUnitAppearanceLayers } = loadTsModule('app/classes/unit/UnitAppearanceLayers.ts', {
+  const { syncUnitAppearanceLayers } = loadTsModule('app/classes/unit/appearance/UnitAppearanceLayers.ts', {
     mocks: {
       '../../constants': constants,
       '../constants': constants,
@@ -235,7 +235,7 @@ test('appearance layers use shooting art for hero bow charge even without a hunt
     ['hair/shooting', { data: { animationSpeed: 0.3 }, textures: { frame: { id: 'shooting' } } }],
   ])
 
-  const { syncUnitAppearanceLayers } = loadTsModule('app/classes/unit/UnitAppearanceLayers.ts', {
+  const { syncUnitAppearanceLayers } = loadTsModule('app/classes/unit/appearance/UnitAppearanceLayers.ts', {
     mocks: {
       '../../constants': constants,
       '../constants': constants,

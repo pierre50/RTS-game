@@ -51,9 +51,7 @@ export const tutorialHuntQuest: QuestDefinition = {
     {
       id: 'hunt',
       dialogue: { key: 'tutorialHuntDialogue' },
-      objectives: [
-        resourceDeliveryObjective('hunt'),
-      ],
+      objectives: [resourceDeliveryObjective('hunt')],
       interactions: [
         {
           id: 'deliver',
@@ -83,25 +81,45 @@ export const tutorialHuntQuest: QuestDefinition = {
       id: 'legacy-hunt',
       dialogue: { key: 'tutorialHuntThanks' },
       objectives: [],
-      interactions: [{
-        id: 'continue', actor: 'recipient', text: { key: 'tutorialContinue' },
-        visibleWhen: [], enabledWhen: [], effects: defenseKit, nextStageId: 'alarm',
-      }],
+      interactions: [
+        {
+          id: 'continue',
+          actor: 'recipient',
+          text: { key: 'tutorialContinue' },
+          visibleWhen: [],
+          enabledWhen: [],
+          effects: defenseKit,
+          nextStageId: 'alarm',
+        },
+      ],
     },
     {
       id: 'alarm',
       dialogue: { key: 'tutorialRaidAlarm' },
       objectives: [],
-      interactions: [{
-        id: 'defend', actor: 'recipient', text: { key: 'tutorialRaidReply' },
-        visibleWhen: [], enabledWhen: [], effects: [], nextStageId: 'raid', closeDialogue: true,
-      }],
+      interactions: [
+        {
+          id: 'defend',
+          actor: 'recipient',
+          text: { key: 'tutorialRaidReply' },
+          visibleWhen: [],
+          enabledWhen: [],
+          effects: [],
+          nextStageId: 'raid',
+          closeDialogue: true,
+        },
+      ],
     },
     {
       id: 'raid',
       dialogue: { key: 'tutorialRaidUrgent' },
-      objectives: [{ id: 'survive', text: { key: 'tutorialRaidObjective' },
-        conditions: [{ type: 'fact', key: 'raidSurvived', value: true }] }],
+      objectives: [
+        {
+          id: 'survive',
+          text: { key: 'tutorialRaidObjective' },
+          conditions: [{ type: 'fact', key: 'raidSurvived', value: true }],
+        },
+      ],
       interactions: [],
     },
   ],

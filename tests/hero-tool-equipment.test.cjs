@@ -16,7 +16,7 @@ function loadHeroToolEquipment() {
         getUnitWorkEquipment: work => (work === 'attacker' ? ['axe_iron'] : []),
         refreshUnitEquipmentStats: () => {},
       },
-      '../units/unitWorkAppearance': {
+      '../units/visuals/unitWorkAppearance': {
         applyUnitActionFrameSequence: () => {},
       },
     },

@@ -74,11 +74,7 @@ export function createResourceRowInfo(
   }
 }
 
-function createEquipmentDetails(
-  equipment: string,
-  count = 1,
-  mode: EquipmentDetailsMode = 'inventory'
-): MenuDetails {
+function createEquipmentDetails(equipment: string, count = 1, mode: EquipmentDetailsMode = 'inventory'): MenuDetails {
   const stats = getEquipmentCombatStats([equipment])
   const value = getEquipmentGoldValue(equipment)
   const amount = Math.max(1, Math.floor(count))

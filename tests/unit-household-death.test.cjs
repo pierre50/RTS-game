@@ -15,7 +15,7 @@ const { UnitLifecycle } = loadTsModule('app/classes/unit/UnitLifecycle.ts', {
     '../../lib/equipment/equipmentLoot': { initializeUnitCorpseLootEquipment() {} },
     '../../lib/equipment/unitCorpseLoot': { addUnitCorpseLootResources() {} },
     '../../lib/entities/entityHealthDisplay': {},
-    '../../lib/units/unitVisualTransition': {},
+    '../../lib/units/visuals/unitVisualTransition': {},
     '../../services/rest/UnitSleepVisuals': { clearSleepingVisualState() {} },
     '../../lib/hero/heroDefense': { cancelHeroDefense() {} },
     '../../lib/hero/heroPowerCharge': { cancelHeroPowerCharge() {} },

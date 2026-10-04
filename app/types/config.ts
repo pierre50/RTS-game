@@ -1,7 +1,7 @@
 import type { ContactActionProfile, ContactProfileOverride } from '../lib/contact/contactTypes'
 import type { ResourceAmount } from './common'
 import type { CommandSound, UnitSounds } from './sounds'
-import type { HeroEquipmentSlot } from './unitTypes'
+import type { HeroEquipmentSlot } from './entities/unitTypes'
 
 export type ConfigValue = string | number | boolean | null | undefined | ConfigValue[] | { [key: string]: ConfigValue }
 

@@ -65,7 +65,7 @@ function fixture() {
   return { grid, space, player, controls, menu, rules: new BuildingPlacementRules(controls) }
 }
 
-for (const type of loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts').INTERIOR_FURNITURE_TYPES) {
+for (const type of loadTsModule('app/lib/buildings/furniture/interiorFurnitureCatalog.ts').INTERIOR_FURNITURE_TYPES) {
   if (type === 'CampBedroll') continue
   test(`${type} preview and purchase require clearance from interior edges and corners`, () => {
     const { grid, player, controls, rules } = fixture()
@@ -155,7 +155,7 @@ test('construction menu exposes only furniture inside and restores buildings out
     getInventoryConstructionButtons(menu)
       .map(button => button.id)
       .sort(),
-    [...loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts').INTERIOR_FURNITURE_TYPES].sort()
+    [...loadTsModule('app/lib/buildings/furniture/interiorFurnitureCatalog.ts').INTERIOR_FURNITURE_TYPES].sort()
   )
   controls.heroUnit.spaceId = 'outside'
   const outside = getInventoryConstructionButtons(menu).map(button => button.id)

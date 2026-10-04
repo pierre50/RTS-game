@@ -161,7 +161,11 @@ export function pickupCorpseEquipment(
   return true
 }
 
-export function equipHeroInventoryItem(hero: UnitEntity | null | undefined, equipment: string, requestedCount?: number): boolean {
+export function equipHeroInventoryItem(
+  hero: UnitEntity | null | undefined,
+  equipment: string,
+  requestedCount?: number
+): boolean {
   if (!hero || !equipHeroInventoryItemData(hero, equipment, requestedCount)) return false
   refreshUnitEquipmentStats(hero)
   refreshBakedLpcUnitAssets(hero)

@@ -53,8 +53,8 @@ for (const dead of [false, true]) {
               params?.count != null ? `${params.count} ${key === 'inventoryItemCountOne' ? 'item' : 'items'}` : key,
           },
           '../utils/entityDisplayName': { getEntityDisplayName: target => target.name },
-          '../EntityInfoContent': { createTitledEntityInfoContent: () => element() },
-          '../InspectionPanel': {
+          '../inspection/EntityInfoContent': { createTitledEntityInfoContent: () => element() },
+          '../inspection/InspectionPanel': {
             createInspectionModal: options => {
               modalOptions = options
               return options

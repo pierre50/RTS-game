@@ -35,7 +35,7 @@ function loadUnitWorkAppearance(cacheGets) {
     },
   }
 
-  return loadTsModule('app/lib/units/unitWorkAppearance.ts', {
+  return loadTsModule('app/lib/units/visuals/unitWorkAppearance.ts', {
     mocks: {
       'pixi.js': {
         Assets: {

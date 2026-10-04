@@ -192,7 +192,9 @@ function* savedStateRestoreSteps(map: MapGenerationMap, data: SavedGameData) {
     label: 'restoringEntities',
     progress: 0.7,
     run: () => {
-      traceLoad('save.restoreEntities', () => restoreSavedEntities(map, players, animals, context, runtime?.dayNightElapsedMs ?? 0))
+      traceLoad('save.restoreEntities', () =>
+        restoreSavedEntities(map, players, animals, context, runtime?.dayNightElapsedMs ?? 0)
+      )
       finishSavedStateRestore(map)
     },
   }

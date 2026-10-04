@@ -1,4 +1,4 @@
-import { notifyVillageStateChanged } from './villageStateEvents'
+import { notifyVillageStateChanged } from './village/villageStateEvents'
 import type { UnitEntity } from '../../types/entities'
 
 export type UnitSuspensionReason = 'camp-paused' | 'distant-work'

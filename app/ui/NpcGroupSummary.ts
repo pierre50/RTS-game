@@ -1,7 +1,7 @@
 import type { Application } from 'pixi.js'
 import type { UnitEntity } from '../types/entities'
 import { t } from '../lib/lang'
-import { createEntityAvatar } from './EntityInfoContent'
+import { createEntityAvatar } from './inspection/EntityInfoContent'
 import { getEntityDisplayName } from './utils/entityDisplayName'
 
 export function createNpcGroupSummary(app: Application, npcs: readonly UnitEntity[]): HTMLElement {

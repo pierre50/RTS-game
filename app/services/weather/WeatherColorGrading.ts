@@ -34,12 +34,7 @@ export class WeatherColorGrading {
   targets: Set<ColorFilterTarget>
   tintFilter: Filter
 
-  constructor(
-    context: GameContextLike,
-    map: WeatherColorMap,
-    tintFilter: Filter,
-    getScreenRect: () => ScreenRect
-  ) {
+  constructor(context: GameContextLike, map: WeatherColorMap, tintFilter: Filter, getScreenRect: () => ScreenRect) {
     this.area = new Rectangle()
     this.context = context
     this.getScreenRect = getScreenRect

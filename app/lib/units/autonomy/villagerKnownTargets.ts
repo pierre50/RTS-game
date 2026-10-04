@@ -1,13 +1,13 @@
-import { canSeekVillageResource } from '../villageSupplyTrips'
-import { withinVillageActivity } from '../villageActivity'
+import { canSeekVillageResource } from '../village/villageSupplyTrips'
+import { withinVillageActivity } from '../village/villageActivity'
 import { nearestResourceRecords } from '../../../classes/resources/CompactResourceSet'
 import { knownTarget, knowsEconomicTarget, playerSeesTarget, rememberedStaticTargets } from '../playerTargetKnowledge'
 import { sameMapSpace } from '../../mapSpaces'
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, WORK_TYPES } from '../../constants'
 import { getGaiaAnimals } from '../../playerState'
 import { isWildHorse } from '../../horses/horseTaming'
-import { canVillagerAutonomouslyHunt } from '../villagerHunting'
-import { targetWorkerLoad } from '../villagerAutonomyTargeting'
+import { canVillagerAutonomouslyHunt } from './villagerHunting'
+import { targetWorkerLoad } from './villagerAutonomyTargeting'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../../types/entities'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {

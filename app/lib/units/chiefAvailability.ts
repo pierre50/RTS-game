@@ -1,5 +1,5 @@
 import { isChiefUnit } from '../chief'
-import { getDailyRoutinePhase } from './villagerSchedule'
+import { getDailyRoutinePhase } from './village/villagerSchedule'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 

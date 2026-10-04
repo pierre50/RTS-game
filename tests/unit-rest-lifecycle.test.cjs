@@ -34,7 +34,7 @@ function fixture({ deferWake = false } = {}) {
       getEntitySpaceMapLike: (_unit, map) => map,
       moveEntityToMapSpace: () => {},
     },
-    '../../lib/units/villagerTaskRecovery': {
+    '../../lib/units/autonomy/villagerTaskRecovery': {
       resumeVillagerStoredTask: (_unit, task) => {
         calls.push(['resume', task])
         return Boolean(task)
@@ -45,7 +45,7 @@ function fixture({ deferWake = false } = {}) {
       },
     },
     '../../lib/resources/resourceDelivery': { unitHasDeliverableResources: unit => Boolean(unit.carrying) },
-    '../../lib/units/villagerSchedule': {
+    '../../lib/units/village/villagerSchedule': {
       hasDailyRestSchedule: () => true,
       shouldVillagerBeAsleep: () => true,
       shouldVillagerWork: () => true,

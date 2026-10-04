@@ -1,5 +1,10 @@
 import { UNIT_TYPES } from '../../../constants'
-import { getCellsAroundPoint, getInstanceDegree, getInstancePath, markVillagerAutonomyTargetRejected } from '../../../lib'
+import {
+  getCellsAroundPoint,
+  getInstanceDegree,
+  getInstancePath,
+  markVillagerAutonomyTargetRejected,
+} from '../../../lib'
 import { canUnitWaitOnCell, createReservedPassageCellLookup } from '../../../lib/buildings/passageCells'
 import { getEntitySpaceMapLike } from '../../../lib/mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'

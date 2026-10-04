@@ -1,6 +1,6 @@
 import { appendConstructionInfo } from './ConstructionInfo'
 import { canHeroDemolishBuilding } from '../../lib/buildings/buildingDemolition'
-import { isInteriorFurniture } from '../../lib/buildings/interiorFurnitureCatalog'
+import { isInteriorFurniture } from '../../lib/buildings/furniture/interiorFurnitureCatalog'
 import { getBuildingBedCount, refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getEntityDescription } from './EntityDescription'
 import { BUILDING_TYPES, MENU_INFO_IDS, PLAYER_TYPES } from '../../constants'

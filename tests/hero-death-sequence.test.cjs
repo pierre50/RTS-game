@@ -9,7 +9,7 @@ test('death completion resolves only after the dying animation reaches its last 
     '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback() {} },
     '../../lib/hero/heroDefense': { cancelHeroDefense() {} },
     '../../lib/hero/heroPowerCharge': { cancelHeroPowerCharge() {} },
-    '../../lib/units/unitVisualTransition': { setUnitVisualSheet: () => 1, isUnitVisualAnimationCurrent: () => true },
+    '../../lib/units/visuals/unitVisualTransition': { setUnitVisualSheet: () => 1, isUnitVisualAnimationCurrent: () => true },
   } })
   const unit = { sprite: {}, owner: { corpses: [] }, zIndex: 1 }
   const lifecycle = new UnitLifecycle(unit)

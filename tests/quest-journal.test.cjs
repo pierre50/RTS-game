@@ -43,7 +43,7 @@ test('journal opens empty, shows accepted quests, tracks one and disposes its mo
   t.after(() => {
     global.document = oldDocument
   })
-  const { QuestJournalManager } = loadTsModule('app/ui/QuestJournalManager.ts', {
+  const { QuestJournalManager } = loadTsModule('app/ui/quests/QuestJournalManager.ts', {
     mocks: {
       '../lib/lang': { t: key => key },
       '../styles/quests.css': {},

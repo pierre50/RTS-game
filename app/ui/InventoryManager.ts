@@ -13,7 +13,7 @@ import {
 } from '../lib/hero/heroTools'
 import { t } from '../lib/lang'
 import type { MenuButtonSpec } from '../types/ui'
-import { createEntityInfoContent } from './EntityInfoContent'
+import { createEntityInfoContent } from './inspection/EntityInfoContent'
 import { appendInventoryEmptyIcon } from './inventory/InventoryActionRow'
 import { createEquipmentRowInfo } from './inventory/InventoryDetails'
 import {

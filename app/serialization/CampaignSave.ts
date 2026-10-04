@@ -42,7 +42,11 @@ function worldEnvironment(world: SerializedSave): string | null {
 }
 
 function isInteriorWorld(world: CampaignWorldSave | undefined, node?: WorldGraphNode): boolean {
-  return node?.kind === 'interior' || world?.state?.world?.mapType === 'interior' || world?.state?.config?.mapType === 'interior'
+  return (
+    node?.kind === 'interior' ||
+    world?.state?.world?.mapType === 'interior' ||
+    world?.state?.config?.mapType === 'interior'
+  )
 }
 
 function isLivingSavedEntity(entity: { hitPoints?: number; isDead?: boolean; isDestroyed?: boolean }): boolean {
@@ -184,7 +188,11 @@ export function getRealWorldGraph(campaign: CampaignSave) {
   }
 }
 
-export function updateCurrentWorldState(campaign: CampaignSave, state: SerializedSave, now: number = Date.now()): CampaignSave {
+export function updateCurrentWorldState(
+  campaign: CampaignSave,
+  state: SerializedSave,
+  now: number = Date.now()
+): CampaignSave {
   const currentWorld = campaign.worlds[campaign.currentWorldId]
   if (!currentWorld) throw new Error('Invalid save file: current campaign world is missing.')
   const world = {
@@ -251,7 +259,9 @@ export function addChildWorldToCampaign(
   const existingWorld = campaign.worlds[id]
   const parentNode = campaign.worldGraph.nodes[parentWorldId]
   const existingNode = campaign.worldGraph.nodes[id]
-  const nextParentChildren = parentNode?.children.includes(id) ? parentNode.children : [...(parentNode?.children ?? []), id]
+  const nextParentChildren = parentNode?.children.includes(id)
+    ? parentNode.children
+    : [...(parentNode?.children ?? []), id]
   const nextFactionIds = [...new Set([...(existingNode?.factionIds ?? []), ...factionIds])]
 
   return {

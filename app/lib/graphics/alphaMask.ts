@@ -122,8 +122,16 @@ export function texturesHaveOpaqueOverlap(
   const backMask = getAlphaMask(backTexture, renderer)
   if (!frontMask || !backMask) return true
 
-  const x0 = clampInt(Math.floor(((intersection.minX - frontBounds.minX) / frontBounds.width) * frontMask.width), 0, frontMask.width)
-  const y0 = clampInt(Math.floor(((intersection.minY - frontBounds.minY) / frontBounds.height) * frontMask.height), 0, frontMask.height)
+  const x0 = clampInt(
+    Math.floor(((intersection.minX - frontBounds.minX) / frontBounds.width) * frontMask.width),
+    0,
+    frontMask.width
+  )
+  const y0 = clampInt(
+    Math.floor(((intersection.minY - frontBounds.minY) / frontBounds.height) * frontMask.height),
+    0,
+    frontMask.height
+  )
   const x1 = clampInt(
     Math.ceil(((intersection.minX + intersection.width - frontBounds.minX) / frontBounds.width) * frontMask.width),
     0,

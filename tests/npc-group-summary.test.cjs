@@ -25,7 +25,7 @@ function withSummary(npcs, check, hasPortrait = true) {
   try {
     const { createNpcGroupSummary } = loadTsModule('app/ui/NpcGroupSummary.ts', {
       mocks: {
-        './EntityInfoContent': {
+        './inspection/EntityInfoContent': {
           createEntityAvatar: (_app, unit) => {
             portraits.push(unit)
             return hasPortrait ? element() : null

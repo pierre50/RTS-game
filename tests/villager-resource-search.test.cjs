@@ -13,7 +13,7 @@ function fixture(compact) {
       },
     },
   }
-  const autonomy = loadTsModule('app/lib/units/villagerAutonomy.ts', { moduleCache, mocks })
+  const autonomy = loadTsModule('app/lib/units/autonomy/villagerAutonomy.ts', { moduleCache, mocks })
   const { CompactResourceSet } = loadTsModule('app/classes/resources/CompactResourceSet.ts', { moduleCache, mocks })
   let resources
   if (compact) {

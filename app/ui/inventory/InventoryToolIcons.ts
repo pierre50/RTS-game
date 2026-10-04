@@ -1,6 +1,6 @@
 import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
 import type { InventoryManager } from '../InventoryManager'
-import { createEquipmentRowInfo,formatGold } from './InventoryDetails'
+import { createEquipmentRowInfo, formatGold } from './InventoryDetails'
 
 export function renderInventoryToolIcons(this: InventoryManager): void {
   const { app } = this.menu.context

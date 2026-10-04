@@ -1,6 +1,6 @@
 import { isCompactResourceRecord } from '../../classes/resources/CompactResourceSet'
 import { isWheatMature } from '../combat/resourceActionConditions'
-import { isVillageResourceWorker } from './villageSupplyTrips'
+import { isVillageResourceWorker } from './village/villageSupplyTrips'
 import { knowsNativeResources } from '../campaign/nativeEconomy'
 import { getEntitySpaceId, sameMapSpace } from '../mapSpaces'
 import { instanceIsInInsightRange } from './insightDetection'

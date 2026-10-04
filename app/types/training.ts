@@ -1,5 +1,5 @@
 import type { ResourceAmount } from './common'
-import type { UnitCreationExtra, UnitEntity } from './unitEntity'
+import type { UnitCreationExtra, UnitEntity } from './entities/unitEntity'
 
 // Entered trainees no longer belong to the map. Training only retains their portable state.
 export type TrainingTrainee = Pick<

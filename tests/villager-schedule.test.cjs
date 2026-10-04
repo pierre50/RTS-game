@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { getVillagerSchedule, shouldVillagerBeAsleep, shouldVillagerWork } = loadTsModule(
-  'app/lib/units/villagerSchedule.ts'
+  'app/lib/units/village/villagerSchedule.ts'
 )
 
 test('schedule stays fixed after movement and survives serialization', () => {
@@ -63,7 +63,7 @@ test('lunch interrupts work at the saved boundaries and upgrades old schedules',
 })
 
 test('all scheduled roles resolve the current phase and next boundary across multiple days', () => {
-  const { getDailyRoutine } = loadTsModule('app/lib/units/villagerSchedule.ts')
+  const { getDailyRoutine } = loadTsModule('app/lib/units/village/villagerSchedule.ts')
   for (const type of ['Villager', 'Chief', 'Fantassin', 'Bowman']) {
     const unit = {
       type,

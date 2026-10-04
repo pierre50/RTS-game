@@ -12,7 +12,7 @@ function setup() {
       remove(id) { tasks.delete(id) },
     },
   }
-  const { createInspectionModal } = loadTsModule('app/ui/InspectionPanel.ts', { mocks: {
+  const { createInspectionModal } = loadTsModule('app/ui/inspection/InspectionPanel.ts', { mocks: {
     '../lib': { Modal: class {
       constructor(options) { this.options = options }
       close() { this.closed = true }

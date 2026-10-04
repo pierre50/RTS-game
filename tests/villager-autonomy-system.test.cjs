@@ -32,7 +32,7 @@ function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
     mocks: {
       '../lib/units/autonomy/villagerJobDiagnostics': { logStationaryVillager: unit => stalledLogs.push(unit.label) },
       '../lib/units/autonomy/villagerExploration': exploration,
-      '../lib/units/villagerTaskRecovery': {
+      '../lib/units/autonomy/villagerTaskRecovery': {
         resumeVillagerJobIntent(unit) {
           calls.push(unit.label)
           if (resume) return resume(unit)
@@ -42,8 +42,8 @@ function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
           return true
         },
       },
-      '../lib/units/villagerAutonomy': { hasVillagerAutonomyTarget: unit => Boolean(unit.hasKnownTarget) },
-      '../lib/units/villagerAutonomyTargeting': {
+      '../lib/units/autonomy/villagerAutonomy': { hasVillagerAutonomyTarget: unit => Boolean(unit.hasKnownTarget) },
+      '../lib/units/autonomy/villagerAutonomyTargeting': {
         markVillagerAutonomyTargetRejected: (_unit, target) => rejected.push(target),
       },
     },

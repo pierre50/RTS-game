@@ -2,11 +2,11 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const moduleCache = new Map()
-const { notifyVillageStateChanged } = loadTsModule('app/lib/units/villageStateEvents.ts', { moduleCache })
+const { notifyVillageStateChanged } = loadTsModule('app/lib/units/village/villageStateEvents.ts', { moduleCache })
 const { updateCollectiveVillage, flushCollectiveVillageWork } = loadTsModule('app/services/CollectiveVillageWork.ts', {
   moduleCache,
   mocks: {
-    '../lib/units/villagerAutonomy': {
+    '../lib/units/autonomy/villagerAutonomy': {
       assignVillagerAutonomy(unit, job) {
         unit.orders.push(job)
         if (unit.unavailableJobs?.includes(job)) {
@@ -122,7 +122,7 @@ test('a failed automatic assignment remains collective while waiting for a targe
   const { owner, unit } = fixture()
   const { updateCollectiveVillage: update } = loadTsModule('app/services/CollectiveVillageWork.ts', {
     mocks: {
-      '../lib/units/villagerAutonomy': {
+      '../lib/units/autonomy/villagerAutonomy': {
         assignVillagerAutonomy(unit, job) {
           unit.autonomousJob = job
           return false

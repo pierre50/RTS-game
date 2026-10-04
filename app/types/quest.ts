@@ -55,11 +55,14 @@ export type QuestDefinition = {
   stages: QuestStage[]
 }
 export type QuestInstance = {
-  encounters?: Record<string, {
-    entityLabels: string[]
-    position: { i: number; j: number }
-    parameters: Record<string, string | number>
-  }>
+  encounters?: Record<
+    string,
+    {
+      entityLabels: string[]
+      position: { i: number; j: number }
+      parameters: Record<string, string | number>
+    }
+  >
   reservation?: { entityLabels: string[]; stageIds: string[] }
   /** Authored assignments can opt out of recurring village offers. */
   repeatable?: boolean

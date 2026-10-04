@@ -3,7 +3,7 @@ import { ambientActivityArea, AMBIENT_CAMERA_MARGIN } from './AmbientActivityAre
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
-import type { VillageHome } from '../../lib/units/villageActivity'
+import type { VillageHome } from '../../lib/units/village/villageActivity'
 
 export type VillageObservation = { reason: 'hero' | 'camera' | 'combat' | 'distant'; actor?: string; distance?: number }
 

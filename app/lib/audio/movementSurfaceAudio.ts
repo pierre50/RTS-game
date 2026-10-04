@@ -112,10 +112,16 @@ function playUnitFootstep(unit: UnitEntity): void {
 function getResourceNormalizedDistance(point: { x?: number; y?: number }, entity: RuntimeEntity): number {
   const halfWidth = (CELL_WIDTH * Math.max(1, entity.size ?? 1)) / 2
   const halfHeight = (CELL_HEIGHT * Math.max(1, entity.size ?? 1)) / 2
-  return Math.abs((point.x ?? 0) - (entity.x ?? 0)) / halfWidth + Math.abs((point.y ?? 0) - (entity.y ?? 0)) / halfHeight
+  return (
+    Math.abs((point.x ?? 0) - (entity.x ?? 0)) / halfWidth + Math.abs((point.y ?? 0) - (entity.y ?? 0)) / halfHeight
+  )
 }
 
-function isMovingTowardResource(unit: UnitEntity, entity: RuntimeEntity, options: MovementSurfaceAudioOptions): boolean {
+function isMovingTowardResource(
+  unit: UnitEntity,
+  entity: RuntimeEntity,
+  options: MovementSurfaceAudioOptions
+): boolean {
   if (options.previousX == null || options.previousY == null) return false
   const moveX = (unit.x ?? 0) - options.previousX
   const moveY = (unit.y ?? 0) - options.previousY

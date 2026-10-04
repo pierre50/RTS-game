@@ -16,7 +16,7 @@ test('shared reveal preserves paragraph order, voice and volume, and cancels sta
   const element = () => ({ textContent: '', classList: { add() {}, remove() {} } })
   const tick = () => { const [key, fn] = [...timers][0]; timers.delete(key); fn() }
   try {
-    const { SpokenTextReveal } = loadTsModule('app/ui/SpokenTextReveal.ts', {
+    const { SpokenTextReveal } = loadTsModule('app/ui/quests/SpokenTextReveal.ts', {
       mocks: { '../lib/audio/settings': { getVolume: () => 0.25 } },
     })
     const reveal = new SpokenTextReveal()

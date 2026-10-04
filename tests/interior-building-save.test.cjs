@@ -10,7 +10,7 @@ function groupInteriorBuildings(buildings, label) {
 }
 const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/BuildingInteriorSpaceDecorations.ts', {
   mocks: {
-    '../../app/lib/buildings/interiorDecorations': {},
+    '../../app/lib/buildings/furniture/interiorDecorations': {},
     '../../app/lib/grid/placement': {},
   },
 })

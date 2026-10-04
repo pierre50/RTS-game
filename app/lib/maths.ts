@@ -167,10 +167,7 @@ export function getReliefLiftPixels(level: number | null | undefined): number {
  * @param {object} cell
  */
 export function getGroundReliefLevel(
-  cell:
-    | ({ z?: number | null; inclined?: boolean | null } & Partial<GridPosition & Point>)
-    | null
-    | undefined
+  cell: ({ z?: number | null; inclined?: boolean | null } & Partial<GridPosition & Point>) | null | undefined
 ): number {
   if (!cell) return 0
   if (isFiniteNumber(cell.i) && isFiniteNumber(cell.j) && isFiniteNumber(cell.y)) {

@@ -31,4 +31,3 @@ export function nearestPlayerForBuilding(building: BuildingEntity, players: Play
   }
   return nearest
 }
-

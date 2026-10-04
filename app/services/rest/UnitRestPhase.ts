@@ -8,7 +8,7 @@ import {
   shouldVillagerBeAwake,
   shouldVillagerReturnHome,
   shouldVillagerWork,
-} from '../../lib/units/villagerSchedule'
+} from '../../lib/units/village/villagerSchedule'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 import { isSleepTime } from './UnitRestRules'

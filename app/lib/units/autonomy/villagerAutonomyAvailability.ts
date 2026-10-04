@@ -1,7 +1,7 @@
 import { isRpgVillager } from '../../../config/rpgVillages'
 import { unitSuspensionReason } from '../unitSuspension'
 import { ACTION_TYPES } from '../../../constants'
-import { shouldVillagerWork } from '../villagerSchedule'
+import { shouldVillagerWork } from '../village/villagerSchedule'
 import type { UnitEntity } from '../../../types/entities'
 
 export function hasPriorityCombat(unit: UnitEntity): boolean {

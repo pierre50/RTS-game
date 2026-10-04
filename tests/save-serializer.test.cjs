@@ -48,7 +48,7 @@ function loadSaveSerializer() {
         mocks: { '../../lib': mockRequire('../lib'), '../../services/wildlife/WildlifeStore': wildlifeModule },
       })
     if (id === '../lib/camps/campRespawnState') return campRespawns
-    if (id === '../lib/units/villageActivity') return loadTsModule('app/lib/units/villageActivity.ts')
+    if (id === '../lib/units/village/villageActivity') return loadTsModule('app/lib/units/village/villageActivity.ts')
     if (id === '../services/NaturalGrowthQueue') return growthModule
     if (id === '../services/wildlife/WildlifeStore') return wildlifeModule
     if (id === '../classes/resources/CompactResourceSet') return compactResources
@@ -84,7 +84,7 @@ function loadSaveSerializer() {
         getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
       }
     }
-    if (id === '../lib/units/villagerAssignments') {
+    if (id === '../lib/units/autonomy/villagerAssignments') {
       return {
         summarizeVillagerAssignments(units = []) {
           const assigned = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
@@ -1159,4 +1159,76 @@ test('market wallets preserve zero and purchase proceeds in saved buildings', ()
     saved.players[0].buildings.map(building => building.marketGold),
     [0, 325, 1800]
   )
+})
+
+test('AI snapshots retain selection and threat memory as detached labels and elapsed ages', () => {
+  const context = makeContext()
+  const owner = context.players[0]
+  Object.assign(owner, {
+    isPlayed: false,
+    type: 'AI',
+    getNow: () => 100,
+    phase: 'attack',
+    selectedUnits: [{ label: 'soldier' }],
+    selectedUnit: { label: 'soldier' },
+    selectedBuilding: { label: 'tower' },
+    selectedOther: { label: 'tree' },
+    enemyUnitMemory: new Map([
+      ['a', { instance: { label: 'enemy' }, lastSeenAt: 60 }],
+      ['b', { label: 'lost' }],
+      ['c', {}],
+    ]),
+    enemyBuildingMemory: new Map([['a', { instance: { label: 'fort' }, lastSeenAt: 200 }]]),
+    threatenedTargets: new Map([
+      [
+        'a',
+        {
+          target: { label: 'tower' },
+          attacker: { label: 'enemy' },
+          lastSeenAt: 80,
+          count: 2,
+          attackerFamily: 'unit',
+          attackerType: 'Archer',
+        },
+      ],
+      ['b', {}],
+    ]),
+  })
+  const saved = loadSaveSerializer().serializeGame(context).players[0]
+  assert.deepEqual(saved.selectedUnitLabels, ['soldier'])
+  assert.equal(saved.selectedUnitLabel, 'soldier')
+  assert.equal(saved.selectedBuildingLabel, 'tower')
+  assert.equal(saved.selectedOtherLabel, 'tree')
+  assert.deepEqual(saved.aiState.enemyUnits, [
+    { instance: 'enemy', lastSeenAgo: 40 },
+    { instance: 'lost', lastSeenAgo: 0 },
+    { instance: null, lastSeenAgo: 0 },
+  ])
+  assert.deepEqual(saved.aiState.enemyBuildings, [{ instance: 'fort', lastSeenAgo: 0 }])
+  assert.deepEqual(saved.aiState.threatenedTargets, [
+    { target: 'tower', attacker: 'enemy', lastSeenAgo: 20, count: 2, attackerFamily: 'unit', attackerType: 'Archer' },
+    { target: null, attacker: null, lastSeenAgo: 0, count: 0, attackerFamily: null, attackerType: null },
+  ])
+  owner.enemyUnitMemory.get('a').instance.label = 'changed'
+  assert.equal(saved.aiState.enemyUnits[0].instance, 'enemy')
+})
+test('legacy and minimal snapshots default missing cameras, clocks and AI memories', () => {
+  const api = loadSaveSerializer()
+  for (const identity of [{ factionId: 'clan' }, { name: 'village' }, {}]) {
+    const context = makeContext({ mapType: undefined })
+    delete context.controls.camera
+    delete context.scheduler
+    const owner = context.players[0]
+    delete owner.label
+    Object.assign(owner, identity, { type: 'Bandits', isPlayed: false, buildings: [{ i: 1, j: 2, type: 'House' }] })
+    const saved = api.serializeGame(context)
+    assert.deepEqual(saved.camera, { x: 0, y: 0 })
+    assert.equal(saved.players[0].aiState.savedAt, 0)
+    assert.deepEqual(saved.players[0].aiState.enemyUnits, [])
+    assert.deepEqual(saved.players[0].aiState.enemyBuildings, [])
+    assert.deepEqual(saved.players[0].aiState.threatenedTargets, [])
+  }
+  const context = makeContext()
+  delete context.players
+  assert.deepEqual(api.serializeGame(context).players, [])
 })

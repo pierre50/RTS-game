@@ -1,8 +1,8 @@
-import { isNightWatchDuty } from '../lib/units/villageNightWatch'
+import { isNightWatchDuty } from '../lib/units/village/villageNightWatch'
 import { isChiefUnit } from '../lib/chief'
 import { getEntitySpaceId } from '../lib/mapSpaces'
-import { isDistantOwner } from '../lib/units/villageActivity'
-import { canUnitStartAmbientWalk } from '../lib/units/walkAround'
+import { isDistantOwner } from '../lib/units/village/villageActivity'
+import { canUnitStartAmbientWalk } from '../lib/units/autonomy/walkAround'
 import { getBuildingInteriorEntryCell, isBuildingInteriorSupported } from '../lib/buildings/interiors'
 import {
   ensureRuntimeBuildingInteriorSpace,

@@ -33,7 +33,10 @@ function resolveLpcVisualIdentity(civilization: string | null | undefined, seed:
   }
 }
 
-export function resolveLpcAppearanceVariants(civilization: string | null | undefined, seedValue: string): LpcAppearanceVariants {
+export function resolveLpcAppearanceVariants(
+  civilization: string | null | undefined,
+  seedValue: string
+): LpcAppearanceVariants {
   const identity = resolveLpcVisualIdentity(civilization, hashLpcAppearanceSeed(seedValue))
   return {
     skin: identity.skinPalette,

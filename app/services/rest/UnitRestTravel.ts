@@ -13,7 +13,7 @@ import {
   getMinutesUntilVillagerWorkEnds,
   shouldVillagerBeAsleep,
   shouldVillagerWork,
-} from '../../lib/units/villagerSchedule'
+} from '../../lib/units/village/villagerSchedule'
 import type { RuntimeEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 

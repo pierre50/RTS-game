@@ -34,8 +34,10 @@ export function createQuestJournal(): QuestJournalState {
 
 // Register authored definitions here when introducing missions. No generated offers at UI construction time.
 const questDefinitions = new Map<string, QuestDefinition>([
-  [resourceRequestQuest.id, resourceRequestQuest], [tutorialHuntQuest.id, tutorialHuntQuest],
-  [banditCampQuest.id, banditCampQuest], ...villageFoundingQuests.map(quest => [quest.id, quest] as [string, QuestDefinition]),
+  [resourceRequestQuest.id, resourceRequestQuest],
+  [tutorialHuntQuest.id, tutorialHuntQuest],
+  [banditCampQuest.id, banditCampQuest],
+  ...villageFoundingQuests.map(quest => [quest.id, quest] as [string, QuestDefinition]),
 ])
 
 export class QuestSystem {
@@ -89,16 +91,18 @@ export class QuestSystem {
         case 'item': {
           const resource = this.resolve(quest, condition.resource)
           const quantity = this.resolve(quest, condition.quantity)
-          const count = typeof resource === 'string' ? (condition.type === 'item'
-            ? env.itemCount?.(resource) ?? 0 : env.resourceCount(resource)) : 0
+          const count =
+            typeof resource === 'string'
+              ? condition.type === 'item'
+                ? (env.itemCount?.(resource) ?? 0)
+                : env.resourceCount(resource)
+              : 0
           return (
             typeof resource === 'string' &&
             typeof quantity === 'number' &&
             Number.isFinite(quantity) &&
             quantity >= 0 &&
-            (condition.comparison === 'below'
-              ? count < quantity
-              : count >= quantity)
+            (condition.comparison === 'below' ? count < quantity : count >= quantity)
           )
         }
         case 'fact':

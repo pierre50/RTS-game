@@ -1,4 +1,4 @@
-import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
 import { canCampPursue } from '../../lib/units/campBehavior'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'

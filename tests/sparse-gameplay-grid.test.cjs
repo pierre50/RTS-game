@@ -119,8 +119,8 @@ test('stale unit and animal paths stop before entering missing cells', () => {
   const { moveUnitToPath } = loadTsModule('app/classes/unit/movement/UnitPathMovement.ts', {
     mocks: {
       '../../../lib': {}, './UnitMovementDebug': {}, './UnitMovementHelpers': {},
-      '../../../lib/units/unitWalkingAnimation': {},
-      '../../../lib/units/unitCrouchPose': { resetUnitCrouchPose() {} },
+      '../../../lib/units/visuals/unitWalkingAnimation': {},
+      '../../../lib/units/visuals/unitCrouchPose': { resetUnitCrouchPose() {} },
       '../../../lib/units/unitLocomotion': {}, '../../../lib/buildings/passageCells': {},
       '../../../lib/mapSpaces': { getEntitySpaceMapLike: () => map },
     },

@@ -17,7 +17,7 @@ function loadSystem(scheduleCalls) {
       '../lib/mapSpaces': {
         sameMapSpace: (a, b) => (a?.spaceId ?? 'outside') === (b?.spaceId ?? 'outside'),
       },
-      '../lib/units/walkAround': {
+      '../lib/units/autonomy/walkAround': {
         scheduleUnitWalkAround: (unit, options) => {
           scheduleCalls.push([unit.label, options])
           options.onTaskId?.(unit, 100 + scheduleCalls.length)

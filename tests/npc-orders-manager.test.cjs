@@ -183,7 +183,7 @@ function buildMocks(calls, context) {
       releaseIfStillLooking: () => calls.push(['releaseIfStillLooking', `paused=${context.paused}`]),
       playNpcOrderSound: () => {},
     },
-    '../lib/units/villagerSchedule': {
+    '../lib/units/village/villagerSchedule': {
       isVillagerSleepTime: ctx => {
         const hour = ctx?.dayNight?.state?.hour ?? 12
         return hour >= 18 || hour < 8
@@ -201,8 +201,8 @@ function buildMocks(calls, context) {
         return summary
       },
     },
-    './EntityInfoContent': { createTitledEntityInfoContent: () => makeFakeElement() },
-    './InspectionPanel': {
+    './inspection/EntityInfoContent': { createTitledEntityInfoContent: () => makeFakeElement() },
+    './inspection/InspectionPanel': {
       createInspectionModal: options => {
         const modal = new FakeModal(options)
         if (options.panelClass) modal._panel.classList.add(options.panelClass)
@@ -1096,7 +1096,7 @@ test('quest return exposes delivery immediately and shows the next instruction a
         return true
       },
     }
-    const { NpcQuestPanel } = loadModule('app/ui/NpcQuestPanel.ts', buildMocks([], context))
+    const { NpcQuestPanel } = loadModule('app/ui/quests/NpcQuestPanel.ts', buildMocks([], context))
     const lines = []
     const panel = new NpcQuestPanel({ context, playUiClick() {}, updateTopbar() {} }, line => lines.push(line))
     const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' } }

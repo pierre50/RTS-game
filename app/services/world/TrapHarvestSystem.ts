@@ -1,5 +1,5 @@
 import { isStaticSettlement } from '../../config/settlementProfiles'
-import { isDistantOwner } from '../../lib/units/villageActivity'
+import { isDistantOwner } from '../../lib/units/village/villageActivity'
 import { BUILDING_TYPES, FADE_DURATION_MS, SHEET_TYPES } from '../../constants'
 import { SOUND_CUES } from '../../constants/sounds'
 import { playAudibleSoundCue } from '../../lib/audio/sound'

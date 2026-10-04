@@ -10,7 +10,7 @@ function fixture() {
   let event = 'initial'
   const { flushCollectiveVillageWork } = loadTsModule('app/services/CollectiveVillageWork.ts', {
     mocks: {
-      '../lib/units/villageWorkEvents': {
+      '../lib/units/village/villageWorkEvents': {
         consumeVillageWorkChange() {
           const result = notifications
           notifications = false

@@ -1,4 +1,4 @@
-import { hasDailyRestSchedule } from '../../lib/units/villagerSchedule'
+import { hasDailyRestSchedule } from '../../lib/units/village/villagerSchedule'
 import { ACTION_TYPES, UNIT_TYPES } from '../../constants'
 import { evaluateCombatMorale } from '../../lib/combat'
 import { findInstancesInSight } from '../../lib/grid/visibility'

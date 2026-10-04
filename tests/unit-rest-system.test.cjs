@@ -118,7 +118,7 @@ function loadUnitRestSystem(calls, fadeOverrides = {}, moduleOverrides = {}) {
     '../lib/units/unitControl': {
       isHeroControlled: unit => unit.controlMode === 'hero',
     },
-    '../../lib/units/villagerTaskRecovery': {
+    '../../lib/units/autonomy/villagerTaskRecovery': {
       resumeStrictVillagerAutonomy: (unit, job) => {
         unit.autonomousJob = job ?? unit.autonomousJob
         calls.push(['resumeAutonomy', unit.label])
@@ -2532,9 +2532,9 @@ test('village activation at lunch wakes a villager left asleep overnight', () =>
 test('rest collection skips sleeping static owners before reading their units and retains dynamic trainees', () => {
   const { collectRestUnits } = loadModule('app/services/rest/UnitRestRuntimeHelpers.ts', {
     '../../lib/units/campActivity': { isCampPaused: () => false },
-    '../../lib/units/unitSittingPose': {},
+    '../../lib/units/visuals/unitSittingPose': {},
     '../../lib/buildings/passageCells': {},
-    '../../lib/units/villageActivity': { isDistantOwner: owner => owner.distant },
+    '../../lib/units/village/villageActivity': { isDistantOwner: owner => owner.distant },
     '../../lib/units/unitSuspension': { isUnitSuspended: unit => unit.suspended },
     '../../lib/entities/overheadIndicator': {},
     '../../lib/mapSpaces': {},

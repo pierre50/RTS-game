@@ -1,4 +1,4 @@
-import { isInteriorFurniture } from './interiorFurnitureCatalog'
+import { isInteriorFurniture } from './furniture/interiorFurnitureCatalog'
 import { BUILDING_TYPES } from '../../constants'
 
 export function isCampBuilding(type: string | null | undefined): boolean {

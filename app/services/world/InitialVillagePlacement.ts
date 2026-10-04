@@ -1,6 +1,6 @@
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { TYPE_ACTION } from '../../constants/entities'
-import { getVillagerSchedule } from '../../lib/units/villagerSchedule'
+import { getVillagerSchedule } from '../../lib/units/village/villagerSchedule'
 import { distance, isLiving, OfflineWorldSpatial, type OfflineTerrainCell } from './offline/OfflineWorldSpatial'
 import { offlineResourceWork, stopOfflineTask, type OfflineWorkRules } from './offline/OfflineWorldWork'
 import type { SaveEntityState, SerializedSave } from '../../types/save'

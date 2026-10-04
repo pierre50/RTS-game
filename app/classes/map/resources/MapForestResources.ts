@@ -1,8 +1,4 @@
-import {
-  BIOME_TREE_PLAYER_SAFE_DIST,
-  RESOURCE_TYPES,
-  WATER_BORDER_PLACEMENT_CLEARANCE,
-} from '../../../constants'
+import { BIOME_TREE_PLAYER_SAFE_DIST, RESOURCE_TYPES, WATER_BORDER_PLACEMENT_CLEARANCE } from '../../../constants'
 import { hasWaterBorderWithin } from '../../../lib'
 import type { ContainerChild } from 'pixi.js'
 import type { ResourceEntity } from '../../../types/entities'
@@ -56,7 +52,12 @@ function isSoloTreeCandidate(grid: RuntimeCell[][], i: number, j: number): boole
   )
 }
 
-function createTree(map: ForestResourceMap, i: number, j: number, options: ForestGenerationOptions = {}): ResourceEntity {
+function createTree(
+  map: ForestResourceMap,
+  i: number,
+  j: number,
+  options: ForestGenerationOptions = {}
+): ResourceEntity {
   const rolledQuantity = rollResourceQuantity(() => map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[RESOURCE_TYPES.tree])
   return map.addChild(
     new Resource(

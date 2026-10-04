@@ -1,4 +1,4 @@
-import { isVillagerWorkTargetRejected } from '../../lib/units/villagerAutonomyTargeting'
+import { isVillagerWorkTargetRejected } from '../../lib/units/autonomy/villagerAutonomyTargeting'
 import { definedProperties } from '../../lib/definedProperties'
 import { showContactDebug } from '../../lib/contact/contactDebug'
 import { isContactTouching, getContactAimDegree } from '../../lib/contact/contactGeometry'
@@ -31,14 +31,14 @@ import { getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipment/eq
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
 import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
-import { canVillagerAutonomouslyHunt } from '../../lib/units/villagerHunting'
+import { canVillagerAutonomouslyHunt } from '../../lib/units/autonomy/villagerHunting'
 import { canUnitEnterBuildingInteriorForAssault } from '../../lib/buildings/interiorAccess'
 import {
   ensureRuntimeBuildingInteriorSpace,
   routeUnitIntoBuildingInteriorSpace,
 } from '../../services/BuildingInteriorSpaceSystem'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
-import { setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
+import { setUnitVisualSheet } from '../../lib/units/visuals/unitVisualTransition'
 import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -54,9 +54,7 @@ function isSlashingMeleeEquipment(item: string): boolean {
 
 function getMeleeImpactEquipment(unit: UnitEntity): string[] {
   if (Array.isArray(unit.equipment) && unit.equipment.length) return unit.equipment
-  return unit.work && typeof getUnitWorkEquipment === 'function'
-    ? getUnitWorkEquipment(unit.work, unit)
-    : []
+  return unit.work && typeof getUnitWorkEquipment === 'function' ? getUnitWorkEquipment(unit.work, unit) : []
 }
 
 function getMeleeImpactSound(unit: UnitEntity, target: RuntimeEntity | null): CommandSound {
@@ -163,9 +161,13 @@ export class UnitCombat {
     const dest = unit.dest
     sprite.onLoop = () => {
       if (
-        unit.isDead || unit.isDestroyed || unit.visualAnimationToken !== token ||
-        unit.action !== action || unit.dest !== dest
-      ) return
+        unit.isDead ||
+        unit.isDestroyed ||
+        unit.visualAnimationToken !== token ||
+        unit.action !== action ||
+        unit.dest !== dest
+      )
+        return
       sprite.onLoop = undefined
       unit.actionLocked = false
       const hadPendingOrder = unit.flushPendingOrder?.()

@@ -54,8 +54,7 @@ export function getTextureByFrame(
   }
 
   const { sortedTextureNames, textureNameByFrameIndex } = getTextureFrameLookup(spritesheet.textures)
-  const textureName =
-    textureNameByFrameIndex.get(normalizedFrameIndex) ?? sortedTextureNames[normalizedFrameIndex]
+  const textureName = textureNameByFrameIndex.get(normalizedFrameIndex) ?? sortedTextureNames[normalizedFrameIndex]
   const texture = textureName ? spritesheet.textures[textureName] : undefined
 
   if (!texture || !textureName) {

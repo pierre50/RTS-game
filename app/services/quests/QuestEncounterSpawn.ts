@@ -13,11 +13,20 @@ type SpawnOptions = {
 }
 type Search = { map: GameContextLike['map']; iterator: Generator<RuntimeCell[] | null, null>; retryAt: number }
 const searches = new WeakMap<QuestInstance, Map<string, Search>>()
-const DIRECTIONS = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const
+const DIRECTIONS = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+] as const
 
 function canWalk(cell: RuntimeCell | undefined): cell is RuntimeCell {
-  return Boolean(cell && cell.category !== 'Water' && !cell.inclined &&
-    (!cell.solid || cell.has?.family === 'unit' || cell.has?.family === 'animal'))
+  return Boolean(
+    cell &&
+      cell.category !== 'Water' &&
+      !cell.inclined &&
+      (!cell.solid || cell.has?.family === 'unit' || cell.has?.family === 'animal')
+  )
 }
 
 function spawnCondition(context: GameContextLike, origin: { i: number; j: number }, radius = 0) {
@@ -31,24 +40,38 @@ function spawnCondition(context: GameContextLike, origin: { i: number; j: number
     if (views?.withSpace?.('outside', visible) ?? visible()) return false
     if (!context.map.activeSpaceId || context.map.activeSpaceId === 'outside') {
       const [x, y] = cartesianToIsometric(cell.i, cell.j)
-      if (!context.controls?.instanceInCamera || context.controls.instanceInCamera({ x, y },
-        { minX: x - 96, minY: y - 96, width: 192, height: 192 })) return false
+      if (
+        !context.controls?.instanceInCamera ||
+        context.controls.instanceInCamera({ x, y }, { minX: x - 96, minY: y - 96, width: 192, height: 192 })
+      )
+        return false
     }
-    return !buildings.some(building => !building.isDead && !building.isDestroyed &&
-      Math.max(Math.abs(cell.i - building.i), Math.abs(cell.j - building.j)) <= Math.ceil((building.size ?? 2) / 2) + 4)
+    return !buildings.some(
+      building =>
+        !building.isDead &&
+        !building.isDestroyed &&
+        Math.max(Math.abs(cell.i - building.i), Math.abs(cell.j - building.j)) <=
+          Math.ceil((building.size ?? 2) / 2) + 4
+    )
   }
   return (cell: RuntimeCell): boolean => {
     if (!accepts(cell)) return false
-    for (let di = -radius; di <= radius; di++) for (let dj = -radius; dj <= radius; dj++) {
-      if (!di && !dj) continue
-      const neighbor = context.map.grid[cell.i + di]?.[cell.j + dj]
-      if (!neighbor || !accepts(neighbor)) return false
-    }
+    for (let di = -radius; di <= radius; di++)
+      for (let dj = -radius; dj <= radius; dj++) {
+        if (!di && !dj) continue
+        const neighbor = context.map.grid[cell.i + di]?.[cell.j + dj]
+        if (!neighbor || !accepts(neighbor)) return false
+      }
     return true
   }
 }
 
-function* searchCells(context: GameContextLike, origin: { i: number; j: number }, count: number, radius = 0): Generator<RuntimeCell[] | null, null> {
+function* searchCells(
+  context: GameContextLike,
+  origin: { i: number; j: number },
+  count: number,
+  radius = 0
+): Generator<RuntimeCell[] | null, null> {
   const grid = context.map.grid
   if (!Number.isInteger(origin.i) || !Number.isInteger(origin.j) || !grid[origin.i]?.[origin.j]) return null
   const queue = [{ i: origin.i, j: origin.j }]
@@ -68,11 +91,18 @@ function* searchCells(context: GameContextLike, origin: { i: number; j: number }
     if (cursor && !canWalk(cell)) continue
     if (cell && canSpawn(cell)) {
       candidates.push(cell)
-      const group = candidates.slice(-128).filter(other => Math.hypot(other.i - cell.i, other.j - cell.j) <= 3 && canSpawn(other)).slice(0, count)
-      if (group.length === count) { yield group; return null }
+      const group = candidates
+        .slice(-128)
+        .filter(other => Math.hypot(other.i - cell.i, other.j - cell.j) <= 3 && canSpawn(other))
+        .slice(0, count)
+      if (group.length === count) {
+        yield group
+        return null
+      }
     }
     for (const [di, dj] of DIRECTIONS) {
-      const i = point.i + di, j = point.j + dj
+      const i = point.i + di,
+        j = point.j + dj
       const key = `${i}:${j}`
       if (Math.max(Math.abs(i - origin.i), Math.abs(j - origin.j)) > 48 || seen.has(key)) continue
       seen.add(key)
@@ -83,17 +113,30 @@ function* searchCells(context: GameContextLike, origin: { i: number; j: number }
 }
 
 /** Animal and hostile-unit factories share placement and persistent encounter identity. */
-export function ensureQuestEncounter(context: GameContextLike, quest: QuestInstance, id: string,
-  origin: { i: number; j: number }, options: SpawnOptions): Encounter | null {
+export function ensureQuestEncounter(
+  context: GameContextLike,
+  quest: QuestInstance,
+  id: string,
+  origin: { i: number; j: number },
+  options: SpawnOptions
+): Encounter | null {
   const existing = quest.encounters?.[id]
   if (existing) return existing
-  if (quest.status !== 'active' || quest.regionId !== (context.map.worldRegionId ?? context.getCurrentWorldId?.())) return null
+  if (quest.status !== 'active' || quest.regionId !== (context.map.worldRegionId ?? context.getCurrentWorldId?.()))
+    return null
   let pending = searches.get(quest)
-  if (!pending) { pending = new Map(); searches.set(quest, pending) }
+  if (!pending) {
+    pending = new Map()
+    searches.set(quest, pending)
+  }
   let search = pending.get(id)
   const now = context.scheduler?.elapsedMs ?? performance.now()
   if (!search || search.map !== context.map) {
-    search = { map: context.map, iterator: searchCells(context, origin, options.count, options.footprintRadius), retryAt: 0 }
+    search = {
+      map: context.map,
+      iterator: searchCells(context, origin, options.count, options.footprintRadius),
+      retryAt: 0,
+    }
     pending.set(id, search)
   }
   if (now < search.retryAt) return null
@@ -108,7 +151,11 @@ export function ensureQuestEncounter(context: GameContextLike, quest: QuestInsta
   if (!result.value) return null
   const canSpawn = spawnCondition(context, origin, options.footprintRadius)
   if (!result.value.every(canSpawn)) return null
-  const encounter: Encounter = { entityLabels: [], position: { i: result.value[0].i, j: result.value[0].j }, parameters: options.parameters }
+  const encounter: Encounter = {
+    entityLabels: [],
+    position: { i: result.value[0].i, j: result.value[0].j },
+    parameters: options.parameters,
+  }
   quest.encounters ??= {}
   quest.encounters[id] = encounter
   for (const cell of result.value) {

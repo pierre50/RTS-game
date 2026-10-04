@@ -1,4 +1,4 @@
-import { notifyVillageWorkChanged } from '../units/villageWorkEvents'
+import { notifyVillageWorkChanged } from '../units/village/villageWorkEvents'
 import { collectiveHarvestBudget } from '../economy/collectiveTasks'
 import { personalFoodReserve } from '../economy/villagerProvisions'
 import { materialAmount } from '../economy/constructionMaterials'

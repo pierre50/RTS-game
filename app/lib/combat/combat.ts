@@ -38,7 +38,8 @@ function isHostileToPlayedOwner(entity: CombatEntity, playedOwner: CombatOwnerLi
 }
 
 function isCombatDifficultyThreat(entity: CombatEntity, playedOwner: CombatOwnerLike): boolean {
-  if (entity.family === FAMILY_TYPES.animal) return getEntityWeaponPower(entity as Parameters<typeof getEntityWeaponPower>[0]) > 0
+  if (entity.family === FAMILY_TYPES.animal)
+    return getEntityWeaponPower(entity as Parameters<typeof getEntityWeaponPower>[0]) > 0
   return isHostileToPlayedOwner(entity, playedOwner)
 }
 

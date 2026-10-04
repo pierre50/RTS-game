@@ -8,7 +8,7 @@ import { activeConstructionSite, belongsToSettlement, collectiveAnchor } from '.
 import { communalStoreBuilding } from '../../lib/economy/constructionStores'
 import { allowsVillagerDeliveries, storageAcceptsResource } from '../../lib/resources/storagePolicy'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
-import { type VillageHome } from '../../lib/units/villageActivity'
+import { type VillageHome } from '../../lib/units/village/villageActivity'
 import { isUnitSuspended, setUnitSuspension } from '../../lib/units/unitSuspension'
 import { cancelEnergyWait, updateUnitEnergy } from '../../lib/units/unitEnergy'
 import { observeVillage } from './VillageObservation'

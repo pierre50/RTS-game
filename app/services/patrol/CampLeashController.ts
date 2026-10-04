@@ -1,4 +1,4 @@
-import { isVillageSupplyTrip } from '../../lib/units/villageSupplyTrips'
+import { isVillageSupplyTrip } from '../../lib/units/village/villageSupplyTrips'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import {
   campAnchor,

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { canMoveForVillageSupply, canSeekVillageResource, villageWorkNeedsLiveSearch } = loadTsModule(
-  'app/lib/units/villageSupplyTrips.ts'
+  'app/lib/units/village/villageSupplyTrips.ts'
 )
 function fixture() {
   const unit = {

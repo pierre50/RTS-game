@@ -1,9 +1,9 @@
-import { isDistantOwner } from '../../lib/units/villageActivity'
-import { configureVillageNightWatch } from '../../lib/units/villageNightWatch'
+import { isDistantOwner } from '../../lib/units/village/villageActivity'
+import { configureVillageNightWatch } from '../../lib/units/village/villageNightWatch'
 import { sameMapSpace } from '../../lib/mapSpaces'
-import { VillageScheduleGate } from '../../lib/units/villageScheduleGate'
-import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
-import { hasDailyRestSchedule } from '../../lib/units/villagerSchedule'
+import { VillageScheduleGate } from '../../lib/units/village/villageScheduleGate'
+import { syncUnitSittingPose } from '../../lib/units/visuals/unitSittingPose'
+import { hasDailyRestSchedule } from '../../lib/units/village/villagerSchedule'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { assignAvailableBeds } from './UnitRestAvailableBeds'
@@ -95,7 +95,8 @@ export class UnitRestSystem {
   }
 
   notifyBedAvailable(building: BuildingEntity): void {
-    if (building.type === 'CampBedroll' && building.isBuilt && !building.isDead && !building.isDestroyed) this.pendingBeds.add(building)
+    if (building.type === 'CampBedroll' && building.isBuilt && !building.isDead && !building.isDestroyed)
+      this.pendingBeds.add(building)
   }
 
   private updateAvailableBeds(): void {

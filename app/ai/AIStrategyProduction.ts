@@ -38,11 +38,27 @@ export function handleAIProductionActions(
   let actions = 0
   let reserve = strategy.getEconomicDemand()
 
-  const infantryOrders = strategy.trainUnits(infantry.length, maxInfantry, barracks, infantryUnit, villagers, reserve, debug)
+  const infantryOrders = strategy.trainUnits(
+    infantry.length,
+    maxInfantry,
+    barracks,
+    infantryUnit,
+    villagers,
+    reserve,
+    debug
+  )
   actions += infantryOrders
   reserve = addReservedTrainingCost(reserve, getUnitTrainingCost(strategy.ai, infantryUnit), infantryOrders)
 
-  const archerOrders = strategy.trainUnits(archers.length, maxArcher, archeryRanges, archerUnit, villagers, reserve, debug)
+  const archerOrders = strategy.trainUnits(
+    archers.length,
+    maxArcher,
+    archeryRanges,
+    archerUnit,
+    villagers,
+    reserve,
+    debug
+  )
   actions += archerOrders
   return actions
 }

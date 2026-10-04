@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { updateUnitSleepHealth, restoreOfflineUnitSleepHealth } = loadTsModule('app/lib/units/unitSleepHealth.ts')
-const { getVillagerSchedule } = loadTsModule('app/lib/units/villagerSchedule.ts')
+const { getVillagerSchedule } = loadTsModule('app/lib/units/village/villagerSchedule.ts')
 const sleeper = (extra = {}) => ({
   type: 'Villager',
   label: 'worker',

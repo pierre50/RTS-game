@@ -1,9 +1,9 @@
-import { configureVillageNightWatch } from '../../../lib/units/villageNightWatch'
+import { configureVillageNightWatch } from '../../../lib/units/village/villageNightWatch'
 import { DAY_NIGHT_CONFIG } from '../../../config/gameplay'
 import { restoreOfflineUnitSleepHealth } from '../../../lib/units/unitSleepHealth'
 import { isStaticSettlement } from '../../../config/settlementProfiles'
 import { traceRuntime } from '../../../lib/runtimeDiagnostics'
-import { villageWorkNeedsLiveSearch } from '../../../lib/units/villageSupplyTrips'
+import { villageWorkNeedsLiveSearch } from '../../../lib/units/village/villageSupplyTrips'
 import { isContinentWorld } from '../../../config/continentWorlds'
 import { getEntitySpaceId } from '../../../lib/mapSpaces'
 import { cancelEnergyWait, updateUnitEnergy } from '../../../lib/units/unitEnergy'
@@ -13,7 +13,7 @@ import {
   registerDistantDailyPlanning,
   withinVillageActivity,
   type VillageHome,
-} from '../../../lib/units/villageActivity'
+} from '../../../lib/units/village/villageActivity'
 import { isUnitSuspended, setUnitSuspension } from '../../../lib/units/unitSuspension'
 import { advanceDistantVillageEconomy, planDistantVillageBuildings } from './DistantVillageEconomy'
 import type { GameContextLike } from '../../../types/context'

@@ -1,5 +1,5 @@
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants/consumption'
-import { getVillagerSchedule, type VillagerSchedule } from '../units/villagerSchedule'
+import { getVillagerSchedule, type VillagerSchedule } from '../units/village/villagerSchedule'
 import { consumeVillageFood } from './villageFood'
 import type { CollectiveMember } from './collectiveTasks'
 

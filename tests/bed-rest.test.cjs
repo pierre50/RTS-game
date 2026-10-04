@@ -69,7 +69,7 @@ function fixture() {
     '../../../engine/services/BuildingInteriorSpaceLookup': {
       isBuildingInteriorRuntimeSpace: s => s?.kind === 'interior',
     },
-    '../../lib/units/villagerSchedule': {
+    '../../lib/units/village/villagerSchedule': {
       isSoldierUnit: () => false,
       hasDailyRestSchedule: () => true,
       shouldVillagerBeAsleep: unit => !unit.evening,
@@ -89,7 +89,7 @@ function fixture() {
     },
     '../../lib/entities/entityFade': { cancelFade() {}, fadeIn() {} },
     '../../lib/entities/overheadIndicator': { clearUnitOverheadIndicator() {}, setUnitOverheadIndicator() {} },
-    '../../lib/units/villagerTaskRecovery': {
+    '../../lib/units/autonomy/villagerTaskRecovery': {
       resumeVillagerStoredTask: () => false,
       resumeStrictVillagerAutonomy: () => false,
     },

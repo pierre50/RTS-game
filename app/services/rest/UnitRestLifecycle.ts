@@ -4,7 +4,7 @@ import { sameCellMapSpace } from '../../lib/mapSpaces'
 import { routeUnitToRestTarget } from './UnitRestRoute'
 import { SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import { unitHasDeliverableResources } from '../../lib/resources/resourceDelivery'
-import { hasDailyRestSchedule, shouldVillagerBeAsleep } from '../../lib/units/villagerSchedule'
+import { hasDailyRestSchedule, shouldVillagerBeAsleep } from '../../lib/units/village/villagerSchedule'
 import type { BuildingEntity, UnitEntity, UnitRestReason } from '../../types/entities'
 import {
   canSleepWithoutRestSite,

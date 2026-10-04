@@ -39,7 +39,9 @@ import {
 } from './UnitMovementPassage'
 
 type SpaceMapLike = NonNullable<ReturnType<typeof getEntitySpaceMapLike>>
-type RouteOptions = Required<Pick<SendToOptions, 'allowBlockedGatherApproach' | 'preserveAutonomy' | 'allowPassageStop'>>
+type RouteOptions = Required<
+  Pick<SendToOptions, 'allowBlockedGatherApproach' | 'preserveAutonomy' | 'allowPassageStop'>
+>
 
 export class UnitMovementRouting {
   unit: UnitEntity

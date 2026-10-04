@@ -12,7 +12,7 @@ function loadNpcGoToDispatch(isSleepTime = false) {
       },
       '../combat/diplomaticAggression': { applyDiplomaticAggression: () => false },
       '../grid/visibility': { findInstancesInSight: () => [] },
-      '../units/villagerSchedule': { isVillagerSleepTime: () => isSleepTime },
+      '../units/village/villagerSchedule': { isVillagerSleepTime: () => isSleepTime },
       '../../services/rest/UnitRestRules': {
         delayUnitRestAfterActivity: unit => {
           if (!isSleepTime) return false

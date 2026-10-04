@@ -1,7 +1,7 @@
 import { belongsToSettlement, collectiveAnchor, constructionCargoReserve } from '../economy/collectiveConstruction'
 import { isDeliveryTargetRejected } from './resourceDeliveryRecovery'
 import { depositableResource } from '../economy/villagerProvisions'
-import { withinVillageActivity } from '../units/villageActivity'
+import { withinVillageActivity } from '../units/village/villageActivity'
 import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { getClosestInstanceWithPath } from '../grid/queries'
 import { isHeroControlled } from '../units/unitControl'

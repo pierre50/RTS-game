@@ -1,11 +1,15 @@
 import { hasConstructionWork } from '../lib/economy/constructionMaterials'
 import { isRpgVillage } from '../config/rpgVillages'
-import { consumeVillageWorkChange } from '../lib/units/villageWorkEvents'
+import { consumeVillageWorkChange } from '../lib/units/village/villageWorkEvents'
 import { hasCollectiveVillageEvent, settleCollectiveVillageEvents } from './CollectiveVillageEvents'
-import { clearVillagerGathering, gatherIdleVillager, isVillagerGathering } from '../lib/units/villagerGathering'
+import {
+  clearVillagerGathering,
+  gatherIdleVillager,
+  isVillagerGathering,
+} from '../lib/units/autonomy/villagerGathering'
 import { reserveUsesFoodJob } from '../lib/economy/depotReserves'
 import { activeConstructionSite, planCollectiveTasks } from '../lib/economy/collectiveTasks'
-import { assignVillagerAutonomy } from '../lib/units/villagerAutonomy'
+import { assignVillagerAutonomy } from '../lib/units/autonomy/villagerAutonomy'
 import { villagerAutonomySuspension } from '../lib/units/autonomy/villagerAutonomyAvailability'
 import { UNIT_TYPES, ACTION_TYPES } from '../constants'
 import type { PlayerLike } from '../types/player'

@@ -7,8 +7,8 @@ import { nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
 import { heroCanCommand } from '../../lib/chief'
 import { isHeroInteractionTargetReachable } from '../../lib/hero/heroActionRange'
 import { createConstructionMaterials } from '../../lib/economy/constructionMaterials'
-import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
-import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { notifyVillageWorkChanged } from '../../lib/units/village/villageWorkEvents'
+import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 
 export function canStartBuildingUpgrade(building: BuildingEntity, hero?: UnitEntity | null): boolean {
   return Boolean(

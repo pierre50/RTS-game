@@ -12,8 +12,20 @@ const steps: readonly FoundingStep[] = [
   { id: 'village-forum', kind: 'building', types: [BUILDING_TYPES.townCenter], count: 1, text: 'foundingForum' },
   { id: 'village-granary', kind: 'building', types: [BUILDING_TYPES.granary], count: 1, text: 'foundingGranary' },
   { id: 'village-storage', kind: 'building', types: [BUILDING_TYPES.storagePit], count: 1, text: 'foundingStorage' },
-  { id: 'village-military', kind: 'building', types: [BUILDING_TYPES.barracks, BUILDING_TYPES.archeryRange], count: 1, text: 'foundingMilitary' },
-  { id: 'village-defenders', kind: 'unit', types: [UNIT_TYPES.infantry, UNIT_TYPES.bowman], count: 2, text: 'foundingDefenders' },
+  {
+    id: 'village-military',
+    kind: 'building',
+    types: [BUILDING_TYPES.barracks, BUILDING_TYPES.archeryRange],
+    count: 1,
+    text: 'foundingMilitary',
+  },
+  {
+    id: 'village-defenders',
+    kind: 'unit',
+    types: [UNIT_TYPES.infantry, UNIT_TYPES.bowman],
+    count: 2,
+    text: 'foundingDefenders',
+  },
   { id: 'village-forge', kind: 'building', types: [BUILDING_TYPES.forge], count: 1, text: 'foundingForge' },
 ] as const
 
@@ -21,31 +33,56 @@ export const villageFoundingQuests: QuestDefinition[] = steps.map(step => ({
   id: step.id,
   title: { key: `${step.text}Title` },
   description: { key: `${step.text}Description` },
-  stages: [{
-    id: 'develop',
-    objectives: [{ id: 'objective', text: { key: `${step.text}Objective` },
-      conditions: [{ type: 'fact', key: 'done', value: true }] }],
-    interactions: [],
-  }],
+  stages: [
+    {
+      id: 'develop',
+      objectives: [
+        {
+          id: 'objective',
+          text: { key: `${step.text}Objective` },
+          conditions: [{ type: 'fact', key: 'done', value: true }],
+        },
+      ],
+      interactions: [],
+    },
+  ],
 }))
 
 function offerStep(system: QuestSystem, index: number, origin: Pick<QuestInstance, 'regionId' | 'owner'>): boolean {
   const step = steps[index]
   return system.offer({
-    id: step.id, definitionId: step.id, regionId: origin.regionId, owner: origin.owner,
-    assigneeId: null, parameters: {}, bindings: {}, status: 'available', stageId: 'develop',
-    facts: {}, usedInteractions: [], markers: {}, unread: true, repeatable: false,
+    id: step.id,
+    definitionId: step.id,
+    regionId: origin.regionId,
+    owner: origin.owner,
+    assigneeId: null,
+    parameters: {},
+    bindings: {},
+    status: 'available',
+    stageId: 'develop',
+    facts: {},
+    usedInteractions: [],
+    markers: {},
+    unread: true,
+    repeatable: false,
   })
 }
 
-export function assignVillageFoundingQuests(context: GameContextLike, system: QuestSystem, companion: UnitEntity): void {
+export function assignVillageFoundingQuests(
+  context: GameContextLike,
+  system: QuestSystem,
+  companion: UnitEntity
+): void {
   const player = context.player
   const regionId = context.map?.worldRegionId ?? context.getCurrentWorldId?.() ?? ''
   if (!player?.label || !regionId) return
-  if (!offerStep(system, 0, {
-    regionId,
-    owner: { entityLabel: companion.label, playerLabel: player.label, name: companion.name || player.name || '' },
-  })) return
+  if (
+    !offerStep(system, 0, {
+      regionId,
+      owner: { entityLabel: companion.label, playerLabel: player.label, name: companion.name || player.name || '' },
+    })
+  )
+    return
   system.accept(steps[0].id, player.label)
   system.track(steps[0].id)
 }
@@ -61,12 +98,21 @@ export function updateVillageFoundingQuests(context: GameContextLike, system: Qu
   for (const [index, step] of steps.entries()) {
     const quest = state.quests.find(item => item.definitionId === step.id && item.status === 'active')
     if (!quest || quest.assigneeId !== player.label || quest.regionId !== regionId) continue
-    const count = step.kind === 'building'
-      ? player.buildings.filter(building => step.types.includes(building.type) &&
-        building.isBuilt && !building.isDead && !building.isDestroyed).length
-      : (player.units ?? []).filter(unit => step.types.includes(unit.type) &&
-        !unit.isDead && !unit.isDestroyed && !unit.trainingTargetType && unit.controlMode !== 'hero' &&
-        unit !== context.controls?.heroUnit).length
+    const count =
+      step.kind === 'building'
+        ? player.buildings.filter(
+            building =>
+              step.types.includes(building.type) && building.isBuilt && !building.isDead && !building.isDestroyed
+          ).length
+        : (player.units ?? []).filter(
+            unit =>
+              step.types.includes(unit.type) &&
+              !unit.isDead &&
+              !unit.isDestroyed &&
+              !unit.trainingTargetType &&
+              unit.controlMode !== 'hero' &&
+              unit !== context.controls?.heroUnit
+          ).length
     if (count < step.count) break
     const tracked = state.trackedQuestId
     quest.facts.done = true

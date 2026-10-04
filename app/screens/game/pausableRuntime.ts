@@ -20,7 +20,7 @@ export function collectPausableInstances(map: RuntimeMap, players: PlayerLike[])
     for (const corpse of player.corpses ?? []) addPausableInstance(instances, corpse)
   }
   const packed = getPackedCellStore(map.grid)
-  const rows = packed ? [packed.changedCells(map.grid)] : map.grid ?? []
+  const rows = packed ? [packed.changedCells(map.grid)] : (map.grid ?? [])
   for (const row of rows) {
     for (const cell of row ?? []) {
       for (const corpse of cell?.corpses ?? []) addPausableInstance(instances, corpse)

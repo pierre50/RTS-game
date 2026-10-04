@@ -87,7 +87,7 @@ const tower = { type: 'WatchTower', size: 2 }
 
 test('every catalogue furnishing rejects neighbouring walls in both orientations', () => {
   const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts')
+  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/furniture/interiorFurnitureCatalog.ts')
   const configs = require('../public/assets/data/gameplay/buildings.json')
   for (const type of INTERIOR_FURNITURE_TYPES) {
     if (type === 'CampBedroll') continue

@@ -126,7 +126,7 @@ function ambientHarness(type = 'village') {
   context.players.push(owner)
   const { RpgVillageSystem } = loadTsModule('app/services/world/RpgVillageSystem.ts', {
     mocks: {
-      '../../lib/units/villageActivity': { isDistantOwner: player => player.distant },
+      '../../lib/units/village/villageActivity': { isDistantOwner: player => player.distant },
       '../../lib/units/unitSuspension': { isUnitSuspended: unit => unit.suspended },
       '../../lib/units/autonomy/villagerExploration': { cancelVillagerExplorationResume() {} },
       '../../lib/buildings/passageCells': {
@@ -186,7 +186,7 @@ test('generic autonomy declines RPG residents but still permits recruited compan
   const { villagerAutonomySuspension } = loadTsModule('app/lib/units/autonomy/villagerAutonomyAvailability.ts', {
     mocks: {
       '../unitSuspension': { unitSuspensionReason: () => null },
-      '../villagerSchedule': { shouldVillagerWork: () => true },
+      '../village/villagerSchedule': { shouldVillagerWork: () => true },
     },
   })
   const owner = village()

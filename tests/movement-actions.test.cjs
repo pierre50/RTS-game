@@ -204,7 +204,7 @@ function loadModule(relativePath, mocks) {
         filename,
         mocks
       )
-    if (request === '../../lib/units/villagerAutonomyTargeting')
+    if (request === '../../lib/units/autonomy/villagerAutonomyTargeting')
       return { isVillagerWorkTargetRejected: () => false, markVillagerAutonomyTargetRejected: () => {} }
     if (request === '../../lib/actions/contactActions')
       return {
@@ -309,7 +309,7 @@ function loadModule(relativePath, mocks) {
         LPC_RUNTIME_SOURCE_PALETTES: {},
       }
     }
-    if (request === '../../lib/units/unitWorkAppearance') return unitWorkAppearanceMock
+    if (request === '../../lib/units/visuals/unitWorkAppearance') return unitWorkAppearanceMock
     if (request === '../../lib/units/unitExperience') return unitExperienceMock
     if (request === '../../lib/entities/entityHealthDisplay') return entityHealthDisplayMock
     if (request === '../../lib/lang') return { t: value => value }
@@ -347,13 +347,13 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/units/unitLocomotion') {
       return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
     }
-    if (request === '../../lib/units/unitCrouchPose') {
+    if (request === '../../lib/units/visuals/unitCrouchPose') {
       return {
         applyUnitCrouchPose: () => {},
         resetUnitCrouchPose: () => {},
       }
     }
-    if (request === '../../lib/units/unitWalkingAnimation') {
+    if (request === '../../lib/units/visuals/unitWalkingAnimation') {
       return {
         applyUnitWalkingAnimationSpeed: (unit, factor) => {
           unit.appliedWalkingAnimationFactor = factor
@@ -476,9 +476,9 @@ function loadModule(relativePath, mocks) {
         dependencyModules
       )
     }
-    if (request.endsWith('/units/villageActivity')) {
+    if (request.endsWith('/units/village/villageActivity')) {
       return requireFromTsFile(
-        path.join(__dirname, '../app/lib/units/villageActivity.ts'),
+        path.join(__dirname, '../app/lib/units/village/villageActivity.ts'),
         filename,
         mocks,
         dependencyModules
@@ -500,8 +500,8 @@ function loadModule(relativePath, mocks) {
         dependencyModules
       )
     }
-    if (request.endsWith('/units/villagerAutonomyTargeting')) {
-      return requireFromTsFile(path.join(__dirname, '../app/lib/units/villagerAutonomyTargeting.ts'), filename, mocks)
+    if (request.endsWith('/units/autonomy/villagerAutonomyTargeting')) {
+      return requireFromTsFile(path.join(__dirname, '../app/lib/units/autonomy/villagerAutonomyTargeting.ts'), filename, mocks)
     }
     if (Object.hasOwn(mocks, request)) return mocks[request]
     // Unmocked app modules load for real, resolved from the file that imports them.

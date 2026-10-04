@@ -3,7 +3,7 @@ import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../../li
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { UNIT_TYPES } from '../../constants'
-import { createTitledEntityInfoContent } from '../EntityInfoContent'
+import { createTitledEntityInfoContent } from '../inspection/EntityInfoContent'
 import type { UnitEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
 

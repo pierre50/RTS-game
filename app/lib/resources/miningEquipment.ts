@@ -2,7 +2,7 @@ import { resolveForgeEquipment, type ForgeUpgradeOwner } from '../equipment/forg
 /** Work tools are automatic unless the unit carries an explicit pickaxe. */
 export type MiningActor = {
   type?: string
-  owner?: (ForgeUpgradeOwner) | null
+  owner?: ForgeUpgradeOwner | null
   equipment?: string[]
   inventory?: { equipment?: string[]; activeWeapons?: { melee?: string | null } }
 }

@@ -1,6 +1,6 @@
 import { RpgVillageSystem } from '../world/RpgVillageSystem'
 import { DailyWorldReport } from './DailyWorldReport'
-import { flushVillageSimulation, planDistantVillages } from '../../lib/units/villageActivity'
+import { flushVillageSimulation, planDistantVillages } from '../../lib/units/village/villageActivity'
 import { NaturalRegrowthSystem } from '../NaturalRegrowthSystem'
 import { MarketRestockSystem } from '../world/MarketRestockSystem'
 import { TrapHarvestSystem } from '../world/TrapHarvestSystem'

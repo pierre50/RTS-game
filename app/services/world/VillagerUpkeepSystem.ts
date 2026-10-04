@@ -1,9 +1,9 @@
 import { isRpgVillager } from '../../config/rpgVillages'
 import { isStaticSettlement } from '../../config/settlementProfiles'
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
-import { VillageScheduleGate, villageCalendarMinute } from '../../lib/units/villageScheduleGate'
-import { notifyVillageWorkChanged } from '../../lib/units/villageWorkEvents'
-import { flushVillageSimulation } from '../../lib/units/villageActivity'
+import { VillageScheduleGate, villageCalendarMinute } from '../../lib/units/village/villageScheduleGate'
+import { notifyVillageWorkChanged } from '../../lib/units/village/villageWorkEvents'
+import { flushVillageSimulation } from '../../lib/units/village/villageActivity'
 import { consumeVillagerMeals } from '../../lib/economy/villagerMeals'
 import type { GameContextLike } from '../../types/context'
 

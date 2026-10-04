@@ -1,4 +1,4 @@
-import { INTERIOR_FURNITURE_CATEGORIES, isInteriorFurniture } from '../lib/buildings/interiorFurnitureCatalog'
+import { INTERIOR_FURNITURE_CATEGORIES, isInteriorFurniture } from '../lib/buildings/furniture/interiorFurnitureCatalog'
 import { createInventorySectionTitle } from './inventory/InventorySection'
 import { isSowingPlacement } from '../lib/buildings/campConstruction'
 import { getActiveInteractionSpace } from '../lib/mapSpaces'

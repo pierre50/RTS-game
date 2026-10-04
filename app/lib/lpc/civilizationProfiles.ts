@@ -64,7 +64,9 @@ const LPC_CIVILIZATION_PROFILES: Record<string, LpcCivilizationVisualProfile> = 
 }
 
 export function getLpcCivilizationProfile(civilization: string | null | undefined): LpcCivilizationVisualProfile {
-  return civilization ? (LPC_CIVILIZATION_PROFILES[civilization] ?? DEFAULT_LPC_CIVILIZATION_PROFILE) : DEFAULT_LPC_CIVILIZATION_PROFILE
+  return civilization
+    ? (LPC_CIVILIZATION_PROFILES[civilization] ?? DEFAULT_LPC_CIVILIZATION_PROFILE)
+    : DEFAULT_LPC_CIVILIZATION_PROFILE
 }
 
 export function pickLpcProfileValue(values: string[], seed: number): string {

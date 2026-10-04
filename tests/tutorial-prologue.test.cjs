@@ -24,7 +24,7 @@ function fixture() {
   global.document = { createElement: () => new Element(), body: new Element(), activeElement: null }
   global.window = { setTimeout: (fn, delay) => { delays.push(delay); timers.set(++id, fn); return id }, clearTimeout: key => timers.delete(key) }
   const { TutorialPrologue } = loadTsModule('app/ui/TutorialPrologue.ts', {
-    mocks: { './SpokenTextReveal': { SpokenTextReveal: class { revealing = true; show(_blocks, _voice, complete) { completeNarration = complete } stop() {} revealAll() { const previous = this.revealing; this.revealing = false; return previous } } }, '../lib/lang': { t: key => key } },
+    mocks: { './quests/SpokenTextReveal': { SpokenTextReveal: class { revealing = true; show(_blocks, _voice, complete) { completeNarration = complete } stop() {} revealAll() { const previous = this.revealing; this.revealing = false; return previous } } }, '../lib/lang': { t: key => key } },
   })
   return { TutorialPrologue, timers, delays, complete: () => completeNarration(), restore() { global.document = savedDocument; global.window = savedWindow } }
 }

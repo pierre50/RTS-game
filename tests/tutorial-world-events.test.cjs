@@ -59,7 +59,7 @@ test('day changes do not add housing or storage alerts to the daily report', () 
           }
         },
       },
-      '../lib/units/villageActivity': { flushVillageSimulation() {}, planDistantVillages() {} },
+      '../lib/units/village/villageActivity': { flushVillageSimulation() {}, planDistantVillages() {} },
       './NaturalRegrowthSystem': { NaturalRegrowthSystem: class {} },
       './world/TrapHarvestSystem': { TrapHarvestSystem: class {} },
       './world/MarketRestockSystem': { MarketRestockSystem: class {} },

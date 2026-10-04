@@ -38,9 +38,7 @@ function blocksHeroDirectMove(entity: HeroDirectMoveBlocker | null | undefined):
   return entity.family === FAMILY_TYPES.resource
 }
 
-export function blocksHeroDirectMoveWithRoundedFootprint(
-  entity: HeroDirectMoveBlocker | null | undefined
-): boolean {
+export function blocksHeroDirectMoveWithRoundedFootprint(entity: HeroDirectMoveBlocker | null | undefined): boolean {
   if (!entity) return false
   if (entity.family === 'terrain') return (entity.collisionPoints?.length ?? 0) >= 3
   return (
@@ -91,7 +89,10 @@ export function getHeroCollisionFootprintPoints(
   let points = getRawHeroCollisionFootprintPoints(entity, map)
   const padding = getHeroDirectMoveCollisionPadding(entity)
   if (padding > 0) {
-    points = entity.family === 'terrain' ? inflateIsoAlignedFootprintPoints(points, padding) : inflateFootprintPoints(points, padding)
+    points =
+      entity.family === 'terrain'
+        ? inflateIsoAlignedFootprintPoints(points, padding)
+        : inflateFootprintPoints(points, padding)
   }
   return points
 }
@@ -106,7 +107,10 @@ function getFootprintCenter(points: Array<{ x: number; y: number }>): { x: numbe
   return { x: centerX / points.length, y: centerY / points.length }
 }
 
-function inflateIsoAlignedFootprintPoints(points: Array<{ x: number; y: number }>, padding: number): Array<{ x: number; y: number }> {
+function inflateIsoAlignedFootprintPoints(
+  points: Array<{ x: number; y: number }>,
+  padding: number
+): Array<{ x: number; y: number }> {
   if (!points.length || padding <= 0) return points
 
   const { x: centerX, y: centerY } = getFootprintCenter(points)
@@ -117,7 +121,10 @@ function inflateIsoAlignedFootprintPoints(points: Array<{ x: number; y: number }
   }))
 }
 
-function inflateFootprintPoints(points: Array<{ x: number; y: number }>, padding: number): Array<{ x: number; y: number }> {
+function inflateFootprintPoints(
+  points: Array<{ x: number; y: number }>,
+  padding: number
+): Array<{ x: number; y: number }> {
   if (!points.length || padding <= 0) return points
 
   const { x: centerX, y: centerY } = getFootprintCenter(points)
@@ -296,7 +303,10 @@ function getCellTerrainCollisionPoints(cell: RuntimeCell): CollisionPoint[] {
   return getRoundedIsoShapePoints({ x, y })
 }
 
-export function createHeroTerrainCollisionBlocker(cell: RuntimeCell, map?: HeroCollisionMap | null): HeroDirectMoveBlocker {
+export function createHeroTerrainCollisionBlocker(
+  cell: RuntimeCell,
+  map?: HeroCollisionMap | null
+): HeroDirectMoveBlocker {
   const [x, y] = cartesianToIsometric(cell.i, cell.j)
   const terrainCollisionKind = getHeroTerrainCollisionKind(cell, map)
   return {

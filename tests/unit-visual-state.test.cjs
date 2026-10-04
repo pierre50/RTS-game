@@ -3,7 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadUnitVisualState({ shadowsEnabled = true, activeMapSpace = true } = {}) {
-  return loadTsModule('app/classes/unit/UnitVisualState.ts', {
+  return loadTsModule('app/classes/unit/appearance/UnitVisualState.ts', {
     mocks: {
       'pixi.js': {
         AnimatedSprite: class {},

@@ -1,7 +1,7 @@
 import { getDeferredVillages } from './world/distantVillages/DeferredVillageStore'
 import { AMBIENT_CAMERA_MARGIN, AMBIENT_CAMERA_EXIT_MARGIN } from './world/AmbientActivityArea'
 import { isStaticSettlement } from '../config/settlementProfiles'
-import { isVillageSupplyTrip, villageWorkNeedsLiveSearch } from '../lib/units/villageSupplyTrips'
+import { isVillageSupplyTrip, villageWorkNeedsLiveSearch } from '../lib/units/village/villageSupplyTrips'
 import { observeVillage } from './world/VillageObservation'
 import { PlayerWorkActivitySystem } from './world/PlayerWorkActivitySystem'
 import {
@@ -18,9 +18,9 @@ import {
   villageHome,
   withinVillageActivity,
   type VillageHome,
-} from '../lib/units/villageActivity'
+} from '../lib/units/village/villageActivity'
 import { setUnitSuspension } from '../lib/units/unitSuspension'
-import { shouldVillagerWork } from '../lib/units/villagerSchedule'
+import { shouldVillagerWork } from '../lib/units/village/villagerSchedule'
 import { CampLeashController } from './patrol/CampLeashController'
 import { advanceVillageWork } from './world/VillageWorkSimulation'
 import { DistantVillageSystem } from './world/distantVillages/DistantVillageSystem'

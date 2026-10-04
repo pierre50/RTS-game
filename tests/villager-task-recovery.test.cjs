@@ -41,7 +41,7 @@ const constants = {
 }
 
 function loadVillagerTaskRecovery(calls) {
-  return loadModule('app/lib/units/villagerTaskRecovery.ts', {
+  return loadModule('app/lib/units/autonomy/villagerTaskRecovery.ts', {
     '../constants': constants,
     '../mapSpaces': {
       getEntityCell: entity => entity.cell ?? null,

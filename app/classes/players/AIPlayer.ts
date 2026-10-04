@@ -1,7 +1,7 @@
 import { isStaticSettlement } from '../../config/settlementProfiles'
 import { traceRuntime } from '../../lib/runtimeDiagnostics'
 import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
-import { isDistantOwner } from '../../lib/units/villageActivity'
+import { isDistantOwner } from '../../lib/units/village/villageActivity'
 import { handleInteriorTheftDefense, isInteriorTheftDefender } from '../../ai/AITheftDefense'
 import { Player } from './Player'
 import { villageResources, villageAnimals } from '../../services/world/VillageResourceKnowledge'

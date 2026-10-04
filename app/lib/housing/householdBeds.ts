@@ -1,7 +1,7 @@
 import { BUILDING_TYPES } from '../../constants/entities'
 import { interiorSaveSpaceId } from '../../serialization/InteriorBuildingSave'
-import { getBuildingInteriorDecorationLayout } from '../buildings/interiorDecorations'
-import { usesInteriorPreset } from '../buildings/interiorFurnitureCatalog'
+import { getBuildingInteriorDecorationLayout } from '../buildings/furniture/interiorDecorations'
+import { usesInteriorPreset } from '../buildings/furniture/interiorFurnitureCatalog'
 import type { HouseholdOwner, HouseholdBuilding } from './households'
 
 const living = (entity: { isDead?: boolean; isDestroyed?: boolean }) => !entity.isDead && !entity.isDestroyed

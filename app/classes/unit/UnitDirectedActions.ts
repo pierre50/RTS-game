@@ -12,7 +12,7 @@ import {
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
 import { isHeroControlled } from '../../lib/units/unitControl'
-import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
+import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/visuals/unitVisualTransition'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'

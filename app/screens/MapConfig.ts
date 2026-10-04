@@ -5,7 +5,7 @@ import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { buildSelectRow } from '../ui/utils/formUtils'
 import { DEFAULT_WORLD_ID } from '../config/worlds'
-import { PlayerSetupPanel } from '../ui/PlayerSetupPanel'
+import { PlayerSetupPanel } from '../ui/setup/PlayerSetupPanel'
 import { RESOURCES_MAP } from '../config/resourcePresets'
 import type { GameConfig } from '../types/save'
 

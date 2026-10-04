@@ -6,7 +6,7 @@ const { installDeferredVillages, deferredVillageState, clearDeferredVillages, ca
   'app/services/world/distantVillages/DeferredVillageStore.ts',
   { moduleCache: cache }
 )
-const { isDistantOwner } = loadTsModule('app/lib/units/villageActivity.ts', { moduleCache: cache })
+const { isDistantOwner } = loadTsModule('app/lib/units/village/villageActivity.ts', { moduleCache: cache })
 function fixture(mode = 'static') {
   const owner = {
     label: 'village',

@@ -25,7 +25,7 @@ function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
       },
       '../lib/hero/heroTools': heroTools,
       '../lib/hero/heroCursor': { updateHeroCursor: () => {} },
-      '../lib/units/unitCrouchPose': { applyUnitCrouchPose: () => {} },
+      '../lib/units/visuals/unitCrouchPose': { applyUnitCrouchPose: () => {} },
       '../lib/npc/npcGoToCursor': { resolveNpcGoToCursorState: () => null },
       '../lib/npc/npcInteraction': {
         resolveHoverTarget: () => null,
@@ -42,7 +42,7 @@ function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
         getUnitWalkSpeedFactor: () => 1,
         isUnitWalkSpeedFactor: factor => factor < 1,
       },
-      '../lib/units/unitWalkingAnimation': {
+      '../lib/units/visuals/unitWalkingAnimation': {
         applyUnitWalkingAnimationSpeed: (unit, factor) => {
           unit.walkAnimationUpdated = factor
         },

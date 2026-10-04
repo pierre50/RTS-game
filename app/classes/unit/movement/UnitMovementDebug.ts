@@ -37,7 +37,10 @@ export type DirectMoveDebugSnapshot = {
 
 let lastDirectMoveDebugSnapshot: DirectMoveDebugSnapshot | null = null
 
-export function serializeDirectMoveDebugCell(cell: RuntimeCell | null | undefined, unit?: UnitEntity): Record<string, unknown> | null {
+export function serializeDirectMoveDebugCell(
+  cell: RuntimeCell | null | undefined,
+  unit?: UnitEntity
+): Record<string, unknown> | null {
   if (!cell) return null
   return {
     i: cell.i,

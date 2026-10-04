@@ -161,10 +161,10 @@ function loadTributeRaidSystem(overrides = {}) {
       '../lib/lpc': {
         preloadBakedLpcUnitsForPlayers: async () => {},
       },
-      '../ui/InspectionPanel': {
+      '../ui/inspection/InspectionPanel': {
         createInspectionModal: () => ({ close: () => {} }),
       },
-      '../ui/EntityInfoContent': {
+      '../ui/inspection/EntityInfoContent': {
         createTitledEntityInfoContent: () => ({ appendChild: () => {} }),
       },
       './TributeRaidRules': loadTributeRaidRules(),
@@ -666,7 +666,7 @@ function negotiationHarness(t, { affordable = true, local = false } = {}) {
   })
   const { TributeRaidSystem } = loadTributeRaidSystem({
     '../lib': { canAfford: () => canPay, payCost: owner => calls.push(['paid', owner]), getHexColor: color => color },
-    '../ui/InspectionPanel': {
+    '../ui/inspection/InspectionPanel': {
       createInspectionModal: options => {
         modalOptions = options
         return { close: options.onClose }

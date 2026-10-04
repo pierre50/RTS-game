@@ -29,7 +29,8 @@ function keepsHuntEncounter(context: GameContextLike, quest: QuestInstance): boo
     const labels = new Set(encounters.hunt.entityLabels)
     const animals = context.map.gaia?.animals ?? context.map.gaia?.units ?? []
     // Corpses remain harvestable. Only replace exhausted targets when loot is still needed.
-    if (animals.some(animal => labels.has(animal.label) && !animal.isDestroyed && (animal.quantity ?? 0) > 0)) return true
+    if (animals.some(animal => labels.has(animal.label) && !animal.isDestroyed && (animal.quantity ?? 0) > 0))
+      return true
     delete encounters.hunt
   }
   return Boolean(quest.encounters?.hunt)

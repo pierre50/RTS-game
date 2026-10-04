@@ -21,10 +21,10 @@ const conversionFlashStates = new WeakMap<DamageSprite, ConversionFlashState>()
 
 const conversionFlashSprites = new Set<DamageSprite>()
 
-
-
 function parseFlashColor(color: string | null | undefined): [number, number, number] {
-  const normalized = color?.startsWith('#') ? color : ((HEX_COLOR_MAP as Record<string, string>)[color ?? ''] ?? '#ffffff')
+  const normalized = color?.startsWith('#')
+    ? color
+    : ((HEX_COLOR_MAP as Record<string, string>)[color ?? ''] ?? '#ffffff')
   const match = /^#?([0-9a-f]{6})$/i.exec(normalized)
   if (!match) return [1, 1, 1]
   const value = Number.parseInt(match[1], 16)

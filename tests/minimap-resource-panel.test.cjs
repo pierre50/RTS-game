@@ -71,7 +71,7 @@ function loadPanel(Modal = class {}) {
         getActiveMapSpace: map => map.spaces.get(map.activeSpaceId),
         getEntitySpaceId: entity => entity.spaceId || 'outside',
       },
-      '../../lib/units/villagerAutonomyTargeting': {
+      '../../lib/units/autonomy/villagerAutonomyTargeting': {
         getAutonomyJobForWork: work =>
           ({
             farmer: 'food',
@@ -251,7 +251,7 @@ test('starting stock survives the real chest transfer and repeated region save/r
     }
     const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/BuildingInteriorSpaceDecorations.ts', {
       mocks: {
-        '../../app/lib/buildings/interiorDecorations': {
+        '../../app/lib/buildings/furniture/interiorDecorations': {
           getBuildingInteriorDecorationLayout: () => [{ key: 'storage-chest', type: 'Chest', offsetI: 0, offsetJ: 0 }],
           findInteriorDecorationCell: ({ grid }) => grid[0][0],
           interiorCellKey: cell => `${cell.i}:${cell.j}`,

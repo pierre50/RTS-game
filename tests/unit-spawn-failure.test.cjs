@@ -30,7 +30,7 @@ test('a missing spritesheet during construction leaves no registered unit or blo
       '../../lib/lpc': {},
       '../../lib/audio/settings': {},
       '../../lib/units/unitEnergy': {},
-      '../../lib/units/unitWorkAppearance': {
+      '../../lib/units/visuals/unitWorkAppearance': {
         applyUnitActionFrameSequence() {},
         getUnitWorkActionSheet: () => 'actionSheet',
       },
@@ -60,11 +60,11 @@ test('a missing spritesheet during construction leaves no registered unit or blo
       './UnitRuntimeShape': {},
       '../../lib/units/unitEnergy': {},
       './UnitBanditDebug': {},
-      './UnitAppearanceLayers': {},
+      './appearance/UnitAppearanceLayers': {},
       './UnitStateHandlers': {},
-      './UnitVisualState': {},
+      './appearance/UnitVisualState': {},
       './UnitOrders': {},
-      './UnitMountedVisuals': { removeMountedHorseSprite() {} },
+      './appearance/UnitMountedVisuals': { removeMountedHorseSprite() {} },
       './UnitInitialization': {
         ...initialization,
         initializeUnitServices() {},

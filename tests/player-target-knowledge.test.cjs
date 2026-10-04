@@ -246,7 +246,7 @@ test('autonomy selects an unexplored local resource through the shared knowledge
 })
 
 test('hero resource jobs switch to distant deposits when the nearby supply is depleted', () => {
-  const { assignVillagerAutonomy } = loadTsModule('app/lib/units/villagerAutonomy.ts')
+  const { assignVillagerAutonomy } = loadTsModule('app/lib/units/autonomy/villagerAutonomy.ts')
   for (const [job, type, action, send] of [
     ['wood', 'Tree', 'chopwood', 'sendToTree'],
     ['stone', 'Stone', 'minestone', 'sendToStone'],
@@ -278,4 +278,56 @@ test('hero resource jobs switch to distant deposits when the nearby supply is de
     assert.equal(worker.autonomousJob, job)
     assert.equal(owner.views.isViewed(far.i, far.j), false)
   }
+})
+
+test('legacy explored resources migrate without granting knowledge of unseen or moving targets', () => {
+  const tree = { label: 'tree', type: 'Tree', family: 'resource', i: 1, j: 2, quantity: 5 }
+  for (const withSpace of [false, true]) {
+    const owner = { views: { isViewed: i => i === 1 } }
+    if (withSpace) owner.views.withSpace = (_space, run) => run()
+    const targets = [
+      tree,
+      { ...tree, label: 'unseen', i: 8 },
+      { ...tree, label: '' },
+      { ...tree, family: 'animal', label: 'deer' },
+    ]
+    knowledge.restoreLegacyStaticKnowledge(owner, targets)
+    assert.deepEqual(
+      knowledge.exportTargetKnowledge(owner).map(record => record.label),
+      ['tree']
+    )
+    assert.deepEqual(knowledge.rememberedStaticTargets(owner), [tree])
+  }
+  knowledge.restoreLegacyStaticKnowledge({}, [tree])
+  assert.equal(knowledge.knowsEconomicTarget({}, tree), false)
+  assert.deepEqual(knowledge.exportTargetKnowledge({}), [])
+  assert.deepEqual(knowledge.rememberedStaticTargets(undefined), [])
+  assert.throws(() => knowledge.validateTargetKnowledge({}), /Invalid target knowledge/)
+})
+test('string viewer identities resolve against units and buildings without leaking ownerless vision', () => {
+  const target = {
+    label: 'wheat',
+    type: 'Wheat',
+    family: 'resource',
+    i: 1,
+    j: 1,
+    spaceId: 'outside',
+    sprite: { currentFrame: 2, textures: [0, 1, 2] },
+  }
+  assert.equal(knowledge.playerSeesTarget(undefined, target), false)
+  const owner = { views: { getViewers: () => ['observer'] } }
+  assert.equal(knowledge.playerSeesTarget(owner, target), false)
+  owner.buildings = [{ label: 'observer', i: 1, j: 1, sight: 3, spaceId: 'outside' }]
+  assert.equal(knowledge.playerSeesTarget(owner, target), true)
+  const observation = knowledge.observeTarget(owner, target)
+  assert.equal(observation.mature, true)
+  assert.equal(knowledge.playerSeesTarget(owner, { ...target, owner }), true)
+  const corpse = { ...target, label: 'corpse', family: 'animal', isDead: true }
+  const living = { ...target, label: 'living', family: 'animal', isDead: false }
+  knowledge.observeTarget(owner, corpse)
+  knowledge.observeTarget(owner, living)
+  assert.deepEqual(
+    knowledge.rememberedStaticTargets(owner).map(item => item.label),
+    ['wheat', 'corpse']
+  )
 })

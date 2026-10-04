@@ -44,6 +44,8 @@ export function tameHorse(horse: AnimalEntity): void {
   setHorseTamingStatus(horse, HORSE_TAMING_STATUS.tamed)
 }
 
-export function shouldHorseFleeFromThreat(horse: (Pick<RuntimeEntity, 'type'> & HorseTamingState) | null | undefined): boolean {
+export function shouldHorseFleeFromThreat(
+  horse: (Pick<RuntimeEntity, 'type'> & HorseTamingState) | null | undefined
+): boolean {
   return !horse || horse.type !== 'Horse' || isWildHorse(horse)
 }

@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { configureVillageNightWatch, isNightWatchDuty } = loadTsModule('app/lib/units/villageNightWatch.ts')
-const { getDailyRoutine } = loadTsModule('app/lib/units/villagerSchedule.ts')
+const { configureVillageNightWatch, isNightWatchDuty } = loadTsModule('app/lib/units/village/villageNightWatch.ts')
+const { getDailyRoutine } = loadTsModule('app/lib/units/village/villagerSchedule.ts')
 const { restoreOfflineUnitSleepHealth } = loadTsModule('app/lib/units/unitSleepHealth.ts')
 function roster(type = 'village') {
   return {

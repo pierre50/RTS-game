@@ -186,7 +186,7 @@ test('an exhausted builder really stops, collects stone and returns to the same 
       '../../lib': stateLib,
       '../../lib/hero/heroTools': { applyToolAppearance() {} },
       './UnitActions': { UnitActions: class {} },
-      './autonomy/villagerKnownTargets': {
+      './villagerKnownTargets': {
         knownConstructionTargets: unit => unit.owner.buildings,
         knownResources: (_unit, type) => (type === 'Stone' ? [stone] : []),
         knownFoodTargets: () => [],
@@ -194,10 +194,10 @@ test('an exhausted builder really stops, collects stone and returns to the same 
     }
   )
   const { unit, site, load } = f
-  stateLib.resumeVillagerAutonomy = load('app/lib/units/villagerAutonomy.ts').resumeVillagerAutonomy
+  stateLib.resumeVillagerAutonomy = load('app/lib/units/autonomy/villagerAutonomy.ts').resumeVillagerAutonomy
   const { stopUnit } = load('app/classes/unit/UnitStateHandlers.ts')
   const { flushCollectiveVillageWork } = load('app/services/CollectiveVillageWork.ts')
-  const { notifyVillageWorkChanged, consumeVillageWorkChange } = load('app/lib/units/villageWorkEvents.ts')
+  const { notifyVillageWorkChanged, consumeVillageWorkChange } = load('app/lib/units/village/villageWorkEvents.ts')
   const owner = { type: 'Human', isPlayed: true, units: [unit], buildings: [site], population: 1 }
   Object.assign(site, { type: 'TownCenter', label: 'town', i: 10, j: 10, owner })
   const orders = []
@@ -292,7 +292,7 @@ test('live builder advances renovation with its cargo without changing building 
 
 test('every interior furnishing completes through hero work and applies its final appearance once', () => {
   const definitions = require('../public/assets/data/gameplay/buildings.json')
-  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/interiorFurnitureCatalog.ts')
+  const { INTERIOR_FURNITURE_TYPES } = loadTsModule('app/lib/buildings/furniture/interiorFurnitureCatalog.ts')
   for (const type of INTERIOR_FURNITURE_TYPES) {
     const config = definitions[type]
     const f = fixture({ ...config.cost }, config.cost, {

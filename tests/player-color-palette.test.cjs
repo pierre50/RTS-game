@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-const { PLAYER_COLORS } = loadTsModule('app/ui/PlayerSetupColors.ts')
+const { PLAYER_COLORS } = loadTsModule('app/ui/setup/PlayerSetupColors.ts')
 const { getHexColor, recolorCanvasPixels, SOURCE_COLORS } = loadTsModule('app/lib/graphics/colors.ts', {
   mocks: { 'pixi.js': {}, 'pixi-filters': {} },
 })

@@ -322,7 +322,8 @@ export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: Atta
   const targetAtWindup = readiness.target
   onSpriteLoopAtFrame(sprite, callbacks.releaseFrame, () => {
     const actor = getAttackLoopActorState(attacker)
-    if (actor.isDead || actor.isDestroyed || attacker.action !== actionAtWindup || attacker.dest !== targetAtWindup) return
+    if (actor.isDead || actor.isDestroyed || attacker.action !== actionAtWindup || attacker.dest !== targetAtWindup)
+      return
     try {
       const target = getRuntimeEntity(attacker.dest)
       debugAttackLoop(attacker, 'frame', {

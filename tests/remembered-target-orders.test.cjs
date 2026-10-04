@@ -58,8 +58,8 @@ function scene() {
   const pursuit = loadTsModule('app/lib/units/targetPursuit.ts', options)
   const { UnitCommands } = loadTsModule('app/classes/unit/UnitCommands.ts', options)
   const commands = new UnitCommands(unit)
-  const targeting = loadTsModule('app/lib/units/villagerAutonomyTargeting.ts', options)
-  const recovery = loadTsModule('app/lib/units/villagerTaskRecovery.ts', options)
+  const targeting = loadTsModule('app/lib/units/autonomy/villagerAutonomyTargeting.ts', options)
+  const recovery = loadTsModule('app/lib/units/autonomy/villagerTaskRecovery.ts', options)
   return {
     unit,
     target,

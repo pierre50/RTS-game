@@ -9,7 +9,7 @@ const { getBuildingFootprintCells } = load('app/lib/grid/cells.ts')
 const maths = load('app/lib/maths.ts')
 const geometry = load('app/lib/graphics/isoFootprint.ts')
 const polygon = load('app/lib/geometry/polygon.ts')
-const { isInteriorFloorFurniture } = load('app/lib/buildings/interiorFurnitureCatalog.ts')
+const { isInteriorFloorFurniture } = load('app/lib/buildings/furniture/interiorFurnitureCatalog.ts')
 const mocks = {
   'pixi.js': {},
   '../../../lib': { ...maths, ...geometry, ...polygon },

@@ -10,7 +10,7 @@ function fixture() {
   const fire = { type: 'FireCamp', owner, isBuilt: true, i: 20, j: 20, size: 1 }
   owner.buildings.push(center, fire)
   const calls = []
-  const api = loadTsModule('app/lib/units/villagerGathering.ts', {
+  const api = loadTsModule('app/lib/units/autonomy/villagerGathering.ts', {
     mocks: {
       '../buildings/passageCells': {
         canUnitUseCellAsIdleDestination: (_unit, cell) => !cell.solid && !cell.passage,
@@ -19,7 +19,7 @@ function fixture() {
       '../economy/collectiveConstruction': { collectiveAnchor: () => center, belongsToSettlement: () => true },
       '../grid/movement': { getInstancePath: (_unit, i, j) => (grid[i][j].unreachable ? [] : [grid[i][j]]) },
       '../mapSpaces': { getEntitySpaceGrid: () => grid, sameMapSpace: (a, b) => a.spaceId === b.spaceId },
-      './autonomy/villagerAutonomyAvailability': {
+      './villagerAutonomyAvailability': {
         villagerAutonomySuspension: unit => unit.followingHero || unit.combatMode || unit.shelterState,
       },
     },
@@ -136,7 +136,7 @@ test('collective needs interrupt gathering while the villager is still walking',
     }
     const { updateCollectiveVillage } = loadTsModule('app/services/CollectiveVillageWork.ts', {
       mocks: {
-        '../lib/units/villagerGathering': f,
+        '../lib/units/autonomy/villagerGathering': f,
         './CollectiveVillageEvents': { hasCollectiveVillageEvent: () => true, settleCollectiveVillageEvents: () => {} },
         '../lib/units/autonomy/villagerAutonomyAvailability': { villagerAutonomySuspension: () => null },
         '../lib/economy/collectiveTasks': {
@@ -144,7 +144,7 @@ test('collective needs interrupt gathering while the villager is still walking',
           planCollectiveTasks: (_owner, workers) =>
             new Map(needed ? workers.map(worker => [worker, { job, site }]) : []),
         },
-        '../lib/units/villagerAutonomy': {
+        '../lib/units/autonomy/villagerAutonomy': {
           assignVillagerAutonomy: (worker, task) => {
             worker.action = task
             worker.dest = site

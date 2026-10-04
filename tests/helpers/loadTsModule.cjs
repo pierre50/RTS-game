@@ -2,6 +2,24 @@ const fs = require('node:fs')
 const path = require('node:path')
 const babel = require('@babel/core')
 
+// Reuse compilation only; every load still creates its own module and mock scope.
+const compiledSources = new Map()
+
+function compileModule(filename, source) {
+  const environment = process.env.BABEL_ENV || process.env.NODE_ENV || 'development'
+  const cached = compiledSources.get(filename)
+  if (cached?.source === source && cached.environment === environment) return cached.code
+  const { code } = babel.transformSync(source, {
+    filename,
+    presets: [
+      ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+      ['@babel/preset-typescript', { allowDeclareFields: true }],
+    ],
+  })
+  compiledSources.set(filename, { source, environment, code })
+  return code
+}
+
 function ensureBrowserTestGlobals() {
   global.window = global.window || {}
   global.window.innerWidth = global.window.innerWidth || 1024
@@ -11,13 +29,11 @@ function ensureBrowserTestGlobals() {
   global.window.removeEventListener = global.window.removeEventListener || (() => {})
   global.window.setTimeout = global.window.setTimeout || setTimeout
   global.window.clearTimeout = global.window.clearTimeout || clearTimeout
-  global.localStorage =
-    global.localStorage ||
-    {
-      getItem: () => null,
-      removeItem: () => {},
-      setItem: () => {},
-    }
+  global.localStorage = global.localStorage || {
+    getItem: () => null,
+    removeItem: () => {},
+    setItem: () => {},
+  }
 }
 
 function resolveLocalModule(request, parentFilename) {
@@ -37,7 +53,10 @@ function resolveLocalModule(request, parentFilename) {
   return filename
 }
 
-function loadTsModule(relativePath, { baseDir = path.join(__dirname, '..', '..'), mocks = {}, moduleCache = new Map() } = {}) {
+function loadTsModule(
+  relativePath,
+  { baseDir = path.join(__dirname, '..', '..'), mocks = {}, moduleCache = new Map() } = {}
+) {
   ensureBrowserTestGlobals()
   const filename = path.isAbsolute(relativePath) ? relativePath : path.join(baseDir, relativePath)
   if (moduleCache.has(filename)) return moduleCache.get(filename).exports
@@ -47,13 +66,7 @@ function loadTsModule(relativePath, { baseDir = path.join(__dirname, '..', '..')
   if (!filename.endsWith('.ts') && !filename.endsWith('.js') && !filename.endsWith('.cjs')) return require(filename)
 
   const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [
-      ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
-      ['@babel/preset-typescript', { allowDeclareFields: true }],
-    ],
-  })
+  const code = compileModule(filename, source)
   const module = { exports: {} }
   moduleCache.set(filename, module)
 
@@ -94,14 +107,22 @@ function mockAliasesFor(request, parentFilename) {
     request.replace(/^\.\.\/\.\.\//, '../'),
     request.replace(/^\.\.\//, './'),
     request.replace(/^\.\//, '../'),
-    request.replace(/^(\.{1,2}\/)(audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)\//, '../$2/'),
-    request.replace(/^(\.{1,2}\/)(audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)\//, './$2/'),
+    request.replace(
+      /^(\.{1,2}\/)(audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)\//,
+      '../$2/'
+    ),
+    request.replace(
+      /^(\.{1,2}\/)(audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)\//,
+      './$2/'
+    ),
   ]
   if (request === '../combat' || request === './combat') {
     aliases.push('../combat/combat')
     aliases.push('./combat/combat')
   }
-  const domainMatch = parentFilename.match(/[\\/]app[\\/]lib[\\/](audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)[\\/]/)
+  const domainMatch = parentFilename.match(
+    /[\\/]app[\\/]lib[\\/](audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)[\\/]/
+  )
   if (domainMatch && request.startsWith('./')) {
     aliases.push(`./${domainMatch[1]}/${request.slice(2)}`)
     aliases.push(`../${domainMatch[1]}/${request.slice(2)}`)

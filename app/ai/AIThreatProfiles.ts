@@ -29,7 +29,8 @@ export function getThreatProfile(
   const isDirectVillageAssault =
     hostileMilitary.length > 0 && (targetIsTownCenter || targetIsBuilding || isInVillageCore)
   const isSeriousMilitaryThreat =
-    hostileMilitary.length > 0 && (isNearHome || hostilePower >= (player.difficultyConfig.defenseRecallThreshold || 16) * 0.85)
+    hostileMilitary.length > 0 &&
+    (isNearHome || hostilePower >= (player.difficultyConfig.defenseRecallThreshold || 16) * 0.85)
 
   let priority = hostilePower + threat.hostiles.length * 2 + threat.count
   if (targetIsTownCenter) priority += 16

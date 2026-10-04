@@ -1,13 +1,13 @@
 import { getChiefAudienceBuilding, isChiefEscort } from '../../lib/units/chiefEscort'
 import { isChiefUnit } from '../../lib/chief'
 import { clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import { syncUnitSittingPose } from '../../lib/units/unitSittingPose'
+import { syncUnitSittingPose } from '../../lib/units/visuals/unitSittingPose'
 import {
   isSoldierUnit,
   isVillagerLunchTime,
   shouldVillagerReturnHome,
   shouldVillagerWork,
-} from '../../lib/units/villagerSchedule'
+} from '../../lib/units/village/villagerSchedule'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 import { putRestingUnitToSleep, sendUnitToRest, wakeUnitInstant } from './UnitRestLifecycle'

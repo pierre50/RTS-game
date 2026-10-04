@@ -6,7 +6,7 @@ const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadUnitWalkingAnimation() {
-  const filename = path.join(__dirname, '../app/lib/units/unitWalkingAnimation.ts')
+  const filename = path.join(__dirname, '../app/lib/units/visuals/unitWalkingAnimation.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,

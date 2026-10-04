@@ -1,13 +1,13 @@
-export type { AnimalEntity } from './animalEntity'
-export type { BuildingEntity, PlaceableBuildingConfig } from './buildingEntity'
+export type { AnimalEntity } from './entities/animalEntity'
+export type { BuildingEntity, PlaceableBuildingConfig } from './entities/buildingEntity'
 export type {
   EntityInfoRenderOptions,
   EntityInterfaceLike,
   EntityLightSourceConfig,
   RuntimeEntityBase,
-} from './entityBase'
-export type { RuntimeEntity } from './entityRuntime'
-export type { ResourceEntity } from './resourceEntity'
+} from './entities/entityBase'
+export type { RuntimeEntity } from './entities/entityRuntime'
+export type { ResourceEntity } from './entities/resourceEntity'
 export type {
   EnergyEntity,
   UnitCommandOptions,
@@ -18,6 +18,6 @@ export type {
   VillagerAutonomyJob,
   UnitRestReason,
   UnitRestState,
-} from './unitEntity'
+} from './entities/unitEntity'
 export type { CommandSound, UnitSounds } from './sounds'
-export type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
+export type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './entities/unitTypes'

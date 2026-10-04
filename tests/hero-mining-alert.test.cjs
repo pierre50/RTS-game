@@ -20,7 +20,7 @@ function attemptMining({ type = 'Copper', age = 0, touching = false, quantity = 
       'pixi.js': { Assets: { cache: { get: () => null } } },
       '../actions/contactActions': { canReachActionTarget: () => touching },
       '../contact/contactGeometry': { getContactAimDegree: () => 0 },
-      '../units/actionVisualSheet': { getActionVisualSheetKey: () => 'action' },
+      '../units/visuals/actionVisualSheet': { getActionVisualSheetKey: () => 'action' },
       '../combat': {
         getActionCondition: (actor, resource, action) => getResourceActionConditions(actor, resource)[action]?.(),
       },

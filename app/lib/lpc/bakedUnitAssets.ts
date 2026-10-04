@@ -5,7 +5,7 @@ import type { PlayerLike } from '../../types/player'
 import { isChiefUnit } from '../chief'
 import { getUnitEquipmentTier } from '../units/unitExperience'
 import { resolveUnitIdentity } from '../units/unitIdentity'
-import { applyUnitActivitySpritesheets } from '../units/unitSpriteAssets'
+import { applyUnitActivitySpritesheets } from '../units/visuals/unitSpriteAssets'
 import { isAssetCached, loadBakedUnitVariant } from './bakedAliasCache'
 import {
   bakedUnitActionAlias,

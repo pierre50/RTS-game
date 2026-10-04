@@ -39,14 +39,14 @@ function loadNaturalRegrowthSystem(calls, moduleCache = new Map()) {
         isWheatMature: () => false,
         updateInstanceVisibility: () => null,
       },
-      '../lib/units/villagerSchedule': {
+      '../lib/units/village/villagerSchedule': {
         shouldVillagerWork: () => true,
         isVillagerSleepTime: context => {
           const hour = context?.dayNight?.state?.hour ?? 12
           return hour >= 18 || hour < 8
         },
       },
-      '../lib/units/villagerTaskRecovery': {
+      '../lib/units/autonomy/villagerTaskRecovery': {
         resumeStrictVillagerAutonomy: (unit, job, options) => {
           calls.push(['resumeAutonomy', unit.label, job, options])
           return true

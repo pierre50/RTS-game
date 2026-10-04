@@ -14,7 +14,7 @@ function loadModule(relativePath, mocks) {
         LPC_SLASH_ANIMATION_SPEED: 0.25,
         lpcAnimationSpeedForSheet: () => 0.3,
       },
-      '../../lib/units/actionVisualSheet': {
+      '../../lib/units/visuals/actionVisualSheet': {
         SHOOTING_SHEET_KEY: 'shootingSheet',
         getActionVisualSheetKey: (action, unitType, work) => {
           if (action === constants.ACTION_TYPES.takemeat) return constants.SHEET_TYPES.harvest
@@ -419,7 +419,7 @@ test('hero hair appearance layer is hidden while a helmet is equipped and restor
     data: { animationSpeed: 0.2 },
     textures: { frame0: { defaultAnchor: { x: 0.5, y: 1 } } },
   }
-  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/appearance/UnitAppearanceLayers.ts', {
     'pixi.js': {
       Assets: {
         cache: {
@@ -514,7 +514,7 @@ test('appearance layers inherit the unit action frame sequence', () => {
     data: { animationSpeed: 0.25 },
     textures: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`00${index}.png`, { id: index }])),
   }
-  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/appearance/UnitAppearanceLayers.ts', {
     'pixi.js': {
       Assets: {
         cache: {
@@ -608,7 +608,7 @@ test('appearance layers keep explicit action frame sequences when the unit uses 
     data: { animationSpeed: 0.25 },
     textures: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`00${index}.png`, { id: index }])),
   }
-  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/appearance/UnitAppearanceLayers.ts', {
     'pixi.js': {
       Assets: {
         cache: {
@@ -700,7 +700,7 @@ test('appearance layers stay frame-locked to the unit sprite', () => {
     data: { animationSpeed: 0.1 },
     textures: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`00${index}.png`, { id: index }])),
   }
-  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/appearance/UnitAppearanceLayers.ts', {
     'pixi.js': {
       Assets: {
         cache: {
@@ -766,7 +766,7 @@ test('appearance layers stay frame-locked to the unit sprite', () => {
 test('appearance layers tolerate units whose main sprite is not ready during resume', () => {
   const destroyed = []
   const removed = []
-  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/appearance/UnitAppearanceLayers.ts', {
     'pixi.js': { AnimatedSprite: class {} },
     '../../constants': constants,
     '../../lib': {
@@ -1299,7 +1299,7 @@ test('chiefs keep their civilization and gender when switching to combat and bac
     'pixi.js': { Assets: { cache: { has: () => true, get: id => ({ id }) } } },
   }
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/bakedUnitAssets.ts', mocks)
-  const { applyUnitWorkAssets } = loadModule('app/lib/units/unitWorkAppearance.ts', mocks)
+  const { applyUnitWorkAssets } = loadModule('app/lib/units/visuals/unitWorkAppearance.ts', mocks)
   const configs = require('../public/assets/data/gameplay/units.json')
 
   for (const civ of ['Hellas', 'Latium', 'Kemet', 'Sumeria', 'Xia', 'Alba', 'Nord', 'Nobatia']) {

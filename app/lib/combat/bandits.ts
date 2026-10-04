@@ -2,11 +2,7 @@ import { PLAYER_TYPES, UNIT_TYPES } from '../constants'
 import type { PlayerLike } from '../../types/player'
 import type { UnitEntity } from '../../types/entities'
 
-const BANDIT_UNIT_TYPES = new Set<string>([
-  UNIT_TYPES.banditChief,
-  UNIT_TYPES.banditSword,
-  UNIT_TYPES.banditArcher,
-])
+const BANDIT_UNIT_TYPES = new Set<string>([UNIT_TYPES.banditChief, UNIT_TYPES.banditSword, UNIT_TYPES.banditArcher])
 
 type BanditOwnerLike = PlayerLike & {
   banditCampOwner?: boolean

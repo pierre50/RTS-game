@@ -45,7 +45,14 @@ export function buildFrameRange(fromFrame: number, toFrame: number): number[] {
 export function playSpriteFrameSequence(
   sprite: FrameSequenceSprite,
   scheduler: Pick<SchedulerLike, 'add' | 'remove'>,
-  { frameMs, frames, isCurrent = () => true, onComplete, onFrame, taskName = 'sprite.frameSequence' }: PlaySpriteFrameSequenceOptions
+  {
+    frameMs,
+    frames,
+    isCurrent = () => true,
+    onComplete,
+    onFrame,
+    taskName = 'sprite.frameSequence',
+  }: PlaySpriteFrameSequenceOptions
 ): SchedulerTaskId | null {
   if (!isCurrent()) return null
   const normalizedFrames = frames.map(frame => Math.max(0, Math.floor(frame))).filter(Number.isFinite)

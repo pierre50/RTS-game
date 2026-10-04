@@ -1,7 +1,12 @@
 import type { Bounds, Viewport } from '../../types/geometry'
 
 export function boundsIntersect(a: Bounds, b: Bounds): boolean {
-  return a.minX + a.width >= b.minX && a.minX <= b.minX + b.width && a.minY + a.height >= b.minY && a.minY <= b.minY + b.height
+  return (
+    a.minX + a.width >= b.minX &&
+    a.minX <= b.minX + b.width &&
+    a.minY + a.height >= b.minY &&
+    a.minY <= b.minY + b.height
+  )
 }
 
 export function rectangleIntersectsViewport(bounds: Bounds, viewport: Viewport, margin = 0): boolean {

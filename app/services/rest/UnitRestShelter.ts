@@ -10,7 +10,7 @@ import { canUnitEnterBuildingInterior } from '../../lib/buildings/interiorAccess
 import { ensureRuntimeBuildingInteriorSpace } from '../BuildingInteriorSpaceSystem'
 import { canReachRestBeforeBed } from './UnitRestTravel'
 import { getRestTravelPathLength } from './UnitRestRoute'
-import { isSoldierUnit } from '../../lib/units/villagerSchedule'
+import { isSoldierUnit } from '../../lib/units/village/villagerSchedule'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { hitPointRatio, restDistance } from './UnitRestMath'

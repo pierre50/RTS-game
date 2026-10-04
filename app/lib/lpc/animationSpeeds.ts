@@ -17,7 +17,10 @@ export function lpcAnimationSpeedForAlias(alias: string): number {
   return LPC_RUNTIME_ANIMATION_SPEED
 }
 
-export function lpcAnimationSpeedForSheet(sheet: string, { slashAction = true }: { slashAction?: boolean } = {}): number {
+export function lpcAnimationSpeedForSheet(
+  sheet: string,
+  { slashAction = true }: { slashAction?: boolean } = {}
+): number {
   if (sheet === 'corpse' || sheet === 'corpseSheet') return LPC_CORPSE_ANIMATION_SPEED
   if (sheet === 'sitting' || sheet === 'sittingSheet') return 0
   if (sheet === 'harvest' || sheet === 'harvestSheet') return LPC_SLASH_ANIMATION_SPEED

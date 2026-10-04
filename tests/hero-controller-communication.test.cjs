@@ -140,7 +140,7 @@ function loadHeroController({
       getUnitWalkSpeedFactor: isWalking => (isWalking ? WALK_SPEED_FACTOR : 1),
       isUnitWalkSpeedFactor: factor => factor < 1,
     },
-    '../lib/units/unitWalkingAnimation': {
+    '../lib/units/visuals/unitWalkingAnimation': {
       applyUnitWalkingAnimationSpeed: () => {},
     },
     '../lib/units/unitControl': {

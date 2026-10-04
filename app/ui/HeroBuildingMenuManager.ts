@@ -1,3 +1,4 @@
+import { renderHeroBuildingInfo } from './hero-building/HeroBuildingInfo'
 import { renderHeroBuildingBody } from './hero-building/HeroBuildingBody'
 import { t } from '../lib/lang'
 import { heroHomeButton } from './hero-building/HeroHomeButton'
@@ -11,14 +12,12 @@ import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
-import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
-import { createInspectionModal, setInspectionWindowSize } from './InspectionPanel'
-import { InteractionPanel } from './InteractionPanel'
+import { createInspectionModal, setInspectionWindowSize } from './inspection/InspectionPanel'
+import { InteractionPanel } from './inspection/InteractionPanel'
 import type { MenuHost } from './MenuHost'
 import { createHeroBuildingActionButton } from './hero-building/HeroBuildingActionButton'
 import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress'
 import { heroBuildingStructureSignature } from './hero-building/HeroBuildingStructureSignature'
-import { buttonMeta } from './hero-building/HeroBuildingButtonText'
 import { heroSleepButton } from './hero-building/HeroSleepButton'
 import { canHeroTradeAtMarket } from './hero-building/HeroMarketBody'
 import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
@@ -332,26 +331,7 @@ export class HeroBuildingMenuManager {
   }
 
   renderInfo(): void {
-    const building = this.building
-    const title = this.modal?._panel?.querySelector('.modal-title')
-    if (title && building) title.textContent = getBuildingDisplayName(building)
-    this.info.textContent = ''
-    this.layout.secondaryActions.replaceChildren()
-    if (typeof building?.interface?.info === 'function') {
-      building.interface.info(this.info, {
-        ...TITLED_ENTITY_INFO_OPTIONS,
-        actionsContainer: this.layout.secondaryActions,
-      })
-    }
-    if (building) {
-      for (const spec of this.getBuildingActionMenuItems(building)) {
-        if (!['heroCampfireSleep', 'heroSetHome'].includes(spec.id ?? '') || spec.hide?.()) continue
-        const button = this.createButton(building, spec)
-        button.dataset.windowAction = spec.id === 'heroCampfireSleep' ? 'sleep' : 'home'
-        button.title = buttonMeta(spec)
-        this.layout.secondaryActions.appendChild(button)
-      }
-    }
+    renderHeroBuildingInfo(this)
   }
 
   createButton(

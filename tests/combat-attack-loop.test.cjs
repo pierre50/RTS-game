@@ -361,16 +361,27 @@ for (const family of ['unit', 'animal']) {
       attacker.family = family
       attacker.attackRecoveryMs = 100
       let timer, finishAnimation
-      attacker.context = { scheduler: {
-        addOneShot(callback) { timer = callback; return 42 }, remove() {},
-      } }
+      attacker.context = {
+        scheduler: {
+          addOneShot(callback) {
+            timer = callback
+            return 42
+          },
+          remove() {},
+        },
+      }
       const calls = []
       runAttackLoopOnFrame(attacker, {
         releaseFrame: 1,
         prepareAttackSheet() {},
         prepareRecoverySheet: () => calls.push('visual'),
-        playRecoveryAnimation: (_frame, done) => { finishAnimation = done; return true },
-        onOutOfRange() {}, onTargetUnavailable: () => calls.push('target'), onReadyToAttack() {},
+        playRecoveryAnimation: (_frame, done) => {
+          finishAnimation = done
+          return true
+        },
+        onOutOfRange() {},
+        onTargetUnavailable: () => calls.push('target'),
+        onReadyToAttack() {},
       })
       attacker.sprite.onFrameChange(1)
       if (invalidate === 'death') attacker.isDead = true
@@ -395,8 +406,12 @@ test('an obsolete loop callback cannot erase its replacement', () => {
   const { attacker } = makeAttackLoopSubject()
   attacker.attackRecoveryMs = 100
   const callbacks = {
-    releaseFrame: 1, prepareAttackSheet() {}, prepareRecoverySheet() {},
-    onOutOfRange() {}, onTargetUnavailable() {}, onReadyToAttack() {},
+    releaseFrame: 1,
+    prepareAttackSheet() {},
+    prepareRecoverySheet() {},
+    onOutOfRange() {},
+    onTargetUnavailable() {},
+    onReadyToAttack() {},
   }
   runAttackLoopOnFrame(attacker, callbacks)
   attacker.sprite.onFrameChange(1)
@@ -406,4 +421,107 @@ test('an obsolete loop callback cannot erase its replacement', () => {
   attacker.sprite.onLoop = newLoop
   oldLoop()
   assert.equal(attacker.sprite.onLoop, newLoop)
+})
+
+function attackCallbacks(calls, overrides = {}) {
+  return {
+    releaseFrame: 1,
+    prepareAttackSheet: () => calls.push('prepare'),
+    onOutOfRange: target => calls.push(['range', target]),
+    onTargetUnavailable: (target, phase) => calls.push(['unavailable', target, phase]),
+    onReadyToAttack: target => calls.push(['hit', target]),
+    ...overrides,
+  }
+}
+test('attack preflight rejects dead, locked, absent and non-entity targets', () => {
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+  for (const patch of [{ sprite: null }, { isDead: true }, { isDestroyed: true }, { actionLocked: true }]) {
+    const { attacker } = makeAttackLoopSubject()
+    Object.assign(attacker, patch)
+    const calls = []
+    runAttackLoopOnFrame(attacker, attackCallbacks(calls))
+    assert.deepEqual(calls, [])
+  }
+  for (const dest of [null, 'label', { i: 1, j: 2 }]) {
+    const { attacker } = makeAttackLoopSubject()
+    attacker.dest = dest
+    const calls = []
+    runAttackLoopOnFrame(attacker, attackCallbacks(calls))
+    assert.deepEqual(calls, [['unavailable', null, 'preflight']])
+    attacker.getActionCondition = () => true
+    calls.length = 0
+    runAttackLoopOnFrame(attacker, attackCallbacks(calls))
+    assert.deepEqual(calls, [])
+  }
+})
+test('attack release cannot deal damage when energy disappears during windup', () => {
+  for (const blockAtRelease of [true, false]) {
+    let checks = 0
+    const { runAttackLoopOnFrame } = loadCombatAttackLoop({
+      hasEnergyForAction: () => !blockAtRelease || ++checks === 1,
+      spendOrWaitForEnergy: () => false,
+    })
+    const { attacker } = makeAttackLoopSubject()
+    delete attacker.energy
+    const calls = []
+    runAttackLoopOnFrame(attacker, attackCallbacks(calls))
+    attacker.sprite.onFrameChange()
+    assert.deepEqual(calls, ['prepare'])
+    assert.equal(attacker.sprite.onFrameChange, undefined)
+  }
+})
+test('attack supports animal range checks and attacker direction synchronization', () => {
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+  const { attacker, target } = makeAttackLoopSubject()
+  delete attacker.isUnitAtDest
+  delete attacker.action
+  delete target.label
+  target.type = 'Deer'
+  const calls = []
+  attacker.syncMovingTargetDirection = () => calls.push('direction')
+  runAttackLoopOnFrame(attacker, attackCallbacks(calls))
+  assert.deepEqual(calls, [['range', target]])
+  attacker.isAnimalAtDest = () => true
+  calls.length = 0
+  runAttackLoopOnFrame(attacker, attackCallbacks(calls, { trackTargetOnRelease: false }))
+  attacker.sprite.onFrameChange()
+  assert.deepEqual(calls, ['direction', 'prepare', ['hit', target]])
+})
+test('attack exceptions clear animation callbacks and report the failed release', t => {
+  const errors = []
+  t.mock.method(console, 'error', (...args) => errors.push(args))
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+  for (const patch of [
+    { family: 'unit' },
+    { family: 'animal', label: 'wolf' },
+    { family: 'animal', type: 'Wolf', path: [] },
+    { family: 'animal' },
+  ]) {
+    const { attacker, target } = makeAttackLoopSubject()
+    Object.assign(attacker, patch)
+    const calls = []
+    runAttackLoopOnFrame(
+      attacker,
+      attackCallbacks(calls, {
+        onReadyToAttack: () => {
+          throw new Error('hit failed')
+        },
+      })
+    )
+    attacker.sprite.onFrameChange()
+    assert.equal(attacker.sprite.onFrameChange, undefined)
+    assert.deepEqual(calls.at(-1), ['unavailable', target, 'release'])
+  }
+  assert.equal(errors.length, 3)
+})
+test('attack impact changing the order or killing the actor cannot schedule recovery', () => {
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+  for (const patch of [{ isDead: true }, { isDestroyed: true }, { action: 'move' }, { dest: null }]) {
+    const { attacker } = makeAttackLoopSubject()
+    attacker.attackRecoveryMs = 200
+    attacker.context = { scheduler: { addOneShot: () => assert.fail('stale attack scheduled recovery') } }
+    runAttackLoopOnFrame(attacker, attackCallbacks([], { onReadyToAttack: () => Object.assign(attacker, patch) }))
+    attacker.sprite.onFrameChange()
+    assert.equal(attacker.attackRecoveryTaskId, undefined)
+  }
 })

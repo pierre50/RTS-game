@@ -49,7 +49,7 @@ test('inspection header keeps live nodes, moves compact stats, refreshes targets
     }
   }
   try {
-    const { attachInspectionHeader } = loadTsModule('app/ui/InspectionHeader.ts')
+    const { attachInspectionHeader } = loadTsModule('app/ui/inspection/InspectionHeader.ts')
     const header = node()
     const panel = node()
     panel.querySelector = () => header

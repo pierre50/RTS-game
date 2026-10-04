@@ -1,5 +1,5 @@
 import { isBanditUnit } from '../../lib/combat/bandits'
-import { isSoldierUnit } from '../../lib/units/villagerSchedule'
+import { isSoldierUnit } from '../../lib/units/village/villagerSchedule'
 import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
 import type { EntityLightSourceConfig, RuntimeEntity, UnitEntity } from '../../types/entities'
 

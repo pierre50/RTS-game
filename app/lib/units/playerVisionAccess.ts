@@ -7,8 +7,10 @@ export function usesPersonalVision(context?: { controls?: { heroUnit?: UnitEntit
 }
 
 /** During boot, an uninitialized player must not reveal the village before the hero exists. */
-export function ownerSharesVision(owner: { isPlayed?: boolean; units?: UnitEntity[] } | null | undefined,
-  context?: { controls?: { heroUnit?: UnitEntity | null } | null }): boolean {
+export function ownerSharesVision(
+  owner: { isPlayed?: boolean; units?: UnitEntity[] } | null | undefined,
+  context?: { controls?: { heroUnit?: UnitEntity | null } | null }
+): boolean {
   if (!owner?.isPlayed) return true
   const hero = context?.controls?.heroUnit ?? owner.units?.find(unit => unit.type === 'Hero')
   return heroCanCommand(hero)

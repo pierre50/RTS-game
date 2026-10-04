@@ -127,10 +127,7 @@ export function shouldUnitAvoidPassageStop(
   return shouldEntityAvoidPassageStop(unit, cell, options)
 }
 
-function entityHasActivePassageStopIntent(
-  entity: PassageEntity,
-  cell: RuntimeCell | null | undefined
-): boolean {
+function entityHasActivePassageStopIntent(entity: PassageEntity, cell: RuntimeCell | null | undefined): boolean {
   if (!cell) return false
   const restState = (entity as UnitEntity).shelterState
   if (restState?.status === 'movingToRest' && samePassageCell(restState.targetCell, cell)) return true

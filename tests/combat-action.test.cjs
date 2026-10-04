@@ -116,7 +116,7 @@ function loadModule(relativePath, mocks) {
       routeUnitIntoBuildingInteriorSpace: () => false,
     },
     '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
-    '../../lib/units/unitWorkAppearance': unitWorkAppearanceMock,
+    '../../lib/units/visuals/unitWorkAppearance': unitWorkAppearanceMock,
     '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
     './maths': { getReliefOffset: () => 0 },
   }
@@ -499,8 +499,8 @@ test('attackers route into an assault-ready building interior instead of retarge
     '../../lib/projectiles': { attachProjectileToMapSpace: () => {} },
     '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
     '../../lib/units/unitExperience': { XP_CATEGORIES: { melee: 'melee' }, getCombatXpBonus: () => 0 },
-    '../../lib/units/unitVisualTransition': { setUnitVisualSheet: () => {} },
-    '../../lib/units/unitWorkAppearance': {
+    '../../lib/units/visuals/unitVisualTransition': { setUnitVisualSheet: () => {} },
+    '../../lib/units/visuals/unitWorkAppearance': {
       applyUnitActionFrameSequence: () => {},
       getUnitWorkActionSheet: () => null,
     },
@@ -548,7 +548,7 @@ test('sendToAttack does not issue an attack order against neutral berry bushes',
     '../../lib/combat/diplomaticAggression': { applyDiplomaticAggression: () => ({ hostileNow: false }) },
     '../../lib/lang': { t: key => key },
     '../../lib/units/unitControl': { isHeroControlled: () => false },
-    '../../lib/units/unitWorkAppearance': { applyUnitWorkAssets: () => {} },
+    '../../lib/units/visuals/unitWorkAppearance': { applyUnitWorkAssets: () => {} },
   })
 
   const berrybush = {

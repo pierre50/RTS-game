@@ -4,7 +4,7 @@ import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { VILLAGE_ACTIVITY_RADIUS } from '../../config/villageActivity'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { consumeVillagerMeals } from '../../lib/economy/villagerMeals'
-import { getVillagerWorkingMinutes } from '../../lib/units/villagerSchedule'
+import { getVillagerWorkingMinutes } from '../../lib/units/village/villagerSchedule'
 import { restoreOfflineUnitSleepHealth, updateUnitSleepHealth } from '../../lib/units/unitSleepHealth'
 import { updateUnitEnergy } from '../../lib/units/unitEnergy'
 import { hasHostileInHeroSight } from '../../lib/hero/heroSleep'
@@ -14,7 +14,7 @@ import type { VillageActivitySystem } from '../VillageActivitySystem'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 import type { UnitEntity } from '../../types/entities'
-import type { VillageHome } from '../../lib/units/villageActivity'
+import type { VillageHome } from '../../lib/units/village/villageActivity'
 
 const HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
 const calendarMinute = (elapsed: number) => DAY_NIGHT_CONFIG.startHour * 60 + (elapsed / HOUR_MS) * 60

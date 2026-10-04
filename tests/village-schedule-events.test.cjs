@@ -2,8 +2,8 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const moduleCache = new Map()
-const { notifyVillageStateChanged } = loadTsModule('app/lib/units/villageStateEvents.ts', { moduleCache })
-const { VillageScheduleGate } = loadTsModule('app/lib/units/villageScheduleGate.ts', { moduleCache })
+const { notifyVillageStateChanged } = loadTsModule('app/lib/units/village/villageStateEvents.ts', { moduleCache })
+const { VillageScheduleGate } = loadTsModule('app/lib/units/village/villageScheduleGate.ts', { moduleCache })
 const { flushTrainingRequests } = loadTsModule('app/lib/training/trainingRequests.ts', { moduleCache })
 const { VillagerUpkeepSystem } = loadTsModule('app/services/world/VillagerUpkeepSystem.ts', { moduleCache })
 function fixture() {
@@ -115,7 +115,7 @@ test('waiting recruitment does not rescan unchanged units and resumes when a rec
 })
 
 test('static village sleep invalidates cached schedules and skips its units until wake', () => {
-  const { setDistantOwner } = loadTsModule('app/lib/units/villageActivity.ts', { moduleCache })
+  const { setDistantOwner } = loadTsModule('app/lib/units/village/villageActivity.ts', { moduleCache })
   const { owner, context } = fixture()
   owner.developmentMode = 'static'
   const gate = new VillageScheduleGate()

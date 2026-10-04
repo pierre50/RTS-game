@@ -1,6 +1,6 @@
 import { UNIT_TYPES } from '../../constants'
 import { sameMapSpace } from '../../lib/mapSpaces'
-import { scheduleUnitWalkAround } from '../../lib/units/walkAround'
+import { scheduleUnitWalkAround } from '../../lib/units/autonomy/walkAround'
 import { UnitWalkAroundPatrolController } from './UnitWalkAroundPatrolController'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'

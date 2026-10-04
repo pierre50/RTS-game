@@ -1,9 +1,4 @@
-import {
-  drainEnergyAmount,
-  ensureUnitEnergy,
-  getActionEnergyCost,
-  spendEnergyForAction,
-} from '../units/unitEnergy'
+import { drainEnergyAmount, ensureUnitEnergy, getActionEnergyCost, spendEnergyForAction } from '../units/unitEnergy'
 import type { UnitEntity } from '../../types/entities'
 
 export type RememberTimedEnergyAt = (now: number) => void

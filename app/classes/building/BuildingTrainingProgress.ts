@@ -1,4 +1,4 @@
-import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { getTrainingProgress, isTrainingComplete } from '../../lib/training/trainingRules'
 import { ACTION_TYPES } from '../../constants'
 import { t } from '../../lib/lang'

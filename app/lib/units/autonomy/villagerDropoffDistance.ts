@@ -1,6 +1,6 @@
 import { ACTION_TYPES, BUILDING_TYPES, MINING_RESOURCE_CONFIG } from '../../../constants'
 import type { UnitEntity } from '../../../types/entities'
-import type { VillagerJobCandidate } from '../villagerAutonomyTargeting'
+import type { VillagerJobCandidate } from './villagerAutonomyTargeting'
 const distance = (a: { i: number; j: number }, b: { i: number; j: number }) => Math.hypot(a.i - b.i, a.j - b.j)
 function getCompatibleDropoffTypes(candidate: VillagerJobCandidate): Set<string> | null {
   if (candidate.action === ACTION_TYPES.forageberry || candidate.action === ACTION_TYPES.farm) {

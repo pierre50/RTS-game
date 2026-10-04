@@ -21,7 +21,7 @@ function fixture() {
   }
   const { DistantVillageSystem } = loadTsModule('app/services/world/distantVillages/DistantVillageSystem.ts', { mocks, moduleCache })
   const rules = {
-    ...loadTsModule('app/lib/units/villageActivity.ts', { mocks, moduleCache }),
+    ...loadTsModule('app/lib/units/village/villageActivity.ts', { mocks, moduleCache }),
     ...loadTsModule('app/lib/units/unitSuspension.ts', { mocks, moduleCache }),
   }
   const context = {

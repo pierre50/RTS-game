@@ -5,8 +5,10 @@ export const EN_QUEST_TRANSLATIONS = {
   questBanditReady: 'The bandits are defeated! Report back to receive your reward.',
 
   questBanditTitle: 'Clear the bandit camp',
-  questBanditDescription: 'Clear the marked bandit camp, then report to {giver}. Reward: {rewardGold} gold and +10 relationship.',
-  questBanditDialogue: 'Bandits threaten our village. Accept this task and I will mark their camp once it is located. Defeat the group and return for {rewardGold} gold.',
+  questBanditDescription:
+    'Clear the marked bandit camp, then report to {giver}. Reward: {rewardGold} gold and +10 relationship.',
+  questBanditDialogue:
+    'Bandits threaten our village. Accept this task and I will mark their camp once it is located. Defeat the group and return for {rewardGold} gold.',
   questBanditObjective: 'Defeat all bandits from the camp, then return to the chief.',
   questBanditReport: 'The camp has been cleared.',
   questBanditThanks: 'The village is safer thanks to you. Here is your reward.',
@@ -38,32 +40,42 @@ export const EN_QUEST_TRANSLATIONS = {
   introductionAskNext: 'What do we do now?',
   introductionAskLead: 'You really want me to make the decisions?',
   introductionAskHouse: 'A house first? What about a town center?',
-  introductionAnswerHouse: 'A house first. The fire keeps us warm, but we need a roof to rest under. The house will also give us room for more people. The town center will be their arrival point and our gathering place once we have a foothold here.',
+  introductionAnswerHouse:
+    'A house first. The fire keeps us warm, but we need a roof to rest under. The house will also give us room for more people. The town center will be their arrival point and our gathering place once we have a foothold here.',
   introductionAskBuild: 'How do I start building it?',
-  introductionAnswerBuild: 'Open the construction menu, choose House and place it on clear ground near the camp. Gather the materials shown in the menu, then work on the site until the house is finished. Laying the foundations is only the beginning.',
+  introductionAnswerBuild:
+    'Open the construction menu, choose House and place it on clear ground near the camp. Gather the materials shown in the menu, then work on the site until the house is finished. Laying the foundations is only the beginning.',
   firstHouseTitle: 'A roof over our heads',
-  firstHouseDescription: 'Build a house in the region where you set up camp. Open the construction menu, choose House, then place it on clear ground. Gather the required materials and finish the construction. The town center can come later.',
+  firstHouseDescription:
+    'Build a house in the region where you set up camp. Open the construction menu, choose House, then place it on clear ground. Gather the required materials and finish the construction. The town center can come later.',
   firstHouseObjective: 'Finish building a house near the camp.',
   foundingForumTitle: 'Found our village',
-  foundingForumDescription: 'We have a roof. Now build a Town Center in the camp region: it is the gathering place and arrival point for new villagers. Usable beds determine how many residents the village can welcome. Choose Town Center in the construction menu, supply the materials and finish the site.',
+  foundingForumDescription:
+    'We have a roof. Now build a Town Center in the camp region: it is the gathering place and arrival point for new villagers. Usable beds determine how many residents the village can welcome. Choose Town Center in the construction menu, supply the materials and finish the site.',
   foundingForumObjective: 'Finish building a town center in the camp region.',
   foundingGranaryTitle: 'Food for the village',
-  foundingGranaryDescription: 'Our new neighbours need food every day. Build a Granary near the food sources so villagers can store berries, wheat and meat. Food must also be gathered: an empty granary does not feed anyone.',
+  foundingGranaryDescription:
+    'Our new neighbours need food every day. Build a Granary near the food sources so villagers can store berries, wheat and meat. Food must also be gathered: an empty granary does not feed anyone.',
   foundingGranaryObjective: 'Finish building a granary in the camp region.',
   foundingStorageTitle: 'Store building materials',
-  foundingStorageDescription: 'Build a Storage Pit near the woods or stone deposits. Villagers can deposit building materials there, keeping supplies closer to their work. Choose it in the Economy section of the construction menu and finish the site.',
+  foundingStorageDescription:
+    'Build a Storage Pit near the woods or stone deposits. Villagers can deposit building materials there, keeping supplies closer to their work. Choose it in the Economy section of the construction menu and finish the site.',
   foundingStorageObjective: 'Finish building a storage pit in the camp region.',
   foundingMilitaryTitle: 'Prepare our defenses',
-  foundingMilitaryDescription: 'Our homes and supplies need protection. Build either Barracks for melee infantry or an Archery Range for ranged archers in the camp region. Choose one in the Military section of the construction menu. One completed military building is enough.',
+  foundingMilitaryDescription:
+    'Our homes and supplies need protection. Build either Barracks for melee infantry or an Archery Range for ranged archers in the camp region. Choose one in the Military section of the construction menu. One completed military building is enough.',
   foundingMilitaryObjective: 'Finish barracks OR an archery range in the camp region.',
   foundingDefendersTitle: 'Our first defenders',
-  foundingDefendersDescription: 'Open the training panel of your barracks or archery range and request infantry or archers. Available villagers will join training during working hours. Wait for training to finish: queued recruits do not count. Have two infantry or archers, in any combination, in the camp region. Keep villagers available to gather food and materials; build more housing if you need more people.',
+  foundingDefendersDescription:
+    'Open the training panel of your barracks or archery range and request infantry or archers. Available villagers will join training during working hours. Wait for training to finish: queued recruits do not count. Have two infantry or archers, in any combination, in the camp region. Keep villagers available to gather food and materials; build more housing if you need more people.',
   foundingDefendersObjective: 'Have two trained infantry or archers in the camp region.',
   foundingForgeTitle: 'Equip for what comes next',
-  foundingForgeDescription: 'With our first defenders ready, build a Forge in the camp region. It lets you craft equipment, arrows and consumables from resources. It is useful for preparing expeditions and replenishing supplies; it is not required to train infantry or archers.',
+  foundingForgeDescription:
+    'With our first defenders ready, build a Forge in the camp region. It lets you craft equipment, arrows and consumables from resources. It is useful for preparing expeditions and replenishing supplies; it is not required to train infantry or archers.',
   foundingForgeObjective: 'Finish a forge in the camp region.',
   foundingNext: 'Objective completed! Next: {objective}',
-  foundingCompleted: 'Your village has homes, supplies, its first defenders and a forge! Keep gathering food and expand as your population grows.',
+  foundingCompleted:
+    'Your village has homes, supplies, its first defenders and a forge! Keep gathering food and expand as your population grows.',
   introductionAnswerAttack:
     'Raiders swept through the village. There was smoke, shouting… It all happened so quickly. I don’t know who made it out. For now, we need to stay somewhere safe.',
   introductionAnswerRescue:
@@ -100,8 +112,7 @@ export const EN_QUEST_TRANSLATIONS = {
   questResourceObjective: 'Deliver {quantity} {resourceLabel} to {giver} ({count}/{quantity})',
   questResourceOffer: 'I need {quantity} {resourceLabel} for the village. I will give you {rewardGold} gold in return.',
   questResourceReminder: 'Come back when you have the {quantity} {resourceLabel} I asked for.',
-  questResourceThanks:
-    'Thank you! The village will put these to good use.',
+  questResourceThanks: 'Thank you! The village will put these to good use.',
   questResourceGive: 'I brought you {quantity} {resourceLabel}.',
   questResourceProgress: 'In your bag: {count}/{quantity} {resourceLabel}',
   questAccept: 'I’ll take care of it',
@@ -136,8 +147,10 @@ export const FR_QUEST_TRANSLATIONS = {
   questBanditReady: 'Les bandits sont vaincus ! Fais-moi ton rapport pour recevoir ta récompense.',
 
   questBanditTitle: 'Nettoyer le camp de bandits',
-  questBanditDescription: 'Éliminez les bandits du camp indiqué, puis retournez voir {giver}. Récompense : {rewardGold} or et +10 de relation.',
-  questBanditDialogue: 'Des bandits menacent notre village. Acceptez cette mission et je vous indiquerai leur camp dès qu’il sera localisé. Éliminez le groupe, puis revenez recevoir {rewardGold} or.',
+  questBanditDescription:
+    'Éliminez les bandits du camp indiqué, puis retournez voir {giver}. Récompense : {rewardGold} or et +10 de relation.',
+  questBanditDialogue:
+    'Des bandits menacent notre village. Acceptez cette mission et je vous indiquerai leur camp dès qu’il sera localisé. Éliminez le groupe, puis revenez recevoir {rewardGold} or.',
   questBanditObjective: 'Éliminer tous les bandits du camp, puis retourner voir le chef.',
   questBanditReport: 'Le camp a été nettoyé.',
   questBanditThanks: 'Le village est plus sûr grâce à vous. Voici votre récompense.',
@@ -169,32 +182,42 @@ export const FR_QUEST_TRANSLATIONS = {
   introductionAskNext: 'Qu’est-ce qu’on fait maintenant ?',
   introductionAskLead: 'Tu veux vraiment que je prenne les décisions ?',
   introductionAskHouse: 'Une maison d’abord ? Et le forum ?',
-  introductionAnswerHouse: 'La maison en premier. Le feu nous réchauffe, mais il nous faut un toit pour nous reposer. La maison nous donnera aussi des places pour accueillir d’autres habitants. Le forum sera leur point d’arrivée et notre lieu de rassemblement, une fois bien installés ici.',
+  introductionAnswerHouse:
+    'La maison en premier. Le feu nous réchauffe, mais il nous faut un toit pour nous reposer. La maison nous donnera aussi des places pour accueillir d’autres habitants. Le forum sera leur point d’arrivée et notre lieu de rassemblement, une fois bien installés ici.',
   introductionAskBuild: 'Comment je m’y prends pour la construire ?',
-  introductionAnswerBuild: 'Ouvre le menu de construction, choisis Maison et place-la sur un terrain dégagé près du camp. Rassemble les matériaux indiqués dans le menu, puis travaille sur le chantier jusqu’à ce que la maison soit terminée. Poser les fondations ne suffit pas.',
+  introductionAnswerBuild:
+    'Ouvre le menu de construction, choisis Maison et place-la sur un terrain dégagé près du camp. Rassemble les matériaux indiqués dans le menu, puis travaille sur le chantier jusqu’à ce que la maison soit terminée. Poser les fondations ne suffit pas.',
   firstHouseTitle: 'Un toit pour nous',
-  firstHouseDescription: 'Construisez une maison dans la région de votre camp. Ouvrez le menu de construction, choisissez Maison, puis placez-la sur un terrain dégagé. Rassemblez les matériaux nécessaires et terminez le chantier. Le forum viendra ensuite.',
+  firstHouseDescription:
+    'Construisez une maison dans la région de votre camp. Ouvrez le menu de construction, choisissez Maison, puis placez-la sur un terrain dégagé. Rassemblez les matériaux nécessaires et terminez le chantier. Le forum viendra ensuite.',
   firstHouseObjective: 'Terminer la construction d’une maison près du camp.',
   foundingForumTitle: 'Fonder notre village',
-  foundingForumDescription: 'Nous avons un toit. Construisez maintenant un forum dans la région du camp : il servira de lieu de rassemblement et de point d’arrivée aux nouveaux villageois. Les lits utilisables déterminent la capacité d’accueil du village. Choisissez Forum dans le menu de construction, apportez les matériaux et terminez le chantier.',
+  foundingForumDescription:
+    'Nous avons un toit. Construisez maintenant un forum dans la région du camp : il servira de lieu de rassemblement et de point d’arrivée aux nouveaux villageois. Les lits utilisables déterminent la capacité d’accueil du village. Choisissez Forum dans le menu de construction, apportez les matériaux et terminez le chantier.',
   foundingForumObjective: 'Terminer un forum dans la région du camp.',
   foundingGranaryTitle: 'Nourrir le village',
-  foundingGranaryDescription: 'Nos nouveaux voisins ont besoin de manger chaque jour. Construisez un grenier près des sources de nourriture pour y stocker les baies, le blé et la viande rapportés par les villageois. Pensez aussi à récolter : un grenier vide ne nourrit personne.',
+  foundingGranaryDescription:
+    'Nos nouveaux voisins ont besoin de manger chaque jour. Construisez un grenier près des sources de nourriture pour y stocker les baies, le blé et la viande rapportés par les villageois. Pensez aussi à récolter : un grenier vide ne nourrit personne.',
   foundingGranaryObjective: 'Terminer un grenier dans la région du camp.',
   foundingStorageTitle: 'Rassembler les matériaux',
-  foundingStorageDescription: 'Construisez un entrepôt près des arbres ou des gisements de pierre. Les villageois pourront y déposer les matériaux de construction, au plus près de leur travail. Choisissez-le dans la catégorie Économie du menu de construction et terminez le chantier.',
+  foundingStorageDescription:
+    'Construisez un entrepôt près des arbres ou des gisements de pierre. Les villageois pourront y déposer les matériaux de construction, au plus près de leur travail. Choisissez-le dans la catégorie Économie du menu de construction et terminez le chantier.',
   foundingStorageObjective: 'Terminer un entrepôt dans la région du camp.',
   foundingMilitaryTitle: 'Préparer notre défense',
-  foundingMilitaryDescription: 'Nos maisons et nos réserves ont besoin de protection. Construisez une caserne pour former des fantassins au corps à corps, ou un champ de tir pour former des archers à distance, dans la région du camp. Choisissez un bâtiment dans la catégorie Militaire du menu de construction. Un seul des deux suffit.',
+  foundingMilitaryDescription:
+    'Nos maisons et nos réserves ont besoin de protection. Construisez une caserne pour former des fantassins au corps à corps, ou un champ de tir pour former des archers à distance, dans la région du camp. Choisissez un bâtiment dans la catégorie Militaire du menu de construction. Un seul des deux suffit.',
   foundingMilitaryObjective: 'Terminer une caserne OU un champ de tir dans la région du camp.',
   foundingDefendersTitle: 'Nos premiers défenseurs',
-  foundingDefendersDescription: 'Ouvrez le panneau d’entraînement de votre caserne ou de votre champ de tir et demandez des fantassins ou des archers. Les villageois disponibles rejoindront la formation pendant leurs heures de travail. Attendez la fin : une recrue en attente ne compte pas. Réunissez deux fantassins ou archers, dans la combinaison de votre choix, dans la région du camp. Gardez des villageois pour récolter ; construisez des logements supplémentaires si vous manquez d’habitants.',
+  foundingDefendersDescription:
+    'Ouvrez le panneau d’entraînement de votre caserne ou de votre champ de tir et demandez des fantassins ou des archers. Les villageois disponibles rejoindront la formation pendant leurs heures de travail. Attendez la fin : une recrue en attente ne compte pas. Réunissez deux fantassins ou archers, dans la combinaison de votre choix, dans la région du camp. Gardez des villageois pour récolter ; construisez des logements supplémentaires si vous manquez d’habitants.',
   foundingDefendersObjective: 'Disposer de deux fantassins ou archers formés dans la région du camp.',
   foundingForgeTitle: 'S’équiper pour la suite',
-  foundingForgeDescription: 'Nos premiers défenseurs sont prêts. Construisez maintenant une forge dans la région du camp pour fabriquer des équipements, des flèches et des consommables avec vos ressources. Elle vous aidera à préparer les expéditions et à renouveler vos réserves ; elle n’est pas nécessaire pour former des fantassins ou des archers.',
+  foundingForgeDescription:
+    'Nos premiers défenseurs sont prêts. Construisez maintenant une forge dans la région du camp pour fabriquer des équipements, des flèches et des consommables avec vos ressources. Elle vous aidera à préparer les expéditions et à renouveler vos réserves ; elle n’est pas nécessaire pour former des fantassins ou des archers.',
   foundingForgeObjective: 'Terminer une forge dans la région du camp.',
   foundingNext: 'Objectif accompli ! À présent : {objective}',
-  foundingCompleted: 'Votre village possède des logements, des réserves, ses premiers défenseurs et une forge ! Continuez à récolter et agrandissez-le selon les besoins des habitants.',
+  foundingCompleted:
+    'Votre village possède des logements, des réserves, ses premiers défenseurs et une forge ! Continuez à récolter et agrandissez-le selon les besoins des habitants.',
   introductionAnswerAttack:
     'Des assaillants ont traversé le village. Il y avait de la fumée, des cris… Tout est allé très vite. Je ne sais pas qui a pu s’en sortir. Pour le moment, nous devons rester à l’abri.',
   introductionAnswerRescue:
@@ -233,8 +256,7 @@ export const FR_QUEST_TRANSLATIONS = {
   questResourceObjective: 'Livrer {quantity} {resourceLabel} à {giver} ({count}/{quantity})',
   questResourceOffer:
     'J’ai besoin de {quantity} {resourceLabel} pour le village. Je te donnerai {rewardGold} or en échange.',
-  questResourceReminder:
-    'Reviens quand tu auras les {quantity} {resourceLabel} que je t’ai demandés.',
+  questResourceReminder: 'Reviens quand tu auras les {quantity} {resourceLabel} que je t’ai demandés.',
   questResourceThanks: 'Merci ! Le village en fera bon usage.',
   questResourceGive: 'Voici les {quantity} {resourceLabel}.',
   questResourceProgress: 'Dans votre sac : {count}/{quantity} {resourceLabel}',

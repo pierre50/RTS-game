@@ -1,5 +1,5 @@
 import { SHEET_TYPES } from '../constants'
-import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../units/unitVisualTransition'
+import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../units/visuals/unitVisualTransition'
 import type { UnitEntity } from '../../types/entities'
 
 const AUTOMATIC_PARRY_HOLD_FRAME = 2

@@ -1,16 +1,16 @@
-import { usesInteriorPreset } from '../../app/lib/buildings/interiorFurnitureCatalog'
+import { usesInteriorPreset } from '../../app/lib/buildings/furniture/interiorFurnitureCatalog'
 import { BUILDING_TYPES } from '../../app/constants'
 import {
   findInteriorDecorationCell,
   getBuildingInteriorDecorationLayout,
   interiorCellKey,
-} from '../../app/lib/buildings/interiorDecorations'
+} from '../../app/lib/buildings/furniture/interiorDecorations'
 import { canPlaceBuildingAt } from '../../app/lib/grid/placement'
 import {
   getInteriorRoomCenter,
   isNearInteriorDoor,
   preservesInteriorPassages,
-} from '../../app/lib/buildings/interiorFurniturePlacement'
+} from '../../app/lib/buildings/furniture/interiorFurniturePlacement'
 import type { GameContextLike } from '../../app/types/context'
 import type { RuntimeCell } from '../../app/types/map'
 import type { BuildingInteriorRuntimeSpace } from './BuildingInteriorSpaceTypes'

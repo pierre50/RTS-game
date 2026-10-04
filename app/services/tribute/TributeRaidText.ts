@@ -13,7 +13,9 @@ function formatCost(cost: ResourceAmount): string {
 function getRaidFactionDisplayName(faction: FactionSave | null | undefined): string {
   const rawName = faction?.name?.trim()
   if (rawName && rawName.toLowerCase() !== 'bandits') return rawName
-  return faction?.civilization ? t('factionCivilizationDisplayName', { civ: t(faction.civilization) }) : t('unknownFaction')
+  return faction?.civilization
+    ? t('factionCivilizationDisplayName', { civ: t(faction.civilization) })
+    : t('unknownFaction')
 }
 
 export function getIncomingRaidMessage(raid: TributeRaid): string {

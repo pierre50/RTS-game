@@ -1,6 +1,6 @@
 import { BUILDING_TYPES } from '../../constants/entities'
 import type { BuildingEntity } from '../../types/entities'
-import { isInteriorFurniture } from './interiorFurnitureCatalog'
+import { isInteriorFurniture } from './furniture/interiorFurnitureCatalog'
 
 export function getFurnitureContainer(building: BuildingEntity): BuildingEntity | null {
   const space = building.spaceId ? building.context?.map?.spaces?.get(building.spaceId) : null

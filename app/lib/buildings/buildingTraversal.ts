@@ -1,5 +1,5 @@
 import { BUILDING_TYPES } from '../../constants/entities'
-import { isInteriorFloorFurniture } from './interiorFurnitureCatalog'
+import { isInteriorFloorFurniture } from './furniture/interiorFurnitureCatalog'
 
 /** Shared by grid occupancy, hero collisions and passage checks.
  * Walking height is handled separately by furnitureSurface.

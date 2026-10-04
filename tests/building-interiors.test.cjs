@@ -103,7 +103,7 @@ test('stable interior entry uses the shared building entry flow', () => {
 
 test('interior decorations vary by building type', () => {
   const { BUILDING_TYPES } = loadTsModule('app/constants/entities.ts')
-  const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/interiorDecorations.ts', {
+  const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/furniture/interiorDecorations.ts', {
     mocks: { '../../constants': { BUILDING_TYPES } },
   })
 

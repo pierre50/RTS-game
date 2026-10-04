@@ -6,7 +6,11 @@ import {
   getArcProgressOffset,
   pointsDistance,
 } from '../lib/maths'
-import { bindAnimatedSpriteToTicker, getAnimationFrames, getMirroredHalfArcFrameIndex } from '../lib/entities/spriteTextures'
+import {
+  bindAnimatedSpriteToTicker,
+  getAnimationFrames,
+  getMirroredHalfArcFrameIndex,
+} from '../lib/entities/spriteTextures'
 import { LABEL_TYPES } from '../constants'
 import { getShadowsEnabled } from '../lib/audio/settings'
 import { getEntityMapSpace, mapSpaceRendersShadows } from '../lib/mapSpaces'

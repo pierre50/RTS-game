@@ -13,12 +13,7 @@ import { addDisplayObjectToMapSpaceContainer } from '../lib/mapSpaces'
 import { getEffectiveProjectileType } from '../lib/projectiles'
 import { playAudibleSoundCue, type AudibleInstance } from '../lib/audio/sound'
 import { getUnitCombatRange } from '../lib/equipment/equipmentStats'
-import {
-  CELL_DEPTH,
-  FAMILY_TYPES,
-  LABEL_TYPES,
-  STEP_TIME,
-} from '../constants'
+import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES, STEP_TIME } from '../constants'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { CommandSound, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { Point } from '../types/grid'

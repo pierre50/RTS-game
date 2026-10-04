@@ -11,7 +11,7 @@ import {
 import { getAutonomyJobForWork, setVillagerAutonomy } from '../../lib'
 import { t } from '../../lib/lang'
 import { isHeroControlled } from '../../lib/units/unitControl'
-import { applyUnitWorkAssets } from '../../lib/units/unitWorkAppearance'
+import { applyUnitWorkAssets } from '../../lib/units/visuals/unitWorkAppearance'
 
 import {
   findResourceDeliveryTarget,

@@ -1,8 +1,8 @@
 import { reconcileHouseholds } from '../../lib/housing/households'
 import { canHeroDemolishBuilding, getFurnitureContainer } from '../../lib/buildings/buildingDemolition'
-import { isInteriorFurniture } from '../../lib/buildings/interiorFurnitureCatalog'
+import { isInteriorFurniture } from '../../lib/buildings/furniture/interiorFurnitureCatalog'
 import { removeFurnitureSurface } from '../../lib/terrain/furnitureSurface'
-import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
+import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { definedProperties } from '../../lib/definedProperties'
 import { LABEL_TYPES, MENU_INFO_IDS, SOUND_CUES } from '../../constants'
 import {

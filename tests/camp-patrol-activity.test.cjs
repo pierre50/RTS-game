@@ -23,7 +23,7 @@ function fixture(count = 12) {
     '../../lib/combat/combatFeedback': { showAlertFeedback() {} },
     '../../lib/units/unitEnergy': { cancelEnergyWait() {} },
     '../../lib/units/campBehavior': { campAnchor: u => u.campPatrolAnchor, canCampPursue: () => true },
-    '../../lib/units/walkAround': {
+    '../../lib/units/autonomy/walkAround': {
       canUnitStartAmbientWalk: u => !u.dest && !u.action,
       findUnitWalkAroundDestination: () => ({ i: 51, j: 50 }),
     },

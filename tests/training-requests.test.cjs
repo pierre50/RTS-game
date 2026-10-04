@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { requestBuildingTraining, dispatchTrainingRequests, completeTrainingRequest, cancelBuildingTrainingRequest } =
   loadTsModule('app/lib/training/trainingRequests.ts', {
     mocks: {
-      '../units/villagerSchedule': { shouldVillagerWork: () => true },
+      '../units/village/villagerSchedule': { shouldVillagerWork: () => true },
       '../units/unitSuspension': { wakeUnitSimulation: () => {} },
     },
   })

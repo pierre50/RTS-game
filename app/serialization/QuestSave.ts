@@ -21,21 +21,38 @@ export function validateQuestJournal(value: unknown): void {
     if (quest.encounters !== undefined) {
       if (!isObject(quest.encounters)) return invalid()
       for (const encounter of Object.values(quest.encounters)) {
-        if (!isObject(encounter) || !Array.isArray(encounter.entityLabels) ||
+        if (
+          !isObject(encounter) ||
+          !Array.isArray(encounter.entityLabels) ||
           !encounter.entityLabels.every(label => typeof label === 'string' && label.length > 0) ||
           !isObject(encounter.position) ||
-          ![encounter.position.i, encounter.position.j].every(value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) ||
-          !isObject(encounter.parameters) || !Object.values(encounter.parameters).every(value =>
-            typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value)))) return invalid()
+          ![encounter.position.i, encounter.position.j].every(
+            value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+          ) ||
+          !isObject(encounter.parameters) ||
+          !Object.values(encounter.parameters).every(
+            value => typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value))
+          )
+        )
+          return invalid()
       }
     }
     const reservation = quest.reservation
-    if (reservation !== undefined && (!isObject(reservation) ||
-      !['entityLabels', 'stageIds'].every(key => Array.isArray(reservation[key]) &&
-        (reservation[key] as unknown[]).every(value => typeof value === 'string')))) return invalid()
+    if (
+      reservation !== undefined &&
+      (!isObject(reservation) ||
+        !['entityLabels', 'stageIds'].every(
+          key =>
+            Array.isArray(reservation[key]) && (reservation[key] as unknown[]).every(value => typeof value === 'string')
+        ))
+    )
+      return invalid()
     if (quest.repeatable !== undefined && typeof quest.repeatable !== 'boolean') return invalid()
     for (const key of ['completedDay', 'nextOfferDay']) {
-      if (quest[key] !== undefined && (typeof quest[key] !== 'number' || !Number.isSafeInteger(quest[key]) || quest[key] < 1))
+      if (
+        quest[key] !== undefined &&
+        (typeof quest[key] !== 'number' || !Number.isSafeInteger(quest[key]) || quest[key] < 1)
+      )
         return invalid()
     }
     for (const key of ['id', 'definitionId', 'regionId', 'stageId']) {

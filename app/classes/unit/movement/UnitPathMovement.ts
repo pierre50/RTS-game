@@ -30,8 +30,8 @@ import {
   startActionIfAlreadyInRange,
   updateCautiousAnimalApproachSpeed,
 } from './UnitMovementHelpers'
-import { applyUnitWalkingAnimationSpeed } from '../../../lib/units/unitWalkingAnimation'
-import { applyUnitCrouchPose, resetUnitCrouchPose } from '../../../lib/units/unitCrouchPose'
+import { applyUnitWalkingAnimationSpeed } from '../../../lib/units/visuals/unitWalkingAnimation'
+import { applyUnitCrouchPose, resetUnitCrouchPose } from '../../../lib/units/visuals/unitCrouchPose'
 import { isUnitWalkSpeedFactor } from '../../../lib/units/unitLocomotion'
 import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '../../../lib/buildings/passageCells'
 import { getEntitySpaceMapLike, isOutsideSpaceId } from '../../../lib/mapSpaces'
@@ -40,13 +40,21 @@ import { getReliefMovementDistance } from '../../../lib/terrain/reliefMovement'
 import type { UnitEntity } from '../../../types/entities'
 
 export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
-  runPathStep(unit, () => stepUnitPath(unit, retryBlockedGatherApproach), () => {
-    if (unit.dest) unit.sendToEvt?.(unit.dest, unit.action ?? null, {
-      forceRepath: true,
-      preserveAutonomy: true,
-      allowPassageStop: unit.action === ACTION_TYPES.train || unitHasActivePassageStopIntent(unit, 'has' in unit.dest ? unit.dest : null),
-    })
-  }, () => unit.stop?.())
+  runPathStep(
+    unit,
+    () => stepUnitPath(unit, retryBlockedGatherApproach),
+    () => {
+      if (unit.dest)
+        unit.sendToEvt?.(unit.dest, unit.action ?? null, {
+          forceRepath: true,
+          preserveAutonomy: true,
+          allowPassageStop:
+            unit.action === ACTION_TYPES.train ||
+            unitHasActivePassageStopIntent(unit, 'has' in unit.dest ? unit.dest : null),
+        })
+    },
+    () => unit.stop?.()
+  )
 }
 
 function stepUnitPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {

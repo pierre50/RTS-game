@@ -131,7 +131,7 @@ test('hunter retargeting routes a nearby carcass through the precise work approa
         getClosestInstanceWithPath: () => ({ instance: carcass, path: [] }),
         instanceContactInstance: () => true,
       },
-      '../../lib/units/villagerAutonomyTargeting': { isVillagerWorkTargetRejected: () => false },
+      '../../lib/units/autonomy/villagerAutonomyTargeting': { isVillagerWorkTargetRejected: () => false },
       '../../services/BuildingInteriorSpaceSystem': {},
     },
   })

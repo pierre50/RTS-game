@@ -32,8 +32,8 @@ function fixture() {
     '../../../lib/units/unitEnergy': { getEnergyMoveSpeedMultiplier: unit => unit.energySpeedFactor ?? 1 },
     './UnitHeroDirectMovementCollision': { getHeroTerrainCollisionBlockerNearPoint: () => null },
     './UnitDirectMovementDiagnostics': { reportBorderAttempt: noop, reportTerrainCollision: noop },
-    '../../../lib/units/unitWalkingAnimation': { applyUnitWalkingAnimationSpeed: noop },
-    '../../../lib/units/unitCrouchPose': { applyUnitCrouchPose: noop, resetUnitCrouchPose: noop },
+    '../../../lib/units/visuals/unitWalkingAnimation': { applyUnitWalkingAnimationSpeed: noop },
+    '../../../lib/units/visuals/unitCrouchPose': { applyUnitCrouchPose: noop, resetUnitCrouchPose: noop },
     '../../../lib/mapSpaces': { getEntitySpaceMapLike: () => map, isOutsideSpaceId: () => true },
     '../../../lib/buildings/passageCells': {
       unitHasActivePassageStopIntent: () => false,

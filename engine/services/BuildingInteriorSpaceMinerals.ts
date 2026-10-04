@@ -1,5 +1,5 @@
-import { findInteriorDecorationCell } from '../../app/lib/buildings/interiorDecorations'
-import { isNearInteriorDoor } from '../../app/lib/buildings/interiorFurniturePlacement'
+import { findInteriorDecorationCell } from '../../app/lib/buildings/furniture/interiorDecorations'
+import { isNearInteriorDoor } from '../../app/lib/buildings/furniture/interiorFurniturePlacement'
 import { Resource } from '../../app/classes/Resource'
 import type { MapBlueprint } from '../../app/classes/map/MapGenerationTypes'
 import { bindCaveMineralState } from '../../app/lib/resources/caveMinerals'

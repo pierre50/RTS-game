@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const { playableColor } = loadTsModule('app/lib/graphics/playableColor.ts')
-const { normalizePlayerColor } = loadTsModule('app/ui/PlayerSetupColors.ts')
+const { normalizePlayerColor } = loadTsModule('app/ui/setup/PlayerSetupColors.ts')
 const { ensureCampaignPlayerRoster } = loadTsModule('app/lib/campaign/playerRoster.ts', {
   mocks: {
     '../graphics/colors': { playerColors: ['violet', 'red', 'yellow', 'brown', 'orange', 'green', 'teal'] },

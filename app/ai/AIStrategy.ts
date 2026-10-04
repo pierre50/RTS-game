@@ -15,14 +15,7 @@ import {
   getTrainingLoad as runGetTrainingLoad,
   trainUnits as runTrainUnits,
 } from './AIStrategyTraining'
-import {
-  AI_DIFFICULTIES,
-  MAX_ARCHERS,
-  MAX_BUILDINGS,
-  MAX_CAVALRY,
-  MAX_INFANTRY,
-  MAX_VILLAGERS,
-} from './config'
+import { AI_DIFFICULTIES, MAX_ARCHERS, MAX_BUILDINGS, MAX_CAVALRY, MAX_INFANTRY, MAX_VILLAGERS } from './config'
 import type {
   AIBuildingLike,
   AIDifficultyConfig,

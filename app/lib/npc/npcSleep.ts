@@ -1,5 +1,5 @@
 import type { UnitEntity } from '../../types/entities'
-import { shouldVillagerBeAsleep } from '../units/villagerSchedule'
+import { shouldVillagerBeAsleep } from '../units/village/villagerSchedule'
 
 /** A visual wake for a conversation does not end the actual sleep session. */
 export function isNpcStillSleeping(npc: UnitEntity): boolean {

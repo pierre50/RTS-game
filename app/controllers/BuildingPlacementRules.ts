@@ -1,5 +1,5 @@
 import { isBuildingTraversable } from '../lib/buildings/buildingTraversal'
-import { isNearInteriorDoor, preservesInteriorPassages } from '../lib/buildings/interiorFurniturePlacement'
+import { isNearInteriorDoor, preservesInteriorPassages } from '../lib/buildings/furniture/interiorFurniturePlacement'
 import { isBuildingAllowedInSpace, isCampBuilding } from '../lib/buildings/campConstruction'
 import { heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import type { Container } from 'pixi.js'
