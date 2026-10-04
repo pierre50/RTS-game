@@ -1,3 +1,4 @@
+import type { RoadLayer } from '../lib/terrain/roadLayer'
 import type { PlayerLike } from './player'
 import type { AnimalConfig } from './config'
 import type { Container, ContainerChild } from 'pixi.js'
@@ -71,6 +72,7 @@ type GaiaPlayerLike = {
 }
 
 export interface RuntimeMap {
+  roads?: RoadLayer
   localGridLayout?: LocalMapLayout
   grid: Grid<RuntimeCell>
   spaces?: Map<string, RuntimeMapSpace>

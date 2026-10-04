@@ -35,6 +35,7 @@ function rulesHash() {
         'settlements/distribute-settlement-units',
         'prepare-bandit-camps',
         'settlements/settlement-terrain',
+        'settlements/settlement-roads',
         'settlements/validate-settlements',
       ].map(name => path.join(__dirname, 'maps', `${name}.cjs`)),
       ...['buildings', 'units', 'equipment'].map(name =>

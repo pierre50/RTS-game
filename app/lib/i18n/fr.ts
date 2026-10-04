@@ -282,6 +282,7 @@ export const FR_TRANSLATIONS = {
   detailsResourceIngredient: 'Ingrédient',
   detailsEquipmentWeapon: 'Arme',
   detailsEquipmentArmor: 'Armure',
+  detailsEquipmentArrows: 'Flèches',
   detailsEquipmentItem: 'Objet',
   detailsDamage: 'Dégâts : {value}',
   detailsMeleeDefense: 'Défense mêlée : +{value}',

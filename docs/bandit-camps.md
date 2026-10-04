@@ -57,7 +57,7 @@ position. Once all its bandit guards are dead or converted, a three-game-day
 cooldown begins (`BANDIT_CAMP_RESPAWN_DAYS` in `app/config/campActivity.ts`). The shared
 patrol task checks camps every five simulation seconds. Living guards still count
 when fleeing, chasing, or inside their linked cave, so they never gain duplicate
-reinforcements. Quest-created camps are excluded.
+reinforcements. Legacy quest-created camps are excluded from automatic respawns. New chief quests reuse occupied camps or immediately repopulate a saved empty site through the same respawn function; they no longer generate new camp sites.
 
 Respawns reuse the original sites and roster limits. Existing fires, decorations
 and loot are reused; a destroyed fire can be rebuilt if its original cell is free.

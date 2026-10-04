@@ -87,6 +87,8 @@ function createItemRow(
   const row = createInventoryActionRow(menu, {
     id: options.id,
     badge: options.badge,
+    category: info.category,
+    stats: info.stats,
     className: options.className,
     disabled: options.disabled,
     title: options.title ?? info.title,

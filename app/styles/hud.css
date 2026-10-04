@@ -384,7 +384,8 @@
   gap: var(--ui-gap-6);
 }
 
-.selection-info .info {
+.selection-info .info,
+.combat-stat-info {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -396,7 +397,8 @@
   border: 1px solid var(--border-divider-subtle);
 }
 
-.selection-info .info img {
+.selection-info .info img,
+.combat-stat-info img {
   width: 18px;
   height: 18px;
   image-rendering: pixelated;
@@ -743,15 +745,11 @@
   text-shadow: var(--text-shadow-ui);
 }
 
-.inventory-quantity-host {
-  position: relative;
-}
-
 .inventory-quantity-badge {
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  z-index: 1;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
   min-width: 22px;
   padding: 2px var(--ui-gap-5);
   color: white;
@@ -1205,7 +1203,7 @@
   gap: var(--ui-gap-12);
 }
 
-.hero-market-wallet,
+.hero-market-wallet:not(.value-badge),
 .hero-market-sell-copy {
   color: var(--text-color-secondary);
   font-size: var(--font-size-sm);

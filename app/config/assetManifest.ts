@@ -44,6 +44,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'pointers/move-target': 'assets/interface/pointers/move-target/texture.json',
   },
   terrain: {
+    'terrain/paths': 'assets/terrain/paths/texture.json',
     'terrain/desert': 'assets/terrain/desert/texture.json',
     'terrain/grass': 'assets/terrain/grass/texture.json',
     'terrain/dark-grass': 'assets/terrain/dark-grass/texture.json',

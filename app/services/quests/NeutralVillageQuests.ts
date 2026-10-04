@@ -13,6 +13,7 @@ import type { PlayerLike } from '../../types/player'
 import type { QuestInstance } from '../../types/quest'
 import { maintainBanditCampEncounter } from './BanditCampEncounter'
 import { banditCampQuest } from './BanditCampQuest'
+import { assignBanditCamp, hasBanditCampCandidate } from './BanditCampSelection'
 import { canTalk } from './NeutralQuestConversation'
 import { getTrackedMarkers } from './NeutralQuestMarkers'
 import { createBanditCampOffer, createResourceRequestOffer, pickResourceRequest } from './NeutralQuestOffers'
@@ -141,7 +142,8 @@ export class NeutralVillageQuests {
         Number.isInteger(npc.i) &&
         Number.isInteger(npc.j) &&
         map.randomRange(0, 2) === 0 &&
-        previous?.definitionId !== banditCampQuest.id
+        previous?.definitionId !== banditCampQuest.id &&
+        hasBanditCampCandidate(this.context, npc)
     )
   }
 
@@ -183,7 +185,10 @@ export class NeutralVillageQuests {
   accept(npc: UnitEntity): boolean {
     const quest = this.dialogue(npc)
     const playerId = this.context.player?.label
-    if (!quest || !playerId || !this.system.accept(quest.id, playerId)) return false
+    if (!quest || !playerId || quest.status !== 'available') return false
+    if (quest.definitionId === banditCampQuest.id && !assignBanditCamp(this.context, quest, npc)) return false
+    if (!this.system.accept(quest.id, playerId)) return false
+    if (quest.definitionId === banditCampQuest.id) this.system.track(quest.id)
     this.update()
     this.context.autosave?.()
     return true

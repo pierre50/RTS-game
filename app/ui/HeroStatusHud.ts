@@ -62,7 +62,7 @@ export class HeroStatusHud {
     this.title.className = 'hero-status-title'
 
     this.level = document.createElement('div')
-    this.level.className = 'hero-status-level level-tag'
+    this.level.className = 'hero-status-level level-tag value-badge value-badge--level'
 
     this.value = document.createElement('div')
     this.value.className = 'hero-status-value'

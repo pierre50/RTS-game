@@ -1,3 +1,4 @@
+import { readRoadLayer } from '../../lib/terrain/roadLayer'
 import { Assets } from 'pixi.js'
 import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../../types/save'
 import { getCurrentWorldState, isCampaignSave } from '../CampaignSave'
@@ -52,6 +53,7 @@ export function validateSaveData(data: unknown): SaveRecord {
   const layout = worldLayout ?? configLayout
   const legacyMapSize = Array.isArray(data.map) ? validateMap(data.map, layout) : null
   const size = validateSeedWorld(data, legacyMapSize)
+  readRoadLayer(isObject(data.world) ? data.world.roads : undefined, size)
   if (layout && layout.columns - 1 + Math.ceil((layout.rows - 1) / 2) >= size) {
     fail('Invalid save file: local grid layout exceeds the map size.')
   }

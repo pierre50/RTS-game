@@ -23,7 +23,9 @@ export function renderEquipmentAvatarLazy(
     performanceMonitor: performanceMonitor ?? null,
   })
     .then(() => {
-      if (canvas.isConnected) renderEquipmentAvatar(app, equipment, canvas)
+      if (canvas.isConnected && renderEquipmentAvatar(app, equipment, canvas)) {
+        canvas.dispatchEvent(new Event('equipmentavatarready', { bubbles: true }))
+      }
     })
     .catch(error => console.warn(`Unable to render ${source} equipment avatar "${equipment}"`, error))
 

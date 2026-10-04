@@ -176,6 +176,7 @@ function serializeGameData(
     ? context.map.worldManifest?.maps?.find(entry => entry.id === context.map.worldRegionId)?.size
     : undefined
   const world = definedProperties({
+    roads: context.map.roads,
     seed: context.map.seed,
     size: context.map.size,
     mapType: context.map.mapType || DEFAULT_SERIALIZED_MAP_TYPE,

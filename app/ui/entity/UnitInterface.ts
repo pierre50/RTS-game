@@ -1,15 +1,15 @@
+import { createValueBadge } from '../ValueBadge'
+import { createCombatStatInfo, type CombatStatInfo } from './CombatStatInfo'
 import { MENU_INFO_IDS, UNIT_TYPES } from '../../constants'
-import { getIconPath } from '../../lib'
 import {
   getHeroInventoryWeaponCombatStats,
   getUnitCombatRange,
   getUnitRuntimeCombatStats,
   hasHeroInventoryEquipment,
 } from '../../lib/equipment/equipmentStats'
-import type { EquipmentCombatStats } from '../../lib/equipment/equipmentStats'
 import { t } from '../../lib/lang'
 import { getUnitOverallLevel } from '../../lib/units/unitExperience'
-import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
+import { appendBaseEntityInfo, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
 
@@ -42,8 +42,8 @@ export class UnitInterface {
 
     if (!showStats) return
 
-    const level = createInfoText('unit-level-tag', `${t('levelShort')} ${getUnitOverallLevel(unit)}`)
-    level.classList.add('level-tag')
+    const level = createValueBadge('level', `${t('levelShort')} ${getUnitOverallLevel(unit)}`)
+    level.classList.add('unit-level-tag', 'level-tag')
     if (options?.hideIdentity) element.appendChild(level)
     else {
       const name = element.querySelector<HTMLElement>(`.${MENU_INFO_IDS.name}`)
@@ -53,56 +53,40 @@ export class UnitInterface {
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
 
-    const infos: { key: keyof EquipmentCombatStats | string; icon: string; title: string; value: number }[] = []
+    const infos: CombatStatInfo[] = []
     const combatStats = getUnitRuntimeCombatStats(unit, data)
     if (hasHeroInventoryEquipment(unit)) {
       const weaponStats = getHeroInventoryWeaponCombatStats(unit)
       if (weaponStats.meleeWeaponPower) {
         infos.push({
           key: 'meleeWeaponPower',
-          icon: '007_50731',
-          title: 'combatMeleeAttackStat',
           value: weaponStats.meleeWeaponPower,
         })
       }
       if (weaponStats.rangedWeaponPower) {
         infos.push({
           key: 'rangedWeaponPower',
-          icon: '006_50731',
-          title: 'combatRangedAttackStat',
           value: weaponStats.rangedWeaponPower,
         })
       }
     } else if (combatStats.weaponPower) {
       infos.push({
         key: 'weaponPower',
-        icon: getUnitCombatRange(unit) != null ? '006_50731' : '007_50731',
-        title: 'combatAttackStat',
+        ranged: getUnitCombatRange(unit) != null,
         value: combatStats.weaponPower,
       })
     }
     if (combatStats.meleeArmor) {
-      infos.push({ key: 'meleeArmor', icon: '008_50731', title: 'combatMeleeArmorStat', value: combatStats.meleeArmor })
+      infos.push({ key: 'meleeArmor', value: combatStats.meleeArmor })
     }
     if (combatStats.pierceArmor) {
       infos.push({
         key: 'pierceArmor',
-        icon: '010_50731',
-        title: 'combatPierceArmorStat',
         value: combatStats.pierceArmor,
       })
     }
 
-    for (let i = 0; i < infos.length; i++) {
-      const info = infos[i]
-      const infoDiv = document.createElement('div')
-      infoDiv.classList.add('info')
-      infoDiv.setAttribute('aria-label', t(info.title))
-
-      infoDiv.appendChild(createInfoImage('', getIconPath(info.icon)))
-      infoDiv.appendChild(createInfoText(String(info.key), info.value))
-      infosDiv.appendChild(infoDiv)
-    }
+    for (const info of infos) infosDiv.appendChild(createCombatStatInfo(info))
 
     element.appendChild(infosDiv)
   }

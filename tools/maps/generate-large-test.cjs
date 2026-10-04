@@ -12,6 +12,7 @@ const { planContinentVillageSlots } = require('./settlements/continent-villages.
 const { encodePreparedTerrain } = loadGenerationTs('app/serialization/blueprint/PreparedTerrainCodec.ts')
 const { generateLargeContent } = require('./large-content.cjs')
 const { addVillageGroves } = require('./settlements/village-groves.cjs')
+const { generateLargeRelief } = require('./large-relief.cjs')
 const { normalizeLargeCoast } = require('./large-coast.cjs')
 const { planContinentCaves, CAVE_LAND_CELLS } = require('../caves/continent-placement.cjs')
 const { MACRO_TERRAIN_CODE_TO_TYPE, TERRAIN_INDEX } = require('./config.cjs')
@@ -31,7 +32,7 @@ async function main() {
   try {
     const mask = loadBiomeRaster(temporary, landMask, layout, seed, biomes)
     const raster = convertBiomeRaster(mask, layout, stride)
-    const { biomeCodes, biomeCounts, terrain, relief, activeCells } = raster
+    const { biomeCodes, biomeCounts, terrain, activeCells } = raster
     let { landCells } = raster
     const coastCleanup = normalizeLargeCoast(terrain, size, biomeCodes)
     landCells += coastCleanup.added
@@ -63,6 +64,8 @@ async function main() {
     console.log(
       `${worldId}: ${cavePlan.caves.length}/${cavePlan.target} caves; ${activeCells} cells, ${landCells} land; generating shared runtime resources`
     )
+    const relief = generateLargeRelief({ terrain, biomeCodes, size, seed, settlements, caves: cavePlan.caves, camps })
+    console.log(`${worldId}: relief generated`)
     const content = await generateLargeContent(
       terrain,
       size,
@@ -71,7 +74,8 @@ async function main() {
       progress => console.log(JSON.stringify(progress)),
       biomeCodes,
       cavePlan.caves,
-      camps
+      camps,
+      relief
     )
     const campSettlements = camps.map(camp => ({
       id: camp.id,
@@ -94,13 +98,14 @@ async function main() {
       cellCount: terrain.length,
       localGridLayout: layout,
       terrain: terrain.toString('base64'),
-      relief: relief.toString('base64'),
+      relief: Buffer.from(relief.buffer, relief.byteOffset, relief.byteLength).toString('base64'),
       terrainAppearanceData: Buffer.from(encodePreparedTerrain(content.appearance, size)).toString('base64'),
       preparedContentVersion: 2,
       generation: {
-        version: 5,
+        version: 6,
         villagePlacement: { version: 2, mode: 'civilization-settlements', placed: settlements.length },
         generator: 'macro-continent',
+        relief: { version: 1, profiles: 'environment-terrain-params' },
         coastCleanup,
         seed,
         biomes: biomes.split(','),
@@ -213,8 +218,7 @@ function convertBiomeRaster(mask, layout, stride) {
   const terrainForCode = new Map(
     Object.entries(MACRO_TERRAIN_CODE_TO_TYPE).map(([code, type]) => [code.charCodeAt(0), TERRAIN_INDEX.get(type)])
   )
-  const terrain = Buffer.alloc(stride * stride, 255),
-    relief = Buffer.alloc(stride * stride)
+  const terrain = Buffer.alloc(stride * stride, 255)
   let activeCells = 0,
     landCells = 0
   for (let row = 0; row < layout.rows; row++) {
@@ -233,7 +237,7 @@ function convertBiomeRaster(mask, layout, stride) {
     }
   }
 
-  return { biomeCodes, biomeCounts, terrain, relief, activeCells, landCells }
+  return { biomeCodes, biomeCounts, terrain, activeCells, landCells }
 }
 
 function loadBiomeRaster(temporary, landMask, layout, seed, biomes) {

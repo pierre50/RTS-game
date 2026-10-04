@@ -48,7 +48,7 @@ village placement and bandit decoration/loot rules. It writes a deterministic
 
 Agriculture uses four 3×3 wheat patches per village and eight per city. Each patch
 starts with one to four young crops at frame zero, randomly scattered across its
-nine cells; the remaining crops use the loaded sprite's final frame. The variation
+nine cells; the remaining crops use the loaded sprite's final frame. Fields leave a circulation margin around building entrances. The variation
 is seeded so repeated preparation stays deterministic. Outposts have no authored wheat fields.
 
 All prepared units start idle, without saved movement orders or autonomous jobs.
@@ -142,3 +142,43 @@ This refresh preserves the final terrain and settlements. Resource textures are
 chosen before lazy visual creation, so visibility does not consume random choices.
 Static resource sprites/shadows are created on first display/use; animated growing
 resources retain their normal lifecycle. Wind subscriptions follow render visibility.
+
+## Prepared settlement roads
+
+`world:prepare` now writes a `roads` section in the settlements sidecar, after
+building and field placement. It connects city and village entrance cells;
+outposts and bandit camps are not destinations. The game bakes the supplied path sprites into its terrain textures, including
+streamed tiles. New saves store the compact layer in `world.roads`; restoration
+uses that snapshot without fetching or reapplying settlement preparations. Older
+saves without that field retain their original road-free state. The minimap draws roads beneath markers, respects explored cells and zoom, and
+never displays the outdoor network in interiors.
+
+The deterministic planner joins nearby settlements with a spanning network in
+each reachable land component. Four-neighbor A* avoids all resource cells,
+building footprints, authored crop rectangles, water and shoreline cells. Height
+changes above one level are forbidden; legal slopes are penalized. A five-cell
+soft tree margin encourages forest detours without blocking narrow passages.
+Jungle/dark forest terrain costs more, and existing roads cost less so routes can
+share sections. Searches try local corridors before falling back to the full map.
+No resources or buildings are removed. Disconnected islands are reported as
+separate `roads.components`; no bridges or artificial connections are invented.
+The network uses distance-ordered candidate links, not a globally optimal road
+length or a direct road for every pair of settlements.
+
+Road version 1 stores `stride`, entrance `anchors`, `routes` with cell indices,
+and unique `cells` as `[gridIndex, connections]`. `gridIndex = i * stride + j`;
+connection bits are NE=1 (`j-1`), SE=2 (`i+1`), SW=4 (`j+1`), NW=8 (`i-1`).
+Only traversed edges contribute to junction masks. The source seed and final
+settlement layout determine the result; road generation consumes no live RNG.
+
+Generate and inspect the current continent:
+
+```sh
+pnpm world:prepare public/maps/worlds/world-test-1000
+pnpm world:prepare public/maps/worlds/world-test-1000 --check
+python3 tools/maps/preview-roads.py public/maps/worlds/world-test-1000/maps/world-test-1000-r0-0.map
+```
+
+The preview requires Pillow and a packed version-2 continent map with its prepared
+sidecar. It writes `reports/roads/roads-overview.png` and `roads-details.png` from
+the actual generated data. These are planning views, not screenshots of gameplay.

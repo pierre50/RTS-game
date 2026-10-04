@@ -1,3 +1,4 @@
+import type { RoadLayer } from '../lib/terrain/roadLayer'
 import type { SavePlayerState, SaveEntityState } from './save'
 import type { MapSettlement } from '../classes/map/MapGenerationTypes'
 import type { BanditCampPlacement } from './camp'
@@ -10,6 +11,7 @@ export type PreparedSettlementReference = {
 }
 
 export type PreparedSettlements = {
+  roads?: RoadLayer
   format: 'prepared-settlements'
   version: 1
   mapId: string

@@ -1,3 +1,4 @@
+import { readRoadLayer } from '../../../lib/terrain/roadLayer'
 import { clearDeferredVillages } from '../../../services/world/distantVillages/DeferredVillageStore'
 import { FAMILY_TYPES } from '../../../constants'
 import { traceLoad } from '../../../lib/loadDiagnostics'
@@ -32,6 +33,7 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
   map.clearRenderChunks()
   map.resetRandom()
   map.size = savedMap.length - 1
+  map.roads = readRoadLayer(data.world?.roads, map.size + 1)
   map.localGridLayout = data.world?.localGridLayout ?? data.config?.localGridLayout
   map.grid = Array.from({ length: savedMap.length }, () => [])
   map.invalidateReliefCoastDistances()

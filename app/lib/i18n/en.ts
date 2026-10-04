@@ -279,6 +279,7 @@ export const EN_TRANSLATIONS = {
   detailsResourceIngredient: 'Ingredient',
   detailsEquipmentWeapon: 'Weapon',
   detailsEquipmentArmor: 'Armor',
+  detailsEquipmentArrows: 'Arrows',
   detailsEquipmentItem: 'Item',
   detailsDamage: 'Damage: {value}',
   detailsMeleeDefense: 'Melee defense: +{value}',

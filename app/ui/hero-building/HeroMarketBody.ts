@@ -1,3 +1,4 @@
+import { createValueBadge } from '../ValueBadge'
 import { definedProperties } from '../../lib/definedProperties'
 import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import { formatEquipmentStackLabel, getEquipmentStacks } from '../../lib/equipment/equipmentLoot'
@@ -209,14 +210,12 @@ export function createHeroMarketBody(
   panel.className = 'hero-market-panel inventory-transfer-panel'
   panel.dataset.marketBuilding = building.label ?? building.type
 
-  const wallet = document.createElement('div')
-  wallet.className = 'hero-market-wallet'
-  wallet.textContent = formatGold(getHeroGold(hero))
+  const wallet = createValueBadge('gold', formatGold(getHeroGold(hero)))
+  wallet.classList.add('hero-market-wallet')
   wallet.setAttribute('aria-label', t('marketHeroGold', { gold: String(getHeroGold(hero)) }))
 
-  const marketWallet = document.createElement('div')
-  marketWallet.className = 'hero-market-wallet'
-  marketWallet.textContent = formatGold(getMarketGold(building))
+  const marketWallet = createValueBadge('gold', formatGold(getMarketGold(building)))
+  marketWallet.classList.add('hero-market-wallet')
   marketWallet.setAttribute('aria-label', t('marketAvailableGold', { gold: formatGold(getMarketGold(building)) }))
 
   panel.appendChild(

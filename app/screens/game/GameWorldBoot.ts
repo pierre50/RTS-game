@@ -1,3 +1,4 @@
+import { readRoadLayer } from '../../lib/terrain/roadLayer'
 import { isContinentWorld } from '../../config/continentWorlds'
 import { DEFAULT_WORLD_ID } from '../../config/worlds'
 import { PLAYER_TYPES } from '../../constants'
@@ -196,6 +197,7 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
       { onProgress: reportProgress(game) }
     )
   )
+  map.roads = readRoadLayer(json.world?.roads, map.size + 1)
   recordLoadedMapBlueprint(map, blueprint, 'save-pregenerated-blueprint')
   await measureAsync(game, 'seedSave.prepareTerrainForSavedState', () =>
     map.prepareTerrainForSavedState({ onProgress: reportProgress(game) })

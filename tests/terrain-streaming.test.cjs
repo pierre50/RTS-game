@@ -39,7 +39,7 @@ function setup(packedStore = null) {
         this.y = p.y
       },
     }
-    anchor = { copyFrom() {} }
+    anchor = { copyFrom() {}, set() {} }
     constructor(texture) {
       super()
       this.texture = texture
@@ -50,7 +50,8 @@ function setup(packedStore = null) {
       super()
       Object.assign(this, source)
       made.push(this)
-      this.addChild(new Sprite({}))
+      this.sprite = new Sprite({ height: 33 })
+      this.addChild(this.sprite)
     }
     setWaterBorder() {
       this.has?.die()
@@ -87,7 +88,11 @@ function setup(packedStore = null) {
           },
         },
       },
-      '../../../lib': { getGaiaAnimals: () => [], getTerrainSetZIndex: () => 1 },
+      '../../../lib': {
+        getGaiaAnimals: () => [],
+        getTerrainSetZIndex: () => 1,
+        getTextureByFrame: (sheet, frame) => ({ sheet, frame, height: 64 }),
+      },
       '../../../constants': {
         CELL_WIDTH: 64,
         CELL_HEIGHT: 32,
@@ -216,4 +221,20 @@ test('terrain map bounds use packed metadata without visiting the grid', () => {
     totalW: 1056,
     totalH: 1028,
   })
+})
+
+test('roads survive streamed tile eviction and remain independent of logical cell materialization', () => {
+  const h = setup()
+  h.map.roads = { version: 1, stride: 1501, cells: [[1502, 5]] }
+  h.map.grid[1][1]._terrainAppearance.relief = { index: '014', elevation: 8 }
+  h.bake.bakeTerrainToChunks()
+  h.bake.updateViewport(viewport)
+  const roadSprites = () => h.rendered.flat().filter(child => child.label === 'terrainRoad')
+  assert.ok(roadSprites().length > 0)
+  assert.equal(roadSprites()[0].texture.frame, 6 * 16 + 5)
+  assert.equal(h.map.grid[1][1].isGenerationCell, true)
+  h.bake.textureCache.destroy()
+  h.rendered.length = 0
+  h.bake.updateViewport(viewport)
+  assert.ok(roadSprites().length > 0)
 })

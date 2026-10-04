@@ -1039,3 +1039,32 @@ test('AI sites remain single icons at every zoom while only personal details exp
     assert.equal(ctx.ellipses.length, zoom >= 3 ? 2 : 1)
   }
 })
+
+test('tracked quest destinations render over unexplored terrain and update to the return marker', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu()
+  menu.context.map.worldRegionId = 'quest-region'
+  let kind = 'area'
+  const queries = []
+  menu.context.neutralQuests = {
+    getTrackedMarkers(space, region) {
+      queries.push([space, region])
+      return kind ? [{ kind, position: { i: 1, j: 2 } }] : []
+    },
+  }
+  const manager = new MinimapManager(menu)
+  manager.activate()
+  const context = menu.resourcesMinimap.context
+  assert.deepEqual(queries.at(-1), ['outside', 'quest-region'])
+  assert.equal(context.labels.at(-1)[0], '!')
+  const position = context.labels.at(-1).slice(1)
+  assert.ok(position.every(Number.isFinite))
+  assert.equal(menu.terrainMinimap.context.paths.length, 0)
+  kind = 'return'
+  manager.updatePlayerMiniMapEvt()
+  assert.deepEqual(context.labels.at(-1), ['?', ...position])
+  kind = null
+  context.labels.length = 0
+  manager.updatePlayerMiniMapEvt()
+  assert.equal(context.labels.length, 0)
+})

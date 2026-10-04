@@ -109,39 +109,62 @@ export function renderWindowDetails(details: HTMLElement, selected: HTMLElement 
     ? selected
     : null
   const content = document.createElement('span')
-  const marketRow = row?.matches('.market-slot')
-  const arrowAvatar = marketRow
-    ? null
-    : row?.querySelector<HTMLElement>(
-        '.inventory-arrow-icon, .inventory-action-row-icon > img, .hero-building-menu-icon > img'
-      )
-  if (arrowAvatar) {
+  const identity = document.createElement('span')
+  identity.className = 'game-window-detail-identity'
+  const sourceAvatar = row?.querySelector<HTMLElement>(
+    '.inventory-action-row-icon > .img, .hero-building-menu-icon > img'
+  )
+  if (sourceAvatar) {
     const avatar = document.createElement('span')
     avatar.className = 'game-window-detail-avatar'
     avatar.setAttribute('aria-hidden', 'true')
-    avatar.appendChild(arrowAvatar.cloneNode(true))
+    const copy =
+      sourceAvatar instanceof HTMLCanvasElement ? document.createElement('img') : sourceAvatar.cloneNode(true)
+    if (sourceAvatar instanceof HTMLCanvasElement && copy instanceof HTMLImageElement) {
+      copy.src = sourceAvatar.toDataURL()
+      copy.alt = ''
+    }
+    avatar.appendChild(copy)
     content.appendChild(avatar)
   }
   const append = (element: HTMLElement): void => {
     if (!element.textContent?.trim()) return
     const part = document.createElement('span')
     part.className = 'game-window-detail-line'
-    if (element.classList.contains('inventory-action-row-label')) part.classList.add('game-window-detail-title')
+    for (const [source, target] of [
+      ['inventory-action-row-label', 'title'],
+      ['inventory-action-row-description', 'description'],
+      ['inventory-action-row-value', 'value'],
+    ]) {
+      if (element.classList.contains(source)) part.classList.add(`game-window-detail-${target}`)
+    }
+    if (element.classList.contains('value-badge')) {
+      part.classList.add('value-badge', 'value-badge--gold')
+      part.setAttribute('aria-label', element.getAttribute('aria-label') ?? '')
+      part.title = element.title
+      if (row?.matches('.market-buy-slot') && row.querySelector('.inventory-row-action-button:disabled')) {
+        part.classList.add('value-badge--unavailable')
+      }
+    }
     // Keep resource status spans without copying the source row's layout classes.
     for (const child of element.childNodes) part.appendChild(child.cloneNode(true))
     if (element.classList.contains('inventory-cost-is-missing')) part.classList.add('inventory-cost-is-missing')
-    content.appendChild(part)
+    const isIdentity =
+      part.classList.contains('game-window-detail-title') || part.classList.contains('game-window-detail-value')
+    const host = isIdentity ? identity : content
+    host.appendChild(part)
   }
-  row
-    ?.querySelectorAll<HTMLElement>(
-      marketRow ? '.inventory-action-row-description, .inventory-action-row-meta' : DETAIL_PARTS
-    )
-    .forEach(append)
-  const disabled = row?.querySelector<HTMLButtonElement>('.inventory-row-action-button:disabled[title]')
-  if (disabled?.title) {
-    const reason = document.createElement('span')
-    reason.textContent = disabled.title
-    append(reason)
+  row?.querySelectorAll<HTMLElement>(DETAIL_PARTS).forEach(append)
+  if (identity.childElementCount) content.appendChild(identity)
+  const stats = row?.querySelector('.inventory-action-row-stats')
+  if (row?.dataset.itemCategory || stats) {
+    const category = document.createElement('span')
+    category.className = 'game-window-detail-category'
+    const label = document.createElement('span')
+    label.textContent = row?.dataset.itemCategory ?? ''
+    category.appendChild(label)
+    if (stats) category.appendChild(stats.cloneNode(true))
+    content.appendChild(category)
   }
   details.hidden = !content.textContent
   if (details.innerHTML !== content.innerHTML) details.replaceChildren(...content.childNodes)

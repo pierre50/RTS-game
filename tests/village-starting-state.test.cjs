@@ -98,7 +98,10 @@ test('tutorial profile produces deterministic saved entities and physical stocks
   const player = result.players[0]
   assert.equal(player.population, 14)
   assert.equal(player.populationMax, player.buildings.filter(b => b.type === 'House').length * 2)
-  assert.ok(player.units.every(u => u.homeHouseLabel && u.homeBedLabel), 'every generated resident has a home and a bed')
+  assert.ok(
+    player.units.every(u => u.homeHouseLabel && u.homeBedLabel),
+    'every generated resident has a home and a bed'
+  )
   assert.equal(player.units.filter(u => u.type === 'Villager').length, 10)
   assert.ok(player.buildings.some(b => b.type === 'House'))
   assert.equal(getPlayerResourceTotals(savedResourceOwner(player, result.players)).wood, 500)
@@ -141,7 +144,13 @@ test('impossible required buildings fail without partially modifying the source'
   const { state, rules } = fixture()
   const before = structuredClone(state)
   assert.throws(
-    () => applyVillageStartingState(state, { Hellas: { buildingLevel: 0, buildings: { Barracks: 1 }, units: {} } }, [], rules),
+    () =>
+      applyVillageStartingState(
+        state,
+        { Hellas: { buildingLevel: 0, buildings: { Barracks: 1 }, units: {} } },
+        [],
+        rules
+      ),
     /No space/
   )
   assert.deepEqual(state, before)
@@ -274,7 +283,9 @@ test('new tutorial configuration reuses village generation with one chief and wo
     'fields stay in a nearby agricultural district'
   )
   assert.ok(
-    generated.resources.filter(r => r.type === 'Wheat').every(r => r.quantity > 0 && (r.currentFrame === undefined || r.currentFrame === 0))
+    generated.resources
+      .filter(r => r.type === 'Wheat')
+      .every(r => r.quantity > 0 && (r.currentFrame === undefined || r.currentFrame === 0))
   )
   assert.equal(village.units.filter(u => u.type === 'Hero').length, 0)
   assert.equal(village.units.filter(u => u.type === 'Chief').length, 1)
@@ -331,4 +342,28 @@ test('starting buildings stay compact and relocate resources without losing thei
   assert.equal(state.resources.length, before)
   const radius = Math.floor((barracks.size - 1) / 2) + 1
   assert.ok(generated.resources.every(r => Math.abs(r.i - barracks.i) > radius || Math.abs(r.j - barracks.j) > radius))
+})
+
+test('wheat fields leave circulation space around building entrance approaches', () => {
+  const { state, terrain, rules } = fixture()
+  const { getBuildingInteriorEntryPosition } = loadTsModule('app/lib/buildings/interiors.ts')
+  const generated = applyVillageStartingState(
+    state,
+    {
+      Hellas: { buildingLevel: 2, buildings: { Granary: 1, House: 4 }, units: {}, wheatFields: 8 },
+    },
+    terrain,
+    rules
+  )
+  const wheat = generated.resources.filter(resource => resource.type === 'Wheat')
+  assert.equal(wheat.length, 72)
+  for (const building of generated.players[0].buildings) {
+    const entry = getBuildingInteriorEntryPosition(building)
+    if (!entry) continue
+    for (const crop of wheat)
+      assert.ok(
+        Math.max(Math.abs(crop.i - entry.i), Math.abs(crop.j - entry.j)) > 1,
+        `wheat encloses ${building.type} entrance at ${entry.i},${entry.j}`
+      )
+  }
 })

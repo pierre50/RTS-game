@@ -1,4 +1,5 @@
 const { loadGenerationTs } = require('../load-generation-ts.cjs')
+const { prepareSettlementRoads } = require('./settlement-roads.cjs')
 const { settlementTerrain } = require('./settlement-terrain.cjs')
 const { prepareBanditCamps } = require('../prepare-bandit-camps.cjs')
 const { distributeSettlementUnits } = require('./distribute-settlement-units.cjs')
@@ -96,6 +97,8 @@ function prepareSettlements(source) {
     animals: generated.animals,
   }
   result.summary = validateSettlements(result, terrain, result.heroSpawns)
+  result.roads = prepareSettlementRoads(result, terrain)
+  result.summary.roads = result.roads.summary
   return result
 }
 module.exports = { prepareSettlements }

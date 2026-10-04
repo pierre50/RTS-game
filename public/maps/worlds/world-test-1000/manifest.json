@@ -2850,9 +2850,9 @@
       ],
       "preparedSettlements": {
         "path": "world-test-1000-r0-0.settlements.json",
-        "sha256": "14d534549e8b3f9c568a506f36a5624dcff542a3dd6057ff4d06d90e14deb02f",
-        "sourceSha256": "d6f8787c063debc37a3ab350ec8ae78d8dac8ba4ddd2ea519d9a17d52c38da77",
-        "rulesSha256": "1ebbb23c6e4405009410aca1949fd1f408d9d62d2f93f5b63abeba1c491625c0"
+        "sha256": "1180d9085c1fa5a5af27f1dd443fc57e97fb7d27fce1f65048995bb78facba1b",
+        "sourceSha256": "d776e03d1766dd20672fb8ef756cb845732faa69769583053721158319d00565",
+        "rulesSha256": "fc1b404bb3adada0a3c9b7913852d08ea6665111ea99f3e2e67d6f28ac7a58f8"
       }
     }
   ]

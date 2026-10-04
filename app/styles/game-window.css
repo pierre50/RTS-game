@@ -110,7 +110,7 @@
 }
 .game-window .inventory-section-list .inventory-action-row:not(.inventory-action-row--no-icon) {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
   grid-template-rows: auto;
   align-items: center;
   gap: 8px;
@@ -127,7 +127,9 @@
 .game-window
   .inventory-section-list
   .inventory-action-row:not(.inventory-action-row--no-icon)
-  > :not(.inventory-action-row-icon):not(.inventory-action-row-label):not(.market-slot > .inventory-action-row-value) {
+  > :not(.inventory-action-row-icon):not(.inventory-action-row-label):not(
+    .market-slot > .inventory-action-row-value
+  ):not(.inventory-quantity-badge) {
   display: none;
 }
 .game-window .inventory-action-row-icon {
@@ -220,8 +222,8 @@
   color: var(--main-text-color);
   font-size: var(--font-size-sm);
   line-height: 1.45;
-  max-height: min(180px, 28vh);
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   background: var(--window-details-bg);
 }
 .game-window-details[hidden] {
@@ -336,19 +338,10 @@ kbd.gamepad-key[data-pad='3'] {
     padding: var(--ui-gap-5) var(--ui-gap-12);
   }
   .game-window > .game-window-details {
-    max-height: 48px;
     padding: var(--ui-gap-6) 14px;
   }
 }
 
-/* Each bag scrolls independently without stretching the equipment column. */
-.game-window .inventory-loot-section .inventory-section-list,
-.game-window .inventory-transfer-panel .inventory-section-list {
-  max-height: min(380px, 44dvh);
-  overflow-y: auto;
-  padding: 3px;
-  scrollbar-gutter: stable;
-}
 .game-window .inventory-section-list .inventory-action-row.empty > .inventory-action-row-label,
 .game-window .inventory-section-list .inventory-action-row:has(.is-empty) > .inventory-action-row-label {
   display: block;
@@ -559,25 +552,23 @@ body:has(.modal) .building-placement-help {
 
 /* Prices stay visible in the grid; status colors remain legible in the details. */
 .game-window .inventory-section-list .market-slot > .inventory-action-row-value {
-  display: block;
+  display: inline-flex;
   position: static;
-  grid-column: 3;
+  grid-column: 4;
   grid-row: 1;
   align-self: center;
   justify-self: end;
-  z-index: 1;
   margin: 0;
-  padding: 0;
   max-width: none;
-  border: 0;
-  background: transparent;
-  line-height: 1.2;
-  white-space: nowrap;
-  font-size: var(--font-size-sm);
-  color: var(--main-accent-hover);
-  text-align: right;
 }
+
 .game-window .market-buy-slot:has(.inventory-row-action-button:disabled) > .inventory-action-row-value,
+.game-window .value-badge--unavailable {
+  color: var(--text-color-danger);
+  background: color-mix(in srgb, var(--text-color-danger) 16%, var(--main-primary-color));
+  border-color: var(--text-color-danger);
+}
+
 .game-window .game-window-details .inventory-cost-is-missing {
   color: var(--text-color-danger);
 }
@@ -634,7 +625,7 @@ body:has(.modal) .building-placement-help {
 }
 .game-window.crafting-workshop .inventory-section-list .inventory-action-row:not(.inventory-action-row--no-icon) {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
   grid-template-rows: auto;
   align-items: center;
   justify-content: start;
@@ -717,7 +708,7 @@ body:has(.modal) .building-placement-help {
   font-size: var(--font-size-sm);
 }
 .game-window .inventory-section-list .inventory-action-row > .inventory-action-row-value {
-  grid-column: 3;
+  grid-column: 4;
   grid-row: 1;
 }
 .game-window.crafting-workshop .forge-body {
@@ -750,19 +741,23 @@ body:has(.modal) .building-placement-help {
   height: 64px;
   margin-bottom: var(--ui-gap-12);
 }
-.game-window-detail-avatar .inventory-arrow-icon {
+.game-window-detail-avatar > :is(.inventory-arrow-icon, .inventory-tool-icon) {
   width: 56px;
   height: 56px;
-  transform: rotate(-30deg) scale(1.1);
-  transform-origin: center;
+  transform: scale(0.857143);
+  transform-origin: top left;
 }
 
 /* The live health bar shares the title row for units and buildings. */
-.game-window > .modal-header--with-summary {
+.game-window > .modal-header--with-summary,
+.game-window > .game-window-details {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) minmax(72px, 120px);
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   gap: 6px 16px;
   align-items: center;
+}
+.game-window > .modal-header--with-summary {
+  grid-template-columns: 48px minmax(0, 1fr) minmax(72px, 120px);
   padding: 12px var(--window-padding-x);
 }
 .modal-header--with-summary > .modal-title {
@@ -1072,9 +1067,9 @@ body:has(.modal) .building-placement-help {
   }
 }
 
-.game-window-detail-avatar > img {
-  width: 64px;
-  height: 64px;
+.game-window-detail-avatar > :is(img, canvas) {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -1143,7 +1138,8 @@ body:has(.modal) .building-placement-help {
   order: 2;
   margin-left: auto;
 }
-.game-window .modal-entity-summary-info .infos {
+.game-window .modal-entity-summary-info .infos,
+.game-window-detail-category .infos {
   display: flex;
   flex-wrap: wrap;
   order: 1;
@@ -1153,7 +1149,8 @@ body:has(.modal) .building-placement-help {
 .game-window .modal-entity-summary-info .infos:empty {
   display: none;
 }
-.game-window .modal-entity-summary-info .infos > .info {
+.game-window .modal-entity-summary-info .infos > .info,
+.game-window-detail-category .infos > .info {
   padding: 0;
   border: 0;
   background: transparent;
@@ -1210,4 +1207,108 @@ body:has(.modal) .building-placement-help {
 }
 .construction-damage-status {
   color: #f2a096;
+}
+
+/* Item sheets use the same identity grid as the inspection header. */
+.game-window-details > .game-window-detail-avatar {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  align-self: start;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+}
+.game-window-details > .game-window-detail-line {
+  grid-column: 2 / -1;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.game-window-detail-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  grid-column: 2 / -1;
+  grid-row: 1;
+  min-width: 0;
+}
+.game-window .game-window-detail-identity > .game-window-detail-line {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.game-window-detail-value {
+  white-space: nowrap;
+}
+.game-window-detail-category {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  grid-column: 2 / -1;
+  grid-row: 2;
+  color: var(--text-color-secondary);
+}
+.game-window-details > .game-window-detail-description {
+  grid-row: 3;
+}
+.game-window .inventory-section-list .inventory-action-row > .inventory-quantity-badge {
+  display: block;
+  grid-column: 3;
+  grid-row: 1;
+  position: static;
+  white-space: nowrap;
+}
+.modal-panel.game-window:has(.inventory-transfer-panel) {
+  height: min(760px, calc(100dvh - 32px));
+}
+/* Allocate the remaining height to the two lists, without a scrolling parent. */
+.game-window .interaction-panel-content:has(.inventory-transfer-panel),
+.game-window .interaction-actions:has(.inventory-transfer-panel),
+.game-window .hero-building-menu-body:has(.inventory-transfer-panel) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.game-window .inventory-transfer-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.game-window .inventory-transfer-panel > .inventory-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.game-window .inventory-transfer-panel .inventory-section-list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 3px;
+}
+@media (max-width: 640px) {
+  .game-window .inventory-transfer-panel {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.game-window:is(.crafting-workshop, .window-catalog) > .game-window-details {
+  overflow-y: auto;
+  align-content: start;
+}
+
+.game-window .inventory-action-row-value.value-badge,
+.game-window .game-window-detail-value.value-badge {
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+}
+
+.game-window .hero-market-wallet.value-badge--gold {
+  color: var(--main-primary-color);
 }

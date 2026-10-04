@@ -7,6 +7,8 @@ import type { ResourceEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import { MinimapBuildingKnowledge } from './MinimapBuildingKnowledge'
+import { drawMinimapRoads } from './MinimapRoads'
+import { drawMinimapQuestMarkers } from './MinimapQuestMarkers'
 import { MinimapNaturalResources } from './MinimapNaturalResources'
 import { terrainColor } from './MinimapColors'
 import { drawMinimapEntities } from './MinimapEntityLayer'
@@ -365,8 +367,10 @@ export class MinimapManager {
       )
     }
     this.withMinimapViewSpace(player, () => {
+      drawMinimapRoads(this.menu, this.geometry, transform, space.id, context)
       this.naturalResources.draw(this.menu, this.geometry, transform, space.id, context)
       drawMinimapEntities(this.menu, this.geometry, knownBuildings, transform, space, context, redraw)
     })
+    drawMinimapQuestMarkers(this.menu, this.geometry, transform, context)
   }
 }

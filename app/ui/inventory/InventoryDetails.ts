@@ -1,3 +1,4 @@
+import type { CombatStatInfo } from '../entity/CombatStatInfo'
 import {
   formatEquipmentLootLabel,
   formatEquipmentStackLabel,
@@ -14,7 +15,9 @@ type EquipmentDetailsMode = 'inventory' | 'market-buy' | 'market-sell'
 type ResourceDetailsMode = 'inventory' | 'market-sell'
 
 type InventoryRowInfo = {
+  stats?: CombatStatInfo[]
   goldValue: number
+  category: string
   description: string
   meta: string
   title: string
@@ -25,6 +28,7 @@ export function formatGold(amount: number): string {
 }
 
 function getEquipmentKindLabel(equipment: string): string {
+  if (getEquipmentSlot(equipment) === 'arrow') return t('detailsEquipmentArrows')
   if (getWeaponSlot(equipment)) return t('detailsEquipmentWeapon')
   if (getEquipmentSlot(equipment)) return t('detailsEquipmentArmor')
   return t('detailsEquipmentItem')
@@ -68,9 +72,13 @@ export function createResourceRowInfo(
   }
   return {
     goldValue: totalValue,
+    category: t('detailsResourceIngredient'),
     title: t(resource),
     description: details.description ?? '',
-    meta: details.meta?.filter(item => item && !hiddenMeta.has(item)).join(' | ') ?? '',
+    meta:
+      details.meta
+        ?.filter(item => item && !hiddenMeta.has(item) && item !== t('detailsResourceIngredient'))
+        .join(' | ') ?? '',
   }
 }
 
@@ -82,10 +90,7 @@ function createEquipmentDetails(equipment: string, count = 1, mode: EquipmentDet
     title: formatEquipmentStackLabel(equipment, amount),
     description: getEquipmentKindLabel(equipment),
     meta: [
-      stats.weaponPower > 0 ? t('detailsDamage', { value: stats.weaponPower }) : null,
       stats.weaponPower > 0 && stats.weaponPower < 2 ? t('detailsLowDamageNote') : null,
-      stats.meleeArmor > 0 ? t('detailsMeleeDefense', { value: stats.meleeArmor }) : null,
-      stats.pierceArmor > 0 ? t('detailsPierceDefense', { value: stats.pierceArmor }) : null,
       value > 0 && mode !== 'market-sell'
         ? t(mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', { gold: formatGold(value * amount) })
         : null,
@@ -100,6 +105,18 @@ export function createEquipmentRowInfo(
   options: { showValue?: boolean } = {}
 ): InventoryRowInfo {
   const details = createEquipmentDetails(equipment, count, mode)
+  const combat = getEquipmentCombatStats([equipment])
+  const stats: CombatStatInfo[] = [
+    {
+      key:
+        getWeaponSlot(equipment) === 'ranged' || getEquipmentSlot(equipment) === 'arrow'
+          ? 'rangedWeaponPower'
+          : 'weaponPower',
+      value: combat.weaponPower,
+    },
+    { key: 'meleeArmor', value: combat.meleeArmor },
+    { key: 'pierceArmor', value: combat.pierceArmor },
+  ]
   const showValue = options.showValue ?? true
   const value = getEquipmentGoldValue(equipment)
   const amount = Math.max(1, Math.floor(count))
@@ -108,9 +125,11 @@ export function createEquipmentRowInfo(
     hiddenMeta.add(t(mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', { gold: formatGold(value * amount) }))
   }
   return {
+    stats: stats.filter(stat => stat.value > 0),
     goldValue: value * amount,
+    category: getEquipmentKindLabel(equipment),
     title: formatEquipmentLootLabel(equipment),
-    description: details.description ?? '',
+    description: '',
     meta: details.meta?.filter(item => item && !hiddenMeta.has(item)).join(' | ') ?? '',
   }
 }

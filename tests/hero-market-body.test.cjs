@@ -78,6 +78,13 @@ function installMockDocument() {
         tagName,
         children: [],
         className: '',
+        get classList() {
+          return {
+            add: (...names) => {
+              this.className = [this.className, ...names].filter(Boolean).join(' ')
+            },
+          }
+        },
         dataset: {},
         textContent: '',
         setAttribute() {},

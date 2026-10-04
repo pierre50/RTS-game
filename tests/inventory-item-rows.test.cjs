@@ -19,7 +19,7 @@ test('inventory items share a separate stack value while retaining combat detail
         '../../lib/equipment/equipmentLoot': {
           formatEquipmentLootLabel: item => item,
           formatEquipmentStackLabel: item => item,
-          getEquipmentSlot: () => null,
+          getEquipmentSlot: item => (item.startsWith('arrow_') ? 'arrow' : null),
           getWeaponSlot: () => 'melee',
         },
         '../../lib/equipment/equipmentMarket': {
@@ -42,8 +42,12 @@ test('inventory items share a separate stack value while retaining combat detail
     rows.map(row => row.value),
     ['370 or', '185 or', '3 or']
   )
-  assert.match(rows[0].meta, /detailsDamage/)
+  assert.deepEqual(rows[0].stats, [{ key: 'weaponPower', value: 6 }])
+  assert.doesNotMatch(rows[0].meta, /detailsDamage/)
   assert.ok(rows.every(row => !row.meta.includes('detailsValue')))
   createInventoryEquipmentRow(undefined, {}, { id: 'market', equipment: 'sword', showValue: false })
   assert.equal(rows.at(-1).value, undefined)
+  createInventoryEquipmentRow(undefined, {}, { id: 'arrows', equipment: 'arrow_ceramic' })
+  assert.equal(rows.at(-1).category, 'detailsEquipmentArrows')
+  assert.deepEqual(rows.at(-1).stats, [{ key: 'rangedWeaponPower', value: 6 }])
 })

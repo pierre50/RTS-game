@@ -16,6 +16,7 @@ import { playableColor } from '../../lib/graphics/playableColor'
 import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
 import { isNeutralPlayer } from '../../lib/playerState'
+import { isBanditOwner } from '../../lib/combat/bandits'
 import { VisionGrid } from '../../services/visibility/VisionGrid'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -203,6 +204,8 @@ export class Player implements PlayerLike {
   isEnemy(player: PlayerLike | null | undefined) {
     if (!player || player.label === this.label) return false
     if (isNeutralPlayer(this) || isNeutralPlayer(player)) return false
+    // Campaign relations describe a faction's stance toward the hero, not toward bandits.
+    if (isBanditOwner(this) !== isBanditOwner(player)) return true
 
     const factions = this.context.getCampaignFactions?.()
     const ownFaction = this.factionId ? factions?.[this.factionId] : null

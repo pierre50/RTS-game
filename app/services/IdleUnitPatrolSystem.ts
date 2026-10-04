@@ -1,3 +1,9 @@
+import {
+  beginIdlePatrolVisit,
+  nextIdlePatrolTime,
+  settleIdlePatrolVisit,
+  type IdlePatrolVisit,
+} from './patrol/IdlePatrolCycle'
 import { isNightWatchDuty } from '../lib/units/village/villageNightWatch'
 import { isChiefUnit } from '../lib/chief'
 import { getEntitySpaceId } from '../lib/mapSpaces'
@@ -35,12 +41,9 @@ import type { GridPosition } from '../types/grid'
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
 
-type Visit = {
-  destination?: UnitEntity['dest']
+type Visit = IdlePatrolVisit & {
   building?: BuildingEntity
-  phase: 'travel' | 'pause' | 'exit'
   interior: boolean
-  until: number
 }
 type ScanStep = 'next' | 'search' | 'stop'
 type VisitAttempt = 'skip' | 'refused' | 'started'
@@ -68,7 +71,7 @@ export class IdleUnitPatrolSystem {
   }
 
   private delay(unit: UnitEntity): void {
-    this.ready.set(unit, this.context.scheduler.elapsedMs + this.context.map.randomRange(5000, 25000))
+    this.ready.set(unit, nextIdlePatrolTime(this.context))
   }
 
   private endVisit(unit: UnitEntity): void {
@@ -124,7 +127,7 @@ export class IdleUnitPatrolSystem {
 
   private updateVisit(unit: UnitEntity, visit: Visit, now: number): ScanStep {
     if (visit.phase === 'travel') {
-      this.settleArrival(unit, visit, now)
+      this.settleArrival(unit, visit)
       return 'next'
     }
     if (now < visit.until) return 'next'
@@ -138,7 +141,7 @@ export class IdleUnitPatrolSystem {
     return 'next'
   }
 
-  private settleArrival(unit: UnitEntity, visit: Visit, now: number): void {
+  private settleArrival(unit: UnitEntity, visit: Visit): void {
     const arrived = visit.interior
       ? getBuildingInteriorSpaceForUnit(unit)?.building === visit.building
       : Boolean(visit.destination && unit.i === visit.destination.i && unit.j === visit.destination.j)
@@ -146,8 +149,7 @@ export class IdleUnitPatrolSystem {
       this.endVisit(unit)
       return
     }
-    visit.phase = 'pause'
-    visit.until = now + this.context.map.randomRange(10000, 25000)
+    settleIdlePatrolVisit(this.context, visit)
   }
 
   private scanIdleUnit(unit: UnitEntity, now: number): ScanStep {
@@ -178,10 +180,8 @@ export class IdleUnitPatrolSystem {
     unit.sendTo(target)
     if (!unit.dest) return false
     this.visits.set(unit, {
-      destination: unit.dest,
-      phase: 'travel',
+      ...beginIdlePatrolVisit(this.context, unit),
       interior: false,
-      until: this.context.scheduler.elapsedMs + 90000,
     })
     return true
   }
@@ -259,10 +259,8 @@ export class IdleUnitPatrolSystem {
     }
     this.visits.set(unit, {
       building,
-      destination: unit.dest,
-      phase: 'travel',
+      ...beginIdlePatrolVisit(this.context, unit),
       interior: entering,
-      until: this.context.scheduler.elapsedMs + 90000,
     })
     this.lastBuilding.set(unit, building)
     return 'started'

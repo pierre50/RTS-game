@@ -1,3 +1,4 @@
+import type { RoadLayer } from '../lib/terrain/roadLayer'
 import type { BuildingUpgrade } from '../lib/economy/constructionMaterials'
 import type { ForgeUpgrades } from '../lib/equipment/forgeUpgrades'
 import type { SettlementType, DevelopmentMode } from '../config/settlementProfiles'
@@ -292,6 +293,7 @@ type SaveRuntimeState = {
 }
 
 type SaveWorldState = {
+  roads?: RoadLayer
   sourceSize?: number
   localGridLayout?: { columns: number; rows: number }
   environment?: string

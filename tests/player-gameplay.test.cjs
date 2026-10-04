@@ -3,7 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
-const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { loadTsModule, requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 test('offscreen attack warnings only play for a chief hero and retain their cooldown', () => {
   const sounds = []
@@ -270,6 +270,59 @@ test('neutral Gaia owner is never considered an enemy relation', () => {
   assert.equal(player.isEnemy(neutral), false)
 })
 
+test('village defenders can attack bandits regardless of their campaign relation with the hero', () => {
+  const Player = loadPlayer()
+  const { PLAYER_TYPES, FAMILY_TYPES, UNIT_TYPES } = loadTsModule('app/constants/index.ts')
+  const { getActionCondition } = loadTsModule('app/lib/combat/combatActionConditions.ts', {
+    mocks: { '../equipment/equipmentStats': { getEntityWeaponPower: () => 10 } },
+  })
+  for (const relationState of ['neutral', 'friendly', 'hostile']) {
+    const context = { getCampaignFactions: () => ({ village: { relationState } }) }
+    const village = Object.assign(Object.create(Player.prototype), {
+      label: 'village',
+      type: PLAYER_TYPES.ai,
+      factionId: 'village',
+      context,
+      team: null,
+    })
+    const heroOwner = Object.assign(Object.create(Player.prototype), {
+      label: 'hero',
+      type: PLAYER_TYPES.human,
+      context,
+      team: null,
+    })
+    for (const patch of [
+      { type: PLAYER_TYPES.bandits },
+      { banditCampOwner: true },
+      { banditRaidOwner: true, diplomacy: 'neutral' },
+      { devConsoleBanditOwner: true },
+    ]) {
+      const owner = Object.assign(Object.create(Player.prototype), {
+        label: 'bandits',
+        type: PLAYER_TYPES.ai,
+        context,
+        team: null,
+        ...patch,
+      })
+      assert.equal(village.isEnemy(owner), true)
+      assert.equal(owner.isEnemy(village), true)
+      assert.equal(owner.isEnemy(owner), false)
+      assert.equal(owner.isEnemy({ label: 'gaia', type: PLAYER_TYPES.gaia, diplomacy: 'neutral' }), false)
+      const bandit = { owner, family: FAMILY_TYPES.unit, type: UNIT_TYPES.banditSword, hitPoints: 50 }
+      for (const family of [FAMILY_TYPES.unit, FAMILY_TYPES.building]) {
+        const defender = { owner: village, family, hitPoints: 100 }
+        assert.equal(getActionCondition(defender, bandit, 'attack'), true)
+        assert.equal(
+          getActionCondition(defender, { ...bandit, owner: heroOwner }, 'attack'),
+          relationState === 'hostile'
+        )
+      }
+    }
+    assert.equal(village.isEnemy(heroOwner), relationState === 'hostile')
+    assert.equal(heroOwner.isEnemy(village), relationState === 'hostile')
+  }
+})
+
 test('placing a wheat parcel creates pending seed sites without unlocking the sowing objective', () => {
   const updated = []
   const faded = []
@@ -372,7 +425,10 @@ test('placing a town center creates a construction site without ordering inspect
 
   assert.equal(player.buyBuilding(0, 0, 'TownCenter'), true)
   assert.equal(player.completedObjectives.includes('buildTownCenter'), false)
-  assert.equal(messages.some(message => message[0] === 'hero-build-order'), false)
+  assert.equal(
+    messages.some(message => message[0] === 'hero-build-order'),
+    false
+  )
   player.buildings[0].isBuilt = true
   assert.deepEqual(player.completedObjectives, [])
   assert.equal(

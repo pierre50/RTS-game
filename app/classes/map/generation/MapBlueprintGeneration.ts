@@ -1,3 +1,4 @@
+import { readRoadLayer } from '../../../lib/terrain/roadLayer'
 import { createDeterministicCellVariantPicker } from '../../../lib'
 import { addInteriorWalls } from '../../../lib/graphics/interiorWalls'
 import { beginLoadTrace } from '../../../lib/loadDiagnostics'
@@ -174,6 +175,7 @@ export class MapBlueprintGeneration {
     registerPreparedMapContent(this.map, blueprint)
     this.map.seed = blueprint.seed
     this.map.size = blueprint.size
+    this.map.roads = readRoadLayer(blueprint.preparedSettlements?.roads, blueprint.size + 1)
     this.map.localGridLayout = blueprint.localGridLayout
     this.map.mapType = isInteriorBlueprint(blueprint) ? 'interior' : (blueprint.mapType ?? 'world-region')
     this.map.playersPos = blueprint.spawns || []

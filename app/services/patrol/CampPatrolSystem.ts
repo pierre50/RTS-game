@@ -1,3 +1,11 @@
+import {
+  beginIdlePatrolVisit,
+  nextIdlePatrolTime,
+  settleIdlePatrolVisit,
+  OUTPOST_PATROL_LIMIT,
+  type IdlePatrolVisit,
+} from './IdlePatrolCycle'
+import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { isCampPaused } from '../../lib/units/campActivity'
 import { setUnitSuspension } from '../../lib/units/unitSuspension'
 import { cancelEnergyWait } from '../../lib/units/unitEnergy'
@@ -20,6 +28,8 @@ const CHECK_INTERVAL_MS = 500
 
 export class CampPatrolSystem {
   private units = new Map<UnitEntity, Timing>()
+  private visits = new Map<UnitEntity, IdlePatrolVisit>()
+  private nextDeparture = 0
   private task: SchedulerTaskId | null = null
   private refreshAt = 0
   private interestAt = 0
@@ -58,7 +68,7 @@ export class CampPatrolSystem {
             if (!this.units.has(unit))
               this.units.set(unit, {
                 nextCheck: now + (this.units.size % 5) * TICK_MS,
-                nextPatrol: now + 3500 + ((this.units.size * 137) % 5000),
+                nextPatrol: nextIdlePatrolTime(this.context),
                 awakeUntil: 0,
               })
           }
@@ -67,6 +77,7 @@ export class CampPatrolSystem {
         if (!active.has(unit)) {
           this.wake(unit, false)
           this.units.delete(unit)
+          this.visits.delete(unit)
         }
     }
     if (now >= this.interestAt) {
@@ -112,23 +123,86 @@ export class CampPatrolSystem {
         continue
       checked++
       timing.nextCheck = now + CHECK_INTERVAL_MS
-      if (this.leash.update(unit)) continue
-      if (isUnitRestWakeLocked(unit) || unit.shelterState?.reason === 'sleep') continue
-      if (unit.action === ACTION_TYPES.attack && unit.dest) continue
+      if (
+        this.leash.update(unit) ||
+        isUnitRestWakeLocked(unit) ||
+        unit.shelterState?.reason === 'sleep' ||
+        (unit.action === ACTION_TYPES.attack && unit.dest)
+      ) {
+        this.endVisit(unit, timing)
+        continue
+      }
       const target = this.findAggroTarget(unit)
       if (target) {
+        this.endVisit(unit, timing)
         showAlertFeedback(unit)
         unit.sendToAttack?.(target)
-      } else if (now >= timing.nextPatrol && canUnitStartAmbientWalk(unit)) {
-        timing.nextPatrol = now + this.context.map.randomRange(3500, 8500)
-        const cell = findUnitWalkAroundDestination(unit, campAnchor(unit), 4)
-        if (cell) unit.sendToEvt?.(cell, null, { preserveAutonomy: true })
-      }
+      } else this.updatePatrol(unit, timing, now)
     }
+  }
+
+  private endVisit(unit: UnitEntity, timing: Timing): void {
+    this.visits.delete(unit)
+    timing.nextPatrol = nextIdlePatrolTime(this.context)
+  }
+
+  private updatePatrol(unit: UnitEntity, timing: Timing, now: number): void {
+    if (
+      unit.action ||
+      unit.actionLocked ||
+      unit.shelterState ||
+      unit.pendingOrder ||
+      unit.spacePortalState ||
+      unit.combatMode
+    ) {
+      this.endVisit(unit, timing)
+      return
+    }
+    const visit = this.visits.get(unit)
+    if (visit) {
+      const diverted = unit.dest && unit.dest !== visit.destination
+      if (diverted || (visit.phase === 'travel' && now > visit.until)) {
+        this.endVisit(unit, timing)
+        return
+      }
+      if (!canUnitStartAmbientWalk(unit)) return
+      if (visit.phase === 'travel') {
+        if (unit.i === visit.destination?.i && unit.j === visit.destination?.j)
+          settleIdlePatrolVisit(this.context, visit)
+        else this.endVisit(unit, timing)
+      } else if (now >= visit.until) this.endVisit(unit, timing)
+      return
+    }
+    if (!canUnitStartAmbientWalk(unit)) {
+      timing.nextPatrol = nextIdlePatrolTime(this.context)
+      return
+    }
+    if (now < timing.nextPatrol || now < this.nextDeparture) return
+    const anchor = campAnchor(unit)
+    const visitors = [...this.visits.keys()].filter(other => {
+      const otherAnchor = campAnchor(other)
+      return (
+        other.owner === unit.owner &&
+        getEntitySpaceId(other) === getEntitySpaceId(unit) &&
+        otherAnchor?.i === anchor?.i &&
+        otherAnchor?.j === anchor?.j
+      )
+    })
+    if (visitors.length >= OUTPOST_PATROL_LIMIT) return
+    timing.nextPatrol = nextIdlePatrolTime(this.context)
+    const cell = findUnitWalkAroundDestination(unit, anchor, 4)
+    if (!cell) return
+    unit.sendToEvt?.(cell, null, { preserveAutonomy: true })
+    if (!unit.dest) return
+    this.visits.set(unit, beginIdlePatrolVisit(this.context, unit))
+    // Match the village patrol's staggered departures without slowing enemy detection.
+    this.nextDeparture = now + 3000
   }
 
   private pause(unit: UnitEntity): void {
     if (isCampPaused(unit)) return
+    const timing = this.units.get(unit)
+    if (timing) this.endVisit(unit, timing)
     setUnitSuspension(unit, {
       reason: 'camp-paused',
       wake: () => {
@@ -179,6 +253,7 @@ export class CampPatrolSystem {
     this.task = null
     for (const unit of this.units.keys()) this.wake(unit, false)
     this.units.clear()
+    this.visits.clear()
     this.activeUnits = []
   }
 }

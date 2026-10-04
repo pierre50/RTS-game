@@ -1,3 +1,4 @@
+import type { RoadLayer } from '../../lib/terrain/roadLayer'
 import { Container, type ContainerChild, type Graphics, type Texture, type Ticker, type TilingSprite } from 'pixi.js'
 import type { LocalMapLayout } from '../../lib/localMapLayout'
 import { CELL_WIDTH } from '../../constants'
@@ -98,6 +99,7 @@ export default class Map extends Container {
   mapGeneration: MapGeneration
   mapResources: MapResources
   mapTerrain: MapTerrain
+  roads?: RoadLayer
   terrainBake: MapTerrainBake
   terrainChunkManager: TerrainChunkManager
   shadowLayer: Container

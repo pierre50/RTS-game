@@ -1232,3 +1232,13 @@ test('legacy and minimal snapshots default missing cameras, clocks and AI memori
   delete context.players
   assert.deepEqual(api.serializeGame(context).players, [])
 })
+
+
+test('world road snapshots persist through save serialization without settlement sidecars', () => {
+  const context = makeContext()
+  context.map.roads = { version: 1, stride: context.map.size + 1, cells: [[5, 2], [9, 8]] }
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+  assert.deepEqual(saved.world.roads, context.map.roads)
+  delete context.map.roads
+  assert.equal(loadSaveSerializer().serializeGame(context).world.roads, undefined)
+})

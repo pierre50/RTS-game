@@ -1,3 +1,6 @@
+import { createValueBadge } from '../ValueBadge'
+import { createCombatStatInfo, type CombatStatInfo } from '../entity/CombatStatInfo'
+
 type InventoryActionRowHost = {
   playUiClick?(): void
 }
@@ -9,6 +12,8 @@ type InventoryActionMetaPart = {
 
 type InventoryActionRowOptions = {
   badge?: string
+  stats?: CombatStatInfo[]
+  category?: string
   metaClassName?: string
   metaParts?: InventoryActionMetaPart[]
   className?: string
@@ -41,7 +46,6 @@ export type InventoryActionRowParts = {
 function appendInventoryQuantityBadge(host: HTMLElement, quantity: number): void {
   const safeQuantity = Math.max(0, Math.floor(quantity))
   if (safeQuantity <= 1) return
-  host.classList.add('inventory-quantity-host')
   const badge = document.createElement('span')
   badge.className = 'inventory-quantity-badge'
   badge.textContent = `x${safeQuantity}`
@@ -71,10 +75,10 @@ export function createInventoryActionRow(
     .filter(Boolean)
     .join(' ')
   element.setAttribute('aria-label', options.title)
+  if (options.category) element.dataset.itemCategory = options.category
 
   const icon = document.createElement('span')
   icon.className = 'inventory-action-row-icon'
-  appendInventoryQuantityBadge(icon, options.quantity ?? 0)
 
   const label = document.createElement('span')
   label.className = 'inventory-action-row-label'
@@ -115,10 +119,14 @@ export function createInventoryActionRow(
 
   if (options.hideIcon) element.append(label, description, meta)
   else element.append(icon, label, description, meta)
+  const stats = document.createElement('span')
+  stats.className = 'inventory-action-row-stats infos'
+  stats.append(...(options.stats ?? []).map(createCombatStatInfo))
+  element.appendChild(stats)
+  appendInventoryQuantityBadge(element, options.quantity ?? 0)
   if (options.value) {
-    const value = document.createElement('span')
-    value.className = 'inventory-action-row-value'
-    value.textContent = options.value
+    const value = createValueBadge('gold', options.value)
+    value.classList.add('inventory-action-row-value')
     element.appendChild(value)
   }
   if (options.badge) {

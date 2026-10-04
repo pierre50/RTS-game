@@ -1,3 +1,5 @@
+import type { RoadLayer } from '../../../lib/terrain/roadLayer'
+import { createRoadTerrainSprite } from './RoadTerrainSprite'
 import { materializedResources } from '../../resources/CompactResourceSet'
 import { getPackedCellStore } from '../../cell/PackedCellRegistry'
 import { beginLoadTrace, traceLoad } from '../../../lib/loadDiagnostics'
@@ -101,6 +103,7 @@ type TerrainMapBounds = {
 }
 
 type TerrainRuntimeMap = {
+  roads?: RoadLayer
   size: number
   grid: TerrainGridCell[][]
   context: TerrainMapContext
@@ -143,6 +146,7 @@ export class MapTerrainBake {
   map: TerrainRuntimeMap
   textureCache: TerrainTextureCache | null = null
   private decorations = new WeakMap<TerrainGridCell, TerrainDecoration[]>()
+  private roadConnections = new Map<number, number>()
   private sourcePadding = 256
   private minYOffset = 0
   private maxYOffset = 0
@@ -332,6 +336,7 @@ export class MapTerrainBake {
             sprite.zIndex = decoration.zIndex
             visual.addChild(sprite)
           }
+          this.addRoad(visual, source)
           containers.terrainContainer.addChild(...visual.getTerrainBakeChildren())
         }
       }
@@ -438,6 +443,7 @@ export class MapTerrainBake {
           cell.terrainSet = set
           terrainSets.push(set)
         }
+        this.addRoad(cell, cell)
         const bakeChildren = cell.getTerrainBakeChildren?.()
         if (bakeChildren?.length) terrainContainer.addChild(...bakeChildren)
         else if (isTerrainContainerCell(cell)) terrainContainer.addChild(cell)
@@ -540,7 +546,17 @@ export class MapTerrainBake {
     this.map.context.performance?.record?.('cellCompaction.instanceRelinks', performance.now() - relinkStartedAt)
   }
 
+  private addRoad(visual: TerrainGridCell, source: TerrainGridCell): void {
+    const connections = this.roadConnections.get(source.i * (this.map.size + 1) + source.j)
+    if (!connections || source.category === 'Water' || source.terrainHidden) return
+    const sprite = (visual as TerrainGridCell & { sprite?: Sprite | null }).sprite
+    if (!sprite) return
+    const frame = source._terrainAppearance?.relief?.index ?? 0
+    visual.addChild?.(createRoadTerrainSprite(connections, frame, sprite.texture.height))
+  }
+
   bakeTerrainToChunks(): void {
+    this.roadConnections = new Map(this.map.roads?.cells ?? [])
     const streamingRenderer = this.map.context.app?.renderer
     if (!this.map.context.editor && streamingRenderer) {
       const startedAt = performance.now()

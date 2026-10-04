@@ -167,6 +167,8 @@ function loadHeadlessImport(request, parent, isMain, originalLoad) {
       }
     }
     if (request === '../../lib/grid/queries') return { hasWaterBorderWithin }
+    if (request === '../../lib/terrain/reliefGeneration')
+      return require('./load-generation-ts.cjs').loadGenerationTs('app/lib/terrain/reliefGeneration.ts')
     if (request === '../../lib/terrain/reliefAppearance') {
       const { loadGenerationTs } = require('./load-generation-ts.cjs')
       const { getReliefAppearance } = loadGenerationTs('app/lib/terrain/reliefAppearance.ts')

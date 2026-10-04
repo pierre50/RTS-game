@@ -1,3 +1,4 @@
+import { OUTPOST_PATROL_LIMIT } from './IdlePatrolCycle'
 import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { usableVisitBuilding, VISIT_RADIUS } from '../IdleVillageDestinations'
 import type { GameContextLike } from '../../types/context'
@@ -15,7 +16,7 @@ function hypot(a: GridPosition, b: GridPosition): number {
 }
 
 export function visitLimit(owner: PlayerLike): number {
-  return owner.settlementType === 'outpost' ? 2 : owner.settlementType === 'city' ? 6 : 4
+  return owner.settlementType === 'outpost' ? OUTPOST_PATROL_LIMIT : owner.settlementType === 'city' ? 6 : 4
 }
 
 function nightPatrolRadius(owner: PlayerLike | undefined): number {

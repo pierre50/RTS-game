@@ -157,7 +157,9 @@ export class StartingVillageLayout {
       for (let dj = -24; dj <= 24; dj++) {
         const candidate = { i: center.i + di, j: center.j + dj }
         if (!this.spatial.reachable(center, candidate)) continue
-        if (this.blocksEntrance(candidate, size)) continue
+        // Fields have no general circulation ring, but must leave room around
+        // door approaches so multiple wheat patches cannot enclose an entrance.
+        if (this.blocksEntrance(candidate, type === 'Farm' ? size + 2 : size)) continue
         if (type === 'WatchTower' && distance(candidate, center) < 10) continue
         if (type === 'Farm' && !this.nearGranary(center, candidate, size)) continue
         if (

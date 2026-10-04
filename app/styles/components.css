@@ -67,24 +67,45 @@
   padding-bottom: var(--ui-gap-10);
 }
 
-/* Shared level badge for the hero HUD and unit identities. */
-.level-tag {
-  display: inline-block;
+/* Shared price and level badges. */
+.value-badge {
+  box-sizing: border-box;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
-  padding: var(--level-tag-padding);
-  color: var(--level-tag-color);
-  background: var(--level-tag-background);
-  border: var(--level-tag-border-width) solid var(--level-tag-border-color);
-  font-family: var(--level-tag-font-family);
-  font-size: var(--level-tag-font-size);
+  gap: var(--ui-gap-5);
+  padding: calc(var(--ui-gap-4) / 2) var(--ui-gap-8);
+  border: var(--ui-control-border);
+  border-color: var(--border-light-color) var(--border-bottom-color) var(--border-bottom-color)
+    var(--border-light-color);
+  border-radius: var(--main-border-radius);
+  box-shadow: var(--ui-control-border-width) var(--ui-control-border-width) 0 var(--border-bottom-color);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
   font-style: normal;
-  text-transform: var(--level-tag-text-transform);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   letter-spacing: 0;
   text-shadow: none;
-  font-weight: var(--level-tag-font-weight);
-  line-height: var(--level-tag-line-height);
   white-space: nowrap;
   vertical-align: middle;
+}
+.value-badge--level {
+  color: var(--main-text-color);
+  background: var(--main-primary-color);
+  text-transform: uppercase;
+}
+.value-badge--gold,
+.inventory-action-row-value.value-badge--gold {
+  color: var(--main-primary-color);
+  background: var(--main-accent-color);
+  border-color: var(--main-accent-hover) var(--border-bottom-color) var(--border-bottom-color) var(--main-accent-hover);
+}
+.value-badge:empty {
+  display: none;
 }
 .modal-title > .level-tag,
 .entity-info-header .level-tag {

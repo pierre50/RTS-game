@@ -86,6 +86,7 @@ export class GameWindow {
     panel.addEventListener('pointerdown', this.onPointer)
     panel.addEventListener('input', this.onFieldChange)
     panel.addEventListener('change', this.onFieldChange)
+    panel.addEventListener('equipmentavatarready', this.onAvatarReady)
     window.addEventListener(LANG_CHANGE_EVENT, this.onFieldChange)
     document.addEventListener('keydown', this.onKey, true)
     document.addEventListener('keyup', this.onKeyUp, true)
@@ -272,6 +273,10 @@ export class GameWindow {
     this.scheduleRefresh()
   }
 
+  private onAvatarReady = (): void => {
+    this.renderDetails()
+  }
+
   private onFieldChange = (): void => {
     this.footer.setAttribute('aria-label', t('windowCommands'))
     this.signature = ''
@@ -286,7 +291,7 @@ export class GameWindow {
     }
     const items = this.items()
     if (!items.length && dy) {
-      scrollWindowInformation(this.panel, dy * 48)
+      scrollWindowInformation(this.panel, dy * 48, this.selected)
       return
     }
     const index = findDirectionalTarget(
@@ -430,7 +435,8 @@ export class GameWindow {
     const elapsed = Math.min(50, Math.max(0, now - (this.lastScrollAt || now)))
     this.lastScrollAt = now
     if (pressed.length || direction || Math.abs(readAxis) > 0.35) this.setMode('gamepad')
-    if (!this.confirmation && Math.abs(readAxis) > 0.35) scrollWindowInformation(this.panel, readAxis * elapsed * 0.65)
+    if (!this.confirmation && Math.abs(readAxis) > 0.35)
+      scrollWindowInformation(this.panel, readAxis * elapsed * 0.65, this.selected)
     if (this.confirmation) {
       this.answerConfirmation(getPadConfirmationChoice(pressed))
       return
@@ -470,6 +476,7 @@ export class GameWindow {
     this.panel.removeEventListener('pointerdown', this.onPointer)
     this.panel.removeEventListener('input', this.onFieldChange)
     this.panel.removeEventListener('change', this.onFieldChange)
+    this.panel.removeEventListener('equipmentavatarready', this.onAvatarReady)
     window.removeEventListener(LANG_CHANGE_EVENT, this.onFieldChange)
     document.removeEventListener('keydown', this.onKey, true)
     document.removeEventListener('keyup', this.onKeyUp, true)

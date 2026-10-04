@@ -40,7 +40,7 @@ function fixture(count = 12) {
   const context = {
     players: [owner],
     controls: { heroUnit: hero, instanceInCamera: () => false },
-    map: { spaces: new Map(), randomRange: () => 3500 },
+    map: { spaces: new Map(), randomRange: min => min },
     scheduler: {
       elapsedMs: 0,
       add(...args) {
@@ -114,7 +114,7 @@ test('nearby checks and resumed walks are bounded and fair, even after a long pa
     assert.ok(f.orders.length - commands <= 4)
   }
   assert.equal(new Set(f.scans).size, 30)
-  assert.equal(f.orders.length, 30)
+  assert.equal(f.orders.length, 1, 'departures stay staggered while all guards scan for enemies')
   assert.equal(f.tasks[0][1], 100)
   assert.deepEqual(f.tasks[0][3], { maxRunsPerTick: 1 })
 })
@@ -212,4 +212,85 @@ test('rest transitions finish before pause, while settled sleep can freeze', () 
   f.context.scheduler.elapsedMs = 500
   f.system.updateAggro()
   assert.equal(f.isCampPaused(unit), true)
+})
+
+function activeCamp(count = 1) {
+  const f = fixture(count)
+  f.hero.i = f.hero.j = 50
+  for (const unit of f.owner.units) {
+    unit.dest = null
+    unit.path = []
+  }
+  f.tick = time => {
+    f.context.scheduler.elapsedMs = time
+    f.system.updateAggro()
+  }
+  f.arrive = unit => {
+    Object.assign(unit, { i: unit.dest.i, j: unit.dest.j, dest: null, path: [] })
+  }
+  f.tick(0)
+  return f
+}
+
+test('long camp walks get a full arrival pause followed by the shared outing delay', () => {
+  const f = activeCamp(),
+    unit = f.owner.units[0]
+  f.tick(5000)
+  assert.equal(f.orders.length, 1)
+  f.tick(30000)
+  assert.equal(f.orders.length, 1)
+  f.arrive(unit)
+  f.tick(30500)
+  f.tick(40000)
+  assert.equal(f.orders.length, 1)
+  f.tick(40500) // Ten seconds at the destination, then a five-second cooldown.
+  f.tick(45000)
+  assert.equal(f.orders.length, 1)
+  f.tick(45500)
+  assert.equal(f.orders.length, 2)
+})
+
+test('camp outings are staggered and capped per camp, not per bandit owner', () => {
+  const f = activeCamp(4)
+  f.owner.units[3].campPatrolAnchor = { i: 55, j: 50 }
+  for (let time = 5000; time <= 20000; time += 100) f.tick(time)
+  assert.equal(f.orders.length, 3)
+  assert.equal(f.system.visits.size, 3)
+  assert.ok(f.orders.includes('guard3'))
+})
+
+test('enemies interrupt arrival pauses immediately and release the outing slot', () => {
+  const f = activeCamp(),
+    unit = f.owner.units[0],
+    target = { i: 52, j: 50 }
+  f.tick(5000)
+  f.arrive(unit)
+  f.tick(5500)
+  unit.sendToAttack = enemy => {
+    unit.action = 'attack'
+    unit.dest = enemy
+  }
+  f.system.findAggroTarget = () => target
+  f.tick(6000)
+  assert.equal(unit.dest, target)
+  assert.equal(f.system.visits.size, 0)
+})
+
+test('failed and diverted patrols release slots without touching replacement orders', () => {
+  for (const diverted of [false, true]) {
+    const f = activeCamp(),
+      unit = f.owner.units[0]
+    f.tick(5000)
+    const replacement = diverted ? { i: 60, j: 60 } : null
+    unit.dest = replacement
+    unit.path = []
+    f.tick(5500)
+    assert.equal(f.system.visits.size, 0)
+    assert.equal(unit.dest, replacement)
+    assert.equal(f.orders.length, 1)
+  }
+  const f = activeCamp()
+  f.owner.units[0].sendToEvt = () => {}
+  f.tick(5000)
+  assert.equal(f.system.visits.size, 0)
 })

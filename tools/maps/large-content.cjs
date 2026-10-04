@@ -18,7 +18,8 @@ async function generateLargeContent(
   onProgress = () => {},
   biomeCodes = null,
   caves = [],
-  camps = []
+  camps = [],
+  relief = null
 ) {
   const stride = size + 1
   const resources = [],
@@ -84,7 +85,16 @@ async function generateLargeContent(
       const dominantCode = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0]
       const environment = MACRO_ENVIRONMENT_BY_CODE[dominantCode] ?? 'Temperate'
       const map = buildHeadlessMap(grid, EDGE - 1, seed + startI * stride + startJ, spawns, spawns.length, environment)
+      const localRelief = grid.map((row, i) =>
+        row.map((_value, j) => {
+          const gi = originI + i,
+            gj = originJ + j
+          return relief && gi >= 0 && gj >= 0 && gi <= size && gj <= size ? relief[gi * stride + gj] : 0
+        })
+      )
+      for (let i = 0; i < EDGE; i++) for (let j = 0; j < EDGE; j++) map.grid[i][j].z = localRelief[i][j]
       map.formatCellsWaterBorder()
+      map.formatCellsRelief()
       const scope = createResourceScope(map)
       const options = createMacroTreeOptions(rows, 'Grass', seed, { i: originI, j: originJ })
       await runtimeNeutralResources.call(scope, spawns, options)
@@ -105,7 +115,7 @@ async function generateLargeContent(
         environment,
         macroTerrainRows: rows,
         terrain: grid.map(row => row.map(value => TERRAIN[value])),
-        relief: grid.map(row => row.map(() => 0)),
+        relief: localRelief,
         spawns,
         resources: localResources,
         caves: localCaves,
