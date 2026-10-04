@@ -35,7 +35,6 @@ export function startBuildingUpgrade(building: BuildingEntity, hero?: UnitEntity
   building.buildingUpgrade = {
     targetLevel,
     constructionProgress: 0,
-    totalHitPoints: config.totalHitPoints ?? 1,
     constructionTime: config.constructionTime ?? 1,
   }
   building.constructionMaterials = createConstructionMaterials(config.cost)

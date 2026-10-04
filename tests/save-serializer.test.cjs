@@ -1047,6 +1047,7 @@ test('saving retains construction accounting and collective task ownership', () 
       isBuilt: false,
       hitPoints: 21,
       constructionProgress: 0.4,
+      constructionWorkRequired: 80,
       constructionMaterials: materials,
     },
   ]
@@ -1054,6 +1055,7 @@ test('saving retains construction accounting and collective task ownership', () 
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
   assert.deepEqual(saved.players[0].buildings[0].constructionMaterials, materials)
   assert.equal(saved.players[0].buildings[0].constructionProgress, 0.4)
+  assert.equal(saved.players[0].buildings[0].constructionWorkRequired, 80)
   assert.equal(saved.players[0].units[0].collectiveTask, 'wood')
 })
 
@@ -1097,7 +1099,7 @@ test('renovation progress and delivered materials survive JSON saving with the i
     buildingLevel: 0,
     hitPoints: 60,
     totalHitPoints: 75,
-    buildingUpgrade: { targetLevel: 1, hitPoints: 40, totalHitPoints: 125, constructionTime: 48 },
+    buildingUpgrade: { targetLevel: 1, constructionProgress: 0.4, constructionTime: 48 },
     constructionMaterials: {
       cost: { wood: 60, stone: 30, fiber: 4 },
       consumed: { wood: 30 },
@@ -1116,13 +1118,25 @@ test('renovation progress and delivered materials survive JSON saving with the i
   assert.equal(saved.interiorBuildings[0].inventory.resources.gold, 20)
 })
 
-
 test('saving an unvisited deferred village preserves its full saved entities without materializing it', () => {
   const context = makeContext()
   const owner = context.players[0]
-  const state = { type: 'AI', label: 'unvisited', buildings: [], units: [{ label: 'remote-chief', type: 'Chief', i: 500, j: 500, hitPoints: 27 }], population: 1 }
+  const state = {
+    type: 'AI',
+    label: 'unvisited',
+    buildings: [],
+    units: [{ label: 'remote-chief', type: 'Chief', i: 500, j: 500, hitPoints: 27 }],
+    population: 1,
+  }
   const store = deferredVillages.installDeferredVillages(context)
-  store.add(owner, state, () => { throw new Error('saving must not create entities') }, () => {})
+  store.add(
+    owner,
+    state,
+    () => {
+      throw new Error('saving must not create entities')
+    },
+    () => {}
+  )
   const saved = loadSaveSerializer().serializeGame(context)
   assert.deepEqual(saved.players[0].units, state.units)
   assert.equal(store.size, 1)
@@ -1132,8 +1146,17 @@ test('saving an unvisited deferred village preserves its full saved entities wit
 test('market wallets preserve zero and purchase proceeds in saved buildings', () => {
   const context = makeContext()
   context.players[0].buildings = [0, 325, 1800].map((marketGold, index) => ({
-    type: 'Market', label: `market-${index}`, i: 1, j: 1, isBuilt: true, marketGold, marketStock: [],
+    type: 'Market',
+    label: `market-${index}`,
+    i: 1,
+    j: 1,
+    isBuilt: true,
+    marketGold,
+    marketStock: [],
   }))
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
-  assert.deepEqual(saved.players[0].buildings.map(building => building.marketGold), [0, 325, 1800])
+  assert.deepEqual(
+    saved.players[0].buildings.map(building => building.marketGold),
+    [0, 325, 1800]
+  )
 })

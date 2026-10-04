@@ -7,7 +7,7 @@ import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { finishSowingTile } from './BuildingSowing'
 import { AnimatedSprite } from 'pixi.js'
 import { wakeDistantOwner } from '../../lib/units/villageActivity'
-import { ACTION_TYPES, LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX } from '../../constants'
+import { ACTION_TYPES, LABEL_TYPES, MENU_INFO_IDS } from '../../constants'
 import { getPercentage, updateInstanceVisibility } from '../../lib'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { BuildingDestruction } from './BuildingDestruction'
@@ -101,10 +101,7 @@ export class BuildingLifecycle {
     if (building.owner.isPlayed) {
       menu.updateTopbar?.()
       if (building.owner.selectedBuilding?.displayPopulation)
-        menu.updateInfo(
-          MENU_INFO_IDS.populationText,
-          building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
-        )
+        menu.updateInfo(MENU_INFO_IDS.populationText, building.owner.population + '/' + building.owner.populationMax)
     }
     if (building.owner.isPlayed && building.selected) {
       menu.setActionTarget(building)

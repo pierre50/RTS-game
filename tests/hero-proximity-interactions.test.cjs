@@ -55,7 +55,8 @@ function loadHeroProximityInteractions(overrides = {}) {
       },
 
       './heroSleep': {
-        isUsableSleepTarget: (_hero, building) => ['FireCamp', 'CampBedroll'].includes(building?.type) && building.reachable !== false,
+        isUsableSleepTarget: (_hero, building) =>
+          ['FireCamp', 'CampBedroll'].includes(building?.type) && building.reachable !== false,
       },
       './heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
@@ -219,7 +220,9 @@ test('unavailable traps never fall back to a generic menu prompt', () => {
     { isDestroyed: true },
   ]) {
     const target = { family: 'building', type: 'Trap', isBuilt: true, interface: { info() {} }, ...state }
-    assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), null)
+    if (state.isBuilt === false)
+      assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target })?.action, 'open')
+    else assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), null)
   }
 })
 
@@ -547,10 +550,14 @@ test('hero proximity interaction resolves a facing openable corpse as open', () 
   })
 })
 
-test('unfinished chest does not fall back to the generic building menu prompt', () => {
+test('unfinished chests open their construction inspection', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const target = { family: 'building', type: 'Chest', isBuilt: false }
-  assert.equal(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), null)
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), {
+    action: 'open',
+    labelKey: 'heroInteractionOpenMenu',
+    target,
+  })
   target.isBuilt = true
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), {
     action: 'open',
@@ -719,7 +726,9 @@ test('forge offers its exterior menu instead of an interior entrance', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const forge = { family: 'building', type: 'Forge', isBuilt: true, i: 5, j: 5 }
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), buildings: [forge], openEntityTarget: forge }), {
-    action: 'open', labelKey: 'heroInteractionOpenMenu', target: forge,
+    action: 'open',
+    labelKey: 'heroInteractionOpenMenu',
+    target: forge,
   })
 })
 
@@ -728,7 +737,9 @@ test('dead animals offer E loot while living animals do not', () => {
   const animal = { family: 'animal', type: 'Deer', isDead: true, x: 105, y: 100 }
   const hero = makeHero({ y: 100 })
   assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: animal }), {
-    action: 'open', labelKey: 'heroInteractionOpen', target: animal,
+    action: 'open',
+    labelKey: 'heroInteractionOpen',
+    target: animal,
   })
   assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: { ...animal, isDead: false } }), null)
   assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: { ...animal, isDestroyed: true } }), null)
@@ -738,6 +749,8 @@ test('nearby furniture offers its interaction menu', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const target = { type: 'CampChair', family: 'building', isBuilt: true, reachable: true }
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: target }), {
-    action: 'open', labelKey: 'heroInteractionOpenMenu', target,
+    action: 'open',
+    labelKey: 'heroInteractionOpenMenu',
+    target,
   })
 })

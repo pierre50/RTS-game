@@ -171,16 +171,6 @@ export function toggleTerrainFrameDebug(context: DevConsoleContext, value: strin
   return { ok: true, message: `Terrain frame debug: ${showTerrainFrame ? 'on' : 'off'}` }
 }
 
-export function toggleFreeCamera(context: DevConsoleContext, value: string): CommandResult {
-  const { controls } = context
-  if (!controls?.setFreeCamera) return { ok: false, message: 'Free camera unavailable' }
-  if (!controls.isHeroControlActive?.()) return { ok: false, message: 'Free camera only applies in hero gameplay' }
-
-  const enabled = normalizeToggle(value, Boolean(controls.freeCameraActive))
-  controls.setFreeCamera(enabled)
-  return { ok: true, message: `Free camera: ${enabled ? 'on' : 'off'}` }
-}
-
 export function togglePerfDebug(context: DevConsoleContext, value: string): CommandResult {
   const { app, map } = context
   const showPerf = normalizeToggle(value, Boolean(map.debugPerfVisible))
@@ -332,37 +322,38 @@ export function togglePlayerStatsDebug(context: DevConsoleContext, value: string
 
 export function aiInfo(context: DevConsoleContext, value: string): CommandResult {
   const aiPlayers = context.players.filter(isAiDebugPlayer)
-  if (!aiPlayers.length) return { ok: false, message: 'No AI players on the map' }
 
   const normalized = typeof value === 'string' ? value.trim().toLowerCase() : ''
   const explicitOff = normalized === 'off'
   const explicitOn = normalized === 'on'
-  const parsedIndex = value !== undefined && !explicitOn && !explicitOff ? parseInt(value, 10) : null
+  const parsedIndex = normalized && !explicitOn && !explicitOff ? Number(normalized) : null
 
-  if (parsedIndex !== null && isNaN(parsedIndex)) {
+  if (parsedIndex !== null && (!Number.isInteger(parsedIndex) || parsedIndex < 0)) {
     return { ok: false, message: `Invalid AI index "${value}"` }
   }
 
-  if (parsedIndex !== null && !aiPlayers[parsedIndex]) {
+  if (parsedIndex !== null && (!context.players[parsedIndex] || !isAiDebugPlayer(context.players[parsedIndex]))) {
     return { ok: false, message: `No AI player at index ${parsedIndex}` }
   }
 
   const isVisible = Boolean(context.map.debugAiInfoVisible)
   const sameTarget =
-    (parsedIndex === null && !Number.isInteger(context.debugAiInfoTargetIndex)) ||
-    context.debugAiInfoTargetIndex === parsedIndex
+    (parsedIndex === null && !Number.isInteger(context.map.debugAiInfoTargetIndex)) ||
+    context.map.debugAiInfoTargetIndex === parsedIndex
   const showOverlay = explicitOff ? false : explicitOn || parsedIndex !== null ? true : !isVisible || !sameTarget
+
+  if (showOverlay && !aiPlayers.length) return { ok: false, message: 'No village AI players on the map' }
 
   context.map.debugAiInfoVisible = showOverlay
 
   if (!showOverlay) {
-    context.debugAiInfoTargetIndex = null
+    context.map.debugAiInfoTargetIndex = null
     stopDebugTicker(context, '_debugAiInfoTicker')
     document.getElementById('debug-ai-info')?.remove()
     return { ok: true, message: 'AI info: off' }
   }
 
-  context.debugAiInfoTargetIndex = parsedIndex
+  context.map.debugAiInfoTargetIndex = parsedIndex
   ensureAiInfoOverlay(context)
   stopDebugTicker(context, '_debugAiInfoTicker')
   context.map._debugAiInfoTicker = () => ensureAiInfoOverlay(context)

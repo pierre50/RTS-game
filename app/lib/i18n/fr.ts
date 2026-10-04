@@ -86,6 +86,12 @@ export const FR_TRANSLATIONS = {
   stableNeedsHorse: 'L’écurie a besoin d’un cheval',
   demolishBuilding: 'Démolir',
   constructionMissingMaterials: 'En attente de matériaux : {resources}. Apportez-les dans votre sac.',
+  constructionSiteName: '{building} — En construction',
+  constructionSiteDescription: 'Terminez la construction pour utiliser cette structure.',
+  constructionSiteProgress: 'Construction : {progress} %',
+  constructionSiteDamaged: 'Chantier endommagé : {health}',
+  constructionSiteReady: 'Matériaux fournis',
+  constructionSiteMissing: 'Matériaux nécessaires : {materials}',
   constructionMaterialStatus: '{resource} : {consumed}/{cost} utilisés · {missing} restants',
   constructionMaterialLegacyStatus:
     '{resource} : {consumed}/{cost} utilisés · {delivered} sur place · {missing} à fournir',

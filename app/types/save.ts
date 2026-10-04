@@ -14,7 +14,7 @@ import type { TargetObservation } from '../lib/units/playerTargetKnowledge'
 import type { CaveDefinition } from './cave'
 import type { HeroEquippedItem } from './heroTools'
 import type { ResourceAmount } from './common'
-import type { AnimalConfig, BuildingConfig, ConfigValue, ResourceConfig, UnitConfig } from './config'
+import type { AnimalConfig, BuildingConfig, ResourceConfig, UnitConfig } from './config'
 import type { FogSpriteMemory } from './fog'
 import type { AssetLevel } from './pixi'
 import type { SerializedVisionGrid } from './vision'
@@ -28,12 +28,11 @@ export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
 export type SaveDestination = Partial<SaveGridPoint & { x: number; y: number; label: string }>
 
-// Read-only compatibility for saves created before objective-based progression.
-type SaveTechnologyState = { type?: string; config?: { [key: string]: ConfigValue } } | null
-
 export type SaveEntityState = {
   collectiveTask?: string | null
   collectiveHome?: { i: number; j: number; spaceId?: string | null }
+  constructionTime?: number
+  constructionWorkRequired?: number
   constructionProgress?: number
   constructionMaterials?: ConstructionMaterials
   buildingUpgrade?: BuildingUpgrade
@@ -158,7 +157,6 @@ export type SaveEntityState = {
   realDest?: SaveDestination | null
   size?: number
   spaceId?: string
-  technology?: SaveTechnologyState
   textureName?: string
   berrybushFullTextureName?: string
   totalHitPoints?: number
@@ -232,14 +230,11 @@ export type SavePlayerState = PlayerSetupConfig & {
   label?: string
   population?: number
   populationMax?: number
-  researchTechnology?: SaveTechnologyState
-  researchLoading?: number | null
   selectedBuildingLabel?: string
   selectedOtherLabel?: string
   selectedUnitLabel?: string
   selectedUnitLabels?: string[]
   stone?: number
-  technologies?: string[]
   type: string
   units?: SaveEntityState[]
   villagerAssignments?: {

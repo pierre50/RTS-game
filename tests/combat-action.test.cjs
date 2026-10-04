@@ -696,7 +696,6 @@ test('priests cannot convert bandit units', () => {
   const playerOwner = {
     isEnemy: targetOwner => targetOwner?.label === 'bandits',
     label: 'player',
-    technologies: [],
   }
   const banditOwner = {
     isEnemy: targetOwner => targetOwner?.label === 'player',
@@ -737,12 +736,10 @@ test('bandit-owned priests cannot convert units into the bandit team', () => {
     label: 'bandit-owner',
     name: 'Bandits',
     isPlayed: false,
-    technologies: [],
   }
   const playerOwner = {
     isEnemy: targetOwner => targetOwner?.label === 'bandit-owner',
     label: 'player',
-    technologies: [],
   }
   const banditPriest = {
     family: constants.FAMILY_TYPES.unit,

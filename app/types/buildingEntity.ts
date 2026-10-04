@@ -20,6 +20,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   heroHomeResident?: { label: string; name?: string }
   plannedBedLabels?: string[]
   demolish?: () => void
+  constructionWorkRequired?: number
   constructionProgress?: number
   constructionMaterials?: ConstructionMaterials
   buildingUpgrade?: BuildingUpgrade

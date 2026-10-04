@@ -93,7 +93,6 @@ function loadPlayer(overrides = {}) {
         updateInstanceVisibility: () => {},
         isBuildingLimitReached: () => false,
         getBuildingFootprintCells: overrides.getBuildingFootprintCells ?? ((i, j, grid) => [grid[i][j]]),
-        capitalizeFirstLetter: value => value.charAt(0).toUpperCase() + value.slice(1),
       }
     }
     if (request === '../building/Building') {
@@ -131,7 +130,6 @@ function loadPlayer(overrides = {}) {
         BUILDING_TYPES: { farm: 'Farm', townCenter: 'TownCenter' },
         FAMILY_TYPES: { player: 'player' },
         PLAYER_TYPES: { human: 'human', ai: 'ai', gaia: 'gaia', bandits: 'bandits' },
-        POPULATION_MAX: 200,
         RESOURCE_NAMES: [],
         RESOURCE_TYPES: { wheat: 'Wheat' },
         SOUND_CUES: {
@@ -170,8 +168,8 @@ function loadPlayer(overrides = {}) {
     if (request === './PlayerBuildingPlacement') {
       return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerBuildingPlacement.ts'))
     }
-    if (request === './PlayerProgression') {
-      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerProgression.ts'))
+    if (request === './PlayerBuildingEligibility') {
+      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerBuildingEligibility.ts'))
     }
     return requireFromTsFile(request, filename, {}, moduleCache)
   }
@@ -232,19 +230,15 @@ test('population counts living villagers without age objectives', () => {
   assert.equal(player.updatePopulationObjectives, undefined)
 })
 
-test('building prerequisites still apply without tech all', () => {
+test('building prerequisites require the configured prerequisite building', () => {
   const Player = loadPlayer()
   const player = {
     age: 1,
     hasBuilt: [],
-    autoTechnologyByAge: false,
     config: {
       buildings: {
         ArcheryRange: {
-          conditions: [
-            { key: 'age', op: '>=', value: 1 },
-            { key: 'hasBuilt', op: 'includes', value: 'Barracks' },
-          ],
+          conditions: [{ key: 'hasBuilt', op: 'includes', value: 'Barracks' }],
         },
       },
     },
@@ -276,56 +270,6 @@ test('neutral Gaia owner is never considered an enemy relation', () => {
   assert.equal(player.isEnemy(neutral), false)
 })
 
-test('existing buildings keep their construction age and HP when their owner advances', () => {
-  const Player = loadPlayer()
-  const calls = []
-  const player = {
-    age: 3,
-    autoTechnologyByAge: false,
-    buildings: [
-      {
-        buildingLevel: 1,
-        totalHitPoints: 125,
-        hitPoints: 70,
-        assetLevel: 1,
-        assetCiv: 'Kemet',
-        finalTexture() {
-          calls.push(['captured', this.assetCiv, this.assetLevel])
-        },
-        isBuilt: true,
-        isDead: false,
-      },
-      {
-        finalTexture() {
-          calls.push(['native', this.assetCiv, this.assetLevel])
-        },
-        isBuilt: true,
-        isDead: false,
-      },
-    ],
-    context: {
-      menu: {},
-      players: [],
-    },
-    isPlayed: false,
-  }
-  player.context.players = [player]
-  Object.setPrototypeOf(player, Player.prototype)
-
-  player.refreshCivilizationAppearance()
-
-  assert.equal(player.buildings[0].assetLevel, 1)
-  assert.equal(player.buildings[0].buildingLevel, 1)
-  assert.equal(player.buildings[0].totalHitPoints, 125)
-  assert.equal(player.buildings[0].hitPoints, 70)
-  assert.equal(player.buildings[0].assetCiv, 'Kemet')
-  assert.equal(player.buildings[1].assetLevel, undefined)
-  assert.deepEqual(calls, [
-    ['captured', 'Kemet', 1],
-    ['native', undefined, undefined],
-  ])
-})
-
 test('placing a wheat parcel creates pending seed sites without unlocking the sowing objective', () => {
   const updated = []
   const faded = []
@@ -347,7 +291,6 @@ test('placing a wheat parcel creates pending seed sites without unlocking the so
   const player = {
     spawnBuilding: options => sites.push(options),
     isPlayed: true,
-    technologies: ['Farming'],
     config: {
       buildings: {
         Farm: {
@@ -393,7 +336,7 @@ test('missing building definitions reject purchases and wheat fields before any 
   assert.equal(player.plantWheatField(0, 0), false)
 })
 
-test('placing a town center orders construction without age objectives', () => {
+test('placing a town center creates a construction site without ordering inspected units', () => {
   const Player = loadPlayer()
   const messages = []
   const player = {
@@ -429,10 +372,13 @@ test('placing a town center orders construction without age objectives', () => {
 
   assert.equal(player.buyBuilding(0, 0, 'TownCenter'), true)
   assert.equal(player.completedObjectives.includes('buildTownCenter'), false)
-  assert.ok(messages.some(message => message[0] === 'hero-build-order' && message[1] === 'TownCenter'))
+  assert.equal(messages.some(message => message[0] === 'hero-build-order'), false)
   player.buildings[0].isBuilt = true
   assert.deepEqual(player.completedObjectives, [])
-  assert.equal(messages.some(message => String(message[0]).includes('Objectif accompli')), false)
+  assert.equal(
+    messages.some(message => String(message[0]).includes('Objectif accompli')),
+    false
+  )
 })
 
 test('player initialization normalizes relations and retains restored resource overrides', () => {
@@ -485,4 +431,17 @@ test('restored AI uses campaign faction color while human, neutral and bandit co
     const player = new Player({ type, civ: 'Hellas', color }, context)
     assert.equal(player.color, expected)
   }
+})
+
+test('placing a building returns it without issuing orders to inspected units', () => {
+  const Player = loadPlayer()
+  const building = { type: 'House' }
+  const inspected = {
+    type: 'Villager',
+    sendToBuilding: () => assert.fail('inspection must not assign construction work'),
+    sendTo: () => assert.fail('inspection must not issue movement orders'),
+  }
+  const player = { isPlayed: true, selectedUnits: [inspected], createBuilding: () => building }
+  Object.setPrototypeOf(player, Player.prototype)
+  assert.equal(player.spawnBuilding({ type: 'House', i: 1, j: 1 }), building)
 })

@@ -872,21 +872,25 @@ test('camera initialization prioritizes the hero, then a building, a unit and ma
   assert.equal(controls.getHeroCameraCenter(), null)
 })
 
-test('free camera limits camera speed without limiting accelerated hero movement', t => {
+test('hero camera keeps following the hero during accelerated movement', t => {
   const { controls, restore } = createControls()
   t.after(restore)
   controls.heroController.active = true
-  controls.freeCameraActive = true
+  controls.getHeroCameraCenter = () => ({ x: 12, y: 34 })
   const pans = []
   const centers = []
   controls.panCameraWithArrowKeys = scale => pans.push(scale)
   controls.cameraController.set = (...args) => centers.push(args)
   controls.onTick({ elapsedMS: 1000, deltaMS: (1000 / 60) * 8, deltaTime: 8 })
-  assert.deepEqual(pans, [3])
-  assert.deepEqual(centers, [])
+  assert.deepEqual(pans, [])
+  assert.deepEqual(centers, [[12, 34, false, false]])
   assert.equal(controls.heroController.lastUpdateFrameScale, 8)
   controls.onTick({ deltaTime: 2 })
-  assert.deepEqual(pans, [3, 2])
+  assert.deepEqual(pans, [])
+  assert.deepEqual(centers, [
+    [12, 34, false, false],
+    [12, 34, false, false],
+  ])
   assert.equal(controls.heroController.lastUpdateFrameScale, 2)
 })
 

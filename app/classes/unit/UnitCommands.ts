@@ -247,12 +247,6 @@ export class UnitCommands {
     return sendUnitToDelivery(this.unit, checkActionCondition, target, returnTaskOverride)
   }
 
-  sendToBuildingQueue(targets: BuildingEntity[]) {
-    if (this.unit.owner?.isPlayed) wakeUnitSimulation(this.unit)
-    this.unit.buildQueue = targets.filter(target => checkActionCondition(this.unit, target, ACTION_TYPES.build))
-    return this.continueBuildingQueue()
-  }
-
   continueBuildingQueue(): boolean {
     const unit = this.unit
     while (unit.buildQueue?.length) {

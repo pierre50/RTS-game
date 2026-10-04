@@ -27,12 +27,11 @@ function diagonalY(speed: number): number {
 export function getCameraMoveDelta(
   dir: CameraDirection | string,
   speed: number,
-  useEdgeSlide: boolean,
   hasLocalBounds: boolean,
   diamond: CameraDiamondBounds,
   cameraCenter: CameraPoint
 ): CameraPoint {
-  if (!useEdgeSlide || hasLocalBounds) return straightDelta(dir, speed)
+  if (hasLocalBounds) return straightDelta(dir, speed)
 
   const { A, B, C, D } = diamond
   const slopeY = diagonalY(speed)

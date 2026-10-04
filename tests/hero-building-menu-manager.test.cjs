@@ -203,6 +203,9 @@ function installMockDocument() {
           this.children = children
           this.childElementCount = this.children.length
         },
+        querySelector() {
+          return null
+        },
         querySelectorAll() {
           return []
         },
@@ -250,26 +253,26 @@ test('chest inventory stays unavailable until construction completes', () => {
   const { manager, player, restoreDocument } = createManager()
   try {
     const building = { family: 'building', type: 'Chest', owner: player, isBuilt: false }
-    assert.equal(manager.open(building), false)
+    assert.equal(manager.open(building), true)
     assert.equal(manager.renderContainerBody(building), false)
     assert.equal(manager.constructor.__transferPanels.length, 0)
     assert.equal(manager.constructor.__audibleSoundCues.length, 0)
     building.isBuilt = true
     assert.equal(manager.open(building), true)
     assert.equal(manager.constructor.__transferPanels.length, 1)
-    assert.equal(manager.constructor.__audibleSoundCues.length, 1)
+    assert.equal(manager.constructor.__audibleSoundCues.length, 0)
   } finally {
     restoreDocument()
   }
 })
 
-test('trap menus cannot open even through a direct request', () => {
+test('trap construction is inspectable while completed traps keep their dedicated interaction', () => {
   const { manager, player, restoreDocument } = createManager()
   try {
     for (const isBuilt of [false, true]) {
       const building = { family: 'building', type: 'Trap', owner: player, isBuilt }
-      assert.equal(manager.canOpenFor(building), false)
-      assert.equal(manager.open(building), false)
+      assert.equal(manager.canOpenFor(building), !isBuilt)
+      assert.equal(manager.open(building), !isBuilt)
     }
   } finally {
     restoreDocument()
@@ -706,7 +709,7 @@ test('forge opens the crafting body and refuses unfinished or unreachable forges
     assert.equal(manager.modal._panel.classList.contains('inventory-transfer-modal'), true)
     assert.equal(manager.modal._panel.classList.contains('inspection-window--large'), true)
     assert.equal(manager.modal._panel.classList.contains('interaction-panel'), false)
-    assert.equal(manager.canOpenFor({ ...forge, isBuilt: false }), false)
+    assert.equal(manager.canOpenFor({ ...forge, isBuilt: false }), true)
     assert.equal(manager.canOpenFor({ ...forge, isDestroyed: true }), false)
   } finally {
     restoreDocument()

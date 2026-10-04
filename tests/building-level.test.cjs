@@ -190,7 +190,25 @@ test('new construction, restoration and captured buildings resolve HP from their
   assert.equal(restored.hitPoints, 37)
   const site = new Building({ type: 'House', i: 1, j: 1, owner }, context)
   assert.equal(site.buildingLevel, 0)
-  assert.equal(site.hitPoints, 1)
+  assert.equal(site.hitPoints, site.totalHitPoints)
+  assert.equal(site.constructionProgress, 0)
+  assert.equal(site.constructionWorkRequired, Math.max(1, site.constructionTime ?? 1))
+  const damagedSite = new Building(
+    {
+      type: 'House',
+      i: 1,
+      j: 1,
+      owner,
+      isBuilt: false,
+      hitPoints: 10,
+      constructionProgress: 0.25,
+      constructionWorkRequired: 40,
+    },
+    context
+  )
+  assert.equal(damagedSite.hitPoints, 10)
+  assert.equal(damagedSite.constructionProgress, 0.25)
+  assert.equal(damagedSite.constructionWorkRequired, 40)
   const legacy = new Building({ type: 'House', i: 1, j: 1, owner, assetLevel: 0, hitPoints: 90 }, context)
   assert.equal(legacy.totalHitPoints, 75)
   assert.equal(legacy.hitPoints, 75)

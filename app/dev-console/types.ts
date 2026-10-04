@@ -104,6 +104,7 @@ export type DevMapLike = {
   debugHeroAimVisible?: boolean
   debugHeroCollisionVisible?: boolean
   debugPerfVisible?: boolean
+  debugAiInfoTargetIndex?: number | null
   debugAiInfoVisible?: boolean
   debugPlayerStatsVisible?: boolean
   debugTerrainFrameVisible?: boolean
@@ -167,9 +168,7 @@ type DevControlsLike = {
   }
   stopKeyboardMove?(): void
   isHeroControlActive?(): boolean
-  freeCameraActive?: boolean
   setCamera?(x: number, y: number, direct?: boolean): void
-  setFreeCamera?(enabled: boolean): void
 }
 
 export type DevPerformanceMetric = {
@@ -218,7 +217,11 @@ type DevPerformanceSlowFrame = {
   untrackedMs: number
 }
 
-export type DevPerformanceEvent = { at: number; name: string; details: Record<string, string | number | boolean | null> }
+export type DevPerformanceEvent = {
+  at: number
+  name: string
+  details: Record<string, string | number | boolean | null>
+}
 
 export type DevPerformanceSnapshot = {
   events?: DevPerformanceEvent[]
@@ -300,7 +303,6 @@ export type DevConsoleContext = {
     _tasks?: { size: number }
     timeScale?: number
   }
-  debugAiInfoTargetIndex?: number | null
 }
 
 export type DevConsoleRuntimeContext = Omit<DevConsoleContext, 'commands'>

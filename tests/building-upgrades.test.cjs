@@ -81,9 +81,9 @@ test('materials constrain independent renovation progress and completion applies
   const { owner, hero, building, chest } = fixture()
   startBuildingUpgrade(building, hero)
   const work = building.buildingUpgrade
-  assert.equal(advanceMaterialConstruction(building, work.totalHitPoints, []), 0)
+  assert.equal(advanceMaterialConstruction(building, work.constructionTime, []), 0)
   const bag = { wood: 60 }
-  applyConstructionWork(building, advanceMaterialConstruction(building, work.totalHitPoints, [bag]))
+  applyConstructionWork(building, advanceMaterialConstruction(building, work.constructionTime, [bag]))
   assert.ok(work.constructionProgress > 0 && work.constructionProgress < 1)
   assert.equal(completeBuildingUpgrade(building, definitions.House), false)
   assert.deepEqual(remainingConstructionMaterials(building), { stone: 30, fiber: 4 })
@@ -92,7 +92,7 @@ test('materials constrain independent renovation progress and completion applies
   // Combat damage during renovation does not reset construction progress.
   building.hitPoints = 40
   Object.assign(bag, { stone: 30, fiber: 4 })
-  applyConstructionWork(building, advanceMaterialConstruction(building, work.totalHitPoints, [bag]))
+  applyConstructionWork(building, advanceMaterialConstruction(building, work.constructionTime, [bag]))
   assert.equal(completeBuildingUpgrade(building, definitions.House), true)
   assert.equal(building.buildingLevel, 1)
   assert.equal(building.totalHitPoints, 125)
@@ -126,7 +126,10 @@ test('all eleven atlas buildings can renovate from level 1 to 2 and stop at the 
     assert.deepEqual(remainingConstructionMaterials(building), target.cost)
     assert.equal(completeBuildingUpgrade(building, config), false)
     const materials = { ...target.cost }
-    applyConstructionWork(building, advanceMaterialConstruction(building, target.totalHitPoints, [materials]))
+    applyConstructionWork(
+      building,
+      advanceMaterialConstruction(building, building.buildingUpgrade.constructionTime, [materials])
+    )
     assert.equal(completeBuildingUpgrade(building, config), true, type)
     assert.equal(building.buildingLevel, 2)
     assert.equal(building.totalHitPoints, target.totalHitPoints)

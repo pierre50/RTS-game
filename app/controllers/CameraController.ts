@@ -40,7 +40,6 @@ type CameraContext = {
   map: RuntimeMap
   editor?: object | null
   controls?: {
-    freeCameraActive?: boolean
     heroUnit?: { spaceId?: string | null; isDead?: boolean; isDestroyed?: boolean } | null
   }
   menu?: {
@@ -156,7 +155,6 @@ export class CameraController {
     const hero = controls?.heroUnit
     return Boolean(
       !editor &&
-        !controls?.freeCameraActive &&
         hero &&
         !hero.isDead &&
         !hero.isDestroyed &&
@@ -257,13 +255,7 @@ export class CameraController {
     }
   }
 
-  move(
-    dir: CameraDirection | string,
-    moveSpeed: number,
-    isSpeedDivided: boolean,
-    deltaScale = 1,
-    useEdgeSlide = true
-  ): void {
+  move(dir: CameraDirection | string, moveSpeed: number, isSpeedDivided: boolean, deltaScale = 1): void {
     /**
      *  /A\
      * /   \
@@ -287,7 +279,6 @@ export class CameraController {
     const delta = getCameraMoveDelta(
       dir,
       speed,
-      useEdgeSlide,
       Boolean(this.getLocalCameraBounds()),
       this.getCameraDiamondBounds(),
       cameraCenter

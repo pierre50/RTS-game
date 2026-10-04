@@ -9,22 +9,24 @@ export function getResourceGatherSwings(resource: string, override?: number): nu
   return Math.max(1, override ?? RESOURCE_GATHER_SWINGS?.[resource as keyof typeof RESOURCE_GATHER_SWINGS] ?? 1)
 }
 
-export function getConstructionGain(totalHitPoints: number, constructionTime: number, multiplier = 1): number {
+export function getRepairGain(totalHitPoints: number, constructionTime: number, multiplier = 1): number {
   if (!(totalHitPoints > 0) || !(constructionTime > 0)) return 0
   return Math.max(0, Math.round((totalHitPoints / constructionTime) * multiplier))
 }
 
-export function advanceConstruction(
+export function advanceRepair(
   hitPoints: number,
   totalHitPoints: number,
   constructionTime: number,
   multiplier = 1,
   impacts = 1
 ): number {
-  return Math.min(
-    totalHitPoints,
-    hitPoints + getConstructionGain(totalHitPoints, constructionTime, multiplier) * impacts
-  )
+  return Math.min(totalHitPoints, hitPoints + getRepairGain(totalHitPoints, constructionTime, multiplier) * impacts)
+}
+
+/** Construction work is measured in work units, never health points. */
+export function advanceConstruction(completedWork: number, requiredWork: number, multiplier = 1, impacts = 1): number {
+  return Math.min(requiredWork, completedWork + Math.max(0, multiplier) * Math.max(0, impacts))
 }
 
 export function getHarvestAmount(requested: number, available: number, capacity = Infinity): number {

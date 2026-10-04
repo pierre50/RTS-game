@@ -83,7 +83,6 @@ export type AssetOwner = {
 
 const INTERFACE_ICON_SHEETS: Record<string, string> = {
   '50721': 'command-icons',
-  '50729': 'technology-icons',
   '50731': 'attribute-icons',
   '50732': 'commodity-icons',
   '51000': 'pointers/main',

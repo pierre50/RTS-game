@@ -13,7 +13,7 @@ type VillagerArrivalInput = {
 }
 
 export function calculateVillagerArrivals({ population, populationMax }: VillagerArrivalInput): number {
-  const freeHousing = Math.max(0, Math.min(populationMax, Number.POSITIVE_INFINITY) - population)
+  const freeHousing = Math.max(0, populationMax - population)
   if (population <= 0 || freeHousing <= 0) return 0
 
   const growthDemand = Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate))

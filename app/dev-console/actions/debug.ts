@@ -4,7 +4,6 @@ export {
   setFpsCapDebug,
   toggleCoordsDebug,
   toggleEntityBars,
-  toggleFreeCamera,
   toggleGridDebug,
   toggleHeroAimDebug,
   toggleHeroCollisionDebug,

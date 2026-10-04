@@ -1,7 +1,7 @@
 import { createInventorySectionTitle } from '../inventory/InventorySection'
 import { Modal } from '../../lib/ui/Modal'
 import { createInventoryResourceIcon } from '../inventory/InventoryItemIcons'
-import { BUILDING_TYPES, POPULATION_MAX, RESOURCE_NAMES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, RESOURCE_NAMES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants/consumption'
 import { STABLE_HORSE_CAPACITY, getStableHorseAmount } from '../../lib/horses/stableHorses'
 import { t } from '../../lib/lang'
@@ -89,12 +89,7 @@ function createOverviewSection(menu: MenuHost): HTMLElement {
   const villagers = getActiveVillagers(player)
   const rows = document.createElement('div')
   rows.className = 'base-report-stats'
-  rows.appendChild(
-    createStatRow(
-      t('minimapUnits'),
-      `${player?.population ?? 0}/${Math.min(POPULATION_MAX, player?.populationMax ?? 0)}`
-    )
-  )
+  rows.appendChild(createStatRow(t('minimapUnits'), `${player?.population ?? 0}/${player?.populationMax ?? 0}`))
   rows.appendChild(createStatRow(t('minimapVillagerConsumption'), formatDailyConsumption(villagers.length)))
 
   return createReportSection(t('baseOverview'), rows)

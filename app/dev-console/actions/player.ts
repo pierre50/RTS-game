@@ -1,17 +1,12 @@
-import { POPULATION_MAX } from '../../constants'
-import { capitalizeFirstLetter } from '../../lib'
 import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/audio/settings'
 import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevPlayer } from '../types'
 import { normalizeToggle } from './shared'
-import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import type { FactionSave } from '../../types/save'
 
 type DevPlayerState = DevPlayer & {
   enemyPlayers?: () => DevPlayerState[]
-  refreshCivilizationAppearance?: () => void
-  populationMax?: number
 }
 
 function formatFactionRelation(faction: FactionSave): string {
@@ -24,18 +19,18 @@ function formatKnownWorlds(faction: FactionSave, currentWorldId: string | null |
   return knownWorldIds.map(worldId => (worldId === currentWorldId ? `${worldId}*` : worldId)).join(',')
 }
 
-export function listGlobalPlayers(context: DevConsoleContext): CommandResult {
+export function listLocalPlayers(context: DevConsoleContext): CommandResult {
+  const lines = context.players.map((player, index) => {
+    const relation = context.player === player ? 'self' : context.player.isEnemy?.(player) ? 'hostile' : 'neutral'
+    const name = player.name || player.label || `player-${index}`
+    return `${index}. ${name} | civ=${player.civ ?? '-'} | color=${player.color ?? '-'} | relation=${relation} | local`
+  })
+  return { ok: true, message: lines.length ? lines.join('\n') : 'No local players found' }
+}
+
+export function listFactions(context: DevConsoleContext): CommandResult {
   const factions = context.getCampaignFactions?.()
-  if (!factions || !Object.keys(factions).length) {
-    const lines = context.players.map((player, index) => {
-      const relation = context.player === player ? 'self' : context.player.isEnemy?.(player) ? 'hostile' : 'neutral'
-      const civ = player.civ ?? '-'
-      const color = player.color ?? '-'
-      const name = player.name || player.label || `player-${index}`
-      return `${index + 1}. ${name} | civ=${civ} | color=${color} | relation=${relation} | local`
-    })
-    return { ok: true, message: lines.length ? lines.join('\n') : 'No players found' }
-  }
+  if (!factions || !Object.keys(factions).length) return { ok: true, message: 'No campaign factions found' }
 
   const currentWorldId = context.getCurrentWorldId?.() ?? null
   const lines = Object.values(factions)
@@ -44,11 +39,20 @@ export function listGlobalPlayers(context: DevConsoleContext): CommandResult {
       if (b.id === BANDIT_FACTION_ID) return -1
       return (a.civilization || a.name).localeCompare(b.civilization || b.name)
     })
-    .map((faction, index) => {
-      const localPlayer = context.players.find(player => player.factionId === faction.id)
-      const presence = localPlayer ? `local units=${localPlayer.units.length} buildings=${localPlayer.buildings.length}` : 'not local'
+    .map(faction => {
+      const localPlayers = context.players.flatMap((player, index) =>
+        player.factionId === faction.id ? [{ player, index }] : []
+      )
+      const presence = localPlayers.length
+        ? localPlayers
+            .map(
+              ({ player, index }) =>
+                `playerIndex=${index} units=${player.units.length} buildings=${player.buildings.length}`
+            )
+            .join('; ')
+        : 'not local'
       return [
-        `${index + 1}. ${faction.name}`,
+        faction.name,
         `id=${faction.id}`,
         `civ=${faction.civilization ?? '-'}`,
         `color=${faction.color ?? '-'}`,
@@ -58,17 +62,7 @@ export function listGlobalPlayers(context: DevConsoleContext): CommandResult {
       ].join(' | ')
     })
 
-  return { ok: true, message: lines.length ? lines.join('\n') : 'No global players found' }
-}
-
-export function setCiv(context: DevConsoleContext, value: string): CommandResult {
-  const civ = value ? capitalizeFirstLetter(value.toLowerCase()) : ''
-  if (!civ) return { ok: false, message: 'Usage: civ <name>' }
-  context.player.civ = civ
-  void preloadBakedLpcUnitsForPlayers([context.player])
-  ;(context.player as DevPlayerState).refreshCivilizationAppearance?.()
-  context.menu.updateActionTarget?.()
-  return { ok: true, message: `Civilization set to ${civ}` }
+  return { ok: true, message: lines.length ? lines.join('\n') : 'No campaign factions found' }
 }
 
 export function killEntities(context: DevConsoleContext, target = 'enemies'): CommandResult {
@@ -132,13 +126,4 @@ export function toggleInstantMode(context: DevConsoleContext, value: string): Co
   const enabled = value === 'on' ? true : value === 'off' ? false : !map.instantMode
   map.instantMode = enabled
   return { ok: true, message: `Instant build/train: ${enabled ? 'on' : 'off'}` }
-}
-
-export function setPopMax(context: DevConsoleContext, value: string): CommandResult {
-  const { player, menu } = context
-  const amount = value != null ? parseInt(value) : POPULATION_MAX
-  if (!Number.isFinite(amount) || amount < 0) return { ok: false, message: 'Usage: popmax [amount]' }
-  ;(player as DevPlayerState).populationMax = amount
-  menu.updateTopbar()
-  return { ok: true, message: `Population max: ${amount}` }
 }

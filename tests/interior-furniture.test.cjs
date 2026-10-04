@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { furnishInterior, ensureInteriorDefaultBuildings } = require('./helpers/interiorFurnitureFixture.cjs')
-const atlas = require('../public/assets/graphics/buildings/deco/texture.json')
+const atlas = require('../public/assets/graphics/structures/decorations/texture.json')
 const { getBuildingAsset } = loadTsModule('app/lib/graphics/assets.ts')
 const { preservesInteriorPassages } = loadTsModule('app/lib/buildings/interiorFurniturePlacement.ts')
 

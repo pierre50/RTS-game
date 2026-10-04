@@ -17,7 +17,6 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     buildMenuDescription: 'Ouvre le menu des bâtiments disponibles.',
     requiresChief: 'Nécessite un chief',
     backMenuDescription: 'Revient au menu précédent.',
-    cancelTechnologyDescription: 'Annule la technologie en cours de recherche.',
 
     HouseDescription:
       'Abrite les habitants. Chaque lit installé et utilisable ajoute une place à la capacité du village.',
@@ -107,7 +106,6 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     buildMenuDescription: 'Opens the list of available buildings.',
     requiresChief: 'Requires a chief',
     backMenuDescription: 'Returns to the previous menu.',
-    cancelTechnologyDescription: 'Cancels the technology currently being researched.',
 
     HouseDescription: 'Shelters residents. Each usable bed placed inside adds one place to the village’s capacity.',
     BarracksDescription: 'Trains infantry units for melee combat.',

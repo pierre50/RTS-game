@@ -1,6 +1,6 @@
 import { Assets } from 'pixi.js'
 import { DevCommandRegistry } from './DevCommandRegistry'
-import { POPULATION_MAX, RESOURCE_STORAGE_NAMES } from '../constants'
+import { RESOURCE_STORAGE_NAMES } from '../constants'
 import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/audio/settings'
 import {
   addHeroInventoryEquipment,
@@ -11,13 +11,12 @@ import {
   healAll,
   killEntities,
   killResources,
-  listGlobalPlayers,
+  listLocalPlayers,
+  listFactions,
   performanceReport,
   setFpsCapDebug,
-  setCiv,
   setGameSpeed,
   toggleHeroInvincible,
-  setPopMax,
   setWeatherPhase,
   spawnAnimal,
   spawnBuilding,
@@ -27,7 +26,6 @@ import {
   toggleCoordsDebug,
   toggleFog,
   toggleInteriorWalls,
-  toggleFreeCamera,
   toggleGridDebug,
   toggleHeroAimDebug,
   toggleInstantMode,
@@ -43,7 +41,8 @@ import {
 import { toggleHeroCollisionDebug, toggleUnitMovementDebug } from './actions/debug'
 import { getAllHeroInventoryItems } from './actions/heroInventory'
 import { economyReport } from './actions/economy'
-import type { DevEntity, DevPlayer } from './types'
+import type { DevEntity } from './types'
+import { isAiDebugPlayer } from './actions/DebugOverlayRenderers'
 
 const RESOURCE_NAMES = ['all', 'food', ...RESOURCE_STORAGE_NAMES]
 
@@ -92,8 +91,9 @@ function registerCoreCommands(registry: DevCommandRegistry): void {
         case 'inventory':
           return { ok: true, message: getAllHeroInventoryItems().join('  ') }
         case 'players':
+          return listLocalPlayers(context)
         case 'factions':
-          return listGlobalPlayers(context)
+          return listFactions(context)
         default:
           return { ok: false, message: 'Usage: list <units|buildings|resources|inventories|players|factions>' }
       }
@@ -106,8 +106,13 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     name: 'spawn',
     aliases: ['unit'],
     usage: 'spawn <unit> [count] [playerIndex]',
-    describe: 'Spawn units near cursor',
-    complete: (_args, { player }) => Object.keys(player?.config?.units || {}),
+    describe: 'Spawn units near cursor (playerIndex from list players)',
+    complete: (args, { player, players }) =>
+      args.length === 2
+        ? players.map((_, index) => String(index))
+        : args.length === 0
+          ? Object.keys(player?.config?.units || {})
+          : [],
     run: ([type, count, playerIndex], context) => {
       if (!type) return { ok: false, message: 'Usage: spawn <unit> [count] [playerIndex]' }
       return spawnUnits(context, type, count, playerIndex)
@@ -160,8 +165,13 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     name: 'building',
     aliases: ['build'],
     usage: 'building <type> [playerIndex]',
-    describe: 'Spawn a building near cursor',
-    complete: (_args, { player }) => [...Object.keys(player?.config?.buildings || {}), ...DECO_BUILDING_COMPLETIONS],
+    describe: 'Spawn a building near cursor (playerIndex from list players)',
+    complete: (args, { player, players }) =>
+      args.length === 1
+        ? players.map((_, index) => String(index))
+        : args.length === 0
+          ? [...Object.keys(player?.config?.buildings || {}), ...DECO_BUILDING_COMPLETIONS]
+          : [],
     run: ([type, playerIndex], context) => {
       if (!type) return { ok: false, message: 'Usage: building <type> [playerIndex]' }
       return spawnBuilding(context, type, playerIndex)
@@ -192,7 +202,6 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
 }
 
 function registerGameplayCommands(registry: DevCommandRegistry): void {
-
   registry.register({
     name: 'nextday',
     aliases: ['daynext'],
@@ -215,13 +224,6 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
     describe: 'Print weather state or force a weather phase',
     complete: () => WEATHER_PHASES,
     run: ([phase], context) => setWeatherPhase(context, phase),
-  })
-
-  registry.register({
-    name: 'civ',
-    usage: 'civ <name>',
-    describe: 'Set player civilization',
-    run: ([value], context) => setCiv(context, value),
   })
 
   registry.register({
@@ -250,17 +252,9 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'instant',
     usage: 'instant [on|off]',
-    describe: 'Toggle instant build/train/tech',
+    describe: 'Toggle instant construction and training',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleInstantMode(context, value),
-  })
-
-  registry.register({
-    name: 'popmax',
-    usage: 'popmax [amount]',
-    describe: `Set player max population (default: ${POPULATION_MAX})`,
-    complete: () => [String(POPULATION_MAX)],
-    run: ([value], context) => setPopMax(context, value),
   })
 
   registry.register({
@@ -358,15 +352,6 @@ function registerDebugOverlayCommands(registry: DevCommandRegistry): void {
   })
 
   registry.register({
-    name: 'free-camera',
-    aliases: ['fcam'],
-    usage: 'free-camera [on|off]',
-    describe: 'Toggle hero free camera (arrow keys pan, off returns to hero)',
-    complete: () => ['on', 'off'],
-    run: ([value], context) => toggleFreeCamera(context, value),
-  })
-
-  registry.register({
     name: 'perf',
     usage: 'perf [on|off]',
     describe: 'Toggle performance debug overlay',
@@ -406,12 +391,12 @@ function registerDebugInfoCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'ai-info',
     aliases: ['aii'],
-    usage: 'ai-info [on|off|index]',
-    describe: 'Toggle a live AI debug overlay for all AI players or one by index',
+    usage: 'ai-info [on|off|playerIndex]',
+    describe: 'Inspect village AI for all players or a player index from list players',
     complete: (_args, context) => [
       'on',
       'off',
-      ...context.players.filter((p: DevPlayer) => p.type === 'ai').map((_, index: number) => `${index}`),
+      ...context.players.flatMap((player, index) => (isAiDebugPlayer(player) ? [String(index)] : [])),
     ],
     run: ([value], context) => aiInfo(context, value),
   })
@@ -428,7 +413,7 @@ function registerDebugInfoCommands(registry: DevCommandRegistry): void {
     name: 'terrain-frame',
     aliases: ['tframe'],
     usage: 'terrain-frame [on|off]',
-    describe: 'Show the terrain sprite sheet/frame under the cursor',
+    describe: 'Show terrain frame numbers on cells around the camera',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleTerrainFrameDebug(context, value),
   })

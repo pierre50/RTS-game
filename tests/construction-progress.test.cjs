@@ -7,9 +7,47 @@ const {
   applyConstructionWork,
   advanceMaterialConstruction,
   createConstructionMaterials,
+  constructionWorkPoints,
+  constructionWorkTotal,
 } = loadTsModule('app/lib/economy/constructionMaterials.ts')
+const { advanceConstruction } = loadTsModule('app/lib/economy/workRules.ts')
 
-test('construction starts at zero and counts only work beyond the initial hit point', () => {
+test('work rate and material costs are independent of health, even for fragile long builds', () => {
+  for (const health of [2, 20, 10000]) {
+    const site = {
+      hitPoints: health,
+      totalHitPoints: health,
+      constructionProgress: 0,
+      constructionWorkRequired: 2000,
+      constructionMaterials: createConstructionMaterials({ wood: 100 }),
+    }
+    const bag = { wood: 100 }
+    for (let impact = 0; impact < 1000; impact++) {
+      const next = advanceConstruction(constructionWorkPoints(site), constructionWorkTotal(site))
+      applyConstructionWork(site, advanceMaterialConstruction(site, next, [bag]))
+    }
+    assert.equal(site.constructionProgress, 0.5)
+    assert.equal(site.hitPoints, health)
+    assert.equal(bag.wood, 50)
+  }
+})
+
+test('renovations need no health fields to progress or consume materials', () => {
+  const site = {
+    hitPoints: 12,
+    totalHitPoints: 20,
+    isBuilt: true,
+    buildingUpgrade: { targetLevel: 1, constructionTime: 10, constructionProgress: 0 },
+    constructionMaterials: createConstructionMaterials({ stone: 10 }),
+  }
+  const bag = { stone: 10 }
+  applyConstructionWork(site, advanceMaterialConstruction(site, 5, [bag]))
+  assert.equal(site.buildingUpgrade.constructionProgress, 0.5)
+  assert.equal(site.hitPoints, 12)
+  assert.equal(bag.stone, 5)
+})
+
+test('legacy progression excludes the former initial hit point', () => {
   for (const totalHitPoints of [2, 20, 101, 300]) {
     assert.equal(constructionProgressPercentage({ hitPoints: 1, totalHitPoints }), 0)
     assert.equal(constructionProgressPercentage({ hitPoints: 1 + (totalHitPoints - 1) / 2, totalHitPoints }), 50)
@@ -18,7 +56,7 @@ test('construction starts at zero and counts only work beyond the initial hit po
 })
 
 test('new construction starts at zero even with full health and survives damage and reload', () => {
-  let site = { hitPoints: 20, totalHitPoints: 20, constructionProgress: 0 }
+  let site = { hitPoints: 20, totalHitPoints: 20, constructionProgress: 0, constructionWorkRequired: 20 }
   assert.equal(constructionProgressPercentage(site), 0)
   applyConstructionWork(site, 10)
   assert.equal(constructionProgressPercentage(site), 50)
@@ -29,10 +67,16 @@ test('new construction starts at zero even with full health and survives damage 
   assert.equal(constructionProgressPercentage(site), 50)
   applyConstructionWork(site, 20)
   assert.equal(constructionProgressPercentage(site), 100)
+  assert.equal(site.hitPoints, 15)
 })
 
 test('legacy migration is done once and preserves work, health and materials', () => {
-  const site = { hitPoints: 51, totalHitPoints: 101, constructionMaterials: createConstructionMaterials({ wood: 10 }) }
+  const site = {
+    hitPoints: 51,
+    totalHitPoints: 101,
+    constructionTime: 101,
+    constructionMaterials: createConstructionMaterials({ wood: 10 }),
+  }
   site.constructionMaterials.consumed.wood = 5
   initializeConstructionProgress(site)
   assert.equal(site.constructionProgress, 0.5)
@@ -47,14 +91,14 @@ test('legacy migration is done once and preserves work, health and materials', (
   assert.equal(site.constructionMaterials.consumed.wood, 10)
 })
 
-test('destroyed sites cannot be resurrected by construction and repairs do not change completed work', () => {
+test('construction cannot resurrect destroyed sites or repair completed buildings', () => {
   const site = { hitPoints: 0, totalHitPoints: 20, constructionProgress: 0.5 }
   applyConstructionWork(site, 20)
   assert.equal(site.hitPoints, 0)
   assert.equal(site.constructionProgress, 0.5)
   const built = { hitPoints: 10, totalHitPoints: 20, isBuilt: true, constructionProgress: 1 }
   applyConstructionWork(built, 15)
-  assert.equal(built.hitPoints, 15)
+  assert.equal(built.hitPoints, 10)
   assert.equal(built.constructionProgress, 1)
 })
 
@@ -72,12 +116,15 @@ test('legacy renovations migrate to independent progress without changing health
 })
 
 test('legacy migration waits for configured health capacity when the save omits it', () => {
-  const site = { hitPoints: 51, isBuilt: false }
+  const site = { hitPoints: 51, isBuilt: false, constructionTime: 40 }
   initializeConstructionProgress(site)
   assert.equal(site.constructionProgress, undefined)
+  assert.equal(site.constructionWorkRequired, undefined)
   site.totalHitPoints = 101
   initializeConstructionProgress(site)
   assert.equal(site.constructionProgress, 0.5)
+  assert.equal(site.constructionWorkRequired, 40)
+  assert.equal(site.hitPoints, 101)
 })
 
 test('live completion follows construction progress, independently of full or damaged health', () => {

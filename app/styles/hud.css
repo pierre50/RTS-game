@@ -262,8 +262,6 @@
   white-space: nowrap;
 }
 
-
-
 .hero-status-value {
   position: absolute;
   inset: 0;
@@ -1994,8 +1992,6 @@ body.hero-cursor-hidden {
   width: 20px;
   height: 20px;
 }
-
-
 
 .depot-reserves {
   display: grid;

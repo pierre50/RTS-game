@@ -9,7 +9,13 @@ export function getFurnitureContainer(building: BuildingEntity): BuildingEntity 
 
 export function canHeroDemolishBuilding(building: BuildingEntity): boolean {
   const heroOwner = building.context?.controls?.heroUnit?.owner
-  if (!heroOwner || !building.owner || building.isDead || building.isDestroyed || building.type === BUILDING_TYPES.trap)
+  if (
+    !heroOwner ||
+    !building.owner ||
+    building.isDead ||
+    building.isDestroyed ||
+    (building.type === BUILDING_TYPES.trap && building.isBuilt)
+  )
     return false
   if (isInteriorFurniture(building.type)) {
     if (building.owner !== heroOwner) return false
@@ -22,7 +28,7 @@ export function canHeroDemolishBuilding(building: BuildingEntity): boolean {
     return true
   }
   return (
-    !building.indestructible &&
+    (!building.isBuilt || !building.indestructible) &&
     (building.owner === heroOwner || (typeof heroOwner.team === 'number' && heroOwner.team === building.owner.team))
   )
 }

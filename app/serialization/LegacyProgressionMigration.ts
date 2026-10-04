@@ -3,7 +3,13 @@ import type { SaveEntityState, SavePlayerState } from '../types/save'
 
 /** Legacy ages are read only at the save boundary and never retained in runtime state. */
 export function migrateLegacyProgression(player: Pick<SavePlayerState, 'forgeUpgrades' | 'buildings'>): void {
-  const legacy = player as typeof player & { age?: number; ageRulesVersion?: number }
+  const legacy = player as typeof player & {
+    age?: number
+    ageRulesVersion?: number
+    technologies?: unknown
+    researchTechnology?: unknown
+    researchLoading?: unknown
+  }
   const rawAge =
     typeof legacy.age === 'number' && Number.isFinite(legacy.age) ? Math.max(0, Math.min(3, Math.floor(legacy.age))) : 0
   const canonicalAge = legacy.ageRulesVersion === 1 ? Math.min(rawAge, 2) : Math.min(rawAge, 1) + Number(rawAge === 3)
@@ -14,6 +20,9 @@ export function migrateLegacyProgression(player: Pick<SavePlayerState, 'forgeUpg
   player.forgeUpgrades = normalizeForgeUpgrades(player)
   for (const building of player.buildings ?? []) migrateBuilding(building, canonicalAge)
   delete legacy.age
+  delete legacy.technologies
+  delete legacy.researchTechnology
+  delete legacy.researchLoading
   delete legacy.ageRulesVersion
 }
 
@@ -21,6 +30,7 @@ function migrateBuilding(building: SaveEntityState, ownerLegacyAge: number): voi
   if (!building || typeof building !== 'object' || Array.isArray(building))
     throw new Error('Invalid save file: building is invalid.')
   const legacy = building as SaveEntityState & {
+    technology?: unknown
     buildingAge?: number
     assetAge?: number
     buildingUpgrade?: { targetAge?: number }
@@ -32,6 +42,7 @@ function migrateBuilding(building: SaveEntityState, ownerLegacyAge: number): voi
     upgrade.targetLevel ??= upgrade.targetAge ?? 1
     delete upgrade.targetAge
   }
+  delete legacy.technology
   delete legacy.buildingAge
   delete legacy.assetAge
   if (building.interiorBuildings != null && !Array.isArray(building.interiorBuildings))

@@ -42,6 +42,7 @@ export type CombatEntity = {
   devInvincible?: boolean
   indestructible?: boolean
   isBuilt?: boolean
+  constructionWorkRequired?: number
   constructionProgress?: number
   buildingUpgrade?: BuildingUpgrade
   isDead?: boolean

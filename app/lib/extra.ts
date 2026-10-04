@@ -98,13 +98,6 @@ export const debounce = <TArgs extends TimerArg[]>(
   }
 }
 
-export function capitalizeFirstLetter(string: string): string {
-  if (typeof string !== 'string') {
-    throw new TypeError('Expected a string')
-  }
-  return string.length > 0 ? string.charAt(0).toUpperCase() + string.slice(1) : ''
-}
-
 type VisibleInstance = GridPosition & {
   context?: {
     controls?: { heroUnit?: UnitEntity | null } | null

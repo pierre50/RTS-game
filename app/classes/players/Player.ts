@@ -5,23 +5,8 @@ import type { SettlementType, DevelopmentMode } from '../../config/settlementPro
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { Assets } from 'pixi.js'
 import { createPlayerData } from '../../config/playerConfig'
-import {
-  ACTION_TYPES,
-  FADE_DURATION_MS,
-  FAMILY_TYPES,
-  PLAYER_TYPES,
-  POPULATION_MAX,
-  SOUND_CUES,
-  UNIT_TYPES,
-} from '../../constants'
-import {
-  canUpdateMinimap,
-  getActionCondition,
-  getHexColor,
-  playSoundCue,
-  updateInstanceVisibility,
-  uuidv4,
-} from '../../lib'
+import { FADE_DURATION_MS, FAMILY_TYPES, PLAYER_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
+import { canUpdateMinimap, getHexColor, updateInstanceVisibility, uuidv4 } from '../../lib'
 import { playUiSound } from '../../lib/audio/uiSound'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
@@ -42,7 +27,7 @@ import { Building } from '../building/Building'
 import type { UnitSpawnOptions } from '../unit/Unit'
 import { buyPlayerBuilding, plantPlayerWheatField } from './PlayerBuildingPlacement'
 import { initializePlayerRelations, initializePlayerResources } from './PlayerInitialization'
-import { isBuildingEligible, refreshCivilizationAppearance } from './PlayerProgression'
+import { isBuildingEligible } from './PlayerBuildingEligibility'
 import { createPlayerUnit } from './PlayerUnitCreation'
 
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
@@ -123,7 +108,7 @@ export class Player implements PlayerLike {
     Object.assign(this, options)
     initializePlayerRelations(this, options)
 
-    this.populationMax = this.populationMax || (map.instantMode ? POPULATION_MAX : 0)
+    this.populationMax = this.populationMax ?? 0
 
     if (this.type === PLAYER_TYPES.ai || this.type === PLAYER_TYPES.human) {
       const factions = context.getCampaignFactions?.()
@@ -190,40 +175,12 @@ export class Player implements PlayerLike {
     notifyVillageStateChanged(this)
     updateInstanceVisibility(building)
     fadeIn(building, FADE_DURATION_MS)
-    if (this.isPlayed) {
-      let hasSentWorker = false
-      let hasSentOther = false
-
-      for (const unit of this.selectedUnits) {
-        if (unit.type === UNIT_TYPES.villager) {
-          if (getActionCondition(unit, building, ACTION_TYPES.build)) {
-            hasSentWorker = true
-            unit.sendToBuilding(building)
-          }
-        } else {
-          unit.sendTo(building)
-          hasSentOther = true
-        }
-      }
-      if (hasSentOther) {
-        playSoundCue(SOUND_CUES.unit.militaryCommand)
-        return
-      } else if (hasSentWorker) {
-        const voice = this.config.units.Villager?.sounds?.buildCommand
-        playSoundCue(voice)
-        return
-      }
-    }
 
     return building
   }
 
   get villagerPopulation() {
     return this.units.filter(unit => unit.type === UNIT_TYPES.villager && !unit.isDead && !unit.isDestroyed).length
-  }
-
-  refreshCivilizationAppearance() {
-    refreshCivilizationAppearance(this)
   }
 
   otherPlayers() {

@@ -234,7 +234,6 @@ export interface MinimapHostLike {
 export interface ControlsLike extends Container {
   context: GameContextLike
   camera: { x: number; y: number }
-  setFreeCamera?(enabled: boolean): void
   mouse: { x: number; y: number; prevent?: boolean }
   mouseBuilding?: (Container & { type?: string; isFree?: boolean }) | null
   entityPreview?: EntityPreviewLike | null
@@ -275,8 +274,6 @@ export interface ControlsLike extends Container {
   closeAnyHeroPanel(): boolean
   beginNpcGoTo?(npcs: UnitEntity[]): void
   openHeroEntityInteraction(target?: RuntimeEntity | null): boolean
-  freeCameraActive?: boolean
-  setFreeCamera?(enabled: boolean): void
 }
 
 export type ControlPointerEvent = {

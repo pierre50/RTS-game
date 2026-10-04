@@ -21,4 +21,3 @@ export const FADE_DURATION_MS = 120
 // Seconds a projectile that missed and stuck in the ground sticks around before it starts
 // fading away (purely decorative — see Projectile.landOnGround).
 export const ARROW_GROUND_TIME = 3
-export const POPULATION_MAX = 200

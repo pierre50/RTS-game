@@ -207,11 +207,7 @@ export function resolveHeroProximityInteraction({
     isHeroInteractionTargetReachable(hero, null, openEntityTarget)
   ) {
     if (openEntityTarget.family === FAMILY_TYPES.building) {
-      if (
-        (openEntityTarget.type === BUILDING_TYPES.chest && !(openEntityTarget as BuildingEntity).isBuilt) ||
-        openEntityTarget.type === BUILDING_TYPES.trap
-      )
-        return null
+      if (openEntityTarget.type === BUILDING_TYPES.trap && (openEntityTarget as BuildingEntity).isBuilt) return null
       return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: openEntityTarget }
     }
     if (openEntityTarget.family === FAMILY_TYPES.resource && openEntityTarget.interface?.info) {

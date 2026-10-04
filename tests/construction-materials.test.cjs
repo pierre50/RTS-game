@@ -18,7 +18,10 @@ const site = (type = 'House', cost = { wood: 40, stone: 10 }) => ({
   i: 10,
   j: 10,
   isBuilt: false,
-  hitPoints: 1,
+  hitPoints: 101,
+  constructionTime: 101,
+  constructionWorkRequired: 101,
+  constructionProgress: 0,
   totalHitPoints: 101,
   constructionMaterials: createConstructionMaterials(cost),
 })
@@ -35,7 +38,7 @@ test('construction progresses in proportion to supplied materials, with exact fi
   const building = site()
   const stock = { wood: 20, stone: 5 }
   applyConstructionWork(building, advanceMaterialConstruction(building, 101, [stock]))
-  assert.equal(building.hitPoints, 51)
+  assert.equal(building.constructionProgress, 0.5)
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 20, stone: 5 })
   assert.equal(advanceMaterialConstruction(building, 101, [stock]), 50.5)
   Object.assign(stock, { wood: 20, stone: 5 })
@@ -48,12 +51,15 @@ test('construction progresses in proportion to supplied materials, with exact fi
 test('a builder keeps unused ingredients and consumes only each hit fraction', () => {
   const building = site('TownCenter', { wood: 100 })
   building.totalHitPoints = 501
+  building.hitPoints = 501
+  building.constructionTime = building.constructionWorkRequired = 501
   const bag = { wood: 20, stone: 7 }
   applyConstructionWork(building, advanceMaterialConstruction(building, 5, [bag]))
   assert.deepEqual(bag, { wood: 19, stone: 7 })
   assert.deepEqual(building.constructionMaterials.delivered, {})
   applyConstructionWork(building, advanceMaterialConstruction(building, 501, [bag]))
-  assert.equal(building.hitPoints, 101)
+  assert.equal(building.hitPoints, 501)
+  assert.equal(building.constructionProgress, 0.2)
   assert.equal(bag.wood, 0)
   assert.equal(bag.stone, 7)
 })
@@ -70,7 +76,7 @@ test('wood and stone independently advance their share, without substituting for
   const building = site('House', { wood: 100, stone: 100 })
   const bag = { wood: 120 }
   applyConstructionWork(building, advanceMaterialConstruction(building, 101, [bag]))
-  assert.equal(building.hitPoints, 51)
+  assert.equal(building.constructionProgress, 0.5)
   assert.equal(bag.wood, 20)
   assert.equal(advanceMaterialConstruction(building, 101, [bag]), 50.5)
   assert.deepEqual(constructionBagNeeds(building, bag, 10), { stone: 10 })
@@ -94,7 +100,7 @@ test('many small hits consume exactly the recipe even after a reload', () => {
 })
 
 test('construction never charges legacy prepaid sites again', () => {
-  const old = { hitPoints: 40, totalHitPoints: 100, isBuilt: false }
+  const old = { hitPoints: 40, totalHitPoints: 100, constructionTime: 100, isBuilt: false }
   assert.equal(advanceMaterialConstruction(old, 80), 80)
 })
 

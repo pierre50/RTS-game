@@ -3,7 +3,7 @@ import { createConstructionMaterials } from '../lib/economy/constructionMaterial
 import { BuildingPlacementHelp } from '../ui/BuildingPlacementHelp'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { Assets, Container, Sprite } from 'pixi.js'
-import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
+import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES } from '../constants'
 import { cartesianToIsometric, getTexture } from '../lib'
 import { isTrapObservedBySight } from '../lib/buildings/trapRules'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
@@ -11,7 +11,7 @@ import { addHeroInventoryItem, removeHeroInventoryItem } from '../lib/equipment/
 import { t } from '../lib/lang'
 import { getCellMapPoint } from '../lib/mapSpaces'
 import type { ControlsLike } from '../types/context'
-import type { PlaceableBuildingConfig, UnitEntity } from '../types/entities'
+import type { PlaceableBuildingConfig } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlacementOwner } from '../types/player'
 import { BuildingPlacementRules } from './BuildingPlacementRules'
@@ -319,7 +319,7 @@ export class BuildingPlacer {
     if (!cells.length) return true
 
     const config = getPlayerBuildingConfig(owner, BUILDING_TYPES.smallWall)!
-    const walls = cells.map(cell =>
+    cells.forEach(cell =>
       owner.createBuilding({
         i: cell.i,
         j: cell.j,
@@ -329,24 +329,6 @@ export class BuildingPlacer {
         constructionMaterials: map.instantMode ? undefined : createConstructionMaterials(config.cost),
       })
     )
-
-    const builders = owner.selectedUnits.filter((unit: UnitEntity) => unit.type === UNIT_TYPES.villager)
-    builders.forEach((builder: UnitEntity, index: number) => {
-      const start = Math.floor((index * walls.length) / builders.length)
-      const end = Math.floor(((index + 1) * walls.length) / builders.length)
-      const assignedWalls = walls.slice(start, end)
-      const first = assignedWalls[0]
-      const last = assignedWalls.at(-1)
-      if (
-        first &&
-        last &&
-        Math.abs(builder.i - last.i) + Math.abs(builder.j - last.j) <
-          Math.abs(builder.i - first.i) + Math.abs(builder.j - first.j)
-      ) {
-        assignedWalls.reverse()
-      }
-      if (assignedWalls.length) builder.sendToBuildingQueue?.(assignedWalls)
-    })
 
     owner.isPlayed && menu.updateTopbar()
     controls.removeMouseBuilding()

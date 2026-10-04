@@ -157,7 +157,9 @@ export function planOfflineBuildings(
           isBuilt: false,
           constructionMaterials: createConstructionMaterials(config.cost),
           constructionProgress: 0,
-          hitPoints: 1,
+          constructionWorkRequired: Number(config.constructionTime),
+          constructionTime: Number(config.constructionTime),
+          hitPoints: Number(config.totalHitPoints),
           totalHitPoints: Number(config.totalHitPoints),
         }
         player.buildings ??= []

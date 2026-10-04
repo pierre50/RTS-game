@@ -10,10 +10,13 @@ export type BuildingUpgrade = {
   /** Legacy saves only. */
   hitPoints?: number
   constructionProgress?: number
-  totalHitPoints: number
+  /** Legacy renovation saves only. */
+  totalHitPoints?: number
   constructionTime: number
 }
 export type MaterialSite = {
+  constructionTime?: number
+  constructionWorkRequired?: number
   /** Completed construction work, from 0 to 1, independent of health. */
   constructionProgress?: number
   buildingUpgrade?: BuildingUpgrade
@@ -34,24 +37,50 @@ export function constructionProgress(site: MaterialSite): number {
   return Math.max(0, Math.min(1, ((work.hitPoints ?? 1) - 1) / (total - 1)))
 }
 
-/** Freeze the legacy conversion before health can change. */
+/** Convert legacy structural health once, preserving damage and completed work. */
 export function initializeConstructionProgress(site: MaterialSite): void {
   if (site.constructionProgress == null && (site.isBuilt || site.totalHitPoints != null)) {
     site.constructionProgress = constructionProgress({ ...site, buildingUpgrade: undefined })
   }
+  if (site.constructionWorkRequired == null && site.constructionTime != null && site.totalHitPoints != null) {
+    if (
+      !site.isBuilt &&
+      !site.isDead &&
+      !site.isDestroyed &&
+      (site.hitPoints ?? 0) > 0 &&
+      site.totalHitPoints != null
+    ) {
+      const progress = site.constructionProgress ?? 0
+      site.hitPoints = Math.min(
+        site.totalHitPoints,
+        (site.hitPoints ?? 0) + (1 - progress) * Math.max(0, site.totalHitPoints - 1)
+      )
+    }
+    site.constructionWorkRequired = Math.max(1, site.constructionTime)
+  }
   if (site.buildingUpgrade) {
     site.buildingUpgrade.constructionProgress = constructionProgress(site)
     delete site.buildingUpgrade.hitPoints
+    delete site.buildingUpgrade.totalHitPoints
   }
 }
 
+/** Work units are independent of health; one unmodified work impact supplies one unit. */
+export function constructionWorkTotal(site: MaterialSite): number {
+  return Math.max(
+    1,
+    site.buildingUpgrade?.constructionTime ?? site.constructionWorkRequired ?? site.constructionTime ?? 1
+  )
+}
+
 /** Renovation work is independent of the health and availability of the building. */
-export function constructionWorkSite(site: MaterialSite): MaterialSite {
+function constructionWorkSite(site: MaterialSite): MaterialSite {
   return site.buildingUpgrade
     ? {
         ...site,
         ...site.buildingUpgrade,
         constructionProgress: constructionProgress(site),
+        constructionWorkRequired: constructionWorkTotal(site),
         isBuilt: false,
         buildingUpgrade: undefined,
       }
@@ -61,32 +90,18 @@ export function hasConstructionWork(site: MaterialSite): boolean {
   return (!site.isBuilt || Boolean(site.buildingUpgrade)) && !site.isDead && !site.isDestroyed
 }
 export function constructionWorkPoints(site: MaterialSite): number {
-  if (site.isBuilt && !site.buildingUpgrade) return site.hitPoints ?? 0 // Repairs use health.
-  return constructionProgress(site) * (site.buildingUpgrade?.totalHitPoints ?? site.totalHitPoints ?? 0)
+  return constructionProgress(site) * constructionWorkTotal(site)
 }
 export function constructionProgressPercentage(site: MaterialSite): number {
   return 100 * constructionProgress(site)
 }
 
-/** Commit work separately from health; construction adds structure without erasing prior damage. */
+/** Construction never heals damage. Completed buildings are repaired separately. */
 export function applyConstructionWork(site: MaterialSite, points: number): void {
-  if (site.isDead || site.isDestroyed || (site.hitPoints ?? 1) <= 0) return
-  if (site.isBuilt && !site.buildingUpgrade) {
-    site.hitPoints = Math.min(site.totalHitPoints ?? 0, points)
-    return
-  }
+  if (site.isDead || site.isDestroyed || (site.hitPoints ?? 1) <= 0 || (site.isBuilt && !site.buildingUpgrade)) return
   initializeConstructionProgress(site)
   const work = site.buildingUpgrade ?? site
-  const total = work.totalHitPoints ?? 0
-  if (!(total > 0)) return
-  const before = constructionProgress(site)
-  const after = Math.max(before, Math.min(1, points / total))
-  work.constructionProgress = after
-  if (!site.buildingUpgrade) {
-    const structure = Math.max(0, total - 1)
-    const damage = 1 + before * structure - (site.hitPoints ?? 1)
-    site.hitPoints = Math.min(total, 1 + after * structure - (Math.abs(damage) < 1e-9 ? 0 : damage))
-  }
+  work.constructionProgress = Math.max(constructionProgress(site), Math.min(1, points / constructionWorkTotal(site)))
 }
 
 const FOOD = ['food', 'berry', 'wheat', 'meat'] as const
@@ -131,7 +146,7 @@ export function advanceMaterialConstruction(
   site = constructionWorkSite(site)
   stores = [...new Set(stores)]
   const before = constructionWorkPoints(site)
-  const total = site.totalHitPoints ?? 0
+  const total = constructionWorkTotal(site)
   const state = site.constructionMaterials
   if (!state || site.isBuilt) return Math.min(total, requestedWork)
   if (!(total > 0)) return before

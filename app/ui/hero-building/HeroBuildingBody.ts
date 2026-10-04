@@ -9,6 +9,10 @@ import type { BuildingEntity } from '../../types/entities'
 import type { HeroBuildingMenuManager } from '../HeroBuildingMenuManager'
 
 export function renderHeroBuildingBody(host: HeroBuildingMenuManager, building: BuildingEntity): boolean {
+  if (!building.isBuilt) {
+    host.transferPanel = null
+    return false
+  }
   const reserves = createHeroDepotReservesBody(building, host.menu, () => host.render())
   if (reserves) {
     host.transferPanel = null

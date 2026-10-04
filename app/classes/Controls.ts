@@ -49,7 +49,6 @@ export default class Controls extends Container implements ControlsLike {
   keySpeed: number
   heroDirectionLockActive: boolean
   shiftKeyActive: boolean
-  freeCameraActive: boolean
   heroController: HeroController
   heroInteractionController: HeroInteractionController
   gamepadInput: GamepadHeroInput
@@ -106,7 +105,6 @@ export default class Controls extends Container implements ControlsLike {
     this.keySpeed = 0
     this.heroDirectionLockActive = false
     this.shiftKeyActive = false
-    this.freeCameraActive = false
     this.heroController = new HeroController(this)
     this.heroInteractionController = new HeroInteractionController(this)
     this.gamepadInput = new GamepadHeroInput(this)
@@ -381,7 +379,7 @@ export default class Controls extends Container implements ControlsLike {
 
   moveCamera(dir: string, moveSpeed: number, isSpeedDivided: boolean, deltaScale = 1): void {
     if (this.isInteractionBlocked()) return
-    this.cameraController.move(dir, moveSpeed, isSpeedDivided, deltaScale, !this.freeCameraActive)
+    this.cameraController.move(dir, moveSpeed, isSpeedDivided, deltaScale)
   }
 
   moveCameraWithMouse(evt: MouseEvent): void {
@@ -412,14 +410,6 @@ export default class Controls extends Container implements ControlsLike {
 
   isHeroControlActive(): boolean {
     return !this.context.timeSkip?.active && this.heroController.isActive()
-  }
-
-  setFreeCamera(enabled: boolean): void {
-    this.freeCameraActive = enabled
-    this.keysPressed = {}
-    this.keyPressedCount = 0
-    this.keySpeed = 0
-    if (!enabled) this.focusHeroCamera()
   }
 
   setRuntimeInputEnabled(enabled: boolean): void {

@@ -461,10 +461,6 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToDelivery(target, returnTaskOverride)
   }
 
-  sendToBuildingQueue(targets: BuildingEntity[]) {
-    return this.unitCommands.sendToBuildingQueue(targets)
-  }
-
   continueBuildingQueue() {
     return this.unitCommands.continueBuildingQueue()
   }

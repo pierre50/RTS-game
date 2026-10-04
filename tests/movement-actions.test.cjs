@@ -695,7 +695,6 @@ test('failed train entry after building cleanup stops without confusion fallback
     loading: null,
     owner: unit.owner,
     queue: [],
-    technology: null,
     trainingUnit: null,
     type: 'Barracks',
     units: ['Fantassin'],
@@ -760,7 +759,6 @@ test('busy training building leaves arrived trainee waiting without retry loop',
     loading: 10,
     owner: unit.owner,
     queue: ['Fantassin'],
-    technology: null,
     trainingUnit: {},
     type: 'Barracks',
     units: ['Fantassin'],
@@ -1139,7 +1137,6 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
     label: 'player',
     population: 0,
     units: [],
-    technologies: [],
   }
   const target = {
     action: constants.ACTION_TYPES.attack,
@@ -1248,7 +1245,7 @@ test('converted player units remove their stale health bar when captured by anot
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = { color: 'blue', isPlayed: true, label: 'player', population: 1, units: [] }
-  const newOwner = { color: 'red', label: 'enemy', population: 0, units: [], technologies: [] }
+  const newOwner = { color: 'red', label: 'enemy', population: 0, units: [] }
   const target = {
     family: constants.FAMILY_TYPES.unit,
     owner: oldOwner,
@@ -1383,7 +1380,6 @@ test('converted buildings keep their source civilization and their own level ass
     selected: false,
     sprite: {},
     stopInterval: () => calls.push(['stopInterval']),
-    technologies: [],
     type: 'TownCenter',
     units: [],
   }
@@ -4986,7 +4982,7 @@ test('hero custom tool work waits for the animation release frame before recover
   )
 })
 
-test('hero building health bar refreshes while construction progresses', () => {
+test('hero construction refreshes the display without treating work as healing', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -5017,7 +5013,8 @@ test('hero building health bar refreshes while construction progresses', () => {
   })
   const building = {
     family: constants.FAMILY_TYPES.building,
-    hitPoints: 1,
+    hitPoints: 10,
+    constructionProgress: 0,
     totalHitPoints: 10,
     constructionTime: 10,
     selected: false,
@@ -5040,10 +5037,9 @@ test('hero building health bar refreshes while construction progresses', () => {
   new UnitActions(unit).getAction(constants.ACTION_TYPES.build)
 
   assert.equal(building.constructionProgress, 0.1)
-  assert.equal(building.hitPoints, 1.9)
+  assert.equal(building.hitPoints, 10)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
-    ['hitPointGain', constants.FAMILY_TYPES.building, 1.9 - 1],
     ['drawHealthBar'],
     ['updateHitPoints', constants.ACTION_TYPES.build],
   ])
@@ -5084,7 +5080,8 @@ test('building work waits for the hammer animation release frame', () => {
   })
   const building = {
     family: constants.FAMILY_TYPES.building,
-    hitPoints: 1,
+    hitPoints: 10,
+    constructionProgress: 0,
     totalHitPoints: 10,
     constructionTime: 10,
     selected: false,
@@ -5111,15 +5108,16 @@ test('building work waits for the hammer animation release frame', () => {
     calls.filter(([type]) => type === 'releaseFrame'),
     [['releaseFrame', 8]]
   )
-  assert.equal(building.hitPoints, 1)
+  assert.equal(building.hitPoints, 10)
+  assert.equal(building.constructionProgress, 0)
 
   buildTick()
 
   assert.equal(building.constructionProgress, 0.1)
-  assert.equal(building.hitPoints, 1.9)
+  assert.equal(building.hitPoints, 10)
   assert.deepEqual(
     calls.filter(([type]) => type === 'hitPointGain'),
-    [['hitPointGain', constants.FAMILY_TYPES.building, 1.9 - 1]]
+    []
   )
 })
 

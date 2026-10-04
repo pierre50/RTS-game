@@ -2,6 +2,8 @@ import { refreshPopulationCapacity } from '../../../lib/buildings/buildingOccupa
 import { completeBuildingUpgrade } from '../../../lib/buildings/buildingUpgrade'
 import {
   constructionWorkPoints,
+  constructionWorkTotal,
+  initializeConstructionProgress,
   applyConstructionWork,
   constructionProgress,
 } from '../../../lib/economy/constructionMaterials'
@@ -13,7 +15,8 @@ import { collectiveHarvestBudget } from '../../../lib/economy/collectiveTasks'
 import { advanceMaterialConstruction } from '../../../lib/economy/constructionMaterials'
 import {
   advanceConstruction,
-  getConstructionGain,
+  getRepairGain,
+  advanceRepair,
   getResourceGatherSwings,
   getWorkGatherAmount,
   harvestWithinBudget,
@@ -61,21 +64,26 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
     rules.buildingConfig(playerIndex, target.type),
     target.buildingUpgrade?.targetLevel ?? getBuildingLevel(target)
   )
-  const total = target.buildingUpgrade?.totalHitPoints ?? target.totalHitPoints ?? Number(buildingConfig.totalHitPoints)
-  const constructionTime = Number(buildingConfig.constructionTime)
-  if (!(total > 0) || !(constructionTime > 0)) return { budget, status: 'skip' }
+  const constructionTime = target.buildingUpgrade?.constructionTime ?? Number(buildingConfig.constructionTime)
+  if (!(constructionTime > 0) || target.isDead || target.isDestroyed || (target.hitPoints ?? 1) <= 0)
+    return { budget, status: 'skip' }
+  target.totalHitPoints ??= Number(buildingConfig.totalHitPoints)
+  target.constructionTime ??= constructionTime
+  initializeConstructionProgress(target)
+  const repairing = Boolean(target.isBuilt && !target.buildingUpgrade)
+  const total = repairing ? target.totalHitPoints : constructionWorkTotal(target)
   const multiplier = getBuildRateXpMultiplier(unit) * getForgeBuildMultiplier(player, unit.type)
-  const gain = getConstructionGain(total, constructionTime, multiplier)
-  if (!gain) return { budget, status: 'skip' }
-  if (!target.buildingUpgrade) target.totalHitPoints = total
-  const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - constructionWorkPoints(target)) / gain))
-  const next = advanceMaterialConstruction(
-    target,
-    advanceConstruction(constructionWorkPoints(target), total, constructionTime, multiplier, impacts),
-    [unit.inventory?.resources ?? {}]
-  )
+  const gain = repairing ? getRepairGain(total, constructionTime, multiplier) : multiplier
+  if (!(gain > 0)) return { budget, status: 'skip' }
+  const before = repairing ? (target.hitPoints ?? 0) : constructionWorkPoints(target)
+  const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - before) / gain))
+  const requested = repairing
+    ? advanceRepair(before, total, constructionTime, multiplier, impacts)
+    : advanceConstruction(before, total, multiplier, impacts)
+  const next = repairing ? requested : advanceMaterialConstruction(target, requested, [unit.inventory?.resources ?? {}])
   budget -= impacts * cycle
-  applyConstructionWork(target, next)
+  if (repairing) target.hitPoints = next
+  else applyConstructionWork(target, next)
   if (target.buildingUpgrade) {
     if (completeBuildingUpgrade(target, rules.buildingConfig(playerIndex, target.type))) {
       refreshPopulationCapacity(player)

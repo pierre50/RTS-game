@@ -289,36 +289,6 @@ test('tracks visible cells from the active interior space instead of the outside
   assert.equal(controller.visibleCells.has(interiorCell), true)
 })
 
-test('can move the camera without edge-slide adjustments', () => {
-  const CameraController = loadCameraController()
-  const mapSize = 80
-  const map = {
-    grid: Array.from({ length: mapSize + 1 }, () =>
-      Array.from({ length: mapSize + 1 }, () => ({ corpses: new Set() }))
-    ),
-    setCoordinate: () => {},
-    size: mapSize,
-    updateRenderChunks: () => {},
-  }
-  const controller = new CameraController({
-    app: { screen: { width: 640, height: 360 } },
-    map,
-    player: { views: {} },
-  })
-  controller.camera = { x: 900, y: 900 }
-  const previousRequestAnimationFrame = global.requestAnimationFrame
-  global.requestAnimationFrame = () => 0
-
-  try {
-    controller.move('left', 20, false, 1, false)
-  } finally {
-    global.requestAnimationFrame = previousRequestAnimationFrame
-  }
-
-  assert.equal(controller.camera.x, 880)
-  assert.equal(controller.camera.y, 900)
-})
-
 function createLocalCamera(zoom = 1, screen = { width: 640, height: 360 }) {
   const CameraController = loadCameraController(zoom)
   const controller = new CameraController({
@@ -359,39 +329,26 @@ test('local camera centers oversized viewport axes independently', () => {
 })
 
 test('local camera movement never slides along a diamond or moves vertically twice', () => {
-  for (const useEdgeSlide of [false, true]) {
-    for (const [direction, dx, dy] of [
-      ['left', -20, 0],
-      ['right', 20, 0],
-      ['up', 0, -20],
-      ['down', 0, 20],
-    ]) {
-      const controller = createLocalCamera()
-      controller.set(0, 960)
-      const before = { ...controller.camera }
-      controller.move(direction, 20, false, 1, useEdgeSlide)
-      assert.equal(controller.camera.x, before.x + dx)
-      assert.equal(controller.camera.y, before.y + dy)
-    }
+  for (const [direction, dx, dy] of [
+    ['left', -20, 0],
+    ['right', 20, 0],
+    ['up', 0, -20],
+    ['down', 0, 20],
+  ]) {
     const controller = createLocalCamera()
-    controller.set(-10000, 960)
+    controller.set(0, 960)
     const before = { ...controller.camera }
-    controller.move('left', 20, false, 1, useEdgeSlide)
-    assert.deepEqual(controller.camera, before)
-    controller.move('down', 20, false, 1, useEdgeSlide)
-    assert.deepEqual(controller.camera, { x: before.x, y: before.y + 20 })
+    controller.move(direction, 20, false, 1)
+    assert.equal(controller.camera.x, before.x + dx)
+    assert.equal(controller.camera.y, before.y + dy)
   }
-})
-
-test('legacy no-edge-slide vertical movement applies speed exactly once', () => {
   const controller = createLocalCamera()
-  delete controller.context.map.localGridLayout
-  controller.set(0, 1600)
+  controller.set(-10000, 960)
   const before = { ...controller.camera }
-  controller.move('up', 20, false, 1, false)
-  assert.deepEqual(controller.camera, { x: before.x, y: before.y - 20 })
-  controller.move('down', 20, false, 1, false)
+  controller.move('left', 20, false, 1)
   assert.deepEqual(controller.camera, before)
+  controller.move('down', 20, false, 1)
+  assert.deepEqual(controller.camera, { x: before.x, y: before.y + 20 })
 })
 
 test('local camera bounds do not apply to interiors', () => {
@@ -432,7 +389,7 @@ function createExplorationCamera(zoom = 1) {
   const context = {
     app: { screen: { width: 64, height: 32 } },
     map: { size, grid, updateRenderChunks() {} },
-    controls: { heroUnit: { spaceId: 'outside' }, freeCameraActive: false },
+    controls: { heroUnit: { spaceId: 'outside' } },
     player: { views: new VisionGrid(size), cellViewed: 0 },
   }
   const controller = new CameraController(context)
@@ -456,13 +413,13 @@ test('only the actual camera footprint is explored, never its render halo', () =
   assert.ok(context.player.cellViewed > discovered)
 })
 
-test('debug camera cannot explore and switching it off refreshes even an unchanged viewport', () => {
+test('returning from the editor refreshes exploration even for an unchanged viewport', () => {
   const { controller, context, views } = createExplorationCamera()
-  context.controls.freeCameraActive = true
+  context.editor = {}
   controller.updateVisibleCells(false)
   assert.equal(context.player.cellViewed, 0)
-  assert.ok(controller.visibleCells.size > 0, 'debug rendering still works')
-  context.controls.freeCameraActive = false
+  assert.ok(controller.visibleCells.size > 0, 'editor rendering still works')
+  context.editor = null
   controller.updateVisibleCells(false)
   assert.equal(views.isViewed(10, 10), true)
 })

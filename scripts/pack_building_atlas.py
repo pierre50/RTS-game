@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILDINGS = ROOT / "public/assets/graphics/buildings"
+BUILDINGS = ROOT / "public/assets/graphics/structures/buildings"
 CIVILIZATIONS = ROOT / "public/assets/data/civilizations"
 TYPES = {
     "ArcheryRange": "archery-range",

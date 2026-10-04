@@ -344,3 +344,31 @@ test('placement mirror toggles preview and is passed to the purchased building',
   placer.handleMouseUp({ i: 1, j: 2 })
   assert.equal(purchased.placementMirrored, true)
 })
+
+test('wall placement creates sites without assigning inspected villagers', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const created = []
+  const owner = {
+    config: { buildings: { SmallWall: { cost: {} } } },
+    selectedUnits: [{ type: 'Villager', sendToBuildingQueue: () => assert.fail('inspection must not assign walls') }],
+    createBuilding: options => {
+      created.push(options)
+      return options
+    },
+  }
+  const controls = { context: { map: { instantMode: false }, menu: {} }, removeMouseBuilding() {} }
+  const placer = new BuildingPlacer(controls)
+  placer.canWallUseCell = () => true
+  assert.equal(
+    placer.commitWallPath(
+      [
+        { i: 1, j: 1 },
+        { i: 1, j: 2 },
+      ],
+      owner
+    ),
+    true
+  )
+  assert.equal(created.length, 2)
+  assert.ok(created.every(site => site.type === 'SmallWall' && !site.isBuilt))
+})

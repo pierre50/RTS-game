@@ -137,6 +137,13 @@ function validatePlayerBuildings(
         building.constructionProgress > 1)
     )
       fail('Invalid construction progress.')
+    if (
+      building.constructionWorkRequired != null &&
+      (typeof building.constructionWorkRequired !== 'number' ||
+        !Number.isFinite(building.constructionWorkRequired) ||
+        building.constructionWorkRequired <= 0)
+    )
+      fail('Invalid construction work.')
     if (building.constructionMaterials != null) {
       const materials = building.constructionMaterials
       if (!isObject(materials)) fail('Invalid construction materials.')
@@ -186,9 +193,12 @@ function validatePlayerBuildings(
         nextBuildingUpgrade(config.buildings[building.type], Number(building.buildingLevel ?? 0))
       )
         fail('Invalid building upgrade tier.')
-      for (const key of ['totalHitPoints', 'constructionTime'])
-        if (typeof upgrade[key] !== 'number' || !Number.isFinite(upgrade[key]) || Number(upgrade[key]) <= 0)
-          fail('Invalid building upgrade progress.')
+      if (
+        typeof upgrade.constructionTime !== 'number' ||
+        !Number.isFinite(upgrade.constructionTime) ||
+        upgrade.constructionTime <= 0
+      )
+        fail('Invalid building upgrade progress.')
       if (upgrade.constructionProgress != null) {
         if (
           typeof upgrade.constructionProgress !== 'number' ||
@@ -200,6 +210,9 @@ function validatePlayerBuildings(
       } else if (
         typeof upgrade.hitPoints !== 'number' ||
         !Number.isFinite(upgrade.hitPoints) ||
+        typeof upgrade.totalHitPoints !== 'number' ||
+        !Number.isFinite(upgrade.totalHitPoints) ||
+        upgrade.totalHitPoints < 1 ||
         upgrade.hitPoints < 1 ||
         upgrade.hitPoints > Number(upgrade.totalHitPoints)
       ) {

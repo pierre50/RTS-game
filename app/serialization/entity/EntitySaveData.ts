@@ -80,6 +80,8 @@ export type SerializableEntity = RuntimeEntityBase & {
   containedAnimalType?: string | null
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string }>
+  constructionTime?: number
+  constructionWorkRequired?: number
   constructionProgress?: number
   constructionMaterials?: SaveEntityState['constructionMaterials']
   buildingUpgrade?: SaveEntityState['buildingUpgrade']
@@ -397,6 +399,8 @@ export function buildingData(building: SerializableEntity): SaveEntityState {
       'horseAmount',
       'stableHorses',
       'containedAnimalType',
+      'constructionWorkRequired',
+      'constructionTime',
       'constructionProgress',
       'constructionMaterials',
       'buildingUpgrade',

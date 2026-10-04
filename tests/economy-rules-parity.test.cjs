@@ -63,11 +63,11 @@ test('construction advances identically in individual impacts and catch-up, incl
   f.spatial.entity = () => building
   let expected = 0
   for (let impact = 0; impact < 10; impact++)
-    expected = advanceConstruction(expected, 100, 25, getBuildRateXpMultiplier(f.worker))
+    expected = advanceConstruction(expected, 25, getBuildRateXpMultiplier(f.worker))
   advanceOfflineWorker(f.state, f.player, 0, f.worker, 10000, 1, f.spatial, f.rules, f.report)
-  assert.equal(building.constructionProgress, expected / 100)
-  assert.equal(building.hitPoints, 1 + (expected / 100) * 99)
-  assert.ok(expected > 41, 'saved experience must affect distant construction too')
+  assert.ok(Math.abs(building.constructionProgress - expected / 25) < 1e-12)
+  assert.equal(building.hitPoints, 100)
+  assert.ok(expected > 10, 'saved experience must affect distant construction too')
 })
 
 test('live and offline training agree before, at and after the completion day, including immediate training', () => {

@@ -9,7 +9,7 @@ const { getReliefLevelAtPoint: height } = load('app/lib/terrain/reliefSurface.ts
 const { getReliefMovementDistance } = load('app/lib/terrain/reliefMovement.ts')
 const { isBuildingTraversable } = load('app/lib/buildings/buildingTraversal.ts')
 const config = require('../public/assets/data/gameplay/buildings.json')
-const atlas = require('../public/assets/graphics/buildings/deco/texture.json')
+const atlas = require('../public/assets/graphics/structures/decorations/texture.json')
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} != ${expected}`)
 const localPoint = (x, y) => ({ x, y: point(4, 4).y + y })
 

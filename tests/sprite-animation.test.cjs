@@ -106,7 +106,6 @@ test('unit death starts the dying animation through the shared helper', () => {
       CORPSE_TIME: 60,
       FADE_DURATION_MS: 2000,
       MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
-      POPULATION_MAX: 50,
       SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet' },
     },
     '../../lib': {
@@ -176,7 +175,6 @@ test('stale unit death callbacks do not decompose after another visual transitio
       CORPSE_TIME: 60,
       FADE_DURATION_MS: 2000,
       MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
-      POPULATION_MAX: 50,
       SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet', standing: 'standingSheet' },
     },
     '../../lib': {
@@ -256,7 +254,6 @@ test('unit die clears pending combat recovery before playing dying animation', (
       CORPSE_TIME: 60,
       FADE_DURATION_MS: 2000,
       MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
-      POPULATION_MAX: 50,
       SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet' },
     },
     '../../lib': {

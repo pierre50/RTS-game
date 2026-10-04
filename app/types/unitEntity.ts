@@ -350,7 +350,6 @@ export interface UnitEntity extends EnergyEntity {
   ) => void
   sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
-  sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
   sendToDelivery?: (
     target?: BuildingEntity | null,
     returnTaskOverride?: UnitResourceDeliveryReturnTask | null

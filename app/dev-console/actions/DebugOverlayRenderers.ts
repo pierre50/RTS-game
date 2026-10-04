@@ -26,9 +26,9 @@ export type AiDebugPlayer = DevPlayer & {
   populationMax?: number
   stepDelay?: number
   maxVillagers: number
-  maxInfantry: Record<number, number>
-  maxArchers: Record<number, number>
-  maxCavalry: Record<number, number>
+  maxInfantry: number
+  maxArchers: number
+  maxCavalry: number
   difficultyConfig: { popCapMultiplier: number; defenseRecallThreshold: number; defensePowerRatio: number }
   enemyUnitMemory: { size: number }
   enemyBuildingMemory: { size: number }
@@ -43,11 +43,24 @@ export type AiDebugPlayer = DevPlayer & {
   scout?: DevEntity | null
   getLivingUnitsByType(type: string): DevEntity[]
   getActiveThreats(): Array<{ target: DevEntity }>
-  getNow(): number
 }
 
 export function isAiDebugPlayer(player: DevPlayer): player is AiDebugPlayer {
-  return player.type === PLAYER_TYPES.ai
+  const ai = player as Partial<AiDebugPlayer>
+  return (
+    player.type === PLAYER_TYPES.ai &&
+    Boolean(
+      typeof ai.strategy?.military?.getGroupCombatPower === 'function' &&
+        typeof ai.strategy?.getEconomicDemand === 'function' &&
+        typeof ai.economy?.getWorkerSnapshot === 'function' &&
+        typeof ai.economy?.getResourceTargets === 'function' &&
+        typeof ai.getLivingUnitsByType === 'function' &&
+        typeof ai.getActiveThreats === 'function' &&
+        ai.difficultyConfig &&
+        ai.enemyUnitMemory &&
+        ai.enemyBuildingMemory
+    )
+  )
 }
 
 export function ensureDebugOverlay(id: string): HTMLElement {
@@ -78,7 +91,8 @@ export function ensurePerfOverlay(context: DevConsoleContext): void {
   const unitMove = metric('unit.move')
   const visibility = metric('visibility.update')
   const camera = metric('camera.visibleCells')
-  const maxFrame = (value: typeof unitMove) => value?.maxFrameExclusiveMs?.toFixed(2) || value?.maxFrameMs?.toFixed(2) || '0.00'
+  const maxFrame = (value: typeof unitMove) =>
+    value?.maxFrameExclusiveMs?.toFixed(2) || value?.maxFrameMs?.toFixed(2) || '0.00'
   const maxCalls = (value: typeof unitMove) => value?.maxFrameCalls || 0
   overlay.textContent = [
     `FPS ${Math.round(app?.ticker.FPS ?? 0)}`,
@@ -97,14 +111,17 @@ export function ensurePerfOverlay(context: DevConsoleContext): void {
   ].join('\n')
 }
 
-function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null = null): string[] | null {
-  const targets = targetIndex !== null ? [aiPlayers[targetIndex]].filter(Boolean) : aiPlayers
+function getAiDebugLines(players: DevPlayer[], targetIndex: number | null = null): string[] | null {
+  const targets = players.filter(
+    (player, index): player is AiDebugPlayer =>
+      isAiDebugPlayer(player) && (targetIndex === null || index === targetIndex)
+  )
   if (!targets.length) return null
 
   const lines: string[] = []
 
   for (const ai of targets) {
-    const idx = aiPlayers.indexOf(ai)
+    const idx = players.indexOf(ai)
     const villagers = ai.getLivingUnitsByType(UNIT_TYPES.villager)
     const aliveUnits = ai.units.filter(isAliveUnit)
     const { infantry, archers, cavalry } = classifyMilitaryUnits(aliveUnits)
@@ -164,8 +181,8 @@ export function ensureAiInfoOverlay(context: DevConsoleContext): void {
     return
   }
 
-  const targetIndex = Number.isInteger(context.debugAiInfoTargetIndex) ? context.debugAiInfoTargetIndex : null
-  const lines = getAiDebugLines(aiPlayers, targetIndex)
+  const targetIndex = Number.isInteger(context.map.debugAiInfoTargetIndex) ? context.map.debugAiInfoTargetIndex : null
+  const lines = getAiDebugLines(context.players, targetIndex)
   overlay.textContent = lines?.join('\n') || `No AI player at index ${targetIndex}`
 }
 
@@ -205,10 +222,7 @@ export function ensurePlayerStatsOverlay(context: DevConsoleContext): void {
 
       const unitLabel = unit.name || `${unit.type}`
       const hp = formatValue(unit.hitPoints, unit.totalHitPoints)
-      const energy =
-        unit.energy == null || unit.totalEnergy == null
-          ? null
-          : formatValue(unit.energy, unit.totalEnergy)
+      const energy = unit.energy == null || unit.totalEnergy == null ? null : formatValue(unit.energy, unit.totalEnergy)
 
       unitRow.textContent = `  ${unitLabel}: HP ${hp}${energy ? ` | EN ${energy}` : ''}`
       overlay.appendChild(unitRow)

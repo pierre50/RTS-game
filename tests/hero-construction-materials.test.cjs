@@ -6,7 +6,9 @@ function fixture(resources = {}, cost = { wood: 100, stone: 50 }, extraMocks = {
   const site = {
     family: 'building',
     type: 'House',
-    hitPoints: 1,
+    hitPoints: 101,
+    constructionProgress: 0,
+    constructionWorkRequired: 101,
     totalHitPoints: 101,
     constructionTime: 101,
     constructionMaterials: { cost, consumed: {}, delivered: {} },
@@ -72,14 +74,14 @@ test('an unfunded hero build stops before animation and reports the exact missin
   assert.equal(f.calls.stopped, 1)
   assert.match(f.calls.messages[0][0], /100 bois, 50 pierre/)
   assert.equal(f.calls.messages[0][1], 'warning')
-  assert.equal(f.site.hitPoints, 1)
+  assert.equal(f.site.hitPoints, 101)
 })
 test('wood alone advances construction without a missing-stone alert', () => {
   const f = fixture({ wood: 20 })
   f.start()
   assert.equal(f.calls.messages.length, 0)
   f.runtime.impact()
-  assert.equal(f.site.hitPoints, 1 + 100 / 101)
+  assert.equal(f.site.hitPoints, 101)
   assert.equal(f.unit.inventory.resources.wood, 18)
   assert.deepEqual(f.site.constructionMaterials.delivered, {})
   assert.equal(f.calls.sound, 1)
@@ -95,7 +97,7 @@ test('materials are checked again at impact and when the next swing begins', () 
   f.unit.inventory.resources.wood = 1
   f.start()
   f.runtime.impact()
-  assert.equal(f.site.hitPoints, 1 + 100 / 101)
+  assert.equal(f.site.hitPoints, 101)
   // Finish the fraction of work already paid for by the first ingredient.
   f.runtime.impact()
   assert.equal(f.site.constructionProgress, 0.01)
@@ -109,7 +111,7 @@ test('legacy paid construction and repairs still allow work without charging mat
   delete f.site.constructionMaterials
   f.start()
   f.runtime.impact()
-  assert.equal(f.site.hitPoints, 1 + 100 / 101)
+  assert.equal(f.site.hitPoints, 101)
   assert.equal(f.calls.messages.length, 0)
 })
 
@@ -132,7 +134,7 @@ test('a villager with no remaining useful material stops without animation', () 
   const f = fixture({ wood: 20 })
   f.unit.controlMode = 'npc'
   f.site.constructionMaterials.consumed = { wood: 100 }
-  f.site.hitPoints = 1 + (100 / 150) * 100
+  f.site.constructionProgress = 100 / 150
   f.start()
   assert.equal(f.calls.animation, 0)
   assert.equal(f.calls.energy, 0)
@@ -141,12 +143,31 @@ test('a villager with no remaining useful material stops without animation', () 
   assert.equal(f.unit.inventory.resources.wood, 20)
 })
 
+test('live construction consumes work and materials without healing combat damage', () => {
+  const f = fixture({ wood: 4 }, { wood: 4 })
+  f.site.constructionWorkRequired = 4
+  f.start()
+  f.runtime.impact()
+  assert.equal(f.site.constructionProgress, 0.25)
+  f.site.hitPoints -= 20
+  for (let impact = 0; impact < 3; impact++) f.runtime.impact()
+  assert.equal(f.site.constructionProgress, 1)
+  assert.equal(f.site.hitPoints, 81)
+  assert.equal(f.site.constructionMaterials.consumed.wood, 4)
+})
+
 test('a lone hero finishes each camp site through real work impacts, including trap fiber', () => {
   const definitions = require('../public/assets/data/gameplay/buildings.json')
   for (const type of ['Trap', 'FireCamp', 'Chest']) {
     const config = definitions[type]
     const f = fixture({ ...config.cost }, config.cost)
-    Object.assign(f.site, { type, totalHitPoints: config.totalHitPoints, constructionTime: config.constructionTime })
+    Object.assign(f.site, {
+      type,
+      hitPoints: config.totalHitPoints,
+      totalHitPoints: config.totalHitPoints,
+      constructionTime: config.constructionTime,
+      constructionWorkRequired: config.constructionTime,
+    })
     f.start()
     for (let impact = 0; impact < 4; impact++) f.runtime.impact()
     assert.equal(f.site.hitPoints, config.totalHitPoints)
@@ -222,7 +243,7 @@ test('an exhausted builder really stops, collects stone and returns to the same 
   flushCollectiveVillageWork(owner, 0)
   f.start()
   for (let i = 0; i < 51; i++) f.runtime.impact()
-  assert.equal(site.hitPoints, 51)
+  assert.equal(site.constructionProgress, 0.5)
   assert.equal(unit.inventory.resources.wood, 0)
   // Discard earlier progress notifications: the blocked action must wake planning itself.
   consumeVillageWorkChange(owner)
@@ -290,6 +311,8 @@ test('every interior furnishing completes through hero work and applies its fina
       isBuilt: false,
       indestructible: type.startsWith('Camp'),
       totalHitPoints: config.totalHitPoints,
+      hitPoints: config.totalHitPoints,
+      constructionWorkRequired: config.constructionTime,
       constructionTime: config.constructionTime,
       owner: { hasBuilt: [] },
       context: { menu: {} },

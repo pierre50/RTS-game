@@ -36,7 +36,7 @@ export class EntityInfoModalManager {
   }
 
   open(entity: RuntimeEntity): boolean {
-    if (isBuildingEntity(entity) && entity.type === BUILDING_TYPES.trap) return false
+    if (isBuildingEntity(entity) && entity.type === BUILDING_TYPES.trap && entity.isBuilt) return false
     if (entity.family === FAMILY_TYPES.animal && !entity.isDead) return false
     if (entity === this.menu.context.controls?.heroUnit) return false
     if (!entity.interface?.info || entity.isDestroyed) return false
@@ -56,8 +56,11 @@ export class EntityInfoModalManager {
     }
 
     this.inventoryScreen =
-      isUnitEntity(entity) && entity.isDead ? new UnitInventoryScreen(this.menu, entity) :
-      entity.family === FAMILY_TYPES.animal && entity.isDead ? new AnimalInventoryScreen(this.menu, entity as AnimalEntity) : undefined
+      isUnitEntity(entity) && entity.isDead
+        ? new UnitInventoryScreen(this.menu, entity)
+        : entity.family === FAMILY_TYPES.animal && entity.isDead
+          ? new AnimalInventoryScreen(this.menu, entity as AnimalEntity)
+          : undefined
     this.layout = this.inventoryScreen ? undefined : new InteractionPanel()
     const infoContent =
       this.inventoryScreen?.element ??
@@ -116,6 +119,10 @@ export class EntityInfoModalManager {
     }
     const infoPanel = this.infoPanel
     if (!this.modal || !entity || !infoPanel || entity.isDestroyed) return
+    if (isBuildingEntity(entity)) {
+      const title = this.modal._panel?.querySelector('.modal-title')
+      if (title) title.textContent = getEntityTitle(entity)
+    }
     infoPanel.replaceChildren()
     this.layout?.secondaryActions.replaceChildren()
     entity.interface?.info?.(infoPanel, {

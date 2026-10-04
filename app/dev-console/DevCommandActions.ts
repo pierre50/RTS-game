@@ -3,7 +3,6 @@ export {
   performanceReport,
   setFpsCapDebug,
   toggleCoordsDebug,
-  toggleFreeCamera,
   toggleGridDebug,
   toggleHeroAimDebug,
   togglePathDebug,
@@ -20,10 +19,9 @@ export { toggleFog, toggleInteriorWalls, toggleResourcesVisibility, killResource
 export {
   healAll,
   killEntities,
-  listGlobalPlayers,
-  setCiv,
+  listLocalPlayers,
+  listFactions,
   setGameSpeed,
-  setPopMax,
   toggleHeroInvincible,
   toggleInstantMode,
 } from './actions/player'

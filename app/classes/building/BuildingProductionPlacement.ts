@@ -1,5 +1,5 @@
 import { definedProperties } from '../../lib/definedProperties'
-import { POPULATION_MAX, UNIT_TYPES } from '../../constants'
+import { UNIT_TYPES } from '../../constants'
 import { getFreeLandCellAroundInstance } from '../../lib'
 import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import { getEntityMapSpace } from '../../lib/mapSpaces'
@@ -32,11 +32,7 @@ export function placeProducedUnit(
 ): boolean {
   const spawnCell = findSpawnCell(building)
   const consumePopulationSlot = options.consumePopulationSlot ?? true
-  if (
-    !spawnCell ||
-    (consumePopulationSlot && building.owner.population >= Math.min(POPULATION_MAX, building.owner.populationMax))
-  )
-    return false
+  if (!spawnCell || (consumePopulationSlot && building.owner.population >= building.owner.populationMax)) return false
   if (consumePopulationSlot) building.owner.population++
 
   const unitExtra = { ...(building.owner.getUnitExtraOptions?.(type) || {}), ...(extra || {}) }

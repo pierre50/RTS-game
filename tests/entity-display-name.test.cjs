@@ -23,7 +23,10 @@ function loadModule(relativePath, mocks) {
 
 function loadDisplayName(t = key => key) {
   return loadModule('app/ui/utils/entityDisplayName.ts', {
-    '../../constants': { ...loadTsModule('app/constants/entities.ts'), FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
+    '../../constants': {
+      ...loadTsModule('app/constants/entities.ts'),
+      FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' },
+    },
     '../../lib/lang': { t },
   })
 }
@@ -34,6 +37,7 @@ test('building display names use gameplay type instead of technical instance nam
   assert.equal(
     getEntityDisplayName({
       family: 'building',
+      isBuilt: true,
       type: 'TownCenter',
       assetType: 'TownCenter',
       name: '9b52-ai-building-id',
@@ -45,8 +49,11 @@ test('building display names use gameplay type instead of technical instance nam
 test('building display names humanize missing translation keys', () => {
   const { getEntityDisplayName } = loadDisplayName()
 
-  assert.equal(getEntityDisplayName({ family: 'building', type: 'StoragePit', name: 'raw-id' }), 'Storage Pit')
-  assert.equal(getEntityDisplayName({ family: 'building', type: 'town-center' }), 'Town Center')
+  assert.equal(
+    getEntityDisplayName({ family: 'building', isBuilt: true, type: 'StoragePit', name: 'raw-id' }),
+    'Storage Pit'
+  )
+  assert.equal(getEntityDisplayName({ family: 'building', isBuilt: true, type: 'town-center' }), 'Town Center')
 })
 
 test('non-building display names keep authored names', () => {
@@ -62,7 +69,6 @@ test('animal display names use translated type instead of technical instance nam
   assert.equal(getEntityDisplayName({ family: 'animal', type: 'Boar', name: 'Mmmmm' }), 'Sanglier')
 })
 
-
 test('houses display the names of their household, including an absent hero', () => {
   const { getEntityDisplayName } = loadDisplayName((key, vars) => {
     if (key === 'houseOfOne') return `Maison de ${vars.name}`
@@ -70,7 +76,7 @@ test('houses display the names of their household, including an absent hero', ()
     return 'Maison inoccupée'
   })
   const owner = { units: [] }
-  const house = { family: 'building', type: 'House', label: 'home', owner }
+  const house = { family: 'building', isBuilt: true, type: 'House', label: 'home', owner }
   assert.equal(getEntityDisplayName(house), 'Maison inoccupée')
   owner.units.push({ label: 'a', name: 'Alice', homeHouseLabel: 'home' })
   assert.equal(getEntityDisplayName(house), 'Maison de Alice')
@@ -79,4 +85,15 @@ test('houses display the names of their household, including an absent hero', ()
   owner.units = []
   house.heroHomeResident = { label: 'hero', name: 'Alex' }
   assert.equal(getEntityDisplayName(house), 'Maison de Alex')
+})
+
+test('construction names use the building type without occupancy claims', () => {
+  const { getBuildingDisplayName } = loadDisplayName((key, values) =>
+    key === 'constructionSiteName' ? `${values.building} — En construction` : key
+  )
+  for (const type of ['House', 'Trap', 'Forge', 'Chest', 'CampBedroll', 'Farm']) {
+    const name = getBuildingDisplayName({ type, isBuilt: false, owner: { units: [] } })
+    assert.ok(name.endsWith(' — En construction'), type)
+    assert.ok(!name.includes('houseUnoccupied'), type)
+  }
 })

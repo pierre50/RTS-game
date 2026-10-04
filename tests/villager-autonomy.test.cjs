@@ -237,7 +237,7 @@ test('wood autonomy resumes a nearby felled tree even when a standing tree is cl
 test('food hunts known living game immediately and switches to meat after the kill', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const deer = { type: 'Deer', family: 'animal', label: 'deer', i: 3, j: 3, hitPoints: 12, quantity: 20 }
-  const owner = createOwner({ technologies: [] })
+  const owner = createOwner({})
   const unit = createVillager(owner, { context: { map: { gaia: { animals: [deer] } } } })
   assert.equal(hasVillagerAutonomyTarget(unit, 'food'), true)
   assert.equal(assignVillagerAutonomy(unit, 'food'), true)
@@ -262,10 +262,10 @@ test('autonomous hunting excludes horses, captured companions and unavailable or
     { hitPoints: 0 },
   ]) {
     const animal = { type: 'Deer', family: 'animal', i: 1, j: 1, hitPoints: 10, quantity: 10, ...patch }
-    const owner = createOwner({ technologies: ['BowCrafting'], foundedAnimals: new Set([animal]) })
+    const owner = createOwner({ foundedAnimals: new Set([animal]) })
     assert.equal(hasVillagerAutonomyTarget(createVillager(owner), 'food'), false, JSON.stringify(patch))
   }
-  const owner = createOwner({ technologies: ['BowCrafting'], views: { isViewed: () => false } })
+  const owner = createOwner({ views: { isViewed: () => false } })
   const unit = createVillager(owner, {
     context: {
       map: {
@@ -282,7 +282,7 @@ test('Hunter keeps berries available and tries another animal when the first hun
   const { assignVillagerAutonomy } = loadVillagerAutonomy()
   const deer = { type: 'Deer', family: 'animal', label: 'deer-1', i: 2, j: 2, hitPoints: 10, quantity: 10 }
   const second = { ...deer, label: 'deer-2', i: 4 }
-  const owner = createOwner({ technologies: ['BowCrafting'], foundedAnimals: new Set([deer, second]) })
+  const owner = createOwner({ foundedAnimals: new Set([deer, second]) })
   const unit = createVillager(owner, {
     sendToHunt(target) {
       if (target === deer) return false

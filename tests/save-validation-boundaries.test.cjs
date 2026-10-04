@@ -645,6 +645,8 @@ test('save validation accepts active renovation and rejects invalid upgrade stat
     modern.constructionProgress = 1
     modern.buildingUpgrade.constructionProgress = 0
     delete modern.buildingUpgrade.hitPoints
+    delete modern.buildingUpgrade.totalHitPoints
+    modern.constructionWorkRequired = 80
     data.players[0].buildings = [modern]
     assert.doesNotThrow(() => validateSaveData(data))
     for (const progress of [-1, 1.1, NaN, Infinity, '0']) {

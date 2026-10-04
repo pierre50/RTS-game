@@ -164,7 +164,6 @@ for (const scenario of destructionCases) {
           },
           MENU_INFO_IDS: { populationText: 'populationText' },
           PLAYER_TYPES: { ai: 'AI' },
-          POPULATION_MAX: 200,
           SOUND_CUES: { building: { burning: 'burning', collapse: 'collapse', flame: 'flame' } },
         },
         '../../lib': {

@@ -43,7 +43,6 @@ function loadPanel(Modal = class {}) {
       '../inventory/InventoryItemIcons': { createInventoryResourceIcon: resource => ({ resource }) },
       '../../constants': {
         BUILDING_TYPES: { chest: 'Chest', stable: 'Stable', storagePit: 'StoragePit', townCenter: 'TownCenter' },
-        POPULATION_MAX: 200,
         RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold'],
         RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold'],
         UNIT_TYPES: { hero: 'Hero', villager: 'Villager' },
@@ -91,7 +90,7 @@ test('base report shows village reserves without the hero bag and keeps only pop
   withFakeDocument(() => {
     const { renderBaseReport } = loadPanel()
     const container = makeElement()
-    const player = { label: 'player', buildings: [], population: 5, populationMax: 12, units: [] }
+    const player = { label: 'player', buildings: [], population: 5, populationMax: 250, units: [] }
     const hero = {
       owner: player,
       type: 'Hero',
@@ -159,7 +158,7 @@ test('base report shows village reserves without the hero bag and keeps only pop
     assert.deepEqual(
       villagerRows.map(row => [row.children[0].textContent, row.children[1].textContent]),
       [
-        ['minimapUnits', '5/12'],
+        ['minimapUnits', '5/250'],
         ['minimapVillagerConsumption', '16 minimapResourceFood'],
       ]
     )

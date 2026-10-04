@@ -1,6 +1,6 @@
 import { reconcileHouseholds } from '../../lib/housing/households'
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
-import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
+import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
@@ -120,10 +120,7 @@ export class UnitLifecycle {
     if (unit.owner) {
       unit.owner.population--
       if (unit.owner.isPlayed && unit.owner.selectedBuilding && unit.owner.selectedBuilding.displayPopulation) {
-        menu?.updateInfo?.(
-          MENU_INFO_IDS.populationText,
-          unit.owner.population + '/' + Math.min(POPULATION_MAX, unit.owner.populationMax)
-        )
+        menu?.updateInfo?.(MENU_INFO_IDS.populationText, unit.owner.population + '/' + unit.owner.populationMax)
       }
       const index = unit.owner.units.indexOf(unit)
       if (index >= 0) {

@@ -99,7 +99,6 @@ export interface PlayerLike {
   minimapPreferences?: MinimapPreferences
   views: VisionGridLike
   config: PlayerConfigLike
-  refreshCivilizationAppearance?: () => void
   selectedUnits: UnitEntity[]
   selectedUnit?: UnitEntity | null
   selectedBuilding?: BuildingEntity | null

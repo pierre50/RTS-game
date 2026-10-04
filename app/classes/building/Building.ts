@@ -64,6 +64,8 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   j: number
   type: string
   spaceId?: string
+  constructionTime?: number
+  constructionWorkRequired?: number
   constructionProgress?: number
   constructionMaterials?: BuildingEntity['constructionMaterials']
   buildingUpgrade?: BuildingEntity['buildingUpgrade']
@@ -140,6 +142,8 @@ export class Building extends Instance implements BuildingEntity {
     resources?: ResourceAmount
     equipment?: string[]
   }
+  constructionTime?: number
+  constructionWorkRequired?: number
   constructionProgress?: number
   constructionMaterials?: BuildingEntity['constructionMaterials']
   buildingUpgrade?: BuildingEntity['buildingUpgrade']
@@ -200,8 +204,12 @@ export class Building extends Instance implements BuildingEntity {
     if (!this.trainingResumePending) resumeInitialBuildingWork(this)
 
     this.quantity = this.quantity ?? this.totalQuantity
-    this.hitPoints = Math.min(this.hitPoints ?? (this.isBuilt ? this.totalHitPoints : 1), this.totalHitPoints)
+    this.hitPoints = Math.min(this.hitPoints ?? this.totalHitPoints, this.totalHitPoints)
 
+    if (options.hitPoints == null) {
+      this.constructionProgress ??= this.isBuilt ? 1 : 0
+      this.constructionWorkRequired ??= Math.max(1, this.constructionTime ?? 1)
+    }
     initializeConstructionProgress(this)
 
     setupBuildingTransform(this)

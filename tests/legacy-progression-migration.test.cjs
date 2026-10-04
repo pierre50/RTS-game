@@ -71,3 +71,25 @@ test('Bronze arrow recipes never require iron, and starting infantry needs no me
   assert.equal(bronzeArrows.cost.iron, undefined)
   assert.ok(bronzeArrows.cost.copper > 0)
 })
+
+test('legacy technology data is discarded while current upgrades survive loading', () => {
+  const player = {
+    technologies: ['Alchemy'],
+    researchTechnology: { type: 'Toolworking' },
+    researchLoading: 70,
+    forgeUpgrades: { weapons: 2 },
+    buildings: [
+      {
+        type: 'House',
+        technology: { type: 'ToolAge' },
+        interiorBuildings: [{ type: 'Chest', technology: { type: 'OldResearch' } }],
+      },
+    ],
+  }
+  migrateLegacyProgression(player)
+  assert.equal(player.forgeUpgrades.weapons, 2)
+  assert.doesNotMatch(JSON.stringify(player), /"(?:technology|technologies|researchTechnology|researchLoading)"/)
+  const migrated = structuredClone(player)
+  migrateLegacyProgression(player)
+  assert.deepEqual(player, migrated)
+})

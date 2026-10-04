@@ -32,6 +32,8 @@ const FIELDS = [
   'inactif',
   'villageHome',
   'buildingLevel',
+  'constructionWorkRequired',
+  'constructionTime',
   'constructionProgress',
   'constructionMaterials',
   'buildingUpgrade',
@@ -254,6 +256,7 @@ function commitVillageWork(
     const building = buildings[index]
     building.inventory = copy.inventory
     const progressChanged = building.constructionProgress !== copy.constructionProgress
+    building.constructionWorkRequired = copy.constructionWorkRequired
     building.constructionProgress = copy.constructionProgress
     building.constructionMaterials = copy.constructionMaterials
     if (building.buildingUpgrade) {

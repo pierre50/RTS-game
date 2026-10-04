@@ -57,27 +57,15 @@ test('minimap camera movement is ignored during normal hero camera mode', () => 
   const controller = createController()
   const calls = []
   controller.moveCameraFromMinimap(pointerEvent(), {
-    freeCameraActive: false,
     setCamera: (x, y) => calls.push([x, y]),
   })
   assert.deepEqual(calls, [])
-})
-
-test('minimap camera movement works in free-camera mode', () => {
-  const controller = createController()
-  const calls = []
-  controller.moveCameraFromMinimap(pointerEvent(), {
-    freeCameraActive: true,
-    setCamera: (x, y) => calls.push([x, y]),
-  })
-  assert.deepEqual(calls, [[0, 34]])
 })
 
 test('minimap camera movement remains enabled for the map editor', () => {
   const controller = createController({ editor: true })
   const calls = []
   controller.moveCameraFromMinimap(pointerEvent(), {
-    freeCameraActive: false,
     setCamera: (x, y) => calls.push([x, y]),
   })
   assert.deepEqual(calls, [[0, 34]])

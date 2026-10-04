@@ -119,7 +119,7 @@ export class MinimapInputController {
       teleportHeroFromMinimap(this.menu, { x, y })
       return
     }
-    if (!this.canMoveCamera(controls)) return
+    if (!this.canMoveCamera()) return
 
     if (controls.mouseBuilding) {
       controls.setCamera?.(x, y)
@@ -147,13 +147,13 @@ export class MinimapInputController {
   }
 
   moveCameraFromMinimap(evt: PointerEvent, controls: ControlsLike): void {
-    if (!this.canMoveCamera(controls)) return
+    if (!this.canMoveCamera()) return
     const { x, y } = this.getMinimapPointer(evt)
     controls.setCamera?.(x, y)
   }
 
-  canMoveCamera(controls: ControlsLike): boolean {
-    return Boolean(controls.freeCameraActive || this.menu.editorPanelMap)
+  canMoveCamera(): boolean {
+    return Boolean(this.menu.editorPanelMap)
   }
 
   destroy(): void {

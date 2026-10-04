@@ -92,9 +92,7 @@ export class HeroBuildingMenuManager {
   canOpenFor(building: BuildingEntity | null | undefined): building is BuildingEntity {
     const hero = this.menu.context.controls.heroUnit
     if (!hero || !building || building.isDestroyed || building.isDead) return false
-    if (building.type === BUILDING_TYPES.trap) return false
-    if ((building.type === BUILDING_TYPES.forge || building.type === BUILDING_TYPES.chest) && !building.isBuilt)
-      return false
+    if (building.type === BUILDING_TYPES.trap && building.isBuilt) return false
     return isHeroInteractionTargetReachable(hero, null, building)
   }
 
@@ -115,13 +113,13 @@ export class HeroBuildingMenuManager {
     this.modal = createInspectionModal({
       proximity: { context: this.menu.context, targets: () => (building.isDead ? [] : [building]) },
       title: getBuildingDisplayName(building),
-      inspection: building.type !== BUILDING_TYPES.chest,
-      interaction: building.type !== BUILDING_TYPES.chest,
-      panelClass: building.type === BUILDING_TYPES.chest ? 'inventory-transfer-modal' : undefined,
+      inspection: !building.isBuilt || building.type !== BUILDING_TYPES.chest,
+      interaction: !building.isBuilt || building.type !== BUILDING_TYPES.chest,
+      panelClass: building.isBuilt && building.type === BUILDING_TYPES.chest ? 'inventory-transfer-modal' : undefined,
       content: this.panel,
       onClose: () => this.close(),
     })
-    if (building.type === BUILDING_TYPES.chest) {
+    if (building.isBuilt && building.type === BUILDING_TYPES.chest) {
       playAudibleSoundCue(building, SOUND_CUES.building.chestOpen, { profile: 'surface' })
     }
     this.render()
@@ -233,6 +231,7 @@ export class HeroBuildingMenuManager {
   }
 
   getBuildingActionMenuItems(building: BuildingEntity): MenuButtonSpec[] {
+    if (!building.isBuilt) return []
     const items = this.menu.getActionMenuItems(building)
     if (building.type === BUILDING_TYPES.house && building.owner === this.menu.context.controls.heroUnit?.owner)
       return [heroHomeButton(this.menu, building, () => this.refresh()), ...items]
@@ -249,11 +248,13 @@ export class HeroBuildingMenuManager {
     if (!building) return
     this.marketOpen =
       building.type === BUILDING_TYPES.market && canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit)
-    const inventoryMode =
-      this.marketOpen ||
-      building.type === BUILDING_TYPES.chest ||
-      building.type === BUILDING_TYPES.forge ||
-      building.type === BUILDING_TYPES.fireCamp
+    const inventoryMode = Boolean(
+      building.isBuilt &&
+        (this.marketOpen ||
+          building.type === BUILDING_TYPES.chest ||
+          building.type === BUILDING_TYPES.forge ||
+          building.type === BUILDING_TYPES.fireCamp)
+    )
     const managementMode = inventoryMode || this.isManagedBuilding(building)
     setInspectionWindowSize(this.modal, managementMode ? 'large' : 'small')
     this.modal?._panel?.classList.toggle('interaction-panel', !inventoryMode)
@@ -332,6 +333,8 @@ export class HeroBuildingMenuManager {
 
   renderInfo(): void {
     const building = this.building
+    const title = this.modal?._panel?.querySelector('.modal-title')
+    if (title && building) title.textContent = getBuildingDisplayName(building)
     this.info.textContent = ''
     this.layout.secondaryActions.replaceChildren()
     if (typeof building?.interface?.info === 'function') {

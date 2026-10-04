@@ -26,12 +26,8 @@ export function onTick(controls: Controls, ticker: TickerLike): void {
   if (controls.isHeroControlActive()) {
     controls.gamepadInput.update()
     controls.heroController.update(gameFrameScale)
-    if (controls.freeCameraActive) {
-      controls.panCameraWithArrowKeys(frameScale)
-    } else {
-      const cameraCenter = controls.getHeroCameraCenter()
-      if (cameraCenter) controls.cameraController.set(cameraCenter.x, cameraCenter.y, false, false)
-    }
+    const cameraCenter = controls.getHeroCameraCenter()
+    if (cameraCenter) controls.cameraController.set(cameraCenter.x, cameraCenter.y, false, false)
     if (controls.mouseBuilding) controls.buildingPlacer.handleMouseMove()
     return
   }

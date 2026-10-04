@@ -4,7 +4,7 @@ import { isInteriorFurniture } from '../../lib/buildings/interiorFurnitureCatalo
 import { removeFurnitureSurface } from '../../lib/terrain/furnitureSurface'
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { definedProperties } from '../../lib/definedProperties'
-import { LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX, SOUND_CUES } from '../../constants'
+import { LABEL_TYPES, MENU_INFO_IDS, SOUND_CUES } from '../../constants'
 import {
   canUpdateMinimap,
   getBuildingFootprintCells,
@@ -162,10 +162,7 @@ export class BuildingDestruction {
     if (building.owner.isPlayed) {
       menu.updateTopbar?.()
       if (building.owner.selectedBuilding?.displayPopulation)
-        menu.updateInfo(
-          MENU_INFO_IDS.populationText,
-          building.owner.population + '/' + Math.min(POPULATION_MAX, building.owner.populationMax)
-        )
+        menu.updateInfo(MENU_INFO_IDS.populationText, building.owner.population + '/' + building.owner.populationMax)
     }
   }
 

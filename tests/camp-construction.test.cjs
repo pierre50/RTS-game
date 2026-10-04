@@ -42,16 +42,25 @@ for (const type of ['Chest', 'FireCamp', 'Trap', 'CampBrazier']) {
     assert.equal(site.isBuilt, false)
     assert.deepEqual(hero.inventory.resources, definitions[type].cost)
     assert.deepEqual(site.constructionMaterials, { cost: definitions[type].cost, consumed: {}, delivered: {} })
-    Object.assign(site, { hitPoints: 1, totalHitPoints: definitions[type].totalHitPoints })
-    const { advanceMaterialConstruction } = loadTsModule('app/lib/economy/constructionMaterials.ts')
+    Object.assign(site, {
+      hitPoints: definitions[type].totalHitPoints,
+      totalHitPoints: definitions[type].totalHitPoints,
+      constructionWorkRequired: definitions[type].constructionTime,
+    })
+    const { advanceMaterialConstruction, applyConstructionWork, constructionWorkPoints, constructionWorkTotal } =
+      loadTsModule('app/lib/economy/constructionMaterials.ts')
     const { advanceConstruction } = loadTsModule('app/lib/economy/workRules.ts')
     for (let impact = 0; impact < 4; impact++) {
-      site.hitPoints = advanceMaterialConstruction(
+      applyConstructionWork(
         site,
-        advanceConstruction(site.hitPoints, site.totalHitPoints, definitions[type].constructionTime),
-        [hero.inventory.resources]
+        advanceMaterialConstruction(
+          site,
+          advanceConstruction(constructionWorkPoints(site), constructionWorkTotal(site)),
+          [hero.inventory.resources]
+        )
       )
     }
+    assert.equal(site.constructionProgress, 1)
     assert.equal(site.hitPoints, site.totalHitPoints)
     assert.deepEqual(site.constructionMaterials.consumed, definitions[type].cost)
     assert.ok(Object.values(hero.inventory.resources).every(amount => amount === 0))

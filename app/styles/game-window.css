@@ -1203,3 +1203,11 @@ body:has(.modal) .building-placement-help {
   white-space: normal;
   line-height: 1.5;
 }
+
+.construction-work-status,
+.construction-damage-status {
+  margin: 0.5em 0;
+}
+.construction-damage-status {
+  color: #f2a096;
+}

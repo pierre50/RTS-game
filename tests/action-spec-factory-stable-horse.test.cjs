@@ -81,7 +81,6 @@ function createFactory({ canAfford, hero, messages }) {
     population: 0,
     populationMax: 10,
     techs: {},
-    technologies: [],
   }
   const menu = {
     context: {

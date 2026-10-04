@@ -36,6 +36,7 @@ export type AIEntityLike = {
   owner?: PlayerLike | null
   hitPoints?: number
   totalHitPoints?: number
+  constructionWorkRequired?: number
   constructionProgress?: number
   constructionMaterials?: ConstructionMaterials
   isBuilt?: boolean

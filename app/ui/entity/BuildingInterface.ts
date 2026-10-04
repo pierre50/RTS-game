@@ -1,8 +1,9 @@
+import { appendConstructionInfo } from './ConstructionInfo'
 import { canHeroDemolishBuilding } from '../../lib/buildings/buildingDemolition'
 import { isInteriorFurniture } from '../../lib/buildings/interiorFurnitureCatalog'
 import { getBuildingBedCount, refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getEntityDescription } from './EntityDescription'
-import { BUILDING_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
+import { BUILDING_TYPES, MENU_INFO_IDS, PLAYER_TYPES } from '../../constants'
 import { getIconPath } from '../../lib'
 import { HORSE_COLOR_PALETTES, isHorseColor } from '../../lib/horses/horseColors'
 import { t } from '../../lib/lang'
@@ -34,26 +35,6 @@ export class BuildingInterface {
     if (building.type === BUILDING_TYPES.stable && building.isBuilt) {
       element.appendChild(this.getStableHorseElement())
     }
-    if (!building.isBuilt && building.constructionMaterials) {
-      const state = building.constructionMaterials
-      const status = document.createElement('div')
-      status.className = 'construction-materials'
-      for (const [resource, cost] of Object.entries(state.cost)) {
-        const key = resource as keyof typeof state.cost
-        const consumed = state.consumed[key] ?? 0
-        const delivered = state.delivered[key] ?? 0
-        const row = document.createElement('div')
-        row.textContent = t(delivered > 0 ? 'constructionMaterialLegacyStatus' : 'constructionMaterialStatus', {
-          resource: t(resource),
-          consumed,
-          cost,
-          delivered,
-          missing: Math.max(0, cost - consumed - delivered),
-        })
-        status.appendChild(row)
-      }
-      element.appendChild(status)
-    }
     if (canHeroDemolishBuilding(building)) {
       ;(options?.actionsContainer ?? element).appendChild(this.getDeleteBuildingButton())
     }
@@ -68,7 +49,7 @@ export class BuildingInterface {
     populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
     const populationSpan = document.createElement('span')
     populationSpan.classList.add(MENU_INFO_IDS.populationText)
-    populationSpan.textContent = owner.population + '/' + Math.min(POPULATION_MAX, owner.populationMax)
+    populationSpan.textContent = owner.population + '/' + owner.populationMax
     populationDiv.appendChild(populationSpan)
     populationDiv.title = t('populationBedsDescription')
     if (building.type === BUILDING_TYPES.house) {
@@ -129,7 +110,7 @@ export class BuildingInterface {
           ? 'removeBuildingObject'
           : 'demolishBuilding'
     )
-    if (building.type === BUILDING_TYPES.chest) button.textContent = t('windowRemoveChest')
+    if (building.isBuilt && building.type === BUILDING_TYPES.chest) button.textContent = t('windowRemoveChest')
     button.addEventListener('click', () => {
       if (!canHeroDemolishBuilding(building)) return
       const menu = building.context?.menu
@@ -156,9 +137,11 @@ export class BuildingInterface {
       building.totalHitPoints,
       {
         hideType: options?.hideIdentity,
-        description: getEntityDescription(building),
+        description: building.isBuilt ? getEntityDescription(building) : t('constructionSiteDescription'),
       }
     )
+
+    if (!building.isBuilt) appendConstructionInfo(element, building)
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
       appendQuantityInfo(element, menu.icons!['food'], building.quantity)

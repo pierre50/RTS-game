@@ -25,4 +25,4 @@ These refresh the displayed sprite using the current work, action and animation,
 without changing its destination or movement path.
 
 Regression coverage lives in `unit-identity.test.cjs`, `unit-appearance-refresh.test.cjs`,
-`appearance-layers.test.cjs` and `player-auto-technologies.test.cjs`.
+`appearance-layers.test.cjs` and `player-gameplay.test.cjs`.

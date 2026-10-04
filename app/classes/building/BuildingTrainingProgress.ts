@@ -1,6 +1,6 @@
 import { notifyVillageStateChanged } from '../../lib/units/villageStateEvents'
 import { getTrainingProgress, isTrainingComplete } from '../../lib/training/trainingRules'
-import { ACTION_TYPES, POPULATION_MAX } from '../../constants'
+import { ACTION_TYPES } from '../../constants'
 import { t } from '../../lib/lang'
 import type { UnitCreationExtra } from '../../types/entities'
 import { refreshOpenBuildingMenu } from './BuildingMenuRefresh'
@@ -101,7 +101,7 @@ export function finishUnitTraining(
   if (!map.instantMode && !isTrainingComplete(runtime.currentTrainingDay(), completeDay)) {
     return false
   }
-  if (!trainee && building.owner.population >= Math.min(POPULATION_MAX, building.owner.populationMax)) {
+  if (!trainee && building.owner.population >= building.owner.populationMax) {
     building.loading = 100
     if (building.owner.isPlayed) {
       menu.showMessage(t('needHouses'), 'warning')

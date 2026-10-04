@@ -24,9 +24,6 @@ function loadModule(relativePath, mocks) {
     if (request === './BuildingProductionPlacement') {
       return loadModule('app/classes/building/BuildingProductionPlacement.ts', mocks)
     }
-    if (request === './BuildingTechnologyProduction') {
-      return loadModule('app/classes/building/BuildingTechnologyProduction.ts', mocks)
-    }
     if (request === '../../lib/chief') {
       return {
         hasLivingChief: () => true,
@@ -88,7 +85,7 @@ const buildingTrainingMock = {
   isTraineeTrainingType: (_building, type) => type !== 'Villager',
 }
 
-test('produced units remain at their spawn cell without movement orders', () => {
+test('production uses housing above 200 residents and gives no movement orders', () => {
   const spawnCell = { i: 1, j: 1, category: 'Land', solid: false }
   const calls = []
   const unit = {
@@ -115,8 +112,8 @@ test('produced units remain at their spawn cell without movement orders', () => 
       menu: {},
     },
     owner: {
-      population: 0,
-      populationMax: 10,
+      population: 200,
+      populationMax: 201,
       config: {
         units: {
           Villager: {},
@@ -143,7 +140,6 @@ test('produced units remain at their spawn cell without movement orders', () => 
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: {},
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -166,6 +162,9 @@ test('produced units remain at their spawn cell without movement orders', () => 
 
   assert.equal(calls[0][0], 'created')
   assert.deepEqual(calls[0][1], { i: 1, j: 1, type: 'Villager' })
+  assert.equal(calls.length, 1)
+  assert.equal(building.owner.population, 201)
+  assert.equal(new BuildingProduction(building).placeUnit('Villager'), false)
   assert.equal(calls.length, 1)
 })
 
@@ -217,7 +216,6 @@ test('produced units do not spawn on reserved passage cells', () => {
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: {},
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -270,7 +268,6 @@ test('military unit purchase from a building no longer auto-picks a trainee', ()
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Fantassin'],
     context: {
       map: { instantMode: false },
@@ -325,7 +322,6 @@ test('military unit purchase from a building no longer auto-picks a trainee', ()
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -382,7 +378,6 @@ test('stable unit purchase from a building no longer auto-picks a mounted traine
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Bowman'],
     context: {
       map: { instantMode: false },
@@ -438,7 +433,6 @@ test('stable unit purchase from a building no longer auto-picks a mounted traine
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -496,7 +490,6 @@ test('temple priest purchase from a building no longer auto-picks a villager', (
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Priest'],
     context: {
       map: { instantMode: false },
@@ -551,7 +544,6 @@ test('temple priest purchase from a building no longer auto-picks a villager', (
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { priest: 'Priest', villager: 'Villager' },
     },
     '../../lib': {
@@ -618,7 +610,6 @@ test('military training starts with the first explicitly ordered trainee to ente
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Fantassin'],
     context: {
       map: { instantMode: false },
@@ -663,7 +654,6 @@ test('military training starts with the first explicitly ordered trainee to ente
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -750,7 +740,6 @@ test('arrived trainee enters a busy training building queue instead of waiting o
     loading: 50,
     trainingUnit: activeTrainee,
     trainingType: 'Fantassin',
-    technology: null,
     units: ['Fantassin'],
     context: {
       map: {
@@ -783,7 +772,6 @@ test('arrived trainee enters a busy training building queue instead of waiting o
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -840,7 +828,6 @@ test('per-unit cancellation no longer owns pending trainee orders', () => {
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Bowman'],
     context: {
       map: { instantMode: false },
@@ -888,7 +875,6 @@ test('per-unit cancellation no longer owns pending trainee orders', () => {
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -976,7 +962,6 @@ test('cancelling stable mount training restores the original unmounted soldier',
     trainingType: 'Fantassin',
     trainingStartedDay: 1,
     trainingCompleteDay: 3,
-    technology: null,
     units: ['Fantassin'],
     context: {
       map: {
@@ -1008,7 +993,6 @@ test('cancelling stable mount training restores the original unmounted soldier',
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -1097,7 +1081,6 @@ test('trainee training updates loading even when the building is not classically
     selected: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Bowman'],
     context: {
       map: { instantMode: false },
@@ -1137,7 +1120,6 @@ test('trainee training updates loading even when the building is not classically
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { priest: 'Priest', villager: 'Villager' },
     },
     '../../lib': {
@@ -1200,7 +1182,6 @@ test('trainee training with empty stores succeeds without resource alerts', () =
     type: 'Stable',
     queue: [],
     loading: null,
-    technology: null,
     units: ['Bowman'],
     context: {
       menu: {
@@ -1229,7 +1210,6 @@ test('trainee training with empty stores succeeds without resource alerts', () =
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { priest: 'Priest', villager: 'Villager' },
     },
     '../../lib': {
@@ -1293,7 +1273,6 @@ test('active military training cannot be cancelled after the unit entered the bu
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -1361,7 +1340,6 @@ test('global unit training cancellation clears active and queued production', ()
     trainingDayChangeUnsubscribe() {
       calls.push(['unsubscribe'])
     },
-    technology: null,
     units: ['Fantassin', 'Bowman'],
     context: {
       map: { instantMode: false },
@@ -1395,7 +1373,6 @@ test('global unit training cancellation clears active and queued production', ()
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -1466,7 +1443,6 @@ test('training building wakes the next waiting trainee when it becomes free', ()
     queue: [],
     loading: null,
     trainingUnit: null,
-    technology: null,
     units: ['Fantassin'],
     context: {
       map: { instantMode: false },
@@ -1491,7 +1467,6 @@ test('training building wakes the next waiting trainee when it becomes free', ()
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -1579,7 +1554,6 @@ test('stable training remounts the same unit type without charging unit cost or 
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Fantassin'],
     stableHorses: [{ horseColor: 'dark' }],
     context: { map, menu: {} },
@@ -1604,7 +1578,6 @@ test('stable training remounts the same unit type without charging unit cost or 
       MENU_INFO_IDS: { populationText: 'populationText' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -1683,7 +1656,6 @@ test('empty stable checks horse stock when the trainee enters, not when ordered'
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Bowman'],
     stableHorses: [],
     context: {
@@ -1713,7 +1685,6 @@ test('empty stable checks horse stock when the trainee enters, not when ordered'
       MENU_INFO_IDS: { populationText: 'populationText' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -1774,7 +1745,6 @@ test('chief requirement for trainee training is checked when the unit enters', (
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Fantassin'],
     context: {
       menu: {
@@ -1803,7 +1773,6 @@ test('chief requirement for trainee training is checked when the unit enters', (
       MENU_INFO_IDS: { populationText: 'populationText' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -1900,7 +1869,6 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Bowman'],
     context: { map, menu: {} },
     owner,
@@ -1924,7 +1892,6 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -2015,7 +1982,6 @@ test('failed trainee placement retains the recruit and completed training', () =
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Fantassin'],
     context: { map, menu: {} },
     owner,
@@ -2041,7 +2007,6 @@ test('failed trainee placement retains the recruit and completed training', () =
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -2132,7 +2097,6 @@ test('arrived villager is consumed and trained unit reuses the same population s
     isDead: false,
     queue: [],
     loading: null,
-    technology: null,
     units: ['Fantassin'],
     context: { map, menu: {} },
     owner,
@@ -2156,7 +2120,6 @@ test('arrived villager is consumed and trained unit reuses the same population s
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
       PLAYER_TYPES: { ai: 'AI' },
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {
@@ -2221,7 +2184,6 @@ test('villagers and unknown unit types cannot charge resources or enter producti
       ACTION_TYPES: { train: 'train' },
       BUILDING_TYPES: {},
       FAMILY_TYPES: {},
-      POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib': {

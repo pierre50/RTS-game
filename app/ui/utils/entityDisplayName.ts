@@ -24,6 +24,8 @@ function getBuildingDisplayType(building: BuildingEntity): string {
 }
 
 export function getBuildingDisplayName(building: BuildingEntity): string {
+  if (!building.isBuilt)
+    return t('constructionSiteName', { building: translateTypeKey(getBuildingDisplayType(building)) })
   if (building.type === 'House') {
     const names = getHouseResidents(building.owner, building).map(unit => unit.name || t(unit.type ?? 'Villager'))
     if (names.length === 1) return t('houseOfOne', { name: names[0] })

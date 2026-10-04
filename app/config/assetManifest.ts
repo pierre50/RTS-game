@@ -7,13 +7,6 @@ function toTextureBundle(basePath: string, ids: string[]): AssetBundle {
   }, {})
 }
 
-function toBuildingShadowBundle(ids: string[]): AssetBundle {
-  return ids.reduce((bundle: AssetBundle, id) => {
-    bundle[`${id}/shadow`] = `assets/graphics/${id}/texture_shadow.png`
-    return bundle
-  }, {})
-}
-
 function toOggSoundFolderBundle(folder: string, ids: string[]): AssetBundle {
   return ids.reduce((bundle: AssetBundle, id) => {
     bundle[id] = `assets/sounds/${folder}/${id}.ogg`
@@ -70,9 +63,18 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'water-surface-filter': 'assets/border/water-surface-filter/texture.json',
   },
   graphics: {
-    buildings: 'assets/graphics/buildings/texture.json',
+    buildings: 'assets/graphics/structures/buildings/texture.json',
+    // Keep sheet aliases stable for gameplay references and saved games.
+    'buildings/wall/dithered': 'assets/graphics/structures/walls/dithered/texture.json',
+    'buildings/wall/dithered/shadow': 'assets/graphics/structures/walls/dithered/texture_shadow.png',
+    'buildings/wall/construction-flag': 'assets/graphics/structures/walls/construction-flag/texture.json',
+    'buildings/wall/construction-flag/shadow': 'assets/graphics/structures/walls/construction-flag/texture_shadow.png',
+    'buildings/wall/level-1': 'assets/graphics/structures/walls/level-1/texture.json',
+    'buildings/wall/level-1/shadow': 'assets/graphics/structures/walls/level-1/texture_shadow.png',
+    'buildings/deco': 'assets/graphics/structures/decorations/texture.json',
+    'buildings/cave': 'assets/graphics/structures/cave/texture.json',
+    'buildings/cave/shadow': 'assets/graphics/structures/cave/texture_shadow.png',
     ...toTextureBundle('assets/graphics', [
-      'buildings/wall/dithered',
       'resources/berrybush',
       'resources/wildgrass',
       'projectiles',
@@ -91,20 +93,9 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'resources/minerals',
       'resources/tree/grass',
       'resources/tree/dark-forest',
-      'buildings/wall/construction-flag',
-      'buildings/wall/level-1',
       'resources/tree/dead',
-      'buildings/deco',
-      'buildings/cave',
     ]),
-    ...toBuildingShadowBundle([
-      'buildings/cave',
-      'buildings/wall/dithered',
-      'buildings/wall/construction-flag',
-      'buildings/wall/level-1',
-      'resources/minerals',
-    ]),
-    'buildings/shadow': 'assets/graphics/buildings/texture_shadow.json',
+    'buildings/shadow': 'assets/graphics/structures/buildings/texture_shadow.json',
     'resources/minerals/shadow': 'assets/graphics/resources/minerals/texture_shadow.json',
   },
   sounds: {

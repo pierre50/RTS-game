@@ -133,7 +133,6 @@ test('ai production does not train villagers without a living chief', () => {
   const AIStrategy = loadAIStrategy()
   const ai = {
     config: { units: { Villager: { cost: {} }, Fantassin: { cost: {} } } },
-    technologies: [],
     units: [{ type: 'Villager' }],
   }
   const strategy = new AIStrategy(ai)
@@ -182,7 +181,6 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
     population: 4,
     populationMax: 20,
     stone: 0,
-    technologies: ['Farming'],
     units: [{ type: 'Chief', hitPoints: 10 }],
     wood: 200,
     buyBuilding: (i, j, type) => {
@@ -241,7 +239,6 @@ test('AI farming cannot spend a personal chest', () => {
     population: 4,
     populationMax: 20,
     stone: 0,
-    technologies: ['Farming'],
     units: [{ type: 'Chief', hitPoints: 10 }],
     wood: 0,
     buildings: [],
@@ -316,7 +313,6 @@ test('ai economic demand reserves food for automatic villager growth', () => {
     population: 10,
     populationMax: 20,
     stone: 0,
-    technologies: [],
     units: [],
     wood: 0,
   }
@@ -346,7 +342,6 @@ test('AI resources are requested for placed projects instead of hypothetical bui
     population: 8,
     populationMax: 20,
     stone: 0,
-    technologies: [],
     units: [],
     wood: 0,
   }
@@ -380,7 +375,6 @@ test('ai building strategy anticipates automatic villager waves before adding ho
     population: 17,
     populationMax: 20,
     stone: 20,
-    technologies: [],
     units: [{ type: 'Chief', hitPoints: 10 }],
     wood: 100,
   }
@@ -443,7 +437,6 @@ test('ai building strategy adds passage clearance to construction searches', () 
     population: 19,
     populationMax: 20,
     stone: 0,
-    technologies: [],
     units: [{ type: 'Chief', hitPoints: 10 }],
     wood: 200,
     buyBuilding: () => false,
@@ -485,7 +478,6 @@ test('ai production no longer buys villagers even when a chief is alive', () => 
   const AIStrategy = loadAIStrategy()
   const ai = {
     config: { units: { Villager: { cost: {} }, Fantassin: { cost: {} } } },
-    technologies: [],
     units: [{ type: 'Chief', hitPoints: 10 }],
   }
   const strategy = new AIStrategy(ai)
@@ -521,7 +513,6 @@ test('ai military production sends a villager to train instead of buying from th
   const ai = {
     config: { units: { Fantassin: { cost: { food: 50 } } } },
     food: 100,
-    technologies: [],
     units: [],
   }
   const villager = {
@@ -559,7 +550,6 @@ function strategyFixture(options = {}) {
     age: 0,
     buildings: [],
     units: [],
-    technologies: [],
     phase: 'economy',
     population: 0,
     populationMax: 20,

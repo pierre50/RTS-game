@@ -26,7 +26,6 @@ function loadBuildingInterface() {
         type: 'type',
       },
       PLAYER_TYPES: { bandits: 'bandits' },
-      POPULATION_MAX: 200,
     },
     '../../lib': { getIconPath: id => id },
     './EntityDescription': { getEntityDescription: () => '' },
@@ -37,7 +36,7 @@ function loadBuildingInterface() {
       },
       isHorseColor: value => ['dark', 'light'].includes(value),
     },
-    '../../lib/lang': { t: (key, values) => values?.count == null ? key : `${key}:${values.count}` },
+    '../../lib/lang': { t: (key, values) => (values?.count == null ? key : `${key}:${values.count}`) },
     '../../lib/horses/stableHorses': {
       getStableHorseAmount: building => building.stableHorses?.length ?? 0,
       getStableHorses: building => building.stableHorses ?? [],
@@ -343,9 +342,16 @@ test('house population information shows real beds and marks renovation unavaila
   try {
     const { BuildingInterface } = loadBuildingInterface()
     const owner = { label: 'village', population: 3, populationMax: 99, buildings: [] }
-    const house = { type: 'House', label: 'house', owner, isBuilt: true, interiorBuildings: [
-      { type: 'CampBedroll', isBuilt: true }, { type: 'CampBedroll', isBuilt: true },
-    ] }
+    const house = {
+      type: 'House',
+      label: 'house',
+      owner,
+      isBuilt: true,
+      interiorBuildings: [
+        { type: 'CampBedroll', isBuilt: true },
+        { type: 'CampBedroll', isBuilt: true },
+      ],
+    }
     owner.buildings.push(house)
     const view = new BuildingInterface(house)
     let element = view.getPopulationElement()
@@ -357,7 +363,9 @@ test('house population information shows real beds and marks renovation unavaila
     assert.equal(element.children[2].textContent, 'houseBedsUnavailable:2')
     delete house.buildingUpgrade
     assert.equal(view.getPopulationElement().children[1].textContent, '3/2')
-  } finally { global.document = previous }
+  } finally {
+    global.document = previous
+  }
 })
 
 test('own indestructible furniture exposes removal and rechecks ownership on click', () => {
@@ -366,7 +374,10 @@ test('own indestructible furniture exposes removal and rechecks ownership on cli
     const owner = { isPlayed: true, civ: 'Hellas' }
     let removed = 0
     const building = {
-      type: 'CampChair', owner, isBuilt: true, indestructible: true,
+      type: 'CampChair',
+      owner,
+      isBuilt: true,
+      indestructible: true,
       context: { controls: { heroUnit: { owner } }, menu: {} },
       demolish: () => removed++,
     }
@@ -380,5 +391,71 @@ test('own indestructible furniture exposes removal and rechecks ownership on cli
     building.owner = { team: owner.team }
     button.dispatch('click')
     assert.equal(removed, 1)
+  })
+})
+
+test('every constructible type shows actual health during and after construction', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const definitions = require('../public/assets/data/gameplay/buildings.json')
+    for (const [type, config] of Object.entries(definitions)) {
+      if (!(config.constructionTime > 0)) continue
+      const building = {
+        type,
+        owner: { civ: 'Hellas' },
+        context: { menu: {} },
+        isBuilt: false,
+        hitPoints: 75,
+        totalHitPoints: 75,
+        constructionProgress: 0,
+        constructionWorkRequired: 10,
+        constructionMaterials: { cost: { wood: 2 }, consumed: {}, delivered: {} },
+      }
+      const ui = new BuildingInterface(building)
+      const initial = document.createElement('div')
+      ui.renderInfo(initial, {})
+      assert.equal(initial.querySelector('.hit-points').textContent, '75/75', type)
+      assert.equal(initial.querySelector('.construction-progress-bar'), null, type)
+      assert.equal(initial.querySelector('.construction-damage-status'), null, type)
+      building.constructionProgress = 0.5
+      building.hitPoints = 50
+      const damaged = document.createElement('div')
+      ui.renderInfo(damaged, {})
+      assert.equal(damaged.querySelector('.hit-points').textContent, '50/75', type)
+      assert.ok(damaged.querySelector('.construction-damage-status'), type)
+      building.isBuilt = true
+      const completed = document.createElement('div')
+      ui.renderInfo(completed, {})
+      assert.equal(completed.querySelector('.construction-progress-display'), null, type)
+      assert.equal(completed.querySelector('.hit-points').textContent, '50/75', type)
+    }
+  })
+})
+
+test('construction inspection has no manual build action or duplicate material ledger', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const owner = { civ: 'Hellas' }
+    const hero = { owner, getActionCondition: () => true }
+    const building = {
+      type: 'House',
+      owner,
+      context: { controls: { heroUnit: hero }, menu: {} },
+      isBuilt: false,
+      hitPoints: 75,
+      totalHitPoints: 75,
+      constructionProgress: 0,
+      constructionMaterials: { cost: { wood: 40, stone: 10 }, delivered: {}, consumed: {} },
+    }
+    const element = document.createElement('div')
+    new BuildingInterface(building).renderInfo(element, {})
+    assert.equal(element.querySelector('.construction-materials'), null)
+    assert.equal(element.querySelectorAll('.construction-work-status').length, 1)
+    assert.equal(
+      element.children.some(child => child.textContent === 'constructionSiteBuild'),
+      false
+    )
+    assert.equal(element.querySelector('.construction-progress-display'), null)
+    assert.equal(element.querySelector('.hit-points').textContent, '75/75')
   })
 })

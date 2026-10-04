@@ -76,7 +76,6 @@ function makeBuilding(label, owner, i, j) {
     owner,
     queue: ['Villager'],
     selected: false,
-    technology: { type: 'ToolAge' },
     type: 'Chest',
   }
   owner.buildings.push(building)
@@ -197,7 +196,10 @@ test('unit transfers move membership and population once and clear interrupted r
   assert.deepEqual(target.path, [])
   assert.equal(target.sprite.onLoop, undefined)
   assert.ok(calls.some(call => call[0] === 'remove' && call[1] === 0))
-  assert.equal(calls.some(call => call[0] === 'milestone'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'milestone'),
+    false
+  )
   assert.equal(transferEntityOwner(target, newOwner), false)
   assert.equal(newOwner.population, 1)
 })
