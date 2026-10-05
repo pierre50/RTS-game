@@ -65,7 +65,8 @@ export function updateTimeSkipOverlay(overlay: TimeSkipOverlay | null, progress:
   if (!overlay) return
   overlay.gamepadHint.hidden = !(getGamepadEnabled() && getActiveGamepad())
   const percent = `${Math.round(Math.max(0, Math.min(100, progress * 100)))}%`
-  const unit = remainingHours === 1 ? 'hour' : 'hours'
-  overlay.label.textContent = `Waiting... ${remainingHours} ${unit} remaining`
+  const displayedHours = Math.ceil(remainingHours)
+  const unit = displayedHours === 1 ? 'hour' : 'hours'
+  overlay.label.textContent = `Waiting... ${displayedHours} ${unit} remaining`
   overlay.fill.style.width = percent
 }
