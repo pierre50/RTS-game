@@ -32,13 +32,17 @@ export function applyVillageStartingState(
   profiles: Record<string, VillageStartProfile>,
   terrain: (OfflineTerrainCell | null | undefined)[][],
   rules: OfflineWorkRules,
-  options: { skipPlayed?: boolean } = {}
+  options: {
+    skipPlayed?: boolean
+    prepareLayout?: (state: SerializedSave, layout: StartingVillageLayout) => void
+  } = {}
 ): SerializedSave {
   const state = structuredClone(source)
   const profileFor = startingProfileResolver(profiles)
   replaceGeneratedBaselines(state, profileFor, rules, options.skipPlayed)
   const chiefHomes = factionChiefHomes(state, profileFor)
   const layout = new StartingVillageLayout(state, terrain, rules)
+  options.prepareLayout?.(state, layout)
   state.players.forEach((player, index) => {
     if (options.skipPlayed && player.isPlayed) return
     if (!isSettlementOwner(player)) return

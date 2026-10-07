@@ -22,7 +22,7 @@ type StoragePitTerrain = {
   waterBorder?: boolean
   z?: number
 }
-const MATERIALS = new Set(['Tree', 'Stone', 'Gold', 'Copper', 'Iron'])
+const MATERIALS = new Set(['Tree', 'Stone', 'Gold', 'Copper', 'Tin', 'Iron'])
 const VILLAGE_RADIUS = 35
 const SERVICE_RADIUS = 8
 const MIN_GAIN = 3

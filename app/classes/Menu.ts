@@ -1,4 +1,3 @@
-import { TerritoryIndicator } from '../ui/TerritoryIndicator'
 import { QuestJournalManager } from '../ui/quests/QuestJournalManager'
 import { MinimapManager } from '../ui/minimap/MinimapManager'
 import { TopbarView } from '../ui/TopbarView'
@@ -50,7 +49,6 @@ export default class Menu implements MenuLike {
   heroBuildingMenuManager: HeroBuildingMenuManager
   entityInfoModalManager: EntityInfoModalManager
   heroStatusHud: HeroStatusHud
-  territoryIndicator: TerritoryIndicator
   heroInteractionPrompt: HeroInteractionPrompt
   toggle?: HTMLButtonElement
   toggled: boolean
@@ -91,7 +89,6 @@ export default class Menu implements MenuLike {
     this.entityInfoModalManager = new EntityInfoModalManager(this)
     this.heroStatusHud = new HeroStatusHud(this)
     this.heroInteractionPrompt = new HeroInteractionPrompt(this.gameHud)
-    this.territoryIndicator = new TerritoryIndicator(this)
     this.toggled = false
 
     this.questJournal = new QuestJournalManager(this)
@@ -108,7 +105,6 @@ export default class Menu implements MenuLike {
   }
 
   destroy(): void {
-    this.territoryIndicator.destroy()
     this.questJournal.destroy()
     this.minimapInputController.destroy()
     this.inventoryManager.destroy()
@@ -138,7 +134,6 @@ export default class Menu implements MenuLike {
   }
 
   updateTopbar(): void {
-    this.territoryIndicator.update()
     this.topbarView.update()
     this.questJournal.sync()
     this.npcOrdersManager.syncQuest()
@@ -267,9 +262,6 @@ export default class Menu implements MenuLike {
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec {
     return this.actionSpecs.getBuildingTrainingStatusButton(type, building)
   }
-  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec {
-    return this.actionSpecs.getCancelUnitTrainingButton(building)
-  }
   getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     return this.actionSpecs.getActionBuildingButton(type, ownerOverride)
   }
@@ -340,7 +332,6 @@ export default class Menu implements MenuLike {
     return this.heroStatusHud.setHero(hero)
   }
   updateHeroStatus(hero?: UnitEntity | null): void {
-    this.territoryIndicator.update()
     return this.heroStatusHud.update(hero)
   }
 

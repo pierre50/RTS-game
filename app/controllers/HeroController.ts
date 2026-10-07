@@ -1,3 +1,4 @@
+import { toggleHeroSprint, stopUnitSprint } from '../lib/units/movement/unitSprint'
 import type { Graphics } from 'pixi.js'
 import { updateInstanceRenderVisibility } from '../lib'
 import { SHEET_TYPES } from '../constants'
@@ -13,9 +14,9 @@ import { heroCanCommand } from '../lib/chief'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { setUnitControlMode } from '../lib/units/unitControl'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
+import { HeroInteractionHighlight } from '../services/HeroInteractionHighlight'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
-import { dismantleTrapBuilding } from '../services/world/TrapHarvestSystem'
 import {
   resolveHeroProximityInteraction,
   wakeOwnSleepingNpcForCommunication,
@@ -41,7 +42,6 @@ import { HeroEquipmentController } from './HeroEquipmentController'
 import {
   COMPANION_HORSE_CALL_MAX_RADIUS,
   TARGET_FRAME_MS,
-  getPointInDirection,
   isHeroMoveAction,
   refreshBakedAppearance,
   type CompanionHorse,
@@ -71,12 +71,12 @@ export class HeroController {
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
   interactInputOwner: InteractInputOwner
-  shiftMoveLockedDegree: number | null
   actionInputController: HeroActionInputController
   companionHorseController: HeroCompanionHorseController
   equipmentController: HeroEquipmentController
   keyboardInteractHeld: boolean
   proximityInteraction: HeroProximityInteraction | null
+  interactionHighlight = new HeroInteractionHighlight()
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
 
@@ -94,7 +94,6 @@ export class HeroController {
     this.pendingGoToNpcs = null
     this.primaryClickPoint = null
     this.interactInputOwner = null
-    this.shiftMoveLockedDegree = null
     this.actionInputController = new HeroActionInputController(this)
     this.companionHorseController = new HeroCompanionHorseController(controls, () => this.heroUnit)
     this.equipmentController = new HeroEquipmentController(this)
@@ -135,17 +134,11 @@ export class HeroController {
     }
   }
 
-  getShiftMoveLockedAimPoint(): HeroAimPoint | null {
-    const unit = this.heroUnit
-    if (!unit || unit.mountedOnHorse || this.shiftMoveLockedDegree == null) return null
-    return getPointInDirection(unit, this.shiftMoveLockedDegree)
-  }
-
   isActive(): boolean {
     return Boolean(this.heroUnit && !this.heroUnit.isDead && !this.heroUnit.isDestroyed)
   }
 
-  handleKeyDown(action: ControlBindingAction): boolean {
+  handleKeyDown(action: ControlBindingAction, source?: 'gamepad'): boolean {
     if (!this.isActive()) return false
 
     if (action === 'inventory') {
@@ -156,6 +149,12 @@ export class HeroController {
     if (action === 'heroDefense') {
       this.handleDefenseKeyDown()
       return true
+    }
+
+    if (action === 'heroInteract' && source === 'gamepad') {
+      if (this.controls.closeAnyHeroPanel()) return true
+      if (this.heroUnit?.mountedOnHorse) return this.dismountCompanionHorse()
+      return this.executeProximityInteraction() || this.controls.openHeroEntityInteraction()
     }
 
     if (action === 'heroInteract') {
@@ -308,6 +307,7 @@ export class HeroController {
     const previousLabelKey = this.proximityInteraction?.labelKey ?? null
     const nextLabelKey = interaction?.labelKey ?? null
     this.proximityInteraction = interaction
+    this.interactionHighlight.update(interaction && 'target' in interaction ? interaction.target : null)
     if (previousLabelKey !== nextLabelKey) this.controls.context.menu?.setHeroInteractionPrompt?.(nextLabelKey)
   }
 
@@ -316,6 +316,7 @@ export class HeroController {
     const previousLabelKey = this.proximityInteraction?.labelKey ?? null
     const nextLabelKey = interaction?.labelKey ?? null
     this.proximityInteraction = interaction
+    this.interactionHighlight.update(interaction && 'target' in interaction ? interaction.target : null)
     if (previousLabelKey !== nextLabelKey) this.controls.context.menu?.setHeroInteractionPrompt?.(nextLabelKey)
     if (!interaction) return false
     if (interaction.action === 'enter') {
@@ -338,11 +339,10 @@ export class HeroController {
       this.controls.context.menu?.openNpcOrders?.([interaction.target], interaction.npcOptions)
       return true
     }
-    if (interaction.action === 'dismantleTrap') return dismantleTrapBuilding(this.heroUnit, interaction.target)
     return this.controls.openHeroEntityInteraction(interaction.target)
   }
 
-  handleKeyUp(action: ControlBindingAction): void {
+  handleKeyUp(action: ControlBindingAction, source?: 'gamepad'): void {
     if (isHeroMoveAction(action)) {
       this.keysPressed.delete(action)
       if (!this.hasMoveKeyPressed()) {
@@ -350,7 +350,7 @@ export class HeroController {
           this.equippedItem === 'interact' && this.mouseHeld && this.primaryClickPoint ? 'mouse' : null
       }
     }
-    if (action === 'heroInteract') {
+    if (action === 'heroInteract' && source !== 'gamepad') {
       this.keyboardInteractHeld = false
       if (this.commCharging) this.endCommCharge()
     }
@@ -358,11 +358,24 @@ export class HeroController {
   }
 
   update(frameScale: number): void {
+    if (!this.isActive()) this.interactionHighlight.clear()
     updateHeroControllerRuntime(this, frameScale)
   }
 
   attackTowardPoint(point: HeroAimPoint): boolean {
     return this.actionInputController.attackTowardPoint(point)
+  }
+
+  toggleSprint(): void {
+    if (this.heroUnit) toggleHeroSprint(this.heroUnit)
+  }
+
+  stopSprint(): void {
+    if (this.heroUnit) stopUnitSprint(this.heroUnit)
+  }
+
+  handleDirectAttack(): void {
+    this.actionInputController.handleDirectAttack()
   }
 
   handlePrimaryPointerDown(): void {
@@ -389,8 +402,8 @@ export class HeroController {
     updateHeroCommIndicator(this)
   }
 
-  endCommCharge(): void {
-    endHeroCommCharge(this)
+  endCommCharge(groupOnly = false): void {
+    if (this.commCharging) endHeroCommCharge(this, groupOnly)
   }
 
   cancelCommCharge(): void {
@@ -420,10 +433,11 @@ export class HeroController {
 
   stopKeyboardMove(): void {
     this.keysPressed.clear()
-    this.shiftMoveLockedDegree = null
   }
 
   cancelActiveInteraction(): void {
+    this.stopSprint()
+    this.interactionHighlight.clear()
     this.stopKeyboardMove()
     this.mouseHeld = false
     this.defenseHeld = false

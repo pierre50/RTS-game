@@ -1,3 +1,4 @@
+import { equipmentBaseKey } from './equipmentCondition'
 import type { ResourceAmount } from '../../types/common'
 
 export const FORGE_FAMILIES = ['axes', 'pickaxes', 'hammers', 'weapons', 'arrows', 'armor'] as const
@@ -53,11 +54,12 @@ export function resolveUnitForgeEquipment(
     owner?: ForgeUpgradeOwner | null
   }
 ): string {
-  if (unit.type === 'Hero') return equipment
+  if (unit.type === 'Hero' && !['axes', 'pickaxes', 'hammers'].includes(forgeFamilyForEquipment(equipment) ?? ''))
+    return equipment
   if (unit.isDead && unit.lootEquipment) {
-    const familyKey = (item: string) => item.replace(/_(ceramic|copper|bronze|iron)(?=_|$)/, '_metal')
+    const familyKey = (item: string) => equipmentBaseKey(item).replace(/_(ceramic|copper|bronze|iron)(?=_|$)/, '_metal')
     const saved = unit.lootEquipment.find(item => familyKey(item) === familyKey(equipment))
-    if (saved) return saved
+    if (saved) return equipmentBaseKey(saved)
   }
   return resolveForgeEquipment(equipment, unit.owner)
 }
@@ -69,13 +71,12 @@ export function getForgeUpgradeCost(family: ForgeFamily, nextTier: number): Reso
   return { wood: military ? 15 : 10, ...(nextTier === 3 ? { iron: metal } : { copper: metal }) }
 }
 
-export function getForgeGatherBonus(owner: ForgeUpgradeOwner | null | undefined, work: string, type?: string): number {
-  if (type === 'Hero') return 0
+export function getForgeGatherBonus(owner: ForgeUpgradeOwner | null | undefined, work: string, _type?: string): number {
   if (work === 'woodcutter') return getForgeTier(owner, 'axes')
   if (work === 'stoneminer' || work === 'goldminer') return getForgeTier(owner, 'pickaxes')
   return 0
 }
 
-export function getForgeBuildMultiplier(owner: ForgeUpgradeOwner | null | undefined, type?: string): number {
-  return type === 'Hero' ? 1 : 1 + getForgeTier(owner, 'hammers') * 0.25
+export function getForgeBuildMultiplier(owner: ForgeUpgradeOwner | null | undefined, _type?: string): number {
+  return 1 + getForgeTier(owner, 'hammers') * 0.25
 }

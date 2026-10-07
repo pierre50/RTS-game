@@ -8,6 +8,7 @@ export const RESOURCE_TYPES = {
   stone: 'Stone',
   gold: 'Gold',
   copper: 'Copper',
+  tin: 'Tin',
   iron: 'Iron',
 }
 
@@ -21,7 +22,7 @@ export const FORAGE_RESOURCE_TYPES = new Set<string>([RESOURCE_TYPES.berrybush, 
 
 export const PASSABLE_RESOURCE_TYPES = new Set<string>([RESOURCE_TYPES.wheat, ...WILDGRASS_RESOURCE_TYPES])
 
-export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'] as const
+export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'tin', 'iron'] as const
 
 // Real, storable resource kinds. 'food' from RESOURCE_NAMES is a virtual aggregate (berry + meat + wheat)
 // used only for costs/display — it is never physically stored in an inventory.resources bag.
@@ -41,6 +42,10 @@ export const RESOURCE_STORAGE_NAMES = [
   'stone',
   'gold',
   'copper',
+  'tin',
+  'copperIngot',
+  'bronzeIngot',
+  'ironIngot',
   'iron',
 ] as const
 
@@ -203,6 +208,7 @@ export const ACTION_TYPES = {
   minegold: 'minegold',
   minestone: 'minestone',
   minecopper: 'minecopper',
+  minetin: 'minetin',
   mineiron: 'mineiron',
   chopwood: 'chopwood',
   delivery: 'delivery',
@@ -220,6 +226,7 @@ export const LOADING_TYPES = {
   stone: 'stone',
   gold: 'gold',
   copper: 'copper',
+  tin: 'tin',
   iron: 'iron',
   wood: 'wood',
 }
@@ -228,6 +235,7 @@ export const TYPE_ACTION = {
   Stone: ACTION_TYPES.minestone,
   Gold: ACTION_TYPES.minegold,
   Copper: ACTION_TYPES.minecopper,
+  Tin: ACTION_TYPES.minetin,
   Iron: ACTION_TYPES.mineiron,
   Berrybush: ACTION_TYPES.forageberry,
   MedicinalHerb: ACTION_TYPES.forageberry,
@@ -247,6 +255,7 @@ export const RESOURCE_STOCKPILE_TYPES = {
   [RESOURCE_TYPES.stone]: 'stone',
   [RESOURCE_TYPES.gold]: 'gold',
   [RESOURCE_TYPES.copper]: 'copper',
+  [RESOURCE_TYPES.tin]: 'tin',
   [RESOURCE_TYPES.iron]: 'iron',
 } as const
 
@@ -261,26 +270,30 @@ export const RESOURCE_GATHER_SWINGS = {
   [LOADING_TYPES.stone]: 3,
   [LOADING_TYPES.gold]: 4,
   [LOADING_TYPES.copper]: 3,
+  [LOADING_TYPES.tin]: 3,
   [LOADING_TYPES.iron]: 4,
 } as const
 
 export const RESOURCE_ICON_IDS = {
-  wood: { commodity: '000_50732', attribute: '000_50731' },
-  food: { commodity: '002_50732', attribute: '002_50731' },
-  // Placeholder: gathered plants reuse the generic food icon until dedicated art exists.
-  berry: { commodity: '002_50732', attribute: '002_50731' },
-  meat: { commodity: '002_50732', attribute: '002_50731' },
-  wheat: { commodity: '002_50732', attribute: '002_50731' },
-  herb: { commodity: '002_50732', attribute: '002_50731' },
-  toxicHerb: { commodity: '002_50732', attribute: '002_50731' },
-  fiber: { commodity: '002_50732', attribute: '002_50731' },
-  feather: { commodity: '002_50732', attribute: '002_50731' },
-  leather: { commodity: '002_50732', attribute: '002_50731' },
-  sinew: { commodity: '002_50732', attribute: '002_50731' },
-  stone: { commodity: '001_50732', attribute: '001_50731' },
-  gold: { commodity: '003_50732', attribute: '003_50731' },
-  copper: { commodity: '003_50732', attribute: '003_50731' },
-  iron: { commodity: '001_50732', attribute: '001_50731' },
+  wood: { commodity: 'resource/wood', attribute: 'resource/wood' },
+  food: { commodity: 'resource/food', attribute: 'resource/food' },
+  berry: { commodity: 'resource/berry', attribute: 'resource/berry' },
+  meat: { commodity: 'resource/meat', attribute: 'resource/meat' },
+  wheat: { commodity: 'resource/wheat', attribute: 'resource/wheat' },
+  herb: { commodity: 'resource/herb', attribute: 'resource/herb' },
+  toxicHerb: { commodity: 'resource/toxicHerb', attribute: 'resource/toxicHerb' },
+  fiber: { commodity: 'resource/fiber', attribute: 'resource/fiber' },
+  feather: { commodity: 'resource/feather', attribute: 'resource/feather' },
+  leather: { commodity: 'resource/leather', attribute: 'resource/leather' },
+  sinew: { commodity: 'resource/sinew', attribute: 'resource/sinew' },
+  stone: { commodity: 'resource/stone', attribute: 'resource/stone' },
+  gold: { commodity: 'resource/gold', attribute: 'resource/gold' },
+  copper: { commodity: 'resource/copper', attribute: 'resource/copper' },
+  tin: { commodity: 'resource/tin', attribute: 'resource/tin' },
+  copperIngot: { commodity: 'resource/copperIngot', attribute: 'resource/copperIngot' },
+  bronzeIngot: { commodity: 'resource/bronzeIngot', attribute: 'resource/bronzeIngot' },
+  ironIngot: { commodity: 'resource/ironIngot', attribute: 'resource/ironIngot' },
+  iron: { commodity: 'resource/iron', attribute: 'resource/iron' },
 } as const
 
 export const MINING_RESOURCE_CONFIG = {
@@ -294,6 +307,12 @@ export const MINING_RESOURCE_CONFIG = {
   [RESOURCE_TYPES.gold]: {
     action: ACTION_TYPES.minegold,
     loadingType: LOADING_TYPES.gold,
+    work: WORK_TYPES.goldminer,
+    sound: 'mineGold',
+  },
+  [RESOURCE_TYPES.tin]: {
+    action: ACTION_TYPES.minetin,
+    loadingType: LOADING_TYPES.tin,
     work: WORK_TYPES.goldminer,
     sound: 'mineGold',
   },
@@ -320,5 +339,6 @@ export const SPACED_RESOURCE_TYPES = [
   RESOURCE_TYPES.gold,
   RESOURCE_TYPES.stone,
   RESOURCE_TYPES.copper,
+  RESOURCE_TYPES.tin,
   RESOURCE_TYPES.iron,
 ] as const

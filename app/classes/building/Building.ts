@@ -51,6 +51,7 @@ type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 
 export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
+  settlementName?: string
   cave?: CaveDefinition
   placementMirrored?: boolean
   buildingLevel?: number
@@ -79,6 +80,7 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
 }
 
 export class Building extends Instance implements BuildingEntity {
+  declare settlementName?: string
   buildingInterface: BuildingInterface
   buildingLifecycle: BuildingLifecycle
   buildingProduction: BuildingProduction

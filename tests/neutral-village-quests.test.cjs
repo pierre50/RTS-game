@@ -635,7 +635,7 @@ test('a sleeping tutorial chief cannot give ammunition or launch the raid on dia
   runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
   const quest = runtime.getQuest(chief)
   quest.stageId = 'hunt'
-  chief.shelterState = { reason: 'sleep' }
+  chief.shelterState = { reason: 'sleep', status: 'outside', location: 'outside' }
   chief.sleepVisualState = null
   assert.equal(runtime.interact(chief, 'arrows'), false)
   assert.equal(hero.inventory.equipped?.arrow, undefined)

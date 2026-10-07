@@ -1,7 +1,6 @@
 import { setHeroGameCursorEnabled } from '../lib/hero/heroCursor'
 import type Controls from './Controls'
 export type TickerLike = { elapsedMS?: number; deltaMS?: number; deltaTime: number }
-const MAX_CAMERA_FRAME_SCALE = 3
 const TARGET_FRAME_MS = 1000 / 60
 
 export function onTick(controls: Controls, ticker: TickerLike): void {
@@ -21,11 +20,6 @@ export function onTick(controls: Controls, ticker: TickerLike): void {
     return
   }
 
-  const frameScale = Math.min(
-    (ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS,
-    MAX_CAMERA_FRAME_SCALE
-  )
-
   if (controls.isHeroControlActive()) {
     controls.gamepadInput.update()
     controls.heroController.update(gameFrameScale)
@@ -37,6 +31,4 @@ export function onTick(controls: Controls, ticker: TickerLike): void {
 
   controls.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
   controls.heroController.updateOcclusionFade(TARGET_FRAME_MS * gameFrameScale, false)
-  controls.cameraController.updateMouseMove(frameScale)
-  controls.panCameraWithArrowKeys(frameScale)
 }

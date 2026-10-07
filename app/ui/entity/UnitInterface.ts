@@ -76,14 +76,8 @@ export class UnitInterface {
         value: combatStats.weaponPower,
       })
     }
-    if (combatStats.meleeArmor) {
-      infos.push({ key: 'meleeArmor', value: combatStats.meleeArmor })
-    }
-    if (combatStats.pierceArmor) {
-      infos.push({
-        key: 'pierceArmor',
-        value: combatStats.pierceArmor,
-      })
+    if (combatStats.armor) {
+      infos.push({ key: 'armor', value: combatStats.armor })
     }
 
     for (const info of infos) infosDiv.appendChild(createCombatStatInfo(info))

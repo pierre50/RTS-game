@@ -1,3 +1,4 @@
+import { equipmentBaseKey } from '../../lib/equipment/equipmentCondition'
 import { RESOURCE_ICON_IDS } from '../../constants'
 import { getIconPath } from '../../lib'
 import { renderBuildingAvatar } from '../../lib/avatar'
@@ -128,8 +129,9 @@ function createInventoryToolIcon(item: string): HTMLSpanElement | null {
 }
 
 export function createInventoryEquipmentIcon(context: GameContextLike, item: string, label: string): HTMLElement {
-  if (item.startsWith('arrow_')) return createInventoryArrowIcon(item)
-  const toolIcon = createInventoryToolIcon(item)
+  const baseItem = equipmentBaseKey(item)
+  if (baseItem.startsWith('arrow_')) return createInventoryArrowIcon(baseItem)
+  const toolIcon = createInventoryToolIcon(baseItem)
   if (toolIcon) return toolIcon
 
   const icon = document.createElement('canvas')

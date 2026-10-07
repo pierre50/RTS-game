@@ -1,7 +1,5 @@
 export const MENU_INFO_IDS = {
   hitPoints: 'hit-points',
-  population: 'population',
-  populationText: 'population-text',
   quantity: 'quantity',
   quantityText: 'quantity-text',
   name: 'name',

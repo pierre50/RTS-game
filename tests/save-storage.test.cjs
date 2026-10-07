@@ -126,15 +126,17 @@ test('invalid index shapes and entries do not crash listing or saving', () => {
   assert.deepEqual(loadSaveStorage(storage).listSaves(), [valid])
 })
 
-test('manual limits allow replacement and autosaving', () => {
+test('manual saves exceed ten without losing older saves and still allow replacement and autosaving', () => {
   const storage = makeMemoryStorage()
   const api = loadSaveStorage(storage)
   for (let i = 1; i <= 10; i++) api.saveRecord(minimalSaveRecord(), { key: `save_${i}`, name: `Save ${i}` })
-  assert.throws(() => api.saveRecord(minimalSaveRecord()), /MAX_SAVES_REACHED/)
+  const added = api.saveRecord(minimalSaveRecord())
+  assert.deepEqual(api.loadSave(added.key), minimalSaveRecord())
+  for (let i = 1; i <= 10; i++) assert.deepEqual(api.loadSave(`save_${i}`), minimalSaveRecord())
   assert.equal(api.saveRecord(minimalSaveRecord(), { key: 'save_1', name: 'Replacement' }).name, 'Replacement')
   assert.equal(api.autosaveRecord(minimalSaveRecord()).key, 'save_0')
   assert.equal(api.autosaveRecord(minimalSaveRecord(), 'Automatic').name, 'Automatic')
-  assert.equal(api.listSaves().length, 11)
+  assert.equal(api.listSaves().length, 12)
   assert.deepEqual(api.loadSave('save_0'), minimalSaveRecord())
   assert.deepEqual(api.buildSaveRecord({}), {})
   assert.deepEqual(api.buildSaveRecord({}, { version: 1 }), {})
@@ -257,18 +259,22 @@ test('async Electron saves serialize writes, preserve replacements and recover a
     './AsyncSaveStorage': {
       writeElectronSave: async (_bridge, key, _data, index) => {
         calls.push({ key, index: JSON.parse(index) })
-        if (reject) throw 'transaction rejected'
+        if (reject) throw new Error('transaction rejected')
+        storage.setItem('saves_index', index)
       },
     },
   })
-  await assert.rejects(api.saveRecordAsync(minimalSaveRecord()), /MAX_SAVES_REACHED/)
+  await assert.rejects(api.saveRecordAsync(minimalSaveRecord()), /transaction rejected/)
   assert.equal(await api.autosaveRecordAsync(minimalSaveRecord()), null)
   reject = false
   const replaced = await api.saveRecordAsync(minimalSaveRecord(), { key: 'save_1', name: 'replacement' })
   assert.deepEqual(replaced, { key: 'save_1', name: 'replacement' })
   assert.equal(calls.at(-1).index.length, 10)
-  storage.setItem('saves_index', '[]')
-  const created = await api.saveRecordAsync(minimalSaveRecord())
-  assert.ok(created.key.startsWith('save_'))
-  assert.equal(calls.at(-1).index[0].name, created.name)
+  const originalIndex = JSON.parse(storage.getItem('saves_index'))
+  const created = await Promise.all([api.saveRecordAsync(minimalSaveRecord()), api.saveRecordAsync(minimalSaveRecord())])
+  const index = JSON.parse(storage.getItem('saves_index'))
+  assert.equal(index.length, 12)
+  assert.deepEqual(index.slice(0, 10), originalIndex)
+  assert.notEqual(created[0].key, created[1].key)
+  for (const saved of created) assert.ok(index.some(entry => entry.key === saved.key && entry.name === saved.name))
 })

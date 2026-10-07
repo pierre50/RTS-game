@@ -90,6 +90,7 @@ export interface PlayerLike {
   stone: number
   gold: number
   copper: number
+  tin: number
   iron: number
   population: number
   populationMax: number
@@ -149,6 +150,7 @@ export interface PlayerLike {
   foundedStones?: Set<RuntimeEntity>
   foundedGolds?: Set<RuntimeEntity>
   foundedCoppers?: Set<RuntimeEntity>
+  foundedTins?: Set<RuntimeEntity>
   foundedIrons?: Set<RuntimeEntity>
   foundedResources?: Record<string, Set<RuntimeEntity>>
   foundedAnimals?: Set<RuntimeEntity>

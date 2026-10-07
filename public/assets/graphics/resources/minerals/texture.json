@@ -287,6 +287,78 @@
         "x": 0.5,
         "y": 0.6964285714
       }
+    },
+    "012_graphics_resources_minerals_tin_000.png": {
+      "frame": {
+        "x": 1039,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6071428571
+      }
+    },
+    "013_graphics_resources_minerals_tin_001.png": {
+      "frame": {
+        "x": 1126,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6607142857
+      }
+    },
+    "014_graphics_resources_minerals_tin_002.png": {
+      "frame": {
+        "x": 1213,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6964285714
+      }
     }
   },
   "meta": {
@@ -295,7 +367,7 @@
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 1021,
+      "w": 1282,
       "h": 56
     },
     "scale": 1

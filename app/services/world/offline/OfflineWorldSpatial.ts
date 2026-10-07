@@ -257,6 +257,11 @@ export class OfflineWorldSpatial {
     this.reserve(entity)
   }
 
+  /** Initial road corridors stay walkable but cannot receive structures or relocated resources. */
+  reservePassage(point: SaveGridPoint): void {
+    this.passages.add(this.key(point))
+  }
+
   naturalCell(point: SaveGridPoint, clearableTypes: ReadonlySet<string> = new Set()): boolean {
     if (!this.land(point) || this.passages.has(this.key(point))) return false
     const occupants = this.occupied.get(this.key(point))

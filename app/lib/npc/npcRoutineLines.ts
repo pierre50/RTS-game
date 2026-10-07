@@ -157,6 +157,10 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
         'Je cherche de l’or pour nos réserves{address}. Chaque pépite compte.',
         'L’or demande de la patience{address}. Je garde l’œil ouvert.',
       ],
+      tin: [
+        'Je cherche de l’étain{address}. Il servira au bronze.',
+        'Je rapporte du minerai d’étain au village{address}.',
+      ],
       copper: [
         'Je m’occupe du cuivre{address}. Les artisans attendent leur minerai.',
         'Le cuivre se mérite{address}. Je veille à en rapporter au village.',
@@ -349,6 +353,7 @@ export const NPC_ROUTINE_LINES: Record<'fr' | 'en', RoutineLines> = {
         'I am looking for gold for our reserves{address}. Every nugget counts.',
         'Gold takes patience{address}. I am keeping my eyes open.',
       ],
+      tin: ['I am looking for tin{address}. We need it for bronze.', 'I am bringing tin ore to the village{address}.'],
       copper: [
         'I am taking care of the copper{address}. The craftspeople need their ore.',
         'Copper takes effort{address}. I am making sure some reaches the village.',

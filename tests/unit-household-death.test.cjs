@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { reconcileHouseholds, getHouseResidents, getVacantHomeCount, claimHeroHome } = loadTsModule(
+const { reconcileHouseholds, getHouseResidents, getVacantHomeCount } = loadTsModule(
   'app/lib/housing/households.ts'
 )
 const { isBedOccupied } = loadTsModule('app/services/rest/BedOccupancy.ts')
@@ -88,7 +88,8 @@ test('death of the resident hero clears the persistent home reservation', () => 
   const { house, owner, add } = fixture()
   const hero = add('Hero', 'Hero')
   reconcileHouseholds(owner)
-  assert.equal(claimHeroHome(owner, hero, house), true)
+  house.heroHomeResident = { label: hero.label, name: hero.name }
+  hero.homeHouseLabel = house.label
   die(hero)
   assert.equal(house.heroHomeResident, undefined)
   assert.deepEqual(getHouseResidents(owner, house), [])

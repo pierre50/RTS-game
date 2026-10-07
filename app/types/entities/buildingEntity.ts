@@ -16,6 +16,7 @@ import type { TrainingEntry, TrainingTrainee } from '../training'
 import type { SaveEntityState } from '../save'
 
 export interface BuildingEntity extends RuntimeEntityBase {
+  settlementName?: string
   scanForInitialTarget?: () => void
   heroHomeResident?: { label: string; name?: string }
   plannedBedLabels?: string[]
@@ -44,7 +45,6 @@ export interface BuildingEntity extends RuntimeEntityBase {
   trainingStartedDay?: number | null
   trainingCompleteDay?: number | null
   addChild?: Container['addChild']
-  displayPopulation?: boolean
   loading?: number | null
   buyUnit?: (
     type: string,

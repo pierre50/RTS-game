@@ -25,6 +25,7 @@ const owners = new WeakMap<object, { store: DeferredVillageStore; entry: Entry }
 export function deferredVillageBuildings(owner: object) {
   return owners.get(owner)?.entry.state.buildings?.map(building => ({
     label: building.label,
+    settlementName: building.settlementName,
     type: building.type,
     i: building.i,
     j: building.j,

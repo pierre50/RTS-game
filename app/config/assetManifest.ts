@@ -40,9 +40,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     nord: 'assets/data/civilizations/nord.json',
     nobatia: 'assets/data/civilizations/nobatia.json',
   },
-  interface: {
-    'pointers/move-target': 'assets/interface/pointers/move-target/texture.json',
-  },
+  interface: {},
   terrain: {
     'terrain/paths': 'assets/terrain/paths/texture.json',
     'terrain/desert': 'assets/terrain/desert/texture.json',

@@ -1,0 +1,386 @@
+const assert = require('node:assert/strict')
+const test = require('node:test')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+
+function makeElement(tag = 'div') {
+  return {
+    tag,
+    dataset: {},
+    alt: '',
+    setAttribute(name, value) {
+      this[name] = value
+    },
+    children: [],
+    className: '',
+    src: '',
+    textContent: '',
+    append(...children) {
+      this.children.push(...children)
+    },
+    appendChild(child) {
+      this.children.push(child)
+      return child
+    },
+    replaceChildren(...children) {
+      this.children = children
+    },
+  }
+}
+
+function withFakeDocument(fn) {
+  const previousDocument = global.document
+  global.document = { createElement: tag => makeElement(tag), getElementById: () => null }
+  try {
+    return fn()
+  } finally {
+    global.document = previousDocument
+  }
+}
+
+function loadPanel() {
+  return loadTsModule('app/ui/hero-building/HeroVillageReport.ts', {
+    mocks: {
+      '../inventory/InventoryItemIcons': { createInventoryResourceIcon: resource => ({ resource }) },
+      '../../constants': {
+        BUILDING_TYPES: { chest: 'Chest', stable: 'Stable', storagePit: 'StoragePit', townCenter: 'TownCenter' },
+        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold'],
+        RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold'],
+        UNIT_TYPES: { hero: 'Hero', villager: 'Villager' },
+        WORK_TYPES: {
+          attacker: 'attacker',
+          builder: 'builder',
+          farmer: 'farmer',
+          forager: 'forager',
+          goldminer: 'goldminer',
+          healer: 'healer',
+          horseCapture: 'horseCapture',
+          hunter: 'hunter',
+          stoneminer: 'stoneminer',
+          woodcutter: 'woodcutter',
+        },
+      },
+      '../../constants/consumption': {
+        DAILY_CONSUMPTION_PER_VILLAGER: { food: 4 },
+      },
+      '../../lib/horses/stableHorses': {
+        STABLE_HORSE_CAPACITY: 5,
+        getStableHorseAmount: building => building.stableHorses?.length ?? building.horseAmount ?? 0,
+      },
+      '../../lib/lang': { t: key => key },
+      '../../lib/mapSpaces': {
+        getActiveMapSpace: map => map.spaces.get(map.activeSpaceId),
+        getEntitySpaceId: entity => entity.spaceId || 'outside',
+      },
+      '../../lib/units/autonomy/villagerAutonomyTargeting': {
+        getAutonomyJobForWork: work =>
+          ({
+            farmer: 'food',
+            forager: 'food',
+            goldminer: 'gold',
+            hunter: 'food',
+            stoneminer: 'stone',
+            woodcutter: 'wood',
+          })[work] ?? null,
+      },
+    },
+  })
+}
+
+test('base report shows village reserves without the hero bag and keeps only population and daily consumption', () => {
+  withFakeDocument(() => {
+    const { createHeroVillageReport } = loadPanel()
+    const player = { label: 'player', buildings: [], population: 5, populationMax: 250, units: [] }
+    const hero = {
+      owner: player,
+      type: 'Hero',
+      spaceId: 'outside',
+      inventory: { resources: { wood: 5, berry: 2 } },
+    }
+    player.units = [
+      hero,
+      { type: 'Villager', work: 'woodcutter' },
+      { type: 'Villager', work: 'farmer' },
+      { type: 'Villager', autonomousJob: 'stone', inactif: true, work: 'forager' },
+      { type: 'Villager', shelterState: { reason: 'sleep', previousAutonomousJob: 'gold' } },
+      { type: 'Villager', isDead: true, work: 'hunter' },
+    ]
+    player.buildings = [
+      {
+        owner: player,
+        type: 'TownCenter',
+        i: 0,
+        j: 0,
+        spaceId: 'outside',
+        inventory: { resources: { wheat: 7, stone: 3 } },
+      },
+      {
+        owner: player,
+        type: 'StoragePit',
+        i: 0,
+        j: 0,
+        spaceId: 'other-map',
+        inventory: { resources: { wood: 99, gold: 99 } },
+      },
+      {
+        owner: player,
+        type: 'StoragePit',
+        i: 0,
+        j: 0,
+        spaceId: 'outside',
+        inventory: { resources: { wood: 11, gold: 4 } },
+      },
+      {
+        owner: player,
+        type: 'Stable',
+        stableHorses: [{}, {}, {}],
+        queue: ['Bowman'],
+        trainingQueue: [{ type: 'Fantassin' }],
+      },
+      {
+        owner: player,
+        type: 'Barracks',
+        queue: ['Bowman', 'Fantassin'],
+      },
+    ]
+    const menu = {
+      context: {
+        controls: { heroUnit: hero },
+        map: { activeSpaceId: 'outside', spaces: new Map([['outside', { id: 'outside' }]]) },
+        player,
+      },
+      icons: { wood: 'wood.png', food: 'food.png', stone: 'stone.png', gold: 'gold.png' },
+    }
+
+    const container = createHeroVillageReport(menu).children[1]
+
+    const villagerRows = container.children[1].children[1].children
+    assert.deepEqual(
+      villagerRows.map(row => [row.children[0].textContent, row.children[1].textContent]),
+      [
+        ['minimapUnits', '5/250'],
+        ['minimapVillagerConsumption', '16 minimapResourceFood'],
+      ]
+    )
+
+    const trainingRows = container.children[2].children[1].children
+    assert.deepEqual(
+      trainingRows.map(row => [row.children[0].textContent, row.children[1].textContent]),
+      [
+        ['Fantassin', '2'],
+        ['Bowman', '1'],
+        ['minimapStableHorses', '3/5'],
+      ]
+    )
+
+    const rows = container.children[0].children[1].children
+    assert.deepEqual(
+      rows.map(row => [row.children[0].resource, row.children[1].textContent]),
+      [
+        ['wood', '11'],
+        ['wheat', '7'],
+        ['stone', '3'],
+        ['gold', '4'],
+      ]
+    )
+  })
+})
+
+function readStock(menu) {
+  const container = loadPanel().createHeroVillageReport(menu).children[1]
+  return Object.fromEntries(
+    container.children[0].children[1].children
+      .filter(row => row.className === 'base-resource-item')
+      .map(row => [row.children[0].resource, Number(row.children[1].textContent)])
+  )
+}
+
+test('outside stock includes local interior chests once, but excludes foreign and destroyed storage', () => {
+  withFakeDocument(() => {
+    const player = { label: 'player', units: [], buildings: [] }
+    const building = (type, label, spaceId, wood, extra = {}) => ({
+      type,
+      i: 0,
+      j: 0,
+      label,
+      spaceId,
+      owner: player,
+      inventory: { resources: { wood } },
+      ...extra,
+    })
+    const chest = building('Chest', 'interior:player:pit:default:storage-chest', 'interior:player:pit', 25, {
+      visible: false,
+    })
+    player.buildings = [
+      building('TownCenter', 'center', 'outside', 5),
+      building('StoragePit', 'pit', 'outside', 0),
+      chest,
+      chest,
+      building('Chest', 'loose-chest', 'outside', 3),
+      building('Chest', 'enemy', 'inside', 100, { owner: { label: 'enemy' } }),
+      building('Chest', 'dead-chest', 'inside', 100, { isDestroyed: true }),
+      building('TownCenter', 'dead-center', 'outside', 100, { isDead: true }),
+      building('Chest', 'orphan', 'dead-room', 100),
+      building('TownCenter', 'remote', 'other-map', 100),
+      building('Chest', 'remote-chest', 'remote-room', 100),
+    ]
+    const map = {
+      activeSpaceId: 'outside',
+      spaces: new Map([
+        ['outside', { id: 'outside' }],
+        ['inside', { id: 'inside', kind: 'interior', buildingLabel: 'center' }],
+        ['dead-room', { id: 'dead-room', kind: 'interior', buildingLabel: 'dead-center' }],
+        ['remote-room', { id: 'remote-room', kind: 'interior', buildingLabel: 'remote' }],
+      ]),
+    }
+    const menu = { context: { map, player, controls: {} }, icons: {} }
+    assert.deepEqual(readStock(menu), { wood: 30 })
+    map.activeSpaceId = 'inside'
+    assert.deepEqual(readStock(menu), { wood: 30 })
+  })
+})
+
+test('starting stock survives the real chest transfer and repeated region save/restores in the panel', () => {
+  withFakeDocument(() => {
+    const { normalizeSavedInteriorBuildings } = loadTsModule('app/serialization/InteriorBuildingSave.ts')
+    const groupInteriorBuildings = (buildings, label) => {
+      const player = { buildings, label }
+      normalizeSavedInteriorBuildings(player)
+      return player.buildings
+    }
+    const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/BuildingInteriorSpaceDecorations.ts', {
+      mocks: {
+        '../../app/lib/buildings/furniture/interiorDecorations': {
+          getBuildingInteriorDecorationLayout: () => [{ key: 'storage-chest', type: 'Chest', offsetI: 0, offsetJ: 0 }],
+          findInteriorDecorationCell: ({ grid }) => grid[0][0],
+          interiorCellKey: cell => `${cell.i}:${cell.j}`,
+        },
+        '../../app/lib/grid/placement': { canPlaceBuildingAt: () => true },
+      },
+    })
+    const map = {
+      grid: [[{}]],
+      activeSpaceId: 'outside',
+      spaces: new Map([['outside', { id: 'outside' }]]),
+      randomItem: items => items[0],
+    }
+    const context = { map, controls: {} }
+    const player = {
+      label: 'player',
+      buildings: [],
+      units: [],
+      config: { buildings: { Chest: { size: 1 } } },
+      createBuilding(options) {
+        const building = { ...options, owner: player, context }
+        player.buildings.push(building)
+        return building
+      },
+    }
+    context.player = player
+    const menu = { context, icons: {} }
+    const center = player.createBuilding({
+      type: 'TownCenter',
+      label: 'center',
+      i: 0,
+      j: 0,
+      inventory: { resources: { wood: 200, wheat: 100, berry: 50, meat: 50, stone: 150 } },
+    })
+    const expected = { wheat: 100, berry: 50, meat: 50, stone: 150, wood: 200 }
+    assert.deepEqual(readStock(menu), expected)
+    const ensureRoom = (_context, building) => {
+      const id = `interior:player:${building.label}`
+      const cell = { i: 0, j: 0, category: 'Grass' }
+      const space = {
+        id,
+        kind: 'interior',
+        buildingLabel: building.label,
+        building,
+        grid: [[cell]],
+        walkableCells: [cell],
+      }
+      map.spaces.set(id, space)
+      ensureInteriorDefaultBuildings(context, space)
+      return space
+    }
+    ensureRoom(context, center)
+    assert.deepEqual(center.inventory.resources, {})
+    assert.deepEqual(readStock(menu), expected)
+    const { restorePlayerEntitiesFromSave } = loadTsModule('app/classes/map/MapSaveRestore.ts', {
+      mocks: {
+        '../../../engine/services/BuildingInteriorSpaceSystemRuntime': {
+          ensureRuntimeBuildingInteriorSpace: ensureRoom,
+        },
+      },
+    })
+    for (let visit = 0; visit < 3; visit++) {
+      const buildings = structuredClone(
+        groupInteriorBuildings(
+          player.buildings.map(building => ({
+            type: building.type,
+            label: building.label,
+            i: building.i,
+            j: building.j,
+            spaceId: building.spaceId,
+            inventory: building.inventory,
+          })),
+          player.label
+        )
+      )
+      player.buildings = []
+      map.spaces = new Map([['outside', { id: 'outside' }]])
+      restorePlayerEntitiesFromSave(player, { buildings, units: [], corpses: [] })
+      assert.deepEqual(readStock(menu), expected)
+      assert.equal(player.wood, 200)
+      assert.equal(player.food, 200)
+      assert.equal(player.buildings.filter(building => building.type === 'Chest').length, 1)
+    }
+  })
+})
+
+test('Town Center village figures refresh in place only when the report changes', () => {
+  withFakeDocument(() => {
+    const { createHeroVillageReport, syncHeroVillageReport } = loadPanel()
+    const player = { label: 'p', population: 2, populationMax: 10, buildings: [], units: [] }
+    const menu = { context: { player } }
+    const section = createHeroVillageReport(menu)
+    assert.equal(section.children[0].textContent, 'settlementVillage')
+    const report = section.children[1]
+    const host = { querySelector: () => report }
+    const initial = report.children[1]
+    syncHeroVillageReport(host, menu)
+    assert.equal(report.children[1], initial, 'unchanged reports keep their DOM')
+    const before = report.dataset.signature
+    player.population = 3
+    player.units.push({ type: 'Villager' })
+    syncHeroVillageReport(host, menu)
+    assert.notEqual(report.dataset.signature, before)
+    assert.notEqual(report.children[1], initial)
+    assert.equal(report.children[1].children[1].children[0].children[1].textContent, '3/10')
+    assert.equal(report.children[1].children[1].children[1].children[1].textContent, '4 minimapResourceFood')
+    syncHeroVillageReport({ querySelector: () => null }, menu)
+  })
+})
+
+test('village report counts current training and waiting requests once, including other buildings', () => {
+  withFakeDocument(() => {
+    const { createHeroVillageReport, syncHeroVillageReport } = loadPanel()
+    const building = {
+      trainingQueue: [{ type: 'Bowman', trainee: { label: 'trainee' } }],
+      trainingRequests: [{ type: 'Bowman', traineeLabel: 'trainee' }, { type: 'Bowman' }],
+    }
+    const player = { label: 'p', units: [], buildings: [building, { queue: ['Fantassin'] }] }
+    const menu = { context: { player } }
+    const report = createHeroVillageReport(menu).children[1]
+    const rows = report.children[2].children[1].children
+    assert.deepEqual(
+      rows.map(row => row.children.map(child => child.textContent)),
+      [
+        ['Bowman', '2'],
+        ['Fantassin', '1'],
+      ]
+    )
+    const before = report.dataset.signature
+    building.trainingRequests.pop()
+    syncHeroVillageReport({ querySelector: () => report }, menu)
+    assert.notEqual(report.dataset.signature, before)
+  })
+})

@@ -9,7 +9,6 @@ import { isBuildingInteriorSupported } from '../../lib/buildings/interiors'
 import { canUnitEnterBuildingInterior } from '../../lib/buildings/interiorAccess'
 import { ensureRuntimeBuildingInteriorSpace } from '../BuildingInteriorSpaceSystem'
 import { canReachRestBeforeBed } from './UnitRestTravel'
-import { getRestTravelPathLength } from './UnitRestRoute'
 import { isSoldierUnit } from '../../lib/units/village/villagerSchedule'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -57,7 +56,13 @@ export function isRestTargetAvailable(unit: UnitEntity, target: BuildingEntity):
   return true
 }
 
-export function getRestTargetSite(unit: UnitEntity, target: BuildingEntity): UnitRestSite | null {
+export function getRestTargetTravelLimit(unit: UnitEntity, target: BuildingEntity): number {
+  return target.type === BUILDING_TYPES.fireCamp && isSoldierUnit(unit) && !sameMapSpace(unit, target)
+    ? SOLDIER_FIRE_CAMP_RADIUS
+    : Infinity
+}
+
+export function getRestTargetSite(unit: UnitEntity, target: BuildingEntity, checkTravel = true): UnitRestSite | null {
   if (!isRestTargetAvailable(unit, target)) return null
   const targetSpace = getMapSpace(unit.context!.map, target.spaceId)
   const visibleAnchor =
@@ -84,48 +89,54 @@ export function getRestTargetSite(unit: UnitEntity, target: BuildingEntity): Uni
     (targetCell.solid && targetCell.has !== unit)
   )
     return null
-  if (!canReachRestBeforeBed(unit, targetCell)) return null
+  if (checkTravel && !canReachRestBeforeBed(unit, targetCell, getRestTargetTravelLimit(unit, target))) return null
   const space = getMapSpace(unit.context!.map, target.spaceId)
   const shelter = isBuildingInteriorRuntimeSpace(space) ? space.building : null
   return { location: shelter ? 'shelter' : 'outside', shelter, restTarget: target, targetCell }
+}
+
+/** Cheap ordering first; interior coordinates must be compared through their outdoor building. */
+export function getRestCandidates(unit: UnitEntity, excludedTarget?: BuildingEntity | null): BuildingEntity[] {
+  if (!unit.context) return []
+  reconcileHouseholds(unit.owner)
+  for (const building of [...(unit.owner?.buildings ?? [])]) {
+    if (isUsableShelter(building, unit.owner) && !isShelterUnsafe(building))
+      ensureRuntimeBuildingInteriorSpace(unit.context, building)
+  }
+  reconcileHouseholds(unit.owner)
+  const anchor = (entity: UnitEntity | BuildingEntity) => {
+    const space = getMapSpace(unit.context!.map, entity.spaceId)
+    return isBuildingInteriorRuntimeSpace(space) ? space.building : entity
+  }
+  const source = anchor(unit)
+  const distance = (target: BuildingEntity) => restDistance(source, anchor(target))
+  return (unit.owner?.buildings ?? [])
+    .filter(
+      target =>
+        target !== excludedTarget &&
+        isRestTargetAvailable(unit, target) &&
+        !(
+          target.type === BUILDING_TYPES.fireCamp &&
+          isSoldierUnit(unit) &&
+          (sameMapSpace(unit, target)
+            ? Math.max(Math.abs(unit.i - target.i), Math.abs(unit.j - target.j))
+            : distance(target)) > SOLDIER_FIRE_CAMP_RADIUS
+        )
+    )
+    .sort((a, b) => {
+      const rank = (target: BuildingEntity) =>
+        target.label === unit.homeBedLabel ? 0 : target.type === BUILDING_TYPES.campBedroll ? 1 : 2
+      return rank(a) - rank(b) || distance(a) - distance(b)
+    })
 }
 
 export function getNearestFurnitureRestSite(
   unit: UnitEntity,
   excludedTarget?: BuildingEntity | null
 ): UnitRestSite | null {
-  if (!unit.context) return null
-  reconcileHouseholds(unit.owner)
-  // Interior contents may still be stored on their parent until first entered.
-  for (const building of [...(unit.owner?.buildings ?? [])]) {
-    if (isUsableShelter(building, unit.owner) && !isShelterUnsafe(building))
-      ensureRuntimeBuildingInteriorSpace(unit.context, building)
-  }
-  reconcileHouseholds(unit.owner)
-  const preferred = unit.owner?.buildings?.find(b => b.label === unit.homeBedLabel && b !== excludedTarget)
-  if (preferred) {
-    const site = getRestTargetSite(unit, preferred)
+  for (const target of getRestCandidates(unit, excludedTarget)) {
+    const site = getRestTargetSite(unit, target)
     if (site) return site
-  }
-  for (const type of [BUILDING_TYPES.campBedroll, BUILDING_TYPES.fireCamp]) {
-    let best: { site: UnitRestSite; score: number } | null = null
-    for (const target of unit.owner?.buildings ?? []) {
-      if (target.type !== type || target === excludedTarget) continue
-      const site = getRestTargetSite(unit, target)
-      if (!site) continue
-      const score = sameMapSpace(unit, target)
-        ? restDistance(unit, target)
-        : (getRestTravelPathLength(unit, site.targetCell) ?? Infinity)
-      if (
-        type === BUILDING_TYPES.fireCamp &&
-        isSoldierUnit(unit) &&
-        (sameMapSpace(unit, target) ? Math.max(Math.abs(unit.i - target.i), Math.abs(unit.j - target.j)) : score) >
-          SOLDIER_FIRE_CAMP_RADIUS
-      )
-        continue
-      if (!best || score < best.score) best = { site, score }
-    }
-    if (best) return best.site
   }
   return null
 }

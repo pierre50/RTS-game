@@ -134,6 +134,7 @@ export class UnitActions {
       case ACTION_TYPES.minestone:
       case ACTION_TYPES.minegold:
       case ACTION_TYPES.minecopper:
+      case ACTION_TYPES.minetin:
       case ACTION_TYPES.mineiron:
         this.startMiningResource(unit.action)
         break

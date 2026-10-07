@@ -146,3 +146,16 @@ test('construction tab reaches the left catalogue even when the tab is above rig
   window.move(0, -1)
   assert.equal(window.selected, tab)
 })
+
+test('right stick scrolls the Town Center report and technologies in their own scroll container', () => {
+  const { scrollWindowInformation } = loadTsModule('app/lib/ui/GameWindowScroll.ts')
+  const body = { scrollTop: 0, scrollHeight: 2000, clientHeight: 400, closest: () => null, getClientRects: () => [1] }
+  const selected = {
+    closest: selector => {
+      assert.ok(selector.includes('.hero-building-menu-body'))
+      return body
+    },
+  }
+  assert.equal(scrollWindowInformation({ querySelectorAll: () => [] }, 120, selected), true)
+  assert.equal(body.scrollTop, 120)
+})

@@ -2,9 +2,8 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
+function loadHeroControllerUpdate({ heroToolsOverride = {}, sprintOverride = {} } = {}) {
   const heroTools = {
-    isHeroCatchingPoleEquipped: () => false,
     aimHeroDefenseAt: () => false,
     aimHeroPowerChargeAt: () => false,
     beginHeroDefense: () => false,
@@ -24,12 +23,16 @@ function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
         STEP_TIME: 100,
       },
       '../lib/hero/heroTools': heroTools,
-      '../lib/hero/heroCursor': { updateHeroCursor: () => {} },
       '../lib/units/visuals/unitCrouchPose': { applyUnitCrouchPose: () => {} },
-      '../lib/npc/npcGoToCursor': { resolveNpcGoToCursorState: () => null },
       '../lib/npc/npcInteraction': {
-        resolveHoverTarget: () => null,
         updateNpcFollow: () => {},
+      },
+      '../lib/units/movement/unitSprint': {
+        getSprintMoveFactor: () => 1,
+        recordSprintMovement() {},
+        stopUnitSprint() {},
+        toggleHeroSprint() {},
+        ...sprintOverride,
       },
       '../lib/units/unitEnergy': {
         getEnergyMoveSpeedMultiplier: () => 1,
@@ -37,7 +40,7 @@ function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
           unit.energyUpdated = true
         },
       },
-      '../lib/units/unitLocomotion': {
+      '../lib/units/movement/unitLocomotion': {
         composeMoveSpeedFactor: (...factors) => factors.reduce((value, factor) => value * factor, 1),
         getUnitWalkSpeedFactor: () => 1,
         isUnitWalkSpeedFactor: factor => factor < 1,
@@ -54,9 +57,7 @@ function loadHeroControllerUpdate({ heroToolsOverride = {} } = {}) {
           dx: keys.has('heroRight') ? 1 : 0,
           dy: 0,
         }),
-        getLockedMoveSpeedFactor: () => 1,
         getVectorFromDegree: () => ({ dx: 1, dy: 0 }),
-        isHeroDirectionLockActive: () => false,
       },
     },
   })
@@ -89,14 +90,12 @@ function createController(hero) {
       mouseHeld: true,
       pendingGoToNpcs: null,
       primaryClickPoint: { x: 5, y: 5 },
-      shiftMoveLockedDegree: null,
       wasMoving: true,
       attackTowardPoint: () => {
         calls.push(['attackTowardPoint'])
         return false
       },
       facePoint: () => calls.push(['facePoint']),
-      getShiftMoveLockedAimPoint: () => null,
       updateCommIndicator: () => calls.push(['updateCommIndicator']),
       updateCriticalHealthEffects: () => calls.push(['updateCriticalHealthEffects']),
       updateOcclusionFade: () => calls.push(['updateOcclusionFade']),
@@ -328,4 +327,52 @@ test('awake hero stays injured after time passes, even with legacy saved regen s
   updateHeroControllerRuntime(controller, 60)
   assert.equal(hero.hitPoints, 7)
   assert.equal(hero.energyUpdated, true)
+})
+
+test('actual hero movement accelerates and spends energy; blocked movement cannot earn an attack bonus', () => {
+  const sprint = loadTsModule('app/lib/units/movement/unitSprint.ts')
+  const { updateHeroControllerRuntime } = loadHeroControllerUpdate({ sprintOverride: sprint })
+  for (const blocked of [false, true]) {
+    const hero = {
+      energy: 10,
+      totalEnergy: 10,
+      speed: 100,
+      x: 0,
+      y: 0,
+      i: 0,
+      j: 0,
+      currentSheet: 'standingSheet',
+      context: { scheduler: { elapsedMs: 0 } },
+      sprite: { play() {}, stop() {} },
+      setTextures(sheet) {
+        this.currentSheet = sheet
+      },
+      moveDirect(dx, dy, distance) {
+        if (!blocked) {
+          this.x += dx * distance
+          this.y += dy * distance
+        }
+        return !blocked
+      },
+    }
+    const { controller } = createController(hero)
+    controller.equippedItem = 'sword'
+    controller.mouseHeld = false
+    controller.defenseHeld = false
+    controller.interactInputOwner = null
+    sprint.toggleHeroSprint(hero)
+    for (let frame = 0; frame < 24; frame++) {
+      hero.context.scheduler.elapsedMs += 16.6667
+      updateHeroControllerRuntime(controller, 1)
+    }
+    if (blocked) {
+      assert.equal(hero.energy, 10)
+      assert.equal(sprint.takeSprintAttackMultiplier(hero), 1)
+    } else {
+      assert.ok(Math.abs(hero.x - 24 * 16.6667 * 1.6) < 1e-5)
+      assert.ok(hero.energy < 10)
+      assert.equal(hero.walkAnimationUpdated, 1.6)
+      assert.equal(sprint.takeSprintAttackMultiplier(hero), 1.35)
+    }
+  }
 })

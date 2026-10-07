@@ -12,6 +12,7 @@ type InspectionModalOptions = {
     context: GameContextLike
     targets: () => RuntimeEntity[]
     enabled?: () => boolean
+    openingRadius?: () => number | undefined
   }
   title: string
   content: HTMLElement
@@ -84,7 +85,8 @@ export function createInspectionModal({
       () => {
         if (proximity.enabled?.() === false) return
         const hero = proximity.context.controls?.heroUnit
-        if (proximity.targets().some(target => isHeroInteractionSessionInRange(hero, target))) return
+        const openingRadius = proximity.openingRadius?.()
+        if (proximity.targets().some(target => isHeroInteractionSessionInRange(hero, target, openingRadius))) return
         modal.close()
         onClose()
       },

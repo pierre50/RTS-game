@@ -147,7 +147,7 @@ test('legacy craft shares are accepted on load but no longer used for comfort re
   assert.equal(policy.shares.wood, 60)
   assert.equal(policy.shares.stone, 40)
   assert.equal(policy.shares.fiber, undefined)
-  assert.deepEqual(depotReserveResources('StoragePit'), ['wood', 'stone', 'gold', 'copper', 'iron'])
+  assert.deepEqual(depotReserveResources('StoragePit'), ['wood', 'stone', 'gold', 'copper', 'tin', 'iron'])
   assert.deepEqual(depotReserveResources('Granary'), ['wheat', 'berry', 'meat'])
   assert.equal(
     Object.values(normalizeDepotReservePolicy({ target: 100, shares: { fiber: 100 } }, 'StoragePit').shares).every(

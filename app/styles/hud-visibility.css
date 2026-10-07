@@ -13,6 +13,7 @@ body:has(.time-skip-overlay--sleep) .game-hud {
     border-color var(--ui-transition-panel);
 }
 
+body:has(.building-placement-help) .game-hud,
 body:has(.modal:not([hidden])) .game-hud :is(.hero-status-hud, .topbar-daytime, .topbar-options),
 .game-hud.hud-suppressed :is(.hero-status-hud, .topbar-daytime, .topbar-options),
 .game-hud.hud-suppressed .hero-interaction-prompt {

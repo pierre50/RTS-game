@@ -1,8 +1,9 @@
+import { t } from '../lang'
 import { getWindowField } from './GameWindowForms'
 
 const WINDOW_ROW = '.inventory-action-row'
 const GLOBAL_ACTION = '[data-window-action], .entity-delete-building-button'
-export const WINDOW_ITEMS = `${WINDOW_ROW}, button, input:not([type=hidden]), select:not([hidden]), [data-window-field], [role="button"]`
+export const WINDOW_ITEMS = `${WINDOW_ROW}, button, input:not([type=hidden]), textarea, select:not([hidden]), [data-window-field], [role="button"]`
 const DETAIL_PARTS =
   '.inventory-action-row-label, .inventory-action-row-description, .inventory-action-row-meta, .inventory-action-row-value, .inventory-action-row-badge, .hero-building-menu-meta'
 
@@ -155,6 +156,20 @@ export function renderWindowDetails(details: HTMLElement, selected: HTMLElement 
     host.appendChild(part)
   }
   row?.querySelectorAll<HTMLElement>(DETAIL_PARTS).forEach(append)
+  const durability = row?.dataset.equipmentDurability
+  if (durability != null && Number.isFinite(Number(durability))) {
+    const value = Math.max(0, Math.min(100, Number(durability)))
+    const bar = document.createElement('span')
+    bar.className = 'game-window-detail-durability ui-progress'
+    bar.setAttribute('role', 'progressbar')
+    bar.setAttribute('aria-label', t('equipmentCondition', { value }))
+    bar.setAttribute('aria-valuemin', '0')
+    bar.setAttribute('aria-valuemax', '100')
+    bar.setAttribute('aria-valuenow', String(value))
+    bar.style.setProperty('--equipment-durability-percent', `${value}%`)
+    bar.textContent = `${value}/100`
+    identity.insertBefore(bar, identity.querySelector('.game-window-detail-value'))
+  }
   if (identity.childElementCount) content.appendChild(identity)
   const stats = row?.querySelector('.inventory-action-row-stats')
   if (row?.dataset.itemCategory || stats) {

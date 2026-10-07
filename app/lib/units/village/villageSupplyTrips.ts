@@ -4,8 +4,17 @@ import { villageHome, withinVillageActivity } from './villageActivity'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
 
-const RESOURCE_JOBS = new Set(['wood', 'food', 'stone', 'gold', 'copper', 'iron'])
-const GATHER_ACTIONS = new Set(['chopwood', 'forageberry', 'farm', 'minestone', 'minegold', 'minecopper', 'mineiron'])
+const RESOURCE_JOBS = new Set(['wood', 'food', 'stone', 'gold', 'copper', 'tin', 'iron'])
+const GATHER_ACTIONS = new Set([
+  'chopwood',
+  'forageberry',
+  'farm',
+  'minestone',
+  'minegold',
+  'minecopper',
+  'minetin',
+  'mineiron',
+])
 
 /** Supply trips belong to settled workers, never to guards, chiefs or expeditions. */
 export function isVillageResourceWorker(unit: UnitEntity): boolean {

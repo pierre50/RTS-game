@@ -8,6 +8,8 @@ import { cancelHeroDefense } from './heroDefense'
 import { beginHeroPowerChargeAt, cancelHeroPowerCharge } from './heroPowerCharge'
 import { finishHeroToolAnimation } from './heroToolAnimation'
 
+export { triggerSwordAttackAt } from './heroMeleeTools'
+
 export {
   applyToolAppearance,
   EQUIPPED_ITEM_WEAPON,
@@ -48,7 +50,7 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroEquippedItem | n
   }
   hero.followAssistIntent = null
   if (tool !== 'interact') return false
-  const actionResult = performContextActionAt(hero)
+  const actionResult = performContextActionAt(hero, destination)
   if (actionResult === 'triggered') return true
   const meleeResult = triggerInteractMeleeAt(hero)
   if (meleeResult === 'triggered') return true

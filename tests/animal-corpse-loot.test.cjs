@@ -136,3 +136,11 @@ test('a hungry hunter takes personal provisions without a completed town center 
   assert.equal(unit.inventory.resources.meat, 12)
   assert.deepEqual(animal.inventory.resources, { meat: 8, leather: 2 })
 })
+
+test('animal corpses with deposited equipment remain lootable after their resources are emptied', () => {
+  const animal = corpse({})
+  animal.inventory.equipment = ['axe']
+  assert.equal(loot.hasAnimalCorpseLoot(animal), true)
+  animal.inventory.equipment.pop()
+  assert.equal(loot.hasAnimalCorpseLoot(animal), false)
+})

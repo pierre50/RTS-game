@@ -170,8 +170,9 @@ export class UnitResourceActions {
       const gain = addGatheredResource(unit, loadingType, getHarvestAmount(requestedGain, dest.quantity ?? 0))
       if (gain <= 0) {
         unit.gatherProgressState = null
-        if (!isHeroControlled(unit)) unit.sendToDelivery?.()
-        else {
+        if (!isHeroControlled(unit)) {
+          if (!sendVillagerToDeliveryIfFull(unit, loadingType)) unit.sendToDelivery?.()
+        } else {
           notifyIfHeroResourceCarryFull(unit)
           stopManualHeroAction(unit)
         }

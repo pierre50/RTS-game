@@ -1,3 +1,5 @@
+import { isEquipmentBroken } from '../equipment/equipmentCondition'
+import { takeSprintAttackMultiplier } from '../units/movement/unitSprint'
 import { definedProperties } from '../definedProperties'
 import { ACTION_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getActionCondition, prepareAutomaticParry, type CombatEntity } from '../combat'
@@ -93,7 +95,8 @@ function findHeroMeleeTargetInAim(
 export function playEmptyHandWhiff(hero: UnitEntity): boolean {
   if (hero.actionLocked || !spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
   const degree = hero.degree ?? 0
-  playHeroToolAnimation(hero, () => resolveHeroMeleeImpact(hero, 'interact', {}, degree), SLASH_IMPACT_FRAME, {
+  const options = { damageMultiplier: takeSprintAttackMultiplier(hero) }
+  playHeroToolAnimation(hero, () => resolveHeroMeleeImpact(hero, 'interact', options, degree), SLASH_IMPACT_FRAME, {
     recoveryAnimation: 'reverseSlash',
   })
   return true
@@ -211,8 +214,10 @@ export function triggerSwordAttackAt(
   destination?: Point | null,
   options: HeroMeleeAttackOptions = {}
 ): boolean {
-  if (hero.actionLocked) return false
+  if (hero.actionLocked || isEquipmentBroken(hero.inventory?.activeWeapons?.melee)) return false
   if (destination) hero.degree = getHeroAimDegree(hero, destination)
+  const sprintMultiplier = takeSprintAttackMultiplier(hero)
+  options = { ...options, damageMultiplier: (options.damageMultiplier ?? 1) * sprintMultiplier }
   const meleeTarget = findHeroMeleeTargetInAim(hero, 'sword')
   if (meleeTarget) {
     const meleeResult = strikeHeroMeleeTarget(hero, meleeTarget, 'sword', options)
@@ -224,5 +229,7 @@ export function triggerSwordAttackAt(
 
 export function triggerInteractMeleeAt(hero: UnitEntity): ToolActionResult {
   const meleeTarget = findHeroMeleeTargetInAim(hero, 'interact')
-  return meleeTarget ? strikeHeroMeleeTarget(hero, meleeTarget, 'interact') : 'miss'
+  if (!meleeTarget) return 'miss'
+  if (hero.actionLocked) return 'blocked'
+  return strikeHeroMeleeTarget(hero, meleeTarget, 'interact', { damageMultiplier: takeSprintAttackMultiplier(hero) })
 }

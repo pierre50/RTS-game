@@ -336,38 +336,6 @@ test('original interior storage chest info does not render the delete button', (
   })
 })
 
-test('house population information shows real beds and marks renovation unavailability', () => {
-  const previous = global.document
-  global.document = { createElement: tag => new MockElement(tag) }
-  try {
-    const { BuildingInterface } = loadBuildingInterface()
-    const owner = { label: 'village', population: 3, populationMax: 99, buildings: [] }
-    const house = {
-      type: 'House',
-      label: 'house',
-      owner,
-      isBuilt: true,
-      interiorBuildings: [
-        { type: 'CampBedroll', isBuilt: true },
-        { type: 'CampBedroll', isBuilt: true },
-      ],
-    }
-    owner.buildings.push(house)
-    const view = new BuildingInterface(house)
-    let element = view.getPopulationElement()
-    assert.equal(element.children[1].textContent, '3/2')
-    assert.equal(element.children[2].textContent, 'houseBedsCount:2')
-    house.buildingUpgrade = { targetLevel: 1 }
-    element = view.getPopulationElement()
-    assert.equal(element.children[1].textContent, '3/0')
-    assert.equal(element.children[2].textContent, 'houseBedsUnavailable:2')
-    delete house.buildingUpgrade
-    assert.equal(view.getPopulationElement().children[1].textContent, '3/2')
-  } finally {
-    global.document = previous
-  }
-})
-
 test('own indestructible furniture exposes removal and rechecks ownership on click', () => {
   withMockDocument(() => {
     const { BuildingInterface } = loadBuildingInterface()

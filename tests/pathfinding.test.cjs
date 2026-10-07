@@ -134,3 +134,44 @@ test('pathfinding can cross water-border shoreline cells', () => {
     ]
   )
 })
+
+test('interleaved incremental searches keep independent state and match complete routes', () => {
+  const { findInstancePath, searchInstancePath } = loadPathfinding()
+  const grid = Array.from({ length: 100 }, (_, i) => Array.from({ length: 100 }, (_, j) => ({ i, j })))
+  const map = { grid }
+  const expected = findInstancePath({ i: 0, j: 0 }, 99, 99, map)
+  const first = searchInstancePath({ i: 0, j: 0 }, 99, 99, map)
+  const second = searchInstancePath({ i: 99, j: 0 }, 0, 99, map)
+  assert.equal(first.next().done, false)
+  assert.equal(second.next().done, false)
+  // A synchronous route on the same cells must not overwrite either suspended search.
+  findInstancePath({ i: 0, j: 99 }, 99, 0, map)
+  let a = first.next(),
+    b = second.next()
+  while (!a.done || !b.done) {
+    if (!a.done) a = first.next()
+    if (!b.done) b = second.next()
+  }
+  assert.deepEqual(a.value, expected)
+  assert.deepEqual(b.value, findInstancePath({ i: 99, j: 0 }, 0, 99, map))
+})
+
+test('a prepared route is reused only in its commit scope and respects new diagonal blockers', () => {
+  const { findInstancePath, withPreparedPaths } = loadPathfinding()
+  const grid = Array.from({ length: 3 }, (_, i) => Array.from({ length: 3 }, (_, j) => ({ i, j })))
+  let calls = 0
+  const map = { grid, context: { performance: { record: () => calls++ } } }
+  const unit = { i: 0, j: 0 }
+  const path = findInstancePath(unit, 2, 2, map)
+  const originalCalls = calls
+  withPreparedPaths([{ start: grid[0][0], path }], () => {
+    assert.deepEqual(findInstancePath(unit, 2, 2, map), path)
+    assert.equal(calls, originalCalls)
+    grid[1][0].solid = true
+    assert.notDeepEqual(findInstancePath(unit, 2, 2, map), path)
+    assert.ok(calls > originalCalls)
+  })
+  const before = calls
+  findInstancePath(unit, 2, 2, map)
+  assert.ok(calls > before)
+})

@@ -92,6 +92,7 @@ export const NATURAL_RESOURCE_REGROWTH_BY_TYPE = {
     respawnDelayDays: 14,
     respawnQuantityRatio: 0.15,
   },
+  [RESOURCE_TYPES.tin]: { respawnDelayDays: 10, respawnQuantityRatio: 0.15 },
   [RESOURCE_TYPES.copper]: {
     respawnDelayDays: 10,
     respawnQuantityRatio: 0.15,

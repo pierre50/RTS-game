@@ -63,6 +63,12 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
       instanceContactInstance: contact,
     },
     '../graphics/isoFootprint': {
+      getRoundedIsoFootprintPoints: entity => [
+        { x: entity.x, y: entity.y - 16 * (entity.size ?? 1) },
+        { x: entity.x + 32 * (entity.size ?? 1), y: entity.y },
+        { x: entity.x, y: entity.y + 16 * (entity.size ?? 1) },
+        { x: entity.x - 32 * (entity.size ?? 1), y: entity.y },
+      ],
       getRoundedIsoShapePoints: ({ x = 0, y = 0, factor = 1 } = {}) => [
         { x, y: y - 16 * factor },
         { x: x + 32 * factor, y },
@@ -82,7 +88,8 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
       isHeroControlled: heroControlled,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -183,8 +190,19 @@ test('open interactions tolerate a small step but close farther away, including 
   assert.equal(inRange(null, corpse), false)
 })
 
+test('group conversations stay open within their charged radius plus half a tile', () => {
+  const { isHeroInteractionSessionInRange: inRange } = loadHeroActionRange()
+  const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: 0 }
+  const villager = { family: 'unit', i: 3, j: 4, x: 0, y: 400 }
+  assert.equal(inRange(hero, villager), false)
+  assert.equal(inRange(hero, villager, 4.5), true)
+  assert.equal(inRange(hero, villager, 4.4), false)
+  assert.equal(inRange({ ...hero, isDead: true }, villager, 7), false)
+})
+
 test('open building interactions keep their footprint margin without extending opening range', () => {
-  const { isHeroInteractionSessionInRange: inRange, isHeroInteractionTargetReachable: reachable } = loadHeroActionRange()
+  const { isHeroInteractionSessionInRange: inRange, isHeroInteractionTargetReachable: reachable } =
+    loadHeroActionRange()
   const building = { family: 'building', size: 1, x: 0, y: 0, i: 0, j: 0 }
   const hero = { controlMode: 'hero', x: 90, y: 0, i: 5, j: 0 }
   assert.equal(reachable(hero, null, building), false)

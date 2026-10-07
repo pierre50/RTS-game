@@ -137,7 +137,7 @@ function loadHeroTools(overrides = {}) {
         return mocks['./equipment/equipmentStats'].getEquipmentCombatStats(equipment).weaponPower
       },
       getEquipmentCombatStats: equipment => {
-        const stats = { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
+        const stats = { weaponPower: 0, armor: 0 }
         for (const item of equipment) {
           if (item === 'sword_ceramic') stats.weaponPower += 4
           if (item === 'sword_copper') stats.weaponPower += 6
@@ -2199,13 +2199,18 @@ for (const state of ['finished', 'no-energy']) {
   test(`interact never aggresses a friendly building when construction is ${state}`, () => {
     let aggressions = 0
     const building = {
-      family: 'building', isBuilt: state === 'finished', hitPoints: 10, totalHitPoints: 10,
-      i: 1, j: 0, x: 10, y: 0,
+      family: 'building',
+      isBuilt: state === 'finished',
+      hitPoints: 10,
+      totalHitPoints: 10,
+      i: 1,
+      j: 0,
+      x: 10,
+      y: 0,
     }
     const { triggerToolAttackAt } = loadHeroTools({
       './combat/combat': {
-        getActionCondition: (_hero, target, action) =>
-          target === building && action === 'build' && !building.isBuilt,
+        getActionCondition: (_hero, target, action) => target === building && action === 'build' && !building.isBuilt,
       },
       './combat/diplomaticAggression': {
         canTriggerDiplomaticAggression: () => true,
@@ -2228,7 +2233,13 @@ for (const state of ['finished', 'no-energy']) {
   })
 }
 
-for (const action of ['cancelHeroPowerCharge', 'releaseHeroPowerCharge', 'cancelHeroDefense', 'releaseHeroDefense', 'cancelHeroActiveToolAction']) {
+for (const action of [
+  'cancelHeroPowerCharge',
+  'releaseHeroPowerCharge',
+  'cancelHeroDefense',
+  'releaseHeroDefense',
+  'cancelHeroActiveToolAction',
+]) {
   test(`${action} preserves death playback after a lethal hit`, () => {
     const tools = loadHeroTools()
     const { hero, projectiles } = makeHero()
@@ -2240,7 +2251,9 @@ for (const action of ['cancelHeroPowerCharge', 'releaseHeroPowerCharge', 'cancel
     hero.sprite.loop = false
     hero.sprite.gotoAndPlay(1)
     let deathFinished = false
-    const finishDeath = () => { deathFinished = true }
+    const finishDeath = () => {
+      deathFinished = true
+    }
     hero.sprite.onComplete = finishDeath
     tools[action](hero)
     assert.equal(hero.sprite.loop, false)
@@ -2259,7 +2272,11 @@ test('pending defense reverse and fallback cannot stop or loop death playback', 
   const { hero } = makeHero()
   const tasks = new Map()
   let nextId = 1
-  const add = callback => { const id = nextId++; tasks.set(id, callback); return id }
+  const add = callback => {
+    const id = nextId++
+    tasks.set(id, callback)
+    return id
+  }
   hero.context.scheduler = { add, addOneShot: add, remove: id => tasks.delete(id) }
   beginHeroDefense(hero, 'sword')
   hero.sprite.currentFrame = 2
@@ -2300,5 +2317,51 @@ test('catching pole returning after hero death leaves the death animation intact
   assert.equal(hero.sprite.currentFrame, 1)
   assert.equal(hero.sprite.playing, true)
   assert.equal(hero.sprite.onComplete, finishDeath)
-  assert.equal([...scheduled.values()].some(task => task.taskName === 'hero.catchingPoleThrowRecovery'), false)
+  assert.equal(
+    [...scheduled.values()].some(task => task.taskName === 'hero.catchingPoleThrowRecovery'),
+    false
+  )
+})
+
+test('sword charge captures sprint momentum at initiation and cancellation discards it', () => {
+  let multiplier = 1.35
+  const swings = []
+  const tools = loadHeroTools({
+    '../units/movement/unitSprint': {
+      takeSprintAttackMultiplier: () => {
+        const result = multiplier
+        multiplier = 1
+        return result
+      },
+    },
+    './heroMeleeTools': {
+      getHeroSwordChargeDamageMultiplier: power => 1 + power * 0.5,
+      triggerSwordAttackAt: (_hero, _point, options) => {
+        swings.push(options.damageMultiplier)
+        return true
+      },
+    },
+  })
+  const { hero } = makeHero()
+  hero.energy = 10
+  let now = 3000
+  const previous = global.performance
+  global.performance = { now: () => now }
+  try {
+    assert.equal(tools.triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+    now += 350
+    tools.releaseHeroPowerCharge(hero, now)
+    assert.equal(swings[0], 1.25 * 1.35)
+    multiplier = 1.35
+    hero.actionLocked = false
+    hero.energy = 10
+    tools.triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 })
+    tools.cancelHeroPowerCharge(hero)
+    hero.actionLocked = false
+    tools.triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 })
+    tools.releaseHeroPowerCharge(hero, now)
+    assert.equal(swings[1], 1)
+  } finally {
+    global.performance = previous
+  }
 })

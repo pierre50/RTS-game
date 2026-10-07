@@ -36,14 +36,14 @@ without `#`:
 #b13e53
 ```
 
-`scripts/retro_palette/jehkobas-master.hex` is the palette used for the game's
-LPC sprites (64 colors). To test against it without moving it, either drop
+`scripts/retro_palette/duel.hex` is the current palette used for the game's
+LPC sprites. To test against it without moving it, either drop
 your test image into `scripts/retro_palette/` (auto-detection), or point to it
 explicitly:
 
 ```bash
 python3 scripts/retro_palette/retro_palette.py /path/to/texture.png \
-  --palette scripts/retro_palette/jehkobas-master.hex --compare
+  --palette scripts/retro_palette/duel.hex --compare
 ```
 
 Without a `.hex` palette found (or with `--no-palette`), the script falls back
@@ -81,10 +81,30 @@ the matching:
 ```python
 from retro_palette import bake_retro_style, load_hex_palette
 
-palette = load_hex_palette(Path("jehkobas-master.hex"))
+palette = load_hex_palette(Path("duel.hex"))
 bake_retro_style(Path("texture.png"), palette, lightness_weight=4.0)
 ```
 
 `bake_retro_style()` rewrites the image in place; this is what
 `scripts/lpc/build.py` calls at the end of the bake, on every generated
 `texture.png`.
+
+## Interface icons (non-LPC)
+
+Run `pnpm assets:icons` to regenerate the resource, command, attribute,
+cursor and minimap icons under `public/assets` from the originals under
+`assets/icon-sources`. Add new original icons to that source tree using the
+same relative paths as their runtime files. Remove both copies when retiring
+an icon so a later rebuild does not restore it.
+
+The builder uses the same `.hex` discovery as LPC (currently `duel.hex`) and
+the existing `snap_to_palette` function with RGB distance, no dithering and no
+rescaling. PNG alpha channels are preserved exactly. SVG fill/stroke colors
+are mapped without rasterizing their shapes. Originals are never overwritten,
+so changing palettes does not accumulate color loss.
+
+To select another palette explicitly:
+
+```bash
+python3 scripts/retro_palette/build_icons.py --palette /path/to/custom.hex
+```

@@ -29,7 +29,7 @@ for (const connected of [true, false]) {
     assert.equal(renderEquipmentAvatarLazy({}, 'sword', canvas), false)
     loaded = true
     finishLoading()
-    await Promise.resolve()
+    await new Promise(resolve => setImmediate(resolve))
     assert.equal(draws, connected ? 2 : 1)
     assert.equal(events.length, connected ? 1 : 0)
     if (connected) {

@@ -51,7 +51,7 @@ function loadMovementSurfaceAudio({ heroControlled = false, played = [] } = {}) 
     '../units/unitControl': {
       isHeroControlled: () => heroControlled,
     },
-    '../units/unitLocomotion': {
+    '../units/movement/unitLocomotion': {
       isUnitWalkSpeedFactor: factor => factor < 1,
     },
     './sound': {
@@ -295,6 +295,19 @@ test('movement surface audio plays light hero footsteps unless shift is held', (
 
   unit.context.scheduler.elapsedMs += 400
   unit.context.controls.shiftKeyActive = true
+  loaded.playMovementSurfaceAudio(unit, 4)
+  assert.equal(played.length, 1)
+})
+
+test('gamepad stealth silences footsteps without holding keyboard Shift', () => {
+  const played = []
+  const loaded = loadMovementSurfaceAudio({ heroControlled: true, played })
+  const { unit } = createUnit({ resourceType: 'Tree' })
+  unit.context.controls.isHeroStealthMode = () => true
+  loaded.playMovementSurfaceAudio(unit, 4)
+  assert.equal(played.length, 0)
+  unit.context.controls.isHeroStealthMode = () => false
+  unit.context.scheduler.elapsedMs += 500
   loaded.playMovementSurfaceAudio(unit, 4)
   assert.equal(played.length, 1)
 })

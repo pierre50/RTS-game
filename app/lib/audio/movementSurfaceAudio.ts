@@ -1,7 +1,7 @@
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, RESOURCE_TYPES, SOUND_CUES } from '../constants'
 import type { SoundDistanceProfileId } from '../../config/soundDistance'
 import { isHeroControlled } from '../units/unitControl'
-import { isUnitWalkSpeedFactor } from '../units/unitLocomotion'
+import { isUnitWalkSpeedFactor } from '../units/movement/unitLocomotion'
 import { getHeroDistanceSoundVolume, playSoundCue } from './sound'
 import { getEntitySpaceGrid } from '../mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -79,7 +79,9 @@ function isAudibleMover(unit: UnitEntity): boolean {
 }
 
 function isHeroFootstepAllowed(unit: UnitEntity): boolean {
-  return Boolean(isHeroControlled(unit) && !unit.mountedOnHorse && unit.context?.controls?.shiftKeyActive !== true)
+  const controls = unit.context?.controls
+  const stealthMode = controls?.isHeroStealthMode?.() ?? controls?.shiftKeyActive
+  return Boolean(isHeroControlled(unit) && !unit.mountedOnHorse && !stealthMode)
 }
 
 function getFootstepCue(unit: UnitEntity): string[] {

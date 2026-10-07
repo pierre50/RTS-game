@@ -73,6 +73,7 @@ export function pickNpcRoutineChatterLine(
       wood: ['bois', 'wood'],
       gold: ['or', 'gold'],
       copper: ['cuivre', 'copper'],
+      tin: ['étain', 'tin'],
       iron: ['fer', 'iron'],
       food: ['nourriture', 'food'],
     }

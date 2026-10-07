@@ -3,9 +3,8 @@ import {
   getUnitCorpseLootEquipment,
   getUnitCorpseLootResources,
   pickupCorpseEquipment,
-  pickupCorpseResource,
 } from '../../lib/equipment/equipmentLoot'
-import { createInventoryContainer } from '../../lib/inventory/inventoryContainers'
+import { createInventoryContainer, moveInventoryEquipment } from '../../lib/inventory/inventoryContainers'
 import { t } from '../../lib/lang'
 import { getUnitBagTitle, getUnitResourceCarryRemaining } from '../../lib/resources/resourceDelivery'
 import type { UnitEntity } from '../../types/entities'
@@ -73,9 +72,10 @@ export class UnitInventoryScreen {
       canTransfer: () => !unit.isDestroyed,
       ...(unit.isDead
         ? {
-            canTransfer: from => from === destination && !unit.isDestroyed,
-            moveEquipment: (_from, _to, equipment) => pickupCorpseEquipment(unit, hero, equipment),
-            moveResource: (_from, _to, resource, amount) => pickupCorpseResource(unit, hero, resource, amount),
+            moveEquipment: (from, to, equipment) =>
+              from === destination
+                ? pickupCorpseEquipment(unit, hero, equipment)
+                : moveInventoryEquipment(from, to, equipment),
           }
         : {}),
       onChange: () => {

@@ -13,7 +13,7 @@ textarea {
 .game-overlay,
 .orientation-guard,
 #dev-console {
-  cursor: default;
+  cursor: var(--game-pointer, auto);
 }
 
 button,
@@ -61,7 +61,7 @@ button,
   background-image: radial-gradient(circle, var(--main-accent-color) 0%, var(--ui-bar-bg) 70%);
   border: var(--ui-control-border);
 
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
   transition: filter var(--ui-transition-fast);
 }
 
@@ -73,7 +73,7 @@ button,
   background-image: radial-gradient(circle, var(--main-accent-color) 0%, var(--ui-bar-bg) 70%);
   border: var(--ui-control-border);
 
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
   transition: filter var(--ui-transition-fast);
 }
 
@@ -145,7 +145,7 @@ button,
 .ui-btn:disabled,
 .ui-btn.disabled,
 .ui-btn[aria-disabled='true'] {
-  cursor: default;
+  cursor: var(--game-pointer, auto);
   opacity: 0.55;
 }
 

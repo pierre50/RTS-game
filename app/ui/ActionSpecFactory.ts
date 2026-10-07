@@ -34,15 +34,6 @@ function hasQueuedTrainingType(selection: BuildingEntity, type: string): boolean
   )
 }
 
-function hasAnyUnitTraining(selection: BuildingEntity): boolean {
-  return Boolean(
-    selection.trainingRequests?.length ||
-      selection.queue?.length ||
-      selection.trainingQueue?.length ||
-      selection.loading != null
-  )
-}
-
 function isOwnedByPlayer(building: BuildingEntity, player: PlayerLike): boolean {
   return building.owner === player || Boolean(building.owner?.label && building.owner.label === player.label)
 }
@@ -97,13 +88,8 @@ export class ActionSpecFactory {
     const preload = (src: string) => {
       new Image().src = src
     }
-    preload(getIconPath('010_50721'))
-    preload(getIconPath('001_50721'))
     preload(getIconPath('003_50721'))
-    preload(getIconPath('002_50721'))
-    ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
-      preload(getIconPath(icon))
-    )
+    ;['stat/sword', 'stat/bow', 'stat/shield'].forEach(icon => preload(getIconPath(icon)))
   }
 
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec {
@@ -134,22 +120,6 @@ export class ActionSpecFactory {
         img.classList.add('is-passive')
         div.appendChild(img)
         element.appendChild(div)
-      },
-    }
-  }
-
-  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec {
-    return {
-      id: 'cancelUnitTraining',
-      icon: getIconPath('003_50721'),
-      details: () => ({
-        title: t('cancelUnitTraining'),
-        description: t('cancelUnitTrainingDescription'),
-      }),
-      hide: () => !hasAnyUnitTraining(building),
-      onClick: selection => {
-        if (selection?.family !== FAMILY_TYPES.building) return
-        ;(selection as BuildingEntity).cancelAllUnitTraining?.()
       },
     }
   }

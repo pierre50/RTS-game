@@ -1,3 +1,4 @@
+import { hasPendingRestPlan } from './UnitRestPlanning'
 import { clearUnitSpacePortalRoute } from '../spacePortal/SpacePortalSystem'
 import { sameCellMapSpace } from '../../lib/mapSpaces'
 import { routeUnitToRestTarget } from './UnitRestRoute'
@@ -82,6 +83,7 @@ export function evacuateUnitsIfShelterUnsafe(building: BuildingEntity): void {
 }
 
 export function updateMovingRestUnit(unit: UnitEntity): void {
+  if (hasPendingRestPlan(unit)) return
   const state = unit.shelterState as TimedUnitRestState | null | undefined
   if (!state) return
   if (state.restTarget && !isRestTargetAvailable(unit, state.restTarget)) {
@@ -95,6 +97,11 @@ export function updateMovingRestUnit(unit: UnitEntity): void {
   if (updateWindingDownRestUnit(unit, state)) return
   if (updateWakingUpRestUnit(unit, state)) return
   if (state.status !== 'movingToRest') return
+  // A saved or suspended plan has no live queue after restoration.
+  if (!state.targetCell) {
+    rerouteRestUnit(unit)
+    return
+  }
   keepSleepingOutsideVisual(unit)
   const targetCell = state.targetCell
   const arrived = Boolean(

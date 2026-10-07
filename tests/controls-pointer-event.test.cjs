@@ -6,6 +6,16 @@ const babel = require('@babel/core')
 
 function loadControls(mockOverrides = {}) {
   const mocks = {
+    '../ui/BuildingPlacementHelp': {
+      BuildingPlacementHelp: class {
+        constructor(actions) {
+          this.actions = actions
+        }
+        destroy() {
+          this.destroyed = true
+        }
+      },
+    },
     'pixi.js': {
       Container: class {
         addChild() {}
@@ -125,7 +135,6 @@ function loadControls(mockOverrides = {}) {
         if (evt.key === 'i') return 'inventory'
         if (evt.key === ' ') return 'heroDefense'
         if (evt.key === 'Shift') return 'heroDismountHorse'
-        if (evt.key === 'ArrowLeft') return 'cameraLeft'
         return null
       },
     },
@@ -134,6 +143,7 @@ function loadControls(mockOverrides = {}) {
       setVirtualCursorVisible: () => {},
       setVirtualCursorPosition: () => {},
     },
+    '../lib/grid/visibility': { instanceIsInActiveOrTeamSight: () => true },
     '../lib/hero/heroActionRange': {
       isHeroInteractionTargetReachable: () => true,
     },
@@ -472,8 +482,7 @@ test('keyup falls back to the original physical code when Option changes the key
 test('Option key clears active movement controls', () => {
   const { controls, restore } = createControls()
   try {
-    controls.keysPressed.cameraLeft = true
-    controls.keyPressedCount = 1
+    controls.keyActionsByCode.KeyZ = 'heroUp'
     controls.heroController.active = true
 
     controls.onKeyDown({
@@ -482,8 +491,7 @@ test('Option key clears active movement controls', () => {
       target: new MockElement(),
     })
 
-    assert.deepEqual(controls.keysPressed, {})
-    assert.equal(controls.keyPressedCount, 0)
+    assert.deepEqual(controls.keyActionsByCode, {})
     assert.equal(controls.heroController.stopKeyboardMoveCalls, 1)
   } finally {
     restore()
@@ -637,6 +645,7 @@ test('hero entity interaction opens building selection interaction', () => {
       select: () => calls.push('select'),
     }
     controls.heroController.active = true
+    controls.heroController.heroUnit = { family: 'unit' }
     controls.context.map.grid[0][0] = { has: building }
     controls.context.menu.openHeroBuildingMenu = target => {
       calls.push(['openHeroBuildingMenu', target])
@@ -894,7 +903,7 @@ test('hero camera keeps following the hero during accelerated movement', t => {
   assert.equal(controls.heroController.lastUpdateFrameScale, 2)
 })
 
-test('inactive hero updates camera and health visuals but disabled input stops frame processing', t => {
+test('inactive hero leaves the camera fixed and disabled input stops frame processing', t => {
   const cursor = []
   const { controls, restore } = createControls({
     '../lib/hero/heroCursor': { setHeroGameCursorEnabled: enabled => cursor.push(enabled) },
@@ -908,9 +917,8 @@ test('inactive hero updates camera and health visuals but disabled input stops f
   controls.onTick({ deltaTime: 1 })
   assert.deepEqual(
     calls.map(c => c[0]),
-    ['health', 'fade', 'mouse', 'pan']
+    ['health', 'fade']
   )
-  assert.equal(calls[2][1], 1)
   calls.length = 0
   controls.runtimeInputEnabled = false
   controls.onTick({ deltaTime: 1 })
@@ -941,4 +949,24 @@ test('audibility requires the camera and either player ownership, visibility or 
   entity.target = null
   controls.context.map.revealEverything = true
   assert.equal(controls.instanceIsAudible(entity), true)
+})
+
+test('Shift toggles crouch on foot without retriggering on repeat or release', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.heroController.active = true
+    controls.heroController.handleKeyDown = () => false
+    const event = { key: 'Shift', code: 'ShiftLeft', preventDefault() {}, target: new MockElement() }
+    controls.onKeyDown(event)
+    assert.equal(controls.isHeroStealthMode(), true)
+    controls.onKeyDown({ ...event, repeat: true })
+    assert.equal(controls.isHeroStealthMode(), true)
+    controls.onKeyUp(event)
+    assert.equal(controls.isHeroStealthMode(), true)
+    controls.onKeyDown(event)
+    controls.onKeyUp(event)
+    assert.equal(controls.isHeroStealthMode(), false)
+  } finally {
+    restore()
+  }
 })

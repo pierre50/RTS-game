@@ -464,7 +464,7 @@
   background: var(--form-surface-color);
   color: var(--main-accent-color);
   font-weight: bold;
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
   transition:
     border-color var(--ui-transition-fast),
     background-color var(--ui-transition-fast);

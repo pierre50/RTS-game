@@ -157,6 +157,7 @@ test('player, combat, followers and travelling cave residents retain live restor
 test('map restoration creates only nearby villages, and restores a remote village once on demand', () => {
   const f = fixture()
   clearDeferredVillages(f.context.map)
+  f.state.buildings.push({ type: 'TownCenter', label: 'town', i: 505, j: 500 })
   const created = []
   const { restoreSavedEntities } = loadTsModule('app/classes/map/generation/MapSavedEntities.ts', {
     moduleCache: cache,
@@ -185,6 +186,8 @@ test('map restoration creates only nearby villages, and restores a remote villag
   f.context.map.context = f.context
   restoreSavedEntities(f.context.map, [f.state], [], f.context)
   assert.deepEqual(created, [])
+  const townName = deferredVillageState(f.owner).buildings.find(b => b.type === 'TownCenter').settlementName
+  assert.ok(townName)
   const { getDeferredVillages } = loadTsModule('app/services/world/distantVillages/DeferredVillageStore.ts', { moduleCache: cache })
   const store = getDeferredVillages(f.context.map)
   Object.assign(f.hero, { i: 450, j: 500 })
@@ -192,6 +195,7 @@ test('map restoration creates only nearby villages, and restores a remote villag
   store.update()
   assert.deepEqual(created, ['village'])
   assert.equal(f.owner.units[0].label, 'chief')
+  assert.equal(f.owner.buildings.find(b => b.type === 'TownCenter').settlementName, townName)
 })
 
 test('an accepted quest keeps its village live on restore', () => {

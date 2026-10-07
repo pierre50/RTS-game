@@ -1,3 +1,4 @@
+import { BuildingPlacementHelp } from '../ui/BuildingPlacementHelp'
 import { Container, Graphics } from 'pixi.js'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { CameraController } from '../controllers/CameraController'
@@ -31,7 +32,6 @@ import {
   handleControlsEscapeKey,
   handleControlsKeyDown,
   handleControlsKeyUp,
-  panControlsCameraWithArrowKeys,
   restoreControlsMovement,
   type HeldMovementKeys,
 } from './ControlsKeyboard'
@@ -43,29 +43,22 @@ export default class Controls extends Container implements ControlsLike {
   mouse: { x: number; y: number; prevent: boolean }
   cameraController: CameraController
   mouseHoldTimeout: ReturnType<typeof setTimeout> | undefined
-  keysPressed: Partial<Record<ControlBindingAction, boolean>>
   keyActionsByCode: Partial<Record<string, ControlBindingAction>>
-  keyPressedCount: number
-  keySpeed: number
-  heroDirectionLockActive: boolean
   shiftKeyActive: boolean
   heroController: HeroController
   heroInteractionController: HeroInteractionController
+  destinationPickingHelp?: BuildingPlacementHelp
   gamepadInput: GamepadHeroInput
   touchInputController: TouchInputController
   pointerInputController: PointerInputController
   mouseBuilding: ControlsLike['mouseBuilding']
-  mouseTouch: PointerPoint | null | undefined
   mouseDrag: boolean
   touchInteraction: TouchInteraction | null
-  touchPanActive: boolean
   ignoreMouseEventsUntil: number
   suppressContextMenuUntil: number
   minimapRectangle: Graphics
   buildingPlacer: BuildingPlacer
   runtimeInputEnabled: boolean
-  _onDocMouseMove: (evt: MouseEvent) => void
-  _onDocMouseOut: () => void
   _onKeyDown: (evt: KeyboardEvent) => void
   _onKeyUp: (evt: KeyboardEvent) => void
   _onTouchStart: (evt: TouchEvent) => void
@@ -99,11 +92,7 @@ export default class Controls extends Container implements ControlsLike {
     this.setCamera(Math.floor(map.size / 2), Math.floor(map.size / 2))
 
     this.mouseHoldTimeout = undefined
-    this.keysPressed = {}
     this.keyActionsByCode = {}
-    this.keyPressedCount = 0
-    this.keySpeed = 0
-    this.heroDirectionLockActive = false
     this.shiftKeyActive = false
     this.heroController = new HeroController(this)
     this.heroInteractionController = new HeroInteractionController(this)
@@ -111,10 +100,8 @@ export default class Controls extends Container implements ControlsLike {
     this.touchInputController = new TouchInputController(this)
     this.pointerInputController = new PointerInputController(this)
     this.eventMode = 'auto'
-    this.mouseTouch = undefined
     this.mouseDrag = false
     this.touchInteraction = null
-    this.touchPanActive = false
     this.ignoreMouseEventsUntil = 0
     this.suppressContextMenuUntil = 0
     this.minimapRectangle = new Graphics()
@@ -123,8 +110,6 @@ export default class Controls extends Container implements ControlsLike {
     this.buildingPlacer = new BuildingPlacer(this)
     this.runtimeInputEnabled = true
 
-    this._onDocMouseMove = (evt: MouseEvent) => this.moveCameraWithMouse(evt)
-    this._onDocMouseOut = () => this.stopMouseCameraMove()
     this._onKeyDown = (evt: KeyboardEvent) => this.onKeyDown(evt)
     this._onKeyUp = (evt: KeyboardEvent) => this.onKeyUp(evt)
     this._onTouchStart = (evt: TouchEvent) => this.onTouchStart(evt)
@@ -139,8 +124,6 @@ export default class Controls extends Container implements ControlsLike {
     this._onWindowBlur = () => this.cancelActiveInteraction()
     this._onTick = (ticker: TickerLike) => this.onTick(ticker)
 
-    document.addEventListener('mousemove', this._onDocMouseMove)
-    document.addEventListener('mouseout', this._onDocMouseOut)
     document.addEventListener('keydown', this._onKeyDown)
     document.addEventListener('keyup', this._onKeyUp)
     gamebox.addEventListener('touchstart', this._onTouchStart)
@@ -163,8 +146,6 @@ export default class Controls extends Container implements ControlsLike {
       context: { gamebox },
     } = this
 
-    document.removeEventListener('mousemove', this._onDocMouseMove)
-    document.removeEventListener('mouseout', this._onDocMouseOut)
     document.removeEventListener('keydown', this._onKeyDown)
     document.removeEventListener('keyup', this._onKeyUp)
     gamebox.removeEventListener('touchstart', this._onTouchStart)
@@ -281,10 +262,6 @@ export default class Controls extends Container implements ControlsLike {
     return runOnTick(this, ticker)
   }
 
-  panCameraWithArrowKeys(frameScale: number): void {
-    panControlsCameraWithArrowKeys(this, frameScale)
-  }
-
   onTouchStart(evt: TouchEvent): void {
     if (!this.runtimeInputEnabled) return
     this.touchInputController.onTouchStart(evt)
@@ -353,10 +330,6 @@ export default class Controls extends Container implements ControlsLike {
     return this.gamepadInput.moveVector
   }
 
-  isHeroDirectionLockActive(): boolean {
-    return this.heroDirectionLockActive || this.gamepadInput.directionLockActive
-  }
-
   isHeroStealthMode(): boolean {
     return this.shiftKeyActive
   }
@@ -377,33 +350,8 @@ export default class Controls extends Container implements ControlsLike {
     return this.buildingPlacer.setMouseBuilding(building)
   }
 
-  moveCamera(dir: string, moveSpeed: number, isSpeedDivided: boolean, deltaScale = 1): void {
-    if (this.isInteractionBlocked()) return
-    this.cameraController.move(dir, moveSpeed, isSpeedDivided, deltaScale)
-  }
-
-  moveCameraWithMouse(evt: MouseEvent): void {
-    if (this.isInteractionBlocked()) {
-      this.stopMouseCameraMove()
-      return
-    }
-    if (evt.target instanceof Element && evt.target.closest('button, .topbar-options-menu, .action-menu')) {
-      this.cameraController.stopMouseMove()
-      return
-    }
-    this.cameraController.moveWithMouse(evt)
-  }
-
-  stopMouseCameraMove(): void {
-    this.cameraController.stopMouseMove()
-  }
-
   stopKeyboardMove(): void {
-    this.keysPressed = {}
     this.keyActionsByCode = {}
-    this.keyPressedCount = 0
-    this.heroDirectionLockActive = false
-    this.keySpeed = 0
     this.shiftKeyActive = false
     this.heroController.stopKeyboardMove()
   }
@@ -436,6 +384,22 @@ export default class Controls extends Container implements ControlsLike {
     this.setEquippedItem(tool)
   }
 
+  setNpcGoToPickingHelp(active: boolean): void {
+    this.destinationPickingHelp?.destroy()
+    this.destinationPickingHelp = undefined
+    if (!active) return
+    this.destinationPickingHelp = new BuildingPlacementHelp(
+      {
+        place: () => this.heroController.resolveGoTo(),
+        cancel: () => this.heroController.cancelGoToPicking(),
+        mirror: () => {},
+        canMirror: false,
+        destination: true,
+      },
+      this.gamepadInput.connected
+    )
+  }
+
   beginNpcGoTo(npcs: UnitEntity[]): void {
     this.heroController.beginGoToPicking(npcs)
   }
@@ -443,7 +407,6 @@ export default class Controls extends Container implements ControlsLike {
   cancelActiveInteraction(): void {
     this.gamepadInput.suspend()
     this.stopKeyboardMove()
-    this.stopMouseCameraMove()
     this.touchInputController.cancel()
     this.heroController.cancelActiveInteraction()
     this.mouse.prevent = false

@@ -87,8 +87,7 @@ export interface UnitConfig extends EntityConfig {
   corpseLootArrowMin?: number
   corpseLootArrowMax?: number
   attackRecoveryMs?: number
-  meleeArmor?: number
-  pierceArmor?: number
+  armor?: number
   totalEnergy?: number
   energyRegenRate?: number
   sounds?: UnitSounds
@@ -102,12 +101,7 @@ export type EquipmentStats = {
     power?: number
     range?: number
   }
-  armor?: {
-    melee?: number
-    pierce?: number
-  }
-  meleeArmor?: number
-  pierceArmor?: number
+  armor?: number
 }
 
 type BuildingLevelStats = {

@@ -81,7 +81,6 @@ function loadHeroController({
       COLOR_GOLD: 0xf8d878,
       HERO_ACTION_MOVE_SPEED_FACTOR: 0,
       HERO_MELEE_CHARGE_MOVE_SPEED_FACTOR: 0.55,
-      HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR: 0.8,
       LABEL_TYPES: { commRadius: 'commRadius' },
       BUILDING_TYPES: { stable: 'Stable' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
@@ -110,9 +109,6 @@ function loadHeroController({
     },
     '../lib/hero/heroTools': heroTools,
     '../lib/hero/heroProximityInteractions': heroProximityInteractions,
-    '../lib/hero/heroCursor': {
-      updateHeroCursor: () => {},
-    },
     '../lib/hero/heroActionRange': heroActionRange,
     '../lib/entities/entityOwnerTransfer': {
       transferNeutralEntityToPlayer: () => false,
@@ -129,11 +125,17 @@ function loadHeroController({
       applyBakedLpcUnitAssets: () => {},
     },
     '../lib/npc/npcInteraction': npcInteraction,
+    '../lib/units/movement/unitSprint': {
+      getSprintMoveFactor: () => 1,
+      recordSprintMovement() {},
+      stopUnitSprint() {},
+      toggleHeroSprint() {},
+    },
     '../lib/units/unitEnergy': {
       getEnergyMoveSpeedMultiplier: () => 1,
       updateUnitEnergy: () => {},
     },
-    '../lib/units/unitLocomotion': {
+    '../lib/units/movement/unitLocomotion': {
       UNIT_WALK_SPEED_FACTOR: WALK_SPEED_FACTOR,
       composeMoveSpeedFactor: (...factors) =>
         factors.reduce((value, factor) => Math.min(value, Math.max(0, factor)), 1),
@@ -713,7 +715,7 @@ test('switching tools during bow charge cancels the charge before pointer releas
   assert.equal(controller.primaryClickPoint, null)
 })
 
-test('shift keyboard movement on foot keeps absolute movement and locks current facing', () => {
+test('shift keyboard movement on foot walks without locking facing', () => {
   const { calls, controller, hero, setCursorPoint } = createController({
     getInstanceDegree: (unit, x) => (x > unit.x ? 180 : 0),
   })
@@ -736,14 +738,13 @@ test('shift keyboard movement on foot keeps absolute movement and locks current 
   assert.ok(Math.abs(moveCalls[0][0]) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][1] + 1) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * WALK_SPEED_FACTOR) < 1e-9)
-  assert.ok(Math.abs(moveCalls[0][3].facingDirX - 1) < 1e-9)
-  assert.ok(Math.abs(moveCalls[0][3].facingDirY) < 1e-9)
+  assert.equal(moveCalls[0][3], undefined)
 
   controller.handlePrimaryPointerDown()
 
   const attackCall = calls.find(call => Array.isArray(call) && call[0] === 'attack')
   assert.ok(attackCall)
-  assert.ok(attackCall[1].x > hero.x)
+  assert.ok(attackCall[1].x < hero.x)
 })
 
 test('shift keyboard movement keeps backpedaling on the shared walking pace', () => {
@@ -768,30 +769,7 @@ test('shift keyboard movement keeps backpedaling on the shared walking pace', ()
   assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * WALK_SPEED_FACTOR) < 1e-9)
 })
 
-test('gamepad direction lock keeps current facing while moving with the stick', () => {
-  const { controller, hero } = createController()
-  const moveCalls = []
-  hero.degree = 180
-  hero.speed = 100 / 6
-  hero.moveDirect = (...args) => {
-    moveCalls.push(args)
-    hero.x += args[0] * args[2]
-    hero.y += args[1] * args[2]
-    return true
-  }
-  controller.controls.getGamepadMoveVector = () => ({ dx: 0, dy: -1 })
-  controller.controls.isHeroDirectionLockActive = () => true
-
-  controller.update(1)
-
-  assert.equal(moveCalls.length, 1)
-  assert.ok(Math.abs(moveCalls[0][0]) < 1e-9)
-  assert.ok(Math.abs(moveCalls[0][1] + 1) < 1e-9)
-  assert.ok(Math.abs(moveCalls[0][3].facingDirX - 1) < 1e-9)
-  assert.ok(Math.abs(moveCalls[0][3].facingDirY) < 1e-9)
-})
-
-test('shift keyboard movement does not lock facing while mounted', () => {
+test('shift keyboard movement keeps full speed and free facing while mounted', () => {
   const { controller, hero, setCursorPoint } = createController()
   const moveCalls = []
   hero.speed = 100 / 6
@@ -1375,7 +1353,7 @@ test('E owns villager communication and opens orders on key release', () => {
 
   assert.equal(controller.commCharging, false)
   assert.equal(controller.isHeroActionHeld(), false)
-  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, undefined]])
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, { commRadius: 2.5 }]])
 })
 
 test('E opens direct interaction when the hero is not a chief', () => {
@@ -1411,12 +1389,10 @@ test('E entering a building preserves held movement for the travel capture', () 
     }),
   })
   controller.keysPressed.add('heroRight')
-  controller.shiftMoveLockedDegree = 90
 
   assert.equal(controller.handleKeyDown('heroInteract'), true)
 
   assert.deepEqual([...controller.keysPressed], ['heroRight'])
-  assert.equal(controller.shiftMoveLockedDegree, 90)
   assert.deepEqual(calls, [
     ['setHeroInteractionPrompt', 'heroInteractionEnter'],
     ['travelIntoBuildingInterior', 'town-center-1'],
@@ -1431,12 +1407,10 @@ test('E exiting an interior preserves held movement for the travel capture', () 
     }),
   })
   controller.keysPressed.add('heroDown')
-  controller.shiftMoveLockedDegree = 180
 
   assert.equal(controller.handleKeyDown('heroInteract'), true)
 
   assert.deepEqual([...controller.keysPressed], ['heroDown'])
-  assert.equal(controller.shiftMoveLockedDegree, 180)
   assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionExit'], ['travelOutOfBuildingInterior']])
 })
 
@@ -1519,7 +1493,7 @@ test('releasing communication after the radius is visible resolves the charged r
 
   assert.deepEqual(resolutions, [2.5])
   assert.deepEqual(optionsSeen, [{ precisionOnly: false }])
-  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, undefined]])
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, { commRadius: 2.5 }]])
 })
 
 test('communication charge indicator is drawn as synchronized ground cells', () => {
@@ -1759,4 +1733,89 @@ test('defense key does not interrupt unsupported equipped tools', () => {
     assert.equal(hero.heroDefenseActive, undefined)
     assert.equal(hero.degree, 270)
   }
+})
+
+test('destination help follows order selection, cancellation, confirmation and interruption', () => {
+  const { controller } = createController({ nearbyGroup: [] })
+  const visibility = []
+  controller.controls.setNpcGoToPickingHelp = active => visibility.push(active)
+  controller.beginGoToPicking([])
+  assert.deepEqual(visibility, [true])
+  controller.cancelGoToPicking()
+  assert.equal(controller.pendingGoToNpcs, null)
+  controller.beginGoToPicking([])
+  controller.resolveGoTo()
+  assert.equal(controller.pendingGoToNpcs, null)
+  controller.beginGoToPicking([])
+  controller.cancelActiveInteraction()
+  assert.equal(controller.pendingGoToNpcs, null)
+  assert.deepEqual(visibility, [true, false, true, false, true, false])
+})
+
+test('gamepad interaction never starts or releases group communication', () => {
+  const { controller } = createController({ nearbyGroup: [] })
+  controller.handleKeyDown('heroInteract', 'gamepad')
+  assert.equal(controller.commCharging, false)
+  controller.beginCommCharge()
+  assert.equal(controller.commCharging, true)
+  controller.handleKeyUp('heroInteract', 'gamepad')
+  assert.equal(controller.commCharging, true)
+  controller.cancelCommCharge()
+})
+
+test('gamepad interaction dismounts before resolving nearby targets', () => {
+  const { controller, hero } = createController({ nearbyGroup: [] })
+  let dismounted = 0
+  hero.mountedOnHorse = true
+  controller.dismountCompanionHorse = () => {
+    dismounted++
+    return true
+  }
+  controller.executeProximityInteraction = () => {
+    throw new Error('Must dismount first')
+  }
+  assert.equal(controller.handleKeyDown('heroInteract', 'gamepad'), true)
+  assert.equal(dismounted, 1)
+})
+
+test('dedicated group communication uses a circle even for a quick release near an interaction target', () => {
+  const requests = []
+  const { controller } = createController({
+    resolveHeroProximityInteraction: () => {
+      throw new Error('Group command must not interact')
+    },
+    resolveCommGroup: (_hero, radius, options) => {
+      requests.push({ radius, options })
+      return []
+    },
+  })
+  controller.beginCommCharge()
+  controller.endCommCharge(true)
+  assert.equal(controller.commCharging, false)
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].options.precisionOnly, false)
+})
+
+test('dedicated group communication keeps distant members in conversation range', () => {
+  const group = [{ label: 'far-villager' }]
+  const { calls, controller } = createController({ commIndicatorDelayMs: 250, resolveCommGroup: () => group })
+  controller.beginCommCharge()
+  controller.endCommCharge(true)
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, { commRadius: 2.5 }]])
+})
+
+test('gamepad interaction falls back to target inspection only when no proximity action applies', () => {
+  const { controller } = createController({ nearbyGroup: [] })
+  let inspections = 0
+  controller.controls.openHeroEntityInteraction = () => {
+    inspections++
+    return true
+  }
+  controller.executeProximityInteraction = () => true
+  assert.equal(controller.handleKeyDown('heroInteract', 'gamepad'), true)
+  assert.equal(inspections, 0)
+  controller.executeProximityInteraction = () => false
+  assert.equal(controller.handleKeyDown('heroInteract', 'gamepad'), true)
+  assert.equal(inspections, 1)
+  assert.equal(controller.commCharging, false)
 })

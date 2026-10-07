@@ -28,6 +28,7 @@ type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 
 export type SerializableEntity = RuntimeEntityBase & {
+  settlementName?: string
   wildlife?: SaveEntityState['wildlife']
   lastMealAt?: number
   homeHouseLabel?: string
@@ -117,6 +118,7 @@ export type SerializableEntity = RuntimeEntityBase & {
   realDest?: Destination | null
   isFleeing?: boolean
   isChief?: boolean
+  equipmentDurability?: Record<string, number>
   lootEquipment?: string[]
   getVisualSprite?: () => SpriteState | undefined
   currentFrame?: number
@@ -327,6 +329,7 @@ export function unitData(unit: SerializableEntity): SaveEntityState {
       'isChief',
       'inventory',
       'lootEquipment',
+      'equipmentDurability',
       'followingHero',
       'pendingRescueThanks',
       'assetCiv',
@@ -369,6 +372,7 @@ export function unitData(unit: SerializableEntity): SaveEntityState {
 
 export function buildingData(building: SerializableEntity): SaveEntityState {
   return definedProperties({
+    settlementName: building.settlementName,
     ...filterObject(building, [
       'label',
       'i',

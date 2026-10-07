@@ -22,9 +22,9 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
-  ACTION_TYPES: { minecopper: 'minecopper', mineiron: 'mineiron' },
-  RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
-  RESOURCE_TYPES: { copper: 'Copper', iron: 'Iron' },
+  ACTION_TYPES: { minecopper: 'minecopper', minetin: 'minetin', mineiron: 'mineiron' },
+  RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'tin', 'iron'],
+  RESOURCE_TYPES: { copper: 'Copper', tin: 'Tin', iron: 'Iron' },
   UNIT_TYPES: { villager: 'Villager' },
   WORK_TYPES: {
     farmer: 'farmer',
@@ -48,6 +48,7 @@ test('summarizes villager resource assignments, sleep and movement', () => {
     { type: 'Villager', work: 'farmer' },
     { type: 'Villager', work: 'goldminer', dest: { type: 'Copper' } },
     { type: 'Villager', work: 'goldminer', action: 'mineiron' },
+    { type: 'Villager', work: 'goldminer', action: 'minetin' },
     {
       type: 'Villager',
       work: null,
@@ -59,8 +60,8 @@ test('summarizes villager resource assignments, sleep and movement', () => {
     { type: 'Villager', work: 'woodcutter', isDead: true },
   ])
 
-  assert.deepEqual(summary.assigned, { wood: 1, food: 1, stone: 1, gold: 0, copper: 1, iron: 1 })
-  assert.equal(summary.total, 7)
+  assert.deepEqual(summary.assigned, { wood: 1, food: 1, stone: 1, gold: 0, copper: 1, tin: 1, iron: 1 })
+  assert.equal(summary.total, 8)
   assert.equal(summary.construction, 1)
   assert.equal(summary.idle, 1)
   assert.equal(summary.sleeping, 1)

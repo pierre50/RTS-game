@@ -14,6 +14,7 @@ export const NEUTRAL_RESOURCE_QUANTITY_RANGES: Partial<Record<string, ResourceQu
   [RESOURCE_TYPES.fiberPlant]: [2, 3],
   [RESOURCE_TYPES.stone]: [70, 120],
   [RESOURCE_TYPES.copper]: [30, 55],
+  [RESOURCE_TYPES.tin]: [30, 55],
   [RESOURCE_TYPES.iron]: [35, 60],
   [RESOURCE_TYPES.gold]: [3, 5],
   [RESOURCE_TYPES.tree]: [140, 220],

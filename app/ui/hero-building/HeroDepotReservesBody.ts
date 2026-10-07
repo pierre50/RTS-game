@@ -1,3 +1,4 @@
+import { getResourceDisplayName } from '../utils/resourceDisplayName'
 import { t } from '../../lib/lang'
 import { depotReserveResources, reserveAmounts, setReserveShare } from '../../lib/economy/depotReserves'
 import { settlementDepotPolicy, setSettlementDepotPolicy } from '../../lib/economy/collectiveTasks'
@@ -32,7 +33,7 @@ export function createHeroDepotReservesBody(
     const row = document.createElement('div')
     row.className = 'depot-reserve-row config-row'
     const label = document.createElement('label')
-    label.textContent = t(resource)
+    label.textContent = getResourceDisplayName(resource)
     label.htmlFor = `depot-reserve-${resource}`
     row.appendChild(label)
     const input = document.createElement('input')
@@ -43,7 +44,7 @@ export function createHeroDepotReservesBody(
     input.max = '100'
     input.step = '5'
     input.value = String(policy.shares[resource] ?? 0)
-    input.setAttribute('aria-label', t(resource))
+    input.setAttribute('aria-label', getResourceDisplayName(resource))
     input.setAttribute('aria-valuetext', t('depotReserveAmount', { count: targets[resource] ?? 0 }))
     input.addEventListener('change', () => {
       const value = policy.shares[resource] === 100 && Number(input.value) < 100 ? 0 : Number(input.value)

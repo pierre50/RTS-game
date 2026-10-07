@@ -7,6 +7,7 @@ const RESOURCE_SEND_TO_BY_ACTION: Partial<Record<string, (unit: UnitEntity, dest
   [ACTION_TYPES.minestone]: (unit, dest) => (unit.sendToStone ? (unit.sendToStone(dest, true), true) : false),
   [ACTION_TYPES.minegold]: (unit, dest) => (unit.sendToGold ? (unit.sendToGold(dest, true), true) : false),
   [ACTION_TYPES.minecopper]: (unit, dest) => (unit.sendToCopper ? (unit.sendToCopper(dest, true), true) : false),
+  [ACTION_TYPES.minetin]: (unit, dest) => (unit.sendToTin ? (unit.sendToTin(dest, true), true) : false),
   [ACTION_TYPES.mineiron]: (unit, dest) => (unit.sendToIron ? (unit.sendToIron(dest, true), true) : false),
   [ACTION_TYPES.forageberry]: (unit, dest) => (unit.sendToBerrybush ? (unit.sendToBerrybush(dest, true), true) : false),
   [ACTION_TYPES.farm]: (unit, dest) => (unit.sendToFarm ? (unit.sendToFarm(dest, true), true) : false),

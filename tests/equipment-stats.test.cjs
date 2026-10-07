@@ -97,8 +97,8 @@ test('gameplay equipment data covers every dynamic equipment key', () => {
   const missing = getDynamicEquipmentKeys().filter(key => !Object.hasOwn(equipment, key))
 
   assert.deepEqual(missing, [])
-  assert.deepEqual(equipment.helmet_barbarian_ceramic, { armor: { melee: 1, pierce: 1 } })
-  assert.deepEqual(equipment.helmet_barbarian_nasal_ceramic, { armor: { melee: 1, pierce: 1 } })
+  assert.deepEqual(equipment.helmet_barbarian_ceramic, { armor: 1 })
+  assert.deepEqual(equipment.helmet_barbarian_nasal_ceramic, { armor: 1 })
 
   for (const visualOnly of VISUAL_ONLY_EQUIPMENT) {
     assert.deepEqual(equipment[visualOnly], {}, `${visualOnly} should remain visual-only`)
@@ -125,8 +125,8 @@ test('combat equipment data declares weapon and armor stats by role', () => {
       assert.ok((equipment[key].weapon?.power ?? 0) > 0, `${key} should declare weapon.power`)
     }
     if (!visualOnly.has(key) && /^(armor_|bracers_|helmet_|leg_armor_|round_shield_|shoulder_)/.test(key)) {
-      const armor = equipment[key].armor ?? {}
-      assert.ok((armor.melee ?? 0) > 0 || (armor.pierce ?? 0) > 0, `${key} should declare armor stats`)
+      const armor = equipment[key].armor ?? 0
+      assert.ok(armor > 0, `${key} should declare armor stats`)
     }
   }
 })
@@ -246,8 +246,7 @@ test('unit combat stats ignore non-work roles and still use unit equipment', () 
     ),
     {
       weaponPower: 6,
-      meleeArmor: 1,
-      pierceArmor: 0,
+      armor: 1,
     }
   )
 })
@@ -282,13 +281,10 @@ test('infantry equipment stats unlock armor by level and cap effective combat ar
 
   assert.deepEqual(getUnitRuntimeCombatStats(makeUnit(0, 0), config), {
     weaponPower: 6,
-    meleeArmor: 0,
-    pierceArmor: 0,
+    armor: 0,
   })
-  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 15), config).meleeArmor, 3)
-  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 15), config).pierceArmor, 2)
-  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 18), config).meleeArmor, 3)
-  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 18), config).pierceArmor, 2)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 15), config).armor, 3)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 18), config).armor, 3)
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',
@@ -309,7 +305,7 @@ test('hero inventory equipment drives runtime attack armor and range', () => {
     refreshUnitEquipmentStats,
     UNARMED_UNIT_WEAPON_POWER,
   } = loadEquipmentStats()
-  const heroConfig = { category: 'Hero', meleeArmor: 1, pierceArmor: 0 }
+  const heroConfig = { category: 'Hero', armor: 1 }
   const owner = {
     age: 0,
     civ: 'demo',
@@ -337,8 +333,7 @@ test('hero inventory equipment drives runtime attack armor and range', () => {
 
   assert.deepEqual(getUnitRuntimeCombatStats(hero, heroConfig), {
     weaponPower: 5,
-    meleeArmor: 3,
-    pierceArmor: 2,
+    armor: 3,
   })
   assert.deepEqual(getHeroInventoryWeaponCombatStats(hero), {
     meleeWeaponPower: 5,
@@ -349,14 +344,12 @@ test('hero inventory equipment drives runtime attack armor and range', () => {
 
   refreshUnitEquipmentStats(hero)
   assert.equal(hero.weaponPower, 5)
-  assert.equal(hero.meleeArmor, 3)
-  assert.equal(hero.pierceArmor, 2)
+  assert.equal(hero.armor, 3)
 
   hero.work = 'hunter'
   assert.deepEqual(getUnitRuntimeCombatStats(hero, heroConfig), {
     weaponPower: 7,
-    meleeArmor: 3,
-    pierceArmor: 2,
+    armor: 3,
   })
   assert.equal(getEntityWeaponPower(hero), 7)
   assert.equal(getUnitCombatRange(hero), 5)
@@ -413,4 +406,19 @@ test('melee collision weapon follows equipment and ignores shields and bows', ()
   assert.equal(getEntityMeleeWeapon({ equipment: ['armor_leather', 'bow', 'axe_iron'] }), 'axe_iron')
   assert.equal(getEntityMeleeWeapon({ equipment: ['armor_leather', 'bow'] }), undefined)
   assert.equal(getEntityMeleeWeapon({ equipment: [] }), undefined)
+})
+
+test('worn equipment keeps normal stats until broken, then contributes nothing', () => {
+  const { getEquipmentCombatStats } = loadEquipmentStats()
+  assert.deepEqual(getEquipmentCombatStats(['sword_iron~condition:40']), getEquipmentCombatStats(['sword_iron']))
+  assert.deepEqual(getEquipmentCombatStats(['sword_iron~condition:0', 'armor_mail_iron~condition:0']), {
+    weaponPower: 0,
+    armor: 0,
+  })
+})
+
+test('an unusable bow does not display damage from its equipped arrows', () => {
+  const { getHeroInventoryWeaponCombatStats } = loadEquipmentStats()
+  const hero = { inventory: { activeWeapons: { ranged: 'bow~condition:0' }, equipped: { arrow: 'arrow_iron' } } }
+  assert.equal(getHeroInventoryWeaponCombatStats(hero).rangedWeaponPower, 0)
 })

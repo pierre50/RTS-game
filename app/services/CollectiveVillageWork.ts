@@ -1,3 +1,4 @@
+import { planBlockedVillagerRecovery } from '../lib/economy/blockedVillagerInventory'
 import { hasConstructionWork } from '../lib/economy/constructionMaterials'
 import { isRpgVillage } from '../config/rpgVillages'
 import { consumeVillageWorkChange } from '../lib/units/village/villageWorkEvents'
@@ -59,9 +60,11 @@ function dispatchCollectiveVillage(owner: PlayerLike): number {
   const queue = [...workers]
   for (const unit of queue) {
     const excluded = rejected.get(unit)
-    const task = excluded
+    let task = excluded
       ? planCollectiveTasks(owner, [unit], members, (_unit, job) => !excluded.has(job)).get(unit)
       : plan.get(unit)
+    const recovery = !task ? planBlockedVillagerRecovery(unit, members, (_unit, job) => !excluded?.has(job)) : undefined
+    if (recovery) task = recovery.task
     if (!task) {
       if (excluded) continue
       if (interruptibleDeposit(unit)) continue
@@ -70,11 +73,15 @@ function dispatchCollectiveVillage(owner: PlayerLike): number {
         unit.collectiveTask = null
         unit.stop?.()
         unit.work = null
-        unit.sendToDelivery?.()
+      }
+      if (unit.sendToDelivery?.() === true) {
+        actions++
+        continue
       }
       gatherIdleVillager(unit)
       continue
     }
+    recovery?.apply()
     clearVillagerGathering(unit)
     if (interruptibleDeposit(unit)) {
       const taskId = unit.resourceDeliveryState?.taskId
@@ -101,10 +108,17 @@ function dispatchCollectiveVillage(owner: PlayerLike): number {
               }
             : null,
       }
-      unit.sendToEvt?.(task.pickup.building as BuildingEntity, ACTION_TYPES.delivery, {
+      const sent: unknown = unit.sendToEvt?.(task.pickup.building as BuildingEntity, ACTION_TYPES.delivery, {
         forceRepath: true,
         preserveAutonomy: true,
       })
+      if (recovery && (sent === false || !unit.dest)) {
+        recovery.rollback()
+        unit.resourceDeliveryState = null
+        unit.collectiveTask = null
+        unit.stop?.()
+        continue
+      }
       actions++
       continue
     }
@@ -122,8 +136,10 @@ function dispatchCollectiveVillage(owner: PlayerLike): number {
       unit.collectiveTask = task.job
       sent = assignVillagerAutonomy(unit, reserveUsesFoodJob(task.job) ? 'food' : (task.job as VillagerAutonomyJob), {
         preserveRejectedTargets: true,
+        ...(recovery ? { exploreWhenNoTarget: false } : {}),
       })
     }
+    if (sent === false) recovery?.rollback()
     if (sent === false && task.job !== 'construction') {
       const failures = excluded ?? new Set<string>()
       failures.add(task.job)

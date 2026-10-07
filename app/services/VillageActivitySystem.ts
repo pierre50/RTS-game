@@ -29,7 +29,16 @@ import type { UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 
 type Village = { home: VillageHome; owner: PlayerLike; units: UnitEntity[]; simplified: boolean; since: number }
-const GATHER_ACTIONS = new Set(['chopwood', 'forageberry', 'farm', 'minestone', 'minegold', 'minecopper', 'mineiron'])
+const GATHER_ACTIONS = new Set([
+  'chopwood',
+  'forageberry',
+  'farm',
+  'minestone',
+  'minegold',
+  'minecopper',
+  'minetin',
+  'mineiron',
+])
 
 export class VillageActivitySystem {
   private sleeping = false
@@ -141,7 +150,7 @@ export class VillageActivitySystem {
             (!unit.action || GATHER_ACTIONS.has(unit.action)) &&
             withinVillageActivity(unit, unit) &&
             (!unit.dest || withinVillageActivity(unit, unit.dest)) &&
-            (['food', 'wood', 'stone', 'gold', 'copper', 'iron'].includes(unit.autonomousJob ?? '') ||
+            (['food', 'wood', 'stone', 'gold', 'copper', 'tin', 'iron'].includes(unit.autonomousJob ?? '') ||
               ['woodcutter', 'forager', 'farmer', 'stoneminer', 'goldminer'].includes(unit.work ?? ''))
       )
     )

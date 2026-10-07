@@ -14,6 +14,7 @@ const COLLECTIVE_RESOURCES = [
   'leather',
   'gold',
   'copper',
+  'tin',
   'iron',
   'sinew',
   'feather',
@@ -68,6 +69,6 @@ export function villageFoodReserve(population: number, populationMax: number): n
 
 /** Per-settlement stock targets. Additional depots add capacity, never multiply these goals. */
 export const DEFAULT_VILLAGE_RESERVES = {
-  materials: { wood: 50, stone: 30, gold: 10, copper: 5, iron: 5 },
+  materials: { wood: 50, stone: 30, gold: 10, copper: 5, tin: 2, iron: 3 },
   food: 100,
 } as const

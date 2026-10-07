@@ -126,23 +126,6 @@ export function placeBanditCamps(map: MapGenerationMap, context: GameContextLike
   }
 }
 
-/** The same outdoor layout as generated camps, without any cave lookup or furnishing. */
-export function placeOutdoorBanditQuestCamp(map: MapGenerationMap, context: GameContextLike, position: GridPosition) {
-  const owner = ensureBanditCampOwner(map, context, position)
-  if (!owner.createUnit || !owner.config.buildings[BUILDING_TYPES.fireCamp]) return []
-  const anchor = findBanditCampAnchor(map, position, owner, 0)
-  if (!anchor) return []
-  const heroLevel = getHeroLevel(map)
-  const unitTypes = getBanditCampUnitTypes(map, 0, heroLevel)
-  const fires = placeBanditCampFires(map, owner, anchor, getBanditCampFireCount(unitTypes.length, heroLevel))
-  if (!fires.length) return []
-  placeCampDecorations(map, owner, anchor, unitTypes.length, heroLevel)
-  placeBanditCampChest(map, owner, anchor, 0, unitTypes.length, heroLevel)
-  const before = new Set(owner.units)
-  placeBanditCampUnits(map, owner, fires, unitTypes)
-  return owner.units.filter(unit => !before.has(unit))
-}
-
 function getHeroLevel(map: MapGenerationMap): number {
   const hero = map.context.controls?.heroUnit ?? map.context.player?.units?.find(unit => unit.type === UNIT_TYPES.hero)
   return hero ? getUnitOverallLevel(hero) : 0

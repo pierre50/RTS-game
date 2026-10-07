@@ -584,7 +584,10 @@ test('NPC sword approach reaches contact before the real attack loop, and interr
           return { killed: false }
         },
       },
-      '../../lib/equipment/equipmentStats': { getUnitCombatRange: () => undefined },
+      '../../lib/equipment/equipmentStats': {
+        getConfiguredEntityEquipment: unit => unit.equipment ?? [],
+        getUnitCombatRange: () => undefined,
+      },
       '../../lib/units/unitExperience': { getCombatXpBonus: () => 0, XP_CATEGORIES: { melee: 'melee' } },
       '../../lib/combat/combatBehavior': { markCombatAttack: () => {} },
       '../../lib/entities/slashRecoveryAnimation': {},

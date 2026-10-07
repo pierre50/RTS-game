@@ -31,6 +31,9 @@ importers:
       pixi.js:
         specifier: ^8.19.0
         version: 8.19.0
+      simple-keyboard:
+        specifier: ^3.8.192
+        version: 3.8.192
     devDependencies:
       '@babel/core':
         specifier: ^7.29.7
@@ -4082,6 +4085,9 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
+
+  simple-keyboard@3.8.192:
+    resolution: {integrity: sha512-/H+ggE5S7iTQxqc9U0wxO+razvRNjy/SOH9h7g8qwwB2JivI7iu2WQXKa6vkyxV2VJciDeimqas2maMCARBukQ==}
 
   simple-update-notifier@2.0.0:
     resolution: {integrity: sha512-a2B9Y0KlNXl9u/vsW6sTIu9vGEpfKu2wRV6l1H3XEas/0gUIzGzBoP/IouTcUQbm9JWZLH3COxyn03TYlFax6w==}
@@ -9320,6 +9326,8 @@ snapshots:
   signal-exit@3.0.7: {}
 
   signal-exit@4.1.0: {}
+
+  simple-keyboard@3.8.192: {}
 
   simple-update-notifier@2.0.0:
     dependencies:

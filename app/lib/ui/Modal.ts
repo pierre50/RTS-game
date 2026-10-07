@@ -88,7 +88,11 @@ export class Modal {
     document.addEventListener('keydown', this._onKeyDown)
     requestAnimationFrame(() => {
       if (!this._backdrop?.isConnected) return
-      const initial = this._panel?.querySelector<HTMLElement>('.is-window-selected') ?? this._getFocusableElements()[0]
+      // Tab headers can be mounted after construction. Restore their active tab on the first frame.
+      const initial =
+        this._panel?.querySelector<HTMLElement>('.modal-header .ui-tab[aria-selected="true"]') ??
+        this._panel?.querySelector<HTMLElement>('.is-window-selected') ??
+        this._getFocusableElements()[0]
       initial?.focus()
       if (!this._panel?.contains(document.activeElement)) this._panel?.focus()
     })

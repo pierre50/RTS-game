@@ -1,3 +1,4 @@
+import { decorateHelmet } from './helmetVariants'
 import type { UnitEntity, HeroEquipmentSlot } from '../../types/entities'
 import { getEquipmentSlot, getWeaponSlot } from './equipmentSlots'
 import { getHeroInventory, pushEquipmentCopies, removeHeroInventoryItem } from './heroInventory'
@@ -15,18 +16,23 @@ export function equipHeroInventoryItemData(
   const slot = getEquipmentSlot(equipment)
   if (!slot) return equipHeroWeaponInventoryItem(hero, equipment)
   const inventory = getHeroInventory(hero)
-  if (slot === 'helmetDecor' && !inventory.equipped.helmet) return false
+  if (slot === 'helmetDecor') {
+    if (!inventory.equipped.helmet || !removeHeroInventoryItem(hero, equipment)) return false
+    inventory.equipped.helmet = decorateHelmet(inventory.equipped.helmet, [equipment])
+    return true
+  }
   const bag = inventory.equipment
   const bagIndex = bag.indexOf(equipment)
   if (bagIndex < 0) return false
 
   const availableCount = countBagEquipment(bag, equipment)
   const defaultCount = slot === 'arrow' ? availableCount : 1
-  const equipCount = Math.min(availableCount, Math.max(1, Math.floor(requestedCount ?? defaultCount)))
+  const equipCount =
+    slot === 'arrow' ? Math.min(availableCount, Math.max(1, Math.floor(requestedCount ?? defaultCount))) : 1
   if (!removeHeroInventoryItem(hero, equipment, equipCount)) return false
   const previous = inventory.equipped[slot]
   let nextEquippedCount = equipCount
-  if (previous === equipment) {
+  if (previous === equipment && slot === 'arrow') {
     nextEquippedCount += getHeroEquippedItemCount(hero, slot)
   } else if (previous) {
     pushEquipmentCopies(bag, previous, getHeroEquippedItemCount(hero, slot))

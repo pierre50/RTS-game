@@ -115,11 +115,19 @@ for (const dead of [false, true]) {
       const updatedPanel = screen.element.children[1]
       assert.equal(updatedPanel.children[0].children[0].children[1].textContent, '1 item')
       const heroAxe = rows.findLast(row => row.id === 'transfer-equipment-hero-axe')
-      assert.equal(Boolean(heroAxe.trailingAction), !dead)
-      if (!dead) {
+      assert.equal(Boolean(heroAxe.trailingAction), true)
+      {
         heroAxe.trailingAction.onAction('one')
         assert.deepEqual(hero.inventory.equipment, [])
-        assert.deepEqual(unit.inventory.equipment, ['axe'])
+        assert.deepEqual(dead ? unit.lootEquipment : unit.inventory.equipment, ['axe'])
+        const heroWood = rows.findLast(row => row.id === 'transfer-resource-hero-wood')
+        heroWood.trailingAction.onAction('all')
+        assert.equal(unit.inventory.resources.wood, 20)
+        assert.deepEqual(hero.inventory.resources, {})
+        const returnedWood = rows.findLast(row => row.id === 'transfer-resource-npc-wood')
+        assert.equal(returnedWood.amount, 20)
+        returnedWood.trailingAction.onAction('all')
+        assert.equal(hero.inventory.resources.wood, 20)
       }
     } finally {
       global.document = previousDocument

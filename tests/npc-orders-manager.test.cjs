@@ -76,8 +76,9 @@ function makeFakeElement() {
 }
 
 class FakeModal {
-  constructor({ title, content, onClose }) {
+  constructor({ title, content, onClose, proximity }) {
     this.title = title
+    this.proximity = proximity
     this.content = content
     this.onClose = onClose
     this._panel = makeFakeElement()
@@ -347,6 +348,28 @@ test('foreign AI units never expose direct order buttons', () => {
     assert.equal(manager.buttonsContainer.hidden, true)
     assert.equal(npc.lookingAtHero, true)
     assert.equal(manager.chatterContainer.children[0].textContent, 'foreign hi')
+  })
+})
+
+test('charged group conversations widen their proximity range until a direct reopen', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager({ context })
+    const npcs = [
+      { type: 'Villager', label: 'villager-1', owner: context.player },
+      { type: 'Villager', label: 'villager-2', owner: context.player },
+    ]
+
+    manager.open(npcs, { commRadius: 5 })
+    assert.equal(manager.modal.proximity.openingRadius(), 5)
+    manager.open([npcs[0]])
+    assert.equal(manager.modal.proximity.openingRadius(), undefined)
+    manager.open(npcs, { commRadius: 5 })
+    manager.close()
+    manager.open([npcs[0]])
+    assert.equal(manager.modal.proximity.openingRadius(), undefined)
   })
 })
 

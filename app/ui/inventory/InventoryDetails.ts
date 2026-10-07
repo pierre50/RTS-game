@@ -1,3 +1,5 @@
+import { getResourceDisplayName } from '../utils/resourceDisplayName'
+import { getEquipmentDurability } from '../../lib/equipment/equipmentCondition'
 import type { CombatStatInfo } from '../entity/CombatStatInfo'
 import {
   formatEquipmentLootLabel,
@@ -15,6 +17,7 @@ type EquipmentDetailsMode = 'inventory' | 'market-buy' | 'market-sell'
 type ResourceDetailsMode = 'inventory' | 'market-sell'
 
 type InventoryRowInfo = {
+  durability?: number | null
   stats?: CombatStatInfo[]
   goldValue: number
   category: string
@@ -46,7 +49,7 @@ function createResourceDetails(
   const goldValue = getResourceGoldValue(resource)
   const totalValue = goldValue * Math.max(1, Math.floor(amount))
   return {
-    title: amount > 1 ? `${t(resource)} x${amount}` : t(resource),
+    title: amount > 1 ? `${getResourceDisplayName(resource)} x${amount}` : getResourceDisplayName(resource),
     description: getResourceDescription(resource),
     meta: [
       t('detailsResourceIngredient'),
@@ -73,7 +76,7 @@ export function createResourceRowInfo(
   return {
     goldValue: totalValue,
     category: t('detailsResourceIngredient'),
-    title: t(resource),
+    title: getResourceDisplayName(resource),
     description: details.description ?? '',
     meta:
       details.meta
@@ -90,6 +93,7 @@ function createEquipmentDetails(equipment: string, count = 1, mode: EquipmentDet
     title: formatEquipmentStackLabel(equipment, amount),
     description: getEquipmentKindLabel(equipment),
     meta: [
+      getEquipmentDurability(equipment) === 0 ? t('equipmentBrokenDescription') : null,
       stats.weaponPower > 0 && stats.weaponPower < 2 ? t('detailsLowDamageNote') : null,
       value > 0 && mode !== 'market-sell'
         ? t(mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', { gold: formatGold(value * amount) })
@@ -114,8 +118,7 @@ export function createEquipmentRowInfo(
           : 'weaponPower',
       value: combat.weaponPower,
     },
-    { key: 'meleeArmor', value: combat.meleeArmor },
-    { key: 'pierceArmor', value: combat.pierceArmor },
+    { key: 'armor', value: combat.armor },
   ]
   const showValue = options.showValue ?? true
   const value = getEquipmentGoldValue(equipment)
@@ -125,6 +128,7 @@ export function createEquipmentRowInfo(
     hiddenMeta.add(t(mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', { gold: formatGold(value * amount) }))
   }
   return {
+    durability: getEquipmentDurability(equipment),
     stats: stats.filter(stat => stat.value > 0),
     goldValue: value * amount,
     category: getEquipmentKindLabel(equipment),

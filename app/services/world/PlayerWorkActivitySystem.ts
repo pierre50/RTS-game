@@ -24,6 +24,7 @@ const ACTIONS = new Set([
   'minestone',
   'minegold',
   'minecopper',
+  'minetin',
   'mineiron',
   'build',
   'delivery',

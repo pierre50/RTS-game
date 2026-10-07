@@ -49,7 +49,7 @@ test('reserve goals use the capacity of each completed depot', () => {
   const { owner, units, pit, granary } = fixture(1)
   owner.forgeUpgrades = { pickaxes: 2 }
   const goals = settlementStockGoals(owner, units[0])
-  assert.deepEqual(goals, { wood: 150, stone: 90, gold: 30, copper: 15, iron: 15, wheat: 300, food: 8 })
+  assert.deepEqual(goals, { wood: 150, stone: 90, gold: 30, copper: 15, tin: 6, iron: 9, wheat: 300, food: 8 })
   owner.buildings.push({ ...pit, label: 'second' })
   assert.deepEqual(settlementStockGoals(owner, units[0]), {
     ...goals,
@@ -57,7 +57,8 @@ test('reserve goals use the capacity of each completed depot', () => {
     stone: 180,
     gold: 60,
     copper: 30,
-    iron: 30,
+    tin: 12,
+    iron: 18,
   })
   owner.buildings = owner.buildings.filter(b => b.type === 'TownCenter')
   assert.deepEqual(settlementStockGoals(owner, units[0]), { food: 8 })
@@ -73,7 +74,7 @@ test('idle human workers divide stock deficits into bounded claims', () => {
 })
 test('five missing wood claims one worker; cargo and manual assignments prevent duplicate work', () => {
   const { owner, units, pit } = fixture()
-  pit.inventory.resources = { wood: 145, stone: 90, gold: 30, copper: 15, iron: 15 }
+  pit.inventory.resources = { wood: 145, stone: 90, gold: 30, copper: 15, tin: 6, iron: 9 }
   assert.equal(planCollectiveTasks(owner, units).size, 1)
   units[0].inventory.resources.wood = 5
   assert.equal(planCollectiveTasks(owner, units).size, 0)
@@ -84,7 +85,7 @@ test('five missing wood claims one worker; cargo and manual assignments prevent 
 })
 test('ongoing useful jobs retain their worker when earlier workers finish another task', () => {
   const { owner, units, pit } = fixture(2)
-  pit.inventory.resources = { wood: 145, stone: 90, gold: 30, copper: 15, iron: 15 }
+  pit.inventory.resources = { wood: 145, stone: 90, gold: 30, copper: 15, tin: 6, iron: 9 }
   units[0].collectiveTask = 'food'
   units[1].collectiveTask = 'wood'
   const plan = planCollectiveTasks(owner, units)
@@ -132,7 +133,7 @@ test('iron reserves unlock with suitable tools, not before', () => {
   owner.age = 0
   assert.equal(settlementStockGoals(owner, units[0]).iron, 0)
   units[0].inventory.equipment = ['pickaxe_bronze']
-  assert.equal(settlementStockGoals(owner, units[0]).iron, 15)
+  assert.equal(settlementStockGoals(owner, units[0]).iron, 9)
 })
 test('automatic deliveries enforce depot roles and ignore legacy block flags', () => {
   const { owner, center, pit, granary } = fixture(1)
@@ -175,7 +176,7 @@ test('three days away replenish within full-capacity targets and never deposit i
     runtime: { dayNightElapsedMs: 0 },
     players: [owner],
     animals: [],
-    resources: ['Tree', 'Stone', 'Gold', 'Copper', 'Iron', 'Berrybush'].map((type, index) => ({
+    resources: ['Tree', 'Stone', 'Gold', 'Copper', 'Tin', 'Iron', 'Berrybush'].map((type, index) => ({
       type,
       label: type,
       i: 20 + index,
@@ -197,7 +198,7 @@ test('three days away replenish within full-capacity targets and never deposit i
     wheatMatureFrame: 5,
   }
   const report = simulateOfflineWorld(state, options)
-  for (const [key, value] of Object.entries({ wood: 150, stone: 90, gold: 30, copper: 15, iron: 15 })) {
+  for (const [key, value] of Object.entries({ wood: 150, stone: 90, gold: 30, copper: 15, tin: 6, iron: 9 })) {
     assert.ok((report.gathered[key] ?? 0) <= value, key)
     assert.equal(pit.inventory.resources[key] ?? 0, report.gathered[key] ?? 0, key)
     assert.equal(center.inventory.resources[key] ?? 0, 0, key)

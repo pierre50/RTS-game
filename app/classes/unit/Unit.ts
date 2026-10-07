@@ -489,6 +489,10 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToCopper(target, immediate)
   }
 
+  sendToTin(target: RuntimeEntity, immediate = false) {
+    return this.unitCommands.sendToTin(target, immediate)
+  }
+
   sendToIron(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToIron(target, immediate)
   }

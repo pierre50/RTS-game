@@ -1,6 +1,6 @@
 import { FAMILY_TYPES } from '../constants'
 import { HERO_STEALTH_ANIMAL_DETECTION_FACTOR } from '../../constants/heroControls'
-import { getRequestedMoveSpeedFactor } from './unitLocomotion'
+import { getRequestedMoveSpeedFactor } from './movement/unitLocomotion'
 import type { UnitEntity } from '../../types/entities'
 
 export type InsightEntity = {

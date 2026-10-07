@@ -143,8 +143,8 @@ function loadUnitMovement(calls) {
     if (request === '../../lib/combat/combatBehavior') return { markCombatFlee: () => {} }
     if (request === '../../lib/units/unitEnergy')
       return { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 }
-    if (request === '../../lib/units/unitLocomotion')
-      return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
+    if (request === '../../lib/units/movement/unitLocomotion')
+      return loadTsFile(path.join(__dirname, '../app/lib/units/movement/unitLocomotion.ts'))
     if (request === '../../lib/units/visuals/unitCrouchPose') {
       return {
         applyUnitCrouchPose: () => {},

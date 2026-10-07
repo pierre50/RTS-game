@@ -1,3 +1,5 @@
+import { assignSettlementNames } from '../../lib/settlements/settlementNames'
+import { deferredVillageBuildings } from '../../services/world/distantVillages/DeferredVillageStore'
 import { reconcileHouseholds } from '../../lib/housing/households'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import type { ForgeUpgrades } from '../../lib/equipment/forgeUpgrades'
@@ -63,6 +65,7 @@ export class Player implements PlayerLike {
   stone!: number
   gold!: number
   copper!: number
+  tin!: number
   iron!: number
   corpses: UnitEntity[]
   units: UnitEntity[]
@@ -272,7 +275,17 @@ export class Player implements PlayerLike {
 
   createBuilding(options: BuildingOptions) {
     const { context } = this
-    const building = new Building({ ...options, owner: this }, context)
+    const namedOptions = { ...options }
+    if (options.type === 'TownCenter') {
+      assignSettlementNames([
+        ...(context.players ?? []).map(owner => ({
+          civ: owner.civ,
+          buildings: deferredVillageBuildings(owner) ?? owner.buildings,
+        })),
+        { civ: this.civ, buildings: [...this.buildings, namedOptions] },
+      ])
+    }
+    const building = new Building({ ...namedOptions, owner: this }, context)
     addEntityToMapSpaceContainer(context.map, building)
     this.buildings.push(building)
     if (!options.skipBuiltEffects) {

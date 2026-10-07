@@ -50,9 +50,8 @@ export type CombatEntity = {
   isUsedBy?: unknown
   loading?: number | null
   equipment?: string[]
-  meleeArmor?: number
+  armor?: number
   owner?: CombatOwnerLike | null
-  pierceArmor?: number
   quantity?: number
   totalHitPoints?: number
   label?: string
@@ -75,5 +74,3 @@ export type CombatEntity = {
   i?: number
   j?: number
 }
-
-export type CombatDamageType = 'melee' | 'pierce'

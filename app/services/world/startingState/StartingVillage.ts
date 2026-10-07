@@ -37,7 +37,7 @@ export function populateStartingVillage(setup: StartingVillageSetup, profile: Vi
   for (const [type, count] of Object.entries(profile.buildings).sort(
     ([a], [b]) => buildingPlacementOrder(a) - buildingPlacementOrder(b)
   ))
-    if (!type.startsWith('Camp')) addMissingBuildings(village, type, count)
+    if (!type.startsWith('Camp') && type !== 'WatchTower') addMissingBuildings(village, type, count)
   const units = (player.units ??= [])
   const population = startingPopulation(village, units)
   const outpost = profile.settlementType === 'outpost'
@@ -47,6 +47,7 @@ export function populateStartingVillage(setup: StartingVillageSetup, profile: Vi
     addStartingHouses(village)
     reconcileHouseholds(player)
   }
+  addMissingBuildings(village, 'WatchTower', profile.buildings.WatchTower ?? 0)
   for (const [type, count] of Object.entries(profile.buildings))
     if (type.startsWith('Camp')) addMissingBuildings(village, type, count)
   player.population = population

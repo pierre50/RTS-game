@@ -58,7 +58,10 @@ function loadModule(relativePath, mocks) {
       getEntityWeaponPower: entity => entity?.weaponPower ?? 0,
       UNARMED_UNIT_WEAPON_POWER: 0.5,
     },
-    '../../lib/equipment/equipmentStats': { getUnitCombatRange: unit => unit?.combatRange ?? 0 },
+    '../../lib/equipment/equipmentStats': {
+      getConfiguredEntityEquipment: unit => unit.equipment ?? [],
+      getUnitCombatRange: unit => unit?.combatRange ?? 0,
+    },
     '../../lib/horses/horseCapture': { getNearestAvailableStableForUnit: () => null },
     '../../lib/combat/combatAttackLoop': {
       runAttackLoopOnFrame: (attacker, callbacks) => {
@@ -444,7 +447,9 @@ test('building interior assault damage stops at the entry threshold', () => {
   assert.equal(result.damageDealt, 5)
   assert.equal(result.killed, false)
   let destroyed = false
-  building.die = () => { destroyed = true }
+  building.die = () => {
+    destroyed = true
+  }
   const heroResult = applyCombatHit({ ...attacker, type: constants.UNIT_TYPES.hero }, building)
   assert.equal(building.hitPoints, 0)
   assert.equal(heroResult.damageDealt, 20)
@@ -494,7 +499,11 @@ test('attackers route into an assault-ready building interior instead of retarge
       },
     },
     '../../lib/combat/combatFeedback': { showAlertThenAggressionFeedback: () => {} },
-    '../../lib/equipment/equipmentStats': { getUnitCombatRange: () => 0, getUnitWorkEquipment: () => [] },
+    '../../lib/equipment/equipmentStats': {
+      getConfiguredEntityEquipment: unit => unit.equipment ?? [],
+      getUnitCombatRange: () => 0,
+      getUnitWorkEquipment: () => [],
+    },
     '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
     '../../lib/projectiles': { attachProjectileToMapSpace: () => {} },
     '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
@@ -1133,7 +1142,7 @@ test('unarmed units deal half a point of damage', () => {
   assert.equal(getHitPointsWithDamage(attacker, enemy), 19.5)
 })
 
-test('melee damage uses melee armor instead of the best armor value', () => {
+test('melee damage subtracts unified armor', () => {
   const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
@@ -1149,15 +1158,14 @@ test('melee damage uses melee armor instead of the best armor value', () => {
     family: constants.FAMILY_TYPES.unit,
     hitPoints: 20,
     isDead: false,
-    meleeArmor: 2,
+    armor: 2,
     owner: { label: 'enemy' },
-    pierceArmor: 8,
   }
 
   assert.equal(getHitPointsWithDamage(attacker, enemy), 12)
 })
 
-test('pierce damage uses pierce armor and still applies armor to default damage', () => {
+test('ranged weapon damage and explicit projectile damage subtract unified armor', () => {
   const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
@@ -1173,13 +1181,12 @@ test('pierce damage uses pierce armor and still applies armor to default damage'
     family: constants.FAMILY_TYPES.unit,
     hitPoints: 20,
     isDead: false,
-    meleeArmor: 8,
+    armor: 2,
     owner: { label: 'enemy' },
-    pierceArmor: 2,
   }
 
-  assert.equal(getHitPointsWithDamage(attacker, enemy, undefined, 0, 'pierce'), 12)
-  assert.equal(getHitPointsWithDamage(attacker, enemy, 6, 0, 'pierce'), 16)
+  assert.equal(getHitPointsWithDamage(attacker, enemy, undefined, 0), 12)
+  assert.equal(getHitPointsWithDamage(attacker, enemy, 6, 0), 16)
 })
 
 test('easy combat difficulty increases played damage against enemies', () => {
@@ -1304,7 +1311,7 @@ test('hero defense blocks incoming damage and flashes', () => {
     heroDefenseActive: true,
     hitPoints: 20,
     isDead: false,
-    meleeArmor: 0,
+    armor: 0,
     owner: { label: 'enemy' },
     showHeroDefenseFlash: () => flashes.push('flash'),
   }
@@ -1365,7 +1372,7 @@ test('hero defense still blocks a hit landing in front of the hero', () => {
     heroDefenseActive: true,
     hitPoints: 20,
     isDead: false,
-    meleeArmor: 0,
+    armor: 0,
     owner: { label: 'enemy' },
     showHeroDefenseFlash: () => flashes.push('flash'),
     x: 0,
@@ -1389,7 +1396,7 @@ test('hero defense still blocks a hit landing exactly at the edge of the frontal
     heroDefenseActive: true,
     hitPoints: 20,
     isDead: false,
-    meleeArmor: 0,
+    armor: 0,
     owner: { label: 'enemy' },
     showHeroDefenseFlash: () => flashes.push('flash'),
     x: 0,
@@ -1413,7 +1420,7 @@ test('hero defense does not block a hit landing behind the hero, even while acti
     heroDefenseActive: true,
     hitPoints: 20,
     isDead: false,
-    meleeArmor: 0,
+    armor: 0,
     owner: { label: 'enemy' },
     showHeroDefenseFlash: () => flashes.push('flash'),
     x: 0,
@@ -1436,7 +1443,7 @@ test('hero defense with no position data on either side fails open (still blocks
     heroDefenseActive: true,
     hitPoints: 20,
     isDead: false,
-    meleeArmor: 0,
+    armor: 0,
     owner: { label: 'enemy' },
     showHeroDefenseFlash: () => flashes.push('flash'),
   }
@@ -1980,13 +1987,19 @@ test('a player villager attacks immediately instead of passing through the gathe
 
 test('archer finishes its last attack loop but ignores a replaced animation', () => {
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
-    '../../lib': {}, '../Projectile': {},
+    '../../lib': {},
+    '../Projectile': {},
     '../../lib/combat/combatFeedback': {},
   })
   let orders = 0
   const unit = {
-    action: 'attack', dest: {}, visualAnimationToken: 1, sprite: {},
-    affectNewDest() { orders++ },
+    action: 'attack',
+    dest: {},
+    visualAnimationToken: 1,
+    sprite: {},
+    affectNewDest() {
+      orders++
+    },
   }
   const combat = new UnitCombat(unit)
   combat.finishAttackAfterCurrentLoop()

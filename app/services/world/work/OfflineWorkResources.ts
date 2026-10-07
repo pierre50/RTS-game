@@ -66,6 +66,7 @@ export const RESOURCE_WORK: Record<string, string> = {
   stone: 'stoneminer',
   gold: 'goldminer',
   copper: 'goldminer',
+  tin: 'goldminer',
   iron: 'goldminer',
 }
 
@@ -75,6 +76,7 @@ const JOB_RESOURCE: Record<string, string[]> = {
   stone: ['stone'],
   gold: ['gold'],
   copper: ['copper'],
+  tin: ['tin'],
   iron: ['iron'],
 }
 
@@ -126,7 +128,14 @@ function targetMatches(unit: SaveEntityState, resource: SaveEntityState): boolea
     return stored === unit.collectiveTask
   if (unit.autonomousJob) return JOB_RESOURCE[unit.autonomousJob]?.includes(stored) ?? false
   if (unit.work === 'goldminer') {
-    const mineral = unit.action === 'minecopper' ? 'copper' : unit.action === 'mineiron' ? 'iron' : 'gold'
+    const mineral =
+      unit.action === 'minetin'
+        ? 'tin'
+        : unit.action === 'minecopper'
+          ? 'copper'
+          : unit.action === 'mineiron'
+            ? 'iron'
+            : 'gold'
     return stored === mineral
   }
   return unit.work === RESOURCE_WORK[stored]

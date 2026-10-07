@@ -1,3 +1,4 @@
+import { equipmentBaseKey } from '../equipment/equipmentCondition'
 import { FAMILY_TYPES } from '../constants'
 import {
   CONTACT_ACTION_PROFILES,
@@ -18,6 +19,7 @@ export function getContactScale(entity: RuntimeEntity & { spriteScale?: number }
 }
 
 export function resolveContactActionProfile(actor: ContactActor, tool?: string): ContactActionProfile {
+  if (tool) tool = equipmentBaseKey(tool)
   const base = tool
     ? CONTACT_ACTION_PROFILES[CONTACT_TOOL_PROFILES[tool] ?? 'unarmed']
     : CONTACT_ACTION_PROFILES[actor.family === FAMILY_TYPES.animal ? 'animal' : 'unarmed']

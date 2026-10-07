@@ -50,7 +50,7 @@ export function validateCaveDefinition(value: unknown): asserts value is CaveDef
     for (const mineral of value.minerals) {
       if (
         !isObject(mineral) ||
-        !['Gold', 'Copper', 'Iron'].includes(String(mineral.type)) ||
+        !['Gold', 'Copper', 'Tin', 'Iron'].includes(String(mineral.type)) ||
         ![mineral.i, mineral.j].every(
           coordinate => Number.isInteger(coordinate) && Number(coordinate) >= 0 && Number(coordinate) < edge
         ) ||

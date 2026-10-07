@@ -21,6 +21,7 @@ export type VillagerAutonomyJob =
   | 'stone'
   | 'gold'
   | 'copper'
+  | 'tin'
   | 'iron'
   | 'construction'
   | 'horseCapture'
@@ -297,6 +298,7 @@ export interface UnitEntity extends EnergyEntity {
     equippedCounts?: Partial<Record<HeroEquipmentSlot, number>>
     activeWeapons?: Partial<Record<HeroWeaponSlot, string>>
   }
+  equipmentDurability?: Record<string, number>
   lootEquipment?: string[]
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
@@ -308,11 +310,9 @@ export interface UnitEntity extends EnergyEntity {
   dyingSheet?: SpritesheetLike | null
   loop?: boolean
   eventMode?: string
-  showBuildings?: boolean
   equipment?: string[]
   weaponPower?: number
-  meleeArmor?: number
-  pierceArmor?: number
+  armor?: number
   range?: number
   projectile?: string
   healing?: number
@@ -366,6 +366,7 @@ export interface UnitEntity extends EnergyEntity {
   sendToStone?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
   sendToGold?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
   sendToCopper?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToTin?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
   sendToIron?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
   affectNewDest?: () => void
   isUnitAtDest?: (action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined) => boolean

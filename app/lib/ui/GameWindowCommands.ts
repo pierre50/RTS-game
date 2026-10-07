@@ -77,6 +77,7 @@ export function availableCommands(host: CommandHost): Command[] {
           else {
             field.focus()
             field.select()
+            field.dispatchEvent(new Event('virtualkeyboardrequest', { bubbles: true }))
           }
         },
       })
@@ -136,15 +137,13 @@ export function availableCommands(host: CommandHost): Command[] {
   for (const button of globalButtons) {
     if (button.matches('.entity-delete-building-button')) continue
     const action = button.dataset.windowAction
-    if (action === 'sleep' || action === 'home') {
+    if (action === 'sleep') {
       commands.push({
         ...buttonCommand(button, action, 'X', 2),
-        confirm: action === 'sleep',
+        confirm: true,
       })
     } else if (action === 'upgrade') {
-      const hasSecondaryAction = globalButtons.some(candidate =>
-        ['sleep', 'home'].includes(candidate.dataset.windowAction ?? '')
-      )
+      const hasSecondaryAction = globalButtons.some(candidate => candidate.dataset.windowAction === 'sleep')
       commands.push({
         ...buttonCommand(button, action, 'U', 2),
         ...(hasSecondaryAction ? { padModifier: 6, glyph: `${getGamepadGlyph(6)} + ${getGamepadGlyph(2)}` } : {}),

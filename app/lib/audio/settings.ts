@@ -11,6 +11,8 @@ const BLOOD_EFFECTS_KEY = 'graphics_blood_effects'
 const KEY_BINDINGS_KEY = 'controls_key_bindings'
 const GAMEPAD_ENABLED_KEY = 'controls_gamepad_enabled'
 const GAMEPAD_BINDINGS_KEY = 'controls_gamepad_bindings'
+const GAMEPAD_LAYOUT_VERSION_KEY = 'controls_gamepad_layout_version'
+const GAMEPAD_LAYOUT_VERSION = '4'
 
 const DEFAULT_VOLUME = 0.6
 const DEFAULT_SPEED = 1
@@ -32,17 +34,12 @@ const DIGIT_CONTROL_ALIASES: Record<string, string[]> = {
 }
 
 export type ControlBindingAction =
-  | 'cameraUp'
-  | 'cameraDown'
-  | 'cameraLeft'
-  | 'cameraRight'
   | 'heroUp'
   | 'heroDown'
   | 'heroLeft'
   | 'heroRight'
   | 'heroInteract'
   | 'heroDefense'
-  | 'heroDirectionLock'
   | 'heroTool1'
   | 'heroTool2'
   | 'heroTool3'
@@ -54,19 +51,20 @@ export type ControlBindingAction =
 export type ControlKeyBindings = Record<ControlBindingAction, string>
 
 export type GamepadBindingAction =
-  | 'heroUp'
-  | 'heroDown'
-  | 'heroLeft'
-  | 'heroRight'
+  | 'destinationConfirm'
+  | 'destinationCancel'
+  | 'heroCommunicate'
+  | 'heroCancel'
+  | 'heroStealth'
+  | 'heroSprint'
   | 'heroInteract'
   | 'heroDefense'
   | 'inventory'
   | 'quests'
   | 'heroMountHorse'
-  | 'heroDismountHorse'
   | 'gameMenu'
   | 'heroAction'
-  | 'heroInspect'
+  | 'heroDirectAttack'
   | 'heroToolPrev'
   | 'heroToolNext'
   | 'placementPlace'
@@ -79,18 +77,17 @@ export const GAMEPAD_BINDING_GROUPS: { key: string; actions: GamepadBindingActio
   {
     key: 'controlsGroupHero',
     actions: [
-      'heroUp',
-      'heroDown',
-      'heroLeft',
-      'heroRight',
       'gameMenu',
       'quests',
       'heroMountHorse',
-      'heroDismountHorse',
+      'heroStealth',
+      'heroSprint',
+      'heroCommunicate',
+      'heroCancel',
       'heroAction',
+      'heroDirectAttack',
       'heroDefense',
       'heroInteract',
-      'heroInspect',
       'heroToolPrev',
       'heroToolNext',
       'inventory',
@@ -98,22 +95,18 @@ export const GAMEPAD_BINDING_GROUPS: { key: string; actions: GamepadBindingActio
   },
   { key: 'placementHelp', actions: ['placementPlace', 'placementMirror', 'placementCancel'] },
   { key: 'inventory', actions: ['inventoryTransferOne', 'inventoryTransferAll'] },
+  { key: 'destinationPickingHelp', actions: ['destinationConfirm', 'destinationCancel'] },
 ]
 type GamepadButtonBinding = `Button${number}`
 export type GamepadButtonBindings = Record<GamepadBindingAction, GamepadButtonBinding>
 
 const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
-  cameraUp: 'ArrowUp',
-  cameraDown: 'ArrowDown',
-  cameraLeft: 'ArrowLeft',
-  cameraRight: 'ArrowRight',
   heroUp: 'z',
   heroDown: 's',
   heroLeft: 'q',
   heroRight: 'd',
   heroInteract: 'e',
   heroDefense: 'Space',
-  heroDirectionLock: 'Control',
   heroTool1: 'Digit1',
   heroTool2: 'Digit2',
   heroTool3: 'Digit3',
@@ -124,21 +117,22 @@ const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
 }
 
 const DEFAULT_GAMEPAD_BINDINGS: GamepadButtonBindings = {
+  destinationConfirm: 'Button0',
+  destinationCancel: 'Button1',
+  heroStealth: 'Button11',
+  heroSprint: 'Button10',
+  heroCommunicate: 'Button3',
+  heroCancel: 'Button8',
   gameMenu: 'Button9',
-  quests: 'Button1',
-  heroMountHorse: 'Button10',
-  heroDismountHorse: 'Button11',
-  heroUp: 'Button12',
-  heroDown: 'Button13',
-  heroLeft: 'Button14',
-  heroRight: 'Button15',
-  heroInteract: 'Button2',
-  heroDefense: 'Button4',
-  inventory: 'Button3',
+  quests: 'Button12',
+  heroMountHorse: 'Button13',
+  heroInteract: 'Button0',
+  heroDefense: 'Button6',
+  inventory: 'Button1',
   heroAction: 'Button5',
-  heroInspect: 'Button8',
-  heroToolPrev: 'Button6',
-  heroToolNext: 'Button7',
+  heroDirectAttack: 'Button7',
+  heroToolPrev: 'Button14',
+  heroToolNext: 'Button2',
   placementPlace: 'Button0',
   placementMirror: 'Button2',
   placementCancel: 'Button1',
@@ -176,7 +170,6 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
       'heroRight',
       'heroInteract',
       'heroDefense',
-      'heroDirectionLock',
       'heroTool1',
       'heroTool2',
       'heroTool3',
@@ -373,8 +366,8 @@ export function resetGamepadBindings(
 export function getGamepadBindingChange(action: GamepadBindingAction, index: number) {
   const sharesContext = (a: GamepadBindingAction, b: GamepadBindingAction): boolean =>
     GAMEPAD_BINDING_GROUPS.some(group => group.actions.includes(a) && group.actions.includes(b)) ||
-    (a === 'gameMenu' && b.startsWith('placement')) ||
-    (b === 'gameMenu' && a.startsWith('placement'))
+    (a === 'gameMenu' && (b.startsWith('placement') || b.startsWith('destination'))) ||
+    (b === 'gameMenu' && (a.startsWith('placement') || a.startsWith('destination')))
   return planBindingChange(_gamepadBindings, action, `Button${index}`, sharesContext)
 }
 
@@ -470,7 +463,6 @@ export function getReservedGameplayHotkeys(): string[] {
     'heroRight',
     'heroInteract',
     'heroDefense',
-    'heroDirectionLock',
     'heroTool1',
     'heroTool2',
     'heroTool3',
@@ -521,7 +513,7 @@ function normalizeGamepadButtonBinding(
 function loadGamepadBindings(): GamepadButtonBindings {
   try {
     const parsed = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY) || '{}') as Partial<GamepadButtonBindings>
-    return {
+    const bindings = {
       ...DEFAULT_GAMEPAD_BINDINGS,
       ...Object.fromEntries(
         GAMEPAD_BINDING_ACTIONS.map(action => [
@@ -530,6 +522,28 @@ function loadGamepadBindings(): GamepadButtonBindings {
         ])
       ),
     } as GamepadButtonBindings
+    // Apply the new gameplay layout once; retain construction and inventory preferences.
+    if (localStorage.getItem(GAMEPAD_LAYOUT_VERSION_KEY) !== GAMEPAD_LAYOUT_VERSION) {
+      if (localStorage.getItem(GAMEPAD_LAYOUT_VERSION_KEY) === '3') {
+        if (bindings.heroAction === 'Button7') bindings.heroAction = 'Button5'
+      } else {
+        for (const action of GAMEPAD_BINDING_GROUPS[0].actions) bindings[action] = DEFAULT_GAMEPAD_BINDINGS[action]
+      }
+      localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings))
+      localStorage.setItem(GAMEPAD_LAYOUT_VERSION_KEY, GAMEPAD_LAYOUT_VERSION)
+    }
+    if (parsed.heroSprint == null) {
+      const used = new Set(
+        GAMEPAD_BINDING_GROUPS[0].actions.filter(action => action !== 'heroSprint').map(action => bindings[action])
+      )
+      if (used.has(bindings.heroSprint)) {
+        const free = Array.from({ length: 17 }, (_, index) => `Button${index}` as GamepadButtonBinding).find(
+          button => !used.has(button)
+        )
+        if (free) bindings.heroSprint = free
+      }
+    }
+    return bindings
   } catch {
     return { ...DEFAULT_GAMEPAD_BINDINGS }
   }

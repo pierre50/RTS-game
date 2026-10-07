@@ -14,6 +14,7 @@
       "minestone": 0.75,
       "minegold": 0.75,
       "minecopper": 0.75,
+      "minetin": 0.75,
       "mineiron": 0.75,
       "build": 1.3,
       "forageberry": 0.25,
@@ -23,8 +24,6 @@
       "captureHorse": 1.5
     },
     "trainingTime": 16,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
     "cost": {
       "food": 50
     },
@@ -37,6 +36,7 @@
       "stone": 10,
       "gold": 10,
       "copper": 10,
+      "tin": 10,
       "iron": 10,
       "meat": 10
     },
@@ -138,7 +138,8 @@
         "build": "building",
         "shootArrow": "arrow-shot"
       }
-    }
+    },
+    "armor": 0
   },
   "Hero": {
     "category": "Civilian",
@@ -155,6 +156,7 @@
       "minestone": 0.75,
       "minegold": 0.75,
       "minecopper": 0.75,
+      "minetin": 0.75,
       "mineiron": 0.75,
       "build": 1.3,
       "forageberry": 0.25,
@@ -163,8 +165,6 @@
       "hunt": 1.5,
       "captureHorse": 1.5
     },
-    "meleeArmor": 0,
-    "pierceArmor": 1,
     "inventory": {
       "equipment": [],
       "equipped": {},
@@ -179,6 +179,7 @@
       "stone": 10,
       "gold": 10,
       "copper": 10,
+      "tin": 10,
       "iron": 10,
       "meat": 10
     },
@@ -262,7 +263,8 @@
         "build": "building",
         "shootArrow": "arrow-shot"
       }
-    }
+    },
+    "armor": 1
   },
   "Chief": {
     "category": "Civilian",
@@ -280,6 +282,7 @@
       "minestone": 0.75,
       "minegold": 0.75,
       "minecopper": 0.75,
+      "minetin": 0.75,
       "mineiron": 0.75,
       "build": 1.3,
       "forageberry": 0.25,
@@ -287,8 +290,6 @@
       "takemeat": 0.25
     },
     "trainingTime": 24,
-    "meleeArmor": 0,
-    "pierceArmor": 1,
     "cost": {
       "food": 50,
       "gold": 25
@@ -311,7 +312,8 @@
     },
     "sounds": {
       "hit": ["attack-class-2", "attack-class-2-2"]
-    }
+    },
+    "armor": 1
   },
   "Fantassin": {
     "category": "Fantassin",
@@ -327,8 +329,6 @@
       "flee": 0.3
     },
     "trainingTime": 21.6,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
     "cost": {},
     "assets": {
       "standingSheet": "units/infantry/hellas/male/walking",
@@ -339,7 +339,8 @@
     },
     "sounds": {
       "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"]
-    }
+    },
+    "armor": 0
   },
   "Bowman": {
     "category": "Archer",
@@ -355,8 +356,6 @@
       "flee": 0.3
     },
     "trainingTime": 24,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
     "projectile": "Arrow",
     "corpseLootArrowMin": 3,
     "corpseLootArrowMax": 8,
@@ -370,7 +369,8 @@
     },
     "sounds": {
       "hit": ["attack-class-2", "attack-class-2-2"]
-    }
+    },
+    "armor": 0
   },
   "Priest": {
     "category": "Civilian",
@@ -387,8 +387,6 @@
     },
     "trainingTime": 40,
     "healing": 1.3,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
     "cost": {},
     "assets": {
       "standingSheet": "units/priest/hellas/male/walking",
@@ -399,6 +397,7 @@
     },
     "sounds": {
       "hit": ["attack-class-2", "attack-class-2-2"]
-    }
+    },
+    "armor": 0
   }
 }

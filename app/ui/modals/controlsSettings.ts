@@ -12,7 +12,6 @@ import {
   rebindGamepadButton,
   getKeyboardBindingChange,
   rebindKeyboardKey,
-  type GamepadBindingAction,
 } from '../../lib/audio/settings'
 import { createGamepadKey } from '../../lib/input/gamepadGlyph'
 import { t } from '../../lib/lang'
@@ -83,18 +82,16 @@ export function buildControlsPages(): { keyboard: HTMLDivElement; gamepad: HTMLD
   help(keyboardHelp, 'controlsKeyboardFixed')
   gamepad.appendChild(buildCheckboxRow(t('gamepadEnabled'), getGamepadEnabled(), setGamepadEnabled))
   help(gamepad, 'controlsGamepadHelp')
-  const movement: GamepadBindingAction[] = ['heroUp', 'heroDown', 'heroLeft', 'heroRight']
   const groups = [
-    { key: 'controlsInGame', actions: GAMEPAD_BINDING_GROUPS[0].actions.filter(action => !movement.includes(action)) },
+    { key: 'controlsInGame', actions: GAMEPAD_BINDING_GROUPS[0].actions },
     { key: 'controlsConstruction', actions: GAMEPAD_BINDING_GROUPS[1].actions },
     { key: 'controlsInventoryMenus', actions: GAMEPAD_BINDING_GROUPS[2].actions },
-    { key: 'controlsAdvanced', actions: movement },
+    GAMEPAD_BINDING_GROUPS[3],
   ]
   for (const group of groups) {
     const body = section(gamepad, t(group.key), group.key === 'controlsInGame')
     if (group.key === 'controlsInGame') help(body, 'controlsSticksHelp')
     if (group.key === 'controlsInventoryMenus') help(body, 'controlsMenuFixed')
-    if (group.key === 'controlsAdvanced') help(body, 'controlsAdvancedHelp')
     refreshers.push(
       buildBindingRows(body, {
         actions: group.actions,

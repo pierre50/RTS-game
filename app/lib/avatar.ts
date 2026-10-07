@@ -73,11 +73,7 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   const sheetIdForLayer = layer[sheetKey as keyof UnitAppearanceLayerConfig] as string | undefined
   const baseSheetId = layer.equipmentKey
     ? sheetIdForLayer?.replace(/^equipments\/([^/]+)\//, (_match, key: string) => {
-        const equipment = key.startsWith('pickaxe_')
-          ? getMiningPickaxe(unit)
-          : unit.type === 'Hero'
-            ? key
-            : resolveUnitForgeEquipment(key, unit)
+        const equipment = key.startsWith('pickaxe_') ? getMiningPickaxe(unit) : resolveUnitForgeEquipment(key, unit)
         return `equipments/${equipment}/`
       })
     : sheetIdForLayer

@@ -1,3 +1,4 @@
+import { equipmentBaseKey } from '../../lib/equipment/equipmentCondition'
 import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import { equipHeroInventoryItemData } from '../../lib/equipment/heroEquipmentData'
 import { addHeroInventoryItem } from '../../lib/equipment/heroInventory'
@@ -7,7 +8,8 @@ import type { ResourceAmount } from '../../types/common'
 import type { ResourceEffect } from './QuestSystem'
 
 export function questItemCount(hero: UnitEntity | null | undefined, item: string): number {
-  const matches = (value: string) => (item === 'arrow' ? value.startsWith('arrow_') : value === item)
+  const matches = (value: string) =>
+    item === 'arrow' ? value.startsWith('arrow_') : equipmentBaseKey(value) === equipmentBaseKey(item)
   const inventory = hero?.inventory
   return (
     (inventory?.equipment ?? []).filter(matches).length +

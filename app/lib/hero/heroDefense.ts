@@ -1,3 +1,4 @@
+import { isEquipmentBroken } from '../equipment/equipmentCondition'
 import { Graphics } from 'pixi.js'
 import { SHEET_TYPES, SOUND_CUES } from '../constants'
 import { showParryFeedback } from '../combat/combatFeedback'
@@ -235,7 +236,8 @@ function showHeroDefenseFlash(hero: UnitEntity): void {
 export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null | undefined): boolean {
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed || !canHeroDefendWithTool(tool)) return false
-  if (hero.heroDefenseEnergyExhausted) return false
+  if (hero.heroDefenseEnergyExhausted || (tool === 'sword' && isEquipmentBroken(hero.inventory?.activeWeapons?.melee)))
+    return false
   if (!hasEnergyToStartDefense(hero)) {
     hero.heroDefenseEnergyExhausted = true
     return false

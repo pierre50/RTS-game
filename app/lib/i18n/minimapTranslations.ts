@@ -30,6 +30,7 @@ export const EN_MINIMAP_TRANSLATIONS = {
   minimapResourceFood: 'Food',
   minimapResourceStone: 'Stone',
   minimapResourceGold: 'Gold',
+  minimapResourceTin: 'Tin',
   minimapResourceCopper: 'Copper',
   minimapResourceIron: 'Iron',
 }
@@ -66,6 +67,7 @@ export const FR_MINIMAP_TRANSLATIONS = {
   minimapResourceFood: 'Nourriture',
   minimapResourceStone: 'Pierre',
   minimapResourceGold: 'Or',
+  minimapResourceTin: 'Étain',
   minimapResourceCopper: 'Cuivre',
   minimapResourceIron: 'Fer',
 }

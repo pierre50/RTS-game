@@ -183,14 +183,17 @@ export class InventoryTransferPanel {
         this.canTransfer?.(container, transferTarget) === false
           ? undefined
           : {
-              ariaLabel: t(action.ariaKey, { item: `${t(resource)} x${amount}` }),
+              ariaLabel: t(action.ariaKey, { item: amount > 1 ? `${t(resource)} x${amount}` : t(resource) }),
               label: action.label,
               onAction: handleAction,
               disabled: full,
               title: full ? t('storageFull') : undefined,
             },
     })
-    element.setAttribute('aria-label', t(action.ariaKey, { item: `${t(resource)} x${amount}` }))
+    element.setAttribute(
+      'aria-label',
+      t(action.ariaKey, { item: amount > 1 ? `${t(resource)} x${amount}` : t(resource) })
+    )
     return element
   }
 

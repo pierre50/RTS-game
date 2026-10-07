@@ -1,3 +1,4 @@
+import { getSprintMoveFactor, recordSprintMovement, stopUnitSprint } from '../lib/units/movement/unitSprint'
 import {
   HERO_ACTION_MOVE_SPEED_FACTOR,
   HERO_STEALTH_SPEED_FACTOR,
@@ -10,19 +11,20 @@ import {
   aimHeroPowerChargeAt,
   beginHeroDefense,
   canHeroDefendWithTool,
-  isHeroCatchingPoleEquipped,
   isHeroPowerChargeActiveForTool,
   updateHeroDefense,
   updateHeroPowerCharge,
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
-import { updateHeroCursor } from '../lib/hero/heroCursor'
 import { applyUnitCrouchPose } from '../lib/units/visuals/unitCrouchPose'
-import { resolveNpcGoToCursorState } from '../lib/npc/npcGoToCursor'
-import { resolveHoverTarget, updateNpcFollow } from '../lib/npc/npcInteraction'
+import { updateNpcFollow } from '../lib/npc/npcInteraction'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/units/unitEnergy'
-import { composeMoveSpeedFactor, getUnitWalkSpeedFactor, isUnitWalkSpeedFactor } from '../lib/units/unitLocomotion'
+import {
+  composeMoveSpeedFactor,
+  getUnitWalkSpeedFactor,
+  isUnitWalkSpeedFactor,
+} from '../lib/units/movement/unitLocomotion'
 import { applyUnitWalkingAnimationSpeed } from '../lib/units/visuals/unitWalkingAnimation'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
@@ -30,9 +32,7 @@ import {
   TARGET_FRAME_MS,
   debugHeroMove,
   getKeyboardMoveVector,
-  getLockedMoveSpeedFactor,
   getVectorFromDegree,
-  isHeroDirectionLockActive,
   type HeroAimPoint,
 } from './HeroControllerSupport'
 
@@ -47,11 +47,9 @@ export type HeroControllerUpdateHost = {
   mouseHeld: boolean
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
-  shiftMoveLockedDegree: number | null
   wasMoving: boolean
   attackTowardPoint(point: HeroAimPoint): boolean
   facePoint(point: HeroAimPoint): void
-  getShiftMoveLockedAimPoint(): HeroAimPoint | null
   updateProximityInteractionPrompt(): void
   updateCommIndicator(): void
   updateCriticalHealthEffects(elapsedMs: number, active?: boolean): void
@@ -87,6 +85,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   const unit = controller.heroUnit
   if (!unit) return
   if (unit.isDead || unit.isDestroyed) {
+    stopUnitSprint(unit)
     if (unit.isDirectMoving) {
       unit.isDirectMoving = false
       unit.syncMountedHorseSprite?.()
@@ -110,15 +109,6 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   const defenseAiming = aimHeroDefenseAt(unit, aimPoint)
   updateHeroPowerCharge(unit)
   updateHeroDefense(unit)
-  const hoverCell = controller.controls.getCellUnderCursor()
-  const hoverTarget = resolveHoverTarget(unit, controller.controls.getWorldPointUnderCursor(), hoverCell)
-  const goToCursorState = controller.pendingGoToNpcs
-    ? resolveNpcGoToCursorState(controller.pendingGoToNpcs, hoverTarget, hoverCell, controller.controls.context)
-    : null
-  updateHeroCursor(
-    isHeroCatchingPoleEquipped(unit, controller.equippedItem) ? 'catchingPole' : controller.equippedItem,
-    goToCursorState
-  )
   controller.updateProximityInteractionPrompt()
   let attacking = Boolean(unit.actionLocked)
   if (
@@ -128,7 +118,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     !unit.heroDefenseActive &&
     !unit.heroDefenseEnergyExhausted
   ) {
-    controller.facePoint?.(controller.getShiftMoveLockedAimPoint() ?? aimPoint)
+    controller.facePoint?.(aimPoint)
     if (beginHeroDefense(unit, controller.equippedItem)) {
       controller.mouseHeld = true
       attacking = Boolean(unit.actionLocked)
@@ -142,9 +132,8 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     controller.equippedItem !== 'bow' &&
     controller.equippedItem !== 'sword'
   ) {
-    const nextPoint = controller.getShiftMoveLockedAimPoint() ?? aimPoint
-    controller.primaryClickPoint = nextPoint
-    if (controller.attackTowardPoint(nextPoint)) {
+    controller.primaryClickPoint = aimPoint
+    if (controller.attackTowardPoint(aimPoint)) {
       attacking = Boolean(unit.actionLocked)
     } else {
       controller.mouseHeld = false
@@ -163,35 +152,29 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     dy = 0
   }
   const isMoving = dx !== 0 || dy !== 0
-  const walkSpeedFactor = getUnitWalkSpeedFactor(Boolean(controller.controls.shiftKeyActive && !unit.mountedOnHorse))
+  const walkSpeedFactor = getUnitWalkSpeedFactor(
+    Boolean((stealthMode || controller.controls.shiftKeyActive) && !unit.mountedOnHorse)
+  )
   unit.isCrouching = stealthMode
   updateNpcFollow(unit, { matchHeroWalk: isMoving && isUnitWalkSpeedFactor(walkSpeedFactor) })
-  const lockedMove = Boolean(isHeroDirectionLockActive(controller.controls) && isMoving && !unit.mountedOnHorse)
-  if (lockedMove && controller.shiftMoveLockedDegree == null) {
-    controller.shiftMoveLockedDegree = unit.degree ?? 0
-  } else if (!lockedMove) {
-    controller.shiftMoveLockedDegree = null
-  }
-  const lockedDegree = controller.shiftMoveLockedDegree
   if (unit.isDirectMoving !== isMoving) {
     unit.isDirectMoving = isMoving
     unit.syncMountedHorseSprite?.()
   }
 
+  const sprintFactor = getSprintMoveFactor(unit, isMoving && walkSpeedFactor === 1)
   let moved = false
   let moveAnimationSpeedFactor = 1
   if (isMoving) {
     const len = Math.hypot(dx, dy)
-    const lockedFacingVector =
-      lockedMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
     const speedFactor = attacking && !unit.mountedOnHorse ? getHeroActionMoveSpeedFactor(unit) : 1
     const stealthSpeedFactor = stealthMode ? HERO_STEALTH_SPEED_FACTOR : 1
-    const directionalMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
-    const moveSpeedFactor = composeMoveSpeedFactor(walkSpeedFactor, directionalMoveSpeedFactor)
-    moveAnimationSpeedFactor = moveSpeedFactor * stealthSpeedFactor * getEnergyMoveSpeedMultiplier(unit)
+    const moveSpeedFactor = composeMoveSpeedFactor(walkSpeedFactor)
+    moveAnimationSpeedFactor = moveSpeedFactor * stealthSpeedFactor * getEnergyMoveSpeedMultiplier(unit) * sprintFactor
     const distance =
       (unit.speed ?? 0) *
       speedFactor *
+      sprintFactor *
       stealthSpeedFactor *
       moveSpeedFactor *
       (TARGET_FRAME_MS / STEP_TIME) *
@@ -199,9 +182,8 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
     const aimedDegree = powerChargeAiming || defenseAiming ? unit.degree : null
     const aimedFacingVector = aimedDegree != null ? getVectorFromDegree(aimedDegree) : null
-    const moveFacingVector = aimedFacingVector ?? lockedFacingVector
-    const moveOptions = moveFacingVector
-      ? { facingDirX: moveFacingVector.dx, facingDirY: moveFacingVector.dy }
+    const moveOptions = aimedFacingVector
+      ? { facingDirX: aimedFacingVector.dx, facingDirY: aimedFacingVector.dy }
       : undefined
     moved = distance > 0 ? (unit.moveDirect?.(dx / len, dy / len, distance, moveOptions) ?? false) : false
     if (aimedDegree != null && unit.degree !== aimedDegree) {
@@ -209,6 +191,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
       if (unit.mountedOnHorse) unit.syncMountedRiderPosition?.()
     }
     const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
+    recordSprintMovement(unit, delta, TARGET_FRAME_MS * frameScale, sprintFactor)
     if (distance > 0 && (!moved || delta < 0.01)) {
       debugHeroMove(moved ? 'moveDirect-returned-true-without-position-change' : 'moveDirect-returned-false', unit, {
         keys: [...controller.keysPressed],
@@ -219,7 +202,6 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
         speedFactor,
         stealthSpeedFactor,
         walkSpeedFactor,
-        directionalMoveSpeedFactor,
         moveSpeedFactor,
         attacking,
         hasMoveDirect: Boolean(unit.moveDirect),

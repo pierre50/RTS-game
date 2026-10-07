@@ -13,8 +13,6 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     detailsRequiresBuilding: 'Requis : {building}',
     detailsRequiresCondition: 'Condition requise : {condition}',
     buildingLimitReached: 'Limite atteinte : 1 centre-ville par carte.',
-    buildMenu: 'Construire',
-    buildMenuDescription: 'Ouvre le menu des bâtiments disponibles.',
     requiresChief: 'Nécessite un chief',
     backMenuDescription: 'Revient au menu précédent.',
 
@@ -24,7 +22,8 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     GranaryDescription: 'Stocke les baies, le blé et la viande rapportés par vos villageois pour nourrir le village.',
     StoragePitDescription:
       'Point de dépôt pour le bois, la pierre, l’or, le cuivre, le fer et les autres matériaux récoltés par vos villageois.',
-    ForgeDescription: 'Fabrique votre équipement personnel et améliore les outils et les armes du village.',
+    ForgeDescription:
+      'Permet de fondre les minerais en lingots, de fabriquer votre équipement et vos flèches, et de réparer vos armes et armures.',
     ArcheryRangeDescription: 'Forme les archers pour le combat à distance.',
     StableDescription: 'Forme les unités montées et les éléphants de guerre.',
     FarmDescription: 'Délimite une parcelle de 16 cases. Chaque case se sème avec un grain de blé.',
@@ -33,7 +32,8 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     ChestDescription: 'Stocke les ressources et les équipements près du camp. Installation immédiate.',
     CampTableDescription: 'Table de camp pour les repas et les petits travaux.',
     CampWorkbenchDescription: 'Établi installé dans le camp.',
-    CampForgeDescription: 'Forge aménagée dans le camp.',
+    CampForgeDescription:
+      'Forge de camp permettant de fondre les minerais en lingots, de fabriquer votre équipement et vos flèches, et de réparer vos armes et armures.',
     CampAlchemyTableDescription: 'Table de camp garnie de préparations et de fioles.',
     CampSupplyShelfDescription: 'Étagère de camp pour ranger les provisions.',
     CampBookcaseDescription: 'Bibliothèque contenant les livres du camp.',
@@ -77,7 +77,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
       'Permet au héros d’acheter de l’équipement et de vendre ses ressources et équipements contre de l’or.',
     TempleDescription: 'Forme les prêtres capables de soigner et de convertir.',
     TownCenterDescription:
-      'Transforme votre camp en village. Centralise les ressources, sert de lieu de rassemblement et accueille de nouveaux villageois si les logements sont suffisants. Les lits disponibles déterminent la capacité d’accueil du village.',
+      'Transforme votre camp en village et accueille de nouveaux habitants selon les lits disponibles. En tant que chef, utilisez son arbre technologique pour améliorer les outils, les armes et les protections du village grâce aux réserves communes. Les améliorations des outils profitent aussi au héros.',
     HeroDescription: 'Chef jouable capable de combattre, récolter, construire et commander votre civilisation.',
     VillagerDescription: 'Unité civile polyvalente qui récolte, construit et répare vos bâtiments.',
     ChiefDescription: 'Chef de village armé d’une épée, indispensable au commandement et au développement.',
@@ -102,8 +102,6 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     detailsRequiresBuilding: 'Requires: {building}',
     detailsRequiresCondition: 'Requires condition: {condition}',
     buildingLimitReached: 'Limit reached: 1 Town Center per map.',
-    buildMenu: 'Build',
-    buildMenuDescription: 'Opens the list of available buildings.',
     requiresChief: 'Requires a chief',
     backMenuDescription: 'Returns to the previous menu.',
 
@@ -112,7 +110,8 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     GranaryDescription: 'Stores berries, wheat and meat brought back by your villagers to feed the village.',
     StoragePitDescription:
       'Drop-off point for wood, stone, gold, copper, iron and other materials gathered by your villagers.',
-    ForgeDescription: 'Craft personal equipment and upgrade the tools and weapons of your village.',
+    ForgeDescription:
+      'Smelt ore into ingots, craft personal equipment and arrows, and use materials to repair your worn weapons and armor.',
     ArcheryRangeDescription: 'Trains archers for ranged combat.',
     StableDescription: 'Trains mounted units and war elephants.',
     FarmDescription: 'Marks out a 16-tile plot. Each tile is sown with one grain of wheat.',
@@ -121,7 +120,8 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     ChestDescription: 'Stores resources and equipment at camp. Placed instantly.',
     CampTableDescription: 'Camp table for meals and small tasks.',
     CampWorkbenchDescription: 'A workbench set up in the camp.',
-    CampForgeDescription: 'A forge set up in the camp.',
+    CampForgeDescription:
+      'A camp forge where you can smelt ore into ingots, craft equipment and arrows, and repair weapons and armor.',
     CampAlchemyTableDescription: 'A camp table with preparations and flasks.',
     CampSupplyShelfDescription: 'Camp shelving for supplies.',
     CampBookcaseDescription: 'A bookcase holding the camp’s books.',
@@ -164,7 +164,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     MarketDescription: 'Allows the hero to buy equipment and sell resources and equipment for gold.',
     TempleDescription: 'Trains priests who can heal and convert.',
     TownCenterDescription:
-      'Turns your camp into a village. Stores resources, serves as a gathering place and welcomes new villagers when housing is available. Usable beds determine the village’s population capacity.',
+      'Turns your camp into a village and welcomes new residents as beds become available. As chief, use its technology tree to improve village tools, weapons and armor with shared reserves. Tool upgrades also benefit the hero.',
     HeroDescription: 'Playable leader able to fight, gather, build and command your civilization.',
     VillagerDescription: 'Versatile civilian unit that gathers resources, builds and repairs structures.',
     ChiefDescription: 'Village leader armed with a sword, required for command and development.',

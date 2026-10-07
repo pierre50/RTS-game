@@ -71,8 +71,7 @@ export type AIEntityLike = {
   range?: number
   speed?: number
   strategy?: string
-  meleeArmor?: number
-  pierceArmor?: number
+  armor?: number
   sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell, action?: string): void
   sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell, action?: string): boolean | void
   sendToTree?(target: AIEntityLike | RuntimeEntity): boolean | void
@@ -123,8 +122,7 @@ export type AIEntityConfig = Record<string, ConfigValue | AIResourceAmount | und
   equipment?: string[]
   range?: number
   speed?: number
-  meleeArmor?: number
-  pierceArmor?: number
+  armor?: number
 }
 
 export type AIDifficultyConfig = {
@@ -167,6 +165,7 @@ export type AIStrategyPlayerLike = {
   gold: number
   stone: number
   copper: number
+  tin: number
   iron: number
   phase: AIPhase
   population: number
@@ -196,6 +195,7 @@ export type AIStrategyPlayerLike = {
   foundedGolds: Set<RuntimeEntity>
   foundedStones: Set<RuntimeEntity>
   foundedCoppers: Set<RuntimeEntity>
+  foundedTins: Set<RuntimeEntity>
   foundedIrons: Set<RuntimeEntity>
   foundedEnemyBuildings: Set<RuntimeEntity>
   foundedEnemyUnits: Set<RuntimeEntity>

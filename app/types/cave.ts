@@ -2,7 +2,7 @@ import type { ResourceAmount } from './common'
 export type CaveMineralState = {
   i: number
   j: number
-  type: 'Gold' | 'Copper' | 'Iron'
+  type: 'Gold' | 'Copper' | 'Tin' | 'Iron'
   quantity: number
   totalQuantity: number
 }

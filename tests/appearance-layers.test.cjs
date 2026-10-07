@@ -312,6 +312,7 @@ test('hero baked appearance includes inventory equipped layers', () => {
     false
   )
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'bow'))
+  assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'quiver'))
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'arrow_copper'))
   assert.equal(
     hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'),

@@ -87,6 +87,7 @@ function getWorkImpactPreset(action: string | null | undefined, target: RuntimeE
     (action === ACTION_TYPES.minestone ||
       action === ACTION_TYPES.minegold ||
       action === ACTION_TYPES.minecopper ||
+      action === ACTION_TYPES.minetin ||
       action === ACTION_TYPES.mineiron) &&
     target.family === FAMILY_TYPES.resource
   ) {
@@ -94,6 +95,7 @@ function getWorkImpactPreset(action: string | null | undefined, target: RuntimeE
       target.type === RESOURCE_TYPES.stone ||
       target.type === RESOURCE_TYPES.gold ||
       target.type === RESOURCE_TYPES.copper ||
+      target.type === RESOURCE_TYPES.tin ||
       target.type === RESOURCE_TYPES.iron
     ) {
       return STONE_CHIP_PRESET

@@ -1,4 +1,4 @@
-import { consumeGamepadButtons } from '../input/gamepadConsumption'
+import { consumeGamepadButtons, getConsumedGamepadButtons } from '../input/gamepadConsumption'
 import { LANG_CHANGE_EVENT, t } from '../lang'
 import { availableCommands, type Command } from './GameWindowCommands'
 import {
@@ -73,7 +73,10 @@ export class GameWindow {
     private dismissible = true
   ) {
     panel.classList.add('game-window')
-    this.hadGamepad = Boolean(this.getGamepad())
+    const initialPad = this.getGamepad()
+    this.hadGamepad = Boolean(initialPad)
+    // Only presses already held at opening should be ignored, not a new press before the first frame.
+    if (initialPad) this.padState.read(initialPad, performance.now())
     this.mode = this.hadGamepad ? 'gamepad' : 'keyboard'
     panel.dataset.inputMode = this.mode
     this.details.className = 'game-window-details'
@@ -101,7 +104,7 @@ export class GameWindow {
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['disabled'],
+      attributeFilter: ['disabled', 'data-equipment-durability'],
     })
     this.refresh()
     this.frame = requestAnimationFrame(this.poll)
@@ -321,8 +324,15 @@ export class GameWindow {
   }
 
   private onKey = (event: KeyboardEvent): void => {
-    if (!this.isTopmost() || event.defaultPrevented || !this.acceptsWindowKey(event)) return
+    if (
+      document.querySelector('.virtual-keyboard') ||
+      !this.isTopmost() ||
+      event.defaultPrevented ||
+      !this.acceptsWindowKey(event)
+    )
+      return
     if (this.toggleInventoryFromKey(event)) return
+    this.refresh()
     const intent = readWindowKeyIntent(event, this.commands)
     if (isUnboundWindowKey(intent, event.key, Boolean(this.confirmation))) {
       if (event.key !== 'Tab') event.stopImmediatePropagation()
@@ -410,7 +420,7 @@ export class GameWindow {
     const pad = this.getGamepad()
     if (pad && !this.hadGamepad) this.setMode('gamepad')
     this.hadGamepad = Boolean(pad)
-    if (this.panel.querySelector('.is-listening')) {
+    if (document.querySelector('.virtual-keyboard') || this.panel.querySelector('.is-listening')) {
       this.cancelKeyboardHold()
       this.padState.reset()
       this.holding = null
@@ -430,11 +440,15 @@ export class GameWindow {
   }
 
   private readGamepad(pad: Gamepad, now: number): void {
-    const { pressed, direction } = this.padState.read(pad, now)
+    const state = this.padState.read(pad, now)
+    const pressed = state.pressed.filter(index => !getConsumedGamepadButtons(pad).has(index))
+    const direction = state.direction
     const readAxis = pad.axes[3] ?? 0
     const elapsed = Math.min(50, Math.max(0, now - (this.lastScrollAt || now)))
     this.lastScrollAt = now
     if (pressed.length || direction || Math.abs(readAxis) > 0.35) this.setMode('gamepad')
+    // Visibility and content may have changed since selection was painted (including during opening).
+    if (pressed.length) this.refresh()
     if (!this.confirmation && Math.abs(readAxis) > 0.35)
       scrollWindowInformation(this.panel, readAxis * elapsed * 0.65, this.selected)
     if (this.confirmation) {
@@ -442,6 +456,7 @@ export class GameWindow {
       return
     }
     if (direction && !hasHeldDirectionalCommand(this.commands, pad)) this.move(...direction)
+    if (document.querySelector('.virtual-keyboard')) return
     if (pressed.includes(4) && !isPadButtonBound(this.commands, 4)) this.switchPanel(-1)
     if (pressed.includes(5) && !isPadButtonBound(this.commands, 5)) this.switchPanel(1)
     for (const index of pressed) {
@@ -449,7 +464,7 @@ export class GameWindow {
       if (!command) continue
       if (command.hold) this.holding = { command, since: now }
       else this.execute(command)
-      if (this.confirmation) break
+      if (this.confirmation || document.querySelector('.virtual-keyboard')) break
     }
     this.advancePadHold(pad, now)
   }
@@ -466,6 +481,7 @@ export class GameWindow {
   }
 
   destroy(): void {
+    unmarkWindowSelection(this.selected)
     const pad = this.getGamepad()
     if (pad) consumeGamepadButtons(pad)
     this.disposed = true

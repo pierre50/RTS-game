@@ -14,6 +14,7 @@ const ACTION = {
   build: ACTION_TYPES?.build ?? 'build',
   chopwood: ACTION_TYPES?.chopwood ?? 'chopwood',
   minecopper: ACTION_TYPES?.minecopper ?? 'minecopper',
+  minetin: ACTION_TYPES?.minetin ?? 'minetin',
   minegold: ACTION_TYPES?.minegold ?? 'minegold',
   mineiron: ACTION_TYPES?.mineiron ?? 'mineiron',
   minestone: ACTION_TYPES?.minestone ?? 'minestone',
@@ -28,6 +29,7 @@ const WORK = {
 const ACTION_FRAME_SEQUENCES: Record<string, number[]> = {
   [`${WORK.builder}:${ACTION.build}`]: TOOL_HAMMER_ACTION_FRAME_SEQUENCE,
   [`${WORK.goldminer}:${ACTION.minecopper}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
+  [`${WORK.goldminer}:${ACTION.minetin}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
   [`${WORK.goldminer}:${ACTION.minegold}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
   [`${WORK.goldminer}:${ACTION.mineiron}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
   [`${WORK.stoneminer}:${ACTION.minestone}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
@@ -62,7 +64,7 @@ function getHeroActiveWeaponEquipment(context: ActionFrameSequenceContext): stri
     )
   }
   if (context.work === (WORK_TYPES?.hunter ?? 'hunter')) {
-    return [activeWeapons.ranged, activeWeapons.quiver, equipped.arrow].filter(
+    return [activeWeapons.ranged, equipped.arrow].filter(
       (item): item is string => typeof item === 'string' && item.length > 0
     )
   }

@@ -7,13 +7,16 @@ function setup(t) {
   const previousWindow = global.window
   global.document = new EventTarget()
   global.window = new EventTarget()
-  t.after(() => { global.document = previousDocument; global.window = previousWindow })
+  t.after(() => {
+    global.document = previousDocument
+    global.window = previousWindow
+  })
   const api = loadTsModule('app/classes/ControlsKeyboard.ts', {
     mocks: { '../lib/audio/settings': { getControlActionForKeyboardEvent: event => event.action } },
   })
   const pressed = []
   const target = {
-    keyActionsByCode: {}, keysPressed: {}, keyPressedCount: 0,
+    keyActionsByCode: {},
     isInteractionBlocked: () => false,
     heroController: { handleKeyDown: action => pressed.push(action) },
   }
@@ -22,7 +25,7 @@ function setup(t) {
   return { ...api, capture, send, target, pressed }
 }
 
-for (const action of ['heroUp', 'heroDown', 'heroLeft', 'heroRight', 'cameraUp', 'cameraDown', 'cameraLeft', 'cameraRight']) {
+for (const action of ['heroUp', 'heroDown', 'heroLeft', 'heroRight']) {
   test(`held ${action} survives replacement of the controls without another keydown`, t => {
     const { capture, restoreControlsMovement, target, pressed } = setup(t)
     const keys = { PhysicalKey: action, KeyE: 'heroInteract' }
@@ -30,8 +33,7 @@ for (const action of ['heroUp', 'heroDown', 'heroLeft', 'heroRight', 'cameraUp',
     delete keys.PhysicalKey
     restoreControlsMovement(target, release())
     assert.deepEqual(target.keyActionsByCode, { PhysicalKey: action })
-    if (action.startsWith('hero')) assert.deepEqual(pressed, [action])
-    else { assert.equal(target.keysPressed[action], true); assert.equal(target.keyPressedCount, 1) }
+    assert.deepEqual(pressed, [action])
   })
 }
 

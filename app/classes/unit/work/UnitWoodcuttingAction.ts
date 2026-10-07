@@ -44,6 +44,7 @@ function chopImpact(runtime: UnitResourceActions, workTickFrame: number): void {
     return
   }
   if (!dest) return
+  if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wood)) return
   if (!runtime.ensureWorkContact(dest)) return
   if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
     if (isHeroControlled(unit)) stopManualHeroAction(unit)

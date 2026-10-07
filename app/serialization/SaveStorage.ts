@@ -24,7 +24,6 @@ const INDEX_KEY = 'saves_index'
 // Keep the autosave key compatible with older Electron main-process validators
 // that only accepted /^save_\d+$/; dev hot reload does not restart main.js.
 const AUTOSAVE_KEY = 'save_0'
-const MAX_SAVES = 10
 const SAVE_BACKEND_DEBUG = false
 
 function assertSaveWrite(result: SaveWriteResult, fallbackMessage = 'STORAGE_FULL'): void {
@@ -124,11 +123,6 @@ type SaveRecordOptions = {
 /** @public Loaded by tests/save-storage.test.cjs (loadTsModule). */
 export function saveRecord(data: SaveRecord, options: SaveRecordOptions = {}): { key: string; name: string } {
   const index = getIndex()
-  const replacing = Boolean(options.key && index.some(entry => entry.key === options.key))
-  const isAutosave = options.key === AUTOSAVE_KEY
-  if (!replacing && !isAutosave && index.length >= MAX_SAVES) {
-    throw new Error('MAX_SAVES_REACHED')
-  }
   const key = options.key ?? createSaveKey(index)
   const name = options.name ?? formatSaveName()
   const date = Date.now()
@@ -190,8 +184,6 @@ export function saveRecordAsync(
       return saveRecord(data, options)
     }
     const index = getIndex()
-    const replacing = Boolean(options.key && index.some(entry => entry.key === options.key))
-    if (!replacing && options.key !== AUTOSAVE_KEY && index.length >= MAX_SAVES) throw new Error('MAX_SAVES_REACHED')
     const key = options.key ?? createSaveKey(index)
     const name = options.name ?? formatSaveName()
     const { writeElectronSave } = await import('./AsyncSaveStorage')

@@ -37,3 +37,11 @@ test('a completed early wake is available even before its scheduled wake time', 
   npc.shelterState = null
   assert.equal(isNpcStillSleeping(npc), false)
 })
+
+test('a villager delivering or still walking to bed is not described as sleeping', () => {
+  for (const status of ['delivering', 'movingToRest', 'windingDown']) {
+    const npc = restingNpc(380)
+    npc.shelterState.status = status
+    assert.equal(isNpcStillSleeping(npc), false)
+  }
+})

@@ -122,7 +122,7 @@
   aspect-ratio: auto;
   text-align: left;
   background: var(--window-slot-bg);
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
 }
 .game-window
   .inventory-section-list
@@ -229,7 +229,8 @@
 .game-window-details[hidden] {
   display: none;
 }
-.game-window > .game-window-footer {
+.game-window > .game-window-footer,
+.virtual-keyboard > .game-window-footer {
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -253,7 +254,7 @@
   font: inherit;
   font-size: var(--font-size-sm);
   text-align: left;
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
 }
 .game-window-command:hover:not(:disabled),
 .game-window-command:focus-visible {
@@ -262,7 +263,7 @@
 }
 .game-window-command:disabled {
   opacity: 0.4;
-  cursor: default;
+  cursor: var(--game-pointer, auto);
 }
 .game-window-command.is-danger {
   color: var(--window-danger-color);
@@ -322,7 +323,8 @@ kbd.gamepad-key[data-pad='3'] {
   .game-window .inventory-transfer-empty {
     min-height: 110px;
   }
-  .game-window > .game-window-footer {
+  .game-window > .game-window-footer,
+  .virtual-keyboard > .game-window-footer {
     gap: var(--ui-gap-4) var(--ui-gap-10);
     padding: var(--ui-gap-8) var(--ui-gap-12);
   }
@@ -334,7 +336,8 @@ kbd.gamepad-key[data-pad='3'] {
   .game-window > .modal-header {
     padding: var(--ui-gap-8) 14px;
   }
-  .game-window > .game-window-footer {
+  .game-window > .game-window-footer,
+  .virtual-keyboard > .game-window-footer {
     padding: var(--ui-gap-5) var(--ui-gap-12);
   }
   .game-window > .game-window-details {
@@ -374,14 +377,14 @@ kbd.gamepad-key[data-pad='3'] {
   color: var(--main-accent-hover);
   font: inherit;
   font-size: var(--window-choice-arrow-font-size);
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
 }
 .window-choice-arrow:hover:not(:disabled) {
   background: var(--window-choice-hover-bg);
 }
 .window-choice-arrow:disabled {
   opacity: 0.25;
-  cursor: default;
+  cursor: var(--game-pointer, auto);
 }
 .game-window .config-row:has(.is-window-selected) > label {
   color: var(--main-accent-hover);
@@ -453,6 +456,7 @@ kbd.gamepad-key[data-pad='3'] {
   align-items: center;
   justify-content: center;
   gap: var(--ui-gap-8) 20px;
+  width: max-content;
   max-width: calc(100vw - 32px);
   box-sizing: border-box;
   padding: var(--ui-gap-10) 20px;
@@ -565,8 +569,6 @@ body:has(.modal) .building-placement-help {
 .game-window .market-buy-slot:has(.inventory-row-action-button:disabled) > .inventory-action-row-value,
 .game-window .value-badge--unavailable {
   color: var(--text-color-danger);
-  background: color-mix(in srgb, var(--text-color-danger) 16%, var(--main-primary-color));
-  border-color: var(--text-color-danger);
 }
 
 .game-window .game-window-details .inventory-cost-is-missing {
@@ -802,7 +804,12 @@ body:has(.modal) .building-placement-help {
   flex-direction: column;
   gap: 12px;
 }
-/* Header-only building inspections retain footer commands without an empty body. */
+/* Header-only inspections retain footer commands without an empty body. */
+.game-window.has-entity-summary
+  > .interaction-panel-content:has(
+    > .interaction-information > .entity-info-wrapper:only-child > .entity-info-modal:only-child:empty,
+    > .interaction-information > .entity-info-modal:only-child:empty
+  ):not(:has(> .interaction-actions > :not(.interaction-secondary-actions:empty))),
 .game-window.has-entity-summary
   > .interaction-panel-content:has(.hero-building-menu-body.is-empty):not(
     :has(
@@ -921,6 +928,9 @@ body:has(.modal) .building-placement-help {
 }
 .game-window.pause-panel {
   width: min(460px, calc(100vw - 32px));
+}
+.game-window .pause-menu > button {
+  text-align: center;
 }
 .game-window.has-entity-summary.npc-orders-panel > .interaction-panel-content {
   display: grid;
@@ -1263,6 +1273,7 @@ body:has(.modal) .building-placement-help {
   height: min(760px, calc(100dvh - 32px));
 }
 /* Allocate the remaining height to the two lists, without a scrolling parent. */
+.game-window .unit-inventory-screen:has(.inventory-transfer-panel),
 .game-window .interaction-panel-content:has(.inventory-transfer-panel),
 .game-window .interaction-actions:has(.inventory-transfer-panel),
 .game-window .hero-building-menu-body:has(.inventory-transfer-panel) {
@@ -1309,6 +1320,135 @@ body:has(.modal) .building-placement-help {
   font-size: var(--font-size-xs);
 }
 
-.game-window .hero-market-wallet.value-badge--gold {
-  color: var(--main-primary-color);
+.technology-tree {
+  width: 100%;
+  min-width: 0;
+}
+
+.technology-tree h4 {
+  margin: 24px 0 12px;
+}
+
+.technology-branch h5 {
+  margin: 16px 0 4px;
+  font-size: 1rem;
+}
+
+.technology-branch > p {
+  margin: 0 0 12px;
+  opacity: 0.85;
+}
+
+.technology-nodes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 12px 14px;
+  border-left: 2px solid #806d44;
+}
+
+.technology-node {
+  position: relative;
+  min-width: 0;
+  border: 1px solid #665d49;
+  border-radius: 6px;
+}
+
+.technology-node.is-acquired {
+  border-color: #698761;
+  background: rgb(105 135 97 / 10%);
+}
+
+.technology-node.is-next {
+  border-color: #c4a76a;
+}
+
+.technology-node.is-locked {
+  opacity: 0.65;
+}
+
+@media (max-width: 720px) {
+  .technology-nodes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.technology-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 0 20px;
+}
+
+.technology-group > h4 {
+  grid-column: 1 / -1;
+}
+
+.technology-node + .technology-node::before {
+  content: '↓';
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  color: #c4a76a;
+}
+
+.game-window .technology-node .inventory-action-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  padding: 10px;
+  gap: 6px 10px;
+}
+
+.game-window .technology-node .inventory-action-row-label {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: left;
+  justify-self: start;
+}
+
+.game-window .technology-node .inventory-action-row-badge {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+}
+
+.game-window .technology-node .inventory-action-row-description {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+.game-window .technology-node .inventory-action-row-meta {
+  grid-column: 1 / -1;
+  grid-row: 4;
+}
+
+.game-window .technology-node .inventory-row-actions {
+  grid-column: 1 / -1;
+  grid-row: 5;
+}
+
+.game-window .technology-node .inventory-action-row-stats:empty {
+  display: none;
+}
+
+/* Equipment condition shares the HUD health colours, before its gold value. */
+.game-window-detail-durability.ui-progress {
+  flex: 0 0 120px;
+  width: 120px;
+  height: 20px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    var(--status-progress-bottom) 0%,
+    var(--status-progress-top) var(--equipment-durability-percent),
+    var(--status-health-bottom) var(--equipment-durability-percent),
+    var(--status-health-top) 100%
+  );
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  line-height: 20px;
+  text-align: center;
+  text-shadow: 1px 1px 0 var(--color-black-deep);
 }

@@ -5,11 +5,13 @@ import {
   cancelHeroCatchingPole,
   canHeroDefendWithTool,
   isHeroCatchingPoleEquipped,
+  isHeroToolAvailable,
   isHeroPowerChargeActiveForTool,
   isMountedAttackAimBlocked,
   releaseHeroDefense,
   releaseHeroPowerCharge,
   triggerToolAttackAt,
+  triggerSwordAttackAt,
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import type { ControlsLike } from '../types/context'
@@ -26,7 +28,6 @@ type HeroActionInputHost = {
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
   facePoint(point: HeroAimPoint): void
-  getShiftMoveLockedAimPoint(): HeroAimPoint | null
   resolveGoTo(): void
 }
 
@@ -48,6 +49,19 @@ export class HeroActionInputController {
     return triggerToolAttackAt(hero, this.host.equippedItem, point)
   }
 
+  handleDirectAttack(): void {
+    const hero = this.host.heroUnit
+    if (!hero || this.host.pendingGoToNpcs || this.host.equippedItem !== 'sword') return
+    if (!isHeroToolAvailable(hero, 'sword') || isHeroCatchingPoleEquipped(hero, 'sword')) return
+    if (hero.actionLocked && !hero.heroDefenseActive) return
+    const point = this.host.controls.getWorldPointUnderCursor()
+    if (isMountedAttackAimBlocked(hero, point)) return
+    if (hero.heroDefenseActive) cancelHeroActiveToolAction(hero)
+    this.host.facePoint(point)
+    hero.stop?.()
+    if (triggerSwordAttackAt(hero, point)) hero.followAssistIntent = null
+  }
+
   handlePrimaryPointerDown(): void {
     if (this.host.pendingGoToNpcs) {
       this.host.resolveGoTo()
@@ -63,8 +77,7 @@ export class HeroActionInputController {
       return
     }
     if (this.host.equippedItem === 'interact') this.host.interactInputOwner = 'mouse'
-    this.host.primaryClickPoint =
-      this.host.getShiftMoveLockedAimPoint() ?? this.host.controls.getWorldPointUnderCursor()
+    this.host.primaryClickPoint = this.host.controls.getWorldPointUnderCursor()
     const triggered = this.attackTowardPoint(this.host.primaryClickPoint)
     this.host.mouseHeld = triggered
     if (!this.host.mouseHeld) this.host.primaryClickPoint = null
@@ -80,7 +93,7 @@ export class HeroActionInputController {
     if (unit.actionLocked && !unit.heroDefenseActive) {
       cancelHeroActiveToolAction(unit)
     }
-    this.host.facePoint(this.host.getShiftMoveLockedAimPoint() ?? this.host.controls.getWorldPointUnderCursor())
+    this.host.facePoint(this.host.controls.getWorldPointUnderCursor())
     if (beginHeroDefense(unit, this.host.equippedItem)) {
       this.host.mouseHeld = true
     }

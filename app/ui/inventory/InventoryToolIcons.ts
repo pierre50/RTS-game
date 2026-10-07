@@ -17,7 +17,11 @@ export function renderInventoryToolIcons(this: InventoryManager): void {
     const info = equipment ? createEquipmentRowInfo(equipment, 1, undefined, { showValue: false }) : undefined
 
     const slot = this.slots.get(tool)
-    if (slot) slot.dataset.itemCategory = info?.category ?? ''
+    if (slot) {
+      slot.dataset.itemCategory = info?.category ?? ''
+      if (info?.durability != null) slot.dataset.equipmentDurability = String(info.durability)
+      else delete slot.dataset.equipmentDurability
+    }
     slot
       ?.querySelector('.inventory-action-row-stats')
       ?.replaceChildren(...(info?.stats ?? []).map(createCombatStatInfo))

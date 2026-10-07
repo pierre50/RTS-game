@@ -26,6 +26,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../equipment/equipmentWear') return { wearEquippedWeapon() {}, wearEquippedArmor() {} }
     if (request === '../buildings/interiorAccess') return { getBuildingInteriorAssaultMinimumHitPoints: () => null }
     return requireFromTsFile(request, filename, mocks)
   }

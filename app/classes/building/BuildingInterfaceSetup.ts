@@ -27,9 +27,6 @@ export function createBuildingEntityInterface(building: BuildingInterfaceHost): 
       const assets = getBuildingAsset(displayType, getBuildingAssetOwner(building), Assets)
       building.buildingInterface.renderInfo(element, assets as BuildingConfig, options)
     },
-    menu:
-      building.owner.isPlayed || map.instantMode
-        ? [...units, ...(units.length ? [menu.getCancelUnitTrainingButton(building)] : [])]
-        : [],
+    menu: building.owner.isPlayed || map.instantMode ? units : [],
   }
 }

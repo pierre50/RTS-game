@@ -218,5 +218,24 @@
         "frame": 11
       }
     ]
+  },
+  "Tin": {
+    "selectionFactor": 1.5,
+    "totalQuantity": 32,
+    "color": "#D8CFB7",
+    "assets": [
+      {
+        "sheet": "resources/minerals",
+        "frame": 12
+      },
+      {
+        "sheet": "resources/minerals",
+        "frame": 13
+      },
+      {
+        "sheet": "resources/minerals",
+        "frame": 14
+      }
+    ]
   }
 }

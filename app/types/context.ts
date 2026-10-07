@@ -111,6 +111,8 @@ export type NpcOrdersOpenOptions = {
   chatterLine?: string
   ordersEnabled?: boolean
   scriptedReply?: { label: string; onSelect(): void }
+  /** Charged radius that gathered the group; the conversation stays open within it. */
+  commRadius?: number
 }
 
 export interface SchedulerLike {
@@ -165,7 +167,6 @@ export interface MenuLike {
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
-  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   init?(): void
   destroy?(): void
@@ -269,7 +270,6 @@ export interface ControlsLike extends Container {
   stopKeyboardMove(): void
   setRuntimeInputEnabled?(enabled: boolean): void
   isHeroControlActive?(): boolean
-  isHeroDirectionLockActive?(): boolean
   isHeroStealthMode?(): boolean
   closeAnyHeroPanel(): boolean
   beginNpcGoTo?(npcs: UnitEntity[]): void

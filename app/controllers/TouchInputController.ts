@@ -2,7 +2,6 @@ import { pointsDistance } from '../lib'
 import { IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import type { ControlPointerEvent } from '../types/context'
 
-type PointerPoint = { x: number; y: number }
 type PointerPageEvent = ControlPointerEvent & {
   pageX: number
   pageY: number
@@ -12,26 +11,21 @@ type PointerPageEvent = ControlPointerEvent & {
 }
 
 export type TouchInteraction = {
-  mode: 'pan' | 'tap' | 'select'
+  mode: 'ignore' | 'tap' | 'select'
   startX: number
   startY: number
-  lastX: number
-  lastY: number
   moved: boolean
 }
 
 type TouchControlsHost = {
   mouse: { x: number; y: number; prevent: boolean }
   mouseBuilding: unknown
-  mouseTouch: PointerPoint | null | undefined
   mouseDrag: boolean
   touchInteraction: TouchInteraction | null
-  touchPanActive: boolean
   ignoreMouseEventsUntil: number
   buildingPlacer: { handleMouseMove: () => void }
   isInteractionBlocked(): boolean
   isMouseInApp(evt: PointerPageEvent): boolean
-  moveCamera(dir: string, moveSpeed: number, isSpeedDivided: boolean, deltaScale?: number): void
   onMouseDown(evt: PointerPageEvent): void
   onMouseMove(evt: PointerPageEvent): void
   onMouseUp(evt: PointerPageEvent): void
@@ -53,10 +47,8 @@ export class TouchInputController {
 
     const touch = evt.touches[0]
     if (evt.touches.length >= 2) {
-      host.touchInteraction = createTouchInteraction('pan', touch)
-      host.touchPanActive = true
+      host.touchInteraction = createTouchInteraction('ignore', touch)
       host.mouseDrag = false
-      host.mouseTouch = { x: touch.pageX, y: touch.pageY }
       return
     }
 
@@ -83,9 +75,7 @@ export class TouchInputController {
     host.mouse.x = touch.pageX
     host.mouse.y = touch.pageY
 
-    if (host.touchPanActive) {
-      this.panFromPreviousTouch()
-      host.mouseTouch = { x: host.mouse.x, y: host.mouse.y }
+    if (host.touchInteraction?.mode === 'ignore') {
       return
     }
 
@@ -114,8 +104,8 @@ export class TouchInputController {
     const { host } = this
     this.deferCompatibilityMouseEvents()
     const touch = evt.changedTouches[0]
-    if (host.touchPanActive || host.touchInteraction?.mode === 'pan') {
-      this.finishPanTouch(evt)
+    if (host.touchInteraction?.mode === 'ignore') {
+      this.finishIgnoredTouch(evt)
       return
     }
 
@@ -130,10 +120,9 @@ export class TouchInputController {
 
   cancel(): void {
     const { host } = this
-    host.mouseTouch = null
+
     host.mouseDrag = false
     host.touchInteraction = null
-    host.touchPanActive = false
   }
 
   shouldIgnoreCompatibilityMouseEvent(evt: PointerPageEvent): boolean {
@@ -147,17 +136,6 @@ export class TouchInputController {
   private updatePlacementPreview(): void {
     const { host } = this
     if (host.mouseBuilding) host.buildingPlacer.handleMouseMove()
-  }
-
-  private panFromPreviousTouch(): void {
-    const { host } = this
-    if (!host.mouseTouch) return
-    const speedX = Math.abs(host.mouse.x - host.mouseTouch.x) * 2
-    const speedY = Math.abs(host.mouse.y - host.mouseTouch.y) * 2
-    if (host.mouse.x > host.mouseTouch.x) host.moveCamera('left', speedX, false)
-    if (host.mouse.y > host.mouseTouch.y) host.moveCamera('up', speedY, false)
-    if (host.mouse.y < host.mouseTouch.y) host.moveCamera('down', speedY, false)
-    if (host.mouse.x < host.mouseTouch.x) host.moveCamera('right', speedX, false)
   }
 
   private updateTouchInteractionMove(touch: PointerPageEvent): void {
@@ -174,25 +152,15 @@ export class TouchInputController {
     } else if (movedEnough) {
       interaction.moved = true
       host.mouseDrag = true
-      const speedX = Math.abs(host.mouse.x - interaction.lastX) * 2
-      const speedY = Math.abs(host.mouse.y - interaction.lastY) * 2
-      if (host.mouse.x > interaction.lastX) host.moveCamera('left', speedX, false)
-      if (host.mouse.y > interaction.lastY) host.moveCamera('up', speedY, false)
-      if (host.mouse.y < interaction.lastY) host.moveCamera('down', speedY, false)
-      if (host.mouse.x < interaction.lastX) host.moveCamera('right', speedX, false)
     }
-
-    interaction.lastX = host.mouse.x
-    interaction.lastY = host.mouse.y
   }
 
-  private finishPanTouch(evt: TouchEvent): void {
+  private finishIgnoredTouch(evt: TouchEvent): void {
     const { host } = this
     host.mouseDrag = true
     if (evt.touches.length) {
       const remainingTouch = evt.touches[0]
-      host.mouseTouch = { x: remainingTouch.pageX, y: remainingTouch.pageY }
-      host.touchInteraction = createTouchInteraction('pan', remainingTouch, true)
+      host.touchInteraction = createTouchInteraction('ignore', remainingTouch, true)
       return
     }
     this.cancel()
@@ -222,8 +190,6 @@ function createTouchInteraction(
     mode,
     startX: touch.pageX,
     startY: touch.pageY,
-    lastX: touch.pageX,
-    lastY: touch.pageY,
     moved,
   }
 }

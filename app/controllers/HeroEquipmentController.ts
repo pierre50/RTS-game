@@ -37,8 +37,13 @@ export class HeroEquipmentController {
 
   cycleTool(direction: 1 | -1): boolean {
     const currentIndex = Math.max(0, HERO_TOOL_ORDER.indexOf(this.host.equippedItem ?? 'interact'))
-    const nextIndex = (currentIndex + direction + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
-    return this.equipToolAt(nextIndex)
+    for (let offset = 1; offset < HERO_TOOL_ORDER.length; offset++) {
+      const nextIndex =
+        (currentIndex + direction * offset + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
+      const tool = HERO_TOOL_ORDER[nextIndex]
+      if (tool && isHeroToolAvailable(this.host.heroUnit, tool)) return this.equipToolAt(nextIndex)
+    }
+    return false
   }
 
   setEquippedItem(item: HeroEquippedItem | null): void {

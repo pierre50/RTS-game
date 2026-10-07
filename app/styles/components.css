@@ -100,9 +100,14 @@
 }
 .value-badge--gold,
 .inventory-action-row-value.value-badge--gold {
-  color: var(--main-primary-color);
-  background: var(--main-accent-color);
-  border-color: var(--main-accent-hover) var(--border-bottom-color) var(--border-bottom-color) var(--main-accent-hover);
+  min-height: 0;
+  padding: 0;
+  color: var(--main-accent-color);
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: 400;
 }
 .value-badge:empty {
   display: none;

@@ -25,6 +25,7 @@ const JOB_ACTIONS: Record<VillagerAutonomyJob, string[]> = {
   stone: [ACTION_TYPES.minestone],
   gold: [ACTION_TYPES.minegold],
   copper: [ACTION_TYPES.minecopper],
+  tin: [ACTION_TYPES.minetin],
   iron: [ACTION_TYPES.mineiron],
   construction: [ACTION_TYPES.build],
   horseCapture: [ACTION_TYPES.captureHorse],

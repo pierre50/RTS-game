@@ -178,29 +178,3 @@ export function getVacantHomeCount(owner: HouseholdOwner): number {
       getHouseBedLabels(owner, h).length > 0
   ).length
 }
-
-export function canClaimHeroHome(owner: HouseholdOwner, unit: HouseholdUnit, house: HouseholdBuilding): boolean {
-  return (
-    hero(unit) &&
-    (owner.buildings ?? []).includes(house) &&
-    house.type === BUILDING_TYPES.house &&
-    !!house.label &&
-    !!house.isBuilt &&
-    living(house) &&
-    !house.buildingUpgrade &&
-    !!unit.label &&
-    unit.homeHouseLabel !== house.label &&
-    getHouseResidents(owner, house).length === 0
-  )
-}
-
-export function claimHeroHome(owner: HouseholdOwner, unit: HouseholdUnit, house: HouseholdBuilding): boolean {
-  if (!canClaimHeroHome(owner, unit, house)) return false
-  for (const previous of owner.buildings ?? []) {
-    if (previous.heroHomeResident?.label === unit.label) delete previous.heroHomeResident
-  }
-  house.heroHomeResident = { label: unit.label!, name: unit.name }
-  unit.homeHouseLabel = house.label
-  unit.homeBedLabel = getHouseBedLabels(owner, house)[0]
-  return true
-}

@@ -131,7 +131,7 @@ test('windows render gamepad hints on first paint without waiting for another bu
     requestAnimationFrame: global.requestAnimationFrame,
     cancelAnimationFrame: global.cancelAnimationFrame,
   }
-  let pad = { buttons: [{ pressed: true }] }
+  let pad = { buttons: [{ pressed: true }], axes: [] }
   let enabled = true
   let gameplay = true
   const makeElement = () => ({
@@ -164,23 +164,29 @@ test('windows render gamepad hints on first paint without waiting for another bu
       firstPaints.push(this.panel.dataset.inputMode)
     }
     GameWindow.prototype.cancelKeyboardHold = () => {}
-    const open = () => {
+    const open = (expectedPresses = []) => {
       const instance = new GameWindow(
         makeElement(),
         () => {},
         () => true
       )
+      if (pad && enabled) {
+        pad.buttons[0] = { pressed: true }
+        assert.deepEqual(instance.padState.read(pad, 1).pressed, expectedPresses)
+      }
       instance.destroy()
     }
     open()
+    pad = { buttons: [{ pressed: false }], axes: [] }
+    open([0]) // A pressed after opening must work even before the first animation frame.
     pad = null
     open()
-    pad = { buttons: [] }
+    pad = { buttons: [], axes: [] }
     enabled = false
     open()
     gameplay = false
     open()
-    assert.deepEqual(firstPaints, ['gamepad', 'keyboard', 'keyboard', 'gamepad'])
+    assert.deepEqual(firstPaints, ['gamepad', 'gamepad', 'keyboard', 'keyboard', 'gamepad'])
   } finally {
     Object.assign(global, previous)
   }
@@ -272,14 +278,12 @@ test('building actions expose direct sleep and removal with confirmation', () =>
       result.some(c => c.id === 'other-actions'),
       false
     )
-    sleep.dataset.windowAction = 'home'
-    assert.equal(availableCommands(host).find(c => c.id === 'home').confirm, false)
     const upgrade = button('upgrade')
     host.panel.querySelectorAll = selector => (selector === '.ui-tab' ? [] : [upgrade, sleep, removal])
     let upgradeCommand = availableCommands(host).find(c => c.id === 'upgrade')
     assert.equal(upgradeCommand.key, 'U')
     assert.equal(upgradeCommand.pad, 2)
-    assert.equal(upgradeCommand.padModifier, 6, 'home retains its direct secondary action')
+    assert.equal(upgradeCommand.padModifier, 6, 'sleep retains its direct secondary action')
     host.panel.querySelectorAll = selector => (selector === '.ui-tab' ? [] : [upgrade, removal])
     upgradeCommand = availableCommands(host).find(c => c.id === 'upgrade')
     assert.equal(upgradeCommand.padModifier, undefined)
@@ -288,7 +292,12 @@ test('building actions expose direct sleep and removal with confirmation', () =>
   }
 })
 
-test('keyboard and gamepad request confirmation immediately without starting a hold', () => {
+test('keyboard and gamepad request confirmation immediately without starting a hold', context => {
+  const previousDocument = global.document
+  global.document = { querySelector: () => null }
+  context.after(() => {
+    global.document = previousDocument
+  })
   const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
     mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
   })
@@ -299,6 +308,7 @@ test('keyboard and gamepad request confirmation immediately without starting a h
     const instance = Object.create(GameWindow.prototype)
     instance.renderCommands = () => {}
     instance.scheduleRefresh = () => {}
+    instance.refresh = () => {}
     instance.commands = [{ ...command, run: () => assert.fail('must wait for confirmation') }]
     instance.runKeyIntent({ command: instance.commands[0] }, false)
     assert.equal(instance.confirmation.id, command.id)

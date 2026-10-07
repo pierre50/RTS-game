@@ -75,7 +75,7 @@ export function waitOutsideForSleep(unit: UnitEntity, options: { instant?: boole
   clearSleepingVisualState(unit)
   clearUnitOverheadIndicator(unit)
   unit.setTextures?.(SHEET_TYPES.standing)
-  unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
+  unit.syncAppearanceLayers?.(unit.currentSheet ?? SHEET_TYPES.standing)
   unit.sprite?.stop?.()
 }
 

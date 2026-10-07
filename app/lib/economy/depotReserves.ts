@@ -3,7 +3,7 @@ import type { ResourceAmount } from '../../types/common'
 
 export type DepotReservePolicy = { target: number; shares: ResourceAmount }
 export const FOOD_RESERVE_RESOURCES = ['wheat', 'berry', 'meat'] as const
-const MATERIAL_RESERVE_RESOURCES = ['wood', 'stone', 'gold', 'copper', 'iron'] as const
+const MATERIAL_RESERVE_RESOURCES = ['wood', 'stone', 'gold', 'copper', 'tin', 'iron'] as const
 // Accepted only when reading policies from older saves.
 export const LEGACY_MATERIAL_RESERVES = ['fiber', 'leather', 'sinew', 'feather', 'herb', 'toxicHerb'] as const
 export const MAX_RESERVE_TARGET = 1000000

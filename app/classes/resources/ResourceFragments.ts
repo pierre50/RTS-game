@@ -87,6 +87,7 @@ export function spawnDepletedResourceFragments(resource: Resource): boolean {
     resource.type === RESOURCE_TYPES.stone ||
     resource.type === RESOURCE_TYPES.gold ||
     resource.type === RESOURCE_TYPES.copper ||
+    resource.type === RESOURCE_TYPES.tin ||
     resource.type === RESOURCE_TYPES.iron
   ) {
     spawnSpriteFragmentBurst({

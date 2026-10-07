@@ -46,7 +46,6 @@ export function applyProjectileHit(projectile: ImpactProjectile, instance: Runti
   applyCombatHit(projectile.owner, instance, {
     attacker: projectile.owner,
     bonusDamage: xpBonusDamage,
-    damageType: 'pierce',
     defaultDamage: damage,
     hitDirection: {
       x: projectile.destinationPoint.x - projectile.spawnOrigin.x,

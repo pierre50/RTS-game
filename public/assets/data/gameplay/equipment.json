@@ -110,10 +110,26 @@
       "range": 6
     }
   },
-  "arrow_ceramic": { "weapon": { "power": 1 } },
-  "arrow_copper": { "weapon": { "power": 2 } },
-  "arrow_bronze": { "weapon": { "power": 3 } },
-  "arrow_iron": { "weapon": { "power": 4 } },
+  "arrow_ceramic": {
+    "weapon": {
+      "power": 1
+    }
+  },
+  "arrow_copper": {
+    "weapon": {
+      "power": 2
+    }
+  },
+  "arrow_bronze": {
+    "weapon": {
+      "power": 3
+    }
+  },
+  "arrow_iron": {
+    "weapon": {
+      "power": 4
+    }
+  },
   "longsword": {
     "weapon": {
       "power": 11
@@ -165,124 +181,67 @@
     }
   },
   "armor_leather": {
-    "armor": {
-      "melee": 1
-    }
+    "armor": 1
   },
   "armor_mail_ceramic": {
-    "armor": {
-      "melee": 2
-    }
+    "armor": 2
   },
   "armor_mail_copper": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "armor_mail_bronze": {
-    "armor": {
-      "melee": 3,
-      "pierce": 1
-    }
+    "armor": 3
   },
   "armor_mail_iron": {
-    "armor": {
-      "melee": 4,
-      "pierce": 2
-    }
+    "armor": 4
   },
   "armor_legion_ceramic": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "armor_legion_copper": {
-    "armor": {
-      "melee": 3,
-      "pierce": 1
-    }
+    "armor": 3
   },
   "armor_legion_bronze": {
-    "armor": {
-      "melee": 4,
-      "pierce": 2
-    }
+    "armor": 4
   },
   "armor_legion_iron": {
-    "armor": {
-      "melee": 5,
-      "pierce": 3
-    }
+    "armor": 5
   },
   "helmet_pointed_ceramic": {
-    "armor": {
-      "melee": 1
-    }
+    "armor": 1
   },
   "helmet_pointed_copper": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "helmet_pointed_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "helmet_pointed_iron": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "shoulder_legion_ceramic": {
-    "armor": {
-      "melee": 1
-    }
+    "armor": 1
   },
   "shoulder_legion_copper": {
-    "armor": {
-      "melee": 1
-    }
+    "armor": 1
   },
   "shoulder_legion_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "shoulder_legion_iron": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "bracers_ceramic": {
-    "armor": {
-      "melee": 1
-    }
+    "armor": 1
   },
   "bracers_copper": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "bracers_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "bracers_iron": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "cape_solid": {},
   "crest": {},
@@ -294,184 +253,95 @@
   "upward_horns_white": {},
   "upward_horns_ceramic": {},
   "helmet_barbuta_ceramic": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "helmet_barbuta_copper": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "helmet_barbuta_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "helmet_barbuta_iron": {
-    "armor": {
-      "melee": 3,
-      "pierce": 2
-    }
+    "armor": 3
   },
   "helmet_legion_ceramic": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "helmet_legion_copper": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "helmet_legion_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "helmet_legion_iron": {
-    "armor": {
-      "melee": 3,
-      "pierce": 2
-    }
+    "armor": 3
   },
   "helmet_nasal_ceramic": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "helmet_nasal_copper": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "helmet_nasal_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "helmet_nasal_iron": {
-    "armor": {
-      "melee": 3,
-      "pierce": 2
-    }
+    "armor": 3
   },
   "helmet_bascinet_round_ceramic": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "helmet_bascinet_round_copper": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "helmet_bascinet_round_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "helmet_bascinet_round_iron": {
-    "armor": {
-      "melee": 3,
-      "pierce": 2
-    }
+    "armor": 3
   },
   "helmet_norman_ceramic": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "helmet_norman_copper": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "helmet_norman_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "helmet_norman_iron": {
-    "armor": {
-      "melee": 3,
-      "pierce": 2
-    }
+    "armor": 3
   },
   "helmet_barbarian_ceramic": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "helmet_barbarian_nasal_ceramic": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "sack_cloth_hood_leather": {},
   "leg_armor_ceramic": {
-    "armor": {
-      "melee": 1
-    }
+    "armor": 1
   },
   "leg_armor_copper": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "leg_armor_bronze": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "leg_armor_iron": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "round_shield_ceramic_slash": {
-    "armor": {
-      "melee": 1,
-      "pierce": 1
-    }
+    "armor": 1
   },
   "round_shield_copper_slash": {
-    "armor": {
-      "melee": 2,
-      "pierce": 1
-    }
+    "armor": 2
   },
   "round_shield_bronze_slash": {
-    "armor": {
-      "melee": 2,
-      "pierce": 2
-    }
+    "armor": 2
   },
   "round_shield_iron_slash": {
-    "armor": {
-      "melee": 3,
-      "pierce": 2
-    }
+    "armor": 3
   },
   "quiver": {}
 }

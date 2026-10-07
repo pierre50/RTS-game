@@ -1101,215 +1101,6 @@ test('closing without an order after a real wake does not resume the old day job
   assert.deepEqual(calls, [])
 })
 
-test('"aller vers" cursor shows combat feedback only when a selected npc can attack the target', () => {
-  const classes = new Set()
-  global.document = {
-    body: {
-      classList: {
-        add: className => classes.add(className),
-        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
-      },
-      appendChild: () => {},
-    },
-    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
-  }
-
-  try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
-      '../constants': constants,
-    })
-    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
-      '../constants': constants,
-    })
-    const target = { family: constants.FAMILY_TYPES.unit, hitPoints: 10, owner: { label: 'enemy' } }
-    const npc = {
-      getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.attack,
-    }
-
-    updateHeroCursor(null, resolveNpcGoToCursorState([npc], target, null, null))
-
-    assert.equal(classes.has('hero-cursor-combat'), true)
-    resetHeroCursor()
-  } finally {
-    delete global.document
-  }
-})
-
-test('"aller vers" cursor shows movement over actionable building work', () => {
-  const classes = new Set()
-  global.document = {
-    body: {
-      classList: {
-        add: className => classes.add(className),
-        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
-      },
-      appendChild: () => {},
-    },
-    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
-  }
-
-  try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
-      '../constants': constants,
-    })
-    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
-      '../constants': constants,
-    })
-    const target = { family: constants.FAMILY_TYPES.building, hitPoints: 25, isBuilt: false, owner: { label: 'own' } }
-    const npc = {
-      getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.build,
-    }
-
-    updateHeroCursor(null, resolveNpcGoToCursorState([npc], target, null, null))
-
-    assert.equal(classes.has('hero-cursor-move'), true)
-    resetHeroCursor()
-  } finally {
-    delete global.document
-  }
-})
-
-test('"aller vers" cursor shows enter feedback over building interior entry cells', () => {
-  const classes = new Set()
-  const entryCell = { i: 4, j: 4 }
-  global.document = {
-    body: {
-      classList: {
-        add: className => classes.add(className),
-        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
-      },
-      appendChild: () => {},
-    },
-    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
-  }
-
-  try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
-      '../constants': constants,
-    })
-    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
-      '../constants': constants,
-    })
-
-    updateHeroCursor(
-      null,
-      resolveNpcGoToCursorState(
-        [{ owner: { label: 'own' } }],
-        { family: constants.FAMILY_TYPES.building, label: 'house-1' },
-        entryCell,
-        { getBuildingInteriorEntryTargetForCell: cell => (cell === entryCell ? { label: 'house-1' } : null) }
-      )
-    )
-
-    assert.equal(classes.has('hero-cursor-enter'), true)
-    resetHeroCursor()
-  } finally {
-    delete global.document
-  }
-})
-
-test('"aller vers" cursor shows movement over empty go-to targets', () => {
-  const classes = new Set()
-  global.document = {
-    body: {
-      classList: {
-        add: className => classes.add(className),
-        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
-      },
-      appendChild: () => {},
-    },
-    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
-  }
-
-  try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
-      '../constants': constants,
-    })
-    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
-      '../constants': constants,
-    })
-    updateHeroCursor(null)
-    assert.equal(classes.has('hero-cursor-pointer'), false)
-
-    updateHeroCursor(null, resolveNpcGoToCursorState([{}], null, { i: 4, j: 4 }, null))
-    assert.equal(classes.has('hero-cursor-move'), true)
-    resetHeroCursor()
-  } finally {
-    delete global.document
-  }
-})
-
-test('"aller vers" cursor shows movement, not resource, when selected npcs cannot gather a resource', () => {
-  const classes = new Set()
-  global.document = {
-    body: {
-      classList: {
-        add: className => classes.add(className),
-        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
-      },
-      appendChild: () => {},
-    },
-    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
-  }
-
-  try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
-      '../constants': constants,
-    })
-    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
-      '../constants': constants,
-    })
-    const tree = { family: constants.FAMILY_TYPES.resource, type: constants.RESOURCE_TYPES.tree }
-    const infantry = {
-      getActionCondition: () => false,
-      type: constants.UNIT_TYPES.infantry,
-    }
-
-    updateHeroCursor(null, resolveNpcGoToCursorState([infantry], tree, null, null))
-
-    assert.equal(classes.has('hero-cursor-resource'), false)
-    assert.equal(classes.has('hero-cursor-move'), true)
-    resetHeroCursor()
-  } finally {
-    delete global.document
-  }
-})
-
-test('"aller vers" cursor shows movement when a selected npc can gather a resource', () => {
-  const classes = new Set()
-  global.document = {
-    body: {
-      classList: {
-        add: className => classes.add(className),
-        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
-      },
-      appendChild: () => {},
-    },
-    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
-  }
-
-  try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
-      '../constants': constants,
-    })
-    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
-      '../constants': constants,
-    })
-    const tree = { family: constants.FAMILY_TYPES.resource, type: constants.RESOURCE_TYPES.tree }
-    const villager = {
-      getActionCondition: (candidate, action) => candidate === tree && action === constants.ACTION_TYPES.chopwood,
-      type: constants.UNIT_TYPES.villager,
-    }
-
-    updateHeroCursor(null, resolveNpcGoToCursorState([villager], tree, null, null))
-
-    assert.equal(classes.has('hero-cursor-move'), true)
-    resetHeroCursor()
-  } finally {
-    delete global.document
-  }
-})
-
 function loadCommModule(instances, getInstanceDegree) {
   return loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
@@ -2154,8 +1945,18 @@ test('closing a conversation never replaces an attack with the previous job', ()
 
 test('AI chief is unavailable for talking or noticing throughout his sleep window', () => {
   const hero = { owner: { isEnemy: () => false } }
-  const target = makeCommAlly({ type: 'Chief', isChief: true, owner: { type: 'AI' },
-    dailySchedule: { bedMinute: 1320, wakeMinute: 370, workStartMinute: 420, workEndMinute: 1080, lunchStartMinute: 720, lunchEndMinute: 780 },
+  const target = makeCommAlly({
+    type: 'Chief',
+    isChief: true,
+    owner: { type: 'AI' },
+    dailySchedule: {
+      bedMinute: 1320,
+      wakeMinute: 370,
+      workStartMinute: 420,
+      workEndMinute: 1080,
+      lunchStartMinute: 720,
+      lunchEndMinute: 780,
+    },
     context: { dayNight: { state: { hour: 22, minute: 0 } } },
   })
   const { isTalkableNpc, noticeNpc } = loadNpcInteraction(target)

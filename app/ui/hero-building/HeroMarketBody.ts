@@ -113,7 +113,7 @@ function appendSellResourceSlots(
     const amount = Math.max(0, Math.floor(resources[resource] ?? 0))
     const goldValue = getResourceGoldValue(resource)
     if (amount <= 0 || goldValue <= 0) continue
-    const label = `${t(resource)} x${amount}`
+    const label = amount > 1 ? `${t(resource)} x${amount}` : t(resource)
     const disabled = getMarketGold(building) < goldValue
     const totalGold = goldValue * amount
     const { element } = createInventoryResourceRow(menu, {
@@ -137,7 +137,10 @@ function appendSellResourceSlots(
           const sold = sellHeroResource(hero, building, resource, amountToSell)
           if (sold <= 0) return
           menu.showMessage(
-            t('marketSoldItem', { item: `${t(resource)} x${sold}`, gold: String(goldValue * sold) }),
+            t('marketSoldItem', {
+              item: sold > 1 ? `${t(resource)} x${sold}` : t(resource),
+              gold: String(goldValue * sold),
+            }),
             'success'
           )
           handleMarketChange(menu, onChange)

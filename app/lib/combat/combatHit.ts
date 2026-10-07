@@ -1,4 +1,5 @@
-import { getHitPointsWithDamage, type CombatDamageType, type CombatEntity } from './combat'
+import { wearEquippedWeapon, wearEquippedArmor } from '../equipment/equipmentWear'
+import { getHitPointsWithDamage, type CombatEntity } from './combat'
 import { showCriticalDamageFeedback, showDamageFeedback, showParryFeedback } from './combatFeedback'
 import { syncEntityHealthDisplay } from '../entities/entityHealthDisplay'
 import { spawnCombatBuildingImpactFragments } from '../entities/combatBuildingImpactFragments'
@@ -19,7 +20,6 @@ type CombatHitNotifyMode = 'always' | 'survived' | false
 export type CombatHitOptions = {
   attacker?: RuntimeEntity
   bonusDamage?: number
-  damageType?: CombatDamageType
   defaultDamage?: number
   grantKillXp?: boolean
   hitDirection?: Point
@@ -67,15 +67,10 @@ function resolveHitDamage(
   source: CombatEntity,
   target: RuntimeEntity,
   attacker: RuntimeEntity,
-  {
-    bonusDamage,
-    damageType,
-    defaultDamage,
-    xpCategory,
-  }: Pick<CombatHitOptions, 'bonusDamage' | 'damageType' | 'defaultDamage' | 'xpCategory'>
+  { bonusDamage, defaultDamage, xpCategory }: Pick<CombatHitOptions, 'bonusDamage' | 'defaultDamage' | 'xpCategory'>
 ): ResolvedHitDamage {
   const beforeHitPoints = target.hitPoints ?? 0
-  const normalHitPoints = getHitPointsWithDamage(source, target, defaultDamage, bonusDamage, damageType)
+  const normalHitPoints = getHitPointsWithDamage(source, target, defaultDamage, bonusDamage)
   const normalDamageDealt = beforeHitPoints - normalHitPoints
   const criticalRoll = normalDamageDealt > 0 && rollCriticalHit(attacker, xpCategory)
   let hitPoints = criticalRoll
@@ -115,7 +110,6 @@ export function applyCombatHit(
   {
     attacker = source as RuntimeEntity,
     bonusDamage = 0,
-    damageType = 'melee',
     defaultDamage,
     grantKillXp = true,
     hitDirection,
@@ -135,7 +129,6 @@ export function applyCombatHit(
   } else {
     const resolvedDamage = resolveHitDamage(source, target, attacker, {
       bonusDamage,
-      damageType,
       defaultDamage,
       xpCategory,
     })
@@ -143,6 +136,8 @@ export function applyCombatHit(
     critical = resolvedDamage.critical
   }
   const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
+  if (isMelee && attacker.family === FAMILY_TYPES.unit) wearEquippedWeapon(attacker as UnitEntity, 'melee')
+  if (damageDealt > 0 && target.family === FAMILY_TYPES.unit) wearEquippedArmor(target as UnitEntity)
   const killed = (target.hitPoints ?? 0) <= 0
   applyFactionAttackPenalty(attacker, target, killed, damageDealt)
   if (damageDealt > 0) {

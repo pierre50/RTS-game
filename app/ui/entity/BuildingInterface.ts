@@ -1,14 +1,13 @@
 import { appendConstructionInfo } from './ConstructionInfo'
 import { canHeroDemolishBuilding } from '../../lib/buildings/buildingDemolition'
 import { isInteriorFurniture } from '../../lib/buildings/furniture/interiorFurnitureCatalog'
-import { getBuildingBedCount, refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
+import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getEntityDescription } from './EntityDescription'
-import { BUILDING_TYPES, MENU_INFO_IDS, PLAYER_TYPES } from '../../constants'
-import { getIconPath } from '../../lib'
+import { BUILDING_TYPES, PLAYER_TYPES } from '../../constants'
 import { HORSE_COLOR_PALETTES, isHorseColor } from '../../lib/horses/horseColors'
 import { t } from '../../lib/lang'
 import { getStableHorseAmount, getStableHorses, STABLE_HORSE_CAPACITY } from '../../lib/horses/stableHorses'
-import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage } from './BaseEntityInterface'
+import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
 import { getBuildingDisplayName } from '../utils/entityDisplayName'
 import type { BuildingEntity, EntityInfoRenderOptions } from '../../types/entities'
 import type { BuildingConfig } from '../../types/config'
@@ -24,43 +23,12 @@ export class BuildingInterface {
   renderInfo(element: HTMLElement, data: BuildingConfig, options?: EntityInfoRenderOptions): void {
     const building = this.building
     this.setDefaultInterface(element, data, options)
-    if (
-      building.type !== BUILDING_TYPES.house &&
-      building.displayPopulation &&
-      building.owner?.isPlayed &&
-      building.isBuilt
-    ) {
-      element.appendChild(this.getPopulationElement())
-    }
     if (building.type === BUILDING_TYPES.stable && building.isBuilt) {
       element.appendChild(this.getStableHorseElement())
     }
     if (canHeroDemolishBuilding(building)) {
       ;(options?.actionsContainer ?? element).appendChild(this.getDeleteBuildingButton())
     }
-  }
-
-  getPopulationElement(): HTMLDivElement {
-    const building = this.building
-    const owner = building.owner!
-    refreshPopulationCapacity(owner)
-    const populationDiv = document.createElement('div')
-    populationDiv.classList.add(MENU_INFO_IDS.population)
-    populationDiv.appendChild(createInfoImage('', getIconPath('004_50731')))
-    const populationSpan = document.createElement('span')
-    populationSpan.classList.add(MENU_INFO_IDS.populationText)
-    populationSpan.textContent = owner.population + '/' + owner.populationMax
-    populationDiv.appendChild(populationSpan)
-    populationDiv.title = t('populationBedsDescription')
-    if (building.type === BUILDING_TYPES.house) {
-      const beds = document.createElement('div')
-      beds.className = 'house-bed-count'
-      beds.textContent = t(building.buildingUpgrade ? 'houseBedsUnavailable' : 'houseBedsCount', {
-        count: getBuildingBedCount(building, owner),
-      })
-      populationDiv.appendChild(beds)
-    }
-    return populationDiv
   }
 
   getStableHorseElement(): HTMLDivElement {

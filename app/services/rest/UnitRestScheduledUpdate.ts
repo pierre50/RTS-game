@@ -1,3 +1,4 @@
+import { SHEET_TYPES } from '../../constants'
 import { getChiefAudienceBuilding, isChiefEscort } from '../../lib/units/chiefEscort'
 import { isChiefUnit } from '../../lib/chief'
 import { clearUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
@@ -62,6 +63,7 @@ function updateNightlyRest(context: GameContextLike, unit: UnitEntity): void {
   if (!unit.shelterState) {
     if (restoreInterruptedSleep(context, unit)) return
     if (shouldReturnHome && shouldRest(unit) && sendUnitToRest(unit, 'sleep')) updateMovingRestUnit(unit)
+    settleRestPose(context, unit)
     return
   }
   updateMovingRestUnit(unit)
@@ -86,7 +88,9 @@ function settleRestPose(context: GameContextLike, unit: UnitEntity): void {
   const state = unit.shelterState
   if (state?.reason !== 'sleep' || (state.status !== 'inside' && state.status !== 'outside')) return
   if (shouldUnitSleep(context, unit)) {
-    if (!unit.sleepVisualState && !unit.lookingAtHero && !isUnitRestWakeLocked(unit)) putRestingUnitToSleep(unit)
+    const missingPose =
+      !unit.sleepVisualState || (unit.sleepVisualState === 'sleeping' && unit.currentSheet !== SHEET_TYPES.dying)
+    if (missingPose && !unit.lookingAtHero && !isUnitRestWakeLocked(unit)) putRestingUnitToSleep(unit)
   } else if (unit.sleepVisualState === 'sleeping') {
     // Wake in the same room and keep the reserved seat until the morning break ends.
     wakeInPlace(unit)

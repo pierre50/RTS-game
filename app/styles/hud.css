@@ -457,7 +457,6 @@
 }
 
 .selection-info .resource-quantity,
-.selection-info .population,
 .selection-info .stable-horses {
   position: static;
   display: flex;
@@ -475,13 +474,11 @@
 
 .selection-info .info:empty,
 .selection-info .resource-quantity:empty,
-.selection-info .population:empty,
 .selection-info .stable-horses:empty {
   display: none;
 }
 
-.selection-info .resource-quantity-icon,
-.selection-info .population img {
+.selection-info .resource-quantity-icon {
   width: 18px;
   height: 18px;
   image-rendering: pixelated;
@@ -489,17 +486,6 @@
 
 .selection-info .stable-horses {
   flex-wrap: wrap;
-}
-
-.population:has(.house-bed-count) {
-  flex-wrap: wrap;
-  max-width: 100%;
-  gap: var(--ui-gap-5);
-}
-
-.house-bed-count {
-  flex-basis: 100%;
-  font-weight: normal;
 }
 
 .selection-info .stable-horses-count {
@@ -1438,7 +1424,7 @@
 }
 
 .hero-building-menu-icon .img.is-passive {
-  cursor: default;
+  cursor: var(--game-pointer, auto);
   opacity: 0.85;
 }
 
@@ -1487,103 +1473,37 @@
   text-shadow: none;
 }
 
+/* One fixed ARPG target in gameplay and menus, also shared by the gamepad. */
 body {
-  cursor: auto;
+  --hero-cursor-image: url('../../public/assets/interface/pointers/main/target.png');
+  --hero-cursor-x: 16;
+  --hero-cursor-y: 16;
+  --game-pointer: var(--hero-cursor-image) var(--hero-cursor-x) var(--hero-cursor-y), auto;
+  cursor: var(--game-pointer);
 }
 
-body.hero-game-cursor {
-  cursor:
-    url('../../public/assets/interface/pointers/main/005.png') 27 14,
-    auto;
-}
-
-body.hero-game-cursor.hero-cursor-pointer {
-  cursor:
-    url('../../public/assets/interface/pointers/main/000.png') 2 2,
-    auto;
-}
-
-body.hero-game-cursor.hero-cursor-resource {
-  cursor:
-    url('../../public/assets/interface/pointers/main/003.png') 4 4,
-    auto;
-}
-
-body.hero-game-cursor.hero-cursor-combat {
-  cursor:
-    url('../../public/assets/interface/pointers/main/004.png') 12 12,
-    auto;
-}
-
-body.hero-game-cursor.hero-cursor-move {
-  cursor:
-    url('../../public/assets/interface/pointers/main/002.png') 21 11,
-    auto;
-}
-
-body.hero-game-cursor.hero-cursor-enter {
-  cursor:
-    url('../../public/assets/interface/pointers/main/000.png') 2 2,
-    auto;
-}
-
-body.hero-game-cursor.hero-cursor-bow {
-  cursor:
-    url('../../public/assets/interface/pointers/main/005.png') 27 14,
-    auto;
-}
-
-/* Gamepad aim reticle: a page can't move the real OS cursor, so this lookalike element
-   (same pointer images as above) stands in for it while the gamepad drives the aim point. */
 body.hero-cursor-hidden {
   cursor: none !important;
 }
 
+/* The virtual gamepad cursor uses the same image and click position as the mouse. */
 #hero-virtual-cursor {
   position: fixed;
   top: 0;
   left: 0;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   pointer-events: none;
   z-index: 1000;
   display: none;
-  background: url('../../public/assets/interface/pointers/main/005.png') no-repeat;
-  transform: translate(-27px, -14px);
+  background-image: var(--hero-cursor-image);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  transform: translate(calc(var(--hero-cursor-x) * -1px), calc(var(--hero-cursor-y) * -1px));
 }
 
-#hero-virtual-cursor.is-visible {
+body.hero-game-cursor #hero-virtual-cursor.is-visible {
   display: block;
-}
-
-#hero-virtual-cursor.hero-cursor-pointer {
-  background-image: url('../../public/assets/interface/pointers/main/000.png');
-  transform: translate(-2px, -2px);
-}
-
-#hero-virtual-cursor.hero-cursor-resource {
-  background-image: url('../../public/assets/interface/pointers/main/003.png');
-  transform: translate(-4px, -4px);
-}
-
-#hero-virtual-cursor.hero-cursor-combat {
-  background-image: url('../../public/assets/interface/pointers/main/004.png');
-  transform: translate(-12px, -12px);
-}
-
-#hero-virtual-cursor.hero-cursor-move {
-  background-image: url('../../public/assets/interface/pointers/main/002.png');
-  transform: translate(-21px, -11px);
-}
-
-#hero-virtual-cursor.hero-cursor-enter {
-  background-image: url('../../public/assets/interface/pointers/main/000.png');
-  transform: translate(-2px, -2px);
-}
-
-#hero-virtual-cursor.hero-cursor-bow {
-  background-image: url('../../public/assets/interface/pointers/main/005.png');
-  transform: translate(-27px, -14px);
 }
 
 .resource {
@@ -1619,7 +1539,8 @@ body.hero-cursor-hidden {
 .resource-content {
   width: var(--ui-resource-icon-width);
   height: var(--ui-resource-icon-height);
-  object-fit: cover;
+  object-fit: contain;
+  image-rendering: pixelated;
   border: var(--ui-slot-border);
   transition: border-color var(--ui-transition-panel);
 }
@@ -1761,14 +1682,6 @@ body.hero-cursor-hidden {
   gap: var(--ui-gap-5);
 }
 
-.population {
-  position: absolute;
-  top: 32px;
-  left: 40%;
-  display: flex;
-  align-items: center;
-}
-
 .hud-icon-btn {
   width: 32px;
   height: 32px;
@@ -1838,27 +1751,6 @@ body.hero-cursor-hidden {
   margin-bottom: var(--ui-gap-12);
 }
 
-.territory-indicator {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: min(42vw, 360px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  pointer-events: auto;
-  z-index: 5;
-}
-.territory-indicator.ui-btn:not(:disabled, .disabled, [aria-disabled='true']):active {
-  transform: translate(-50%, var(--ui-press-offset));
-}
-.territory-indicator[hidden] {
-  display: none;
-}
-.territory-indicator.is-foreign {
-  cursor: default;
-}
 .base-report {
   --base-report-stat-height: 30px;
   --base-report-resource-min-width: 64px;
@@ -1937,7 +1829,7 @@ body.hero-cursor-hidden {
   color: inherit;
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
 }
 .minimap-legend-toggle:hover,
 .minimap-legend-toggle:focus-visible {
@@ -2018,7 +1910,7 @@ body.hero-cursor-hidden {
 }
 .game-window .depot-reserve-row.config-row:has(.ui-range) > label {
   grid-column: auto;
-  cursor: pointer;
+  cursor: var(--game-pointer, auto);
 }
 .depot-reserve-row .ui-range {
   width: 100%;

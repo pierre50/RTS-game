@@ -52,7 +52,8 @@ export function hasAnimalCorpseLoot(animal: AnimalLootSource): boolean {
     animal.isDead &&
       !animal.isDestroyed &&
       (animal.inventory
-        ? Object.values(animal.inventory.resources ?? {}).some(n => (n ?? 0) > 0)
+        ? Boolean(animal.inventory.equipment?.length) ||
+          Object.values(animal.inventory.resources ?? {}).some(n => (n ?? 0) > 0)
         : (animal.quantity ?? 0) > 0)
   )
 }

@@ -1,3 +1,4 @@
+import { getEquipmentDurability } from '../../lib/equipment/equipmentCondition'
 import { RESOURCE_ICON_IDS } from '../../constants'
 import { renderBuildingAvatar } from '../../lib/avatar'
 import { getIconPath } from '../../lib/graphics/assets'
@@ -66,13 +67,15 @@ export abstract class HeroCraftingBody {
   createCraftButton(recipe: HeroCraftRecipe): HTMLElement {
     const { app, player } = this.menu.context
     const hero = this.menu.context.controls.heroUnit
+    const label = t(recipe.labelKey, recipe.materialKey ? { material: t(recipe.materialKey) } : undefined)
     const disabled = !this.canUse() || !hero || !canCraftHeroRecipe(player, recipe, hero)
     const { element, icon } = createInventoryActionRow(this.menu, {
       id: `craft-${recipe.id}`,
       className: 'inventory-craft-row',
       disabled,
-      title: t(recipe.labelKey),
+      title: label,
       quantity: recipe.outputCount,
+      durability: getEquipmentDurability(recipe.outputEquipment),
       description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
       meta: '',
       metaParts: this.getCraftCostMetaParts(recipe.cost, hero),
@@ -94,10 +97,7 @@ export abstract class HeroCraftingBody {
             return
           }
           this.menu.updateTopbar?.()
-          this.menu.showMessage(
-            t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount * count }),
-            'success'
-          )
+          this.menu.showMessage(t('craftRecipeSuccess', { item: label, count: recipe.outputCount * count }), 'success')
           this.renderCraft()
         },
       },

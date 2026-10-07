@@ -1,6 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { applyUnitCrouchPose } from '../units/visuals/unitCrouchPose'
-import { clearRequestedMoveSpeedFactor, requestUnitWalk } from '../units/unitLocomotion'
+import { clearRequestedMoveSpeedFactor, requestUnitWalk } from '../units/movement/unitLocomotion'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { findInstancesInSight } from '../grid/visibility'

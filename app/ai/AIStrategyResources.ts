@@ -12,6 +12,7 @@ export function storageResourcesForAI(ai: AIStrategyPlayerLike) {
     ...(ai.foundedGolds ?? []),
     ...(ai.foundedStones ?? []),
     ...(ai.foundedCoppers ?? []),
+    ...(ai.foundedTins ?? []),
     ...(ai.foundedIrons ?? []),
   ]
 }

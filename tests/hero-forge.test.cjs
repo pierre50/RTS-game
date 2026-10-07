@@ -23,6 +23,7 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
   const { HeroForgeBody } = loadTsModule('app/ui/hero-building/HeroForgeBody.ts', {
     mocks: {
       '../../lib/avatar': {},
+      '../inventory/InventoryItemRows': { createInventoryEquipmentRow: () => ({ element: {} }) },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
       '../../lib/graphics/assets': { getIconPath: () => '' },
       '../../lib/hero/heroActionRange': { isHeroInteractionTargetReachable: () => reachable },
@@ -36,6 +37,7 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
         },
       },
       '../equipment/equipmentLoot': {
+        getHeroInventory: hero => hero.inventory,
         addHeroInventoryItem: (hero, item) => hero.inventory.equipment.push(item),
         removeHeroInventoryItem: () => false,
       },
@@ -66,6 +68,12 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
     arrows.trailingAction.onClick({ shiftKey: true })
     assert.equal(hero.inventory.equipment.length, 4)
     assert.deepEqual(hero.inventory.resources, { wood: 2, feather: 2 })
+    hero.inventory.resources = { wood: 2, copper: 2, tin: 1 }
+    const ingot = rows.find(row => row.id === 'craft-bronzeIngot')
+    assert.ok(ingot)
+    ingot.trailingAction.onClick()
+    assert.deepEqual(hero.inventory.resources, { bronzeIngot: 1 })
+    assert.equal(hero.inventory.equipment.length, 4)
   } finally {
     global.document = previousDocument
   }
@@ -89,7 +97,7 @@ test('forge remains exterior and uses its atlas sprite across levels and civiliz
   }
 })
 
-test('forge stacks crafting and six next-tier village upgrades in sections', () => {
+test('forge keeps repairs and personal crafting without village research', () => {
   const previousDocument = global.document
   const element = () => ({
     children: [],
@@ -128,20 +136,13 @@ test('forge stacks crafting and six next-tier village upgrades in sections', () 
       '../../lib/resources/playerResourceTotals': {
         getPlayerResourceTotals: () => ({ wood: 500, copper: 500, iron: 500 }),
       },
+      '../inventory/InventoryItemRows': { createInventoryEquipmentRow: () => ({ element: {} }) },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => element() },
       '../inventory/InventoryActionRow': {
         createInventoryActionRow: (_, options) => {
           rows.push(options)
           return { element: element(), icon: element() }
-        },
-      },
-      '../../lib/equipment/forgeResearch': {
-        canManageForge: () => true,
-        canResearchForgeUpgrade: (player, _forge, family) => (player.forgeUpgrades[family] ?? 0) < 3,
-        researchForgeUpgrade: (player, _forge, family, tier) => {
-          player.forgeUpgrades[family] = tier
-          return true
         },
       },
     },
@@ -151,28 +152,16 @@ test('forge stacks crafting and six next-tier village upgrades in sections', () 
     const forge = { type: 'Forge', isBuilt: true }
     const body = new HeroForgeBody(menu, forge)
     const upgrades = () => rows.filter(row => row.id.startsWith('forge-upgrade-'))
-    assert.equal(body.craftPanel.children.length, 4, 'two crafting and two upgrade sections')
+    assert.equal(
+      body.craftPanel.children.length,
+      7,
+      'repair, ingots, weapons, armor, shields, other equipment and arrows'
+    )
+    for (const id of ['sword_copper', 'armor_mail_iron', 'helmet_norman_bronze', 'round_shield_iron_slash']) {
+      assert.ok(rows.some(row => row.id === `craft-${id}`))
+    }
     assert.ok(rows.some(row => row.id === 'craft-arrow_ceramic'))
-    assert.equal(upgrades().length, 6)
-    const [title] = body.craftPanel.children[2].children
-    assert.equal(title.text, 'forgeCategoryTools')
-    assert.equal(body.craftPanel.children[2].children.length, 2, 'only category title and upgrade list')
-    let axes = rows.find(row => row.id === 'forge-upgrade-axes')
-    assert.match(axes.title, /forgeMaterial_copper/)
-    axes.trailingAction.onClick()
-    axes = rows.findLast(row => row.id === 'forge-upgrade-axes')
-    assert.match(axes.title, /forgeMaterial_bronze/)
-    axes.trailingAction.onClick()
-    axes = rows.findLast(row => row.id === 'forge-upgrade-axes')
-    assert.match(axes.title, /forgeMaterial_iron/)
-    axes.trailingAction.onClick()
-    axes = rows.findLast(row => row.id === 'forge-upgrade-axes')
-    assert.equal(axes.disabled, true)
-    assert.equal(axes.badge, 'forgeMaximum')
-    assert.equal(rows.findLast(row => row.id === 'forge-upgrade-weapons').disabled, false)
-    rows.length = 0
-    new HeroForgeBody(menu, forge)
-    assert.equal(upgrades().length, 6, 'a fresh body lists upgrades without switching panels')
+    assert.equal(upgrades().length, 0)
   } finally {
     global.document = previousDocument
   }
@@ -199,6 +188,7 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
   const { HeroCampfireBody } = loadTsModule('app/ui/hero-building/HeroCampfireBody.ts', {
     mocks: {
       '../../lib/avatar': {},
+      '../inventory/InventoryItemRows': { createInventoryEquipmentRow: () => ({ element: {} }) },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
       '../../lib/graphics/assets': { getIconPath: () => '' },
       '../../lib/hero/heroActionRange': { isHeroInteractionTargetReachable: () => reachable },
@@ -212,6 +202,7 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
         },
       },
       '../equipment/equipmentLoot': {
+        getHeroInventory: hero => hero.inventory,
         addHeroInventoryItem: (hero, item) => hero.inventory.equipment.push(item),
         removeHeroInventoryItem: () => false,
       },

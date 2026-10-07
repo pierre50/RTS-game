@@ -46,21 +46,20 @@ function getEquipmentStats(keys = []) {
     (stats, key) => {
       const item = equipment[key] ?? {}
       stats.weaponPower += item.weapon?.power ?? 0
-      stats.meleeArmor += item.armor?.melee ?? item.meleeArmor ?? 0
-      stats.pierceArmor += item.armor?.pierce ?? item.pierceArmor ?? 0
+      stats.armor += item.armor ?? 0
       return stats
     },
-    { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
+    { weaponPower: 0, armor: 0 }
   )
 }
 
-function damagePerHit(attacker, target, type = 'melee') {
-  const armor = type === 'pierce' ? (target.pierceArmor ?? 0) : (target.meleeArmor ?? 0)
+function damagePerHit(attacker, target) {
+  const armor = target.armor ?? 0
   return Math.max(1, attacker.weaponPower - armor)
 }
 
-function hitsToKill(attacker, target, type = 'melee') {
-  return Math.ceil(target.totalHitPoints / damagePerHit(attacker, target, type))
+function hitsToKill(attacker, target) {
+  return Math.ceil(target.totalHitPoints / damagePerHit(attacker, target))
 }
 
 function createCombatConfig() {
@@ -86,9 +85,9 @@ test('bandit combat pacing stays in ARPG hit-count ranges', () => {
   assert.equal(hitsToKill(heroSword, banditArcher), 3)
   assert.equal(hitsToKill(heroSword, banditSword), 4)
   assert.equal(hitsToKill(heroSword, banditChief), 8)
-  assert.equal(hitsToKill(heroBow, banditArcher, 'pierce'), 4)
-  assert.equal(hitsToKill(heroBow, banditSword, 'pierce'), 4)
-  assert.equal(hitsToKill(heroBow, banditChief, 'pierce'), 9)
+  assert.equal(hitsToKill(heroBow, banditArcher), 4)
+  assert.equal(hitsToKill(heroBow, banditSword), 5)
+  assert.equal(hitsToKill(heroBow, banditChief), 9)
 })
 
 test('trainable non-siege units use ARPG health pacing against starting hero weapons', () => {
@@ -99,17 +98,20 @@ test('trainable non-siege units use ARPG health pacing against starting hero wea
   assert.equal(hitsToKill(heroSword, units.Priest), 3)
   assert.equal(hitsToKill(heroSword, units.Bowman), 4)
   assert.equal(hitsToKill(heroSword, units.Fantassin), 4)
-  assert.equal(hitsToKill(heroSword, units.Chief), 6)
-  assert.equal(hitsToKill(heroBow, units.Bowman, 'pierce'), 4)
-  assert.equal(hitsToKill(heroBow, units.Fantassin, 'pierce'), 5)
-  assert.equal(hitsToKill(heroBow, units.Chief, 'pierce'), 8)
+  assert.equal(hitsToKill(heroSword, units.Chief), 7)
+  assert.equal(hitsToKill(heroBow, units.Bowman), 4)
+  assert.equal(hitsToKill(heroBow, units.Fantassin), 5)
+  assert.equal(hitsToKill(heroBow, units.Chief), 8)
   assert.equal(units.Hero.totalHitPoints, 45)
 })
 
 test('hero starts without equipped arrows', () => {
   assert.deepEqual(units.Hero.inventory.equipped, {})
   assert.deepEqual(units.Hero.inventory.equippedCounts, {})
-  assert.equal(units.Hero.inventory.equipment.some(item => item.startsWith('arrow_')), false)
+  assert.equal(
+    units.Hero.inventory.equipment.some(item => item.startsWith('arrow_')),
+    false
+  )
 })
 
 test('animals stay quick to resolve with starting hero weapons', () => {
@@ -118,8 +120,8 @@ test('animals stay quick to resolve with starting hero weapons', () => {
 
   assert.equal(hitsToKill(heroSword, animals.Wolf), 4)
   assert.equal(hitsToKill(heroSword, animals.Boar), 4)
-  assert.equal(hitsToKill(heroBow, animals.Wolf, 'pierce'), 4)
-  assert.equal(hitsToKill(heroBow, animals.Boar, 'pierce'), 5)
+  assert.equal(hitsToKill(heroBow, animals.Wolf), 4)
+  assert.equal(hitsToKill(heroBow, animals.Boar), 5)
   assert.equal(hitsToKill(heroSword, animals.Deer), 3)
   assert.equal(hitsToKill(heroSword, animals.Hare), 1)
   assert.equal(hitsToKill(heroSword, animals.BlackGrouse), 1)
@@ -134,11 +136,11 @@ test('starting bandits remain dangerous without deleting the hero instantly', ()
   const banditSword = { ...config.units.BanditSword, ...getEquipmentStats(config.units.BanditSword.equipment) }
   const banditArcher = { ...config.units.BanditArcher, ...getEquipmentStats(config.units.BanditArcher.equipment) }
 
-  assert.equal(hitsToKill(banditChief, hero), 9)
-  assert.equal(hitsToKill(banditSword, hero), 8)
-  // Ceramic arrows add one damage to the bow's four damage per hit.
-  assert.equal(damagePerHit(banditArcher, hero, 'pierce'), 5)
-  assert.equal(hitsToKill(banditArcher, hero, 'pierce'), 9)
+  assert.equal(hitsToKill(banditChief, hero), 12)
+  assert.equal(hitsToKill(banditSword, hero), 9)
+  // Bow (5) + ceramic arrow (1) minus the hero's unified armor (1).
+  assert.equal(damagePerHit(banditArcher, hero), 5)
+  assert.equal(hitsToKill(banditArcher, hero), 9)
 })
 
 test('non-siege enemies and aggressive animals have ARPG attack recovery', () => {

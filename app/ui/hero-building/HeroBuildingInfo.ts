@@ -17,9 +17,9 @@ export function renderHeroBuildingInfo(host: HeroBuildingMenuManager): void {
   }
   if (building) {
     for (const spec of host.getBuildingActionMenuItems(building)) {
-      if (!['heroCampfireSleep', 'heroSetHome'].includes(spec.id ?? '') || spec.hide?.()) continue
+      if (spec.id !== 'heroCampfireSleep' || spec.hide?.()) continue
       const button = host.createButton(building, spec)
-      button.dataset.windowAction = spec.id === 'heroCampfireSleep' ? 'sleep' : 'home'
+      button.dataset.windowAction = 'sleep'
       button.title = buttonMeta(spec)
       host.layout.secondaryActions.appendChild(button)
     }

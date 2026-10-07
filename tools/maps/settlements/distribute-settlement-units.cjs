@@ -13,7 +13,8 @@ const directions = [
 ]
 
 // Offline only: one bounded connectivity search per settlement, never a live relocation.
-function distributeSettlementUnits(state, terrain) {
+function distributeSettlementUnits(state, terrain, roads) {
+  const roadCells = new Set((roads?.cells ?? []).map(([id]) => `${Math.floor(id / roads.stride)}:${id % roads.stride}`))
   const occupied = new Set(state.resources.filter(r => !r.isDestroyed).map(key))
   const entrances = new Set()
   const buildingClearance = new Set()
@@ -67,7 +68,9 @@ function distributeSettlementUnits(state, terrain) {
         queue.push(next)
       }
     }
-    const candidates = queue.filter(p => !entrances.has(key(p)) && !buildingClearance.has(key(p)))
+    const candidates = queue.filter(
+      p => !entrances.has(key(p)) && !buildingClearance.has(key(p)) && !roadCells.has(key(p))
+    )
     const homes = owner.buildings.filter(b =>
       ['House', 'Market', 'Temple', 'Granary', 'StoragePit', 'Forge'].includes(b.type)
     )

@@ -12,6 +12,7 @@ type InventoryActionMetaPart = {
 
 type InventoryActionRowOptions = {
   badge?: string
+  durability?: number | null
   stats?: CombatStatInfo[]
   category?: string
   metaClassName?: string
@@ -45,7 +46,7 @@ export type InventoryActionRowParts = {
 
 function appendInventoryQuantityBadge(host: HTMLElement, quantity: number): void {
   const safeQuantity = Math.max(0, Math.floor(quantity))
-  if (safeQuantity <= 1) return
+  if (safeQuantity < 2) return
   const badge = document.createElement('span')
   badge.className = 'inventory-quantity-badge'
   badge.textContent = `x${safeQuantity}`
@@ -76,6 +77,7 @@ export function createInventoryActionRow(
     .join(' ')
   element.setAttribute('aria-label', options.title)
   if (options.category) element.dataset.itemCategory = options.category
+  if (options.durability != null) element.dataset.equipmentDurability = String(options.durability)
 
   const icon = document.createElement('span')
   icon.className = 'inventory-action-row-icon'

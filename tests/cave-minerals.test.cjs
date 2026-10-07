@@ -55,7 +55,7 @@ test('cave minerals are sparse, finite, flat, reproducible and never block a pas
           floor = Buffer.from(map.floorMask, 'base64'),
           relief = Buffer.from(map.relief, 'base64')
         for (const mineral of map.resources) {
-          assert.ok(['Gold', 'Copper', 'Iron'].includes(mineral.type))
+          assert.ok(['Gold', 'Copper', 'Tin', 'Iron'].includes(mineral.type))
           assert.ok(mineral.quantity >= 3 && mineral.quantity <= 9)
           assert.ok(Math.hypot(mineral.i - map.exits[0].i, mineral.j - map.exits[0].j) >= 4)
           for (let di = -1; di <= 1; di++)

@@ -143,10 +143,16 @@ function findRoute(start, end, terrain, grid, existing) {
   return null
 }
 
-function prepareSettlementRoads(prepared, terrain) {
+function prepareSettlementRoads(prepared, terrain, squares = new Map()) {
   const sites = prepared.settlements.filter(s => ['city', 'village'].includes(s.profile))
   const grid = roadTerrain(prepared, terrain)
   const anchors = sites.map(s => settlementAccess(s, prepared, grid))
+  const hubs = anchors.map(anchor => squares.get(anchor.settlementId) ?? anchor)
+  const access = anchors.map((anchor, index) => {
+    const path = findRoute(anchor, hubs[index], terrain, grid, new Set())
+    if (!path) throw new Error(`${anchor.settlementId}: inaccessible village square`)
+    return path
+  })
   // Label reachable land once: disconnected islands must never cause repeated full-map searches.
   const components = new Uint32Array(grid.count)
   let component = 0
@@ -186,11 +192,12 @@ function prepareSettlementRoads(prepared, terrain) {
     routes = []
   for (const { a, b } of candidates) {
     if (root(a) === root(b)) continue
-    const cells = findRoute(anchors[a], anchors[b], terrain, grid, occupied)
-    if (!cells)
+    const trunk = findRoute(hubs[a], hubs[b], terrain, grid, occupied)
+    if (!trunk)
       throw new Error(
         `Road routing failed inside connected land: ${anchors[a].settlementId} / ${anchors[b].settlementId}`
       )
+    const cells = [...access[a].slice(0, -1), ...trunk, ...access[b].slice(0, -1).reverse()]
     roots[root(b)] = root(a)
     for (const id of cells) occupied.add(id)
     routes.push({ from: anchors[a].settlementId, to: anchors[b].settlementId, cells })
@@ -223,4 +230,32 @@ function prepareSettlementRoads(prepared, terrain) {
     summary: { settlements: anchors.length, routes: routes.length, cells: cells.length, components: groups.length },
   }
 }
-module.exports = { prepareSettlementRoads, roadTerrain }
+function validateSettlementRoads(roads, prepared, terrain) {
+  const grid = roadTerrain(prepared, terrain)
+  const { readRoadLayer } = loadGenerationTs('app/lib/terrain/roadLayer.ts')
+  readRoadLayer(roads, grid.stride)
+  const cells = new Map(roads.cells)
+  for (const [id] of cells) {
+    if (!grid.walkable(Math.floor(id / grid.stride), id % grid.stride))
+      throw new Error(`Prepared road blocked at ${id}`)
+  }
+  const anchors = new Map(roads.anchors.map(anchor => [anchor.settlementId, grid.index(anchor)]))
+  for (const route of roads.routes) {
+    if (route.cells[0] !== anchors.get(route.from) || route.cells.at(-1) !== anchors.get(route.to))
+      throw new Error('Road no longer reaches a settlement entrance')
+    for (let k = 0; k < route.cells.length; k++) {
+      const id = route.cells[k]
+      if (!cells.has(id)) throw new Error('Missing prepared road cell')
+      if (!k) continue
+      const previous = route.cells[k - 1]
+      const a = Math.floor(previous / grid.stride),
+        b = previous % grid.stride
+      const i = Math.floor(id / grid.stride),
+        j = id % grid.stride
+      if (Math.abs(a - i) + Math.abs(b - j) !== 1 || !grid.step(a, b, i, j))
+        throw new Error('Unwalkable prepared road edge')
+    }
+  }
+}
+
+module.exports = { prepareSettlementRoads, roadTerrain, validateSettlementRoads }

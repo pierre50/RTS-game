@@ -93,13 +93,14 @@ test('settings expose both devices as top-level tabs and keep every binding acce
     const actions = all(gamepad)
       .filter(node => node.dataset.bindingAction)
       .map(node => node.dataset.bindingAction)
-    assert.equal(new Set(actions).size, 20)
-    assert.equal(actions.length, 20)
+    assert.equal(new Set(actions).size, 21)
+    assert.equal(actions.length, 21)
+    assert.ok(actions.includes('heroDirectAttack'))
     assert.deepEqual(
       all(groups[3])
         .filter(node => node.dataset.bindingAction)
         .map(node => node.dataset.bindingAction),
-      ['heroUp', 'heroDown', 'heroLeft', 'heroRight']
+      ['destinationConfirm', 'destinationCancel']
     )
     const constructionToggle = groups[1].children[0].children[0]
     constructionToggle.click()

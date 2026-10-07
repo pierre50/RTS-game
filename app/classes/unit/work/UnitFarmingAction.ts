@@ -86,7 +86,7 @@ function harvestFarm(
     if (isHeroControlled(unit)) {
       notifyIfHeroResourceCarryFull(unit)
       stopManualHeroAction(unit)
-    } else unit.sendToDelivery?.()
+    } else if (!sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat)) unit.sendToDelivery?.()
     return
   }
   grantUnitXp(unit, XP_CATEGORIES.farming, gain)

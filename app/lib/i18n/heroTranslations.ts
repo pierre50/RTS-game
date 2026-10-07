@@ -1,4 +1,15 @@
 export const EN_HERO_TRANSLATIONS = {
+  equipmentCondition: 'Condition: {value}/100',
+  equipmentBrokenLabel: 'Broken',
+  equipmentBrokenDescription: 'Broken: no damage or protection. Repair at a forge.',
+  equipmentBrokenMessage: '{item} has broken. Repair it at a forge.',
+  forgeRepairTitle: 'Repair equipment',
+  forgeRepairNothing: 'All your equipment is in good condition.',
+  forgeRepairAction: 'Repair to 100%',
+  forgeRepairSuccess: 'Equipment repaired.',
+  forgeRepairDescription:
+    'Swords wear on contact, bows when fired, armor when you take damage. At 0, weapons cannot attack and armor offers no protection. Repairs use resources and keep the item.',
+
   heroToolInteract: 'Utility',
   heroToolSword: 'Melee weapon',
   heroToolBow: 'Ranged weapon',
@@ -13,6 +24,8 @@ export const EN_HERO_TRANSLATIONS = {
   heroInteractionMount: 'Mount',
   heroInteractionOpen: 'Open',
   heroInteractionDismantle: 'Dismantle',
+  trapDismantleDescription: 'Remove the trap and release any captured animal.',
+  animalLootCount: '{name} — {count} items remaining',
   heroInteractionRecover: 'Recover',
   heroInteractionSleep: 'Sleep',
   heroInteractionSteal: 'Steal',
@@ -87,6 +100,17 @@ export const EN_HERO_TRANSLATIONS = {
 }
 
 export const FR_HERO_TRANSLATIONS = {
+  equipmentCondition: 'État : {value}/100',
+  equipmentBrokenLabel: 'Cassé',
+  equipmentBrokenDescription: 'Cassé : aucun dégât ni protection. À réparer à la forge.',
+  equipmentBrokenMessage: '{item} est cassé. Réparez-le à la forge.',
+  forgeRepairTitle: 'Réparer l’équipement',
+  forgeRepairNothing: 'Tous vos équipements sont en bon état.',
+  forgeRepairAction: 'Réparer à 100 %',
+  forgeRepairSuccess: 'Équipement réparé.',
+  forgeRepairDescription:
+    'Les épées s’usent au contact, les arcs à chaque tir, les armures en recevant des dégâts. À 0, l’arme ne peut plus attaquer et l’armure ne protège plus. La réparation consomme des ressources et conserve l’objet.',
+
   heroToolInteract: 'Utility',
   heroToolSword: 'Arme de poing',
   heroToolBow: 'Arme de jet',
@@ -101,6 +125,8 @@ export const FR_HERO_TRANSLATIONS = {
   heroInteractionMount: 'Monter',
   heroInteractionOpen: 'Ouvrir',
   heroInteractionDismantle: 'Démonter',
+  trapDismantleDescription: 'Retirer le piège et libérer l’animal capturé, le cas échéant.',
+  animalLootCount: '{name} — {count} objets restants',
   heroInteractionRecover: 'Récupérer',
   heroInteractionSleep: 'Dormir',
   heroInteractionSteal: 'Voler',

@@ -36,6 +36,7 @@ function loadMapResources() {
         fiberPlant: 'FiberPlant',
         stone: 'Stone',
         copper: 'Copper',
+        tin: 'Tin',
         iron: 'Iron',
         gold: 'Gold',
         tree: 'Tree',
@@ -48,6 +49,7 @@ function loadMapResources() {
         'FiberPlant',
         'Stone',
         'Copper',
+        'Tin',
         'Iron',
         'Gold',
         'Tree',
@@ -508,6 +510,9 @@ test('neutral wheat groups spawn mature', async () => {
 
   await mapResources.generateNeutralResourceGroupsAsync([{ i: 60, j: 60 }])
 
+  const tinCalls = calls.filter(call => call.type === 'Tin')
+  assert.equal(tinCalls.length, 1)
+  assert.equal(tinCalls[0].quantity, 2)
   const wheatCalls = calls.filter(call => call.type === 'Wheat')
   assert.equal(wheatCalls.length, 2)
   assert(wheatCalls.every(call => call.quantity === 4))
@@ -717,4 +722,14 @@ test('daily respawns defer occupied or reserved sites instead of searching the c
   assert.deepEqual([node.i, node.j, node.quantity, node.totalQuantity], [10, 10, 15, 100])
   assert.equal(runtime.respawnNaturalResource(slot), false)
   assert.equal(map.resources.size, 1)
+})
+
+test('tin deposits remain available across biomes and densities', () => {
+  for (const density of ['low', 'moderate', 'high'])
+    for (const environment of ['Temperate', 'BlackForest', 'Jungle', 'Desert', 'Steppe'])
+      assert.ok(getNeutralResourceGroupCount(density, environment, 'tin', 120) >= 1)
+  const config = require('../public/assets/data/gameplay/resources.json')
+  const atlas = require('../public/assets/graphics/resources/minerals/texture.json')
+  const frames = Object.keys(atlas.frames)
+  for (const asset of config.Tin.assets) assert.ok(frames[asset.frame].includes('_tin_'))
 })

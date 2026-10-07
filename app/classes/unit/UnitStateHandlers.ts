@@ -105,7 +105,7 @@ export function stopUnit(unit: UnitStateHost): void {
   placeStoppedUnit(unit, heroControlled)
   unit.path = []
   unit.stopInterval()
-  if (unit.shelterState?.status === 'outside') {
+  if (unit.shelterState?.status === 'outside' && unit.sleepVisualState === 'sleeping') {
     keepSleepingOutsideVisual(unit)
     unit.actionLocked = true
     return

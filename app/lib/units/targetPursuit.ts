@@ -14,6 +14,7 @@ const targetActions = new Set([
   'forageberry',
   'minegold',
   'minecopper',
+  'minetin',
   'mineiron',
   'minestone',
   'farm',

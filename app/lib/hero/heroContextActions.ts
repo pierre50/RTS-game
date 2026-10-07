@@ -18,6 +18,7 @@ import { canHeroStrikeLockedMine, showIronMiningBlockedMessage } from '../resour
 import { hasEnergyForAction } from '../units/unitEnergy'
 import { applyWorkForAction } from '../../classes/unit/UnitResourceDeliveryCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { Point } from '../../types/grid'
 import type { HeroContextAction } from '../../types/heroTools'
 import { CLICK_TARGET_SEARCH_RANGE, getDirectionalTargets } from './heroTargeting'
 
@@ -204,14 +205,14 @@ function blockContextActionWhileMounted(hero: UnitEntity): boolean {
   return true
 }
 
-export function performContextActionAt(hero: UnitEntity): ToolActionResult {
+export function performContextActionAt(hero: UnitEntity, destination?: Point): ToolActionResult {
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
     target => HERO_CONTEXT_ACTIONS.some(config => config.matches(target)),
     CLICK_TARGET_SEARCH_RANGE
   )
 
-  for (const target of getDirectionalTargets(hero, candidates)) {
+  for (const target of getDirectionalTargets(hero, candidates, undefined, destination)) {
     const config = HERO_CONTEXT_ACTIONS.find(candidate => candidate.matches(target))
     if (!config) continue
     if (!isContextActionTargetReachable(hero, config.action, target)) continue

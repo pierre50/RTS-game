@@ -112,3 +112,19 @@ test('empty and single-settlement worlds have no phantom road cells', () => {
   assert.equal(roads.cells.length, 0)
   assert.equal(roads.anchors.length, 1)
 })
+
+test('planned routes visit the reserved squares and still reach the actual building doors', () => {
+  const { prepared, terrain } = fixture()
+  const squares = new Map([
+    ['a', { i: 12, j: 16 }],
+    ['b', { i: 44, j: 16 }],
+    ['c', { i: 44, j: 40 }],
+  ])
+  const roads = prepareSettlementRoads(prepared, terrain, squares)
+  validate(roads, prepared, terrain)
+  for (const route of roads.routes)
+    for (const site of [route.from, route.to]) {
+      const point = squares.get(site)
+      assert.ok(route.cells.includes(point.i * roads.stride + point.j))
+    }
+})

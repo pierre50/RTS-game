@@ -252,3 +252,93 @@ test('offline inhabitants are spread around buildings and fields with clear entr
     ) <= 5
   )
 })
+
+test('roads are reserved before districts and towers cover distinct village approaches', () => {
+  const { validateSettlementRoads } = require('../tools/maps/settlements/settlement-roads.cjs')
+  const { loadGenerationTs } = require('../tools/maps/load-generation-ts.cjs')
+  const { StartingVillageRoads } = loadGenerationTs('app/services/world/StartingVillageRoads.ts')
+  const towerRange = require('../public/assets/data/gameplay/buildings.json').WatchTower.range
+  for (const [seed, neighbors] of [
+    [
+      41,
+      [
+        [150, 70],
+        [70, 150],
+      ],
+    ],
+    [
+      42,
+      [
+        [30, 70],
+        [70, 150],
+      ],
+    ],
+    [
+      43,
+      [
+        [150, 70],
+        [70, 30],
+      ],
+    ],
+  ]) {
+    const input = {
+      format: 'map-blueprint',
+      version: 2,
+      id: `roads-${seed}`,
+      seed,
+      size: 189,
+      terrain: Array.from({ length: 190 }, () => Array(190).fill('Grass')),
+      resources: [],
+      animals: [],
+      settlements: [
+        { id: 'city', kind: 'city', settlementType: 'city', civ: 'Hellas', local: { i: 70, j: 70 } },
+        ...neighbors.map(([i, j], n) => ({
+          id: `village-${n}`,
+          kind: 'village',
+          settlementType: 'village',
+          civ: 'Hellas',
+          local: { i, j },
+        })),
+      ],
+    }
+    const before = structuredClone(input)
+    const prepared = prepareSettlements(input)
+    assert.deepEqual(input, before)
+    assert.deepEqual(prepareSettlements(input), prepared, `deterministic layout ${seed}`)
+    const terrain = settlementTerrain(input)
+    validateSettlementRoads(prepared.roads, prepared, terrain)
+    const owner = prepared.players.find(p => p.settlementType === 'city')
+    const center = owner.buildings.find(b => b.type === 'TownCenter')
+    const towers = owner.buildings.filter(b => b.type === 'WatchTower')
+    assert.equal(towers.length, 3)
+    const planner = new StartingVillageRoads(prepared.roads)
+    const approaches = planner.entrances(center)
+    assert.ok(approaches.length >= 2, `separate approaches ${seed}`)
+    for (const entry of approaches)
+      assert.ok(
+        towers.some(tower => Math.hypot(tower.i - entry.i, tower.j - entry.j) <= towerRange),
+        `undefended approach ${seed}: ${JSON.stringify(entry)}`
+      )
+    const roads = new Set(prepared.roads.cells.map(([id]) => id))
+    const { footprint } = require('../tools/maps/settlements/validate-settlements.cjs')
+    for (const player of prepared.players)
+      for (const building of player.buildings.slice(1)) {
+        for (const cell of footprint(building))
+          for (let di = -1; di <= 1; di++)
+            for (let dj = -1; dj <= 1; dj++)
+              assert.equal(
+                roads.has((cell.i + di) * prepared.roads.stride + cell.j + dj),
+                false,
+                `${building.type} leaves a road margin`
+              )
+      }
+
+    for (const player of prepared.players)
+      for (const unit of player.units)
+        assert.equal(roads.has(unit.i * prepared.roads.stride + unit.j), false, 'idle spawn off road')
+    const blocked = structuredClone(prepared)
+    const [id] = prepared.roads.cells[0]
+    blocked.resources.push({ type: 'Stone', i: Math.floor(id / prepared.roads.stride), j: id % prepared.roads.stride })
+    assert.throws(() => validateSettlementRoads(prepared.roads, blocked, terrain), /road blocked/)
+  }
+})

@@ -31,10 +31,10 @@ test('loading a hero preserves the entire saved inventory without sharing config
   const saved = JSON.parse(
     JSON.stringify({
       resources: { gold: 17 },
-      equipment: ['bow', 'armor_leather'],
+      equipment: ['bow~condition:34', 'armor_leather~condition:0'],
       equipped: { body: 'armor_leather' },
       equippedCounts: { arrow: 12 },
-      activeWeapons: { melee: 'axe_ceramic', ranged: 'bow', quiver: 'quiver' },
+      activeWeapons: { melee: 'axe_ceramic', ranged: 'bow~condition:77', quiver: 'quiver' },
     })
   )
   const owner = { config: { units: { Hero: { inventory: defaults } } } }
@@ -49,7 +49,10 @@ test('loading a hero preserves the entire saved inventory without sharing config
     return unit
   }
   const restored = create(saved)
-  assert.deepEqual(restored.inventory, saved)
+  assert.deepEqual(restored.inventory, {
+    ...saved,
+    activeWeapons: { melee: 'axe_ceramic', ranged: 'bow~condition:77' },
+  })
   restored.inventory.equipment.pop()
   restored.inventory.activeWeapons.melee = 'changed'
   assert.equal(saved.equipment.length, 2)

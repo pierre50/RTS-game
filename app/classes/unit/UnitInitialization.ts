@@ -1,3 +1,5 @@
+import { removeLegacyQuiver } from '../../lib/equipment/heroInventory'
+import { migrateHelmetInventory } from '../../lib/equipment/helmetVariants'
 import { getVillagerSchedule } from '../../lib/units/village/villagerSchedule'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import type { Texture } from 'pixi.js'
@@ -14,19 +16,16 @@ import {
   attachEntityShadowsToMapSpace,
   cartesianToIsometric,
   getAnimationFrames,
-  getIconPath,
   getInstanceZIndex,
   getEntityMapSpace,
   getEntityCell,
   throttle,
   updateInstanceVisibility,
 } from '../../lib'
-import { heroCanCommand } from '../../lib/chief'
 import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { getHorseColorFromSeed, isHorseColor } from '../../lib/horses/horseColors'
-import { t } from '../../lib/lang'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
@@ -145,8 +144,13 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
     unit.dailySchedule = options.dailySchedule ? { ...options.dailySchedule } : undefined
     getVillagerSchedule(unit)
   }
+  if (options.equipmentDurability) unit.equipmentDurability = { ...options.equipmentDurability }
   const inventory = options.inventory ?? unit.inventory
-  if (inventory) unit.inventory = structuredClone(inventory)
+  if (inventory) {
+    unit.inventory = structuredClone(inventory)
+    migrateHelmetInventory(unit.inventory)
+    removeLegacyQuiver(unit.inventory)
+  }
   unit.mountedOnHorse = options.mountedOnHorse ?? unit.mountedOnHorse
   if (unit.mountedOnHorse) {
     unit.horseColor = isHorseColor(options.horseColor)
@@ -224,34 +228,12 @@ export function loadConfiguredUnitSpritesheets(unit: UnitRuntimeHost): void {
 }
 
 export function setupUnitInterface(unit: UnitRuntimeHost): void {
-  const { menu } = unit.context
   unit.interface = {
     info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
       const data = unit.owner.config.units[unit.type] as UnitConfig
       unit.setDefaultInterface?.(element, data, options)
     },
-    menu:
-      unit.owner.isPlayed && !unit.context.editor
-        ? [
-            ...(unit.showBuildings
-              ? [
-                  {
-                    id: 'build',
-                    icon: getIconPath('002_50721'),
-                    details: () => ({
-                      title: t('buildMenu'),
-                      description: t('buildMenuDescription'),
-                      meta: heroCanCommand(unit.context.controls.heroUnit) ? [] : [t('requiresChief')],
-                    }),
-                    disabled: () => !heroCanCommand(unit.context.controls.heroUnit),
-                    children: Object.keys(unit.owner.config.buildings)
-                      .map(key => menu.getActionBuildingButton?.(key, unit.owner))
-                      .filter((item): item is NonNullable<typeof item> => Boolean(item)),
-                  },
-                ]
-              : []),
-          ]
-        : [],
+    menu: [],
   }
 }
 

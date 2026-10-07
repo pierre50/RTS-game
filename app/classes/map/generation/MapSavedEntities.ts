@@ -1,3 +1,4 @@
+import { assignSettlementNames } from '../../../lib/settlements/settlementNames'
 import { reconcileHouseholds } from '../../../lib/housing/households'
 import { installDeferredVillages, canDeferVillage } from '../../../services/world/distantVillages/DeferredVillageStore'
 import { advanceDeferredVillage } from '../../../services/world/distantVillages/DeferredVillageEconomy'
@@ -140,6 +141,7 @@ export function restoreSavedEntities(
   context: GameContextLike,
   elapsedMs?: number
 ): void {
+  assignSettlementNames(players)
   const deferred = installDeferredVillages(context, elapsedMs)
   const deferredOwners = new Set<PlayerLike>()
   // Register every owner before resolving any saved cross-reference.

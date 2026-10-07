@@ -131,7 +131,7 @@
       "wood": 60,
       "stone": 20
     },
-    "accept": ["wood", "stone", "gold", "copper", "iron"],
+    "accept": ["wood", "stone", "gold", "copper", "tin", "iron", "copperIngot", "bronzeIngot", "ironIngot"],
     "sounds": {
       "burning": ["building-burning", "building-burning-2", "building-burning-3"],
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]

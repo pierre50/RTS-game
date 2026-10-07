@@ -21,7 +21,7 @@ function applySpriteAnimationSpeed(sprite: AnimationSpriteLike | null | undefine
 }
 
 export function applyUnitWalkingAnimationSpeed(unit: UnitEntity, factor: number): void {
-  const safeFactor = Math.max(0, Math.min(1, factor))
+  const safeFactor = Math.max(0, Math.min(2, factor))
   applySpriteAnimationSpeed(unit.sprite, safeFactor)
   applySpriteAnimationSpeed(unit.shadow, safeFactor)
   for (const sprite of (unit as LayeredUnit).appearanceLayerSprites?.values() ?? []) {

@@ -67,6 +67,7 @@ const RESOURCE_TEXTURE_MIGRATIONS: Record<string, { sheet: string; frameOffset: 
   'resources/gold': { sheet: 'resources/minerals', frameOffset: 0 },
   'resources/stone': { sheet: 'resources/minerals', frameOffset: 3 },
   'resources/copper': { sheet: 'resources/minerals', frameOffset: 6 },
+  'resources/tin': { sheet: 'resources/minerals', frameOffset: 12 },
   'resources/iron': { sheet: 'resources/minerals', frameOffset: 9 },
 }
 

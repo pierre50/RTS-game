@@ -1,3 +1,4 @@
+import { instanceIsInActiveOrTeamSight } from '../lib/grid/visibility'
 import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import {
@@ -59,14 +60,22 @@ export class HeroInteractionController {
     if (!target) return false
 
     const hero = this.host.heroUnit
-    if (target === hero) return false
+    if (!hero || target === hero || !isHeroInteractionTargetReachable(hero, null, target)) return false
 
     const player = this.host.context.player
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
-      if ((building.type === BUILDING_TYPES.chest && !building.isBuilt) || building.type === BUILDING_TYPES.trap)
+      if (building.type === BUILDING_TYPES.chest && !building.isBuilt) return false
+      if (
+        building.requiresActiveSightInteraction &&
+        !instanceIsInActiveOrTeamSight(building, player, this.host.context.players)
+      )
         return false
-      if (player && !CAMP_DECORATION_BUILDING_TYPES.some(type => type === building.type))
+      if (
+        player &&
+        building.type !== BUILDING_TYPES.trap &&
+        !CAMP_DECORATION_BUILDING_TYPES.some(type => type === building.type)
+      )
         transferNeutralEntityToPlayer(building, player, { player })
       if (menu?.openHeroBuildingMenu?.(building)) {
         player?.unselectAll?.()

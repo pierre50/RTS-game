@@ -66,6 +66,7 @@ export class AI extends Player {
   foundedGolds!: Set<RuntimeEntity>
   foundedStones!: Set<RuntimeEntity>
   foundedCoppers!: Set<RuntimeEntity>
+  foundedTins!: Set<RuntimeEntity>
   foundedIrons!: Set<RuntimeEntity>
   foundedResources!: Record<string, Set<RuntimeEntity>>
   foundedAnimals!: Set<RuntimeEntity>
@@ -101,6 +102,7 @@ export class AI extends Player {
     this.foundedGolds = new Set()
     this.foundedStones = new Set()
     this.foundedCoppers = new Set()
+    this.foundedTins = new Set()
     this.foundedIrons = new Set()
     this.foundedResources = {
       [RESOURCE_TYPES.fiberPlant]: new Set(),
@@ -110,6 +112,7 @@ export class AI extends Player {
       [RESOURCE_TYPES.stone]: this.foundedStones,
       [RESOURCE_TYPES.gold]: this.foundedGolds,
       [RESOURCE_TYPES.copper]: this.foundedCoppers,
+      [RESOURCE_TYPES.tin]: this.foundedTins,
       [RESOURCE_TYPES.iron]: this.foundedIrons,
     }
     this.foundedAnimals = new Set()

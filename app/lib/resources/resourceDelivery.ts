@@ -14,7 +14,17 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 
 type ResourceKey = keyof ResourceAmount
 
-const RESOURCE_KEYS = RESOURCE_STORAGE_NAMES ?? ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron']
+const RESOURCE_KEYS = RESOURCE_STORAGE_NAMES ?? [
+  'wood',
+  'berry',
+  'meat',
+  'wheat',
+  'stone',
+  'gold',
+  'copper',
+  'tin',
+  'iron',
+]
 
 export function getResourceKeyForLoadingType(loadingType: string | null | undefined): ResourceKey | null {
   if (!loadingType) return null

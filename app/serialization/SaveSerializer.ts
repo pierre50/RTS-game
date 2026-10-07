@@ -16,7 +16,18 @@ import { groupPlayersInteriorBuildings, interiorSaveSpaceId } from './InteriorBu
 import { resourceData } from './ResourceSaveData'
 export { serializeWildAnimal } from './entity/EntitySaveData'
 const DEFAULT_SERIALIZED_MAP_TYPE = 'world-region'
-const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'] as const
+const SERIALIZED_RESOURCE_NAMES = [
+  'wood',
+  'food',
+  'berry',
+  'meat',
+  'wheat',
+  'stone',
+  'gold',
+  'copper',
+  'tin',
+  'iron',
+] as const
 type SerializablePlayer = PlayerLike & {
   abstractProductionRemainder?: Record<string, number>
   offlineBuildingDecision?: string

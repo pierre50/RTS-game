@@ -27,6 +27,10 @@ export function sendUnitToMiningAction(
     if (!unit.sendToCopper) return false
     return unit.sendToCopper(target, immediate)
   }
+  if (action === ACTION_TYPES.minetin) {
+    if (!unit.sendToTin) return false
+    return unit.sendToTin(target, immediate)
+  }
   if (action === ACTION_TYPES.mineiron) {
     if (!unit.sendToIron) return false
     return unit.sendToIron(target, immediate)

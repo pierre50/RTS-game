@@ -9,7 +9,7 @@ import { routeUnitThroughSpacePortal } from '../spacePortal/SpacePortalSystem'
 type RestLeg = { from: RuntimeCell; to: RuntimeCell; portal?: RuntimeMapSpacePortal }
 
 /** Rest uses the same doors in both directions, including between two interiors. */
-function getRestRoute(unit: UnitEntity, target: RuntimeCell): RestLeg[] | null {
+export function getRestRoute(unit: UnitEntity, target: RuntimeCell): RestLeg[] | null {
   const map = unit.context?.map
   if (!map) return null
   let from = getMapSpace(map, unit.spaceId)?.grid[unit.i]?.[unit.j] ?? unit.currentCell ?? map.grid[unit.i]?.[unit.j]

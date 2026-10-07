@@ -67,9 +67,9 @@ function isSurrenderEligible(source: CombatEntity, attacker?: CombatEntity | nul
 function combatWeight(entity: CombatEntity): number {
   const hp = Math.max(0, entity.hitPoints ?? entity.totalHitPoints ?? 0)
   const weaponPower = Math.max(0, getEntityWeaponPower(entity as Parameters<typeof getEntityWeaponPower>[0]))
-  const armor = Math.max(0, entity.meleeArmor ?? 0) + Math.max(0, entity.pierceArmor ?? 0)
+  const armor = Math.max(0, entity.armor ?? 0)
   const buildingBias = entity.family === FAMILY_TYPES.building ? 1.35 : 1
-  return (hp + weaponPower * 8 + armor * 4) * buildingBias
+  return (hp + weaponPower * 8 + armor * 8) * buildingBias
 }
 
 function belongsToSameSide(source: CombatEntity, target: CombatEntity): boolean {

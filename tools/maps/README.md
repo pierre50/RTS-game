@@ -145,8 +145,9 @@ resources retain their normal lifecycle. Wind subscriptions follow render visibi
 
 ## Prepared settlement roads
 
-`world:prepare` now writes a `roads` section in the settlements sidecar, after
-building and field placement. It connects city and village entrance cells;
+`world:prepare` writes a `roads` section in the settlements sidecar. It fixes
+settlement anchors and shared squares first, then plans roads through these squares
+before placing secondary buildings and fields. It connects city and village entrance cells;
 outposts and bandit camps are not destinations. The game bakes the supplied path sprites into its terrain textures, including
 streamed tiles. New saves store the compact layer in `world.roads`; restoration
 uses that snapshot without fetching or reapplying settlement preparations. Older
@@ -168,8 +169,8 @@ length or a direct road for every pair of settlements.
 Road version 1 stores `stride`, entrance `anchors`, `routes` with cell indices,
 and unique `cells` as `[gridIndex, connections]`. `gridIndex = i * stride + j`;
 connection bits are NE=1 (`j-1`), SE=2 (`i+1`), SW=4 (`j+1`), NW=8 (`i-1`).
-Only traversed edges contribute to junction masks. The source seed and final
-settlement layout determine the result; road generation consumes no live RNG.
+Only traversed edges contribute to junction masks. The source seed, terrain and
+settlement cores determine the network; road generation consumes no live RNG.
 
 Generate and inspect the current continent:
 
@@ -182,3 +183,30 @@ python3 tools/maps/preview-roads.py public/maps/worlds/world-test-1000/maps/worl
 The preview requires Pillow and a packed version-2 continent map with its prepared
 sidecar. It writes `reports/roads/roads-overview.png` and `roads-details.png` from
 the actual generated data. These are planning views, not screenshots of gameplay.
+
+
+### Districts and defenses around prepared roads
+
+After planning the network, road cells and a one-cell margin are protected from
+buildings, fields, perimeter walls and relocated resource nodes. This is a placement
+reservation, not an obstacle to walking. Required tower lots are reserved before
+housing; the real towers are installed after the other buildings. Their placement
+uses the configured attack range, prioritizes different road approaches at the
+village outskirts, and discourages clustered towers. When there is no usable road
+approach, the existing peripheral placement remains the fallback. Tower counts
+still come from settlement profiles; outposts gain no artificial road links.
+
+Markets favor the central square and roads. Military buildings favor the inside
+of a road approach. Houses and forges have a softer road preference, while granaries,
+fields and resource depots retain their agricultural/resource priorities. Idle
+inhabitants are distributed off the road after all buildings are finished.
+
+The final validation checks settlement access, all occupied footprints, continuous
+walkable road edges and reciprocal atlas connections. The preparation CLI includes
+these rules in its content hash. Existing saves are not rebuilt or relocated.
+
+Preview real footprints and tower coverage without running the game:
+
+```sh
+python3 tools/maps/preview-settlement-defenses.py public/maps/worlds/world-test-1000/maps/world-test-1000-r0-0.map --prepared /tmp/rts-road-planning/world-test-1000-r0-0.settlements.json --out reports/roads/settlement-defenses.png
+```

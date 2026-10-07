@@ -57,7 +57,7 @@ export function renderCommandFooter({
       if (current) execute(current)
     })
     footer.appendChild(button)
-    if (command.disabled && command.description && ['sleep', 'home'].includes(command.id)) {
+    if (command.disabled && command.description && command.id === 'sleep') {
       const reason = document.createElement('span')
       reason.className = 'game-window-action-reason'
       reason.textContent = command.description

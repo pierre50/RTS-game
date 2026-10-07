@@ -2,7 +2,7 @@ import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
 import type { RenderableInstance } from '../../lib/grid/visibility'
 import type { RuntimeCell } from '../../types/map'
 import type { Viewport } from '../../types/geometry'
-import type { CameraPoint } from './CameraMovement'
+type CameraPoint = { x: number; y: number }
 
 export type CameraVisibleCellsStats = {
   candidates: number

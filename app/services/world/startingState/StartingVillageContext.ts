@@ -49,7 +49,14 @@ export function findStartingSite(
   size: number,
   type: string
 ): SaveGridPoint | null {
-  return village.layout.findSite(village.center, anchor, size, village.player.civ ?? '', type)
+  return village.layout.findSite(
+    village.center,
+    anchor,
+    size,
+    village.player.civ ?? '',
+    type,
+    Number(village.rules.buildingConfig(village.index, 'WatchTower').range) || 6
+  )
 }
 
 export function addStartingBuilding(village: StartingVillage, type: string, fixedPoint?: SaveGridPoint): void {

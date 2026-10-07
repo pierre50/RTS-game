@@ -27,7 +27,7 @@ test('inventory items share a separate stack value while retaining combat detail
           getResourceGoldValue: () => 1,
         },
         '../../lib/equipment/equipmentStats': {
-          getEquipmentCombatStats: () => ({ weaponPower: 6, meleeArmor: 0, pierceArmor: 0 }),
+          getEquipmentCombatStats: () => ({ weaponPower: 6, armor: 0 }),
         },
         '../../lib/lang': {
           t: (key, params) => (key === 'goldShort' ? 'or' : `${key}${params ? JSON.stringify(params) : ''}`),

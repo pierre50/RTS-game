@@ -83,11 +83,7 @@ export class PauseMenu {
         const message = e instanceof Error ? e.message : String(e)
         console.error(`[save] Manual save failed: ${message}`, e)
         menu.showMessage(
-          message === 'MAX_SAVES_REACHED'
-            ? t('maxSavesReached')
-            : message === 'SAVE_RESTART_ELECTRON_REQUIRED'
-              ? t('saveRestartRequired')
-              : t('saveFailed'),
+          message === 'SAVE_RESTART_ELECTRON_REQUIRED' ? t('saveRestartRequired') : t('saveFailed'),
           'warning'
         )
       } finally {

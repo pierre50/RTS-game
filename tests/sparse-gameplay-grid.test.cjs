@@ -121,7 +121,7 @@ test('stale unit and animal paths stop before entering missing cells', () => {
       '../../../lib': {}, './UnitMovementDebug': {}, './UnitMovementHelpers': {},
       '../../../lib/units/visuals/unitWalkingAnimation': {},
       '../../../lib/units/visuals/unitCrouchPose': { resetUnitCrouchPose() {} },
-      '../../../lib/units/unitLocomotion': {}, '../../../lib/buildings/passageCells': {},
+      '../../../lib/units/movement/unitLocomotion': {}, '../../../lib/buildings/passageCells': {},
       '../../../lib/mapSpaces': { getEntitySpaceMapLike: () => map },
     },
   })

@@ -286,6 +286,10 @@ export class UnitCommands {
     return this.sendToMineResource(target, immediate)
   }
 
+  sendToTin(target: RuntimeEntity, immediate = false) {
+    return this.sendToMineResource(target, immediate)
+  }
+
   sendToIron(target: RuntimeEntity, immediate = false) {
     return this.sendToMineResource(target, immediate)
   }

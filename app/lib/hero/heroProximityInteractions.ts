@@ -13,7 +13,7 @@ import { isTalkableNpc } from '../npc/npcInteraction'
 import { isUsableSleepTarget } from './heroSleep'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
-type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'dismantleTrap'
+type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open'
 
 export type HeroProximityInteraction =
   | {
@@ -40,11 +40,6 @@ export type HeroProximityInteraction =
       action: 'open'
       labelKey: 'heroInteractionOpen' | 'heroInteractionOpenMenu' | 'heroInteractionExamine'
       target: RuntimeEntity
-    }
-  | {
-      action: 'dismantleTrap'
-      labelKey: 'heroInteractionDismantle'
-      target: BuildingEntity
     }
 
 export type HeroProximityInteractionOptions = {
@@ -163,7 +158,7 @@ export function resolveHeroProximityInteraction({
   if (isHeroOnInteriorExitCell(hero)) return { action: 'exit', labelKey: 'heroInteractionExit' }
 
   const trap = resolveFacingRecoverableTrap(hero, openEntityTarget)
-  if (trap) return { action: 'dismantleTrap', labelKey: 'heroInteractionDismantle', target: trap }
+  if (trap) return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: trap }
 
   const openableBuilding = resolveFacingOpenableBuilding(hero, openEntityTarget)
   if (openableBuilding) return { action: 'open', labelKey: 'heroInteractionOpen', target: openableBuilding }
@@ -172,7 +167,11 @@ export function resolveHeroProximityInteraction({
   if (isUsableSleepTarget(hero, sleepTarget))
     return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: sleepTarget }
 
-  const building = findBuildingInteriorEntryTarget(hero, buildings)
+  // Resolve the selected entity before unrelated nearby doors or companion horses.
+  const building = findBuildingInteriorEntryTarget(
+    hero,
+    openEntityTarget ? (buildings ?? []).filter(candidate => candidate === openEntityTarget) : buildings
+  )
   if (building) {
     return {
       action: 'enter',
@@ -186,7 +185,7 @@ export function resolveHeroProximityInteraction({
   }
 
   const mountableHorse = findNearestMountableHorse(hero, companionHorse, openEntityTarget)
-  if (mountableHorse) {
+  if (mountableHorse && (!openEntityTarget || mountableHorse === openEntityTarget)) {
     return {
       action: 'mount',
       labelKey: isStoredForeignStableHorse(hero, mountableHorse) ? 'heroInteractionSteal' : 'heroInteractionMount',

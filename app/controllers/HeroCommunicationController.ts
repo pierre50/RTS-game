@@ -20,6 +20,7 @@ type HeroCommunicationHost = {
   commIndicator: Graphics | null
   controls: {
     context: { menu?: { openNpcOrders?: (npcs: UnitEntity[], options?: NpcOrdersOpenOptions) => void } }
+    setNpcGoToPickingHelp?(active: boolean): void
     getCellUnderCursor(): RuntimeCell | null
     getWorldPointUnderCursor(): { x: number; y: number }
     openHeroEntityInteraction(): boolean
@@ -53,16 +54,17 @@ export function updateHeroCommIndicator(controller: HeroCommunicationHost): void
   drawCommIndicatorCells(indicator, hero, radius)
 }
 
-export function endHeroCommCharge(controller: HeroCommunicationHost): void {
+export function endHeroCommCharge(controller: HeroCommunicationHost, groupOnly = false): void {
   const hero = controller.heroUnit
   const elapsed = performance.now() - controller.commChargeStart
   cancelHeroCommCharge(controller)
   if (!hero) return
-  const precisionOnly = elapsed < COMM_INDICATOR_DELAY_MS
+  const precisionOnly = !groupOnly && elapsed < COMM_INDICATOR_DELAY_MS
   const radius = precisionOnly ? 0 : getCommRadiusForHold(elapsed)
   const group = resolveCommGroup(hero, radius, { precisionOnly })
   if (group.length) {
-    controller.controls.context.menu?.openNpcOrders?.(group)
+    // A charged group can be gathered from beyond the normal conversation range.
+    controller.controls.context.menu?.openNpcOrders?.(group, precisionOnly ? undefined : { commRadius: radius })
     return
   }
   if (precisionOnly) controller.controls.openHeroEntityInteraction()
@@ -79,17 +81,20 @@ export function cancelHeroCommCharge(controller: HeroCommunicationHost): void {
 
 export function beginHeroGoToPicking(controller: HeroCommunicationHost, npcs: UnitEntity[]): void {
   controller.pendingGoToNpcs = npcs
+  controller.controls.setNpcGoToPickingHelp?.(true)
 }
 
 export function cancelHeroGoToPicking(controller: HeroCommunicationHost): void {
   const npcs = controller.pendingGoToNpcs
   controller.pendingGoToNpcs = null
+  controller.controls.setNpcGoToPickingHelp?.(false)
   if (npcs?.length) releaseIfStillLooking(npcs)
 }
 
 export function resolveHeroGoTo(controller: HeroCommunicationHost): void {
   const npcs = controller.pendingGoToNpcs
   controller.pendingGoToNpcs = null
+  controller.controls.setNpcGoToPickingHelp?.(false)
   if (!npcs?.length) return
   const cell = controller.controls.getCellUnderCursor()
   if (cell) sendNpcGroupToTarget(npcs, cell, controller.controls.getWorldPointUnderCursor())

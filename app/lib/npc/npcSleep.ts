@@ -8,6 +8,9 @@ export function isNpcStillSleeping(npc: UnitEntity): boolean {
   // A night-time conversation preview still belongs to the ongoing sleep session.
   const rest = npc.shelterState
   return Boolean(
-    rest?.reason === 'sleep' && !rest.mealBreak && rest.status !== 'wakingUp' && shouldVillagerBeAsleep(npc)
+    rest?.reason === 'sleep' &&
+      !rest.mealBreak &&
+      (rest.status === 'inside' || rest.status === 'outside') &&
+      shouldVillagerBeAsleep(npc)
   )
 }

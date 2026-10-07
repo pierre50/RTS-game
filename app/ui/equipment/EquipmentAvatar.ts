@@ -1,3 +1,4 @@
+import { equipmentVisualParts } from '../../lib/equipment/helmetVariants'
 import { renderEquipmentAvatar } from '../../lib/avatar'
 import { dynamicEquipmentVisualKey } from '../../lib/lpc/equipment'
 import { loadDynamicEquipmentAssetQueued } from '../../lib/lpc/lazyEquipmentAssets'
@@ -15,13 +16,17 @@ export function renderEquipmentAvatarLazy(
   performanceMonitor?: EquipmentAvatarPerformanceMonitor | null
 ): boolean {
   if (renderEquipmentAvatar(app, equipment, canvas)) return true
-  const visualEquipment = dynamicEquipmentVisualKey(equipment)
-  if (!visualEquipment) return false
+  const visualEquipment = equipmentVisualParts(equipment).map(dynamicEquipmentVisualKey)
+  if (visualEquipment.some(part => !part)) return false
 
-  void loadDynamicEquipmentAssetQueued(visualEquipment, {
-    metricName: 'lazyEquipmentAvatar.loadAsset',
-    performanceMonitor: performanceMonitor ?? null,
-  })
+  void Promise.all(
+    visualEquipment.map(part =>
+      loadDynamicEquipmentAssetQueued(part!, {
+        metricName: 'lazyEquipmentAvatar.loadAsset',
+        performanceMonitor: performanceMonitor ?? null,
+      })
+    )
+  )
     .then(() => {
       if (canvas.isConnected && renderEquipmentAvatar(app, equipment, canvas)) {
         canvas.dispatchEvent(new Event('equipmentavatarready', { bubbles: true }))

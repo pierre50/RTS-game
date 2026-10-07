@@ -83,9 +83,6 @@ export type AssetOwner = {
 
 const INTERFACE_ICON_SHEETS: Record<string, string> = {
   '50721': 'command-icons',
-  '50731': 'attribute-icons',
-  '50732': 'commodity-icons',
-  '51000': 'pointers/main',
 }
 
 export type BuildingWithAssetOwner = {
@@ -98,6 +95,8 @@ export type BuildingWithAssetOwner = {
 }
 
 export function getIconPath(name: string): string {
+  if (name.startsWith('stat/')) return `assets/icons/attributes/${name.slice('stat/'.length)}.svg`
+  if (name.startsWith('resource/')) return `assets/icons/resources/pixel/${name.slice('resource/'.length)}.png`
   const id = name.split('_')[1]
   const index = name.split('_')[0]
   const sheet = INTERFACE_ICON_SHEETS[id] || id

@@ -1,5 +1,8 @@
 import { Application, TextureStyle } from 'pixi.js'
 import './styles.css'
+import 'simple-keyboard/build/css/index.css'
+import './styles/virtual-keyboard.css'
+import { VirtualKeyboard } from './lib/ui/VirtualKeyboard'
 import Loader from './screens/Loader'
 import { ScreenManager } from './screens/ScreenManager'
 import { DISPLAY_SCALE, getScreenBrightness, onVisualSettingsChange } from './lib/audio/settings'
@@ -14,6 +17,7 @@ TextureStyle.defaultOptions.scaleMode = 'nearest'
     console.error('No #game container found')
     return
   }
+  new VirtualKeyboard()
   const gameRoot = gamebox
 
   function getGameViewSize(): { width: number; height: number } {

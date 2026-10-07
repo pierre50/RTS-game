@@ -35,6 +35,7 @@ const WORK_ACTIONS = new Set([
   'minestone',
   'minegold',
   'minecopper',
+  'minetin',
   'mineiron',
   'build',
   'delivery',

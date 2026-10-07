@@ -1,7 +1,8 @@
+import { syncHeroVillageReport } from './hero-building/HeroVillageReport'
+import { heroTrapButton } from './hero-building/HeroTrapButton'
 import { renderHeroBuildingInfo } from './hero-building/HeroBuildingInfo'
 import { renderHeroBuildingBody } from './hero-building/HeroBuildingBody'
 import { t } from '../lib/lang'
-import { heroHomeButton } from './hero-building/HeroHomeButton'
 import { getBuildingAssetOwner } from '../lib/graphics/assets'
 import { createHeroBuildingUpgrade } from './hero-building/HeroBuildingUpgrade'
 import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
@@ -91,7 +92,6 @@ export class HeroBuildingMenuManager {
   canOpenFor(building: BuildingEntity | null | undefined): building is BuildingEntity {
     const hero = this.menu.context.controls.heroUnit
     if (!hero || !building || building.isDestroyed || building.isDead) return false
-    if (building.type === BUILDING_TYPES.trap && building.isBuilt) return false
     return isHeroInteractionTargetReachable(hero, null, building)
   }
 
@@ -210,6 +210,7 @@ export class HeroBuildingMenuManager {
       this.refresh()
       return
     }
+    syncHeroVillageReport(this.body, this.menu)
     this.renderInfo()
     this.updateProgress()
   }
@@ -218,6 +219,7 @@ export class HeroBuildingMenuManager {
     if (
       this.building?.type !== BUILDING_TYPES.chest &&
       this.building?.type !== BUILDING_TYPES.market &&
+      this.building?.type !== BUILDING_TYPES.townCenter &&
       this.building?.type !== BUILDING_TYPES.forge &&
       this.building?.type !== BUILDING_TYPES.fireCamp
     )
@@ -231,9 +233,8 @@ export class HeroBuildingMenuManager {
 
   getBuildingActionMenuItems(building: BuildingEntity): MenuButtonSpec[] {
     if (!building.isBuilt) return []
+    if (building.type === BUILDING_TYPES.trap) return [heroTrapButton(this.menu, building, () => this.close())]
     const items = this.menu.getActionMenuItems(building)
-    if (building.type === BUILDING_TYPES.house && building.owner === this.menu.context.controls.heroUnit?.owner)
-      return [heroHomeButton(this.menu, building, () => this.refresh()), ...items]
     if (!isSleepTarget(building)) return items
     return [this.getSleepButton(building), ...items]
   }
@@ -294,7 +295,7 @@ export class HeroBuildingMenuManager {
       return
     }
     items
-      .filter(button => !['heroCampfireSleep', 'heroSetHome'].includes(button.id ?? ''))
+      .filter(button => button.id !== 'heroCampfireSleep')
       .filter(button => !button.hide || !button.hide())
       .forEach(button => this.appendActionButton(building, button))
     this.body.classList.toggle(
@@ -308,7 +309,7 @@ export class HeroBuildingMenuManager {
     return Boolean(
       building.isBuilt &&
         building.owner?.label === this.menu.context.player.label &&
-        (['StoragePit', 'Granary'].includes(building.type) ||
+        (['StoragePit', 'Granary', BUILDING_TYPES.townCenter].includes(building.type) ||
           (building.units ?? []).some(type => isTraineeTrainingType(building, type)))
     )
   }

@@ -68,6 +68,7 @@ export class NpcOrdersManager {
   buttons: NestedButtonMenu<NpcOrderMenuId>['buttons']
   opened: boolean
   npcs: UnitEntity[]
+  private commRadius: number | undefined
   private scriptedReplyActive = false
   private dialogueRevision = 0
   private scriptedReplyPanel = document.createElement('div')
@@ -184,6 +185,7 @@ export class NpcOrdersManager {
     const wasSleeping = npcs.length === 1 && isSleepingNpc(npcs[0])
     if (hero) for (const npc of npcs) noticeNpc(npc, hero, false)
     this.npcs = npcs
+    this.commRadius = options.commRadius
     this.opened = true
     this.orderMenu.reset()
     this.closeBag()
@@ -254,6 +256,7 @@ export class NpcOrdersManager {
         context: this.menu.context,
         targets: () => this.npcs.filter(npc => !npc.isDead),
         enabled: () => !this.scriptedReplyActive,
+        openingRadius: () => this.commRadius,
       },
       title,
       content: this.panel,
@@ -317,6 +320,7 @@ export class NpcOrdersManager {
     this.orderMenu.reset()
     const npcs = this.npcs
     this.npcs = []
+    this.commRadius = undefined
     this.stopChatterReveal()
     if (!keepFrozen) releaseIfStillLooking(npcs)
     modal?.close()

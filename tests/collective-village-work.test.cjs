@@ -146,7 +146,7 @@ test('idle villagers of the hero replenish depot defaults without a construction
     i: 8,
     j: 8,
     isBuilt: true,
-    inventory: { resources: { wood: 145, stone: 90, gold: 30, copper: 15, iron: 15 } },
+    inventory: { resources: { wood: 145, stone: 90, gold: 30, copper: 15, tin: 6, iron: 9 } },
   }
   owner.buildings.push(pit)
   updateCollectiveVillage(owner)
@@ -311,4 +311,91 @@ test('reassignment clears the old autonomy before stopping, preventing an old-or
   }
   updateCollectiveVillage(owner)
   assert.deepEqual(unit.orders, ['wood', 'construction'])
+})
+
+test('full wood bag frees exactly one slot to gather the missing stone', () => {
+  const { owner, unit, site } = fixture()
+  unit.inventory.resources = { wheat: 4, wood: 26 }
+  unit.collectiveTask = 'wood'
+  unit.autonomousJob = 'wood'
+  unit.inactif = false
+  site.constructionMaterials.cost = { stone: 10 }
+  updateCollectiveVillage(owner)
+  assert.deepEqual(unit.inventory.resources, { wheat: 4, wood: 25 })
+  assert.equal(unit.collectiveTask, 'stone')
+  assert.deepEqual(unit.orders, ['stone'])
+  updateCollectiveVillage(owner)
+  assert.equal(unit.inventory.resources.wood, 25)
+  unit.inventory.resources.stone = 1
+  updateCollectiveVillage(owner)
+  assert.equal(unit.dest, site)
+  assert.equal(unit.inventory.resources.wood, 25)
+})
+
+test('unavailable replacement work never consumes the blocked cargo', () => {
+  const { owner, unit, site } = fixture()
+  unit.inventory.resources = { wheat: 4, wood: 26 }
+  unit.unavailableJobs = ['stone', 'food']
+  site.constructionMaterials.cost = { stone: 10 }
+  updateCollectiveVillage(owner)
+  assert.deepEqual(unit.inventory.resources, { wheat: 4, wood: 26 })
+})
+
+test('full useful cargo goes to another local construction without deletion', () => {
+  const { owner, unit, site } = fixture()
+  unit.inventory.resources = { wheat: 4, wood: 26 }
+  site.constructionMaterials.cost = { stone: 10 }
+  const other = { ...site, label: 'other', constructionMaterials: { cost: { wood: 20 }, delivered: {}, consumed: {} } }
+  owner.buildings.push(other)
+  updateCollectiveVillage(owner)
+  assert.equal(unit.dest, other)
+  assert.equal(unit.inventory.resources.wood, 26)
+})
+
+test('full bags with only food or equipment are never discarded', () => {
+  for (const resources of [{ wheat: 30 }, {}]) {
+    const { owner, unit, site } = fixture()
+    unit.inventory.resources = resources
+    if (!Object.keys(resources).length) unit.inventory.equipment = Array(30).fill('sword')
+    site.constructionMaterials.cost = { stone: 10 }
+    const before = structuredClone(unit.inventory)
+    updateCollectiveVillage(owner)
+    assert.deepEqual(unit.inventory, before)
+  }
+})
+
+test('an available depot receives the full bag instead of deleting resources', () => {
+  const { owner, unit, site } = fixture()
+  unit.inventory.resources = { wheat: 4, wood: 26 }
+  site.constructionMaterials.cost = { stone: 10 }
+  owner.buildings.push({
+    family: 'building',
+    type: 'StoragePit',
+    owner,
+    i: 11,
+    j: 11,
+    isBuilt: true,
+    inventory: { resources: {} },
+  })
+  let deliveries = 0
+  unit.sendToDelivery = () => {
+    deliveries++
+    return true
+  }
+  updateCollectiveVillage(owner)
+  assert.equal(unit.inventory.resources.wood, 26)
+  assert.equal(deliveries, 1)
+  assert.deepEqual(unit.orders, [])
+})
+
+test('hero and followers never discard resources through collective work', () => {
+  for (const mode of [{ controlMode: 'hero' }, { followingHero: true }]) {
+    const { owner, unit, site } = fixture()
+    Object.assign(unit, mode)
+    unit.inventory.resources = { wood: 50 }
+    site.constructionMaterials.cost = { stone: 10 }
+    updateCollectiveVillage(owner)
+    assert.equal(unit.inventory.resources.wood, 50)
+    assert.deepEqual(unit.orders, [])
+  }
 })

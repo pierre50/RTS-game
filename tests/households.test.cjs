@@ -64,19 +64,6 @@ test('loaded interiors replace planned beds; removing a bed never regenerates it
   homes.reconcileHouseholds(owner)
   assert.notEqual(resident.homeHouseLabel, house.label)
 })
-test('hero chooses a vacant home, releases the previous one, and cannot evict another household', () => {
-  const { owner, add } = fixture()
-  const resident = add('Resident')
-  const hero = add('Hero'); hero.type = 'Hero'
-  homes.reconcileHouseholds(owner)
-  assert.equal(hero.homeHouseLabel, undefined)
-  const [occupied, first, second] = owner.buildings
-  assert.equal(homes.claimHeroHome(owner, hero, occupied), false)
-  assert.equal(homes.claimHeroHome(owner, hero, first), true)
-  assert.equal(homes.claimHeroHome(owner, hero, second), true)
-  assert.equal(homes.getHouseResidents(owner, first).length, 0)
-  assert.equal(resident.homeHouseLabel, occupied.label)
-})
 test('a death releases a bed, preserves the surviving partner’s home and does not create a new couple', () => {
   const { owner, add } = fixture()
   const a = add('Alice', 'female'), b = add('Bob')
@@ -120,7 +107,8 @@ test('hero house remains reserved while travelling and saved references survive 
   const hero = add('Hero'); hero.type = 'Hero'
   homes.reconcileHouseholds(owner)
   const house = owner.buildings[0]
-  assert.equal(homes.claimHeroHome(owner, hero, house), true)
+  house.heroHomeResident = { label: hero.label, name: hero.name }
+  hero.homeHouseLabel = house.label
   owner.units = []
   const saved = JSON.parse(JSON.stringify(owner))
   homes.reconcileHouseholds(saved)
@@ -128,24 +116,6 @@ test('hero house remains reserved while travelling and saved references survive 
   assert.equal(homes.getVacantHomeCount(saved), 2)
   homes.reconcileHouseholds({ units: [hero], buildings: [] })
   assert.equal(hero.homeHouseLabel, house.label)
-})
-
-
-test('choosing a home in another region releases the old saved house', () => {
-  const { setHeroHome } = loadTsModule('app/lib/housing/heroHome.ts')
-  const { owner, add } = fixture()
-  const hero = add('Hero'); hero.type = 'Hero'; hero.owner = owner
-  homes.reconcileHouseholds(owner)
-  const oldHero = { type: 'Hero', label: hero.label, homeHouseLabel: 'old-home', homeBedLabel: 'old-bed' }
-  const oldHouse = { type: 'House', label: 'old-home', heroHomeResident: { label: hero.label } }
-  const state = { players: [{ units: [oldHero], buildings: [oldHouse] }] }
-  const context = { players: [owner], getWorldGraph: () => ({ nodes: { old: {} } }), getCampaignWorldState: () => state,
-    getCampaignEconomy: () => ({ regions: { old: { initialState: structuredClone(state) } } }) }
-  const house = owner.buildings[0]; house.owner = owner
-  assert.equal(setHeroHome(context, hero, house), true)
-  assert.equal(oldHouse.heroHomeResident, undefined)
-  assert.equal(oldHero.homeHouseLabel, house.label)
-  assert.equal(oldHero.homeBedLabel, hero.homeBedLabel)
 })
 
 

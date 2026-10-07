@@ -60,10 +60,13 @@ function fixture({ refused = false, mirrored = false } = {}) {
   return { ...api, hero, bed, cell, owner, isBedOccupied, callbacks: () => callbacks, finishWake: () => finishWake() }
 }
 
-test('bed blocks sleep when reserved by an NPC, too far away or in another room', () => {
+test('hero can borrow a reserved bed but cannot use an occupied, distant or other-room bed', () => {
   const f = fixture()
   const npc = { shelterState: { restTarget: f.bed, status: 'movingToRest' } }
   f.owner.units.push(npc)
+  assert.equal(f.getHeroSleepBlockedReason(f.hero, f.bed), null)
+  Object.assign(npc, { i: 4, j: 3, spaceId: 'room' })
+  Object.assign(npc.shelterState, { status: 'outside', targetCell: { i: 4, j: 3, spaceId: 'room' } })
   assert.equal(f.getHeroSleepBlockedReason(f.hero, f.bed), 'heroBedSleepOccupied')
   npc.shelterState.status = 'wakingUp'
   assert.equal(f.getHeroSleepBlockedReason(f.hero, f.bed), null)
@@ -93,3 +96,18 @@ for (const ending of ['complete', 'cancel', 'refused']) {
     assert.equal(f.isBedOccupied(npc, f.bed), false)
   })
 }
+
+test('borrowing a household bed keeps its assignment but makes it unavailable to its NPC', () => {
+  const f = fixture()
+  f.bed.label = 'assigned-bed'
+  const npc = {
+    owner: f.owner,
+    context: f.hero.context,
+    homeBedLabel: f.bed.label,
+    shelterState: { status: 'movingToRest', restTarget: f.bed },
+  }
+  f.owner.units.push(npc)
+  assert.equal(f.sleepHeroAtTarget(f.hero, f.bed), true)
+  assert.equal(f.isBedOccupied(npc, f.bed), true)
+  assert.equal(npc.homeBedLabel, f.bed.label)
+})

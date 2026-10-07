@@ -19,6 +19,7 @@ import {
   SPEED_PRESETS,
   CAMERA_ZOOM_PRESETS,
 } from '../../lib/audio/settings'
+import { getVirtualKeyboardLayout, setVirtualKeyboardLayout } from '../../lib/input/virtualKeyboardSettings'
 import { ModalTabs } from '../Tabs'
 import { buildControlsPages } from './controlsSettings'
 
@@ -83,6 +84,19 @@ function createSettingsTabs({
         setLang(val)
         if (onLangChange) onLangChange()
       }
+    )
+  )
+
+  gamePanel.appendChild(
+    buildSelectRow(
+      t('virtualKeyboardLayout'),
+      [
+        { value: 'auto', label: t('virtualKeyboardLayoutAuto') },
+        { value: 'azerty', label: 'AZERTY' },
+        { value: 'qwerty', label: 'QWERTY' },
+      ],
+      getVirtualKeyboardLayout(),
+      setVirtualKeyboardLayout
     )
   )
 

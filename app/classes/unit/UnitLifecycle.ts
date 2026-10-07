@@ -119,9 +119,6 @@ export class UnitLifecycle {
     unit.unselect?.()
     if (unit.owner) {
       unit.owner.population--
-      if (unit.owner.isPlayed && unit.owner.selectedBuilding && unit.owner.selectedBuilding.displayPopulation) {
-        menu?.updateInfo?.(MENU_INFO_IDS.populationText, unit.owner.population + '/' + unit.owner.populationMax)
-      }
       const index = unit.owner.units.indexOf(unit)
       if (index >= 0) {
         unit.owner.units.splice(index, 1)

@@ -1,3 +1,5 @@
+import { equipmentBaseKey } from './equipmentCondition'
+import { migrateHelmetInventory } from './helmetVariants'
 import type { UnitEntity } from '../../types/entities'
 
 // Loose items sitting in a bag (distinct from the fixed equipped-gear slots, which only a hero
@@ -8,8 +10,19 @@ export function getUnitEquipmentBagCount(unit: UnitEntity): number {
   return unit.inventory?.equipment?.length ?? 0
 }
 
+export function removeLegacyQuiver(inventory: NonNullable<UnitEntity['inventory']>): void {
+  if (inventory.equipment) {
+    for (let i = inventory.equipment.length - 1; i >= 0; i--) {
+      if (equipmentBaseKey(inventory.equipment[i]!) === 'quiver') inventory.equipment.splice(i, 1)
+    }
+  }
+  if (inventory.activeWeapons) delete inventory.activeWeapons.quiver
+}
+
 export function getHeroInventory(hero: UnitEntity): Required<NonNullable<UnitEntity['inventory']>> {
   hero.inventory = hero.inventory ?? {}
+  migrateHelmetInventory(hero.inventory)
+  removeLegacyQuiver(hero.inventory)
   return Object.assign(hero.inventory, {
     resources: hero.inventory.resources ?? {},
     equipment: hero.inventory.equipment ?? [],
@@ -20,7 +33,7 @@ export function getHeroInventory(hero: UnitEntity): Required<NonNullable<UnitEnt
 }
 
 export function removeHeroInventoryItem(hero: UnitEntity | null | undefined, item: string, count = 1): boolean {
-  if (!hero || !item || !Number.isFinite(count)) return false
+  if (!hero || !item || equipmentBaseKey(item) === 'quiver' || !Number.isFinite(count)) return false
   const inventory = getHeroInventory(hero)
   const bag = inventory.equipment
   const amount = Math.max(1, Math.floor(count))
@@ -34,13 +47,14 @@ export function removeHeroInventoryItem(hero: UnitEntity | null | undefined, ite
 }
 
 export function addHeroInventoryItem(hero: UnitEntity | null | undefined, item: string, count = 1): boolean {
-  if (!hero || !item || !Number.isFinite(count)) return false
+  if (!hero || !item || equipmentBaseKey(item) === 'quiver' || !Number.isFinite(count)) return false
   const inventory = getHeroInventory(hero)
   pushEquipmentCopies(inventory.equipment, item, Math.max(1, Math.floor(count)))
   return true
 }
 
 export function pushEquipmentCopies(bag: string[], equipment: string, count: number): void {
+  if (equipmentBaseKey(equipment) === 'quiver') return
   for (let i = 0; i < count; i++) {
     bag.push(equipment)
   }

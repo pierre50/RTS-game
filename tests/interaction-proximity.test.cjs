@@ -17,7 +17,9 @@ function setup() {
       constructor(options) { this.options = options }
       close() { this.closed = true }
     } },
-    '../lib/hero/heroActionRange': { isHeroInteractionSessionInRange: (hero, target) => hero && target.near },
+    '../lib/hero/heroActionRange': {
+      isHeroInteractionSessionInRange: (hero, target, radius) => hero && (target.near || radius >= target.distance),
+    },
   } })
   return { context, tasks, createInspectionModal, tick: () => [...tasks.values()].forEach(fn => fn()) }
 }
@@ -60,6 +62,20 @@ test('groups stay open near any participant and scripted dialogue can suspend ch
   tick()
   assert.equal(tasks.size, 1)
   context.controls.heroUnit = null
+  tick()
+  assert.equal(modal.closed, true)
+})
+
+test('the opening radius is read live on every distance check', () => {
+  const { context, createInspectionModal, tick } = setup()
+  let radius = 4
+  const modal = createInspectionModal({
+    proximity: { context, targets: () => [{ near: false, distance: 4 }], openingRadius: () => radius },
+    onClose() {},
+  })
+  tick()
+  assert.equal(modal.closed, undefined)
+  radius = undefined
   tick()
   assert.equal(modal.closed, true)
 })

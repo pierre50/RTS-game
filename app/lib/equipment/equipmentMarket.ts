@@ -1,3 +1,5 @@
+import { isHelmetDecoration, equipmentVisualParts } from './helmetVariants'
+import { equipmentBaseKey, getEquipmentDurability } from './equipmentCondition'
 import { FORGE_FAMILIES } from './forgeUpgrades'
 import { UNIT_TYPES, type RESOURCE_STORAGE_NAMES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
@@ -61,6 +63,10 @@ const RESOURCE_GOLD_VALUES: Record<ResourceStorageName, number> = {
   stone: 2,
   gold: 1,
   copper: 3,
+  tin: 4,
+  copperIngot: 11,
+  bronzeIngot: 12,
+  ironIngot: 17,
   iron: 5,
 }
 
@@ -140,14 +146,20 @@ function equipmentBaseValue(equipment: DynamicEquipmentKey): number {
 
 function isMarketPurchasableEquipment(equipment: string): boolean {
   return (
-    !MARKET_BLOCKED_EQUIPMENT.has(equipment) && !MARKET_BLOCKED_PREFIXES.some(prefix => equipment.startsWith(prefix))
+    !isHelmetDecoration(equipment) &&
+    !MARKET_BLOCKED_EQUIPMENT.has(equipment) &&
+    !MARKET_BLOCKED_PREFIXES.some(prefix => equipment.startsWith(prefix))
   )
 }
 
 export function getEquipmentGoldValue(equipment: string): number {
+  const parts = equipmentVisualParts(equipment)
+  if (parts.length > 1) return parts.reduce((sum, part) => sum + getEquipmentGoldValue(part), 0)
+  const conditionFactor = 0.15 + 0.85 * ((getEquipmentDurability(equipment) ?? 100) / 100)
+  equipment = equipmentBaseKey(equipment)
   if (!DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey)) return 0
   const key = equipment as DynamicEquipmentKey
-  return Math.max(1, Math.floor(equipmentBaseValue(key) + metalTierValue(key)))
+  return Math.max(1, Math.floor((equipmentBaseValue(key) + metalTierValue(key)) * conditionFactor))
 }
 
 export function getResourceGoldValue(resource: keyof ResourceAmount): number {

@@ -22,8 +22,9 @@ export function getMiningPickaxe(unit: MiningActor | null | undefined): string {
   ]
     .filter((item): item is string => Boolean(item && Object.hasOwn(PICKAXE_TIERS, item)))
     .sort((a, b) => PICKAXE_TIERS[b] - PICKAXE_TIERS[a])
-  if (carried[0]) return carried[0]
-  return resolveForgeEquipment('pickaxe_ceramic', unit?.type === 'Hero' ? {} : unit?.owner)
+  const researched = resolveForgeEquipment('pickaxe_ceramic', unit?.owner)
+  if (carried[0] && (unit?.type !== 'Hero' || PICKAXE_TIERS[carried[0]] > PICKAXE_TIERS[researched])) return carried[0]
+  return researched
 }
 
 export function hasIronMiningPickaxe(unit: MiningActor | null | undefined): boolean {

@@ -189,61 +189,6 @@ test('own building actions survive owner object restore by label', () => {
   )
 })
 
-test('cancel training button is a single global building action', () => {
-  const messages = []
-  const { factory, player } = createFactory({ hero: {}, messages })
-  const calls = []
-  const building = {
-    family: 'building',
-    type: 'Barracks',
-    owner: player,
-    queue: ['Fantassin', 'Bowman'],
-    interface: { menu: [] },
-    cancelAllUnitTraining: () => {
-      calls.push('cancelAll')
-      return true
-    },
-  }
-
-  const button = factory.getCancelUnitTrainingButton(building)
-  assert.equal(button.hide(), false)
-  button.onClick(building)
-  assert.deepEqual(calls, ['cancelAll'])
-})
-
-test('cancel training button hides when no unit training exists', () => {
-  const messages = []
-  const { factory, player } = createFactory({ hero: {}, messages })
-  const building = {
-    family: 'building',
-    type: 'Barracks',
-    owner: player,
-    queue: [],
-    interface: { menu: [] },
-  }
-
-  const button = factory.getCancelUnitTrainingButton(building)
-  assert.equal(button.hide(), true)
-})
-
-test('cancel training button ignores villagers only heading to training', () => {
-  const messages = []
-  const { factory, player } = createFactory({ hero: {}, messages })
-  const building = {
-    family: 'building',
-    type: 'Barracks',
-    owner: player,
-    queue: [],
-    trainingQueue: [],
-    loading: null,
-    interface: { menu: [] },
-  }
-  player.units = [{ dest: building, trainingTargetType: 'Fantassin', isDead: false }]
-
-  const button = factory.getCancelUnitTrainingButton(building)
-  assert.equal(button.hide(), true)
-})
-
 test('building training status button is hidden without an active queue and has no buy action', () => {
   const { factory, player } = createFactory({ hero: {}, messages: [] })
   player.config.units.Fantassin = { cost: { food: 50 } }

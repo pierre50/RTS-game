@@ -69,7 +69,9 @@ test('Bronze arrow recipes never require iron, and starting infantry needs no me
   })
   const bronzeArrows = HERO_CRAFT_RECIPES.find(recipe => recipe.id === 'arrow_bronze')
   assert.equal(bronzeArrows.cost.iron, undefined)
-  assert.ok(bronzeArrows.cost.copper > 0)
+  assert.ok(bronzeArrows.cost.bronzeIngot > 0)
+  const bronze = HERO_CRAFT_RECIPES.find(recipe => recipe.id === 'bronzeIngot')
+  assert.deepEqual(bronze.cost, { copper: 2, tin: 1, wood: 2 })
 })
 
 test('legacy technology data is discarded while current upgrades survive loading', () => {

@@ -30,7 +30,7 @@ test('soldier experience unlocks pieces while forge upgrades independently choos
   assert.ok(archer.includes('armor_mail_copper'))
 })
 
-test('upgraded tools unlock village iron mining without changing the hero inventory', () => {
+test('upgraded tools unlock village iron mining for the hero too without rewriting carried equipment', () => {
   const { getMiningPickaxe, hasIronMiningPickaxe } = loadTsModule('app/lib/resources/miningEquipment.ts')
   const owner = { age: 2, forgeUpgrades: { pickaxes: 1 } }
   const worker = { type: 'Villager', owner }
@@ -39,11 +39,12 @@ test('upgraded tools unlock village iron mining without changing the hero invent
   owner.forgeUpgrades.pickaxes = 2
   assert.equal(getMiningPickaxe(worker), 'pickaxe_bronze')
   assert.equal(hasIronMiningPickaxe(worker), true)
-  assert.equal(hasIronMiningPickaxe(hero), false)
+  assert.equal(hasIronMiningPickaxe(hero), true)
+  assert.deepEqual(hero.inventory.equipment, ['pickaxe_copper'])
   hero.inventory.equipment.push('pickaxe_iron')
   assert.equal(getMiningPickaxe(hero), 'pickaxe_iron')
   assert.equal(rules.getForgeGatherBonus(owner, 'goldminer', 'Villager'), 2)
-  assert.equal(rules.getForgeGatherBonus(owner, 'goldminer', 'Hero'), 0)
+  assert.equal(rules.getForgeGatherBonus(owner, 'goldminer', 'Hero'), 2)
   assert.equal(rules.getForgeGatherBonus(owner, 'woodcutter', 'Villager'), 0)
   assert.equal(rules.getForgeBuildMultiplier({ forgeUpgrades: { hammers: 2 } }, 'Villager'), 1.5)
 })
@@ -51,7 +52,7 @@ test('upgraded tools unlock village iron mining without changing the hero invent
 test('forge purchase revalidates ownership, chief, proximity, cost and expected tier', () => {
   const refreshed = []
   let reachable = true
-  const { researchForgeUpgrade } = loadTsModule('app/lib/equipment/forgeResearch.ts', {
+  const { researchVillageUpgrade } = loadTsModule('app/lib/equipment/villageResearch.ts', {
     mocks: {
       '../hero/heroActionRange': { isHeroInteractionTargetReachable: () => reachable },
       './equipmentStats': { refreshUnitEquipmentStats: unit => refreshed.push(unit.type) },
@@ -72,28 +73,29 @@ test('forge purchase revalidates ownership, chief, proximity, cost and expected 
   const hero = { owner: player, type: 'Hero', isChief: true }
   const soldier = { type: 'Fantassin', experience: { melee: 1000 }, syncAppearanceLayers() {} }
   player.units.push(hero, soldier, { type: 'Villager' }, { type: 'Fantassin', isDead: true })
-  const forge = { type: 'Forge', isBuilt: true, owner: player }
+  const forge = { type: 'TownCenter', isBuilt: true, owner: player }
+  assert.equal(researchVillageUpgrade(player, { ...forge, type: 'Forge' }, 'weapons', 1, hero), false)
   const before = structuredClone(player.stock)
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 2, hero), false)
-  assert.equal(researchForgeUpgrade(player, { ...forge, owner: {} }, 'weapons', 1, hero), false)
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 1, { ...hero, isChief: false }), false)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 2, hero), false)
+  assert.equal(researchVillageUpgrade(player, { ...forge, owner: {} }, 'weapons', 1, hero), false)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 1, { ...hero, isChief: false }), false)
   reachable = false
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 1, hero), false)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 1, hero), false)
   reachable = true
   for (const invalid of [{ isBuilt: false }, { isDead: true }, { isDestroyed: true }])
-    assert.equal(researchForgeUpgrade(player, { ...forge, ...invalid }, 'weapons', 1, hero), false)
+    assert.equal(researchVillageUpgrade(player, { ...forge, ...invalid }, 'weapons', 1, hero), false)
   assert.deepEqual(player.stock, before)
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 1, hero), true)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 1, hero), true)
   assert.equal(player.forgeUpgrades.weapons, 1)
-  assert.deepEqual(refreshed, ['Fantassin', 'Villager'])
+  assert.deepEqual(refreshed, ['Hero', 'Fantassin', 'Villager'])
   assert.deepEqual(soldier.experience, { melee: 1000 })
   assert.equal(player.stock.copper, before.copper - 20)
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 1, hero), false)
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 2, hero), true)
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 3, hero), true)
-  assert.equal(researchForgeUpgrade(player, forge, 'weapons', 4, hero), false)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 1, hero), false)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 2, hero), true)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 3, hero), true)
+  assert.equal(researchVillageUpgrade(player, forge, 'weapons', 4, hero), false)
   player.stock.copper = 0
-  assert.equal(researchForgeUpgrade(player, forge, 'pickaxes', 1, hero), false)
+  assert.equal(researchVillageUpgrade(player, forge, 'pickaxes', 1, hero), false)
 })
 
 test('save snapshots preserve independent forge families', () => {
@@ -128,4 +130,16 @@ test('unit appearance uses the selected family and keeps corpse equipment stable
   assert.equal(getLayerRenderState(unit, layer, 'walkingSheet')?.spritesheet, sheet)
   unit.lootEquipment = []
   assert.equal(getLayerRenderState(unit, layer, 'walkingSheet'), null)
+})
+
+test('hero work tools follow village research while personal combat equipment stays individual', () => {
+  const owner = { forgeUpgrades: { axes: 3, hammers: 2, weapons: 3, arrows: 3, armor: 3 } }
+  const hero = { type: 'Hero', owner }
+  assert.equal(rules.resolveUnitForgeEquipment('axe_ceramic', hero), 'axe_iron')
+  assert.equal(rules.resolveUnitForgeEquipment('hammer_ceramic', hero), 'hammer_bronze')
+  assert.equal(rules.resolveUnitForgeEquipment('sword_copper', hero), 'sword_copper')
+  assert.equal(rules.resolveUnitForgeEquipment('bow', hero), 'bow')
+  assert.equal(rules.resolveUnitForgeEquipment('armor_mail_copper', hero), 'armor_mail_copper')
+  assert.equal(rules.getForgeGatherBonus(owner, 'woodcutter', 'Hero'), 3)
+  assert.equal(rules.getForgeBuildMultiplier(owner, 'Hero'), 1.5)
 })

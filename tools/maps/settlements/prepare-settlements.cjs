@@ -1,11 +1,12 @@
 const { loadGenerationTs } = require('../load-generation-ts.cjs')
-const { prepareSettlementRoads } = require('./settlement-roads.cjs')
+const { prepareSettlementRoads, validateSettlementRoads } = require('./settlement-roads.cjs')
 const { settlementTerrain } = require('./settlement-terrain.cjs')
 const { prepareBanditCamps } = require('../prepare-bandit-camps.cjs')
 const { distributeSettlementUnits } = require('./distribute-settlement-units.cjs')
 const { validateSettlements } = require('./validate-settlements.cjs')
 const { relocateSettlementAnimals, stockSettlementStables } = require('./settlement-animals.cjs')
 const { assignContinentVillages } = loadGenerationTs('app/lib/campaign/continentVillagePlacement.ts')
+const { SETTLEMENT_PROFILES } = loadGenerationTs('app/config/settlementProfiles.ts')
 const { applyVillageStartingState } = loadGenerationTs('app/services/world/VillageStartingState.ts')
 const { factionIdForCivilization } = loadGenerationTs('app/lib/campaign/playerRoster.ts')
 const { populateVillageBase } = loadGenerationTs('app/services/world/VillageBaseState.ts')
@@ -67,9 +68,36 @@ function prepareSettlements(source) {
     populateVillageBase(player, state.players.length - 1, site.local, spatial, rules, {})
     sites.push({ ...site, ownerLabel: label })
   }
-  const generated = applyVillageStartingState(state, {}, terrain, rules)
+  let roads
+  const generated = applyVillageStartingState(state, {}, terrain, rules, {
+    prepareLayout(core, layout) {
+      const coreSites = sites.map(site => ({
+        ...site,
+        profile: core.players.find(player => player.label === site.ownerLabel).settlementType,
+      }))
+      const squares = new Map()
+      for (const site of coreSites) {
+        const owner = core.players.find(player => player.label === site.ownerLabel)
+        const anchor = owner.buildings[0]
+        squares.set(site.id, layout.prepareCore(anchor))
+      }
+      roads = prepareSettlementRoads({ ...core, settlements: coreSites }, terrain, squares)
+      layout.reserveRoads(roads)
+      for (const site of coreSites) {
+        const owner = core.players.find(player => player.label === site.ownerLabel)
+        const tower = configFor(owner.civ).buildings.WatchTower
+        layout.reserveDefenseSites(
+          owner.buildings[0],
+          SETTLEMENT_PROFILES[owner.settlementType].buildings.WatchTower ?? 0,
+          tower.size,
+          tower.range,
+          owner.civ
+        )
+      }
+    },
+  })
   stockSettlementStables(generated, blueprint.seed)
-  distributeSettlementUnits(generated, terrain)
+  distributeSettlementUnits(generated, terrain, roads)
   generated.animals = structuredClone(blueprint.animals ?? [])
   relocateSettlementAnimals(generated, terrain, blueprint)
   // A prepared spawn is an idle position, not a saved live movement or economic task.
@@ -97,7 +125,8 @@ function prepareSettlements(source) {
     animals: generated.animals,
   }
   result.summary = validateSettlements(result, terrain, result.heroSpawns)
-  result.roads = prepareSettlementRoads(result, terrain)
+  validateSettlementRoads(roads, result, terrain)
+  result.roads = roads
   result.summary.roads = result.roads.summary
   return result
 }

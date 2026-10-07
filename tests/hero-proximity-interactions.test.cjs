@@ -204,8 +204,8 @@ test('hero proximity interaction can recover a visible foreign trap', () => {
   }
 
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: building }), {
-    action: 'dismantleTrap',
-    labelKey: 'heroInteractionDismantle',
+    action: 'open',
+    labelKey: 'heroInteractionOpenMenu',
     target: building,
   })
 })
@@ -716,8 +716,8 @@ test('a filled trap offers the same dismantling action as an empty trap', () => 
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const trap = { type: 'Trap', isBuilt: true, containedAnimalType: 'Fox', reachable: true, i: 6, j: 7 }
   assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: trap }), {
-    action: 'dismantleTrap',
-    labelKey: 'heroInteractionDismantle',
+    action: 'open',
+    labelKey: 'heroInteractionOpenMenu',
     target: trap,
   })
 })
@@ -753,4 +753,27 @@ test('nearby furniture offers its interaction menu', () => {
     labelKey: 'heroInteractionOpenMenu',
     target,
   })
+})
+
+test('a selected construction site is not replaced by a nearby entrance', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const entrance = { i: 5, isBuilt: true, j: 5, type: 'TownCenter' }
+  const site = { family: 'building', type: 'House', isBuilt: false }
+  const interaction = resolveHeroProximityInteraction({
+    buildings: [entrance],
+    hero: makeHero(),
+    openEntityTarget: site,
+  })
+  assert.equal(interaction.target, site)
+  assert.equal(interaction.action, 'open')
+})
+
+test('a selected NPC is not replaced by a nearby companion horse', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const hero = makeHero()
+  const npc = { family: 'unit', talkable: true, owner: hero.owner }
+  const horse = { family: 'animal', type: 'Horse', x: 100, y: 248, tamingStatus: 'tamed' }
+  const interaction = resolveHeroProximityInteraction({ hero, companionHorse: horse, openEntityTarget: npc })
+  assert.equal(interaction.target, npc)
+  assert.equal(interaction.action, 'communicate')
 })

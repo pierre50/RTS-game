@@ -67,6 +67,7 @@ export type SaveEntityState = {
   }
   cavePosition?: { caveId: string; i: number; j: number }
   cave?: CaveDefinition
+  settlementName?: string
   placementMirrored?: boolean
   buildingLevel?: number
   homeHouseLabel?: string
@@ -145,6 +146,7 @@ export type SaveEntityState = {
   reservePolicy?: DepotReservePolicy
   trainingExtra?: SavedTrainingExtra
   loop?: boolean
+  equipmentDurability?: Record<string, number>
   lootEquipment?: string[]
   marketGold?: number
   marketStock?: string[]
@@ -217,6 +219,7 @@ export type SavePlayerState = PlayerSetupConfig & {
   colorHex?: string
   corpses?: SaveEntityState[]
   copper?: number
+  tin?: number
   food?: number
   berry?: number
   meat?: number

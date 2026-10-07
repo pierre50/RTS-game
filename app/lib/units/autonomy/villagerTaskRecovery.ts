@@ -132,6 +132,7 @@ function routeStoredTask(unit: UnitEntity, task: VillagerStoredTask, dest: Runti
     case ACTION_TYPES.minestone:
     case ACTION_TYPES.minegold:
     case ACTION_TYPES.minecopper:
+    case ACTION_TYPES.minetin:
     case ACTION_TYPES.mineiron:
       return issueTaskCommand(unit, dest, action, () => sendUnitToMiningAction(unit, dest, action, true))
     case ACTION_TYPES.build:

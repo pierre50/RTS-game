@@ -1,0 +1,118 @@
+/* A docked input surface, sharing the game's control and command styles. */
+.virtual-keyboard {
+  position: fixed;
+  z-index: 2147483647;
+  inset: auto 0 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--ui-gap-6);
+  max-height: calc(100dvh - env(safe-area-inset-top));
+  overflow: auto;
+  box-sizing: border-box;
+  padding: var(--ui-gap-8) max(var(--ui-gap-12), env(safe-area-inset-right))
+    max(var(--ui-gap-4), env(safe-area-inset-bottom)) max(var(--ui-gap-12), env(safe-area-inset-left));
+  color: var(--main-text-color);
+  background: var(--main-primary-color);
+  border-top: var(--panel-border);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-base);
+  text-shadow: var(--text-shadow-ui);
+  cursor: var(--game-pointer, auto);
+}
+.virtual-keyboard > * {
+  width: min(800px, 100%);
+  min-width: 0;
+  box-sizing: border-box;
+}
+.virtual-keyboard-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-16);
+}
+.virtual-keyboard-title {
+  flex: 0 1 auto;
+  max-width: 35%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+}
+.virtual-keyboard-preview {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: var(--ui-gap-4) var(--ui-control-padding-x);
+  color: var(--main-text-color);
+  background: var(--form-surface-color);
+  border: var(--ui-control-border);
+  border-radius: var(--main-border-radius);
+  overflow: auto;
+  white-space: pre;
+}
+/* Keep the edited form in the remaining viewport while the keyboard is open. */
+.modal.virtual-keyboard-host {
+  bottom: var(--virtual-keyboard-height, 0px);
+  box-sizing: border-box;
+}
+.modal.virtual-keyboard-host > .modal-panel {
+  max-height: 100%;
+}
+.virtual-keyboard .hg-theme-default {
+  background: transparent;
+  border-radius: var(--main-border-radius);
+  font-family: var(--font-family-ui);
+  padding: 0;
+}
+.virtual-keyboard .hg-row:not(:last-child) {
+  margin-bottom: var(--ui-gap-5);
+}
+.virtual-keyboard .hg-row .hg-button:not(:last-child) {
+  margin-right: var(--ui-gap-5);
+}
+.virtual-keyboard .hg-theme-default .hg-button {
+  background: var(--form-surface-color);
+  color: var(--main-text-color);
+  border: var(--ui-control-border);
+  border-radius: var(--main-border-radius);
+  box-shadow: none;
+  height: clamp(var(--font-size-title), 4.5dvh, var(--ui-control-height-compact));
+  min-width: 0;
+  padding: var(--ui-gap-5);
+  font-size: var(--font-size-base);
+  text-shadow: var(--text-shadow-ui);
+  cursor: inherit;
+  transition:
+    border-color var(--ui-transition-fast),
+    background-color var(--ui-transition-fast);
+}
+.virtual-keyboard .hg-theme-default .hg-button:hover {
+  background: var(--window-slot-hover-bg);
+  border-color: var(--ui-control-border-hover);
+}
+.virtual-keyboard .hg-theme-default .hg-button:is(.is-selected, .hg-selectedButton, :focus-visible) {
+  background: var(--window-selected-bg);
+  border-color: var(--ui-control-border-focus);
+  outline: none;
+}
+.virtual-keyboard .hg-theme-default .hg-button:is(.hg-activeButton, :active) {
+  background: var(--surface-accent-medium);
+  border-color: var(--ui-control-border-active);
+}
+.virtual-keyboard > .game-window-footer {
+  padding: var(--ui-gap-4) 0 0;
+  gap: var(--ui-gap-4) var(--ui-gap-16);
+}
+.virtual-keyboard-footer .game-window-command {
+  padding: var(--ui-gap-4) var(--ui-gap-5);
+  min-height: 0;
+}
+@media (max-width: 600px) {
+  .virtual-keyboard {
+    padding: var(--ui-gap-6);
+  }
+  .virtual-keyboard .hg-theme-default .hg-button {
+    font-size: var(--font-size-xs);
+    padding: var(--ui-gap-1);
+  }
+}

@@ -1,8 +1,10 @@
-import { addHeroInventoryItem, removeHeroInventoryItem } from '../equipment/equipmentLoot'
+import { FORGE_EQUIPMENT_RECIPES } from './heroForgeRecipes'
+import { addHeroInventoryItem, removeHeroInventoryItem, getHeroInventory } from '../equipment/equipmentLoot'
 import {
   getMissingPlayerResources,
   getPlayerResourceTotals,
   withdrawChestResources,
+  syncPlayerResourceFieldsFromChests,
 } from '../resources/playerResourceTotals'
 import type { ResourceAmount } from '../../types/common'
 import type { UnitEntity } from '../../types/entities'
@@ -10,11 +12,14 @@ import type { PlayerLike } from '../../types/player'
 
 export type HeroCraftRecipe = {
   station: 'forge' | 'campfire'
-  category: 'equipment' | 'arrows' | 'cooking' | 'potions'
+  category: 'equipment' | 'arrows' | 'cooking' | 'potions' | 'ingots'
+  forgeGroup?: 'weapons' | 'armor' | 'shields'
+  materialKey?: string
   descriptionKey?: string
   iconResource?: keyof ResourceAmount
   id: string
   labelKey: string
+  outputResource?: 'copperIngot' | 'bronzeIngot' | 'ironIngot'
   outputEquipment: string
   outputCount: number
   cost: ResourceAmount
@@ -35,6 +40,24 @@ const HERO_CONSUMABLE_HEALING: Record<string, number> = {
 }
 
 export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
+  ...FORGE_EQUIPMENT_RECIPES,
+  ...(['copperIngot', 'bronzeIngot', 'ironIngot'] as const).map(resource => ({
+    id: resource,
+    station: 'forge' as const,
+    category: 'ingots' as const,
+    labelKey: resource,
+    descriptionKey: 'craftIngotDescription',
+    iconResource: resource,
+    outputResource: resource,
+    outputEquipment: '',
+    outputCount: 1,
+    cost:
+      resource === 'copperIngot'
+        ? { copper: 3, wood: 2 }
+        : resource === 'bronzeIngot'
+          ? { copper: 2, tin: 1, wood: 2 }
+          : { iron: 3, wood: 2 },
+  })),
   {
     id: HERO_GRILLED_MEAT_ITEM,
     station: 'campfire',
@@ -117,7 +140,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_copper',
     outputCount: 1,
-    cost: { wood: 5, feather: 2, copper: 2 },
+    cost: { wood: 5, feather: 2, copperIngot: 1 },
   },
   {
     id: 'arrow_bronze',
@@ -127,7 +150,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_bronze',
     outputCount: 1,
-    cost: { wood: 5, feather: 2, copper: 3 },
+    cost: { wood: 5, feather: 2, bronzeIngot: 1 },
   },
   {
     id: 'arrow_iron',
@@ -137,7 +160,7 @@ export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     descriptionKey: 'craftArrowDescription',
     outputEquipment: 'arrow_iron',
     outputCount: 1,
-    cost: { wood: 5, feather: 2, iron: 2 },
+    cost: { wood: 5, feather: 2, ironIngot: 1 },
   },
 ]
 
@@ -179,6 +202,13 @@ export function craftHeroRecipe(
   const cost = Object.fromEntries(Object.entries(recipe.cost).map(([resource, amount]) => [resource, amount * count]))
   if (!withdrawChestResources(player, cost, { hero })) return false
 
+  if (recipe.outputResource) {
+    const inventory = getHeroInventory(hero)
+    inventory.resources[recipe.outputResource] =
+      (inventory.resources[recipe.outputResource] ?? 0) + recipe.outputCount * count
+    syncPlayerResourceFieldsFromChests(player)
+    return true
+  }
   for (let i = 0; i < recipe.outputCount * count; i++) {
     addHeroInventoryItem(hero, recipe.outputEquipment)
   }

@@ -95,18 +95,15 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
 
 const UNIT_OVERRIDES: Record<string, Partial<UnitConfig>> = {}
 
-const UNIT_COMBAT_BALANCE_OVERRIDES: Record<string, Partial<Pick<UnitConfig, 'meleeArmor' | 'pierceArmor'>>> = {
+const UNIT_COMBAT_BALANCE_OVERRIDES: Record<string, Partial<Pick<UnitConfig, 'armor'>>> = {
   [UNIT_TYPES.banditChief]: {
-    meleeArmor: 1,
-    pierceArmor: 1,
+    armor: 1,
   },
   [UNIT_TYPES.banditSword]: {
-    meleeArmor: 1,
-    pierceArmor: 0,
+    armor: 1,
   },
   [UNIT_TYPES.banditArcher]: {
-    meleeArmor: 0,
-    pierceArmor: 0,
+    armor: 0,
   },
 }
 

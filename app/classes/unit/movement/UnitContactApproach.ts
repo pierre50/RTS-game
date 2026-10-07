@@ -1,3 +1,5 @@
+import { applyUnitWalkingAnimationSpeed } from '../../../lib/units/visuals/unitWalkingAnimation'
+import { getSprintMoveFactor, recordSprintMovement } from '../../../lib/units/movement/unitSprint'
 import { isHeroControlled } from '../../../lib/units/unitControl'
 import {
   markVillagerAutonomyTargetRejected,
@@ -32,13 +34,20 @@ export function tryStartUnitContactApproach(
     isTargetValid: () => sameMapSpace(unit, target) && Boolean(unit.getActionCondition?.(target, action)),
     isCurrent: () => unit.dest === target && unit.action === action,
     sample: () => sampleActionApproach(unit, target, action),
-    move: ({ point, distance }) =>
-      distance > 0 &&
-      moveDirect(
+    move: ({ point, distance }) => {
+      if (distance <= 0) return false
+      const factor = getSprintMoveFactor(unit, true, true)
+      const beforeX = unit.x
+      const beforeY = unit.y
+      const moved = moveDirect(
         (point.x - unit.x) / distance,
         (point.y - unit.y) / distance,
-        Math.min(unit.speed ?? 1, CONTACT_APPROACH.maxStep, distance)
-      ),
+        Math.min((unit.speed ?? 1) * factor, CONTACT_APPROACH.maxStep * factor, distance)
+      )
+      recordSprintMovement(unit, Math.hypot(unit.x - beforeX, unit.y - beforeY), STEP_TIME, factor)
+      if (moved) applyUnitWalkingAnimationSpeed(unit, factor)
+      return moved
+    },
     begin: () => {
       unit.setDest?.(target)
       unit.action = action

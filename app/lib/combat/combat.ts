@@ -3,26 +3,21 @@ import { getGameDifficultyCombatBalance } from '../../config/gameDifficultyBalan
 import { getEntityWeaponPower, UNARMED_UNIT_WEAPON_POWER } from '../equipment/equipmentStats'
 import { isFriendlyTarget } from './combatRelations'
 import { angleDelta, getPointsDegree } from '../maths'
-import type { CombatDamageType, CombatEntity, CombatOwnerLike } from '../../types/combat'
+import type { CombatEntity, CombatOwnerLike } from '../../types/combat'
 
 export { evaluateCombatMorale } from './combatMorale'
 export { getActionCondition, isValidCondition, isWheatMature } from './combatActionConditions'
 export { isFriendlyTarget } from './combatRelations'
-export type { ActionProps, CombatDamageType, CombatEntity } from '../../types/combat'
+export type { ActionProps, CombatEntity } from '../../types/combat'
 export type { Condition } from '../../types/config'
-
-function getArmorForDamageType(target: CombatEntity, damageType: CombatDamageType): number {
-  return damageType === 'pierce' ? (target.pierceArmor ?? 0) : (target.meleeArmor ?? 0)
-}
 
 function getDamage(
   source: CombatEntity,
   target: CombatEntity,
-  damageType: CombatDamageType,
   baseDamage = getEntityWeaponPower(source as Parameters<typeof getEntityWeaponPower>[0])
 ): number {
   const weaponPower = baseDamage
-  const armor = Math.max(0, getArmorForDamageType(target, damageType))
+  const armor = Math.max(0, target.armor ?? 0)
   const minimumDamage = weaponPower <= UNARMED_UNIT_WEAPON_POWER ? UNARMED_UNIT_WEAPON_POWER : 1
   return Math.max(minimumDamage, weaponPower - armor)
 }
@@ -77,11 +72,10 @@ export function getHitPointsWithDamage(
   source: CombatEntity,
   target: CombatEntity,
   defaultDamage?: number,
-  bonusDamage = 0,
-  damageType: CombatDamageType = 'melee'
+  bonusDamage = 0
 ): number {
   if (isFriendlyTarget(source, target)) return target.hitPoints ?? 0
-  const rawDamage = getDamage(source, target, damageType, defaultDamage) + Math.max(0, bonusDamage)
+  const rawDamage = getDamage(source, target, defaultDamage) + Math.max(0, bonusDamage)
   const difficultyDamage = rawDamage * getCombatDifficultyDamageMultiplier(source, target)
   const damage = applyHeroDefenseDamage(source, target, difficultyDamage)
   return Math.max(0, (target.hitPoints ?? 0) - damage)

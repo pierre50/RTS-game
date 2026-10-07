@@ -328,29 +328,6 @@ test('local camera centers oversized viewport axes independently', () => {
   assert.equal(oversized.visibleTop + oversized.visibleHeight / 2, 960)
 })
 
-test('local camera movement never slides along a diamond or moves vertically twice', () => {
-  for (const [direction, dx, dy] of [
-    ['left', -20, 0],
-    ['right', 20, 0],
-    ['up', 0, -20],
-    ['down', 0, 20],
-  ]) {
-    const controller = createLocalCamera()
-    controller.set(0, 960)
-    const before = { ...controller.camera }
-    controller.move(direction, 20, false, 1)
-    assert.equal(controller.camera.x, before.x + dx)
-    assert.equal(controller.camera.y, before.y + dy)
-  }
-  const controller = createLocalCamera()
-  controller.set(-10000, 960)
-  const before = { ...controller.camera }
-  controller.move('left', 20, false, 1)
-  assert.deepEqual(controller.camera, before)
-  controller.move('down', 20, false, 1)
-  assert.deepEqual(controller.camera, { x: before.x, y: before.y + 20 })
-})
-
 test('local camera bounds do not apply to interiors', () => {
   const controller = createLocalCamera()
   controller.context.map.activeSpaceId = 'interior:house'

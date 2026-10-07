@@ -1,3 +1,6 @@
+import { bundleHelmetDecorations, equipmentVisualParts } from './helmetVariants'
+import { equipmentBaseKey, withEquipmentDurability } from './equipmentCondition'
+import { getUnitEquipmentTier } from '../units/unitExperience'
 import { equipHeroInventoryItemData } from './heroEquipmentData'
 import { t } from '../lang'
 import { getUnitResourceCarryRemaining } from '../resources/resourceDelivery'
@@ -6,7 +9,6 @@ import type { UnitConfig } from '../../types/config'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
 import { RESOURCE_STORAGE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { refreshBakedLpcUnitAssets } from '../lpc'
-import { getUnitEquipmentTier } from '../units/unitExperience'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
 import { addHeroInventoryItem, getHeroInventory, pushEquipmentCopies } from './heroInventory'
 
@@ -29,7 +31,7 @@ export type EquipmentStack = {
 }
 
 function cleanEquipment(items: readonly string[]): string[] {
-  return items.filter(item => typeof item === 'string' && item.length > 0)
+  return items.filter(item => typeof item === 'string' && item.length > 0 && equipmentBaseKey(item) !== 'quiver')
 }
 
 function randomArrowLootCount(
@@ -77,7 +79,11 @@ function cleanResourceAmount(resources: ResourceAmount | null | undefined): Reso
 
 export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
   if (!unit.isDead || unit.isDestroyed) return []
-  if (Array.isArray(unit.lootEquipment)) return unit.lootEquipment
+  if (Array.isArray(unit.lootEquipment)) {
+    const bundled = bundleHelmetDecorations(cleanEquipment(unit.lootEquipment))
+    unit.lootEquipment.splice(0, unit.lootEquipment.length, ...bundled)
+    return unit.lootEquipment
+  }
 
   const config = unit.owner?.config.units[unit.type]
   const isVillagerWithWorkTool = unit.type === UNIT_TYPES.villager && Boolean(unit.work)
@@ -89,9 +95,12 @@ export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
         unit.owner ?? {},
         getUnitEquipmentTier(unit, config?.category),
         unit.owner?.civ
-      )
+      ).map(item => {
+        const durability = unit.equipmentDurability?.[equipmentBaseKey(item)]
+        return durability == null ? item : withEquipmentDurability(item, durability)
+      })
 
-  unit.lootEquipment = expandCorpseLootArrowStack(unit, cleanEquipment(equipment), config)
+  unit.lootEquipment = expandCorpseLootArrowStack(unit, bundleHelmetDecorations(cleanEquipment(equipment)), config)
   return unit.lootEquipment
 }
 
@@ -100,15 +109,18 @@ export function initializeUnitCorpseLootEquipment(unit: UnitEntity): string[] {
   unit.lootEquipment = undefined
   const loot = getUnitCorpseLootEquipment(unit)
   if (loot.length || !Array.isArray(previousLoot)) return loot
-  unit.lootEquipment = previousLoot
-  return previousLoot
+  unit.lootEquipment = bundleHelmetDecorations(cleanEquipment(previousLoot))
+  return unit.lootEquipment
 }
 
 export function getUnitCorpseLootResources(unit: UnitEntity): ResourceAmount {
   if (!unit.isDead || unit.isDestroyed) return {}
   const resources = cleanResourceAmount(unit.inventory?.resources)
-  if (unit.inventory) unit.inventory.resources = resources
-  return resources
+  unit.inventory ??= {}
+  unit.inventory.resources ??= {}
+  for (const key of Object.keys(unit.inventory.resources)) delete unit.inventory.resources[key as keyof ResourceAmount]
+  Object.assign(unit.inventory.resources, resources)
+  return unit.inventory.resources
 }
 
 export function pickupCorpseResource(
@@ -151,8 +163,11 @@ export function pickupCorpseEquipment(
 
   loot.splice(index, 1)
   if (Array.isArray(corpse.equipment)) {
-    const equipmentIndex = corpse.equipment.indexOf(equipment)
-    if (equipmentIndex >= 0) corpse.equipment.splice(equipmentIndex, 1)
+    for (const part of [equipment, ...equipmentVisualParts(equipment)]) {
+      const equipmentIndex = corpse.equipment.indexOf(part)
+      if (equipmentIndex >= 0) corpse.equipment.splice(equipmentIndex, 1)
+      if (part === equipment && equipmentIndex >= 0) break
+    }
   }
 
   addHeroInventoryItem(hero, equipment)
@@ -190,13 +205,6 @@ export function unequipHeroInventorySlot(
     inventory.equippedCounts[slot] = count - unequipCount
   }
   if (equipment) pushEquipmentCopies(inventory.equipment, equipment, unequipCount)
-  if (slot === 'helmet' && unequipCount >= count && inventory.equipped.helmetDecor) {
-    const decor = inventory.equipped.helmetDecor
-    const decorCount = getHeroEquippedItemCount(hero, 'helmetDecor')
-    delete inventory.equipped.helmetDecor
-    delete inventory.equippedCounts.helmetDecor
-    pushEquipmentCopies(inventory.equipment, decor, decorCount)
-  }
   refreshUnitEquipmentStats(hero)
   refreshBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)

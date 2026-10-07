@@ -12,6 +12,7 @@ const COLORS: Record<string, string> = {
   Gold: '#e5bb45',
   Iron: '#8a839a',
   Copper: '#ce8659',
+  Tin: '#d8cfb7',
   MedicinalHerb: '#8abb69',
   ToxicHerb: '#9077a8',
   FiberPlant: '#79a674',

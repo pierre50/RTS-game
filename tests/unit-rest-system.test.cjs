@@ -2,6 +2,9 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+// These lifecycle cases use tiny maps; wall-clock scheduling is exercised separately.
+test.beforeEach(t => t.mock.method(performance, 'now', () => 0))
+
 function loadModule(relativePath, mocks) {
   return loadTsModule(relativePath, { mocks })
 }
@@ -2263,12 +2266,14 @@ test('rest checks keep retrying blocked sleep without rebuilding the roster', ()
 test('RPG villagers without houses rest outside in the evening and sleep at night', () => {
   const calls = []
   const owner = { type: 'AI', developmentMode: 'static', units: [], buildings: [] }
-  const villager = createUnit(owner)
+  const villager = createUnit(owner, { sittingSheet: {} })
   const context = createContext(19, [owner], calls)
   villager.context = context
   const UnitRestSystem = loadUnitRestSystem(calls)
   const system = new UnitRestSystem(context)
   assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.currentSheet, 'sittingSheet')
+  assert.notEqual(villager.sleepVisualState, 'sleeping')
   context.dayNight.state.hour = 23
   system.update()
   assert.equal(villager.shelterState.status, 'outside')
@@ -2688,15 +2693,85 @@ for (const hour of [6, 12, 19]) {
     const UnitRestSystem = loadUnitRestSystem(calls)
     const system = new UnitRestSystem(context)
     let followed = false
-    assert.equal(system.wakeRestingUnitForOrder(unit, () => {
-      followed = true
-    }), true)
+    assert.equal(
+      system.wakeRestingUnitForOrder(unit, () => {
+        followed = true
+      }),
+      true
+    )
     assert.equal(followed, true)
     assert.equal(unit.shelterState, null)
     assert.equal(unit.sleepVisualState, null)
     assert.equal(unit.actionLocked, false)
     assert.equal(unit.currentSheet, 'standingSheet')
-    assert.equal([...context.scheduler.tasks.values()].some(task => task.name === 'unit.sleepWake'), false)
+    assert.equal(
+      [...context.scheduler.tasks.values()].some(task => task.name === 'unit.sleepWake'),
+      false
+    )
     system.destroy()
+  })
+}
+
+test('a house completed during the evening redirects an outdoor villager to its bed', () => {
+  const {
+    units: [unit],
+    owner,
+    context,
+    system,
+    house: bed,
+  } = eveningShelterScenario()
+  const house = {
+    label: 'new-house',
+    type: 'House',
+    owner,
+    isBuilt: true,
+    i: 5,
+    j: 5,
+    hitPoints: 100,
+    totalHitPoints: 100,
+  }
+  owner.buildings.push(house)
+  system.notifyBedAvailable(house)
+  system.update()
+  assert.equal(unit.shelterState.restTarget, bed)
+  assert.equal(unit.shelterState.status, 'movingToRest')
+  assert.notEqual(unit.sleepVisualState, 'sleeping')
+  unit.i = unit.dest.i
+  unit.j = unit.dest.j
+  system.update()
+  assert.equal(unit.shelterState.restTarget, bed)
+  context.dayNight.state.hour = 23
+  system.update()
+  assert.equal(unit.currentSheet, 'dyingSheet')
+  assert.equal(unit.sleepVisualState, 'sleeping')
+})
+
+test('a newly available bed can replace a trip toward an outdoor rest spot', () => {
+  const {
+    units: [unit],
+    system,
+    house: bed,
+  } = eveningShelterScenario()
+  unit.shelterState.status = 'movingToRest'
+  system.notifyBedAvailable(bed)
+  system.update()
+  assert.equal(unit.shelterState.restTarget, bed)
+  assert.equal(unit.dest, unit.shelterState.targetCell)
+})
+
+for (const status of ['outside', 'inside']) {
+  test(`nightly rest repairs a missing sleeping pose ${status}`, () => {
+    const {
+      units: [unit],
+      context,
+      system,
+    } = eveningShelterScenario()
+    context.dayNight.state.hour = 23
+    unit.shelterState.status = status
+    unit.sleepVisualState = 'sleeping'
+    unit.currentSheet = 'standingSheet'
+    system.update()
+    assert.equal(unit.currentSheet, 'dyingSheet')
+    assert.equal(unit.sleepVisualState, 'sleeping')
   })
 }

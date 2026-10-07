@@ -112,13 +112,12 @@ export class AIMilitary {
     const range =
       (instance.family === FAMILY_TYPES.unit ? getUnitCombatRange(instance as UnitEntity) : instance.range) ?? 0
     const speed = instance.speed ?? config.speed ?? 0
-    const meleeArmor = instance.meleeArmor ?? config.meleeArmor ?? 0
-    const pierceArmor = instance.pierceArmor ?? config.pierceArmor ?? 0
+    const armor = instance.armor ?? config.armor ?? 0
 
     let power = 0
     power += totalHitPoints / 18
     power += weaponPower * (1 + Math.min(range, 8) * 0.08)
-    power *= 1 + (meleeArmor + pierceArmor) * 0.04
+    power *= 1 + armor * 0.08
     power *= 1 + Math.min(speed, 1.6) * 0.12
 
     if (range > 1) power *= 1.08

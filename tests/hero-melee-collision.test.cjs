@@ -46,21 +46,24 @@ test('dead targets and entities in another map space cannot be hit', () => {
   assert.equal(geometry.isContactTouching(hero, { ...targetAt(25), spaceId: 'interior:house' }, 'sword'), false)
 })
 
-function setupSwing(initialTargets) {
+function setupSwing(initialTargets, sprintOverride) {
   const aggressions = []
   let candidates = initialTargets
   let impact
   const hits = []
+  const damageOptions = []
   const sounds = []
   const hero = { ...heroAtOrigin(), inventory: { activeWeapons: { melee: 'sword_iron' } } }
   const tools = loadTsModule('app/lib/hero/heroMeleeTools.ts', {
     mocks: {
+      ...(sprintOverride ? { '../units/movement/unitSprint': sprintOverride } : {}),
       '../combat': {
         getActionCondition: (_hero, target) => target.hitPoints > 0 && !target.isDead && !target.nonHostile,
         prepareAutomaticParry: () => {},
       },
       '../combat/combatHit': {
-        applyCombatHit: (_source, target) => {
+        applyCombatHit: (_source, target, options) => {
+          damageOptions.push(options)
           hits.push(target)
           return { damageDealt: 4 }
         },
@@ -98,6 +101,7 @@ function setupSwing(initialTargets) {
   return {
     hero,
     hits,
+    damageOptions,
     aggressions,
     sounds,
     tools,
@@ -254,10 +258,14 @@ test('NPC abandons its final approach after a new order', () => {
 test('NPC melee impact applies the shared geometry even when legacy arrival says true', () => {
   let callbacks
   let damage = 0
+  const optionsSeen = []
+  const sprint = loadTsModule('app/lib/units/movement/unitSprint.ts')
   const { UnitCombat } = loadTsModule('app/classes/unit/UnitCombat.ts', {
     mocks: {
+      '../../lib/units/movement/unitSprint': sprint,
       '../../lib': {
-        applyCombatHit: () => {
+        applyCombatHit: (_source, _target, options) => {
+          optionsSeen.push(options)
           damage++
           return { killed: false }
         },
@@ -272,7 +280,11 @@ test('NPC melee impact applies the shared geometry even when legacy arrival says
           callbacks = options
         },
       },
-      '../../lib/equipment/equipmentStats': { getUnitCombatRange: () => undefined },
+      '../../lib/equipment/equipmentStats': {
+        getUnitCombatRange: () => undefined,
+        getEntityWeaponPower: () => 4,
+        getConfiguredEntityEquipment: () => [],
+      },
       '../../lib/units/unitExperience': { getCombatXpBonus: () => 0, XP_CATEGORIES: { melee: 'melee' } },
       '../../lib/combat/combatBehavior': { markCombatAttack: () => {} },
       '../../lib/entities/slashRecoveryAnimation': {},
@@ -305,6 +317,17 @@ test('NPC melee impact applies the shared geometry even when legacy arrival says
   target.x = 30
   callbacks.onReadyToAttack(target)
   assert.equal(damage, 1)
+  Object.assign(npc, { action: 'attack', energy: 10, totalEnergy: 10, context: { scheduler: { elapsedMs: 0 } } })
+  target.i = 6
+  for (let frame = 0; frame < 20; frame++) {
+    npc.context.scheduler.elapsedMs += 20
+    sprint.recordSprintMovement(npc, 2, 20, sprint.getSprintMoveFactor(npc, true, true))
+  }
+  callbacks.onAttackPrepared(target)
+  callbacks.onReadyToAttack(target)
+  assert.equal(optionsSeen.at(-1).defaultDamage, 5.4)
+  callbacks.onReadyToAttack(target)
+  assert.equal(optionsSeen.at(-1).defaultDamage, undefined, 'following swings use normal damage')
 })
 
 for (const family of ['unit', 'building', 'animal']) {
@@ -343,4 +366,25 @@ test('sword still allows deliberate diplomatic aggression', () => {
   const swing = setupSwing([target])
   assert.equal(swing.tools.triggerSwordAttackAt(swing.hero), true)
   assert.deepEqual(swing.aggressions, [target])
+})
+
+test('running sword strike carries its purchased bonus to impact only once', () => {
+  const sprint = loadTsModule('app/lib/units/movement/unitSprint.ts')
+  const swing = setupSwing([targetAt(25)], sprint)
+  Object.assign(swing.hero, { energy: 10, totalEnergy: 10, context: { scheduler: { elapsedMs: 0 } } })
+  sprint.toggleHeroSprint(swing.hero)
+  for (let frame = 0; frame < 20; frame++) {
+    swing.hero.context.scheduler.elapsedMs += 20
+    sprint.recordSprintMovement(swing.hero, 2, 20, sprint.getSprintMoveFactor(swing.hero, true))
+  }
+  const before = swing.hero.energy
+  assert.equal(swing.tools.triggerSwordAttackAt(swing.hero), true)
+  assert.equal(swing.hero.energy, before - 2)
+  swing.hero.context.scheduler.elapsedMs += 500
+  swing.release()
+  assert.equal(swing.damageOptions[0].defaultDamage, 5)
+  swing.hero.actionLocked = false
+  swing.tools.triggerSwordAttackAt(swing.hero)
+  swing.release()
+  assert.equal(swing.damageOptions[1].defaultDamage, 4)
 })

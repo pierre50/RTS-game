@@ -89,9 +89,13 @@ export function canResumeVillagerReturnTaskBeforeRest(
   return travelMs + usefulWorkMs <= remainingWorkMs
 }
 
-export function canReachRestBeforeBed(unit: UnitEntity, targetCell: RuntimeCell): boolean {
+export function canReachRestBeforeBed(unit: UnitEntity, targetCell: RuntimeCell, maxLength = Infinity): boolean {
   const pathLength = getRestTravelPathLength(unit, targetCell)
-  if (pathLength == null) return false
+  if (pathLength == null || pathLength > maxLength) return false
+  return canReachRestWithPathLength(unit, pathLength)
+}
+
+export function canReachRestWithPathLength(unit: UnitEntity, pathLength: number): boolean {
   if (!isVillager(unit) || shouldVillagerBeAsleep(unit)) return true
   const travelMs = estimatePathTravelMs(unit, pathLength)
   return travelMs != null && travelMs <= getMinutesUntilVillagerBed(unit) * GAME_MINUTE_MS

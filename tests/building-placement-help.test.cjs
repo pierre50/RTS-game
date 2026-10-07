@@ -13,6 +13,9 @@ test('placement immediately displays controller buttons and switches back with t
     children: [],
     dataset: {},
     setAttribute() {},
+    contains() {
+      return false
+    },
     appendChild(child) {
       this.children.push(child)
     },
@@ -23,6 +26,7 @@ test('placement immediately displays controller buttons and switches back with t
     remove() {},
   })
   global.document = {
+    querySelector: () => null,
     createElement: makeElement,
     createTextNode: text => ({ textContent: text }),
     body: {
@@ -42,7 +46,13 @@ test('placement immediately displays controller buttons and switches back with t
             return () => stopped++
           },
           getGamepadButtonIndex: action =>
-            ({ placementPlace: placeButton, placementMirror: 4, placementCancel: 8 })[action],
+            ({
+              placementPlace: placeButton,
+              placementMirror: 4,
+              placementCancel: 8,
+              destinationConfirm: 0,
+              destinationCancel: 1,
+            })[action],
         },
       },
     })
@@ -68,6 +78,26 @@ test('placement immediately displays controller buttons and switches back with t
     const keyboard = new BuildingPlacementHelp(actions)
     assert.deepEqual(keys(), ['↵', 'R', 'Esc'])
     keyboard.destroy()
+    const calls = []
+    const destination = new BuildingPlacementHelp(
+      {
+        ...actions,
+        place: () => calls.push('confirm'),
+        cancel: () => calls.push('cancel'),
+        destination: true,
+        canMirror: false,
+      },
+      true
+    )
+    assert.deepEqual(keys(), ['A', 'LB', 'B'])
+    assert.equal(footer.children[2].hidden, true)
+    const key = listeners.get('keydown')
+    const event = { preventDefault() {}, stopImmediatePropagation() {} }
+    key({ ...event, key: 'Enter' })
+    key({ ...event, key: 'Enter', repeat: true })
+    key({ ...event, key: 'Escape' })
+    assert.deepEqual(calls, ['confirm', 'cancel'])
+    destination.destroy()
   } finally {
     global.document = previousDocument
   }

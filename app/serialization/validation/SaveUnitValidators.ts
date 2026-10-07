@@ -21,6 +21,15 @@ function isSupportedSavedUnitType(type: unknown, config: LoadedGameConfig): type
 }
 
 function validateSavedUnitOrders(unit: Record<string, unknown>): void {
+  if (
+    unit.equipmentDurability != null &&
+    (!isObject(unit.equipmentDurability) ||
+      Object.values(unit.equipmentDurability).some(
+        value => typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 100
+      ))
+  ) {
+    fail('Invalid save file: equipment durability is invalid.')
+  }
   const reference = (value: unknown, label: string) => {
     if (typeof value === 'string' && value.length) return
     validateOptionalGridDestination(value, MAX_MAP_EDGE, label)

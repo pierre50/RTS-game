@@ -20,7 +20,8 @@ function loadUnitWalkingAnimation() {
       },
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -55,4 +56,19 @@ test('unit animation speed also affects non-walking action sheets', () => {
 
   applyUnitWalkingAnimationSpeed(unit, 0.6)
   assert.equal(unit.sprite.animationSpeed, 0.24)
+})
+
+test('sprinting speeds up body, shadow and equipment without compounding between frames', () => {
+  const { applyUnitWalkingAnimationSpeed } = loadUnitWalkingAnimation()
+  const layer = { animationSpeed: 0.4 }
+  const unit = {
+    sprite: { animationSpeed: 0.4 },
+    shadow: { animationSpeed: 0.4 },
+    appearanceLayerSprites: new Map([[0, layer]]),
+  }
+  applyUnitWalkingAnimationSpeed(unit, 1.6)
+  applyUnitWalkingAnimationSpeed(unit, 1.6)
+  for (const sprite of [unit.sprite, unit.shadow, layer]) assert.ok(Math.abs(sprite.animationSpeed - 0.64) < 1e-8)
+  applyUnitWalkingAnimationSpeed(unit, 1)
+  for (const sprite of [unit.sprite, unit.shadow, layer]) assert.equal(sprite.animationSpeed, 0.4)
 })

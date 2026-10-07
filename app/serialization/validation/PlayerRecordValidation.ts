@@ -112,6 +112,13 @@ function validatePlayerBuildings(
 ): void {
   buildings.forEach((building, buildingIndex) => {
     validateEntityPosition(building, size, `player ${playerIndex} building ${buildingIndex}`)
+    if (
+      building.settlementName != null &&
+      (typeof building.settlementName !== 'string' ||
+        !building.settlementName.trim() ||
+        building.settlementName.length > 120)
+    )
+      fail('Invalid save file: settlement name is invalid.')
     validateOptionalBoolean((building as SaveEntityState).placementMirrored, 'building mirror')
     validateDepotReservePolicy(building.reservePolicy, String(building.type))
     if (

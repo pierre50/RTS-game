@@ -19,11 +19,7 @@ type ControlsKeyboardHost = {
     handleKeyUp(action: ControlBindingAction): void
     pendingGoToNpcs?: unknown
   }
-  heroDirectionLockActive: boolean
   keyActionsByCode: Partial<Record<string, ControlBindingAction>>
-  keyPressedCount: number
-  keySpeed: number
-  keysPressed: Partial<Record<ControlBindingAction, boolean>>
   mouseBuilding: unknown
   shiftKeyActive: boolean
   closeAnyHeroPanel(): boolean
@@ -31,19 +27,11 @@ type ControlsKeyboardHost = {
   isEditableTarget(target: EventTarget | null): boolean
   isHeroControlActive(): boolean
   isInteractionBlocked(): boolean
-  moveCamera(direction: 'left' | 'right' | 'up' | 'down', speed: number, double?: boolean, frameScale?: number): void
   removeMouseBuilding(): void
   stopKeyboardMove(): void
 }
 
-const CAMERA_ACTIONS = new Set<ControlBindingAction>(['cameraLeft', 'cameraRight', 'cameraDown', 'cameraUp'])
-const MOVEMENT_ACTIONS = new Set<ControlBindingAction>([
-  ...CAMERA_ACTIONS,
-  'heroLeft',
-  'heroRight',
-  'heroDown',
-  'heroUp',
-])
+const MOVEMENT_ACTIONS = new Set<ControlBindingAction>(['heroLeft', 'heroRight', 'heroDown', 'heroUp'])
 export type HeldMovementKeys = Partial<Record<string, ControlBindingAction>>
 
 export function captureControlsMovement(controls: ControlsKeyboardHost): () => HeldMovementKeys {
@@ -86,15 +74,9 @@ export function restoreControlsMovement(controls: ControlsKeyboardHost, held: He
   for (const [code, action] of Object.entries(held)) {
     if (!action || !MOVEMENT_ACTIONS.has(action)) continue
     controls.keyActionsByCode[code] = action
-    if (CAMERA_ACTIONS.has(action)) controls.keysPressed[action] = true
-    else controls.heroController.handleKeyDown(action)
+    controls.heroController.handleKeyDown(action)
   }
-  controls.keyPressedCount = [...CAMERA_ACTIONS].filter(action => controls.keysPressed[action]).length
-  controls.keySpeed = controls.keyPressedCount ? KEYBOARD_CAMERA_INITIAL_SPEED : 0
 }
-const KEYBOARD_CAMERA_INITIAL_SPEED = 7
-const KEYBOARD_CAMERA_MAX_SPEED = 14
-const KEYBOARD_CAMERA_ACCELERATION = 0.24
 
 export function handleControlsEscapeKey(controls: ControlsKeyboardHost, evt: KeyboardEvent): boolean {
   if (controls.context.menu?.isQuestJournalOpen?.()) {
@@ -137,21 +119,14 @@ export function handleControlsKeyDown(controls: ControlsKeyboardHost, evt: Keybo
   }
   if (evt.key === 'Escape' && controls.handleEscapeKey(evt)) return
   const action = getControlActionForKeyboardEvent(evt)
-  if (action === 'heroDirectionLock') {
-    if (evt.code) controls.keyActionsByCode[evt.code] = action
-    controls.heroDirectionLockActive = true
-    if (evt.key === 'Shift') controls.shiftKeyActive = true
-    evt.preventDefault()
-    return
-  }
   if (evt.key === 'Shift') {
-    if (action && !controls.isInteractionBlocked() && controls.heroController.handleKeyDown(action)) {
+    evt.preventDefault()
+    if (evt.repeat || controls.isInteractionBlocked()) return
+    if (action && controls.heroController.handleKeyDown(action)) {
       if (evt.code) controls.keyActionsByCode[evt.code] = action
-      evt.preventDefault()
       return
     }
-    controls.shiftKeyActive = true
-    evt.preventDefault()
+    controls.shiftKeyActive = !controls.shiftKeyActive
     return
   }
   if (action === 'quests' && !evt.repeat && controls.context.menu?.isQuestJournalOpen?.()) {
@@ -173,20 +148,7 @@ export function handleControlsKeyDown(controls: ControlsKeyboardHost, evt: Keybo
     return
   }
   if (controls.context.menu?.isQuestJournalOpen?.()) return
-  const isCameraAction = Boolean(action && CAMERA_ACTIONS.has(action))
-  if (evt.repeat && !isCameraAction) return
-
-  if (action && isCameraAction) {
-    if (evt.code) controls.keyActionsByCode[evt.code] = action
-    if (!evt.repeat) {
-      controls.keysPressed[action] = true
-      controls.keyPressedCount++
-      if (controls.keyPressedCount === 1) {
-        controls.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
-      }
-    }
-    return
-  }
+  if (evt.repeat) return
 
   if (action && controls.heroController.handleKeyDown(action)) {
     if (evt.code) controls.keyActionsByCode[evt.code] = action
@@ -209,43 +171,10 @@ export function handleControlsKeyUp(controls: ControlsKeyboardHost, evt: Keyboar
 
   const action = getControlActionForKeyboardEvent(evt) || (evt.code ? controls.keyActionsByCode[evt.code] : null)
   if (evt.code) delete controls.keyActionsByCode[evt.code]
-  if (action === 'heroDirectionLock') {
-    controls.heroDirectionLockActive = false
-    if (evt.key === 'Shift') controls.shiftKeyActive = false
-    evt.preventDefault()
-    return
-  }
   if (evt.key === 'Shift') {
     if (action) controls.heroController.handleKeyUp(action)
-    controls.shiftKeyActive = false
     evt.preventDefault()
     return
   }
   if (action) controls.heroController.handleKeyUp(action)
-
-  if (!action || !CAMERA_ACTIONS.has(action)) return
-
-  if (!evt.repeat && controls.keysPressed[action]) {
-    delete controls.keysPressed[action]
-    controls.keyPressedCount--
-  }
-  if (controls.keyPressedCount <= 0) {
-    controls.keyPressedCount = 0
-    controls.keySpeed = 0
-  }
-}
-
-export function panControlsCameraWithArrowKeys(controls: ControlsKeyboardHost, frameScale: number): void {
-  if (controls.keyPressedCount <= 0) return
-  const double = controls.keyPressedCount > 1
-  if (controls.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
-    controls.keySpeed = Math.min(
-      KEYBOARD_CAMERA_MAX_SPEED,
-      controls.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION
-    )
-  }
-  if (controls.keysPressed.cameraLeft) controls.moveCamera('left', controls.keySpeed, double, frameScale)
-  if (controls.keysPressed.cameraUp) controls.moveCamera('up', controls.keySpeed, double, frameScale)
-  if (controls.keysPressed.cameraDown) controls.moveCamera('down', controls.keySpeed, double, frameScale)
-  if (controls.keysPressed.cameraRight) controls.moveCamera('right', controls.keySpeed, double, frameScale)
 }

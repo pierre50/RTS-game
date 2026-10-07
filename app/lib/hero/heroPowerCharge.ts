@@ -1,3 +1,6 @@
+import { wearEquippedWeapon } from '../equipment/equipmentWear'
+import { isEquipmentBroken } from '../equipment/equipmentCondition'
+import { takeSprintAttackMultiplier } from '../units/movement/unitSprint'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { Projectile } from '../../classes/Projectile'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -23,6 +26,8 @@ import {
 } from './heroProjectileTools'
 import { getHeroSwordChargeDamageMultiplier, getHeroWeaponDamage, triggerSwordAttackAt } from './heroMeleeTools'
 import { getHeroPowerChargeToolForEquippedItem, type HeroEquippedItem } from './heroToolEquipment'
+
+const sprintChargeMultipliers = new WeakMap<UnitEntity, number>()
 
 type HeroPowerChargeTool = 'bow' | 'catchingPole' | 'sword'
 
@@ -130,6 +135,7 @@ export function updateHeroPowerCharge(hero: UnitEntity, now = performance.now())
 }
 
 function clearHeroPowerCharge(hero: UnitEntity): void {
+  sprintChargeMultipliers.delete(hero)
   hero.heroPowerChargeStart = null
   hero.heroPowerChargeRatio = undefined
   hero.heroPowerChargeDestination = null
@@ -166,6 +172,7 @@ export function cancelHeroCatchingPole(hero: UnitEntity): void {
 }
 
 function finishHeroSwordChargeAttack(hero: UnitEntity, destination: Point, power: number): boolean {
+  const sprintMultiplier = sprintChargeMultipliers.get(hero) ?? 1
   const sprite = hero.sprite
   clearHeroPowerCharge(hero)
   if (sprite) {
@@ -175,7 +182,7 @@ function finishHeroSwordChargeAttack(hero: UnitEntity, destination: Point, power
   }
   hero.actionLocked = false
   const triggered = triggerSwordAttackAt(hero, destination, {
-    damageMultiplier: getHeroSwordChargeDamageMultiplier(power),
+    damageMultiplier: getHeroSwordChargeDamageMultiplier(power) * sprintMultiplier,
     impactFrame: SLASH_IMPACT_FRAME,
     swordChargePower: power,
   })
@@ -191,6 +198,10 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
   }
   const power = hero.heroPowerReleasePower ?? getHeroPowerChargeRatio(hero)
   const tool = hero.heroPowerChargeTool ?? 'bow'
+  if (tool === 'bow' && isEquipmentBroken(hero.inventory?.activeWeapons?.ranged)) {
+    cancelHeroPowerCharge(hero)
+    return
+  }
   const target = hero.heroPowerChargeTarget ?? (tool === 'bow' ? (findBowHuntTarget(hero) ?? undefined) : undefined)
   clearHeroPowerCharge(hero)
   const map = hero.context?.map
@@ -223,6 +234,7 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
       hero.followAssistIntent =
         tool === 'bow' && target ? { action: ACTION_TYPES.hunt, target, targetLabel: target.label } : null
       consumeHeroArrow(hero)
+      wearEquippedWeapon(hero, 'ranged')
     }
   }
   if (!sprite) {
@@ -253,6 +265,7 @@ export function beginHeroPowerChargeAt(
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed) return false
   if (!hasEnergyToStartPowerCharge(hero)) return false
+  sprintChargeMultipliers.set(hero, tool === 'sword' ? takeSprintAttackMultiplier(hero) : 1)
   hero.actionLocked = true
   const now = performance.now()
   hero.heroPowerChargeStart = now

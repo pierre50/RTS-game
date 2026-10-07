@@ -1,3 +1,4 @@
+import { selectRestSite } from './UnitRestPlanning'
 import { isRestTargetAvailable } from './UnitRestShelter'
 import { cancelSleepingWakeVisual, clearSleepingVisualState } from './UnitSleepVisuals'
 import { sameCellMapSpace } from '../../lib/mapSpaces'
@@ -84,53 +85,57 @@ export function sendUnitToRest(unit: UnitEntity, reason: UnitRestReason, options
     if (unit.sendToDelivery?.() === true) return true
     unit.shelterState = null
   }
-  const restSite = getNearestRestSite(unit)
-  if (!restSite) {
-    if (reason === 'sleep' && canSleepWithoutRestSite(unit)) {
-      sleepOutside(unit, reason)
+  return selectRestSite(unit, undefined, restSite => {
+    if (!restSite) {
+      if (reason === 'sleep' && canSleepWithoutRestSite(unit)) {
+        sleepOutside(unit, reason)
+        return true
+      }
+      return false
+    }
+    if (hasDailyRestSchedule(unit) && isCurrentOutsideRestSite(unit, restSite)) {
+      waitOutsideForSleep(unit)
+      if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
       return true
     }
-    return false
-  }
-  if (hasDailyRestSchedule(unit) && isCurrentOutsideRestSite(unit, restSite)) {
-    waitOutsideForSleep(unit)
-    if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
-    return true
-  }
-  return sendUnitToRestSite(unit, reason, restSite, {
-    ...options,
-    transition: hasDailyRestSchedule(unit) ? false : options.transition,
+    return sendUnitToRestSite(unit, reason, restSite, {
+      ...options,
+      transition: hasDailyRestSchedule(unit) ? false : options.transition,
+    })
   })
 }
 
 export function continueRestAfterDelivery(unit: UnitEntity): boolean {
   if (unit.shelterState?.reason !== 'sleep' || unit.shelterState.status !== 'delivering') return false
   const state = unit.shelterState
-  const restSite = getNearestRestSite(unit)
-  if (!restSite || isCurrentOutsideRestSite(unit, restSite)) {
-    waitOutsideForSleep(unit)
-    if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
-    return true
-  }
-  unit.shelterState = state
-  return sendUnitToRestSite(unit, 'sleep', restSite, { transition: false })
+  return selectRestSite(unit, undefined, restSite => {
+    if (!restSite || isCurrentOutsideRestSite(unit, restSite)) {
+      waitOutsideForSleep(unit)
+      if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
+      return true
+    }
+    unit.shelterState = state
+    return sendUnitToRestSite(unit, 'sleep', restSite, { transition: false })
+  })
 }
 
 export function rerouteRestUnit(unit: UnitEntity, excludedTarget?: BuildingEntity | null): boolean {
   const state = unit.shelterState
   if (!state?.reason) return false
-  const restSite = getNearestRestSite(unit, excludedTarget)
-  if (!restSite || isCurrentOutsideRestSite(unit, restSite)) {
-    waitOutsideForSleep(unit)
-    if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
-    return true
-  }
-  unit.shelterState = state
-  return sendUnitToRestSite(unit, state.reason, restSite, { transition: false })
+  return selectRestSite(unit, excludedTarget, restSite => {
+    if (!restSite || isCurrentOutsideRestSite(unit, restSite)) {
+      waitOutsideForSleep(unit)
+      if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
+      return true
+    }
+    unit.shelterState = state
+    return sendUnitToRestSite(unit, 'sleep', restSite, { transition: false })
+  })
 }
 
 export function settleUnitRestForTimeJump(unit: UnitEntity, sleep: boolean, refreshSite = false): boolean {
   if (unit.shelterState?.restTarget && !isRestTargetAvailable(unit, unit.shelterState.restTarget)) refreshSite = true
+  if (unit.shelterState?.status === 'movingToRest' && !unit.shelterState.targetCell) refreshSite = true
   if (!unit.shelterState || refreshSite) {
     if (!canStartSleepRest(unit)) return false
     const site = getNearestRestSite(unit)

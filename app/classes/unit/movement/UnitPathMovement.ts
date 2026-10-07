@@ -1,8 +1,9 @@
+import { getSprintMoveFactor, recordSprintMovement } from '../../../lib/units/movement/unitSprint'
 import { runPathStep } from '../../../lib/units/pathProgress'
 import { updateInstanceRenderVisibility } from '../../../lib/grid/visibility'
 import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
 import { tryStartUnitContactApproach } from './UnitContactApproach'
-import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
+import { ACTION_TYPES, SHEET_TYPES, STEP_TIME } from '../../../constants'
 import {
   canUpdateMinimap,
   cartesianToIsometric,
@@ -32,7 +33,7 @@ import {
 } from './UnitMovementHelpers'
 import { applyUnitWalkingAnimationSpeed } from '../../../lib/units/visuals/unitWalkingAnimation'
 import { applyUnitCrouchPose, resetUnitCrouchPose } from '../../../lib/units/visuals/unitCrouchPose'
-import { isUnitWalkSpeedFactor } from '../../../lib/units/unitLocomotion'
+import { isUnitWalkSpeedFactor } from '../../../lib/units/movement/unitLocomotion'
 import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '../../../lib/buildings/passageCells'
 import { getEntitySpaceMapLike, isOutsideSpaceId } from '../../../lib/mapSpaces'
 import { syncEntityRelief } from '../../../lib/terrain/reliefSurface'
@@ -92,14 +93,27 @@ function stepUnitPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolea
   if (!sprite) return
   if (!sprite.playing) sprite.play()
 
-  const moveSpeed = getReliefMovementDistance(map, unit, nextFlatPoint, getPathMoveSpeed(unit), unit.currentCell)
+  const sprintFactor = getSprintMoveFactor(unit, true, true)
+  const moveSpeed = getReliefMovementDistance(
+    map,
+    unit,
+    nextFlatPoint,
+    getPathMoveSpeed(unit) * sprintFactor,
+    unit.currentCell
+  )
+  const beforeX = unit.x
+  const beforeY = unit.y
   const remaining = Math.hypot(nextFlatX - unit.x, nextFlatY - unit.y)
   if (remaining <= moveSpeed + 1e-6) {
     if (remaining > 0) advanceTowardPathCell(unit, nextCell, nextFlatX, nextFlatY, remaining, false)
+    recordSprintMovement(unit, Math.hypot(unit.x - beforeX, unit.y - beforeY), STEP_TIME, sprintFactor)
     finishPathCellStep(unit, nextCell, dest, retryBlockedGatherApproach)
   } else {
     advanceTowardPathCell(unit, nextCell, nextFlatX, nextFlatY, moveSpeed)
+    recordSprintMovement(unit, Math.hypot(unit.x - beforeX, unit.y - beforeY), STEP_TIME, sprintFactor)
   }
+  if (unit.currentSheet === SHEET_TYPES.walking)
+    applyUnitWalkingAnimationSpeed(unit, getRequestedMoveSpeedFactor(unit) * sprintFactor)
 }
 
 function applyPathReliefLift(unit: UnitEntity): void {

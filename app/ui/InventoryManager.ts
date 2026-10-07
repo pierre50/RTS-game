@@ -153,7 +153,8 @@ export class InventoryManager {
     const modal = this.modal
     this.modal = undefined
     modal?.close()
-    this.showTab('tools')
+    this.menu.deactivateMiniMap()
+    this.menu.clearActionHotkeys()
     if (!this.menu.context.controls.mouseBuilding) this.menu.updateActionTarget()
     if (this.pausedByMenu) {
       this.pausedByMenu = false

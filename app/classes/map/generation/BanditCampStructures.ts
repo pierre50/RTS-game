@@ -1,3 +1,4 @@
+import { hasEquipmentDurability, withEquipmentDurability } from '../../../lib/equipment/equipmentCondition'
 import { BUILDING_TYPES } from '../../../constants'
 import { canPlaceBuildingAt } from '../../../lib/grid/placement'
 import { getPlainCellsAroundPoint } from '../../../lib/grid/cells'
@@ -28,7 +29,6 @@ const BANDIT_CHEST_EQUIPMENT_LOOT: Array<{ item: string; chance: number; min?: n
   { item: 'trap', chance: 55 },
   { item: 'sword_ceramic', chance: 35 },
   { item: 'bow', chance: 28 },
-  { item: 'quiver', chance: 28 },
   { item: 'round_shield_ceramic_slash', chance: 22 },
   { item: 'helmet_barbarian_nasal_ceramic', chance: 18 },
 ]
@@ -173,7 +173,9 @@ export function createBanditCampChestInventory(
     if (map.randomRange(1, 100) > loot.chance) continue
     const count = map.randomRange(loot.min ?? 1, loot.max ?? 1)
     for (let index = 0; index < count; index++) {
-      equipment.push(loot.item)
+      equipment.push(
+        hasEquipmentDurability(loot.item) ? withEquipmentDurability(loot.item, map.randomRange(25, 100)) : loot.item
+      )
     }
   }
 

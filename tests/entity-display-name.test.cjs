@@ -97,3 +97,16 @@ test('construction names use the building type without occupancy claims', () => 
     assert.ok(!name.includes('houseUnoccupied'), type)
   }
 })
+
+test('town centers display their settlement name alongside their translated role', () => {
+  const { getBuildingDisplayName } = loadDisplayName((key, values) =>
+    key === 'TownCenter'
+      ? 'Centre-ville'
+      : key === 'constructionSiteName'
+        ? `${values.building} — En construction`
+        : key
+  )
+  const town = { type: 'TownCenter', isBuilt: true, settlementName: 'Uruk' }
+  assert.equal(getBuildingDisplayName(town), 'Uruk — Centre-ville')
+  assert.equal(getBuildingDisplayName({ ...town, isBuilt: false }), 'Uruk — Centre-ville — En construction')
+})

@@ -1,3 +1,4 @@
+import { equipmentBaseKey, isEquipmentBroken, withEquipmentDurability } from './equipmentCondition'
 import type { ForgeUpgradeOwner } from './forgeUpgrades'
 import { getMiningPickaxe, type MiningActor } from '../resources/miningEquipment'
 import { Assets } from 'pixi.js'
@@ -14,17 +15,15 @@ import type { EquipmentStats, UnitConfig } from '../../types/config'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
-const COMBAT_STAT_KEYS = ['meleeArmor', 'pierceArmor'] as const
+const COMBAT_STAT_KEYS = ['armor'] as const
 type CombatStatKey = (typeof COMBAT_STAT_KEYS)[number]
 
 export const UNARMED_UNIT_WEAPON_POWER = 0.5
-const MAX_UNIT_EQUIPMENT_MELEE_ARMOR = 3
-const MAX_UNIT_EQUIPMENT_PIERCE_ARMOR = 2
+const MAX_UNIT_EQUIPMENT_ARMOR = 3
 
 export type EquipmentCombatStats = {
   weaponPower: number
-  meleeArmor: number
-  pierceArmor: number
+  armor: number
 }
 
 export type HeroInventoryWeaponCombatStats = {
@@ -34,6 +33,7 @@ export type HeroInventoryWeaponCombatStats = {
 
 type EquipmentEntityLike = {
   equipment?: string[]
+  equipmentDurability?: Record<string, number>
   experience?: UnitEntity['experience']
   family?: string
   inventory?: UnitEntity['inventory']
@@ -87,58 +87,58 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   sword_ceramic: { weapon: { power: 6 } },
   sword_bronze: { weapon: { power: 10 } },
   sword_iron: { weapon: { power: 12 } },
-  armor_leather: { armor: { melee: 1 } },
-  armor_mail_ceramic: { armor: { melee: 2 } },
-  armor_mail_copper: { armor: { melee: 2, pierce: 1 } },
-  armor_mail_bronze: { armor: { melee: 3, pierce: 1 } },
-  armor_mail_iron: { armor: { melee: 4, pierce: 2 } },
-  armor_legion_ceramic: { armor: { melee: 2, pierce: 1 } },
-  armor_legion_copper: { armor: { melee: 3, pierce: 1 } },
-  armor_legion_bronze: { armor: { melee: 4, pierce: 2 } },
-  armor_legion_iron: { armor: { melee: 5, pierce: 3 } },
-  helmet_pointed_ceramic: { armor: { melee: 1 } },
-  helmet_pointed_copper: { armor: { melee: 1, pierce: 1 } },
-  helmet_pointed_bronze: { armor: { melee: 2, pierce: 1 } },
-  helmet_pointed_iron: { armor: { melee: 2, pierce: 2 } },
-  helmet_barbuta_ceramic: { armor: { melee: 1, pierce: 1 } },
-  helmet_barbuta_copper: { armor: { melee: 2, pierce: 1 } },
-  helmet_barbuta_bronze: { armor: { melee: 2, pierce: 2 } },
-  helmet_barbuta_iron: { armor: { melee: 3, pierce: 2 } },
-  helmet_legion_ceramic: { armor: { melee: 1, pierce: 1 } },
-  helmet_legion_copper: { armor: { melee: 2, pierce: 1 } },
-  helmet_legion_bronze: { armor: { melee: 2, pierce: 2 } },
-  helmet_legion_iron: { armor: { melee: 3, pierce: 2 } },
-  helmet_nasal_ceramic: { armor: { melee: 1, pierce: 1 } },
-  helmet_nasal_copper: { armor: { melee: 2, pierce: 1 } },
-  helmet_nasal_bronze: { armor: { melee: 2, pierce: 2 } },
-  helmet_nasal_iron: { armor: { melee: 3, pierce: 2 } },
-  helmet_bascinet_round_ceramic: { armor: { melee: 1, pierce: 1 } },
-  helmet_bascinet_round_copper: { armor: { melee: 2, pierce: 1 } },
-  helmet_bascinet_round_bronze: { armor: { melee: 2, pierce: 2 } },
-  helmet_bascinet_round_iron: { armor: { melee: 3, pierce: 2 } },
-  helmet_norman_ceramic: { armor: { melee: 1, pierce: 1 } },
-  helmet_norman_copper: { armor: { melee: 2, pierce: 1 } },
-  helmet_norman_bronze: { armor: { melee: 2, pierce: 2 } },
-  helmet_norman_iron: { armor: { melee: 3, pierce: 2 } },
-  helmet_barbarian_ceramic: { armor: { melee: 1, pierce: 1 } },
-  helmet_barbarian_nasal_ceramic: { armor: { melee: 1, pierce: 1 } },
-  shoulder_legion_ceramic: { armor: { melee: 1 } },
-  shoulder_legion_copper: { armor: { melee: 1 } },
-  shoulder_legion_bronze: { armor: { melee: 2, pierce: 1 } },
-  shoulder_legion_iron: { armor: { melee: 2, pierce: 2 } },
-  bracers_ceramic: { armor: { melee: 1 } },
-  bracers_copper: { armor: { melee: 1, pierce: 1 } },
-  bracers_bronze: { armor: { melee: 2, pierce: 1 } },
-  bracers_iron: { armor: { melee: 2, pierce: 2 } },
-  leg_armor_ceramic: { armor: { melee: 1 } },
-  leg_armor_copper: { armor: { melee: 1, pierce: 1 } },
-  leg_armor_bronze: { armor: { melee: 2, pierce: 1 } },
-  leg_armor_iron: { armor: { melee: 2, pierce: 2 } },
+  armor_leather: { armor: 1 },
+  armor_mail_ceramic: { armor: 2 },
+  armor_mail_copper: { armor: 2 },
+  armor_mail_bronze: { armor: 3 },
+  armor_mail_iron: { armor: 4 },
+  armor_legion_ceramic: { armor: 2 },
+  armor_legion_copper: { armor: 3 },
+  armor_legion_bronze: { armor: 4 },
+  armor_legion_iron: { armor: 5 },
+  helmet_pointed_ceramic: { armor: 1 },
+  helmet_pointed_copper: { armor: 1 },
+  helmet_pointed_bronze: { armor: 2 },
+  helmet_pointed_iron: { armor: 2 },
+  helmet_barbuta_ceramic: { armor: 1 },
+  helmet_barbuta_copper: { armor: 2 },
+  helmet_barbuta_bronze: { armor: 2 },
+  helmet_barbuta_iron: { armor: 3 },
+  helmet_legion_ceramic: { armor: 1 },
+  helmet_legion_copper: { armor: 2 },
+  helmet_legion_bronze: { armor: 2 },
+  helmet_legion_iron: { armor: 3 },
+  helmet_nasal_ceramic: { armor: 1 },
+  helmet_nasal_copper: { armor: 2 },
+  helmet_nasal_bronze: { armor: 2 },
+  helmet_nasal_iron: { armor: 3 },
+  helmet_bascinet_round_ceramic: { armor: 1 },
+  helmet_bascinet_round_copper: { armor: 2 },
+  helmet_bascinet_round_bronze: { armor: 2 },
+  helmet_bascinet_round_iron: { armor: 3 },
+  helmet_norman_ceramic: { armor: 1 },
+  helmet_norman_copper: { armor: 2 },
+  helmet_norman_bronze: { armor: 2 },
+  helmet_norman_iron: { armor: 3 },
+  helmet_barbarian_ceramic: { armor: 1 },
+  helmet_barbarian_nasal_ceramic: { armor: 1 },
+  shoulder_legion_ceramic: { armor: 1 },
+  shoulder_legion_copper: { armor: 1 },
+  shoulder_legion_bronze: { armor: 2 },
+  shoulder_legion_iron: { armor: 2 },
+  bracers_ceramic: { armor: 1 },
+  bracers_copper: { armor: 1 },
+  bracers_bronze: { armor: 2 },
+  bracers_iron: { armor: 2 },
+  leg_armor_ceramic: { armor: 1 },
+  leg_armor_copper: { armor: 1 },
+  leg_armor_bronze: { armor: 2 },
+  leg_armor_iron: { armor: 2 },
   longsword: { weapon: { power: 11 } },
-  round_shield_ceramic_slash: { armor: { melee: 1, pierce: 1 } },
-  round_shield_copper_slash: { armor: { melee: 2, pierce: 1 } },
-  round_shield_bronze_slash: { armor: { melee: 2, pierce: 2 } },
-  round_shield_iron_slash: { armor: { melee: 3, pierce: 2 } },
+  round_shield_ceramic_slash: { armor: 1 },
+  round_shield_copper_slash: { armor: 2 },
+  round_shield_bronze_slash: { armor: 2 },
+  round_shield_iron_slash: { armor: 3 },
   cane: { weapon: { power: 1 } },
   longstick: { weapon: { power: 1 } },
   catchingPole: { weapon: { power: 1 } },
@@ -156,14 +156,13 @@ function loadedEquipmentStats(): Record<string, EquipmentStats> {
 }
 
 function emptyStats(): EquipmentCombatStats {
-  return { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
+  return { weaponPower: 0, armor: 0 }
 }
 
 function capUnitEquipmentArmor(stats: EquipmentCombatStats): EquipmentCombatStats {
   return {
     ...stats,
-    meleeArmor: Math.min(stats.meleeArmor, MAX_UNIT_EQUIPMENT_MELEE_ARMOR),
-    pierceArmor: Math.min(stats.pierceArmor, MAX_UNIT_EQUIPMENT_PIERCE_ARMOR),
+    armor: Math.min(stats.armor, MAX_UNIT_EQUIPMENT_ARMOR),
   }
 }
 
@@ -173,7 +172,8 @@ function getWeaponRangeFromEquipment(
 ): number | undefined {
   let bestRange = 0
   for (const key of equipment) {
-    const itemRange = definitions[key]?.weapon?.range
+    if (isEquipmentBroken(key)) continue
+    const itemRange = definitions[equipmentBaseKey(key)]?.weapon?.range
     if (typeof itemRange === 'number' && itemRange > bestRange) {
       bestRange = itemRange
     }
@@ -197,8 +197,8 @@ function getHeroInventoryActiveWeaponEquipment(entity: EquipmentEntityLike): str
     return [activeWeapons.melee, activeWeapons.offhand].filter((item): item is string => typeof item === 'string')
   }
   if (entity.work === WORK_TYPES.hunter) {
-    if (!activeWeapons.ranged) return []
-    return [activeWeapons.ranged, activeWeapons.quiver, entity.inventory?.equipped?.arrow].filter(
+    if (!activeWeapons.ranged || isEquipmentBroken(activeWeapons.ranged)) return []
+    return [activeWeapons.ranged, entity.inventory?.equipped?.arrow].filter(
       (item): item is string => typeof item === 'string'
     )
   }
@@ -219,11 +219,11 @@ export function getEquipmentCombatStats(
 ): EquipmentCombatStats {
   const stats = emptyStats()
   for (const key of equipment) {
-    const item = definitions[key]
+    if (isEquipmentBroken(key)) continue
+    const item = definitions[equipmentBaseKey(key)]
     if (!item) continue
     stats.weaponPower += item.weapon?.power ?? 0
-    stats.meleeArmor += item.armor?.melee ?? item.meleeArmor ?? 0
-    stats.pierceArmor += item.armor?.pierce ?? item.pierceArmor ?? 0
+    stats.armor += item.armor ?? 0
   }
   return stats
 }
@@ -239,9 +239,12 @@ export function getUnitEquipment(
 }
 
 export function getUnitWorkEquipment(work: string | null | undefined, unit?: MiningActor): string[] {
-  return dynamicEquipmentForWork(work, unit?.type === 'Hero' ? {} : (unit?.owner ?? {})).map(item =>
-    unit && item.startsWith('pickaxe_') ? getMiningPickaxe(unit) : item
-  )
+  return dynamicEquipmentForWork(
+    work,
+    unit?.type === 'Hero' && !['woodcutter', 'stoneminer', 'goldminer', 'builder'].includes(work ?? '')
+      ? {}
+      : (unit?.owner ?? {})
+  ).map(item => (unit && item.startsWith('pickaxe_') ? getMiningPickaxe(unit) : item))
 }
 
 function getUnitEffectiveCombatStats(
@@ -260,20 +263,18 @@ function getUnitEffectiveCombatStats(
 
   return {
     weaponPower: UNARMED_UNIT_WEAPON_POWER,
-    meleeArmor: config.meleeArmor ?? 0,
-    pierceArmor: config.pierceArmor ?? 0,
+    armor: config.armor ?? 0,
   }
 }
 
 function getHeroInventoryEffectiveCombatStats(
   hero: EquipmentEntityLike,
-  config?: Pick<UnitConfig, 'meleeArmor' | 'pierceArmor'>
+  config?: Pick<UnitConfig, 'armor'>
 ): EquipmentCombatStats {
   const equipmentStats = getEquipmentCombatStats(getHeroInventoryCombatEquipment(hero), hero.owner?.config.equipment)
   return {
     weaponPower: equipmentStats.weaponPower || UNARMED_UNIT_WEAPON_POWER,
-    meleeArmor: (config?.meleeArmor ?? 0) + equipmentStats.meleeArmor,
-    pierceArmor: (config?.pierceArmor ?? 0) + equipmentStats.pierceArmor,
+    armor: (config?.armor ?? 0) + equipmentStats.armor,
   }
 }
 
@@ -283,19 +284,22 @@ export function getHeroInventoryWeaponCombatStats(hero: EquipmentEntityLike): He
     meleeWeaponPower: activeWeapons.melee
       ? getEquipmentCombatStats([activeWeapons.melee], hero.owner?.config.equipment).weaponPower
       : 0,
-    rangedWeaponPower: activeWeapons.ranged
-      ? getEquipmentCombatStats(
-          [activeWeapons.ranged, hero.inventory?.equipped?.arrow].filter(
-            (item): item is string => typeof item === 'string'
-          ),
-          hero.owner?.config.equipment
-        ).weaponPower
-      : 0,
+    rangedWeaponPower:
+      activeWeapons.ranged && !isEquipmentBroken(activeWeapons.ranged)
+        ? getEquipmentCombatStats(
+            [activeWeapons.ranged, hero.inventory?.equipped?.arrow].filter(
+              (item): item is string => typeof item === 'string'
+            ),
+            hero.owner?.config.equipment
+          ).weaponPower
+        : 0,
   }
 }
 
 export function getUnitRuntimeCombatStats(unit: UnitEntity, config: UnitConfig): EquipmentCombatStats {
   if (usesHeroInventoryEquipment(unit)) return getHeroInventoryEffectiveCombatStats(unit, config)
+  if (unit.equipmentDurability)
+    return capUnitEquipmentArmor(getEquipmentCombatStats(getConfiguredEntityEquipment(unit)))
   return getUnitEffectiveCombatStats(
     unit.type,
     config,
@@ -357,6 +361,11 @@ export function refreshUnitEquipmentStats(unit: UnitEntity): void {
     }
     return
   }
+  if (unit.equipmentDurability && Object.keys(unit.equipmentDurability).length) {
+    const stats = capUnitEquipmentArmor(getEquipmentCombatStats(getConfiguredEntityEquipment(unit)))
+    for (const stat of COMBAT_STAT_KEYS) unit[stat] = stats[stat]
+    return
+  }
   const useWorkEquipment = unit.type === UNIT_TYPES.villager && Boolean(unit.work)
   const stats = getUnitEffectiveCombatStats(
     unit.type,
@@ -399,7 +408,15 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
   return getWeaponRangeFromEquipment(unitEquipment)
 }
 
-function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
+export function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
+  if (usesHeroInventoryEquipment(entity)) return getHeroInventoryCombatEquipment(entity)
+  return getRawEntityEquipment(entity).map(item => {
+    const durability = entity.equipmentDurability?.[equipmentBaseKey(item)]
+    return durability == null ? item : withEquipmentDurability(item, durability)
+  })
+}
+
+function getRawEntityEquipment(entity: EquipmentEntityLike): string[] {
   if (usesHeroInventoryEquipment(entity)) return getHeroInventoryCombatEquipment(entity)
   if (entity.type === UNIT_TYPES.villager && entity.work) return getUnitWorkEquipment(entity.work, entity)
   if (Array.isArray(entity.equipment)) return [...entity.equipment]
@@ -429,7 +446,8 @@ export function getEntityMeleeWeapon(entity: EquipmentEntityLike): string | unde
   const definitions = loadedEquipmentStats()
   return getConfiguredEntityEquipment(entity).find(key => {
     if (key.startsWith('arrow_')) return false
-    const weapon = definitions[key]?.weapon
+    if (isEquipmentBroken(key)) return false
+    const weapon = definitions[equipmentBaseKey(key)]?.weapon
     return Boolean(weapon && !weapon.range)
   })
 }

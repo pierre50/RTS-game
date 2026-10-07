@@ -1,3 +1,4 @@
+import { isEquipmentBroken } from '../equipment/equipmentCondition'
 import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { refreshBakedLpcUnitAssets } from '../lpc/baked'
 import type { DynamicEquipmentKey } from '../lpc/equipment'
@@ -43,7 +44,8 @@ export function isHeroToolAvailable(
   tool: HeroEquippedItem | null | undefined
 ): boolean {
   if (!tool || tool === 'interact') return true
-  return Boolean(getEquippedItemWeapon(tool, hero))
+  const item = getEquippedItemWeapon(tool, hero)
+  return Boolean(item && !isEquipmentBroken(item))
 }
 
 export function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): string[] {
@@ -52,7 +54,9 @@ export function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): 
     return [activeWeapons.melee, hero.inventory?.equipped?.offhand, activeWeapons.offhand].filter(isEquipmentKey)
   }
   if (tool === 'bow') {
-    return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(isEquipmentKey)
+    return [activeWeapons.ranged, activeWeapons.ranged ? 'quiver' : undefined, hero.inventory?.equipped?.arrow].filter(
+      isEquipmentKey
+    )
   }
   return []
 }

@@ -10,12 +10,6 @@ import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { Bounds, Viewport } from '../types/geometry'
 import type { VisionGridLike } from '../types/player'
 import {
-  getCameraMoveDelta,
-  getMouseCameraDirections,
-  type CameraDirection,
-  type CameraPoint,
-} from './camera/CameraMovement'
-import {
   collectCameraCells,
   collectCameraRenderCandidates,
   exploreCameraCells,
@@ -29,7 +23,7 @@ import {
 const CAMERA_CULL_MARGIN = CELL_WIDTH * 4
 const CAMERA_VISIBLE_CELLS_SNAP = CELL_WIDTH / 2
 
-type Point = CameraPoint
+type Point = { x: number; y: number }
 type CameraContext = {
   app: {
     screen: {
@@ -55,10 +49,6 @@ type CameraContext = {
     record(name: string, value: number): void
   } | null
 }
-type MouseMoveState = {
-  dir: CameraDirection[]
-  calcs: Record<CameraDirection, number>
-}
 type CameraMapSpaceView = {
   grid: RuntimeMap['grid']
   id: string
@@ -71,7 +61,6 @@ export class CameraController {
   context: CameraContext
   camera: { x: number; y: number }
   visibleCells: Set<RuntimeCell>
-  mouseMoveState: MouseMoveState | null
   _rafPending: boolean
   _lastVisibleCellsViewportKey: string | null
   _lastCameraCellCollectionKey: string | null
@@ -87,7 +76,6 @@ export class CameraController {
       y: 0,
     }
     this.visibleCells = new Set()
-    this.mouseMoveState = null
     this._rafPending = false
     this._lastVisibleCellsViewportKey = null
     this._lastCameraCellCollectionKey = null
@@ -111,22 +99,6 @@ export class CameraController {
       isOutside: !space || space.id === OUTSIDE_SPACE_ID || space.container === map,
       origin: space?.origin ?? { x: 0, y: 0 },
       size: space?.size ?? map.size,
-    }
-  }
-
-  getCameraDiamondBounds(): { A: Point; B: Point; D: Point; C: Point } {
-    const { origin, size } = this.getActiveCameraSpace()
-    return {
-      A: { x: origin.x + CELL_WIDTH / 2 - this.camera.x, y: origin.y - this.camera.y },
-      B: {
-        x: origin.x + CELL_WIDTH / 2 - (size * CELL_WIDTH) / 2 - this.camera.x,
-        y: origin.y + (size * CELL_HEIGHT) / 2 - this.camera.y,
-      },
-      D: {
-        x: origin.x + CELL_WIDTH / 2 + (size * CELL_WIDTH) / 2 - this.camera.x,
-        y: origin.y + (size * CELL_HEIGHT) / 2 - this.camera.y,
-      },
-      C: { x: origin.x + CELL_WIDTH / 2 - this.camera.x, y: origin.y + size * CELL_HEIGHT - this.camera.y },
     }
   }
 
@@ -253,74 +225,6 @@ export class CameraController {
       top: bounds.top + space.origin.y,
       bottom: bounds.bottom + space.origin.y,
     }
-  }
-
-  move(dir: CameraDirection | string, moveSpeed: number, isSpeedDivided: boolean, deltaScale = 1): void {
-    /**
-     *  /A\
-     * /   \
-     *B     D
-     * \   /
-     *  \C/
-     */
-
-    const {
-      context: { app, menu },
-    } = this
-
-    const dividedSpeed = isSpeedDivided ? 1.5 : 1
-    const speed = ((moveSpeed || 20) / dividedSpeed) * deltaScale
-    const cameraCenter = {
-      x: app.screen.width / 2,
-      y: app.screen.height / 2,
-    }
-    const prevX = this.camera.x
-    const prevY = this.camera.y
-    const delta = getCameraMoveDelta(
-      dir,
-      speed,
-      Boolean(this.getLocalCameraBounds()),
-      this.getCameraDiamondBounds(),
-      cameraCenter
-    )
-    this.camera.x += delta.x
-    this.camera.y += delta.y
-
-    if (this.camera.x === prevX && this.camera.y === prevY) return
-
-    this.clampCameraToMap()
-    if (menu?.isMiniMapActive?.() !== false) menu?.updateCameraMiniMap?.()
-    this.applyCameraTransform()
-    this.scheduleVisibleCellsUpdate()
-  }
-
-  moveWithMouse(evt: { pageX: number; pageY: number }): void {
-    const mouse = {
-      x: evt.pageX,
-      y: evt.pageY,
-    }
-    const coef = 1
-    const moveDist = 10
-
-    const calcs = {
-      left: (0 + moveDist - mouse.x) * coef,
-      right: (mouse.x - (window.innerWidth - moveDist)) * coef,
-      up: (0 + moveDist - mouse.y) * coef,
-      down: (mouse.y - (window.innerHeight - moveDist)) * coef,
-    }
-    const dir = getMouseCameraDirections(mouse, { width: window.innerWidth, height: window.innerHeight }, moveDist)
-    this.mouseMoveState = dir.length ? { dir, calcs } : null
-  }
-
-  stopMouseMove(): void {
-    this.mouseMoveState = null
-  }
-
-  updateMouseMove(deltaScale = 1): void {
-    if (!this.mouseMoveState) return
-    this.mouseMoveState.dir.forEach(dir => {
-      this.move(dir, this.mouseMoveState!.calcs[dir], false, deltaScale)
-    })
   }
 
   instanceInCamera(instance: Point, bounds?: Bounds): boolean {

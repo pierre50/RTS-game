@@ -1,3 +1,4 @@
+import { equipmentVisualParts } from '../equipment/helmetVariants'
 import { SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { UnitEntity } from '../../types/entities'
@@ -36,13 +37,17 @@ function isEquipmentKey(value: string | null | undefined): value is string {
 
 function getInventoryAppearanceEquipment(unit: UnitEntity): string[] {
   const { offhand, arrow, ...equippedWithoutOffhand } = unit.inventory?.equipped ?? {}
-  const equipped = Object.values(equippedWithoutOffhand).filter(isEquipmentKey)
+  const equipped = Object.values(equippedWithoutOffhand).filter(isEquipmentKey).flatMap(equipmentVisualParts)
   const activeWeapons = unit.inventory?.activeWeapons ?? {}
   if (unit.work === 'heroSword') {
-    return [...equipped, offhand, activeWeapons.melee, activeWeapons.offhand].filter(isEquipmentKey)
+    return [...equipped, offhand, activeWeapons.melee, activeWeapons.offhand]
+      .filter(isEquipmentKey)
+      .flatMap(equipmentVisualParts)
   }
   if (unit.work === WORK_TYPES.hunter) {
-    return [...equipped, activeWeapons.ranged, activeWeapons.quiver, arrow].filter(isEquipmentKey)
+    return [...equipped, activeWeapons.ranged, activeWeapons.ranged ? 'quiver' : undefined, arrow]
+      .filter(isEquipmentKey)
+      .flatMap(equipmentVisualParts)
   }
   return equipped
 }
@@ -59,7 +64,7 @@ function isLayerReplacedByActiveWeapon(layer: UnitAppearanceLayerConfig, unit: U
   if (activeWeapons.ranged && (layer.equipmentKey.startsWith('bow') || layer.equipmentKey.startsWith('arrow_'))) {
     return true
   }
-  return Boolean(activeWeapons.quiver && layer.equipmentKey === 'quiver')
+  return Boolean(activeWeapons.ranged && layer.equipmentKey === 'quiver')
 }
 
 function isDefaultHeroWeaponLayer(layer: UnitAppearanceLayerConfig, unit: UnitEntity): boolean {
@@ -77,8 +82,8 @@ function isHelmetEquipmentKey(equipment: string): boolean {
 
 function getCorpseAppearanceEquipment(unit: UnitEntity): readonly string[] | null {
   if (!unit.isDead) return null
-  if (Array.isArray(unit.lootEquipment)) return unit.lootEquipment
-  if (Array.isArray(unit.equipment)) return unit.equipment
+  if (Array.isArray(unit.lootEquipment)) return unit.lootEquipment.flatMap(equipmentVisualParts)
+  if (Array.isArray(unit.equipment)) return unit.equipment.flatMap(equipmentVisualParts)
   return null
 }
 

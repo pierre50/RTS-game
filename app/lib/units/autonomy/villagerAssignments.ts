@@ -2,7 +2,7 @@ import { ACTION_TYPES, RESOURCE_NAMES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } 
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob, UnitRestState } from '../../../types/entities'
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
-type ResourceJob = Extract<VillagerAutonomyJob, 'food' | 'wood' | 'stone' | 'gold' | 'copper' | 'iron'>
+type ResourceJob = Extract<VillagerAutonomyJob, 'food' | 'wood' | 'stone' | 'gold' | 'copper' | 'tin' | 'iron'>
 
 export type VillagerAssignmentSummary = {
   total: number
@@ -20,6 +20,7 @@ const RESOURCE_JOB_BY_AUTONOMY: Partial<Record<VillagerAutonomyJob, ResourceJob>
   stone: 'stone',
   gold: 'gold',
   copper: 'copper',
+  tin: 'tin',
   iron: 'iron',
 }
 
@@ -30,6 +31,7 @@ function createAssignedCounts(): Record<ResourceName, number> {
 function resourceFromMiningTarget(unit: UnitEntity): ResourceJob {
   const target = unit.dest ?? (unit.lookingAtHero ? unit.previousDest : null)
   const destType = ((target as RuntimeEntity | null | undefined)?.type ?? '').toString()
+  if (destType === RESOURCE_TYPES.tin || unit.action === ACTION_TYPES.minetin) return 'tin'
   if (destType === RESOURCE_TYPES.copper || unit.action === ACTION_TYPES.minecopper) return 'copper'
   if (destType === RESOURCE_TYPES.iron || unit.action === ACTION_TYPES.mineiron) return 'iron'
   return 'gold'

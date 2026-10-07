@@ -1242,3 +1242,23 @@ test('world road snapshots persist through save serialization without settlement
   delete context.map.roads
   assert.equal(loadSaveSerializer().serializeGame(context).world.roads, undefined)
 })
+
+test('town names survive actual serialization and building restoration', () => {
+  const context = makeContext()
+  context.players[0].buildings = [{ type: 'TownCenter', i: 1, j: 1, settlementName: 'Athènes' }]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
+  assert.equal(saved.players[0].buildings[0].settlementName, 'Athènes')
+  const { restorePlayerEntitiesFromSave } = loadTsModule('app/classes/map/MapSaveRestore.ts', {
+    mocks: {
+      '../../lib/units/playerTargetKnowledge': { restoreTargetKnowledge() {}, restoreLegacyStaticKnowledge() {} },
+      '../../lib/resources/playerResourceTotals': { syncPlayerResourceFieldsFromChests() {} },
+      './generation/CaveSaveRestore': {},
+      './MapSaveReferences': {},
+      './MapSaveAI': {},
+      '../../../engine/services/BuildingInteriorSpaceSystemRuntime': {},
+    },
+  })
+  const restored = { createBuilding: options => ({ ...options }) }
+  restorePlayerEntitiesFromSave(restored, { buildings: saved.players[0].buildings }, true)
+  assert.equal(restored.buildings[0].settlementName, 'Athènes')
+})

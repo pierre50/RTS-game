@@ -344,8 +344,8 @@ function loadModule(relativePath, mocks) {
         spendOrWaitForEnergy: () => true,
       }
     }
-    if (request === '../../lib/units/unitLocomotion') {
-      return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
+    if (request === '../../lib/units/movement/unitLocomotion') {
+      return loadTsFile(path.join(__dirname, '../app/lib/units/movement/unitLocomotion.ts'))
     }
     if (request === '../../lib/units/visuals/unitCrouchPose') {
       return {
@@ -452,6 +452,9 @@ function loadModule(relativePath, mocks) {
     if (request === './movement/UnitPathMovement' || request === './UnitPathMovement') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitPathMovement.ts'))
     }
+    if (request === './HeroCollisionFootprint') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/HeroCollisionFootprint.ts'))
+    }
     if (request === './movement/UnitHeroDirectMovementCollision' || request === './UnitHeroDirectMovementCollision') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitHeroDirectMovementCollision.ts'))
     }
@@ -501,7 +504,11 @@ function loadModule(relativePath, mocks) {
       )
     }
     if (request.endsWith('/units/autonomy/villagerAutonomyTargeting')) {
-      return requireFromTsFile(path.join(__dirname, '../app/lib/units/autonomy/villagerAutonomyTargeting.ts'), filename, mocks)
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/units/autonomy/villagerAutonomyTargeting.ts'),
+        filename,
+        mocks
+      )
     }
     if (Object.hasOwn(mocks, request)) return mocks[request]
     // Unmocked app modules load for real, resolved from the file that imports them.
@@ -611,6 +618,7 @@ test('resource gather cadence values are centralized by carried resource type', 
     [LOADING_TYPES.stone]: 3,
     [LOADING_TYPES.gold]: 4,
     [LOADING_TYPES.copper]: 3,
+    [LOADING_TYPES.tin]: 3,
     [LOADING_TYPES.iron]: 4,
   })
 })

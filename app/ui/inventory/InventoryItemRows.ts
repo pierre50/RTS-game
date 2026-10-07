@@ -1,3 +1,5 @@
+import { isEquipmentBroken } from '../../lib/equipment/equipmentCondition'
+import { t } from '../../lib/lang'
 import { appendInventoryEmptyIcon, createInventoryActionRow, type InventoryActionRowParts } from './InventoryActionRow'
 import { createInventoryEquipmentIcon, createInventoryResourceIcon } from './InventoryItemIcons'
 import { createEquipmentRowInfo, createResourceRowInfo, formatGold } from './InventoryDetails'
@@ -54,7 +56,15 @@ export function createInventoryEquipmentRow(
 ): InventoryItemRowParts {
   const count = options.count ?? 1
   const info = createEquipmentRowInfo(options.equipment, count, options.mode, { showValue: false })
-  const parts = createItemRow(menu, options, info, count)
+  const parts = createItemRow(
+    menu,
+    {
+      ...options,
+      badge: options.badge ?? (isEquipmentBroken(options.equipment) ? t('equipmentBrokenLabel') : undefined),
+    },
+    info,
+    count
+  )
   if (options.icon) {
     parts.icon.appendChild(options.icon)
   } else if (options.equipment && context) {
@@ -89,6 +99,7 @@ function createItemRow(
     badge: options.badge,
     category: info.category,
     stats: info.stats,
+    durability: info.durability,
     className: options.className,
     disabled: options.disabled,
     title: options.title ?? info.title,

@@ -1,3 +1,7 @@
+import { wearEquippedWeapon } from '../../lib/equipment/equipmentWear'
+import { isBrokenCombatWeapon } from '../../lib/equipment/equipmentCondition'
+import { getConfiguredEntityEquipment } from '../../lib/equipment/equipmentStats'
+import { takeSprintAttackMultiplier } from '../../lib/units/movement/unitSprint'
 import { isVillagerWorkTargetRejected } from '../../lib/units/autonomy/villagerAutonomyTargeting'
 import { definedProperties } from '../../lib/definedProperties'
 import { showContactDebug } from '../../lib/contact/contactDebug'
@@ -27,7 +31,7 @@ import { Projectile } from '../Projectile'
 import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/units/unitExperience'
 import { showAlertThenAggressionFeedback } from '../../lib/combat/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/units/unitControl'
-import { getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipment/equipmentStats'
+import { getEntityWeaponPower, getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipment/equipmentStats'
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
 import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
@@ -246,6 +250,10 @@ export class UnitCombat {
     const player = unit.owner
     const rangedAttackRange = getUnitCombatRange(unit)
     markCombatAttack(unit)
+    if (getConfiguredEntityEquipment(unit).some(isBrokenCombatWeapon)) {
+      unit.stop?.()
+      return
+    }
 
     if (!unit.getActionCondition?.(unit.dest)) {
       unit.affectNewDest?.()
@@ -266,11 +274,15 @@ export class UnitCombat {
           unit.context!
         )
         attachProjectileToMapSpace(projectile, map)
+        wearEquippedWeapon(unit, 'ranged')
       })
     } else {
+      let sprintMultiplier = 1
       this.runAttackLoop(
         SLASH_IMPACT_FRAME,
         dest => {
+          const attackSprintMultiplier = sprintMultiplier
+          sprintMultiplier = 1
           showContactDebug(unit, dest ? [dest] : [], getUnitMeleeWeapon(unit))
           if (!dest || !isContactTouching(unit, dest, getUnitMeleeWeapon(unit))) {
             playAudibleSoundCue(unit, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' })
@@ -279,6 +291,9 @@ export class UnitCombat {
           playAudibleSoundCue(unit, getMeleeImpactSound(unit, dest), { profile: 'combat' })
           if (dest && (dest.hitPoints ?? 0) > 0) {
             const { killed } = applyCombatHit(unit, dest, {
+              ...(attackSprintMultiplier > 1
+                ? { defaultDamage: getEntityWeaponPower(unit) * attackSprintMultiplier }
+                : {}),
               bonusDamage: getCombatXpBonus(unit, XP_CATEGORIES.melee),
               isMelee: true,
               menu,
@@ -294,7 +309,10 @@ export class UnitCombat {
         },
         {
           trackTargetOnRelease: false,
-          onAttackPrepared: target => prepareAutomaticParry?.(target),
+          onAttackPrepared: target => {
+            sprintMultiplier = takeSprintAttackMultiplier(unit)
+            prepareAutomaticParry?.(target)
+          },
           playRecoveryAnimation: (releaseFrame, onComplete) => this.playReverseSlashRecovery(releaseFrame, onComplete),
         }
       )

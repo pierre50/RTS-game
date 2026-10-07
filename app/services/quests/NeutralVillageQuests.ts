@@ -1,10 +1,6 @@
-import { VILLAGE_DETAIL_ENTER_RADIUS } from '../../config/villageActivity'
 import { updateVillageFoundingQuests } from './VillageFoundingQuests'
 import { VILLAGE_QUEST_CONFIG } from '../../config/gameplay'
-import { isLivingChief } from '../../lib/chief'
 import { clearEntityOverheadIndicator, setEntityOverheadIndicator } from '../../lib/entities/overheadIndicator'
-import { t } from '../../lib/lang'
-import { isNeutralPlayer } from '../../lib/playerState'
 import type { ResourceAmount } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
@@ -14,18 +10,19 @@ import type { QuestInstance } from '../../types/quest'
 import { maintainBanditCampEncounter } from './BanditCampEncounter'
 import { banditCampQuest } from './BanditCampQuest'
 import { assignBanditCamp, hasBanditCampCandidate } from './BanditCampSelection'
-import { canTalk } from './NeutralQuestConversation'
+import { canTalk, isChiefNearby, isEligibleChief } from './NeutralQuestConversation'
 import { getTrackedMarkers } from './NeutralQuestMarkers'
 import { createBanditCampOffer, createResourceRequestOffer, pickResourceRequest } from './NeutralQuestOffers'
 import { assignResourceRequest, interact } from './NeutralQuestTransactions'
 import { commitQuestInventory, questItemCount } from './QuestInventory'
 import { QuestSystem, type QuestEnvironment } from './QuestSystem'
 import { resourceRequestQuest } from './ResourceRequestQuest'
-import { tutorialHuntQuest } from './TutorialHuntQuest'
+import { TutorialQuestRaid } from './TutorialQuestRaid'
 import { maintainTutorialHunt } from './TutorialHuntUpkeep'
 const INDICATOR_LABEL = 'quest-offer-indicator'
 type QuestOfferMarker = 'exclamation' | 'question'
 export class NeutralVillageQuests {
+  private readonly raid: TutorialQuestRaid
   readonly system: QuestSystem
   private taskId: number | null = null
   private initialized = false
@@ -35,6 +32,7 @@ export class NeutralVillageQuests {
   private marked = new Map<UnitEntity, QuestOfferMarker>()
 
   constructor(private readonly context: GameContextLike) {
+    this.raid = new TutorialQuestRaid(context)
     this.system = new QuestSystem(() => context.getQuestJournal?.() ?? null)
     if (!context.editor) {
       this.taskId = context.scheduler?.add(() => this.update(!this.initialized), 500, 'quests.neutralVillages') ?? null
@@ -47,16 +45,7 @@ export class NeutralVillageQuests {
   }
 
   private eligible(npc: UnitEntity): boolean {
-    const owner = npc.owner
-    if (!owner || !isLivingChief(npc) || this.context.map?.mapType === 'interior') return false
-    if (this.getQuest(npc)?.repeatable === false) return this.context.player?.isEnemy?.(owner) !== true
-    if (owner.isPlayed) return false
-    const faction = owner.factionId ? this.context.getCampaignFactions?.()?.[owner.factionId] : null
-    return (
-      (faction
-        ? ['neutral', 'friendly', 'allied'].includes(faction.relationState)
-        : isNeutralPlayer(owner) || owner.diplomacy === 'neutral') && this.context.player?.isEnemy?.(owner) !== true
-    )
+    return isEligibleChief(this.context, npc, this.getQuest.bind(this))
   }
 
   private canTalk(npc: UnitEntity): boolean {
@@ -104,21 +93,6 @@ export class NeutralVillageQuests {
     return this.context.dayNight?.state.day ?? 1
   }
 
-  private nearbyChief(npc: UnitEntity): boolean {
-    const hero = this.context.controls?.heroUnit
-    if (!hero || hero.isDead || hero.isDestroyed) return false
-    const outside = (unit: UnitEntity) =>
-      !unit.spaceId || unit.spaceId === 'outside'
-        ? unit
-        : this.context.map.spaces?.get(unit.spaceId)?.portals?.find(portal => portal.targetSpaceId === 'outside')
-            ?.targetCell
-    if (hero.spaceId && hero.spaceId === npc.spaceId && hero.spaceId !== 'outside')
-      return Math.hypot(hero.i - npc.i, hero.j - npc.j) <= VILLAGE_DETAIL_ENTER_RADIUS
-    const a = outside(hero),
-      b = outside(npc)
-    return Boolean(a && b && Math.hypot(a.i - b.i, a.j - b.j) <= VILLAGE_DETAIL_ENTER_RADIUS)
-  }
-
   private isOfferDue(npc: UnitEntity, previous: QuestInstance, refreshOffers: boolean): boolean {
     if (previous.repeatable === false || previous.status !== 'completed') return false
     if (!refreshOffers && this.offerChecks.get(npc) === this.day()) return false
@@ -148,7 +122,7 @@ export class NeutralVillageQuests {
   }
 
   private ensureOffer(npc: UnitEntity, refreshOffers = true): void {
-    if (!this.eligible(npc) || !this.nearbyChief(npc) || !this.system.state || !this.regionId()) return
+    if (!this.eligible(npc) || !isChiefNearby(this.context, npc) || !this.system.state || !this.regionId()) return
     const previous = this.getQuest(npc)
     if (previous && !this.isOfferDue(npc, previous, refreshOffers)) return
     const map = this.context.map
@@ -214,32 +188,9 @@ export class NeutralVillageQuests {
     )
   }
 
-  private raidPending = false
-
   dialogueClosed(npc: UnitEntity): void {
     if (!this.canTalk(npc)) return
-    const quest = this.getQuest(npc)
-    if (!quest || quest.definitionId !== tutorialHuntQuest.id || quest.status !== 'active') return
-    if (quest.stageId === 'alarm' && !this.interact(npc, 'defend')) return
-    if (quest.stageId !== 'raid' || quest.facts.raidStarted || this.raidPending) return
-    const raids = this.context.tributeRaids
-    if (!raids?.triggerTutorialRaid) return
-    this.raidPending = true
-    void raids
-      .triggerTutorialRaid()
-      .then(started => {
-        if (started) {
-          quest.facts.raidStarted = true
-          this.context.autosave?.()
-        } else this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
-      })
-      .catch(error => {
-        console.error('Unable to start tutorial raid', error)
-        this.context.menu?.showMessage?.(t('tutorialRaidUnavailable'), 'warning')
-      })
-      .finally(() => {
-        this.raidPending = false
-      })
+    this.raid.dialogueClosed(this.getQuest(npc), () => this.interact(npc, 'defend'))
   }
 
   private maintainTutorialHunt(quest: QuestInstance, npc: UnitEntity): void {
@@ -270,7 +221,7 @@ export class NeutralVillageQuests {
     if (!quest) return null
     this.maintainTutorialHunt(quest, npc)
     maintainBanditCampEncounter(this.context, quest, npc)
-    if (!this.nearbyChief(npc) || !this.canTalk(npc)) return null
+    if (!isChiefNearby(this.context, npc) || !this.canTalk(npc)) return null
     if (quest.status === 'available') return 'exclamation'
     return this.canAdvanceQuest(quest, npc) ? 'question' : null
   }

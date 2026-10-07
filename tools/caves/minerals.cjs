@@ -23,7 +23,7 @@ function addCaveMinerals(blueprint) {
   candidates.sort((a, b) => a.order - b.order)
   const count = { small: 2, medium: 4, large: 6 }[blueprint.tier]
   const resources = []
-  const types = ['Gold', 'Copper', 'Iron']
+  const types = ['Gold', 'Copper', 'Tin', 'Iron']
   for (const cell of candidates) {
     if (resources.some(node => Math.hypot(node.i - cell.i, node.j - cell.j) < 4)) continue
     const type = types[resources.length % types.length]

@@ -129,7 +129,14 @@ export function addGatheredResource(unit: UnitEntity, loadingType: string, amoun
 export function sendVillagerToDeliveryIfFull(unit: UnitEntity, loadingType: string): boolean {
   if (!unitShouldDeliverResource(unit, loadingType)) return false
   if (unit.sendToDelivery?.() === true) return true
-  return false
+  // stop() normally resumes the current job; suppress that while the bag is blocked.
+  const job = unit.autonomousJob
+  unit.autonomousJob = null
+  unit.stop?.()
+  unit.autonomousJob = job
+  unit.gatherProgressState = null
+  notifyVillageWorkChanged(unit.owner)
+  return true
 }
 
 function getGatherProgressState(

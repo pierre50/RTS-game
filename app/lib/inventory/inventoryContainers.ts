@@ -1,3 +1,4 @@
+import { bundleHelmetDecorations } from '../equipment/helmetVariants'
 import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 
@@ -28,7 +29,7 @@ export type InventoryContainer = {
 
 function ensureInventoryStorage(target: { inventory?: InventoryStorage | null }): InventoryStorage {
   target.inventory = target.inventory ?? {}
-  target.inventory.equipment = target.inventory.equipment ?? []
+  target.inventory.equipment = bundleHelmetDecorations(target.inventory.equipment ?? [])
   target.inventory.resources = target.inventory.resources ?? {}
   return target.inventory
 }

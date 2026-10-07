@@ -41,3 +41,10 @@ test('cave definitions can only belong to cave buildings', () => {
   assert.throws(() => validate(building({ cave })), /cave building type/)
   assert.doesNotThrow(() => validate(building({ type: 'Cave', cave })))
 })
+
+test('settlement names accept old saves and reject invalid saved values', () => {
+  for (const settlementName of [undefined, 'Athènes', 'Uruk 2'])
+    assert.doesNotThrow(() => validate(building({ settlementName })))
+  for (const settlementName of [false, 42, '', '   ', 'a'.repeat(121)])
+    assert.throws(() => validate(building({ settlementName })), /settlement name/)
+})

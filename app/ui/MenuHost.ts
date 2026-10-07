@@ -30,7 +30,6 @@ export interface MenuHost {
   updateActionTarget(): void
   getMessage(cost: ResourceAmount): string
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
-  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[]
   createActionIcon(src: string): HTMLImageElement

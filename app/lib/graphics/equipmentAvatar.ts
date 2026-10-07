@@ -1,3 +1,4 @@
+import { equipmentVisualParts } from '../equipment/helmetVariants'
 import { Assets, type Texture, type Application } from 'pixi.js'
 import { getAnimationFrames } from '../entities/spriteFrameSelection'
 import { dynamicEquipmentVisualKey } from '../lpc/equipment'
@@ -45,24 +46,28 @@ function drawCachedEquipmentAvatar(source: HTMLCanvasElement, canvas: HTMLCanvas
 // across both, e.g. a halberd's shaft going behind the arm), then crops
 // tightly to whatever's actually drawn.
 export function renderEquipmentAvatar(app: Application, equipment: string, canvas: HTMLCanvasElement): boolean {
-  const visualEquipment = dynamicEquipmentVisualKey(equipment)
-  if (!visualEquipment) return false
+  const visualEquipment = equipmentVisualParts(equipment).map(dynamicEquipmentVisualKey)
+  if (visualEquipment.some(part => !part)) return false
 
   const cacheKey = `${equipment}:${canvas.width}x${canvas.height}`
   const cached = equipmentAvatarCache.get(cacheKey)
   if (cached) return drawCachedEquipmentAvatar(cached, canvas)
 
   for (const sheet of EQUIPMENT_SHEETS) {
-    const layerTextures = EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(visualEquipment, layer, sheet)).filter(
-      (texture): texture is Texture => Boolean(texture)
+    const texturesByPart = visualEquipment.map(part =>
+      EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(part!, layer, sheet))
     )
-    if (!layerTextures.length) continue
+    // Wait for every part before caching: otherwise a slow ornament stays invisible.
+    if (texturesByPart.some(textures => !textures.some(Boolean))) continue
+    const layerTextures = EQUIPMENT_LAYERS.flatMap((_, index) =>
+      texturesByPart.map(textures => textures[index])
+    ).filter((texture): texture is Texture => Boolean(texture))
 
     const size = layerTextures[0]
     if (!size) continue
     const composed = document.createElement('canvas')
-    composed.width = size.width
-    composed.height = size.height
+    composed.width = Math.max(...layerTextures.map(texture => texture.width))
+    composed.height = Math.max(...layerTextures.map(texture => texture.height))
     const ctx = composed.getContext('2d', { willReadFrequently: true })
     if (!ctx) continue
     ctx.imageSmoothingEnabled = false

@@ -1,8 +1,9 @@
+import { equipmentVisualParts, isHelmetDecoration } from './helmetVariants'
+import { equipmentBaseKey } from './equipmentCondition'
 import type { HeroEquipmentSlot, HeroWeaponSlot } from '../../types/entities'
 
 export const HERO_EQUIPMENT_SLOTS: readonly HeroEquipmentSlot[] = [
   'helmet',
-  'helmetDecor',
   'cape',
   'armor',
   'legs',
@@ -24,22 +25,13 @@ const SLOT_LABEL_KEYS: Record<HeroEquipmentSlot, string> = {
   arrow: 'heroEquipmentSlotArrow',
 }
 
-const HELMET_DECOR_PREFIXES = [
-  'upward_horns',
-  'helmet_wings',
-  'plumage',
-  'centurion_crest',
-  'centurion_plumage',
-  'legion_plumage',
-  'crest',
-]
-
 export function getHeroEquipmentSlotLabelKey(slot: HeroEquipmentSlot): string {
   return SLOT_LABEL_KEYS[slot]
 }
 
 export function getEquipmentSlot(equipment: string): HeroEquipmentSlot | null {
-  if (HELMET_DECOR_PREFIXES.some(prefix => equipment === prefix || equipment.startsWith(`${prefix}_`))) {
+  equipment = equipmentBaseKey(equipment)
+  if (isHelmetDecoration(equipment)) {
     return 'helmetDecor'
   }
   if (equipment.startsWith('helmet_') || equipment.includes('_hood_')) return 'helmet'
@@ -54,7 +46,7 @@ export function getEquipmentSlot(equipment: string): HeroEquipmentSlot | null {
 }
 
 export function getWeaponSlot(equipment: string): HeroWeaponSlot | null {
-  if (equipment === 'quiver') return 'quiver'
+  equipment = equipmentBaseKey(equipment)
   if (equipment.startsWith('bow')) return 'ranged'
   if (
     equipment.startsWith('sword_') ||
@@ -71,6 +63,9 @@ export function getWeaponSlot(equipment: string): HeroWeaponSlot | null {
 }
 
 export function formatEquipmentLootLabel(equipment: string): string {
+  const parts = equipmentVisualParts(equipment)
+  if (parts.length > 1) return parts.map(formatEquipmentLootLabel).join(' · ')
+  equipment = equipmentBaseKey(equipment)
   return equipment
     .split('_')
     .filter(Boolean)

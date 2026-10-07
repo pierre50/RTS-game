@@ -64,7 +64,7 @@ function fixture() {
       },
       '../../../lib/units/visuals/unitWalkingAnimation': { applyUnitWalkingAnimationSpeed() {} },
       '../../../lib/units/visuals/unitCrouchPose': { applyUnitCrouchPose() {}, resetUnitCrouchPose: mark('reset') },
-      '../../../lib/units/unitLocomotion': { isUnitWalkSpeedFactor: () => false },
+      '../../../lib/units/movement/unitLocomotion': { isUnitWalkSpeedFactor: () => false },
       '../../../lib/buildings/passageCells': {
         routeUnitAwayFromPassageCell: () => rules.passage,
         unitHasActivePassageStopIntent: () => rules.passageIntent,

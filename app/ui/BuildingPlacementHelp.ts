@@ -12,14 +12,14 @@ export class BuildingPlacementHelp {
   private stopSettingsWatch: () => void
 
   constructor(
-    private actions: { place(): void; mirror(): void; cancel(): void; canMirror: boolean },
+    private actions: { place(): void; mirror(): void; cancel(): void; canMirror: boolean; destination?: boolean },
     gamepad = false
   ) {
     this.gamepad = gamepad
     this.element.className = 'building-placement-help'
-    this.element.setAttribute('aria-label', t('placementHelp'))
+    this.element.setAttribute('aria-label', t(actions.destination ? 'destinationPickingHelp' : 'placementHelp'))
     const title = document.createElement('span')
-    title.textContent = t('placementHelp')
+    title.textContent = t(actions.destination ? 'destinationPickingHelp' : 'placementHelp')
     this.element.appendChild(title)
     this.place = this.button(actions.place)
     this.mirror = this.button(actions.mirror)
@@ -49,9 +49,14 @@ export class BuildingPlacementHelp {
 
   private render(): void {
     for (const [button, action, key, label] of [
-      [this.place, 'placementPlace', '↵', t('placementPlace')],
+      [
+        this.place,
+        this.actions.destination ? 'destinationConfirm' : 'placementPlace',
+        '↵',
+        t(this.actions.destination ? 'destinationConfirm' : 'placementPlace'),
+      ],
       [this.mirror, 'placementMirror', 'R', t('placementMirror')],
-      [this.cancel, 'placementCancel', 'Esc', t('cancel')],
+      [this.cancel, this.actions.destination ? 'destinationCancel' : 'placementCancel', 'Esc', t('cancel')],
     ] as const) {
       const hint = this.gamepad ? createGamepadKey(getGamepadButtonIndex(action)) : document.createElement('kbd')
       if (!this.gamepad) hint.textContent = key

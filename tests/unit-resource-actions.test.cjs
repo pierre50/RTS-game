@@ -143,18 +143,23 @@ test('berrybush forage keeps the berry gathering sound', () => {
   assert.equal(captureForageSound('Berrybush'), 'berry-gathering')
 })
 
-test('delivery helper reports failure when a full bag cannot be delivered', () => {
+test('full gathering stops when no delivery is possible', () => {
   const { sendVillagerToDeliveryIfFull } = loadUnitResourceGathering()
   const calls = []
   const unit = {
     inventory: { resources: { wood: 30 } },
     owner: { isPlayed: true },
     sendToDelivery: () => false,
-    stop: () => calls.push('stop'),
+    autonomousJob: 'wood',
+    stop() {
+      assert.equal(this.autonomousJob, null)
+      calls.push('stop')
+    },
   }
 
-  assert.equal(sendVillagerToDeliveryIfFull(unit, 'wood'), false)
-  assert.deepEqual(calls, [])
+  assert.equal(sendVillagerToDeliveryIfFull(unit, 'wood'), true)
+  assert.deepEqual(calls, ['stop'])
+  assert.equal(unit.autonomousJob, 'wood')
 })
 
 for (const [type, age, action] of [['Iron', 0, 'mineiron']]) {

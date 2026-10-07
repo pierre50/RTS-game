@@ -33,6 +33,7 @@ const RESOURCE_AUTONOMY_CONFIG: Record<ResourceAutonomyJob, { action: string; re
   stone: { action: ACTION_TYPES.minestone, resourceType: RESOURCE_TYPES.stone, work: WORK_TYPES.stoneminer },
   gold: { action: ACTION_TYPES.minegold, resourceType: RESOURCE_TYPES.gold, work: WORK_TYPES.goldminer },
   copper: { action: ACTION_TYPES.minecopper, resourceType: RESOURCE_TYPES.copper, work: WORK_TYPES.goldminer },
+  tin: { action: ACTION_TYPES.minetin, resourceType: RESOURCE_TYPES.tin, work: WORK_TYPES.goldminer },
   iron: { action: ACTION_TYPES.mineiron, resourceType: RESOURCE_TYPES.iron, work: WORK_TYPES.goldminer },
 }
 

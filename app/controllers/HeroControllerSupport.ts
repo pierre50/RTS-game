@@ -5,14 +5,12 @@ import {
   COMM_INDICATOR_FILL_ALPHA,
   COMM_INDICATOR_STROKE_ALPHA,
   COMM_INDICATOR_STROKE_WIDTH,
-  HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR,
   FADE_DURATION_MS,
 } from '../constants'
 import { getCommCellsInRadius } from '../lib/npc/npcInteraction'
 import { refreshBakedLpcUnitAssets } from '../lib/lpc'
 import { getEntitySpaceGrid } from '../lib/mapSpaces'
 import { ENTITY_TRANSITION_HIDDEN_ALPHA } from '../lib/entities/entityFade'
-import { UNIT_WALK_SPEED_FACTOR } from '../lib/units/unitLocomotion'
 import { getLastDirectMoveDebugSnapshot } from '../classes/unit/movement/UnitMovementDebug'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
@@ -45,10 +43,6 @@ export type CompanionHorse = AnimalEntity & {
   ) => void
 }
 export type ViewportMetrics = { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
-type HeroDirectionLockHost = {
-  shiftKeyActive?: boolean
-  isHeroDirectionLockActive?: () => boolean
-}
 
 const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, MoveVector>> = {
   heroUp: { dx: 0, dy: -1 },
@@ -116,35 +110,9 @@ export function easeInOut(t: number): number {
   return clamped * clamped * (3 - 2 * clamped)
 }
 
-export function isHeroDirectionLockActive(controls: HeroDirectionLockHost): boolean {
-  return controls.isHeroDirectionLockActive?.() ?? Boolean(controls.shiftKeyActive)
-}
-
 export function getVectorFromDegree(degree: number): MoveVector {
   const radians = ((degree - 180) * Math.PI) / 180
   return { dx: Math.cos(radians), dy: Math.sin(radians) }
-}
-
-export function getPointInDirection(unit: UnitEntity, degree: number, distance = 100): HeroAimPoint {
-  const vector = getVectorFromDegree(degree)
-  return {
-    x: unit.x + vector.dx * distance,
-    y: unit.y + vector.dy * distance,
-  }
-}
-
-export function getLockedMoveSpeedFactor(move: MoveVector, facing: MoveVector): number {
-  const moveLength = Math.hypot(move.dx, move.dy)
-  const facingLength = Math.hypot(facing.dx, facing.dy)
-  if (moveLength <= 0 || facingLength <= 0) return 1
-
-  const alignment = (move.dx * facing.dx + move.dy * facing.dy) / (moveLength * facingLength)
-  if (alignment >= 0) {
-    return HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR + (1 - HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR) * alignment
-  }
-  return (
-    HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR + (HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR - UNIT_WALK_SPEED_FACTOR) * alignment
-  )
 }
 
 export function refreshBakedAppearance(unit: UnitEntity): void {

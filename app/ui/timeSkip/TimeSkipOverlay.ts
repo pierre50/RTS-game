@@ -5,6 +5,7 @@ import { t } from '../../lib/lang'
 
 export type TimeSkipOverlay = {
   gamepadHint: HTMLElement
+  keyboardHint: HTMLElement
   fill: HTMLElement
   label: HTMLElement
   root: HTMLElement
@@ -56,14 +57,16 @@ export function createTimeSkipOverlay(
   overlay.appendChild(panel)
   gamebox.appendChild(overlay)
 
-  const result = { fill, label, gamepadHint, root: overlay }
+  const result = { fill, label, gamepadHint, keyboardHint, root: overlay }
   updateTimeSkipOverlay(result, 0, hours)
   return result
 }
 
 export function updateTimeSkipOverlay(overlay: TimeSkipOverlay | null, progress: number, remainingHours: number): void {
   if (!overlay) return
-  overlay.gamepadHint.hidden = !(getGamepadEnabled() && getActiveGamepad())
+  const gamepadActive = Boolean(getGamepadEnabled() && getActiveGamepad())
+  overlay.gamepadHint.hidden = !gamepadActive
+  overlay.keyboardHint.hidden = gamepadActive
   const percent = `${Math.round(Math.max(0, Math.min(100, progress * 100)))}%`
   const displayedHours = Math.ceil(remainingHours)
   const unit = displayedHours === 1 ? 'hour' : 'hours'

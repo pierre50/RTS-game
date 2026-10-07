@@ -1,4 +1,5 @@
 import { getGamepadButtonIndex, getGamepadEnabled } from '../lib/audio/settings'
+import { getConsumedGamepadButtons } from '../lib/input/gamepadConsumption'
 import { getActiveGamepad } from '../lib/input/gamepad'
 
 /** Runs independently of the game ticker so Start still works while paused. */
@@ -22,7 +23,14 @@ export class GamepadMenuInput {
     this.binding = binding
     this.connected = Boolean(pad)
     this.pressed = pressed
-    if (activate && document.visibilityState !== 'hidden' && !document.querySelector('.is-listening')) this.toggle()
+    if (
+      activate &&
+      document.visibilityState !== 'hidden' &&
+      !document.querySelector('.is-listening, .virtual-keyboard') &&
+      pad &&
+      !getConsumedGamepadButtons(pad).has(binding)
+    )
+      this.toggle()
     if (!this.disposed) this.frame = requestAnimationFrame(this.poll)
   }
 

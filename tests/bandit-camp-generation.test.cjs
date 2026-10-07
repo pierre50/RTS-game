@@ -106,8 +106,8 @@ function createBanditOwner() {
   return owner
 }
 
-test('quest camps reuse outdoor fires, furniture, chest and patrol units without a cave', () => {
-  const { placeOutdoorBanditQuestCamp } = loadBanditCampGeneration(() => assert.fail('No cave for quest camps'))
+test('generated camps reuse outdoor fires, furniture, chest and patrol units without a cave', () => {
+  const { placeBanditCamps } = loadBanditCampGeneration(() => assert.fail('No cave for quest camps'))
   const owner = createBanditOwner()
   owner.units = [{ label: 'existing' }]
   owner.createUnit = options => {
@@ -116,7 +116,9 @@ test('quest camps reuse outdoor fires, furniture, chest and patrol units without
     return unit
   }
   const map = { context: { players: [owner] }, grid: [], randomItem: items => items[0], randomRange: min => min }
-  const guards = placeOutdoorBanditQuestCamp(map, map.context, { i: 30, j: 30 })
+  map.banditCampPositions = [{ i: 30, j: 30 }]
+  placeBanditCamps(map, map.context)
+  const guards = owner.units.filter(unit => unit.label !== 'existing')
   assert.equal(guards.length, 3)
   assert.ok(guards.every(unit => unit.banditCampAnchor && unit.campPatrolAnchor))
   assert.ok(guards.some(unit => unit.type === 'BanditChief'))
@@ -148,7 +150,7 @@ test('bandit camps place a bandit-owned chest with loot', () => {
   assert.deepEqual(chest.inventory.resources, { berry: 2, meat: 2, wheat: 4, gold: 2, wood: 3 })
   assert.equal(chest.inventory.equipment.filter(item => item === 'arrow_ceramic').length, 6)
   assert.ok(chest.inventory.equipment.includes('trap'))
-  assert.ok(chest.inventory.equipment.includes('sword_ceramic'))
+  assert.ok(chest.inventory.equipment.some(item => item.startsWith('sword_ceramic~condition:')))
   assert.equal(chest.i, 18)
   assert.equal(chest.j, 17)
 })

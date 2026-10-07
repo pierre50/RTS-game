@@ -32,7 +32,9 @@ function writePreview(blueprint, file) {
       const exit = blueprint.exits.some(exit => exit.i === i && exit.j === j)
       const mineral = blueprint.resources?.find(resource => resource.i === i && resource.j === j)
       const color = mineral
-        ? ({ Gold: [222, 207, 16], Copper: [184, 115, 51], Iron: [140, 155, 175] }[mineral.type] ?? [174, 151, 116])
+        ? ({ Gold: [222, 207, 16], Copper: [184, 115, 51], Tin: [216, 207, 183], Iron: [140, 155, 175] }[
+            mineral.type
+          ] ?? [174, 151, 116])
         : exit
           ? [92, 204, 134]
           : !floor[index]

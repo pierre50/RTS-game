@@ -29,6 +29,13 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
         }
       },
     },
+    './hero-building/HeroVillageReport': {
+      createHeroVillageReport: () => global.document.createElement('village-report'),
+      syncHeroVillageReport() {},
+    },
+    './hero-building/HeroTechnologyBody': {
+      createHeroTechnologyBody: () => global.document.createElement('technology-tree'),
+    },
     './hero-building/HeroForgeBody': {
       HeroForgeBody: class {
         constructor() {
@@ -37,6 +44,7 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
       },
     },
     '../lib/resources/playerResourceTotals': { getPlayerResourceTotals: () => ({}) },
+    '../../services/world/TrapHarvestSystem': { dismantleTrapBuilding: () => true },
     '../constants': {
       DAILY_CONSUMPTION_PER_VILLAGER: { food: 4 },
       VILLAGER_ARRIVAL_CONFIG: {
@@ -52,6 +60,7 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
         temple: 'Temple',
         stable: 'Stable',
         forge: 'Forge',
+        townCenter: 'TownCenter',
         chest: 'Chest',
         fireCamp: 'FireCamp',
         campBedroll: 'CampBedroll',
@@ -138,7 +147,7 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
       getBuildingDisplayName: building => building.type || 'building',
     },
   }
-  for (const name of ['HeroMarketBody', 'HeroCampfireBody', 'HeroForgeBody'])
+  for (const name of ['HeroMarketBody', 'HeroCampfireBody', 'HeroForgeBody', 'HeroTechnologyBody', 'HeroVillageReport'])
     mocks[`./${name}`] = mocks[`./hero-building/${name}`]
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
@@ -266,13 +275,13 @@ test('chest inventory stays unavailable until construction completes', () => {
   }
 })
 
-test('trap construction is inspectable while completed traps keep their dedicated interaction', () => {
+test('trap construction and completed traps both open their menu', () => {
   const { manager, player, restoreDocument } = createManager()
   try {
     for (const isBuilt of [false, true]) {
       const building = { family: 'building', type: 'Trap', owner: player, isBuilt }
-      assert.equal(manager.canOpenFor(building), !isBuilt)
-      assert.equal(manager.open(building), !isBuilt)
+      assert.equal(manager.canOpenFor(building), true)
+      assert.equal(manager.open(building), true)
     }
   } finally {
     restoreDocument()
@@ -784,7 +793,7 @@ test('E depot panels allocate building capacity without a total amount control',
       )
       assert.ok(panel.children.find(child => child.className === 'depot-reserve-capacity'))
       const rows = panel.children.filter(child => child.className.startsWith('depot-reserve-row'))
-      assert.equal(rows.length, type === 'StoragePit' ? 5 : 3)
+      assert.equal(rows.length, type === 'StoragePit' ? 6 : 3)
       const input = rows[1].children.find(child => child.tagName === 'input')
       assert.equal(input.type, 'range')
       input.value = '40'
@@ -888,6 +897,32 @@ test('building upgrade opens a separate review sheet and restores the building o
     action.dispatch('click')
     manager.close()
     assert.equal(manager.upgradeModal, undefined)
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('own Town Center opens technology management in a large window', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    const center = { type: 'TownCenter', family: 'building', owner: player, isBuilt: true }
+    assert.equal(manager.open(center), true)
+    assert.equal(manager.body.children[0].tagName, 'village-report')
+    assert.equal(manager.body.children.at(-1).tagName, 'technology-tree')
+    assert.equal(manager.isManagedBuilding(center), true)
+    const before = manager.getStructureSignature()
+    player.forgeUpgrades = { axes: 1 }
+    assert.notEqual(manager.getStructureSignature(), before)
+    manager.open({ ...center, owner: { label: 'foreign' } })
+    assert.equal(
+      manager.body.children.some(child => child.tagName === 'village-report'),
+      false
+    )
+    manager.open({ ...center, isBuilt: false })
+    assert.equal(
+      manager.body.children.some(child => child.tagName === 'technology-tree'),
+      false
+    )
   } finally {
     restoreDocument()
   }

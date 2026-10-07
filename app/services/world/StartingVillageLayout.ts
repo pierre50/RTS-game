@@ -1,7 +1,9 @@
+import { StartingVillageRoads } from './StartingVillageRoads'
+import type { RoadLayer } from '../../lib/terrain/roadLayer'
 import { BUILDING_INTERIOR_TYPES } from '../../lib/buildings/interiorProfiles'
 import { storagePitResources, storagePitSiteScore } from '../../lib/grid/storagePitPlacement'
 import { StartingResourceRelocation } from './StartingResourceRelocation'
-import { planVillageDistricts, type VillageDistrictPlan } from './VillageDistrictPlan'
+import { planVillageDistricts, findVillageSquare, type VillageDistrictPlan } from './VillageDistrictPlan'
 import { OfflineWorldSpatial, type OfflineTerrainCell } from './offline/OfflineWorldSpatial'
 import type { OfflineWorkRules } from './offline/OfflineWorldWork'
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../types/save'
@@ -9,6 +11,8 @@ import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../types
 /** Initial layouts use runtime-sized footprints and a free circulation ring, rather
  * than the historical path reservations needed when extending a live village. */
 export class StartingVillageLayout {
+  private readonly defenseSites = new Map<SaveEntityState, SaveEntityState[]>()
+  private roads?: StartingVillageRoads
   readonly spatial: OfflineWorldSpatial
   private readonly relocation: StartingResourceRelocation
   private readonly movableResources: SaveEntityState[]
@@ -35,6 +39,48 @@ export class StartingVillageLayout {
     this.relocation = new StartingResourceRelocation(this.movableResources, terrain, this.spatial)
   }
 
+  /** Fix the shared square before the road planner sees the settlement. */
+  prepareCore(center: SaveEntityState): SaveGridPoint {
+    return this.plan(center).square
+  }
+
+  reserveRoads(roads: RoadLayer): void {
+    this.roads = new StartingVillageRoads(roads)
+    for (const [id] of roads.cells) {
+      const i = Math.floor(id / roads.stride)
+      const j = id % roads.stride
+      for (let di = -1; di <= 1; di++)
+        for (let dj = -1; dj <= 1; dj++) this.spatial.reservePassage({ i: i + di, j: j + dj })
+    }
+  }
+
+  /** Reserve defensive lots before housing can consume the few valid roadside sites. */
+  reserveDefenseSites(center: SaveEntityState, count: number, size: number, range: number, civilization: string): void {
+    const reservations: SaveEntityState[] = []
+    for (let n = 0; n < count; n++) {
+      const point = this.findSite(center, center, size, civilization, 'WatchTower', range)
+      if (!point) throw new Error(`No defensive site for ${civilization}`)
+      const reservation: SaveEntityState = {
+        ...point,
+        type: 'WatchTower',
+        size,
+        label: `defense-lot:${center.label}:${n}`,
+      }
+      // Include the circulation ring until the real tower is built.
+      const before = Math.floor((size - 1) / 2) + 1
+      const after = size - Math.floor((size - 1) / 2)
+      for (let i = point.i - before; i <= point.i + after; i++)
+        for (let j = point.j - before; j <= point.j + after; j++) this.spatial.reserve(reservation, { i, j })
+      this.placed.get(center)!.push(reservation)
+      reservations.push(reservation)
+    }
+    this.placed.set(
+      center,
+      this.placed.get(center)!.filter(building => !reservations.includes(building))
+    )
+    this.defenseSites.set(center, reservations)
+  }
+
   reserveBuilding(building: SaveEntityState): void {
     this.reserveEntrance(building)
     const size = Math.max(1, Math.floor(building.size ?? 1))
@@ -49,27 +95,12 @@ export class StartingVillageLayout {
     if (!plan) {
       plan = planVillageDistricts(center, point => this.spatial.naturalCell(point, this.clearableTypes))
       // Keep the shared yard clear of both structures and resource nodes.
-      let square: SaveGridPoint | undefined
-      for (let ring = 0; ring <= 6 && !square; ring++) {
-        for (let di = -ring; di <= ring && !square; di++) {
-          for (let dj = -ring; dj <= ring; dj++) {
-            if (Math.max(Math.abs(di), Math.abs(dj)) !== ring) continue
-            const candidate = { i: plan.square.i + di, j: plan.square.j + dj }
-            if (!this.spatial.reachable(center, candidate)) continue
-            let free = true
-            for (let i = candidate.i - 1; i <= candidate.i + 1 && free; i++)
-              for (let j = candidate.j - 1; j <= candidate.j + 1; j++)
-                if (this.entrances.has(`${i}:${j}`) || !this.spatial.naturalCell({ i, j }, this.clearableTypes)) {
-                  free = false
-                  break
-                }
-            if (free) {
-              square = candidate
-              break
-            }
-          }
-        }
-      }
+      const square = findVillageSquare(
+        center,
+        plan.square,
+        (from, to) => this.spatial.reachable(from, to),
+        point => !this.entrances.has(`${point.i}:${point.j}`) && this.spatial.naturalCell(point, this.clearableTypes)
+      )
       if (square) {
         plan.square = square
         this.relocateResources(center, square, 1, 1, center.label ?? 'village')
@@ -114,7 +145,7 @@ export class StartingVillageLayout {
       case 'Barracks':
       case 'ArcheryRange':
       case 'Stable':
-        return plan.defence
+        return this.roads?.militarySite(center, plan.defence) ?? plan.defence
       case 'WatchTower':
         return plan.towers[count % plan.towers.length]
       case 'CampCrate':
@@ -142,8 +173,16 @@ export class StartingVillageLayout {
     anchor: SaveEntityState,
     size: number,
     civilization: string,
-    type = ''
+    type = '',
+    towerRange = 6
   ): SaveGridPoint | null {
+    if (type === 'WatchTower') {
+      const reserved = this.defenseSites.get(center)?.shift()
+      if (reserved) {
+        this.spatial.releaseBuilding(reserved)
+        return { i: reserved.i, j: reserved.j }
+      }
+    }
     const plan = this.plan(center)
     const preferred = type ? this.preferredSite(center, type) : anchor
     const distance = (a: SaveGridPoint, b: SaveGridPoint) => Math.hypot(a.i - b.i, a.j - b.j)
@@ -215,6 +254,7 @@ export class StartingVillageLayout {
           if (value === null) continue
           score = -value + displaced * 2 + breathingRoom
         }
+        score += this.roads?.score(center, candidate, type, this.placed.get(center) ?? [], towerRange) ?? 0
         if (type === 'WatchTower') score += Math.max(0, 13 - distance(candidate, center)) * 5
         lots.push({ point: candidate, score })
       }

@@ -107,27 +107,6 @@ test('Space is the default hero defense key', () => {
   }
 })
 
-test('Control is the default hero direction lock key and can be rebound', () => {
-  const { settings, restore } = loadSettings()
-  try {
-    assert.equal(settings.getKeyBindings().heroDirectionLock, 'Control')
-    assert.equal(
-      settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }),
-      'heroDirectionLock'
-    )
-    assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDirectionLock), 'Control')
-
-    settings.setKeyBindingFromKeyboardEvent('heroDirectionLock', { code: 'ControlLeft', key: 'Control' })
-    assert.equal(
-      settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }),
-      'heroDirectionLock'
-    )
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), 'heroDismountHorse')
-  } finally {
-    restore()
-  }
-})
-
 test('recording a digit-row binding stores the physical key code', () => {
   const { settings, restore } = loadSettings()
   try {
@@ -179,8 +158,18 @@ test('all exposed gamepad actions have defaults and can be rebound and reset', (
     const defaults = settings.getGamepadBindings()
     const actions = settings.GAMEPAD_BINDING_GROUPS.flatMap(group => group.actions)
     assert.deepEqual(new Set(actions), new Set(Object.keys(defaults)))
+    assert.equal(defaults.inventory, 'Button1')
+    assert.equal(defaults.heroCommunicate, 'Button3')
+    assert.equal(defaults.heroToolNext, 'Button2')
+    assert.equal(defaults.heroCancel, 'Button8')
+    assert.equal(defaults.heroMountHorse, 'Button13')
+    assert.equal(defaults.heroStealth, 'Button11')
+    assert.equal(defaults.heroToolPrev, 'Button14')
     assert.equal(defaults.heroAction, 'Button5')
-    assert.equal(defaults.heroInteract, 'Button2')
+    assert.equal(defaults.heroDirectAttack, 'Button7')
+    assert.equal(defaults.heroSprint, 'Button10')
+    assert.equal(defaults.heroStealth, 'Button11')
+    assert.equal(defaults.heroInteract, 'Button0')
     assert.equal(defaults.placementPlace, 'Button0')
     for (const action of actions) {
       settings.setGamepadBindingFromButtonIndex(action, 11)
@@ -197,7 +186,7 @@ test('gamepad bindings preserve old transfer preferences, save new actions and r
   const first = loadSettings({ controls_gamepad_bindings: JSON.stringify({ inventoryTransferOne: 'Button9' }) })
   try {
     assert.equal(first.settings.getGamepadButtonIndex('inventoryTransferOne'), 9)
-    assert.equal(first.settings.getGamepadButtonIndex('heroInteract'), 2)
+    assert.equal(first.settings.getGamepadButtonIndex('heroInteract'), 0)
     first.settings.setGamepadBindingFromButtonIndex('heroInteract', 10)
     first.settings.setGamepadBindingFromButtonIndex('placementPlace', 11)
     saved = first.saved()
@@ -216,7 +205,7 @@ test('gamepad bindings preserve old transfer preferences, save new actions and r
   }
   const third = loadSettings(saved)
   try {
-    assert.equal(third.settings.getGamepadButtonIndex('heroInteract'), 2)
+    assert.equal(third.settings.getGamepadButtonIndex('heroInteract'), 0)
     assert.equal(third.settings.getGamepadButtonIndex('placementPlace'), 0)
     assert.equal(third.settings.getGamepadButtonIndex('inventoryTransferOne'), 0)
   } finally {
@@ -234,10 +223,10 @@ test('section resets preserve bindings outside that section and the other device
     assert.equal(settings.getGamepadButtonIndex('placementPlace'), 0)
     assert.equal(settings.getGamepadButtonIndex('heroInteract'), 0)
     assert.equal(settings.getKeyBindings().inventory, 'o')
-    settings.setKeyBindingFromKeyboardEvent('cameraUp', { key: 'u', code: 'KeyU' })
+    settings.setKeyBindingFromKeyboardEvent('heroUp', { key: 'u', code: 'KeyU' })
     settings.resetKeyBindings(['inventory'])
     assert.equal(settings.getKeyBindings().inventory, 'i')
-    assert.equal(settings.getKeyBindings().cameraUp, 'u')
+    assert.equal(settings.getKeyBindings().heroUp, 'u')
     assert.equal(settings.getGamepadButtonIndex('heroInteract'), 0)
   } finally {
     restore()
@@ -247,12 +236,12 @@ test('section resets preserve bindings outside that section and the other device
 test('controller swaps honor gameplay contexts and reject new third-party conflicts', () => {
   const { settings, restore } = loadSettings()
   try {
-    const proposal = settings.getGamepadBindingChange('heroInteract', 4)
+    const proposal = settings.getGamepadBindingChange('heroInteract', 6)
     assert.deepEqual(proposal.conflicts, ['heroDefense'])
-    assert.equal(settings.getGamepadButtonIndex('heroInteract'), 2)
-    assert.equal(settings.rebindGamepadButton('heroInteract', 4), true)
-    assert.equal(settings.getGamepadButtonIndex('heroInteract'), 4)
-    assert.equal(settings.getGamepadButtonIndex('heroDefense'), 2)
+    assert.equal(settings.getGamepadButtonIndex('heroInteract'), 0)
+    assert.equal(settings.rebindGamepadButton('heroInteract', 6), true)
+    assert.equal(settings.getGamepadButtonIndex('heroInteract'), 6)
+    assert.equal(settings.getGamepadButtonIndex('heroDefense'), 0)
     assert.equal(settings.getGamepadButtonIndex('placementMirror'), 2)
     assert.equal(settings.getGamepadButtonIndex('inventoryTransferAll'), 2)
     assert.deepEqual(settings.getGamepadBindingChange('placementMirror', 4).conflicts, [])
@@ -292,6 +281,96 @@ test('standalone pause binding is removed, including saved shortcuts', () => {
       settings.CONTROL_BINDING_GROUPS.some(group => group.actions.includes('pause')),
       false
     )
+  } finally {
+    restore()
+  }
+})
+
+test('old gameplay bindings migrate once while contextual preferences and later customizations survive', () => {
+  const first = loadSettings({
+    controls_gamepad_bindings: JSON.stringify({
+      heroMountHorse: 'Button10',
+      heroUp: 'Button12',
+      heroInteract: 'Button2',
+      placementMirror: 'Button4',
+    }),
+  })
+  let saved
+  try {
+    assert.equal(first.settings.getGamepadButtonIndex('heroStealth'), 11)
+    assert.equal(first.settings.getGamepadButtonIndex('heroMountHorse'), 13)
+    assert.equal(first.settings.getGamepadButtonIndex('heroInteract'), 0)
+    assert.equal(first.settings.getGamepadBindings().heroUp, undefined)
+    assert.equal(first.settings.getGamepadButtonIndex('placementMirror'), 4)
+    for (const action of first.settings.GAMEPAD_BINDING_GROUPS[0].actions)
+      assert.deepEqual(
+        first.settings.getGamepadBindingChange(action, first.settings.getGamepadButtonIndex(action)).conflicts,
+        []
+      )
+    first.settings.rebindGamepadButton('heroStealth', 10)
+    saved = first.saved()
+  } finally {
+    first.restore()
+  }
+  const second = loadSettings(saved)
+  try {
+    assert.equal(second.settings.getGamepadButtonIndex('heroStealth'), 10)
+    assert.equal(second.settings.getGamepadButtonIndex('heroMountHorse'), 13)
+    assert.equal(second.settings.getGamepadButtonIndex('placementMirror'), 4)
+  } finally {
+    second.restore()
+  }
+})
+
+test('removed free camera shortcuts are not loaded from old settings', () => {
+  const { settings, restore } = loadSettings({ controls_key_bindings: JSON.stringify({ cameraUp: 'ArrowUp' }) })
+  try {
+    assert.equal(settings.getKeyBindings().cameraUp, undefined)
+    assert.equal(settings.getControlActionForKeyboardEvent({ key: 'ArrowUp', code: 'ArrowUp' }), null)
+  } finally {
+    restore()
+  }
+})
+
+test('removed inspection binding is ignored without resetting current custom bindings', () => {
+  const { settings, restore } = loadSettings({
+    controls_gamepad_layout_version: '3',
+    controls_gamepad_bindings: JSON.stringify({ heroInspect: 'Button2', heroInteract: 'Button4' }),
+  })
+  try {
+    assert.equal(settings.getGamepadBindings().heroInspect, undefined)
+    assert.equal(settings.getGamepadButtonIndex('heroInteract'), 4)
+    assert.equal(
+      settings.GAMEPAD_BINDING_GROUPS.some(group => group.actions.includes('heroInspect')),
+      false
+    )
+  } finally {
+    restore()
+  }
+})
+
+test('attack migration moves the former default to R1 and keeps other custom controls', () => {
+  const { settings, restore } = loadSettings({
+    controls_gamepad_layout_version: '3',
+    controls_gamepad_bindings: JSON.stringify({ heroAction: 'Button7', heroInteract: 'Button4' }),
+  })
+  try {
+    assert.equal(settings.getGamepadButtonIndex('heroAction'), 5)
+    assert.equal(settings.getGamepadButtonIndex('heroDirectAttack'), 7)
+    assert.equal(settings.getGamepadButtonIndex('heroInteract'), 4)
+  } finally {
+    restore()
+  }
+})
+
+test('adding sprint preserves an existing custom left-stick action without duplicating its binding', () => {
+  const { settings, restore } = loadSettings({
+    controls_gamepad_layout_version: '4',
+    controls_gamepad_bindings: JSON.stringify({ heroInteract: 'Button10' }),
+  })
+  try {
+    assert.equal(settings.getGamepadButtonIndex('heroInteract'), 10)
+    assert.notEqual(settings.getGamepadButtonIndex('heroSprint'), 10)
   } finally {
     restore()
   }

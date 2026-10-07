@@ -1,3 +1,4 @@
+import { RestPlanningQueue } from './UnitRestPlanning'
 import { isDistantOwner } from '../../lib/units/village/villageActivity'
 import { configureVillageNightWatch } from '../../lib/units/village/villageNightWatch'
 import { sameMapSpace } from '../../lib/mapSpaces'
@@ -50,10 +51,12 @@ export class UnitRestSystem {
   private schedule = new VillageScheduleGate()
   private activeRest = false
   private cachedUnits: RestUnitBuckets | null = null
+  private planning: RestPlanningQueue
   private pendingBeds = new Set<BuildingEntity>()
 
   constructor(context: GameContextLike, synchronize = false) {
     this.context = context
+    this.planning = new RestPlanningQueue(context)
     this.taskId = null
     this.taskId = context.scheduler.add(() => this.update(false), REST_CHECK_INTERVAL_MS, 'unit.rest')
     // Reconcile restored evening rest states once; pending notifications are not saved.
@@ -95,7 +98,12 @@ export class UnitRestSystem {
   }
 
   notifyBedAvailable(building: BuildingEntity): void {
-    if (building.type === 'CampBedroll' && building.isBuilt && !building.isDead && !building.isDestroyed)
+    if (
+      ['CampBedroll', 'House'].includes(building.type) &&
+      building.isBuilt &&
+      !building.isDead &&
+      !building.isDestroyed
+    )
       this.pendingBeds.add(building)
   }
 
@@ -105,6 +113,7 @@ export class UnitRestSystem {
 
   /** Reconcile only the returning base, before any suspended walking order resumes. */
   synchronizeVillageRest(units: UnitEntity[]): void {
+    this.planning.forget(units)
     synchronizeVillageRestUnits(this.context, units)
     this.cachedUnits = null
   }
@@ -220,6 +229,7 @@ export class UnitRestSystem {
   }
 
   synchronizeAfterTimeJump(): void {
+    this.planning.clear()
     const { livingUnits, restUnits } = this.collectUnits()
     if (!livingUnits.length) return
     this.synchronizeVillageRest(restUnits)
@@ -282,6 +292,7 @@ export class UnitRestSystem {
   }
 
   destroy(): void {
+    this.planning.destroy()
     this.cachedUnits = null
     this.pendingBeds.clear()
     if (this.taskId != null) {

@@ -75,6 +75,7 @@ export function applyPortableUnitState(
     inventory: cloneHeroInventory(source.inventory),
     isChief: source.isChief,
     lastEnergySpentAt: source.lastEnergySpentAt,
+    equipmentDurability: source.equipmentDurability ? { ...source.equipmentDurability } : undefined,
     lootEquipment: source.lootEquipment ? [...source.lootEquipment] : source.lootEquipment,
     mountedOnHorse: source.mountedOnHorse,
     name: source.name,

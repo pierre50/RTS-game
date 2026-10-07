@@ -1,3 +1,4 @@
+import { equipmentVisualParts } from '../../../lib/equipment/helmetVariants'
 import { resolveUnitForgeEquipment } from '../../../lib/equipment/forgeUpgrades'
 import { getMiningPickaxe } from '../../../lib/resources/miningEquipment'
 import { definedProperties } from '../../../lib/definedProperties'
@@ -116,14 +117,12 @@ function isLayerHidden(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, she
     sheet === SHEET_TYPES.action &&
     typeof layer.hideOnOrAfterFrame === 'number' &&
     unit.sprite.currentFrame >= layer.hideOnOrAfterFrame
-  const equipmentKey =
-    layer.equipmentKey &&
-    (unit.type === 'Hero' ? layer.equipmentKey : resolveUnitForgeEquipment(layer.equipmentKey, unit))
+  const equipmentKey = layer.equipmentKey && resolveUnitForgeEquipment(layer.equipmentKey, unit)
   const isLootedCorpseEquipment =
     unit.isDead &&
     Array.isArray(unit.lootEquipment) &&
     equipmentKey != null &&
-    !unit.lootEquipment.includes(equipmentKey)
+    !unit.lootEquipment.some(item => equipmentVisualParts(item).includes(equipmentKey))
   return (
     isSowingTool ||
     isLayerHiddenByAction ||
@@ -170,13 +169,12 @@ function getLayerSheet(
     (visualSheet === SHOOTING_SHEET_KEY
       ? layer.shootingSheet
       : (layer[visualSheet as keyof RuntimeAppearanceLayer] as string | undefined))
-  const equipmentSheetId =
-    unit.type !== 'Hero' && layer.equipmentKey
-      ? baseSheetId?.replace(
-          /^equipments\/([^/]+)\//,
-          (_match, key: string) => `equipments/${resolveUnitForgeEquipment(key, unit)}/`
-        )
-      : baseSheetId
+  const equipmentSheetId = layer.equipmentKey
+    ? baseSheetId?.replace(
+        /^equipments\/([^/]+)\//,
+        (_match, key: string) => `equipments/${resolveUnitForgeEquipment(key, unit)}/`
+      )
+    : baseSheetId
   const workSheetId = layer.equipmentKey?.startsWith('pickaxe_')
     ? equipmentSheetId?.replace(/^equipments\/pickaxe_[^/]+\//, `equipments/${getMiningPickaxe(unit)}/`)
     : equipmentSheetId
