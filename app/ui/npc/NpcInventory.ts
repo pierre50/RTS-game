@@ -1,11 +1,8 @@
 import { UnitInventoryScreen } from '../inventory/UnitInventoryScreen'
-import { playUiSound } from '../../lib/audio/uiSound'
-import { SOUND_CUES } from '../../constants'
 import type { NpcOrdersManager } from '../NpcOrdersManager'
 
 export function openNpcInventory(host: NpcOrdersManager, allowed: boolean): void {
   if (host.bagModal || !allowed) return
-  playUiSound(SOUND_CUES.ui.menuClick)
   host.orderMenu.reset()
   host.buttonsContainer.hidden = true
   host.bagScreen = new UnitInventoryScreen(host.menu, host.npcs[0])

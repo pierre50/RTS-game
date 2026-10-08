@@ -52,6 +52,7 @@ type DevWeatherLike = {
 }
 
 type DevTimeSkipLike = {
+  nextDay?(): CommandResult
   active?: boolean
   dayNightMaxDeltaMs?: number
   suppressAudio?: boolean

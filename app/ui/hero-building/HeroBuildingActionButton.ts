@@ -1,5 +1,4 @@
-import { FAMILY_TYPES, SOUND_CUES } from '../../constants'
-import { playUiSound } from '../../lib/audio/uiSound'
+import { FAMILY_TYPES } from '../../constants'
 import type { BuildingEntity } from '../../types/entities'
 import type { MenuButtonSpec } from '../../types/ui'
 import type { MenuHost } from '../MenuHost'
@@ -58,13 +57,11 @@ function handleActionButtonClick(
   if (button.disabled?.()) return
   if (button.onCreate) {
     if (!pointer.handled && button.onClick) {
-      playUiSound(SOUND_CUES.ui.menuClick)
       button.onClick(building, evt)
     }
     handlers.refresh()
     return
   }
-  playUiSound(SOUND_CUES.ui.menuClick)
   if (button.children) {
     handlers.openChildren(button.children)
     return

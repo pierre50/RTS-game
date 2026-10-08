@@ -1,3 +1,4 @@
+import { validateAmbientTraffic } from './SaveAmbientTrafficValidation'
 import type { LoadedGameConfig } from '../../types/save'
 import { validateWorldPursuers } from './SaveEntityValidators'
 import { fail, isObject, validateOptionalFiniteNumber } from './SaveValidationPrimitives'
@@ -43,6 +44,7 @@ export function validateRuntimeState(runtime: unknown, size: number, config: Loa
         positions.add(`${camp.i}:${camp.j}`)
       }
     }
+    validateAmbientTraffic(runtime.ambientTraffic, size, config)
     validateOptionalFiniteNumber(runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
     validateOptionalFiniteNumber(runtime.offlineFromElapsedMs, 'runtime offlineFromElapsedMs')
     validateOptionalFiniteNumber(runtime.elapsedMs, 'runtime elapsedMs')

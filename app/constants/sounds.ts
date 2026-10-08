@@ -1,9 +1,4 @@
 export const SOUND_CUES = {
-  ui: {
-    buttonPress: 'button-selected',
-    menuClick: 'button-selected',
-    underAttack: 'attack-warning',
-  },
   hero: {
     heartbeat: 'heartbeat',
     footstepGrass: ['surface/hero-footstep-grass-1', 'surface/hero-footstep-grass-2', 'surface/hero-footstep-grass-3'],

@@ -218,6 +218,8 @@ export const FR_TRANSLATIONS = {
   npcOrderFollow: 'Suivez-moi',
   npcOrderBag: 'Sac',
   npcOrderCancelSleep: 'Oups, rien',
+  npcTravelNoRoute: 'Impossible de rejoindre cette ville pour le moment.',
+  npcOrderSendTo: 'Envoyer vers',
   npcOrderGoTo: 'Aller vers',
   Tin: 'Étain',
   Copper: 'Cuivre',

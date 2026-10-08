@@ -1,3 +1,4 @@
+import { unitSuspensionReason } from '../units/unitSuspension'
 import { isReservedQuestTarget } from '../quests/questReservations'
 import type { ActionProps, CombatEntity } from '../../types/combat'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
@@ -37,6 +38,13 @@ export const getActionCondition = (
   props?: ActionProps
 ): boolean => {
   if (!action || !source || !target) return false
+  if ((target as UnitEntity).ambientRoadGroup && action === 'convert') return false
+  if ((source as UnitEntity).ambientRoadGroup && target.family === 'building' && action === 'attack') return false
+  if (
+    unitSuspensionReason(source as UnitEntity) === 'road-travel' ||
+    unitSuspensionReason(target as UnitEntity) === 'road-travel'
+  )
+    return false
   if (['hunt', 'takemeat', 'attack', 'captureHorse'].includes(action) && isReservedQuestTarget(source, target))
     return false
 

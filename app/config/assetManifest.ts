@@ -98,7 +98,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'resources/minerals/shadow': 'assets/graphics/resources/minerals/texture_shadow.json',
   },
   sounds: {
-    ...toOggSoundFolderBundle('ui', ['button-selected', 'attack-warning']),
     ...toOggSoundFolderBundle('hero', ['heartbeat']),
     ...toOggSoundFolderBundle('combat', [
       'attack-swipe',

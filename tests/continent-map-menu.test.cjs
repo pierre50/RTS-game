@@ -13,7 +13,6 @@ test('map menu selects the matching continent blueprint and resets normal size',
   const { default: MapConfig } = loadTsModule('app/screens/MapConfig.ts', {
     mocks: {
       '../lib': { Modal: class {} },
-      '../lib/audio/uiSound': { playClickSound() {} },
       '../lib/lang': { t: key => key },
       '../ui/utils/formUtils': {
         buildSelectRow(label, options, value, change) {

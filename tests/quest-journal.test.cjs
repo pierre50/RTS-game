@@ -65,7 +65,6 @@ test('journal opens empty, shows accepted quests, tracks one and disposes its mo
     context: { getQuestJournal: () => state },
     gameHud: element('div'),
     closeHeroBuildingMenu() {},
-    playUiClick() {},
   }
   const journal = new QuestJournalManager(menu)
   const button = journal.createOpenButton()

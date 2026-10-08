@@ -14,6 +14,8 @@ export function hasPriorityCombat(unit: UnitEntity): boolean {
 }
 
 export function villagerAutonomySuspension(unit: UnitEntity, reconsiderDeposit = false): string | null {
+  if (unit.ambientRoadGroup) return 'ambient-traveler'
+  if (unit.roadJourney) return 'road-travel'
   if (isRpgVillager(unit)) return 'rpg-village'
   const simulation = unitSuspensionReason(unit)
   if (simulation) return simulation

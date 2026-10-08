@@ -72,7 +72,7 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
       emptyText: t('inventoryEmptySlot'),
       title: hero ? getUnitBagTitle(hero) : t('inventoryBag'),
       renderResource: (resource, amount) =>
-        createInventoryResourceRow(menu, {
+        createInventoryResourceRow({
           id: `inventory-resource-${resource}`,
           resource,
           amount,
@@ -169,7 +169,7 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
     selectEquippedWeaponTool(menu, weaponSlot)
     host.renderTools()
   }
-  const { element } = createInventoryEquipmentRow(menu.context, menu, {
+  const { element } = createInventoryEquipmentRow(menu.context, {
     id: `inventory-equipment-${item}`,
     equipment: item,
     title: recipe ? t(recipe.labelKey) : placeableBuildingType ? t(placeableBuildingType) : undefined,
@@ -206,7 +206,7 @@ export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendere
           const disabled = !equipment || requiresHelmet
           const count = equipment ? getHeroEquippedItemCount(hero, slotId) : 0
           const { element } = equipment
-            ? createInventoryEquipmentRow(menu.context, menu, {
+            ? createInventoryEquipmentRow(menu.context, {
                 id: `inventory-equipped-${slotId}`,
                 className: 'inventory-equipped-row',
                 disabled,
@@ -223,7 +223,7 @@ export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendere
                   },
                 },
               })
-            : createInventoryEquipmentRow(menu.context, menu, {
+            : createInventoryEquipmentRow(menu.context, {
                 id: `inventory-equipped-${slotId}`,
                 className: 'inventory-equipped-row',
                 disabled,

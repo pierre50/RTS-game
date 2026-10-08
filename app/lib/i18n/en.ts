@@ -216,6 +216,8 @@ export const EN_TRANSLATIONS = {
   npcOrderFollow: 'Follow me',
   npcOrderBag: 'Bag',
   npcOrderCancelSleep: 'Oops, nothing',
+  npcTravelNoRoute: 'Unable to reach this town for now.',
+  npcOrderSendTo: 'Send to',
   npcOrderGoTo: 'Go to',
   Tin: 'Tin',
   Copper: 'Copper',

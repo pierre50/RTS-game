@@ -59,3 +59,13 @@ Les pauses éveillées du matin, du midi et du soir utilisent la pose `sit` une 
 La simulation hors écran retire exactement ce même créneau du temps de travail. Elle conserve les ressources finies et les règles de dépôt existantes. La pause réduit le temps de travail d’environ 9 %, sans changer la cadence de récolte. Les trajets simulés sont désormais amortis sur la capacité réelle du sac, comme les livraisons en détail. Les règles partagées et les limites des approximations sont décrites dans [economy-rules.md](economy-rules.md).
 
 Le forum est le lieu d’arrivée des nouveaux villageois et un point de rassemblement. Il ne fournit ni couchages ni capacité de population. Les maisons fournissent les places ; sans maison disponible, le repos extérieur près du camp reste possible. La capacité est recalculée au chargement et pour les régions simulées, sans supprimer les habitants déjà présents.
+
+## Déboguer une journée avec `nextday`
+
+`nextday` calcule directement 24 heures à partir de l’heure courante, sans fenêtre, animation d’attente ni accélération visible. La commande réutilise `TimeSkipSystem` et `SleepSimulation`, puis `advanceVillageWork` pour le travail, les repas et le repos des résidents dynamiques, proches comme éloignés. Les villages non matérialisés avancent via leur moteur existant, sans charger leurs entités. Les colonies statiques conservent leurs règles économiques et récupèrent leur santé pendant les heures de repos.
+
+Les intervalles sont bornés à une heure et à la prochaine frontière quotidienne. Tous les propriétaires sont réglés avant de publier la nouvelle heure : les événements journaliers et les formations du runtime restent uniques, tandis que les villages non matérialisés gardent leurs propres événements. Les checkpoints de travail sont transférés au début et recréés à la fin ; `lastMealAt` protège les repas contre un second prélèvement à la reprise.
+
+Le résultat de console contient les heures effectivement simulées, les frontières quotidiennes franchies et les variations par propriétaire : stocks, sacs des PNJ, effectifs par type, bâtiments terminés, chantiers, formations en file, santé, énergie et repères de repas. Ce sont des variations **nettes**, pas une mesure de production brute ; les arrivées influencent aussi les totaux de santé/énergie. Les repères de repas ne sont pas un nombre de portions consommées. L’événement de performance `nextday.report` permet de retrouver la durée réellement traitée.
+
+Le calcul est synchrone. Il conserve les interruptions liées au danger ou à l’échéance d’un événement dangereux ; dans ce cas, il retourne un bilan partiel. Les déplacements et combats ne sont pas rejoués. `next <1-12>` conserve l’accélération de la simulation détaillée pour les observer.

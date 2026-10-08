@@ -69,7 +69,6 @@ function loadGame({
         destroy() {}
       },
     },
-    '../lib/audio/uiSound': { stopAllUiSounds() {} },
     '../serialization/validation/SaveValidator': { validateSaveData() {} },
     '../serialization/SaveStorage': { save: () => ({}) },
     '../serialization/SaveSerializer': { serializeGame: () => ({}) },

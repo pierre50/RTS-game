@@ -1,4 +1,5 @@
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
+import { startingHeroInventory } from '../../lib/economy/startingProvisions'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
 import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
 import type { ResourceAmount } from '../../types/common'
@@ -72,6 +73,7 @@ export function populateVillageBase(
       totalHitPoints: hp,
       inactif: true,
       gender: type === 'Hero' ? player.gender : n % 2 ? ('female' as const) : ('male' as const),
+      ...(type === 'Hero' ? { inventory: startingHeroInventory() } : {}),
       ...(type === 'Villager' ? { autonomousJob: n % 3 ? 'food' : 'wood' } : {}),
     }
     player.units.push(unit)

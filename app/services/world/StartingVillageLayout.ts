@@ -8,6 +8,8 @@ import { OfflineWorldSpatial, type OfflineTerrainCell } from './offline/OfflineW
 import type { OfflineWorkRules } from './offline/OfflineWorldWork'
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../types/save'
 
+const ROAD_CLEARANCE = 2
+
 /** Initial layouts use runtime-sized footprints and a free circulation ring, rather
  * than the historical path reservations needed when extending a live village. */
 export class StartingVillageLayout {
@@ -41,7 +43,19 @@ export class StartingVillageLayout {
 
   /** Fix the shared square before the road planner sees the settlement. */
   prepareCore(center: SaveEntityState): SaveGridPoint {
-    return this.plan(center).square
+    const square = this.plan(center).square
+    // The road endpoints need the same resource clearance as the future road.
+    // Clear one connected corridor so neither endpoint is sealed by nearby nodes.
+    const before = Math.floor(((center.size ?? 3) - 1) / 2) + ROAD_CLEARANCE + 1
+    const minI = Math.min(center.i - before, square.i - ROAD_CLEARANCE)
+    const maxI = Math.max(center.i + before, square.i + ROAD_CLEARANCE)
+    const minJ = Math.min(center.j - before, square.j - ROAD_CLEARANCE)
+    const maxJ = Math.max(center.j + before, square.j + ROAD_CLEARANCE)
+    const excluded = (point: SaveGridPoint) => point.i >= minI && point.i <= maxI && point.j >= minJ && point.j <= maxJ
+    for (const resource of this.movableResources)
+      if (excluded(resource) && !this.relocation.move(resource, center, excluded))
+        throw new Error(`No room to clear road access around ${center.label}`)
+    return square
   }
 
   reserveRoads(roads: RoadLayer): void {
@@ -49,8 +63,9 @@ export class StartingVillageLayout {
     for (const [id] of roads.cells) {
       const i = Math.floor(id / roads.stride)
       const j = id % roads.stride
-      for (let di = -1; di <= 1; di++)
-        for (let dj = -1; dj <= 1; dj++) this.spatial.reservePassage({ i: i + di, j: j + dj })
+      // Keep both sides and bends clear, measured from the occupied footprint.
+      for (let di = -ROAD_CLEARANCE; di <= ROAD_CLEARANCE; di++)
+        for (let dj = -ROAD_CLEARANCE; dj <= ROAD_CLEARANCE; dj++) this.spatial.reservePassage({ i: i + di, j: j + dj })
     }
   }
 
@@ -198,7 +213,7 @@ export class StartingVillageLayout {
         if (!this.spatial.reachable(center, candidate)) continue
         // Fields have no general circulation ring, but must leave room around
         // door approaches so multiple wheat patches cannot enclose an entrance.
-        if (this.blocksEntrance(candidate, type === 'Farm' ? size + 2 : size)) continue
+        if (this.blocksEntrance(candidate, type === 'Farm' ? size + 4 : size)) continue
         if (type === 'WatchTower' && distance(candidate, center) < 10) continue
         if (type === 'Farm' && !this.nearGranary(center, candidate, size)) continue
         if (
@@ -213,6 +228,8 @@ export class StartingVillageLayout {
           continue
         // Keep an actual shared courtyard. Campfires decorate its edge.
         if (type !== 'FireCamp' && distance(candidate, plan.square) < Math.ceil(size / 2) + 2) continue
+        const gateTower =
+          type === 'WatchTower' && this.roads?.entrances(center).some(entry => distance(candidate, entry) <= towerRange)
         let free = true
         let displaced = 0
         let breathingRoom = 0
@@ -225,7 +242,14 @@ export class StartingVillageLayout {
               (j === candidate.j - before || j === candidate.j + after)
             )
               continue
-            if (!this.spatial.naturalCell({ i, j }, this.clearableTypes)) {
+            // A gate tower's walking ring can share the road verge; its footprint
+            // still respects the full road clearance and all other obstacles.
+            const circulation =
+              i === candidate.i - before ||
+              i === candidate.i + after ||
+              j === candidate.j - before ||
+              j === candidate.j + after
+            if (!this.spatial.naturalCell({ i, j }, this.clearableTypes, Boolean(gateTower && circulation))) {
               free = false
               break
             }
@@ -254,7 +278,23 @@ export class StartingVillageLayout {
           if (value === null) continue
           score = -value + displaced * 2 + breathingRoom
         }
-        score += this.roads?.score(center, candidate, type, this.placed.get(center) ?? [], towerRange) ?? 0
+        const placed = this.placed.get(center) ?? []
+        const cityPerimeter = center.type === 'TownCenter'
+        score += this.roads?.score(center, candidate, type, placed, towerRange, cityPerimeter) ?? 0
+        if (type === 'WatchTower' && cityPerimeter) {
+          // Spread the remaining defenses around the city, even without roads.
+          // Gate and uncovered-approach bonuses still take priority when feasible.
+          const radius = distance(candidate, center)
+          score += Math.abs(radius - 18) * 15
+          for (const tower of placed.filter(building => building.type === 'WatchTower')) {
+            const towerRadius = distance(tower, center)
+            if (!towerRadius) continue
+            const alignment =
+              ((candidate.i - center.i) * (tower.i - center.i) + (candidate.j - center.j) * (tower.j - center.j)) /
+              (radius * towerRadius)
+            score += Math.max(0, alignment - 0.5) * 300
+          }
+        }
         if (type === 'WatchTower') score += Math.max(0, 13 - distance(candidate, center)) * 5
         lots.push({ point: candidate, score })
       }

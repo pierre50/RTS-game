@@ -7,9 +7,8 @@ import type { SettlementType, DevelopmentMode } from '../../config/settlementPro
 import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { Assets } from 'pixi.js'
 import { createPlayerData } from '../../config/playerConfig'
-import { FADE_DURATION_MS, FAMILY_TYPES, PLAYER_TYPES, SOUND_CUES, UNIT_TYPES } from '../../constants'
+import { FADE_DURATION_MS, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { canUpdateMinimap, getHexColor, updateInstanceVisibility, uuidv4 } from '../../lib'
-import { playUiSound } from '../../lib/audio/uiSound'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'
 import { heroCanCommand } from '../../lib/chief'
@@ -77,7 +76,6 @@ export class Player implements PlayerLike {
   population: number
   cellViewed: number
   forgeUpgrades: ForgeUpgrades
-  lastUnderAttackAlertAt: number
   team!: number | null
   diplomacy!: Exclude<PlayerLike['diplomacy'], undefined>
   factionId!: string | null
@@ -108,7 +106,6 @@ export class Player implements PlayerLike {
     this.population = 0
     this.cellViewed = 0
     this.forgeUpgrades = {}
-    this.lastUnderAttackAlertAt = 0
     Object.assign(this, options)
     initializePlayerRelations(this, options)
 
@@ -160,18 +157,7 @@ export class Player implements PlayerLike {
             owner.reportThreat?.(target, attacker)
         }
       }
-      return
     }
-
-    const isWindowFocused = document.visibilityState === 'visible' && document.hasFocus()
-    const isTargetInCamera = this.context.controls?.instanceInCamera(target) ?? true
-    if (isWindowFocused && isTargetInCamera) return
-
-    const now = Date.now()
-    if (now - this.lastUnderAttackAlertAt < 5000) return
-
-    this.lastUnderAttackAlertAt = now
-    playUiSound(SOUND_CUES.ui.underAttack)
   }
 
   spawnBuilding(options: BuildingOptions) {

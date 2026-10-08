@@ -31,6 +31,7 @@ export type VillageHome = GridPosition & { id: string; spaceId: string }
 
 export function villageHome(unit: UnitEntity): VillageHome | null {
   if (
+    unit.roadJourney ||
     unit.owner?.isPlayed ||
     unit.controlMode === 'hero' ||
     unit.followingHero ||

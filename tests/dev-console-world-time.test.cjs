@@ -43,3 +43,16 @@ test('advanceTime reports when the time skip system is unavailable', () => {
 
   assert.deepEqual(advanceTime({}, '1'), { ok: false, message: 'Time skip system unavailable' })
 })
+
+test('nextday requires shared simulation and forwards its eventual report without jumping the clock', async () => {
+  const { forceNextDay } = loadTsModule('app/dev-console/actions/world.ts')
+  const result = { ok: true, message: 'completed report' }
+  assert.deepEqual(
+    await forceNextDay({
+      dayNight: { forceNextDay: () => assert.fail('must not bypass simulation') },
+      timeSkip: { nextDay: () => result },
+    }),
+    result
+  )
+  assert.equal(forceNextDay({}).ok, false)
+})

@@ -5,6 +5,7 @@ function fixture() {
   const calls = []
   const rules = {
     admit: true,
+    road: false,
     attack: null,
     redundant: false,
     remembered: false,
@@ -18,6 +19,7 @@ function fixture() {
   }
   const { UnitMovementRouting } = loadTsModule('app/classes/unit/movement/UnitMovementRoutingRuntime.ts', {
     mocks: {
+      '../../../lib/units/roadJourney': { beginRoadJourney: () => rules.road },
       '../../../lib': {
         getInstancePath: () => rules.path,
         getInstanceClosestFreeCellPath: () => rules.path,
@@ -165,4 +167,13 @@ test('routing falls back through water, contact, blocked gather and unreachable 
   assert.equal(routing.retryBlockedGatherApproach(), false)
   routing.handleBlockedApproachFailure(dest, null, false)
   assert.equal(calls.pop(), 'blocked')
+})
+
+test('plain town transfers enter cooperative travel before ordinary routing', () => {
+  const { routing, rules, calls, dest } = fixture()
+  rules.road = true
+  rules.admit = false
+  assert.equal(routing.sendToEvt({ ...dest, type: 'TownCenter' }, null), true)
+  assert.deepEqual(calls, [])
+  assert.equal(routing.sendToEvt({ ...dest, type: 'TownCenter' }, 'delivery'), false)
 })

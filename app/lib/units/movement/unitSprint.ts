@@ -37,10 +37,12 @@ export function stopUnitSprint(unit: UnitEntity): void {
 export function toggleHeroSprint(unit: UnitEntity): void {
   const state = stateFor(unit)
   if (state.requested) stopUnitSprint(unit)
-  else {
-    ensureUnitEnergy(unit)
-    state.requested = !unit.isDead && !unit.isDestroyed && !unit.mountedOnHorse && (unit.energy ?? 0) > 0
-  }
+  else startHeroSprint(unit)
+}
+
+export function startHeroSprint(unit: UnitEntity): void {
+  ensureUnitEnergy(unit)
+  stateFor(unit).requested = !unit.isDead && !unit.isDestroyed && !unit.mountedOnHorse && (unit.energy ?? 0) > 0
 }
 
 /** Returns a speed factor; only confirmed position changes earn momentum and spend energy. */

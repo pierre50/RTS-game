@@ -56,7 +56,7 @@ export function collectRestUnits(context: GameContextLike): RestUnitBuckets {
   for (const player of context.players ?? []) {
     if (isStaticSettlement(player) && isDistantOwner(player)) continue
     for (const unit of player.units ?? []) {
-      if (isCampPaused(unit)) continue
+      if (isCampPaused(unit) || unit.roadJourney) continue
       if (unit.isDead || unit.isDestroyed || ((player.isPlayed || isDistantOwner(player)) && isUnitSuspended(unit)))
         continue
       buckets.livingUnits.push(unit)

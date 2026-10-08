@@ -34,7 +34,7 @@ export function createHeroBuildingUpgrade(
     t('buildingUpgradeHealth', { before: building.totalHitPoints ?? 0, after: targetConfig.totalHitPoints ?? 0 }),
   ]
   if (building.type === 'House') benefits.push(t('buildingUpgradeBedsPreserved'))
-  const { element, icon } = createInventoryActionRow(menu, {
+  const { element, icon } = createInventoryActionRow({
     id: 'building-upgrade',
     className: 'inventory-construction-row building-upgrade-row',
     title,

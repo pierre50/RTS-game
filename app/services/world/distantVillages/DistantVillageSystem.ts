@@ -70,7 +70,7 @@ export class DistantVillageSystem {
       (isStaticSettlement(owner) ||
         owner.units.some(unit => unit.type === 'Villager' && !unit.isDead && !unit.isDestroyed)) &&
       owner.units.every(unit => {
-        if (unit.isDead || unit.isDestroyed) return true
+        if (unit.roadJourney || unit.isDead || unit.isDestroyed) return true
         if (isStaticSettlement(owner))
           return Boolean(
             unit.villageHome &&
@@ -112,6 +112,7 @@ export class DistantVillageSystem {
   private suspend(owner: PlayerLike): void {
     for (const unit of owner.units) {
       if (
+        unit.roadJourney ||
         unit.isDead ||
         unit.isDestroyed ||
         unit.trainingTargetType ||
@@ -209,7 +210,7 @@ export class DistantVillageSystem {
         }
         planDistantVillageBuildings(this.context, owner, state.homes)
         // Recruitment uses normal paid training. Only those trainees stay live.
-        for (const unit of owner.units) setUnitSuspension(unit)
+        for (const unit of owner.units) if (!unit.roadJourney) setUnitSuspension(unit)
         try {
           ;(owner as PlayerLike & { planDistantProduction?: () => void }).planDistantProduction?.()
         } finally {
@@ -227,7 +228,7 @@ export class DistantVillageSystem {
       if (now <= state.restSince) return
       const minuteMs = DAY_NIGHT_CONFIG.dayLengthMs / (DAY_NIGHT_CONFIG.hoursPerDay * 60)
       for (const unit of owner.units) {
-        if (!isUnitSuspended(unit)) continue
+        if (unit.roadJourney || !isUnitSuspended(unit)) continue
         restoreOfflineUnitSleepHealth(
           unit,
           DAY_NIGHT_CONFIG.startHour * 60 + state.restSince / minuteMs,
@@ -245,7 +246,8 @@ export class DistantVillageSystem {
     try {
       if (this.context.performance) this.context.performance.measure('village.abstractAdvance', run)
       else run()
-      for (const unit of owner.units) if (isUnitSuspended(unit)) updateUnitEnergy(unit, now - economy.since)
+      for (const unit of owner.units)
+        if (!unit.roadJourney && isUnitSuspended(unit)) updateUnitEnergy(unit, now - economy.since)
       // Commit the checkpoint only after the transaction succeeds.
       economy.since = now
     } finally {
@@ -280,7 +282,7 @@ export class DistantVillageSystem {
     this.owners.delete(owner)
     this.pendingPlans.delete(owner)
     setDistantOwner(owner)
-    const resuming = owner.units.filter(isUnitSuspended)
+    const resuming = owner.units.filter(unit => !unit.roadJourney && isUnitSuspended(unit))
     const alreadyResting = new Set(resuming.filter(unit => unit.shelterState))
     for (const unit of resuming) setUnitSuspension(unit)
     if (!this.shuttingDown) this.context.unitRest?.synchronizeVillageRest?.(resuming)

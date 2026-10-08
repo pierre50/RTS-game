@@ -57,7 +57,7 @@ export function advanceDeferredVillage(
     }
     // The supply helper only reads saved inventories/ownership, never entity methods.
     const supplies = { ...player, ...savedResourceOwner(player), units: player.units ?? [] } as unknown as PlayerLike
-    replenishRpgVillage(supplies, context.dayNight?.state.day ?? 1)
+    replenishRpgVillage(supplies, dayAt(to))
     player.rpgRestockDay = supplies.rpgRestockDay
     return
   }

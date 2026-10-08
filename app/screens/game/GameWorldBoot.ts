@@ -1,3 +1,4 @@
+import { restoreAmbientTraffic } from '../../services/travel/ambient/AmbientTrafficState'
 import { readRoadLayer } from '../../lib/terrain/roadLayer'
 import { isContinentWorld } from '../../config/continentWorlds'
 import { DEFAULT_WORLD_ID } from '../../config/worlds'
@@ -265,6 +266,7 @@ function restoreSavedRuntimeState(game: GameWorldBootHost, json: SerializedSave)
         ...(camp.caveId ? { caveId: camp.caveId } : {}),
       }))
   restoreCampRespawnStates(map, camps)
+  restoreAmbientTraffic(map, json.runtime?.ambientTraffic)
   if (json.runtime?.heroEquippedItem !== undefined) {
     game.context.controls?.setEquippedItem?.(json.runtime.heroEquippedItem)
   }

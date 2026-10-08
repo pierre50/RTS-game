@@ -125,7 +125,6 @@ function buildMocks(calls, context) {
     },
     '../lib/lang': { t: key => key },
     '../lib/audio/settings': { getVolume: () => 1 },
-    '../lib/audio/uiSound': { playUiSound: () => {} },
     '../lib/inventory/inventoryContainers': {
       createInventoryContainer: (target, options) => {
         target.inventory = target.inventory ?? { equipment: [], resources: {} }
@@ -174,6 +173,7 @@ function buildMocks(calls, context) {
         return true
       },
     },
+    '../lib/npc/npcGoToDispatch': { sendNpcToTownCenter: () => {} },
     '../lib/npc/npcInteraction': {
       noticeNpc: npc => {
         npc.lookingAtHero = true
@@ -931,8 +931,21 @@ test('AI chief refuses night conversations and ends an audience at bedtime', () 
   withFakeDocument(() => {
     const context = makeContext([])
     context.dayNight = { state: { hour: 22, minute: 0 } }
-    const npc = { context, type: 'Chief', isChief: true, label: 'chief', owner: { type: 'AI', label: 'neutral-ai' },
-      dailySchedule: { wakeMinute: 360, workStartMinute: 420, bedMinute: 1320, workEndMinute: 1080, lunchStartMinute: 720, lunchEndMinute: 780 } }
+    const npc = {
+      context,
+      type: 'Chief',
+      isChief: true,
+      label: 'chief',
+      owner: { type: 'AI', label: 'neutral-ai' },
+      dailySchedule: {
+        wakeMinute: 360,
+        workStartMinute: 420,
+        bedMinute: 1320,
+        workEndMinute: 1080,
+        lunchStartMinute: 720,
+        lunchEndMinute: 780,
+      },
+    }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks([], context))
     const manager = new NpcOrdersManager({ context })
     manager.open([npc], { ordersEnabled: false })
@@ -1121,7 +1134,7 @@ test('quest return exposes delivery immediately and shows the next instruction a
     }
     const { NpcQuestPanel } = loadModule('app/ui/quests/NpcQuestPanel.ts', buildMocks([], context))
     const lines = []
-    const panel = new NpcQuestPanel({ context, playUiClick() {}, updateTopbar() {} }, line => lines.push(line))
+    const panel = new NpcQuestPanel({ context, updateTopbar() {} }, line => lines.push(line))
     const npc = { type: 'Chief', label: 'chief', owner: { label: 'neutral-ai' } }
     assert.equal(panel.update(npc, true), 'woodReminder')
     assert.equal(panel.root.children.length, 0, 'No unavailable action or progress text')
@@ -1162,5 +1175,88 @@ test('conversations expose no economic job commands at any hour or storage level
       assert.equal(manager.buttons.has('stay'), true)
       assert.deepEqual(calls, [])
     }
+  })
+})
+
+test('chiefs can open the city page, go back and send the whole group to a named town', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.controls.heroUnit = { type: 'Hero', isChief: true, owner: context.player }
+    const town = { type: 'TownCenter', isBuilt: true, settlementName: 'Uruk', owner: context.player }
+    context.player.buildings = [town, { ...town, settlementName: 'Ur', isDead: true }, { ...town, isBuilt: false }]
+    const mocks = buildMocks(calls, context)
+    mocks['../lib/npc/npcGoToDispatch'] = { sendNpcToTownCenter: (npc, target) => calls.push(['city', npc, target]) }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
+    const manager = new NpcOrdersManager({ context })
+    const group = [1, 2].map(id => ({ type: 'Villager', label: `worker-${id}`, owner: context.player }))
+    manager.open(group)
+    const modal = manager.modal
+    assert.equal(manager.buttons.get('sendToCity').hidden, false)
+    manager.buttons.get('sendToCity').click()
+    assert.equal(manager.modal, modal)
+    assert.equal(manager.buttons.get('goto').hidden, true)
+    assert.equal(manager.buttons.get('back').hidden, false)
+    assert.equal(manager.buttons.get('city:0').children[0].textContent, 'Uruk')
+    assert.equal(manager.buttons.has('city:1'), false)
+    manager.buttons.get('back').click()
+    assert.equal(manager.buttons.get('sendToCity').hidden, false)
+    assert.equal(manager.buttons.get('city:0').hidden, true)
+    manager.buttons.get('sendToCity').click()
+    manager.buttons.get('city:0').click()
+    assert.equal(manager.opened, false)
+    assert.deepEqual(
+      calls,
+      group.map(npc => ['city', npc, town])
+    )
+  })
+})
+
+test('city destinations require a chief and completed owned towns and refresh on reopening', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.controls.heroUnit = { type: 'Hero', isChief: true, owner: context.player }
+    const mocks = buildMocks(calls, context)
+    mocks['../lib/npc/npcGoToDispatch'] = { sendNpcToTownCenter: () => calls.push('sent') }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
+    const manager = new NpcOrdersManager({ context })
+    const npc = { type: 'Villager', owner: context.player }
+    manager.open([npc])
+    assert.equal(manager.buttons.get('sendToCity').hidden, true)
+    const town = { type: 'TownCenter', isBuilt: true, settlementName: 'Roma', owner: context.player }
+    context.player.buildings = [town]
+    manager.open([npc])
+    assert.equal(manager.buttons.get('sendToCity').hidden, false)
+    manager.buttons.get('sendToCity').click()
+    town.isDestroyed = true
+    manager.buttons.get('city:0').click()
+    assert.equal(calls.includes('sent'), false)
+    town.isDestroyed = false
+    context.controls.heroUnit.isChief = false
+    manager.open([npc])
+    assert.equal(manager.buttons.get('sendToCity').hidden, true)
+    context.controls.heroUnit.isChief = true
+    manager.open([{ ...npc, owner: { isPlayed: false } }])
+    assert.equal(manager.buttons.get('sendToCity').hidden, true)
+    town.owner = { label: 'enemy' }
+    manager.open([npc])
+    assert.equal(manager.buttons.get('sendToCity').hidden, true)
+  })
+})
+
+test('ambient travelers can be greeted but cannot take orders or block orders to residents', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager({ context })
+    const traveler = { type: 'Villager', label: 'traveler', owner: context.player, ambientRoadGroup: 'route' }
+    const resident = { type: 'Villager', label: 'resident', owner: context.player }
+    manager.open([traveler])
+    assert.equal(manager.ordersEnabled, false)
+    manager.open([traveler, resident])
+    assert.equal(manager.ordersEnabled, true)
+    assert.deepEqual(manager.npcs, [resident])
   })
 })

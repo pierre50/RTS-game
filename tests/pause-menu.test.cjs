@@ -15,7 +15,6 @@ function loadPauseMenu(overrides = {}) {
 
   const mocks = {
     '../lib': { Modal: class Modal {} },
-    '../lib/audio/uiSound': { playClickSound() {} },
     '../lib/lang': { t: key => key },
     './modals/settingsPanel': { openSettingsModal() {} },
     './modals/saveListModal': { openSaveListModal() {} },

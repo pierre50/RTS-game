@@ -40,6 +40,8 @@ export type ControlBindingAction =
   | 'heroRight'
   | 'heroInteract'
   | 'heroDefense'
+  | 'heroSprint'
+  | 'heroStealth'
   | 'heroTool1'
   | 'heroTool2'
   | 'heroTool3'
@@ -111,7 +113,9 @@ const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroTool2: 'Digit2',
   heroTool3: 'Digit3',
   heroMountHorse: 'h',
-  heroDismountHorse: 'Shift',
+  heroDismountHorse: 'x',
+  heroSprint: 'Shift',
+  heroStealth: 'c',
   quests: 'j',
   inventory: 'i',
 }
@@ -175,6 +179,8 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
       'heroTool3',
       'heroMountHorse',
       'heroDismountHorse',
+      'heroSprint',
+      'heroStealth',
       'quests',
       'inventory',
     ],
@@ -489,6 +495,7 @@ export function isGameSpeedPreset(v: number | string): boolean {
 function loadKeyBindings(): ControlKeyBindings {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY_BINDINGS_KEY) || '{}') as Partial<ControlKeyBindings>
+    if (parsed.heroSprint == null && parsed.heroDismountHorse === 'Shift') parsed.heroDismountHorse = 'x'
     return {
       ...DEFAULT_KEY_BINDINGS,
       ...Object.fromEntries(

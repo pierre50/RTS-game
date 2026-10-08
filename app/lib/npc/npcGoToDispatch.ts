@@ -1,3 +1,4 @@
+import { beginRoadJourney, cancelRoadJourney } from '../units/roadJourney'
 import { wakeUnitSimulation } from '../units/unitSuspension'
 import { delayUnitRestAfterActivity } from '../../services/rest/UnitRestRules'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -10,6 +11,7 @@ import { resolveClickTarget } from './npcTargetResolution'
 export { resolveHoverTarget } from './npcTargetResolution'
 
 function resetNpcDirectives(target: UnitEntity): void {
+  cancelRoadJourney(target)
   wakeUnitSimulation(target)
   target.lookingAtHero = false
   target.followingHero = false
@@ -53,6 +55,23 @@ function hasSameOwner(source: UnitEntity, target: RuntimeEntity): boolean {
     target.owner === source.owner ||
       (target.owner?.label && source.owner?.label && target.owner.label === source.owner.label)
   )
+}
+
+/** Explicit destination orders use the town center itself, without cursor picking. */
+export function sendNpcToTownCenter(npc: UnitEntity, building: BuildingEntity): void {
+  if (
+    building.type !== 'TownCenter' ||
+    !building.isBuilt ||
+    building.isDead ||
+    building.isDestroyed ||
+    !hasSameOwner(npc, building) ||
+    npc.isDead ||
+    npc.isDestroyed
+  )
+    return
+  resetNpcDirectives(npc)
+  delayUnitRestAfterActivity(npc)
+  if (!beginRoadJourney(npc, building)) npc.sendToEvt?.(building, null, { allowPassageStop: true })
 }
 
 function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): void {

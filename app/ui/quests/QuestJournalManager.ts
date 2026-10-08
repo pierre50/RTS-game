@@ -38,7 +38,6 @@ export class QuestJournalManager {
     button.setAttribute('aria-haspopup', 'dialog')
     button.addEventListener('click', () => {
       button.blur()
-      this.menu.playUiClick()
       this.toggle()
     })
     this.button = button

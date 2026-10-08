@@ -18,15 +18,8 @@ function formatDebugState(state: object | undefined): string {
 }
 
 export function forceNextDay(context: DevConsoleContext): CommandResult {
-  if (!context.dayNight?.forceNextDay) return { ok: false, message: 'Day/night system unavailable' }
-  context.dayNight.forceNextDay()
-  context.unitRest?.synchronizeAfterTimeJump?.()
-  context.synchronizeBuildingInteriorAfterTimeJump?.()
-  return {
-    ok: true,
-    message:
-      `Advanced to ${context.dayNight.getDayLabel?.() ?? 'next day'} ${context.dayNight.getTimeLabel?.() ?? ''}`.trim(),
-  }
+  if (!context.timeSkip?.nextDay) return { ok: false, message: 'Day simulation unavailable' }
+  return context.timeSkip.nextDay()
 }
 
 export function setWeatherPhase(context: DevConsoleContext, phase?: string): CommandResult {

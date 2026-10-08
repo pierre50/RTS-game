@@ -43,16 +43,24 @@ class MinHeap {
   }
 }
 
-function roadTerrain(prepared, terrain) {
+function roadTerrain(prepared, terrain, clearTrees = false) {
   const stride = terrain.length,
     count = stride * stride
   const blocked = new Uint8Array(count),
     forest = new Uint8Array(count)
   const index = p => p.i * stride + p.j
   const inside = (i, j) => i >= 0 && j >= 0 && i < stride && j < stride
+  const reserveMargin = point => {
+    for (let di = -2; di <= 2; di++)
+      for (let dj = -2; dj <= 2; dj++)
+        if (inside(point.i + di, point.j + dj)) blocked[(point.i + di) * stride + point.j + dj] = 1
+  }
+  // Caves are authored in the blueprint and instantiated only when loading the game.
+  for (const cave of prepared.caves ?? [])
+    for (const point of footprint({ ...cave, type: 'Cave', size: buildings.Cave.size })) reserveMargin(point)
   for (const r of prepared.resources ?? []) {
     if (r.isDestroyed) continue
-    blocked[index(r)] = 1
+    if (!clearTrees || r.type !== 'Tree') reserveMargin(r)
     if (r.type !== 'Tree') continue
     // A soft margin encourages skirting groves, without sealing narrow passes.
     for (let di = -5; di <= 5; di++)
@@ -76,7 +84,7 @@ function roadTerrain(prepared, terrain) {
     fields.set(match[1], box)
   }
   for (const b of fields.values())
-    for (let i = b.minI; i <= b.maxI; i++) for (let j = b.minJ; j <= b.maxJ; j++) blocked[i * stride + j] = 1
+    for (let i = b.minI; i <= b.maxI; i++) for (let j = b.minJ; j <= b.maxJ; j++) reserveMargin({ i, j })
   for (const owner of prepared.players ?? [])
     for (const building of owner.buildings ?? [])
       for (const p of footprint(building)) if (inside(p.i, p.j)) blocked[index(p)] = 1
@@ -145,7 +153,7 @@ function findRoute(start, end, terrain, grid, existing) {
 
 function prepareSettlementRoads(prepared, terrain, squares = new Map()) {
   const sites = prepared.settlements.filter(s => ['city', 'village'].includes(s.profile))
-  const grid = roadTerrain(prepared, terrain)
+  const grid = roadTerrain(prepared, terrain, true)
   const anchors = sites.map(s => settlementAccess(s, prepared, grid))
   const hubs = anchors.map(anchor => squares.get(anchor.settlementId) ?? anchor)
   const access = anchors.map((anchor, index) => {
@@ -258,4 +266,19 @@ function validateSettlementRoads(roads, prepared, terrain) {
   }
 }
 
-module.exports = { prepareSettlementRoads, roadTerrain, validateSettlementRoads }
+function clearRoadTrees(roads, resources) {
+  const corridor = new Set()
+  for (const [id] of roads.cells) {
+    const i = Math.floor(id / roads.stride),
+      j = id % roads.stride
+    for (let di = -2; di <= 2; di++)
+      for (let dj = -2; dj <= 2; dj++) {
+        const a = i + di,
+          b = j + dj
+        if (a >= 0 && b >= 0 && a < roads.stride && b < roads.stride) corridor.add(a * roads.stride + b)
+      }
+  }
+  return resources.filter(resource => resource.type !== 'Tree' || !corridor.has(resource.i * roads.stride + resource.j))
+}
+
+module.exports = { prepareSettlementRoads, roadTerrain, validateSettlementRoads, clearRoadTrees }

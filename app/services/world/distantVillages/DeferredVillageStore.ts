@@ -26,6 +26,7 @@ export function deferredVillageBuildings(owner: object) {
   return owners.get(owner)?.entry.state.buildings?.map(building => ({
     label: building.label,
     settlementName: building.settlementName,
+    isBuilt: building.isBuilt,
     type: building.type,
     i: building.i,
     j: building.j,
@@ -142,8 +143,18 @@ export class DeferredVillageStore {
     }
   }
 
-  advance(entry: Entry): void {
-    const now = this.now()
+  advanceOwner(owner: PlayerLike, to: number): boolean {
+    const entry = this.entries.get(owner)
+    if (!entry) return false
+    this.advance(entry, to)
+    return true
+  }
+
+  flush(to = this.now()): void {
+    for (const entry of this.entries.values()) this.advance(entry, to)
+  }
+
+  advance(entry: Entry, now = this.now()): void {
     if (now <= entry.since || entry.waking) return
     entry.advance(entry.state, entry.since, now)
     this.release(entry)

@@ -134,7 +134,9 @@ function loadControls(mockOverrides = {}) {
         if (evt.key === 'e') return 'heroInteract'
         if (evt.key === 'i') return 'inventory'
         if (evt.key === ' ') return 'heroDefense'
-        if (evt.key === 'Shift') return 'heroDismountHorse'
+        if (evt.key === 'Shift') return 'heroSprint'
+        if (evt.key === 'c') return 'heroStealth'
+        if (evt.key === 'x') return 'heroDismountHorse'
         return null
       },
     },
@@ -732,20 +734,20 @@ test('hero defense key is handled by hero controller', () => {
   }
 })
 
-test('Shift dismount action is handled without enabling slow walk', () => {
+test('X dismount action is handled without enabling slow walk', () => {
   const { controls, restore } = createControls()
   try {
     controls.heroController.active = true
 
     controls.onKeyDown({
-      key: 'Shift',
-      code: 'ShiftLeft',
+      key: 'x',
+      code: 'KeyX',
       preventDefault() {},
       target: new MockElement(),
     })
     controls.onKeyUp({
-      key: 'Shift',
-      code: 'ShiftLeft',
+      key: 'x',
+      code: 'KeyX',
       preventDefault() {},
       target: new MockElement(),
     })
@@ -951,20 +953,16 @@ test('audibility requires the camera and either player ownership, visibility or 
   assert.equal(controls.instanceIsAudible(entity), true)
 })
 
-test('Shift toggles crouch on foot without retriggering on repeat or release', () => {
+test('Shift dispatches sprint once on press and releases it without toggling crouch', () => {
   const { controls, restore } = createControls()
   try {
     controls.heroController.active = true
-    controls.heroController.handleKeyDown = () => false
     const event = { key: 'Shift', code: 'ShiftLeft', preventDefault() {}, target: new MockElement() }
     controls.onKeyDown(event)
-    assert.equal(controls.isHeroStealthMode(), true)
     controls.onKeyDown({ ...event, repeat: true })
-    assert.equal(controls.isHeroStealthMode(), true)
     controls.onKeyUp(event)
-    assert.equal(controls.isHeroStealthMode(), true)
-    controls.onKeyDown(event)
-    controls.onKeyUp(event)
+    assert.deepEqual(controls.heroController.keyDowns, ['heroSprint'])
+    assert.deepEqual(controls.heroController.keyUps, ['heroSprint'])
     assert.equal(controls.isHeroStealthMode(), false)
   } finally {
     restore()

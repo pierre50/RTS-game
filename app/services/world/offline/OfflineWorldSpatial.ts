@@ -262,8 +262,8 @@ export class OfflineWorldSpatial {
     this.passages.add(this.key(point))
   }
 
-  naturalCell(point: SaveGridPoint, clearableTypes: ReadonlySet<string> = new Set()): boolean {
-    if (!this.land(point) || this.passages.has(this.key(point))) return false
+  naturalCell(point: SaveGridPoint, clearableTypes: ReadonlySet<string> = new Set(), allowPassage = false): boolean {
+    if (!this.land(point) || (!allowPassage && this.passages.has(this.key(point)))) return false
     const occupants = this.occupied.get(this.key(point))
     if (occupants && [...occupants].some(entity => !clearableTypes.has(entity.type))) return false
     const cell = this.terrain[point.i]?.[point.j]

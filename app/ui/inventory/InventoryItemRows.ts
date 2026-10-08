@@ -5,14 +5,11 @@ import { createInventoryEquipmentIcon, createInventoryResourceIcon } from './Inv
 import { createEquipmentRowInfo, createResourceRowInfo, formatGold } from './InventoryDetails'
 import type { ResourceAmount } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
-import type { MenuHost } from '../MenuHost'
-
-type InventoryItemRowMenu = MenuHost | GameContextLike['menu']
 
 type BaseInventoryItemRowOptions = {
   showValue?: boolean
   value?: string
-  metaParts?: Parameters<typeof createInventoryActionRow>[1]['metaParts']
+  metaParts?: Parameters<typeof createInventoryActionRow>[0]['metaParts']
   ariaLabel?: string
   badge?: string
   className?: string
@@ -22,11 +19,10 @@ type BaseInventoryItemRowOptions = {
   icon?: HTMLElement
   id: string
   labelContext?: string
-  playClick?: boolean
   meta?: string
   title?: string
-  secondaryAction?: Parameters<typeof createInventoryActionRow>[1]['secondaryAction']
-  trailingAction?: Parameters<typeof createInventoryActionRow>[1]['trailingAction']
+  secondaryAction?: Parameters<typeof createInventoryActionRow>[0]['secondaryAction']
+  trailingAction?: Parameters<typeof createInventoryActionRow>[0]['trailingAction']
 }
 
 type EquipmentItemRowOptions = BaseInventoryItemRowOptions & {
@@ -51,13 +47,11 @@ export type InventoryItemRowParts = InventoryActionRowParts & {
 
 export function createInventoryEquipmentRow(
   context: GameContextLike | undefined,
-  menu: InventoryItemRowMenu,
   options: EquipmentItemRowOptions
 ): InventoryItemRowParts {
   const count = options.count ?? 1
   const info = createEquipmentRowInfo(options.equipment, count, options.mode, { showValue: false })
   const parts = createItemRow(
-    menu,
     {
       ...options,
       badge: options.badge ?? (isEquipmentBroken(options.equipment) ? t('equipmentBrokenLabel') : undefined),
@@ -77,24 +71,20 @@ export function createInventoryEquipmentRow(
   return parts
 }
 
-export function createInventoryResourceRow(
-  menu: InventoryItemRowMenu,
-  options: ResourceItemRowOptions
-): InventoryItemRowParts {
+export function createInventoryResourceRow(options: ResourceItemRowOptions): InventoryItemRowParts {
   const amount = options.amount ?? 1
   const info = createResourceRowInfo(options.resource, amount, options.mode, { showValue: false })
-  const parts = createItemRow(menu, options, info, amount)
+  const parts = createItemRow(options, info, amount)
   parts.icon.appendChild(options.icon ?? createInventoryResourceIcon(options.resource))
   return parts
 }
 
 function createItemRow(
-  menu: InventoryItemRowMenu,
   options: BaseInventoryItemRowOptions,
   info: InventoryItemRowParts['info'],
   quantity: number
 ): InventoryItemRowParts {
-  const row = createInventoryActionRow(menu, {
+  const row = createInventoryActionRow({
     id: options.id,
     badge: options.badge,
     category: info.category,
@@ -109,7 +99,6 @@ function createItemRow(
     value:
       options.value ?? (options.showValue !== false && info.goldValue > 0 ? formatGold(info.goldValue) : undefined),
     quantity,
-    playClick: options.playClick,
     secondaryAction: options.secondaryAction,
     trailingAction: options.trailingAction,
   })

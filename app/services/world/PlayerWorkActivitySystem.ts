@@ -44,7 +44,8 @@ export class PlayerWorkActivitySystem {
 
   private eligible(unit: UnitEntity): boolean {
     return Boolean(
-      unit.owner?.isPlayed &&
+      !unit.roadJourney &&
+        unit.owner?.isPlayed &&
         unit.type === 'Villager' &&
         unit !== this.context.controls?.heroUnit &&
         unit.controlMode !== 'hero' &&

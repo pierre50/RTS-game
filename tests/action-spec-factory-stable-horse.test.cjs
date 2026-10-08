@@ -65,7 +65,6 @@ function loadActionSpecFactory(options = {}) {
       playerNeedsChiefForCommand: () => false,
     },
     '../lib/lang': { t: key => key },
-    '../lib/audio/uiSound': { playUiSound: () => {} },
   }
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
@@ -93,7 +92,6 @@ function createFactory({ canAfford, hero, messages }) {
       },
       player,
     },
-    playUiClick: () => {},
     showMessage: (...args) => messages.push(args),
     toggleQueuedActionCancel: () => {},
   }

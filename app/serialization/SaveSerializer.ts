@@ -1,3 +1,4 @@
+import { serializeAmbientTraffic } from '../services/travel/ambient/AmbientTrafficState'
 import { deferredVillageState } from '../services/world/distantVillages/DeferredVillageStore'
 import { CompactResourceSet, resourceReadValues } from '../classes/resources/CompactResourceSet'
 import { filterObject } from '../lib'
@@ -202,6 +203,7 @@ function serializeGameData(
     version: 2,
     runtime: {
       banditCamps: serializeCampRespawnStates(context.map),
+      ambientTraffic: serializeAmbientTraffic(context.map),
       heroEquippedItem: context.controls.equippedItem ?? null,
       dayNightElapsedMs: context.dayNight?.getElapsedMs?.() ?? 0,
       elapsedMs: context.scheduler?.elapsedMs ?? 0,

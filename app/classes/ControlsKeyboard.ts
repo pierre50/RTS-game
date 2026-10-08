@@ -119,16 +119,6 @@ export function handleControlsKeyDown(controls: ControlsKeyboardHost, evt: Keybo
   }
   if (evt.key === 'Escape' && controls.handleEscapeKey(evt)) return
   const action = getControlActionForKeyboardEvent(evt)
-  if (evt.key === 'Shift') {
-    evt.preventDefault()
-    if (evt.repeat || controls.isInteractionBlocked()) return
-    if (action && controls.heroController.handleKeyDown(action)) {
-      if (evt.code) controls.keyActionsByCode[evt.code] = action
-      return
-    }
-    controls.shiftKeyActive = !controls.shiftKeyActive
-    return
-  }
   if (action === 'quests' && !evt.repeat && controls.context.menu?.isQuestJournalOpen?.()) {
     evt.preventDefault()
     controls.context.menu.closeQuests?.()

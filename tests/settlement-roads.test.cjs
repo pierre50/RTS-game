@@ -1,6 +1,11 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { prepareSettlementRoads, roadTerrain } = require('../tools/maps/settlements/settlement-roads.cjs')
+const {
+  prepareSettlementRoads,
+  roadTerrain,
+  validateSettlementRoads,
+  clearRoadTrees,
+} = require('../tools/maps/settlements/settlement-roads.cjs')
 
 function fixture(size = 60) {
   const terrain = Array.from({ length: size }, (_, i) =>
@@ -81,6 +86,30 @@ test('routes detour around woodland, crops and buildings without deleting resour
   assert.ok(!roads.cells.some(([id]) => Math.floor(id / roads.stride) === 18 && id % roads.stride === 23))
   validate(roads, prepared, terrain)
 })
+test('forest barriers are cleared along the fixed route without removing other resources', () => {
+  const { prepared, terrain } = fixture()
+  for (let i = 0; i < 60; i++) for (let j = 27; j <= 33; j++) prepared.resources.push({ type: 'Tree', i, j })
+  prepared.resources.push({ type: 'Stone', i: 30, j: 20 })
+  const before = structuredClone(prepared)
+  const roads = prepareSettlementRoads(prepared, terrain)
+  assert.equal(roads.components.length, 1, 'trees do not disconnect settlements')
+  assert.deepEqual(prepared, before, 'planning preserves the source')
+  const fixed = structuredClone(roads)
+  const resources = clearRoadTrees(roads, prepared.resources)
+  assert.ok(resources.length < prepared.resources.length)
+  assert.ok(
+    resources.some(resource => resource.type === 'Tree'),
+    'preserve forest away from roads'
+  )
+  assert.deepEqual(
+    resources.filter(resource => resource.type !== 'Tree'),
+    before.resources.filter(resource => resource.type !== 'Tree')
+  )
+  assert.deepEqual(roads, fixed, 'clearing does not change the route')
+  assert.deepEqual(clearRoadTrees(roads, resources), resources, 'clearing is idempotent')
+  validateSettlementRoads(roads, { ...prepared, resources }, terrain)
+})
+
 test('water separates networks explicitly; a legal gap reconnects them', () => {
   const { prepared, terrain } = fixture()
   for (const row of terrain) row[30].category = 'Water'
@@ -127,4 +156,33 @@ test('planned routes visit the reserved squares and still reach the actual build
       const point = squares.get(site)
       assert.ok(route.cells.includes(point.i * roads.stride + point.j))
     }
+})
+
+test('roads leave two cells around resources and the entire cave footprint', () => {
+  const { prepared, terrain } = fixture()
+  prepared.caves = [{ id: 'cave', i: 27, j: 10 }]
+  prepared.resources = [
+    { type: 'Stone', i: 38, j: 10 },
+    { type: 'Tree', i: 38, j: 35 },
+  ]
+  const before = structuredClone(prepared)
+  const roads = prepareSettlementRoads(prepared, terrain)
+  assert.equal(roads.summary.components, 1)
+  assert.deepEqual(prepared, before)
+  for (const [id] of roads.cells) {
+    const i = Math.floor(id / roads.stride),
+      j = id % roads.stride
+    assert.ok(Math.max(Math.abs(i - 27), Math.abs(j - 10)) > 3, '3x3 cave plus two-cell margin')
+    for (const resource of prepared.resources)
+      assert.ok(Math.max(Math.abs(i - resource.i), Math.abs(j - resource.j)) > 2, 'resource margin')
+  }
+  validateSettlementRoads(roads, prepared, terrain)
+  const [id] = roads.cells[Math.floor(roads.cells.length / 2)]
+  const point = { i: Math.floor(id / roads.stride), j: id % roads.stride }
+  for (const type of ['resource', 'cave']) {
+    const invalid = structuredClone(prepared)
+    if (type === 'resource') invalid.resources.push({ type: 'Gold', i: point.i, j: point.j + 2 })
+    else invalid.caves.push({ id: 'near-road', i: point.i, j: point.j + 3 })
+    assert.throws(() => validateSettlementRoads(roads, invalid, terrain), /road blocked/)
+  }
 })

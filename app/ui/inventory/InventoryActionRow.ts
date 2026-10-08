@@ -1,10 +1,6 @@
 import { createValueBadge } from '../ValueBadge'
 import { createCombatStatInfo, type CombatStatInfo } from '../entity/CombatStatInfo'
 
-type InventoryActionRowHost = {
-  playUiClick?(): void
-}
-
 type InventoryActionMetaPart = {
   text: string
   className?: string
@@ -25,7 +21,6 @@ type InventoryActionRowOptions = {
   description?: string
   hideIcon?: boolean
   meta?: string
-  playClick?: boolean
   quantity?: number
   secondaryAction?: InventoryActionRowOptions['trailingAction']
   trailingAction?: {
@@ -61,10 +56,7 @@ export function appendInventoryEmptyIcon(host: HTMLElement): void {
   host.appendChild(marker)
 }
 
-export function createInventoryActionRow(
-  menu: InventoryActionRowHost,
-  options: InventoryActionRowOptions
-): InventoryActionRowParts {
+export function createInventoryActionRow(options: InventoryActionRowOptions): InventoryActionRowParts {
   const element = document.createElement('div')
   element.id = options.id
   element.className = [
@@ -141,7 +133,7 @@ export function createInventoryActionRow(
     const actions = document.createElement('div')
     actions.className = 'inventory-row-actions'
     for (const action of [options.trailingAction, options.secondaryAction]) {
-      if (action) appendTrailingActionButton(menu, actions, { ...options, trailingAction: action })
+      if (action) appendTrailingActionButton(actions, { ...options, trailingAction: action })
     }
     element.appendChild(actions)
   }
@@ -149,11 +141,7 @@ export function createInventoryActionRow(
   return { element, icon }
 }
 
-function appendTrailingActionButton(
-  menu: InventoryActionRowHost,
-  element: HTMLElement,
-  options: InventoryActionRowOptions
-): void {
+function appendTrailingActionButton(element: HTMLElement, options: InventoryActionRowOptions): void {
   const action = options.trailingAction
   if (!action) return
 
@@ -176,7 +164,6 @@ function appendTrailingActionButton(
     evt.preventDefault()
     evt.stopPropagation()
     if (button.disabled) return
-    if (options.playClick !== false) menu.playUiClick?.()
     if (action.onAction) {
       action.onAction(evt.shiftKey ? 'all' : 'one')
     } else {
@@ -188,14 +175,12 @@ function appendTrailingActionButton(
       evt.preventDefault()
       evt.stopPropagation()
       if (button.disabled) return
-      if (options.playClick !== false) menu.playUiClick?.()
       action.onAction?.('all')
     })
     button.addEventListener('inventorytransfergamepad', evt => {
       evt.preventDefault()
       evt.stopPropagation()
       if (button.disabled) return
-      if (options.playClick !== false) menu.playUiClick?.()
       action.onAction?.((evt as CustomEvent<{ mode: 'one' | 'all' }>).detail.mode)
     })
   }

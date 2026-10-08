@@ -76,7 +76,7 @@ test('item quantity badges only appear for stacks of two or more', () => {
       mocks: { '../ValueBadge': {}, '../entity/CombatStatInfo': { createCombatStatInfo: element } },
     })
     for (const quantity of [0, 1, 2, 12]) {
-      const { element: row } = createInventoryActionRow({}, { id: 'loot', title: 'Leather', quantity })
+      const { element: row } = createInventoryActionRow({ id: 'loot', title: 'Leather', quantity })
       const badge = row.children.find(child => child.className === 'inventory-quantity-badge')
       if (quantity < 2) assert.equal(badge, undefined)
       else assert.equal(badge.textContent, `x${quantity}`)

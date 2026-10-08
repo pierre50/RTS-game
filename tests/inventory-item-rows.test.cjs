@@ -10,7 +10,7 @@ test('inventory items share a separate stack value while retaining combat detail
       mocks: {
         './InventoryActionRow': {
           appendInventoryEmptyIcon() {},
-          createInventoryActionRow: (_menu, options) => {
+          createInventoryActionRow: (options) => {
             rows.push(options)
             return { element: {}, icon: { appendChild() {} } }
           },
@@ -35,9 +35,9 @@ test('inventory items share a separate stack value while retaining combat detail
       },
     }
   )
-  createInventoryEquipmentRow(undefined, {}, { id: 'bag', equipment: 'sword', count: 2 })
-  createInventoryEquipmentRow(undefined, {}, { id: 'equipped', equipment: 'sword' })
-  createInventoryResourceRow({}, { id: 'loot', resource: 'gold', amount: 3 })
+  createInventoryEquipmentRow(undefined, { id: 'bag', equipment: 'sword', count: 2 })
+  createInventoryEquipmentRow(undefined, { id: 'equipped', equipment: 'sword' })
+  createInventoryResourceRow({ id: 'loot', resource: 'gold', amount: 3 })
   assert.deepEqual(
     rows.map(row => row.value),
     ['370 or', '185 or', '3 or']
@@ -45,9 +45,9 @@ test('inventory items share a separate stack value while retaining combat detail
   assert.deepEqual(rows[0].stats, [{ key: 'weaponPower', value: 6 }])
   assert.doesNotMatch(rows[0].meta, /detailsDamage/)
   assert.ok(rows.every(row => !row.meta.includes('detailsValue')))
-  createInventoryEquipmentRow(undefined, {}, { id: 'market', equipment: 'sword', showValue: false })
+  createInventoryEquipmentRow(undefined, { id: 'market', equipment: 'sword', showValue: false })
   assert.equal(rows.at(-1).value, undefined)
-  createInventoryEquipmentRow(undefined, {}, { id: 'arrows', equipment: 'arrow_ceramic' })
+  createInventoryEquipmentRow(undefined, { id: 'arrows', equipment: 'arrow_ceramic' })
   assert.equal(rows.at(-1).category, 'detailsEquipmentArrows')
   assert.deepEqual(rows.at(-1).stats, [{ key: 'rangedWeaponPower', value: 6 }])
 })

@@ -59,12 +59,57 @@ export class StartingVillageRoads {
     }
   }
 
+  /** Complete a gate across the local road direction before defending another approach. */
+  private gateScore(
+    entries: SaveGridPoint[],
+    roads: SaveGridPoint[],
+    point: SaveGridPoint,
+    towers: SaveEntityState[],
+    range: number
+  ): number {
+    let best = 0
+    for (const entry of entries) {
+      if (distance(point, entry) > range) continue
+      const nearby = roads.filter(road => distance(road, entry) <= 3)
+      let ii = 0,
+        jj = 0,
+        ij = 0
+      for (const road of nearby) {
+        const di = road.i - entry.i,
+          dj = road.j - entry.j
+        ii += di * di
+        jj += dj * dj
+        ij += di * dj
+      }
+      if (ii + jj === 0 || (ii === jj && ij === 0)) continue
+      const angle = Math.atan2(2 * ij, ii - jj) / 2
+      const di = Math.cos(angle),
+        dj = Math.sin(angle)
+      const along = (p: SaveGridPoint) => (p.i - entry.i) * di + (p.j - entry.j) * dj
+      const side = (p: SaveGridPoint) => (p.i - entry.i) * -dj + (p.j - entry.j) * di
+      const alignment = (a: SaveGridPoint, b: SaveGridPoint): number | null => {
+        if (side(a) * side(b) >= 0 || Math.min(Math.abs(side(a)), Math.abs(side(b))) < 2) return null
+        const offset = Math.abs(along(a) - along(b))
+        const symmetry = Math.abs(side(a) + side(b))
+        return offset <= 2 && symmetry <= 2 ? offset + symmetry : null
+      }
+      const defenders = towers.filter(tower => distance(tower, entry) <= range)
+      for (const tower of defenders) {
+        if (defenders.some(other => other !== tower && alignment(tower, other) !== null)) continue
+        const error = alignment(tower, point)
+        if (error !== null) best = Math.min(best, -3000 + error * 150 + distance(tower, point) * 100)
+      }
+    }
+    return best
+  }
+
   score(
     center: SaveGridPoint,
     point: SaveGridPoint,
     type: string,
     placed: SaveEntityState[],
-    towerRange: number
+    towerRange: number,
+    perimeter = false
   ): number {
     if (type !== 'WatchTower' && !ROAD_ATTRACTION[type]) return 0
     const roads = this.nearby(center)
@@ -77,7 +122,14 @@ export class StartingVillageRoads {
     const covered = entries.filter(entry => distance(point, entry) <= towerRange)
     const newlyCovered = covered.filter(entry => !towers.some(tower => distance(tower, entry) <= towerRange))
     const separation = towers.reduce((sum, tower) => sum + Math.max(0, 8 - distance(point, tower)), 0)
-    // Cover distinct entrances first, then reinforce an existing one from a separate position.
-    return -newlyCovered.length * 1000 - covered.length * 200 + separation * 60 + nearestRoad * 4
+    const gate = this.gateScore(entries, roads, point, towers, towerRange)
+    // Pair towers across an approach when a valid lot exists; otherwise retain coverage priorities.
+    return (
+      gate -
+      newlyCovered.length * 1000 -
+      (perimeter ? 0 : covered.length * 200) +
+      (gate < 0 ? 0 : separation * 60) +
+      (newlyCovered.length ? nearestRoad * 100 : perimeter ? 0 : nearestRoad * 4)
+    )
   }
 }

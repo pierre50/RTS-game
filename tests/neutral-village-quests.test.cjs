@@ -303,7 +303,6 @@ test('quest dialogue hides unavailable deliveries and closes after acceptance an
   let closed = 0
   const menu = {
     context: f.context,
-    playUiClick() {},
     showMessage() {},
     closeNpcOrders() {
       closed++
@@ -534,7 +533,7 @@ test('tutorial raid waits for dialogue closure and cannot duplicate its army or 
   let resolveRaid
   context.tributeRaids = { triggerTutorialRaid: () => { starts++; return new Promise(resolve => { resolveRaid = resolve }) } }
   assert.equal(runtime.deliver(chief), true)
-  assert.deepEqual(sounds, ['attack-warning'])
+  assert.deepEqual(sounds, [])
   assert.equal(starts, 0)
   assert.equal(quest.stageId, 'alarm')
   assert.equal(runtime.deliver(chief), false)

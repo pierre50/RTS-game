@@ -88,12 +88,12 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
           createInventoryResourceIcon: () => makeElement(),
         },
         './InventoryItemRows': {
-          createInventoryEquipmentRow: (context, rowMenu, options) => {
+          createInventoryEquipmentRow: (context, options) => {
             equipAction = options.trailingAction
             deleteEquipmentAction = options.secondaryAction
             return { element: makeElement(), icon: makeElement() }
           },
-          createInventoryResourceRow: (_menu, options) => {
+          createInventoryResourceRow: (options) => {
             if (options.amount === 99) deleteResourceAction = options.secondaryAction
             return { element: makeElement(), icon: makeElement() }
           },
@@ -191,7 +191,7 @@ test('a looted trap can be placed from the bag outside but not inside a building
         '../../lib/lang': { t: key => key },
         './InventoryItemIcons': { createInventoryBuildingIcon: () => makeElement() },
         './InventoryItemRows': {
-          createInventoryEquipmentRow: (_context, _menu, options) => {
+          createInventoryEquipmentRow: (_context, options) => {
             placeAction = options.trailingAction
             return { element: makeElement(), icon: makeElement() }
           },

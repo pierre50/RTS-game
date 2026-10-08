@@ -50,7 +50,7 @@ export const SETTLEMENT_PROFILES: Record<SettlementType, VillageStartProfile> = 
       Stable: 1,
       Granary: 3,
       StoragePit: 2,
-      WatchTower: 3,
+      WatchTower: 8,
       CampBrazier: 10,
     },
     units: { Chief: 1, Villager: 24, Fantassin: 12, Bowman: 6 },

@@ -1,3 +1,5 @@
+import type { BuildingEntity } from '../../../types/entities'
+import { beginRoadJourney } from '../../../lib/units/roadJourney'
 import { ACTION_TYPES } from '../../../constants'
 import { getInstanceClosestFreeCellPath, getInstanceDegree, getInstancePath } from '../../../lib'
 import {
@@ -142,6 +144,14 @@ export class UnitMovementRouting {
     }: SendToOptions = {}
   ) {
     const unit = this.unit
+    if (
+      !action &&
+      dest &&
+      'type' in dest &&
+      dest.type === 'TownCenter' &&
+      beginRoadJourney(unit, dest as BuildingEntity)
+    )
+      return true
     if (!admitMoveOrder(unit, dest, action)) return false
     const map = getEntitySpaceMapLike(unit, unit.context?.map)
     const attackDecision = resolveAttackOrder(unit, dest, action)

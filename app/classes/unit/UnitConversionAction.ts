@@ -64,6 +64,7 @@ export class UnitConversionAction {
   }
 
   convertTarget(target: RuntimeEntity, options: { grantXp?: boolean; stopConverter?: boolean } = {}): boolean {
+    if ((target as UnitEntity).ambientRoadGroup) return false
     const unit = this.unit
     const grantXpOnSuccess = options.grantXp ?? true
     const stopConverter = options.stopConverter ?? true

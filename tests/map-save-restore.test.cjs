@@ -203,3 +203,15 @@ test('restoring visibility resolves repeated viewer labels once, including missi
   restorePlayerViews(player, map)
   assert.equal(lookups, 2)
 })
+
+test('restoring a road journey preserves its final town without resuming an obsolete waypoint', () => {
+  const { processUnit } = loadMapSaveRestore()
+  const unit = { family: 'unit', roadJourney: { targetLabel: 'far-town' },
+    dest: [3, 2], path: [{ i: 3, j: 2 }], action: null,
+    sendTo: () => assert.fail('Must not start an old local path during restore'),
+    setPath: () => assert.fail('Must replan the journey from its saved position') }
+  processUnit(unit, { grid: [] })
+  assert.deepEqual(unit.roadJourney, { targetLabel: 'far-town' })
+  assert.equal(unit.dest, null)
+  assert.deepEqual(unit.path, [])
+})

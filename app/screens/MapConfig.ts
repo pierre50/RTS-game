@@ -1,6 +1,5 @@
 import { CONTINENT_WORLD_PRESETS } from '../config/continentWorlds'
 import { definedProperties } from '../lib/definedProperties'
-import { playClickSound } from '../lib/audio/uiSound'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { buildSelectRow } from '../ui/utils/formUtils'
@@ -53,7 +52,6 @@ export default class MapConfig {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
-    button.addEventListener('pointerdown', playClickSound)
     button.addEventListener('click', onClick)
     return button
   }
@@ -112,7 +110,6 @@ export default class MapConfig {
     if (evt.target instanceof HTMLElement && evt.target.closest('input, select, textarea')) return
 
     evt.preventDefault()
-    playClickSound()
     this._startGame()
   }
 

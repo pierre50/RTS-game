@@ -1,3 +1,4 @@
+import { getDeferredVillages } from './distantVillages/DeferredVillageStore'
 import { isStaticSettlement } from '../../config/settlementProfiles'
 import { flushNaturalGrowth } from '../NaturalGrowthQueue'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
@@ -45,6 +46,7 @@ export class SleepSimulation {
     this.plannedDay.clear()
     this.workers.clear()
     this.villages.beginSleep()
+    getDeferredVillages(this.context.map)?.flush()
     this.context.performance?.markEvent?.('sleep.begin', { elapsedMs: this.context.dayNight!.getElapsedMs() })
   }
 
@@ -88,8 +90,13 @@ export class SleepSimulation {
   }
 
   private advanceOwner(owner: PlayerLike, from: number, to: number): void {
+    // Saved residents own their own daily events; settle them before the live calendar commits.
+    if (getDeferredVillages(this.context.map)?.advanceOwner(owner, to)) return
     if (isStaticSettlement(owner)) {
-      for (const unit of owner.units) unit.lastMealAt = calendarMinute(to)
+      for (const unit of owner.units) {
+        restoreOfflineUnitSleepHealth(unit, calendarMinute(from), calendarMinute(to))
+        unit.lastMealAt = calendarMinute(to)
+      }
       return
     }
     const hero = this.context.controls?.heroUnit
@@ -98,6 +105,7 @@ export class SleepSimulation {
       unit =>
         unit !== hero &&
         unit.type === 'Villager' &&
+        !unit.roadJourney &&
         !unit.followingHero &&
         unit.controlMode !== 'hero' &&
         !unit.trainingTargetType &&
@@ -165,6 +173,7 @@ export class SleepSimulation {
     this.work = []
     this.villages.endSleep()
     this.context.unitRest?.synchronizeAfterTimeJump?.()
+    this.context.synchronizeBuildingInteriorAfterTimeJump?.()
     for (const unit of this.workers)
       if (!unit.isDead && !unit.isDestroyed && !unit.shelterState && unit.dest)
         unit.sendToEvt?.(unit.dest, unit.action, { forceRepath: true, preserveAutonomy: true })

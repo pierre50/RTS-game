@@ -8,13 +8,13 @@ import {
   cancelHeroCatchingPole,
   cancelHeroDefense,
   getHeroAimDegree,
+  isHeroToolAvailable,
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import { heroCanCommand } from '../lib/chief'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { setUnitControlMode } from '../lib/units/unitControl'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
-import { HeroInteractionHighlight } from '../services/HeroInteractionHighlight'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import {
@@ -74,9 +74,9 @@ export class HeroController {
   actionInputController: HeroActionInputController
   companionHorseController: HeroCompanionHorseController
   equipmentController: HeroEquipmentController
+  keyboardSprintHeld = false
   keyboardInteractHeld: boolean
   proximityInteraction: HeroProximityInteraction | null
-  interactionHighlight = new HeroInteractionHighlight()
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
 
@@ -140,6 +140,17 @@ export class HeroController {
 
   handleKeyDown(action: ControlBindingAction, source?: 'gamepad'): boolean {
     if (!this.isActive()) return false
+
+    if (action === 'heroSprint') {
+      this.keyboardSprintHeld = true
+      return true
+    }
+
+    if (action === 'heroStealth') {
+      this.controls.shiftKeyActive = !this.controls.shiftKeyActive
+      if (this.controls.shiftKeyActive) this.stopSprint()
+      return true
+    }
 
     if (action === 'inventory') {
       this.controls.context.menu?.toggleInventory?.()
@@ -307,7 +318,6 @@ export class HeroController {
     const previousLabelKey = this.proximityInteraction?.labelKey ?? null
     const nextLabelKey = interaction?.labelKey ?? null
     this.proximityInteraction = interaction
-    this.interactionHighlight.update(interaction && 'target' in interaction ? interaction.target : null)
     if (previousLabelKey !== nextLabelKey) this.controls.context.menu?.setHeroInteractionPrompt?.(nextLabelKey)
   }
 
@@ -316,7 +326,6 @@ export class HeroController {
     const previousLabelKey = this.proximityInteraction?.labelKey ?? null
     const nextLabelKey = interaction?.labelKey ?? null
     this.proximityInteraction = interaction
-    this.interactionHighlight.update(interaction && 'target' in interaction ? interaction.target : null)
     if (previousLabelKey !== nextLabelKey) this.controls.context.menu?.setHeroInteractionPrompt?.(nextLabelKey)
     if (!interaction) return false
     if (interaction.action === 'enter') {
@@ -343,6 +352,11 @@ export class HeroController {
   }
 
   handleKeyUp(action: ControlBindingAction, source?: 'gamepad'): void {
+    if (action === 'heroSprint') {
+      this.keyboardSprintHeld = false
+      this.stopSprint()
+      return
+    }
     if (isHeroMoveAction(action)) {
       this.keysPressed.delete(action)
       if (!this.hasMoveKeyPressed()) {
@@ -358,7 +372,6 @@ export class HeroController {
   }
 
   update(frameScale: number): void {
-    if (!this.isActive()) this.interactionHighlight.clear()
     updateHeroControllerRuntime(this, frameScale)
   }
 
@@ -432,12 +445,13 @@ export class HeroController {
   }
 
   stopKeyboardMove(): void {
+    this.keyboardSprintHeld = false
+    this.stopSprint()
     this.keysPressed.clear()
   }
 
   cancelActiveInteraction(): void {
     this.stopSprint()
-    this.interactionHighlight.clear()
     this.stopKeyboardMove()
     this.mouseHeld = false
     this.defenseHeld = false
@@ -495,7 +509,7 @@ export class HeroController {
     this.heroUnit.stop?.()
     this.heroUnit.removeHealthBar?.()
     player.unselectAll?.()
-    this.setEquippedTool('interact')
+    this.setEquippedTool(isHeroToolAvailable(this.heroUnit, 'sword') ? 'sword' : 'interact')
     this.controls.context.menu?.setHeroStatusTarget?.(this.heroUnit)
     this.controls.context.menu?.setActionTarget?.(this.heroUnit)
     this.controls.setCamera(this.heroUnit.x, this.heroUnit.y)

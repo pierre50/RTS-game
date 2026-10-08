@@ -35,3 +35,29 @@ test('economic sites keep resource priorities; buildings without nearby roads re
   assert.equal(isolated.score(center, near, 'WatchTower', [], 6), 0)
   assert.equal(isolated.militarySite(center, far), far)
 })
+
+test('towers form a gate across the road before moving on to another entrance', () => {
+  for (const transpose of [false, true]) {
+    const point = (i, j) => (transpose ? { i: j, j: i } : { i, j })
+    const roads = new StartingVillageRoads({
+      version: 1,
+      stride: 100,
+      cells: Array.from({ length: 61 }, (_, k) => {
+        const p = point(k + 20, 50)
+        return [p.i * 100 + p.j, transpose ? 5 : 10]
+      }),
+    })
+    const center = point(50, 50)
+    const first = { ...point(35, 46), type: 'WatchTower' }
+    const opposite = point(35, 54)
+    const otherEntrance = point(65, 46)
+    const score = (p, placed) => roads.score(center, p, 'WatchTower', placed, 6)
+    assert.ok(score(opposite, [first]) < score(otherEntrance, [first]), 'complete the gate first')
+    assert.ok(score(opposite, [first]) < score(point(39, 46), [first]), 'avoid a same-side pair')
+    assert.ok(score(opposite, [first]) < score(point(38, 54), [first]), 'align towers across the road')
+    assert.ok(score(opposite, [first]) < score(point(35, 55), [first]), 'prefer a narrower gate')
+    assert.ok(score(point(35, 46), []) < score(point(35, 45), []), 'start the gate close to the road')
+    const pair = [first, { ...opposite, type: 'WatchTower' }]
+    assert.ok(score(otherEntrance, pair) < score(point(36, 54), pair), 'a completed gate needs no third tower')
+  }
+})

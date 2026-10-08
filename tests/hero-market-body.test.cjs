@@ -108,7 +108,7 @@ test('hero market allows own, allied, neutral and friendly markets', () => {
     isEnemy: owner => owner?.relation === 'enemy',
   }
   const hero = { owner: heroOwner, context: { getCampaignFactions: () => ({ tribe: { relationState: 'neutral' } }) } }
-  const menu = { context: { app: {}, controls: { heroUnit: hero } }, playUiClick() {} }
+  const menu = { context: { app: {}, controls: { heroUnit: hero } } }
 
   try {
     assert.notEqual(
@@ -147,7 +147,7 @@ test('hero market blocks hostile, wary and enemy markets', () => {
     isEnemy: owner => owner?.relation === 'enemy',
   }
   const hero = { owner: heroOwner, context: { getCampaignFactions: () => ({ tribe: { relationState: 'hostile' } }) } }
-  const menu = { context: { app: {}, controls: { heroUnit: hero } }, playUiClick() {} }
+  const menu = { context: { app: {}, controls: { heroUnit: hero } } }
 
   assert.equal(
     createHeroMarketBody({ owner: { label: 'enemy', relation: 'enemy' } }, menu, () => {}),
@@ -187,8 +187,8 @@ test('market rows show unit price tags without repeated lot totals', () => {
       getResourceGoldValue: () => 2,
     },
     '../inventory/InventoryItemRows': {
-      createInventoryEquipmentRow: (_context, _menu, options) => makeRow(options),
-      createInventoryResourceRow: (_menu, options) => makeRow(options),
+      createInventoryEquipmentRow: (_context, options) => makeRow(options),
+      createInventoryResourceRow: (options) => makeRow(options),
     },
     '../inventory/InventorySection': {
       createInventorySection: options => {

@@ -29,7 +29,6 @@ function loadLifecycle({ calls, soundSuppressed, defeated = false }) {
           calls.push(['suppressed', value])
         },
       },
-      '../../lib/audio/uiSound': { stopAllUiSounds: () => calls.push(['stopAllUiSounds']) },
       '../../lib/combat/combatFeedback': { clearAllCombatFeedback: () => {} },
     },
   })

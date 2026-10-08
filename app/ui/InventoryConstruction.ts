@@ -153,7 +153,7 @@ function createInventoryConstructionRow(
     .filter((meta): meta is string => typeof meta === 'string' && meta.length > 0)
     .filter(meta => !isDetailsCostMetaLine(meta, detailsCostPrefix))
     .filter(meta => !isDetailsCostMetaLine(meta, detailsHpPrefix))
-  const { element, icon } = createInventoryActionRow(host.menu, {
+  const { element, icon } = createInventoryActionRow({
     id: button.id || `construction-${index}`,
     className: 'inventory-construction-row',
     disabled,
@@ -200,7 +200,6 @@ function bindConstructionHotkey(
 ): void {
   if (!hotkey || typeof button.onClick !== 'function') return
   host.menu.setActionHotkey(hotkey, () => {
-    host.menu.playUiClick()
     button.onClick!(selection, null)
   })
 }

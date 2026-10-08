@@ -24,7 +24,8 @@ function isOutsideIdleRoster(unit: UnitEntity, owner: PlayerLike): boolean {
 
 function isOccupied(unit: UnitEntity): boolean {
   return Boolean(
-    unit.controlMode === 'hero' ||
+    unit.roadJourney ||
+      unit.controlMode === 'hero' ||
       unit.followingHero ||
       unit.lookingAtHero ||
       unit.combatMode ||

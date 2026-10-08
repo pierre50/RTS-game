@@ -89,9 +89,6 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
     '../lib/lang': {
       t: (key, params) => (params ? `${key}:${params.target}:${params.owner}` : key),
     },
-    '../lib/audio/uiSound': {
-      playUiSound: () => {},
-    },
     '../lib/audio/sound': {
       playAudibleSoundCue: (instance, cue, options) => audibleSoundCues.push({ cue, instance, options }),
     },

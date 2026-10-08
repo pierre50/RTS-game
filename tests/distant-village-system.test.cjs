@@ -19,7 +19,10 @@ function fixture() {
       },
     },
   }
-  const { DistantVillageSystem } = loadTsModule('app/services/world/distantVillages/DistantVillageSystem.ts', { mocks, moduleCache })
+  const { DistantVillageSystem } = loadTsModule('app/services/world/distantVillages/DistantVillageSystem.ts', {
+    mocks,
+    moduleCache,
+  })
   const rules = {
     ...loadTsModule('app/lib/units/village/villageActivity.ts', { mocks, moduleCache }),
     ...loadTsModule('app/lib/units/unitSuspension.ts', { mocks, moduleCache }),
@@ -300,4 +303,24 @@ test('static rest catch-up is committed once across save flushes and activation'
   f.update()
   assert.equal(f.worker.hitPoints, 11)
   assert.deepEqual(f.advances, [])
+})
+
+test('village suspension, planning and wake leave its travelers under travel control', () => {
+  const f = fixture()
+  const traveler = { ...f.worker, label: 'traveler', i: 500, roadJourney: { targetLabel: 'other-town' } }
+  f.owner.units.push(traveler)
+  f.rules.setUnitSuspension(traveler, {
+    reason: 'road-travel',
+    wake() {
+      throw new Error('unexpected traveler wake')
+    },
+  })
+  f.update()
+  assert.equal(f.service.has(f.owner), true)
+  assert.equal(f.rules.unitSuspensionReason(traveler), 'road-travel')
+  f.context.scheduler.elapsedMs += 60000
+  f.service.flush()
+  f.service.wake(f.owner)
+  assert.equal(f.rules.unitSuspensionReason(traveler), 'road-travel')
+  assert.equal(traveler.i, 500)
 })

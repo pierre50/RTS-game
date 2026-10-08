@@ -1,5 +1,5 @@
 const { loadGenerationTs } = require('../load-generation-ts.cjs')
-const { prepareSettlementRoads, validateSettlementRoads } = require('./settlement-roads.cjs')
+const { prepareSettlementRoads, validateSettlementRoads, clearRoadTrees } = require('./settlement-roads.cjs')
 const { settlementTerrain } = require('./settlement-terrain.cjs')
 const { prepareBanditCamps } = require('../prepare-bandit-camps.cjs')
 const { distributeSettlementUnits } = require('./distribute-settlement-units.cjs')
@@ -81,7 +81,7 @@ function prepareSettlements(source) {
         const anchor = owner.buildings[0]
         squares.set(site.id, layout.prepareCore(anchor))
       }
-      roads = prepareSettlementRoads({ ...core, settlements: coreSites }, terrain, squares)
+      roads = prepareSettlementRoads({ ...core, settlements: coreSites, caves: blueprint.caves }, terrain, squares)
       layout.reserveRoads(roads)
       for (const site of coreSites) {
         const owner = core.players.find(player => player.label === site.ownerLabel)
@@ -96,6 +96,7 @@ function prepareSettlements(source) {
       }
     },
   })
+  generated.resources = clearRoadTrees(roads, generated.resources)
   stockSettlementStables(generated, blueprint.seed)
   distributeSettlementUnits(generated, terrain, roads)
   generated.animals = structuredClone(blueprint.animals ?? [])
@@ -125,7 +126,7 @@ function prepareSettlements(source) {
     animals: generated.animals,
   }
   result.summary = validateSettlements(result, terrain, result.heroSpawns)
-  validateSettlementRoads(roads, result, terrain)
+  validateSettlementRoads(roads, { ...result, caves: blueprint.caves }, terrain)
   result.roads = roads
   result.summary.roads = result.roads.summary
   return result

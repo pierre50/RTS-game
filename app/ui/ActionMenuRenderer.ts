@@ -70,13 +70,11 @@ export class ActionMenuRenderer {
       if (children) {
         this.makePressable(box, () => {
           if (btn.disabled?.(selection)) return
-          this.menu.playUiClick()
           onNavigate(children)
         })
       } else if (typeof onClick === 'function') {
         this.makePressable(box, evt => {
           if (btn.disabled?.(selection)) return
-          this.menu.playUiClick()
           onClick(selection, evt)
         })
       }
@@ -112,13 +110,11 @@ export class ActionMenuRenderer {
           if (btn.children) {
             this.activeHotkeys.set(hotkey, () => {
               if (btn.disabled?.(selection)) return
-              this.menu.playUiClick()
               onNavigate(btn.children!)
             })
           } else if (typeof btn.onClick === 'function') {
             this.activeHotkeys.set(hotkey, () => {
               if (btn.disabled?.(selection)) return
-              this.menu.playUiClick()
               btn.onClick!(selection, null)
             })
           }

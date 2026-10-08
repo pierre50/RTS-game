@@ -61,11 +61,14 @@ function fixture(mode) {
 }
 test('a dormant static settlement replenishes its saved stores without any runtime units or buildings', () => {
   const f = fixture('static')
-  advanceDeferredVillage(f.context, f.owner, f.state, 0, 60000, () => assert.fail('no world resource creation'))
+  // The saved simulation reaches day 2 before the live clock publishes it.
+  f.context.dayNight.state.day = 1
+  const target = gameplay.DAY_NIGHT_CONFIG.dayLengthMs + 60000
+  advanceDeferredVillage(f.context, f.owner, f.state, 0, target, () => assert.fail('no world resource creation'))
   assert.equal(f.state.buildings[0].inventory.resources.wood, 20)
   assert.equal(f.state.buildings[1].inventory.resources.wheat, 130)
   assert.equal(f.state.rpgRestockDay, 2)
-  advanceDeferredVillage(f.context, f.owner, f.state, 60000, 120000, () => {})
+  advanceDeferredVillage(f.context, f.owner, f.state, target, target + 60000, () => {})
   assert.equal(f.state.buildings[0].inventory.resources.wood, 20)
   assert.equal(f.owner.units, undefined)
 })
@@ -107,7 +110,15 @@ for (const mode of ['static', 'dynamic']) {
   test(`dormant ${mode} market recovers gold over successive days without resetting its wallet`, () => {
     const f = fixture(mode)
     const day = gameplay.DAY_NIGHT_CONFIG.dayLengthMs
-    f.state.buildings.push({ type: 'Market', label: 'market', i: 30, j: 30, isBuilt: true, marketGold: 0, marketStock: [] })
+    f.state.buildings.push({
+      type: 'Market',
+      label: 'market',
+      i: 30,
+      j: 30,
+      isBuilt: true,
+      marketGold: 0,
+      marketStock: [],
+    })
     const market = () => f.state.buildings.find(building => building.label === 'market')
     advanceDeferredVillage(f.context, f.owner, f.state, 0, day, () => {})
     assert.equal(market().marketGold, 200)

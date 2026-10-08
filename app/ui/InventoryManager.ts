@@ -1,8 +1,6 @@
 import { createInventorySectionTitle } from './inventory/InventorySection'
-import { SOUND_CUES } from '../constants'
 import { getIconPath } from '../lib/graphics/assets'
 import { Modal } from '../lib'
-import { playUiSound } from '../lib/audio/uiSound'
 import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
 import {
   EQUIPPED_ITEM_WEAPON,
@@ -101,7 +99,6 @@ export class InventoryManager {
       ],
       this.activeTab,
       tab => {
-        playUiSound(SOUND_CUES.ui.menuClick)
         this.showTab(tab)
       }
     )
@@ -242,7 +239,7 @@ export class InventoryManager {
       const equipment = this.getActiveWeaponEquipment(tool)
       const info = equipment ? createEquipmentRowInfo(equipment, 1, undefined, { showValue: false }) : undefined
       const weaponSlot = equipment ? getWeaponSlot(equipment) : null
-      const { element, icon } = createInventoryEquipmentRow(this.menu.context, this.menu, {
+      const { element, icon } = createInventoryEquipmentRow(this.menu.context, {
         equipment: equipment ?? '',
         count: equipment ? 1 : 0,
         icon: document.createElement('span'),
@@ -308,7 +305,6 @@ export class InventoryManager {
 
   selectTool(tool: HeroEquippedItem): void {
     if (!isHeroToolAvailable(this.menu.context.controls.heroUnit, tool)) return
-    playUiSound(SOUND_CUES.ui.menuClick)
     this.menu.context.controls.setEquippedItem?.(tool)
     this.menu.context.controls.setEquippedTool?.(tool)
     this.close()

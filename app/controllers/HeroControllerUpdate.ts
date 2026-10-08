@@ -1,4 +1,9 @@
-import { getSprintMoveFactor, recordSprintMovement, stopUnitSprint } from '../lib/units/movement/unitSprint'
+import {
+  startHeroSprint,
+  getSprintMoveFactor,
+  recordSprintMovement,
+  stopUnitSprint,
+} from '../lib/units/movement/unitSprint'
 import {
   HERO_ACTION_MOVE_SPEED_FACTOR,
   HERO_STEALTH_SPEED_FACTOR,
@@ -43,6 +48,7 @@ export type HeroControllerUpdateHost = {
   equippedItem: HeroEquippedItem | null
   heroUnit: UnitEntity | null
   interactInputOwner: 'mouse' | 'movement' | null
+  keyboardSprintHeld?: boolean
   keysPressed: Set<ControlBindingAction>
   mouseHeld: boolean
   pendingGoToNpcs: UnitEntity[] | null
@@ -162,6 +168,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     unit.syncMountedHorseSprite?.()
   }
 
+  if (controller.keyboardSprintHeld) startHeroSprint(unit)
   const sprintFactor = getSprintMoveFactor(unit, isMoving && walkSpeedFactor === 1)
   let moved = false
   let moveAnimationSpeedFactor = 1

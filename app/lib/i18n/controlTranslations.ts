@@ -7,7 +7,7 @@ export const EN_CONTROL_TRANSLATIONS = {
   controlAction_destinationCancel: 'Cancel destination selection',
   controlAction_quests: 'Quest journal',
   controlAction_gameMenu: 'Pause menu',
-  controlAction_heroSprint: 'Sprint (toggle)',
+  controlAction_heroSprint: 'Sprint',
   controlAction_heroAction: 'Charged attack / use tool',
   controlAction_heroDirectAttack: 'Direct melee attack',
   controlAction_heroToolPrev: 'Previous tool',
@@ -35,7 +35,7 @@ export const EN_CONTROL_TRANSLATIONS = {
   controlsMenuFixed:
     'Fixed controls: left stick / D-pad to navigate, A to confirm, B to go back, LB / RB to switch tabs. Available controls appear at the bottom of the menu.',
   controlsKeyboardFixed:
-    'Shift on foot: press once to crouch, again to stand up. Mouse: left click to act, right click to defend. Menus: arrows, Enter and Escape. Construction: Enter to place, R to mirror, Escape to cancel.',
+    'Hold the sprint key to run; press the crouch key once to crouch, again to stand up. Mouse: left click to act, right click to defend. Menus: arrows, Enter and Escape. Construction: Enter to place, R to mirror, Escape to cancel.',
   controlsGroupGamepad: 'Gamepad',
   controlsGroupHero: 'Hero',
   controlAction_heroUp: 'Hero up',
@@ -68,7 +68,7 @@ export const FR_CONTROL_TRANSLATIONS = {
   controlAction_destinationCancel: 'Annuler le choix de destination',
   controlAction_quests: 'Journal des quêtes',
   controlAction_gameMenu: 'Menu de pause',
-  controlAction_heroSprint: 'Course (activer / arrêter)',
+  controlAction_heroSprint: 'Courir',
   controlAction_heroAction: 'Attaque chargée / utiliser l’outil',
   controlAction_heroDirectAttack: 'Attaque directe de mêlée',
   controlAction_heroToolPrev: 'Outil précédent',
@@ -96,7 +96,7 @@ export const FR_CONTROL_TRANSLATIONS = {
   controlsMenuFixed:
     'Commandes fixes : stick gauche / croix pour naviguer, A pour valider, B pour revenir, LB / RB pour changer d’onglet. Les commandes disponibles sont affichées en bas du menu.',
   controlsKeyboardFixed:
-    'Shift à pied : un appui pour s’accroupir, un second pour se relever. Souris : clic gauche pour agir, clic droit pour défendre. Menus : flèches, Entrée et Échap. Construction : Entrée pour placer, R pour inverser, Échap pour annuler.',
+    'Maintenir la touche de course pour courir ; un appui sur la touche d’accroupissement pour s’accroupir, un second pour se relever. Souris : clic gauche pour agir, clic droit pour défendre. Menus : flèches, Entrée et Échap. Construction : Entrée pour placer, R pour inverser, Échap pour annuler.',
   controlsGroupGamepad: 'Manette',
   controlsGroupHero: 'Héros',
   controlAction_heroUp: 'Héros haut',

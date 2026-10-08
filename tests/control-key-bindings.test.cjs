@@ -71,12 +71,12 @@ test('H is the default call horse key for the hero', () => {
   }
 })
 
-test('Shift is the default dismount horse key for the hero', () => {
+test('X is the default dismount horse key for the hero', () => {
   const { settings, restore } = loadSettings()
   try {
-    assert.equal(settings.getKeyBindings().heroDismountHorse, 'Shift')
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), 'heroDismountHorse')
-    assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDismountHorse), 'Shift')
+    assert.equal(settings.getKeyBindings().heroDismountHorse, 'x')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyX', key: 'x' }), 'heroDismountHorse')
+    assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDismountHorse), 'X')
   } finally {
     restore()
   }
@@ -371,6 +371,26 @@ test('adding sprint preserves an existing custom left-stick action without dupli
   try {
     assert.equal(settings.getGamepadButtonIndex('heroInteract'), 10)
     assert.notEqual(settings.getGamepadButtonIndex('heroSprint'), 10)
+  } finally {
+    restore()
+  }
+})
+
+test('keyboard sprint and crouch have single defaults and migrate the old dismount key', () => {
+  const { settings, restore } = loadSettings({
+    controls_key_bindings: JSON.stringify({ heroDismountHorse: 'Shift', heroUp: 'w' }),
+  })
+  try {
+    for (const [key, action] of [
+      ['Shift', 'heroSprint'],
+      ['c', 'heroStealth'],
+      ['x', 'heroDismountHorse'],
+      ['Control', null],
+    ])
+      assert.equal(settings.getControlActionForKeyboardEvent({ key }), action)
+    assert.equal(settings.getKeyBindings().heroUp, 'w')
+    const bindings = Object.values(settings.getKeyBindings())
+    assert.equal(new Set(bindings).size, bindings.length)
   } finally {
     restore()
   }

@@ -5,35 +5,6 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { loadTsModule, requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-test('offscreen attack warnings only play for a chief hero and retain their cooldown', () => {
-  const sounds = []
-  const Player = loadPlayer({ playUiSound: cue => sounds.push(cue) })
-  const previousDocument = global.document
-  global.document = { visibilityState: 'hidden', hasFocus: () => false }
-  try {
-    const hero = { isChief: false }
-    const player = {
-      label: 'player',
-      isPlayed: true,
-      type: 'human',
-      lastUnderAttackAlertAt: 0,
-      context: { controls: { heroUnit: hero, instanceInCamera: () => false } },
-    }
-    const target = { owner: player }
-    Player.prototype.reportThreat.call(player, target, {})
-    assert.deepEqual(sounds, [])
-    assert.equal(player.lastUnderAttackAlertAt, 0)
-    hero.isChief = true
-    Player.prototype.reportThreat.call(player, target, {})
-    assert.deepEqual(sounds, ['attack-warning'])
-    Player.prototype.reportThreat.call(player, target, {})
-    assert.equal(sounds.length, 1)
-  } finally {
-    if (previousDocument === undefined) delete global.document
-    else global.document = previousDocument
-  }
-})
-
 function loadPlayer(overrides = {}) {
   const filename = path.join(__dirname, '../app/classes/players/Player.ts')
   const compileTs = tsFilename => {
@@ -132,11 +103,6 @@ function loadPlayer(overrides = {}) {
         PLAYER_TYPES: { human: 'human', ai: 'ai', gaia: 'gaia', bandits: 'bandits' },
         RESOURCE_NAMES: [],
         RESOURCE_TYPES: { wheat: 'Wheat' },
-        SOUND_CUES: {
-          ui: { underAttack: 'attack-warning' },
-          player: { ageAdvance: 'ageAdvance' },
-          unit: { militaryCommand: 'militaryCommand' },
-        },
         UNIT_TYPES: { villager: 'Villager' },
         FADE_DURATION_MS: 2000,
       }
@@ -151,7 +117,6 @@ function loadPlayer(overrides = {}) {
         playerNeedsChiefForCommand: () => false,
       }
     }
-    if (request === '../../lib/audio/uiSound') return { playUiSound: overrides.playUiSound ?? (() => {}) }
     if (request === '../../lib/lang') return { t: key => key }
     if (request === '../../services/visibility/VisionGrid') return { VisionGrid: class {} }
     if (request === '../../lib/buildings/walls') {

@@ -10,7 +10,7 @@ from merge_resource_atlases import read_json, write_json, atlas_meta, write_shad
 ROOT = Path(__file__).resolve().parents[1]
 ATLAS = ROOT / 'public/assets/graphics/resources/minerals'
 # Original iron frames recovered from the committed mineral atlas, at native size.
-SOURCE = ROOT / 'assets/concepts/sources/iron-original.png'
+SOURCE = ROOT / 'assets/resource-sources/minerals/iron-original.png'
 PALETTE = ROOT / 'scripts/retro_palette/duel.hex'
 # Only the metallic deposits change hue; the surrounding rock keeps its palette.
 TIN_COLORS = dict(zip(
@@ -41,13 +41,12 @@ def main():
     atlas.paste(old.crop((0, 0, start - SHADOW_PAD_X, old.height)), (0, 0))
     shadow = Image.new('RGBA', (width + SHADOW_PAD_X, old_shadow.height))
     shadow.paste(old_shadow.crop((0, 0, start, old_shadow.height)), (0, 0))
-    preview = Image.new('RGBA', (3 * 87, 2 * 70))
     # One deterministic substitution per source color, with no dithering.
     nearest = {
         color[:3]: min(palette, key=lambda p: sum((a - b) ** 2 for a, b in zip(color[:3], p)))
         for color in source.getdata() if color[3]
     }
-    for row, metal in enumerate(('iron', 'tin')):
+    for metal in ('iron', 'tin'):
         cursor = start
         for i, (name, original) in enumerate(iron):
             sprite = source.crop((i * 69, 0, (i + 1) * 69, 56))
@@ -66,14 +65,11 @@ def main():
                 shadow.paste(old_shadow.crop((old_x, 0, old_x + f['w'] + SHADOW_PAD_X, old_shadow.height)), (cursor, 0))
                 cursor += f['w'] + SHADOW_PAD_X
             atlas.paste(sprite, (f['x'], f['y']))
-            preview.paste(sprite, (i * 87, row * 70))
             frames[name] = frame
     atlas.save(ATLAS / 'texture.png')
     shadow.save(ATLAS / 'texture_shadow.png')
     write_json(ATLAS / 'texture.json', {'frames': frames, 'meta': atlas_meta(atlas)})
     write_shadow_json(ATLAS, frames, shadow)
-    preview.save(ROOT / 'assets/concepts/iron-tin-palette.png')
-    preview.resize((783, 420), Image.Resampling.NEAREST).save(ROOT / 'assets/concepts/iron-tin-ingame-preview.png')
     print('Recolored original iron and tin sprites using duel.hex, preserving every alpha pixel.')
 
 

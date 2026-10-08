@@ -11,7 +11,6 @@ const { PlayerSetupPanel } = loadModule(path.join(__dirname, '../app/ui/setup/Pl
   '../lib/avatar': {
     getUnitFacePortraitTexture: () => null,
   },
-  '../lib/audio/uiSound': { playClickSound: () => {} },
   '../lib/lang': { t: key => key },
   '../config/civilizations': {
     CIVILIZATIONS: [

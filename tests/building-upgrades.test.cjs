@@ -269,7 +269,7 @@ test('upgrade row displays construction costs, starts an unfunded project and th
       '../../lib/lang': { t: (key, values = {}) => `${key} ${JSON.stringify(values)}` },
       '../ActionDetailsFactory': { formatActionCost: cost => JSON.stringify(cost) },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (_, row) => {
+        createInventoryActionRow: (row) => {
           rows.push(row)
           return { element: {}, icon: { appendChild() {} } }
         },

@@ -1,3 +1,4 @@
+import { restoreAmbientTraffic } from '../../services/travel/ambient/AmbientTrafficState'
 import type { MapBlueprint } from '../../classes/map/MapGenerationTypes'
 import { restoreCampRespawnStates } from '../../lib/camps/campRespawnState'
 import { definedProperties } from '../../lib/definedProperties'
@@ -64,6 +65,7 @@ export async function restorePreparedSettlements(
   )
   await applyGeneratedState(game, map, generated, 'boot.restorePreparedSettlements')
   restoreCampRespawnStates(map, generated.runtime?.banditCamps ?? [])
+  restoreAmbientTraffic(map, generated.runtime?.ambientTraffic)
 }
 
 function needsVillageBase(player: SavePlayerState, economy: SerializedSave | undefined): boolean {

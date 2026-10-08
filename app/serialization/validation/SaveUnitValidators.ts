@@ -22,6 +22,14 @@ function isSupportedSavedUnitType(type: unknown, config: LoadedGameConfig): type
 
 function validateSavedUnitOrders(unit: Record<string, unknown>): void {
   if (
+    unit.roadJourney != null &&
+    (!isObject(unit.roadJourney) ||
+      typeof unit.roadJourney.targetLabel !== 'string' ||
+      !unit.roadJourney.targetLabel ||
+      unit.roadJourney.targetLabel.length > 256)
+  )
+    fail('Invalid save file: road journey is invalid.')
+  if (
     unit.equipmentDurability != null &&
     (!isObject(unit.equipmentDurability) ||
       Object.values(unit.equipmentDurability).some(

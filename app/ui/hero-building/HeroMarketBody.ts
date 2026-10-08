@@ -44,7 +44,6 @@ export function canHeroTradeAtMarket(building: BuildingEntity, hero: UnitEntity 
 }
 
 function handleMarketChange(menu: MenuHost, onChange: () => void): void {
-  menu.playUiClick()
   menu.refreshInventory?.()
   onChange()
 }
@@ -63,7 +62,7 @@ function appendBuySlots(
     const label = formatEquipmentStackLabel(offer.equipment, offer.count)
     const totalGold = offer.goldValue * offer.count
     const disabled = heroGold < offer.goldValue
-    const { element } = createInventoryEquipmentRow(menu.context, menu, {
+    const { element } = createInventoryEquipmentRow(menu.context, {
       id: `market-buy-${offer.equipment}`,
       className: 'inventory-loot-slot market-slot market-buy-slot',
       disabled,
@@ -116,7 +115,7 @@ function appendSellResourceSlots(
     const label = amount > 1 ? `${t(resource)} x${amount}` : t(resource)
     const disabled = getMarketGold(building) < goldValue
     const totalGold = goldValue * amount
-    const { element } = createInventoryResourceRow(menu, {
+    const { element } = createInventoryResourceRow({
       id: `market-sell-resource-${resource}`,
       className: 'inventory-loot-slot market-slot market-sell-slot',
       disabled,
@@ -165,7 +164,7 @@ function appendSellEquipmentSlots(
     const label = formatEquipmentStackLabel(stack.equipment, stack.count)
     const disabled = getMarketGold(building) < goldValue
     const totalGold = goldValue * stack.count
-    const { element } = createInventoryEquipmentRow(menu.context, menu, {
+    const { element } = createInventoryEquipmentRow(menu.context, {
       id: `market-sell-equipment-${stack.equipment}`,
       className: 'inventory-loot-slot market-slot market-sell-slot',
       disabled,

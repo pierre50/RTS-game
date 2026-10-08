@@ -1,3 +1,4 @@
+import { unitSuspensionReason } from '../units/unitSuspension'
 import { wearEquippedWeapon, wearEquippedArmor } from '../equipment/equipmentWear'
 import { getHitPointsWithDamage, type CombatEntity } from './combat'
 import { showCriticalDamageFeedback, showDamageFeedback, showParryFeedback } from './combatFeedback'
@@ -121,6 +122,8 @@ export function applyCombatHit(
     xpUnit,
   }: CombatHitOptions = {}
 ): CombatHitResult {
+  if (unitSuspensionReason(target as UnitEntity) === 'road-travel')
+    return { damageDealt: 0, critical: false, killed: false }
   const beforeHitPoints = target.hitPoints ?? 0
   const parried = isMelee && attemptAutomaticParry(target)
   let critical = false

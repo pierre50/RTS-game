@@ -1,5 +1,4 @@
 import { Modal } from '../lib'
-import { playClickSound } from '../lib/audio/uiSound'
 import { t } from '../lib/lang'
 import { openSettingsModal } from './modals/settingsPanel'
 import { openSaveListModal } from './modals/saveListModal'
@@ -27,7 +26,6 @@ export class PauseMenu {
     }
     button.appendChild(icon)
 
-    button.addEventListener('pointerdown', playClickSound)
     button.addEventListener('click', () => {
       button.blur()
       this.open()
@@ -146,7 +144,6 @@ export class PauseMenu {
     const button = document.createElement('button')
     button.className = 'ui-btn'
     button.innerText = label
-    button.addEventListener('pointerdown', playClickSound)
     button.addEventListener('click', onClick)
     return button
   }

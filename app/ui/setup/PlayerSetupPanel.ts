@@ -1,4 +1,3 @@
-import { playClickSound } from '../../lib/audio/uiSound'
 import { t } from '../../lib/lang'
 import { CIVILIZATIONS } from '../../config/civilizations'
 import { isGeneratedPlayerName, randomPlayerNameForCivilization } from '../../config/playerNames'
@@ -385,7 +384,6 @@ export class PlayerSetupPanel {
       teamBtn.type = 'button'
       teamBtn.textContent = player.team == null ? '-' : String(player.team)
       teamBtn.setAttribute('aria-label', t('teamInput'))
-      teamBtn.addEventListener('pointerdown', playClickSound)
       teamBtn.addEventListener('click', () => this._cycleTeam(index))
       teamCell.appendChild(teamBtn)
       row.appendChild(teamCell)
@@ -398,7 +396,6 @@ export class PlayerSetupPanel {
       swatch.type = 'button'
       swatch.style.backgroundColor = colorData ? colorData.hex : '#fff'
       swatch.setAttribute('aria-label', t('colorSwatch', { color: player.color }))
-      swatch.addEventListener('pointerdown', playClickSound)
       swatch.addEventListener('click', () => this._cycleColor(index))
       colorCell.appendChild(swatch)
       row.appendChild(colorCell)
@@ -483,7 +480,6 @@ export class PlayerSetupPanel {
     swatch.type = 'button'
     swatch.style.backgroundColor = colorData ? colorData.hex : '#fff'
     swatch.setAttribute('aria-label', t('colorSwatch', { color: human.color }))
-    swatch.addEventListener('pointerdown', playClickSound)
     swatch.addEventListener('click', () => this._cycleColor(0))
     colorRow.appendChild(swatch)
     this.humanControlsEl.appendChild(colorRow)
@@ -502,7 +498,6 @@ export class PlayerSetupPanel {
 
     this.playerCountSelect = document.createElement('select')
     this.playerCountSelect.className = 'ui-select'
-    this.playerCountSelect.addEventListener('pointerdown', playClickSound)
     this.playerCountSelect.addEventListener('change', (evt: Event) =>
       this._setPlayerCount((evt.target as HTMLSelectElement).value)
     )

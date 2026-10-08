@@ -1,3 +1,4 @@
+import type { RoadJourney } from '../../lib/units/roadJourney'
 import type { VillageHome } from '../../lib/units/village/villageActivity'
 import type { CampBehavior } from '../camp'
 import type { VillagerSchedule } from '../../lib/units/village/villagerSchedule'
@@ -188,6 +189,8 @@ export interface EnergyEntity extends RuntimeEntityBase {
 }
 
 export interface UnitEntity extends EnergyEntity {
+  ambientRoadGroup?: string
+  roadJourney?: RoadJourney
   lastMealAt?: number
   homeHouseLabel?: string
   homeBedLabel?: string

@@ -4,7 +4,6 @@ import { t } from '../../lib/lang'
 import { debounce, isPlayedHeroDefeated } from '../../lib'
 import { clearAllCombatFeedback } from '../../lib/combat/combatFeedback'
 import { isGameplaySoundSuppressed, setGameplaySoundSuppressed } from '../../lib/audio/sound'
-import { stopAllUiSounds } from '../../lib/audio/uiSound'
 import { getCameraZoom } from '../../lib/audio/settings'
 import { collectPausableInstances } from './pausableRuntime'
 import type { Application, Container } from 'pixi.js'
@@ -122,7 +121,6 @@ export function handleGameDocumentHidden(game: GameRuntimeLifecycleHost): void {
     game.togglePause(true, { silent: true })
   }
   sound.stopAll()
-  stopAllUiSounds()
 }
 
 export function handleGameDocumentVisible(game: GameRuntimeLifecycleHost): void {

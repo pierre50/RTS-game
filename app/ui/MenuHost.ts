@@ -33,7 +33,6 @@ export interface MenuHost {
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[]
   createActionIcon(src: string): HTMLImageElement
-  playUiClick(): void
   refreshInventory?(): void
   closeInventory?(): void
   closeNpcOrders?(): void

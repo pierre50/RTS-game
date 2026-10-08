@@ -231,7 +231,7 @@ test('interior construction lists furniture sections only and starts placement',
         './inventory/InventoryCostMeta': { inventoryDeliveryMetaParts: () => [] },
         './inventory/InventorySection': { createInventorySectionTitle: () => new Element() },
         './inventory/InventoryActionRow': {
-          createInventoryActionRow: (_menu, row) => {
+          createInventoryActionRow: (row) => {
             rows.push(row)
             return { element: new Element(), icon: new Element() }
           },
@@ -247,7 +247,6 @@ test('interior construction lists furniture sections only and starts placement',
     menu.clearActionHotkeys = () => {}
     menu.assignActionHotkey = id => id
     menu.setActionHotkey = (key, action) => hotkeys.set(key, action)
-    menu.playUiClick = () => {}
     let previewPointer
     menu.getActionBuildingButton = type => ({
       id: type,

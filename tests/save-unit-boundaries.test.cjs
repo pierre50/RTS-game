@@ -178,3 +178,9 @@ test('equipment durability accepts old saves and valid NPC wear, rejecting corru
     assert.throws(() => validate({ equipmentDurability }), /durability/)
   }
 })
+
+test('road journeys require a stable destination identity', () => {
+  assert.doesNotThrow(() => validate({ roadJourney: { targetLabel: 'town-2' } }))
+  for (const roadJourney of [false, {}, { targetLabel: '' }, { targetLabel: 3 }, { targetLabel: 'x'.repeat(257) }])
+    assert.throws(() => validate({ roadJourney }), /road journey/)
+})

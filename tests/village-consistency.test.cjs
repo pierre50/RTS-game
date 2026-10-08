@@ -24,6 +24,18 @@ const rules = {
   planBuildings: true,
 }
 
+test('new village heroes start with an equipped ceramic sword in both starting modes', () => {
+  for (const heroOnly of [true, false]) {
+    const terrain = Array.from({ length: 61 }, () => Array.from({ length: 61 }, () => ({ category: 'Land' })))
+    const player = { type: 'Human', isPlayed: true, civ: 'Hellas', label: 'human' }
+    const state = { players: [player], resources: [], animals: [] }
+    populateVillageBase(player, 0, { i: 30, j: 30 }, new OfflineWorldSpatial(terrain, state, () => 2), rules, {}, { heroOnly })
+    const hero = player.units.find(unit => unit.type === 'Hero')
+    assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
+    assert.ok(player.units.filter(unit => unit.type !== 'Hero').every(unit => !unit.inventory?.activeWeapons?.melee))
+  }
+})
+
 test('food and materials reach distinct stores before and after interiors are created', () => {
   const center = { label: 'tc', type: 'TownCenter', i: 0, j: 0, isBuilt: true, inventory: { resources: { wood: 20 } } }
   const granary = { label: 'gr', type: 'Granary', i: 3, j: 0, isBuilt: true }

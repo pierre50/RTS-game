@@ -1,6 +1,5 @@
 import { loadSavedGame } from '../LoadSavedGame'
 import { Modal } from '../../lib'
-import { playClickSound } from '../../lib/audio/uiSound'
 import { t } from '../../lib/lang'
 import { listSaves } from '../../serialization/SaveStorage'
 import type { SaveIndexEntry, SaveRecord } from '../../types/save'
@@ -24,29 +23,26 @@ function formatSaveDate(date: number): string {
 }
 
 function createSaveRow(state: SaveListState, { key, name, date }: SaveIndexEntry): HTMLElement {
-  return createInventoryActionRow(
-    { playUiClick: playClickSound },
-    {
-      id: `save-list-${key}`,
-      className: 'save-list-row',
-      hideIcon: true,
-      title: name,
-      description: formatSaveDate(date),
-      trailingAction: {
-        label: t('load'),
-        onClick: async () => {
-          try {
-            await loadSavedGame(key, saveData => {
-              state.getModal().close()
-              state.onLoad(saveData)
-            })
-          } catch {
-            reportMaybeVisibleError(state, t('corruptSave'))
-          }
-        },
+  return createInventoryActionRow({
+    id: `save-list-${key}`,
+    className: 'save-list-row',
+    hideIcon: true,
+    title: name,
+    description: formatSaveDate(date),
+    trailingAction: {
+      label: t('load'),
+      onClick: async () => {
+        try {
+          await loadSavedGame(key, saveData => {
+            state.getModal().close()
+            state.onLoad(saveData)
+          })
+        } catch {
+          reportMaybeVisibleError(state, t('corruptSave'))
+        }
       },
-    }
-  ).element
+    },
+  }).element
 }
 
 function reportMaybeVisibleError(state: SaveListState, message: string): void {

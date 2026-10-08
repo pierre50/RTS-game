@@ -1,3 +1,4 @@
+import { cancelRoadJourney } from '../../../lib/units/roadJourney'
 import { canMoveForVillageSupply } from '../../../lib/units/village/villageSupplyTrips'
 import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
 import { campAnchor, canCampPursue } from '../../../lib/units/campBehavior'
@@ -11,6 +12,7 @@ type MoveOrderDest = RuntimeEntity | RuntimeCell | null
 
 /** Wakes units for orders that matter and keeps village workers within their activity range. */
 export function admitMoveOrder(unit: UnitEntity, dest: MoveOrderDest, action: string | null): boolean {
+  if (action || dest !== unit.dest) cancelRoadJourney(unit)
   if (action === ACTION_TYPES.attack || unit.owner?.isPlayed) wakeUnitSimulation(unit)
   if (isUnitSuspended(unit)) return false
   if (

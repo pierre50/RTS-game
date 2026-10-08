@@ -1,6 +1,5 @@
 import { VILLAGE_QUEST_CONFIG } from '../../config/gameplay'
-import { RESOURCE_STORAGE_NAMES, SOUND_CUES } from '../../constants'
-import { playSoundCue } from '../../lib/audio/sound'
+import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import { formatEquipmentStackLabel } from '../../lib/equipment/equipmentSlots'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { t } from '../../lib/lang'
@@ -113,7 +112,6 @@ export function interact(
   if (!this.system.interact(quest.id, interactionId, playerId, npc.label, this.environment(npc))) return false
   if (quest.definitionId === tutorialHuntQuest.id && quest.stageId === 'alarm') {
     quest.markers = {}
-    playSoundCue(SOUND_CUES.ui.underAttack)
   }
   if (hunt) {
     Object.assign(quest.parameters, hunt.parameters)

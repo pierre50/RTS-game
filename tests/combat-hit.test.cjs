@@ -36,6 +36,7 @@ function loadModule(relativePath, mocks) {
 
 function loadCombatHit({
   rawDamage = 6,
+  suspended = false,
   parryResult = false,
   criticalChance = 0,
   grantCalls = [],
@@ -44,6 +45,7 @@ function loadCombatHit({
   buildingFragmentCalls = [],
 } = {}) {
   return loadModule('app/lib/combat/combatHit.ts', {
+    '../units/unitSuspension': { unitSuspensionReason: () => (suspended ? 'road-travel' : undefined) },
     '../constants': constants,
     './combat': { getHitPointsWithDamage: (source, target) => (target.hitPoints ?? 0) - rawDamage },
     './combatFeedback': {
@@ -320,4 +322,19 @@ test('building impact fragments are skipped when a building takes no damage', ()
   applyCombatHit({ label: 'attacker' }, target)
 
   assert.deepEqual(buildingFragmentCalls, [])
+})
+
+test('a projectile cannot damage or wake a distant traveler', () => {
+  const feedbackCalls = []
+  const { applyCombatHit } = loadCombatHit({ suspended: true, feedbackCalls })
+  let attacked = false
+  const target = makeTarget({
+    isAttacked() {
+      attacked = true
+    },
+  })
+  assert.deepEqual(applyCombatHit({}, target), { damageDealt: 0, critical: false, killed: false })
+  assert.equal(target.hitPoints, 20)
+  assert.equal(attacked, false)
+  assert.equal(feedbackCalls.length, 0)
 })

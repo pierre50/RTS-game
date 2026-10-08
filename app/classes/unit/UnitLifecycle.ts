@@ -118,7 +118,7 @@ export class UnitLifecycle {
     unit.context?.map.removeFromInstanceBucket(unit)
     unit.unselect?.()
     if (unit.owner) {
-      unit.owner.population--
+      if (!unit.ambientRoadGroup) unit.owner.population--
       const index = unit.owner.units.indexOf(unit)
       if (index >= 0) {
         unit.owner.units.splice(index, 1)

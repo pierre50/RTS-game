@@ -1,0 +1,166 @@
+{
+  "node": "v22.22.3",
+  "platform": "darwin/arm64",
+  "results": [
+    {
+      "travelers": 100,
+      "distinctDepartures": false,
+      "villages": 8,
+      "workers": 160,
+      "harvest": {
+        "wood": 235,
+        "berry": 292
+      },
+      "planning": {
+        "meanMs": 2.136,
+        "p95Ms": 2.662,
+        "maxMs": 3.337,
+        "updates": 94,
+        "estimatedQueueSecondsAt20Hz": 4.7,
+        "totalMs": 200.8
+      },
+      "travel": {
+        "meanMs": 0.04,
+        "p95Ms": 0.1,
+        "maxMs": 0.802
+      },
+      "economy": {
+        "meanMs": 4.456,
+        "p95Ms": 8.941,
+        "maxMs": 17.463
+      },
+      "combined": {
+        "meanMs": 0.263,
+        "p95Ms": 2.533,
+        "maxMs": 17.535
+      }
+    },
+    {
+      "travelers": 500,
+      "distinctDepartures": false,
+      "villages": 8,
+      "workers": 160,
+      "harvest": {
+        "wood": 235,
+        "berry": 292
+      },
+      "planning": {
+        "meanMs": 2.241,
+        "p95Ms": 2.771,
+        "maxMs": 3.137,
+        "updates": 124,
+        "estimatedQueueSecondsAt20Hz": 6.2,
+        "totalMs": 277.9
+      },
+      "travel": {
+        "meanMs": 0.181,
+        "p95Ms": 0.433,
+        "maxMs": 1.362
+      },
+      "economy": {
+        "meanMs": 3.555,
+        "p95Ms": 5.053,
+        "maxMs": 5.838
+      },
+      "combined": {
+        "meanMs": 0.358,
+        "p95Ms": 2.528,
+        "maxMs": 6.256
+      }
+    },
+    {
+      "travelers": 1000,
+      "distinctDepartures": false,
+      "villages": 8,
+      "workers": 160,
+      "harvest": {
+        "wood": 235,
+        "berry": 292
+      },
+      "planning": {
+        "meanMs": 2.398,
+        "p95Ms": 3.216,
+        "maxMs": 8.556,
+        "updates": 150,
+        "estimatedQueueSecondsAt20Hz": 7.5,
+        "totalMs": 359.7
+      },
+      "travel": {
+        "meanMs": 0.338,
+        "p95Ms": 0.771,
+        "maxMs": 1.416
+      },
+      "economy": {
+        "meanMs": 3.46,
+        "p95Ms": 4.139,
+        "maxMs": 4.603
+      },
+      "combined": {
+        "meanMs": 0.511,
+        "p95Ms": 2.865,
+        "maxMs": 5.436
+      }
+    },
+    {
+      "travelers": 1000,
+      "distinctDepartures": true,
+      "villages": 8,
+      "workers": 160,
+      "harvest": {
+        "wood": 235,
+        "berry": 292
+      },
+      "planning": {
+        "meanMs": 2.216,
+        "p95Ms": 2.605,
+        "maxMs": 3.561,
+        "updates": 936,
+        "estimatedQueueSecondsAt20Hz": 46.8,
+        "totalMs": 2074.5
+      },
+      "travel": {
+        "meanMs": 0.355,
+        "p95Ms": 0.852,
+        "maxMs": 2.018
+      },
+      "economy": {
+        "meanMs": 3.347,
+        "p95Ms": 4.269,
+        "maxMs": 5.113
+      },
+      "combined": {
+        "meanMs": 0.522,
+        "p95Ms": 2.701,
+        "maxMs": 5.362
+      }
+    }
+  ],
+  "methodology": {
+    "date": "2026-10-07",
+    "roadLengthCells": 1000,
+    "roadFixtureWidthCells": 25,
+    "simulationSeconds": 30,
+    "travelUpdatesPerSecond": 20,
+    "economy": "8 separate village fixtures; 20 workers each; one village checkpoint per second; real wood and berry harvest",
+    "realLogic": [
+      "RoadTravelSystem",
+      "RoadRoute",
+      "Pathfinding",
+      "DistantVillageEconomy",
+      "VillageWorkSimulation"
+    ],
+    "stubbed": [
+      "rendering",
+      "map-space placement adapter",
+      "energy multiplier",
+      "scheduler wall-clock driver"
+    ],
+    "notMeasured": [
+      "full-game FPS",
+      "live hunting and animal AI",
+      "rendering cost",
+      "full AI strategic planning"
+    ],
+    "planningQueue": "estimate at 20 Hz; planning measured separately before travel/economy workload"
+  }
+}

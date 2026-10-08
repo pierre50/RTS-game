@@ -151,7 +151,6 @@ export interface MenuLike {
   icons?: Record<string, string>
   infoIcons?: Record<string, string>
   handleHotkey?(key: string): void
-  playUiClick?(): void
   showMessage(message: string, type?: string): void
   setActionTarget(selection?: RuntimeEntity | null): void
   updateTopbar(): void

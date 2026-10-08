@@ -82,11 +82,11 @@ for (const dead of [false, true]) {
             },
           },
           './InventoryItemRows': {
-            createInventoryEquipmentRow: (_context, _menu, options) => {
+            createInventoryEquipmentRow: (_context, options) => {
               rows.push(options)
               return { element: element() }
             },
-            createInventoryResourceRow: (_menu, options) => {
+            createInventoryResourceRow: (options) => {
               rows.push(options)
               return { element: element() }
             },

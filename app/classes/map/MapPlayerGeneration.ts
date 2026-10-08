@@ -1,5 +1,5 @@
 import { defaultSettlementType } from '../../config/settlementProfiles'
-import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
+import { startingHeroInventory, startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { definedProperties } from '../../lib/definedProperties'
 import { playerColors } from '../../lib'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
@@ -137,7 +137,7 @@ export function placePlayers(map: MapGenerationMap): void {
   for (const player of players) {
     if (player.type === PLAYER_TYPES.bandits || player.type === PLAYER_TYPES.gaia) continue
     if (player.isPlayed && map.heroOnlyStart) {
-      player.createUnit?.({ i: player.i, j: player.j, type: UNIT_TYPES.hero })
+      player.createUnit?.({ i: player.i, j: player.j, type: UNIT_TYPES.hero, inventory: startingHeroInventory() })
       continue
     }
 
@@ -219,7 +219,9 @@ function placeStartingUnits(map: MapGenerationMap, player: PlayerLike, towncente
   if (player.type === PLAYER_TYPES.ai) {
     towncenter.placeUnit?.(UNIT_TYPES.chief)
   } else if (player.isPlayed) {
-    towncenter.placeUnit?.(UNIT_TYPES.villager, { inventory: startingVillagerInventory() })
+    towncenter.placeUnit?.(UNIT_TYPES.villager, {
+      inventory: { ...startingVillagerInventory(), ...startingHeroInventory() },
+    })
   }
   for (let i = 0; i < startingCivilianCount; i++) {
     const gender = STARTING_CIVILIAN_GENDERS[i % STARTING_CIVILIAN_GENDERS.length]

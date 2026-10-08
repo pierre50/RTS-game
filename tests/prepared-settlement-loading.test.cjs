@@ -64,6 +64,7 @@ test('prepared state keeps exact resources, stocks and units and maps the hero a
   assert.equal(result.players[1].label, 'ai')
   assert.equal(result.players[1].developmentMode, 'static')
   assert.equal(result.players[0].units[0].hitPoints, 50)
+  assert.equal(result.players[0].units[0].inventory.activeWeapons.melee, 'sword_ceramic')
   assert.deepEqual([result.players[0].units[0].i, result.players[0].units[0].j], [0, 1])
   const bandits = result.players.find(p => p.type === 'Bandits')
   const cave = result.players.find(p => p.label === 'neutral').buildings[0].cave

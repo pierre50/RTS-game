@@ -66,7 +66,7 @@ export function createHeroTechnologyBody(building: BuildingEntity, menu: MenuHos
         : t('forgeResourcesMissing')
       const node = document.createElement('li')
       node.className = `technology-node ${acquired ? 'is-acquired' : next ? 'is-next' : 'is-locked'}`
-      const { element, icon } = createInventoryActionRow(menu, {
+      const { element, icon } = createInventoryActionRow({
         id: `technology-${family}-${tier}`,
         title: t(`forgeMaterial_${material}`),
         badge: t(acquired ? 'technologyAcquired' : next ? 'technologyNext' : 'technologyLocked'),

@@ -43,7 +43,6 @@ export class NpcQuestPanel {
     button.appendChild(document.createTextNode(text))
     button.disabled = disabled
     button.addEventListener('click', () => {
-      this.menu.playUiClick()
       run()
     })
     this.root.appendChild(button)

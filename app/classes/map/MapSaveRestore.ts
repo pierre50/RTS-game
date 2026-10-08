@@ -39,6 +39,13 @@ export function processUnit(
   saved?: SaveEntityState,
   options: { resume?: boolean } = {}
 ): void {
+  // The travel service resumes from the saved position, not an obsolete local waypoint.
+  if ((unit as UnitEntity).roadJourney) {
+    unit.dest = null
+    unit.path = []
+    unit.action = null
+    return
+  }
   const restoringUnit = unit as RestoringMobileEntity
   const grid = getEntitySpaceGrid(unit, context) ?? context.grid
   const orders = saved?.caveOrders ?? unit

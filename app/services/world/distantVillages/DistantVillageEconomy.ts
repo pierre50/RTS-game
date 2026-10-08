@@ -19,7 +19,7 @@ function capture(
   context: GameContextLike,
   owner: PlayerLike,
   homes: VillageHome[],
-  units = owner.units.filter(isUnitSuspended)
+  units = owner.units.filter(unit => !unit.roadJourney && isUnitSuspended(unit))
 ) {
   const player = serializeEconomyPlayer(owner)
   const suspended = new Set(units.map(unit => unit.label))
@@ -120,7 +120,7 @@ export function advanceDistantVillageEconomy(
     context,
     homes,
     owner,
-    owner.units.filter(isUnitSuspended),
+    owner.units.filter(unit => !unit.roadJourney && isUnitSuspended(unit)),
     toElapsedMs - fromElapsedMs,
     fromElapsedMs
   )

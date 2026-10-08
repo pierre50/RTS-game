@@ -20,7 +20,6 @@ function loadMainMenu({ saveEntries }) {
         destroy() {}
       },
     },
-    '../lib/audio/uiSound': { playClickSound() {} },
     '../lib/lang': { t: key => key },
     '../ui/modals/settingsPanel': { openSettingsModal() {} },
     '../ui/modals/saveListModal': {

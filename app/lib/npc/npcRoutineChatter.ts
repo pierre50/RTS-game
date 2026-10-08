@@ -1,3 +1,4 @@
+import { ambientTrafficState } from '../../services/travel/ambient/AmbientTrafficState'
 import { UNIT_TYPES } from '../../constants'
 import type { UnitEntity } from '../../types/entities'
 import { heroCanCommand, isChiefUnit } from '../chief'
@@ -29,6 +30,21 @@ export function pickNpcRoutineChatterLine(
   hero?: UnitEntity | null,
   options: { sleeping?: boolean; playerName?: string } = {}
 ): string {
+  if (unit.ambientRoadGroup && unit.context?.map) {
+    const group = ambientTrafficState(unit.context.map).groups.find(group => group.id === unit.ambientRoadGroup)
+    if (group) {
+      const english = getLang() === 'en'
+      const town = (group.reverse ? group.from : group.to).name
+      if (group.kind === 'bandits') return english ? 'Keep moving.' : 'Passe ton chemin.'
+      if (!town)
+        return english ? 'Still a long way to go. Safe travels!' : 'Il nous reste du chemin. Bonne route à vous !'
+      if (group.kind === 'military')
+        return english
+          ? `We are heading to ${town}. Keep the road clear.`
+          : `Nous faisons route vers ${town}. Gardez le passage libre.`
+      return english ? `We are on our way to ${town}. Safe travels!` : `On rejoint ${town}. Bonne route à vous !`
+    }
+  }
   const audience = audienceFor(unit, hero)
   const sleeping = options.sleeping ?? (unit.shelterState?.reason === 'sleep' && unit.sleepVisualState === 'sleeping')
   if (sleeping) {

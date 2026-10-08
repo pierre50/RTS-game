@@ -82,7 +82,6 @@ export class BuildingInterface {
     button.addEventListener('click', () => {
       if (!canHeroDemolishBuilding(building)) return
       const menu = building.context?.menu
-      menu?.playUiClick?.()
       menu?.closeEntityInfoModal?.()
       menu?.closeHeroBuildingMenu?.()
       building.demolish?.()

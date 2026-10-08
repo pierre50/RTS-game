@@ -360,7 +360,7 @@ test('actual hero movement accelerates and spends energy; blocked movement canno
     controller.mouseHeld = false
     controller.defenseHeld = false
     controller.interactInputOwner = null
-    sprint.toggleHeroSprint(hero)
+    controller.keyboardSprintHeld = true
     for (let frame = 0; frame < 24; frame++) {
       hero.context.scheduler.elapsedMs += 16.6667
       updateHeroControllerRuntime(controller, 1)

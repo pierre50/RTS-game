@@ -251,7 +251,7 @@ test('three skipped days build an autonomous settlement from finite materials fo
   assert.deepEqual(results[0], results[1])
 })
 
-test('nextday three times catches up an idle player settlement and returning does not replay it', () => {
+test('raw calendar jumps catch up an idle distant settlement without replay on return', () => {
   const { PlayerWorkActivitySystem } = loadTsModule('app/services/world/PlayerWorkActivitySystem.ts', {
     moduleCache,
     mocks: { '../../lib/units/unitEnergy': { cancelEnergyWait() {}, updateUnitEnergy() {} } },
@@ -260,7 +260,6 @@ test('nextday three times catches up an idle player settlement and returning doe
     moduleCache,
     mocks: { '../lib/lang': { t: (_key, params) => `Day ${params.day}` } },
   })
-  const { forceNextDay } = loadTsModule('app/dev-console/actions/world.ts', { moduleCache })
   const { isUnitSuspended } = loadTsModule('app/lib/units/unitSuspension.ts', { moduleCache })
   const f = settlement('Human')
   const hero = { type: 'Hero', i: 900, j: 900 }
@@ -275,7 +274,7 @@ test('nextday three times catches up an idle player settlement and returning doe
   f.context.dayNight.onDayChange(() => work.flush())
   work.update()
   assert.equal(isUnitSuspended(f.unit), true)
-  for (let day = 0; day < 3; day++) assert.equal(forceNextDay(f.context).ok, true)
+  for (let day = 0; day < 3; day++) f.context.dayNight.forceNextDay()
   assert.equal(f.store.isBuilt, true)
   assert.equal(f.unit.inventory.resources.wheat, 12)
   const inventory = structuredClone(f.unit.inventory)
@@ -423,4 +422,92 @@ test('exhausting local AI work hands resource search back to the live dispatcher
   assert.equal(tree.quantity, 0)
   assert.equal(unit.autonomousJob, null)
   assert.equal(unit.autonomyBlockedJob, 'wood')
+})
+
+test('console nextday reuses sleep work for near and distant residents and reports actual changes', async () => {
+  const { SleepSimulation } = loadTsModule('app/services/world/SleepSimulation.ts', {
+    moduleCache,
+    mocks: {
+      '../../lib/hero/heroSleep': { hasHostileInHeroSight: () => false },
+      '../../lib/units/unitHealth': { notifyHeroHealthChanged() {} },
+    },
+  })
+  const { TimeSkipSystem } = loadTsModule('app/services/TimeSkipSystem.ts', {
+    moduleCache,
+    mocks: {
+      '../lib/audio/settings': { getGamepadEnabled: () => false },
+      '../lib/audio/sound': { isGameplaySoundSuppressed: () => false, setGameplaySoundSuppressed() {} },
+      '../ui/timeSkip/TimeSkipCancelInput': {
+        TimeSkipCancelInput: class {
+          reset() {}
+          poll() {
+            return false
+          }
+        },
+      },
+    },
+  })
+  const { DayNightSystem } = loadTsModule('app/services/DayNightSystem.ts', {
+    moduleCache,
+    mocks: { '../lib/lang': { t: (_key, params) => `Day ${params.day}` } },
+  })
+  const { PlayerWorkActivitySystem } = loadTsModule('app/services/world/PlayerWorkActivitySystem.ts', { moduleCache })
+  const { forceNextDay } = loadTsModule('app/dev-console/actions/world.ts', { moduleCache })
+  const { consumeVillagerMeals } = loadTsModule('app/lib/economy/villagerMeals.ts', { moduleCache })
+  const { DAY_NIGHT_CONFIG } = loadTsModule('app/config/gameplay.ts', { moduleCache })
+  const results = []
+  for (const distant of [false, true]) {
+    const f = settlement('Human')
+    Object.assign(f.unit, { hitPoints: 5, totalHitPoints: 20 })
+    Object.assign(f.context, {
+      app: { ticker: { speed: 1, add() {}, remove() {} } },
+      scheduler: {
+        elapsedMs: 0,
+        timeScale: 1,
+        advanceSleepTime(ms) {
+          this.elapsedMs += ms
+        },
+      },
+      controls: {
+        heroUnit: { type: 'Hero', i: distant ? 900 : 40, j: distant ? 900 : 40 },
+        instanceInCamera: () => false,
+      },
+    })
+    f.context.dayNight = new DayNightSystem(f.context)
+    const activity = new PlayerWorkActivitySystem(f.context)
+    activity.update()
+    const villages = {
+      beginSleep() {
+        activity.flush()
+        activity.destroy()
+      },
+      endSleep() {},
+    }
+    f.context.timeSkip = new TimeSkipSystem(f.context, new SleepSimulation(f.context, villages))
+    let days = 0
+    f.context.dayNight.onDayChange(() => {
+      days++
+      assert.equal(f.store.isBuilt, true, 'previous work must precede daily events')
+    })
+    for (let day = 0; day < 3; day++) {
+      const result = forceNextDay(f.context)
+      assert.equal(f.context.timeSkip.active, false, 'nextday completes synchronously')
+      assert.equal(f.context.timeSkip.overlay, null, 'no waiting window')
+      assert.equal(result.ok, true, result.message)
+      assert.match(result.message, /24.00 \/ 24h; daily boundaries: 1/)
+      assert.match(result.message, /stocks:.*bags:/)
+      assert.equal(f.context.scheduler.suspended, false)
+      assert.equal(f.context.app.ticker.speed, 1)
+    }
+    assert.equal(days, 3)
+    assert.equal(f.context.dayNight.getElapsedMs(), 3 * DAY_NIGHT_CONFIG.dayLengthMs)
+    assert.equal(f.unit.hitPoints, 20)
+    assert.equal(f.unit.inventory.resources.wheat, 12)
+    assert.deepEqual(consumeVillagerMeals(f.unit, 450, 450 + 3 * 1440), { needed: 0, consumed: 0 })
+    const inventory = structuredClone(f.unit.inventory)
+    activity.flush()
+    assert.deepEqual(f.unit.inventory, inventory, 'old distant checkpoints must not replay')
+    results.push({ inventory, materials: f.store.constructionMaterials, hp: f.unit.hitPoints, tree: f.tree.quantity })
+  }
+  assert.deepEqual(results[0], results[1])
 })

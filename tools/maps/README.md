@@ -155,13 +155,19 @@ saves without that field retain their original road-free state. The minimap draw
 never displays the outdoor network in interiors.
 
 The deterministic planner joins nearby settlements with a spanning network in
-each reachable land component. Four-neighbor A* avoids all resource cells,
+each reachable land component. Four-neighbor A* avoids non-tree resource cells,
 building footprints, authored crop rectangles, water and shoreline cells. Height
 changes above one level are forbidden; legal slopes are penalized. A five-cell
 soft tree margin encourages forest detours without blocking narrow passages.
 Jungle/dark forest terrain costs more, and existing roads cost less so routes can
 share sections. Searches try local corridors before falling back to the full map.
-No resources or buildings are removed. Disconnected islands are reported as
+Routes also leave a hard two-cell margin around remaining resources, full crop rectangles
+and the complete 3×3 footprints of blueprint caves, including diagonal corners.
+Final validation enforces this clearance after resource relocation and field placement.
+Trees are a routing cost rather than a barrier: after fixing the network, preparation
+removes only trees on its paths and within their two-cell margins. Other resources,
+caves and buildings remain protected. Clearing never changes the planned routes
+or the source map; the prepared resource list records it. Disconnected islands are reported as
 separate `roads.components`; no bridges or artificial connections are invented.
 The network uses distance-ordered candidate links, not a globally optimal road
 length or a direct road for every pair of settlements.
@@ -187,14 +193,26 @@ the actual generated data. These are planning views, not screenshots of gameplay
 
 ### Districts and defenses around prepared roads
 
-After planning the network, road cells and a one-cell margin are protected from
+After planning the network, road cells and a two-cell margin (including diagonals) are protected from
 buildings, fields, perimeter walls and relocated resource nodes. This is a placement
 reservation, not an obstacle to walking. Required tower lots are reserved before
 housing; the real towers are installed after the other buildings. Their placement
-uses the configured attack range, prioritizes different road approaches at the
-village outskirts, and discourages clustered towers. When there is no usable road
-approach, the existing peripheral placement remains the fallback. Tower counts
-still come from settlement profiles; outposts gain no artificial road links.
+uses the configured attack range and favors a pair of aligned towers on opposite
+sides of a road at the village outskirts, forming an entrance gate. Once a pair
+is complete, remaining towers favor other approaches. If terrain or the road
+clearance prevents a pair, individual towers retain their coverage priorities.
+Gate towers favor compact pairs: their circulation ring can share the road verge,
+while their occupied footprints still leave the full two-cell road margin. Other
+obstacles remain excluded from the circulation ring.
+Cities have eight towers. After protecting road entrances, placement favors gaps
+around the city perimeter, about 18 cells from its center, including cities without
+roads. Terrain constraints can shift these positions. Villages retain no towers
+and outposts retain their two towers; they do not receive the city's defensive ring
+or artificial road links. Tower counts still come from settlement profiles.
+
+The margin is measured from building footprints. Settlement anchors placed before
+the roads keep their direct entrance connection. Rerun `world:prepare` to apply
+the wider clearance to an existing world's preparation; saved games keep their layout.
 
 Markets favor the central square and roads. Military buildings favor the inside
 of a road approach. Houses and forges have a softer road preference, while granaries,

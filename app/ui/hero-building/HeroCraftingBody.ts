@@ -69,7 +69,7 @@ export abstract class HeroCraftingBody {
     const hero = this.menu.context.controls.heroUnit
     const label = t(recipe.labelKey, recipe.materialKey ? { material: t(recipe.materialKey) } : undefined)
     const disabled = !this.canUse() || !hero || !canCraftHeroRecipe(player, recipe, hero)
-    const { element, icon } = createInventoryActionRow(this.menu, {
+    const { element, icon } = createInventoryActionRow({
       id: `craft-${recipe.id}`,
       className: 'inventory-craft-row',
       disabled,

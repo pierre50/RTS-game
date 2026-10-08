@@ -47,6 +47,22 @@ test('generator assigns building level 2 to cities, level 1 to villages and leve
     input.settlements[0].settlementType = settlementType
     const prepared = prepareSettlements(input)
     const owner = prepared.players.find(player => player.type === 'AI')
+    const towers = owner.buildings.filter(building => building.type === 'WatchTower')
+    assert.equal(towers.length, settlementType === 'city' ? 8 : settlementType === 'outpost' ? 2 : 0)
+    if (settlementType === 'city') {
+      assert.equal(prepared.roads.cells.length, 0)
+      const center = owner.buildings.find(building => building.type === 'TownCenter')
+      for (const [di, dj] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ])
+        assert.ok(
+          towers.some(tower => (tower.i - center.i) * di + (tower.j - center.j) * dj > 10),
+          'isolated cities also have towers on every side'
+        )
+    }
     for (const building of owner.buildings) {
       const usesAgeAtlas = definitions[building.type].levelStats || building.type === 'Forge'
       assert.equal(building.buildingLevel, usesAgeAtlas ? level : 0, `${settlementType}: ${building.type}`)
@@ -59,6 +75,31 @@ test('generator assigns building level 2 to cities, level 1 to villages and leve
         assert.equal(asset.images.final.sheet, 'buildings')
       }
     }
+  }
+})
+
+test('road access clears nearby resource margins without losing nodes', () => {
+  const input = source()
+  input.banditCampPositions = []
+  input.settlements.push({ id: 'neighbor', kind: 'village', civ: 'Hellas', local: { i: 70, j: 30 } })
+  input.resources = [
+    { type: 'Stone', i: 32, j: 34, label: 'entrance-node' },
+    { type: 'Tree', i: 30, j: 38, label: 'square-node' },
+  ]
+  const before = structuredClone(input)
+  const prepared = prepareSettlements(input)
+  assert.deepEqual(input, before)
+  assert.equal(prepared.roads.routes.length, 1)
+  for (const sourceNode of input.resources) {
+    const nodes = prepared.resources.filter(node => node.label === sourceNode.label)
+    assert.equal(nodes.length, 1)
+    for (const [id] of prepared.roads.cells)
+      assert.ok(
+        Math.max(
+          Math.abs(Math.floor(id / prepared.roads.stride) - nodes[0].i),
+          Math.abs((id % prepared.roads.stride) - nodes[0].j)
+        ) > 2
+      )
   }
 })
 
@@ -310,7 +351,10 @@ test('roads are reserved before districts and towers cover distinct village appr
     const owner = prepared.players.find(p => p.settlementType === 'city')
     const center = owner.buildings.find(b => b.type === 'TownCenter')
     const towers = owner.buildings.filter(b => b.type === 'WatchTower')
-    assert.equal(towers.length, 3)
+    assert.equal(towers.length, 8)
+    const angles = towers.map(tower => Math.atan2(tower.j - center.j, tower.i - center.i)).sort((a, b) => a - b)
+    const gaps = angles.map((angle, index) => (angles[index + 1] ?? angles[0] + Math.PI * 2) - angle)
+    assert.ok(Math.max(...gaps) < (Math.PI * 2) / 3, `towers surround the city ${seed}`)
     const planner = new StartingVillageRoads(prepared.roads)
     const approaches = planner.entrances(center)
     assert.ok(approaches.length >= 2, `separate approaches ${seed}`)
@@ -320,16 +364,37 @@ test('roads are reserved before districts and towers cover distinct village appr
         `undefended approach ${seed}: ${JSON.stringify(entry)}`
       )
     const roads = new Set(prepared.roads.cells.map(([id]) => id))
+    assert.ok(
+      towers.some((tower, index) =>
+        towers.slice(index + 1).some(other => {
+          if (Math.hypot(tower.i - other.i, tower.j - other.j) < 6) return false
+          if (
+            !approaches.some(
+              entry =>
+                Math.hypot(tower.i - entry.i, tower.j - entry.j) <= towerRange &&
+                Math.hypot(other.i - entry.i, other.j - entry.j) <= towerRange
+            )
+          )
+            return false
+          const i = (tower.i + other.i) / 2,
+            j = (tower.j + other.j) / 2
+          return prepared.roads.cells.some(
+            ([id]) => Math.hypot(Math.floor(id / prepared.roads.stride) - i, (id % prepared.roads.stride) - j) <= 1
+          )
+        })
+      ),
+      `a pair of towers straddles an entrance road ${seed}`
+    )
     const { footprint } = require('../tools/maps/settlements/validate-settlements.cjs')
     for (const player of prepared.players)
       for (const building of player.buildings.slice(1)) {
         for (const cell of footprint(building))
-          for (let di = -1; di <= 1; di++)
-            for (let dj = -1; dj <= 1; dj++)
+          for (let di = -2; di <= 2; di++)
+            for (let dj = -2; dj <= 2; dj++)
               assert.equal(
                 roads.has((cell.i + di) * prepared.roads.stride + cell.j + dj),
                 false,
-                `${building.type} leaves a road margin`
+                `${building.type} leaves a two-cell road margin, including bends`
               )
       }
 

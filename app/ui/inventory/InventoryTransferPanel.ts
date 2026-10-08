@@ -172,12 +172,11 @@ export class InventoryTransferPanel {
         source: container,
       })
     }
-    const { element } = createInventoryResourceRow(this.context.menu, {
+    const { element } = createInventoryResourceRow({
       id: `transfer-resource-${container.id}-${resource}`,
       className: 'inventory-transfer-slot',
       resource,
       amount,
-      playClick: false,
 
       trailingAction:
         this.canTransfer?.(container, transferTarget) === false
@@ -223,13 +222,12 @@ export class InventoryTransferPanel {
         source: container,
       })
     }
-    const { element } = createInventoryEquipmentRow(this.context, this.context.menu, {
+    const { element } = createInventoryEquipmentRow(this.context, {
       id: `transfer-equipment-${container.id}-${equipment}`,
       className: 'inventory-transfer-slot',
       equipment,
       count,
       labelContext: 'inventory transfer',
-      playClick: false,
 
       trailingAction:
         this.canTransfer?.(container, transferTarget) === false
@@ -247,7 +245,6 @@ export class InventoryTransferPanel {
   }
 
   private handleTransfer(event: InventoryTransferEvent): void {
-    this.context.menu.playUiClick?.()
     this.onTransfer?.(event)
     this.context.menu.refreshInventory?.()
     this.onChange?.()

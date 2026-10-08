@@ -4,7 +4,9 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function fixture(startHour = 22) {
   const calls = []
+  const moduleCache = new Map()
   const { SleepSimulation } = loadTsModule('app/services/world/SleepSimulation.ts', {
+    moduleCache,
     mocks: {
       '../../lib/hero/heroSleep': { hasHostileInHeroSight: hero => Boolean(hero.hostile) },
       '../../lib/units/unitEnergy': { updateUnitEnergy() {} },
@@ -74,7 +76,7 @@ function fixture(startHour = 22) {
   context.dayNight.onDayChange((day, previous) => calls.push(['day', day, previous]))
   const villages = { beginSleep: () => calls.push(['begin']), endSleep: () => calls.push(['end']) }
   const simulation = new SleepSimulation(context, villages)
-  return { simulation, context, calls, hero, worker }
+  return { simulation, context, calls, hero, worker, moduleCache }
 }
 
 function advance(simulation, context, target) {
@@ -180,5 +182,47 @@ test('new arrivals join the next interval, never receive the preceding night ret
   advance(simulation, context, from + (8 + 1 / 3) * 60000)
   assert.ok(Math.abs(arrival.hitPoints - (5 + 20 / 24)) < 0.00001)
   assert.equal(hero.hitPoints, 100)
+  simulation.end()
+})
+
+test('static residents regain scheduled sleep health without starting an economy', () => {
+  const { simulation, context, worker, calls } = fixture()
+  context.players[0].developmentMode = 'static'
+  simulation.begin()
+  advance(simulation, context, context.dayNight.getElapsedMs() + 8 * 60000)
+  simulation.end()
+  assert.equal(worker.hitPoints, 20)
+  assert.deepEqual(worker.inventory.resources, { bread: 8 })
+  assert.equal(calls.filter(call => call[0] === 'work').length, 0)
+})
+
+test('unloaded villages settle before the daily event and do not replay on later reads', () => {
+  const { simulation, context, calls, moduleCache } = fixture()
+  const { installDeferredVillages, deferredVillageState } = loadTsModule(
+    'app/services/world/distantVillages/DeferredVillageStore.ts',
+    { moduleCache }
+  )
+  const store = installDeferredVillages(context)
+  const owner = context.players[1]
+  let advanced = 0
+  store.add(
+    owner,
+    { label: 'ai', units: [], buildings: [] },
+    () => assert.fail('must stay unloaded'),
+    (_state, from, to) => {
+      advanced += to - from
+      calls.push(['deferred', to])
+    }
+  )
+  const target = context.dayNight.getElapsedMs() + 8 * 60000
+  simulation.begin()
+  advance(simulation, context, target)
+  assert.equal(advanced, 8 * 60000)
+  const dailyIndex = calls.findIndex(call => call[0] === 'day')
+  assert.deepEqual(calls[dailyIndex - 1], ['deferred', target])
+  deferredVillageState(owner)
+  store.flush()
+  assert.equal(advanced, 8 * 60000)
+  assert.equal(owner.units.length, 0)
   simulation.end()
 })

@@ -1,7 +1,6 @@
 import { loadSavedGame } from '../ui/LoadSavedGame'
 import type { Application } from 'pixi.js'
 import { GameWindow } from '../lib/ui/GameWindow'
-import { playClickSound } from '../lib/audio/uiSound'
 import { t } from '../lib/lang'
 import { openSettingsModal } from '../ui/modals/settingsPanel'
 import { openSaveListModal } from '../ui/modals/saveListModal'
@@ -61,7 +60,6 @@ export default class MainMenu {
     if (className === 'home-btn') {
       button.addEventListener('focus', () => this._setActiveHomeButton(button))
     }
-    button.addEventListener('pointerdown', playClickSound)
     button.addEventListener('click', onClick)
     return button
   }
@@ -170,7 +168,6 @@ export default class MainMenu {
     if (evt.key !== 'Enter') return
 
     evt.preventDefault()
-    playClickSound()
     const focusedButton = this._activeHomeButton || buttons[0]
     focusedButton.click()
   }

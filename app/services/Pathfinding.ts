@@ -78,6 +78,8 @@ type PathMap<TCell extends PathCell = PathCell> = {
 
 export type PathfindingOptions<TCell extends PathCell = PathCell> = {
   canPassThroughSolidCell?: (cell: TCell) => boolean
+  searchMargin?: number
+  alternativeGoals?: readonly TCell[]
 }
 
 /** Each search owns its state, so yielding cannot corrupt another unit's route. */
@@ -91,11 +93,13 @@ export function* searchInstancePath<TCell extends PathCell>(
   const end = map.grid[x]?.[y]
   const start = map.grid[instance.i]?.[instance.j]
   if (!start || !end || !isReachable(instance, end, options)) return []
+  const goals = new Set([end, ...(options.alternativeGoals ?? [])].filter(cell => isReachable(instance, cell, options)))
+  const margin = Math.max(0, options.searchMargin ?? 10)
   const mapSize = map.size ?? map.grid.length - 1
-  const minX = Math.max(Math.min(start.i, end.i) - 10, 0)
-  const maxX = Math.min(Math.max(start.i, end.i) + 10, mapSize)
-  const minY = Math.max(Math.min(start.j, end.j) - 10, 0)
-  const maxY = Math.min(Math.max(start.j, end.j) + 10, mapSize)
+  const minX = Math.max(Math.min(start.i, ...[...goals].map(cell => cell.i)) - margin, 0)
+  const maxX = Math.min(Math.max(start.i, ...[...goals].map(cell => cell.i)) + margin, mapSize)
+  const minY = Math.max(Math.min(start.j, ...[...goals].map(cell => cell.j)) - margin, 0)
+  const maxY = Math.min(Math.max(start.j, ...[...goals].map(cell => cell.j)) + margin, mapSize)
   const heap: HeapEntry[] = []
   const nodes = new Map<PathCell, SearchNode>()
   const closed = new Set<PathCell>()
@@ -114,7 +118,7 @@ export function* searchInstancePath<TCell extends PathCell>(
     }
     const [pushedF, current] = heapPop(heap)
     if (pushedF !== current.f || closed.has(current.cell)) continue
-    if (current.cell === end) {
+    if (goals.has(current.cell as TCell)) {
       const path: TCell[] = []
       let node = current
       while (node.prev) {

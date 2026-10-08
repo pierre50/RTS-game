@@ -1,3 +1,4 @@
+import { sendNpcToTownCenter } from '../lib/npc/npcGoToDispatch'
 import { openNpcInventory, closeNpcInventory } from './npc/NpcInventory'
 import { cycleNpcDebugLevel, updateNpcDebugControls } from './npc/NpcDebugControls'
 import { isAiChiefResting } from '../lib/units/chiefAvailability'
@@ -8,9 +9,7 @@ import { InteractionPanel } from './inspection/InteractionPanel'
 import type { Modal } from '../lib'
 import { NpcQuestPanel } from './quests/NpcQuestPanel'
 import { t } from '../lib/lang'
-import { playUiSound } from '../lib/audio/uiSound'
 import { getUnitGender } from '../lib/units/unitIdentity'
-import { SOUND_CUES } from '../constants'
 import {
   noticeNpc,
   keepNpcHere,
@@ -25,12 +24,12 @@ import { pickNpcRoutineChatterLine } from '../lib/npc/npcRoutineChatter'
 import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
 import type { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
 import type { NpcOrdersOpenOptions } from '../types/context'
-import type { UnitEntity } from '../types/entities'
+import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 import { SpokenTextReveal } from './quests/SpokenTextReveal'
 
 type NpcOrderId = 'stay' | 'follow' | 'goto'
-type NpcOrderMenuId = NpcOrderId | 'bag'
+type NpcOrderMenuId = NpcOrderId | 'bag' | 'sendToCity' | `city:${number}`
 
 type NpcOrderSpec = {
   id: NpcOrderId
@@ -112,7 +111,6 @@ export class NpcOrdersManager {
     this.debugLevelButton.addEventListener('click', () => {
       const target = this.npcs.length === 1 ? this.npcs[0] : null
       if (!target || this.debugLevelButton.disabled) return
-      playUiSound(SOUND_CUES.ui.menuClick)
       void this.cycleDebugLevel(target)
     })
     this.debugContainer.appendChild(this.debugLevelButton)
@@ -121,15 +119,7 @@ export class NpcOrdersManager {
     this.buttonsContainer.className = 'npc-orders-options'
     this.choicesContainer.appendChild(this.buttonsContainer)
 
-    this.orderMenu = new NestedButtonMenu<NpcOrderMenuId>({
-      container: this.buttonsContainer,
-      items: this.createOrderMenuItems(),
-      backLabel: t('back'),
-      backButtonClassName: 'ui-btn npc-orders-back',
-      showBackButton: false,
-      onNavigate: () => playUiSound(SOUND_CUES.ui.menuClick),
-      onBack: () => playUiSound(SOUND_CUES.ui.menuClick),
-    })
+    this.orderMenu = this.createOrderMenu()
     this.buttons = this.orderMenu.buttons
 
     // Keep the exit outside conditional choices, submenus and inventory content.
@@ -138,7 +128,6 @@ export class NpcOrdersManager {
     this.exitButton.className = 'ui-btn npc-orders-exit'
     this.exitButton.textContent = t('npcOrderCancelSleep')
     this.exitButton.addEventListener('click', () => {
-      playUiSound(SOUND_CUES.ui.menuClick)
       this.close()
     })
     this.choicesContainer.appendChild(this.exitButton)
@@ -147,6 +136,10 @@ export class NpcOrdersManager {
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
     if (this.scriptedReplyActive) return
     npcs = npcs.filter(npc => !isAiChiefResting(npc, this.menu.context))
+    if (npcs.some(npc => npc.ambientRoadGroup) && npcs.some(npc => !npc.ambientRoadGroup && npc.owner?.isPlayed)) {
+      releaseIfStillLooking(npcs.filter(npc => Boolean(npc.ambientRoadGroup)))
+      npcs = npcs.filter(npc => !npc.ambientRoadGroup)
+    }
     if (!npcs.length) return
     const dialogue =
       options.dialogue ??
@@ -209,11 +202,13 @@ export class NpcOrdersManager {
     // Just chatting (no order possible right now — non-chief hero, or the ally isn't
     // commandable) shows the same panel with the buttons hidden rather than a whole
     // separate window.
-    const isOwnGroup = npcs.every(npc => npc.owner?.isPlayed === true)
+    const isOwnGroup = npcs.every(npc => !npc.ambientRoadGroup && npc.owner?.isPlayed === true)
     const ordersEnabled = !dialogue && (options.ordersEnabled ?? true) && isOwnGroup
     this.ordersEnabled = ordersEnabled
     this.buttonsContainer.hidden = !ordersEnabled
-    this.orderMenu.syncVisibility()
+    this.buttonsContainer.replaceChildren()
+    this.orderMenu = this.createOrderMenu()
+    this.buttons = this.orderMenu.buttons
 
     // A commandable single target gets a short in-character greeting addressed to the player
     // instead of idle chatter — callers can still override with an explicit chatterLine.
@@ -281,7 +276,6 @@ export class NpcOrdersManager {
         if (!this.scriptedReplyActive || revision !== this.dialogueRevision) return
         ++this.dialogueRevision
         button.disabled = true
-        this.menu.playUiClick?.()
         if (choice.nextId !== undefined) {
           sequence.onNodeChanged?.(choice.nextId)
           const next = sequence.nodes.find(entry => entry.id === choice.nextId)!
@@ -366,12 +360,54 @@ export class NpcOrdersManager {
     this.modal = undefined
   }
 
+  private createOrderMenu(): NestedButtonMenu<NpcOrderMenuId> {
+    return new NestedButtonMenu<NpcOrderMenuId>({
+      container: this.buttonsContainer,
+      items: this.createOrderMenuItems(),
+      backLabel: t('back'),
+      backButtonClassName: 'ui-btn npc-orders-back',
+    })
+  }
+
+  private availableTownCenters(): BuildingEntity[] {
+    const hero = this.menu.context.controls?.heroUnit
+    if (!this.ordersEnabled || this.scriptedReplyActive || !heroCanCommand(hero)) return []
+    const owner = hero?.owner ?? this.menu.context.player
+    return (owner?.buildings ?? []).filter(
+      building =>
+        building.type === 'TownCenter' &&
+        building.isBuilt &&
+        !building.isDead &&
+        !building.isDestroyed &&
+        (!building.owner || building.owner === owner || (owner?.label && building.owner.label === owner.label))
+    )
+  }
+
+  private sendToCity(building: BuildingEntity): void {
+    if (!this.npcs.length || !this.availableTownCenters().includes(building)) return
+    const npcs = this.npcs
+    this.close(true)
+    for (const npc of npcs) sendNpcToTownCenter(npc, building)
+    playNpcOrderSound(npcs)
+  }
+
   private createOrderMenuItems(): NestedButtonMenuItem<NpcOrderMenuId>[] {
     return NPC_ORDER_SPECS.flatMap(spec => {
       const item = this.createOrderMenuItem(spec)
       if (spec.id !== 'goto') return [item]
       return [
         item,
+        {
+          id: 'sendToCity',
+          label: t('npcOrderSendTo'),
+          hidden: () => !this.availableTownCenters().length,
+          children: this.availableTownCenters().map((building, index) => ({
+            id: `city:${index}` as const,
+            label: building.settlementName || t('TownCenter'),
+            hidden: () => !this.availableTownCenters().includes(building),
+            onClick: () => this.sendToCity(building),
+          })),
+        },
         {
           id: 'bag',
           label: t('npcOrderBag'),
@@ -437,7 +473,6 @@ export class NpcOrdersManager {
 
   private runOrder(spec: NpcOrderSpec): void {
     if (this.scriptedReplyActive || !this.ordersEnabled || !this.npcs.length) return
-    playUiSound(SOUND_CUES.ui.menuClick)
     const npcs = this.npcs
     if (spec.startsPicking) {
       // Still committed to an order (waiting on the world click) — don't resume old tasks yet.

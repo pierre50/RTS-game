@@ -13,8 +13,6 @@ import { MinimapView } from '../ui/minimap/MinimapView'
 import { ActionMenuRenderer } from '../ui/ActionMenuRenderer'
 import { ActionSpecFactory } from '../ui/ActionSpecFactory'
 import { resetHeroCursor } from '../lib/hero/heroCursor'
-import { playUiSound } from '../lib/audio/uiSound'
-import { SOUND_CUES } from '../constants'
 import type { GameContextLike, MenuLike, NpcOrdersOpenOptions } from '../types/context'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -270,9 +268,6 @@ export default class Menu implements MenuLike {
   }
   createActionIcon(src: string): HTMLImageElement {
     return this.actionSpecs.createActionIcon(src)
-  }
-  playUiClick(): void {
-    playUiSound(SOUND_CUES.ui.menuClick)
   }
   clearActionHotkeys(): void {
     return this.actionRenderer.clearHotkeys()

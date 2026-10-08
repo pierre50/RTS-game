@@ -1,4 +1,5 @@
 import { migrateLegacyProgression } from './LegacyProgressionMigration'
+import { startingHeroInventory } from '../lib/economy/startingProvisions'
 import type { MapBlueprint } from '../classes/map/MapGenerationTypes'
 import type { GameConfig, SavePlayerState, SerializedSave } from '../types/save'
 
@@ -52,6 +53,7 @@ export function preparedSettlementState(
         i: spawn.i,
         j: spawn.j,
         type: 'Hero',
+        inventory: startingHeroInventory(),
         label: `${player.label}:hero`,
         gender: player.gender,
         inactif: true,

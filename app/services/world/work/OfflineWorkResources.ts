@@ -88,6 +88,7 @@ export function savedResourceOwner(player: SavePlayerState, players: SavePlayerS
 export function isOfflineWorker(unit: SaveEntityState): boolean {
   return (
     unit.type === UNIT_TYPES.villager &&
+    !unit.roadJourney &&
     isLiving(unit) &&
     !unit.followingHero &&
     unit.controlMode !== 'hero' &&

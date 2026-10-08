@@ -1,9 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { reconcileHouseholds, getHouseResidents, getVacantHomeCount } = loadTsModule(
-  'app/lib/housing/households.ts'
-)
+const { reconcileHouseholds, getHouseResidents, getVacantHomeCount } = loadTsModule('app/lib/housing/households.ts')
 const { isBedOccupied } = loadTsModule('app/services/rest/BedOccupancy.ts')
 const { UnitLifecycle } = loadTsModule('app/classes/unit/UnitLifecycle.ts', {
   mocks: {
@@ -94,4 +92,14 @@ test('death of the resident hero clears the persistent home reservation', () => 
   assert.equal(house.heroHomeResident, undefined)
   assert.deepEqual(getHouseResidents(owner, house), [])
   assert.equal(getVacantHomeCount(owner), 1)
+})
+
+test('a decorative traveler death never consumes a resident population slot', () => {
+  const { owner, context, add } = fixture()
+  add('resident')
+  const traveler = { type: 'Villager', label: 'traveler', ambientRoadGroup: 'route', owner, context }
+  die(traveler)
+  assert.equal(traveler.isDead, true)
+  assert.equal(owner.population, 1)
+  assert.equal(owner.units.length, 1)
 })

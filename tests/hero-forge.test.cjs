@@ -31,7 +31,7 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
       '../../lib/lang': { t: key => key },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => ({}) },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (_, options) => {
+        createInventoryActionRow: (options) => {
           rows.push(options)
           return { element: { querySelector: () => null }, icon: { appendChild() {} } }
         },
@@ -140,7 +140,7 @@ test('forge keeps repairs and personal crafting without village research', () =>
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => element() },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (_, options) => {
+        createInventoryActionRow: (options) => {
           rows.push(options)
           return { element: element(), icon: element() }
         },
@@ -196,7 +196,7 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
       '../../lib/lang': { t: key => key },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => ({}) },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (_, options) => {
+        createInventoryActionRow: (options) => {
           rows.push(options)
           return { element: { querySelector: () => null }, icon: { appendChild() {} } }
         },

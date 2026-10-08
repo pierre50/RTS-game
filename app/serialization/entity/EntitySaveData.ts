@@ -74,6 +74,7 @@ export type SerializableEntity = RuntimeEntityBase & {
   trapPrey?: boolean
   tamingStatus?: SaveEntityState['tamingStatus']
   companionHorseColor?: string | null
+  roadJourney?: UnitEntity['roadJourney']
   villageHome?: VillageHome
   campBehavior?: CampBehavior
   campPatrolAnchor?: GridPoint | null
@@ -338,6 +339,7 @@ export function unitData(unit: SerializableEntity): SaveEntityState {
       'mountedOnHorse',
       'horseColor',
       'companionHorseColor',
+      'roadJourney',
       'villageHome',
       'campBehavior',
       'campPatrolAnchor',

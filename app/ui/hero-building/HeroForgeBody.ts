@@ -42,7 +42,7 @@ export class HeroForgeBody extends HeroCraftingBody {
         for (const target of targets) {
           const cost = getEquipmentRepairCost(target.item)
           const disabled = !canRepairEquipment(player, hero, this.building, target)
-          const { element } = createInventoryEquipmentRow(this.menu.context, this.menu, {
+          const { element } = createInventoryEquipmentRow(this.menu.context, {
             id: `repair-${target.location}-${target.key}`,
             equipment: target.item,
             count: 1,

@@ -1,9 +1,12 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const moduleCache = new Map()
+const { ambientTrafficState } = loadTsModule('app/services/travel/ambient/AmbientTrafficState.ts', { moduleCache })
 let language = 'fr'
 let choice = 0
 const { pickNpcRoutineChatterLine: pick } = loadTsModule('app/lib/npc/npcRoutineChatter.ts', {
+  moduleCache,
   mocks: {
     '../lang': { getLang: () => language },
     '../random': { pickRandomItem: lines => lines[choice % lines.length] },
@@ -396,6 +399,22 @@ test('a chief on a meal break describes lunch instead of village work', () => {
   choice = 0
   for (language of ['fr', 'en']) {
     const { unit, hero } = scenario({ speakerChief: true, hour: 12, minute: 30 })
-    assert.equal(pick(unit, hero), `${NPC_ROUTINE_LINES[language].chief.meal[0]} ${NPC_ROUTINE_LINES[language].chiefGreeting.ownChief[0]}`)
+    assert.equal(
+      pick(unit, hero),
+      `${NPC_ROUTINE_LINES[language].chief.meal[0]} ${NPC_ROUTINE_LINES[language].chiefGreeting.ownChief[0]}`
+    )
   }
+})
+
+test('travelers talk about their actual destination in both languages', () => {
+  const map = {}
+  const group = { id: 'road', kind: 'villagers', from: { name: 'Athènes' }, to: { name: 'Sparte' }, reverse: false }
+  ambientTrafficState(map).groups.push(group)
+  const unit = { type: 'Villager', ambientRoadGroup: 'road', context: { map } }
+  language = 'fr'
+  assert.match(pick(unit), /Sparte/)
+  group.reverse = true
+  language = 'en'
+  assert.match(pick(unit), /Athènes/)
+  language = 'fr'
 })

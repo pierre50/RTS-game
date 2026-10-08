@@ -1,3 +1,5 @@
+import type { RoadJourney } from '../lib/units/roadJourney'
+import type { AmbientTrafficState } from '../services/travel/ambient/AmbientTrafficState'
 import type { RoadLayer } from '../lib/terrain/roadLayer'
 import type { BuildingUpgrade } from '../lib/economy/constructionMaterials'
 import type { ForgeUpgrades } from '../lib/equipment/forgeUpgrades'
@@ -107,6 +109,7 @@ export type SaveEntityState = {
   trapPrey?: boolean
   tamingStatus?: HorseTamingStatus
   companionHorseColor?: string | null
+  roadJourney?: RoadJourney
   villageHome?: VillageHome
   campBehavior?: CampBehavior
   campPatrolAnchor?: SaveGridPoint | null
@@ -285,6 +288,7 @@ type PendingWorldPursuer = {
 }
 
 type SaveRuntimeState = {
+  ambientTraffic?: AmbientTrafficState
   banditCamps?: CampRespawnState[]
   heroEquippedItem?: HeroEquippedItem | null
   offlineFromElapsedMs?: number

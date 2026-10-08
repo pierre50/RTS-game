@@ -1,3 +1,5 @@
+import { AmbientTrafficSystem } from './travel/ambient/AmbientTrafficSystem'
+import { RoadTravelSystem } from './travel/RoadTravelSystem'
 import { getDeferredVillages } from './world/distantVillages/DeferredVillageStore'
 import { AMBIENT_CAMERA_MARGIN, AMBIENT_CAMERA_EXIT_MARGIN } from './world/AmbientActivityArea'
 import { isStaticSettlement } from '../config/settlementProfiles'
@@ -41,6 +43,8 @@ const GATHER_ACTIONS = new Set([
 ])
 
 export class VillageActivitySystem {
+  private ambientTraffic: AmbientTrafficSystem
+  private roadTravel: RoadTravelSystem
   private sleeping = false
   private villages = new Map<string, Village>()
   private task: SchedulerTaskId | null = null
@@ -50,7 +54,9 @@ export class VillageActivitySystem {
   private playerWork: PlayerWorkActivitySystem
   private distant: DistantVillageSystem
   constructor(private context: GameContextLike) {
+    this.roadTravel = new RoadTravelSystem(context)
     this.leash = new CampLeashController(context)
+    this.ambientTraffic = new AmbientTrafficSystem(context, this.leash)
     this.distant = new DistantVillageSystem(context)
     this.playerWork = new PlayerWorkActivitySystem(context)
     if (context.editor) return
@@ -331,6 +337,8 @@ export class VillageActivitySystem {
   }
 
   destroy(): void {
+    this.ambientTraffic.destroy()
+    this.roadTravel.destroy()
     this.playerWork.destroy()
     this.distant.destroy()
     for (const village of this.villages.values()) this.wake(village)

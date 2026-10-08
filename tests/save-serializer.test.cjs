@@ -7,6 +7,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const wildlifeModule = loadTsModule('app/services/wildlife/WildlifeStore.ts')
 const deferredVillages = loadTsModule('app/services/world/distantVillages/DeferredVillageStore.ts')
 const growthModule = loadTsModule('app/services/NaturalGrowthQueue.ts')
+const ambientTraffic = loadTsModule('app/services/travel/ambient/AmbientTrafficState.ts')
 const campRespawns = loadTsModule('app/lib/camps/campRespawnState.ts')
 const compactResources = loadTsModule('app/classes/resources/CompactResourceSet.ts')
 
@@ -41,6 +42,7 @@ function loadSaveSerializer() {
   })
   const module = { exports: {} }
   const mockRequire = id => {
+    if (id === '../services/travel/ambient/AmbientTrafficState') return ambientTraffic
     if (id === '../services/world/distantVillages/DeferredVillageStore') return deferredVillages
 
     if (id === './entity/EntitySaveData')
@@ -1233,10 +1235,16 @@ test('legacy and minimal snapshots default missing cameras, clocks and AI memori
   assert.deepEqual(api.serializeGame(context).players, [])
 })
 
-
 test('world road snapshots persist through save serialization without settlement sidecars', () => {
   const context = makeContext()
-  context.map.roads = { version: 1, stride: context.map.size + 1, cells: [[5, 2], [9, 8]] }
+  context.map.roads = {
+    version: 1,
+    stride: context.map.size + 1,
+    cells: [
+      [5, 2],
+      [9, 8],
+    ],
+  }
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
   assert.deepEqual(saved.world.roads, context.map.roads)
   delete context.map.roads
@@ -1261,4 +1269,32 @@ test('town names survive actual serialization and building restoration', () => {
   const restored = { createBuilding: options => ({ ...options }) }
   restorePlayerEntitiesFromSave(restored, { buildings: saved.players[0].buildings }, true)
   assert.equal(restored.buildings[0].settlementName, 'Athènes')
+})
+
+test('a road trip saves both the current position and the final city', () => {
+  const context = makeContext()
+  context.players[0].units = [
+    { type: 'Villager', i: 12, j: 5, roadJourney: { targetLabel: 'town-2' }, inventory: { resources: { tin: 4 } } },
+  ]
+  const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context))).players[0].units[0]
+  assert.deepEqual(saved.roadJourney, { targetLabel: 'town-2' })
+  assert.equal(saved.i, 12)
+  assert.equal(saved.j, 5)
+  assert.equal(saved.inventory.resources.tin, 4)
+})
+
+test('ambient identities and routes are saved outside the player population', () => {
+  const context = makeContext()
+  ambientTraffic.ambientTrafficState(context.map).groups.push({
+    id: 'test-route',
+    members: [{ label: 'traveler', type: 'Villager', i: 1, j: 1, name: 'Leon' }],
+    route: [
+      { i: 1, j: 1 },
+      { i: 2, j: 1 },
+    ],
+    progress: 0,
+  })
+  const saved = loadSaveSerializer().serializeGame(context)
+  assert.equal(saved.runtime.ambientTraffic.groups[0].members[0].name, 'Leon')
+  assert.ok(saved.players.every(player => !player.units.some(unit => unit.label === 'traveler')))
 })

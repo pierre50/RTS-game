@@ -1,0 +1,27 @@
+{
+  "node": "v22.22.3",
+  "planning": {
+    "groups": 6,
+    "yields": 146,
+    "totalCpuMs": 21.62370900000002
+  },
+  "updates": [
+    {
+      "groups": 24,
+      "near": false,
+      "actors": 0,
+      "meanMs": 0.005524554200000648,
+      "p95Ms": 0.009374999999863576,
+      "maxMs": 2.934332999999924
+    },
+    {
+      "groups": 24,
+      "near": true,
+      "actors": 6,
+      "meanMs": 0.02512701900000129,
+      "p95Ms": 0.03654200000005403,
+      "maxMs": 2.3913330000000315
+    }
+  ],
+  "limitations": "Headless CPU measurements. Rendering, audio and detailed unit movement are stubbed; not an FPS measurement."
+}

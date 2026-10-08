@@ -40,7 +40,7 @@ test('technology tree exposes saved tiers, prerequisites and costs, and revalida
       },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: element },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (_, row) => {
+        createInventoryActionRow: (row) => {
           rows.push(row)
           return { element: element(), icon: element() }
         },

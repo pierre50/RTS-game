@@ -5,9 +5,8 @@ import { getBuildingAsset, getIconPath, getStableHorseAmount, storeStableHorse, 
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { HORSE_COLOR_PALETTES, type HorseColor } from '../lib/horses/horseColors'
 import { t } from '../lib/lang'
-import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES } from '../constants'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
-import { playUiSound } from '../lib/audio/uiSound'
 import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
 import {
   formatActionCost,
@@ -45,9 +44,6 @@ export class ActionSpecFactory {
     this.menu = menu
   }
 
-  playUiClick(): void {
-    playUiSound(SOUND_CUES.ui.menuClick)
-  }
 
   createActionIcon(src: string): HTMLImageElement {
     const img = document.createElement('img')

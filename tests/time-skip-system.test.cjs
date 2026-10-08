@@ -459,3 +459,38 @@ test('reduced-motion sleep starts after rendering black without waiting for an a
     skip.cancel()
   })
 })
+
+for (const ending of ['completed', 'danger', 'error']) {
+  test(`immediate nextday returns ${ending} without an overlay or ticker and restores runtime`, () => {
+    const { TimeSkipSystem } = loadTimeSkipModule()
+    const { context, setElapsedMs } = createContext()
+    context.players = []
+    context.map = {}
+    context.dayNight.state = { day: 1 }
+    context.dayNight.setElapsedMs = setElapsedMs
+    context.scheduler.advanceSleepTime = () => {}
+    context.app.ticker.add = () => assert.fail('must not install a waiting ticker')
+    const simulation = {
+      busy: false,
+      begin() {},
+      end() {},
+      step(target) {
+        assert.equal(skip.nextDay().ok, false, 'cannot overlap another skip')
+        if (ending === 'error') throw new Error('test failure')
+        setElapsedMs(ending === 'completed' ? target : 60000)
+        this.interrupted = ending === 'danger'
+        if (ending === 'completed') context.dayNight.state.day = 2
+      },
+    }
+    const skip = new TimeSkipSystem(context, simulation)
+    context.timeSkip = skip
+    const report = skip.nextDay()
+    assert.equal(report.ok, ending === 'completed')
+    assert.match(report.message, ending === 'completed' ? /nextday completed:/ : /nextday interrupted:/)
+    assert.match(report.message, ending === 'completed' ? /24.00 \/ 24h/ : /daily boundaries: 0/)
+    assert.equal(skip.active, false)
+    assert.equal(skip.overlay, null)
+    assert.equal(context.scheduler.suspended, false)
+    assert.equal(context.app.ticker.speed, 1.5)
+  })
+}

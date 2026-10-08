@@ -217,7 +217,6 @@ test('hero team building info renders a demolish button that destroys the buildi
     let died = false
     let closed = false
     let heroMenuClosed = false
-    let clicked = false
     const building = {
       type: 'House',
       owner: { isPlayed: false, civ: 'Hellas', team: 2 },
@@ -233,9 +232,6 @@ test('hero team building info renders a demolish button that destroys the buildi
           },
           closeHeroBuildingMenu: () => {
             heroMenuClosed = true
-          },
-          playUiClick: () => {
-            clicked = true
           },
         },
       },
@@ -254,8 +250,6 @@ test('hero team building info renders a demolish button that destroys the buildi
     assert.ok(button.classList.contains('ui-btn'))
 
     button.dispatch('click')
-
-    assert.equal(clicked, true)
     assert.equal(closed, true)
     assert.equal(heroMenuClosed, true)
     assert.equal(died, true)

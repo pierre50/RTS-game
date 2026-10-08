@@ -1,7 +1,7 @@
 import { notifyVillageStateChanged } from './village/villageStateEvents'
 import type { UnitEntity } from '../../types/entities'
 
-export type UnitSuspensionReason = 'camp-paused' | 'distant-work'
+export type UnitSuspensionReason = 'camp-paused' | 'distant-work' | 'road-travel'
 type Suspension = { reason: UnitSuspensionReason; wake: () => void; waking?: boolean }
 const suspensions = new WeakMap<UnitEntity, Suspension>()
 

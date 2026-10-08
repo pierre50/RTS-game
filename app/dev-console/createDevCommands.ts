@@ -206,7 +206,7 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
     name: 'nextday',
     aliases: ['daynext'],
     usage: 'nextday',
-    describe: 'Advance the day/night cycle to the next day',
+    describe: 'Simulate 24 hours of village work, meals and rest, then report changes',
     run: (_args, context) => forceNextDay(context),
   })
 
