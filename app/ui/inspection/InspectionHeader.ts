@@ -1,14 +1,12 @@
-const SUMMARY_PARTS =
-  ':scope > .entity-info-header, :scope > .entity-description, :scope > .hit-points-display, :scope > .infos'
+import { createEntitySummary, moveEntitySummary } from './EntitySummary'
 
 /** Move live identity nodes, not copies: canvases and health updates keep their owners. */
 export function attachInspectionHeader(panel: HTMLElement, content: HTMLElement): () => void {
   const header = panel.querySelector<HTMLElement>('.modal-header')
   if (!header) return () => {}
-  const summary = document.createElement('div')
-  summary.className = 'modal-entity-summary entity-info-wrapper'
-  const summaryInfo = document.createElement('div')
-  summaryInfo.className = 'modal-entity-summary-info entity-info-modal selection-info active'
+  const { summary, info: summaryInfo } = createEntitySummary()
+  summary.className += ' modal-entity-summary'
+  summaryInfo.className += ' modal-entity-summary-info'
   let source: HTMLElement | null = null
   let avatar: HTMLElement | null = null
   let avatarOwner: HTMLElement | null = null
@@ -32,13 +30,7 @@ export function attachInspectionHeader(panel: HTMLElement, content: HTMLElement)
       header.querySelector('.unit-level-tag')?.remove()
       header.querySelector('.modal-title')?.appendChild(level)
     }
-    const parts = info ? [...info.querySelectorAll<HTMLElement>(SUMMARY_PARTS)] : []
-    if (parts.length) {
-      summaryInfo.replaceChildren(...parts)
-      const identity = summaryInfo.querySelector<HTMLElement>('.entity-info-header')
-      const stats = summaryInfo.querySelector<HTMLElement>(':scope > .infos')
-      if (identity && stats) identity.appendChild(stats)
-    }
+    if (info) moveEntitySummary(info, summaryInfo)
     const visible = Boolean(info && (avatar || summaryInfo.childElementCount))
     summary.hidden = !visible
     header.classList.toggle('modal-header--with-summary', visible)

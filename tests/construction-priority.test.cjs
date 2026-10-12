@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -21,7 +22,7 @@ function fixture() {
     j: 0,
     owner,
     collectiveTask: 'wood',
-    inventory: { resources: { wheat: 12, wood: 18 } },
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { wheat: 12, wood: 18 } },
   }
   return { unit, owner, site, depot }
 }

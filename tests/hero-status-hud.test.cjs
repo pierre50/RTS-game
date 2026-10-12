@@ -186,3 +186,52 @@ test('hero status hud displays one hit point while the hero has positive fractio
     dom.restore()
   }
 })
+
+test('city indicator follows the hero location, discoveries and town removal', () => {
+  const dom = installDom()
+  try {
+    const HeroStatusHud = loadHeroStatusHud()
+    const home = { label: 'home', type: 'TownCenter', i: 0, j: 0, settlementName: 'Athènes' }
+    const away = { label: 'away', type: 'TownCenter', i: 100, j: 100, settlementName: 'Sparte' }
+    let explored = false
+    const player = { label: 'player', buildings: [home], views: { isViewed: () => explored } }
+    const ai = { label: 'ai', buildings: [away], colorHex: '#ff0000' }
+    const menu = { context: { app: {}, player, players: [player, ai] }, gameHud: makeElement('div') }
+    const hud = new HeroStatusHud(menu)
+    const hero = makeHero({ i: 0, j: 0, townCenterId: 'player:home' })
+    hud.setHero(hero)
+    assert.equal(hud.settlement.textContent, 'Athènes')
+    assert.equal(hud.settlement.hidden, false)
+    const writes = hud.settlement.textWrites
+    dom.setNow(16)
+    hud.update(hero)
+    assert.equal(hud.settlement.textWrites, writes)
+    hero.i = 100
+    hero.j = 100
+    dom.setNow(300)
+    hud.update(hero)
+    assert.equal(hud.settlement.hidden, true)
+    explored = true
+    dom.setNow(600)
+    hud.update(hero)
+    assert.equal(hud.settlement.textContent, 'Sparte')
+    assert.equal(hud.settlement.style.properties.color, '#ff0000')
+    away.isDestroyed = true
+    dom.setNow(900)
+    hud.update(hero)
+    assert.equal(hud.settlement.hidden, true)
+    hero.i = 0
+    hero.j = 0
+    dom.setNow(1200)
+    hud.update(hero)
+    assert.equal(hud.settlement.textContent, 'Athènes')
+    hero.i = 50
+    dom.setNow(1500)
+    hud.update(hero)
+    assert.equal(hud.settlement.hidden, true)
+    hud.setHero(null)
+    assert.equal(hud.settlement.hidden, true)
+  } finally {
+    dom.restore()
+  }
+})

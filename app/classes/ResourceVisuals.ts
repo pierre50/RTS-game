@@ -1,3 +1,4 @@
+import { resourceVisualTexture } from '../lib/graphics/resourceMirroring'
 import { AnimatedSprite, Assets, Rectangle, Sprite, Texture, type Ticker } from 'pixi.js'
 import {
   bindAnimatedSpriteToTicker,
@@ -61,7 +62,8 @@ function getLifecycleSheetId(asset: string | { sheet: string } | undefined): str
 function getShadowTexture(
   textureName: string,
   spriteTexture: Texture,
-  spriteAnchor: { x: number; y: number }
+  spriteAnchor: { x: number; y: number },
+  resource: ResourceVisualOwner
 ): Texture | null {
   const sheet = getTextureSheet(textureName)
   const shadowAtlasId = `${sheet}/shadow`
@@ -71,7 +73,7 @@ function getShadowTexture(
   if (!shadowAsset) return null
 
   if (shadowAsset.textures) {
-    return getTextureByFrame(shadowAtlasId, parseTextureRef(textureName).frame, Assets)
+    return resourceVisualTexture(resource, getTextureByFrame(shadowAtlasId, parseTextureRef(textureName).frame, Assets))
   }
 
   const { frame, rotate } = spriteTexture
@@ -84,7 +86,7 @@ function getShadowTexture(
 
   if (frame.x + shadowFrameWidth > source.width || frame.y + shadowFrameHeight > source.height) return null
 
-  const cacheKey = `${sheet}/shadow:${frame.x}:${frame.y}:${shadowFrameWidth}:${shadowFrameHeight}`
+  const cacheKey = `${sheet}/shadow:${frame.x}:${frame.y}:${shadowFrameWidth}:${shadowFrameHeight}:${rotate}`
   let shadowTexture = resourceShadowTextureFrameCache.get(cacheKey)
   if (!shadowTexture) {
     const anchorX = (spriteAnchor.x * frame.width + atlasPadX) / shadowFrameWidth
@@ -148,10 +150,15 @@ export function canApplyWindMotion(displayObject: ResourceShadow | null | undefi
   return Boolean(displayObject && !displayObject.destroyed && displayObject.skew)
 }
 
+function isGroundPickup(resource: ResourceVisualOwner): boolean {
+  return resource.type === RESOURCE_TYPES.groundWood || resource.type === RESOURCE_TYPES.groundStone
+}
+
 function shouldShowResourceShadow(resource: ResourceVisualOwner): boolean {
   // Shadows live outside the resource container, so sprite visibility must be checked explicitly.
   // Dead resources can still have a visible sprite (for example, a fallen tree).
   return (
+    !isGroundPickup(resource) &&
     getShadowsEnabled() &&
     resource.visible &&
     !resource.isDestroyed &&
@@ -215,9 +222,13 @@ export function updateWindMotion(resource: ResourceVisualOwner, deltaMS: number)
 }
 
 export function createShadow(resource: ResourceVisualOwner): ResourceShadow | null {
+  if (isGroundPickup(resource)) {
+    resource.usesTextureShadow = false
+    return null
+  }
   const shadowTexture =
     resource.sprite && resource.textureName
-      ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor)
+      ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor, resource)
       : null
   resource.usesTextureShadow = Boolean(shadowTexture)
   const shadow = shadowTexture
@@ -245,7 +256,7 @@ export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shad
   shadow.visible = shouldShowResourceShadow(resource)
   if (resource.usesTextureShadow && shadow instanceof Sprite) {
     const shadowTexture = resource.textureName
-      ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor)
+      ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor, resource)
       : null
     if (shadowTexture) {
       shadow.texture = shadowTexture

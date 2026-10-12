@@ -26,15 +26,18 @@ export function createInventoryContents(options: {
   title: string
   emptyText: string
   action?: HTMLElement
+  additionalItems?: HTMLElement[]
   renderResource: (resource: keyof ResourceAmount, amount: number) => HTMLElement
   renderEquipment: (equipment: string, count: number) => HTMLElement
 }): HTMLElement {
   return createInventorySection({
     title: options.title,
+    presentation: 'items',
     emptyText: options.emptyText,
     action: options.action,
     showItemCount: true,
     renderItems: grid => {
+      for (const item of options.additionalItems ?? []) grid.appendChild(item)
       for (const resource of RESOURCE_STORAGE_NAMES) {
         const amount = Math.max(0, Math.floor(options.inventory.resources?.[resource] ?? 0))
         appendStacks(grid, amount, count => options.renderResource(resource, count))

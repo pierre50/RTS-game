@@ -1,7 +1,9 @@
 import { definedProperties } from '../definedProperties'
 import { CELL_HEIGHT, CELL_WIDTH, SHEET_TYPES, SOUND_CUES } from '../constants'
 import { HeroCatchingPoleThrow } from '../../classes/HeroCatchingPoleThrow'
-import { consumeHeroEquippedItem } from '../equipment/equipmentLoot'
+import { hasRangedAmmunition } from '../units/combat/rangedAmmunition'
+import { consumeRangedAmmunition } from '../units/combat/rangedShot'
+import { isSlingshot } from '../equipment/rangedWeapon'
 import { getUnitCombatRange } from '../equipment/equipmentStats'
 import { BOW_SHOOT_RELEASE_FRAME, CATCHING_POLE_SHOOT_RELEASE_FRAME } from '../graphics'
 import { t } from '../lang'
@@ -57,8 +59,10 @@ function getHeroShootHoldFrame(tool: 'bow' | 'catchingPole' | null | undefined):
   return tool === 'catchingPole' ? HERO_CATCHING_POLE_CHARGE_HOLD_FRAME : BOW_SHOOT_RELEASE_FRAME
 }
 
-export function getHeroPowerChargeHoldFrame(tool: 'bow' | 'catchingPole' | 'sword' | null | undefined): number {
-  return tool === 'sword' ? HERO_SWORD_CHARGE_HOLD_FRAME : getHeroShootHoldFrame(tool)
+export function getHeroPowerChargeHoldFrame(
+  tool: 'bow' | 'catchingPole' | 'sword' | 'tool' | null | undefined
+): number {
+  return tool === 'sword' || tool === 'tool' ? HERO_SWORD_CHARGE_HOLD_FRAME : getHeroShootHoldFrame(tool)
 }
 
 export function hideReleasedBowArrowLayer(hero: UnitEntity, sprite: UnitEntity['sprite']): void {
@@ -68,17 +72,22 @@ export function hideReleasedBowArrowLayer(hero: UnitEntity, sprite: UnitEntity['
   hero.syncAppearanceLayers?.(SHEET_TYPES.action)
 }
 
-export function hasHeroEquippedArrow(hero: UnitEntity): boolean {
-  return Boolean(hero.inventory?.equipped?.arrow)
+export function hasHeroRangedAmmunition(hero: UnitEntity): boolean {
+  return hasRangedAmmunition(hero)
 }
 
-export function warnHeroNoArrowEquipped(hero: UnitEntity): void {
-  if (hero.owner?.isPlayed) hero.context?.menu?.showMessage(t('heroNoArrowsEquipped'), 'warning')
+export function warnHeroNoRangedAmmunition(hero: UnitEntity): void {
+  if (hero.owner?.isPlayed)
+    hero.context?.menu?.showMessage(
+      t(isSlingshot(hero.inventory?.activeWeapons?.ranged) ? 'heroNoStoneAmmo' : 'heroNoArrowsEquipped'),
+      'warning'
+    )
 }
 
-export function consumeHeroArrow(hero: UnitEntity): void {
-  consumeHeroEquippedItem(hero, 'arrow')
+export function consumeHeroRangedAmmunition(hero: UnitEntity): string | null {
+  const projectileType = consumeRangedAmmunition(hero)
   hero.context?.menu?.refreshInventory?.()
+  return projectileType
 }
 
 function getHeroArrowVisualY(hero: UnitEntity): number {

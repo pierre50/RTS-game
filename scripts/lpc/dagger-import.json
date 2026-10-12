@@ -1,0 +1,27 @@
+{
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "commit": "58ce1aa479e4df32845a73a5d0afc221c3a893c2",
+  "credits": "sheet_definitions/weapon_sword_dagger.json",
+  "files": [
+    {
+      "path": "spritesheets/weapon/sword/dagger/walk/dagger.png",
+      "sha256": "03589477c854ee84af63916d4ae0bd81237c67bd0c0304c53446077a3409719d"
+    },
+    {
+      "path": "spritesheets/weapon/sword/dagger/slash/dagger.png",
+      "sha256": "238792746ed9d90148ac9a85c88d224f1ea81ea2376fcb85228b26fdf1159cd1"
+    },
+    {
+      "path": "spritesheets/weapon/sword/dagger/hurt/dagger.png",
+      "sha256": "c4ed2a7a22efbe74bca6554d1daa583008ed51cd7db40a8da287f47ddffa90ba"
+    },
+    {
+      "path": "spritesheets/weapon/sword/dagger/behind/walk/dagger.png",
+      "sha256": "b8b78ba194427d1506a8e8583891ae5b0695fe8829627fad66cced08506e679b"
+    },
+    {
+      "path": "spritesheets/weapon/sword/dagger/behind/slash/dagger.png",
+      "sha256": "328b5818b9d379e77b6ec51edbf0de49dc987e41db252841c16a7dfcc978fbc0"
+    }
+  ]
+}

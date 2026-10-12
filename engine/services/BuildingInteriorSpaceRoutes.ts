@@ -1,4 +1,4 @@
-import { canCampPursue, campSpaceAllowed } from '../../app/lib/units/campBehavior'
+import { canCampPursue, campSpaceAllowed } from '../../app/lib/units/camps/campBehavior'
 import { hasInteriorCombatCapacity } from '../../app/lib/buildings/interiorCombatCapacity'
 import { ACTION_TYPES } from '../../app/constants'
 import { canUnitEnterBuildingInterior } from '../../app/lib/buildings/interiorAccess'

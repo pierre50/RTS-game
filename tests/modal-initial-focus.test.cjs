@@ -15,11 +15,13 @@ test('reopening a tabbed modal focuses its active tab even when the header is mo
     isConnected: true,
     appendChild() {},
     setAttribute() {},
+    hasAttribute: () => false,
     addEventListener() {},
     focus() {
       focused = this
     },
     contains: () => true,
+    closest: () => null,
     querySelector: () => null,
   })
   global.document = { createElement: makeElement, body: makeElement(), addEventListener() {} }
@@ -38,7 +40,19 @@ test('reopening a tabbed modal focuses its active tab even when the header is mo
   modal._getFocusableElements = () => [info, minimap]
   initialFrame()
   assert.equal(focused, minimap, 'Minimap is active; Info must not receive the initial focus')
+  info.hasAttribute = name => name === 'data-window-default'
+  initialFrame()
+  assert.equal(focused, info, 'an explicit inventory tile takes priority over the active tab')
+  info.hasAttribute = () => false
   active = null
   initialFrame()
   assert.equal(focused, info, 'non-tabbed windows keep their existing selected item')
+
+  const close = makeElement()
+  close.closest = selector => (selector === '.game-window-footer' ? {} : null)
+  modal._panel.querySelector = () => null
+  modal._panel.contains = () => false
+  modal._getFocusableElements = () => [close]
+  initialFrame()
+  assert.equal(focused, modal._panel, 'an information-only window focuses the panel, not its footer shortcut')
 })

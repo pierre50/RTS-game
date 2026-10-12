@@ -1,4 +1,4 @@
-import { equipmentBaseKey } from './equipmentCondition'
+import { equipmentBaseKey, equipmentWithoutCondition } from './equipmentCondition'
 import type { UnitEntity } from '../../types/entities'
 
 const DECOR_PREFIXES = [
@@ -17,8 +17,8 @@ export function isHelmetDecoration(item: string): boolean {
 }
 
 export function equipmentVisualParts(item: string): string[] {
-  const [base, decorations] = item.replace(/~condition:\d+$/, '').split('~decor:')
-  return [base!, ...(decorations?.split('+').filter(Boolean) ?? [])]
+  const [base, decorations] = equipmentWithoutCondition(item).split('~decor:')
+  return [base!, ...(decorations?.split('+').filter(Boolean) ?? [])].filter(part => !part.startsWith('cape_'))
 }
 
 export function decorateHelmet(helmet: string, decorations: readonly string[]): string {

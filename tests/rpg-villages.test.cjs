@@ -206,7 +206,7 @@ test('exhausted RPG work stops instead of searching for replacement resources', 
   const { affectNewDest } = loadTsModule('app/classes/unit/movement/UnitAffectNewDest.ts', {
     mocks: {
       './UnitMovementHelpers': {},
-      '../../../lib/units/targetPursuit': { updateTargetPursuit: () => false },
+      '../../../lib/units/combat/targetPursuit': { updateTargetPursuit: () => false },
       '../../../lib': {
         findInstancesInSight: forbidden,
         getClosestInstanceWithPath: forbidden,

@@ -138,6 +138,7 @@ export function applyCombatHit(
     target.hitPoints = resolvedDamage.hitPoints
     critical = resolvedDamage.critical
   }
+  if (parried) wearEquippedWeapon(target as UnitEntity, 'melee')
   const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
   if (isMelee && attacker.family === FAMILY_TYPES.unit) wearEquippedWeapon(attacker as UnitEntity, 'melee')
   if (damageDealt > 0 && target.family === FAMILY_TYPES.unit) wearEquippedArmor(target as UnitEntity)

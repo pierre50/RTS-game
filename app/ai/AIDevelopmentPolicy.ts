@@ -1,24 +1,29 @@
-import { BUILDING_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../constants'
-
-function expectedVillageArrivals(population: number): number {
-  return population > 0
-    ? Math.min(
-        VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay,
-        Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate))
-      )
-    : 0
-}
+import { calculateVillagerArrivals } from '../lib/buildings/townCenter'
+import { getBuildingLevel } from '../lib/buildings/buildingLevel'
+import { BUILDING_TYPES } from '../constants'
 
 export function villageBuildingNeeds(input: {
   storagePitNeeded: boolean
   population: number
   populationMax: number
-  residentHouseholds?: number
   phase: string
   desiredBarracks: number
-  buildings: readonly { type: string; isBuilt?: boolean; isDead?: boolean; isDestroyed?: boolean }[]
+  buildings: readonly {
+    type: string
+    buildingLevel?: number
+    assetLevel?: unknown
+    isBuilt?: boolean
+    isDead?: boolean
+    isDestroyed?: boolean
+  }[]
 }): Record<string, boolean> {
   const buildings = input.buildings.filter(b => !b.isDead && !b.isDestroyed)
+  const level = Math.max(0, ...buildings.filter(b => b.type === 'TownCenter' && b.isBuilt).map(getBuildingLevel))
+  const expected = calculateVillagerArrivals({
+    population: input.population,
+    populationMax: Infinity,
+    buildingLevel: level,
+  })
   const count = (type: string) => buildings.filter(b => b.type === type).length
   return {
     [BUILDING_TYPES.storagePit]: input.storagePitNeeded === true,
@@ -27,8 +32,7 @@ export function villageBuildingNeeds(input: {
     // Storage pits are optional logistics projects, not a prerequisite for village development.
     [BUILDING_TYPES.market]: count(BUILDING_TYPES.granary) > 0 && count(BUILDING_TYPES.market) === 0,
     [BUILDING_TYPES.house]:
-      count(BUILDING_TYPES.house) <
-        (input.residentHouseholds ?? Math.ceil(input.population / 2)) + expectedVillageArrivals(input.population) + 1 &&
+      input.populationMax < input.population + expected + 1 &&
       !buildings.some(b => b.type === BUILDING_TYPES.house && !b.isBuilt),
     [BUILDING_TYPES.archeryRange]: count(BUILDING_TYPES.barracks) > 0,
     [BUILDING_TYPES.stable]: count(BUILDING_TYPES.barracks) > 0,
@@ -38,7 +42,7 @@ export function villageBuildingNeeds(input: {
     [BUILDING_TYPES.forge]:
       count(BUILDING_TYPES.forge) === 0 &&
       !input.storagePitNeeded &&
-      input.population + expectedVillageArrivals(input.population) + 2 <= input.populationMax &&
+      input.population + expected + 2 <= input.populationMax &&
       !buildings.some(building => !building.isBuilt) &&
       [BUILDING_TYPES.granary, BUILDING_TYPES.market, BUILDING_TYPES.barracks].every(type => count(type) > 0),
   }

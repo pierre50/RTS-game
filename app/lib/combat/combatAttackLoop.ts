@@ -101,6 +101,7 @@ type AttackFrameActor = Partial<
 >
 
 type AttackFrameCallbacks = {
+  validateAttack?: () => boolean
   trackTargetOnRelease?: boolean
   releaseFrame: number
   prepareAttackSheet: () => void
@@ -262,6 +263,8 @@ function resolveReadyAttackTarget(
   const target = getRuntimeEntity(attacker.dest)
   if (actor.isDead || actor.isDestroyed || actor.actionLocked) return { status: 'not-ready' }
 
+  if (callbacks.validateAttack?.() === false) return { status: 'not-ready' }
+
   if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
     debugAttackLoop(attacker, 'target-unavailable', {
       target: getTargetLabel(target),
@@ -315,6 +318,7 @@ export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: Atta
 
   sprite.loop = true
   if ('onComplete' in sprite) sprite.onComplete = undefined
+  clearAttackCallbacks()
   callbacks.prepareAttackSheet()
   callbacks.onAttackPrepared?.(readiness.target)
 

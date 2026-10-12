@@ -76,7 +76,9 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     ...toTextureBundle('assets/graphics', [
       'resources/berrybush',
       'resources/wildgrass',
+      'resources/ground',
       'projectiles',
+      'projectiles/pebble',
       'units/rider-legs',
       'effects/fire',
       'effects/smoke',

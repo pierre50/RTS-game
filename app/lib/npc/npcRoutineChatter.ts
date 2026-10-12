@@ -1,3 +1,4 @@
+import { npcActivityChatter } from './npcActivityChatter'
 import { ambientTrafficState } from '../../services/travel/ambient/AmbientTrafficState'
 import { UNIT_TYPES } from '../../constants'
 import type { UnitEntity } from '../../types/entities'
@@ -54,6 +55,8 @@ export function pickNpcRoutineChatterLine(
   }
   const lines = NPC_ROUTINE_LINES[getLang() === 'en' ? 'en' : 'fr']
   const phase = hasDailyRestSchedule(unit) ? getDailyRoutinePhase(unit) : 'idle'
+  const activity = npcActivityChatter(unit, getLang() === 'en', phase === 'work' || phase === 'idle')
+  if (activity) return activity
   const address = audience === 'ownChief' ? (getLang() === 'en' ? ', chief' : ', chef') : ''
   if (unit.type === UNIT_TYPES.villager && !isChiefUnit(unit) && phase === 'meal') {
     return pickRandomItem(lines.lunch).replace('{address}', address)

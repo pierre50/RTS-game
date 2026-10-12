@@ -3,6 +3,7 @@ import type { ContactActionProfile, ContactBodyProfile, ContactProfileOverride }
 // Ground-plane sprite pixels before spriteScale. Tune here with debug.contact enabled.
 export const CONTACT_ACTION_PROFILES = {
   sword: { reach: 38, handOffset: 10, width: 6, halfAngle: 45 },
+  dagger: { reach: 26, handOffset: 10, width: 5, halfAngle: 40 },
   axe: { reach: 32, handOffset: 10, width: 10, halfAngle: 45 },
   spear: { reach: 52, handOffset: 10, width: 5, halfAngle: 16 },
   animal: { reach: 26, handOffset: 10, width: 12, halfAngle: 40 },
@@ -19,6 +20,7 @@ export const CONTACT_BODY_PROFILES = {
 type ActionProfileName = keyof typeof CONTACT_ACTION_PROFILES
 const TOOL_FAMILIES: Record<string, ActionProfileName> = {
   sword: 'sword',
+  dagger: 'dagger',
   longsword: 'sword',
   cane: 'sword',
   axe: 'axe',
@@ -27,7 +29,6 @@ const TOOL_FAMILIES: Record<string, ActionProfileName> = {
   spear: 'spear',
   pike: 'spear',
   lance: 'spear',
-  halberd: 'spear',
   pickaxe: 'pickaxe',
   scythe: 'scythe',
 }
@@ -41,7 +42,11 @@ export const CONTACT_TOOL_PROFILES: Readonly<Record<string, ActionProfileName>> 
 // Optional exact-key exceptions. Per-entity gameplay config can also set `contact`;
 // equipment config can set `contact` to override that item's action profile.
 export const CONTACT_ENTITY_OVERRIDES: Readonly<Record<string, ContactProfileOverride>> = {}
-export const CONTACT_TOOL_OVERRIDES: Readonly<Record<string, Partial<ContactActionProfile>>> = {}
+export const CONTACT_TOOL_OVERRIDES: Readonly<Record<string, Partial<ContactActionProfile>>> = {
+  spear_ceramic: { reach: 52, halfAngle: 45 },
+  spear_bronze: { reach: 52, halfAngle: 45 },
+  spear_iron: { reach: 52, halfAngle: 45 },
+}
 export const CONTACT_APPROACH = { activationDistance: 80, maxStep: 2, maxSteps: 120 } as const
 
 export const GATHER_CONTACT_STALL = { maxTicks: 30, probeEvery: 5, minimumProgress: 1 } as const

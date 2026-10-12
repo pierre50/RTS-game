@@ -1,4 +1,3 @@
-import { countResidentHouseholds } from '../../../lib/housing/households'
 import { isStaticSettlement } from '../../../config/settlementProfiles'
 import { createConstructionMaterials } from '../../../lib/economy/constructionMaterials'
 import { generatedBuildingMirrored } from '../../../lib/buildings/generatedBuildingOrientation'
@@ -97,7 +96,6 @@ export function planOfflineBuildings(
       )
       const needs = villageBuildingNeeds({
         population: player.population ?? 0,
-        residentHouseholds: countResidentHouseholds(player),
         populationMax: player.populationMax ?? 0,
 
         phase: player.aiState.phase,
@@ -157,7 +155,7 @@ export function planOfflineBuildings(
           isBuilt: false,
           constructionMaterials: createConstructionMaterials(config.cost),
           constructionProgress: 0,
-          constructionWorkRequired: Number(config.constructionTime),
+          constructionWorkRequired: Number(config.constructionWorkRequired ?? config.constructionTime),
           constructionTime: Number(config.constructionTime),
           hitPoints: Number(config.totalHitPoints),
           totalHitPoints: Number(config.totalHitPoints),

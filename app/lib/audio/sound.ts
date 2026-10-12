@@ -91,7 +91,8 @@ export function playSoundCue(cue: MaybeSoundCue, options: PlaySoundCueOptions = 
   if (gameplaySoundSuppressed) return null
   const soundId = resolveSoundCue(cue)
   if (!soundId) return null
-  sound.play(soundId as string, options)
+  const playback = sound.play(soundId as string, options)
+  if (playback instanceof Promise) playback.catch(error => console.warn('Sound playback failed', error))
   return soundId
 }
 

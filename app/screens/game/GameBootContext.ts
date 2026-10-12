@@ -20,7 +20,7 @@ export type RuntimeMapInstance = BlueprintRuntimeMap & {
   destroy(options?: unknown): void
   generateFromBlueprint(
     blueprint: LoadedMapBlueprint,
-    options?: { onProgress?: (messageKey: string, progress: number) => void }
+    options?: { onProgress?: (messageKey: string, progress: number) => void | Promise<void> }
   ): Promise<void>
   generateFromJSON(state: ReturnType<typeof savedRuntimeState>): void
   generatePlayers(players: Array<Partial<PlayerLike> & PlayerSetupConfig> | null): PlayerLike[]
@@ -31,9 +31,11 @@ export type RuntimeMapInstance = BlueprintRuntimeMap & {
       onProgress: (stage: string, progress: number) => Promise<void>
     ): Promise<void>
   }
-  prepareTerrainForSavedState(options?: { onProgress?: (messageKey: string, progress: number) => void }): Promise<void>
+  prepareTerrainForSavedState(options?: {
+    onProgress?: (messageKey: string, progress: number) => void | Promise<void>
+  }): Promise<void>
   stylishMap(options?: {
-    onProgress?: (messageKey: string, progress: number) => void
+    onProgress?: (messageKey: string, progress: number) => void | Promise<void>
     deferPlayerPlacement?: boolean
   }): Promise<void>
 }

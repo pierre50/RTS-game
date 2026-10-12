@@ -64,6 +64,8 @@ export const NATURAL_REGROWTH_CONFIG = {
 }
 
 export const NATURAL_RESOURCE_REGROWTH_BY_TYPE = {
+  [RESOURCE_TYPES.groundWood]: { respawnDelayDays: 2, respawnQuantityRatio: 1 },
+  [RESOURCE_TYPES.groundStone]: { respawnDelayDays: 4, respawnQuantityRatio: 1 },
   [RESOURCE_TYPES.berrybush]: {
     respawnDelayDays: 3,
     respawnQuantityRatio: 0.5,

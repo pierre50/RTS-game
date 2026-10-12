@@ -176,19 +176,19 @@ test('house beds are inside the room and its reversed shelf survives saving in b
   }
 })
 
-test('saved automatic house beds return to the back wall without moving a manual bed', () => {
+test('saved house beds retain valid positions, including manually placed beds', () => {
   for (const mirrored of [false, true]) {
     const fresh = furnishInterior('House', undefined, mirrored)
     const saved = JSON.parse(JSON.stringify(fresh.owner.buildings))
     const second = saved.find(item => item.label.endsWith(':bedroll-2'))
-    Object.assign(second, mirrored ? { i: 8, j: 12 } : { i: 12, j: 8 })
+    Object.assign(second, mirrored ? { i: 8, j: 11 } : { i: 11, j: 8 })
     second.hitPoints = 17
     saved.push({ type: 'CampBedroll', label: 'manual-bed', i: 11, j: 11, placementMirrored: !mirrored })
     const restored = furnishInterior('House', saved, mirrored)
     const beds = restored.owner.buildings.filter(item => item.type === 'CampBedroll')
     assert.equal(beds.length, 3)
     const moved = beds.find(item => item.label === second.label)
-    assert.deepEqual([moved.i, moved.j], mirrored ? [8, 6] : [6, 8])
+    assert.deepEqual([moved.i, moved.j], mirrored ? [8, 11] : [11, 8])
     assert.equal(moved.hitPoints, 17)
     const manual = beds.find(item => item.label === 'manual-bed')
     assert.deepEqual([manual.i, manual.j, manual.placementMirrored], [11, 11, !mirrored])
@@ -220,7 +220,7 @@ test('real placement rules keep generated house beds separated along the back wa
     assert.equal(beds[1][axis], center[axis] - 3)
     const alongWall = mirrored ? 'i' : 'j'
     assert.equal(beds[0][alongWall], center[alongWall] + 2)
-    assert.equal(beds[1][alongWall], center[alongWall] - 1)
+    assert.equal(beds[1][alongWall], center[alongWall])
     const footprints = beds.map(bed => getBuildingFootprintCells(bed.i, bed.j, space.grid, 2, undefined, bed.type))
     for (let index = 0; index < beds.length; index++) {
       assert.equal(footprints[index].length, 4)
@@ -492,7 +492,7 @@ test('catalogue covers every preset furnishing and all floor decoration frames',
   const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/furniture/interiorDecorations.ts')
   const { getInteriorFloorDecorations } = loadTsModule('app/lib/buildings/furniture/interiorFloorDecorations.ts')
   for (const type of Object.keys(expectedFurniture)) {
-    for (const item of getBuildingInteriorDecorationLayout({ type }))
+    for (const item of getBuildingInteriorDecorationLayout({ type, buildingLevel: 1 }))
       assert.ok(INTERIOR_FURNITURE_TYPES.includes(item.type))
     for (const item of getInteriorFloorDecorations(type)) {
       assert.ok(
@@ -546,4 +546,25 @@ test('prepared house beds materialize with their assigned IDs after changing to 
     )
     assert.equal(space.building.plannedBedLabels, undefined)
   }
+})
+
+test('saved preset furniture retains its individually authored orientation', () => {
+  for (const mirrored of [false, true]) {
+    const initial = furnishInterior('House', undefined, mirrored)
+    const saved = initial.owner.buildings.map(item => ({ ...item, placementMirrored: !mirrored }))
+    const restored = furnishInterior('House', saved, mirrored)
+    assert.ok(restored.owner.buildings.length > 0)
+    assert.ok(restored.owner.buildings.every(item => item.placementMirrored === !mirrored))
+  }
+})
+
+test('saved furniture outside a reduced grid is relocated without losing its inventory', () => {
+  const saved = [
+    { type: 'Chest', label: 'saved-chest', i: 99, j: 99, inventory: { resources: { gold: 42 } }, isBuilt: true },
+  ]
+  const restored = furnishInterior('House', saved, false)
+  const chest = restored.owner.buildings.find(item => item.label === 'saved-chest')
+  assert.ok(chest)
+  assert.equal(chest.inventory.resources.gold, 42)
+  assert.equal(restored.space.grid[chest.i][chest.j].terrainHidden, false)
 })

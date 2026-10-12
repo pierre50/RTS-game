@@ -123,6 +123,7 @@ function buildMocks(calls, context) {
       hasVillagerAutonomyTarget: () => true,
       Modal: FakeModal,
     },
+    './quests/QuestResources': { renderQuestResourceText: (element, text) => { element.textContent = text } },
     '../lib/lang': { t: key => key },
     '../lib/audio/settings': { getVolume: () => 1 },
     '../lib/inventory/inventoryContainers': {

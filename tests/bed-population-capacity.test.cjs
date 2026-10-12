@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { getPopulationCapacityFromBuildings: capacity, refreshPopulationCapacity, getBuildingBedCount } =
+const { getPopulationCapacityFromBuildings: capacity, refreshPopulationCapacity } =
   loadTsModule('app/lib/buildings/buildingOccupancy.ts')
 const bed = (extra = {}) => ({ type: 'CampBedroll', isBuilt: true, ...extra })
 const house = (extra = {}) => ({ type: 'House', label: 'home', isBuilt: true, ...extra })
@@ -23,10 +23,8 @@ test('saved and loaded interiors have identical capacity without double counting
   assert.equal(capacity([home, liveBed], owner), 1)
   delete home.interiorBuildings
   assert.equal(capacity([home, liveBed], owner), 1)
-  assert.equal(getBuildingBedCount(home, { ...owner, buildings: [home, liveBed] }), 1)
   home.buildingUpgrade = { targetLevel: 1 }
   assert.equal(capacity([home, liveBed], owner), 0)
-  assert.equal(getBuildingBedCount(home, { ...owner, buildings: [home, liveBed] }), 1)
   delete home.buildingUpgrade
   assert.equal(capacity([home, liveBed], owner), 1)
   home.isDead = true

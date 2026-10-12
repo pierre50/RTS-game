@@ -8,7 +8,7 @@ function loadUnitInitialization() {
       'pixi.js': {},
       '../../lib': { getEntityMapSpace: () => null, cartesianToIsometric: () => [0, 0], getInstanceZIndex: () => 0 },
       '../../lib/chief': {},
-      '../../lib/equipment/equipmentStats': {},
+      '../../lib/equipment/equipmentStats': { getUnitEquipment: () => [], getUnitWorkEquipment: () => [] },
       '../../lib/horses/horseColors': {},
       '../../lib/lang': {},
       '../../lib/lpc': { applyBakedLpcUnitAssets() {} },
@@ -27,14 +27,16 @@ function loadUnitInitialization() {
 
 test('loading a hero preserves the entire saved inventory without sharing config or save objects', () => {
   const { applyUnitSpawnConfiguration } = loadUnitInitialization()
-  const defaults = { equipment: [], equipped: {}, activeWeapons: { melee: 'sword_ceramic' } }
+  const defaults = { equipment: [], equipped: {}, activeWeapons: { melee: 'axe_ceramic' } }
   const saved = JSON.parse(
     JSON.stringify({
+      toolsInitialized: true,
+      toolsStowed: true,
       resources: { gold: 17 },
       equipment: ['bow~condition:34', 'armor_leather~condition:0'],
       equipped: { body: 'armor_leather' },
       equippedCounts: { arrow: 12 },
-      activeWeapons: { melee: 'axe_ceramic', ranged: 'bow~condition:77', quiver: 'quiver' },
+      activeWeapons: { tool: 'axe_ceramic~condition:33', ranged: 'bow~condition:77', quiver: 'quiver' },
     })
   )
   const owner = { config: { units: { Hero: { inventory: defaults } } } }
@@ -51,16 +53,17 @@ test('loading a hero preserves the entire saved inventory without sharing config
   const restored = create(saved)
   assert.deepEqual(restored.inventory, {
     ...saved,
-    activeWeapons: { melee: 'axe_ceramic', ranged: 'bow~condition:77' },
+    activeWeapons: { tool: 'axe_ceramic~condition:33', ranged: 'bow~condition:77' },
   })
   restored.inventory.equipment.pop()
-  restored.inventory.activeWeapons.melee = 'changed'
+  restored.inventory.activeWeapons.tool = 'changed'
   assert.equal(saved.equipment.length, 2)
-  assert.equal(saved.activeWeapons.melee, 'axe_ceramic')
+  assert.equal(saved.activeWeapons.tool, 'axe_ceramic~condition:33')
   const fresh = create()
+  const freshBaseline = structuredClone(fresh.inventory)
   fresh.inventory.equipment.push('bow')
   assert.deepEqual(defaults.equipment, [])
-  assert.deepEqual(create().inventory, defaults)
+  assert.deepEqual(create().inventory, freshBaseline)
 })
 
 test('loading preserves saved chief promotions and explicit non-chief roles over type defaults', () => {

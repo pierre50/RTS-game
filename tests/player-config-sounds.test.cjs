@@ -49,7 +49,8 @@ function loadPlayerConfig() {
     '../constants/sounds': { SOUND_CUES: soundCues },
     '../lib/equipment/equipmentStats': { applyEquipmentStatsToUnitConfig: () => {} },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return { ...module.exports, soundCues }
 }
@@ -108,4 +109,13 @@ test('camp decoration buildings do not fade over the hero and use sprite shadows
   assert.equal(config.buildings.CampTotemSkull.useSpriteShadow, true)
   assert.equal(config.buildings.House.occlusionFade, undefined)
   assert.equal(config.buildings.House.useSpriteShadow, undefined)
+})
+
+test('town centers receive their defensive projectile and cadence in the playable configuration', () => {
+  const { createPlayerData } = loadPlayerConfig()
+  const config = createPlayerData({ buildings: { TownCenter: {} }, projectiles: {}, units: {} }, 'Hellas')
+  assert.equal(config.buildings.TownCenter.projectile, 'Arrow')
+  assert.equal(config.buildings.TownCenter.rateOfFire, 2.5)
+  assert.equal(config.buildings.TownCenter.range, 4)
+  assert.ok(config.projectiles.Arrow)
 })

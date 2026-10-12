@@ -1,7 +1,30 @@
-import { isHelmetDecoration, equipmentVisualParts } from './helmetVariants'
+import {
+  MARKET_GOLD_TARGETS,
+  MARKET_DAILY_GOLD_FRACTION,
+  MARKET_RESOURCE_BUY_MULTIPLIER,
+  MARKET_TOOL_COUNTS,
+  MARKET_EQUIPMENT_COUNTS,
+  MARKET_LEATHER_EQUIPMENT_COUNT,
+  MARKET_ARROW_COUNTS,
+  MARKET_RESOURCE_COUNTS,
+  MARKET_MATERIAL_MIN_LEVEL,
+  MARKET_EQUIPMENT_MIN_LEVEL,
+  MARKET_USED_VALUE_FLOOR,
+  METAL_TIER_GOLD_VALUES,
+  RESOURCE_GOLD_VALUES,
+  EQUIPMENT_BASE_GOLD_VALUES,
+  EQUIPMENT_RESALE_PERCENT,
+} from '../../config/market'
+import { getBuildingLevel } from '../buildings/buildingLevel'
+import { getUnitResourceCarryRemaining } from '../resources/resourceDelivery'
+import { isCurrentEquipment } from './equipmentMaterials'
+import { SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT } from '../lpc/civilizationHelmetDecorations'
+import { isEquipmentEnabledForCivilization } from '../lpc/equipmentData'
+import { isRemovedCape } from './armorVariants'
+import { isHelmetDecoration, equipmentVisualParts, decorateHelmet } from './helmetVariants'
 import { equipmentBaseKey, getEquipmentDurability } from './equipmentCondition'
 import { FORGE_FAMILIES } from './forgeUpgrades'
-import { UNIT_TYPES, type RESOURCE_STORAGE_NAMES } from '../../constants'
+import { UNIT_TYPES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import {
   DYNAMIC_EQUIPMENT_KEYS,
@@ -13,104 +36,66 @@ import { addHeroInventoryItem, getHeroInventory, removeHeroInventoryItem } from 
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 
 export type MarketEquipmentOffer = {
-  equipment: DynamicEquipmentKey
+  equipment: string
   goldValue: number
   count: number
 }
 
 export type MarketEquipmentOfferOptions = {
   civilization?: string
+  buildingLevel?: number
 }
 
-type ResourceStorageName = (typeof RESOURCE_STORAGE_NAMES)[number]
+export { MARKET_RESTOCK_INTERVAL_DAYS, MARKET_GOLD_TARGETS } from '../../config/market'
+export function getMarketLevel(market: { buildingLevel?: number; assetLevel?: unknown }): number {
+  return Math.min(MARKET_GOLD_TARGETS.length - 1, getBuildingLevel(market))
+}
+export function getMarketGoldTarget(market: MarketWallet): number {
+  return MARKET_GOLD_TARGETS[getMarketLevel(market)]!
+}
 
-export const MARKET_RESTOCK_INTERVAL_DAYS = 3
-const MARKET_INITIAL_GOLD = 1000
-const MARKET_DAILY_GOLD = 200
+export function getMarketDailyGold(market: MarketWallet): number {
+  return Math.floor(getMarketGoldTarget(market) * MARKET_DAILY_GOLD_FRACTION)
+}
 
-type MarketWallet = Pick<BuildingEntity, 'marketGold'>
+export type MarketWallet = Pick<BuildingEntity, 'marketGold'> &
+  Partial<Pick<BuildingEntity, 'owner' | 'marketStock' | 'marketResourceStock' | 'buildingLevel' | 'assetLevel'>>
 
 export function getMarketGold(market: MarketWallet): number {
   const gold = market.marketGold
-  market.marketGold = gold == null || !Number.isFinite(gold) ? MARKET_INITIAL_GOLD : Math.max(0, Math.floor(gold))
+  market.marketGold =
+    gold == null || !Number.isFinite(gold) ? getMarketGoldTarget(market) : Math.max(0, Math.floor(gold))
   return market.marketGold
 }
 
 export function replenishMarketGold(market: MarketWallet): void {
   const gold = getMarketGold(market)
-  if (gold < MARKET_INITIAL_GOLD) market.marketGold = Math.min(MARKET_INITIAL_GOLD, gold + MARKET_DAILY_GOLD)
+  const target = getMarketGoldTarget(market)
+  if (gold < target) market.marketGold = Math.min(target, gold + getMarketDailyGold(market))
 }
-
-const METAL_TIER_GOLD_VALUES: Record<string, number> = {
-  ceramic: 45,
-  leather: 70,
-  copper: 95,
-  bronze: 160,
-  iron: 260,
-}
-
-const RESOURCE_GOLD_VALUES: Record<ResourceStorageName, number> = {
-  wood: 1,
-  berry: 1,
-  meat: 2,
-  wheat: 1,
-  herb: 3,
-  toxicHerb: 5,
-  fiber: 2,
-  feather: 4,
-  leather: 6,
-  sinew: 8,
-  stone: 2,
-  gold: 1,
-  copper: 3,
-  tin: 4,
-  copperIngot: 11,
-  bronzeIngot: 12,
-  ironIngot: 17,
-  iron: 5,
-}
-
-const EQUIPMENT_BASE_GOLD_VALUES: Record<string, number> = {
-  arrow_ceramic: 4,
-  arrow_copper: 6,
-  arrow_bronze: 9,
-  arrow_iron: 12,
-  bow: 180,
-  bow_great: 280,
-  bow_recurve: 420,
-  sword: 140,
-  longsword: 520,
-  halberd: 620,
-  armor_leather: 180,
-  armor_mail: 340,
-  armor_legion: 520,
-  helmet: 140,
-  shoulder_legion: 160,
-  bracers: 120,
-  leg_armor: 140,
-  round_shield: 180,
-  cape_solid: 220,
-  crest: 160,
-  centurion_crest: 320,
-  centurion_plumage: 340,
-  legion_plumage: 260,
-  plumage: 160,
-  helmet_wings: 260,
-  upward_horns_white: 220,
-  upward_horns_ceramic: 260,
-  sack_cloth_hood_leather: 180,
-  cane: 120,
-  longstick: 80,
-  catchingPole: 80,
-}
-
-const EQUIPMENT_RESALE_PERCENT = 35
 
 const MARKET_BLOCKED_EQUIPMENT = new Set(['quiver', 'longstick'])
-const MARKET_BLOCKED_PREFIXES = ['axe_', 'hammer_', 'scythe_']
+const MARKET_BLOCKED_PREFIXES: string[] = []
 
-function getMarketEquipmentOfferCount(equipment: string): number {
-  return equipment.startsWith('arrow_') ? 20 : 1
+function getMarketEquipmentOfferCount(equipment: string, level: number): number {
+  if (equipment.startsWith('arrow_')) return MARKET_ARROW_COUNTS[level]!
+  if (equipmentVisualParts(equipment).some(part => equipmentBaseKey(part).split('_').includes('leather')))
+    return MARKET_LEATHER_EQUIPMENT_COUNT
+  return /^(axe|pickaxe|hammer|scythe)_/.test(equipment) ? MARKET_TOOL_COUNTS[level]! : MARKET_EQUIPMENT_COUNTS[level]!
+}
+
+export function marketEquipmentUnlocked(equipment: string, level: number): boolean {
+  return equipmentVisualParts(equipment).every(part => {
+    const key = equipmentBaseKey(part)
+    const materialLevel = Math.max(
+      0,
+      ...Object.entries(MARKET_MATERIAL_MIN_LEVEL)
+        .filter(([material]) => key.split('_').includes(material))
+        .map(([, minimum]) => minimum)
+    )
+    const required = Math.max(materialLevel, MARKET_EQUIPMENT_MIN_LEVEL[key] ?? 0)
+    return level >= required
+  })
 }
 
 function getStockCount(stock: readonly string[], equipment: string): number {
@@ -146,7 +131,9 @@ function equipmentBaseValue(equipment: DynamicEquipmentKey): number {
 
 function isMarketPurchasableEquipment(equipment: string): boolean {
   return (
+    isCurrentEquipment(equipment) &&
     !isHelmetDecoration(equipment) &&
+    !isRemovedCape(equipment) &&
     !MARKET_BLOCKED_EQUIPMENT.has(equipment) &&
     !MARKET_BLOCKED_PREFIXES.some(prefix => equipment.startsWith(prefix))
   )
@@ -154,8 +141,10 @@ function isMarketPurchasableEquipment(equipment: string): boolean {
 
 export function getEquipmentGoldValue(equipment: string): number {
   const parts = equipmentVisualParts(equipment)
-  if (parts.length > 1) return parts.reduce((sum, part) => sum + getEquipmentGoldValue(part), 0)
-  const conditionFactor = 0.15 + 0.85 * ((getEquipmentDurability(equipment) ?? 100) / 100)
+  const conditionFactor =
+    MARKET_USED_VALUE_FLOOR + (1 - MARKET_USED_VALUE_FLOOR) * ((getEquipmentDurability(equipment) ?? 100) / 100)
+  if (parts.length > 1)
+    return Math.max(1, Math.floor(parts.reduce((sum, part) => sum + getEquipmentGoldValue(part), 0) * conditionFactor))
   equipment = equipmentBaseKey(equipment)
   if (!DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey)) return 0
   const key = equipment as DynamicEquipmentKey
@@ -163,12 +152,27 @@ export function getEquipmentGoldValue(equipment: string): number {
 }
 
 export function getResourceGoldValue(resource: keyof ResourceAmount): number {
-  return Math.max(0, Math.floor(RESOURCE_GOLD_VALUES[resource as ResourceStorageName] ?? 0))
+  return Math.max(0, Math.floor(RESOURCE_GOLD_VALUES[resource] ?? 0))
 }
 
-function getMarketEquipmentKeys(options: MarketEquipmentOfferOptions = {}): DynamicEquipmentKey[] {
+export function getMarketResourceBuyPrice(resource: keyof ResourceAmount): number {
+  return getResourceGoldValue(resource) * MARKET_RESOURCE_BUY_MULTIPLIER
+}
+
+function getMarketEquipmentKeys(options: MarketEquipmentOfferOptions = {}): string[] {
   const { civilization } = options
-  const equipment = new Set<string>()
+  const level = getMarketLevel(options)
+  const equipment = new Set<string>([
+    'mace_bronze',
+    'mace_iron',
+    'slingshot',
+    'spear_ceramic',
+    'spear_bronze',
+    'spear_iron',
+  ])
+  for (const family of ['axe', 'pickaxe', 'hammer', 'scythe']) {
+    for (const material of ['ceramic', 'bronze', 'iron']) equipment.add(`${family}_${material}`)
+  }
   for (const tier of [0, 1, 2, 3]) {
     const owner = { forgeUpgrades: Object.fromEntries(FORGE_FAMILIES.map(family => [family, tier])) }
     dynamicEquipmentForWork('heroSword', owner).forEach(item => equipment.add(item))
@@ -179,10 +183,20 @@ function getMarketEquipmentKeys(options: MarketEquipmentOfferOptions = {}): Dyna
       )
     }
   }
-  return [...equipment].filter(
+  const baseItems = [...equipment].filter(
     (item): item is DynamicEquipmentKey =>
       DYNAMIC_EQUIPMENT_KEYS.includes(item as DynamicEquipmentKey) && isMarketPurchasableEquipment(item)
   )
+  const decoration = SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT.find(
+    entry => typeof entry !== 'string' && isEquipmentEnabledForCivilization(entry, civilization)
+  )
+  return baseItems
+    .flatMap(item =>
+      item.startsWith('helmet_') && decoration && typeof decoration !== 'string'
+        ? [item, decorateHelmet(item, [decoration.equipment])]
+        : [item]
+    )
+    .filter(item => marketEquipmentUnlocked(item, level))
 }
 
 export function getMarketEquipmentOffers(
@@ -191,10 +205,15 @@ export function getMarketEquipmentOffers(
 ): MarketEquipmentOffer[] {
   if (stock) {
     return [...new Set(stock)]
-      .filter(
-        (equipment): equipment is DynamicEquipmentKey =>
-          DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey) && isMarketPurchasableEquipment(equipment)
-      )
+      .filter(equipment => {
+        const parts = equipmentVisualParts(equipment)
+        return (
+          parts.length > 0 &&
+          parts.every(part => DYNAMIC_EQUIPMENT_KEYS.includes(part as DynamicEquipmentKey)) &&
+          isMarketPurchasableEquipment(equipment) &&
+          marketEquipmentUnlocked(equipment, getMarketLevel(options))
+        )
+      })
       .map(equipment => ({
         count: getStockCount(stock, equipment),
         equipment,
@@ -205,28 +224,33 @@ export function getMarketEquipmentOffers(
 
   return getMarketEquipmentKeys(options)
     .map(equipment => ({
-      count: getMarketEquipmentOfferCount(equipment),
+      count: getMarketEquipmentOfferCount(equipment, getMarketLevel(options)),
       equipment,
       goldValue: getEquipmentGoldValue(equipment),
     }))
     .filter(offer => offer.goldValue > 0)
 }
 
-function createMarketEquipmentStock(options: MarketEquipmentOfferOptions = {}): DynamicEquipmentKey[] {
+function createMarketEquipmentStock(options: MarketEquipmentOfferOptions = {}): string[] {
   return getMarketEquipmentOffers(options).flatMap(offer => Array.from({ length: offer.count }, () => offer.equipment))
 }
 
 export function resetMarketEquipmentStock(
-  market: Pick<BuildingEntity, 'marketStock'> | null | undefined,
+  market: MarketWallet | null | undefined,
   options: MarketEquipmentOfferOptions = {}
 ): string[] {
   if (!market) return []
-  market.marketStock = createMarketEquipmentStock(options)
+  market.marketStock = createMarketEquipmentStock({
+    ...options,
+    civilization: market.owner?.civ ?? options.civilization,
+    buildingLevel: getMarketLevel(market),
+  })
+  market.marketResourceStock = createMarketResourceStock(market)
   return market.marketStock
 }
 
 export function ensureMarketEquipmentStock(
-  market: Pick<BuildingEntity, 'marketStock'> | null | undefined,
+  market: MarketWallet | null | undefined,
   options: MarketEquipmentOfferOptions = {}
 ): string[] {
   if (!market) return []
@@ -249,7 +273,10 @@ export function buyMarketEquipment(
   requestedCount = 1,
   stock?: string[]
 ): number {
-  if (!hero) return 0
+  if (!Number.isFinite(requestedCount)) return 0
+  if (!hero || !marketEquipmentUnlocked(equipment, getMarketLevel(market)) || !isMarketPurchasableEquipment(equipment))
+    return 0
+  stock ??= ensureMarketEquipmentStock(market)
   const goldValue = getEquipmentGoldValue(equipment)
   if (goldValue <= 0) return 0
   const inventory = getHeroInventory(hero)
@@ -281,6 +308,8 @@ export function sellHeroEquipment(
     sold++
   }
   if (sold <= 0) return 0
+  const stock = ensureMarketEquipmentStock(market)
+  for (let index = 0; index < sold; index++) stock.push(equipment)
   const inventory = getHeroInventory(hero)
   market.marketGold = getMarketGold(market) - sold * goldValue
   inventory.resources!.gold = (inventory.resources!.gold ?? 0) + sold * goldValue
@@ -309,4 +338,58 @@ export function sellHeroResource(
   market.marketGold = getMarketGold(market) - amount * goldValue
   resources.gold = (resources.gold ?? 0) + amount * goldValue
   return amount
+}
+
+function createMarketResourceStock(market: MarketWallet): ResourceAmount {
+  const level = getMarketLevel(market)
+  const stock: ResourceAmount = {}
+  for (const [key, counts] of Object.entries(MARKET_RESOURCE_COUNTS)) {
+    const count = counts[level]!
+    if (count > 0) stock[key as keyof ResourceAmount] = count
+  }
+  return stock
+}
+
+export function getMarketResourceOffers(
+  market: MarketWallet
+): { resource: keyof ResourceAmount; count: number; goldValue: number }[] {
+  market.marketResourceStock ??= createMarketResourceStock(market)
+  return Object.keys(createMarketResourceStock(market)).flatMap(key => {
+    const resource = key as keyof ResourceAmount
+    const savedCount = market.marketResourceStock?.[resource] ?? 0
+    const count = Number.isFinite(savedCount) ? Math.max(0, Math.floor(savedCount)) : 0
+    return count > 0 ? [{ resource, count, goldValue: getMarketResourceBuyPrice(resource) }] : []
+  })
+}
+
+export function buyMarketResource(
+  hero: UnitEntity | null | undefined,
+  market: MarketWallet,
+  resource: keyof ResourceAmount,
+  requestedCount = 1
+): number {
+  if (!hero || !Number.isFinite(requestedCount)) return 0
+  const offer = getMarketResourceOffers(market).find(entry => entry.resource === resource)
+  if (!offer) return 0
+  const inventory = getHeroInventory(hero)
+  const count = Math.min(
+    Math.max(0, Math.floor(requestedCount)),
+    offer.count,
+    Math.floor(getHeroGold(hero) / offer.goldValue)
+  )
+  if (count <= 0) return 0
+  // Paying releases the bag slots occupied by gold before the purchased resources enter it.
+  const afterPayment = {
+    ...hero,
+    inventory: {
+      ...inventory,
+      resources: { ...inventory.resources, gold: getHeroGold(hero) - count * offer.goldValue },
+    },
+  }
+  if (getUnitResourceCarryRemaining(afterPayment) < count) return 0
+  inventory.resources![resource] = (inventory.resources![resource] ?? 0) + count
+  inventory.resources!.gold = getHeroGold(hero) - count * offer.goldValue
+  market.marketGold = getMarketGold(market) + count * offer.goldValue
+  market.marketResourceStock![resource] = offer.count - count
+  return count
 }

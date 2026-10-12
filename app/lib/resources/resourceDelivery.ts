@@ -1,3 +1,4 @@
+import { constructionToolPreparation } from '../units/supplies/toolPreparation'
 import { belongsToSettlement, collectiveAnchor, constructionCargoReserve } from '../economy/collectiveConstruction'
 import { isDeliveryTargetRejected } from './resourceDeliveryRecovery'
 import { depositableResource } from '../economy/villagerProvisions'
@@ -133,14 +134,14 @@ function getBuildingStorageTotal(building: BuildingEntity): number {
 const INTERIOR_STORAGE_CHEST_LABEL = /^interior:(.+):default:storage-chest$/
 
 // An interior chest exposes its parent building's capacity, not the camp chest capacity.
-function resolveStorageOwnerType(building: BuildingEntity): string {
-  if (building.type !== BUILDING_TYPES.chest) return building.type
+function resolveStorageOwner(building: BuildingEntity): BuildingEntity {
+  if (building.type !== BUILDING_TYPES.chest) return building
   const parent = getInteriorChestParentBuilding(building)
-  return parent?.type ?? building.type
+  return parent ?? building
 }
 
 export function getBuildingStorageCapacity(building: BuildingEntity): number {
-  return getStorageCapacity(resolveStorageOwnerType(building))
+  return getStorageCapacity(resolveStorageOwner(building))
 }
 
 export function getBuildingStorageRemaining(building: BuildingEntity): number {
@@ -157,7 +158,7 @@ export function buildingAcceptsInventoryResource(
   amount = 1
 ): boolean {
   if (!building || building.family !== 'building') return false
-  if (!storageAcceptsResource(resolveStorageOwnerType(building), resource)) return false
+  if (!storageAcceptsResource(resolveStorageOwner(building).type, resource)) return false
   return getBuildingStorageTotal(building) + Math.max(1, Math.floor(amount)) <= getBuildingStorageCapacity(building)
 }
 
@@ -168,7 +169,11 @@ export function automaticDepositAmount(unit: UnitEntity, resource: ResourceKey):
   const bag = unit.inventory?.resources ?? {}
   const surplus = Math.max(
     0,
-    (bag[resource] ?? 0) - (unit.owner ? constructionCargoReserve(unit.owner, unit, resource) : 0)
+    (bag[resource] ?? 0) -
+      Math.max(
+        unit.owner ? constructionCargoReserve(unit.owner, unit, resource) : 0,
+        constructionToolPreparation(unit, unit.owner)?.reserve[resource] ?? 0
+      )
   )
   return Math.min(depositableResource(bag, resource), surplus)
 }
@@ -205,7 +210,7 @@ export function findResourceDeliveryTarget(unit: UnitEntity): BuildingEntity | n
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit)) return null
   const owner = unit.owner
   if (!owner) return null
-  const home = unit.collectiveTask && unit.collectiveHome ? collectiveAnchor(owner, unit) : null
+  const home = unit.villageHome || (unit.collectiveTask && unit.collectiveHome) ? collectiveAnchor(owner, unit) : null
   const candidates = (owner.buildings ?? [])
     .flatMap(building => {
       if (building.owner !== owner) return []

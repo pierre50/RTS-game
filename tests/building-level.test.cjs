@@ -25,11 +25,11 @@ const expected = {
     },
     350,
     {
-      wood: 100,
-      stone: 40,
-      fiber: 4,
+      wood: 150,
+      stone: 60,
+      fiber: 6,
     },
-    550,
+    825,
   ],
   Granary: [
     {
@@ -77,11 +77,11 @@ const expected = {
     },
     350,
     {
-      wood: 160,
-      stone: 70,
-      fiber: 6,
+      wood: 240,
+      stone: 105,
+      fiber: 9,
     },
-    500,
+    750,
   ],
   Temple: [
     {
@@ -106,7 +106,7 @@ test('the agreed level 0 and level 1 costs and HP are applied exactly', () => {
     assert.deepEqual(one.cost, cost1, type)
     assert.equal(zero.totalHitPoints, hp0, type)
     assert.equal(one.totalHitPoints, hp1, type)
-    assert.equal(zero.constructionTime, one.constructionTime, 'work duration is not changed by this balance pass')
+    assert.equal(zero.constructionTime, one.constructionTime, 'repair pacing is independent of construction work')
   }
   for (const age of [0, 1, 2]) {
     assert.deepEqual(getBuildingConfigForLevel(definitions.Farm, age).cost, { wheat: 1 })
@@ -192,7 +192,7 @@ test('new construction, restoration and captured buildings resolve HP from their
   assert.equal(site.buildingLevel, 0)
   assert.equal(site.hitPoints, site.totalHitPoints)
   assert.equal(site.constructionProgress, 0)
-  assert.equal(site.constructionWorkRequired, Math.max(1, site.constructionTime ?? 1))
+  assert.equal(site.constructionWorkRequired, definitions.House.constructionWorkRequired)
   const damagedSite = new Building(
     {
       type: 'House',
@@ -228,7 +228,7 @@ test('sprite selection uses the individual building level', () => {
   )
 })
 
-test('new construction starts at base level and requires renovation for higher levels', () => {
+test('new construction uses the selected defined level and rejects unknown levels', () => {
   const { buyPlayerBuilding } = loadTsModule('app/classes/players/PlayerBuildingPlacement.ts', {
     mocks: {
       '../../lib': {
@@ -242,7 +242,7 @@ test('new construction starts at base level and requires renovation for higher l
       },
       '../../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set() },
       '../../lib/entities/entityFade': {},
-      '../../lib/mapSpaces': { getMapSpace: () => null },
+      '../../lib/mapSpaces': { getMapSpace: () => null, isOutsideSpaceId: () => true },
       '../Resource': {},
     },
   })
@@ -270,7 +270,10 @@ test('new construction starts at base level and requires renovation for higher l
   assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingLevel: 0 }), true)
   assert.equal(player.spawned.buildingLevel, 0)
   assert.equal(player.leather, 2)
-  assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingLevel: 2, alreadyPaid: true }), false)
+  assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingLevel: 2 }), true)
+  assert.equal(player.spawned.buildingLevel, 2)
+  assert.deepEqual(player.spawned.constructionMaterials.cost, getBuildingConfigForLevel(definitions.House, 2).cost)
+  assert.equal(buyPlayerBuilding(player, 2, 2, 'House', { buildingLevel: 99 }), false)
 })
 
 test('starter buildings use gathered wood and stone without requiring a prefilled chest', () => {
@@ -282,4 +285,29 @@ test('starter buildings use gathered wood and stone without requiring a prefille
       type
     )
   }
+})
+
+test('restored construction keeps the saved work budget instead of adopting newly calibrated durations', () => {
+  const Building = loadBuilding()
+  const owner = { config: { buildings: definitions } }
+  const context = { map: { addToInstanceBucket() {} } }
+  const saved = new Building(
+    {
+      type: 'House',
+      i: 1,
+      j: 1,
+      owner,
+      isBuilt: false,
+      hitPoints: 60,
+      constructionProgress: 0.5,
+      constructionWorkRequired: 48,
+    },
+    context
+  )
+  assert.equal(saved.constructionWorkRequired, 48)
+  assert.equal(saved.constructionProgress, 0.5)
+  assert.equal(saved.hitPoints, 60)
+  const legacy = new Building({ type: 'House', i: 1, j: 1, owner, isBuilt: false, hitPoints: 38 }, context)
+  assert.equal(legacy.constructionWorkRequired, definitions.House.constructionTime)
+  assert.equal(legacy.constructionProgress, 0.5)
 })

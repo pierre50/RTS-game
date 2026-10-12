@@ -71,17 +71,24 @@ export function populateStartingVillage(setup: StartingVillageSetup, profile: Vi
 function fillStartingDepots({ profile, buildings }: StartingVillage): void {
   for (const [type, stock] of Object.entries(profile.depotStocks ?? {})) {
     const total = Object.values(stock).reduce((sum, n) => sum + (n ?? 0), 0)
-    if (Object.values(stock).some(n => !Number.isFinite(n) || n < 0) || total > getStorageCapacity(type))
+    if (Object.values(stock).some(n => !Number.isFinite(n) || n < 0))
       throw new Error(`Starting stock exceeds ${type} capacity`)
-    for (const building of buildings.filter(b => b.type === type))
+    for (const building of buildings.filter(b => b.type === type)) {
+      if (total > getStorageCapacity(building)) throw new Error(`Starting stock exceeds ${type} capacity`)
       building.inventory = { ...building.inventory, resources: { ...stock } }
+    }
   }
 }
 
-function depositStartingBonus({ profile, player, state }: StartingVillage): void {
+function depositStartingBonus({ profile, player, state, center }: StartingVillage): void {
   if (!profile.resourceBonus) return
   if (Object.values(profile.resourceBonus).some(n => !Number.isFinite(n) || n < 0))
     throw new Error('Invalid starting resources')
-  if (!depositChestResources(savedResourceOwner(player, state.players), profile.resourceBonus, { allowPartial: true }))
+  if (
+    !depositChestResources(savedResourceOwner(player, state.players), profile.resourceBonus, {
+      allowPartial: true,
+      settlement: center,
+    })
+  )
     throw new Error('Starting village has no resource depot')
 }

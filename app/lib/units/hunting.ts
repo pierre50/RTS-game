@@ -22,14 +22,14 @@ function getTargetMoveSpeed(target: MovingTargetLike): number {
 // Arrows don't home in flight (Projectile flies straight to a fixed point), so the point aimed at
 // the moment of release must already account for the prey's movement during the arrow's travel
 // time, or fast-moving animals are consistently missed.
-export function getHuntingAimPoint(unit: UnitEntity, dest: RuntimeEntity): Point {
+export function getHuntingAimPoint(unit: UnitEntity, dest: RuntimeEntity, projectileType = HUNTING_PROJECTILE): Point {
   const target = dest as MovingTargetLike
   const speed = getTargetMoveSpeed(target)
   const path = target.path
   if (!speed || !path?.length) return { x: dest.x, y: dest.y }
 
   const player = unit.owner
-  const arrowType = player ? getEffectiveProjectileType(HUNTING_PROJECTILE, player) : HUNTING_PROJECTILE
+  const arrowType = player ? getEffectiveProjectileType(projectileType, player) : projectileType
   const arrowSpeed = player?.config?.projectiles?.[arrowType]?.speed
   if (!arrowSpeed) return { x: dest.x, y: dest.y }
 

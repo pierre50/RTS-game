@@ -44,7 +44,24 @@ export const EN_QUEST_TRANSLATIONS = {
     'A house first. The fire keeps us warm, but we need a roof to rest under. The house will also give us room for more people. The town center will be their arrival point and our gathering place once we have a foothold here.',
   introductionAskBuild: 'How do I start building it?',
   introductionAnswerBuild:
-    'Open the construction menu, choose House and place it on clear ground near the camp. Gather the materials shown in the menu, then work on the site until the house is finished. Laying the foundations is only the beginning.',
+    'Start with an axe to gather wood and a hammer to build. Then open the construction menu, choose House and place it on clear ground near the camp. Gather the materials shown in the menu, then work on the site until the house is finished. Laying the foundations is only the beginning.',
+  campResourcesTitle: 'The first resources',
+  campResourcesDescription:
+    'We have no tools. Pick up branches and loose stones near the camp. Keep 4 wood and 5 stone in your bag to make a stone axe. You keep these supplies.',
+  campResourcesObjective: 'Gather 4 wood and 5 stone for your first axe.',
+  campAxeTitle: 'A first tool',
+  campAxeDescription:
+    'Open crafting in your inventory, make a stone axe, then equip it in the Tool slot. An axe you already made also counts; a better material is accepted.',
+  campAxeObjective: 'Make and equip a stone axe.',
+  campHammerTitle: 'Prepare our shelter',
+  campHammerDescription:
+    'Use your axe to fell a tree and collect wood from it. Then gather 4 wood and 5 stone, craft a stone hammer and equip it in the Tool slot. Wood already cut and a hammer already equipped count.',
+  campHammerObjective: 'Collect wood from a tree, then make and equip a stone hammer.',
+  campSpearTitle: 'Something to defend ourselves (optional)',
+  campSpearDescription:
+    'Gather 6 wood, 3 stone and 1 fiber. Craft a stone spear in your inventory and equip it as your melee weapon. This optional task does not block the house; an existing spear of any material also counts.',
+  campSpearObjective: 'Make and equip a stone spear (optional).',
+  campSpearCompleted: 'Your spear is ready. You can defend yourself!',
   firstHouseTitle: 'A roof over our heads',
   firstHouseDescription:
     'Build a house in the region where you set up camp. Open the construction menu, choose House, then place it on clear ground. Gather the required materials and finish the construction. The town center can come later.',
@@ -81,7 +98,7 @@ export const EN_QUEST_TRANSLATIONS = {
   introductionAnswerRescue:
     'Yes. I found you unconscious, away from the fighting. I managed to get you out, then lit this fire. You gave me a fright, but you’re awake now. That’s what matters.',
   introductionAnswerNext:
-    'We have a few provisions, but this camp cannot shelter us forever. Let’s stay close to the fire and build our first house. Then we can explore the area and look for other people.',
+    'We have no tools yet. First, pick up 4 wood and 5 stone from the ground to make an axe. We can cut wood and make a hammer, then build our first house. Stay close to the fire for now.',
   introductionAnswerLead:
     'Someone needs to decide where we settle and what we do first. I can help, but I won’t sit here waiting. Take the lead. We’ll build what comes next together.',
   questCompletedRelation: 'Quest completed — Relationship with {name}: +{gain}.',
@@ -186,7 +203,24 @@ export const FR_QUEST_TRANSLATIONS = {
     'La maison en premier. Le feu nous réchauffe, mais il nous faut un toit pour nous reposer. La maison nous donnera aussi des places pour accueillir d’autres habitants. Le forum sera leur point d’arrivée et notre lieu de rassemblement, une fois bien installés ici.',
   introductionAskBuild: 'Comment je m’y prends pour la construire ?',
   introductionAnswerBuild:
-    'Ouvre le menu de construction, choisis Maison et place-la sur un terrain dégagé près du camp. Rassemble les matériaux indiqués dans le menu, puis travaille sur le chantier jusqu’à ce que la maison soit terminée. Poser les fondations ne suffit pas.',
+    'Commence par une hache pour récolter du bois et un marteau pour construire. Ensuite, ouvre le menu de construction, choisis Maison et place-la sur un terrain dégagé près du camp. Rassemble les matériaux indiqués dans le menu, puis travaille sur le chantier jusqu’à ce que la maison soit terminée. Poser les fondations ne suffit pas.',
+  campResourcesTitle: 'Les premières ressources',
+  campResourcesDescription:
+    'Nous n’avons aucun outil. Ramassez des branches et des pierres au sol près du camp. Gardez 4 bois et 5 pierres dans votre sac pour fabriquer une hache en pierre. Ces ressources restent à vous.',
+  campResourcesObjective: 'Rassembler 4 bois et 5 pierres pour votre première hache.',
+  campAxeTitle: 'Un premier outil',
+  campAxeDescription:
+    'Ouvrez la fabrication dans votre inventaire, fabriquez une hache en pierre, puis équipez-la dans l’emplacement Outil. Une hache déjà fabriquée compte aussi, même dans un meilleur matériau.',
+  campAxeObjective: 'Fabriquer et équiper une hache en pierre.',
+  campHammerTitle: 'Préparer notre abri',
+  campHammerDescription:
+    'Avec votre hache, abattez un arbre puis récoltez son bois. Rassemblez ensuite 4 bois et 5 pierres, fabriquez un marteau en pierre et équipez-le dans l’emplacement Outil. Le bois déjà coupé et un marteau déjà équipé comptent.',
+  campHammerObjective: 'Récolter le bois d’un arbre, puis fabriquer et équiper un marteau en pierre.',
+  campSpearTitle: 'De quoi nous défendre (facultatif)',
+  campSpearDescription:
+    'Rassemblez 6 bois, 3 pierres et 1 fibre. Fabriquez une lance en pierre dans votre inventaire et équipez-la comme arme de mêlée. Cette quête facultative ne bloque pas la maison ; une lance existante de n’importe quel matériau compte aussi.',
+  campSpearObjective: 'Fabriquer et équiper une lance en pierre (facultatif).',
+  campSpearCompleted: 'Votre lance est prête. Vous pouvez vous défendre !',
   firstHouseTitle: 'Un toit pour nous',
   firstHouseDescription:
     'Construisez une maison dans la région de votre camp. Ouvrez le menu de construction, choisissez Maison, puis placez-la sur un terrain dégagé. Rassemblez les matériaux nécessaires et terminez le chantier. Le forum viendra ensuite.',
@@ -223,7 +257,7 @@ export const FR_QUEST_TRANSLATIONS = {
   introductionAnswerRescue:
     'Oui. Je t’ai trouvé sans connaissance, à l’écart des combats. J’ai réussi à t’éloigner, puis j’ai allumé ce feu. Tu m’as fait peur, mais tu es réveillé, c’est ce qui compte.',
   introductionAnswerNext:
-    'Nous avons quelques provisions, mais ce camp ne pourra pas nous abriter longtemps. Restons près du feu et construisons notre première maison. Nous pourrons ensuite explorer les alentours et chercher d’autres personnes.',
+    'Nous n’avons même pas d’outils. Ramasse d’abord 4 bois et 5 pierres au sol pour fabriquer une hache. Nous pourrons couper du bois, fabriquer un marteau, puis construire notre première maison. Restons près du feu pour commencer.',
   introductionAnswerLead:
     'Quelqu’un doit décider où nous installer et par quoi commencer. Je peux t’aider, mais je ne veux pas rester ici à attendre. Prends la tête. Nous construirons la suite ensemble.',
   questCompletedRelation: 'Quête terminée — Relation avec {name} : +{gain}.',

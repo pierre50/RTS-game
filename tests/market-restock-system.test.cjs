@@ -6,6 +6,7 @@ function loadMarketRestockSystem() {
   return loadTsModule('app/services/world/MarketRestockSystem.ts', {
     mocks: {
       '../../constants': {
+        ...loadTsModule('app/constants/index.ts'),
         BUILDING_TYPES: { market: 'Market' },
         RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
         UNIT_TYPES: { chief: 'Chief', infantry: 'Fantassin', bowman: 'Bowman', priest: 'Priest' },
@@ -19,8 +20,8 @@ function loadMarketRestockSystem() {
         },
       },
       '../lpc/equipment': {
-        DYNAMIC_EQUIPMENT_KEYS: ['axe_ceramic', 'arrow_copper', 'bow', 'quiver'],
-        dynamicEquipmentForUnit: unitType => (unitType === 'Bowman' ? ['bow', 'quiver', 'arrow_copper'] : []),
+        DYNAMIC_EQUIPMENT_KEYS: ['axe_ceramic', 'arrow_bronze', 'bow', 'quiver'],
+        dynamicEquipmentForUnit: unitType => (unitType === 'Bowman' ? ['bow', 'quiver', 'arrow_bronze'] : []),
         dynamicEquipmentForWork: work => (work === 'woodcutter' ? ['axe_ceramic'] : []),
       },
       './equipmentLoot': {
@@ -34,7 +35,13 @@ function loadMarketRestockSystem() {
 
 test('market restock resets built market stock on interval days only', () => {
   const { MarketRestockSystem } = loadMarketRestockSystem()
-  const market = { type: 'Market', isBuilt: true, marketStock: ['old_item'], owner: { age: 1, civ: 'Hellas' } }
+  const market = {
+    type: 'Market',
+    buildingLevel: 1,
+    isBuilt: true,
+    marketStock: ['old_item'],
+    owner: { age: 1, civ: 'Hellas' },
+  }
   const menuRefreshes = []
   const reportEntries = []
   const system = new MarketRestockSystem({
@@ -50,22 +57,22 @@ test('market restock resets built market stock on interval days only', () => {
     previousDay: 2,
     report: { add: entry => reportEntries.push(entry) },
   })
-  assert.equal(market.marketStock.filter(item => item === 'arrow_copper').length, 20)
-  assert.equal(market.marketStock.includes('axe_ceramic'), false)
+  assert.equal(market.marketStock.filter(item => item === 'arrow_bronze').length, 40)
+  assert.equal(market.marketStock.includes('axe_ceramic'), true)
   assert.equal(market.marketStock.includes('quiver'), false)
   assert.deepEqual(menuRefreshes, ['refresh', 'refresh'])
-  assert.deepEqual(reportEntries, [
-    { count: 1, player: system.context.players[0], type: 'market-restocked' },
-  ])
+  assert.deepEqual(reportEntries, [{ count: 1, player: system.context.players[0], type: 'market-restocked' }])
 })
 
 test('daily money recovery includes distant static AI markets and ignores ruined markets', () => {
   const { MarketRestockSystem } = loadMarketRestockSystem()
   const market = { type: 'Market', isBuilt: true, marketGold: 0, marketStock: [] }
   const ruined = { ...market, isDestroyed: true }
-  const system = new MarketRestockSystem({ players: [{ developmentMode: 'static', villageActivity: 'distant', buildings: [market, ruined] }] })
+  const system = new MarketRestockSystem({
+    players: [{ developmentMode: 'static', villageActivity: 'distant', buildings: [market, ruined] }],
+  })
   system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
-  assert.equal(market.marketGold, 200)
+  assert.equal(market.marketGold, 25)
   assert.equal(ruined.marketGold, 0)
   assert.deepEqual(market.marketStock, [])
 })

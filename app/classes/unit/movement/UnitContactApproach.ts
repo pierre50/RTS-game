@@ -17,7 +17,7 @@ export function tryStartUnitContactApproach(
   target: RuntimeEntity,
   action: string | null | undefined
 ): boolean {
-  if (!action || !usesUnitContactAction(unit, action) || !unit.moveDirect || !unit.startInterval) return false
+  if (!action || !usesUnitContactAction(unit, action, target) || !unit.moveDirect || !unit.startInterval) return false
   const gathering =
     unit.type === UNIT_TYPES.villager &&
     !isHeroControlled(unit) &&

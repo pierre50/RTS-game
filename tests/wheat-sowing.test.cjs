@@ -126,7 +126,10 @@ test('placing a parcel reserves sixteen independent seed sites without spending 
         },
       },
       '../../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set() },
-      '../../lib/mapSpaces': { getMapSpace: () => null },
+      '../../lib/mapSpaces': {
+        ...loadTsModule('app/lib/mapSpaces.ts'),
+        getMapSpace: () => null,
+      },
     },
   })
   const player = {

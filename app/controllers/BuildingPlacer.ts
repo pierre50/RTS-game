@@ -1,3 +1,4 @@
+import { BuildingTerritoryPreview } from './BuildingTerritoryPreview'
 import { isSowingPlacement } from '../lib/buildings/campConstruction'
 import { createConstructionMaterials } from '../lib/economy/constructionMaterials'
 import { BuildingPlacementHelp } from '../ui/BuildingPlacementHelp'
@@ -29,11 +30,13 @@ const WHEAT_PREVIEW_ALPHA = 0.75
 export class BuildingPlacer {
   private readonly placementRules: BuildingPlacementRules
   private help?: BuildingPlacementHelp
+  private territoryPreview: BuildingTerritoryPreview
   controls: ControlsLike
   wallPlacementController: WallPlacementController
 
   constructor(controls: ControlsLike) {
     this.controls = controls
+    this.territoryPreview = new BuildingTerritoryPreview(controls)
     this.placementRules = new BuildingPlacementRules(controls)
     this.wallPlacementController = new WallPlacementController({
       context: controls.context,
@@ -66,6 +69,7 @@ export class BuildingPlacer {
     } = controls
     const cell = this.getPointerCell()
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
+    this.territoryPreview.update(cell)
     if (!cell || !mouseBuilding) return
     if (mouseBuilding.type === BUILDING_TYPES.smallWall) {
       const sprite = mouseBuilding.getChildByLabel(LABEL_TYPES.sprite) as Sprite | null
@@ -181,12 +185,14 @@ export class BuildingPlacer {
     )
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
     this.tintMouseBuilding(COLOR_GREEN)
+    this.territoryPreview.update(this.getPointerCell())
     controls.addChild(controls.mouseBuilding)
     this.handleMouseMove()
   }
 
   removeMouseBuilding(): void {
     const { controls } = this
+    this.territoryPreview.destroy()
     this.wallPlacementController.cancel()
     this.help?.destroy()
     this.help = undefined

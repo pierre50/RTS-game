@@ -94,9 +94,16 @@
   vertical-align: middle;
 }
 .value-badge--level {
-  color: var(--main-text-color);
-  background: var(--main-primary-color);
-  text-transform: uppercase;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text-color-secondary);
+  background: none;
+  font-size: var(--font-size-sm);
+  font-weight: normal;
+  text-transform: none;
 }
 .value-badge--gold,
 .inventory-action-row-value.value-badge--gold {
@@ -112,7 +119,6 @@
 .value-badge:empty {
   display: none;
 }
-.modal-title > .level-tag,
-.entity-info-header .level-tag {
+.modal-title > .unit-level-tag {
   margin-left: var(--level-tag-gap);
 }

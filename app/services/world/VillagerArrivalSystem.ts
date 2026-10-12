@@ -1,24 +1,14 @@
-import { getVacantHomeCount, reconcileHouseholds } from '../../lib/housing/households'
+import { planVillagerArrivals } from '../../lib/population/villagerArrivals'
+import { getVacantHomes, getFreeHouseBedLabels, reconcileHouseholds } from '../../lib/housing/households'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { isStaticSettlement } from '../../config/settlementProfiles'
-import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../../constants'
+import { PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import type { DailyWorldEvent, DailyWorldEventHandler } from '../dailyEvents/DailyWorldEventTypes'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitCreationExtra } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
-type VillagerArrivalInput = {
-  population: number
-  populationMax: number
-}
-
-export function calculateVillagerArrivals({ population, populationMax }: VillagerArrivalInput): number {
-  const freeHousing = Math.max(0, populationMax - population)
-  if (population <= 0 || freeHousing <= 0) return 0
-
-  const growthDemand = Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate))
-  return Math.max(0, Math.min(growthDemand, freeHousing, VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay))
-}
+export { calculateVillagerArrivals } from '../../lib/population/villagerArrivals'
 
 export class VillagerArrivalSystem implements DailyWorldEventHandler {
   context: GameContextLike
@@ -32,11 +22,9 @@ export class VillagerArrivalSystem implements DailyWorldEventHandler {
       if (!this.canGrow(player)) continue
       reconcileHouseholds(player)
       refreshPopulationCapacity(player)
-      const targetArrivals = calculateVillagerArrivals({
-        population: player.population,
-        populationMax: player.populationMax,
-      })
-      if (targetArrivals > 0) this.placeArrivals(event, player, Math.min(targetArrivals, getVacantHomeCount(player)))
+      for (const plan of planVillagerArrivals(player)) {
+        if (plan.count > 0) this.placeArrivals(event, player, plan.count, plan.centers as BuildingEntity[])
+      }
     }
   }
 
@@ -45,24 +33,19 @@ export class VillagerArrivalSystem implements DailyWorldEventHandler {
     return player.type === PLAYER_TYPES.human || player.type === PLAYER_TYPES.ai
   }
 
-  private getArrivalBuildings(player: PlayerLike): BuildingEntity[] {
-    return (player.buildings ?? []).filter(
-      building =>
-        building.type === BUILDING_TYPES.townCenter &&
-        building.isBuilt &&
-        !building.isDead &&
-        !building.isDestroyed &&
-        typeof building.placeUnit === 'function'
-    )
-  }
-
-  private placeArrivals(event: DailyWorldEvent, player: PlayerLike, targetArrivals: number): void {
-    const buildings = this.getArrivalBuildings(player)
+  private placeArrivals(
+    event: DailyWorldEvent,
+    player: PlayerLike,
+    targetArrivals: number,
+    centers: BuildingEntity[]
+  ): void {
+    const buildings = centers.filter(building => typeof building.placeUnit === 'function')
     if (!buildings.length) return
 
+    const claimedBeds = new Set<string>()
     let arrived = 0
     for (let index = 0; index < targetArrivals; index++) {
-      if (this.tryPlaceArrival(buildings, index)) {
+      if (this.tryPlaceArrival(player, buildings, index, claimedBeds)) {
         reconcileHouseholds(player)
         arrived++
       }
@@ -73,11 +56,29 @@ export class VillagerArrivalSystem implements DailyWorldEventHandler {
     if (player.isPlayed) this.context.menu?.updateTopbar?.()
   }
 
-  private tryPlaceArrival(buildings: BuildingEntity[], offset: number): boolean {
+  private tryPlaceArrival(
+    player: PlayerLike,
+    buildings: BuildingEntity[],
+    offset: number,
+    claimedBeds: Set<string>
+  ): boolean {
     for (let attempts = 0; attempts < buildings.length; attempts++) {
       const building = buildings[(offset + attempts) % buildings.length]
-      if (building.placeUnit?.(UNIT_TYPES.villager, this.getArrivalExtra(), { consumePopulationSlot: true }))
+      const home = getVacantHomes(player, building).find(house =>
+        getFreeHouseBedLabels(player, house).some(bed => !claimedBeds.has(bed))
+      )
+      if (!home) continue
+      const bed = getFreeHouseBedLabels(player, home).find(bed => !claimedBeds.has(bed))!
+      const extra: UnitCreationExtra = {
+        ...this.getArrivalExtra(),
+        villageHome: { id: `${player.label}:${building.label}`, i: building.i, j: building.j, spaceId: 'outside' },
+        homeHouseLabel: home.label,
+        homeBedLabel: bed,
+      }
+      if (building.placeUnit?.(UNIT_TYPES.villager, extra, { consumePopulationSlot: true })) {
+        claimedBeds.add(bed)
         return true
+      }
     }
     return false
   }

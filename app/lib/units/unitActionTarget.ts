@@ -3,7 +3,7 @@ import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import { degreeToDirection, getInstanceDegree } from '../maths'
 
 export function syncMovedActionTarget(unit: UnitEntity, dest: RuntimeEntity | null): void {
-  if (!unit.destHasMoved?.() || !dest || !unit.realDest) return
+  if (!dest || !unit.realDest) return
   unit.realDest.i = dest.i
   unit.realDest.j = dest.j
   unit.realDest.x = dest.x

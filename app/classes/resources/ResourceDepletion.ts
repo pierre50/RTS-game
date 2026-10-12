@@ -39,6 +39,10 @@ export function die(this: Host, immediate?: boolean) {
   map.removeFromInstanceBucket(this)
   this.isDead = true
   this.stopWindMotion()
+  if (this.type === RESOURCE_TYPES.groundWood || this.type === RESOURCE_TYPES.groundStone) {
+    this.clear()
+    return
+  }
   let clearWithoutFade = false
   if (this.type === RESOURCE_TYPES.tree && !immediate) {
     this.onTreeDie()

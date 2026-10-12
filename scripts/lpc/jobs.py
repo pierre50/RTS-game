@@ -33,11 +33,11 @@ VILLAGER_JOBS: tuple[Job, ...] = (
 )
 
 INFANTRY_JOBS: tuple[Job, ...] = (
-    Job("default", walking_equipment="sword_ceramic", action_animation="slash", action_equipment="sword_ceramic"),
+    Job("default", walking_equipment="spear_ceramic", action_animation="slash", action_equipment="spear_ceramic"),
 )
 
 CHIEF_JOBS: tuple[Job, ...] = (
-    Job("default", walking_equipment="sword_ceramic", action_animation="slash", action_equipment="sword_ceramic"),
+    Job("default", walking_equipment="sword_bronze", action_animation="slash", action_equipment="sword_bronze"),
 )
 
 BANDIT_MELEE_JOBS: tuple[Job, ...] = (

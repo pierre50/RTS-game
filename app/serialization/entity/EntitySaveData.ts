@@ -1,3 +1,4 @@
+import type { ResourceAmount } from '../../types/common'
 import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from '../../lib'
 import { definedProperties } from '../../lib/definedProperties'
 import type { DepotReservePolicy } from '../../lib/economy/depotReserves'
@@ -5,7 +6,6 @@ import type { VillageHome } from '../../lib/units/village/villageActivity'
 import { getWildlifeStore } from '../../services/wildlife/WildlifeStore'
 import type { CampBehavior } from '../../types/camp'
 import type { CaveDefinition } from '../../types/cave'
-import type { ResourceAmount } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type {
   AnimalEntity,
@@ -35,6 +35,7 @@ export type SerializableEntity = RuntimeEntityBase & {
   homeBedLabel?: string
   partnerLabel?: string
   heroHomeResident?: { label: string; name?: string }
+  houseInteriorLevel?: number
   plannedBedLabels?: string[]
   dailySchedule?: UnitEntity['dailySchedule']
   offlineBuilderJob?: SaveEntityState['offlineBuilderJob']
@@ -84,18 +85,14 @@ export type SerializableEntity = RuntimeEntityBase & {
   stableHorses?: Array<{ horseColor?: string }>
   constructionTime?: number
   constructionWorkRequired?: number
+  constructionPaused?: boolean
   constructionProgress?: number
   constructionMaterials?: SaveEntityState['constructionMaterials']
   buildingUpgrade?: SaveEntityState['buildingUpgrade']
-  inventory?: {
-    resources?: ResourceAmount
-    equipment?: string[]
-    equipped?: NonNullable<SaveEntityState['inventory']>['equipped']
-    equippedCounts?: NonNullable<SaveEntityState['inventory']>['equippedCounts']
-    activeWeapons?: NonNullable<SaveEntityState['inventory']>['activeWeapons']
-  }
+  inventory?: SaveEntityState['inventory']
   marketGold?: number
   marketStock?: string[]
+  marketResourceStock?: ResourceAmount
   indestructible?: boolean
   followingHero?: boolean
   pendingRescueThanks?: boolean
@@ -384,8 +381,10 @@ export function buildingData(building: SerializableEntity): SaveEntityState {
       'interiorBuildings',
       'interiorUnfurnished',
       'plannedBedLabels',
+      'houseInteriorLevel',
       'heroHomeResident',
       'interiorPortalId',
+      'townCenterId',
       'cave',
       'queue',
       'loading',
@@ -408,11 +407,13 @@ export function buildingData(building: SerializableEntity): SaveEntityState {
       'constructionWorkRequired',
       'constructionTime',
       'constructionProgress',
+      'constructionPaused',
       'constructionMaterials',
       'buildingUpgrade',
       'inventory',
       'marketGold',
       'marketStock',
+      'marketResourceStock',
       'indestructible',
     ] as const),
     inventory: building.inventory ? definedProperties(building.inventory) : undefined,

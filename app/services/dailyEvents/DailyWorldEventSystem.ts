@@ -1,3 +1,4 @@
+import { NpcArrowSupplySystem } from '../world/NpcArrowSupplySystem'
 import { RpgVillageSystem } from '../world/RpgVillageSystem'
 import { DailyWorldReport } from './DailyWorldReport'
 import { flushVillageSimulation, planDistantVillages } from '../../lib/units/village/villageActivity'
@@ -22,6 +23,7 @@ export class DailyWorldEventSystem {
     this.handlers = []
     this.unsubscribeDayChange =
       context.dayNight?.onDayChange?.((day, previousDay) => this.handleDayChange({ day, previousDay })) ?? null
+    this.register(new NpcArrowSupplySystem(context))
     this.register(new NaturalRegrowthSystem(context))
     this.register(new TrapHarvestSystem(context))
     this.register(new MarketRestockSystem(context))

@@ -1,4 +1,7 @@
-import { bundleHelmetDecorations, equipmentVisualParts } from './helmetVariants'
+import { hasNpcWeaponInventory, isNpcWeaponItem } from '../units/combat/npcWeapons'
+import { npcArrowCapacity } from '../units/combat/unitArrows'
+import { bundleEquipmentParts } from './armorVariants'
+import { equipmentVisualParts } from './helmetVariants'
 import { equipmentBaseKey, withEquipmentDurability } from './equipmentCondition'
 import { getUnitEquipmentTier } from '../units/unitExperience'
 import { equipHeroInventoryItemData } from './heroEquipmentData'
@@ -80,7 +83,7 @@ function cleanResourceAmount(resources: ResourceAmount | null | undefined): Reso
 export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
   if (!unit.isDead || unit.isDestroyed) return []
   if (Array.isArray(unit.lootEquipment)) {
-    const bundled = bundleHelmetDecorations(cleanEquipment(unit.lootEquipment))
+    const bundled = bundleEquipmentParts(cleanEquipment(unit.lootEquipment))
     unit.lootEquipment.splice(0, unit.lootEquipment.length, ...bundled)
     return unit.lootEquipment
   }
@@ -100,7 +103,20 @@ export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
         return durability == null ? item : withEquipmentDurability(item, durability)
       })
 
-  unit.lootEquipment = expandCorpseLootArrowStack(unit, bundleHelmetDecorations(cleanEquipment(equipment)), config)
+  if (hasNpcWeaponInventory(unit) || npcArrowCapacity(unit)) {
+    // Ammunition is carried, not generated from the visual loadout on death.
+    unit.lootEquipment = bundleEquipmentParts(
+      cleanEquipment([
+        ...equipment.filter(
+          item => !item.startsWith('arrow_') && !(hasNpcWeaponInventory(unit) && isNpcWeaponItem(item, unit))
+        ),
+        ...(unit.inventory?.equipment ?? []),
+        ...(unit.inventory?.activeWeapons?.tool ? [unit.inventory.activeWeapons.tool] : []),
+      ])
+    )
+    if (unit.inventory?.equipment) unit.inventory.equipment = []
+    if (unit.inventory?.activeWeapons) delete unit.inventory.activeWeapons.tool
+  } else unit.lootEquipment = expandCorpseLootArrowStack(unit, bundleEquipmentParts(cleanEquipment(equipment)), config)
   return unit.lootEquipment
 }
 
@@ -109,7 +125,7 @@ export function initializeUnitCorpseLootEquipment(unit: UnitEntity): string[] {
   unit.lootEquipment = undefined
   const loot = getUnitCorpseLootEquipment(unit)
   if (loot.length || !Array.isArray(previousLoot)) return loot
-  unit.lootEquipment = bundleHelmetDecorations(cleanEquipment(previousLoot))
+  unit.lootEquipment = bundleEquipmentParts(cleanEquipment(previousLoot))
   return unit.lootEquipment
 }
 
@@ -121,30 +137,6 @@ export function getUnitCorpseLootResources(unit: UnitEntity): ResourceAmount {
   for (const key of Object.keys(unit.inventory.resources)) delete unit.inventory.resources[key as keyof ResourceAmount]
   Object.assign(unit.inventory.resources, resources)
   return unit.inventory.resources
-}
-
-export function pickupCorpseResource(
-  corpse: UnitEntity,
-  hero: UnitEntity | null | undefined,
-  resource: keyof ResourceAmount,
-  requestedAmount?: number
-): number {
-  if (!hero || !corpse.isDead || corpse.isDestroyed) return 0
-  const loot = getUnitCorpseLootResources(corpse)
-  const available = Math.max(0, Math.floor(loot[resource] ?? 0))
-  const requested = requestedAmount == null ? available : Math.min(available, Math.max(0, Math.floor(requestedAmount)))
-  const amount = Math.min(requested, getUnitResourceCarryRemaining(hero))
-  if (amount <= 0) {
-    if (requested > 0) notifyHeroBagFull(hero)
-    return 0
-  }
-
-  const heroResources = getHeroInventory(hero).resources
-  heroResources[resource] = (heroResources[resource] ?? 0) + amount
-  const remaining = available - amount
-  if (remaining > 0) loot[resource] = remaining
-  else delete loot[resource]
-  return amount
 }
 
 export function pickupCorpseEquipment(
@@ -215,6 +207,7 @@ export function unequipHeroActiveWeaponSlot(hero: UnitEntity | null | undefined,
   if (!hero?.inventory?.activeWeapons?.[slot]) return false
   const inventory = getHeroInventory(hero)
   const equipment = inventory.activeWeapons[slot]
+  if (slot === 'tool') delete hero.inventory!.toolSupplyTarget
   delete inventory.activeWeapons[slot]
   if (equipment) inventory.equipment.push(equipment)
   refreshUnitEquipmentStats(hero)

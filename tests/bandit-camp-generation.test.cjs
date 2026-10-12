@@ -150,7 +150,7 @@ test('bandit camps place a bandit-owned chest with loot', () => {
   assert.deepEqual(chest.inventory.resources, { berry: 2, meat: 2, wheat: 4, gold: 2, wood: 3 })
   assert.equal(chest.inventory.equipment.filter(item => item === 'arrow_ceramic').length, 6)
   assert.ok(chest.inventory.equipment.includes('trap'))
-  assert.ok(chest.inventory.equipment.some(item => item.startsWith('sword_ceramic~condition:')))
+  assert.ok(chest.inventory.equipment.some(item => item.startsWith('axe_ceramic~condition:')))
   assert.equal(chest.i, 18)
   assert.equal(chest.j, 17)
 })

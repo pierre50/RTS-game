@@ -52,5 +52,24 @@
         "archer-attack-2"
       ]
     }
+  },
+  "Pebble": {
+    "size": 2,
+    "speed": 20,
+    "assets": "projectiles/pebble",
+    "staticFrame": 0,
+    "spawnOffsetY": 10,
+    "sounds": {
+      "launch": [
+        "archer-attack",
+        "archer-attack-2"
+      ]
+    },
+    "trajectory": {
+      "kind": "arc",
+      "minArcHeight": 4,
+      "arcHeightFactor": 0.06,
+      "maxArcHeight": 16
+    }
   }
 }

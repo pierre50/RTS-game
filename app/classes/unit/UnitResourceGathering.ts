@@ -1,4 +1,6 @@
-import { getForgeGatherBonus } from '../../lib/equipment/forgeUpgrades'
+import { isGroundResourceType } from '../../lib/resources/groundResourceRegrowth'
+import { getEquippedWorkTool, workToolFamily, getWorkToolTier, toolFamilyForWork } from '../../lib/equipment/workTools'
+import { recordEconomyFlow } from '../../lib/economy/economyTelemetry'
 import { notifyVillageWorkChanged } from '../../lib/units/village/villageWorkEvents'
 import { collectiveHarvestBudget } from '../../lib/economy/collectiveTasks'
 import { getWorkGatherAmount, getResourceGatherSwings } from '../../lib/economy/workRules'
@@ -54,7 +56,10 @@ export function startForageResourceAction(actions: UnitResourceActions): void {
     : actions.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry)
   actions.startGathering(getForageLoadingType(target), sound, {
     dieOnEmpty: target?.type !== RESOURCE_TYPES.berrybush,
-    onImpact: target => spawnWorkImpactFragments(unit, target),
+    gatherEvery: target && isGroundResourceType(target.type) ? 1 : undefined,
+    onImpact: target => {
+      if (!isGroundResourceType(target.type)) spawnWorkImpactFragments(unit, target)
+    },
     onDepleted: dest => {
       if (dest.type === RESOURCE_TYPES.berrybush) {
         markBerrybushDepleted(dest)
@@ -104,7 +109,9 @@ export function getGatherAmount(unit: UnitEntity): number {
   return getWorkGatherAmount(
     unit.gatherAmount,
     unit.work ?? '',
-    getGatherXpBonus(unit) + getForgeGatherBonus(unit.owner, unit.work ?? '', unit.type)
+    getGatherXpBonus(unit) + (toolFamilyForWork(unit.work) ? getWorkToolTier(unit) : 0),
+    workToolFamily(getEquippedWorkTool(unit)) === 'scythe',
+    getWorkToolTier(unit)
   )
 }
 
@@ -123,6 +130,7 @@ export function addGatheredResource(unit: UnitEntity, loadingType: string, amoun
     unit.context.menu?.refreshInventory?.()
   }
   notifyVillageWorkChanged(unit.owner)
+  recordEconomyFlow(unit, 'gathered', { [resourceKey]: gatheredAmount })
   return gatheredAmount
 }
 

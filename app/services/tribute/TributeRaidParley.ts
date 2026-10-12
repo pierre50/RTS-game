@@ -36,7 +36,7 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
   const actions = document.createElement('div')
   actions.className = 'interaction-actions npc-orders-options bandit-tribute-actions'
 
-  const canPayTribute = canAfford(runtime.context.player, raid.tribute)
+  const canPayTribute = canAfford(runtime.context.player, raid.tribute, { includeHero: false, settlement: raid.target })
   const payButton = document.createElement('button')
   payButton.type = 'button'
   payButton.className = 'ui-btn'
@@ -49,12 +49,12 @@ export function openTributeModal(runtime: TributeRaidSystem, raid: TributeRaid, 
   }
   payButton.addEventListener('click', () => {
     if (resolved || raid.phase !== 'parley') return
-    if (!canAfford(runtime.context.player, raid.tribute)) {
+    if (!canAfford(runtime.context.player, raid.tribute, { includeHero: false, settlement: raid.target })) {
       runtime.context.menu?.showMessage(getTributeCannotPayLabel(raid), 'warning')
       return
     }
     resolved = true
-    payCost(runtime.context.player, raid.tribute)
+    payCost(runtime.context.player, raid.tribute, { includeHero: false, settlement: raid.target })
     runtime.context.menu?.updateTopbar()
     raid.modal?.close()
     raid.modal = null
@@ -97,7 +97,7 @@ export function resolveTributeParley(runtime: TributeRaidSystem, raid: TributeRa
   for (const unit of livingRaidUnits(raid)) unit.stop?.()
   const targetOwner = raid.target.owner
   if (targetOwner && runtime.shouldLocalChiefPayTribute(raid)) {
-    payCost(targetOwner, raid.tribute)
+    payCost(targetOwner, raid.tribute, { includeHero: false, settlement: raid.target })
     runtime.context.menu?.showMessage(getLocalTributeTargetMessage(raid), 'info')
     runtime.acceptTribute(raid)
     return
@@ -109,6 +109,7 @@ export function resolveTributeParley(runtime: TributeRaidSystem, raid: TributeRa
 
 export function shouldLocalChiefPayTribute(runtime: TributeRaidSystem, raid: TributeRaid): boolean {
   const targetOwner = raid.target.owner
-  if (!targetOwner || !canAfford(targetOwner, raid.tribute)) return false
+  if (!targetOwner || !canAfford(targetOwner, raid.tribute, { includeHero: false, settlement: raid.target }))
+    return false
   return (runtime.context.map.random?.() ?? Math.random()) < 0.5
 }

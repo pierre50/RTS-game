@@ -1,0 +1,31 @@
+{
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "commit": "58ce1aa479e4df32845a73a5d0afc221c3a893c2",
+  "credits": "sheet_definitions/weapon_blunt_mace.json",
+  "files": [
+    {
+      "path": "spritesheets/weapon/blunt/mace/walk/mace.png",
+      "sha256": "5de80e7e7846112ff0e181b53936d884da507c9a81c6c79febe8ca0c64606898"
+    },
+    {
+      "path": "spritesheets/weapon/blunt/mace/universal_behind/walk/mace.png",
+      "sha256": "74ee467cb765c938c8fb662ed435cf27112fe1e59d7a1991670907c29bb2341e"
+    },
+    {
+      "path": "spritesheets/weapon/blunt/mace/attack_slash/mace.png",
+      "sha256": "c6727a30d8cfebcacf9dba4c70ad993ecada6c9d75ca524e14803cf2fd9634f8"
+    },
+    {
+      "path": "spritesheets/weapon/blunt/mace/attack_slash/behind/mace.png",
+      "sha256": "e9c97d28c7108b695614593262b6ac6eec9720f2a4e7411d27d14195062905e1"
+    },
+    {
+      "path": "spritesheets/weapon/blunt/mace/hurt/mace.png",
+      "sha256": "4842f631d82e9316cfa9f96d13846070b7e36b58cb283230cac191e9b64f9a5c"
+    },
+    {
+      "path": "spritesheets/weapon/blunt/mace/universal_behind/hurt/mace.png",
+      "sha256": "c980bcbdd974a8b9c38c6f5d587692d50bc1f30a47e36a26daa9d1dead640ae0"
+    }
+  ]
+}

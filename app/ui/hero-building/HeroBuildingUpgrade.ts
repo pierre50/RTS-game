@@ -1,13 +1,12 @@
 import { getBuildingTrainingLoad } from '../../lib/buildings/buildingTraining'
 import { getBuildingLevel, getBuildingConfigForLevel } from '../../lib/buildings/buildingLevel'
-import { nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
+import { getBuildingUpgradeCost, nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
 import { canStartBuildingUpgrade, startBuildingUpgrade } from '../../classes/building/BuildingUpgrade'
-import { remainingConstructionMaterials, constructionProgressPercentage } from '../../lib/economy/constructionMaterials'
+import { constructionMaterialsReady } from '../../lib/economy/constructionMaterials'
 import { renderBuildingAvatar } from '../../lib/avatar'
 import { t } from '../../lib/lang'
 import type { BuildingEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
-import { inventoryDeliveryMetaParts } from '../inventory/InventoryCostMeta'
 import { createInventoryActionRow } from '../inventory/InventoryActionRow'
 
 export function createHeroBuildingUpgrade(
@@ -23,12 +22,12 @@ export function createHeroBuildingUpgrade(
   const next = upgrade?.targetLevel ?? nextBuildingUpgrade(config, current)
   const maximum = next == null
   const targetConfig = getBuildingConfigForLevel(config, next ?? current)
-  const progress = upgrade ? Math.min(99, Math.floor(constructionProgressPercentage(building))) : 0
+  const supplying = Boolean(upgrade) && !constructionMaterialsReady(building)
   const disabled = Boolean(upgrade) || maximum || !canStartBuildingUpgrade(building, menu.context.controls.heroUnit)
-  const title = t(upgrade ? 'buildingUpgradeProgress' : maximum ? 'buildingUpgradeMaximum' : 'buildingUpgradeTitle', {
-    level: (next ?? current) + 1,
-    progress,
-  })
+  const title = t(
+    upgrade ? 'buildingUpgradeActiveTitle' : maximum ? 'buildingUpgradeMaximum' : 'buildingUpgradeTitle',
+    { level: (next ?? current) + 1 }
+  )
   const trainingBlocked = getBuildingTrainingLoad(building) > 0 || Boolean(building.trainingRequests?.length)
   const benefits = [
     t('buildingUpgradeHealth', { before: building.totalHitPoints ?? 0, after: targetConfig.totalHitPoints ?? 0 }),
@@ -42,14 +41,29 @@ export function createHeroBuildingUpgrade(
     description: maximum
       ? ''
       : `${benefits.join(' · ')}. ${t(trainingBlocked ? 'buildingUpgradeTrainingBlocked' : 'buildingUpgradeDescription')}`,
-    metaParts: maximum
-      ? []
-      : inventoryDeliveryMetaParts(
-          upgrade ? remainingConstructionMaterials(building) : (targetConfig.cost ?? {}),
-          Boolean(upgrade)
-        ),
+    metaParts:
+      maximum || Boolean(upgrade)
+        ? []
+        : [
+            {
+              constructionSite: {
+                config: targetConfig,
+                level: next ?? current,
+                cost: getBuildingUpgradeCost(config, current, next ?? current),
+                building: upgrade ? building : undefined,
+              },
+            },
+          ],
     trailingAction: {
-      label: t(upgrade ? 'buildingUpgradeInProgress' : maximum ? 'forgeUpgradeMax' : 'forgeUpgradeAction'),
+      label: t(
+        supplying
+          ? 'constructionSupplyInProgress'
+          : upgrade
+            ? 'buildingUpgradeInProgress'
+            : maximum
+              ? 'forgeUpgradeMax'
+              : 'forgeUpgradeAction'
+      ),
       disabled,
       onClick: () => {
         if (startBuildingUpgrade(building, menu.context.controls.heroUnit)) refresh()

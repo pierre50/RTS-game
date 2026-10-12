@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -18,7 +19,7 @@ function fixture(resources = {}, cost = { wood: 100, stone: 50 }, extraMocks = {
     dest: site,
     action: 'build',
     sprite: {},
-    inventory: { resources },
+    inventory: { ...workerInventory('hammer_ceramic'), resources },
     getActionCondition: () => true,
     stop: () => calls.stopped++,
     context: { menu: { showMessage: (message, severity) => calls.messages.push([message, severity]) } },
@@ -72,39 +73,41 @@ test('an unfunded hero build stops before animation and reports the exact missin
   assert.equal(f.calls.sound, 0)
   assert.equal(f.calls.fragments, 0)
   assert.equal(f.calls.stopped, 1)
-  assert.match(f.calls.messages[0][0], /100 bois, 50 pierre/)
+  assert.match(f.calls.messages[0][0], /100 Bois, 50 Pierre/)
   assert.equal(f.calls.messages[0][1], 'warning')
   assert.equal(f.site.hitPoints, 101)
 })
-test('wood alone advances construction without a missing-stone alert', () => {
+test('partial hero delivery reserves cargo and stops before animation without advancing work', () => {
   const f = fixture({ wood: 20 })
   f.start()
-  assert.equal(f.calls.messages.length, 0)
-  f.runtime.impact()
-  assert.equal(f.site.hitPoints, 101)
-  assert.equal(f.unit.inventory.resources.wood, 18)
-  assert.deepEqual(f.site.constructionMaterials.delivered, {})
-  assert.equal(f.calls.sound, 1)
-})
-test('materials are checked again at impact and when the next swing begins', () => {
-  const f = fixture({ wood: 1 }, { wood: 100 })
-  f.start()
-  f.unit.inventory.resources.wood = 0
-  f.runtime.impact()
+  assert.equal(f.site.constructionProgress, 0)
+  assert.equal(f.unit.inventory.resources.wood, 0)
+  assert.deepEqual(f.site.constructionMaterials.delivered, { wood: 20 })
+  assert.deepEqual(f.site.constructionMaterials.consumed, {})
+  assert.equal(f.calls.animation, 0)
   assert.equal(f.calls.energy, 0)
   assert.equal(f.calls.sound, 0)
-  assert.equal(f.calls.fragments, 0)
-  f.unit.inventory.resources.wood = 1
+  assert.match(f.calls.messages[0][0], /80 Bois, 50 Pierre/)
+})
+test('complete delivery starts animation but only a work impact advances construction', () => {
+  const f = fixture({ wood: 100, stone: 50 })
   f.start()
+  assert.equal(f.site.constructionProgress, 0)
+  assert.equal(f.calls.animation, 1)
+  assert.deepEqual(f.site.constructionMaterials.consumed, {})
   f.runtime.impact()
-  assert.equal(f.site.hitPoints, 101)
-  // Finish the fraction of work already paid for by the first ingredient.
-  f.runtime.impact()
-  assert.equal(f.site.constructionProgress, 0.01)
-  const animations = f.calls.animation
+  assert.equal(f.site.constructionProgress, 1 / 101)
+  assert.equal(f.calls.energy, 1)
+  assert.equal(f.calls.sound, 1)
+  assert.deepEqual(f.site.constructionMaterials.consumed, { wood: 100, stone: 50 })
+})
+test('a worker out of contact cannot deliver materials remotely', () => {
+  const f = fixture({ wood: 100, stone: 50 })
+  f.runtime.ensureWorkContact = () => false
   f.start()
-  assert.equal(f.calls.animation, animations)
-  assert.equal(f.calls.sound, 2)
+  assert.deepEqual(f.site.constructionMaterials.delivered, {})
+  assert.deepEqual(f.unit.inventory.resources, { wood: 100, stone: 50 })
+  assert.equal(f.calls.animation, 0)
 })
 test('legacy paid construction and repairs still allow work without charging materials again', () => {
   const f = fixture()
@@ -115,14 +118,16 @@ test('legacy paid construction and repairs still allow work without charging mat
   assert.equal(f.calls.messages.length, 0)
 })
 
-test('live construction leaves unused materials in the worker bag', () => {
+test('live construction reserves the whole recipe and leaves only excess cargo in the bag', () => {
   for (const controlMode of ['hero', 'npc']) {
-    const f = fixture({ wood: 20, stone: 10 })
+    const f = fixture({ wood: 120, stone: 60 })
     f.unit.controlMode = controlMode
     f.start()
+    assert.deepEqual(f.unit.inventory.resources, { wood: 20, stone: 10 })
+    assert.deepEqual(f.site.constructionMaterials.delivered, { wood: 100, stone: 50 })
+    assert.equal(f.site.constructionProgress, 0)
     f.runtime.impact()
-    assert.deepEqual(f.unit.inventory.resources, { wood: 18, stone: 10 })
-    assert.deepEqual(f.site.constructionMaterials.consumed, { wood: 2 })
+    assert.deepEqual(f.site.constructionMaterials.consumed, { wood: 100, stone: 50 })
     assert.equal(
       Object.values(f.site.constructionMaterials.delivered).reduce((a, b) => a + b, 0),
       0
@@ -188,7 +193,8 @@ test('an exhausted builder really stops, collects stone and returns to the same 
       './UnitActions': { UnitActions: class {} },
       './villagerKnownTargets': {
         knownConstructionTargets: unit => unit.owner.buildings,
-        knownResources: (_unit, type) => (type === 'Stone' ? [stone] : []),
+        knownResources: (_unit, type) =>
+          (Array.isArray(type) ? type.includes('Stone') : type === 'Stone') ? [stone] : [],
         knownFoodTargets: () => [],
       },
     }
@@ -197,8 +203,15 @@ test('an exhausted builder really stops, collects stone and returns to the same 
   stateLib.resumeVillagerAutonomy = load('app/lib/units/autonomy/villagerAutonomy.ts').resumeVillagerAutonomy
   const { stopUnit } = load('app/classes/unit/UnitStateHandlers.ts')
   const { flushCollectiveVillageWork } = load('app/services/CollectiveVillageWork.ts')
-  const { notifyVillageWorkChanged, consumeVillageWorkChange } = load('app/lib/units/village/villageWorkEvents.ts')
-  const owner = { type: 'Human', isPlayed: true, units: [unit], buildings: [site], population: 1 }
+  const { notifyVillageWorkChanged } = load('app/lib/units/village/villageWorkEvents.ts')
+  const owner = {
+    type: 'Human',
+    config: { units: {} },
+    isPlayed: true,
+    units: [unit],
+    buildings: [site],
+    population: 1,
+  }
   Object.assign(site, { type: 'TownCenter', label: 'town', i: 10, j: 10, owner })
   const orders = []
   Object.assign(unit, {
@@ -242,12 +255,9 @@ test('an exhausted builder really stops, collects stone and returns to the same 
   unit.context.dayNight = { state: { hour: 10, minute: 0 } }
   flushCollectiveVillageWork(owner, 0)
   f.start()
-  for (let i = 0; i < 51; i++) f.runtime.impact()
-  assert.equal(site.constructionProgress, 0.5)
+  assert.equal(site.constructionProgress, 0)
   assert.equal(unit.inventory.resources.wood, 0)
-  // Discard earlier progress notifications: the blocked action must wake planning itself.
-  consumeVillageWorkChange(owner)
-  f.runtime.impact()
+  assert.deepEqual(site.constructionMaterials.delivered, { wood: 1 })
   assert.equal(unit.inactif, true)
   assert.equal(unit.action, null)
   assert.equal(unit.dest, null)
@@ -266,13 +276,13 @@ test('an exhausted builder really stops, collects stone and returns to the same 
   assert.deepEqual(orders, ['stone', 'construction'])
   assert.equal(unit.dest, site)
   f.start()
-  for (let i = 0; i < 51; i++) f.runtime.impact()
+  for (let i = 0; i < 101; i++) f.runtime.impact()
   assert.equal(site.hitPoints, site.totalHitPoints)
   assert.deepEqual(site.constructionMaterials.consumed, { wood: 1, stone: 1 })
 })
 
 test('live builder advances renovation with its cargo without changing building health', () => {
-  const f = fixture({ wood: 20 }, { wood: 100 })
+  const f = fixture({ wood: 120 }, { wood: 100 })
   Object.assign(f.site, {
     isBuilt: true,
     hitPoints: 75,
@@ -286,7 +296,7 @@ test('live builder advances renovation with its cargo without changing building 
   assert.equal(f.site.buildingUpgrade.constructionProgress, 1 / 101)
   assert.equal(f.site.hitPoints, 75)
   assert.equal(f.site.isBuilt, true)
-  assert.equal(f.unit.inventory.resources.wood, 19)
+  assert.equal(f.unit.inventory.resources.wood, 20)
   assert.equal(updates, 1)
 })
 
@@ -297,6 +307,7 @@ test('every interior furnishing completes through hero work and applies its fina
     const config = definitions[type]
     const f = fixture({ ...config.cost }, config.cost, {
       'pixi.js': { AnimatedSprite: class {} },
+      '../../services/BuildingInteriorSpaceSystem': { syncHouseInteriorSpace() {} },
       '../../lib': { getPercentage: (hp, total) => (hp * 100) / total, updateInstanceVisibility() {} },
       './BuildingSowing': {},
       './BuildingDestruction': {},

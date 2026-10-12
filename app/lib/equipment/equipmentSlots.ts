@@ -1,13 +1,14 @@
-import { equipmentVisualParts, isHelmetDecoration } from './helmetVariants'
+import { workToolFamily } from './workTools'
+import { getEquipmentDisplayName } from './equipmentNames'
+import { isHelmetDecoration } from './helmetVariants'
 import { equipmentBaseKey } from './equipmentCondition'
 import type { HeroEquipmentSlot, HeroWeaponSlot } from '../../types/entities'
 
 export const HERO_EQUIPMENT_SLOTS: readonly HeroEquipmentSlot[] = [
   'helmet',
-  'cape',
   'armor',
-  'legs',
   'shoulders',
+  'legs',
   'bracers',
   'offhand',
   'arrow',
@@ -35,7 +36,7 @@ export function getEquipmentSlot(equipment: string): HeroEquipmentSlot | null {
     return 'helmetDecor'
   }
   if (equipment.startsWith('helmet_') || equipment.includes('_hood_')) return 'helmet'
-  if (equipment.startsWith('cape_')) return 'cape'
+  if (equipment.startsWith('cape_')) return null
   if (equipment.startsWith('armor_')) return 'armor'
   if (equipment.startsWith('leg_')) return 'legs'
   if (equipment.startsWith('shoulder_')) return 'shoulders'
@@ -47,12 +48,14 @@ export function getEquipmentSlot(equipment: string): HeroEquipmentSlot | null {
 
 export function getWeaponSlot(equipment: string): HeroWeaponSlot | null {
   equipment = equipmentBaseKey(equipment)
-  if (equipment.startsWith('bow')) return 'ranged'
+  if (workToolFamily(equipment)) return 'tool'
+  if (equipment === 'slingshot' || equipment.startsWith('bow')) return 'ranged'
   if (
     equipment.startsWith('sword_') ||
-    equipment.startsWith('axe_') ||
+    equipment.startsWith('dagger_') ||
+    equipment.startsWith('spear_') ||
+    equipment.startsWith('mace_') ||
     equipment === 'longsword' ||
-    equipment === 'halberd' ||
     equipment === 'cane' ||
     equipment === 'catchingPole' ||
     equipment === 'longstick'
@@ -63,15 +66,7 @@ export function getWeaponSlot(equipment: string): HeroWeaponSlot | null {
 }
 
 export function formatEquipmentLootLabel(equipment: string): string {
-  const parts = equipmentVisualParts(equipment)
-  if (parts.length > 1) return parts.map(formatEquipmentLootLabel).join(' · ')
-  equipment = equipmentBaseKey(equipment)
-  return equipment
-    .split('_')
-    .filter(Boolean)
-    .filter(part => part.toLowerCase() !== 'bandit')
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
+  return getEquipmentDisplayName(equipment)
 }
 
 export function formatEquipmentStackLabel(equipment: string, count = 1): string {

@@ -1,3 +1,4 @@
+import { migrateTwoLevelBuilding } from './TwoLevelBuildingMigration'
 import { normalizeForgeUpgrades } from '../lib/equipment/forgeUpgrades'
 import type { SaveEntityState, SavePlayerState } from '../types/save'
 
@@ -42,6 +43,8 @@ function migrateBuilding(building: SaveEntityState, ownerLegacyAge: number): voi
     upgrade.targetLevel ??= upgrade.targetAge ?? 1
     delete upgrade.targetAge
   }
+  if (building.type === 'House') building.houseInteriorLevel ??= Math.max(1, Math.min(2, building.buildingLevel ?? 0))
+  migrateTwoLevelBuilding(building)
   delete legacy.technology
   delete legacy.buildingAge
   delete legacy.assetAge

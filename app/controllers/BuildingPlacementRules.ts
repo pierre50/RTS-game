@@ -1,3 +1,4 @@
+import { isRoadCell } from '../lib/terrain/roadLayer'
 import { isBuildingTraversable } from '../lib/buildings/buildingTraversal'
 import { isNearInteriorDoor, preservesInteriorPassages } from '../lib/buildings/furniture/interiorFurniturePlacement'
 import { isBuildingAllowedInSpace, isCampBuilding } from '../lib/buildings/campConstruction'
@@ -62,6 +63,7 @@ export class BuildingPlacementRules {
       return false
     const passageLookup = createReservedPassageCellLookup(controls.context)
     const placementOptions = {
+      roads: isOutsideSpaceId(cell.spaceId) ? map.roads : undefined,
       allowBorder: interiorFurniture,
       requireVisible: true,
       requireExplored: true,
@@ -94,6 +96,7 @@ export class BuildingPlacementRules {
       (playerNeedsChiefForCommand(this.controls.context.player) && !heroCanCommand(this.controls.heroUnit)) ||
       !cell ||
       this.isHeroOnCell(cell) ||
+      isRoadCell(this.controls.context.map.roads, cell) ||
       !cell.visible ||
       !this.isExploredForPlacement(cell, owner) ||
       cell.category === 'Water' ||

@@ -1,6 +1,11 @@
 import { getVolume } from '../../lib/audio/settings'
 
-type TextBlock = { element: HTMLElement; text: string }
+type TextBlock = { element: HTMLElement; text: string; render?: (element: HTMLElement, text: string) => void }
+
+function renderBlock(block: TextBlock, text: string): void {
+  if (block.render) block.render(block.element, text)
+  else block.element.textContent = text
+}
 type Voice = 'male' | 'female'
 const WORD_DELAY_MS = 72
 const VOICE_SOUNDS: Record<Voice, string> = {
@@ -28,12 +33,13 @@ export class SpokenTextReveal {
         .map(word => ({ block, word }))
     })
     if (words.length <= 1) {
-      for (const block of blocks) block.element.textContent = block.text
+      for (const block of blocks) renderBlock(block, block.text)
       this.finish()
       onComplete?.()
       return
     }
     let index = 0
+    const revealed = new Map<TextBlock, string>()
     const next = () => {
       if (generation !== this.generation) return
       this.timer = null
@@ -43,7 +49,9 @@ export class SpokenTextReveal {
         return
       }
       const { block, word } = words[index++]
-      block.element.textContent = block.element.textContent ? `${block.element.textContent} ${word}` : word
+      const text = revealed.has(block) ? `${revealed.get(block)} ${word}` : word
+      revealed.set(block, text)
+      renderBlock(block, text)
       const audio = this.voices[voice]
       audio.currentTime = 0
       audio.volume = getVolume()
@@ -58,7 +66,7 @@ export class SpokenTextReveal {
     if (this.timer === null) return false
     const blocks = this.blocks
     this.stop()
-    for (const block of blocks) block.element.textContent = block.text
+    for (const block of blocks) renderBlock(block, block.text)
     return true
   }
 

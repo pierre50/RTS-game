@@ -44,7 +44,7 @@ export class Instance extends Container {
     if (isTeamHealthBarRestricted(this)) return false
     const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
     const showForFamily = this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.animal
-    const showForHeroTeam = isHeroTeamUnit(this)
+    const showForHeroTeam = isHeroTeamUnit(this) && this.hitPoints < this.totalHitPoints
     const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
     return Boolean(
       showForFamily && (showEntityBars || showForHeroTeam) && !isHeroUnit && !this.isDead && !this.isDestroyed

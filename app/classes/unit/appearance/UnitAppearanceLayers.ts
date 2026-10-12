@@ -1,3 +1,4 @@
+import { syncNpcWeaponAppearance } from '../../../lib/units/visuals/npcWeaponAppearance'
 import type { Texture } from 'pixi.js'
 import { AnimatedSprite } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES } from '../../../constants'
@@ -138,6 +139,7 @@ function syncAppearanceLayerSprite(
 }
 
 export function syncUnitAppearanceLayers(unit: UnitRuntimeHost, sheet: string): void {
+  syncNpcWeaponAppearance(unit)
   const layers = unit.appearance?.layers
   if (!getAppearanceSyncSprite(unit) || !layers?.length) {
     clearAppearanceLayers(unit)

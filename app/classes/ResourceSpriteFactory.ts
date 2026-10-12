@@ -1,3 +1,4 @@
+import { resourceVisualTexture } from '../lib/graphics/resourceMirroring'
 import { AnimatedSprite, Assets, Polygon, Sprite, type Texture } from 'pixi.js'
 import { RESOURCE_TYPES } from '../constants'
 import {
@@ -23,7 +24,9 @@ export function createResourceSprite(
 
 function createAnimatedResourceSprite(resource: Resource, options: ResourceOptions): AnimatedSprite {
   const spritesheetJump = Assets.cache.get(resource.assets as string)
-  const sprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures) as Texture[])
+  const sprite = new AnimatedSprite(
+    (getAnimationFrames(spritesheetJump.textures) as Texture[]).map(texture => resourceVisualTexture(resource, texture))
+  )
   bindAnimatedSpriteToTicker(sprite, resource.context.app)
   sprite.animationSpeed = spritesheetJump.data?.animationSpeed ?? 0.3
   sprite.loop = spritesheetJump.data?.loop ?? true
@@ -75,7 +78,10 @@ export function prepareStaticResourceTexture(resource: Resource, cell: { type: s
       resource.berrybushFullTextureName = resource.textureName
     }
   }
-  return { texture, hitArea: spritesheet?.data?.frames?.[textureFile]?.hitArea }
+  return {
+    texture: resourceVisualTexture(resource, texture),
+    hitArea: spritesheet?.data?.frames?.[textureFile]?.hitArea,
+  }
 }
 
 function createStaticResourceSprite(resource: Resource, cell: { type: string }): Sprite {

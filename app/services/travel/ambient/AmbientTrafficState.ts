@@ -14,7 +14,7 @@ export function trafficActiveAtHour(group: TrafficGroup, hour: number): boolean 
   return hash % 2 === 0
 }
 
-export type TrafficKind = 'villagers' | 'military' | 'bandits'
+type TrafficKind = 'villagers' | 'military' | 'bandits'
 export type TrafficGroup = {
   id: string
   kind: TrafficKind

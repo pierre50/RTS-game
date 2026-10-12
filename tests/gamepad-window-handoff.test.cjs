@@ -43,6 +43,8 @@ test('closing a window before the gameplay tick consumes B until release', () =>
       getGamepad: () => pad,
       observer: { disconnect() {} },
       panel: { removeEventListener() {} },
+      details: { remove() {} },
+      footer: { remove() {} },
       cancelKeyboardHold() {},
     })
     window.destroy()

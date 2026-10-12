@@ -33,6 +33,8 @@ export function syncEntityHealthDisplay(entity: RuntimeEntity, options: EntityHe
   if (shouldShowEntityHealthBar(entity)) {
     entity.drawHealthBar?.()
     entity.drawEnergyBar?.()
+  } else {
+    entity.removeHealthBar?.()
   }
 
   if (options.menu && (options.forceInfo || isEntitySelectedForInfo(entity, options.player))) {

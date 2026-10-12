@@ -1,3 +1,5 @@
+import { canAutonomouslyWork } from '../../equipment/workTools'
+import { runAutonomyPlan } from '../../../services/AutonomyPlanningQueue'
 import { isVillageResourceWorker } from '../village/villageSupplyTrips'
 import { applyUnitActivitySpritesheets } from '../visuals/unitSpriteAssets'
 import { ANIMAL_CORPSE_DROPS } from '../../../config/animalGatherLoot'
@@ -19,13 +21,17 @@ import { sendUnitToMiningAction } from '../miningActions'
 import {
   clearVillagerAutonomyTargetRejections,
   targetWorkerLoad,
-  tryVillagerJobCandidates,
+  planVillagerJobCandidates,
   villagerJobCandidateLimit,
   type VillagerJobCandidate,
 } from './villagerAutonomyTargeting'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../../types/entities'
 
-type AssignmentOptions = { exploreWhenNoTarget?: boolean; preserveRejectedTargets?: boolean }
+type AssignmentOptions = {
+  onSettled?: (accepted: boolean, cancelled?: boolean) => void
+  exploreWhenNoTarget?: boolean
+  preserveRejectedTargets?: boolean
+}
 type ResourceAutonomyJob = Exclude<VillagerAutonomyJob, 'food' | 'construction' | 'horseCapture'>
 
 const RESOURCE_AUTONOMY_CONFIG: Record<ResourceAutonomyJob, { action: string; resourceType: string; work: string }> = {
@@ -93,7 +99,7 @@ function noStrictTargetForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob, o
 
 export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
-  if (!canMineIronResource(unit, { type: job })) return false
+  if (!canAutonomouslyWork(unit, job, true) || !canMineIronResource(unit, { type: job })) return false
   if (job === 'construction') return knownConstructionTargets(unit).length > 0
   if (job === 'food') return knownFoodTargets(unit, 1).length > 0
   if (job === 'horseCapture') {
@@ -104,7 +110,7 @@ export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonom
     )
   }
 
-  return knownResources(unit, RESOURCE_AUTONOMY_CONFIG[job].resourceType, 1).length > 0
+  return resourceAutonomyTargets(unit, job, 1).length > 0
 }
 
 export function clearVillagerAutonomy(unit: UnitEntity): void {
@@ -146,9 +152,16 @@ function foodCandidateFor(unit: UnitEntity, target: RuntimeEntity): VillagerJobC
   }
 }
 
-type AutonomyScoring = { targetWorkerLoad(target: RuntimeEntity, work: string, action: string): number }
+type AutonomyScoring = {
+  incremental: boolean
+  targetWorkerLoad(target: RuntimeEntity, work: string, action: string): number
+}
 
-function assignFoodAutonomy(unit: UnitEntity, options: AssignmentOptions, scoring: AutonomyScoring): boolean {
+function* assignFoodAutonomy(
+  unit: UnitEntity,
+  options: AssignmentOptions,
+  scoring: AutonomyScoring
+): Generator<void, boolean, void> {
   const job = 'food'
   const jobResource = unit.collectiveTask
   const plant =
@@ -178,7 +191,7 @@ function assignFoodAutonomy(unit: UnitEntity, options: AssignmentOptions, scorin
       })
   if (!targets.length) return noStrictTargetForAutonomy(unit, job, options)
   if (
-    tryVillagerJobCandidates(
+    yield* planVillagerJobCandidates(
       unit,
       job,
       targets.map(target => foodCandidateFor(unit, target)),
@@ -189,12 +202,16 @@ function assignFoodAutonomy(unit: UnitEntity, options: AssignmentOptions, scorin
   return noStrictTargetForAutonomy(unit, job, options)
 }
 
-function assignHorseAutonomy(unit: UnitEntity, options: AssignmentOptions, scoring: AutonomyScoring): boolean {
+function* assignHorseAutonomy(
+  unit: UnitEntity,
+  options: AssignmentOptions,
+  scoring: AutonomyScoring
+): Generator<void, boolean, void> {
   const job = 'horseCapture'
   const target = closest(unit, knownCapturableHorses(unit))
   if (!target) return noStrictTargetForAutonomy(unit, job, options)
   if (!getNearestAvailableStableForUnit(unit, target)) return false
-  return tryVillagerJobCandidates(
+  return yield* planVillagerJobCandidates(
     unit,
     job,
     [
@@ -209,13 +226,17 @@ function assignHorseAutonomy(unit: UnitEntity, options: AssignmentOptions, scori
   )
 }
 
-function assignConstructionAutonomy(unit: UnitEntity, _options: AssignmentOptions, scoring: AutonomyScoring): boolean {
+function* assignConstructionAutonomy(
+  unit: UnitEntity,
+  _options: AssignmentOptions,
+  scoring: AutonomyScoring
+): Generator<void, boolean, void> {
   const job = 'construction'
   const targets = knownConstructionTargets(unit)
   if (!targets.length) {
     return noStrictTargetForAutonomy(unit, job, { exploreWhenNoTarget: false })
   }
-  const accepted = tryVillagerJobCandidates(
+  const accepted = yield* planVillagerJobCandidates(
     unit,
     job,
     targets.map(target => ({
@@ -230,20 +251,34 @@ function assignConstructionAutonomy(unit: UnitEntity, _options: AssignmentOption
   return noStrictTargetForAutonomy(unit, job, { exploreWhenNoTarget: false })
 }
 
-function assignResourceAutonomy(
+function resourceAutonomyTargets(unit: UnitEntity, job: ResourceAutonomyJob, limit: number): RuntimeEntity[] {
+  const types: string[] = canAutonomouslyWork(unit, job) ? [RESOURCE_AUTONOMY_CONFIG[job].resourceType] : []
+  const ground = job === 'wood' ? RESOURCE_TYPES.groundWood : job === 'stone' ? RESOURCE_TYPES.groundStone : null
+  if (ground) types.push(ground)
+  return types.length ? knownResources(unit, types, limit * types.length) : []
+}
+
+function* assignResourceAutonomy(
   unit: UnitEntity,
   job: ResourceAutonomyJob,
   options: AssignmentOptions,
   scoring: AutonomyScoring
-): boolean {
+): Generator<void, boolean, void> {
   const resourceJob = job
   const resourceConfig = RESOURCE_AUTONOMY_CONFIG[resourceJob]
-  const targets = knownResources(unit, resourceConfig.resourceType, villagerJobCandidateLimit(unit, job))
+  const targets = resourceAutonomyTargets(unit, job, villagerJobCandidateLimit(unit, job))
   if (!targets.length) {
     return noStrictTargetForAutonomy(unit, job, options)
   }
 
   const candidates = targets.map(target => {
+    if (target.type === RESOURCE_TYPES.groundWood || target.type === RESOURCE_TYPES.groundStone)
+      return {
+        action: ACTION_TYPES.forageberry,
+        send: (candidate: RuntimeEntity) => unit.sendToBerrybush?.(candidate, true),
+        target,
+        work: WORK_TYPES.forager,
+      }
     if (resourceJob === 'wood') {
       return {
         action: resourceConfig.action,
@@ -259,7 +294,7 @@ function assignResourceAutonomy(
       work: resourceConfig.work,
     }
   })
-  if (tryVillagerJobCandidates(unit, job, candidates, scoring)) {
+  if (yield* planVillagerJobCandidates(unit, job, candidates, scoring)) {
     return true
   }
 
@@ -273,24 +308,26 @@ export function assignVillagerAutonomy(
 ): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
   if (hasPriorityCombat(unit) || !shouldVillagerWork(unit)) return false
-  if (!canMineIronResource(unit, { type: job })) return false
+  if (!canAutonomouslyWork(unit, job, true) || !canMineIronResource(unit, { type: job })) return false
   if (!options.preserveRejectedTargets) clearVillagerAutonomyTargetRejections(unit, job)
   unit.autonomyBlockedJob = null
   setVillagerAutonomy(unit, job)
-  const scoring = {
-    targetWorkerLoad: (target: RuntimeEntity, work: string, action: string) =>
-      targetWorkerLoad(unit, target, work, action),
-  }
+  return runAutonomyPlan(
+    unit,
+    function* (incremental) {
+      const scoring = {
+        incremental,
+        targetWorkerLoad: (target: RuntimeEntity, work: string, action: string) =>
+          targetWorkerLoad(unit, target, work, action),
+      }
 
-  unit.assigningAutonomousJob = true
-  try {
-    if (job === 'food') return assignFoodAutonomy(unit, options, scoring)
-    if (job === 'horseCapture') return assignHorseAutonomy(unit, options, scoring)
-    if (job === 'construction') return assignConstructionAutonomy(unit, options, scoring)
-    return assignResourceAutonomy(unit, job, options, scoring)
-  } finally {
-    unit.assigningAutonomousJob = false
-  }
+      if (job === 'food') return yield* assignFoodAutonomy(unit, options, scoring)
+      if (job === 'horseCapture') return yield* assignHorseAutonomy(unit, options, scoring)
+      if (job === 'construction') return yield* assignConstructionAutonomy(unit, options, scoring)
+      return yield* assignResourceAutonomy(unit, job, options, scoring)
+    },
+    options.onSettled
+  )
 }
 
 export function resumeVillagerAutonomy(unit: UnitEntity): boolean {

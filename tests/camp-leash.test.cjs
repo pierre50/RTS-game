@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const rules = loadTsModule('app/lib/units/campBehavior.ts')
+const rules = loadTsModule('app/lib/units/camps/campBehavior.ts')
 const { CampLeashController } = loadTsModule('app/services/patrol/CampLeashController.ts', {
   mocks: {
     '../../lib/units/insightDetection': { instanceIsInInsightRange: (_unit, target) => target.visible !== false },

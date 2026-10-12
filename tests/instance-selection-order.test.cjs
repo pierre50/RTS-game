@@ -128,6 +128,44 @@ test('unselect keeps played unit health bars visible in hero gameplay', () => {
   assert.equal(children.some(child => child.label === 'healthBar'), true)
 })
 
+test('allied health bars follow wounds, healing, selection and debug visibility', () => {
+  const { Instance } = loadInstance()
+  const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+  const { syncEntityHealthDisplay } = loadTsModule('app/lib/entities/entityHealthDisplay.ts')
+  const instance = Object.create(Instance.prototype)
+  Object.assign(instance, {
+    label: 'villager',
+    context: { map: {}, controls: { heroUnit: { label: 'hero', isChief: true, owner: { team: 1 } } } },
+    family: 'unit',
+    owner: { team: 1 },
+    selected: false,
+    isDead: false,
+    isDestroyed: false,
+    hitPoints: 10,
+    totalHitPoints: 10,
+    sprite: { height: 40, anchor: { y: 1 } },
+    children: [],
+    addChild(child) { this.children.push(child) },
+  })
+  const hasBar = () => Boolean(instance.getChildByLabel('healthBar'))
+
+  instance.drawHealthBar()
+  assert.equal(hasBar(), false, 'healthy spawned villagers have no bar')
+  instance.hitPoints = 9.5
+  syncEntityHealthDisplay(instance)
+  assert.equal(hasBar(), true, 'damage reveals the bar, including fractional wounds')
+  instance.hitPoints = 10
+  syncEntityHealthDisplay(instance)
+  assert.equal(hasBar(), false, 'full healing hides the bar')
+  instance.select()
+  assert.equal(hasBar(), true, 'selection reveals full health')
+  instance.unselect()
+  assert.equal(hasBar(), false, 'deselection hides full health')
+  instance.context.map.debugEntityBarsVisible = true
+  instance.drawHealthBar()
+  assert.equal(hasBar(), true, 'debug mode can still show all bars')
+})
+
 test('buildings do not keep world health bars visible in hero gameplay', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
@@ -178,7 +216,7 @@ test('unselect removes the active hero world health bar in hero gameplay', () =>
   assert.equal(children.some(child => child.label === 'healthBar'), false)
 })
 
-test('chief hero sees health bars of units in the same team', () => {
+test('chief hero sees health bars of wounded units in the same team', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
   instance.label = 'hero-player-unit-1'
@@ -189,6 +227,8 @@ test('chief hero sees health bars of units in the same team', () => {
   }
   instance.family = 'unit'
   instance.owner = { label: 'player-1', team: 2 }
+  instance.hitPoints = 7
+  instance.totalHitPoints = 10
   instance.isDead = false
   instance.isDestroyed = false
 
@@ -199,7 +239,7 @@ test('chief hero sees health bars of units in the same team', () => {
   assert.equal(Instance.prototype.shouldKeepHealthBarVisible.call(instance), false)
 })
 
-test('same-team AI units keep world health bars visible for the chief', () => {
+test('wounded same-team AI units keep world health bars visible for the chief', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
   instance.label = 'ai-ally-1'
@@ -210,6 +250,8 @@ test('same-team AI units keep world health bars visible for the chief', () => {
   }
   instance.family = 'unit'
   instance.owner = { label: 'ai-ally-player', team: 2 }
+  instance.hitPoints = 7
+  instance.totalHitPoints = 10
   instance.isDead = false
   instance.isDestroyed = false
 

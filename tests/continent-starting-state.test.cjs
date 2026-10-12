@@ -88,7 +88,16 @@ test('shipped continent restores 42 distinct AI settlements and an empty hero st
         const migrated = structuredClone(authored)
         loadTsModule('app/serialization/LegacyProgressionMigration.ts').migrateLegacyProgression(migrated)
         assert.deepEqual(player.buildings, migrated.buildings)
-        assert.deepEqual(player.units, authored.units)
+        const withoutStartingTools = units =>
+          units.map(unit => {
+            if (unit.type !== 'Villager') return unit
+            const { activeWeapons, equipment, toolsInitialized, ...inventory } = unit.inventory ?? {}
+            return { ...unit, inventory }
+          })
+        assert.deepEqual(withoutStartingTools(player.units), withoutStartingTools(authored.units))
+        const workers = player.units.filter(unit => unit.type === 'Villager')
+        if (workers.length >= 4)
+          assert.equal(new Set(workers.map(unit => unit.inventory.activeWeapons.tool.split('_')[0])).size, 4)
         if (player.settlementType !== 'outpost') {
           assert.equal(player.buildings.filter(b => b.type === 'House').length, countResidentHouseholds(player))
           const assignedBeds = new Set()

@@ -103,7 +103,7 @@
         "images": {
           "final": {
             "sheet": "buildings",
-            "frame": 11
+            "frame": 22
           }
         }
       },
@@ -119,7 +119,7 @@
         "images": {
           "final": {
             "sheet": "buildings",
-            "frame": 7
+            "frame": 18
           }
         }
       },
@@ -159,7 +159,7 @@
         "images": {
           "final": {
             "sheet": "buildings",
-            "frame": 13
+            "frame": 24
           }
         }
       },
@@ -175,7 +175,7 @@
         "images": {
           "final": {
             "sheet": "buildings",
-            "frame": 17
+            "frame": 28
           }
         }
       }
@@ -213,14 +213,6 @@
           }
         }
       },
-      "StoragePit": {
-        "images": {
-          "final": {
-            "sheet": "buildings",
-            "frame": 24
-          }
-        }
-      },
       "Temple": {
         "images": {
           "final": {
@@ -237,35 +229,11 @@
           }
         }
       },
-      "ArcheryRange": {
-        "images": {
-          "final": {
-            "sheet": "buildings",
-            "frame": 18
-          }
-        }
-      },
-      "Market": {
-        "images": {
-          "final": {
-            "sheet": "buildings",
-            "frame": 22
-          }
-        }
-      },
       "WatchTower": {
         "images": {
           "final": {
             "sheet": "buildings",
             "frame": 27
-          }
-        }
-      },
-      "Forge": {
-        "images": {
-          "final": {
-            "sheet": "buildings",
-            "frame": 28
           }
         }
       }

@@ -1,0 +1,31 @@
+{
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "commit": "58ce1aa479e4df32845a73a5d0afc221c3a893c2",
+  "credits": "sheet_definitions/weapon_ranged_slingshot.json",
+  "files": [
+    {
+      "path": "spritesheets/weapon/ranged/slingshot/foreground/walk/slingshot.png",
+      "sha256": "78e205914584e2b649ea02f2d6c48cd50a0eff599c95c6fd16d648c8830cf975"
+    },
+    {
+      "path": "spritesheets/weapon/ranged/slingshot/foreground/shoot/slingshot.png",
+      "sha256": "e4321e78b9c93b7f489728a5df430faf482d9f5e597e20dc7b82462b6f7af773"
+    },
+    {
+      "path": "spritesheets/weapon/ranged/slingshot/foreground/hurt/slingshot.png",
+      "sha256": "10e47ee7d2532962703c9101b4a6ef5154632a7d2cef1492d737b6aaec45c1d7"
+    },
+    {
+      "path": "spritesheets/weapon/ranged/slingshot/background/walk/slingshot.png",
+      "sha256": "1091bbc3aa81679a28cc80ed88d8e4ed448ed10d9f91f41c80619b18de1f8fc7"
+    },
+    {
+      "path": "spritesheets/weapon/ranged/slingshot/background/shoot/slingshot.png",
+      "sha256": "1808a991257b92966660f67a23125dd14b6f1abf2c6d99f708900693145e322f"
+    },
+    {
+      "path": "spritesheets/weapon/ranged/slingshot/background/hurt/slingshot.png",
+      "sha256": "648b551efa3912e3ec466567e8d797eeb66da1437032b2919983de0a55955ca6"
+    }
+  ]
+}

@@ -25,6 +25,8 @@ function loadNaturalRegrowthSystem(calls, moduleCache = new Map()) {
           wheatRegrowRatioPerDay: 0.2,
         },
         NATURAL_RESOURCE_REGROWTH_BY_TYPE: {
+          GroundWood: { respawnDelayDays: 2, respawnQuantityRatio: 1 },
+          GroundStone: { respawnDelayDays: 4, respawnQuantityRatio: 1 },
           Berrybush: { respawnDelayDays: 3, respawnQuantityRatio: 0.5 },
           Wheat: { respawnDelayDays: 2, respawnQuantityRatio: 0.5 },
           Stone: { respawnDelayDays: 7, respawnQuantityRatio: 0.2 },
@@ -214,5 +216,40 @@ test('daily renewal is batched and saving flushes pending changes exactly once',
   assert.equal(context.map.naturalResourceRespawnSlots.length, 0)
   system.applyDailyRegrowth({ day: 16 })
   assert.equal(restored, 100)
+  system.destroy()
+})
+
+test('daily events renew ground slots once, with separate delays and retries for blocked cells', () => {
+  const calls = []
+  const NaturalRegrowthSystem = loadNaturalRegrowthSystem(calls)
+  let blocked = true
+  const renewed = []
+  const context = {
+    map: {
+      resources: new Set(),
+      naturalResourceRespawnSlots: [
+        { type: 'GroundWood', i: 2, j: 2, depletedDay: 1, totalQuantity: 1 },
+        { type: 'GroundStone', i: 3, j: 3, depletedDay: 1, totalQuantity: 1 },
+      ],
+      respawnNaturalResource: slot => {
+        if (slot.type === 'GroundStone' && blocked) return false
+        renewed.push(slot.type)
+        return true
+      },
+    },
+    players: [],
+  }
+  const system = new NaturalRegrowthSystem(context)
+  system.handleDailyWorldEvent({ day: 2 })
+  assert.deepEqual(renewed, [])
+  system.handleDailyWorldEvent({ day: 3 })
+  assert.deepEqual(renewed, ['GroundWood'])
+  system.handleDailyWorldEvent({ day: 5 })
+  assert.equal(context.map.naturalResourceRespawnSlots.length, 1)
+  blocked = false
+  system.handleDailyWorldEvent({ day: 6 })
+  system.handleDailyWorldEvent({ day: 6 })
+  assert.deepEqual(renewed, ['GroundWood', 'GroundStone'])
+  assert.equal(context.map.naturalResourceRespawnSlots.length, 0)
   system.destroy()
 })

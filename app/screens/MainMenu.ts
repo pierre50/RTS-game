@@ -53,14 +53,20 @@ export default class MainMenu {
     document.addEventListener('keydown', this._onKeyDown)
   }
 
-  _btn(label: string, onClick: (evt: MouseEvent) => void, className: string = 'home-btn'): HTMLButtonElement {
+  _btn(
+    label: string,
+    onClick: (evt: MouseEvent) => void | Promise<void>,
+    className: string = 'home-btn'
+  ): HTMLButtonElement {
     const button = document.createElement('button')
     button.className = className
     button.textContent = label
     if (className === 'home-btn') {
       button.addEventListener('focus', () => this._setActiveHomeButton(button))
     }
-    button.addEventListener('click', onClick)
+    button.addEventListener('click', evt => {
+      Promise.resolve(onClick(evt)).catch(error => console.error('Menu action failed', error))
+    })
     return button
   }
 

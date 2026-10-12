@@ -5,7 +5,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { handleUnitIsAttacked } = loadTsModule('app/classes/unit/UnitStateHandlers.ts', {
   mocks: {
     '../../lib/units/unitSuspension': { wakeUnitSimulation: () => {} },
-    '../../lib/units/campBehavior': { canCampPursue: () => true },
+    '../../lib/units/camps/campBehavior': { canCampPursue: () => true },
     '../../lib': {
       evaluateCombatMorale: () => 'fight',
       cancelPendingAggression: () => {},

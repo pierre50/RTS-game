@@ -115,3 +115,18 @@ test('left click teleports in hero camera mode, dragging and right click do not'
   controller.onPointerUp({ ...event, button: 2 })
   assert.equal(calls.length, 1)
 })
+
+test('the inventory map delegates pointer navigation without teleporting or moving the camera', () => {
+  let teleports = 0
+  const MinimapInputController = loadMinimapInputController(() => teleports++)
+  const controller = new MinimapInputController({
+    context: { controls: { setCamera: () => assert.fail('camera moved') } },
+    minimapMap: { closest: () => ({}) },
+    minimapManager: {},
+  })
+  controller.onPointerDown({ button: 0, pointerId: 1 })
+  controller.onPointerUp({ button: 0, pointerId: 1 })
+  assert.equal(controller.pointerSession, null)
+  assert.equal(controller.mouseHoldTimeout, null)
+  assert.equal(teleports, 0)
+})

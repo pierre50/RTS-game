@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 test('a chief stays in conversation until a hostile requires village defense', () => {
   const { handleAIChiefGuard } = loadTsModule('app/classes/players/AIPlayerBehavior.ts', { mocks: {
-    '../../lib/units/interiorCombat': { hasInteriorCombatRoute: () => false },
+    '../../lib/units/combat/interiorCombat': { hasInteriorCombatRoute: () => false },
     '../../ai/AITheftDefense': { isInteriorTheftDefender: () => false },
   } })
   const orders = []

@@ -61,6 +61,7 @@ function unitEquipmentEntry(definition: UnitEquipmentDefinition): UnitEquipmentE
 }
 
 export function dynamicEquipmentVisualKey(equipment: string): DynamicEquipmentKey | null {
+  if (equipment.startsWith('cape_')) return null
   if (equipment === 'catchingPole') return 'longstick'
   return DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey) ? (equipment as DynamicEquipmentKey) : null
 }

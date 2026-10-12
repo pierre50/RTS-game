@@ -45,7 +45,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.7
+        "y": 0.6
       }
     },
     "002_graphics_buildings_rustic_house.png": {
@@ -332,8 +332,8 @@
         "h": 106
       },
       "anchor": {
-        "x": 0.5,
-        "y": 0.65
+        "x": 0.45,
+        "y": 0.55
       }
     },
     "014_graphics_buildings_village_temple.png": {

@@ -12,7 +12,7 @@ const UNIT_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
 const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
 const VILLAGER_ACTION_SHEETS = ['slash', 'shoot'] as const
 const HERO_BASE_ACTION_SHEETS = ['slash', 'shoot'] as const
-const RANGED_INFANTRY_ACTION_SHEETS = ['shoot'] as const
+const RANGED_UNIT_ACTION_SHEETS = ['shoot'] as const
 
 export type BakedUnitType =
   | 'villager'
@@ -136,8 +136,9 @@ export function bakedLogicalAliases(unit: BakedUnitType, variant: string): strin
   return [
     ...UNIT_SHEETS.map(sheet => bakedUnitAlias(unit, variant, sheet)),
     ...(['chief', 'infantry', 'infantry_nohair'].includes(unit) ? [bakedUnitAlias(unit, variant, 'sitting')] : []),
-    ...(unit === 'infantry' || unit === 'infantry_nohair'
-      ? RANGED_INFANTRY_ACTION_SHEETS.map(sheet => bakedUnitActionAlias(unit, variant, sheet))
+    ...(['bandit_archer', 'priest'].includes(unit) ? [bakedUnitActionAlias(unit, variant, 'slash')] : []),
+    ...(unit !== 'bandit_archer'
+      ? RANGED_UNIT_ACTION_SHEETS.map(sheet => bakedUnitActionAlias(unit, variant, sheet))
       : []),
   ]
 }

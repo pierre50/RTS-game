@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -39,6 +40,7 @@ function fixture(compact) {
   }
   const owner = { isPlayed: true, units: [], buildings: [] }
   const unit = {
+    inventory: workerInventory('axe_ceramic'),
     type: 'Villager',
     owner,
     i: 0,

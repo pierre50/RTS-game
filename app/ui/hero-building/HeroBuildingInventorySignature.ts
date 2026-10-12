@@ -9,8 +9,21 @@ export function getHeroBuildingInteractiveInventorySignature(
   building: BuildingEntity,
   hero: UnitEntity | null | undefined
 ): string {
+  if (building.type === BUILDING_TYPES.forge) {
+    return [
+      ...inventorySignature(hero),
+      JSON.stringify(hero?.inventory?.activeWeapons ?? {}),
+      JSON.stringify(hero?.inventory?.equipped ?? {}),
+    ].join('|')
+  }
   if (building.type === BUILDING_TYPES.market) {
-    return [building.marketGold ?? '', building.marketStock?.join(',') || '', ...inventorySignature(hero)].join('|')
+    return [
+      building.marketGold ?? '',
+      building.marketStock?.join(',') || '',
+      building.buildingLevel ?? 0,
+      JSON.stringify(building.marketResourceStock ?? {}),
+      ...inventorySignature(hero),
+    ].join('|')
   }
   if (building.type === BUILDING_TYPES.chest) {
     return [

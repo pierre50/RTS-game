@@ -2,12 +2,26 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const moduleCache = new Map()
+const planning = loadTsModule('app/services/AutonomyPlanningQueue.ts', { moduleCache })
 const { notifyVillageStateChanged } = loadTsModule('app/lib/units/village/villageStateEvents.ts', { moduleCache })
 const { updateCollectiveVillage, flushCollectiveVillageWork } = loadTsModule('app/services/CollectiveVillageWork.ts', {
   moduleCache,
   mocks: {
     '../lib/units/autonomy/villagerAutonomy': {
-      assignVillagerAutonomy(unit, job) {
+      assignVillagerAutonomy(unit, job, options) {
+        if (unit.deferAssignment) {
+          unit.autonomousJob = job
+          return planning.runAutonomyPlan(
+            unit,
+            function* () {
+              yield
+              unit.orders.push(job)
+              unit.autonomyBlockedJob = job
+              return false
+            },
+            options.onSettled
+          )
+        }
         unit.orders.push(job)
         if (unit.unavailableJobs?.includes(job)) {
           unit.autonomyBlockedJob = job
@@ -33,7 +47,12 @@ function fixture() {
     j: 10,
     context,
     inactif: true,
-    inventory: { resources: { wheat: 12 } },
+    inventory: {
+      toolsInitialized: true,
+      activeWeapons: { tool: 'axe_ceramic' },
+      equipment: ['pickaxe_ceramic', 'hammer_ceramic', 'scythe_ceramic'],
+      resources: { wheat: 12 },
+    },
     orders: [],
     stop() {
       this.inactif = true
@@ -173,18 +192,18 @@ test('a builder gathering wood finishes the batch instead of returning after eac
     updateCollectiveVillage(owner)
     assert.equal(unit.dest, tree)
   }
-  // The twelve provisions occupy bag slots; eighteen wood completes this trip.
-  for (let wood = 1; wood < 18; wood++) {
+  // The twelve provisions and three spare tools occupy bag slots; fifteen wood completes this trip.
+  for (let wood = 1; wood < 15; wood++) {
     unit.inventory.resources.wood = wood
     updateCollectiveVillage(owner)
     assert.equal(unit.dest, tree)
   }
-  unit.inventory.resources.wood = 18
+  unit.inventory.resources.wood = 15
   updateCollectiveVillage(owner)
   assert.equal(unit.dest, site)
   assert.deepEqual(unit.orders, ['wood', 'construction'])
   unit.inventory.resources.wood = 0
-  site.constructionMaterials.delivered.wood = 18
+  site.constructionMaterials.delivered.wood = 15
   updateCollectiveVillage(owner)
   assert.equal(unit.collectiveTask, 'wood')
   const nextTree = unit.dest
@@ -237,11 +256,17 @@ test('combat and following still block reassignment of an ongoing stock delivery
   }
 })
 
-test('a rejected resource assignment tries another useful construction material immediately', () => {
+test('a rejected resource assignment defers the next material to a later dispatch', () => {
   const { owner, unit, site } = fixture()
   site.constructionMaterials.cost = { wood: 10, stone: 10 }
   unit.unavailableJobs = ['wood']
+  unit.context.scheduler = { elapsedMs: 0 }
   updateCollectiveVillage(owner)
+  assert.deepEqual(unit.orders, ['wood'])
+  updateCollectiveVillage(owner)
+  assert.deepEqual(unit.orders, ['wood'])
+  unit.context.scheduler.elapsedMs = 1000
+  flushCollectiveVillageWork(owner)
   assert.deepEqual(unit.orders, ['wood', 'stone'])
   assert.equal(unit.collectiveTask, 'stone')
   assert.equal(unit.autonomyBlockedJob, null)
@@ -251,7 +276,14 @@ test('rejecting every resource remains bounded and leaves a truthful blocked sta
   const { owner, unit, site } = fixture()
   site.constructionMaterials.cost = { wood: 10, stone: 10 }
   unit.unavailableJobs = ['wood', 'stone', 'food']
+  unit.context.scheduler = { elapsedMs: 0 }
   updateCollectiveVillage(owner)
+  assert.deepEqual(unit.orders, ['wood'])
+  unit.context.scheduler.elapsedMs = 1000
+  flushCollectiveVillageWork(owner)
+  assert.deepEqual(unit.orders, ['wood', 'stone'])
+  unit.context.scheduler.elapsedMs = 2000
+  flushCollectiveVillageWork(owner)
   assert.deepEqual(unit.orders, ['wood', 'stone'])
   assert.equal(unit.inactif, true)
   assert.equal(unit.autonomyBlockedJob, 'stone')
@@ -315,41 +347,41 @@ test('reassignment clears the old autonomy before stopping, preventing an old-or
 
 test('full wood bag frees exactly one slot to gather the missing stone', () => {
   const { owner, unit, site } = fixture()
-  unit.inventory.resources = { wheat: 4, wood: 26 }
+  unit.inventory.resources = { wheat: 4, wood: 23 }
   unit.collectiveTask = 'wood'
   unit.autonomousJob = 'wood'
   unit.inactif = false
   site.constructionMaterials.cost = { stone: 10 }
   updateCollectiveVillage(owner)
-  assert.deepEqual(unit.inventory.resources, { wheat: 4, wood: 25 })
+  assert.deepEqual(unit.inventory.resources, { wheat: 4, wood: 22 })
   assert.equal(unit.collectiveTask, 'stone')
   assert.deepEqual(unit.orders, ['stone'])
   updateCollectiveVillage(owner)
-  assert.equal(unit.inventory.resources.wood, 25)
+  assert.equal(unit.inventory.resources.wood, 22)
   unit.inventory.resources.stone = 1
   updateCollectiveVillage(owner)
   assert.equal(unit.dest, site)
-  assert.equal(unit.inventory.resources.wood, 25)
+  assert.equal(unit.inventory.resources.wood, 22)
 })
 
 test('unavailable replacement work never consumes the blocked cargo', () => {
   const { owner, unit, site } = fixture()
-  unit.inventory.resources = { wheat: 4, wood: 26 }
+  unit.inventory.resources = { wheat: 4, wood: 23 }
   unit.unavailableJobs = ['stone', 'food']
   site.constructionMaterials.cost = { stone: 10 }
   updateCollectiveVillage(owner)
-  assert.deepEqual(unit.inventory.resources, { wheat: 4, wood: 26 })
+  assert.deepEqual(unit.inventory.resources, { wheat: 4, wood: 23 })
 })
 
 test('full useful cargo goes to another local construction without deletion', () => {
   const { owner, unit, site } = fixture()
-  unit.inventory.resources = { wheat: 4, wood: 26 }
+  unit.inventory.resources = { wheat: 4, wood: 23 }
   site.constructionMaterials.cost = { stone: 10 }
   const other = { ...site, label: 'other', constructionMaterials: { cost: { wood: 20 }, delivered: {}, consumed: {} } }
   owner.buildings.push(other)
   updateCollectiveVillage(owner)
   assert.equal(unit.dest, other)
-  assert.equal(unit.inventory.resources.wood, 26)
+  assert.equal(unit.inventory.resources.wood, 23)
 })
 
 test('full bags with only food or equipment are never discarded', () => {
@@ -366,7 +398,7 @@ test('full bags with only food or equipment are never discarded', () => {
 
 test('an available depot receives the full bag instead of deleting resources', () => {
   const { owner, unit, site } = fixture()
-  unit.inventory.resources = { wheat: 4, wood: 26 }
+  unit.inventory.resources = { wheat: 4, wood: 23 }
   site.constructionMaterials.cost = { stone: 10 }
   owner.buildings.push({
     family: 'building',
@@ -383,7 +415,7 @@ test('an available depot receives the full bag instead of deleting resources', (
     return true
   }
   updateCollectiveVillage(owner)
-  assert.equal(unit.inventory.resources.wood, 26)
+  assert.equal(unit.inventory.resources.wood, 23)
   assert.equal(deliveries, 1)
   assert.deepEqual(unit.orders, [])
 })
@@ -398,4 +430,36 @@ test('hero and followers never discard resources through collective work', () =>
     assert.equal(unit.inventory.resources.wood, 50)
     assert.deepEqual(unit.orders, [])
   }
+})
+
+test('a deferred failure tries another task on the next dispatch, never while pending', t => {
+  // This scenario checks task transitions; frame-budget timing has its own queue tests.
+  t.mock.method(performance, 'now', () => 0)
+  const { owner, unit, site } = fixture()
+  const tasks = new Map()
+  let id = 0
+  unit.context.scheduler = {
+    elapsedMs: 0,
+    add: callback => {
+      tasks.set(++id, callback)
+      return id
+    },
+    remove: key => tasks.delete(key),
+  }
+  const queue = new planning.AutonomyPlanningQueue(unit.context)
+  site.constructionMaterials.cost = { wood: 10, stone: 10 }
+  unit.deferAssignment = true
+  updateCollectiveVillage(owner)
+  assert.equal(planning.hasPendingAutonomyPlan(unit), true)
+  assert.deepEqual(unit.orders, [])
+  updateCollectiveVillage(owner)
+  queue.flush()
+  assert.deepEqual(unit.orders, ['wood'])
+  unit.deferAssignment = false
+  flushCollectiveVillageWork(owner)
+  assert.deepEqual(unit.orders, ['wood'])
+  unit.context.scheduler.elapsedMs = 1000
+  flushCollectiveVillageWork(owner)
+  assert.deepEqual(unit.orders, ['wood', 'stone'])
+  queue.destroy()
 })

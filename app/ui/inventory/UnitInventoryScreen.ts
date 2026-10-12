@@ -1,3 +1,4 @@
+import { unitToolBagActions } from './UnitToolEquipment'
 import type { Modal } from '../../lib'
 import {
   getUnitCorpseLootEquipment,
@@ -30,7 +31,9 @@ export class UnitInventoryScreen {
   open(onClose: () => void): Modal {
     return createInspectionModal({
       proximity: { context: this.menu.context, targets: () => [this.unit] },
-      title: getEntityDisplayName(this.unit),
+      title: this.unit.isDead
+        ? t('inventoryLootTitle', { name: getEntityDisplayName(this.unit) })
+        : getEntityDisplayName(this.unit),
       inspection: false,
       panelClass: 'inventory-transfer-modal',
       content: this.element,
@@ -41,16 +44,20 @@ export class UnitInventoryScreen {
   render(): void {
     const { menu, unit } = this
     const hero = menu.context.controls.heroUnit
-    const content = createTitledEntityInfoContent(menu.context.app, unit)
-    this.element.replaceChildren(content)
+    this.element.replaceChildren()
+    if (!unit.isDead) this.element.appendChild(createTitledEntityInfoContent(menu.context.app, unit))
     if (!hero || unit.isDestroyed) return
 
+    const toolActions =
+      !unit.isDead && unit.owner && hero.owner && unit.owner.label === hero.owner.label
+        ? unitToolBagActions(menu, unit, () => this.render())
+        : null
     const source = createHeroBagContainer(hero, menu)
     const destination = unit.isDead
       ? {
           id: unit.label,
-          labelKey: 'inventoryNpcBag',
-          label: t('inventoryNpcBag', { name: getEntityDisplayName(unit) }),
+          labelKey: 'inventoryLootAvailable',
+          label: t('inventoryLootAvailable'),
           inventory: {
             equipment: getUnitCorpseLootEquipment(unit),
             resources: getUnitCorpseLootResources(unit),
@@ -69,6 +76,9 @@ export class UnitInventoryScreen {
       context: menu.context,
       source,
       destination,
+      additionalItems: container => (container === destination ? (toolActions?.equippedItems() ?? []) : []),
+      equipmentAction: (container, equipment) =>
+        container === destination ? toolActions?.equipmentAction(equipment) : undefined,
       canTransfer: () => !unit.isDestroyed,
       ...(unit.isDead
         ? {
@@ -82,9 +92,13 @@ export class UnitInventoryScreen {
         source.label = getUnitBagTitle(hero)
         if (!unit.isDead) destination.label = getUnitBagTitle(unit, getEntityDisplayName(unit))
         menu.updateHeroStatus?.(hero)
+        this.render()
       },
     })
     this.element.appendChild(transfer.element)
-    this.element.setAttribute('aria-label', t('inventoryNpcBag', { name: getEntityDisplayName(unit) }))
+    this.element.setAttribute(
+      'aria-label',
+      t(unit.isDead ? 'inventoryLootTitle' : 'inventoryNpcBag', { name: getEntityDisplayName(unit) })
+    )
   }
 }

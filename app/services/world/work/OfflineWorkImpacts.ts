@@ -1,13 +1,25 @@
+import { isGroundResourceType } from '../../../lib/resources/groundResourceRegrowth'
+import {
+  hasRequiredWorkTool,
+  getWorkToolTier,
+  getEquippedWorkTool,
+  requiredWorkTool,
+  workToolFamily,
+} from '../../../lib/equipment/workTools'
+import { getEquipmentRemainingUses, withEquipmentRemainingUses } from '../../../lib/equipment/equipmentCondition'
+import { observeEconomyChange, recordEconomyFlow } from '../../../lib/economy/economyTelemetry'
 import { refreshPopulationCapacity } from '../../../lib/buildings/buildingOccupancy'
+import { reconcileHouseholds } from '../../../lib/housing/households'
 import { completeBuildingUpgrade } from '../../../lib/buildings/buildingUpgrade'
 import {
   constructionWorkPoints,
+  deliverConstructionMaterials,
+  constructionMaterialsReady,
   constructionWorkTotal,
   initializeConstructionProgress,
   applyConstructionWork,
   constructionProgress,
 } from '../../../lib/economy/constructionMaterials'
-import { getForgeBuildMultiplier, getForgeGatherBonus } from '../../../lib/equipment/forgeUpgrades'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../../config/gameplay'
 import { RESOURCE_TYPES } from '../../../constants/entities'
 import { getBuildingLevel, getBuildingConfigForLevel } from '../../../lib/buildings/buildingLevel'
@@ -60,6 +72,18 @@ type WorkStep = {
 type StepResult = { budget: number; status: 'wait' | 'skip' | 'next' }
 export function buildOffline(step: WorkStep, budget: number): StepResult {
   const { state, player, playerIndex, unit, target, spatial, rules, report, cycle } = step
+  if (target.constructionPaused) {
+    delete unit.offlineWork
+    stopOfflineTask(unit)
+    return { budget, status: 'skip' }
+  }
+  deliverConstructionMaterials(target, [unit.inventory?.resources ?? {}])
+  if (!constructionMaterialsReady(target)) {
+    delete unit.offlineWork
+    stopOfflineTask(unit)
+    return { budget, status: 'next' }
+  }
+  if (!hasRequiredWorkTool(unit, 'build')) return { budget, status: 'skip' }
   const buildingConfig = getBuildingConfigForLevel(
     rules.buildingConfig(playerIndex, target.type),
     target.buildingUpgrade?.targetLevel ?? getBuildingLevel(target)
@@ -72,20 +96,30 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
   initializeConstructionProgress(target)
   const repairing = Boolean(target.isBuilt && !target.buildingUpgrade)
   const total = repairing ? target.totalHitPoints : constructionWorkTotal(target)
-  const multiplier = getBuildRateXpMultiplier(unit) * getForgeBuildMultiplier(player, unit.type)
+  const multiplier = getBuildRateXpMultiplier(unit) * (1 + getWorkToolTier(unit) * 0.25)
   const gain = repairing ? getRepairGain(total, constructionTime, multiplier) : multiplier
   if (!(gain > 0)) return { budget, status: 'skip' }
   const before = repairing ? (target.hitPoints ?? 0) : constructionWorkPoints(target)
-  const impacts = Math.min(Math.floor(budget / cycle), Math.ceil((total - before) / gain))
+  const impacts = Math.min(toolWorkRemaining(unit), Math.floor(budget / cycle), Math.ceil((total - before) / gain))
   const requested = repairing
     ? advanceRepair(before, total, constructionTime, multiplier, impacts)
     : advanceConstruction(before, total, multiplier, impacts)
-  const next = repairing ? requested : advanceMaterialConstruction(target, requested, [unit.inventory?.resources ?? {}])
+  const next = repairing
+    ? requested
+    : observeEconomyChange(
+        player,
+        'construction',
+        () => target.constructionMaterials?.consumed ?? {},
+        'added',
+        () => advanceMaterialConstruction(target, requested)
+      )
+  if (next > before) wearOfflineTool(unit, Math.ceil((next - before) / gain))
   budget -= impacts * cycle
   if (repairing) target.hitPoints = next
   else applyConstructionWork(target, next)
   if (target.buildingUpgrade) {
     if (completeBuildingUpgrade(target, rules.buildingConfig(playerIndex, target.type))) {
+      reconcileHouseholds(player)
       refreshPopulationCapacity(player)
       report.buildingsCompleted++
       if (unit.buildQueue) unit.buildQueue = unit.buildQueue.filter(label => label !== target.label)
@@ -123,20 +157,41 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
 export function gatherOffline(step: WorkStep, budget: number): StepResult {
   const { state, player, unit, target, day, spatial, report, config, cycle, work, depot, stored } = step
 
+  const ground = isGroundResourceType(target.type)
+  const action = ground
+    ? 'forageberry'
+    : (unit.action ??
+      (
+        {
+          woodcutter: 'chopwood',
+          farmer: 'farm',
+          stoneminer: 'minestone',
+          goldminer: 'minegold',
+          copperminer: 'minecopper',
+          tinminer: 'minetin',
+          ironminer: 'mineiron',
+        } as Record<string, string>
+      )[work])
+  if (!hasRequiredWorkTool(unit, action)) return { budget, status: 'skip' }
+  const family = workToolFamily(getEquippedWorkTool(unit))
+  const needsTool = Boolean(requiredWorkTool(action)) && family === requiredWorkTool(action)
   const gatherAmounts = config.gatherAmount as Record<string, number> | undefined
   const gain = getWorkGatherAmount(
     gatherAmounts,
     work,
-    getGatherXpBonus({ experience: unit.experience, work }) + getForgeGatherBonus(player, work, unit.type)
+    getGatherXpBonus({ experience: unit.experience, work }) + (needsTool ? getWorkToolTier(unit) : 0),
+    family === 'scythe',
+    getWorkToolTier(unit)
   )
-  const swings = getResourceGatherSwings(stored)
+  const swings = ground ? 1 : getResourceGatherSwings(stored)
   const carry = getUnitResourceGatherCapacity(unit as unknown as UnitEntity)
   if (carry <= 0) return { budget, status: 'skip' }
   const deliveryPerItem = depot ? (travelMs(target, depot, config) * 2) / carry : 0
   const treeHealth = target.hitPoints ?? 0
   if (target.type === RESOURCE_TYPES.tree && treeHealth > 0) {
-    const impacts = Math.min(treeHealth, Math.floor(budget / cycle))
+    const impacts = Math.min(treeHealth, toolWorkRemaining(unit), Math.floor(budget / cycle))
     target.hitPoints = treeHealth - impacts
+    wearOfflineTool(unit, impacts)
     budget -= impacts * cycle
     if (target.hitPoints > 0) {
       if (unit.offlineWork) unit.offlineWork.milliseconds = budget
@@ -148,9 +203,12 @@ export function gatherOffline(step: WorkStep, budget: number): StepResult {
   // gets rejected outright and the worker stalls just short of a full storage building.
   const harvest = harvestWithinBudget(
     budget,
-    cycle * swings,
+    ground ? 450 : cycle * swings,
     Math.min(gain, carry),
-    harvestableQuantity(unit, target),
+    Math.min(
+      harvestableQuantity(unit, target),
+      needsTool ? Math.floor(toolWorkRemaining(unit) / swings) * gain : Infinity
+    ),
     Math.min(
       collectiveHarvestBudget(player, unit, stored),
       depot ? depotRemainingCapacity(depot) : getUnitResourceCarryRemaining(unit as unknown as UnitEntity)
@@ -178,7 +236,9 @@ export function gatherOffline(step: WorkStep, budget: number): StepResult {
       target.inventory.resources[stored] = Math.max(0, harvestableQuantity(unit, target) - amount)
       target.quantity = target.inventory.resources.meat ?? 0
     } else target.quantity = Math.max(0, (target.quantity ?? 0) - amount)
+    recordEconomyFlow(player, 'gathered', { [stored]: amount })
     report.gathered[stored] = (report.gathered[stored] ?? 0) + amount
+    if (needsTool) wearOfflineTool(unit, Math.ceil(amount / gain) * swings)
     budget -= harvest.milliseconds
     if (corpseResource(unit, target) && harvestableQuantity(unit, target) === 0) {
       delete unit.offlineWork
@@ -211,5 +271,29 @@ export function gatherOffline(step: WorkStep, budget: number): StepResult {
       return { budget, status: 'next' }
     }
   }
+  // Finish the last incomplete batch: a tool with fewer uses than a full harvest
+  // still performs its remaining impacts and breaks, without yielding a partial lot.
+  const remaining = needsTool ? toolWorkRemaining(unit) : 0
+  if (
+    remaining > 0 &&
+    remaining < swings &&
+    budget >= remaining * cycle &&
+    harvestableQuantity(unit, target) > 0 &&
+    collectiveHarvestBudget(player, unit, stored) > 0 &&
+    (depot ? depotRemainingCapacity(depot) : getUnitResourceCarryRemaining(unit as unknown as UnitEntity)) > 0
+  ) {
+    wearOfflineTool(unit, remaining)
+    budget -= remaining * cycle
+  }
   return { budget, status: 'wait' }
+}
+
+function toolWorkRemaining(unit: SaveEntityState): number {
+  const tool = getEquippedWorkTool(unit)
+  return tool ? (getEquipmentRemainingUses(tool) ?? 0) : 0
+}
+function wearOfflineTool(unit: SaveEntityState, impacts: number): void {
+  const tool = getEquippedWorkTool(unit)
+  if (tool && impacts > 0)
+    unit.inventory!.activeWeapons!.tool = withEquipmentRemainingUses(tool, toolWorkRemaining(unit) - impacts)
 }

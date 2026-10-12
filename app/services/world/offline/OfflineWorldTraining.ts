@@ -1,3 +1,4 @@
+import { trainedInventory } from '../../../lib/training/trainedInventory'
 import { isStaticSettlement } from '../../../config/settlementProfiles'
 import { getTrainingProgress, isTrainingComplete } from '../../../lib/training/trainingRules'
 import { definedProperties } from '../../../lib/definedProperties'
@@ -32,8 +33,14 @@ export function completeOfflineTraining(
         const unit: SaveEntityState = definedProperties({
           ...point,
           ...entry.extra,
+          inventory: trainedInventory(
+            entry.trainee.type,
+            entry.type,
+            entry.extra?.inventory ?? entry.trainee.inventory
+          ),
           type: entry.type,
           label,
+          villageHome: entry.trainee.villageHome,
           homeHouseLabel: entry.trainee.homeHouseLabel,
           homeBedLabel: entry.trainee.homeBedLabel,
           partnerLabel: entry.trainee.partnerLabel,

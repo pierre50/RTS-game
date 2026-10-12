@@ -1,17 +1,21 @@
+import { canUseResourceApproachCell } from '../../grid/resourceApproachDestination'
+import { searchInstancePath } from '../../../services/Pathfinding'
 import { resolveResource } from '../../../classes/resources/CompactResourceSet'
 import { RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../../../constants'
 import { knownTarget } from '../playerTargetKnowledge'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
 import {
-  canUnitUseCellAsIdleDestination,
   canUseReservedPassageCellForTransit,
   createReservedPassageCellLookup,
+  type ReservedPassageCellLookup,
 } from '../../buildings/passageCells'
-import { getInstanceClosestFreeCellPath } from '../../grid/movement'
+import { getInstancePath, getInstanceClosestFreeCellPath, searchInstanceClosestFreeCellPath } from '../../grid/movement'
+import { prepareContactPath, takePreparedContactPath } from '../../grid/preparedContactPath'
+import { getEntitySpaceMapLike } from '../../mapSpaces'
 import { nearestDropoffDistance } from './villagerDropoffDistance'
 
-import { isPursuingRememberedTarget } from '../targetPursuit'
+import { isPursuingRememberedTarget } from '../combat/targetPursuit'
 
 export type VillagerJobCandidate = {
   action: string
@@ -21,6 +25,8 @@ export type VillagerJobCandidate = {
 }
 
 type CandidateEvaluation = VillagerJobCandidate & {
+  commit: <T>(send: () => T) => T
+  valid: () => boolean
   readyWood: boolean
   dropoffDistance: number
   pathLength: number
@@ -30,6 +36,7 @@ type CandidateEvaluation = VillagerJobCandidate & {
 }
 
 type CandidateScoringOptions = {
+  incremental?: boolean
   targetWorkerLoad: (target: RuntimeEntity, work: string, action: string) => number
 }
 
@@ -37,6 +44,7 @@ const AUTONOMY_REJECT_TTL_MS = 8000
 const MAX_CANDIDATES_TO_PATH = 18
 const WORKER_LOAD_SCORE = 6
 const DROPOFF_DISTANCE_SCORE = 0.15
+const rejectionOrigins = new WeakMap<UnitEntity, { i: number; j: number; space: unknown }>()
 const rejectedAutonomyTargets = new WeakMap<UnitEntity, Map<VillagerAutonomyJob, Map<string, number>>>()
 const candidateSearches = new WeakMap<UnitEntity, Map<string, { space: unknown; offset: number }>>()
 
@@ -79,6 +87,11 @@ function nowMs(): number {
 }
 
 function getRejectedTargets(unit: UnitEntity, job: VillagerAutonomyJob): Map<string, number> | null {
+  const origin = rejectionOrigins.get(unit)
+  if (origin && (origin.i !== unit.i || origin.j !== unit.j || origin.space !== unit.spaceId)) {
+    rejectedAutonomyTargets.delete(unit)
+    rejectionOrigins.delete(unit)
+  }
   return rejectedAutonomyTargets.get(unit)?.get(job) ?? null
 }
 
@@ -113,6 +126,12 @@ export function markVillagerAutonomyTargetRejected(unit: UnitEntity, target: Run
   if (unit.type !== UNIT_TYPES.villager || !target) return
   const job = unit.autonomousJob ?? getAutonomyJobForWork(unit.work)
   if (!job) return
+  rejectTarget(unit, job, target)
+}
+
+function rejectTarget(unit: UnitEntity, job: VillagerAutonomyJob, target: RuntimeEntity): void {
+  getRejectedTargets(unit, job)
+  rejectionOrigins.set(unit, { i: unit.i, j: unit.j, space: unit.spaceId })
   let byJob = rejectedAutonomyTargets.get(unit)
   if (!byJob) {
     byJob = new Map()
@@ -155,35 +174,97 @@ function isRejectedTarget(unit: UnitEntity, job: VillagerAutonomyJob, target: Ru
   return false
 }
 
-function getCandidatePathLength(unit: UnitEntity, candidate: VillagerJobCandidate): number | null {
-  if (unit.isUnitAtDest?.(candidate.action, candidate.target)) return 0
-  const map = unit.context?.map
-  if (!map?.grid) return distance(unit, candidate.target)
-  const passageLookup = createReservedPassageCellLookup(unit.context)
-  const path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, candidate.target, map, {
-    isCellAllowed: cell => canUnitUseCellAsIdleDestination(unit, cell, { passageLookup }),
+function* getCandidatePath(
+  unit: UnitEntity,
+  candidate: VillagerJobCandidate,
+  getPassageLookup: () => ReservedPassageCellLookup,
+  incremental: boolean
+): Generator<
+  void,
+  { length: number | null; commit: <T>(send: () => T) => T; valid: () => boolean; stale?: boolean },
+  void
+> {
+  const commit = <T>(send: () => T): T => send()
+  const valid = () => true
+  if (unit.isUnitAtDest?.(candidate.action, candidate.target)) return { length: 0, commit, valid }
+  const map = getEntitySpaceMapLike(unit, unit.context?.map)
+  if (!map?.grid) return { length: distance(unit, candidate.target), commit, valid }
+  const passageLookup = getPassageLookup()
+  const pathOptions = {
+    isCellAllowed: (cell: RuntimeCell) => canUseResourceApproachCell(unit, cell, candidate.target, { passageLookup }),
     pathfinding: {
-      canPassThroughSolidCell: cell => canUseReservedPassageCellForTransit(cell, passageLookup),
+      canPassThroughSolidCell: (cell: RuntimeCell) => canUseReservedPassageCellForTransit(cell, passageLookup),
     },
-  })
-  return path.length ? path.length : null
+  }
+  const { i, j, size } = candidate.target
+  const direct = !candidate.action && !map.grid[i]?.[j]?.solid
+  const path = direct
+    ? incremental
+      ? yield* searchInstancePath(unit, i, j, { grid: map.grid, context: unit.context }, pathOptions.pathfinding)
+      : getInstancePath(unit, i, j, map, pathOptions.pathfinding)
+    : incremental
+      ? yield* searchInstanceClosestFreeCellPath(unit, candidate.target, map, pathOptions)
+      : getInstanceClosestFreeCellPath(unit, candidate.target, map, pathOptions)
+  if (candidate.target.i !== i || candidate.target.j !== j || candidate.target.size !== size)
+    return { length: null, commit, valid: () => false, stale: true }
+  const prepared = prepareContactPath(unit, candidate.target, map, path)
+  return {
+    length: path.length || null,
+    commit: prepared,
+    valid: () => {
+      if (!incremental) return true
+      const currentMap = getEntitySpaceMapLike(unit, unit.context?.map)
+      if (!currentMap) return false
+      const passages = createReservedPassageCellLookup(unit.context)
+      return (
+        prepared(() =>
+          takePreparedContactPath(
+            unit,
+            candidate.target,
+            currentMap,
+            cell => canUseResourceApproachCell(unit, cell, candidate.target, { passageLookup: passages }),
+            { canPassThroughSolidCell: cell => canUseReservedPassageCellForTransit(cell, passages) }
+          )
+        ) !== null
+      )
+    },
+  }
 }
 
-function evaluateCandidate(
+/** Shared incremental route preparation, including path reuse when the order is committed. */
+export function* planResourceApproach(unit: UnitEntity, target: RuntimeEntity, action: string, incremental: boolean) {
+  let passages: ReservedPassageCellLookup | undefined
+  return yield* getCandidatePath(
+    unit,
+    { target, action, work: '', send: () => false },
+    () => (passages ??= createReservedPassageCellLookup(unit.context)),
+    incremental
+  )
+}
+
+function* evaluateCandidate(
   unit: UnitEntity,
   job: VillagerAutonomyJob,
   candidate: VillagerJobCandidate,
-  options: CandidateScoringOptions
-): CandidateEvaluation {
+  options: CandidateScoringOptions,
+  getPassageLookup: () => ReservedPassageCellLookup
+): Generator<void, CandidateEvaluation, void> {
   candidate = { ...candidate, target: resolveResource(candidate.target) }
   const workerLoad = options.targetWorkerLoad(candidate.target, candidate.work, candidate.action)
   const dropoffDistance = nearestDropoffDistance(unit, candidate)
   const rejected = isRejectedTarget(unit, job, candidate.target)
-  const pathLength = rejected ? null : getCandidatePathLength(unit, candidate)
   let rejectedReason: string | null = null
   if (rejected) rejectedReason = 'recently-rejected'
   else if (!unit.getActionCondition?.(candidate.target, candidate.action)) rejectedReason = 'invalid-action'
-  else if (pathLength === null) rejectedReason = 'no-contact-path'
+  const route = rejectedReason
+    ? null
+    : yield* getCandidatePath(unit, candidate, getPassageLookup, Boolean(options.incremental))
+  const pathLength = route?.length ?? null
+  if (route?.stale) rejectedReason = 'target-moved'
+  if (!rejectedReason && pathLength === null) {
+    rejectedReason = 'no-contact-path'
+    rejectTarget(unit, job, candidate.target)
+  }
 
   const dropoffScore = Number.isFinite(dropoffDistance) ? dropoffDistance * DROPOFF_DISTANCE_SCORE : 0
   const score = (pathLength ?? distance(unit, candidate.target)) + workerLoad * WORKER_LOAD_SCORE + dropoffScore
@@ -193,6 +274,8 @@ function evaluateCandidate(
   )
   return {
     ...candidate,
+    commit: route?.commit ?? (send => send()),
+    valid: route?.valid ?? (() => false),
     readyWood,
     dropoffDistance,
     pathLength: pathLength ?? Infinity,
@@ -202,18 +285,24 @@ function evaluateCandidate(
   }
 }
 
-function rankVillagerJobCandidates(
+function* rankVillagerJobCandidates(
   unit: UnitEntity,
   job: VillagerAutonomyJob,
   candidates: VillagerJobCandidate[],
   options: CandidateScoringOptions
-): CandidateEvaluation[] {
+): Generator<void, CandidateEvaluation[], void> {
   const offset = candidateSearch(unit, job).offset
-  return [...candidates]
+  let passageLookup: ReservedPassageCellLookup | undefined
+  const getPassageLookup = () => (passageLookup ??= createReservedPassageCellLookup(unit.context))
+  const ranked: CandidateEvaluation[] = []
+  const batch = [...candidates]
     .sort((a, b) => distance(unit, a.target) - distance(unit, b.target))
     .slice(offset, offset + MAX_CANDIDATES_TO_PATH)
-    .map(candidate => evaluateCandidate(unit, job, candidate, options))
-    .sort((a, b) => Number(b.readyWood) - Number(a.readyWood) || a.score - b.score)
+  for (const candidate of batch) {
+    yield
+    ranked.push(yield* evaluateCandidate(unit, job, candidate, options, getPassageLookup))
+  }
+  return ranked.sort((a, b) => Number(b.readyWood) - Number(a.readyWood) || a.score - b.score)
 }
 
 function wasAutonomyOrderAccepted(unit: UnitEntity, candidate: VillagerJobCandidate, result: unknown): boolean {
@@ -231,19 +320,21 @@ function wasAutonomyOrderAccepted(unit: UnitEntity, candidate: VillagerJobCandid
   return result !== false && sameTarget(dest, candidate.target) && unit.work === candidate.work
 }
 
-export function tryVillagerJobCandidates(
+export function* planVillagerJobCandidates(
   unit: UnitEntity,
   job: VillagerAutonomyJob,
   candidates: VillagerJobCandidate[],
   options: CandidateScoringOptions
-): boolean {
+): Generator<void, boolean, void> {
   const search = candidateSearch(unit, job)
-  const ranked = rankVillagerJobCandidates(unit, job, candidates, options)
+  const ranked = yield* rankVillagerJobCandidates(unit, job, candidates, options)
   for (const candidate of ranked) {
     if (candidate.rejectedReason) {
       continue
     }
-    const result = candidate.send(candidate.target)
+    yield
+    if (!unit.getActionCondition?.(candidate.target, candidate.action) || !candidate.valid()) continue
+    const result = candidate.commit(() => candidate.send(candidate.target))
     if (wasAutonomyOrderAccepted(unit, candidate, result)) {
       search.offset = 0
       // Keep other failures until their TTL expires, even after accepting a new target.
@@ -255,4 +346,17 @@ export function tryVillagerJobCandidates(
   // Do not let the nearest unreachable deposits hide the rest of the map forever.
   search.offset = ranked.length === MAX_CANDIDATES_TO_PATH ? search.offset + MAX_CANDIDATES_TO_PATH : 0
   return false
+}
+
+/** @public Synchronous entry point for restoration and isolated callers without a live planner. */
+export function tryVillagerJobCandidates(
+  unit: UnitEntity,
+  job: VillagerAutonomyJob,
+  candidates: VillagerJobCandidate[],
+  options: CandidateScoringOptions
+): boolean {
+  const plan = planVillagerJobCandidates(unit, job, candidates, options)
+  let step = plan.next()
+  while (!step.done) step = plan.next()
+  return step.value
 }

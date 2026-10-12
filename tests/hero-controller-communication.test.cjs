@@ -41,6 +41,12 @@ function loadHeroController({
     return tsModule.exports
   }
   const mocks = {
+    '../lib/equipment/equipmentStats': { refreshUnitEquipmentStats() {} },
+    '../lib/lpc/baked': { refreshBakedLpcUnitAssets() {} },
+    '../lib/hero/heroGroundCollection': {
+      collectGroundResource: () => false,
+      isCollectableGroundResource: () => false,
+    },
     'pixi.js': {
       Graphics: class {
         constructor() {
@@ -123,6 +129,7 @@ function loadHeroController({
     '../theft/theft': theft,
     '../lib/lpc': {
       applyBakedLpcUnitAssets: () => {},
+      refreshBakedLpcUnitAssets: () => {},
     },
     '../lib/npc/npcInteraction': npcInteraction,
     '../lib/units/movement/unitSprint': {
@@ -171,6 +178,7 @@ function loadHeroController({
   }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './HeroFacing') return loadControllerTsModule('HeroFacing')
     if (request === './HeroControllerSupport') {
       return loadControllerTsModule('HeroControllerSupport')
     }
@@ -192,6 +200,26 @@ function loadHeroController({
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.HeroController
 }
+
+test('activating the loaded hero refreshes existing units after assigning the hero', () => {
+  const { controller, hero } = createController()
+  const refreshed = []
+  const unit = label => ({
+    label,
+    drawHealthBar() {
+      assert.equal(controller.heroUnit, hero)
+      refreshed.push(label)
+    },
+  })
+  const player = { units: [hero, unit('villager')] }
+  controller.controls.context.player = player
+  controller.controls.context.players = [player, { units: [unit('ally')] }]
+  controller.heroUnit = null
+  controller.setEquippedTool = () => {}
+
+  assert.equal(controller.initFromPlayerStart(), true)
+  assert.deepEqual(refreshed, ['villager', 'ally'])
+})
 
 function createController({
   nearbyGroup = [],

@@ -1,33 +1,31 @@
-import { toggleHeroSprint, stopUnitSprint } from '../lib/units/movement/unitSprint'
 import type { Graphics } from 'pixi.js'
 import { updateInstanceRenderVisibility } from '../lib'
-import { SHEET_TYPES } from '../constants'
-import {
-  cancelHeroActiveToolAction,
-  cancelHeroPowerCharge,
-  cancelHeroCatchingPole,
-  cancelHeroDefense,
-  getHeroAimDegree,
-  isHeroToolAvailable,
-  type HeroEquippedItem,
-} from '../lib/hero/heroTools'
-import { heroCanCommand } from '../lib/chief'
 import type { ControlBindingAction } from '../lib/audio/settings'
-import { setUnitControlMode } from '../lib/units/unitControl'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
-import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
-import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
+import { heroCanCommand } from '../lib/chief'
+import { transferNeutralEntityToPlayer } from '../lib/entities/entityOwnerTransfer'
+import { collectGroundResource } from '../lib/hero/heroGroundCollection'
 import {
   resolveHeroProximityInteraction,
   wakeOwnSleepingNpcForCommunication,
   type HeroProximityInteraction,
 } from '../lib/hero/heroProximityInteractions'
-import { transferNeutralEntityToPlayer } from '../lib/entities/entityOwnerTransfer'
+import {
+  cancelHeroActiveToolAction,
+  cancelHeroCatchingPole,
+  cancelHeroDefense,
+  cancelHeroPowerCharge,
+  isHeroToolAvailable,
+  type HeroEquippedItem,
+} from '../lib/hero/heroTools'
+import { stopUnitSprint, toggleHeroSprint } from '../lib/units/movement/unitSprint'
+import { setUnitControlMode } from '../lib/units/unitControl'
+import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
+import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import { HeroActionInputController } from './HeroActionInputController'
-import { HeroCompanionHorseController } from './HeroCompanionHorseController'
 import {
   beginHeroCommCharge,
   beginHeroGoToPicking,
@@ -37,8 +35,7 @@ import {
   resolveHeroGoTo,
   updateHeroCommIndicator,
 } from './HeroCommunicationController'
-import { updateHeroControllerRuntime } from './HeroControllerUpdate'
-import { HeroEquipmentController } from './HeroEquipmentController'
+import { HeroCompanionHorseController } from './HeroCompanionHorseController'
 import {
   COMPANION_HORSE_CALL_MAX_RADIUS,
   TARGET_FRAME_MS,
@@ -48,6 +45,9 @@ import {
   type HeroAimPoint,
   type ViewportMetrics,
 } from './HeroControllerSupport'
+import { updateHeroControllerRuntime } from './HeroControllerUpdate'
+import { HeroEquipmentController } from './HeroEquipmentController'
+import { faceHeroPoint } from './HeroFacing'
 
 const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool1: 0,
@@ -124,14 +124,7 @@ export class HeroController {
   }
 
   facePoint(point: HeroAimPoint): void {
-    const unit = this.heroUnit
-    if (!unit || unit.actionLocked) return
-    const aimDegree = getHeroAimDegree(unit, point)
-    if (unit.degree !== aimDegree) {
-      unit.degree = aimDegree
-      if (unit.owner) unit.context?.menu?.updatePlayerMiniMap?.(unit.owner)
-      unit.setTextures?.(unit.currentSheet === SHEET_TYPES.walking ? SHEET_TYPES.walking : SHEET_TYPES.standing)
-    }
+    faceHeroPoint(this.heroUnit, point)
   }
 
   isActive(): boolean {
@@ -196,6 +189,11 @@ export class HeroController {
       return true
     }
 
+    if (action === 'heroStow') {
+      this.setEquippedItem(null)
+      return true
+    }
+
     const toolIndex = HERO_TOOL_ACTIONS[action]
     if (toolIndex != null) {
       this.equipToolAt(toolIndex)
@@ -203,7 +201,13 @@ export class HeroController {
     }
 
     if (isHeroMoveAction(action)) {
-      if (this.equippedItem === 'interact' && this.mouseHeld && this.primaryClickPoint) {
+      if (
+        this.equippedItem === 'interact' &&
+        this.mouseHeld &&
+        this.primaryClickPoint &&
+        this.heroUnit?.heroPowerChargeTool !== 'tool' &&
+        !this.heroUnit?.heroDefenseActive
+      ) {
         this.interactInputOwner = 'movement'
         if (this.heroUnit?.actionLocked) cancelHeroActiveToolAction(this.heroUnit)
       }
@@ -328,6 +332,7 @@ export class HeroController {
     this.proximityInteraction = interaction
     if (previousLabelKey !== nextLabelKey) this.controls.context.menu?.setHeroInteractionPrompt?.(nextLabelKey)
     if (!interaction) return false
+    if (interaction.action === 'collect') return collectGroundResource(this.heroUnit, interaction.target)
     if (interaction.action === 'enter') {
       this.controls.context.travelIntoBuildingInterior?.(interaction.target)
       return true
@@ -509,6 +514,10 @@ export class HeroController {
     this.heroUnit.stop?.()
     this.heroUnit.removeHealthBar?.()
     player.unselectAll?.()
+    // Restored units were created before the active hero (and their alliance) was known.
+    for (const owner of this.controls.context.players ?? [player]) {
+      for (const unit of owner.units) unit.drawHealthBar?.()
+    }
     this.setEquippedTool(isHeroToolAvailable(this.heroUnit, 'sword') ? 'sword' : 'interact')
     this.controls.context.menu?.setHeroStatusTarget?.(this.heroUnit)
     this.controls.context.menu?.setActionTarget?.(this.heroUnit)

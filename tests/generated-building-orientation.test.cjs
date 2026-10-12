@@ -43,7 +43,10 @@ test('live AI construction varies orientation while respecting explicit and huma
       },
       '../../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set() },
       '../../lib/entities/entityFade': {},
-      '../../lib/mapSpaces': { getMapSpace: () => null },
+      '../../lib/mapSpaces': {
+        ...loadTsModule('app/lib/mapSpaces.ts'),
+        getMapSpace: () => null,
+      },
       '../Resource': {},
     },
   })

@@ -44,7 +44,6 @@ export class ActionSpecFactory {
     this.menu = menu
   }
 
-
   createActionIcon(src: string): HTMLImageElement {
     const img = document.createElement('img')
     img.src = src
@@ -84,7 +83,6 @@ export class ActionSpecFactory {
     const preload = (src: string) => {
       new Image().src = src
     }
-    preload(getIconPath('003_50721'))
     ;['stat/sword', 'stat/bow', 'stat/shield'].forEach(icon => preload(getIconPath(icon)))
   }
 
@@ -144,13 +142,12 @@ export class ActionSpecFactory {
     }
   }
 
-  getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
+  getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null, buildingLevel = 0): MenuButtonSpec {
     const { menu } = this
     const {
       context: { controls, player },
     } = menu
     const owner = ownerOverride || player
-    const buildingLevel = 0
     const config = getPlayerBuildingConfig(owner, type, buildingLevel)!
     return {
       id: type,

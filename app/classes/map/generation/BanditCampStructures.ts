@@ -27,10 +27,10 @@ const BANDIT_CHEST_OFFSETS: GridPosition[] = [
 const BANDIT_CHEST_EQUIPMENT_LOOT: Array<{ item: string; chance: number; min?: number; max?: number }> = [
   { item: 'arrow_ceramic', chance: 100, min: 6, max: 16 },
   { item: 'trap', chance: 55 },
-  { item: 'sword_ceramic', chance: 35 },
+  { item: 'axe_ceramic', chance: 35 },
   { item: 'bow', chance: 28 },
-  { item: 'round_shield_ceramic_slash', chance: 22 },
-  { item: 'helmet_barbarian_nasal_ceramic', chance: 18 },
+  { item: 'round_shield_wood_slash', chance: 22 },
+  { item: 'helmet_barbarian_nasal_leather', chance: 18 },
 ]
 
 const CAMP_DECORATION_LAYOUT: Array<{ type: string; offset: GridPosition }> = [
@@ -63,7 +63,7 @@ export function canPlaceCampBuildingAt(
 ): boolean {
   const config = owner.config.buildings[type]
   if (!config) return false
-  return canPlaceBuildingAt(map.grid, i, j, { ...config, type })
+  return canPlaceBuildingAt(map.grid, i, j, { ...config, type }, { roads: map.roads })
 }
 
 function placeCampBuildingNear(

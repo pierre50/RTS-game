@@ -97,7 +97,7 @@ test('tutorial profile produces deterministic saved entities and physical stocks
   assert.deepEqual(result.runtime, state.runtime)
   const player = result.players[0]
   assert.equal(player.population, 14)
-  assert.equal(player.populationMax, player.buildings.filter(b => b.type === 'House').length * 2)
+  assert.equal(player.populationMax, player.buildings.filter(b => b.type === 'House').length)
   assert.ok(
     player.units.every(u => u.homeHouseLabel && u.homeBedLabel),
     'every generated resident has a home and a bed'
@@ -296,7 +296,7 @@ test('new tutorial configuration reuses village generation with one chief and wo
       .filter(u => u.type === 'Villager')
       .every(
         u =>
-          ['food', 'wood'].includes(u.autonomousJob) &&
+          u.autonomousJob === null &&
           u.inventory.resources.meat === 6 &&
           u.inventory.resources.berry === 6 &&
           !u.inventory.resources.wheat

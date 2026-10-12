@@ -74,11 +74,11 @@ test('role changes discard old work sprites and remain coherent after conversion
   }
 })
 
-test('promoted archers use chief melee sprites rather than nonexistent chief shooting sprites', () => {
+test('promoted archers retain shooting with the chief shooting atlas', () => {
   const { refreshBakedLpcUnitAssets } = loadAppearance()
   const unit = unitState({ type: 'Bowman', isChief: true, work: 'attacker', action: 'attack' })
   refreshBakedLpcUnitAssets(unit)
-  assert.equal(unit.actionSheet.id, 'units/chief/kemet/female/action')
+  assert.equal(unit.actionSheet.id, 'units/chief/kemet/female/action/shoot')
 })
 
 test('helmet changes and corpse looting refresh the actual displayed base sheets', () => {

@@ -33,9 +33,6 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
       createHeroVillageReport: () => global.document.createElement('village-report'),
       syncHeroVillageReport() {},
     },
-    './hero-building/HeroTechnologyBody': {
-      createHeroTechnologyBody: () => global.document.createElement('technology-tree'),
-    },
     './hero-building/HeroForgeBody': {
       HeroForgeBody: class {
         constructor() {
@@ -144,7 +141,7 @@ function loadHeroBuildingMenuManager({ reachable = true, createUpgrade = () => n
       getBuildingDisplayName: building => building.type || 'building',
     },
   }
-  for (const name of ['HeroMarketBody', 'HeroCampfireBody', 'HeroForgeBody', 'HeroTechnologyBody', 'HeroVillageReport'])
+  for (const name of ['HeroMarketBody', 'HeroCampfireBody', 'HeroForgeBody', 'HeroVillageReport'])
     mocks[`./${name}`] = mocks[`./hero-building/${name}`]
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
@@ -204,6 +201,17 @@ function installMockDocument() {
         },
         dispatch(type) {
           for (const listener of this.listeners.get(type) ?? []) listener({ type, currentTarget: this })
+        },
+        get childNodes() {
+          return this.children
+        },
+        isEqualNode(other) {
+          return (
+            this.tagName === other.tagName &&
+            this.textContent === other.textContent &&
+            this.className === other.className &&
+            this.disabled === other.disabled
+          )
         },
         replaceChildren(...children) {
           this.children = children
@@ -899,17 +907,20 @@ test('building upgrade opens a separate review sheet and restores the building o
   }
 })
 
-test('own Town Center opens technology management in a large window', () => {
+test('own Town Center shows its village report without technology management', () => {
   const { manager, player, restoreDocument } = createManager()
   try {
     const center = { type: 'TownCenter', family: 'building', owner: player, isBuilt: true }
     assert.equal(manager.open(center), true)
     assert.equal(manager.body.children[0].tagName, 'village-report')
-    assert.equal(manager.body.children.at(-1).tagName, 'technology-tree')
+    assert.equal(
+      manager.body.children.some(child => child.tagName === 'technology-tree'),
+      false
+    )
     assert.equal(manager.isManagedBuilding(center), true)
     const before = manager.getStructureSignature()
     player.forgeUpgrades = { axes: 1 }
-    assert.notEqual(manager.getStructureSignature(), before)
+    assert.equal(manager.getStructureSignature(), before)
     manager.open({ ...center, owner: { label: 'foreign' } })
     assert.equal(
       manager.body.children.some(child => child.tagName === 'village-report'),

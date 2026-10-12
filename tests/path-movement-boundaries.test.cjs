@@ -28,7 +28,7 @@ function fixture() {
         runPathStep: (_unit, step, repath, stop) => ({ step, repath, stop })[rules.mode](),
       },
       '../../../lib/grid/visibility': { updateInstanceRenderVisibility: mark('visible') },
-      '../../../lib/units/targetPursuit': { updateTargetPursuit: () => rules.pursue },
+      '../../../lib/units/combat/targetPursuit': { updateTargetPursuit: () => rules.pursue },
       './UnitContactApproach': { tryStartUnitContactApproach: () => rules.contact },
       '../../../lib': {
         canUpdateMinimap: () => true,

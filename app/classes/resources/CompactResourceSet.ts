@@ -1,5 +1,5 @@
+import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
 import { restoredResourceState } from '../../serialization/ResourceSaveData'
-import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
 import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { BlueprintResourceDelta, SaveEntityState } from '../../types/save'
 import {
@@ -16,6 +16,7 @@ import {
   type ResourceDefinition,
 } from './CompactResourcePacking'
 import { CompactResourceSaveCache } from './CompactResourceSaveCache'
+import { createResourceRanking } from './ResourceRanking'
 import { ResourceZoneIndex } from './ResourceZoneIndex'
 export { resourceSnapshotZones } from './CompactResourceSaveCache'
 
@@ -348,29 +349,55 @@ export class CompactResourceSet extends Set<ResourceEntity> {
   }
 
   nearest(
-    type: string,
+    type: string | readonly string[],
     i: number,
     j: number,
     limit: number,
     accepts: (resource: ResourceEntity) => boolean
   ): ResourceEntity[] {
     if (limit <= 0) return []
-    if (!Number.isFinite(limit)) return [...this.readValues(type)].filter(accepts)
-    const code = this.typeCodes.get(type)
-    if (code === undefined) return [...super.values()].filter(resource => resource.type === type && accepts(resource))
+    const types = typeof type === 'string' ? [type] : type
+    const wanted = new Set(types)
+    if (!Number.isFinite(limit))
+      return [...this.readValues()].filter(resource => wanted.has(resource.type) && accepts(resource))
+    const codes = new Set(types.map(name => this.typeCodes.get(name)).filter(code => code !== undefined))
     // Preserve source ordering for the existing stable candidate ranking.
     const result = this.zones.nearest(
       i,
       j,
       limit,
-      index => Boolean(this.flags[index] & 1) && this.kinds[index] === code,
+      index => Boolean(this.flags[index] & 1) && codes.has(this.kinds[index]),
       index => {
         const resource = this.read(index)
         return accepts(resource) ? resource : undefined
       }
     )
-    for (const resource of super.values()) if (resource.type === type && accepts(resource)) result.push(resource)
+    for (const resource of super.values()) if (wanted.has(resource.type) && accepts(resource)) result.push(resource)
     return result
+  }
+
+  /** Bounded multi-type search without materializing resources or scanning empty cells. */
+  nearestInArea(
+    types: readonly string[],
+    point: { i: number; j: number },
+    area: { i: number; j: number; radius: number },
+    limit: number,
+    accepts: (resource: ResourceEntity) => boolean
+  ): ResourceEntity[] {
+    if (limit <= 0 || area.radius < 0) return []
+    const codes = new Set(types.map(type => this.typeCodes.get(type)).filter(code => code !== undefined))
+    const { consider, results } = createResourceRanking(types, point, area, limit, accepts)
+    for (const index of this.zones.inArea(
+      area.i - area.radius,
+      area.j - area.radius,
+      area.i + area.radius,
+      area.j + area.radius
+    )) {
+      if (this.flags[index] & 1 && codes.has(this.kinds[index])) consider(this.read(index))
+    }
+    // Only unpackable runtime additions live in the underlying Set; packed active slots were already visited.
+    for (const resource of super.values()) consider(resource)
+    return results()
   }
 
   *readArea(
@@ -487,14 +514,16 @@ export function resolveResource<T extends RuntimeEntity>(value: T): T {
 
 export function nearestResourceRecords(
   resources: Iterable<ResourceEntity> | undefined,
-  type: string,
+  type: string | readonly string[],
   point: { i: number; j: number },
   limit: number,
   accepts: (resource: ResourceEntity) => boolean
 ): Iterable<ResourceEntity> {
   return resources instanceof CompactResourceSet
     ? resources.nearest(type, point.i, point.j, limit, accepts)
-    : resourceReadValues(resources, type)
+    : [...resourceReadValues(resources)].filter(resource =>
+        typeof type === 'string' ? resource.type === type : type.includes(resource.type)
+      )
 }
 
 /** Refresh a cold read without creating a gameplay entity. */

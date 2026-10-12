@@ -3,6 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function fixture() {
   const calls = []
+  const alerts = []
   const rules = {
     admit: true,
     road: false,
@@ -16,12 +17,22 @@ function fixture() {
     resolved: true,
     contact: false,
     detour: false,
+    prepared: null,
+    searches: 0,
   }
   const { UnitMovementRouting } = loadTsModule('app/classes/unit/movement/UnitMovementRoutingRuntime.ts', {
     mocks: {
+      '../../../lib/units/unitCombatAlert': {
+        alertUnitCombatAllies: unit => alerts.push([unit.dest, unit.action]),
+        clearUnitCombatAlert() {},
+      },
       '../../../lib/units/roadJourney': { beginRoadJourney: () => rules.road },
+      '../../../lib/grid/preparedContactPath': { takePreparedContactPath: () => rules.prepared },
       '../../../lib': {
-        getInstancePath: () => rules.path,
+        getInstancePath: () => {
+          rules.searches++
+          return rules.path
+        },
         getInstanceClosestFreeCellPath: () => rules.path,
         getInstanceDegree: () => 45,
       },
@@ -36,7 +47,7 @@ function fixture() {
         sameCellMapSpace: (a, b) => a.spaceId === b.spaceId,
       },
       '../../../lib/units/autonomy/villagerExploration': { cancelVillagerExplorationResume() {} },
-      '../../../lib/units/targetPursuit': { routeToRememberedTarget: () => rules.remembered },
+      '../../../lib/units/combat/targetPursuit': { routeToRememberedTarget: () => rules.remembered },
       '../../../lib/units/unitEnergy': { cancelEnergyWait() {} },
       './ManualMoveState': { clearManualMoveWorkState() {} },
       './UnitActionArrivalCells': { getActionArrivalCell: () => rules.arrival },
@@ -83,8 +94,25 @@ function fixture() {
       return true
     },
   }
-  return { routing: new UnitMovementRouting(unit), rules, calls, unit, dest }
+  return { routing: new UnitMovementRouting(unit), rules, calls, unit, dest, alerts }
 }
+test('combat alerts run after routing accepts the target, not for refused or queued orders', () => {
+  const { routing, rules, unit, dest, alerts } = fixture()
+  routing.routeAdmittedOrder = (target, action) => {
+    unit.dest = target
+    unit.action = action
+  }
+  rules.admit = false
+  routing.sendToEvt(dest, 'attack', {})
+  assert.deepEqual(alerts, [])
+  rules.admit = true
+  unit.actionLocked = true
+  routing.sendToEvt(dest, 'attack', {})
+  assert.deepEqual(alerts, [])
+  unit.actionLocked = false
+  routing.sendToEvt(dest, 'attack', {})
+  assert.deepEqual(alerts, [[dest, 'attack']])
+})
 test('routing refuses inadmissible, redundant, destroyed and cross-space orders', () => {
   const { routing, rules, calls, unit, dest } = fixture()
   rules.admit = false
@@ -176,4 +204,20 @@ test('plain town transfers enter cooperative travel before ordinary routing', ()
   assert.equal(routing.sendToEvt({ ...dest, type: 'TownCenter' }, null), true)
   assert.deepEqual(calls, [])
   assert.equal(routing.sendToEvt({ ...dest, type: 'TownCenter' }, 'delivery'), false)
+})
+
+test('a prepared ground pickup route is used without a second path search', () => {
+  const { routing, rules, unit, dest } = fixture()
+  const path = [{ i: 1, j: 1 }]
+  rules.prepared = path
+  unit.setPath = value => {
+    unit.path = value
+  }
+  unit.setDest = value => {
+    unit.dest = value
+  }
+  routing.sendToEvt(dest, null)
+  assert.equal(unit.path, path)
+  assert.equal(unit.dest, dest)
+  assert.equal(rules.searches, 0)
 })

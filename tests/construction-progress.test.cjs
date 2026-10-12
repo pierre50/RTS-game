@@ -6,6 +6,7 @@ const {
   initializeConstructionProgress,
   applyConstructionWork,
   advanceMaterialConstruction,
+  deliverConstructionMaterials,
   createConstructionMaterials,
   constructionWorkPoints,
   constructionWorkTotal,
@@ -22,13 +23,14 @@ test('work rate and material costs are independent of health, even for fragile l
       constructionMaterials: createConstructionMaterials({ wood: 100 }),
     }
     const bag = { wood: 100 }
+    deliverConstructionMaterials(site, [bag])
     for (let impact = 0; impact < 1000; impact++) {
       const next = advanceConstruction(constructionWorkPoints(site), constructionWorkTotal(site))
-      applyConstructionWork(site, advanceMaterialConstruction(site, next, [bag]))
+      applyConstructionWork(site, advanceMaterialConstruction(site, next))
     }
     assert.equal(site.constructionProgress, 0.5)
     assert.equal(site.hitPoints, health)
-    assert.equal(bag.wood, 50)
+    assert.equal(bag.wood, 0)
   }
 })
 
@@ -41,10 +43,11 @@ test('renovations need no health fields to progress or consume materials', () =>
     constructionMaterials: createConstructionMaterials({ stone: 10 }),
   }
   const bag = { stone: 10 }
-  applyConstructionWork(site, advanceMaterialConstruction(site, 5, [bag]))
+  deliverConstructionMaterials(site, [bag])
+  applyConstructionWork(site, advanceMaterialConstruction(site, 5))
   assert.equal(site.buildingUpgrade.constructionProgress, 0.5)
   assert.equal(site.hitPoints, 12)
-  assert.equal(bag.stone, 5)
+  assert.equal(bag.stone, 0)
 })
 
 test('legacy progression excludes the former initial hit point', () => {
@@ -84,7 +87,8 @@ test('legacy migration is done once and preserves work, health and materials', (
   initializeConstructionProgress(site)
   assert.equal(site.constructionProgress, 0.5)
   const bag = { wood: 5 }
-  applyConstructionWork(site, advanceMaterialConstruction(site, 101, [bag]))
+  deliverConstructionMaterials(site, [bag])
+  applyConstructionWork(site, advanceMaterialConstruction(site, 101))
   assert.equal(site.constructionProgress, 1)
   assert.equal(site.hitPoints, 81)
   assert.equal(bag.wood, 0)
@@ -132,6 +136,7 @@ test('live completion follows construction progress, independently of full or da
   const { BuildingLifecycle } = loadTsModule('app/classes/building/BuildingLifecycle.ts', {
     mocks: {
       'pixi.js': { AnimatedSprite: class {} },
+      '../../services/BuildingInteriorSpaceSystem': { syncHouseInteriorSpace() {} },
       '../../lib': { getPercentage: (hp, total) => (hp * 100) / total, updateInstanceVisibility() {} },
       './BuildingSowing': {},
       './BuildingDestruction': {},

@@ -1,3 +1,6 @@
+import { wearEquippedGuard } from '../equipment/equipmentWear'
+import { HERO_POWER_CHARGE_MS, canHeroDefendWithTool } from './heroCombatRules'
+export { canHeroDefendWithTool } from './heroCombatRules'
 import { isEquipmentBroken } from '../equipment/equipmentCondition'
 import { Graphics } from 'pixi.js'
 import { SHEET_TYPES, SOUND_CUES } from '../constants'
@@ -16,7 +19,6 @@ import type { HeroEquippedItem } from './heroToolEquipment'
 
 const HERO_DEFENSE_ENERGY_ACTION = 'heroDefense'
 const HERO_PARRY_SOUND_CUES = SOUND_CUES.unit.swordAttack
-const HERO_POWER_CHARGE_MS = 700
 const HERO_DEFENSE_HOLD_FRAME = 2
 const HERO_DEFENSE_REVERSE_FRAME_MS = 45
 const HERO_DEFENSE_RELEASE_FALLBACK_MS = 260
@@ -98,10 +100,6 @@ function showHeroDefenseParryEffect(hero: UnitEntity): void {
   )
 }
 
-export function canHeroDefendWithTool(tool: HeroEquippedItem | null | undefined): boolean {
-  return tool === 'sword'
-}
-
 function hasEnergyToStartDefense(hero: UnitEntity): boolean {
   return hasEnergyForAction(hero, HERO_DEFENSE_ENERGY_ACTION)
 }
@@ -165,6 +163,7 @@ function clearHeroDefense(hero: UnitEntity): void {
   hero.heroDefenseActive = false
   hero.heroDefenseVisualLocked = false
   hero.showHeroDefenseFlash = undefined
+  hero.onHeroDefenseBlock = undefined
 }
 
 function finishHeroDefenseRelease(hero: UnitEntity): void {
@@ -235,7 +234,8 @@ function showHeroDefenseFlash(hero: UnitEntity): void {
 
 export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null | undefined): boolean {
   const sprite = hero.sprite
-  if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed || !canHeroDefendWithTool(tool)) return false
+  if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed || !canHeroDefendWithTool(tool, hero))
+    return false
   if (hero.heroDefenseEnergyExhausted || (tool === 'sword' && isEquipmentBroken(hero.inventory?.activeWeapons?.melee)))
     return false
   if (!hasEnergyToStartDefense(hero)) {
@@ -252,6 +252,11 @@ export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null
   hero.heroDefenseVisualLocked = false
   hero.heroDefenseEnergyExhausted = false
   hero.showHeroDefenseFlash = () => showHeroDefenseFlash(hero)
+  hero.onHeroDefenseBlock = () => {
+    const slot = tool === 'interact' ? 'tool' : 'melee'
+    wearEquippedGuard(hero, slot)
+    if (isEquipmentBroken(hero.inventory?.activeWeapons?.[slot])) cancelHeroDefense(hero)
+  }
   hero.setTextures?.(SHEET_TYPES.action)
   sprite.loop = false
   sprite.onComplete = undefined
@@ -298,6 +303,7 @@ export function releaseHeroDefense(hero: UnitEntity): boolean {
   hero.heroDefenseActive = false
   hero.heroDefenseVisualLocked = false
   hero.showHeroDefenseFlash = undefined
+  hero.onHeroDefenseBlock = undefined
   reverseHeroDefenseAnimation(hero)
   return true
 }

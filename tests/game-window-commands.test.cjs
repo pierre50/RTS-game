@@ -1,3 +1,4 @@
+const { attachWindowControls } = require('./helpers/windowControls.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -19,6 +20,7 @@ function commands(bindings) {
   const row = {
     matches: selector => selector === '.inventory-action-row',
     querySelectorAll: () => [primary],
+    querySelector: selector => (selector === '.inventory-quantity-badge' ? { textContent: 'x2' } : null),
     closest: () => null,
   }
   return availableCommands({
@@ -57,7 +59,7 @@ test('switching tabs activates and focuses the new tab', () => {
       this.clicked = true
     },
   }))
-  const instance = Object.create(GameWindow.prototype)
+  const instance = attachWindowControls(Object.create(GameWindow.prototype))
   instance.panel = { querySelectorAll: () => tabs }
   instance.visible = () => true
   instance.select = (tab, focus) => {
@@ -78,22 +80,25 @@ test('keyboard hold executes once after 850 ms and uses the current action', () 
   const previousDocument = global.document
   global.document = { activeElement: null }
   try {
-    const instance = Object.create(GameWindow.prototype)
+    const instance = attachWindowControls(Object.create(GameWindow.prototype))
     let executions = 0
     instance.commands = [{ id: 'remove', run: () => executions++ }]
-    instance.keyboardHolding = { command: { id: 'remove', run: () => assert.fail('stale action') }, since: 100 }
+    instance.controls.keyboardHolding = {
+      command: { id: 'remove', run: () => assert.fail('stale action') },
+      since: 100,
+    }
     instance.isTopmost = () => true
     instance.footer = { style: { setProperty() {} } }
     instance.cancelKeyboardHold = () => {
-      instance.keyboardHolding = null
+      instance.controls.keyboardHolding = null
     }
     instance.scheduleRefresh = () => {}
-    instance.advanceKeyboardHold(949)
+    instance.controls.advanceKeyboardHold(949)
     assert.equal(executions, 0)
-    instance.advanceKeyboardHold(950)
-    instance.advanceKeyboardHold(1200)
+    instance.controls.advanceKeyboardHold(950)
+    instance.controls.advanceKeyboardHold(1200)
     assert.equal(executions, 1)
-    assert.equal(instance.keyboardHolding, null)
+    assert.equal(instance.controls.keyboardHolding, null)
   } finally {
     global.document = previousDocument
   }
@@ -107,16 +112,16 @@ test('keyboard hold cancels when editing, covered, disabled or removed', () => {
   try {
     for (const reason of ['editing', 'covered', 'disabled', 'removed']) {
       global.document = { activeElement: { closest: () => (reason === 'editing' ? {} : null) } }
-      const instance = Object.create(GameWindow.prototype)
+      const instance = attachWindowControls(Object.create(GameWindow.prototype))
       instance.commands =
         reason === 'removed' ? [] : [{ id: 'remove', disabled: reason === 'disabled', run: () => assert.fail(reason) }]
-      instance.keyboardHolding = { command: { id: 'remove' }, since: 0 }
+      instance.controls.keyboardHolding = { command: { id: 'remove' }, since: 0 }
       instance.isTopmost = () => reason !== 'covered'
       instance.cancelKeyboardHold = () => {
-        instance.keyboardHolding = null
+        instance.controls.keyboardHolding = null
       }
-      instance.advanceKeyboardHold(1000)
-      assert.equal(instance.keyboardHolding, null, reason)
+      instance.controls.advanceKeyboardHold(1000)
+      assert.equal(instance.controls.keyboardHolding, null, reason)
     }
   } finally {
     global.document = previousDocument
@@ -139,6 +144,7 @@ test('windows render gamepad hints on first paint without waiting for another bu
     classList: { add() {} },
     setAttribute() {},
     append() {},
+    remove() {},
     addEventListener() {},
     removeEventListener() {},
     closest: () => (gameplay ? {} : null),
@@ -172,7 +178,7 @@ test('windows render gamepad hints on first paint without waiting for another bu
       )
       if (pad && enabled) {
         pad.buttons[0] = { pressed: true }
-        assert.deepEqual(instance.padState.read(pad, 1).pressed, expectedPresses)
+        assert.deepEqual(instance.controls.padState.read(pad, 1).pressed, expectedPresses)
       }
       instance.destroy()
     }
@@ -208,7 +214,7 @@ test('panel shortcuts stay within controls device tabs when focus is inside cont
   })
   const deviceTabs = [tab('keyboard', true, true), tab('gamepad', false, true)]
   const outerTabs = [tab('game', false, false), tab('graphics', false, false), tab('controls', true, false)]
-  const instance = Object.create(GameWindow.prototype)
+  const instance = attachWindowControls(Object.create(GameWindow.prototype))
   instance.panel = { querySelectorAll: () => [...outerTabs, ...deviceTabs] }
   instance.visible = () => true
   instance.select = () => {}
@@ -305,20 +311,20 @@ test('keyboard and gamepad request confirmation immediately without starting a h
     { id: 'sleep', pad: 2, confirm: true },
     { id: 'remove', pad: 3, danger: true },
   ]) {
-    const instance = Object.create(GameWindow.prototype)
+    const instance = attachWindowControls(Object.create(GameWindow.prototype))
     instance.renderCommands = () => {}
     instance.scheduleRefresh = () => {}
     instance.refresh = () => {}
     instance.commands = [{ ...command, run: () => assert.fail('must wait for confirmation') }]
-    instance.runKeyIntent({ command: instance.commands[0] }, false)
+    instance.controls.runKeyIntent({ command: instance.commands[0] }, false)
     assert.equal(instance.confirmation.id, command.id)
-    assert.equal(instance.keyboardHolding, undefined)
+    assert.equal(instance.controls.keyboardHolding, null)
     instance.confirmation = null
-    instance.padState = { read: () => ({ pressed: [command.pad], direction: null }) }
+    instance.controls.padState = { read: () => ({ pressed: [command.pad], direction: null }) }
     instance.setMode = () => {}
-    instance.readGamepad({ buttons: [], axes: [] }, 0)
+    instance.controls.readGamepad({ buttons: [], axes: [] }, 0)
     assert.equal(instance.confirmation.id, command.id)
-    assert.equal(instance.holding, undefined)
+    assert.equal(instance.controls.holding, null)
   }
 })
 
@@ -326,7 +332,7 @@ test('shoulder buttons do not treat recipe categories as tabs', () => {
   const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
     mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
   })
-  const instance = Object.create(GameWindow.prototype)
+  const instance = attachWindowControls(Object.create(GameWindow.prototype))
   instance.panel = {
     querySelectorAll: selector => {
       assert.equal(selector, '.ui-tab')
@@ -343,7 +349,7 @@ test('craft gamepad combination takes precedence without also crafting one item'
     mocks: { '../audio/settings': {} },
   })
   const primary = { id: 'primary', pad: 0 }
-  const maximum = { id: 'craft-max', pad: 0, padModifier: 6 }
+  const maximum = { id: 'craft-batch', pad: 0, padModifier: 6 }
   const commands = [primary, maximum]
   const pad = { buttons: Array.from({ length: 17 }, () => ({ pressed: false })) }
   assert.equal(findEnabledPadCommand(commands, 0, pad), primary)
@@ -352,4 +358,74 @@ test('craft gamepad combination takes precedence without also crafting one item'
   assert.equal(findEnabledPadCommand(commands, 6, pad), null)
   maximum.disabled = true
   assert.equal(findEnabledPadCommand(commands, 0, pad), null)
+})
+
+test('craft footer exposes the bounded count and runs Shift+Enter and LT+A exactly once per press', () => {
+  const { availableCommands } = loadTsModule('app/lib/ui/GameWindowCommands.ts', {
+    mocks: {
+      '../audio/settings': {},
+      '../lang': { t: key => key },
+      './GameWindowForms': { getWindowField: () => null },
+    },
+  })
+  const { findEnabledPadCommand, readWindowKeyIntent } = loadTsModule('app/lib/ui/GameWindowInput.ts', {
+    mocks: { '../audio/settings': {} },
+  })
+  const { GameWindowPadState } = loadTsModule('app/lib/ui/GameWindowNavigation.ts')
+  const previousMouseEvent = global.MouseEvent
+  global.MouseEvent = class {
+    constructor(type, options) {
+      this.type = type
+      Object.assign(this, options)
+    }
+  }
+  try {
+    const clicks = []
+    const primary = {
+      dataset: { craftBatchLabel: 'Fabriquer 6' },
+      textContent: 'Fabriquer 1',
+      isConnected: true,
+      disabled: false,
+      matches: () => false,
+      querySelector: () => null,
+      click: () => clicks.push(1),
+      dispatchEvent: event => clicks.push(event.shiftKey ? 6 : 1),
+    }
+    const row = {
+      dataset: {},
+      matches: selector => selector === '.inventory-action-row',
+      querySelectorAll: () => [primary],
+      querySelector: () => null,
+      closest: () => null,
+    }
+    const result = availableCommands({ getSelected: () => row, panel: { querySelectorAll: () => [] } })
+    const batch = result.find(command => command.id === 'craft-batch')
+    assert.equal(batch.label, 'Fabriquer 6')
+    assert.equal(batch.padModifier, 6)
+    assert.equal(batch.pad, 0)
+    readWindowKeyIntent({ key: 'Enter', shiftKey: true }, result).command.run()
+    assert.deepEqual(clicks, [6])
+    const pad = { buttons: Array.from({ length: 17 }, () => ({ pressed: false })), axes: [] }
+    const state = new GameWindowPadState()
+    const poll = now => {
+      for (const index of state.read(pad, now).pressed) findEnabledPadCommand(result, index, pad)?.run()
+    }
+    poll(0)
+    pad.buttons[6].pressed = true
+    pad.buttons[0].pressed = true
+    poll(16)
+    poll(1000)
+    assert.deepEqual(clicks, [6, 6])
+    pad.buttons[0].pressed = false
+    poll(1016)
+    pad.buttons[6].pressed = false
+    pad.buttons[0].pressed = true
+    poll(1032)
+    assert.deepEqual(clicks, [6, 6, 1])
+    primary.disabled = true
+    batch.run()
+    assert.deepEqual(clicks, [6, 6, 1])
+  } finally {
+    global.MouseEvent = previousMouseEvent
+  }
 })

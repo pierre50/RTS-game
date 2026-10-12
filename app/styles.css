@@ -14,5 +14,6 @@
 @import './styles/hud-visibility.css';
 
 @import './styles/game-window.css';
+@import './styles/inventory-presentation.css';
 
 @import './styles/control-states.css';

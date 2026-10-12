@@ -11,7 +11,7 @@ const { settleChiefEscortAtPost } = loadTsModule('app/services/rest/ChiefEscortP
     '../../../engine/services/BuildingInteriorSpaceLookup': {
       getBuildingInteriorSpaceForUnit: unit => unit.interior ?? null,
     },
-    '../../lib/units/interiorCombat': { hasInteriorCombatRoute: unit => !!unit.interiorCombat },
+    '../../lib/units/combat/interiorCombat': { hasInteriorCombatRoute: unit => !!unit.interiorCombat },
     './UnitRestRules': { isUnitRestWakeLocked: unit => !!unit.wakeLocked },
     './UnitRestState': {
       stopUnitForRest: unit => {

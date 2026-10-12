@@ -54,17 +54,17 @@
       "legacyId": "temple-circle-001"
     },
     {
-      "blueprintId": "building-size-3-001",
-      "buildingSize": 3,
+      "blueprintId": "building-size-2-001",
+      "buildingSize": 2,
       "buildingType": "Granary",
-      "id": "granary-size-3-001",
+      "id": "granary-size-2-001",
       "legacyId": "granary-circle-001"
     },
     {
-      "blueprintId": "building-size-3-001",
-      "buildingSize": 3,
+      "blueprintId": "building-size-2-001",
+      "buildingSize": 2,
       "buildingType": "StoragePit",
-      "id": "storage-pit-size-3-001",
+      "id": "storage-pit-size-2-001",
       "legacyId": "storage-pit-circle-001"
     },
     {

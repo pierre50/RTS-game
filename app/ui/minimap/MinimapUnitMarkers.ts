@@ -1,6 +1,43 @@
 import { MINIMAP_RESOLUTION_SCALE as SCALE } from './MinimapGeometry'
+import type { MinimapUnitCluster } from './MinimapUnitClusters'
 
 type MarkerKind = 'villager' | 'troop' | 'building' | 'hero'
+
+export function drawMinimapUnitCluster(
+  context: CanvasRenderingContext2D,
+  cluster: MinimapUnitCluster,
+  color: string,
+  markerScale: number
+): void {
+  if (cluster.count === 1) {
+    drawMinimapUnitMarker(context, 'villager', cluster, color, cluster.selected, 0, markerScale)
+    return
+  }
+  const label = String(cluster.count)
+  const radius = Math.max(7, 3 + label.length * 2.5) * SCALE
+  context.save()
+  context.translate(cluster.x, cluster.y)
+  if (cluster.selected) {
+    context.beginPath()
+    context.ellipse(0, 0, radius + 2 * SCALE, radius + 2 * SCALE, 0, 0, Math.PI * 2)
+    context.strokeStyle = '#ffffff'
+    context.lineWidth = SCALE
+    context.stroke()
+  }
+  context.beginPath()
+  context.ellipse(0, 0, radius, radius, 0, 0, Math.PI * 2)
+  context.fillStyle = '#171a20'
+  context.fill()
+  context.strokeStyle = color
+  context.lineWidth = 1.5 * SCALE
+  context.stroke()
+  context.font = `600 ${9 * SCALE}px sans-serif`
+  context.textAlign = 'center'
+  context.textBaseline = 'middle'
+  context.fillStyle = '#ffffff'
+  context.fillText(label, 0, 0)
+  context.restore()
+}
 
 /** Scale shapes, selection rings and outlines together with the minimap zoom. */
 export function drawMinimapUnitMarker(

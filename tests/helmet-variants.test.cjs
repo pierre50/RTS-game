@@ -3,12 +3,12 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const variants = loadTsModule('app/lib/equipment/helmetVariants.ts')
 const slots = loadTsModule('app/lib/equipment/equipmentSlots.ts')
-const helmet = 'helmet_barbarian_ceramic'
-const horns = `${helmet}~decor:upward_horns_ceramic`
+const helmet = 'helmet_barbarian_leather'
+const horns = `${helmet}~decor:upward_horns_white`
 const wings = `${helmet}~decor:helmet_wings`
 const loot = loadTsModule('app/lib/equipment/equipmentLoot.ts', {
   mocks: {
-    './equipmentStats': { getUnitEquipment: () => [helmet, 'upward_horns_ceramic'], refreshUnitEquipmentStats() {} },
+    './equipmentStats': { getUnitEquipment: () => [helmet, 'upward_horns_white'], refreshUnitEquipmentStats() {} },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': { refreshBakedLpcUnitAssets() {} },
   },
@@ -18,12 +18,12 @@ test('corpse loot, pickup, equip, swap and unequip keep a decorated helmet indiv
   const corpse = {
     isDead: true,
     type: 'BanditSword',
-    equipment: [helmet, 'upward_horns_ceramic'],
+    equipment: [helmet, 'upward_horns_white'],
     owner: { config: { units: {} } },
   }
   const hero = { inventory: { equipment: [wings] } }
   assert.deepEqual(loot.getUnitCorpseLootEquipment(corpse), [horns])
-  assert.equal(loot.pickupCorpseEquipment(corpse, hero, 'upward_horns_ceramic'), false)
+  assert.equal(loot.pickupCorpseEquipment(corpse, hero, 'upward_horns_white'), false)
   assert.equal(loot.pickupCorpseEquipment(corpse, hero, horns), true)
   assert.deepEqual(corpse.lootEquipment, [])
   assert.deepEqual(corpse.equipment, [])
@@ -46,14 +46,14 @@ test('variant identity controls stacks and names; equipment panel has no decorat
   assert.notEqual(slots.formatEquipmentLootLabel(horns), slots.formatEquipmentLootLabel(wings))
   assert.equal(slots.formatEquipmentLootLabel(horns).includes('~'), false)
   assert.equal(slots.HERO_EQUIPMENT_SLOTS.includes('helmetDecor'), false)
-  assert.deepEqual(variants.equipmentVisualParts(horns), [helmet, 'upward_horns_ceramic'])
+  assert.deepEqual(variants.equipmentVisualParts(horns), [helmet, 'upward_horns_white'])
 })
 
 test('legacy equipped and bag items migrate once without losing unmatched ornaments', () => {
   const inventory = {
     equipped: { helmet, helmetDecor: 'helmet_wings' },
     equippedCounts: { helmet: 1, helmetDecor: 1 },
-    equipment: [helmet, 'upward_horns_ceramic'],
+    equipment: [helmet, 'upward_horns_white'],
   }
   variants.migrateHelmetInventory(inventory)
   assert.deepEqual(inventory, { equipped: { helmet: wings }, equippedCounts: { helmet: 1 }, equipment: [horns] })
@@ -80,11 +80,11 @@ test('lazy decorated avatar loads every part before refreshing the composite', a
     },
   })
   renderEquipmentAvatarLazy({}, horns, { isConnected: true })
-  assert.deepEqual([...pending.keys()], [helmet, 'upward_horns_ceramic'])
+  assert.deepEqual([...pending.keys()], [helmet, 'upward_horns_white'])
   pending.get(helmet)()
   await new Promise(resolve => setImmediate(resolve))
   assert.equal(calls.length, 1)
-  pending.get('upward_horns_ceramic')()
+  pending.get('upward_horns_white')()
   await new Promise(resolve => setImmediate(resolve))
   assert.deepEqual(calls, [horns, horns])
 })
@@ -109,8 +109,8 @@ test('avatar composites helmet and ornament at their original positions before c
   try {
     const textures = new Map([
       [`equipments/${helmet}/front/walking`, { id: 'helmet-front', width: 64, height: 64 }],
-      ['equipments/upward_horns_ceramic/back/walking', { id: 'horns-back', width: 64, height: 64 }],
-      ['equipments/upward_horns_ceramic/front/walking', { id: 'horns-front', width: 64, height: 64 }],
+      ['equipments/upward_horns_white/back/walking', { id: 'horns-back', width: 64, height: 64 }],
+      ['equipments/upward_horns_white/front/walking', { id: 'horns-front', width: 64, height: 64 }],
     ])
     const { renderEquipmentAvatar } = loadTsModule('app/lib/graphics/equipmentAvatar.ts', {
       mocks: {
@@ -169,7 +169,7 @@ test('equipped and corpse variants expand into both appearance layers', () => {
     inventory: { equipped: { helmet: horns } },
   }
   refreshBakedLpcUnitAssets(unit)
-  assert.ok(received.some(items => items.includes(helmet) && items.includes('upward_horns_ceramic')))
+  assert.ok(received.some(items => items.includes(helmet) && items.includes('upward_horns_white')))
   received.length = 0
   refreshBakedLpcUnitAssets({ ...unit, isDead: true, lootEquipment: [wings], currentSheet: 'corpseSheet' })
   assert.ok(received.some(items => items.includes(helmet) && items.includes('helmet_wings')))

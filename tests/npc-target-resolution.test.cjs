@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 let candidates = []
-const { resolveClickTarget, resolveHoverTarget } = loadTsModule('app/lib/npc/npcTargetResolution.ts', {
+const { resolveClickTarget } = loadTsModule('app/lib/npc/npcTargetResolution.ts', {
   mocks: {
     '../grid/visibility': {
       findInstancesInSight: (hero, matches, range) => {
@@ -33,16 +33,13 @@ test('NPC target resolution excludes destroyed entities while keeping animal cor
   const corpse = target('animal', 10, { isDead: true })
   candidates = [destroyed, corpse, target('unit', 1, { owner: { enemy: true }, isDead: true })]
   assert.equal(resolveClickTarget(hero, point, { has: destroyed }), corpse)
-  assert.equal(resolveHoverTarget(hero, point, { has: destroyed }), corpse)
   candidates = [destroyed]
-  assert.equal(resolveHoverTarget(hero, point, null), null)
 })
-test('NPC hover identifies neutral units while click dispatch remains limited to enemies', () => {
+test('NPC click dispatch excludes neutral units and only accepts enemies', () => {
   const neutral = target('unit', 1, { owner: {} })
   const enemy = target('unit', 10, { owner: { enemy: true } })
   candidates = [target('unit', 0, { owner }), neutral, enemy]
   assert.equal(resolveClickTarget(hero, point, {}), enemy)
-  assert.equal(resolveHoverTarget(hero, point, null), neutral)
   candidates = [target('unit', 1)]
   assert.equal(resolveClickTarget({}, point, {}), null)
 })

@@ -1,4 +1,4 @@
-import { countResidentHouseholds } from '../lib/housing/households'
+import { isRoadCell } from '../lib/terrain/roadLayer'
 import { storageResourcesForAI } from './AIStrategyResources'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { BUILDING_TYPES } from '../constants'
@@ -145,7 +145,6 @@ function buyCoreInfrastructure(options: {
   const needs = villageBuildingNeeds({
     storagePitNeeded: needsStoragePit(storageResources, ai.buildings),
     population: ai.population,
-    residentHouseholds: countResidentHouseholds(ai),
     populationMax: ai.populationMax,
     phase: ai.phase,
     desiredBarracks,
@@ -315,7 +314,8 @@ export function handleAIBuildingActions(
   }
 
   const passageLookup = createReservedPassageCellLookup(ai.context)
-  const avoidsReservedPassages = (cell: GridCell) => !passageLookup.has(cell as RuntimeCell)
+  const avoidsReservedPassages = (cell: GridCell) =>
+    !passageLookup.has(cell as RuntimeCell) && !isRoadCell(map.roads, cell)
   const placementCondition =
     (...conditions: Array<(cell: AIGridPosition) => boolean>) =>
     (cell: GridCell) =>

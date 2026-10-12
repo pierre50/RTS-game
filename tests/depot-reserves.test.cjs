@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -34,7 +35,7 @@ function fixture() {
     i: 11,
     j: 10,
     inactif: true,
-    inventory: { resources: { wheat: 12 } },
+    inventory: { ...workerInventory('axe_ceramic'), resources: { wheat: 12 } },
   }
   const owner = { label: 'player', population: 1, populationMax: 1, buildings: [center, pit, granary], units: [unit] }
   return { owner, unit, pit, granary }
@@ -83,7 +84,7 @@ test('disabled reserves stop comfort harvesting while meals and building materia
     constructionMaterials: { cost: { wood: 40 }, delivered: {}, consumed: {} },
   })
   assert.equal(planCollectiveTasks(owner, [unit]).get(unit).job, 'wood')
-  assert.equal(collectiveHarvestBudget(owner, unit, 'wood'), 18)
+  assert.equal(collectiveHarvestBudget(owner, unit, 'wood'), 15)
   assert.deepEqual(pit.inventory.resources, {})
   unit.inventory.resources = {}
   assert.equal(planCollectiveTasks(owner, [unit]).get(unit).job, 'food')
@@ -129,7 +130,12 @@ test('save validation accepts all-zero policies and rejects invalid totals, shar
 
 const { offlineResourceWork } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
 test('offline gathering selects the requested food and animal material', () => {
-  const unit = { type: 'Villager', autonomousJob: 'food', collectiveTask: 'berry' }
+  const unit = {
+    inventory: workerInventory('axe_ceramic'),
+    type: 'Villager',
+    autonomousJob: 'food',
+    collectiveTask: 'berry',
+  }
   assert.equal(offlineResourceWork({}, unit, { type: 'Berrybush', quantity: 30 }, 3), 'forager')
   assert.equal(offlineResourceWork({}, unit, { type: 'Wheat', quantity: 30, currentFrame: 3 }, 3), undefined)
   unit.collectiveTask = 'leather'
@@ -155,4 +161,18 @@ test('legacy craft shares are accepted on load but no longer used for comfort re
     ),
     true
   )
+})
+
+test('reserve goals add the individual capacities of upgraded depots', () => {
+  const { owner, pit, granary } = fixture()
+  pit.buildingLevel = 1
+  pit.reservePolicy = { target: 100, shares: { wood: 100 } }
+  granary.buildingLevel = 2
+  granary.reservePolicy = { target: 100, shares: {} }
+  const second = { ...pit, label: 'second', buildingLevel: 2 }
+  owner.buildings.push(second)
+  assert.equal(settlementDepotPolicy(owner, pit).target, 900)
+  assert.equal(settlementDepotPolicy(owner, second).target, 900)
+  assert.equal(settlementDepotPolicy(owner, granary).target, 900)
+  assert.equal(settlementStockGoals(owner, pit).wood, 1800)
 })

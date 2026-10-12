@@ -54,10 +54,17 @@ PALETTES: dict[str, list[str]] = {
     "player_cyan":   ["#002219", "#004051", "#004D5E", "#006B6D", "#008279", "#00A087"],
     "player_brown":  ["#222323", "#453125", "#583126", "#733D3B", "#885041", "#AD6E51"],
 
+    # ULPC leather ramp shared with leather armour and the sack hood sources.
+    "leather": ["#2B1C1D", "#311210", "#4B2B13", "#704325", "#75502D", "#9A6F37"],
+
     # ── Metal tones ─────────────────────────────────────────────────────────
     # ULPC metal palettes from scripts/lpc/palettes/ulpc-metal-palettes.json.
     "brass":  ["#1A1213", "#2E2533", "#61482C", "#836332", "#AF8A35", "#FDD082", "#FDF5CC"],
-    "ceramic": ["#181009", "#2B1C1D", "#32251A", "#594435", "#7D604D", "#BA9069", "#FBE3B0"],
+    # Legacy "ceramic" key represents stone tools and arrowheads. Use the map
+    # stone ramp from resources/minerals; source masks preserve wooden handles.
+    # Repeated light stops deliberately weight the rank-based mapping toward the
+    # rock's taupe surface and pale highlights, rather than iron-like dark greys.
+    "ceramic": ["#19191B", "#75686E", "#9E8C79", "#9E8C79", "#CCC3B1", "#CCC3B1", "#CCC3B1"],
     "copper": ["#662B29", "#94363A", "#B64D46", "#E37840", "#F99B4E"],
     "bronze": ["#4F2313", "#573726", "#6D4A00", "#966600", "#BF8200", "#E7A820", "#FBE3B0"],
     "iron_source": ["#000000", "#1D131E", "#1B192B", "#29253A", "#343043", "#484152", "#726B7E"],
@@ -67,6 +74,9 @@ PALETTES: dict[str, list[str]] = {
     "gold":   ["#2E1026", "#753B09", "#9E6520", "#D1AA39", "#EDD493", "#FFF3D6"],
     # Tool sheets mix wooden handles with metal heads, so this source palette
     # targets only the common ULPC metal pixels and leaves handle colors alone.
+    # Three visible spear grays map to material ramp slots 3/5/6. The other
+    # entries are unused mask colors; wooden browns and outlines stay untouched.
+    "spear_metal_source": ["#000001", "#111112", "#222223", "#4A5057", "#666667", "#8AAAAB", "#A9C9CA"],
     "tool_metal_source": [
         "#1D131E",
         "#2E2533",
@@ -102,6 +112,8 @@ PALETTES: dict[str, list[str]] = {
         "#C4B59F",
         "#E5E6C7",
     ],
+    # Dagger blade only; retain the original brown grip.
+    "dagger_metal_source": ["#1D131E", "#4D4A5D", "#726B7E", "#B19998", "#C4B59F", "#E5E6C7", "#FFFFFF"],
 
     # ── Cloth ───────────────────────────────────────────────────────────────
     "white":       ["#2E1026", "#554769", "#917A7B", "#BBAFA4", "#EADBC9", "#F5F7FA"],

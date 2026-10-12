@@ -1,3 +1,4 @@
+import { belongsToSettlement, collectiveAnchor } from '../economy/collectiveConstruction'
 import { VillageScheduleGate } from '../units/village/villageScheduleGate'
 import { notifyVillageStateChanged } from '../units/village/villageStateEvents'
 import type { GameContextLike } from '../../types/context'
@@ -112,7 +113,12 @@ export function dispatchTrainingRequests(owner: PlayerLike): void {
         if (getStableHorseAmount(building) <= incoming) continue
       }
       for (const unit of candidates) {
-        if (!availableRecruit(unit) || !canUnitTrainInto(building, unit, request.type)) continue
+        if (
+          !availableRecruit(unit) ||
+          !belongsToSettlement(owner, collectiveAnchor(owner, unit), building) ||
+          !canUnitTrainInto(building, unit, request.type)
+        )
+          continue
         wakeUnitSimulation(unit)
         unit.trainingTargetType = request.type
         request.traineeLabel = unit.label

@@ -179,3 +179,40 @@ test('established villages build one decorative forge offline and retain it when
   const arrived = materializeInitialEconomy(structuredClone(state), state, 2 * DAY)
   assert.ok(arrived.players[0].buildings.some(building => building.type === 'Forge' && building.isBuilt))
 })
+
+test('offline construction avoids saved roads while keeping them walkable', () => {
+  const { OfflineWorldSpatial } = loadTsModule('app/services/world/offline/OfflineWorldSpatial.ts')
+  const { state, terrain, rules } = fixture()
+  const original = structuredClone(state)
+  planOfflineBuildings(original, 1, terrain, rules)
+  const site = original.players[0].buildings.find(b => !b.isBuilt)
+  assert.ok(site)
+  state.world.roads = { version: 1, stride: 41, cells: [[site.i * 41 + site.j, 1]] }
+  const spatial = new OfflineWorldSpatial(terrain, state, () => 2)
+  assert.equal(spatial.available(site), true)
+  assert.equal(spatial.naturalCell(site), false)
+  assert.equal(spatial.storageSiteFree(site, true), false)
+  assert.equal(spatial.storageSiteFree(site, false), true)
+  planOfflineBuildings(state, 1, terrain, rules, spatial)
+  const project = state.players[0].buildings.find(b => !b.isBuilt)
+  assert.ok(project)
+  const before = Math.floor((project.size - 1) / 2)
+  const after = project.size - before - 1
+  assert.ok(
+    site.i < project.i - before ||
+      site.i > project.i + after ||
+      site.j < project.j - before ||
+      site.j > project.j + after
+  )
+})
+
+test('offline planned bases copy the calibrated budget separately from repair pacing', () => {
+  const { player, state, terrain, rules } = fixture()
+  rules.buildingConfig = (_index, type) => realBuildings[type] ?? {}
+  planOfflineBuildings(state, 1, terrain, rules)
+  const project = player.buildings.find(building => !building.isBuilt)
+  assert.ok(project)
+  assert.equal(project.constructionWorkRequired, realBuildings[project.type].constructionWorkRequired)
+  assert.equal(project.constructionTime, realBuildings[project.type].constructionTime)
+  assert.ok(project.constructionWorkRequired > project.constructionTime)
+})

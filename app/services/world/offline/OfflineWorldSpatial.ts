@@ -1,3 +1,5 @@
+import { OfflineResourceIndex, offlineResourceApproach } from './OfflineResourceSearch'
+import { groundResourceSurroundings, isGroundResourceType } from '../../../lib/resources/groundResourceRegrowth'
 import { beginLoadTrace } from '../../../lib/loadDiagnostics'
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../../types/save'
 
@@ -25,12 +27,14 @@ export function isLiving(entity: SaveEntityState): boolean {
 
 /** Terrain connectivity is cached; occupancy remains mutable as nodes disappear and units move. */
 export class OfflineWorldSpatial {
+  private resourceIndex = new OfflineResourceIndex()
   private traceConnectivity: boolean
   private occupied = new Map<string, Set<SaveEntityState>>()
   private regions = new Map<string, number>()
   private nextRegion = 0
   private entities = new Map<string, SaveEntityState>()
   private passages = new Set<string>()
+  private buildings = new WeakSet<SaveEntityState>()
   private mobile = new Set<SaveEntityState>()
 
   constructor(
@@ -45,6 +49,9 @@ export class OfflineWorldSpatial {
     } = {}
   ) {
     this.traceConnectivity = options.traceConnectivity !== false
+    const roads = state.world?.roads
+    if (roads)
+      for (const [id] of roads.cells) this.reservePassage({ i: Math.floor(id / roads.stride), j: id % roads.stride })
     for (const entity of [...state.resources, ...state.animals]) {
       if (!entity.isDestroyed) this.reserve(entity)
     }
@@ -56,6 +63,7 @@ export class OfflineWorldSpatial {
         }
       for (const building of player.buildings ?? []) {
         if (!isLiving(building)) continue
+        this.buildings.add(building)
         const size = Math.max(1, Math.floor(building.size ?? buildingSize(building, index)))
         const before = options.exactBuildingFootprints ? Math.floor((size - 1) / 2) : Math.ceil(size / 2)
         const after = options.exactBuildingFootprints ? size - before - 1 : before
@@ -156,6 +164,7 @@ export class OfflineWorldSpatial {
   }
 
   reserve(entity: SaveEntityState, point: SaveGridPoint = entity): void {
+    this.resourceIndex.add(entity)
     this.entities.set(entityKey(entity), entity)
     const key = this.key(point)
     const occupants = this.occupied.get(key) ?? new Set<SaveEntityState>()
@@ -164,6 +173,7 @@ export class OfflineWorldSpatial {
   }
 
   release(entity: SaveEntityState): void {
+    this.resourceIndex.delete(entity)
     this.entities.delete(entityKey(entity))
     const key = this.key(entity)
     const occupants = this.occupied.get(key)
@@ -172,6 +182,7 @@ export class OfflineWorldSpatial {
   }
 
   releaseBuilding(entity: SaveEntityState): void {
+    this.resourceIndex.delete(entity)
     this.entities.delete(entityKey(entity))
     // Buildings reserve their entire footprint, unlike resources and moving units.
     for (const [key, occupants] of this.occupied) {
@@ -268,6 +279,44 @@ export class OfflineWorldSpatial {
     if (occupants && [...occupants].some(entity => !clearableTypes.has(entity.type))) return false
     const cell = this.terrain[point.i]?.[point.j]
     return !cell?.waterBorder && !cell?.inclined
+  }
+
+  nearestResources(
+    unit: SaveEntityState,
+    area: SaveGridPoint & { radius: number },
+    accepts: (entity: SaveEntityState) => boolean,
+    limit = 16
+  ): SaveEntityState[] {
+    return this.resourceIndex.nearest(unit, area, accepts, limit)
+  }
+
+  resourceApproach(unit: SaveEntityState, targets: SaveEntityState[], area: SaveGridPoint & { radius: number }) {
+    return offlineResourceApproach(
+      unit,
+      targets,
+      area,
+      point =>
+        this.land(point) &&
+        [...(this.occupied.get(this.key(point)) ?? [])].every(
+          entity => entity === unit || !isLiving(entity) || isGroundResourceType(entity.type)
+        )
+    )
+  }
+
+  groundCell(point: SaveGridPoint, type: string): boolean {
+    return (
+      this.naturalCell(point) &&
+      groundResourceSurroundings(type, point, (i, j) => {
+        const entities = [...(this.occupied.get(this.key({ i, j })) ?? [])].filter(isLiving)
+        return {
+          building: entities.some(entity => this.buildings.has(entity)),
+          ground: entities.some(entity => isGroundResourceType(entity.type)),
+          tree:
+            this.elevation({ i, j }) === this.elevation(point) &&
+            entities.some(entity => entity.type === 'Tree' && entity.hitPoints !== 0),
+        }
+      })
+    )
   }
 
   storageSiteFree(point: SaveGridPoint, forBuilding: boolean): boolean {

@@ -30,7 +30,20 @@ const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/Buildin
 
 function furnishInterior(type, saved, placementMirrored = false, ownerOptions = {}, buildingOptions = {}) {
   const buildingSize = config[type].size
-  const blueprint = buildingInterior({ buildingSize, size: buildingSize * 2 + 7, id: type, seed: 1 })
+  let blueprint = buildingInterior({ buildingSize, size: buildingSize * 2 + 7, id: type, seed: 1 })
+  if (type === 'House') {
+    const { createIsometricInteriorBlueprint } = loadTsModule('app/classes/map/generation/LocalMapBlueprint.ts')
+    const { getHouseRoomShape } = loadTsModule('app/lib/housing/houseLevels.ts')
+    const room = createIsometricInteriorBlueprint(
+      { size: 11, terrain: [], exits: [], resources: [] },
+      getHouseRoomShape({ buildingLevel: 1, ...buildingOptions })
+    )
+    blueprint = {
+      ...room,
+      floorMask: Buffer.from(room.floorMask.flat()).toString('base64'),
+      borderMask: Buffer.from(room.borderMask.flat()).toString('base64'),
+    }
+  }
   const floor = Buffer.from(blueprint.floorMask, 'base64')
   const borders = Buffer.from(blueprint.borderMask, 'base64')
   const width = blueprint.size + 1
@@ -75,7 +88,7 @@ function furnishInterior(type, saved, placementMirrored = false, ownerOptions = 
     exitCell: grid[exit.i][exit.j],
     walkableCells: cells,
     sleepCells: cells,
-    building: { type, owner, interiorBuildings: saved, placementMirrored, ...buildingOptions },
+    building: { type, buildingLevel: 1, owner, interiorBuildings: saved, placementMirrored, ...buildingOptions },
   }
   const context = { map: { randomItem: items => items[0] } }
   ensureInteriorDefaultBuildings(context, space)

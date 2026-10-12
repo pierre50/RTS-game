@@ -1,8 +1,9 @@
 import { renderUnitHeadAvatar } from '../lib/avatar'
 import { formatDisplayedHitPoints } from '../lib/entities/hitPointsText'
 import { t } from '../lib/lang'
-import { getUnitOverallLevel } from '../lib/units/unitExperience'
-import type { UnitEntity } from '../types/entities'
+import { getBaseTerritory } from '../lib/territory/baseTerritory'
+import { createUnitLevelBadge, formatUnitLevel } from './entity/UnitLevelBadge'
+import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
 const HEALTH_RECOVERY_FILL_MS = 180
@@ -10,9 +11,12 @@ const HEALTH_RECOVERY_FILL_MS = 180
 export class HeroStatusHud {
   menu: MenuHost
   element: HTMLDivElement
+  settlement: HTMLDivElement
+  private nextSettlementUpdateAt = 0
+  private lastSettlementColor = ''
   avatarCanvas: HTMLCanvasElement
   title: HTMLDivElement
-  level: HTMLDivElement
+  level: HTMLSpanElement
   value: HTMLDivElement
   healthBar: HTMLDivElement
   energyBar: HTMLDivElement
@@ -42,6 +46,11 @@ export class HeroStatusHud {
     this.element = document.createElement('div')
     this.element.className = 'hero-status-hud hidden'
 
+    this.settlement = document.createElement('div')
+    this.settlement.className = 'hero-status-settlement'
+    this.settlement.hidden = true
+    this.element.appendChild(this.settlement)
+
     const frame = document.createElement('div')
     frame.className = 'hero-status-frame hud-info-panel'
 
@@ -61,8 +70,7 @@ export class HeroStatusHud {
     this.title = document.createElement('div')
     this.title.className = 'hero-status-title'
 
-    this.level = document.createElement('div')
-    this.level.className = 'hero-status-level level-tag value-badge value-badge--level'
+    this.level = createUnitLevelBadge()
 
     this.value = document.createElement('div')
     this.value.className = 'hero-status-value'
@@ -100,6 +108,7 @@ export class HeroStatusHud {
 
   setHero(hero: UnitEntity | null): void {
     this.hero = hero
+    this.nextSettlementUpdateAt = 0
     this.displayedHitPoints = null
     this.lastHealthDisplayUpdateAt = null
     this.resetRenderCache()
@@ -132,7 +141,31 @@ export class HeroStatusHud {
 
   private updateIdentity(hero: UnitEntity): void {
     this.setText(this.title, 'lastTitleText', hero.name || t(hero.type || 'heroStatusTitle'))
-    this.setText(this.level, 'lastLevelText', `${t('levelShort')} ${getUnitOverallLevel(hero)}`)
+    this.setText(this.level, 'lastLevelText', formatUnitLevel(hero))
+  }
+
+  private updateSettlement(hero: UnitEntity, now: number): void {
+    if (now < this.nextSettlementUpdateAt) return
+    this.nextSettlementUpdateAt = now + 250
+    const { player, players } = this.menu.context
+    const owners = [...new Set([player, ...(players ?? [])].filter(Boolean))]
+    // Location is independent of the hero's assigned home town.
+    const territory = getBaseTerritory({ i: hero.i, j: hero.j, spaceId: hero.spaceId }, owners)
+    const center = territory?.center as BuildingEntity | undefined
+    const own = territory?.owner === player
+    const known =
+      center &&
+      (own ||
+        ((!hero.spaceId || hero.spaceId === 'outside') && player?.views?.isViewed(center.i, center.j)) ||
+        player?.minimapBuildingMemory?.some(entry => entry.town && entry.id === center.label))
+    const name = known ? center.settlementName || t('settlementVillage') : ''
+    if (this.settlement.textContent !== name) this.settlement.textContent = name
+    this.settlement.hidden = !name
+    const color = own ? 'var(--main-accent-color)' : territory?.owner.colorHex || 'var(--main-accent-color)'
+    if (color !== this.lastSettlementColor) {
+      this.settlement.style.setProperty('color', color)
+      this.lastSettlementColor = color
+    }
   }
 
   private updateHealth(hero: UnitEntity, elapsedMs: number): void {
@@ -176,10 +209,13 @@ export class HeroStatusHud {
     if (!hero || hero.isDead || hero.isDestroyed) {
       this.element.classList.add('hidden')
       this.displayedHitPoints = null
+      this.nextSettlementUpdateAt = 0
+      this.settlement.hidden = true
       this.resetRenderCache()
       return
     }
 
+    this.updateSettlement(hero, now)
     this.updateIdentity(hero)
     this.updateHealth(hero, elapsedMs)
     this.updateEnergy(hero)

@@ -1,21 +1,12 @@
-import { remainingConstructionMaterials } from '../../lib/economy/constructionMaterials'
+import { canManageConstructionPause, setConstructionPaused } from '../../lib/buildings/constructionPause'
+import { createConstructionSite, constructionSiteOptions } from '../ConstructionSite'
 import { formatHitPointsText } from '../../lib/entities/hitPointsText'
 import { t } from '../../lib/lang'
 import type { BuildingEntity } from '../../types/entities'
 
 /** Shared by inspection and interaction panels for every unfinished structure. */
 export function appendConstructionInfo(element: HTMLElement, building: BuildingEntity): void {
-  const missing = remainingConstructionMaterials(building)
-  const status = document.createElement('div')
-  status.className = 'construction-work-status'
-  status.textContent = Object.keys(missing).length
-    ? t('constructionSiteMissing', {
-        materials: Object.entries(missing)
-          .map(([key, amount]) => `${amount} ${t(key)}`)
-          .join(', '),
-      })
-    : t('constructionSiteReady')
-  element.appendChild(status)
+  element.appendChild(createConstructionSite(constructionSiteOptions(building)))
   if ((building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)) {
     const damage = document.createElement('div')
     damage.className = 'construction-damage-status'
@@ -24,4 +15,20 @@ export function appendConstructionInfo(element: HTMLElement, building: BuildingE
     })
     element.appendChild(damage)
   }
+}
+
+export function createConstructionPauseButton(building: BuildingEntity): HTMLButtonElement | null {
+  if (!canManageConstructionPause(building)) return null
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'entity-construction-pause-button ui-btn'
+  const render = () => {
+    button.textContent = t(building.constructionPaused ? 'constructionResume' : 'constructionPause')
+    button.setAttribute('aria-pressed', String(Boolean(building.constructionPaused)))
+  }
+  render()
+  button.addEventListener('click', () => {
+    if (setConstructionPaused(building, !building.constructionPaused)) render()
+  })
+  return button
 }

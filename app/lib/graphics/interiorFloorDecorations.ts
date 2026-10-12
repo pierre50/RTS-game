@@ -1,3 +1,4 @@
+import { getBuildingLevel } from '../buildings/buildingLevel'
 import { usesInteriorPreset } from '../buildings/furniture/interiorFurnitureCatalog'
 import { Assets, Sprite, type ContainerChild } from 'pixi.js'
 import { getInteriorFloorDecorations } from '../buildings/furniture/interiorFloorDecorations'
@@ -10,6 +11,8 @@ export function addInteriorFloorDecorations(
   space: {
     building: {
       type: string
+      buildingLevel?: number
+      assetLevel?: unknown
       placementMirrored?: boolean
       interiorUnfurnished?: boolean
       owner?: { type?: string; isPlayed?: boolean } | null
@@ -22,7 +25,7 @@ export function addInteriorFloorDecorations(
   layer: { addChild(child: ContainerChild): unknown }
 ): void {
   if (!usesInteriorPreset(space.building)) return
-  const decorations = getInteriorFloorDecorations(space.building.type)
+  const decorations = getInteriorFloorDecorations(space.building.type, getBuildingLevel(space.building))
   if (!decorations.length) return
   const center = getInteriorRoomCenter(space)
   for (const decoration of decorations) {
@@ -34,7 +37,7 @@ export function addInteriorFloorDecorations(
       continue
     const texture = getTextureByFrame('buildings/deco', decoration.frame, Assets)
     const sprite = new Sprite(texture)
-    sprite.scale.x = space.building.placementMirrored ? -1 : 1
+    sprite.scale.x = Boolean(space.building.placementMirrored) !== Boolean(decoration.mirrored) ? -1 : 1
     if (texture.defaultAnchor) sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
     sprite.x = ((center.i - center.j) * CELL_WIDTH) / 2 + offsetX
     sprite.y = ((center.i + center.j) * CELL_HEIGHT) / 2 + decoration.offsetY

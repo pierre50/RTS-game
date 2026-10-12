@@ -1,3 +1,4 @@
+import { villageReportData } from './VillageReportData'
 import { getResourceDisplayName } from '../utils/resourceDisplayName'
 import { createInventorySectionTitle } from '../inventory/InventorySection'
 import { createInventoryResourceIcon } from '../inventory/InventoryItemIcons'
@@ -93,19 +94,34 @@ function createStatRow(labelText: string, valueText: string): HTMLDivElement {
   return row
 }
 
-function createOverviewSection(menu: MenuHost): HTMLElement {
+function createOverviewSection(menu: MenuHost, town?: BuildingEntity): HTMLElement {
   const player = menu.context.player
-  const villagers = getActiveVillagers(player)
+  const local = town ? villageReportData(player, town) : null
+  const villagers = local
+    ? local.residents.filter(unit => unit.type === UNIT_TYPES.villager)
+    : getActiveVillagers(player)
   const rows = document.createElement('div')
   rows.className = 'base-report-stats'
-  rows.appendChild(createStatRow(t('minimapUnits'), `${player?.population ?? 0}/${player?.populationMax ?? 0}`))
+  if (local) {
+    rows.appendChild(createStatRow(t('villageReportResidents'), String(local.residents.length)))
+    rows.appendChild(createStatRow(t('villageReportBeds'), String(local.capacity)))
+    rows.appendChild(createStatRow(t('villageReportOccupiedHomes'), `${local.occupied}/${local.houses}`))
+    rows.appendChild(createStatRow(t('villageReportVacantHomes'), String(local.vacant)))
+    const arrivals = createStatRow(t('villageReportArrivals'), t(local.arrival))
+    arrivals.className += ' base-report-arrivals'
+    rows.appendChild(arrivals)
+  } else {
+    rows.appendChild(createStatRow(t('minimapUnits'), `${player?.population ?? 0}/${player?.populationMax ?? 0}`))
+  }
   rows.appendChild(createStatRow(t('minimapVillagerConsumption'), formatDailyConsumption(villagers.length)))
 
   return createReportSection(t('baseOverview'), rows)
 }
 
-function createTrainingSection(menu: MenuHost): HTMLElement | null {
-  const buildings = getActivePlayerBuildings(menu.context.player)
+function createTrainingSection(menu: MenuHost, town?: BuildingEntity): HTMLElement | null {
+  const buildings = town
+    ? villageReportData(menu.context.player, town).buildings
+    : getActivePlayerBuildings(menu.context.player)
   const trainingCounts = countQueuedTraining(buildings)
   const horses = getStableHorseSummary(buildings)
   const rows = document.createElement('div')
@@ -123,9 +139,12 @@ function createTrainingSection(menu: MenuHost): HTMLElement | null {
   return createReportSection(t('minimapTraining'), rows)
 }
 
-function renderBaseReport(container: HTMLElement, menu: MenuHost): void {
+function renderBaseReport(container: HTMLElement, menu: MenuHost, town?: BuildingEntity): void {
   container.replaceChildren()
-  const totals = getPlayerResourceTotals(menu.context.player, { includeHero: false })
+  const totals = getPlayerResourceTotals(
+    town ? villageReportData(menu.context.player, town).localPlayer : menu.context.player,
+    { includeHero: false }
+  )
   const grid = document.createElement('div')
   grid.className = 'base-resource-grid'
   for (const resource of RESOURCE_STORAGE_NAMES) {
@@ -145,43 +164,51 @@ function renderBaseReport(container: HTMLElement, menu: MenuHost): void {
     empty.textContent = t('minimapLocalStockEmpty')
     grid.appendChild(empty)
   }
-  container.append(createReportSection(t('baseReserves'), grid), createOverviewSection(menu))
-  const training = createTrainingSection(menu)
+  container.append(
+    createReportSection(t(town ? 'villageReportLocalReserves' : 'baseReserves'), grid),
+    createOverviewSection(menu, town)
+  )
+  const training = createTrainingSection(menu, town)
   if (training) container.appendChild(training)
 }
 
-/** Refresh only the report when its figures change, preserving the technology selection. */
-function villageReportSignature(menu: MenuHost): string {
+/** Refresh only the report when its figures change, preserving the current selection. */
+function villageReportSignature(menu: MenuHost, town?: BuildingEntity): string {
   const player = menu.context.player
-  const buildings = getActivePlayerBuildings(player)
+  const local = town ? villageReportData(player, town) : null
+  const buildings = local?.buildings ?? getActivePlayerBuildings(player)
   return JSON.stringify([
-    getPlayerResourceTotals(player, { includeHero: false }),
-    player.population,
-    player.populationMax,
-    getActiveVillagers(player).length,
+    town?.settlementName,
+    local && [local.residents.length, local.capacity, local.houses, local.occupied, local.vacant, local.arrival],
+    getPlayerResourceTotals(local?.localPlayer ?? player, { includeHero: false }),
+    local ? null : player.population,
+    local ? null : player.populationMax,
+    local
+      ? local.residents.filter(unit => unit.type === UNIT_TYPES.villager).length
+      : getActiveVillagers(player).length,
     [...countQueuedTraining(buildings)],
     getStableHorseSummary(buildings),
   ])
 }
 
-export function createHeroVillageReport(menu: MenuHost): HTMLElement {
+export function createHeroVillageReport(menu: MenuHost, town?: BuildingEntity): HTMLElement {
   const section = document.createElement('section')
   section.className = 'hero-village-report'
   const heading = document.createElement('h3')
-  heading.textContent = t('settlementVillage')
+  heading.textContent = town?.settlementName || t('settlementVillage')
   const report = document.createElement('div')
   report.className = 'base-report'
-  report.dataset.signature = villageReportSignature(menu)
-  renderBaseReport(report, menu)
+  report.dataset.signature = villageReportSignature(menu, town)
+  renderBaseReport(report, menu, town)
   section.append(heading, report)
   return section
 }
 
-export function syncHeroVillageReport(container: HTMLElement, menu: MenuHost): void {
+export function syncHeroVillageReport(container: HTMLElement, menu: MenuHost, town?: BuildingEntity): void {
   const report = container.querySelector<HTMLElement>('.base-report')
   if (!report) return
-  const signature = villageReportSignature(menu)
+  const signature = villageReportSignature(menu, town)
   if (report.dataset.signature === signature) return
   report.dataset.signature = signature
-  renderBaseReport(report, menu)
+  renderBaseReport(report, menu, town)
 }

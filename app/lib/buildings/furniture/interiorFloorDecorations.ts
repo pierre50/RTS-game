@@ -1,9 +1,10 @@
-export type InteriorFloorDecoration = {
-  allowBorderPlacement?: boolean
-  frame: number
-  offsetX: number
-  offsetY: number
-}
+import { getInteriorLayoutLevel } from '../interiorLayoutLevel'
+import {
+  INTERIOR_LAYOUT_POSITIONS,
+  isFullInteriorLayout,
+  type InteriorRug,
+} from '../../../config/interiorLayoutPositions'
+export type InteriorFloorDecoration = InteriorRug
 
 // Ground-level hides and rugs from the reference montage; offsets are in isometric pixels.
 const FLOOR_DECORATIONS: Record<string, readonly InteriorFloorDecoration[]> = {
@@ -23,6 +24,9 @@ const FLOOR_DECORATIONS: Record<string, readonly InteriorFloorDecoration[]> = {
   WatchTower: [{ frame: 17, offsetX: -1, offsetY: 17 }],
 }
 
-export function getInteriorFloorDecorations(type: string): readonly InteriorFloorDecoration[] {
-  return FLOOR_DECORATIONS[type] ?? []
+export function getInteriorFloorDecorations(type: string, level = 0): readonly InteriorFloorDecoration[] {
+  const layout = INTERIOR_LAYOUT_POSITIONS[type]?.[getInteriorLayoutLevel({ type, buildingLevel: level })]
+  return layout && isFullInteriorLayout(layout) && layout.rugs !== undefined
+    ? layout.rugs
+    : (FLOOR_DECORATIONS[type] ?? [])
 }

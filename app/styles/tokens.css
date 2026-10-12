@@ -151,6 +151,10 @@
   --status-health-top: #d85e62;
   --status-health-bottom: #84263e;
 
+  --status-durability-fill: #86b9d4;
+  --status-durability-track: #293653;
+  --status-durability-critical: #e5a15b;
+
   --level-tag-color: var(--main-accent-color);
   --level-tag-background: color-mix(in srgb, var(--main-accent-color) 14%, var(--main-primary-color));
   --level-tag-border-color: color-mix(in srgb, var(--main-accent-color) 65%, var(--main-primary-color));

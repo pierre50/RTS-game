@@ -45,6 +45,7 @@ export type ControlBindingAction =
   | 'heroTool1'
   | 'heroTool2'
   | 'heroTool3'
+  | 'heroStow'
   | 'heroMountHorse'
   | 'heroDismountHorse'
   | 'quests'
@@ -112,6 +113,7 @@ const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroTool1: 'Digit1',
   heroTool2: 'Digit2',
   heroTool3: 'Digit3',
+  heroStow: 'r',
   heroMountHorse: 'h',
   heroDismountHorse: 'x',
   heroSprint: 'Shift',
@@ -177,6 +179,7 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
       'heroTool1',
       'heroTool2',
       'heroTool3',
+      'heroStow',
       'heroMountHorse',
       'heroDismountHorse',
       'heroSprint',
@@ -472,6 +475,7 @@ export function getReservedGameplayHotkeys(): string[] {
     'heroTool1',
     'heroTool2',
     'heroTool3',
+    'heroStow',
     'heroMountHorse',
     'heroDismountHorse',
     'quests',

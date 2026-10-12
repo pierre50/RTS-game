@@ -1,17 +1,18 @@
 import { isRpgVillage, isRpgVillager } from '../config/rpgVillages'
-import { isVillageResourceWorker } from '../lib/units/village/villageSupplyTrips'
-import { flushTrainingRequests } from '../lib/training/trainingRequests'
-import { flushCollectiveVillageWork } from './CollectiveVillageWork'
-import { isUnitSuspended } from '../lib/units/unitSuspension'
-import { logStationaryVillager } from '../lib/units/autonomy/villagerJobDiagnostics'
 import { ACTION_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
-import { cancelVillagerExplorationResume } from '../lib/units/autonomy/villagerExploration'
-import { villagerAutonomySuspension } from '../lib/units/autonomy/villagerAutonomyAvailability'
+import { flushTrainingRequests } from '../lib/training/trainingRequests'
 import { hasVillagerAutonomyTarget } from '../lib/units/autonomy/villagerAutonomy'
+import { villagerAutonomySuspension } from '../lib/units/autonomy/villagerAutonomyAvailability'
 import { markVillagerAutonomyTargetRejected } from '../lib/units/autonomy/villagerAutonomyTargeting'
+import { cancelVillagerExplorationResume } from '../lib/units/autonomy/villagerExploration'
+import { hasInvalidTarget, observeWalking, progressSnapshot, workTarget } from '../lib/units/autonomy/villagerProgress'
 import { resumeVillagerJobIntent } from '../lib/units/autonomy/villagerTaskRecovery'
+import { isUnitSuspended } from '../lib/units/unitSuspension'
+import { isVillageResourceWorker } from '../lib/units/village/villageSupplyTrips'
 import type { GameContextLike } from '../types/context'
-import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../types/entities'
+import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
+import { AutonomyPlanningQueue, hasPendingAutonomyPlan } from './AutonomyPlanningQueue'
+import { flushCollectiveVillageWork } from './CollectiveVillageWork'
 
 const SCAN_INTERVAL_MS = 1000
 const SCAN_BATCH_SIZE = 32
@@ -41,42 +42,6 @@ type Observation = {
   reason: string
 }
 
-function workTarget(unit: UnitEntity): RuntimeEntity | null {
-  const target = unit.blockedGatherApproach?.target ?? unit.dest
-  return target && !('has' in target) ? target : null
-}
-
-function progressSnapshot(unit: UnitEntity): unknown[] {
-  const target = workTarget(unit)
-  const moving = Boolean(unit.path?.length)
-  return [
-    unit.x,
-    unit.y,
-    unit.i,
-    unit.j,
-    unit.spaceId,
-    unit.dest,
-    unit.action,
-    moving ? null : unit.gatherProgressState?.progress,
-    moving ? null : target?.quantity,
-    moving ? null : target?.hitPoints,
-    target?.isDestroyed,
-    target?.isDead,
-    ...Object.entries(unit.inventory?.resources ?? {})
-      .sort(([a], [b]) => a.localeCompare(b))
-      .flat(),
-  ]
-}
-
-function hasInvalidTarget(unit: UnitEntity): boolean {
-  const target = workTarget(unit)
-  if (!target) return false
-  const action = unit.blockedGatherApproach?.action ?? unit.action
-  if (target.isDestroyed || (target.isDead && action !== ACTION_TYPES.takemeat)) return true
-  if (target.quantity != null && target.quantity <= 0 && action !== ACTION_TYPES.build) return true
-  return Boolean(action && unit.getActionCondition?.(target, action) === false)
-}
-
 export class VillagerAutonomySystem {
   private walkingObservations = new WeakMap<
     UnitEntity,
@@ -84,11 +49,13 @@ export class VillagerAutonomySystem {
   >()
   private observations = new WeakMap<UnitEntity, Observation>()
   private taskId: number | null = null
+  private planning: AutonomyPlanningQueue | null = null
   private cursor = 0
   private lastScanMs = -1
 
   constructor(private readonly context: GameContextLike) {
     if (context.editor || !context.scheduler) return
+    this.planning = new AutonomyPlanningQueue(context)
     // The first scheduler tick runs after restore, travel-party placement and rest synchronization.
     this.taskId = context.scheduler.add(() => this.update(), SCAN_INTERVAL_MS, 'unit.autonomy.reconcile')
   }
@@ -118,30 +85,10 @@ export class VillagerAutonomySystem {
     this.cursor %= Math.max(1, units.length)
   }
 
-  private observeWalking(unit: UnitEntity, now: number): void {
-    if (
-      unit.type !== UNIT_TYPES.villager ||
-      unit.isDead ||
-      unit.isDestroyed ||
-      unit.currentSheet !== SHEET_TYPES.walking
-    ) {
-      this.walkingObservations.delete(unit)
-      return
-    }
-    let state = this.walkingObservations.get(unit)
-    if (!state || state.x !== unit.x || state.y !== unit.y || state.space !== unit.spaceId) {
-      state = { x: unit.x, y: unit.y, space: unit.spaceId, since: now, logged: false }
-      this.walkingObservations.set(unit, state)
-    }
-    if (!state.logged && now - state.since >= 5000) {
-      state.logged = true
-      logStationaryVillager(unit)
-    }
-  }
-
   private check(unit: UnitEntity, now: number, canRecover: boolean): boolean {
     if (isRpgVillager(unit) || isUnitSuspended(unit)) return false
-    this.observeWalking(unit, now)
+    if (hasPendingAutonomyPlan(unit)) return false
+    observeWalking(unit, now, this.walkingObservations)
     const job = unit.autonomousJob
     if (
       unit.type !== UNIT_TYPES.villager ||
@@ -220,6 +167,8 @@ export class VillagerAutonomySystem {
   }
 
   destroy(): void {
+    this.planning?.destroy()
+    this.planning = null
     if (this.taskId != null) this.context.scheduler.remove(this.taskId)
     this.taskId = null
     this.observations = new WeakMap()

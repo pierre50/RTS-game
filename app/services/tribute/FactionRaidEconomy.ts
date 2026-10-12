@@ -10,7 +10,9 @@ import { savedResourceOwner } from '../world/offline/OfflineWorldWork'
 export function creditFactionRaidTribute(context: GameContextLike, expedition: FactionExpeditionSave): void {
   const source = factionArmySource(context, expedition.regionId, expedition.playerLabel)
   if (!source) return
-  depositChestResources(savedResourceOwner(source.player, source.state.players), expedition.tribute)
+  depositChestResources(savedResourceOwner(source.player, source.state.players), expedition.tribute, {
+    settlement: expedition.original.villageHome ?? expedition.original,
+  })
   summarizeEconomy(source.region, source.state)
 }
 

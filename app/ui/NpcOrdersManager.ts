@@ -1,31 +1,33 @@
-import { sendNpcToTownCenter } from '../lib/npc/npcGoToDispatch'
-import { openNpcInventory, closeNpcInventory } from './npc/NpcInventory'
-import { cycleNpcDebugLevel, updateNpcDebugControls } from './npc/NpcDebugControls'
-import { isAiChiefResting } from '../lib/units/chiefAvailability'
-import type { DialogueSequence } from '../types/dialogue'
-import { heroCanCommand } from '../lib/chief'
-import { createNpcGroupSummary } from './NpcGroupSummary'
-import { InteractionPanel } from './inspection/InteractionPanel'
 import type { Modal } from '../lib'
-import { NpcQuestPanel } from './quests/NpcQuestPanel'
+import { heroCanCommand } from '../lib/chief'
 import { t } from '../lib/lang'
-import { getUnitGender } from '../lib/units/unitIdentity'
-import {
-  noticeNpc,
-  keepNpcHere,
-  startFollowingHero,
-  releaseIfStillLooking,
-  playNpcOrderSound,
-} from '../lib/npc/npcInteraction'
-import { createTitledEntityInfoContent } from './inspection/EntityInfoContent'
-import { createInspectionModal, setInspectionMode, setModalTitle } from './inspection/InspectionPanel'
 import { pickNpcRescueThanksLine } from '../lib/npc/npcChatter'
+import { sendNpcToTownCenter } from '../lib/npc/npcGoToDispatch'
+import {
+  keepNpcHere,
+  noticeNpc,
+  playNpcOrderSound,
+  releaseIfStillLooking,
+  startFollowingHero,
+} from '../lib/npc/npcInteraction'
 import { pickNpcRoutineChatterLine } from '../lib/npc/npcRoutineChatter'
-import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
-import type { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
+import { isAiChiefResting } from '../lib/units/chiefAvailability'
+import { getUnitGender } from '../lib/units/unitIdentity'
 import type { NpcOrdersOpenOptions } from '../types/context'
+import type { DialogueSequence } from '../types/dialogue'
 import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
+import { createNpcGroupSummary } from './NpcGroupSummary'
+import { createTitledEntityInfoContent } from './inspection/EntityInfoContent'
+import { createInspectionModal, setInspectionMode, setModalTitle } from './inspection/InspectionPanel'
+import { InteractionPanel } from './inspection/InteractionPanel'
+import type { UnitInventoryScreen } from './inventory/UnitInventoryScreen'
+import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
+import { cycleNpcDebugLevel, updateNpcDebugControls } from './npc/NpcDebugControls'
+import { canShowNpcBag, closeNpcInventory, openNpcInventory } from './npc/NpcInventory'
+import { canShowNpcOrder, availableOrderNpcs, isSleepingNpc, resolveOrderDialogue } from './npc/NpcOrderDialogue'
+import { NpcQuestPanel } from './quests/NpcQuestPanel'
+import { renderQuestResourceText } from './quests/QuestResources'
 import { SpokenTextReveal } from './quests/SpokenTextReveal'
 
 type NpcOrderId = 'stay' | 'follow' | 'goto'
@@ -43,10 +45,6 @@ const NPC_ORDER_SPECS: NpcOrderSpec[] = [
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
   { id: 'stay', labelKey: 'npcOrderStay', run: keepNpcHere },
 ]
-
-function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
-  return npc?.shelterState?.reason === 'sleep' && npc.sleepVisualState === 'sleeping'
-}
 
 export class NpcOrdersManager {
   menu: MenuHost
@@ -135,41 +133,9 @@ export class NpcOrdersManager {
 
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
     if (this.scriptedReplyActive) return
-    npcs = npcs.filter(npc => !isAiChiefResting(npc, this.menu.context))
-    if (npcs.some(npc => npc.ambientRoadGroup) && npcs.some(npc => !npc.ambientRoadGroup && npc.owner?.isPlayed)) {
-      releaseIfStillLooking(npcs.filter(npc => Boolean(npc.ambientRoadGroup)))
-      npcs = npcs.filter(npc => !npc.ambientRoadGroup)
-    }
+    npcs = availableOrderNpcs(this.menu.context, npcs)
     if (!npcs.length) return
-    const dialogue =
-      options.dialogue ??
-      (options.scriptedReply
-        ? {
-            startId: 'reply',
-            nodes: [
-              {
-                id: 'reply',
-                line: options.chatterLine ?? '',
-                choices: [{ id: 'reply', label: options.scriptedReply.label }],
-              },
-            ],
-            onComplete: options.scriptedReply.onSelect,
-          }
-        : undefined)
-    if (dialogue) {
-      const ids = new Set(dialogue.nodes.map(node => node.id))
-      if (
-        ids.size !== dialogue.nodes.length ||
-        !ids.has(dialogue.startId) ||
-        dialogue.nodes.some(
-          node =>
-            !node.choices.length ||
-            new Set(node.choices.map(choice => choice.id)).size !== node.choices.length ||
-            node.choices.some(choice => choice.nextId !== undefined && !ids.has(choice.nextId))
-        )
-      )
-        throw new Error('Invalid dialogue sequence')
-    }
+    const dialogue = resolveOrderDialogue(options)
     this.scriptedReplyActive = Boolean(dialogue)
     this.scriptedReplyPanel.hidden = !dialogue
     this.scriptedReplyPanel.replaceChildren()
@@ -327,7 +293,7 @@ export class NpcOrdersManager {
     renderedLine.className = 'npc-orders-chatter-line'
     this.chatterContainer.appendChild(renderedLine)
     this.chatterReveal.show(
-      [{ element: renderedLine, text: line }],
+      [{ element: renderedLine, text: line, render: renderQuestResourceText }],
       getUnitGender(speaker) === 'female' ? 'female' : 'male'
     )
   }
@@ -428,10 +394,7 @@ export class NpcOrdersManager {
   }
 
   private canShowOrder(spec: NpcOrderSpec): boolean {
-    if (this.scriptedReplyActive) return false
-    if (spec.id === 'follow') return this.npcs.some(npc => npc.followingHero !== true)
-    if (spec.id === 'stay') return this.npcs.some(npc => npc.followingHero === true)
-    return true
+    return canShowNpcOrder(this.scriptedReplyActive, spec.id, this.npcs)
   }
 
   syncQuest(): void {
@@ -455,12 +418,7 @@ export class NpcOrdersManager {
   }
 
   private canShowBagButton(): boolean {
-    return (
-      !this.scriptedReplyActive &&
-      this.ordersEnabled &&
-      this.npcs.length === 1 &&
-      Boolean(this.menu.context.controls.heroUnit)
-    )
+    return canShowNpcBag(this.scriptedReplyActive, this.ordersEnabled, this.npcs, this.menu.context.controls.heroUnit)
   }
 
   private openBag(): void {

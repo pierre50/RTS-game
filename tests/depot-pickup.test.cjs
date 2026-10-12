@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -11,7 +12,7 @@ function fixture() {
     i: 10,
     j: 10,
     inactif: true,
-    inventory: { resources: { wheat: 12 } },
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { wheat: 12 } },
   }
   const center = { type: 'TownCenter', label: 'center', i: 6, j: 6, isBuilt: true, inventory: { resources: {} } }
   const pit = {
@@ -47,12 +48,12 @@ test('construction schedules a bounded physical pickup without spending depot st
   const { owner, unit, pit, site } = fixture()
   const task = planCollectiveTasks(owner, [unit]).get(unit)
   assert.equal(task.pickup.building, pit)
-  assert.deepEqual(task.pickup.resources, { wood: 18 })
+  assert.deepEqual(task.pickup.resources, { wood: 15 })
   assert.equal(pit.inventory.resources.wood, 20)
   assert.deepEqual(site.constructionMaterials.delivered, {})
   withdrawDepotResources(unit, pit.inventory.resources, task.pickup.resources)
-  assert.equal(unit.inventory.resources.wood, 18)
-  assert.equal(pit.inventory.resources.wood, 2)
+  assert.equal(unit.inventory.resources.wood, 15)
+  assert.equal(pit.inventory.resources.wood, 5)
   assert.equal(planCollectiveTasks(owner, [unit]).get(unit).site, site)
 })
 test('provisions are fetched from the granary and daily meals never borrow other inventories', () => {
@@ -72,8 +73,8 @@ test('concurrent withdrawals conserve scarce stocks and respect bag capacity', (
   const { unit } = fixture()
   const other = structuredClone(unit)
   const stock = { wood: 20 }
-  assert.equal(withdrawDepotResources(unit, stock, { wood: 30 }), 18)
-  assert.equal(withdrawDepotResources(other, stock, { wood: 30 }), 2)
+  assert.equal(withdrawDepotResources(unit, stock, { wood: 30 }), 15)
+  assert.equal(withdrawDepotResources(other, stock, { wood: 30 }), 5)
   assert.equal(stock.wood, 0)
 })
 test('offline builders fetch depot materials before using them at the site', () => {

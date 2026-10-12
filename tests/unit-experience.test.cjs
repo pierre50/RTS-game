@@ -5,12 +5,13 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function loadModule(relativePath, mocks) {
   return loadTsModule(relativePath, {
     mocks: {
+      '../../lib/equipment/equipmentLoot': { consumeHeroEquippedItem: () => {} },
       [require.resolve('../app/classes/HeroCatchingPoleThrow.ts')]: { HeroCatchingPoleThrow: class {} },
       '../../lib/horses/horseCapture': {
         getNearestAvailableStableForUnit: () => null,
         routeCapturedHorseToStableWithOwnerContact: () => null,
       },
-      '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
+      '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false, logHeroSlashFrame() {} },
       ...mocks,
     },
   })
@@ -397,6 +398,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       Assets: { cache: { get: () => ({}) } },
     },
     '../../constants': {
+      ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
       ACTION_TYPES: { forageberry: 'forageberry' },
       BUILDING_TYPES: {},
       FAMILY_TYPES: {},
@@ -457,6 +459,8 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
 
   const berryBush = { family: 'resource', type: 'Berrybush', quantity: 10, selected: false }
   const unit = {
+    type: 'Villager',
+    inventory: { activeWeapons: { tool: 'axe_ceramic' }, resources: {} },
     category: 'Villager',
     action: 'forageberry',
     work: 'forager',
@@ -470,7 +474,9 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     affectNewDest: () => {},
   }
 
-  new UnitActions(unit).getAction('forageberry')
+  const actions = new UnitActions(unit)
+  const { RESOURCE_GATHER_SWINGS } = require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts')
+  for (let swing = 0; swing < RESOURCE_GATHER_SWINGS.berry; swing++) actions.getAction('forageberry')
 
   // base gatherAmount 1 + xp bonus 2 = 3 berries per swing, all granted as xp
   assert.equal(unit.owner.food, 0)
@@ -483,6 +489,7 @@ test('gathered stone exceeds ten in local inventory without increasing global re
   let inventoryRefreshes = 0
   const { addGatheredResource } = loadModule('app/classes/unit/UnitResourceGathering.ts', {
     '../../constants': {
+      ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
       BUILDING_TYPES: { granary: 'Granary', storagePit: 'StoragePit', townCenter: 'TownCenter' },
       LOADING_TYPES: { berry: 'berry', wheat: 'wheat', meat: 'meat', stone: 'stone' },
       RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],

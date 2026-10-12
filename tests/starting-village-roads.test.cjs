@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { StartingVillageRoads } = loadTsModule('app/services/world/StartingVillageRoads.ts')
+const { StartingVillageRoads } = loadTsModule('app/services/world/startingState/StartingVillageRoads.ts')
 
 function planner() {
   return new StartingVillageRoads({

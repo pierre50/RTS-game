@@ -22,8 +22,12 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
   const rows = []
   const { HeroForgeBody } = loadTsModule('app/ui/hero-building/HeroForgeBody.ts', {
     mocks: {
+      '../../lib/ui/VariantRow': { attachVariantRow() {} },
       '../../lib/avatar': {},
-      '../inventory/InventoryItemRows': { createInventoryEquipmentRow: () => ({ element: {} }) },
+      '../inventory/InventoryItemRows': {
+        createInventoryEquipmentRow: () => ({ element: {} }),
+        createInventoryResourceRow: () => ({ element: {} }),
+      },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
       '../../lib/graphics/assets': { getIconPath: () => '' },
       '../../lib/hero/heroActionRange': { isHeroInteractionTargetReachable: () => reachable },
@@ -31,7 +35,7 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
       '../../lib/lang': { t: key => key },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => ({}) },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (options) => {
+        createInventoryActionRow: options => {
           rows.push(options)
           return { element: { querySelector: () => null }, icon: { appendChild() {} } }
         },
@@ -44,36 +48,36 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
     },
   })
   try {
-    const hero = { type: 'Hero', inventory: { resources: { wood: 10, feather: 4, stone: 4 }, equipment: [] } }
+    const hero = { type: 'Hero', inventory: { resources: { wood: 10, feather: 4, bronzeIngot: 2 }, equipment: [] } }
     const menu = { context: { player: { age: 0 }, controls: { heroUnit: hero } }, showMessage() {}, updateTopbar() {} }
     const forge = { type: 'Forge', isBuilt: true }
     new HeroForgeBody(menu, forge)
-    const arrows = rows.find(row => row.id === 'craft-arrow_ceramic')
+    const arrows = rows.find(row => row.id === 'craft-arrow_bronze')
     assert.equal(arrows.disabled, false)
     arrows.trailingAction.onClick()
     assert.equal(hero.inventory.equipment.length, 1)
-    assert.deepEqual(hero.inventory.resources, { wood: 5, feather: 2, stone: 2 })
+    assert.deepEqual(hero.inventory.resources, { wood: 9, feather: 4, bronzeIngot: 1 })
     for (const state of ['distant', 'unfinished', 'destroyed']) {
       reachable = state !== 'distant'
       forge.isBuilt = state !== 'unfinished'
       forge.isDestroyed = state === 'destroyed'
       arrows.trailingAction.onClick()
       assert.equal(hero.inventory.equipment.length, 1)
-      assert.deepEqual(hero.inventory.resources, { wood: 5, feather: 2, stone: 2 })
+      assert.deepEqual(hero.inventory.resources, { wood: 9, feather: 4, bronzeIngot: 1 })
     }
     reachable = true
     forge.isBuilt = true
     forge.isDestroyed = false
-    hero.inventory.resources = { wood: 17, feather: 8, stone: 6 }
+    hero.inventory.resources = { wood: 17, feather: 8, bronzeIngot: 3 }
     arrows.trailingAction.onClick({ shiftKey: true })
-    assert.equal(hero.inventory.equipment.length, 4)
-    assert.deepEqual(hero.inventory.resources, { wood: 2, feather: 2 })
+    assert.equal(hero.inventory.equipment.length, 11)
+    assert.deepEqual(hero.inventory.resources, { wood: 12, feather: 8, bronzeIngot: 2 })
     hero.inventory.resources = { wood: 2, copper: 2, tin: 1 }
     const ingot = rows.find(row => row.id === 'craft-bronzeIngot')
     assert.ok(ingot)
     ingot.trailingAction.onClick()
     assert.deepEqual(hero.inventory.resources, { bronzeIngot: 1 })
-    assert.equal(hero.inventory.equipment.length, 4)
+    assert.equal(hero.inventory.equipment.length, 11)
   } finally {
     global.document = previousDocument
   }
@@ -128,6 +132,7 @@ test('forge keeps repairs and personal crafting without village research', () =>
   const rows = []
   const { HeroForgeBody } = loadTsModule('app/ui/hero-building/HeroForgeBody.ts', {
     mocks: {
+      '../../lib/ui/VariantRow': { attachVariantRow() {} },
       '../../lib/avatar': {},
       '../../lib/lang': { t: (key, args) => `${key}${args ? JSON.stringify(args) : ''}` },
       '../../lib/graphics/assets': { getIconPath: () => '' },
@@ -136,11 +141,14 @@ test('forge keeps repairs and personal crafting without village research', () =>
       '../../lib/resources/playerResourceTotals': {
         getPlayerResourceTotals: () => ({ wood: 500, copper: 500, iron: 500 }),
       },
-      '../inventory/InventoryItemRows': { createInventoryEquipmentRow: () => ({ element: {} }) },
+      '../inventory/InventoryItemRows': {
+        createInventoryEquipmentRow: () => ({ element: {} }),
+        createInventoryResourceRow: () => ({ element: {} }),
+      },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => element() },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (options) => {
+        createInventoryActionRow: options => {
           rows.push(options)
           return { element: element(), icon: element() }
         },
@@ -152,15 +160,18 @@ test('forge keeps repairs and personal crafting without village research', () =>
     const forge = { type: 'Forge', isBuilt: true }
     const body = new HeroForgeBody(menu, forge)
     const upgrades = () => rows.filter(row => row.id.startsWith('forge-upgrade-'))
+    assert.equal(body.craftPanel.children.length, 2, 'craft catalogue and repair bag')
+    assert.equal(body.craftPanel.children[0].children.length, 3, 'fixed title, iron requirement and scrolling body')
     assert.equal(
-      body.craftPanel.children.length,
-      7,
-      'repair, ingots, weapons, armor, shields, other equipment and arrows'
+      body.craftPanel.children[0].children[2].children.length,
+      5,
+      'five recipe categories in the scrolling body'
     )
-    for (const id of ['sword_copper', 'armor_mail_iron', 'helmet_norman_bronze', 'round_shield_iron_slash']) {
+    for (const id of ['sword_bronze', 'armor_legion_bronze', 'helmet_pointed_bronze', 'round_shield_bronze_slash']) {
       assert.ok(rows.some(row => row.id === `craft-${id}`))
     }
-    assert.ok(rows.some(row => row.id === 'craft-arrow_ceramic'))
+    assert.ok(rows.some(row => row.id === 'craft-arrow_bronze'))
+    assert.ok(!rows.some(row => row.id === 'craft-ironIngot' || row.id === 'craft-armor_mail_iron'))
     assert.equal(upgrades().length, 0)
   } finally {
     global.document = previousDocument
@@ -187,8 +198,12 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
   const rows = []
   const { HeroCampfireBody } = loadTsModule('app/ui/hero-building/HeroCampfireBody.ts', {
     mocks: {
+      '../../lib/ui/VariantRow': { attachVariantRow() {} },
       '../../lib/avatar': {},
-      '../inventory/InventoryItemRows': { createInventoryEquipmentRow: () => ({ element: {} }) },
+      '../inventory/InventoryItemRows': {
+        createInventoryEquipmentRow: () => ({ element: {} }),
+        createInventoryResourceRow: () => ({ element: {} }),
+      },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
       '../../lib/graphics/assets': { getIconPath: () => '' },
       '../../lib/hero/heroActionRange': { isHeroInteractionTargetReachable: () => reachable },
@@ -196,7 +211,7 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
       '../../lib/lang': { t: key => key },
       '../inventory/InventoryItemIcons': { createInventoryEquipmentIcon: () => ({}) },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (options) => {
+        createInventoryActionRow: options => {
           rows.push(options)
           return { element: { querySelector: () => null }, icon: { appendChild() {} } }
         },
@@ -209,28 +224,28 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
     },
   })
   try {
-    const hero = { type: 'Hero', inventory: { resources: { herb: 4, fiber: 2 }, equipment: [] } }
+    const hero = { type: 'Hero', inventory: { resources: { toxicHerb: 4 }, equipment: [] } }
     const menu = { context: { player: { age: 0 }, controls: { heroUnit: hero } }, showMessage() {}, updateTopbar() {} }
     const forge = { type: 'FireCamp', isBuilt: true }
     new HeroCampfireBody(menu, forge)
-    const arrows = rows.find(row => row.id === 'craft-healing_poultice')
+    const arrows = rows.find(row => row.id === 'craft-poison_vial')
     assert.equal(arrows.disabled, false)
-    assert.equal(arrows.trailingAction.label, 'campfirePrepare')
-    assert.equal(rows.find(row => row.id === 'craft-grilled_meat').trailingAction.label, 'campfireCook')
+    assert.equal(arrows.trailingAction.label, 'campfirePrepare 1')
+    assert.equal(rows.find(row => row.id === 'craft-grilled_meat').trailingAction.label, 'campfireCook 1')
     assert.equal(
       rows.some(row => row.id === 'craft-arrow_ceramic'),
       false
     )
     arrows.trailingAction.onClick()
     assert.equal(hero.inventory.equipment.length, 1)
-    assert.deepEqual(hero.inventory.resources, { herb: 2, fiber: 1 })
+    assert.deepEqual(hero.inventory.resources, { toxicHerb: 2 })
     for (const state of ['distant', 'unfinished', 'destroyed']) {
       reachable = state !== 'distant'
       forge.isBuilt = state !== 'unfinished'
       forge.isDestroyed = state === 'destroyed'
       arrows.trailingAction.onClick()
       assert.equal(hero.inventory.equipment.length, 1)
-      assert.deepEqual(hero.inventory.resources, { herb: 2, fiber: 1 })
+      assert.deepEqual(hero.inventory.resources, { toxicHerb: 2 })
     }
   } finally {
     global.document = previousDocument

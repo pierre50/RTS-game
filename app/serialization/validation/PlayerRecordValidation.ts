@@ -1,3 +1,5 @@
+import { HOUSE_LEVELS } from '../../config/housing'
+import { migrateEquipmentRecord } from '../../lib/equipment/equipmentMaterials'
 import { nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
 import { migrateLegacyProgression } from '../LegacyProgressionMigration'
 import { FORGE_FAMILIES } from '../../lib/equipment/forgeUpgrades'
@@ -83,6 +85,7 @@ export function validatePlayerRecord(
     if (building.interiorBuildings != null) validateArray(building.interiorBuildings, 'interior buildings')
   }
   migrateLegacyProgression(player as SavePlayerState)
+  migrateEquipmentRecord(player)
   normalizeSavedInteriorBuildings(player as { label?: string; buildings?: SaveEntityState[] })
   const normalizedBuildings = player.buildings as SaveEntityState[]
   validateArray(units, `player ${index} units`)
@@ -136,6 +139,8 @@ function validatePlayerBuildings(
         new Set(building.plannedBedLabels).size !== building.plannedBedLabels.length)
     )
       fail('Invalid planned bed identities.')
+    if (building.constructionPaused != null && typeof building.constructionPaused !== 'boolean')
+      fail('Invalid construction pause state.')
     if (
       building.constructionProgress != null &&
       (typeof building.constructionProgress !== 'number' ||
@@ -185,6 +190,14 @@ function validatePlayerBuildings(
     ) {
       fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an invalid building level.`)
     }
+    if (
+      building.houseInteriorLevel != null &&
+      (typeof building.houseInteriorLevel !== 'number' ||
+        !Number.isInteger(building.houseInteriorLevel) ||
+        building.houseInteriorLevel < 0 ||
+        building.houseInteriorLevel >= HOUSE_LEVELS.length)
+    )
+      fail('Invalid house interior level.')
     if (building.buildingUpgrade != null) {
       const upgrade = building.buildingUpgrade
       if (
@@ -230,6 +243,8 @@ function validatePlayerBuildings(
       if (building.type !== 'Cave') fail('Invalid cave building type.')
       validateCaveDefinition(building.cave)
     }
+    if (building.townCenterId != null && (typeof building.townCenterId !== 'string' || !building.townCenterId))
+      fail('Invalid town center identity.')
     if (building.interiorBuildings != null) {
       validateArray(building.interiorBuildings, 'interior buildings')
       for (const child of building.interiorBuildings) {

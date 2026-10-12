@@ -1,4 +1,4 @@
-import { isCampPaused } from '../lib/units/campActivity'
+import { isCampPaused } from '../lib/units/camps/campActivity'
 import { updateUnitEnergy } from '../lib'
 import { isDistantOwner } from '../lib/units/village/villageActivity'
 import { isUnitSuspended } from '../lib/units/unitSuspension'

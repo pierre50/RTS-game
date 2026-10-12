@@ -1,4 +1,5 @@
-import { countResidentHouseholds } from '../../../lib/housing/households'
+import { prepareHouseBedPlans } from '../../../lib/housing/householdBeds'
+import { getPopulationCapacityFromBuildings } from '../../../lib/buildings/buildingOccupancy'
 import { resolveUnitIdentity } from '../../../lib/units/unitIdentity'
 import { getRandomUnitName } from '../../../config/name'
 import { createSeededRandom } from '../../../lib/random'
@@ -20,9 +21,11 @@ export function addStartingHouses(village: StartingVillage): void {
   const residents = (village.player.units ?? []).filter(isLiving)
   // Houses must not compete with the temporary spawn positions of their own residents.
   for (const unit of residents) village.spatial.release(unit)
-  const required = countResidentHouseholds(village.player)
-  while (village.buildings.filter(b => b.type === 'House' && b.isBuilt && isLiving(b)).length < required)
+  prepareHouseBedPlans(village.player)
+  while (getPopulationCapacityFromBuildings(village.buildings, village.player) < residents.length) {
     addStartingBuilding(village, 'House')
+    prepareHouseBedPlans(village.player)
+  }
 }
 
 export function placeStartingResidents(village: StartingVillage): void {
@@ -50,7 +53,7 @@ export function addStartingUnits(village: StartingVillage, units: SaveEntityStat
         hitPoints: Number(config.totalHitPoints),
         totalHitPoints: Number(config.totalHitPoints),
         inactif: true,
-        ...(type === 'Villager' ? startingVillagerState(n) : {}),
+        ...(type === 'Villager' ? startingVillagerState(n, units) : {}),
       }
       units.push(unit)
       spatial.reserve(unit)
@@ -62,10 +65,10 @@ export function addStartingUnits(village: StartingVillage, units: SaveEntityStat
   }
 }
 
-function startingVillagerState(n: number): Partial<SaveEntityState> {
+function startingVillagerState(n: number, residents: SaveEntityState[]): Partial<SaveEntityState> {
   return {
-    inventory: startingVillagerInventory(),
+    inventory: startingVillagerInventory(residents),
     gender: n % 2 ? ('female' as const) : ('male' as const),
-    autonomousJob: n % 3 ? 'food' : 'wood',
+    autonomousJob: null,
   }
 }

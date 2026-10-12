@@ -12,13 +12,13 @@ export type CombatStatInfo = { key: keyof typeof STAT_PRESENTATION; value: numbe
 
 /** Shared icon, label and value for unit profiles and equipment sheets. */
 export function createCombatStatInfo({ key, value, ranged }: CombatStatInfo): HTMLElement {
-  const [icon, label] = STAT_PRESENTATION[key]
+  const [icon, label] = STAT_PRESENTATION[ranged ? 'rangedWeaponPower' : key]
   const element = document.createElement('span')
   element.className = 'info combat-stat-info'
   element.title = t(label)
   element.setAttribute('aria-label', `${t(label)}: ${value}`)
   const image = document.createElement('img')
-  image.src = getIconPath(ranged ? STAT_PRESENTATION.rangedWeaponPower[0] : icon)
+  image.src = getIconPath(icon)
   image.alt = ''
   const amount = document.createElement('span')
   amount.className = key

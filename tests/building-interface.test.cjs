@@ -3,7 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
-const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { requireFromTsFile, loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadBuildingInterface() {
   const filename = path.join(__dirname, '../app/ui/entity/BuildingInterface.ts')
@@ -15,6 +15,7 @@ function loadBuildingInterface() {
   const module = { exports: {} }
   const mocks = {
     '../../constants': {
+      ...loadTsModule('app/constants/index.ts'),
       BUILDING_TYPES: { house: 'House', chest: 'Chest', fireCamp: 'FireCamp', stable: 'Stable', trap: 'Trap' },
       MENU_INFO_IDS: {
         civ: 'civ',
@@ -99,6 +100,10 @@ class MockElement {
 
   setAttribute(name, value) {
     this.attributes.set(name, value)
+  }
+
+  append(...children) {
+    for (const child of children) this.appendChild(child)
   }
 
   appendChild(child) {
@@ -419,5 +424,48 @@ test('construction inspection has no manual build action or duplicate material l
     )
     assert.equal(element.querySelector('.construction-progress-display'), null)
     assert.equal(element.querySelector('.hit-points').textContent, '75/75')
+  })
+})
+
+test('construction info offers pause and resume, replacing progress with the pause status', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const owner = { isPlayed: true, civ: 'Hellas', units: [] }
+    const building = {
+      type: 'House',
+      owner,
+      isBuilt: false,
+      hitPoints: 50,
+      totalHitPoints: 100,
+      constructionProgress: 0.25,
+      context: { player: owner, menu: {} },
+    }
+    const info = new BuildingInterface(building)
+    const element = document.createElement('div')
+    info.renderInfo(element, {})
+    const button = element.querySelector('.entity-construction-pause-button')
+    assert.ok(button)
+    button.dispatch('click')
+    assert.equal(building.constructionPaused, true)
+    assert.equal(button.attributes.get('aria-pressed'), 'true')
+    const paused = document.createElement('div')
+    info.renderInfo(paused, {})
+    assert.match(
+      paused
+        .querySelector('.construction-work-status')
+        .children.map(child => child.textContent)
+        .join(' '),
+      /⏸/
+    )
+    assert.doesNotMatch(
+      paused
+        .querySelector('.construction-work-status')
+        .children.map(child => child.textContent)
+        .join(' '),
+      /%/
+    )
+    paused.querySelector('.entity-construction-pause-button').dispatch('click')
+    assert.equal(building.constructionPaused, undefined)
+    assert.equal(building.constructionProgress, 0.25)
   })
 })

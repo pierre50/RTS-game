@@ -1,3 +1,4 @@
+import type { UnitEntity } from '../../types/entities'
 import { UnitInventoryScreen } from '../inventory/UnitInventoryScreen'
 import type { NpcOrdersManager } from '../NpcOrdersManager'
 
@@ -17,4 +18,13 @@ export function closeNpcInventory(host: NpcOrdersManager): void {
   if (host.modal?._backdrop) host.modal._backdrop.hidden = false
   host.bagScreen = null
   host.buttonsContainer.hidden = !host.ordersEnabled
+}
+
+export function canShowNpcBag(
+  scriptedReply: boolean,
+  ordersEnabled: boolean,
+  npcs: UnitEntity[],
+  hero: UnitEntity | null | undefined
+): boolean {
+  return !scriptedReply && ordersEnabled && npcs.length === 1 && Boolean(hero)
 }

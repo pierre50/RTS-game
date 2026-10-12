@@ -15,16 +15,27 @@ export function ensureCaveMinerals(
 ): void {
   const cave = space.building.cave
   if (space.building.type !== 'Cave' || !cave) return
-  if (!cave.minerals) {
-    cave.minerals = (blueprint.resources ?? []).flatMap(node => {
-      if (node.type !== 'Gold' && node.type !== 'Copper' && node.type !== 'Iron') return []
-      const cell = space.grid[node.i]?.[node.j]
-      if (!cell || cell.solid || cell.has || cell.terrainHidden) return []
-      const quantity = Math.max(0, Math.floor(node.quantity ?? 0))
-      if (quantity <= 0) return []
-      return [{ i: node.i, j: node.j, type: node.type, quantity, totalQuantity: quantity } satisfies CaveMineralState]
-    })
-  }
+  const initializing = !cave.minerals
+  // Older saves silently omitted tin. Append only absent tin nodes; preserve all saved stocks, including zero.
+  const existing = cave.minerals ?? []
+  const additions = (blueprint.resources ?? []).flatMap(node => {
+    if (!['Gold', 'Copper', 'Tin', 'Iron'].includes(node.type)) return []
+    if (!initializing && (node.type !== 'Tin' || existing.some(saved => saved.type === 'Tin'))) return []
+    const cell = space.grid[node.i]?.[node.j]
+    if (!cell || cell.solid || cell.has || cell.terrainHidden) return []
+    const quantity = Math.max(0, Math.floor(node.quantity ?? 0))
+    if (quantity <= 0) return []
+    return [
+      {
+        i: node.i,
+        j: node.j,
+        type: node.type as CaveMineralState['type'],
+        quantity,
+        totalQuantity: quantity,
+      } satisfies CaveMineralState,
+    ]
+  })
+  cave.minerals = [...existing, ...additions]
   for (const [index, state] of cave.minerals.entries()) {
     if (state.quantity <= 0) continue
     const label = `${space.id}:mineral:${index}`

@@ -1,6 +1,6 @@
 import { createSeededRandom } from '../../../lib/random'
 import { isLiving } from '../offline/OfflineWorldSpatial'
-import { findStartingSite, type StartingVillage } from './StartingVillageContext'
+import type { StartingVillage } from './StartingVillageContext'
 import type { SaveEntityState, SaveGridPoint } from '../../../types/save'
 
 // A field is a patch of individual crops, independent of the one-cell sowing footprint.
@@ -15,12 +15,13 @@ export function addStartingWheatFields(village: StartingVillage): void {
   if (!Number.isInteger(fields) || fields < 0 || fields > 20) throw new Error('Invalid starting wheat field count')
   const granary =
     village.buildings.find(building => building.type === 'Granary' && isLiving(building)) ?? village.center
-  for (let field = 0; field < fields; field++) {
-    const point = findStartingSite(village, granary, FIELD_SIZE, 'Farm')
-    if (!point) throw new Error(`No space for starting wheat field in ${village.player.civ}`)
+  const points = village.layout.planFields(village.center, granary, FIELD_SIZE, fields)
+  if (!points) throw new Error(`No space for starting wheat fields in ${village.player.civ}`)
+  points.forEach((point, field) => {
+    village.layout.clearField(village.center, point, FIELD_SIZE, village.player.civ ?? '')
     village.layout.recordSite(village.center, 'Farm', point, FIELD_SIZE)
     plantWheatField(village, point, field)
-  }
+  })
 }
 
 function youngCropCells(random: () => number): Set<number> {

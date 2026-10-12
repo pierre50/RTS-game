@@ -1,4 +1,3 @@
-import { createValueBadge } from '../ValueBadge'
 import { createCombatStatInfo, type CombatStatInfo } from './CombatStatInfo'
 import { MENU_INFO_IDS, UNIT_TYPES } from '../../constants'
 import {
@@ -8,7 +7,7 @@ import {
   hasHeroInventoryEquipment,
 } from '../../lib/equipment/equipmentStats'
 import { t } from '../../lib/lang'
-import { getUnitOverallLevel } from '../../lib/units/unitExperience'
+import { createUnitLevelBadge } from './UnitLevelBadge'
 import { appendBaseEntityInfo, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
@@ -26,28 +25,32 @@ export class UnitInterface {
     const showStats = !options?.hideStats
     appendBaseEntityInfo(
       element,
-      t(unit.owner!.civ!),
+      '',
       typeText,
       showStats ? unit.hitPoints : undefined,
       showStats ? unit.totalHitPoints : undefined,
       {
-        hideType: Boolean(options?.hideIdentity && !unit.name),
+        hideType: Boolean(unit.type === UNIT_TYPES.hero || (options?.hideIdentity && !unit.name)),
       }
     )
     if (unit.name && !options?.hideIdentity) {
       const nameElement = createInfoText(MENU_INFO_IDS.name, unit.name)
-      const header = element.querySelector('.entity-info-header')
-      header?.prepend(nameElement)
+      let header = element.querySelector('.entity-info-header')
+      if (!header) {
+        header = document.createElement('div')
+        header.className = 'entity-info-header'
+        element.prepend(header)
+      }
+      header.prepend(nameElement)
     }
 
     if (!showStats) return
 
-    const level = createValueBadge('level', `${t('levelShort')} ${getUnitOverallLevel(unit)}`)
-    level.classList.add('unit-level-tag', 'level-tag')
+    const level = createUnitLevelBadge(unit)
     if (options?.hideIdentity) element.appendChild(level)
     else {
       const name = element.querySelector<HTMLElement>(`.${MENU_INFO_IDS.name}`)
-      ;(name ?? element.querySelector('.entity-info-header'))?.appendChild(level)
+      ;(name ?? element.querySelector('.entity-info-header') ?? element).appendChild(level)
     }
 
     const infosDiv = document.createElement('div')

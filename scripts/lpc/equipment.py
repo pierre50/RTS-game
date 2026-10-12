@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from pathlib import Path
+import json
 
 
 @dataclass(frozen=True)
@@ -137,6 +139,39 @@ def arming_sword_equipment(palette: str | None = None) -> dict[str, Equipment]:
     }
 
 
+def dagger_equipment(palette: str) -> dict[str, Equipment]:
+    def layer(path: str) -> LayerSpec:
+        return LayerSpec(f"weapon/sword/dagger/{path}/dagger.png", palette, source_palette="dagger_metal_source")
+
+    return {
+        "walk": Equipment(background=(layer("behind/walk"),), foreground=(layer("walk"),)),
+        "slash": Equipment(background=(layer("behind/slash"),), foreground=(layer("slash"),)),
+        "hurt": Equipment(foreground=(layer("hurt"),)),
+    }
+
+
+def spear_equipment(palette: str) -> dict[str, Equipment]:
+    def layer(path: str) -> LayerSpec:
+        return LayerSpec(f"weapon/polearm/spear_slash/{path}/spear.png", palette,
+                         source_palette="spear_metal_source", frame_size=192)
+    return {
+        "walk": Equipment(background=(layer("walk/behind"),), foreground=(layer("walk"),)),
+        "hurt": Equipment(background=(layer("hurt/behind"),), foreground=(layer("hurt"),)),
+        "slash": Equipment(background=(layer("attack_slash/behind"),), foreground=(layer("attack_slash"),)),
+    }
+
+
+def mace_equipment(palette: str) -> dict[str, Equipment]:
+    def layer(path: str) -> LayerSpec:
+        return LayerSpec(f"weapon/blunt/mace/{path}/mace.png", palette)
+
+    return {
+        "walk": Equipment(background=(layer("universal_behind/walk"),), foreground=(layer("walk"),)),
+        "slash": Equipment(background=(layer("attack_slash/behind"),), foreground=(layer("attack_slash"),)),
+        "hurt": Equipment(background=(layer("universal_behind/hurt"),), foreground=(layer("hurt"),)),
+    }
+
+
 def variant_layer(path: str, color: str) -> LayerSpec:
     source_palette = VARIANT_SOURCE_PALETTES.get(color)
     return LayerSpec(path, color, source_palette=source_palette) if source_palette else LayerSpec(path)
@@ -176,6 +211,7 @@ def helmet_equipment(path: str, color: str, include_hurt: bool = False) -> dict[
 def hood_equipment(path: str, color: str) -> dict[str, Equipment]:
     return {
         "walk": Equipment(foreground=(variant_layer(f"{path}/adult/walk/{color}.png", color),)),
+        "slash": Equipment(foreground=(variant_layer(f"{path}/adult/slash/{color}.png", color),)),
         "shoot": Equipment(foreground=(variant_layer(f"{path}/adult/shoot/{color}.png", color),)),
         "hurt": Equipment(foreground=(variant_layer(f"{path}/adult/hurt/{color}.png", color),)),
     }
@@ -260,16 +296,20 @@ def recolored_shield_equipment(color: str) -> dict[str, Equipment]:
 
 
 EQUIPMENT: dict[str, dict[str, Equipment]] = {
+    "spear_ceramic": spear_equipment("ceramic"),
+    "spear_bronze": spear_equipment("bronze"),
+    "spear_iron": spear_equipment("iron"),
+    "dagger_bronze": dagger_equipment("bronze"),
+    "dagger_iron": dagger_equipment("iron"),
+    "mace_bronze": mace_equipment("bronze"),
+    "mace_iron": mace_equipment("iron"),
     "axe_ceramic": smash_tool_equipment("axe", "ceramic"),
-    "axe_copper": smash_tool_equipment("axe", "copper"),
     "axe_bronze": smash_tool_equipment("axe", "bronze"),
     "axe_iron": smash_tool_equipment("axe", "iron"),
     "pickaxe_ceramic": smash_tool_equipment("pickaxe", "ceramic"),
-    "pickaxe_copper": smash_tool_equipment("pickaxe", "copper"),
     "pickaxe_bronze": smash_tool_equipment("pickaxe", "bronze"),
     "pickaxe_iron": smash_tool_equipment("pickaxe", "iron"),
     "hammer_ceramic": smash_tool_equipment("hammer", "ceramic"),
-    "hammer_copper": smash_tool_equipment("hammer", "copper"),
     "hammer_bronze": smash_tool_equipment("hammer", "bronze"),
     "hammer_iron": smash_tool_equipment("hammer", "iron"),
     # Carried in hand for the "loaded" walk (bringing a gathered resource home), not
@@ -307,10 +347,15 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
         ),
     },
     "scythe_ceramic": scythe_equipment("ceramic"),
-    "scythe_copper": scythe_equipment("copper"),
     "scythe_bronze": scythe_equipment("bronze"),
     "scythe_iron": scythe_equipment("iron"),
     "longstick": longstick_equipment(),
+    "slingshot": {
+        animation: Equipment(
+            background=(LayerSpec(f"weapon/ranged/slingshot/background/{animation}/slingshot.png", direct_columns=animation == "walk"),),
+            foreground=(LayerSpec(f"weapon/ranged/slingshot/foreground/{animation}/slingshot.png", direct_columns=animation == "walk"),),
+        ) for animation in ("walk", "shoot", "hurt")
+    },
     "bow": {
         "walk": Equipment(
             background=(
@@ -377,73 +422,41 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
         ),
     },
     "arrow_ceramic": arrow_equipment("ceramic"),
-    "arrow_copper": arrow_equipment("copper"),
     "arrow_bronze": arrow_equipment("bronze"),
     "arrow_iron": arrow_equipment("iron"),
-    "halberd": {
-        "walk": Equipment(
-            background=(LayerSpec("weapon/polearm/halberd/walk/behind/halberd.png"),),
-            foreground=(LayerSpec("weapon/polearm/halberd/walk/halberd.png"),),
-        ),
-        "slash": Equipment(
-            background=(LayerSpec("weapon/polearm/halberd/attack_slash/behind/halberd.png"),),
-            foreground=(LayerSpec("weapon/polearm/halberd/attack_slash/halberd.png"),),
-        ),
-    },
-    "sword_ceramic": arming_sword_equipment("ceramic"),
-    "sword_copper": arming_sword_equipment("copper"),
     "sword_bronze": arming_sword_equipment("bronze"),
     "sword_iron": arming_sword_equipment("iron"),
     "armor_leather": torso_armor_equipment("torso/armour/leather", "leather", include_hurt=True),
-    "armor_mail_ceramic": recolored_torso_armor_equipment("torso/chainmail", "gray", "ceramic"),
-    "armor_mail_copper": recolored_torso_armor_equipment("torso/chainmail", "gray", "copper"),
-    "armor_mail_bronze": recolored_torso_armor_equipment("torso/chainmail", "gray", "bronze"),
     "armor_mail_iron": recolored_torso_armor_equipment("torso/chainmail", "gray", "iron"),
-    "armor_legion_ceramic": torso_armor_equipment("torso/armour/legion", "ceramic"),
-    "armor_legion_copper": torso_armor_equipment("torso/armour/legion", "copper"),
     "armor_legion_bronze": torso_armor_equipment("torso/armour/legion", "bronze"),
     "armor_legion_iron": torso_armor_equipment("torso/armour/legion", "iron"),
-    "helmet_pointed_ceramic": helmet_equipment("hat/helmet/pointed", "ceramic"),
-    "helmet_pointed_copper": helmet_equipment("hat/helmet/pointed", "copper"),
+    "helmet_pointed_leather": helmet_equipment("hat/helmet/pointed", "ceramic"),
     "helmet_pointed_bronze": helmet_equipment("hat/helmet/pointed", "bronze"),
     "helmet_pointed_iron": helmet_equipment("hat/helmet/pointed", "iron"),
-    "helmet_barbuta_ceramic": helmet_equipment("hat/helmet/barbuta_simple", "ceramic"),
-    "helmet_barbuta_copper": helmet_equipment("hat/helmet/barbuta_simple", "copper"),
     "helmet_barbuta_bronze": helmet_equipment("hat/helmet/barbuta_simple", "bronze"),
     "helmet_barbuta_iron": helmet_equipment("hat/helmet/barbuta_simple", "iron"),
-    "helmet_legion_ceramic": helmet_equipment("hat/helmet/legion", "ceramic"),
-    "helmet_legion_copper": helmet_equipment("hat/helmet/legion", "copper"),
     "helmet_legion_bronze": helmet_equipment("hat/helmet/legion", "bronze"),
     "helmet_legion_iron": helmet_equipment("hat/helmet/legion", "iron"),
-    "helmet_nasal_ceramic": helmet_equipment("hat/helmet/nasal", "ceramic"),
-    "helmet_nasal_copper": helmet_equipment("hat/helmet/nasal", "copper"),
     "helmet_nasal_bronze": helmet_equipment("hat/helmet/nasal", "bronze"),
     "helmet_nasal_iron": helmet_equipment("hat/helmet/nasal", "iron"),
-    "helmet_bascinet_round_ceramic": helmet_equipment("hat/helmet/bascinet_round", "ceramic"),
-    "helmet_bascinet_round_copper": helmet_equipment("hat/helmet/bascinet_round", "copper"),
     "helmet_bascinet_round_bronze": helmet_equipment("hat/helmet/bascinet_round", "bronze"),
     "helmet_bascinet_round_iron": helmet_equipment("hat/helmet/bascinet_round", "iron"),
-    "helmet_norman_ceramic": helmet_equipment("hat/helmet/norman", "ceramic"),
-    "helmet_norman_copper": helmet_equipment("hat/helmet/norman", "copper"),
     "helmet_norman_bronze": helmet_equipment("hat/helmet/norman", "bronze"),
     "helmet_norman_iron": helmet_equipment("hat/helmet/norman", "iron"),
-    "helmet_barbarian_ceramic": helmet_equipment("hat/helmet/barbarian", "ceramic", include_hurt=True),
-    "helmet_barbarian_nasal_ceramic": helmet_equipment(
+    "helmet_barbarian_leather": helmet_equipment("hat/helmet/barbarian", "ceramic", include_hurt=True),
+    "helmet_barbarian_nasal_leather": helmet_equipment(
         "hat/helmet/barbarian_nasal",
         "ceramic",
         include_hurt=True,
     ),
     "sack_cloth_hood_leather": hood_equipment("hat/cloth/hood_sack", "leather"),
-    "shoulder_legion_ceramic": torso_armor_equipment("shoulders/legion", "ceramic"),
-    "shoulder_legion_copper": torso_armor_equipment("shoulders/legion", "copper"),
+    "shoulder_legion_leather": torso_armor_equipment("shoulders/legion", "ceramic"),
     "shoulder_legion_bronze": torso_armor_equipment("shoulders/legion", "bronze"),
     "shoulder_legion_iron": torso_armor_equipment("shoulders/legion", "iron"),
-    "bracers_ceramic": bracers_equipment("ceramic"),
-    "bracers_copper": bracers_equipment("copper"),
+    "bracers_leather": bracers_equipment("ceramic"),
     "bracers_bronze": bracers_equipment("bronze"),
     "bracers_iron": bracers_equipment("iron"),
-    "leg_armor_ceramic": torso_armor_equipment("legs/armour/plate", "ceramic"),
-    "leg_armor_copper": torso_armor_equipment("legs/armour/plate", "copper"),
+    "leg_armor_leather": torso_armor_equipment("legs/armour/plate", "ceramic"),
     "leg_armor_bronze": torso_armor_equipment("legs/armour/plate", "bronze"),
     "leg_armor_iron": torso_armor_equipment("legs/armour/plate", "iron"),
     "cape_solid": cape_solid_equipment(),
@@ -454,11 +467,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "plumage": hat_accessory_equipment("hat/accessory/plumage"),
     "helmet_wings": split_hat_accessory_equipment("hat/accessory/wings", palette=None),
     "upward_horns_white": split_hat_accessory_equipment("hat/accessory/horns_upward", palette=None, include_hurt=True),
-    "upward_horns_ceramic": split_hat_accessory_equipment(
-        "hat/accessory/horns_upward",
-        palette="ceramic",
-        include_hurt=True,
-    ),
     # Silver arming sword only. The matching shield is generated separately.
     "longsword": {
         "walk": Equipment(
@@ -475,8 +483,7 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "cane": {
         "walk": Equipment(foreground=(LayerSpec("weapon/polearm/cane/male/walk/cane.png"),)),
     },
-    "round_shield_ceramic_slash": recolored_shield_equipment("ceramic"),
-    "round_shield_copper_slash": recolored_shield_equipment("copper"),
+    "round_shield_wood_slash": recolored_shield_equipment("leather"),
     "round_shield_bronze_slash": recolored_shield_equipment("bronze"),
     "round_shield_iron_slash": recolored_shield_equipment("iron"),
 }
@@ -494,84 +501,65 @@ EQUIPMENT_LAYER_ORDER: tuple[tuple[str, int], ...] = (
 )
 
 EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
+    "spear_ceramic": "slash",
+    "spear_bronze": "slash",
+    "spear_iron": "slash",
+    "dagger_bronze": "slash",
+    "dagger_iron": "slash",
+    "mace_bronze": "slash",
+    "mace_iron": "slash",
     "axe_ceramic": "slash",
-    "axe_copper": "slash",
     "axe_bronze": "slash",
     "axe_iron": "slash",
     "pickaxe_ceramic": "slash",
-    "pickaxe_copper": "slash",
     "pickaxe_bronze": "slash",
     "pickaxe_iron": "slash",
     "hammer_ceramic": "slash",
-    "hammer_copper": "slash",
     "hammer_bronze": "slash",
     "hammer_iron": "slash",
     "meat": "walk",
     "stone": "walk",
     "gold": "walk",
     "scythe_ceramic": "slash",
-    "scythe_copper": "slash",
     "scythe_bronze": "slash",
     "scythe_iron": "slash",
     "longstick": "slash",
+    "slingshot": "shoot",
     "bow": "shoot",
     "bow_great": "shoot",
     "bow_recurve": "shoot",
     "arrow_ceramic": "shoot",
-    "arrow_copper": "shoot",
     "arrow_bronze": "shoot",
     "arrow_iron": "shoot",
-    "halberd": "slash",
-    "sword_ceramic": "slash",
-    "sword_copper": "slash",
     "sword_bronze": "slash",
     "sword_iron": "slash",
     "armor_leather": "slash",
-    "armor_mail_ceramic": "slash",
-    "armor_mail_copper": "slash",
-    "armor_mail_bronze": "slash",
     "armor_mail_iron": "slash",
-    "armor_legion_ceramic": "slash",
-    "armor_legion_copper": "slash",
     "armor_legion_bronze": "slash",
     "armor_legion_iron": "slash",
-    "helmet_pointed_ceramic": "slash",
-    "helmet_pointed_copper": "slash",
+    "helmet_pointed_leather": "slash",
     "helmet_pointed_bronze": "slash",
     "helmet_pointed_iron": "slash",
-    "helmet_barbuta_ceramic": "slash",
-    "helmet_barbuta_copper": "slash",
     "helmet_barbuta_bronze": "slash",
     "helmet_barbuta_iron": "slash",
-    "helmet_legion_ceramic": "slash",
-    "helmet_legion_copper": "slash",
     "helmet_legion_bronze": "slash",
     "helmet_legion_iron": "slash",
-    "helmet_nasal_ceramic": "slash",
-    "helmet_nasal_copper": "slash",
     "helmet_nasal_bronze": "slash",
     "helmet_nasal_iron": "slash",
-    "helmet_bascinet_round_ceramic": "slash",
-    "helmet_bascinet_round_copper": "slash",
     "helmet_bascinet_round_bronze": "slash",
     "helmet_bascinet_round_iron": "slash",
-    "helmet_norman_ceramic": "slash",
-    "helmet_norman_copper": "slash",
     "helmet_norman_bronze": "slash",
     "helmet_norman_iron": "slash",
-    "helmet_barbarian_ceramic": "slash",
-    "helmet_barbarian_nasal_ceramic": "slash",
-    "sack_cloth_hood_leather": "shoot",
-    "shoulder_legion_ceramic": "slash",
-    "shoulder_legion_copper": "slash",
+    "helmet_barbarian_leather": "slash",
+    "helmet_barbarian_nasal_leather": "slash",
+    "sack_cloth_hood_leather": "slash",
+    "shoulder_legion_leather": "slash",
     "shoulder_legion_bronze": "slash",
     "shoulder_legion_iron": "slash",
-    "bracers_ceramic": "slash",
-    "bracers_copper": "slash",
+    "bracers_leather": "slash",
     "bracers_bronze": "slash",
     "bracers_iron": "slash",
-    "leg_armor_ceramic": "slash",
-    "leg_armor_copper": "slash",
+    "leg_armor_leather": "slash",
     "leg_armor_bronze": "slash",
     "leg_armor_iron": "slash",
     "cape_solid": "slash",
@@ -582,10 +570,8 @@ EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
     "plumage": "slash",
     "helmet_wings": "slash",
     "upward_horns_white": "slash",
-    "upward_horns_ceramic": "slash",
     "longsword": "slash",
-    "round_shield_ceramic_slash": "slash",
-    "round_shield_copper_slash": "slash",
+    "round_shield_wood_slash": "slash",
     "round_shield_bronze_slash": "slash",
     "round_shield_iron_slash": "slash",
     "cane": "spellcast",
@@ -644,6 +630,20 @@ EXTRA_DYNAMIC_EQUIPMENT: dict[str, DynamicEquipment] = {
     ),
 }
 
+
+# Runtime and sprite generation share the same retired-item policy.
+_LEGACY = json.loads((Path(__file__).resolve().parents[2] / "app/config/equipmentLegacyReplacements.json").read_text())
+EQUIPMENT = {key: value for key, value in EQUIPMENT.items() if key not in _LEGACY}
+EQUIPMENT_ACTION_ANIMATIONS = {key: value for key, value in EQUIPMENT_ACTION_ANIMATIONS.items() if key not in _LEGACY}
+# Reuse the existing shapes with leather palettes; their logical IDs no longer describe stone.
+for _key in ("helmet_pointed_leather", "helmet_barbarian_leather", "helmet_barbarian_nasal_leather",
+             "shoulder_legion_leather", "bracers_leather", "leg_armor_leather"):
+    EQUIPMENT[_key] = {
+        animation: Equipment(
+            background=tuple(replace(layer, palette="leather", source_palette=None) for layer in part.background),
+            foreground=tuple(replace(layer, palette="leather", source_palette=None) for layer in part.foreground),
+        ) for animation, part in EQUIPMENT[_key].items()
+    }
 
 DYNAMIC_EQUIPMENT: dict[str, DynamicEquipment] = {
     key: dynamic_equipment_for(key, EQUIPMENT_ACTION_ANIMATIONS[key])

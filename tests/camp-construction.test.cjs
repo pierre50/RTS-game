@@ -15,7 +15,10 @@ const { buyPlayerBuilding } = loadTsModule('app/classes/players/PlayerBuildingPl
     },
     '../../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set() },
     '../../lib/entities/entityFade': {},
-    '../../lib/mapSpaces': { getMapSpace: () => null },
+    '../../lib/mapSpaces': {
+      ...loadTsModule('app/lib/mapSpaces.ts'),
+      getMapSpace: () => null,
+    },
     '../Resource': {},
   },
 })
@@ -47,16 +50,22 @@ for (const type of ['Chest', 'FireCamp', 'Trap', 'CampBrazier']) {
       totalHitPoints: definitions[type].totalHitPoints,
       constructionWorkRequired: definitions[type].constructionTime,
     })
-    const { advanceMaterialConstruction, applyConstructionWork, constructionWorkPoints, constructionWorkTotal } =
-      loadTsModule('app/lib/economy/constructionMaterials.ts')
+    const {
+      advanceMaterialConstruction,
+      deliverConstructionMaterials,
+      applyConstructionWork,
+      constructionWorkPoints,
+      constructionWorkTotal,
+    } = loadTsModule('app/lib/economy/constructionMaterials.ts')
     const { advanceConstruction } = loadTsModule('app/lib/economy/workRules.ts')
+    deliverConstructionMaterials(site, [hero.inventory.resources])
+    assert.equal(site.constructionProgress, 0)
     for (let impact = 0; impact < 4; impact++) {
       applyConstructionWork(
         site,
         advanceMaterialConstruction(
           site,
-          advanceConstruction(constructionWorkPoints(site), constructionWorkTotal(site)),
-          [hero.inventory.resources]
+          advanceConstruction(constructionWorkPoints(site), constructionWorkTotal(site))
         )
       )
     }

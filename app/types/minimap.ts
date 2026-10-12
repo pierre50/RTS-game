@@ -18,3 +18,6 @@ export type MinimapPreferences = {
   zoom: number
   hiddenMarkers: string[]
 }
+
+/** Only locations actually painted on the map can be inspected. */
+export type MinimapPlace = { x: number; y: number; name: string; description: string }

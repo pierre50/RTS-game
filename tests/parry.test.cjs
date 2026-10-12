@@ -147,3 +147,12 @@ test('an expired prepared parry no longer blocks the impact', () => {
   assert.deepEqual(grantCalls, [])
   assert.equal(unit.automaticParryActiveUntil, null)
 })
+
+test('an already prepared guard cannot block after its melee equipment is lost or broken', () => {
+  const grants = []
+  const api = loadParry({ meleeEquipped: false, grantCalls: grants })
+  const unit = makeUnit({ automaticParryActiveUntil: 1000 })
+  assert.equal(api.attemptAutomaticParry(unit, 500), false)
+  assert.equal(unit.automaticParryActiveUntil, null)
+  assert.deepEqual(grants, [])
+})

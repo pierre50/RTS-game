@@ -11,14 +11,14 @@ export function heroBuildingStructureSignature(manager: HeroBuildingMenuManager)
   return [
     building.buildingLevel,
     building.isBuilt,
+    building.constructionPaused,
     building.buildingUpgrade ? JSON.stringify(building.buildingUpgrade) : '',
     JSON.stringify(building.constructionMaterials),
     ['StoragePit', 'Granary'].includes(building.type) && building.owner
       ? JSON.stringify(settlementDepotPolicy(building.owner, building))
       : '',
-    [BUILDING_TYPES.forge, BUILDING_TYPES.fireCamp, BUILDING_TYPES.townCenter].includes(building.type)
+    [BUILDING_TYPES.forge, BUILDING_TYPES.fireCamp].includes(building.type)
       ? JSON.stringify([
-          manager.menu.context.player.forgeUpgrades,
           building.owner?.label,
           manager.menu.context.controls.heroUnit?.isChief,
           building.isBuilt,

@@ -1154,12 +1154,22 @@ test('market wallets preserve zero and purchase proceeds in saved buildings', ()
     j: 1,
     isBuilt: true,
     marketGold,
+    buildingLevel: index,
+    marketResourceStock: { wood: 7, ironIngot: 0 },
     marketStock: [],
   }))
   const saved = JSON.parse(JSON.stringify(loadSaveSerializer().serializeGame(context)))
   assert.deepEqual(
     saved.players[0].buildings.map(building => building.marketGold),
     [0, 325, 1800]
+  )
+  assert.deepEqual(
+    saved.players[0].buildings.map(building => building.buildingLevel),
+    [0, 1, 2]
+  )
+  assert.deepEqual(
+    saved.players[0].buildings.map(building => building.marketResourceStock),
+    Array.from({ length: 3 }, () => ({ wood: 7, ironIngot: 0 }))
   )
 })
 

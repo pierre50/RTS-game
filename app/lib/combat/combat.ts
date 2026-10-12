@@ -65,6 +65,7 @@ function isOutsideHeroDefenseArc(source: CombatEntity, target: CombatEntity): bo
 function applyHeroDefenseDamage(source: CombatEntity, target: CombatEntity, damage: number): number {
   if (!target.heroDefenseActive || damage <= 0 || isOutsideHeroDefenseArc(source, target)) return damage
   target.showHeroDefenseFlash?.()
+  target.onHeroDefenseBlock?.()
   return 0
 }
 

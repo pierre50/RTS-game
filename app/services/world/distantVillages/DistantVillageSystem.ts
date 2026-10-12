@@ -1,3 +1,4 @@
+import { reconcileSettlementResidents } from '../../../lib/territory/settlementResidents'
 import { configureVillageNightWatch } from '../../../lib/units/village/villageNightWatch'
 import { DAY_NIGHT_CONFIG } from '../../../config/gameplay'
 import { restoreOfflineUnitSleepHealth } from '../../../lib/units/unitSleepHealth'
@@ -7,7 +8,6 @@ import { villageWorkNeedsLiveSearch } from '../../../lib/units/village/villageSu
 import { isContinentWorld } from '../../../config/continentWorlds'
 import { getEntitySpaceId } from '../../../lib/mapSpaces'
 import { cancelEnergyWait, updateUnitEnergy } from '../../../lib/units/unitEnergy'
-import { VILLAGE_ACTIVITY_RADIUS } from '../../../config/villageActivity'
 import {
   setDistantOwner,
   registerDistantDailyPlanning,
@@ -149,22 +149,7 @@ export class DistantVillageSystem {
     }
     for (const owner of this.owners.keys()) {
       const villages = grouped.get(owner)
-      if (villages) {
-        for (const unit of owner.units) {
-          if (unit.villageHome || unit.isDead || unit.isDestroyed) continue
-          const nearest = villages.reduce<(typeof villages)[number] | undefined>(
-            (best, village) =>
-              !best ||
-              Math.hypot(unit.i - village.home.i, unit.j - village.home.j) <
-                Math.hypot(unit.i - best.home.i, unit.j - best.home.j)
-                ? village
-                : best,
-            undefined
-          )
-          if (nearest && Math.hypot(unit.i - nearest.home.i, unit.j - nearest.home.j) <= VILLAGE_ACTIVITY_RADIUS)
-            unit.villageHome = nearest.home
-        }
-      }
+      if (villages) reconcileSettlementResidents(owner)
       const homes = this.owners.get(owner)?.homes ?? []
       const changedHomes =
         villages?.length !== homes.length ||

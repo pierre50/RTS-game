@@ -196,7 +196,7 @@ export function syncBuildingConstructionReveal(building: BuildingControllerHost,
   mask.rect(bounds.x - 2, top, bounds.width + 4, visibleHeight + 2)
   mask.fill({ color: 0xffffff })
 
-  if (building.type === BUILDING_TYPES.farm) {
+  if (building.type === BUILDING_TYPES.farm && !building.constructionPaused) {
     building.constructionProgressText?.parent?.removeChild(building.constructionProgressText)
     building.constructionProgressText?.destroy()
     building.constructionProgressText = null
@@ -221,7 +221,9 @@ export function syncBuildingConstructionReveal(building: BuildingControllerHost,
     building.constructionProgressText = text
     building.addChild(text)
   }
-  building.constructionProgressText.text = `${Math.floor(Math.max(0, Math.min(100, percentage)))}%`
+  building.constructionProgressText.text = building.constructionPaused
+    ? '⏸'
+    : `${Math.floor(Math.max(0, Math.min(100, percentage)))}%`
   building.constructionProgressText.position.set(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
 }
 

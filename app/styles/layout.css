@@ -184,6 +184,11 @@
   overflow: auto;
 }
 
+/* The dialog receives fallback focus; controls keep their own focus indicators. */
+.modal-panel:focus {
+  outline: none;
+}
+
 .modal-panel.settings-panel {
   width: min(1000px, 100%);
 }

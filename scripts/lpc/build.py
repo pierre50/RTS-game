@@ -329,8 +329,10 @@ def unit_build_tasks(unit: str, body: str = "male") -> list[BuildTask]:
     ]
     if unit in {"chief", "infantry", "infantry_nohair"}:
         tasks.append(("sitting", villager_sitting_sheet(body), "sit"))
-    if unit in {"infantry", "infantry_nohair"}:
+    if unit != "bandit_archer":
         tasks.append(("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"))
+    if unit in {"bandit_archer", "priest"}:
+        tasks.append(("action/slash", SHEET_BY_ANIMATION["slash"], "slash"))
     return tasks
 
 
@@ -342,6 +344,8 @@ def build(
     civ_keys: set[str] | None = None,
     unit_keys: set[str] | None = None,
 ) -> None:
+    from build_spear import build_spear_sources
+    build_spear_sources(source_root)
     retro_palette_hex = find_hex_palette(RETRO_PALETTE_ROOT / "_")
     if retro_palette_hex is None:
         print(f"Error: no .hex palette found in {RETRO_PALETTE_ROOT}", file=sys.stderr)

@@ -238,6 +238,13 @@ test('construction reveal sprite is recolored to the building owner color', () =
   assert.equal(building.constructionRevealSprite.mask, building.constructionRevealMask)
   assert.equal(children.includes(building.constructionRevealSprite), true)
   assert.equal(children.includes(building.constructionRevealMask), true)
+  assert.equal(building.constructionProgressText.text, '50%')
+  building.constructionPaused = true
+  syncBuildingConstructionReveal(building, 50)
+  assert.equal(building.constructionProgressText.text, '⏸')
+  delete building.constructionPaused
+  syncBuildingConstructionReveal(building, 50)
+  assert.equal(building.constructionProgressText.text, '50%')
 })
 
 test('construction ghost keeps the player-colored texture transparent', () => {

@@ -1,6 +1,8 @@
+import { applyInventoryPresentation, type InventoryPresentation } from './InventoryPresentation'
 import { t } from '../../lib/lang'
 
 type InventorySectionOptions = {
+  presentation?: InventoryPresentation
   action?: HTMLElement
   showItemCount?: boolean
   className?: string
@@ -19,6 +21,14 @@ export function createInventorySectionTitle(text: string, className?: string): H
   return title
 }
 
+/** Keep a panel's title outside the scrolling categories. */
+export function appendInventoryScrollBody(panel: HTMLElement): HTMLDivElement {
+  const body = document.createElement('div')
+  body.className = 'inventory-scroll-body'
+  panel.appendChild(body)
+  return body
+}
+
 export function createInventorySection(options: InventorySectionOptions): HTMLElement {
   const block = document.createElement('section')
   block.className = ['inventory-section', options.className].filter(Boolean).join(' ')
@@ -26,6 +36,7 @@ export function createInventorySection(options: InventorySectionOptions): HTMLEl
   const grid = document.createElement('div')
   grid.className = options.gridClassName ?? 'inventory-section-list'
   options.renderItems(grid)
+  if (options.presentation) applyInventoryPresentation(grid, options.presentation)
 
   const title = createInventorySectionTitle(options.title, options.titleClassName)
   if (options.action || options.showItemCount) {

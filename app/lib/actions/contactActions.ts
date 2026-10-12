@@ -19,12 +19,20 @@ export function isWorkContactAction(action: string | null | undefined): boolean 
   return Boolean(action && Object.hasOwn(WORK_CONTACT_ACTIONS, action))
 }
 
-export function usesUnitContactAction(unit: UnitEntity, action: string | null | undefined): boolean {
-  return isWorkContactAction(action) || (action === ACTION_TYPES.attack && usesMeleeAttack(unit))
+export function usesUnitContactAction(
+  unit: UnitEntity,
+  action: string | null | undefined,
+  target?: RuntimeEntity
+): boolean {
+  return isWorkContactAction(action) || (action === ACTION_TYPES.attack && usesMeleeAttack(unit, target))
 }
 
-export function getActionContactTool(unit: UnitEntity, action: string | null | undefined): string | undefined {
-  if (action === ACTION_TYPES.attack) return getUnitMeleeWeapon(unit)
+export function getActionContactTool(
+  unit: UnitEntity,
+  action: string | null | undefined,
+  target?: RuntimeEntity
+): string | undefined {
+  if (action === ACTION_TYPES.attack) return getUnitMeleeWeapon(unit, target)
   const work = action ? WORK_CONTACT_ACTIONS[action] : undefined
   if (!work) return undefined
   return getUnitWorkEquipment(work, unit).find(key =>
@@ -38,8 +46,8 @@ export function canReachActionTarget(
   action: string | null | undefined
 ): boolean {
   return (
-    usesUnitContactAction(unit, action) &&
-    canReachContact(unit, target, getActionContactTool(unit, action), {
+    usesUnitContactAction(unit, action, target) &&
+    canReachContact(unit, target, getActionContactTool(unit, action, target), {
       allowDeadTarget: action !== ACTION_TYPES.attack,
     })
   )
@@ -51,15 +59,15 @@ export function isActionTouchingTarget(
   action: string | null | undefined
 ): boolean {
   return (
-    usesUnitContactAction(unit, action) &&
-    isContactTouching(unit, target, getActionContactTool(unit, action), {
+    usesUnitContactAction(unit, action, target) &&
+    isContactTouching(unit, target, getActionContactTool(unit, action, target), {
       allowDeadTarget: action !== ACTION_TYPES.attack,
     })
   )
 }
 
 export function sampleActionApproach(unit: UnitEntity, target: RuntimeEntity, action: string) {
-  return sampleContactApproach(unit, target, getActionContactTool(unit, action), {
+  return sampleContactApproach(unit, target, getActionContactTool(unit, action, target), {
     allowDeadTarget: action !== ACTION_TYPES.attack,
   })
 }

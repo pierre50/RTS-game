@@ -1,4 +1,6 @@
 // UI and gameplay poll independently. Keep closing presses consumed across both loops.
+// A button is released from the set only when read while up: pollers must read every frame,
+// not only on a new press (a press reads it while still down and stays consumed).
 const consumedButtons = new Map<number, Set<number>>()
 
 export function consumeGamepadButtons(pad: Gamepad): void {

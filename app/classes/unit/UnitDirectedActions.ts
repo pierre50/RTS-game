@@ -109,9 +109,7 @@ export class UnitDirectedActions {
     const showFeedback = healedAmount > 0 && allowFeedback
     if (showFeedback) showHealingFeedback(dest)
     grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
-    if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
-      syncEntityHealthDisplay(dest, display)
-    }
+    syncEntityHealthDisplay(dest, display)
     return showFeedback
   }
 

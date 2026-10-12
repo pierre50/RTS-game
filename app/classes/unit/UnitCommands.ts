@@ -17,9 +17,9 @@ import type { ActionProps } from '../../lib/combat'
 import { applyDiplomaticAggression } from '../../lib/combat/diplomaticAggression'
 import { getNearestAvailableStableForUnit } from '../../lib/horses/horseCapture'
 import { t } from '../../lib/lang'
-import { canCampPursue } from '../../lib/units/campBehavior'
+import { canCampPursue } from '../../lib/units/camps/campBehavior'
 import { knownTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
-import { routeToRememberedTarget } from '../../lib/units/targetPursuit'
+import { routeToRememberedTarget } from '../../lib/units/combat/targetPursuit'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
 import type {
@@ -271,7 +271,12 @@ export class UnitCommands {
   }
 
   sendToBerrybush(target: RuntimeEntity, immediate = false) {
-    return this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry, false, immediate)
+    const result = this.commonSendTo(target, WORK_TYPES.forager, ACTION_TYPES.forageberry, false, immediate)
+    if (result !== false) {
+      if (target.type === RESOURCE_TYPES.groundWood) this.unit.autonomousJob = 'wood'
+      if (target.type === RESOURCE_TYPES.groundStone) this.unit.autonomousJob = 'stone'
+    }
+    return result
   }
 
   sendToStone(target: RuntimeEntity, immediate = false) {

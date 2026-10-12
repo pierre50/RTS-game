@@ -48,6 +48,7 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
   const mocks = {
     '../actions/contactActions': {
       usesUnitContactAction: (_unit, action) => action === 'chopwood',
+      isWorkContactAction: action => ['chopwood', 'minestone', 'farm', 'forageberry'].includes(action),
       canReachActionTarget: () => false,
     },
     '../constants': {
@@ -145,7 +146,7 @@ test('hero interaction keeps a forgiving band around large building-like resourc
   assert.equal(isHeroInteractionTargetReachable(hero, null, stoneDeposit), true)
 })
 
-test('interaction footprint can be widened without granting work contact', () => {
+test('hero resource work also accepts the widened interaction footprint', () => {
   const { getHeroInteractionTargetPoint, isHeroInteractionTargetReachable } = loadHeroActionRange()
   const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: -64 }
   const tree = {
@@ -161,7 +162,7 @@ test('interaction footprint can be widened without granting work contact', () =>
   }
 
   assert.deepEqual(getHeroInteractionTargetPoint(hero, tree), { x: 0, y: -32 })
-  assert.equal(isHeroInteractionTargetReachable(hero, 'chopwood', tree), false)
+  assert.equal(isHeroInteractionTargetReachable(hero, 'chopwood', tree), true)
 })
 
 test('hero interaction range still falls back to strict contact for regular targets', () => {
@@ -208,4 +209,18 @@ test('open building interactions keep their footprint margin without extending o
   assert.equal(reachable(hero, null, building), false)
   assert.equal(inRange(hero, building), true)
   assert.equal(inRange({ ...hero, x: 110 }, building), false)
+})
+
+test('hero resource work shares the examine range without extending distant work or building contact', () => {
+  const { isHeroActionInRange, isHeroInteractionTargetReachable } = loadHeroActionRange()
+  const hero = { controlMode: 'hero', x: 0, y: -64, i: 0, j: 0 }
+  const tree = { family: 'resource', type: 'Tree', size: 1, interactionFootprintFactor: 2, x: 0, y: 0, i: 0, j: 0 }
+  assert.equal(isHeroInteractionTargetReachable(hero, null, tree), true)
+  for (const action of ['chopwood', 'minestone', 'farm', 'forageberry']) {
+    assert.equal(isHeroActionInRange(hero, action, tree), true)
+    assert.equal(isHeroActionInRange({ ...hero, y: -200 }, action, tree), false)
+    assert.equal(isHeroActionInRange(hero, action, { ...tree, isDestroyed: true }), false)
+    assert.equal(isHeroActionInRange({ ...hero, isDead: true }, action, tree), false)
+  }
+  assert.equal(isHeroActionInRange(hero, 'chopwood', { ...tree, family: 'building' }), false)
 })

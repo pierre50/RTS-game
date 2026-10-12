@@ -1,3 +1,4 @@
+import { getBuildingLevel } from '../lib/buildings/buildingLevel'
 import { remainingConstructionMaterials } from '../lib/economy/constructionMaterials'
 import { villageFoodReserve } from '../lib/economy/collectiveNeeds'
 import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
@@ -21,7 +22,16 @@ export function getCurrentResources(strategy: AIStrategy): AIResourceAmount {
 }
 
 export function getVillagerGrowthFoodReserve(strategy: AIStrategy): number {
-  return villageFoodReserve(strategy.ai.population, strategy.ai.populationMax)
+  return villageFoodReserve(
+    strategy.ai.population,
+    strategy.ai.populationMax,
+    Math.max(
+      0,
+      ...strategy.ai.buildings
+        .filter(b => b.type === 'TownCenter' && b.isBuilt && !b.isDead && !b.isDestroyed)
+        .map(getBuildingLevel)
+    )
+  )
 }
 
 export function addBuildingReserve(

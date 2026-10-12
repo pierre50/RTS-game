@@ -93,7 +93,12 @@ export class PlayerWorkActivitySystem {
         if (building.isDead || building.isDestroyed || !allowsVillagerDeliveries(building, owner)) continue
         const depot = communalStoreBuilding(building, owner)
         // Collective deliveries stay in their origin settlement, as in offline work.
-        if (depot && unit.collectiveTask && unit.collectiveHome && !belongsToSettlement(owner, anchor, depot)) continue
+        if (
+          depot &&
+          (unit.villageHome || (unit.collectiveTask && unit.collectiveHome)) &&
+          !belongsToSettlement(owner, anchor, depot)
+        )
+          continue
         if (depot && storageAcceptsResource(depot.type, resource) && !local(depot)) return false
       }
     }

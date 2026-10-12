@@ -1,3 +1,4 @@
+const { attachWindowControls } = require('./helpers/windowControls.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -32,9 +33,8 @@ test('moving onto a text field consumes the frame before underlying window comma
   const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
     mocks: { '../lang': { t: key => key }, '../audio/settings': {} },
   })
-  const instance = Object.create(GameWindow.prototype)
+  const instance = attachWindowControls(Object.create(GameWindow.prototype))
   Object.assign(instance, {
-    padState: { read: () => ({ pressed: [0], direction: [0, 1] }) },
     commands: [{ pad: 0, run: () => assert.fail('underlying action must not execute') }],
     setMode() {},
     refresh() {},
@@ -42,7 +42,8 @@ test('moving onto a text field consumes the frame before underlying window comma
       open = true
     },
   })
-  instance.readGamepad({ index: 0, buttons: [], axes: [] }, 1)
+  instance.controls.padState = { read: () => ({ pressed: [0], direction: [0, 1] }) }
+  instance.controls.readGamepad({ index: 0, buttons: [], axes: [] }, 1)
   assert.equal(open, true)
 })
 

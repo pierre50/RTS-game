@@ -4,7 +4,7 @@ import { normalizeForgeUpgrades } from '../../../lib/equipment/forgeUpgrades'
 import { createSeededRandom } from '../../../lib/random'
 import { isLiving, type OfflineWorldSpatial } from '../offline/OfflineWorldSpatial'
 import type { OfflineWorkRules } from '../offline/OfflineWorldWork'
-import type { StartingVillageLayout } from '../StartingVillageLayout'
+import type { StartingVillageLayout } from './StartingVillageLayout'
 import { settlementAnchorType, startingBuilding } from './StartingProfiles'
 import type {
   SaveEntityState,
@@ -43,7 +43,7 @@ export function createStartingVillage(setup: StartingVillageSetup, profile: Vill
   return { ...setup, spatial: setup.layout.spatial, profile, center, buildings, hasBuilt }
 }
 
-export function findStartingSite(
+function findStartingSite(
   village: StartingVillage,
   anchor: SaveEntityState,
   size: number,

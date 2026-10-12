@@ -5,14 +5,19 @@ import { getHeroAimDegree } from './heroTargeting'
 import { performContextActionAt } from './heroContextActions'
 import { playEmptyHandWhiff, triggerInteractMeleeAt } from './heroMeleeTools'
 import { cancelHeroDefense } from './heroDefense'
-import { beginHeroPowerChargeAt, cancelHeroPowerCharge } from './heroPowerCharge'
+import {
+  aimHeroPowerChargeAt,
+  beginHeroPowerChargeAt,
+  cancelHeroPowerCharge,
+  releaseHeroPowerCharge,
+} from './heroPowerCharge'
 import { finishHeroToolAnimation } from './heroToolAnimation'
+import { getEquippedWorkTool } from '../equipment/workTools'
 
 export { triggerSwordAttackAt } from './heroMeleeTools'
 
 export {
   applyToolAppearance,
-  EQUIPPED_ITEM_WEAPON,
   getEquippedItemWeapon,
   isHeroCatchingPoleEquipped,
   isHeroToolAvailable,
@@ -37,8 +42,14 @@ export {
   updateHeroPowerCharge,
 } from './heroPowerCharge'
 
-export function triggerToolAttackAt(hero: UnitEntity, tool: HeroEquippedItem | null, destination: Point): boolean {
-  if (!tool || hero.actionLocked) return false
+export function triggerToolAttackAt(
+  hero: UnitEntity,
+  tool: HeroEquippedItem | null,
+  destination: Point,
+  repeat = false
+): boolean {
+  if (hero.actionLocked) return false
+  tool ??= 'interact'
   if (!isHeroToolAvailable(hero, tool)) return false
   hero.degree = getHeroAimDegree(hero, destination)
   const powerChargeTool = getHeroPowerChargeToolForEquippedItem(hero, tool)
@@ -52,6 +63,12 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroEquippedItem | n
   if (tool !== 'interact') return false
   const actionResult = performContextActionAt(hero, destination)
   if (actionResult === 'triggered') return true
+  // A held work gesture must never turn into a combat gesture when its target disappears.
+  if (repeat) return false
+  const equippedTool = getEquippedWorkTool(hero)
+  if (equippedTool) {
+    return beginHeroPowerChargeAt(hero, destination, null, 'tool')
+  }
   const meleeResult = triggerInteractMeleeAt(hero)
   if (meleeResult === 'triggered') return true
   if (meleeResult === 'blocked') return false
@@ -59,6 +76,12 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroEquippedItem | n
     return playEmptyHandWhiff(hero)
   }
   return false
+}
+
+export function releaseHeroToolStrike(hero: UnitEntity, destination: Point): boolean {
+  if (hero.heroPowerChargeTool !== 'tool') return false
+  aimHeroPowerChargeAt(hero, destination)
+  return releaseHeroPowerCharge(hero)
 }
 
 export function cancelHeroActiveToolAction(hero: UnitEntity): boolean {

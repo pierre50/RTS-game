@@ -1,3 +1,4 @@
+import { syncHouseInteriorSpace } from '../../services/BuildingInteriorSpaceSystem'
 import { constructionProgressPercentage } from '../../lib/economy/constructionMaterials'
 import { reconcileHouseholds } from '../../lib/housing/households'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
@@ -41,7 +42,7 @@ export class BuildingLifecycle {
     const {
       context: { menu },
     } = building
-    if (building.buildingUpgrade) {
+    if (building.buildingUpgrade || building.constructionPaused) {
       syncBuildingConstructionReveal(building, constructionProgressPercentage(building))
       building.updateShadow()
       return
@@ -124,8 +125,11 @@ export class BuildingLifecycle {
     }
     if (action === ACTION_TYPES.build && building.buildingUpgrade && !building.isDead) {
       if (completeBuildingUpgrade(building, building.owner.config.buildings[building.type])) {
+        syncHouseInteriorSpace(building.context, building)
+        reconcileHouseholds(building.owner)
         refreshPopulationCapacity(building.owner)
         building.finalTexture()
+        building.scanForInitialTarget?.()
         syncEntityHealthDisplay(building, { menu: building.context.menu, player: building.owner })
         building.context.unitRest?.notifyBedAvailable?.(building)
         notifyVillageWorkChanged(building.owner)

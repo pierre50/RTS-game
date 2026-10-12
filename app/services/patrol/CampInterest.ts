@@ -1,5 +1,5 @@
 import { getEntitySpaceId } from '../../lib/mapSpaces'
-import { campAnchor } from '../../lib/units/campBehavior'
+import { campAnchor } from '../../lib/units/camps/campBehavior'
 import { observeVillage } from '../world/VillageObservation'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'

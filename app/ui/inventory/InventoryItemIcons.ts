@@ -17,7 +17,7 @@ const ARROW_PROJECTILE_SHEET_HEIGHT = 5
 const ARROW_PROJECTILE_FRAME_SCALE = 1.65
 
 const TOOL_ICON_FAMILIES = {
-  axe: 'assets/graphics/equipments/weapon/axe/texture.png',
+  axe: 'assets/graphics/equipments/tool/axe/texture.png',
   hammer: 'assets/graphics/equipments/tool/hammer/texture.png',
   pickaxe: 'assets/graphics/equipments/tool/pickaxe/texture.png',
 } as const

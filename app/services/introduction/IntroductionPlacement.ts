@@ -54,7 +54,7 @@ export function findIntroductionPlacement(
 ): { camp: RuntimeCell; companion: RuntimeCell; arrival: RuntimeCell } | null {
   const nearby = reachable(map, hero)
   for (const camp of nearby) {
-    if (!canPlaceBuildingAt(map.grid, camp.i, camp.j, { size })) continue
+    if (!canPlaceBuildingAt(map.grid, camp.i, camp.j, { size }, { roads: map.roads })) continue
     const footprint = new Set(getBuildingFootprintCells(camp.i, camp.j, map.grid, size))
     // Leave one tile between the hero and the edge of the starting fire.
     if ([...footprint].some(cell => cell.has || Math.max(Math.abs(cell.i - hero.i), Math.abs(cell.j - hero.j)) < 2))

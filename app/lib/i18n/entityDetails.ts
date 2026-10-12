@@ -77,7 +77,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
       'Permet au héros d’acheter de l’équipement et de vendre ses ressources et équipements contre de l’or.',
     TempleDescription: 'Forme les prêtres capables de soigner et de convertir.',
     TownCenterDescription:
-      'Transforme votre camp en village et accueille de nouveaux habitants selon les lits disponibles. En tant que chef, utilisez son arbre technologique pour améliorer les outils, les armes et les protections du village grâce aux réserves communes. Les améliorations des outils profitent aussi au héros.',
+      'Transforme votre camp en village et accueille de nouveaux habitants selon les lits disponibles.',
     HeroDescription: 'Chef jouable capable de combattre, récolter, construire et commander votre civilisation.',
     VillagerDescription: 'Unité civile polyvalente qui récolte, construit et répare vos bâtiments.',
     ChiefDescription: 'Chef de village armé d’une épée, indispensable au commandement et au développement.',
@@ -164,7 +164,7 @@ export const ENTITY_DETAILS_TRANSLATIONS = {
     MarketDescription: 'Allows the hero to buy equipment and sell resources and equipment for gold.',
     TempleDescription: 'Trains priests who can heal and convert.',
     TownCenterDescription:
-      'Turns your camp into a village and welcomes new residents as beds become available. As chief, use its technology tree to improve village tools, weapons and armor with shared reserves. Tool upgrades also benefit the hero.',
+      'Turns your camp into a village and welcomes new residents as beds become available.',
     HeroDescription: 'Playable leader able to fight, gather, build and command your civilization.',
     VillagerDescription: 'Versatile civilian unit that gathers resources, builds and repairs structures.',
     ChiefDescription: 'Village leader armed with a sword, required for command and development.',

@@ -11,7 +11,7 @@ import { sendNpcGroupToTarget as sendNpcGroupToTargetDispatch } from './npcGoToD
 import { getEntitySpaceMapLike } from '../mapSpaces'
 import { transferNeutralEntityToPlayer } from '../entities/entityOwnerTransfer'
 export { updateNpcFollow } from './npcFollow'
-export { keepNpcHere, resolveHoverTarget, startFollowingHero } from './npcGoToDispatch'
+export { keepNpcHere, startFollowingHero } from './npcGoToDispatch'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { Point } from '../../types/grid'

@@ -57,7 +57,7 @@ export function settlementDepotPolicy(owner: Owner, building: CollectiveSite): D
   )
   const configured = peers.find(other => other.reservePolicy)?.reservePolicy
   const policy = configured ?? defaultDepotReservePolicy(building.type)
-  return normalizeDepotReservePolicy({ ...policy, target: getStorageCapacity(building.type) }, building.type)
+  return normalizeDepotReservePolicy({ ...policy, target: getStorageCapacity(building) }, building.type)
 }
 
 export function setSettlementDepotPolicy(owner: Owner, building: CollectiveSite, policy: DepotReservePolicy): void {

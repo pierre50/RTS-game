@@ -80,9 +80,13 @@ export function createGameRuntimeContext(
     defeat: false,
     scheduler: null,
     performance: null,
-    autosave: () => host.autosave(),
+    autosave: () => {
+      host.autosave().catch(error => console.error('Automatic save failed', error))
+    },
     save: () => host.save(),
-    load: (evt: object) => host.load(evt as SaveRecord),
+    load: (evt: object) => {
+      host.load(evt as SaveRecord).catch(error => console.error('Game loading failed', error))
+    },
     pause: () => host.togglePause(true),
     resume: () => {
       if (!context.defeat) host.togglePause(false)

@@ -6,7 +6,7 @@ import { assignVillagerAutonomy } from './villagerAutonomy'
 import { getAutonomyJobForWork } from './villagerAutonomyTargeting'
 
 import { sendUnitToMiningAction } from '../miningActions'
-import { isPursuingRememberedTarget } from '../targetPursuit'
+import { isPursuingRememberedTarget } from '../combat/targetPursuit'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
 

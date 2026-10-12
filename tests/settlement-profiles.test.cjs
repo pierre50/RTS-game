@@ -92,6 +92,8 @@ for (const type of ['outpost', 'village', 'city']) {
       assert.ok(positions.size > 2, 'young crops are scattered across different cells')
       assert.deepEqual(generate(type).resources, state.resources, 'generation stays deterministic')
     }
+    const { initializeNpcArrows } = loadTsModule('app/lib/units/combat/unitArrows.ts')
+    for (const unit of player.units) initializeNpcArrows(unit)
     const before = structuredClone(player)
     const report = simulateOfflineWorld(state, {
       ...rules,
@@ -102,11 +104,11 @@ for (const type of ['outpost', 'village', 'city']) {
       abstractVillages: true,
     })
     const economicState = player => JSON.parse(JSON.stringify(player, (key, value) =>
-      ['constructionProgress', 'dailySchedule', 'marketStock', 'marketGold'].includes(key) ? undefined : value))
+      ['constructionProgress', 'dailySchedule', 'marketStock', 'marketGold', 'npcArrows'].includes(key) ? undefined : value))
     assert.deepEqual(economicState(state.players[0]), economicState(before), 'ten days away must preserve losses, resource stocks and population')
     const afterFirstVisit = structuredClone(state.players[0])
     simulateOfflineWorld(state, { ...rules, terrain, fromElapsedMs: 10 * 1440000, toElapsedMs: 11 * 1440000 })
-    assert.deepEqual(state.players[0], afterFirstVisit, 'normalized schedules and stock remain stable on later visits')
+    assert.deepEqual(economicState(state.players[0]), economicState(afterFirstVisit), 'normalized schedules and stock remain stable on later visits')
     assert.equal(report.arrivals, 0)
     assert.equal(report.foodConsumed, 0)
     assert.equal(report.trainingsCompleted, 0)

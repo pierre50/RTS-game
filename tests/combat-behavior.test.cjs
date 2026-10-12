@@ -340,3 +340,44 @@ test('combat mode transitions clear recovery timers and use safe defaults', () =
     global.performance = previous
   }
 })
+
+test('unit recovery reuses its path without issuing an order that cancels the energy wait', () => {
+  const behavior = loadCombatBehavior()
+  const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+  const energy = loadTsModule('app/lib/units/unitEnergy.ts', {
+    mocks: { '../combat/combatBehavior': behavior },
+  })
+  let resumeTick
+  const resumed = []
+  const { unit, target } = createRecoveryFixture({
+    family: 'unit',
+    energyRegenRate: 100,
+    energyRegenDelay: 0,
+    setDest(dest) {
+      this.dest = dest
+    },
+    setPath(path) {
+      this.path = path
+    },
+    // The regular order router cancels energy recovery.
+    sendTo() {
+      energy.cancelEnergyWait(unit)
+    },
+    sendToEvt: (...args) => resumed.push(args),
+  })
+  unit.context.scheduler.add = callback => {
+    resumeTick = callback
+    return 1
+  }
+  unit.context.scheduler.remove = () => {}
+  energy.waitForEnergy(unit, 'attack', target)
+  assert.equal(unit.combatMode, 'recover')
+  assert.equal(unit.waitingForEnergyTarget, target)
+  assert.equal(unit.waitingForEnergyAction, 'attack')
+  assert.ok(unit.path.length > 0)
+  assert.notEqual(unit.dest, target)
+  for (let tick = 0; tick < 100 && !resumed.length; tick++) resumeTick()
+  assert.deepEqual(resumed, [[target, 'attack', { forceRepath: true }]])
+  assert.equal(unit.waitingForEnergyAction, null)
+  assert.equal(unit.energyWaitTaskId, null)
+})

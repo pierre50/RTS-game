@@ -159,3 +159,125 @@ test('right stick scrolls the Town Center report and technologies in their own s
   assert.equal(scrollWindowInformation({ querySelectorAll: () => [] }, 120, selected), true)
   assert.equal(body.scrollTop, 120)
 })
+
+function selectionScrollFixture(t) {
+  const previous = global.getComputedStyle
+  t.after(() => {
+    global.getComputedStyle = previous
+  })
+  global.getComputedStyle = () => ({ overflowY: 'auto' })
+  const calls = []
+  const heading = { scrollIntoView: () => calls.push('heading') }
+  const root = { scrollHeight: 1000, clientHeight: 300, scrollTop: 8, parentElement: null, contains: () => true }
+  const first = { getBoundingClientRect: () => ({ top: 10 }), getClientRects: () => [1], closest: () => null }
+  root.querySelectorAll = () => [first]
+  const list = { parentElement: { querySelector: () => heading }, firstElementChild: first }
+  const row = {
+    parentElement: root,
+    scrollIntoView: () => calls.push('row'),
+    getBoundingClientRect: () => ({ top: 10 }),
+    closest: () => list,
+  }
+  const { scrollWindowSelectionIntoView } = loadTsModule('app/lib/ui/GameWindowScroll.ts')
+  return { root, row, first, list, calls, scroll: () => scrollWindowSelectionIntoView(row) }
+}
+
+test('returning to any column of the first inventory row restores the full top padding', t => {
+  const f = selectionScrollFixture(t)
+  assert.notEqual(f.row, f.first)
+  f.scroll()
+  assert.equal(f.root.scrollTop, 0)
+  assert.deepEqual(f.calls, ['row'])
+})
+
+test('moving within a later row does not jump the scroll container to the top', t => {
+  const f = selectionScrollFixture(t)
+  f.row.getBoundingClientRect = () => ({ top: 150 })
+  f.scroll()
+  assert.equal(f.root.scrollTop, 8)
+  assert.deepEqual(f.calls, ['row'])
+})
+
+test('the first row of a later category reveals its heading in any inventory catalogue', t => {
+  const f = selectionScrollFixture(t)
+  f.row.getBoundingClientRect = () => ({ top: 150 })
+  f.list.firstElementChild = f.row
+  f.scroll()
+  assert.equal(f.root.scrollTop, 8)
+  assert.deepEqual(f.calls, ['row', 'heading'])
+})
+
+test('returning to a nested list top does not scroll its outer window or external heading', t => {
+  const f = selectionScrollFixture(t)
+  const outer = { scrollHeight: 2000, clientHeight: 600, scrollTop: 100 }
+  f.root.parentElement = outer
+  f.scroll()
+  assert.equal(f.root.scrollTop, 0)
+  assert.equal(outer.scrollTop, 100)
+  f.row.getBoundingClientRect = () => ({ top: 150 })
+  f.list.firstElementChild = f.row
+  f.root.contains = () => false
+  f.calls.length = 0
+  f.scroll()
+  assert.deepEqual(f.calls, ['row'])
+})
+
+test('right stick scrolls the category body beneath a fixed panel header', t => {
+  const previous = global.getComputedStyle
+  t.after(() => {
+    global.getComputedStyle = previous
+  })
+  global.getComputedStyle = element => ({ overflowY: element.overflowY })
+  const body = {
+    overflowY: 'auto',
+    scrollTop: 0,
+    scrollHeight: 1200,
+    clientHeight: 300,
+    parentElement: null,
+    closest: () => null,
+    getClientRects: () => [1],
+  }
+  const list = { overflowY: 'visible', scrollHeight: 800, clientHeight: 800, parentElement: body }
+  const selected = { parentElement: list, closest: () => list }
+  const { scrollWindowInformation } = loadTsModule('app/lib/ui/GameWindowScroll.ts')
+  assert.equal(scrollWindowInformation({ querySelectorAll: () => [] }, 120, selected), true)
+  assert.equal(body.scrollTop, 120)
+})
+
+test('down from Construction enters the first tile instead of a lower category aligned with the tab', () => {
+  const { GameWindow } = loadTsModule('app/lib/ui/GameWindow.ts', {
+    mocks: { '@pixi/sound': { sound: {} }, './GameWindowForms': { getWindowField: () => null } },
+  })
+  const tab = {
+    getBoundingClientRect: () => ({ x: 600, y: 0, width: 180, height: 40 }),
+    closest: () => null,
+    matches: selector => selector === '.ui-tab',
+  }
+  const tile = (x, y) => ({
+    getBoundingClientRect: () => ({ x, y, width: 120, height: 120 }),
+    closest: () => null,
+    matches: selector => selector === '.inventory-construction-row',
+  })
+  const first = tile(20, 80)
+  const second = tile(150, 80)
+  const lower = tile(620, 500)
+  const window = Object.create(GameWindow.prototype)
+  Object.assign(window, {
+    selected: tab,
+    items: () => [tab, first, second, lower],
+    select(next, focus) {
+      this.selected = next
+      assert.equal(focus, true)
+    },
+  })
+  window.move(0, 1)
+  assert.equal(window.selected, first)
+  // A previous scroll position must not change the entry point.
+  first.getBoundingClientRect = () => ({ x: 20, y: -500, width: 120, height: 120 })
+  window.selected = tab
+  window.move(0, 1)
+  assert.equal(window.selected, first)
+  first.getBoundingClientRect = () => ({ x: 20, y: 80, width: 120, height: 120 })
+  window.move(1, 0)
+  assert.equal(window.selected, second)
+})

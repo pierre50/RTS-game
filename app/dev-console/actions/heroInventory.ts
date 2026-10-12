@@ -64,7 +64,8 @@ export function getAllHeroInventoryItems(): string[] {
   return [...DYNAMIC_EQUIPMENT_KEYS, ...SPECIAL_HERO_INVENTORY_ITEMS].filter(
     item =>
       !HERO_INVENTORY_COMMAND_EXCLUDED_ITEMS.has(item) &&
-      getEquipmentSlot(item) !== 'helmetDecor' &&
+      !item.startsWith('cape_') &&
+      !['helmetDecor', 'cape'].includes(getEquipmentSlot(item) ?? '') &&
       (specialItems.has(item) || Boolean(getEquipmentSlot(item)) || Boolean(getWeaponSlot(item)))
   )
 }

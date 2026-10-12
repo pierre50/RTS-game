@@ -42,19 +42,3 @@ function isClickDispatchable(hero: UnitEntity, target: RuntimeEntity): boolean {
 export function resolveClickTarget(hero: UnitEntity, worldPoint: Point, cell: RuntimeCell): RuntimeEntity | null {
   return findNearestInteractable(hero, worldPoint, cell, target => isClickDispatchable(hero, target))
 }
-
-export function resolveHoverTarget(
-  hero: UnitEntity,
-  worldPoint: Point,
-  cell: RuntimeCell | null
-): RuntimeEntity | null {
-  return findNearestInteractable(
-    hero,
-    worldPoint,
-    cell,
-    target =>
-      isClickDispatchable(hero, target) ||
-      target.family === FAMILY_TYPES.animal ||
-      (target.family === FAMILY_TYPES.unit && target.owner !== hero.owner && !target.isDead)
-  )
-}

@@ -7,7 +7,7 @@ const huntingKit: QuestInteraction['effects'] = [
 ]
 
 const defenseKit: QuestInteraction['effects'] = [
-  { type: 'give-item', resource: 'sword_ceramic', quantity: 1, equip: true },
+  { type: 'give-item', resource: 'axe_ceramic', quantity: 1, equip: true },
 ]
 
 export const tutorialHuntQuest: QuestDefinition = {

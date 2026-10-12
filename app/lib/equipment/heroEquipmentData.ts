@@ -54,6 +54,8 @@ function equipHeroWeaponInventoryItem(hero: UnitEntity | null | undefined, equip
   bag.splice(bagIndex, 1)
   const previous = inventory.activeWeapons[slot]
   if (previous) bag.push(previous)
+  if (slot === 'tool') delete hero.inventory!.toolSupplyTarget
   inventory.activeWeapons[slot] = equipment
+  inventory.toolsStowed = false
   return true
 }

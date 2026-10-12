@@ -56,9 +56,16 @@ export async function acquireGameWakeLock(game: GameRuntimeLifecycleHost): Promi
     game._wakeLock = await navigator.wakeLock.request('screen')
     document.addEventListener(
       'visibilitychange',
-      (game._onVisibilityChange = async () => {
+      (game._onVisibilityChange = () => {
         if (game._wakeLock && document.visibilityState === 'visible') {
-          game._wakeLock = await navigator.wakeLock.request('screen').catch(() => null)
+          void navigator.wakeLock.request('screen').then(
+            lock => {
+              game._wakeLock = lock
+            },
+            () => {
+              game._wakeLock = null
+            }
+          )
         }
       })
     )

@@ -1,5 +1,5 @@
-import { t } from '../lang'
 import { getWindowField } from './GameWindowForms'
+import { createEquipmentDurabilityBar } from './EquipmentDurabilityBar'
 
 const WINDOW_ROW = '.inventory-action-row'
 const GLOBAL_ACTION = '[data-window-action], .entity-delete-building-button'
@@ -12,7 +12,7 @@ export function isWindowItemCandidate(element: HTMLElement, footer: HTMLElement,
   return (
     !footer.contains(element) &&
     !details.contains(element) &&
-    !element.matches('.window-choice-arrow') &&
+    !element.matches('.window-choice-arrow, .ui-variant-arrow') &&
     !element.closest('.inventory-row-actions') &&
     !element.matches(GLOBAL_ACTION)
   )
@@ -28,6 +28,7 @@ export function findRetainedWindowItem(
   return (
     items.find(item => item === selected) ??
     items.find(item => selectedId && item.id === selectedId) ??
+    (!selectedId ? items.find(item => item.hasAttribute?.('data-window-default')) : undefined) ??
     items[Math.min(selectedIndex, items.length - 1)] ??
     null
   )
@@ -103,7 +104,7 @@ export function preferActiveWindowTab(
   return items.find(item => item.matches('.ui-tab[aria-selected="true"]')) ?? next
 }
 
-export function renderWindowDetails(details: HTMLElement, selected: HTMLElement | null): void {
+function renderWindowDetails(details: HTMLElement, selected: HTMLElement | null): void {
   const row = selected?.matches(
     `${WINDOW_ROW}:not(.inventory-action-row--no-icon), .hero-building-menu-body > button.ui-action-row`
   )
@@ -158,17 +159,9 @@ export function renderWindowDetails(details: HTMLElement, selected: HTMLElement 
   row?.querySelectorAll<HTMLElement>(DETAIL_PARTS).forEach(append)
   const durability = row?.dataset.equipmentDurability
   if (durability != null && Number.isFinite(Number(durability))) {
-    const value = Math.max(0, Math.min(100, Number(durability)))
-    const bar = document.createElement('span')
-    bar.className = 'game-window-detail-durability ui-progress'
-    bar.setAttribute('role', 'progressbar')
-    bar.setAttribute('aria-label', t('equipmentCondition', { value }))
-    bar.setAttribute('aria-valuemin', '0')
-    bar.setAttribute('aria-valuemax', '100')
-    bar.setAttribute('aria-valuenow', String(value))
-    bar.style.setProperty('--equipment-durability-percent', `${value}%`)
-    bar.textContent = `${value}/100`
-    identity.insertBefore(bar, identity.querySelector('.game-window-detail-value'))
+    const bar = createEquipmentDurabilityBar(Number(durability))
+    bar.classList.add('game-window-detail-durability', 'ui-progress')
+    identity.appendChild(bar)
   }
   if (identity.childElementCount) content.appendChild(identity)
   const stats = row?.querySelector('.inventory-action-row-stats')
@@ -183,4 +176,29 @@ export function renderWindowDetails(details: HTMLElement, selected: HTMLElement 
   }
   details.hidden = !content.textContent
   if (details.innerHTML !== content.innerHTML) details.replaceChildren(...content.childNodes)
+}
+
+export function renderDockedWindowDetails(
+  panel: HTMLElement,
+  details: HTMLElement,
+  footer: HTMLElement,
+  selected: HTMLElement | null
+): void {
+  const dock = panel.querySelector<HTMLElement>('.inventory-rpg:not(.hidden) .inventory-detail-dock')
+  const parent = dock ?? panel
+  if (details.parentElement !== parent) {
+    if (dock) dock.appendChild(details)
+    else panel.insertBefore(details, footer)
+  }
+  renderWindowDetails(details, selected)
+}
+
+export function firstConstructionRow(
+  items: HTMLElement[],
+  selected: HTMLElement | null,
+  dy: number
+): HTMLElement | undefined {
+  return dy > 0 && selected?.matches('.ui-tab')
+    ? items.find(item => item.matches('.inventory-construction-row'))
+    : undefined
 }

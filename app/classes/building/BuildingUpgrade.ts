@@ -3,7 +3,7 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import { expelBuildingInteriorOccupants } from '../../services/BuildingInteriorSpaceSystem'
 import { getBuildingTrainingLoad } from '../../lib/buildings/buildingTraining'
 import { getBuildingConfigForLevel, getBuildingLevel } from '../../lib/buildings/buildingLevel'
-import { nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
+import { getBuildingUpgradeCost, nextBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
 import { heroCanCommand } from '../../lib/chief'
 import { isHeroInteractionTargetReachable } from '../../lib/hero/heroActionRange'
 import { createConstructionMaterials } from '../../lib/economy/constructionMaterials'
@@ -30,14 +30,18 @@ export function canStartBuildingUpgrade(building: BuildingEntity, hero?: UnitEnt
 
 export function startBuildingUpgrade(building: BuildingEntity, hero?: UnitEntity | null): boolean {
   if (!building.owner || !canStartBuildingUpgrade(building, hero)) return false
-  const targetLevel = nextBuildingUpgrade(building.owner.config.buildings[building.type], getBuildingLevel(building))!
-  const config = getBuildingConfigForLevel(building.owner.config.buildings[building.type], targetLevel)
+  const definition = building.owner.config.buildings[building.type]
+  const currentLevel = getBuildingLevel(building)
+  const targetLevel = nextBuildingUpgrade(definition, currentLevel)!
+  const config = getBuildingConfigForLevel(definition, targetLevel)
   building.buildingUpgrade = {
     targetLevel,
     constructionProgress: 0,
-    constructionTime: config.constructionTime ?? 1,
+    constructionTime: config.constructionWorkRequired ?? config.constructionTime ?? 1,
   }
-  building.constructionMaterials = createConstructionMaterials(config.cost)
+  building.constructionMaterials = createConstructionMaterials(
+    getBuildingUpgradeCost(definition, currentLevel, targetLevel)
+  )
   if (building.context) expelBuildingInteriorOccupants(building.context, building, { unitsOnly: true })
   refreshPopulationCapacity(building.owner)
   building.context?.menu?.updateTopbar?.()

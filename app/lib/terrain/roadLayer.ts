@@ -56,3 +56,20 @@ export function roadAtlasFrame(terrainFrame: number | string, connections: numbe
   if (row === undefined) throw new Error(`Unsupported road terrain frame: ${terrainFrame}`)
   return row * 16 + connections
 }
+
+const roadCellIndexes = new WeakMap<RoadLayer, ReadonlySet<number>>()
+
+/** Roads belong to the outside map, never to an interior at the same coordinates. */
+export function isRoadCell(
+  roads: RoadLayer | undefined,
+  point: { i: number; j: number; spaceId?: string | null }
+): boolean {
+  if (!roads || (point.spaceId && point.spaceId !== 'outside')) return false
+  if (point.i < 0 || point.j < 0 || point.i >= roads.stride || point.j >= roads.stride) return false
+  let cells = roadCellIndexes.get(roads)
+  if (!cells) {
+    cells = new Set(roads.cells.map(([id]) => id))
+    roadCellIndexes.set(roads, cells)
+  }
+  return cells.has(point.i * roads.stride + point.j)
+}

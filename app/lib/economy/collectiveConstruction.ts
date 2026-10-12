@@ -1,3 +1,4 @@
+import { canAutonomouslyWork } from '../equipment/workTools'
 import type { ForgeUpgrades } from '../equipment/forgeUpgrades'
 import { hasConstructionWork } from './constructionMaterials'
 import { constructionAssignment } from './constructionAssignments'
@@ -13,7 +14,7 @@ import {
 } from './constructionMaterials'
 import { type DepotReservePolicy } from './depotReserves'
 
-export type Point = { i: number; j: number; spaceId?: string | null }
+export type Point = { i: number; j: number; spaceId?: string | null; id?: string }
 
 export type CollectiveMember = Point & {
   followingHero?: boolean
@@ -23,8 +24,13 @@ export type CollectiveMember = Point & {
   isDead?: boolean
   isDestroyed?: boolean
   collectiveHome?: Point
-  villageHome?: Point
-  inventory?: { resources?: ResourceAmount; equipment?: string[]; activeWeapons?: { melee?: string | null } }
+  villageHome?: Point & { id?: string }
+  inventory?: {
+    resources?: ResourceAmount
+    equipment?: string[]
+    toolsStowed?: boolean
+    activeWeapons?: { melee?: string | null; tool?: string }
+  }
   autonomousJob?: string | null
   inactif?: boolean
   action?: string | null
@@ -34,6 +40,8 @@ export type CollectiveMember = Point & {
 export type CollectiveSite = Point &
   MaterialSite & {
     type: string
+    buildingLevel?: number
+    assetLevel?: unknown
     label?: string
     isDead?: boolean
     isDestroyed?: boolean
@@ -60,6 +68,7 @@ export function collectiveAnchor(owner: Owner, unit: CollectiveMember): Collecti
   const point = collectivePosition(unit)
   const territory = getBaseTerritory(point, [owner])
   if (territory) return territory.center
+  if (point.id) return point
   return (
     (owner.buildings ?? [])
       .filter(
@@ -106,12 +115,14 @@ export function activeConstructionSite(owner: Owner, unit: CollectiveMember): Co
 }
 
 export function readyConstructionSite(owner: Owner, unit: CollectiveMember): CollectiveSite | undefined {
+  if (!canAutonomouslyWork(unit, 'construction')) return undefined
   const site = activeConstructionSite(owner, unit)
   const bag = unit.inventory?.resources ?? {}
   if (!site || materialAmount(bag, 'food') < (DAILY_CONSUMPTION_PER_VILLAGER.food ?? 0)) return
-  if (Object.keys(missingConstructionMaterialsForNextPoint(site, bag)).length) return
+  const missing = missingConstructionMaterialsForNextPoint(site)
   if (
-    !Object.keys(remainingConstructionMaterials(site)).some(key => materialAmount(bag, key as keyof ResourceAmount) > 0)
+    Object.keys(missing).length &&
+    !Object.keys(missing).some(key => materialAmount(bag, key as keyof ResourceAmount) > 0)
   )
     return
   return site
@@ -119,6 +130,7 @@ export function readyConstructionSite(owner: Owner, unit: CollectiveMember): Col
 
 /** Keep a balanced construction load; only excess or unrelated cargo may be deposited. */
 export function constructionCargoReserve(owner: Owner, unit: CollectiveMember, resource: keyof ResourceAmount): number {
+  if (!canAutonomouslyWork(unit, 'construction')) return 0
   const site = activeConstructionSite(owner, unit)
   if (!site) return 0
   const anchor = collectiveAnchor(owner, site)

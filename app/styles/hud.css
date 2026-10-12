@@ -167,6 +167,19 @@
   text-shadow: var(--text-shadow-ui);
 }
 
+.hero-status-settlement {
+  margin: 0 0 var(--ui-gap-8);
+  padding: 0 var(--ui-gap-8);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  overflow-wrap: anywhere;
+  text-shadow: var(--text-shadow-ui);
+}
+
+.hero-status-settlement[hidden] {
+  display: none;
+}
+
 .hero-status-hud.hidden {
   display: none;
 }
@@ -881,8 +894,9 @@
 }
 
 .action-menu-minimap-page {
+  --inventory-map-square-max-height: min(540px, max(180px, calc(100dvh - 280px)));
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 320px;
   overflow: visible;
@@ -898,12 +912,26 @@
 
 .action-menu-info-page {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ui-gap-18);
 }
 
 .action-menu-info-page .entity-info-wrapper {
   width: 100%;
-  max-width: 480px;
+  max-width: none;
+  min-width: 0;
+}
+
+.action-menu-info-page > .inventory-discoveries {
+  width: 100%;
+  box-sizing: border-box;
+  border-top: 1px solid var(--window-line);
+  padding-top: var(--ui-gap-18);
+}
+
+.action-menu-info-page > .inventory-discoveries > :is(h3, p) {
+  margin: 0;
 }
 
 .action-menu-info-page .infos,
@@ -929,6 +957,7 @@
 }
 
 .action-menu-minimap-page .minimap-wrap {
+  margin-inline: auto;
   width: min(100%, var(--inventory-map-preview-max), var(--inventory-map-preview-gutter));
   height: auto;
   aspect-ratio: 2 / 1;
@@ -1790,6 +1819,13 @@ body.hero-game-cursor #hero-virtual-cursor.is-visible {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.base-report-arrivals {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--ui-gap-4);
+}
+.base-report-arrivals .base-report-value {
+  text-align: left;
+}
 .base-resource-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--base-report-resource-min-width)), 1fr));
@@ -1817,7 +1853,7 @@ body.hero-game-cursor #hero-virtual-cursor.is-visible {
   color: var(--text-color-secondary);
 }
 
-.minimap-legend-toggle {
+.minimap-legend-entry {
   grid-template-columns: 24px minmax(0, 1fr) auto;
   column-gap: 10px;
   box-sizing: border-box;
@@ -1836,33 +1872,16 @@ body.hero-game-cursor #hero-virtual-cursor.is-visible {
   background: #ffffff12;
   outline: none;
 }
-.minimap-legend-toggle.is-hidden {
+.minimap-legend-entry.is-hidden {
   opacity: 0.45;
 }
-.minimap-legend-toggle.is-hidden .worldmap-legend-name {
+.minimap-legend-entry.is-hidden .worldmap-legend-name {
   text-decoration: line-through;
 }
 .minimap-legend-icon {
   display: block;
   width: 12px;
   height: 12px;
-}
-
-.minimap-zoom-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.minimap-zoom-controls button {
-  min-width: 34px;
-  min-height: 32px;
-}
-.minimap-zoom-controls span {
-  min-width: 54px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 
 .worldmap-legend-swatch.minimap-legend-marker {
@@ -2017,4 +2036,164 @@ body.hero-game-cursor #hero-virtual-cursor.is-visible {
 .minimap-symbol > img {
   width: 20px;
   height: 20px;
+}
+
+/* Shared costs in construction, crafting, repairs and building upgrades. */
+.resource-cost {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--ui-gap-6);
+  max-width: 100%;
+}
+
+.resource-cost-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-6);
+}
+
+.resource-cost-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-gap-6);
+  padding: 3px var(--ui-gap-6);
+  white-space: nowrap;
+  background: rgba(5, 7, 18, 0.28);
+  border: 1px solid var(--border-divider-subtle);
+}
+
+.resource-cost-item img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.resource-cost-item.inventory-cost-is-missing {
+  color: var(--text-color-danger);
+}
+
+.resource-cost-hint {
+  font-size: var(--font-size-sm);
+  opacity: 0.75;
+}
+
+/* Map controls live in the shared action bar; the legend remains informational. */
+.action-menu-minimap-page .minimap-wrap {
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+}
+.action-menu-minimap-page .minimap-wrap:active {
+  cursor: grabbing;
+}
+.minimap-cursor {
+  z-index: 3;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--main-accent-hover);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px #101426;
+  pointer-events: none;
+}
+.minimap-zoom-status {
+  z-index: 3;
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 4px 8px;
+  background: var(--main-primary-color);
+  color: var(--main-accent-hover);
+  pointer-events: none;
+}
+.minimap-location-status,
+.minimap-navigation-hint {
+  margin: var(--ui-gap-8) 0 0;
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+.minimap-navigation-hint {
+  color: var(--text-color-secondary);
+}
+.minimap-hint-gamepad {
+  display: none;
+}
+[data-input-mode='gamepad'] .minimap-hint-keyboard {
+  display: none;
+}
+[data-input-mode='gamepad'] .minimap-hint-gamepad {
+  display: inline;
+}
+.minimap-filter-panel > .worldmap-legend {
+  width: 100%;
+}
+.minimap-filter-panel .minimap-shape-legend > :not(button) {
+  display: none;
+}
+.minimap-legend .worldmap-legend-swatch:not(.minimap-legend-marker) {
+  width: 12px;
+  height: 12px;
+  justify-self: center;
+  border-radius: 50%;
+  transform: none;
+}
+
+/* Compact shared construction card, with the same badges as materials. */
+.construction-site {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-6);
+  padding: var(--ui-gap-6) var(--ui-gap-12, 12px);
+  border: 1px solid var(--border-divider-subtle);
+  border-left: 3px solid var(--text-color-gold, #f6df92);
+  background: rgba(5, 7, 18, 0.2);
+  max-width: 100%;
+}
+.construction-site-heading {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-gold, #f6df92);
+}
+.construction-site-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-6);
+}
+.construction-site .resource-cost-heading,
+.construction-site .resource-cost-hint {
+  display: none;
+}
+.construction-site-time {
+  color: var(--text-color-gold, #f6df92);
+}
+.construction-site-hourglass {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+}
+.construction-site-hourglass svg {
+  width: 100%;
+  height: 100%;
+}
+.construction-site .construction-work-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-6);
+  font-size: var(--font-size-sm);
+}
+.construction-site-progress {
+  width: 100px;
+  height: 8px;
+  accent-color: #f6df92;
+}
+.construction-site.is-paused {
+  border-left-color: #a9adbf;
+}
+.construction-site.is-paused .construction-site-progress {
+  accent-color: #a9adbf;
 }

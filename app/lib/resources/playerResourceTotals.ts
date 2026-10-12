@@ -1,10 +1,11 @@
 import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
-import type { BuildingEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { ResourceStoreOwner, ResourceTotalOptions } from './playerResourceStores'
 import {
   getPersonalResourceHero,
+  resourceTransactionOptions,
   getPlayerResourceHeroes,
   getPlayerResourceStores,
   isVisibleStorageBuilding,
@@ -35,7 +36,7 @@ function getPlayerStoredResourceTotals(
   const totals = createEmptyResourceTotals()
   if (!player) return totals
 
-  for (const building of getPlayerResourceStores(player)) {
+  for (const building of getPlayerResourceStores(player, options)) {
     if (options.visibleOnly && !isVisibleStorageBuilding(building, player)) continue
     const resources = building.inventory?.resources
     if (!resources) continue
@@ -73,7 +74,7 @@ export function getPlayerResourceTotals(
 export function getMissingPlayerResources(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   cost: ResourceAmount,
-  options: { includeHero?: boolean; hero?: UnitEntity | null } = {}
+  options: ResourceTotalOptions = {}
 ): ResourceAmount {
   const totals = getPlayerResourceTotals(player, options)
   const missing: ResourceAmount = {}
@@ -95,9 +96,10 @@ export function syncPlayerResourceFieldsFromChests(player: ResourceStoreOwner | 
 export function withdrawChestResources(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   cost: ResourceAmount | null | undefined,
-  options: { includeHero?: boolean; hero?: UnitEntity | null } = {}
+  options: ResourceTotalOptions = {}
 ): boolean {
   if (!player || !cost) return false
+  options = resourceTransactionOptions(player, options)
   const missing = getMissingPlayerResources(player, cost, options)
   if (Object.keys(missing).length > 0) return false
 
@@ -109,7 +111,7 @@ export function withdrawChestResources(
     let remaining = Math.max(0, Math.floor(rawAmount ?? 0))
     if (remaining <= 0) continue
 
-    const stores = personalHero ? [] : getPlayerResourceStores(player)
+    const stores = personalHero ? [] : getPlayerResourceStores(player, options)
     const heroes =
       options.includeHero === false ? [] : personalHero ? [personalHero] : getPlayerResourceHeroes(player, options.hero)
     for (const store of [...stores, ...heroes]) {
@@ -139,10 +141,11 @@ function getStoreResourceTotal(store: BuildingEntity): number {
 export function depositChestResources(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   resourcesToDeposit: ResourceAmount | null | undefined,
-  options: { automaticDelivery?: boolean; allowPartial?: boolean } = {}
+  options: ResourceTotalOptions & { automaticDelivery?: boolean; allowPartial?: boolean } = {}
 ): boolean {
   if (!player || !resourcesToDeposit) return false
-  const stores = getPlayerResourceStores(player).filter(store => store.isBuilt !== false)
+  options = { ...options, ...resourceTransactionOptions(player, { ...options, includeHero: false }) }
+  const stores = getPlayerResourceStores(player, options).filter(store => store.isBuilt !== false)
   if (!stores.length) return false
   const buildings = player.buildings ?? []
   const parentOf = (store: BuildingEntity) =>

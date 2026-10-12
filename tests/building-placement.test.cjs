@@ -245,3 +245,25 @@ test('building placement allows units in its extra clearance', () => {
     true
   )
 })
+
+test('roads reject every footprint cell, including edges, but allow building beside the road', () => {
+  const grid = createGrid(9, (i, j) => createCell(i, j))
+  for (const building of [{ type: 'Trap', size: 1 }, tower, barracks]) {
+    const before = Math.floor((building.size - 1) / 2)
+    const after = building.size - before - 1
+    for (let i = 4 - before; i <= 4 + after; i++) {
+      for (let j = 4 - before; j <= 4 + after; j++) {
+        const roads = { version: 1, stride: 9, cells: [[i * 9 + j, 1]] }
+        assert.equal(canPlaceBuildingAt(grid, 4, 4, building, { roads }), false)
+      }
+    }
+    const roads = { version: 1, stride: 9, cells: [[(5 + after) * 9 + 4, 1]] }
+    assert.equal(canPlaceBuildingAt(grid, 4, 4, building, { roads }), true)
+  }
+})
+
+test('outside roads do not block interior cells at matching coordinates', () => {
+  const grid = createGrid(5, (i, j) => createCell(i, j, { spaceId: 'interior:house' }))
+  const roads = { version: 1, stride: 5, cells: [[12, 1]] }
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, barracks, { roads }), true)
+})

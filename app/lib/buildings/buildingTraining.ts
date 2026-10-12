@@ -1,4 +1,4 @@
-import { BUILDING_TRAINING_CAPACITY } from '../training/trainingRules'
+import { getBuildingTrainingCapacity } from '../training/trainingRules'
 import { BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { getMissingPlayerResources, hasPlayerResourceChests } from '../resources/playerResourceTotals'
 import type { ResourceAmount } from '../../types/common'
@@ -6,7 +6,7 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
 const DIRECT_TRAINING_CATEGORIES = new Set(['Civilian'])
-export { BUILDING_TRAINING_CAPACITY } from '../training/trainingRules'
+export { getBuildingTrainingCapacity } from '../training/trainingRules'
 
 type TrainingLoadUnit = {
   dest?: unknown
@@ -15,6 +15,9 @@ type TrainingLoadUnit = {
   isDestroyed?: boolean
 }
 type TrainingLoadBuilding = {
+  type?: string
+  buildingLevel?: number
+  assetLevel?: unknown
   buildingUpgrade?: unknown
   trainingQueue?: readonly unknown[]
   queue?: readonly string[]
@@ -65,7 +68,7 @@ export function hasBuildingTrainingCapacity(
   building: TrainingLoadBuilding,
   options?: BuildingTrainingLoadOptions
 ): boolean {
-  return !building.buildingUpgrade && getBuildingTrainingLoad(building, options) < BUILDING_TRAINING_CAPACITY
+  return !building.buildingUpgrade && getBuildingTrainingLoad(building, options) < getBuildingTrainingCapacity(building)
 }
 
 export function getMissingResourceNames(

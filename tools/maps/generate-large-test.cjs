@@ -1,3 +1,4 @@
+const { addGroundResources } = require('./ground-resources.cjs')
 const { sourcePosition } = require('../caves/settlements.cjs')
 const { planContinentCamps, SMALL_CAMP_LAND_CELLS, LAIR_FRACTION } = require('../caves/continent-camps.cjs')
 // Single-region continent. Run: node tools/maps/generate-large-test.cjs [--size 5000] [--out directory]
@@ -85,47 +86,49 @@ async function main() {
       world: sourcePosition(camp, layout),
       strength: camp.unitTypes.length,
     }))
-    const blueprint = addVillageGroves({
-      format: 'map-blueprint',
-      version: 2,
-      id,
-      sourceSize,
-      size,
-      seed,
-      mapType: 'world-region',
-      environment: 'Temperate',
-      encoding: 'base64',
-      cellCount: terrain.length,
-      localGridLayout: layout,
-      terrain: terrain.toString('base64'),
-      relief: Buffer.from(relief.buffer, relief.byteOffset, relief.byteLength).toString('base64'),
-      terrainAppearanceData: Buffer.from(encodePreparedTerrain(content.appearance, size)).toString('base64'),
-      preparedContentVersion: 2,
-      generation: {
-        version: 6,
-        villagePlacement: { version: 2, mode: 'civilization-settlements', placed: settlements.length },
-        generator: 'macro-continent',
-        relief: { version: 1, profiles: 'environment-terrain-params' },
-        coastCleanup,
+    const blueprint = addGroundResources(
+      addVillageGroves({
+        format: 'map-blueprint',
+        version: 2,
+        id,
+        sourceSize,
+        size,
         seed,
-        biomes: biomes.split(','),
-        biomeCounts,
-        campPlacement: { version: 1, cellsPerCamp, lairFraction, placed: camps.length },
-        cavePlacement: {
-          version: 1,
-          cellsPerCave,
-          minDistance: cavePlan.minDistance,
-          target: cavePlan.target,
-          placed: cavePlan.caves.length,
+        mapType: 'world-region',
+        environment: 'Temperate',
+        encoding: 'base64',
+        cellCount: terrain.length,
+        localGridLayout: layout,
+        terrain: terrain.toString('base64'),
+        relief: Buffer.from(relief.buffer, relief.byteOffset, relief.byteLength).toString('base64'),
+        terrainAppearanceData: Buffer.from(encodePreparedTerrain(content.appearance, size)).toString('base64'),
+        preparedContentVersion: 2,
+        generation: {
+          version: 6,
+          villagePlacement: { version: 2, mode: 'civilization-settlements', placed: settlements.length },
+          generator: 'macro-continent',
+          relief: { version: 1, profiles: 'environment-terrain-params' },
+          coastCleanup,
+          seed,
+          biomes: biomes.split(','),
+          biomeCounts,
+          campPlacement: { version: 1, cellsPerCamp, lairFraction, placed: camps.length },
+          cavePlacement: {
+            version: 1,
+            cellsPerCave,
+            minDistance: cavePlan.minDistance,
+            target: cavePlan.target,
+            placed: cavePlan.caves.length,
+          },
         },
-      },
-      spawns: settlements.map(site => site.local),
-      settlements: [...settlements, ...campSettlements],
-      resources: content.resources,
-      animals: content.animals,
-      banditCampPositions: camps,
-      caves: cavePlan.caves,
-    })
+        spawns: settlements.map(site => site.local),
+        settlements: [...settlements, ...campSettlements],
+        resources: content.resources,
+        animals: content.animals,
+        banditCampPositions: camps,
+        caves: cavePlan.caves,
+      })
+    )
     const manifest = {
       format: 'macro-world-map-manifest',
       version: 1,

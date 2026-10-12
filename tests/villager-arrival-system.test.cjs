@@ -4,7 +4,14 @@ const test = require('node:test')
 const beds = count =>
   Array.from({ length: count }, (_, i) => ({ type: 'CampBedroll', isBuilt: true, label: `bed-${i}` }))
 const houses = count =>
-  beds(count).map((bed, i) => ({ type: 'House', label: `house-${i}`, isBuilt: true, interiorBuildings: [bed] }))
+  beds(count).map((bed, i) => ({
+    type: 'House',
+    i: 12,
+    j: 10,
+    label: `house-${i}`,
+    isBuilt: true,
+    interiorBuildings: [bed],
+  }))
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadVillagerArrivalSystem() {
@@ -25,8 +32,8 @@ function loadVillagerArrivalSystem() {
     '../../lib/lang': {
       t: (key, vars) => (vars?.count == null ? key : `${key}:${vars.count}`),
     },
-    '../../lib/resources/playerResourceTotals': {
-      getPlayerResourceTotals: player => ({ food: player.foodAvailable ?? 0 }),
+    '../resources/playerResourceTotals': {
+      getPlayerResourceTotals: player => ({ food: player.foodAvailable ?? 5000 }),
     },
   })
 }
@@ -44,6 +51,8 @@ test('villager arrival growth is capped by population demand, housing and daily 
         ...houses(populationMax),
         {
           type: 'TownCenter',
+          i: 10,
+          j: 10,
           isBuilt: true,
           placeUnit() {
             arrivals++
@@ -59,13 +68,13 @@ test('villager arrival growth is capped by population demand, housing and daily 
     return arrivals
   }
 
-  assert.equal(run({ foodAvailable: 5000, population: 40, populationMax: 100 }), 4)
-  assert.equal(run({ foodAvailable: 5000, population: 80, populationMax: 100 }), 5)
-  assert.equal(run({ foodAvailable: 5000, population: 40, populationMax: 42 }), 2)
-  assert.equal(run({ foodAvailable: 500, population: 40, populationMax: 100 }), 4)
+  assert.equal(run({ foodAvailable: 5000, population: 40, populationMax: 100 }), 1)
+  assert.equal(run({ foodAvailable: 5000, population: 80, populationMax: 100 }), 1)
+  assert.equal(run({ foodAvailable: 5000, population: 40, populationMax: 42 }), 1)
+  assert.equal(run({ foodAvailable: 500, population: 40, populationMax: 100 }), 1)
 })
 
-test('villager arrival requires free housing but no food reserve', () => {
+test('villager arrival requires free housing and food reserves', () => {
   const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
   const run = ({ foodAvailable, population, populationMax }) => {
     let arrivals = 0
@@ -78,6 +87,8 @@ test('villager arrival requires free housing but no food reserve', () => {
         ...houses(populationMax),
         {
           type: 'TownCenter',
+          i: 10,
+          j: 10,
           isBuilt: true,
           placeUnit() {
             arrivals++
@@ -93,7 +104,7 @@ test('villager arrival requires free housing but no food reserve', () => {
     return arrivals
   }
 
-  assert.equal(run({ foodAvailable: 0, population: 6, populationMax: 20 }), 1)
+  assert.equal(run({ foodAvailable: 0, population: 6, populationMax: 20 }), 0)
   assert.equal(run({ foodAvailable: 92, population: 6, populationMax: 20 }), 1)
   assert.equal(run({ foodAvailable: 0, population: 6, populationMax: 6 }), 0)
   assert.equal(run({ foodAvailable: 0, population: 0, populationMax: 20 }), 0)
@@ -105,6 +116,8 @@ test('daily villager arrival places villagers for a played village and reports t
   const reportEntries = []
   const townCenter = {
     type: 'TownCenter',
+    i: 10,
+    j: 10,
     isBuilt: true,
     placeUnit(type, extra, options) {
       calls.push(['placeUnit', type, extra.gender, options.consumePopulationSlot])
@@ -136,12 +149,12 @@ test('daily villager arrival places villagers for a played village and reports t
     report: { add: entry => reportEntries.push(entry) },
   })
 
-  assert.equal(calls.filter(call => call[0] === 'placeUnit').length, 4)
+  assert.equal(calls.filter(call => call[0] === 'placeUnit').length, 1)
   assert.deepEqual(messages, [])
   assert.ok(calls.some(call => call[0] === 'updateTopbar'))
   assert.deepEqual(
     reportEntries.map(entry => [entry.type, entry.count, entry.player]),
-    [['villager-arrival', 4, player]]
+    [['villager-arrival', 1, player]]
   )
 })
 
@@ -151,13 +164,15 @@ test('daily villager arrival uses the same growth rules for AI without showing p
   const player = {
     type: 'AI',
     isPlayed: false,
-    foodAvailable: 0,
+    foodAvailable: 5000,
     population: 20,
     populationMax: 40,
     buildings: [
       ...houses(40),
       {
         type: 'TownCenter',
+        i: 10,
+        j: 10,
         isBuilt: true,
         placeUnit() {
           arrivals++
@@ -179,7 +194,7 @@ test('daily villager arrival uses the same growth rules for AI without showing p
 
   new VillagerArrivalSystem(context).handleDailyWorldEvent({ day: 2, previousDay: 1 })
 
-  assert.equal(arrivals, 2)
+  assert.equal(arrivals, 1)
   assert.deepEqual(messages, [])
 })
 
@@ -188,13 +203,15 @@ test('only beds add capacity; occupied beds count and the town center remains th
   let arrivals = 0
   const center = {
     type: 'TownCenter',
+    i: 10,
+    j: 10,
     isBuilt: true,
     placeUnit() {
       arrivals++
       return true
     },
   }
-  const house = { type: 'House', label: 'house', isBuilt: true, interiorBuildings: [] }
+  const house = { type: 'House', i: 12, j: 10, label: 'house', isBuilt: true, interiorBuildings: [] }
   const player = { type: 'Human', population: 2, buildings: [center, house], populationMax: 999 }
   const system = new VillagerArrivalSystem({ map: { random: () => 0.25 }, players: [player] })
   const update = () => system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
@@ -202,7 +219,7 @@ test('only beds add capacity; occupied beds count and the town center remains th
   assert.equal(arrivals, 0)
   assert.equal(player.populationMax, 0, 'stale house capacity must be discarded')
   house.interiorBuildings = beds(3)
-  player.units = [{ shelterState: { restTarget: house.interiorBuildings[0], status: 'outside' } }]
+  player.units = [{ i: 10, j: 10, shelterState: { restTarget: house.interiorBuildings[0], status: 'outside' } }]
   update()
   assert.equal(arrivals, 1)
   assert.equal(player.populationMax, 3)
@@ -216,18 +233,20 @@ test('only beds add capacity; occupied beds count and the town center remains th
   assert.equal(arrivals, 1, 'beds cannot replace the arrival point')
 })
 
-test('a daily arrival receives its own home; spare beds in occupied homes do not attract arrivals', () => {
+test('a daily arrival uses a free bed in an occupied home', () => {
   const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
   const player = {
     label: 'player',
     type: 'Human',
     population: 1,
-    units: [{ type: 'Villager', label: 'first' }],
+    units: [{ type: 'Villager', label: 'first', i: 10, j: 10 }],
     buildings: houses(2),
   }
   player.buildings[0].interiorBuildings.push({ type: 'CampBedroll', label: 'spare-bed', isBuilt: true })
   player.buildings.push({
     type: 'TownCenter',
+    i: 10,
+    j: 10,
     isBuilt: true,
     placeUnit(type, extra) {
       player.units.push({ type, ...extra, label: `arrival-${player.units.length}` })
@@ -239,15 +258,62 @@ test('a daily arrival receives its own home; spare beds in occupied homes do not
   system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
   assert.equal(player.units.length, 2)
   assert.equal(player.units[0].homeHouseLabel, 'house-0')
-  assert.equal(player.units[1].homeHouseLabel, 'house-1')
-  assert.equal(player.units[1].homeBedLabel, 'bed-1')
+  assert.equal(player.units[1].homeHouseLabel, 'house-0')
+  assert.equal(player.units[1].homeBedLabel, 'spare-bed')
   system.handleDailyWorldEvent({ day: 3, previousDay: 2 })
-  assert.equal(player.units.length, 2)
+  assert.equal(player.units.length, 3)
   assert.equal(player.populationMax, 3)
 })
 
 test('village arrivals remain limited by housing rather than the old 200 cap', () => {
   const { calculateVillagerArrivals } = loadVillagerArrivalSystem()
-  assert.equal(calculateVillagerArrivals({ population: 200, populationMax: 205 }), 5)
+  assert.equal(calculateVillagerArrivals({ population: 200, populationMax: 205, buildingLevel: 2 }), 3)
   assert.equal(calculateVillagerArrivals({ population: 205, populationMax: 205 }), 0)
+})
+
+test('arrivals use only the destination town housing, including overlapping territories', () => {
+  const { VillagerArrivalSystem } = loadVillagerArrivalSystem()
+  const calls = []
+  const player = {
+    type: 'Human',
+    label: 'p',
+    population: 1,
+    units: [{ type: 'Villager', label: 'resident', i: 10, j: 10 }],
+    buildings: [],
+  }
+  const center = (label, i) => ({
+    type: 'TownCenter',
+    label,
+    i,
+    j: 10,
+    isBuilt: true,
+    placeUnit(type, extra) {
+      calls.push(label)
+      player.units.push({ type, label: `new-${calls.length}`, i, j: 10, ...extra })
+      player.population++
+      return true
+    },
+  })
+  const home = (label, i) => ({
+    type: 'House',
+    label,
+    i,
+    j: 10,
+    isBuilt: true,
+    interiorBuildings: [{ type: 'CampBedroll', label: `${label}-bed`, isBuilt: true }],
+  })
+  // The empty house lies inside both circles, but is closer to B.
+  player.buildings = [
+    center('A', 10),
+    center('B', 50),
+    home('occupied-A', 11),
+    home('free-B', 35),
+    home('outside', 100),
+  ]
+  const system = new VillagerArrivalSystem({ map: { random: () => 0.25 }, players: [player] })
+  system.handleDailyWorldEvent({ day: 2, previousDay: 1 })
+  assert.deepEqual(calls, ['B'])
+  assert.equal(player.units[1].homeHouseLabel, 'free-B')
+  system.handleDailyWorldEvent({ day: 3, previousDay: 2 })
+  assert.deepEqual(calls, ['B'], 'the house outside both territories cannot attract another arrival')
 })

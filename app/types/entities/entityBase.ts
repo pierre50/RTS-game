@@ -18,8 +18,6 @@ export type EntityLightSourceConfig = {
 }
 
 export type EntityInfoRenderOptions = {
-  // Character-sheet views (the hero's inventory "Infos" tab) want every XP category listed even
-  // at level 1; the compact side-HUD/modal/NPC-orders views stay filtered to earned categories only.
   // Conversations hide numerical information until the hero becomes chief.
   hideStats?: boolean
   // Modal windows already carry the entity identity in their title; hide duplicate identity labels
@@ -34,6 +32,7 @@ export interface EntityInterfaceLike {
 }
 
 export interface RuntimeEntityBase extends GridPosition, Point {
+  townCenterId?: string
   contact?: ContactProfileOverride
   label: string
   spaceId?: string

@@ -1,8 +1,12 @@
-import { getForgeBuildMultiplier } from '../../../lib/equipment/forgeUpgrades'
+import { constructionToolPreparation } from '../../../lib/units/supplies/toolPreparation'
+import { getWorkToolTier } from '../../../lib/equipment/workTools'
+import { wearEquippedTool } from '../../../lib/equipment/equipmentWear'
+import { observeEconomyChange } from '../../../lib/economy/economyTelemetry'
 import { notifyVillageWorkChanged } from '../../../lib/units/village/villageWorkEvents'
 import { t } from '../../../lib/lang'
 import {
   advanceMaterialConstruction,
+  deliverConstructionMaterials,
   applyConstructionWork,
   constructionWorkTotal,
   constructionWorkPoints,
@@ -68,15 +72,29 @@ function advanceConstruction(runtime: UnitResourceActions, dest: BuildingEntity)
   const unit = runtime.unit
   const menu = unit.context?.menu
   const player = unit.owner
+  if (constructionToolPreparation(unit, player)) {
+    unit.stop?.()
+    notifyVillageWorkChanged(player)
+    return
+  }
   const repairing = Boolean(dest.isBuilt && !dest.buildingUpgrade)
-  const multiplier = getBuildRateXpMultiplier(unit) * getForgeBuildMultiplier(unit.owner, unit.type)
+  const multiplier = getBuildRateXpMultiplier(unit) * (1 + getWorkToolTier(unit) * 0.25)
   const healthBefore = dest.hitPoints ?? 0
   const beforeWork = repairing ? healthBefore : constructionWorkPoints(dest)
   const requested = repairing
     ? advanceRepair(healthBefore, dest.totalHitPoints ?? 0, dest.constructionTime ?? 1, multiplier)
     : advanceConstructionProgress(beforeWork, constructionWorkTotal(dest), multiplier)
-  const next = repairing ? requested : advanceMaterialConstruction(dest, requested, [unit.inventory?.resources ?? {}])
+  const next = repairing
+    ? requested
+    : observeEconomyChange(
+        unit,
+        'construction',
+        () => dest.constructionMaterials?.consumed ?? {},
+        'added',
+        () => advanceMaterialConstruction(dest, requested)
+      )
   if (next === beforeWork) return
+  wearEquippedTool(unit, 'build')
   if (repairing) dest.hitPoints = next
   else applyConstructionWork(dest, next)
   notifyVillageWorkChanged(unit.owner)
@@ -93,7 +111,28 @@ function advanceConstruction(runtime: UnitResourceActions, dest: BuildingEntity)
 function blockUnfundedBuild(runtime: UnitResourceActions): boolean {
   const unit = runtime.unit
   if (!isBuildingEntity(unit.dest)) return false
-  const missing = missingConstructionMaterialsForNextPoint(unit.dest, unit.inventory?.resources)
+  if (unit.dest.constructionPaused) {
+    if (isHeroControlled(unit)) {
+      unit.context?.menu?.showMessage(t('constructionPaused'), 'warning')
+      stopManualHeroAction(unit)
+    } else {
+      unit.autonomousJob = null
+      unit.collectiveTask = null
+      unit.stop?.()
+      notifyVillageWorkChanged(unit.owner)
+    }
+    return true
+  }
+  if (!runtime.ensureWorkContact(unit.dest, true)) return true
+  const delivered = deliverConstructionMaterials(unit.dest, [unit.inventory?.resources ?? {}])
+  if (Object.keys(delivered).length) {
+    notifyVillageWorkChanged(unit.owner)
+    syncEntityHealthDisplay(
+      unit.dest,
+      definedProperties({ menu: unit.context?.menu, player: unit.owner, forceInfo: unit.owner?.isPlayed })
+    )
+  }
+  const missing = missingConstructionMaterialsForNextPoint(unit.dest)
   if (!Object.keys(missing).length) return false
   if (!isHeroControlled(unit)) {
     // stop() resumes autonomous work first; release the job so the collective planner can resupply.

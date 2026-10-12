@@ -1,3 +1,8 @@
+import { isGroundResourceType } from '../resources/groundResourceRegrowth'
+import { hasNpcWeaponInventory, hasUsableNpcRangedWeapon } from '../units/combat/npcWeapons'
+import { supplyTownArrows } from '../units/supplies/townArrowSupply'
+import { hasRangedAmmunition } from '../units/combat/rangedAmmunition'
+import type { UnitEntity } from '../../types/entities'
 import { hasAnimalCorpseLoot } from '../equipment/animalCorpseLoot'
 import { canGatherCaveMineral } from '../resources/caveMinerals'
 import type { CombatEntity } from '../../types/combat'
@@ -69,7 +74,10 @@ export function getResourceActionConditions(source: CombatEntity, target: Combat
           !target.isDestroyed
       ),
     hunt: () =>
+      (!hasNpcWeaponInventory(source as UnitEntity) || hasUsableNpcRangedWeapon(source as UnitEntity)) &&
       isVillagerOrHero(source) &&
+      (hasRangedAmmunition(source as UnitEntity) ||
+        supplyTownArrows(source as UnitEntity, (source as UnitEntity).owner, { hunting: true, preview: true }) > 0) &&
       target.family === FAMILY_TYPES.animal &&
       (target.quantity ?? 0) > 0 &&
       (target.hitPoints ?? 0) > 0 &&
@@ -95,7 +103,10 @@ export function getResourceActionConditions(source: CombatEntity, target: Combat
       (source.type === UNIT_TYPES.hero || !target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
     forageberry: () =>
-      isVillagerOrHero(source) && isForageResource(target) && (target.quantity ?? 0) > 0 && !target.isDead,
+      isVillagerOrHero(source) &&
+      (isForageResource(target) || (source.type === UNIT_TYPES.villager && isGroundResourceType(target.type ?? ''))) &&
+      (target.quantity ?? 0) > 0 &&
+      !target.isDead,
     ...Object.fromEntries(
       getMiningActionEntries().map(([resourceType, config]) => [
         config.action,

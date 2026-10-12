@@ -105,9 +105,13 @@ export type EquipmentStats = {
 }
 
 type BuildingLevelStats = {
+  /** Materials required to renovate from the previous available level. */
+  upgradeCost?: ResourceAmount
   cost?: ResourceAmount
   totalHitPoints?: number
   shelterCapacity?: number
+  /** Total construction work; constructionTime remains the repair pacing fallback. */
+  constructionWorkRequired?: number
   constructionTime?: number
 }
 
@@ -119,6 +123,8 @@ export interface BuildingConfig extends EntityConfig {
   requiresActiveSightInteraction?: boolean
   overheadIndicatorOffsetX?: number
   overheadIndicatorOffsetY?: number
+  /** Total construction work; constructionTime remains the repair pacing fallback. */
+  constructionWorkRequired?: number
   constructionTime?: number
   inventoryItem?: string
   shelterCapacity?: number

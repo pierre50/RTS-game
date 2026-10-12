@@ -88,11 +88,14 @@ export class Modal {
     document.addEventListener('keydown', this._onKeyDown)
     requestAnimationFrame(() => {
       if (!this._backdrop?.isConnected) return
-      // Tab headers can be mounted after construction. Restore their active tab on the first frame.
+      // Footer shortcuts remain reachable with Tab, but never receive the opening focus.
+      const contentControls = this._getFocusableElements().filter(element => !element.closest('.game-window-footer'))
+      // Content may nominate an initial control; other windows start on their active tab.
       const initial =
+        contentControls.find(element => element.hasAttribute('data-window-default')) ??
         this._panel?.querySelector<HTMLElement>('.modal-header .ui-tab[aria-selected="true"]') ??
         this._panel?.querySelector<HTMLElement>('.is-window-selected') ??
-        this._getFocusableElements()[0]
+        contentControls[0]
       initial?.focus()
       if (!this._panel?.contains(document.activeElement)) this._panel?.focus()
     })

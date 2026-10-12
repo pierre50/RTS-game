@@ -31,3 +31,16 @@ reports/health-logs/
 
 # Large generated test world exceeds the repository file-size limit.
 /public/maps/worlds/world-test-5000/
+
+!tools/ui-gallery/
+!tools/ui-gallery/**
+/reports/ui-gallery/
+
+!tools/economy-audit.cjs
+!tools/economy/
+!tools/economy/**
+/reports/economy/
+
+!tools/interiors-preview/
+!tools/interiors-preview/**
+/reports/interiors/

@@ -5,6 +5,8 @@ export const RESOURCE_TYPES = {
   medicinalHerb: 'MedicinalHerb',
   toxicHerb: 'ToxicHerb',
   fiberPlant: 'FiberPlant',
+  groundWood: 'GroundWood',
+  groundStone: 'GroundStone',
   stone: 'Stone',
   gold: 'Gold',
   copper: 'Copper',
@@ -20,7 +22,12 @@ export const WILDGRASS_RESOURCE_TYPES = new Set<string>([
 
 export const FORAGE_RESOURCE_TYPES = new Set<string>([RESOURCE_TYPES.berrybush, ...WILDGRASS_RESOURCE_TYPES])
 
-export const PASSABLE_RESOURCE_TYPES = new Set<string>([RESOURCE_TYPES.wheat, ...WILDGRASS_RESOURCE_TYPES])
+export const PASSABLE_RESOURCE_TYPES = new Set<string>([
+  RESOURCE_TYPES.wheat,
+  RESOURCE_TYPES.groundWood,
+  RESOURCE_TYPES.groundStone,
+  ...WILDGRASS_RESOURCE_TYPES,
+])
 
 export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'tin', 'iron'] as const
 
@@ -43,7 +50,6 @@ export const RESOURCE_STORAGE_NAMES = [
   'gold',
   'copper',
   'tin',
-  'copperIngot',
   'bronzeIngot',
   'ironIngot',
   'iron',
@@ -247,6 +253,8 @@ export const TYPE_ACTION = {
 
 export const RESOURCE_STOCKPILE_TYPES = {
   [RESOURCE_TYPES.tree]: 'wood',
+  [RESOURCE_TYPES.groundWood]: 'wood',
+  [RESOURCE_TYPES.groundStone]: 'stone',
   [RESOURCE_TYPES.berrybush]: 'berry',
   [RESOURCE_TYPES.wheat]: 'wheat',
   [RESOURCE_TYPES.medicinalHerb]: 'herb',

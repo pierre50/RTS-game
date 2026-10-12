@@ -30,6 +30,20 @@ function validateExtra(value: unknown, label: string): void {
     const number = value[key]
     if (number != null && (typeof number !== 'number' || !Number.isFinite(number) || number < 0)) invalid(label)
   }
+  if (value.villageHome != null) {
+    const home = value.villageHome
+    if (
+      !isObject(home) ||
+      typeof home.id !== 'string' ||
+      !home.id ||
+      home.spaceId !== 'outside' ||
+      !Number.isInteger(home.i) ||
+      !Number.isInteger(home.j) ||
+      Number(home.i) < 0 ||
+      Number(home.j) < 0
+    )
+      invalid(label)
+  }
   validateAmounts(value.experience, label)
   if (
     value.appearanceVariants != null &&

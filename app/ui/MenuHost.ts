@@ -1,5 +1,5 @@
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
-import type { GameContextLike, NpcOrdersOpenOptions } from '../types/context'
+import type { GameContextLike, NpcOrdersOpenOptions, MinimapManagerLike } from '../types/context'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from '../types/ui'
 import type { PlayerLike } from '../types/player'
 import type { ResourceAmount } from '../types/common'
@@ -11,6 +11,7 @@ interface MenuPauseHost {
 export interface MenuHost {
   context: GameContextLike
   gameHud: HTMLDivElement
+  minimapManager?: MinimapManagerLike
   minimapWrap: HTMLDivElement
   terrainMinimap?: HTMLCanvasElement
   playersMinimap: MinimapPlayerCanvas[]
@@ -30,7 +31,7 @@ export interface MenuHost {
   updateActionTarget(): void
   getMessage(cost: ResourceAmount): string
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
-  getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
+  getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null, buildingLevel?: number): MenuButtonSpec
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[]
   createActionIcon(src: string): HTMLImageElement
   refreshInventory?(): void

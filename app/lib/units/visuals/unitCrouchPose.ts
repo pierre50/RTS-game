@@ -55,7 +55,7 @@ function isHeldEquipmentKey(equipmentKey: string | undefined): boolean {
       (equipmentKey === 'bow' ||
         equipmentKey === 'bow_great' ||
         equipmentKey === 'bow_recurve' ||
-        equipmentKey === 'halberd' ||
+        equipmentKey.startsWith('spear_') ||
         equipmentKey === 'longsword' ||
         equipmentKey === 'cane' ||
         equipmentKey === 'longstick' ||

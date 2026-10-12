@@ -61,6 +61,7 @@ function loadPanel() {
       },
       '../../constants/consumption': {
         DAILY_CONSUMPTION_PER_VILLAGER: { food: 4 },
+        VILLAGER_ARRIVAL_CONFIG: { currentPopulationReserveDays: 3, newVillagerReserveDays: 5 },
       },
       '../../lib/horses/stableHorses': {
         STABLE_HORSE_CAPACITY: 5,
@@ -382,5 +383,63 @@ test('village report counts current training and waiting requests once, includin
     building.trainingRequests.pop()
     syncHeroVillageReport({ querySelector: () => report }, menu)
     assert.notEqual(report.dataset.signature, before)
+  })
+})
+
+test('selected town report shows local homes, residents and stocks without borrowing another city', () => {
+  withFakeDocument(() => {
+    const { createHeroVillageReport, syncHeroVillageReport } = loadPanel()
+    const home = (label, i, bed) => ({
+      type: 'House',
+      label,
+      i,
+      j: 10,
+      isBuilt: true,
+      interiorBuildings: [{ type: 'CampBedroll', label: bed, isBuilt: true }],
+    })
+    const a = { type: 'TownCenter', label: 'a', settlementName: 'Athènes', i: 10, j: 10, isBuilt: true }
+    const b = { type: 'TownCenter', label: 'b', i: 100, j: 10, isBuilt: true }
+    const player = {
+      label: 'p',
+      type: 'Human',
+      population: 1,
+      populationMax: 3,
+      buildings: [
+        a,
+        b,
+        home('home-a', 12, 'bed-a'),
+        home('free-a', 14, 'free-bed-a'),
+        home('home-b', 102, 'bed-b'),
+        { type: 'StoragePit', i: 13, j: 10, inventory: { resources: { wood: 7 } } },
+        { type: 'StoragePit', i: 103, j: 10, inventory: { resources: { wood: 99 } } },
+      ],
+      units: [{ type: 'Villager', label: 'traveler', i: 100, j: 10, homeHouseLabel: 'home-a', homeBedLabel: 'bed-a' }],
+    }
+    const menu = { context: { player } }
+    const section = createHeroVillageReport(menu, a)
+    assert.equal(section.children[0].textContent, 'Athènes')
+    const report = section.children[1]
+    const rows = () =>
+      Object.fromEntries(
+        report.children[1].children[1].children.map(row => row.children.map(child => child.textContent))
+      )
+    assert.equal(rows().villageReportResidents, '1', 'a traveling resident remains attached to their home')
+    assert.equal(rows().villageReportBeds, '2')
+    assert.equal(rows().villageReportOccupiedHomes, '1/2')
+    assert.equal(rows().villageReportVacantHomes, '1')
+    assert.equal(rows().villageReportArrivals, 'villageReportNoFood')
+    assert.equal(report.children[0].children[1].children[0].children[1].textContent, '7')
+    player.units.push({
+      type: 'Villager',
+      label: 'new',
+      i: 10,
+      j: 10,
+      homeHouseLabel: 'free-a',
+      homeBedLabel: 'free-bed-a',
+    })
+    player.population++
+    syncHeroVillageReport({ querySelector: () => report }, menu, a)
+    assert.equal(rows().villageReportVacantHomes, '0')
+    assert.equal(rows().villageReportArrivals, 'villageReportNoHousing', 'free homes in B do not enable arrivals in A')
   })
 })

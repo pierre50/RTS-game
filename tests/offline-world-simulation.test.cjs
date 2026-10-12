@@ -13,8 +13,16 @@ const villager = (extra = {}) => ({ type: 'Villager', label: 'worker', i: 10, j:
 const setBedCapacity = (player, count) => {
   player.buildings[0].interiorBuildings = []
   player.buildings = player.buildings.filter(b => !b.label?.startsWith('housing-'))
-  player.buildings.push(...Array.from({ length: count }, (_, i) => ({ type: 'House', label: `housing-${i}`, i: 25, j: i % 25, isBuilt: true,
-    interiorBuildings: [{ type: 'CampBedroll', label: `bed-${i}`, isBuilt: true }] })))
+  player.buildings.push(
+    ...Array.from({ length: count }, (_, i) => ({
+      type: 'House',
+      label: `housing-${i}`,
+      i: 25,
+      j: i % 25,
+      isBuilt: true,
+      interiorBuildings: [{ type: 'CampBedroll', label: `bed-${i}`, isBuilt: true }],
+    }))
+  )
 }
 const node = (type, extra = {}) => ({ type, label: 'node', i: 10, j: 12, quantity: 100, totalQuantity: 100, ...extra })
 
@@ -33,7 +41,15 @@ function fixture() {
         populationMax: 1,
         units: [villager()],
         buildings: [
-          { type: 'TownCenter', i: 6, j: 6, label: 'center', isBuilt: true, interiorBuildings: [{ type: 'CampBedroll', isBuilt: true }], inventory: { resources: { wheat: 100 } } },
+          {
+            type: 'TownCenter',
+            i: 6,
+            j: 6,
+            label: 'center',
+            isBuilt: true,
+            interiorBuildings: [{ type: 'CampBedroll', isBuilt: true }],
+            inventory: { resources: { wheat: 100 } },
+          },
           { type: 'StoragePit', i: 6, j: 12, label: 'pit', isBuilt: true, inventory: { resources: {} } },
           { type: 'Granary', i: 6, j: 16, label: 'grain', isBuilt: true, inventory: { resources: {} } },
         ],
@@ -204,7 +220,7 @@ test('construction follows saved queues and never grants housing for empty house
   assert.equal(player.populationMax, 1)
 })
 
-test('arrivals require housing but no food and villagers continue eating scheduled meals', () => {
+test('arrivals require housing and provisions while villagers continue eating scheduled meals', () => {
   const { state, options, player } = fixture()
   player.buildings[0].inventory.resources.wheat = 0
   player.buildings[2].inventory.resources.wheat = 100
@@ -220,8 +236,8 @@ test('arrivals require housing but no food and villagers continue eating schedul
   starving.player.buildings[0].inventory.resources.wheat = 0
   starving.player.buildings[2].inventory.resources.wheat = 2
   const hunger = simulateOfflineWorld(starving.state, starving.options)
-  assert.equal(hunger.arrivals, 1)
-  assert.equal(hunger.foodConsumed, 3) // Resident eats 2; arrival eats breakfast from personal provisions.
+  assert.equal(hunger.arrivals, 0)
+  assert.equal(hunger.foodConsumed, 2) // No arrivals when communal reserves are insufficient.
   assert.equal(hunger.foodShortage, 2)
   assert.equal(starving.player.food, 0)
 })
@@ -239,8 +255,8 @@ test('travelling followers do not consume food and arrivals leave hero inventori
   player.buildings[0].inventory.resources.wheat = 0
   player.units[0].inventory = { resources: { wheat: 4 } }
   const report = simulateOfflineWorld(state, options)
-  assert.equal(report.foodConsumed, 5) // Resident ration plus the new arrival's breakfast.
-  assert.equal(report.arrivals, 1)
+  assert.equal(report.foodConsumed, 4) // Only the resident eats; hero provisions do not enable arrivals.
+  assert.equal(report.arrivals, 0)
   assert.equal(player.units.find(unit => unit.type === 'Hero').inventory.resources.wheat, 10000)
 })
 
@@ -282,7 +298,12 @@ test('small absence preserves incomplete work for the next visit and stamps the 
 
 test('carried personal provisions remain in the bag before sleeping', () => {
   const { state, options, player } = fixture()
-  player.units[0].inventory = { resources: { wheat: 8 }, equipment: ['hammer'] }
+  player.units[0].inventory = {
+    toolsInitialized: true,
+    resources: { wheat: 8 },
+    equipment: ['hammer'],
+    npcArrows: { initialized: true },
+  }
   const report = simulateOfflineWorld(state, { ...options, fromElapsedMs: 14 * HOUR, toElapsedMs: 16 * HOUR })
   assert.equal(player.food, 100)
   assert.deepEqual(player.units[0].inventory.resources, { wheat: 8 })
@@ -311,6 +332,11 @@ test('offline iron mining requires bronze pickaxes and explored resources', () =
   assert.deepEqual(simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR }).gathered, {})
   player.forgeUpgrades = { pickaxes: 2 }
   assert.deepEqual(simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR, isKnown: () => false }).gathered, {})
+  // Research unlocks crafting; it does not upgrade the pickaxe already carried.
+  assert.deepEqual(simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR }).gathered, {})
+  player.units[0].inventory.equipment.push('pickaxe_bronze')
+  player.units[0].inventory.activeWeapons.tool = 'axe_ceramic'
+  player.units[0].inventory.equipment = player.units[0].inventory.equipment.filter(item => item !== 'pickaxe_ceramic')
   assert.ok(simulateOfflineWorld(state, { ...options, toElapsedMs: HOUR }).gathered.iron > 0)
 })
 
@@ -408,7 +434,7 @@ test('mounting preserves the reserved horse and soldier stats through offline co
   assert.equal(soldier.mountedOnHorse, true)
   assert.equal(soldier.horseColor, 'black')
   // The final quarter-hour of the soldier's night watch restores 18 * 9 / 480 health.
-  assert.equal(soldier.hitPoints, 14 + 18 * 9 / 480)
+  assert.equal(soldier.hitPoints, 14 + (18 * 9) / 480)
   assert.equal(soldier.speed, 2.4)
   assert.deepEqual(soldier.experience, { attack: 20 })
   assert.deepEqual(stable.stableHorses, [])
@@ -768,6 +794,7 @@ test('offline recruitment keeps five training places and advances a saved queue 
   )
   const barracks = {
     type: 'Barracks',
+    buildingLevel: 1,
     label: 'barracks',
     i: 15,
     j: 15,
@@ -804,6 +831,7 @@ function trainingFixture(recruits, requests, duration = 2) {
   )
   const barracks = {
     type: 'Barracks',
+    buildingLevel: 1,
     label: 'barracks',
     i: 15,
     j: 15,
@@ -900,4 +928,113 @@ test('detached AI cannot use a deposit across impassable terrain', () => {
   const report = simulateOfflineWorld(state, { ...options, abstractVillages: true, toElapsedMs: HOUR })
   assert.equal(report.gathered.wood ?? 0, 0)
   assert.equal(tree.quantity, 3)
+})
+
+test('offline arrivals reserve housing in their arrival town rather than a different city', () => {
+  const { state, options, player } = fixture()
+  const home = (label, i) => ({
+    type: 'House',
+    label,
+    i,
+    j: 6,
+    isBuilt: true,
+    interiorBuildings: [{ type: 'CampBedroll', label: `${label}-bed`, isBuilt: true }],
+  })
+  player.buildings.push(home('occupied-home', 7), home('new-town-home', 25), {
+    type: 'TownCenter',
+    label: 'second-center',
+    i: 26,
+    j: 6,
+    isBuilt: true,
+  })
+  const report = simulateOfflineWorld(state, options)
+  assert.equal(report.arrivals, 1)
+  const arrival = player.units.find(u => u.label.startsWith('offline-villager:'))
+  assert.equal(arrival.homeHouseLabel, 'new-town-home')
+  assert.ok(Math.hypot(arrival.i - 26, arrival.j - 6) < 8)
+})
+
+test('tool bootstrap and material construction agree across short saved catch-up windows', () => {
+  const setup = () => {
+    const f = fixture()
+    f.player.buildings = [
+      {
+        type: 'House',
+        label: 'bootstrap-site',
+        i: 12,
+        j: 8,
+        isBuilt: false,
+        hitPoints: 1,
+        totalHitPoints: 11,
+        constructionMaterials: { cost: { wood: 2, stone: 2 }, delivered: {}, consumed: {} },
+      },
+    ]
+    f.player.units[0].inventory = { toolsInitialized: true, activeWeapons: {}, equipment: [], resources: { wheat: 2 } }
+    f.state.resources = Array.from({ length: 31 }, (_, n) => ({
+      type: n < 14 ? 'GroundWood' : 'GroundStone',
+      label: `pickup-${n}`,
+      i: 14 + Math.floor(n / 10),
+      j: 5 + (n % 10),
+      quantity: 1,
+      totalQuantity: 1,
+      isNaturalResource: true,
+    }))
+    f.options = {
+      ...f.options,
+      runtimeOwnsMeals: true,
+      runtimeOwnsDailyEvents: true,
+      runtimeOwnsTraining: true,
+      buildingConfig: () => ({ size: 1, constructionTime: 4, totalHitPoints: 11 }),
+      spatialOptions: { traceConnectivity: false, protectVillageAccess: false },
+    }
+    return f
+  }
+  const whole = setup()
+  simulateOfflineWorld(whole.state, { ...whole.options, toElapsedMs: 180000 })
+  assert.equal(whole.player.buildings[0].isBuilt, true)
+  const split = setup()
+  for (let from = 0; from < 180000; from += 1000) {
+    split.state = JSON.parse(JSON.stringify(split.state))
+    simulateOfflineWorld(split.state, { ...split.options, fromElapsedMs: from, toElapsedMs: from + 1000 })
+  }
+  assert.equal(split.state.players[0].buildings[0].isBuilt, true)
+  assert.deepEqual(
+    split.state.players[0].buildings[0].constructionMaterials,
+    whole.player.buildings[0].constructionMaterials
+  )
+  assert.equal(split.state.resources.length, whole.state.resources.length)
+})
+
+test('offline markets share the same village allowance and tiered restock as live markets', () => {
+  const { state, options, player } = fixture()
+  const { MarketRestockSystem } = loadTsModule('app/services/world/MarketRestockSystem.ts')
+  const makeMarket = (i, buildingLevel) => ({
+    type: 'Market',
+    label: `market-${i}`,
+    i,
+    j: 20,
+    buildingLevel,
+    isBuilt: true,
+    marketGold: 0,
+    marketStock: [],
+    marketResourceStock: {},
+  })
+  player.buildings.push(makeMarket(20, 0), makeMarket(21, 2))
+  const livePlayer = JSON.parse(JSON.stringify(player))
+  const live = new MarketRestockSystem({ players: [livePlayer] })
+  for (let day = 2; day <= 3; day++) {
+    live.handleDailyWorldEvent({ day, previousDay: day - 1 })
+    simulateOfflineWorld(state, { ...options, fromElapsedMs: (day - 2) * DAY, toElapsedMs: (day - 1) * DAY })
+  }
+  const values = owner =>
+    owner.buildings
+      .filter(b => b.type === 'Market')
+      .map(b => ({ gold: b.marketGold, stock: b.marketStock, resources: b.marketResourceStock }))
+  assert.deepEqual(values(player), values(livePlayer))
+  assert.equal(
+    values(player).reduce((sum, b) => sum + b.gold, 0),
+    120
+  )
+  assert.equal(values(player)[0].resources.iron, undefined)
+  assert.equal(values(player)[1].resources.iron, 10)
 })

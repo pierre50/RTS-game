@@ -7,6 +7,7 @@ export function serializeTrainingExtra(extra: UnitCreationExtra | undefined): Sa
   return structuredClone(
     definedProperties({
       label: extra.label,
+      villageHome: extra.villageHome,
       inventory: extra.inventory,
       name: extra.name,
       gender: extra.gender,
@@ -29,6 +30,7 @@ function serializeTrainee(trainee: TrainingTrainee): TrainingTrainee {
       label: trainee.label,
       i: trainee.i,
       j: trainee.j,
+      villageHome: trainee.villageHome,
       homeHouseLabel: trainee.homeHouseLabel,
       homeBedLabel: trainee.homeBedLabel,
       partnerLabel: trainee.partnerLabel,

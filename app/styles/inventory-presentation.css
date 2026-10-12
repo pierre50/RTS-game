@@ -1,0 +1,255 @@
+/* Shared icon geometry for object grids and recipe lists. */
+.game-window {
+  --inventory-item-icon-size: 48px;
+  --inventory-tile-size: 96px;
+}
+.game-window .inventory-section-list.inventory-tile-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--inventory-tile-size)), var(--inventory-tile-size)));
+  grid-auto-rows: max-content;
+  gap: var(--ui-gap-8);
+  align-content: start;
+  align-items: start;
+}
+.game-window .inventory-section-list.inventory-tile-list > .inventory-action-row:not(.inventory-action-row--no-icon) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--ui-gap-4);
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0;
+  padding: var(--ui-gap-8);
+  align-items: center;
+  justify-items: center;
+  overflow: hidden;
+  text-align: center;
+}
+.game-window .inventory-section-list.inventory-recipe-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ui-gap-8);
+}
+.game-window .inventory-section-list.inventory-recipe-list > .inventory-action-row:not(.inventory-action-row--no-icon) {
+  display: grid;
+  grid-template-columns: var(--inventory-item-icon-size) minmax(0, 1fr);
+  grid-template-rows: auto;
+  gap: var(--ui-gap-12);
+  min-height: 68px;
+  padding: var(--ui-gap-8) var(--ui-gap-12);
+  margin: 0;
+  aspect-ratio: auto;
+  align-items: center;
+}
+.game-window .inventory-section-list.inventory-recipe-list > .inventory-action-row > .inventory-action-row-label {
+  display: block;
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+  font-size: var(--font-size-base);
+}
+.game-window
+  :is(.inventory-tile-list, .inventory-recipe-list)
+  > .inventory-action-row
+  > :is(
+    .inventory-action-row-description,
+    .inventory-action-row-meta,
+    .inventory-action-row-stats,
+    .inventory-action-row-badge,
+    .inventory-row-actions
+  ) {
+  display: none;
+}
+.game-window .inventory-tile-list > .inventory-action-row > .inventory-action-row-label,
+.game-window
+  .inventory-tile-list:not(.inventory-tile-list--market)
+  > .inventory-action-row
+  > .inventory-action-row-value,
+.game-window .inventory-recipe-list > .inventory-action-row > .inventory-tile-condition {
+  display: none;
+}
+.game-window :is(.inventory-tile-list, .inventory-recipe-list) > .inventory-action-row > .inventory-action-row-icon {
+  --inventory-row-icon-size: var(--inventory-item-icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1;
+  grid-row: 1;
+  position: static;
+  width: var(--inventory-item-icon-size);
+  height: var(--inventory-item-icon-size);
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+.game-window :is(.inventory-tile-list, .inventory-recipe-list) .inventory-action-row-icon > .img,
+.game-window :is(.inventory-tile-list, .inventory-recipe-list) .inventory-action-row-icon > span > .img {
+  width: 100%;
+  height: 100%;
+  max-width: var(--inventory-item-icon-size);
+  max-height: var(--inventory-item-icon-size);
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.game-window
+  :is(.inventory-tile-list, .inventory-recipe-list)
+  .inventory-action-row-icon:has(> span)
+  > span:has(> .img) {
+  display: contents;
+}
+.game-window
+  :is(.inventory-tile-list, .inventory-recipe-list)
+  .inventory-action-row-icon
+  > :is(.inventory-arrow-icon, .inventory-tool-icon) {
+  display: block;
+  width: var(--inventory-item-icon-size);
+  height: var(--inventory-item-icon-size);
+  max-width: 100%;
+  max-height: 100%;
+  flex: 0 0 var(--inventory-item-icon-size);
+  position: relative;
+  transform: none;
+}
+.game-window .inventory-tile-list > .inventory-action-row > .inventory-quantity-badge {
+  display: block;
+  position: absolute;
+  inset: var(--ui-gap-4) var(--ui-gap-4) auto auto;
+  z-index: 1;
+  min-width: 0;
+  background: var(--window-quantity-bg);
+  font-size: var(--font-size-xs);
+  text-shadow: 1px 1px #000;
+  pointer-events: none;
+}
+.game-window .inventory-tile-list > .inventory-action-row > .inventory-tile-condition {
+  display: block;
+}
+.game-window .inventory-section:has(> .inventory-tile-list) .inventory-section-count {
+  display: none;
+}
+.game-window
+  .inventory-section-list.inventory-tile-list--market
+  > .inventory-action-row:not(.inventory-action-row--no-icon) {
+  grid-template-rows: minmax(0, 1fr) auto;
+  padding-bottom: var(--ui-gap-12);
+}
+.game-window .inventory-section-list.inventory-tile-list--market > .inventory-action-row > .inventory-action-row-value {
+  display: inline-flex;
+  grid-column: 1;
+  grid-row: 2;
+  max-width: 100%;
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  justify-self: center;
+}
+
+/* Shared window size; forge keeps its details below the two inventories. */
+.modal-panel.game-window:is(.crafting-workshop, .window-catalog),
+.modal-panel.game-window:has(.inventory-transfer-panel) {
+  width: min(1200px, calc(100vw - 32px));
+  height: min(850px, calc(100dvh - 24px));
+  max-height: calc(100dvh - 24px);
+}
+.modal-panel.game-window:is(.crafting-workshop, .window-catalog) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+.game-window:is(.crafting-workshop, .window-catalog) > :is(.inventory-content, .interaction-panel-content) {
+  grid-column: 1;
+  grid-row: 2;
+}
+.game-window:is(.crafting-workshop, .window-catalog) > .game-window-details {
+  grid-column: 1;
+  grid-row: 3;
+  border-left: 0;
+  border-top: 1px solid var(--window-line);
+  padding: var(--ui-gap-12) var(--ui-gap-16);
+  max-height: 26dvh;
+  min-height: 120px;
+  font-size: var(--font-size-sm);
+}
+.game-window:is(.crafting-workshop, .window-catalog) > .game-window-footer {
+  grid-column: 1;
+  grid-row: 4;
+}
+.game-window:is(.crafting-workshop, .window-catalog) .game-window-detail-title {
+  margin-bottom: 0;
+  font-size: var(--font-size-base);
+}
+.game-window:is(.crafting-workshop, .window-catalog) .game-window-detail-line + .game-window-detail-line {
+  margin-top: 0;
+}
+.game-window .action-menu-construction-page > .inventory-section + .inventory-section {
+  margin-top: var(--ui-gap-24);
+}
+
+/* Single recipe catalogues pair their list with a readable detail column. */
+@media (min-width: 760px) {
+  .modal-panel.game-window:is(.window-catalog, .crafting-workshop:not(.forge-workshop)) {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .game-window:is(.window-catalog, .crafting-workshop:not(.forge-workshop)) > .modal-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .game-window:is(.window-catalog, .crafting-workshop:not(.forge-workshop)) > .game-window-details {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    max-height: none;
+    border-left: 1px solid var(--window-line);
+    padding: var(--ui-gap-18) var(--ui-gap-16);
+    align-content: start;
+    overflow-y: auto;
+  }
+  .game-window:is(.window-catalog, .crafting-workshop:not(.forge-workshop)) > .game-window-footer {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+/* Variant arrows surround the title without exposing the right-panel details. */
+.game-window
+  .inventory-section-list.inventory-recipe-list
+  > .inventory-action-row.ui-variant-row:not(.inventory-action-row--no-icon) {
+  grid-template-columns: var(--inventory-item-icon-size) 24px minmax(0, 1fr) 24px;
+}
+.game-window
+  .inventory-section-list.inventory-recipe-list
+  > .inventory-action-row.ui-variant-row
+  > .inventory-action-row-label {
+  grid-column: 3;
+}
+.ui-variant-arrow {
+  display: block;
+  grid-row: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 24px;
+  cursor: var(--game-pointer, pointer);
+}
+.ui-variant-arrow--previous {
+  grid-column: 2;
+}
+.ui-variant-arrow--next {
+  grid-column: 4;
+}
+.ui-variant-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

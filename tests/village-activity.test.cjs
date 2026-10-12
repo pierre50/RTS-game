@@ -107,7 +107,7 @@ test('fixed settlements are suspended before the first simulation tick and wake 
   assert.equal(f.first.resumed, true)
   assert.deepEqual(f.advances, [])
 })
-test('homes are stable per town center, not per faction; destroyed centers reassign their residents', () => {
+test('homes are stable per town center, not per faction; destroyed centers do not silently transfer their residents', () => {
   const { service, first, second, owner, context } = setup()
   assert.notEqual(first.villageHome.id, second.villageHome.id)
   first.i = 290
@@ -118,7 +118,7 @@ test('homes are stable per town center, not per faction; destroyed centers reass
   owner.buildings[0].isDestroyed = true
   context.scheduler.elapsedMs = 10000
   service.update()
-  assert.equal(first.villageHome.id, 'ai:b')
+  assert.equal(first.villageHome.id, 'ai:a')
 })
 test('30 cell work radius projects interiors and exempts expeditions, scouts and player control', () => {
   const { rules, first, context } = setup()

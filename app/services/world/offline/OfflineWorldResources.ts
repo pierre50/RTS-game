@@ -1,3 +1,6 @@
+import { groundRespawnCandidates, isGroundResourceType } from '../../../lib/resources/groundResourceRegrowth'
+import { recordEconomyFlow } from '../../../lib/economy/economyTelemetry'
+import { RESOURCE_STOCKPILE_TYPES } from '../../../constants/entities'
 import { NATURAL_REGROWTH_CONFIG, NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../../config/gameplay'
 import { RESOURCE_TYPES } from '../../../constants/entities'
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../../types/save'
@@ -5,6 +8,12 @@ import { entityKey, isLiving, type OfflineWorldSpatial } from './OfflineWorldSpa
 import type { OfflineWorldReport } from './OfflineWorldWork'
 
 function respawnPoint(slot: SaveEntityState, day: number, spatial: OfflineWorldSpatial): SaveGridPoint | null {
+  if (isGroundResourceType(slot.type))
+    return (
+      groundRespawnCandidates(slot).find(
+        point => spatial.groundCell(point, slot.type) && spatial.reachable(slot, point)
+      ) ?? null
+    )
   const fallback = spatial.naturalCell(slot) ? { i: slot.i, j: slot.j } : null
   if (slot.type !== RESOURCE_TYPES.berrybush) return fallback
   // Stable per resource/day: reopening a save cannot reroll the destination.
@@ -56,9 +65,14 @@ function growResource(resource: SaveEntityState, wheatMatureFrame: number): void
     }
     ratio = NATURAL_REGROWTH_CONFIG.wheatRegrowRatioPerDay
   }
+  const before = resource.quantity ?? 0
   const total = resource.totalQuantity ?? resource.quantity ?? 0
   if (ratio > 0 && total > 0)
     resource.quantity = Math.min(total, (resource.quantity ?? 0) + Math.max(1, Math.ceil(total * ratio)))
+  recordEconomyFlow(null, 'renewed', {
+    [RESOURCE_STOCKPILE_TYPES[resource.type as keyof typeof RESOURCE_STOCKPILE_TYPES] ?? resource.type]:
+      (resource.quantity ?? 0) - before,
+  })
 }
 
 export function regrowOfflineResources(
@@ -74,6 +88,10 @@ export function regrowOfflineResources(
     if (!slot) continue
     const resource = respawnResource(slot, day, spatial)
     if (!resource) continue
+    recordEconomyFlow(null, 'renewed', {
+      [RESOURCE_STOCKPILE_TYPES[resource.type as keyof typeof RESOURCE_STOCKPILE_TYPES] ?? resource.type]:
+        resource.quantity,
+    })
     state.resources.push(resource)
     spatial.reserve(resource)
     slots.splice(index, 1)

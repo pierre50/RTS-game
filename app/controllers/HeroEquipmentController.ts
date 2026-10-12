@@ -1,3 +1,5 @@
+import { refreshBakedLpcUnitAssets } from '../lib/lpc/baked'
+import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import {
   applyToolAppearance,
   cancelHeroDefense,
@@ -38,8 +40,7 @@ export class HeroEquipmentController {
   cycleTool(direction: 1 | -1): boolean {
     const currentIndex = Math.max(0, HERO_TOOL_ORDER.indexOf(this.host.equippedItem ?? 'interact'))
     for (let offset = 1; offset < HERO_TOOL_ORDER.length; offset++) {
-      const nextIndex =
-        (currentIndex + direction * offset + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
+      const nextIndex = (currentIndex + direction * offset + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
       const tool = HERO_TOOL_ORDER[nextIndex]
       if (tool && isHeroToolAvailable(this.host.heroUnit, tool)) return this.equipToolAt(nextIndex)
     }
@@ -56,11 +57,24 @@ export class HeroEquipmentController {
       this.host.mouseHeld = false
       this.host.primaryClickPoint = null
     }
+    if (unit) {
+      unit.inventory ??= {}
+      unit.inventory.toolsStowed = item === null
+    }
     this.host.equippedItem = item
     if (unit?.actionLocked) {
       unit.stop?.()
-    } else if (item && unit) {
-      applyToolAppearance(unit, item)
+    }
+    if (unit) {
+      if (item) applyToolAppearance(unit, item)
+      else {
+        unit.stop?.()
+        unit.work = 'attacker'
+        refreshBakedLpcUnitAssets(unit)
+        refreshUnitEquipmentStats(unit)
+        unit.setTextures?.('standingSheet')
+        unit.syncAppearanceLayers?.('standingSheet')
+      }
     }
     this.host.controls.context.menu?.setEquippedItem?.(item)
     this.host.controls.context.menu?.setEquippedTool?.(item)

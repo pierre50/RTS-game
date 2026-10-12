@@ -112,7 +112,8 @@ export function createWorldMapLegend(
   menu: MenuHost,
   manifest: MacroWorldManifest,
   interactive = false,
-  markerLegend?: HTMLElement
+  markerLegend?: HTMLElement,
+  filterControls = true
 ): HTMLElement | null {
   const entries = new Map<string, WorldMapLegendEntry>()
   const dedupeKeys = new Set<string>()
@@ -178,9 +179,13 @@ export function createWorldMapLegend(
 
   const sortedEntries = [...entries.values()].sort((a, b) => Number(b.self === true) - Number(a.self === true))
   for (const entry of sortedEntries) {
-    const row = document.createElement(interactive ? 'button' : 'div')
+    const row = document.createElement(interactive && filterControls ? 'button' : 'div')
     row.className = 'worldmap-legend-row'
     if (interactive) {
+      row.classList.add('minimap-legend-entry')
+      row.classList.toggle('is-hidden', isMinimapMarkerHidden(menu.context, entry.key))
+    }
+    if (interactive && filterControls) {
       row.setAttribute('type', 'button')
       row.classList.add('minimap-legend-toggle')
       const sync = () => {

@@ -48,3 +48,10 @@ test('settlement names accept old saves and reject invalid saved values', () => 
   for (const settlementName of [false, 42, '', '   ', 'a'.repeat(121)])
     assert.throws(() => validate(building({ settlementName })), /settlement name/)
 })
+
+test('saved construction pause accepts booleans and rejects malformed flags', () => {
+  for (const constructionPaused of [undefined, true, false])
+    assert.doesNotThrow(() => validate(building({ constructionPaused })))
+  for (const constructionPaused of ['true', 1, {}, []])
+    assert.throws(() => validate(building({ constructionPaused })), /pause state/)
+})

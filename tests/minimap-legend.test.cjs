@@ -58,7 +58,7 @@ test('minimap contains only map legend, toggles caves and factions, and keeps fi
   assert.equal(container.children.length, 2)
   assert.equal(symbols.children[0].textContent, 'minimapLegendSymbols')
   assert.equal(symbols.children.length, 5)
-  const legend = container.children[1]
+  const legend = container.children[0]
   assert.equal(legend.children[0].textContent, 'minimapLegendPlayers')
   assert.deepEqual(
     legend.children.slice(1).map(row => row.children[1].textContent),
@@ -75,26 +75,11 @@ test('minimap contains only map legend, toggles caves and factions, and keeps fi
   legend.children[2].events.click()
   assert.equal(isMinimapMarkerHidden(menu.context, 'Other'), true)
   renderMinimapLegend(container, menu, symbols)
-  const reopened = container.children[1].children[3]
+  const reopened = container.children[0].children[3]
   assert.equal(reopened.classList.contains('is-hidden'), true)
   reopened.events.click()
   assert.equal(isMinimapMarkerHidden(menu.context, 'caves'), false)
   assert.equal(isMinimapMarkerHidden({}, 'Other'), false)
-  const [less, value, more] = container.children[0].children
-  assert.equal(value.textContent, '100 %')
-  assert.equal(less.disabled, true)
-  less.events.click()
-  assert.equal(value.textContent, '100 %')
-  more.events.click()
-  assert.equal(value.textContent, '150 %')
-  less.events.click()
-  assert.equal(value.textContent, '100 %')
-  for (let n = 0; n < 10; n++) more.events.click()
-  assert.equal(value.textContent, '400 %')
-  assert.equal(more.disabled, true)
-  for (let n = 0; n < 10; n++) less.events.click()
-  assert.equal(value.textContent, '100 %')
-  assert.equal(less.disabled, true)
 })
 
 test('minimap legend uses live owners and colors even for a guest sharing the host civilization', t => {
@@ -136,7 +121,7 @@ test('minimap legend uses live owners and colors even for a guest sharing the ho
   const container = element('div')
   const symbols = element('div')
   renderMinimapLegend(container, menu, symbols)
-  const rows = container.children[1].children.slice(1)
+  const rows = container.children[0].children.slice(1)
   assert.deepEqual(
     rows.map(row => row.children[1].textContent),
     ['you', 'Host', 'worldMapBandits', 'Cave']
@@ -167,12 +152,12 @@ test('AI faction filters remain available for remembered buildings while cleared
   const container = element('div')
   const symbols = element('div')
   renderMinimapLegend(container, menu, symbols)
-  assert.equal(container.children[1].children.length, 4)
+  assert.equal(container.children[0].children.length, 4)
   ai.units[0].isDead = true
   bandits.units = []
   renderMinimapLegend(container, menu, symbols)
   assert.deepEqual(
-    container.children[1].children.slice(1).map(row => row.children[1].textContent),
+    container.children[0].children.slice(1).map(row => row.children[1].textContent),
     ['Hellas', 'Cave']
   )
 })
@@ -197,7 +182,7 @@ test('minimap relation follows current faction diplomacy on reopen instead of th
   for (const relation of ['friendly', 'wary', 'hostile', 'allied', 'neutral']) {
     faction.relationState = relation
     renderMinimapLegend(container, menu, symbols)
-    const label = container.children[1].children[2].children[2]
+    const label = container.children[0].children[2].children[2]
     assert.equal(label.className, `worldmap-legend-relation ${relation}`)
     assert.equal(label.textContent, `worldMapRelation${relation[0].toUpperCase()}${relation.slice(1)}`)
   }
@@ -228,7 +213,7 @@ test('legend shares marker icons and shows a separate base only while a complete
   }
   const container = element('div')
   const symbols = element('div')
-  const rows = () => container.children[1].children.slice(1)
+  const rows = () => container.children[0].children.slice(1)
   renderMinimapLegend(container, menu, symbols)
   assert.deepEqual(
     rows().map(row => row.children[0].children[0]?.src ?? null),

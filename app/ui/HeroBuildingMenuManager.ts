@@ -3,13 +3,11 @@ import { heroTrapButton } from './hero-building/HeroTrapButton'
 import { renderHeroBuildingInfo } from './hero-building/HeroBuildingInfo'
 import { renderHeroBuildingBody } from './hero-building/HeroBuildingBody'
 import { t } from '../lib/lang'
-import { getBuildingAssetOwner } from '../lib/graphics/assets'
 import { createHeroBuildingUpgrade } from './hero-building/HeroBuildingUpgrade'
 import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
 import { BUILDING_TYPES, SOUND_CUES } from '../constants'
 import type { Modal } from '../lib'
 import { playAudibleSoundCue } from '../lib/audio/sound'
-import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
@@ -33,8 +31,6 @@ export class HeroBuildingMenuManager {
   layout: InteractionPanel
   panel: HTMLDivElement
   header: HTMLDivElement
-  infoAvatarWrap: HTMLDivElement
-  infoAvatarCanvas: HTMLCanvasElement
   info: HTMLDivElement
   body: HTMLDivElement
   backButton: HTMLButtonElement
@@ -68,19 +64,11 @@ export class HeroBuildingMenuManager {
     this.body = document.createElement('div')
     this.body.className = 'hero-building-menu-body'
 
-    this.infoAvatarWrap = document.createElement('div')
-    this.infoAvatarWrap.className = 'unit-avatar-frame'
-    this.infoAvatarCanvas = document.createElement('canvas')
-    this.infoAvatarCanvas.width = 120
-    this.infoAvatarCanvas.height = 120
-    this.infoAvatarWrap.appendChild(this.infoAvatarCanvas)
-
     this.info = document.createElement('div')
     this.info.className = 'entity-info-modal selection-info active'
 
     this.header = document.createElement('div')
     this.header.className = 'entity-info-wrapper'
-    this.header.appendChild(this.infoAvatarWrap)
     this.header.appendChild(this.info)
 
     this.layout.information.appendChild(this.header)
@@ -210,7 +198,7 @@ export class HeroBuildingMenuManager {
       this.refresh()
       return
     }
-    syncHeroVillageReport(this.body, this.menu)
+    syncHeroVillageReport(this.body, this.menu, this.building)
     this.renderInfo()
     this.updateProgress()
   }
@@ -263,18 +251,11 @@ export class HeroBuildingMenuManager {
       'crafting-workshop',
       Boolean(building.isBuilt && (building.type === BUILDING_TYPES.forge || building.type === BUILDING_TYPES.fireCamp))
     )
-    this.panel.classList.toggle('market-trade-screen', this.marketOpen)
-    // Only re-extracted on open/refresh (structure changes), not on every
-    // syncLiveState() tick — renderInfo() alone runs far more often (e.g. on
-    // every training-progress update) and re-cropping the avatar each time
-    // would be wasteful.
-    const rendered = renderBuildingAvatar(
-      this.menu.context.app,
-      building.type,
-      getBuildingAssetOwner({ ...building, owner: building.owner ?? this.menu.context.player }),
-      this.infoAvatarCanvas
+    this.modal?._panel?.classList.toggle(
+      'forge-workshop',
+      Boolean(building.isBuilt && building.type === BUILDING_TYPES.forge)
     )
-    this.infoAvatarWrap.classList.toggle('hidden', !rendered)
+    this.panel.classList.toggle('market-trade-screen', this.marketOpen)
     const items = this.stack[this.stack.length - 1] || []
     this.renderInfo()
     this.body.replaceChildren()

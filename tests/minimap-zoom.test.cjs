@@ -9,6 +9,7 @@ const { changeMinimapZoom } = loadTsModule('app/ui/minimap/MinimapZoom.ts', opti
 for (const rectangular of [false, true]) {
   test(`zoom preserves map center and aligns terrain with markers (${rectangular ? 'rectangle' : 'diamond'})`, () => {
     const context = {
+      player: { minimapPreferences: { zoom: 1, hiddenMarkers: [] } },
       map: {
         space: {
           id: 'outside',
@@ -67,6 +68,11 @@ for (const rectangular of [false, true]) {
     const geometry = new MinimapGeometry({ context, minimapMap: {} }, () => 1.284 * 4)
     const before = geometry.getMinimapTransform()
     const originalHeroPoint = geometry.instanceToMinimapPoint(hero, before)
+    assert.ok(Math.abs(originalHeroPoint.x + before.translate - before.canvasWidth / 2) < 1e-8)
+    assert.ok(Math.abs(originalHeroPoint.y - before.canvasHeight / 2) < 1e-8)
+    changeMinimapZoom(context, -1)
+    changeMinimapZoom(context, -1)
+    changeMinimapZoom(context, -1)
     for (let step = 0; step < 4; step++) {
       changeMinimapZoom(context, 1)
       const transform = geometry.getMinimapTransform()
@@ -108,11 +114,62 @@ test('minimap zoom and filters survive a JSON round trip through player state', 
   const { getMinimapZoom, changeMinimapZoom } = loadTsModule('app/ui/minimap/MinimapZoom.ts', options)
   const { toggleMinimapMarker, isMinimapMarkerHidden } = loadTsModule('app/ui/minimap/MinimapFilters.ts', options)
   const context = { player: {} }
-  changeMinimapZoom(context, 1)
+  changeMinimapZoom(context, -1)
   toggleMinimapMarker(context, 'enemy')
   const restored = JSON.parse(JSON.stringify(context))
-  assert.equal(getMinimapZoom(restored), 1.5)
+  assert.equal(getMinimapZoom(restored), 3)
   assert.equal(isMinimapMarkerHidden(restored, 'enemy'), true)
-  assert.equal(getMinimapZoom({ player: {} }), 1)
+  assert.equal(getMinimapZoom({ player: {} }), 4)
   assert.equal(isMinimapMarkerHidden({ player: {} }, 'enemy'), false)
+})
+
+for (const rectangular of [false, true]) {
+  test(`panning preserves the cursor center across smooth zoom and recenters on request (${rectangular})`, () => {
+    const { setMinimapZoom } = loadTsModule('app/ui/minimap/MinimapZoom.ts', options)
+    const hero = { position: { x: 0, y: 1000 }, spaceId: 'outside' }
+    const context = {
+      player: {},
+      controls: { heroUnit: hero },
+      map: {
+        space: {
+          id: 'outside',
+          size: 100,
+          grid: [],
+          origin: { x: 125, y: -60 },
+          localGridLayout: rectangular ? { columns: 30, rows: 100 } : undefined,
+        },
+      },
+    }
+    const geometry = new MinimapGeometry({ context, minimapMap: {} }, () => 1.284 * 4)
+    const rect = { left: 15, top: 30, width: 450, height: rectangular ? 450 : 225 }
+    const center = () => geometry.getMinimapWorldPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, rect)
+    assert.deepEqual(center(), { x: 125, y: 940 })
+    geometry.pan(0.1, 0.1)
+    const moved = center()
+    assert.ok(moved.x > 125 && moved.y > 940)
+    setMinimapZoom(context, 2.375)
+    const zoomed = center()
+    assert.ok(Math.abs(moved.x - zoomed.x) < 1e-8)
+    assert.ok(Math.abs(moved.y - zoomed.y) < 1e-8)
+    geometry.pan(1e8, 1e8)
+    const edge = center()
+    geometry.pan(1, 1)
+    assert.deepEqual(center(), edge, 'panning is bounded')
+    geometry.resetZoomAnchor()
+    assert.deepEqual(center(), { x: 125, y: 940 })
+  })
+}
+
+test('continuous trigger zoom stays bounded, steps correctly, and remains saveable', () => {
+  const { setMinimapZoom, getMinimapZoom, changeMinimapZoom } = loadTsModule('app/ui/minimap/MinimapZoom.ts', options)
+  const { validateMinimapPreferences } = loadTsModule('app/serialization/validation/MinimapMemoryValidation.ts')
+  const context = { player: {} }
+  setMinimapZoom(context, 2.375)
+  validateMinimapPreferences(JSON.parse(JSON.stringify(context.player.minimapPreferences)))
+  assert.equal(changeMinimapZoom(context, 1), 3)
+  setMinimapZoom(context, 2.375)
+  assert.equal(changeMinimapZoom(context, -1), 2)
+  assert.equal(setMinimapZoom(context, 100), 4)
+  assert.equal(setMinimapZoom(context, -100), 1)
+  assert.equal(getMinimapZoom(context), 1)
 })

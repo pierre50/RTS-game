@@ -2,7 +2,7 @@ import { appendEntityDescription } from './EntityDescription'
 import { MENU_INFO_IDS } from '../../constants'
 import { formatHitPointsText } from '../../lib/entities/hitPointsText'
 
-export function createInfoImage(className: string, src: string): HTMLImageElement {
+function createInfoImage(className: string, src: string): HTMLImageElement {
   const img = document.createElement('img')
   img.className = className
   img.src = src

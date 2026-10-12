@@ -20,7 +20,8 @@
           "wood": 40,
           "stone": 10
         },
-        "totalHitPoints": 75
+        "totalHitPoints": 75,
+        "constructionWorkRequired": 146.4566929133858
       },
       "1": {
         "cost": {
@@ -29,7 +30,13 @@
           "fiber": 4
         },
         "totalHitPoints": 125,
-        "shelterCapacity": 10
+        "shelterCapacity": 10,
+        "upgradeCost": {
+          "wood": 40,
+          "stone": 30,
+          "fiber": 6
+        },
+        "constructionWorkRequired": 2196.850393700787
       },
       "2": {
         "cost": {
@@ -38,9 +45,16 @@
           "fiber": 6
         },
         "totalHitPoints": 188,
-        "shelterCapacity": 10
+        "shelterCapacity": 10,
+        "upgradeCost": {
+          "wood": 40,
+          "stone": 25,
+          "fiber": 4
+        },
+        "constructionWorkRequired": 6590.551181102362
       }
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "Barracks": {
     "size": 3,
@@ -62,7 +76,8 @@
           "wood": 120,
           "stone": 40
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 585.8267716535432
       },
       "1": {
         "cost": {
@@ -70,7 +85,13 @@
           "stone": 80,
           "fiber": 8
         },
-        "totalHitPoints": 550
+        "totalHitPoints": 550,
+        "upgradeCost": {
+          "wood": 80,
+          "stone": 50,
+          "fiber": 8
+        },
+        "constructionWorkRequired": 6590.551181102362
       },
       "2": {
         "cost": {
@@ -78,12 +99,19 @@
           "stone": 120,
           "fiber": 12
         },
-        "totalHitPoints": 825
+        "totalHitPoints": 825,
+        "upgradeCost": {
+          "wood": 110,
+          "stone": 60,
+          "fiber": 6
+        },
+        "constructionWorkRequired": 10984.251968503937
       }
-    }
+    },
+    "constructionWorkRequired": 585.8267716535432
   },
   "Granary": {
-    "size": 3,
+    "size": 2,
     "sight": 8,
     "totalHitPoints": 350,
     "constructionTime": 72,
@@ -102,7 +130,8 @@
           "wood": 50,
           "stone": 20
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 292.9133858267716
       },
       "1": {
         "cost": {
@@ -110,7 +139,13 @@
           "stone": 40,
           "fiber": 4
         },
-        "totalHitPoints": 500
+        "totalHitPoints": 500,
+        "upgradeCost": {
+          "wood": 40,
+          "stone": 30,
+          "fiber": 4
+        },
+        "constructionWorkRequired": 4393.700787401574
       },
       "2": {
         "cost": {
@@ -118,12 +153,19 @@
           "stone": 60,
           "fiber": 6
         },
-        "totalHitPoints": 750
+        "totalHitPoints": 750,
+        "upgradeCost": {
+          "wood": 55,
+          "stone": 35,
+          "fiber": 4
+        },
+        "constructionWorkRequired": 6590.551181102362
       }
-    }
+    },
+    "constructionWorkRequired": 292.9133858267716
   },
   "StoragePit": {
-    "size": 3,
+    "size": 2,
     "sight": 8,
     "totalHitPoints": 350,
     "constructionTime": 72,
@@ -131,7 +173,7 @@
       "wood": 60,
       "stone": 20
     },
-    "accept": ["wood", "stone", "gold", "copper", "tin", "iron", "copperIngot", "bronzeIngot", "ironIngot"],
+    "accept": ["wood", "stone", "gold", "copper", "tin", "iron", "bronzeIngot", "ironIngot"],
     "sounds": {
       "burning": ["building-burning", "building-burning-2", "building-burning-3"],
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
@@ -142,25 +184,25 @@
           "wood": 60,
           "stone": 20
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 292.9133858267716
       },
       "1": {
-        "cost": {
-          "wood": 100,
-          "stone": 40,
-          "fiber": 4
-        },
-        "totalHitPoints": 550
-      },
-      "2": {
         "cost": {
           "wood": 150,
           "stone": 60,
           "fiber": 6
         },
-        "totalHitPoints": 825
+        "totalHitPoints": 825,
+        "upgradeCost": {
+          "wood": 100,
+          "stone": 50,
+          "fiber": 6
+        },
+        "constructionWorkRequired": 4393.700787401574
       }
-    }
+    },
+    "constructionWorkRequired": 292.9133858267716
   },
   "ArcheryRange": {
     "size": 3,
@@ -183,23 +225,23 @@
           "wood": 225,
           "stone": 65
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 878.7401574803149
       },
       "1": {
-        "cost": {
-          "wood": 340,
-          "stone": 100
-        },
-        "totalHitPoints": 550
-      },
-      "2": {
         "cost": {
           "wood": 510,
           "stone": 150
         },
-        "totalHitPoints": 825
+        "totalHitPoints": 825,
+        "upgradeCost": {
+          "wood": 285,
+          "stone": 85
+        },
+        "constructionWorkRequired": 6590.551181102362
       }
-    }
+    },
+    "constructionWorkRequired": 878.7401574803149
   },
   "Stable": {
     "size": 3,
@@ -223,23 +265,35 @@
           "wood": 225,
           "stone": 70
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 878.7401574803149
       },
       "1": {
         "cost": {
           "wood": 340,
           "stone": 110
         },
-        "totalHitPoints": 550
+        "totalHitPoints": 550,
+        "upgradeCost": {
+          "wood": 130,
+          "stone": 55
+        },
+        "constructionWorkRequired": 6590.551181102362
       },
       "2": {
         "cost": {
           "wood": 510,
           "stone": 165
         },
-        "totalHitPoints": 825
+        "totalHitPoints": 825,
+        "upgradeCost": {
+          "wood": 190,
+          "stone": 75
+        },
+        "constructionWorkRequired": 8787.401574803149
       }
-    }
+    },
+    "constructionWorkRequired": 878.7401574803149
   },
   "Farm": {
     "size": 1,
@@ -275,23 +329,35 @@
           "wood": 60,
           "stone": 120
         },
-        "totalHitPoints": 300
+        "totalHitPoints": 300,
+        "constructionWorkRequired": 878.7401574803149
       },
       "1": {
         "cost": {
           "wood": 90,
           "stone": 180
         },
-        "totalHitPoints": 500
+        "totalHitPoints": 500,
+        "upgradeCost": {
+          "wood": 40,
+          "stone": 75
+        },
+        "constructionWorkRequired": 4393.700787401574
       },
       "2": {
         "cost": {
           "wood": 135,
           "stone": 270
         },
-        "totalHitPoints": 750
+        "totalHitPoints": 750,
+        "upgradeCost": {
+          "wood": 60,
+          "stone": 110
+        },
+        "constructionWorkRequired": 8787.401574803149
       }
-    }
+    },
+    "constructionWorkRequired": 878.7401574803149
   },
   "SmallWall": {
     "size": 1,
@@ -305,7 +371,8 @@
     "sounds": {
       "burning": ["building-burning", "building-burning-2", "building-burning-3"],
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "Trap": {
     "size": 1,
@@ -323,7 +390,8 @@
     "cost": {
       "wood": 5,
       "fiber": 2
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "Cave": {
     "size": 3,
@@ -346,7 +414,8 @@
     },
     "cost": {
       "wood": 10
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "Market": {
     "size": 3,
@@ -367,25 +436,25 @@
           "wood": 100,
           "stone": 40
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 585.8267716535432
       },
       "1": {
-        "cost": {
-          "wood": 160,
-          "stone": 70,
-          "fiber": 6
-        },
-        "totalHitPoints": 500
-      },
-      "2": {
         "cost": {
           "wood": 240,
           "stone": 105,
           "fiber": 9
         },
-        "totalHitPoints": 750
+        "totalHitPoints": 750,
+        "upgradeCost": {
+          "wood": 150,
+          "stone": 75,
+          "fiber": 9
+        },
+        "constructionWorkRequired": 6590.551181102362
       }
-    }
+    },
+    "constructionWorkRequired": 585.8267716535432
   },
   "Temple": {
     "size": 2,
@@ -407,7 +476,8 @@
           "wood": 140,
           "stone": 200
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 1171.6535433070865
       },
       "1": {
         "cost": {
@@ -415,7 +485,13 @@
           "stone": 300,
           "fiber": 8
         },
-        "totalHitPoints": 600
+        "totalHitPoints": 600,
+        "upgradeCost": {
+          "wood": 60,
+          "stone": 120,
+          "fiber": 8
+        },
+        "constructionWorkRequired": 6590.551181102362
       },
       "2": {
         "cost": {
@@ -423,9 +499,16 @@
           "stone": 450,
           "fiber": 12
         },
-        "totalHitPoints": 900
+        "totalHitPoints": 900,
+        "upgradeCost": {
+          "wood": 110,
+          "stone": 170,
+          "fiber": 6
+        },
+        "constructionWorkRequired": 10984.251968503937
       }
-    }
+    },
+    "constructionWorkRequired": 1171.6535433070865
   },
   "TownCenter": {
     "size": 3,
@@ -446,7 +529,8 @@
           "wood": 150,
           "stone": 80
         },
-        "totalHitPoints": 600
+        "totalHitPoints": 600,
+        "constructionWorkRequired": 878.7401574803149
       },
       "1": {
         "cost": {
@@ -454,7 +538,13 @@
           "stone": 100,
           "fiber": 8
         },
-        "totalHitPoints": 950
+        "totalHitPoints": 950,
+        "upgradeCost": {
+          "wood": 120,
+          "stone": 60,
+          "fiber": 10
+        },
+        "constructionWorkRequired": 8787.401574803149
       },
       "2": {
         "cost": {
@@ -462,9 +552,16 @@
           "stone": 150,
           "fiber": 12
         },
-        "totalHitPoints": 1425
+        "totalHitPoints": 1425,
+        "upgradeCost": {
+          "wood": 150,
+          "stone": 80,
+          "fiber": 8
+        },
+        "constructionWorkRequired": 13181.102362204723
       }
-    }
+    },
+    "constructionWorkRequired": 878.7401574803149
   },
   "FireCamp": {
     "size": 1,
@@ -480,7 +577,8 @@
     "sounds": {
       "burning": ["building-burning", "building-burning-2", "building-burning-3"],
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampTotemPlain": {
     "size": 1,
@@ -492,7 +590,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampTotemHorns": {
     "size": 1,
@@ -505,7 +604,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampTotemSkull": {
     "size": 1,
@@ -518,7 +618,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampFencePost": {
     "size": 1,
@@ -530,7 +631,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampBoneSmall": {
     "size": 1,
@@ -542,7 +644,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampRockPile": {
     "size": 1,
@@ -554,7 +657,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampSkull": {
     "size": 1,
@@ -566,7 +670,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampAnimalBones": {
     "size": 1,
@@ -578,7 +683,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampMeatRack": {
     "size": 1,
@@ -591,7 +697,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampDryingRack": {
     "size": 1,
@@ -604,7 +711,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampBucket": {
     "size": 1,
@@ -617,7 +725,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampCrate": {
     "size": 1,
@@ -629,7 +738,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampJarSmall": {
     "size": 1,
@@ -641,7 +751,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampJarLarge": {
     "size": 1,
@@ -653,7 +764,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampBedroll": {
     "size": 2,
@@ -667,7 +779,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampTable": {
     "size": 1,
@@ -679,7 +792,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampWorkbench": {
     "size": 1,
@@ -692,7 +806,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampForge": {
     "size": 1,
@@ -705,7 +820,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampAlchemyTable": {
     "size": 1,
@@ -719,7 +835,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampSupplyShelf": {
     "size": 1,
@@ -731,7 +848,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampBookcase": {
     "size": 1,
@@ -744,7 +862,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampArrowBasket": {
     "size": 1,
@@ -757,7 +876,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampAppleBasket": {
     "size": 1,
@@ -770,7 +890,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampBench": {
     "size": 1,
@@ -782,7 +903,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampRoundStool": {
     "size": 1,
@@ -794,7 +916,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampChair": {
     "size": 1,
@@ -806,7 +929,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampThrone": {
     "size": 1,
@@ -819,7 +943,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampBrazier": {
     "size": 1,
@@ -832,7 +957,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampBlueJar": {
     "size": 1,
@@ -845,7 +971,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampScreen": {
     "size": 1,
@@ -858,7 +985,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampWeavingTable": {
     "size": 1,
@@ -871,7 +999,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampSquareStool": {
     "size": 1,
@@ -883,7 +1012,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampStumpStool": {
     "size": 1,
@@ -895,7 +1025,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampMountedSkull": {
     "size": 1,
@@ -908,7 +1039,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampTorchStand": {
     "size": 1,
@@ -921,7 +1053,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "Forge": {
     "size": 3,
@@ -942,25 +1075,25 @@
           "wood": 60,
           "stone": 20
         },
-        "totalHitPoints": 350
+        "totalHitPoints": 350,
+        "constructionWorkRequired": 585.8267716535432
       },
       "1": {
-        "cost": {
-          "wood": 90,
-          "stone": 40,
-          "fiber": 4
-        },
-        "totalHitPoints": 550
-      },
-      "2": {
         "cost": {
           "wood": 135,
           "stone": 60,
           "fiber": 6
         },
-        "totalHitPoints": 825
+        "totalHitPoints": 825,
+        "upgradeCost": {
+          "wood": 120,
+          "stone": 70,
+          "fiber": 8
+        },
+        "constructionWorkRequired": 8787.401574803149
       }
-    }
+    },
+    "constructionWorkRequired": 585.8267716535432
   },
   "CampFruitBowl": {
     "size": 1,
@@ -973,7 +1106,8 @@
     },
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
+    },
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampHide": {
     "size": 1,
@@ -986,7 +1120,8 @@
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     },
-    "zIndexOffset": -0.9
+    "zIndexOffset": -0.9,
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampRug": {
     "size": 1,
@@ -999,7 +1134,8 @@
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     },
-    "zIndexOffset": -0.9
+    "zIndexOffset": -0.9,
+    "constructionWorkRequired": 146.4566929133858
   },
   "CampFur": {
     "size": 1,
@@ -1012,6 +1148,7 @@
     "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     },
-    "zIndexOffset": -0.9
+    "zIndexOffset": -0.9,
+    "constructionWorkRequired": 146.4566929133858
   }
 }

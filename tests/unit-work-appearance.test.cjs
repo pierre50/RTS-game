@@ -138,7 +138,7 @@ test('builder build action applies the custom frame sequence', () => {
   assert.deepEqual(unit.actionFrameSequence, [5, 5, 4, 4, 1, 0, 0, 0, 0])
 
   applyUnitActionFrameSequence(unit, 'farmer', 'farm')
-  assert.equal(unit.actionFrameSequence, null)
+  assert.deepEqual(unit.actionFrameSequence, [0, 1, 2, 3, 4, 5])
 })
 
 test('woodcutting and mining actions apply the axe-style custom frame sequence', () => {
@@ -162,7 +162,7 @@ test('woodcutting and mining actions apply the axe-style custom frame sequence',
 test('attack action frame sequence follows equipped tool instead of work', () => {
   const cacheGets = []
   const { applyUnitActionFrameSequence } = loadUnitWorkAppearance(cacheGets)
-  const axeSequence = [5, 5, 4, 4, 3, 1, 0, 0, 0, 0]
+  const axeSequence = [5, 5, 4, 3, 1, 0]
   const bareHand = { type: 'Villager' }
   const bandit = { type: 'BanditChief', equipment: ['axe_ceramic', 'armor_leather'] }
 

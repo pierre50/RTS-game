@@ -1,5 +1,5 @@
 import { isStaticSettlement } from '../../config/settlementProfiles'
-import { isCampPaused } from '../../lib/units/campActivity'
+import { isCampPaused } from '../../lib/units/camps/campActivity'
 import { syncUnitSittingPose } from '../../lib/units/visuals/unitSittingPose'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { isDistantOwner } from '../../lib/units/village/villageActivity'

@@ -108,6 +108,8 @@ export type AIEntityLike = {
 }
 
 export type AIBuildingLike = AIEntityLike & {
+  buildingLevel?: number
+  assetLevel?: unknown
   units?: string[]
   queue?: string[]
   trainingQueue?: Array<{ type?: string; trainee?: AIEntityLike | RuntimeEntity | null }>

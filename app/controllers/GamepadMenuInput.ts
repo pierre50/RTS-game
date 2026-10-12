@@ -19,6 +19,8 @@ export class GamepadMenuInput {
     const pad = getGamepadEnabled() ? getActiveGamepad() : null
     const binding = getGamepadButtonIndex('gameMenu')
     const pressed = Boolean(pad?.buttons[binding]?.pressed)
+    // Read every frame so a released consumed button is cleared before its next press.
+    const consumed = pad ? getConsumedGamepadButtons(pad) : null
     const activate = this.connected && binding === this.binding && pressed && !this.pressed
     this.binding = binding
     this.connected = Boolean(pad)
@@ -27,8 +29,8 @@ export class GamepadMenuInput {
       activate &&
       document.visibilityState !== 'hidden' &&
       !document.querySelector('.is-listening, .virtual-keyboard') &&
-      pad &&
-      !getConsumedGamepadButtons(pad).has(binding)
+      consumed &&
+      !consumed.has(binding)
     )
       this.toggle()
     if (!this.disposed) this.frame = requestAnimationFrame(this.poll)

@@ -526,7 +526,7 @@ export default class Game extends Container {
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
     this._worldRegionBlueprintCache.clear()
     this._worldBlueprintFileCache.clear()
-    this._wakeLock?.release()
+    this._wakeLock?.release().catch(error => console.warn('Wake lock release failed', error))
     document.removeEventListener('visibilitychange', this._onVisibilityChange as EventListener)
     this._destroyRuntime()
     this.context.scheduler?.destroy?.()

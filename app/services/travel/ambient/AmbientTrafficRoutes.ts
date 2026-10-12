@@ -5,8 +5,35 @@ import type { GameContextLike } from '../../../types/context'
 import { MAX_TRAFFIC_GROUPS, type TrafficGroup } from './AmbientTrafficState'
 import { planRoadRoute, townArrivalCells } from '../RoadRoute'
 
-export { MAX_TRAFFIC_GROUPS } from './AmbientTrafficState'
 const dist = (a: { i: number; j: number }, b: { i: number; j: number }) => Math.hypot(a.i - b.i, a.j - b.j)
+
+function* makeTrafficGroup(context: GameContextLike, groups: TrafficGroup[], group: TrafficGroup): Generator<void> {
+  if (groups.some(existing => existing.id === group.id) || groups.length >= MAX_TRAFFIC_GROUPS) return
+  const start = townArrivalCells(group.to, group.from, context.map)[0]
+  if (!start) return
+  const search = planRoadRoute({ ...start, label: group.id }, group.to, context.map)
+  for (let n = 0; n < 4096; n++) {
+    const result = search.next()
+    if (result.done) {
+      const route = result.value
+      if (
+        route &&
+        route.length >= 12 &&
+        route.length <= 8192 &&
+        (group.kind !== 'bandits' || route.every(p => dist(p, group.from) <= 35))
+      ) {
+        group.route = route
+        let seed = 0
+        for (const char of group.id) seed = (Math.imul(seed, 31) + char.charCodeAt(0)) >>> 0
+        group.progress = seed % route.length
+        group.reverse = Boolean(seed % 2)
+        groups.push(group)
+      }
+      return
+    }
+    yield
+  }
+}
 
 /** Bounded roster, stable IDs, no random actors generated merely by turning the camera. */
 export function* buildTrafficRoutes(context: GameContextLike, groups: TrafficGroup[]): Generator<void> {
@@ -24,33 +51,6 @@ export function* buildTrafficRoutes(context: GameContextLike, groups: TrafficGro
   const hero = context.controls?.heroUnit
   if (hero) towns.sort((a, b) => dist(a.town, hero) - dist(b.town, hero))
   const has = (id: string) => groups.some(group => group.id === id)
-  const make = function* (group: TrafficGroup): Generator<void> {
-    if (has(group.id) || groups.length >= MAX_TRAFFIC_GROUPS) return
-    const start = townArrivalCells(group.to, group.from, context.map)[0]
-    if (!start) return
-    const search = planRoadRoute({ ...start, label: group.id }, group.to, context.map)
-    for (let n = 0; n < 4096; n++) {
-      const result = search.next()
-      if (result.done) {
-        const route = result.value
-        if (
-          route &&
-          route.length >= 12 &&
-          route.length <= 8192 &&
-          (group.kind !== 'bandits' || route.every(p => dist(p, group.from) <= 35))
-        ) {
-          group.route = route
-          let seed = 0
-          for (const char of group.id) seed = (Math.imul(seed, 31) + char.charCodeAt(0)) >>> 0
-          group.progress = seed % route.length
-          group.reverse = Boolean(seed % 2)
-          groups.push(group)
-        }
-        return
-      }
-      yield
-    }
-  }
   for (const { town, owner } of towns) {
     if (groups.length >= 20) break
     const destinations = towns
@@ -81,7 +81,7 @@ export function* buildTrafficRoutes(context: GameContextLike, groups: TrafficGro
             ? ['Villager', 'Fantassin']
             : ['Villager', 'Villager']
     const id = `traffic:${owner.label}:${town.label}`
-    yield* make({
+    yield* makeTrafficGroup(context, groups, {
       id,
       kind,
       owner: owner.label,
@@ -147,7 +147,7 @@ export function* buildTrafficRoutes(context: GameContextLike, groups: TrafficGro
       if (n % 64 === 0) yield
     }
     if (!end) continue
-    yield* make({
+    yield* makeTrafficGroup(context, groups, {
       id,
       kind: 'bandits',
       owner: owner.label,

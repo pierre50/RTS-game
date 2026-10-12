@@ -8,6 +8,7 @@ export type TrainingTrainee = Pick<
   | 'label'
   | 'i'
   | 'j'
+  | 'villageHome'
   | 'homeHouseLabel'
   | 'homeBedLabel'
   | 'partnerLabel'

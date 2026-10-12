@@ -173,6 +173,9 @@ test('unit and corpse types accept runtime bandits but reject unknown types and 
 
 test('equipment durability accepts old saves and valid NPC wear, rejecting corrupt condition', () => {
   assert.doesNotThrow(() => validate({ equipmentDurability: { sword_iron: 0, bow: 100 } }))
+  assert.doesNotThrow(() =>
+    validate(JSON.parse(JSON.stringify({ equipmentDurability: { sword_iron: 899 / 9, bow: 599 / 6 } })))
+  )
   assert.doesNotThrow(() => validate({}))
   for (const equipmentDurability of [false, [], { bow: -1 }, { bow: 101 }, { bow: NaN }, { bow: '30' }]) {
     assert.throws(() => validate({ equipmentDurability }), /durability/)

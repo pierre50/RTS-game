@@ -148,7 +148,11 @@ test('only heroes can mine cave nodes, retaining tool requirements and normal ou
   const [gold, iron] = runtime.created
   const conditions = (type, tier, target) =>
     runtime.getResourceActionConditions(
-      { type, owner: { age: 0 }, inventory: { equipment: [tier >= 2 ? 'pickaxe_bronze' : 'pickaxe_ceramic'] } },
+      {
+        type,
+        owner: { age: 0 },
+        inventory: { activeWeapons: { tool: tier >= 2 ? 'pickaxe_bronze' : 'pickaxe_ceramic' } },
+      },
       target
     )
   assert.equal(conditions('Hero', 0, gold).minegold(), true)
@@ -202,4 +206,32 @@ test('saved minerals outside a reshaped cave move to accessible floor without re
   assert.equal(mineral.totalQuantity, 6)
   assert.equal(cave.minerals[0].i, mineral.i)
   assert.equal(cave.minerals[0].j, mineral.j)
+})
+
+test('tin loads and repairs pre-fix caves once without replenishing exhausted saved ores', () => {
+  const runtime = loadMinerals()
+  const tinBlueprint = { resources: [...blueprint.resources, { i: 2, j: 5, type: 'Tin', quantity: 5 }] }
+  const cave = { ...definition(), minerals: [{ i: 2, j: 2, type: 'Gold', quantity: 0, totalQuantity: 4 }] }
+  const room = space(cave)
+  runtime.ensureCaveMinerals({ space: room }, room, tinBlueprint)
+  assert.deepEqual(
+    cave.minerals.map(r => [r.type, r.quantity]),
+    [
+      ['Gold', 0],
+      ['Tin', 5],
+    ]
+  )
+  assert.equal(runtime.created[0].type, 'Tin')
+  runtime.created[0].quantity = 0
+  cave.minerals[1].i = 3 // A relocated saved vein must never be appended again.
+  runtime.ensureCaveMinerals({ space: room }, room, tinBlueprint)
+  assert.equal(cave.minerals.length, 2)
+  assert.equal(cave.minerals[1].quantity, 0)
+  const saved = JSON.parse(JSON.stringify(cave)),
+    restored = space(saved)
+  runtime.ensureCaveMinerals({ space: restored }, restored, tinBlueprint)
+  assert.equal(saved.minerals[1].quantity, 0)
+  const fresh = space(definition())
+  runtime.ensureCaveMinerals({ space: fresh }, fresh, tinBlueprint)
+  assert.equal(fresh.building.cave.minerals.find(r => r.type === 'Tin').quantity, 5)
 })

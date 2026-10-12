@@ -8,7 +8,7 @@ export function renderInventoryToolIcons(this: InventoryManager): void {
   const { app } = this.menu.context
   for (const [tool, slot] of this.slots) {
     const available = this.isActiveWeaponAvailable(tool)
-    slot.classList.toggle('empty', !available && tool !== 'interact')
+    slot.classList.toggle('empty', !this.getActiveWeaponEquipment(tool) || !available)
   }
   for (const [tool, canvas] of this.toolIcons) {
     const equipment = this.getActiveWeaponEquipment(tool)

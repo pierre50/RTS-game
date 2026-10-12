@@ -1,12 +1,11 @@
+import { belongsToSettlement, collectiveAnchor } from '../../../lib/economy/collectiveConstruction'
 import { isStaticSettlement } from '../../../config/settlementProfiles'
-import { getTrainingDurationDays } from '../../../lib/training/trainingRules'
 import {
-  MAX_INFANTRY,
-  MAX_ARCHERS,
-  AI_DIFFICULTIES,
-  AI_BUILDING_TRAINING_CAPACITY,
-  AI_ABSTRACT_DAILY_RECRUITS,
-} from '../../../ai/config'
+  getTrainingDurationDays,
+  getBuildingTrainingCapacity,
+  getTrainingStartingExperience,
+} from '../../../lib/training/trainingRules'
+import { MAX_INFANTRY, MAX_ARCHERS, AI_DIFFICULTIES, AI_ABSTRACT_DAILY_RECRUITS } from '../../../ai/config'
 import { BUILDING_TYPES, UNIT_TYPES } from '../../../constants'
 import { isOfflineWorker, type OfflineWorkRules } from '../offline/OfflineWorldWork'
 import { isLiving, type OfflineWorldSpatial } from '../offline/OfflineWorldSpatial'
@@ -45,13 +44,19 @@ export function planAbstractTraining(
         const building = player.buildings?.find(
           b =>
             b.type === buildingType &&
+            belongsToSettlement(player, collectiveAnchor(player, worker), b) &&
             b.isBuilt &&
+            !b.buildingUpgrade &&
             isLiving(b) &&
-            (b.trainingQueue?.length ?? 0) < AI_BUILDING_TRAINING_CAPACITY
+            (b.trainingQueue?.length ?? 0) < getBuildingTrainingCapacity(b)
         )
         if (!building || !worker.label) continue
         const trainee = {
           type: worker.type,
+          villageHome: worker.villageHome,
+          homeHouseLabel: worker.homeHouseLabel,
+          homeBedLabel: worker.homeBedLabel,
+          partnerLabel: worker.partnerLabel,
           label: worker.label,
           i: worker.i,
           j: worker.j,
@@ -64,6 +69,7 @@ export function planAbstractTraining(
         building.trainingQueue.push({
           type,
           trainee,
+          extra: { experience: getTrainingStartingExperience(building, type) },
           cost: {},
           loading: 0,
           trainingStartedDay: day,

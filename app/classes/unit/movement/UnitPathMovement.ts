@@ -1,7 +1,7 @@
 import { getSprintMoveFactor, recordSprintMovement } from '../../../lib/units/movement/unitSprint'
 import { runPathStep } from '../../../lib/units/pathProgress'
 import { updateInstanceRenderVisibility } from '../../../lib/grid/visibility'
-import { updateTargetPursuit } from '../../../lib/units/targetPursuit'
+import { updateTargetPursuit } from '../../../lib/units/combat/targetPursuit'
 import { tryStartUnitContactApproach } from './UnitContactApproach'
 import { ACTION_TYPES, SHEET_TYPES, STEP_TIME } from '../../../constants'
 import {

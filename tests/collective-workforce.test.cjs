@@ -6,6 +6,7 @@ const { planCollectiveTasks, collectiveHarvestBudget, activeConstructionSite } =
   'app/lib/economy/collectiveTasks.ts',
   { moduleCache }
 )
+const { equipOwnedTool } = loadTsModule('app/lib/units/supplies/toolPreparation.ts', { moduleCache })
 const { constructionAssignment } = loadTsModule('app/lib/economy/constructionAssignments.ts', { moduleCache })
 function fixture(costs) {
   const units = Array.from({ length: 100 }, (_, i) => ({
@@ -14,7 +15,12 @@ function fixture(costs) {
     i: 10,
     j: 10,
     inactif: true,
-    inventory: { resources: { meat: 6, berry: 6 } },
+    inventory: {
+      toolsInitialized: true,
+      activeWeapons: { tool: i % 2 ? 'pickaxe_ceramic' : 'axe_ceramic' },
+      equipment: [i % 2 ? 'axe_ceramic' : 'pickaxe_ceramic', 'hammer_ceramic'],
+      resources: { meat: 5, berry: 5 },
+    },
   }))
   const sites = costs.map((cost, i) => ({
     type: 'House',
@@ -60,6 +66,7 @@ test('a partial last load returns to its own project and its harvest cannot exce
   apply(plan)
   const unit = [...plan].find(([unit, task]) => task.site === sites[1] && constructionAssignment(unit).target === 2)[0]
   unit.inventory.resources.stone = 2
+  equipOwnedTool(unit, 'hammer')
   assert.equal(collectiveHarvestBudget(owner, unit, 'stone'), 0)
   assert.equal(activeConstructionSite(owner, unit), sites[1])
   const next = planCollectiveTasks(owner, units).get(unit)
@@ -68,7 +75,10 @@ test('a partial last load returns to its own project and its harvest cannot exce
 })
 test('material already in bags or reserved in a pickup reduces new harvest claims', () => {
   const { owner, units, sites } = fixture([{ wood: 100 }])
+  equipOwnedTool(units[0], 'hammer')
+  equipOwnedTool(units[1], 'hammer')
   units[0].inventory.resources.wood = 18
+  equipOwnedTool(units[0], 'hammer')
   units[1].resourceDeliveryState = { building: { label: 'pit' }, pickup: { wood: 18 } }
   const plan = planCollectiveTasks(
     owner,
@@ -95,6 +105,7 @@ test('completed or demolished projects release their workers to another local pr
 
 test('prepaid legacy projects can still receive builders', () => {
   const { owner, units, sites } = fixture([{}])
+  equipOwnedTool(units[0], 'hammer')
   delete sites[0].constructionMaterials
   const plan = planCollectiveTasks(owner, units)
   assert.ok([...plan.values()].some(task => task.job === 'construction' && task.site === sites[0]))
@@ -102,6 +113,8 @@ test('prepaid legacy projects can still receive builders', () => {
 
 test('a partial bag cannot reserve materials already carried by another builder', () => {
   const { owner, units } = fixture([{ wood: 20 }])
+  equipOwnedTool(units[0], 'hammer')
+  equipOwnedTool(units[1], 'hammer')
   units[0].inventory.resources.wood = 1
   units[1].inventory.resources.wood = 19
   owner.buildings.push({
@@ -119,7 +132,9 @@ test('a partial bag cannot reserve materials already carried by another builder'
 })
 
 test('offline planning uses the same project assignments and bounded loads', () => {
-  const { planOfflineCollectiveWork } = loadTsModule('app/services/world/offline/OfflineCollectiveWork.ts', { moduleCache })
+  const { planOfflineCollectiveWork } = loadTsModule('app/services/world/offline/OfflineCollectiveWork.ts', {
+    moduleCache,
+  })
   const { owner, units, sites } = fixture([{ wood: 100 }, { stone: 80 }])
   planOfflineCollectiveWork(owner)
   assert.equal(units.filter(unit => unit.collectiveTask === 'wood').length, 6)
@@ -127,6 +142,7 @@ test('offline planning uses the same project assignments and bounded loads', () 
   const stoneWorker = units.find(unit => unit.collectiveTask === 'stone')
   assert.equal(activeConstructionSite(owner, stoneWorker), sites[1])
   stoneWorker.inventory.resources.stone = 18
+  equipOwnedTool(stoneWorker, 'hammer')
   planOfflineCollectiveWork(owner)
   assert.equal(stoneWorker.collectiveTask, 'construction')
   assert.equal(stoneWorker.dest[2], sites[1].label)
@@ -134,7 +150,10 @@ test('offline planning uses the same project assignments and bounded loads', () 
 
 test('loaded builders spread across projects instead of all bringing wood to the first one', () => {
   const { owner, units, sites } = fixture([{ wood: 36 }, { wood: 36 }])
-  for (const unit of units) unit.inventory.resources.wood = 18
+  for (const unit of units) {
+    unit.inventory.resources.wood = 18
+    equipOwnedTool(unit, 'hammer')
+  }
   const plan = planCollectiveTasks(owner, units)
   assert.equal(plan.size, 4)
   for (const site of sites) assert.equal([...plan.values()].filter(task => task.site === site).length, 2)
@@ -151,6 +170,7 @@ test('a distant gatherer keeps its settlement, project and cargo reservation acr
   assert.equal(activeConstructionSite(owner, unit), sites[0])
   assert.equal(planCollectiveTasks(owner, [unit]).get(unit).site, sites[0])
   unit.inventory.resources.wood = 18
+  equipOwnedTool(unit, 'hammer')
   const next = planCollectiveTasks(owner, [unit]).get(unit)
   assert.equal(next.job, 'construction')
   assert.equal(next.site, sites[0])

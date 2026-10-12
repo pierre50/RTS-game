@@ -8,7 +8,12 @@ test('tin can be mined with starting tools and routed to the tin command', () =>
   const { getActionContactTool } = loadTsModule('app/lib/actions/contactActions.ts')
   const target = { type: 'Tin' }
   const calls = []
-  const hero = { type: 'Hero', owner: { forgeUpgrades: {} }, sendToTin: (...args) => calls.push(args) }
+  const hero = {
+    inventory: { activeWeapons: { tool: 'pickaxe_ceramic' } },
+    type: 'Hero',
+    owner: { forgeUpgrades: {} },
+    sendToTin: (...args) => calls.push(args),
+  }
   assert.equal(canMineIronResource(hero, target), true)
   assert.ok(getMiningActions().includes('minetin'))
   assert.equal(getActionContactTool(hero, 'minetin'), 'pickaxe_ceramic')
@@ -19,7 +24,11 @@ test('tin can be mined with starting tools and routed to the tin command', () =>
 test('tin work yields tin during offline simulation', () => {
   const { offlineResourceWork } = loadTsModule('app/services/world/offline/OfflineWorldWork.ts')
   const resource = { type: 'Tin', quantity: 32, hitPoints: 20 }
-  const worker = { type: 'Villager', autonomousJob: 'tin', inventory: { equipment: [] } }
+  const worker = {
+    type: 'Villager',
+    autonomousJob: 'tin',
+    inventory: { activeWeapons: { tool: 'pickaxe_ceramic' }, equipment: [] },
+  }
   const result = offlineResourceWork({}, worker, resource, 3)
   assert.ok(result)
   assert.equal(result, 'goldminer')
@@ -39,7 +48,7 @@ test('tin and ingots survive unit serialization and count in bag capacity and st
   })
   const { getPlayerResourceTotals } = loadTsModule('app/lib/resources/playerResourceTotals.ts')
   const { getUnitResourceCarryRemaining } = loadTsModule('app/lib/resources/resourceDelivery.ts')
-  const resources = { tin: 4, copperIngot: 2, bronzeIngot: 3, ironIngot: 1 }
+  const resources = { tin: 4, copper: 2, bronzeIngot: 3, ironIngot: 1 }
   const hero = {
     type: 'Hero',
     controlMode: 'hero',

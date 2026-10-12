@@ -379,6 +379,7 @@ function loadHeroTools(overrides = {}) {
       applyWorkForAction: (hero, work, action) => Object.assign(hero, { work, action }),
     },
   }
+  mocks[path.join(__dirname, '../app/lib/equipment/equipmentLoot.ts')] = mocks['./equipment/equipmentLoot']
   Object.assign(mocks, overrides)
   if (overrides['./combat/combat']) mocks['./combat/combat'] = { ...combatMock, ...overrides['./combat/combat'] }
   if (!mocks['./combat/combatHit']) {
@@ -473,6 +474,114 @@ function loadHeroTools(overrides = {}) {
   return module.exports
 }
 
+for (const family of ['axe', 'pickaxe', 'hammer', 'scythe']) {
+  test(`${family} combat charges while held and strikes only once on release`, () => {
+    const enemy = { family: 'unit', hitPoints: 20, totalHitPoints: 20, x: 10, y: 0, i: 1, j: 0 }
+    let impacts = 0
+    const tools = loadHeroTools({
+      './combat/combat': {
+        getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
+        getHitPointsWithDamage: (_hero, target) => {
+          impacts++
+          return target.hitPoints - 2
+        },
+      },
+      './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+    })
+    const { hero } = makeHero()
+    hero.inventory.activeWeapons.tool = `${family}_ceramic`
+    hero.setDest = target => {
+      hero.dest = target
+    }
+    hero.energy = 10
+    const energy = hero.energy
+    assert.equal(tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+    for (let i = 0; i < 100; i++) {
+      assert.equal(tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }, true), false)
+      tools.updateHeroPowerCharge(hero, hero.heroPowerChargeStart + 700)
+    }
+    assert.equal(impacts, 0)
+    assert.ok(hero.energy < energy)
+    assert.ok(Math.abs(hero.heroPowerChargeRatio - 1) < 1e-12)
+    assert.equal(hero.currentSheet, 'standingSheet')
+    assert.equal(tools.releaseHeroToolStrike(hero, { x: 10, y: 0 }), true)
+    assert.equal(impacts, 0)
+    const impactFrame = family === 'scythe' ? 5 : 4
+    playImpactFrame(hero, impactFrame - 1)
+    assert.equal(impacts, 0)
+    playImpactFrame(hero, impactFrame)
+    assert.equal(impacts, 1)
+    assert.equal(hero.actionLocked, true)
+    hero.sprite.onComplete()
+    assert.equal(hero.actionLocked, false)
+    assert.equal(tools.releaseHeroToolStrike(hero, { x: 10, y: 0 }), false)
+    assert.equal(impacts, 1)
+  })
+}
+
+for (const family of ['axe', 'pickaxe', 'hammer', 'scythe']) {
+  for (const duration of [0, 350, 700, 1400]) {
+    test(`${family} combat charge scales damage after ${duration} ms`, () => {
+      const enemy = { family: 'unit', hitPoints: 100, x: 10, y: 0, i: 1, j: 0 }
+      const tools = loadHeroTools({
+        './combat/combat': {
+          getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
+          getHitPointsWithDamage: (_hero, target, damage) => target.hitPoints - damage,
+        },
+        './equipment/equipmentStats': {
+          getEquipmentCombatStats: () => ({ weaponPower: 8, armor: 0 }),
+          getUnitWorkEquipment: () => [`${family}_ceramic`],
+        },
+        './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+      })
+      const { hero } = makeHero()
+      hero.energy = 100
+      hero.inventory.activeWeapons.tool = `${family}_ceramic`
+      assert.equal(tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+      assert.equal(tools.isHeroPowerChargeActiveForTool(hero, 'interact'), true)
+      assert.equal(tools.releaseHeroPowerCharge(hero, hero.heroPowerChargeStart + duration), true)
+      playImpactFrame(hero, family === 'scythe' ? 5 : 4)
+      assert.equal(100 - enemy.hitPoints, 8 * (1 + Math.min(1, duration / 700) * 0.5))
+      assert.equal(hero.heroPendingToolStrike, undefined)
+      assert.equal(tools.releaseHeroPowerCharge(hero), false)
+    })
+  }
+}
+
+for (const family of ['axe', 'pickaxe', 'hammer', 'scythe']) {
+  test(`${family} whiffs finish the same authored gesture as targeted strikes`, () => {
+    const tools = loadHeroTools()
+    const { hero } = makeHero()
+    hero.inventory.activeWeapons.tool = `${family}_ceramic`
+    hero.action = null
+    tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 })
+    tools.releaseHeroToolStrike(hero, { x: 10, y: 0 })
+    assert.equal(hero.action, 'attack')
+    playImpactFrame(hero, family === 'scythe' ? 5 : 4)
+    assert.equal(hero.actionLocked, true)
+    assert.equal(hero.attackRecoveryAnimationTaskId, undefined)
+    hero.sprite.onComplete()
+    assert.equal(hero.actionLocked, false)
+  })
+}
+
+test('a held work gesture cannot become a tool attack, and cancelled or changed tools cannot strike', () => {
+  const tools = loadHeroTools()
+  for (const cancel of ['cancel', 'change', 'death']) {
+    const { hero } = makeHero()
+    hero.inventory.activeWeapons.tool = 'axe_ceramic'
+    assert.equal(tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }, true), false)
+    assert.equal(hero.heroPendingToolStrike, undefined)
+    assert.equal(tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+    if (cancel === 'cancel') tools.cancelHeroActiveToolAction(hero)
+    if (cancel === 'change') hero.inventory.activeWeapons.tool = 'pickaxe_ceramic'
+    if (cancel === 'death') hero.isDead = true
+    tools.releaseHeroToolStrike(hero, { x: 10, y: 0 })
+    assert.equal(hero.heroPendingToolStrike, undefined)
+    assert.notEqual(hero.currentSheet, 'actionSheet')
+  }
+})
+
 function makeSprite() {
   return {
     currentFrame: 0,
@@ -507,6 +616,7 @@ function makeHero() {
   let nextTaskId = 1
   const scheduled = new Map()
   const hero = {
+    type: 'Hero',
     actionLocked: false,
     context: {
       scheduler: {
@@ -880,7 +990,7 @@ test('hero defense holds melee tools on the third action frame', () => {
     now += 350
     updateHeroDefense(hero)
     assert.equal(hero.sprite.currentFrame, 2)
-    assert.equal(hero.energy, 9)
+    assert.ok(Math.abs(hero.energy - 9) < 1e-12)
   } finally {
     global.performance = originalPerformance
   }
@@ -1008,7 +1118,7 @@ test('hero defense release fallback clears a stuck reverse animation', () => {
   assert.equal(hero.heroDefenseReleaseFallbackTaskId, null)
 })
 
-test('hero defense only starts with point weapons', () => {
+test('hero defense rejects bows and bare hands', () => {
   const { beginHeroDefense } = loadHeroTools()
   const { hero } = makeHero()
 
@@ -1363,7 +1473,7 @@ test('bow release drains energy up to the mouse-up instant', () => {
     now += 350
     assert.equal(releaseHeroPowerCharge(hero), true)
 
-    assert.equal(hero.energy, 9)
+    assert.ok(Math.abs(hero.energy - 9) < 1e-12)
     assert.equal(hero.heroPowerReleasePower, 0.5)
   } finally {
     global.performance = originalPerformance
@@ -2025,7 +2135,7 @@ test('sword damages berry bushes with weapon damage', () => {
   assert.deepEqual(damageFeedback, [['berrybush', 4]])
 })
 
-test('free-hand interact chops a depleted berry bush instead of blocking on gather', () => {
+test('equipped axe chops a depleted berry bush instead of blocking on gather', () => {
   const berrybush = {
     family: 'resource',
     hitPoints: 3,
@@ -2053,6 +2163,7 @@ test('free-hand interact chops a depleted berry bush instead of blocking on gath
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [berrybush].filter(predicate) },
   })
   const { hero } = makeHero()
+  hero.inventory.activeWeapons.tool = 'axe_ceramic'
   Object.assign(hero, {
     energy: 10,
     i: 0,
@@ -2365,3 +2476,117 @@ test('sword charge captures sprint momentum at initiation and cancellation disca
     global.performance = previous
   }
 })
+
+test('charged slingshot releases one pebble, preserves arrows and warns when stones run out', () => {
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools()
+  const { hero, projectiles } = makeHero()
+  const messages = []
+  hero.inventory.activeWeapons.ranged = 'slingshot'
+  hero.inventory.resources = { stone: 1 }
+  hero.context.menu = { showMessage: message => messages.push(message) }
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+  try {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      hero.actionLocked = false
+      hero.sprite = makeSprite()
+      assert.equal(triggerToolAttackAt(hero, 'bow', { x: 170, y: 100 }), true)
+      assert.equal(hero.inventory.resources.stone, attempt === 0 ? 1 : 0)
+      now += 700
+      assert.equal(releaseHeroPowerCharge(hero, now), true)
+      hero.sprite.currentFrame = 8
+      hero.sprite.onFrameChange?.(8)
+    }
+    assert.equal(projectiles.length, 1)
+    assert.equal(projectiles[0].type, 'Pebble')
+    assert.equal(hero.inventory.resources.stone, 0)
+    assert.equal(hero.inventory.equippedCounts.arrow, 1)
+    assert.deepEqual(messages, ['heroNoStoneAmmo'])
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+for (const family of ['axe', 'pickaxe', 'hammer', 'scythe']) {
+  test(`${family} can guard, drain energy, release and resume charging`, () => {
+    const tools = loadHeroTools()
+    const { hero, scheduled } = makeHero()
+    hero.context.scheduler.addOneShot = hero.context.scheduler.add
+    hero.inventory.activeWeapons.tool = `${family}_ceramic`
+    hero.energy = 10
+    assert.equal(tools.canHeroDefendWithTool('interact', hero), true)
+    assert.equal(tools.beginHeroDefense(hero, 'interact'), true)
+    playImpactFrame(hero, 2)
+    assert.equal(hero.sprite.playing, false)
+    assert.equal(hero.heroDefenseActive, true)
+    tools.updateHeroDefense(hero, hero.heroDefenseStart + 350)
+    assert.ok(Math.abs(hero.energy - 9) < 1e-12)
+    assert.equal(tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
+    tools.releaseHeroDefense(hero)
+    assert.equal(hero.heroDefenseActive, false)
+    const reverse = scheduled.get(hero.heroDefenseReverseTaskId).callback
+    reverse()
+    reverse()
+    assert.equal(hero.actionLocked, false)
+    assert.equal(hero.currentSheet, 'standingSheet')
+    assert.equal(tools.triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+    assert.equal(hero.heroPowerChargeTool, 'tool')
+    tools.cancelHeroActiveToolAction(hero)
+    assert.equal(tools.beginHeroDefense(hero, 'interact'), true)
+    tools.updateHeroDefense(hero, hero.heroDefenseStart + 100000)
+    assert.equal(hero.heroDefenseActive, false)
+    assert.equal(hero.heroDefenseEnergyExhausted, true)
+  })
+}
+test('tool guard rejects missing, stowed and broken tools', () => {
+  const tools = loadHeroTools()
+  for (const state of ['missing', 'stowed', 'broken']) {
+    const { hero } = makeHero()
+    hero.inventory.activeWeapons.tool = state === 'broken' ? 'axe_ceramic~condition:0' : 'axe_ceramic'
+    if (state === 'missing') delete hero.inventory.activeWeapons.tool
+    if (state === 'stowed') hero.inventory.toolsStowed = true
+    assert.equal(tools.canHeroDefendWithTool('interact', hero), false)
+    assert.equal(tools.beginHeroDefense(hero, 'interact'), false)
+  }
+})
+
+for (const [slot, mode, item] of [
+  ['tool', 'interact', 'axe_ceramic'],
+  ['tool', 'interact', 'pickaxe_bronze'],
+  ['tool', 'interact', 'hammer_iron'],
+  ['tool', 'interact', 'scythe_iron'],
+  ['melee', 'sword', 'sword_iron'],
+]) {
+  test(`${item} wears only on a frontal block and its last use blocks before ending guard`, () => {
+    const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+    const { getHitPointsWithDamage } = loadTsModule('app/lib/combat/combat.ts')
+    const tools = loadHeroTools()
+    const { hero } = makeHero()
+    hero.family = 'unit'
+    hero.energy = 10
+    hero.work = 'woodcutter' // Guard must use the selected slot, not a stale job.
+    hero.inventory.activeWeapons.tool = 'axe_iron'
+    hero.inventory.activeWeapons[slot] = `${item}~uses:2`
+    const otherSlot = slot === 'tool' ? 'melee' : 'tool'
+    const otherItem = hero.inventory.activeWeapons[otherSlot]
+    assert.equal(tools.beginHeroDefense(hero, mode), true)
+    tools.updateHeroDefense(hero, hero.heroDefenseStart + 100)
+    assert.equal(hero.inventory.activeWeapons[slot], `${item}~uses:2`, 'holding does not wear equipment')
+    const front = { x: -10, y: 0 }
+    const back = { x: 10, y: 0 }
+    assert.equal(getHitPointsWithDamage(back, hero, 3), 7)
+    assert.equal(hero.inventory.activeWeapons[slot], `${item}~uses:2`)
+    assert.equal(getHitPointsWithDamage(front, hero, 3), 10)
+    assert.equal(hero.inventory.activeWeapons[slot], `${item}~uses:1`)
+    assert.equal(hero.heroDefenseActive, true)
+    assert.equal(getHitPointsWithDamage(front, hero, 3), 10, 'last use still blocks')
+    assert.equal(hero.inventory.activeWeapons[slot], `${item}~condition:0`)
+    assert.equal(hero.heroDefenseActive, false)
+    assert.equal(hero.onHeroDefenseBlock, undefined)
+    assert.equal(hero.actionLocked, false)
+    assert.equal(getHitPointsWithDamage(front, hero, 3), 7, 'next hit passes through')
+    assert.equal(hero.inventory.activeWeapons[otherSlot], otherItem)
+    assert.equal(tools.beginHeroDefense(hero, mode), false)
+  })
+}

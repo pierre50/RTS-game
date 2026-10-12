@@ -1,3 +1,5 @@
+import { getEquippedWorkTool } from '../lib/equipment/workTools'
+import { equipmentBaseKey } from '../lib/equipment/equipmentCondition'
 import { constructionAssignment } from '../lib/economy/constructionAssignments'
 import { UNIT_TYPES, DAILY_CONSUMPTION_PER_VILLAGER } from '../constants'
 import type { PlayerLike } from '../types/player'
@@ -52,6 +54,7 @@ export function collectiveVillageEventSnapshot(owner: PlayerLike): string {
       assignment?.resource && assignment.target != null
         ? materialAmount(bag, assignment.resource) >= assignment.target
         : false,
+      equipmentBaseKey(getEquippedWorkTool(unit) ?? ''),
       unit.label,
       unit.type,
       unit.lastMealAt,

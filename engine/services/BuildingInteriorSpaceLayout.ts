@@ -1,19 +1,12 @@
+import { getInteriorRoomSize } from '../../app/lib/buildings/interiorRoomSize'
 import { getCaveInteriorBlueprint } from '../../app/lib/buildings/caveBlueprint'
 import type { MapBlueprint } from '../../app/classes/map/MapGeneration'
 import { createIsometricInteriorBlueprint } from '../../app/classes/map/generation/LocalMapBlueprint'
-import { getInteriorMapSizeForBuildingSize } from '../../app/lib/buildings/interiorProfiles'
 import type { ReservedPassageCellLookup } from '../../app/lib/buildings/passageCells'
-import {
-  canUnitUseCellAsIdleDestination,
-  isRuntimeMapSpacePassageCell,
-} from '../../app/lib/buildings/passageCells'
+import { canUnitUseCellAsIdleDestination, isRuntimeMapSpacePassageCell } from '../../app/lib/buildings/passageCells'
 import { getCellsAroundPoint } from '../../app/lib/grid/cells'
 import type { BuildingEntity, UnitEntity } from '../../app/types/entities'
 import type { RuntimeCell, RuntimeMapSpace } from '../../app/types/map'
-
-function getDefaultInteriorMapSize(building: BuildingEntity): number {
-  return getInteriorMapSizeForBuildingSize(building.size)
-}
 
 export function maskValue(mask: MapBlueprint['floorMask'], i: number, j: number): boolean {
   return mask?.[i]?.[j] === 1
@@ -25,7 +18,7 @@ export function isBlueprintExitCell(blueprint: MapBlueprint, i: number, j: numbe
 
 export function createDefaultBuildingInteriorBlueprint(building: BuildingEntity): MapBlueprint {
   if (building.type === 'Cave') return getCaveInteriorBlueprint(building)
-  const size = getDefaultInteriorMapSize(building)
+  const size = getInteriorRoomSize(building)
   const buildingSize = building.size ?? 2
   return createIsometricInteriorBlueprint({
     ...(building.context?.map?.seed === undefined ? {} : { seed: building.context.map.seed }),
@@ -79,7 +72,11 @@ export function findFreeCellNear(
   return null
 }
 
-export function sortInteriorIdleCells(cells: RuntimeCell[], exitCell: RuntimeCell | null, center: number): RuntimeCell[] {
+export function sortInteriorIdleCells(
+  cells: RuntimeCell[],
+  exitCell: RuntimeCell | null,
+  center: number
+): RuntimeCell[] {
   return [...cells].sort((a, b) => {
     const aExit = exitCell ? Math.abs(a.i - exitCell.i) + Math.abs(a.j - exitCell.j) : 0
     const bExit = exitCell ? Math.abs(b.i - exitCell.i) + Math.abs(b.j - exitCell.j) : 0

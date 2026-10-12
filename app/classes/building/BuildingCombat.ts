@@ -1,3 +1,6 @@
+import { TOWN_CENTER_DEFENSE } from '../../config/townCenter'
+import { getBuildingAttackRange, getBuildingCombatProfile } from '../../lib/buildings/towerCombat'
+import { sameMapSpace } from '../../lib/mapSpaces'
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, getActionCondition, instancesDistance } from '../../lib'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
@@ -15,27 +18,72 @@ export class BuildingCombat {
   attackAction(target: RuntimeEntity): void {
     const building = this.building
     const map = building.context.map
-    const range = building.range
-    if (!building.isBuilt || building.isDead || !range || !building.projectile) return
+    if (
+      !building.isBuilt ||
+      building.isDead ||
+      building.isDestroyed ||
+      !getBuildingAttackRange(building) ||
+      !building.projectile ||
+      building.attackIntervalId != null
+    )
+      return
     const projectileType = building.projectile
-    building.startAttackInterval(() => {
-      if (
-        building.isBuilt &&
-        getActionCondition(building, target, ACTION_TYPES.attack) &&
-        instancesDistance(building, target) <= range
-      ) {
-        const projectile = new Projectile({ owner: building, type: projectileType, target }, building.context)
-        attachProjectileToMapSpace(projectile, map)
-      } else {
-        building.stopAttackInterval()
-      }
-    }, building.rateOfFire)
+    building.startAttackInterval(
+      () => {
+        if (!building.isBuilt || building.isDead || building.isDestroyed) {
+          building.stopAttackInterval()
+          return
+        }
+        const range = getBuildingAttackRange(building)!
+        const profile = getBuildingCombatProfile(building)
+        const valid = (candidate: RuntimeEntity) =>
+          !candidate.isDead &&
+          !candidate.isDestroyed &&
+          candidate.family !== FAMILY_TYPES.animal &&
+          sameMapSpace(building, candidate) &&
+          getActionCondition(building, candidate, ACTION_TYPES.attack) &&
+          instancesDistance(building, candidate) <= range
+        const targets: RuntimeEntity[] = valid(target) ? [target] : []
+        const limit = profile?.targets ?? 1
+        if (targets.length < limit) {
+          const candidates = findInstancesInSight<BuildingControllerHost, RuntimeEntity>(building, valid, {
+            range,
+            useInsightRange: true,
+          })
+            .filter(valid)
+            .sort((a, b) => instancesDistance(building, a) - instancesDistance(building, b))
+          for (const candidate of candidates) {
+            if (targets.includes(candidate)) continue
+            targets.push(candidate)
+            if (targets.length >= limit) break
+          }
+        }
+        if (!targets.length) {
+          building.stopAttackInterval()
+          return
+        }
+        target = targets[0]!
+        for (const enemy of targets) {
+          const projectile = new Projectile(
+            {
+              owner: building,
+              type: projectileType,
+              target: enemy,
+              ...(profile ? { weaponPower: profile.power } : {}),
+            },
+            building.context
+          )
+          attachProjectileToMapSpace(projectile, map)
+        }
+      },
+      building.type === 'TownCenter' ? TOWN_CENTER_DEFENSE.rateOfFire : building.rateOfFire
+    )
   }
 
   detect(instance: RuntimeEntity): void {
     const building = this.building
     if (building.context.editor) return
-    const range = building.range
+    const range = getBuildingAttackRange(building)
     if (!range) return
 
     const actionOk = getActionCondition(building, instance, ACTION_TYPES.attack)
@@ -43,8 +91,10 @@ export class BuildingCombat {
 
     if (
       building.isBuilt &&
+      !building.isDead &&
+      !building.isDestroyed &&
       instance.family !== FAMILY_TYPES.animal &&
-      !building.attackIntervalId &&
+      building.attackIntervalId == null &&
       actionOk &&
       dist <= range
     ) {
@@ -59,11 +109,16 @@ export class BuildingCombat {
   // instant-build path (constructed directly with isBuilt: true, e.g. map generation).
   scanForInitialTarget(): void {
     const building = this.building
-    const range = building.range
+    const range = getBuildingAttackRange(building)
     if (!range || !building.projectile) return
     const candidates = findInstancesInSight<BuildingControllerHost, RuntimeEntity>(
       building,
-      candidate => getActionCondition(building, candidate, ACTION_TYPES.attack),
+      candidate =>
+        !candidate.isDead &&
+        !candidate.isDestroyed &&
+        candidate.family !== FAMILY_TYPES.animal &&
+        sameMapSpace(building, candidate) &&
+        getActionCondition(building, candidate, ACTION_TYPES.attack),
       { range, useInsightRange: true }
     )
 
@@ -74,7 +129,7 @@ export class BuildingCombat {
   isAttacked(instance: RuntimeEntity): void {
     const building = this.building
     if (building.context.editor) return
-    const range = building.range
+    const range = getBuildingAttackRange(building)
     if (building.isDead || !getActionCondition(building, instance, ACTION_TYPES.attack)) return
     building.owner.reportThreat?.(building, instance)
     building.context.unitRest?.handleShelterAttack?.(building, instance)

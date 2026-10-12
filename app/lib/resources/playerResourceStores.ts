@@ -1,6 +1,6 @@
 import { isCommunalResourceStore } from '../economy/constructionStores'
 import { getBaseTerritory } from '../territory/baseTerritory'
-import { BUILDING_TYPES, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, UNIT_TYPES } from '../../constants/entities'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -20,6 +20,15 @@ export type ResourceTotalOptions = {
   includeHero?: boolean
   hero?: UnitEntity | null
   visibleOnly?: boolean
+  /** Building or resident home whose town owns this transaction; null means no town. */
+  settlement?: {
+    i: number
+    j: number
+    spaceId?: string | null
+    id?: string
+    townCenterId?: string
+    owner?: { label?: string } | null
+  } | null
 }
 
 function isOwnedChest(building: BuildingEntity, player: ResourceStoreOwner): boolean {
@@ -47,10 +56,43 @@ function getPlayerStartingResourceDepots(player: ResourceStoreOwner | null | und
   return (player.buildings ?? []).filter(building => isOwnedStartingResourceDepot(building, player))
 }
 
-export function getPlayerResourceStores(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
-  return [...new Set([...getPlayerResourceChests(player), ...getPlayerStartingResourceDepots(player)])].filter(store =>
-    Boolean(player && getBaseTerritory(store, [player]))
+export function getPlayerResourceStores(
+  player: ResourceStoreOwner | null | undefined,
+  options: ResourceTotalOptions = {}
+): BuildingEntity[] {
+  const hero =
+    options.includeHero === false
+      ? null
+      : (options.hero ?? (player?.isPlayed ? player.context?.controls?.heroUnit : null))
+  const point = options.settlement !== undefined ? options.settlement : hero
+  const scoped = options.settlement !== undefined || Boolean(hero)
+  const center =
+    player && point && (!point.owner || point.owner.label === player.label)
+      ? getBaseTerritory(point, [player])?.center
+      : null
+  return [...new Set([...getPlayerResourceChests(player), ...getPlayerStartingResourceDepots(player)])].filter(
+    store => {
+      const territory = player && getBaseTerritory(store, [player])
+      return Boolean(territory && (!scoped || territory.center === center))
+    }
   )
+}
+
+/** Unscoped reports may aggregate a faction; an ambiguous payment must never do so. */
+export function resourceTransactionOptions(
+  player: ResourceStoreOwner,
+  options: ResourceTotalOptions = {}
+): ResourceTotalOptions {
+  if (options.settlement !== undefined) return options
+  const hero =
+    options.includeHero === false
+      ? null
+      : (options.hero ?? (player.isPlayed ? player.context?.controls?.heroUnit : null))
+  if (hero) return { ...options, settlement: hero }
+  const centers = (player.buildings ?? []).filter(
+    center => center.type === BUILDING_TYPES.townCenter && getBaseTerritory(center, [player])?.center === center
+  )
+  return { ...options, settlement: centers.length === 1 ? centers[0] : null }
 }
 
 function isOwnedHero(unit: UnitEntity, player: ResourceStoreOwner): boolean {

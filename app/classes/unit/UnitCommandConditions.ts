@@ -2,6 +2,7 @@ import { ACTION_TYPES } from '../../constants'
 import { getActionCondition } from '../../lib'
 import type { ActionProps } from '../../lib/combat'
 import { playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
+import { isUnitRetaliationTarget } from '../../lib/units/unitRetaliation'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -18,6 +19,7 @@ export function checkActionCondition(
   if (!target) return false
   if (
     ['attack', 'hunt', 'captureHorse', 'convert'].includes(action ?? '') &&
+    !(action === ACTION_TYPES.attack && isUnitRetaliationTarget(source, target as RuntimeEntity)) &&
     !playerSeesTarget(source.owner, target as RuntimeEntity)
   )
     return false

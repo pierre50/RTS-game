@@ -1,3 +1,5 @@
+import { constructionToolPreparation, equipOwnedTool, toolFamilyForJob } from '../units/supplies/toolPreparation'
+import { canAutonomouslyWork } from '../equipment/workTools'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import { hasIronMiningPickaxe } from '../resources/miningEquipment'
@@ -11,11 +13,66 @@ import {
   type SettlementPlan,
 } from './collectiveSettlementPlan'
 import { assignConstructionWork, constructionAssignment } from './constructionAssignments'
-import { constructionBagNeeds, materialAmount, missingConstructionMaterialsForNextPoint } from './constructionMaterials'
+import { constructionBagNeeds, materialAmount } from './constructionMaterials'
 import { planDepotPickup, type DepotPickup } from './depotPickup'
 import { personalFoodReserve } from './villagerProvisions'
 
 export type CollectiveTask = { job: string; site?: CollectiveSite; pickup?: DepotPickup }
+function canUseOwnedTool(unit: CollectiveMember, job: string, allowGround = false): boolean {
+  if (canAutonomouslyWork(unit, job, allowGround)) return true
+  if (unit.inventory?.toolsStowed) return false
+  return (unit.inventory?.equipment ?? []).some(tool =>
+    canAutonomouslyWork(
+      {
+        inventory: {
+          ...unit.inventory,
+          activeWeapons: { ...unit.inventory?.activeWeapons, tool },
+        },
+      },
+      job,
+      allowGround
+    )
+  )
+}
+
+export function planUnitTask<T extends CollectiveMember>(
+  plan: SettlementPlan,
+  unit: T,
+  acceptsJob: AcceptsJob<T>
+): CollectiveTask | undefined {
+  if (constructionToolPreparation(unit, plan.owner)) return undefined
+  const task = planUnitTaskReady(plan, unit, (member, job) => {
+    const family = toolFamilyForJob(job)
+    const original = member.inventory?.activeWeapons?.tool
+    const bag = member.inventory?.equipment
+    if (!family || !bag || !member.inventory?.activeWeapons) return acceptsJob(member, job)
+    const tool = [original, ...bag].find(
+      tool =>
+        tool &&
+        canAutonomouslyWork(
+          {
+            inventory: {
+              ...member.inventory,
+              activeWeapons: { tool },
+            },
+          },
+          job
+        )
+    )
+    if (!tool) return acceptsJob(member, job)
+    member.inventory.activeWeapons.tool = tool
+    try {
+      return acceptsJob(member, job)
+    } finally {
+      if (original) member.inventory.activeWeapons.tool = original
+      else delete member.inventory.activeWeapons.tool
+    }
+  })
+  const family = task && toolFamilyForJob(task.job)
+  if (family) equipOwnedTool(unit, family)
+  return task
+}
+
 type AcceptsJob<T> = (unit: T, job: string) => boolean
 type UnitPlan<T extends CollectiveMember> = {
   plan: SettlementPlan
@@ -36,11 +93,14 @@ export function orderedSettlementWorkers<T extends CollectiveMember>(plan: Settl
 }
 
 /** Finish an active collection batch before delivering: one useful item is not a full trip. */
-export function planUnitTask<T extends CollectiveMember>(
+function planUnitTaskReady<T extends CollectiveMember>(
   plan: SettlementPlan,
   unit: T,
   acceptsJob: AcceptsJob<T>
 ): CollectiveTask | undefined {
+  if (!canUseOwnedTool(unit, 'idle')) return undefined
+  const accepts = acceptsJob
+  acceptsJob = (member, job) => canUseOwnedTool(member, job, true) && accepts(member, job)
   const bag = unit.inventory?.resources ?? {}
   const room = plan.carryRemaining(unit)
   const board = unitBoard(plan, unit, bag, room, acceptsJob)
@@ -80,11 +140,11 @@ function unitBoard<T extends CollectiveMember>(
   const candidates = [...plan.boards].sort((a, b) => Number(b.site === preferred) - Number(a.site === preferred))
   return candidates.find(
     board =>
-      (board.prepaid && (plan.builders.get(board.site) ?? 0) < 2) ||
+      (canUseOwnedTool(unit, 'construction') && board.prepaid && (plan.builders.get(board.site) ?? 0) < 2) ||
       (board.site === preferred && Object.keys(board.needed).some(key => carriesMaterial(bag, key))) ||
       (room > 0 &&
         Object.entries(board.transport).some(
-          ([key, amount]) => amount > 0 && acceptsJob(unit, key) && ironReady(plan, unit, key)
+          ([key, amount]) => amount > 0 && (canUseOwnedTool(unit, 'construction') || acceptsJob(unit, key))
         ))
   )
 }
@@ -135,11 +195,9 @@ function deliveryTask<T extends CollectiveMember>(
   job: UnitPlan<T>,
   loadNeeds: ResourceAmount
 ): CollectiveTask | undefined {
+  if (!canUseOwnedTool(job.unit, 'construction')) return undefined
   const { site, bag } = job
-  const bringing =
-    site &&
-    Object.entries(job.needed).some(([key, n]) => n > 0 && carriesMaterial(bag, key)) &&
-    !Object.keys(missingConstructionMaterialsForNextPoint(site, bag)).length
+  const bringing = site && Object.entries(job.needed).some(([key, n]) => n > 0 && carriesMaterial(bag, key))
   if (!site || !bringing || !batchReady(job, loadNeeds)) return undefined
   assignConstructionWork(job.unit, { site })
   return { job: 'construction', site }
@@ -149,6 +207,7 @@ function pickupTask<T extends CollectiveMember>(
   job: UnitPlan<T>,
   loadNeeds: ResourceAmount
 ): CollectiveTask | undefined {
+  if (!canUseOwnedTool(job.unit, 'construction')) return undefined
   const { plan, site, transport } = job
   if (!site) return undefined
   const pickup = planDepotPickup(
@@ -202,6 +261,7 @@ function stockTask<T extends CollectiveMember>(job: UnitPlan<T>): CollectiveTask
 }
 
 function builderTask<T extends CollectiveMember>(job: UnitPlan<T>): CollectiveTask | undefined {
+  if (!canUseOwnedTool(job.unit, 'construction')) return undefined
   const { plan, site } = job
   if (!site || (plan.builders.get(site) ?? 0) >= 2 || !canAdvanceConstruction(site)) return undefined
   plan.builders.set(site, (plan.builders.get(site) ?? 0) + 1)

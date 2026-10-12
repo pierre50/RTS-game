@@ -1,3 +1,7 @@
+import { supplyTownArrows } from '../../../lib/units/supplies/townArrowSupply'
+import { supplyTownTool, supplyTownWeapons } from '../../../lib/units/supplies/townToolSupply'
+import { withOfflineEconomyTelemetry } from '../../../lib/economy/economyTelemetry'
+import { initializeNpcArrows, replenishNpcArrows } from '../../../lib/units/combat/unitArrows'
 import { BUILDING_TYPES } from '../../../constants/entities'
 import {
   replenishMarketGold,
@@ -22,7 +26,6 @@ import type { PlayerLike } from '../../../types/player'
 import type { RuntimeEntity } from '../../../types/entities'
 import type { SaveEntityState, SavePlayerState, SerializedSave } from '../../../types/save'
 
-/** Simulate saved village data against finite local resources, without creating residents. */
 export function advanceDeferredVillage(
   context: GameContextLike,
   owner: PlayerLike,
@@ -31,6 +34,21 @@ export function advanceDeferredVillage(
   to: number,
   createResource: (state: SaveEntityState) => void
 ): void {
+  withOfflineEconomyTelemetry([player], from, to, () =>
+    advanceDeferredVillageSteps(context, owner, player, from, to, createResource)
+  )
+}
+
+/** Simulate saved village data against finite local resources, without creating residents. */
+function advanceDeferredVillageSteps(
+  context: GameContextLike,
+  owner: PlayerLike,
+  player: SavePlayerState,
+  from: number,
+  to: number,
+  createResource: (state: SaveEntityState) => void
+): void {
+  for (const unit of player.units ?? []) initializeNpcArrows(unit)
   configureVillageNightWatch(player)
   if (isStaticSettlement(player)) {
     const minuteMs = DAY_NIGHT_CONFIG.dayLengthMs / (DAY_NIGHT_CONFIG.hoursPerDay * 60)
@@ -49,11 +67,17 @@ export function advanceDeferredVillage(
         ) + 1
       )
     for (let day = dayAt(from) + 1; day <= dayAt(to); day++) {
+      for (const unit of player.units ?? []) replenishNpcArrows(unit, day, player)
       for (const market of player.buildings ?? []) {
         if (market.type !== BUILDING_TYPES.market || !market.isBuilt || market.isDead || market.isDestroyed) continue
         replenishMarketGold(market)
         if (day % MARKET_RESTOCK_INTERVAL_DAYS === 0) resetMarketEquipmentStock(market, { civilization: player.civ })
       }
+    }
+    for (const unit of player.units ?? []) {
+      supplyTownArrows(unit, player)
+      supplyTownTool(unit, player)
+      supplyTownWeapons(unit, player)
     }
     // The supply helper only reads saved inventories/ownership, never entity methods.
     const supplies = { ...player, ...savedResourceOwner(player), units: player.units ?? [] } as unknown as PlayerLike

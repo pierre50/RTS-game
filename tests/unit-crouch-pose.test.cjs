@@ -88,7 +88,7 @@ test('held equipment translates while clothing follows the compressed body', () 
     'bow',
     'bow_great',
     'bow_recurve',
-    'halberd',
+    'spear_iron',
     'longsword',
     'cane',
     'arrow_wood',

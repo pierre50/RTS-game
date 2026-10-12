@@ -1,3 +1,5 @@
+import { recordCampWoodCut } from '../../../services/quests/CampPreparationProgress'
+import { wearEquippedTool } from '../../../lib/equipment/equipmentWear'
 import { getHarvestAmount } from '../../../lib/economy/workRules'
 import { definedProperties } from '../../../lib/definedProperties'
 import { LOADING_TYPES, MENU_INFO_IDS, RESOURCE_TYPES, SOUND_CUES } from '../../../constants'
@@ -55,8 +57,12 @@ function chopImpact(runtime: UnitResourceActions, workTickFrame: number): void {
   if ((dest.hitPoints ?? 0) > 0) {
     damageChoppableResource(runtime, dest)
   } else if (!isChoppableBerrybush(dest)) {
-    if (!collectChoppedWood(runtime, dest, workTickFrame)) return
+    if (!collectChoppedWood(runtime, dest, workTickFrame)) {
+      wearEquippedTool(unit, 'chopwood')
+      return
+    }
   }
+  wearEquippedTool(unit, 'chopwood')
   finishWorkSwing(unit, workTickFrame, workTickFrame)
 }
 
@@ -101,6 +107,7 @@ function collectChoppedWood(runtime: UnitResourceActions, dest: RuntimeEntity, w
   }
   grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
   dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
+  recordCampWoodCut(unit)
   showResourceGainFeedback(unit, gain)
   if (dest.selected) {
     menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)

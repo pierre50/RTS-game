@@ -6,10 +6,12 @@ import {
   canCampPursue,
   CAMP_RETURN_RANGE,
   CAMP_TETHER_RANGE,
-} from '../../lib/units/campBehavior'
+} from '../../lib/units/camps/campBehavior'
 import { getEntitySpaceId, sameMapSpace } from '../../lib/mapSpaces'
 import { instanceIsInInsightRange } from '../../lib/units/insightDetection'
 import { playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
+import { clearUnitCombatAlert } from '../../lib/units/unitCombatAlert'
+import { clearUnitAttacker, isUnitRetaliationTarget } from '../../lib/units/unitRetaliation'
 import { cancelPendingAggression } from '../../lib/combat/combatFeedback'
 import { getCellsAroundPoint } from '../../lib/grid/cells'
 import { canUnitUseCellAsIdleDestination } from '../../lib/buildings/passageCells'
@@ -34,6 +36,8 @@ export class CampLeashController {
   constructor(private context: GameContextLike) {}
 
   recall(unit: UnitEntity): void {
+    clearUnitCombatAlert(unit)
+    clearUnitAttacker(unit)
     const state = (unit.campBehavior ??= { phase: 'guard' })
     state.phase = 'return'
     clearUnitSpacePortalRoute(unit)
@@ -78,8 +82,8 @@ export class CampLeashController {
       const visible =
         target &&
         sameMapSpace(unit, target) &&
-        instanceIsInInsightRange(unit, target) &&
-        playerSeesTarget(unit.owner, target)
+        (isUnitRetaliationTarget(unit, target) ||
+          (instanceIsInInsightRange(unit, target) && playerSeesTarget(unit.owner, target)))
       // A valid portal pursuit gets the same short grace period as a lost target.
       if (target?.isDead || target?.isDestroyed) abandon = true
       else if (visible && target) {

@@ -7,14 +7,18 @@ import {
   getEquipmentSlot,
   getWeaponSlot,
 } from '../../lib/equipment/equipmentLoot'
-import { getEquipmentGoldValue, getResourceGoldValue } from '../../lib/equipment/equipmentMarket'
+import {
+  getEquipmentGoldValue,
+  getResourceGoldValue,
+  getMarketResourceBuyPrice,
+} from '../../lib/equipment/equipmentMarket'
 import { getEquipmentCombatStats } from '../../lib/equipment/equipmentStats'
 import { t } from '../../lib/lang'
 import type { ResourceAmount } from '../../types/common'
 import type { MenuDetails } from '../../types/ui'
 
 type EquipmentDetailsMode = 'inventory' | 'market-buy' | 'market-sell'
-type ResourceDetailsMode = 'inventory' | 'market-sell'
+type ResourceDetailsMode = 'inventory' | 'market-sell' | 'market-buy'
 
 type InventoryRowInfo = {
   durability?: number | null
@@ -46,7 +50,7 @@ function createResourceDetails(
   amount = 1,
   mode: ResourceDetailsMode = 'inventory'
 ): MenuDetails {
-  const goldValue = getResourceGoldValue(resource)
+  const goldValue = mode === 'market-buy' ? getMarketResourceBuyPrice(resource) : getResourceGoldValue(resource)
   const totalValue = goldValue * Math.max(1, Math.floor(amount))
   return {
     title: amount > 1 ? `${getResourceDisplayName(resource)} x${amount}` : getResourceDisplayName(resource),
@@ -54,7 +58,9 @@ function createResourceDetails(
     meta: [
       t('detailsResourceIngredient'),
       goldValue > 0
-        ? t(mode === 'market-sell' ? 'detailsSellValue' : 'detailsValue', { gold: formatGold(totalValue) })
+        ? t(mode === 'market-sell' ? 'detailsSellValue' : mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', {
+            gold: formatGold(totalValue),
+          })
         : null,
     ],
   }
@@ -68,10 +74,16 @@ export function createResourceRowInfo(
 ): InventoryRowInfo {
   const details = createResourceDetails(resource, amount, mode)
   const showValue = options.showValue ?? true
-  const totalValue = getResourceGoldValue(resource) * Math.max(1, Math.floor(amount))
+  const totalValue =
+    (mode === 'market-buy' ? getMarketResourceBuyPrice(resource) : getResourceGoldValue(resource)) *
+    Math.max(1, Math.floor(amount))
   const hiddenMeta = new Set<string>()
   if (!showValue && totalValue > 0) {
-    hiddenMeta.add(t(mode === 'market-sell' ? 'detailsSellValue' : 'detailsValue', { gold: formatGold(totalValue) }))
+    hiddenMeta.add(
+      t(mode === 'market-sell' ? 'detailsSellValue' : mode === 'market-buy' ? 'detailsBuyValue' : 'detailsValue', {
+        gold: formatGold(totalValue),
+      })
+    )
   }
   return {
     goldValue: totalValue,

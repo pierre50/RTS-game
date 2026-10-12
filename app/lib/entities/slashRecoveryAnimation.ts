@@ -4,6 +4,7 @@ import { debugLog } from '../debug'
 import { lpcSlashFrameMs } from '../lpc/animationSpeeds'
 import { buildFrameRange, playSpriteFrameSequence } from './spriteAnimation'
 import { isHeroControlled } from '../units/unitControl'
+import { hasConfiguredActionFrameSequence } from '../animations/actionFrameSequences'
 
 const HERO_SLASH_FRAME_DEBUG = false
 const SLASH_REVERSE_RECOVERY_FRAME_MS = lpcSlashFrameMs()
@@ -36,6 +37,7 @@ export function playReverseSlashRecovery(
     stopFrame = SLASH_REVERSE_RECOVERY_STOP_FRAME,
   }: ReverseSlashRecoveryOptions
 ): boolean {
+  if (hasConfiguredActionFrameSequence(unit)) return false
   const sprite = unit.sprite
   const scheduler = unit.context?.scheduler
   if (unit.isDead || unit.isDestroyed) return true

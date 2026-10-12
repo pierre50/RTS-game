@@ -22,7 +22,9 @@ function fixture() {
   })
   let state = { version: 1, quests: [], trackedQuestId: null }
   const village = { label: 'village', name: 'Village', type: 'AI', diplomacy: 'neutral', units: [] }
-  const chief = { i: 0, j: 0,
+  const chief = {
+    i: 0,
+    j: 0,
     label: 'chief',
     name: 'Ari',
     owner: village,
@@ -34,7 +36,13 @@ function fixture() {
   const player = { label: 'human', isPlayed: true, isEnemy: () => false, units: [] }
   const hero = { i: 0, j: 0, label: 'hero', owner: player, inventory: { resources: { wood: 20 } } }
   const context = {
-    dayNight: { state: { day: 1 }, onDayChange(callback) { dayListeners.add(callback); return () => dayListeners.delete(callback) } },
+    dayNight: {
+      state: { day: 1 },
+      onDayChange(callback) {
+        dayListeners.add(callback)
+        return () => dayListeners.delete(callback)
+      },
+    },
     player,
     players: [player, village],
     controls: { heroUnit: hero },
@@ -71,17 +79,23 @@ function fixture() {
 test('tutorial wood leads to a saved wildlife choice, equipped rewards and conditional ammunition help without gold', () => {
   const { runtime, chief, hero, context, village, reload } = fixture()
   village.isPlayed = true
-  chief.i = 1; chief.j = 1
+  chief.i = 1
+  chief.j = 1
   context.map.grid = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => ({ category: 'Land' })))
-  context.map.gaia = { animals: [
-    { type: 'Deer', i: 2, j: 2, quantity: 20 },
-    { label: 'quest-bird', type: 'BlackGrouse', i: 3, j: 3, quantity: 100 },
-  ] }
+  context.map.gaia = {
+    animals: [
+      { type: 'Deer', i: 2, j: 2, quantity: 20 },
+      { label: 'quest-bird', type: 'BlackGrouse', i: 3, j: 3, quantity: 100 },
+    ],
+  }
   assert.equal(runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks'), true)
-  runtime.getQuest(chief).encounters = { hunt: {
-    entityLabels: ['quest-bird'], position: { i: 3, j: 3 },
-    parameters: { resource: 'feather', quantity: 3, rewardGold: 0 },
-  } }
+  runtime.getQuest(chief).encounters = {
+    hunt: {
+      entityLabels: ['quest-bird'],
+      position: { i: 3, j: 3 },
+      parameters: { resource: 'feather', quantity: 3, rewardGold: 0 },
+    },
+  }
   assert.equal(runtime.deliver(chief), true)
   assert.equal(hero.inventory.resources.wood, 10)
   assert.equal(hero.inventory.resources.gold ?? 0, 0)
@@ -113,7 +127,7 @@ test('tutorial wood leads to a saved wildlife choice, equipped rewards and condi
   assert.equal(runtime.deliver(chief), true)
   assert.equal(runtime.getQuest(chief).status, 'active')
   assert.equal(runtime.getQuest(chief).stageId, 'alarm')
-  assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
+  assert.equal(hero.inventory.activeWeapons.tool, 'axe_ceramic')
   assert.equal(hero.inventory.resources.feather, 0)
   assert.equal(hero.inventory.resources.gold ?? 0, 0)
   assert.equal(runtime.interact(chief, 'arrows'), false)
@@ -121,39 +135,65 @@ test('tutorial wood leads to a saved wildlife choice, equipped rewards and condi
 
 test('tutorial polling creates one encounter, preserves corpses and replenishes only exhausted targets', () => {
   const { runtime, context, chief, hero } = fixture()
-  chief.i = 5; chief.j = 5
+  chief.i = 5
+  chief.j = 5
   context.scheduler.elapsedMs = 0
   context.player.views = { isVisible: () => false }
   context.controls.instanceInCamera = () => true
-  const grid = Array.from({ length: 50 }, (_, i) => Array.from({ length: 50 }, (_, j) => ({
-    i, j, category: 'Land', solid: false, has: null,
-  })))
+  const grid = Array.from({ length: 50 }, (_, i) =>
+    Array.from({ length: 50 }, (_, j) => ({
+      i,
+      j,
+      category: 'Land',
+      solid: false,
+      has: null,
+    }))
+  )
   context.map.grid = grid
   const animals = []
-  context.map.gaia = { animals, config: { animals: { Deer: {} } }, createAnimal(options) {
-    const animal = { ...options, label: 'encounter-' + animals.length, quantity: 60 }
-    animals.push(animal)
-    return animal
-  } }
+  context.map.gaia = {
+    animals,
+    config: { animals: { Deer: {} } },
+    createAnimal(options) {
+      const animal = { ...options, label: 'encounter-' + animals.length, quantity: 60 }
+      animals.push(animal)
+      return animal
+    },
+  }
   runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
   assert.equal(runtime.deliver(chief), false, 'Waiting for placement does not take the wood')
   assert.equal(hero.inventory.resources.wood, 20)
   context.controls.instanceInCamera = () => false
-  const tick = () => { context.scheduler.elapsedMs += 500; runtime.update(false) }
+  const tick = () => {
+    context.scheduler.elapsedMs += 500
+    runtime.update(false)
+  }
   for (let i = 0; i < 100 && !runtime.getQuest(chief).encounters?.hunt; i++) tick()
   assert.equal(animals.length, 3)
-  context.map.grid = new Proxy([], { get() { throw new Error('Valid encounters must not rescan terrain') } })
+  context.map.grid = new Proxy([], {
+    get() {
+      throw new Error('Valid encounters must not rescan terrain')
+    },
+  })
   for (let i = 0; i < 20; i++) tick()
   assert.equal(runtime.deliver(chief), true)
-  animals.forEach(animal => { animal.isDead = true })
+  animals.forEach(animal => {
+    animal.isDead = true
+  })
   for (let i = 0; i < 20; i++) tick()
   assert.equal(animals.length, 3, 'Harvestable corpses are still valid targets')
   context.map.grid = grid
-  animals.forEach(animal => { animal.quantity = 0; animal.isDestroyed = true })
+  animals.forEach(animal => {
+    animal.quantity = 0
+    animal.isDestroyed = true
+  })
   for (let i = 0; i < 100 && animals.length === 3; i++) tick()
   assert.equal(animals.length, 6)
   hero.inventory.resources.leather = 3
-  animals.forEach(animal => { animal.quantity = 0; animal.isDestroyed = true })
+  animals.forEach(animal => {
+    animal.quantity = 0
+    animal.isDestroyed = true
+  })
   for (let i = 0; i < 20; i++) tick()
   assert.equal(animals.length, 6, 'No replacement when the objective is already satisfied')
 })
@@ -166,7 +206,8 @@ test('old completed tutorial wood can continue without another payment', () => {
   hero.inventory.resources.wood = 0
   const gold = hero.inventory.resources.gold
   runtime.assignResourceRequest('tutorial', chief, 'wood', 10, 'tutorial-first-tasks')
-  chief.i = 0; chief.j = 0
+  chief.i = 0
+  chief.j = 0
   context.map.grid = [[{ category: 'Land' }]]
   context.map.gaia = { animals: [{ label: 'legacy-deer', type: 'Deer', i: 0, j: 0, quantity: 100 }] }
   runtime.getQuest(chief).reservation = { entityLabels: ['legacy-deer'], stageIds: ['wood', 'hunt'] }
@@ -277,8 +318,18 @@ test('quest dialogue hides unavailable deliveries and closes after acceptance an
   const previous = global.document
   global.document = {
     createTextNode: textContent => ({ textContent }),
-    createElement: () => ({
-      setAttribute(name, value) { this[name] = value },
+    createElement: tag => ({
+      tag,
+      classList: { add() {} },
+      get childElementCount() {
+        return this.children.length
+      },
+      append(...children) {
+        this.children.push(...children)
+      },
+      setAttribute(name, value) {
+        this[name] = value
+      },
       children: [],
       textContent: '',
       hidden: false,
@@ -309,46 +360,47 @@ test('quest dialogue hides unavailable deliveries and closes after acceptance an
     },
   }
   const panel = new NpcQuestPanel(menu, () => {})
+  const buttons = () => panel.root.children.filter(child => child.tag === 'button')
   assert.match(panel.update(f.chief), /parler/)
-  assert.equal(panel.root.children.length, 2)
+  assert.equal(buttons().length, 2)
   panel.clear()
   assert.equal(closed, 0)
   assert.equal(f.runtime.getQuest(f.chief).status, 'available')
   panel.update(f.chief, true)
-  panel.root.children[0].click()
+  buttons()[0].click()
   assert.equal(f.runtime.getQuest(f.chief).status, 'available')
-  panel.root.children[0].click()
+  buttons()[0].click()
   assert.equal(f.runtime.getQuest(f.chief).status, 'active')
   assert.equal(closed, 1, 'Accepting ends the conversation immediately')
   panel.clear() // Reopening must expose the delivery without selecting a topic.
   f.hero.inventory.resources.wood = 3
   panel.update(f.chief)
-  assert.equal(panel.root.children.length, 1, 'Only the civilization topic remains; no counters or disabled delivery')
-  assert.equal(panel.root.children[0].disabled, false)
+  assert.equal(buttons().length, 1, 'Only the civilization action remains while resources are missing')
+  assert.equal(buttons()[0].disabled, false)
   f.hero.inventory.resources.wood = 15
   panel.update(f.chief)
-  assert.equal(panel.root.children[0].disabled, false)
-  panel.root.children[0].click()
+  assert.equal(buttons()[0].disabled, false)
+  buttons()[0].click()
   assert.equal(f.runtime.getQuest(f.chief).status, 'completed')
   assert.equal(closed, 2, 'Completion ends the conversation without another menu')
   panel.clear()
   panel.update(f.chief, true)
-  assert.equal(panel.root.children.length, 1, 'Completed quests leave only the civilization topic')
+  assert.equal(buttons().length, 1, 'Completed quests leave only the civilization topic')
   assert.equal(f.indicators.has(f.chief), false)
-  panel.root.children[0].click()
+  buttons()[0].click()
   assert.equal(panel.hasTopic(), true, 'Civilization lore remains accessible')
   panel.clear()
   f.nextDay(4)
   panel.update(f.chief, true)
   assert.equal(f.runtime.getQuest(f.chief).status, 'available')
-  assert.equal(panel.root.children.length, 2, 'A new offer restores the quest topic')
+  assert.equal(buttons().length, 2, 'A new offer restores the quest topic')
   assert.equal(f.indicators.get(f.chief), 'exclamation')
   const offer = f.runtime.getQuest(f.chief)
   const resource = offer.parameters.resource
   const quantity = Number(offer.parameters.quantity)
   f.hero.inventory.resources[resource] = quantity
-  panel.root.children[0].click()
-  const give = panel.root.children[0]
+  buttons()[0].click()
+  const give = buttons()[0]
   assert.match(give.children.at(-1).textContent, /Voici/)
   // Inventory may change while the dialogue is open; do not accept an impossible delivery.
   f.hero.inventory.resources[resource] = 0
@@ -356,7 +408,7 @@ test('quest dialogue hides unavailable deliveries and closes after acceptance an
   assert.equal(offer.status, 'available')
   f.hero.inventory.resources[resource] = quantity
   panel.update(f.chief, true)
-  const directGive = panel.root.children[0]
+  const directGive = buttons()[0]
   const previousGold = f.hero.inventory.resources.gold ?? 0
   directGive.click()
   assert.equal(offer.status, 'completed', 'One click accepts and delivers an offer already in the bag')
@@ -364,7 +416,11 @@ test('quest dialogue hides unavailable deliveries and closes after acceptance an
   assert.equal(f.hero.inventory.resources.gold, previousGold + Number(offer.parameters.rewardGold))
   assert.equal(closed, 3)
   directGive.click()
-  assert.equal(f.hero.inventory.resources.gold, previousGold + Number(offer.parameters.rewardGold), 'No duplicate reward')
+  assert.equal(
+    f.hero.inventory.resources.gold,
+    previousGold + Number(offer.parameters.rewardGold),
+    'No duplicate reward'
+  )
 })
 
 test('completion grants faction relation once, reports actual gain and announces crossed thresholds', () => {
@@ -404,7 +460,8 @@ test('completion grants faction relation once, reports actual gain and announces
 
 test('failed deliveries grant no reputation; independent village reputation survives reload', () => {
   const f = fixture()
-  f.runtime.update(); f.runtime.accept(f.chief)
+  f.runtime.update()
+  f.runtime.accept(f.chief)
   f.hero.inventory.resources.wood = 0
   assert.equal(f.runtime.deliver(f.chief), false)
   assert.equal(f.runtime.system.state.villageRelations, undefined)
@@ -419,7 +476,8 @@ test('failed deliveries grant no reputation; independent village reputation surv
 
 test('maximum reputation completion does not announce a fictitious increase', () => {
   const f = fixture()
-  f.runtime.update(); f.runtime.accept(f.chief)
+  f.runtime.update()
+  f.runtime.accept(f.chief)
   f.runtime.system.state.villageRelations = { [JSON.stringify(['region', 'village'])]: 100 }
   const messages = []
   f.context.menu.showMessage = message => messages.push(message)
@@ -491,7 +549,6 @@ test('legacy active quests gain their gold reward, legacy completed quests only 
   assert.equal(f.hero.inventory.resources.gold, 15)
 })
 
-
 test('fixed tutorial assignment works for an own chief, delivers once and never respawns', () => {
   const f = fixture()
   f.chief.owner = f.context.player
@@ -519,7 +576,6 @@ test('fixed tutorial assignment works for an own chief, delivers once and never 
   assert.equal(f.runtime.system.state.villageRelations, undefined)
 })
 
-
 test('tutorial raid waits for dialogue closure and cannot duplicate its army or sword', async () => {
   const { runtime, chief, hero, village, context, sounds } = fixture()
   village.isPlayed = true
@@ -531,7 +587,14 @@ test('tutorial raid waits for dialogue closure and cannot duplicate its army or 
   hero.inventory.resources.leather = 2
   let starts = 0
   let resolveRaid
-  context.tributeRaids = { triggerTutorialRaid: () => { starts++; return new Promise(resolve => { resolveRaid = resolve }) } }
+  context.tributeRaids = {
+    triggerTutorialRaid: () => {
+      starts++
+      return new Promise(resolve => {
+        resolveRaid = resolve
+      })
+    },
+  }
   assert.equal(runtime.deliver(chief), true)
   assert.deepEqual(sounds, [])
   assert.equal(starts, 0)
@@ -546,8 +609,8 @@ test('tutorial raid waits for dialogue closure and cannot duplicate its army or 
   assert.equal(quest.facts.raidStarted, true)
   runtime.dialogueClosed(chief)
   assert.equal(starts, 1)
-  assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
-  assert.equal(hero.inventory.equipment.includes('sword_ceramic'), false)
+  assert.equal(hero.inventory.activeWeapons.tool, 'axe_ceramic')
+  assert.equal(hero.inventory.equipment.includes('axe_ceramic'), false)
 })
 
 test('failed tutorial raid can retry on the next dialogue close', async () => {
@@ -578,7 +641,7 @@ test('a previously completed hunt continues without paying its resources twice',
   assert.equal(quest.stageId, 'legacy-hunt')
   assert.equal(runtime.interact(chief, 'continue'), true)
   assert.equal(quest.stageId, 'alarm')
-  assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
+  assert.equal(hero.inventory.activeWeapons.tool, 'axe_ceramic')
   assert.equal(runtime.interact(chief, 'continue'), false)
 })
 
@@ -644,10 +707,10 @@ test('a sleeping tutorial chief cannot give ammunition or launch the raid on dia
   assert.equal(quest.facts.raidStarted, undefined)
 })
 
-
 test('tracked minimap destination switches between objective area and the live recipient', () => {
   const { runtime, chief, hero, context } = fixture()
-  chief.i = 1; chief.j = 2
+  chief.i = 1
+  chief.j = 2
   runtime.update()
   runtime.accept(chief)
   const quest = runtime.getQuest(chief)
@@ -684,7 +747,6 @@ test('tracked minimap destination switches between objective area and the live r
   assert.equal(redraws, 1, 'quest polling refreshes the overlay even without camera movement')
 })
 
-
 test('offers prepare near the hero beyond the camera, never for remote chiefs', () => {
   const { runtime, chief, hero, context } = fixture()
   context.controls.instanceInCamera = () => false
@@ -704,13 +766,26 @@ test('offers prepare near the hero beyond the camera, never for remote chiefs', 
 test('nearby offers stop reading resources once all possible request quantities are covered', () => {
   const { runtime, chief, context } = fixture()
   let reads = 0
-  context.map.resources = new Set(['Tree', 'Stone', 'Berrybush'].map(type => ({ type, get quantity() { reads++; return 100 } })))
-  for (let i = 0; i < 1000; i++) context.map.resources.add({ type: 'Tree', get quantity() { throw new Error('unnecessary scan') } })
+  context.map.resources = new Set(
+    ['Tree', 'Stone', 'Berrybush'].map(type => ({
+      type,
+      get quantity() {
+        reads++
+        return 100
+      },
+    }))
+  )
+  for (let i = 0; i < 1000; i++)
+    context.map.resources.add({
+      type: 'Tree',
+      get quantity() {
+        throw new Error('unnecessary scan')
+      },
+    })
   runtime.update()
   assert.ok(runtime.getQuest(chief))
   assert.equal(reads, 3)
 })
-
 
 test('a repeat offer becomes available on approaching a chief after a distant cooldown', () => {
   const f = fixture()

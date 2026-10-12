@@ -1,22 +1,21 @@
-import { updateUnitEnergy } from '../../../lib/units/unitEnergy'
-import { ambientActivityArea } from '../../world/AmbientActivityArea'
-import { getEntitySpaceId } from '../../../lib/mapSpaces'
 import { updateInstanceVisibility } from '../../../lib/grid/visibility'
-import { campRespawnStates } from '../../../lib/camps/campRespawnState'
-import { deferredVillageBuildings } from '../../world/distantVillages/DeferredVillageStore'
-import type { CampLeashController } from '../../patrol/CampLeashController'
-import { buildTrafficRoutes } from './AmbientTrafficRoutes'
-import {
-  snapshotTrafficActor,
-  advanceTraffic,
-  trafficActiveAtHour,
-  ambientTrafficState,
-  registerAmbientTrafficFlush,
-  type TrafficGroup,
-} from './AmbientTrafficState'
+import { getEntitySpaceId } from '../../../lib/mapSpaces'
+import { updateUnitEnergy } from '../../../lib/units/unitEnergy'
 import type { GameContextLike, SchedulerTaskId } from '../../../types/context'
 import type { UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
+import type { CampLeashController } from '../../patrol/CampLeashController'
+import { ambientActivityArea } from '../../world/AmbientActivityArea'
+import { buildTrafficRoutes } from './AmbientTrafficRoutes'
+import {
+  advanceTraffic,
+  ambientTrafficState,
+  registerAmbientTrafficFlush,
+  snapshotTrafficActor,
+  trafficActiveAtHour,
+  type TrafficGroup,
+} from './AmbientTrafficState'
+import { isTrafficGroupValid } from './AmbientTrafficValidity'
 
 type LiveGroup = { actors: UnitEntity[]; positions: Map<UnitEntity, number>; retryAt: number }
 const distance = (a: { i: number; j: number }, b: { i: number; j: number }) => Math.hypot(a.i - b.i, a.j - b.j)
@@ -56,22 +55,6 @@ export class AmbientTrafficSystem {
     )
   }
 
-  private valid(group: TrafficGroup): boolean {
-    if (group.kind === 'bandits')
-      return campRespawnStates(this.context.map).some(
-        c => c.id === group.campId && c.generation === group.campGeneration && c.clearedAtMs == null
-      )
-    return [group.from, group.to].every(end => {
-      const owner = this.context.players?.find(p => p.label === end.owner)
-      return (
-        owner &&
-        (deferredVillageBuildings(owner) ?? owner.buildings).some(
-          b => b.label === end.label && b.isBuilt && !b.isDead && !b.isDestroyed
-        )
-      )
-    })
-  }
-
   update(): void {
     const now = this.context.scheduler.elapsedMs
     const elapsed = Math.max(0, now - this.last)
@@ -89,7 +72,7 @@ export class AmbientTrafficSystem {
     const visible = ambientActivityArea(this.context)
     for (const group of groups) {
       const live = this.live.get(group)
-      if (!this.valid(group)) group.retired = true
+      if (!isTrafficGroupValid(this.context, group)) group.retired = true
       if (live) {
         this.snapshotGroup(group, live)
         const living = live.actors.filter(unit => !unit.isDead && !unit.isDestroyed)

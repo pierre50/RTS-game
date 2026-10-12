@@ -3,12 +3,12 @@ import { isNearInteriorDoor, preservesInteriorPassages } from '../../lib/buildin
 import { isBuildingAllowedInSpace, isSowingPlacement, WHEAT_PLOT_SIZE } from '../../lib/buildings/campConstruction'
 import { createConstructionMaterials } from '../../lib/economy/constructionMaterials'
 import { generatedBuildingMirrored } from '../../lib/buildings/generatedBuildingOrientation'
-import { getBuildingLevel, getPlayerBuildingConfig } from '../../lib/buildings/buildingLevel'
+import { getBuildingLevel, getBuildingLevels, getPlayerBuildingConfig } from '../../lib/buildings/buildingLevel'
 import { BUILDING_TYPES } from '../../constants'
 import { canPlaceBuildingAt, getBuildingFootprintCells, hasBuildingPlacementClearance } from '../../lib'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { definedProperties } from '../../lib/definedProperties'
-import { getMapSpace } from '../../lib/mapSpaces'
+import { getMapSpace, isOutsideSpaceId } from '../../lib/mapSpaces'
 
 import type { RuntimeCell } from '../../types/map'
 import type { Player } from './Player'
@@ -31,6 +31,7 @@ export function plantPlayerWheatField(
   const placementConfig = { ...config, size: WHEAT_PLOT_SIZE, type: BUILDING_TYPES.farm }
   const passageLookup = createReservedPassageCellLookup(player.context)
   const placementOptions = {
+    roads: isOutsideSpaceId(options.spaceId) ? map.roads : undefined,
     canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
   }
   if (
@@ -67,7 +68,7 @@ export function buyPlayerBuilding(
 ) {
   if (isSowingPlacement(type)) return player.plantWheatField(i, j, options)
   const buildingLevel = getBuildingLevel(options)
-  if (buildingLevel > 0) return false
+  if (!getBuildingLevels(player.config.buildings[type]).includes(buildingLevel)) return false
   const {
     context: { menu, map },
   } = player
@@ -88,6 +89,7 @@ export function buyPlayerBuilding(
     return false
   const passageLookup = createReservedPassageCellLookup(player.context)
   const placementOptions = {
+    roads: isOutsideSpaceId(options.spaceId) ? map.roads : undefined,
     allowBorder: interiorFurniture,
     canUseCell: (cell: RuntimeCell) =>
       !passageLookup.has(cell) && (!interiorFurniture || (!cell.terrainHidden && !cell.has)),

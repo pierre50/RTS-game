@@ -17,7 +17,11 @@ export function registerResourceRespawnSlot(resource: Resource): void {
       isNaturalResource: true,
       j: resource.j,
       label: resource.label,
-      textureName: resource.type === RESOURCE_TYPES.berrybush ? resource.textureName : undefined,
+      textureName: [RESOURCE_TYPES.berrybush, RESOURCE_TYPES.groundWood, RESOURCE_TYPES.groundStone].includes(
+        resource.type
+      )
+        ? resource.textureName
+        : undefined,
       totalQuantity: resource.totalQuantity,
       type: resource.type,
     })

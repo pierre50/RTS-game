@@ -183,6 +183,8 @@ test('work effects are blocked at impact for mining, hand gathering, chopping, f
       else if (action === 'build') h.actions.handleBuildAction()
       else h.actions.startGathering('stone', null)
       target.x = 150
+      target.i = 10
+      target.j = 10
       h.release()
       assert.deepEqual(h.counts(), { gained: 0, spent: 0, rerouted: hero ? 0 : 1, stopped: hero ? 1 : 0 })
       assert.equal(target.quantity, 20)
@@ -655,4 +657,24 @@ test('NPC sword approach reaches contact before the real attack loop, and interr
     frame(7)
     assert.equal(hits, scenario === 'hit' ? 1 : 0, scenario)
   }
+})
+
+test('hero gathering awards consecutive impacts throughout examine range and stops outside it', () => {
+  const target = resource(75)
+  const h = workHarness('chopwood', target, true)
+  assert.equal(contacts.canReachActionTarget(h.unit, target, 'chopwood'), false)
+  assert.equal(h.actions.ensureWorkContact(target, true), true)
+  for (let stroke = 0; stroke < 2; stroke++) {
+    h.actions.startGathering('wood', null)
+    h.release()
+  }
+  assert.deepEqual(h.counts(), { gained: 2, spent: 2, rerouted: 0, stopped: 0 })
+  h.actions.startGathering('wood', null)
+  target.x = 300
+  target.i = 10
+  target.j = 10
+  h.release()
+  assert.deepEqual(h.counts(), { gained: 2, spent: 2, rerouted: 0, stopped: 1 })
+  const npc = workHarness('chopwood', resource(75), false)
+  assert.equal(npc.actions.ensureWorkContact(npc.unit.dest, true), false)
 })

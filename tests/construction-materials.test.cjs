@@ -1,8 +1,11 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const {
   createConstructionMaterials,
+  deliverConstructionMaterials,
+  constructionMaterialsReady,
   constructionBagNeeds,
   advanceMaterialConstruction,
   applyConstructionWork,
@@ -34,67 +37,75 @@ const center = (i, stock) => ({
   inventory: { resources: stock },
 })
 
-test('construction progresses in proportion to supplied materials, with exact final costs', () => {
+test('partial and complete deliveries never advance work; the complete recipe unlocks building', () => {
   const building = site()
   const stock = { wood: 20, stone: 5 }
-  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [stock]))
-  assert.equal(building.constructionProgress, 0.5)
-  assert.deepEqual(building.constructionMaterials.consumed, { wood: 20, stone: 5 })
-  assert.equal(advanceMaterialConstruction(building, 101, [stock]), 50.5)
+  deliverConstructionMaterials(building, [stock])
+  assert.equal(building.constructionProgress, 0)
+  assert.deepEqual(building.constructionMaterials.delivered, { wood: 20, stone: 5 })
+  assert.deepEqual(building.constructionMaterials.consumed, {})
+  assert.equal(advanceMaterialConstruction(building, 101), 0)
+  applyConstructionWork(building, 101)
+  assert.equal(building.constructionProgress, 0, 'direct work cannot bypass incomplete supplies')
   Object.assign(stock, { wood: 20, stone: 5 })
-  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [stock]))
-  assert.equal(building.hitPoints, 101)
-  assert.deepEqual(stock, { wood: 0, stone: 0 })
+  deliverConstructionMaterials(building, [stock])
+  assert.equal(building.constructionProgress, 0)
+  assert.equal(constructionMaterialsReady(building), true)
+  applyConstructionWork(building, advanceMaterialConstruction(building, 1))
+  assert.equal(building.constructionProgress, 1 / 101)
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 40, stone: 10 })
+  applyConstructionWork(building, advanceMaterialConstruction(building, 101))
+  assert.equal(building.constructionProgress, 1)
+  assert.deepEqual(stock, { wood: 0, stone: 0 })
 })
 
-test('a builder keeps unused ingredients and consumes only each hit fraction', () => {
-  const building = site('TownCenter', { wood: 100 })
-  building.totalHitPoints = 501
-  building.hitPoints = 501
-  building.constructionTime = building.constructionWorkRequired = 501
-  const bag = { wood: 20, stone: 7 }
-  applyConstructionWork(building, advanceMaterialConstruction(building, 5, [bag]))
-  assert.deepEqual(bag, { wood: 19, stone: 7 })
-  assert.deepEqual(building.constructionMaterials.delivered, {})
-  applyConstructionWork(building, advanceMaterialConstruction(building, 501, [bag]))
-  assert.equal(building.hitPoints, 501)
-  assert.equal(building.constructionProgress, 0.2)
-  assert.equal(bag.wood, 0)
-  assert.equal(bag.stone, 7)
+test('a partially supplied project survives a save without completing or repaying work', () => {
+  let building = site()
+  deliverConstructionMaterials(building, [{ wood: 30, stone: 5 }])
+  building = JSON.parse(JSON.stringify(building))
+  assert.deepEqual(remainingConstructionMaterials(building), { wood: 10, stone: 5 })
+  assert.equal(advanceMaterialConstruction(building, 101), 0)
+  const bag = { wood: 20, stone: 10 }
+  deliverConstructionMaterials(building, [bag])
+  assert.deepEqual(bag, { wood: 10, stone: 5 })
+  assert.equal(building.constructionProgress, 0)
+  applyConstructionWork(building, advanceMaterialConstruction(building, 1))
+  assert.equal(building.constructionProgress, 1 / 101)
 })
 
-test('old deposited materials remain usable without taking new materials from a bag', () => {
-  const building = site()
-  building.constructionMaterials.delivered = { wood: 40, stone: 10 }
-  const bag = { wood: 20, stone: 20 }
-  assert.equal(advanceMaterialConstruction(building, 101, [bag]), 101)
-  assert.deepEqual(bag, { wood: 20, stone: 20 })
-})
-
-test('wood and stone independently advance their share, without substituting for each other', () => {
+test('delivery reserves only missing recipe ingredients and leaves excess cargo in the bag', () => {
   const building = site('House', { wood: 100, stone: 100 })
-  const bag = { wood: 120 }
-  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [bag]))
-  assert.equal(building.constructionProgress, 0.5)
-  assert.equal(bag.wood, 20)
-  assert.equal(advanceMaterialConstruction(building, 101, [bag]), 50.5)
+  const bag = { wood: 120, fiber: 7 }
+  deliverConstructionMaterials(building, [bag])
+  assert.deepEqual(bag, { wood: 20, fiber: 7 })
+  assert.equal(advanceMaterialConstruction(building, 101), 0)
   assert.deepEqual(constructionBagNeeds(building, bag, 10), { stone: 10 })
-  bag.stone = 100
-  applyConstructionWork(building, advanceMaterialConstruction(building, 101, [bag]))
-  assert.equal(building.hitPoints, 101)
-  assert.deepEqual(bag, { wood: 20, stone: 0 })
+  bag.stone = 120
+  deliverConstructionMaterials(building, [bag])
+  assert.equal(building.constructionProgress, 0)
+  applyConstructionWork(building, advanceMaterialConstruction(building, 101))
+  assert.deepEqual(bag, { wood: 20, stone: 20, fiber: 7 })
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 100, stone: 100 })
 })
 
-test('many small hits consume exactly the recipe even after a reload', () => {
+test('complete deposited materials permit work without withdrawing from another bag', () => {
+  const building = site()
+  building.constructionMaterials.delivered = { wood: 40, stone: 10 }
+  const bag = { wood: 20, stone: 20 }
+  assert.deepEqual(deliverConstructionMaterials(building, [bag]), {})
+  assert.equal(advanceMaterialConstruction(building, 101), 101)
+  assert.deepEqual(bag, { wood: 20, stone: 20 })
+})
+
+test('funded construction takes its full independent work budget and survives reload', () => {
   let building = site('House', { wood: 17, stone: 3 })
   const bag = { wood: 20, stone: 10 }
-  for (let hp = 2; hp <= 101; hp++) {
-    applyConstructionWork(building, advanceMaterialConstruction(building, hp, [bag]))
-    if (hp === 50) building = JSON.parse(JSON.stringify(building))
+  deliverConstructionMaterials(building, [bag])
+  for (let work = 1; work <= 101; work++) {
+    applyConstructionWork(building, advanceMaterialConstruction(building, work))
+    assert.equal(building.constructionProgress, work / 101)
+    if (work === 50) building = JSON.parse(JSON.stringify(building))
   }
-  assert.equal(building.hitPoints, 101)
   assert.deepEqual(bag, { wood: 3, stone: 7 })
   assert.deepEqual(building.constructionMaterials.consumed, { wood: 17, stone: 3 })
 })
@@ -104,13 +115,17 @@ test('construction never charges legacy prepaid sites again', () => {
   assert.equal(advanceMaterialConstruction(old, 80), 80)
 })
 
-test('materials survive reload and repairing damage does not charge consumed materials again', () => {
-  let building = site()
-  applyConstructionWork(building, advanceMaterialConstruction(building, 50.5, [{ wood: 40, stone: 10 }]))
-  building = JSON.parse(JSON.stringify(building))
-  building.hitPoints = 11
-  assert.equal(advanceMaterialConstruction(building, 50.5), 50.5)
-  assert.deepEqual(building.constructionMaterials.consumed, { wood: 25 })
+test('partially consumed legacy recipes retain progress and require only unpaid materials', () => {
+  const building = site()
+  building.constructionProgress = 0.5
+  building.constructionMaterials.consumed = { wood: 25 }
+  const bag = { wood: 15, stone: 10 }
+  assert.deepEqual(remainingConstructionMaterials(building), bag)
+  assert.equal(advanceMaterialConstruction(building, 101), 50.5)
+  deliverConstructionMaterials(building, [bag])
+  assert.equal(building.constructionProgress, 0.5)
+  applyConstructionWork(building, advanceMaterialConstruction(building, 101))
+  assert.deepEqual(building.constructionMaterials.consumed, { wood: 40, stone: 10 })
 })
 
 test('a distant village and personal chest cannot finance this construction', () => {
@@ -126,8 +141,18 @@ test('a distant village and personal chest cannot finance this construction', ()
 test('collective work protects the first project and accounts for cargo already in transit', () => {
   const first = site('House', { wood: 10 })
   const second = { ...site('House', { stone: 10 }), label: 'second', i: 15 }
-  const a = { type: 'Villager', i: 11, j: 10, inventory: { resources: { wood: 10, wheat: 12 } } }
-  const b = { type: 'Villager', i: 12, j: 10, inventory: { resources: { wheat: 12 } } }
+  const a = {
+    type: 'Villager',
+    i: 11,
+    j: 10,
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { wood: 10, wheat: 12 } },
+  }
+  const b = {
+    type: 'Villager',
+    i: 12,
+    j: 10,
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { wheat: 12 } },
+  }
   const owner = { populationMax: 2, buildings: [center(8, { wheat: 100 }), first, second], units: [a, b] }
   const plan = planCollectiveTasks(owner, [a, b])
   assert.equal(plan.get(a).job, 'construction')
@@ -138,7 +163,12 @@ test('collective work protects the first project and accounts for cargo already 
 })
 
 test('camp meals consume carried food and leave the personal chest untouched', () => {
-  const unit = { type: 'Villager', i: 10, j: 10, inventory: { resources: { berry: 6 } } }
+  const unit = {
+    type: 'Villager',
+    i: 10,
+    j: 10,
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { berry: 6 } },
+  }
   const chest = { ...center(10, { wheat: 100 }), type: 'Chest' }
   assert.deepEqual(consumeVillageFood({ units: [unit], buildings: [chest] }), { needed: 4, consumed: 4 })
   assert.equal(unit.inventory.resources.berry, 2)
@@ -146,7 +176,7 @@ test('camp meals consume carried food and leave the personal chest untouched', (
 })
 
 test('an idle villager founds the first center from local resources during a three-day absence', () => {
-  const building = site('TownCenter', { wood: 6, stone: 4 })
+  const building = { ...site('TownCenter', { wood: 6, stone: 4 }), constructionWorkRequired: 4, constructionTime: 4 }
   const unit = {
     type: 'Villager',
     label: 'founder',
@@ -154,7 +184,7 @@ test('an idle villager founds the first center from local resources during a thr
     j: 7,
     hitPoints: 18,
     inactif: true,
-    inventory: { resources: { berry: 8 } },
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { berry: 8 } },
   }
   const player = {
     type: 'Human',
@@ -223,8 +253,9 @@ test('the synthetic chest of a communal depot remains shared, while a house ches
 test('one shared inventory reference cannot be charged or counted twice', () => {
   const building = site('House', { wood: 10 })
   const stock = { wood: 5 }
-  assert.equal(advanceMaterialConstruction(building, 101, [stock, stock]), 50.5)
-  assert.equal(building.constructionMaterials.consumed.wood, 5)
+  deliverConstructionMaterials(building, [stock, stock])
+  assert.equal(advanceMaterialConstruction(building, 101), 0)
+  assert.equal(building.constructionMaterials.delivered.wood, 5)
   assert.equal(stock.wood, 0)
 })
 
@@ -248,8 +279,14 @@ test('saved communal depot chests accept deliveries without runtime owner refere
 
 test('builders holding different ingredients can both work on the same site', () => {
   const building = site('TownCenter', { wood: 100, stone: 100 })
-  const a = { type: 'Villager', i: 10, j: 10, inactif: true, inventory: { resources: { wheat: 12, wood: 9 } } }
-  const b = { ...a, i: 11, inventory: { resources: { wheat: 12, stone: 9 } } }
+  const a = {
+    type: 'Villager',
+    i: 10,
+    j: 10,
+    inactif: true,
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { wheat: 12, wood: 9 } },
+  }
+  const b = { ...a, i: 11, inventory: { ...workerInventory('hammer_ceramic'), resources: { wheat: 12, stone: 9 } } }
   const owner = { units: [a, b], buildings: [building] }
   const plan = planCollectiveTasks(owner, [a, b])
   assert.equal(plan.get(a).job, 'construction')
@@ -257,7 +294,7 @@ test('builders holding different ingredients can both work on the same site', ()
 })
 
 test('an unattended trap site gathers fiber and finishes identically across save-sized simulation steps', () => {
-  const building = site('Trap', { wood: 5, fiber: 2 })
+  const building = { ...site('Trap', { wood: 5, fiber: 2 }), constructionWorkRequired: 4, constructionTime: 4 }
   const unit = {
     type: 'Villager',
     label: 'founder',
@@ -265,7 +302,7 @@ test('an unattended trap site gathers fiber and finishes identically across save
     j: 7,
     hitPoints: 18,
     inactif: true,
-    inventory: { resources: { berry: 8 } },
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { berry: 8 } },
   }
   const player = {
     type: 'Human',

@@ -59,12 +59,20 @@ test('prepared state keeps exact resources, stocks and units and maps the hero a
   assert.deepEqual(initial.resources, [])
   assert.equal(result.resourceDelta, undefined)
   assert.deepEqual(result.resources, data.resources)
-  assert.deepEqual(result.players[1].buildings, data.players[0].buildings.map(building => ({ ...building, buildingLevel: 0 })))
-  assert.deepEqual(result.players[1].units, data.players[0].units)
+  assert.deepEqual(
+    result.players[1].buildings,
+    data.players[0].buildings.map(building => ({ ...building, buildingLevel: 0 }))
+  )
+  assert.deepEqual(
+    result.players[1].units.map(({ inventory, ...unit }) => unit),
+    data.players[0].units
+  )
+  assert.equal(result.players[1].units[0].inventory.activeWeapons.tool, 'axe_ceramic')
   assert.equal(result.players[1].label, 'ai')
   assert.equal(result.players[1].developmentMode, 'static')
   assert.equal(result.players[0].units[0].hitPoints, 50)
-  assert.equal(result.players[0].units[0].inventory.activeWeapons.melee, 'sword_ceramic')
+  assert.deepEqual(result.players[0].units[0].inventory.activeWeapons, {})
+  assert.deepEqual(result.players[0].units[0].inventory.equipment, [])
   assert.deepEqual([result.players[0].units[0].i, result.players[0].units[0].j], [0, 1])
   const bandits = result.players.find(p => p.type === 'Bandits')
   const cave = result.players.find(p => p.label === 'neutral').buildings[0].cave
@@ -120,7 +128,9 @@ test('new map loads preparation while save loading retains the source baseline w
     return { ok: !unavailable, status: 404, text: async () => rawPrepared }
   }
   try {
-    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule('app/serialization/blueprint/MapBlueprintLoader.ts')
+    const { loadPregeneratedWorldMapBlueprint: load } = loadTsModule(
+      'app/serialization/blueprint/MapBlueprintLoader.ts'
+    )
     const options = { worldId: 'fixture', worldRegionId: 'fixture', size: 2 }
     const cache = new Map()
     const fresh = await load({ ...options, includePreparedSettlements: true }, cache)
@@ -219,4 +229,38 @@ test('prepared new-game boot bypasses all live settlement generation and stays r
   assert.equal(terrainPrepared, true)
   assert.deepEqual(restored.resources, data.resources)
   assert.equal(game._campaignSave.worlds.root.state, restored)
+})
+
+test('fresh prepared villages distribute their owned tools without duplicating or recoloring equipment', () => {
+  const data = prepared()
+  data.players[0].units = Array.from({ length: 4 }, (_, n) => ({
+    type: 'Villager',
+    i: 1,
+    j: n,
+    inventory: {
+      toolsInitialized: true,
+      activeWeapons: { tool: 'axe_copper' },
+      equipment: ['pickaxe_bronze', 'hammer_iron~condition:12', 'scythe_ceramic'],
+      resources: { berry: 6 },
+    },
+  }))
+  const original = structuredClone(data)
+  const result = preparedSettlementState(
+    { players: [{ type: 'AI', civ: 'Hellas' }] },
+    { preparedSettlements: data },
+    {},
+    50
+  )
+  assert.deepEqual(data, original)
+  assert.deepEqual(
+    result.players[0].units.map(u => u.inventory.activeWeapons.tool),
+    ['axe_bronze', 'pickaxe_bronze', 'hammer_iron~condition:12', 'scythe_ceramic']
+  )
+  for (const unit of result.players[0].units) {
+    assert.deepEqual(
+      [unit.inventory.activeWeapons.tool, ...unit.inventory.equipment].sort(),
+      ['axe_bronze', 'pickaxe_bronze', 'hammer_iron~condition:12', 'scythe_ceramic'].sort()
+    )
+    assert.deepEqual(unit.inventory.resources, { berry: 6 })
+  }
 })

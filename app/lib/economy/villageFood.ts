@@ -1,3 +1,4 @@
+import { observeEconomyChange } from './economyTelemetry'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants/consumption'
 import type { CollectiveMember, CollectiveSite } from './collectiveTasks'
 import { materialAmount, takeMaterial } from './constructionMaterials'
@@ -17,7 +18,13 @@ export function consumeVillageFood(
     const sources = unit.inventory?.resources ? [unit.inventory.resources] : []
     let remaining = daily
     for (const source of sources) {
-      const taken = takeMaterial(source, 'food', Math.min(remaining, materialAmount(source, 'food')))
+      const taken = observeEconomyChange(
+        unit,
+        'meals',
+        () => source,
+        'removed',
+        () => takeMaterial(source, 'food', Math.min(remaining, materialAmount(source, 'food')))
+      )
       remaining -= taken
       consumed += taken
       if (!remaining) break

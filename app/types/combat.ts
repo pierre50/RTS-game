@@ -41,6 +41,7 @@ export type CombatEntity = {
   hitPoints?: number
   devInvincible?: boolean
   indestructible?: boolean
+  constructionPaused?: boolean
   isBuilt?: boolean
   constructionWorkRequired?: number
   constructionProgress?: number
@@ -61,6 +62,7 @@ export type CombatEntity = {
   trainingUnit?: unknown
   heroDefenseActive?: boolean
   showHeroDefenseFlash?: () => void
+  onHeroDefenseBlock?: () => void
   sprite?: unknown
   context?: {
     map?: {

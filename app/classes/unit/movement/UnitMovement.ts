@@ -1,5 +1,8 @@
+import { hasRequiredWorkTool, requiredWorkTool } from '../../../lib/equipment/workTools'
+import { t } from '../../../lib/lang'
 import { isVillageResourceWorker } from '../../../lib/units/village/villageSupplyTrips'
 import { playerSeesTarget, observeTarget } from '../../../lib/units/playerTargetKnowledge'
+import { isUnitRetaliationTarget } from '../../../lib/units/unitRetaliation'
 import { getVillagerExplorationSearch } from '../../../lib/units/autonomy/villagerExploration'
 import { canReachActionTarget, usesUnitContactAction } from '../../../lib/actions/contactActions'
 import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../../../constants'
@@ -100,6 +103,11 @@ export class UnitMovement {
       allowPassageStop = false,
     }: SendToOptions = {}
   ) {
+    if (!hasRequiredWorkTool(this.unit, action)) {
+      if (!preserveAutonomy && !forceRepath && this.unit.owner?.isPlayed)
+        this.unit.context?.menu?.showMessage?.(t(`toolRequired_${requiredWorkTool(action)}`), 'warning')
+      return
+    }
     const startedAt = performance.now()
     if (forceRepath) this.unit.context?.performance?.record?.('unit.repath', 0)
     try {
@@ -138,8 +146,8 @@ export class UnitMovement {
   isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     const unit = this.unit
     if (!dest) return false
-    if (isRuntimeEntity(dest) && usesUnitContactAction(unit, action)) {
-      return canReachActionTarget(unit, dest, action)
+    if (isRuntimeEntity(dest) && usesUnitContactAction(unit, action, dest)) {
+      return isHeroActionInRange(unit, action, dest) || canReachActionTarget(unit, dest, action)
     }
     if (!action && isUnitOnActionArrivalCell(unit, dest, action)) return true
     if (!action) return false
@@ -151,7 +159,7 @@ export class UnitMovement {
 
   private isUnitInActionRange(action: string, dest: RuntimeEntity | RuntimeCell): boolean {
     const unit = this.unit
-    const { usesActionRange, effectiveRange } = this.actionRange(action)
+    const { usesActionRange, effectiveRange } = this.actionRange(action, dest)
     const distance = instancesDistance(unit, dest)
     debugHuntRangeCheck(unit, action, dest, effectiveRange, distance)
     if (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse) {
@@ -167,7 +175,10 @@ export class UnitMovement {
     return instanceContactInstance(unit, dest)
   }
 
-  private actionRange(action: string): { usesActionRange: boolean; effectiveRange: number | undefined } {
+  private actionRange(
+    action: string,
+    dest: RuntimeEntity | RuntimeCell
+  ): { usesActionRange: boolean; effectiveRange: number | undefined } {
     const unit = this.unit
     const usesActionRange =
       action === ACTION_TYPES.attack ||
@@ -180,7 +191,7 @@ export class UnitMovement {
         : unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt
           ? getUnitCombatRange(unit)
           : action === ACTION_TYPES.attack
-            ? getUnitCombatRange(unit)
+            ? getUnitCombatRange(unit, dest)
             : undefined
     return { usesActionRange, effectiveRange }
   }
@@ -189,7 +200,12 @@ export class UnitMovement {
     const unit = this.unit
     const dest = unit.dest
     if (!dest || !unit.realDest) return false
-    if (!('family' in dest) || !playerSeesTarget(unit.owner, dest as RuntimeEntity)) return false
+    if (!('family' in dest)) return false
+    if (
+      !(unit.action === ACTION_TYPES.attack && isUnitRetaliationTarget(unit, dest as RuntimeEntity)) &&
+      !playerSeesTarget(unit.owner, dest as RuntimeEntity)
+    )
+      return false
     observeTarget(unit.owner, dest as RuntimeEntity)
     return dest.i !== unit.realDest.i || dest.j !== unit.realDest.j
   }

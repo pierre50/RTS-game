@@ -72,4 +72,4 @@ TextureStyle.defaultOptions.scaleMode = 'nearest'
 
   const screenManager = new ScreenManager(app, gameRoot)
   screenManager.start()
-})()
+})().catch(error => console.error('Application startup failed', error))

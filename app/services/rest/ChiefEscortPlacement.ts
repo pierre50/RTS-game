@@ -3,7 +3,7 @@ import { isChiefEscort, getChiefAudienceBuilding } from '../../lib/units/chiefEs
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { getEntitySpaceGrid, sameMapSpace } from '../../lib/mapSpaces'
 import { getBuildingInteriorSpaceForUnit } from '../../../engine/services/BuildingInteriorSpaceLookup'
-import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
+import { hasInteriorCombatRoute } from '../../lib/units/combat/interiorCombat'
 import { isUnitRestWakeLocked } from './UnitRestRules'
 import { placeUnitAtCell, stopUnitForRest } from './UnitRestState'
 import type { GameContextLike } from '../../types/context'

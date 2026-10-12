@@ -1,3 +1,4 @@
+import { createQuestObjective, renderQuestResourceText } from './QuestResources'
 import { formatQuestText } from '../../services/quests/QuestText'
 import { Modal } from '../../lib/ui/Modal'
 import { t } from '../../lib/lang'
@@ -93,10 +94,13 @@ export class QuestJournalManager {
     const definition = tracked && this.system.definitions.get(tracked.definitionId)
     const stage = definition?.stages.find(item => item.id === tracked?.stageId)
     this.tracker.hidden = !tracked || !definition
-    if (tracked && definition) {
-      this.tracker.textContent = `${this.label(definition.title, tracked)} — ${stage?.objectives.map(objective => this.label(objective.text, tracked)).join(' · ') ?? ''}`
+    const resources = this.menu.context.controls?.heroUnit?.inventory?.resources
+    const signature = JSON.stringify([state, resources])
+    if (tracked && definition && signature !== this.signature) {
+      this.tracker.replaceChildren(text('span', this.label(definition.title, tracked)))
+      for (const objective of stage?.objectives ?? [])
+        this.tracker.appendChild(createQuestObjective(objective, tracked, resources))
     }
-    const signature = JSON.stringify([state, this.menu.context.controls?.heroUnit?.inventory?.resources])
     if (this.modal && signature !== this.signature) this.render()
     this.signature = signature
   }
@@ -151,11 +155,17 @@ export class QuestJournalManager {
     details.appendChild(text('h2', definition ? this.label(definition.title, quest) : t('questUnavailable')))
     details.appendChild(text('p', t('questGiver', { name: quest.owner.name }), 'quest-giver'))
     if (definition) {
-      details.appendChild(text('p', this.label(definition.description, quest)))
+      const description = document.createElement('p')
+      renderQuestResourceText(description, this.label(definition.description, quest))
+      details.appendChild(description)
       details.appendChild(text('h3', t('questObjectives')))
       const objectives = document.createElement('ul')
       for (const objective of definition.stages.find(stage => stage.id === quest.stageId)?.objectives ?? []) {
-        objectives.appendChild(text('li', this.label(objective.text, quest)))
+        const item = document.createElement('li')
+        item.appendChild(
+          createQuestObjective(objective, quest, this.menu.context.controls?.heroUnit?.inventory?.resources)
+        )
+        objectives.appendChild(item)
       }
       details.appendChild(objectives)
     }

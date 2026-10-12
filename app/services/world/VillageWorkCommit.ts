@@ -30,10 +30,12 @@ export function commitVillageWork(
   }
   savedBuildings.forEach((copy, index) => {
     const building = buildings[index]
+    building.townCenterId = copy.townCenterId
     building.inventory = copy.inventory
     const progressChanged = building.constructionProgress !== copy.constructionProgress
     building.constructionWorkRequired = copy.constructionWorkRequired
     building.constructionProgress = copy.constructionProgress
+    building.constructionPaused = copy.constructionPaused
     building.constructionMaterials = copy.constructionMaterials
     if (building.buildingUpgrade) {
       if (copy.buildingUpgrade) building.buildingUpgrade = copy.buildingUpgrade
@@ -53,6 +55,7 @@ export function commitVillageWork(
   const space = ensureOutsideMapSpace(context.map)
   copies.forEach((copy, index) => {
     const unit = units[index]
+    unit.villageHome = copy.villageHome
     unit.inventory = copy.inventory
     unit.lastMealAt = copy.lastMealAt
     unit.collectiveTask = copy.collectiveTask
@@ -111,10 +114,12 @@ const FIELDS = [
   'isChief',
   'inactif',
   'villageHome',
+  'townCenterId',
   'buildingLevel',
   'constructionWorkRequired',
   'constructionTime',
   'constructionProgress',
+  'constructionPaused',
   'constructionMaterials',
   'buildingUpgrade',
   'reservePolicy',

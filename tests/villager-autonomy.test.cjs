@@ -22,6 +22,7 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
+  ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
   SHEET_TYPES: { walking: 'walking' },
   ACTION_TYPES: {
     attack: 'attack',
@@ -128,6 +129,10 @@ function createOwner(extra = {}) {
 
 function createVillager(owner, extra = {}) {
   const villager = {
+    inventory: {
+      activeWeapons: { tool: 'axe_ceramic' },
+      equipment: ['pickaxe_ceramic', 'hammer_ceramic', 'scythe_ceramic', 'bow', 'arrow_ceramic'],
+    },
     autonomousJob: null,
     dest: null,
     i: 0,
@@ -227,10 +232,10 @@ test('wood autonomy resumes a nearby felled tree even when a standing tree is cl
   assert.equal(unit.action, constants.ACTION_TYPES.chopwood)
 
   unit.context.map.resources = [felledTree]
-  assert.equal(hasVillagerAutonomyTarget(unit, 'wood'), true)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(unit, 'wood'), 'wood'), true)
   for (const patch of [{ quantity: 0 }, { isDead: true }, { isDestroyed: true }]) {
     unit.context.map.resources = [{ ...felledTree, ...patch }]
-    assert.equal(hasVillagerAutonomyTarget(unit, 'wood'), false)
+    assert.equal(hasVillagerAutonomyTarget(equippedForJob(unit, 'wood'), 'wood'), false)
   }
 })
 
@@ -327,9 +332,9 @@ test('copper and iron autonomy target only the requested ore and issue the match
   })
   const copperMiner = createVillager(owner)
   const ironMiner = createVillager(owner)
-  ironMiner.inventory = { equipment: ['pickaxe_bronze'] }
+  ironMiner.inventory = { activeWeapons: { tool: 'pickaxe_bronze' }, equipment: [] }
 
-  assert.equal(assignVillagerAutonomy(copperMiner, 'copper'), true)
+  assert.equal(assignVillagerAutonomy(equippedForJob(copperMiner, 'copper'), 'copper'), true)
   assert.equal(copperMiner.dest, copper)
   assert.equal(copperMiner.action, constants.ACTION_TYPES.minecopper)
   assert.equal(copperMiner.autonomousJob, 'copper')
@@ -365,6 +370,8 @@ test('iron autonomy requires a bronze pickaxe regardless of the legacy age', () 
   owner.age = 2
   assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), false)
   owner.forgeUpgrades = { pickaxes: 2 }
+  assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), false)
+  ironMiner.inventory.activeWeapons.tool = 'pickaxe_bronze'
   assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), true)
   assert.equal(assignVillagerAutonomy(ironMiner, 'iron'), true)
   assert.equal(ironMiner.dest, iron)
@@ -555,8 +562,8 @@ test('construction autonomy does not explore when there is no construction targe
     },
   })
 
-  assert.equal(hasVillagerAutonomyTarget(villager, 'construction'), false)
-  assert.equal(assignVillagerAutonomy(villager, 'construction'), false)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(villager, 'construction'), 'construction'), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'construction'), 'construction'), false)
   assert.equal(villager.explored, false)
   assert.equal(villager.autonomousJob, 'construction')
 })
@@ -572,8 +579,8 @@ test('resource autonomy explores when the requested resource is unknown', () => 
     },
   })
 
-  assert.equal(hasVillagerAutonomyTarget(villager, 'wood'), false)
-  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(villager, 'wood'), 'wood'), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'wood'), 'wood'), true)
   assert.equal(villager.explored, true)
   assert.equal(villager.autonomousJob, 'wood')
 })
@@ -589,8 +596,8 @@ test('resource autonomy can keep a strict job idle without exploring when no tar
     },
   })
 
-  assert.equal(hasVillagerAutonomyTarget(villager, 'gold'), false)
-  assert.equal(assignVillagerAutonomy(villager, 'gold', { exploreWhenNoTarget: false }), false)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(villager, 'gold'), 'gold'), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'gold'), 'gold', { exploreWhenNoTarget: false }), false)
   assert.equal(villager.explored, false)
   assert.equal(villager.autonomousJob, 'gold')
   assert.equal(villager.dest, null)
@@ -609,8 +616,8 @@ test('resource autonomy keeps the job stopped when no target or exploration rout
     },
   })
 
-  assert.equal(hasVillagerAutonomyTarget(villager, 'wood'), false)
-  assert.equal(assignVillagerAutonomy(villager, 'wood'), false)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(villager, 'wood'), 'wood'), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'wood'), 'wood'), false)
   assert.equal(villager.explored, true)
   assert.equal(villager.autonomousJob, 'wood')
   assert.equal(villager.dest, null)
@@ -655,7 +662,7 @@ test('resource autonomy tries the next known target when the closest order is re
     },
   })
 
-  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'wood'), 'wood'), true)
 
   assert.deepEqual(attempts, ['tree-blocked', 'tree-reachable'])
   assert.equal(villager.dest, reachableTree)
@@ -701,7 +708,7 @@ test('resource autonomy skips known targets without a contact path before sendin
     },
   })
 
-  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'wood'), 'wood'), true)
 
   assert.deepEqual(attempts, ['tree-path'])
   assert.equal(villager.dest, reachableTree)
@@ -741,7 +748,7 @@ test('resource autonomy scores real path length ahead of raw distance', () => {
     context: { map: { grid: [[]] } },
   })
 
-  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'wood'), 'wood'), true)
 
   assert.equal(villager.dest, fartherTreeWithShortPath)
 })
@@ -772,7 +779,7 @@ test('resource autonomy explores after every known resource target is rejected',
     },
   })
 
-  assert.equal(assignVillagerAutonomy(villager, 'stone'), true)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'stone'), 'stone'), true)
 
   assert.equal(villager.explored, true)
   assert.equal(villager.autonomousJob, 'stone')
@@ -844,7 +851,7 @@ test('villager autonomy does not assign work during sleep time', () => {
     },
   })
 
-  assert.equal(assignVillagerAutonomy(villager, 'wood'), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'wood'), 'wood'), false)
   assert.deepEqual(attempts, [])
   assert.equal(villager.autonomousJob, null)
   assert.equal(villager.dest, null)
@@ -879,12 +886,12 @@ test('construction autonomy only targets own unfinished buildings', () => {
   owner.buildings.push(otherBuilding)
   const villager = createVillager(owner)
 
-  assert.equal(hasVillagerAutonomyTarget(villager, 'construction'), false)
-  assert.equal(assignVillagerAutonomy(villager, 'construction'), false)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(villager, 'construction'), 'construction'), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'construction'), 'construction'), false)
 
   owner.buildings.push(ownBuilding)
-  assert.equal(hasVillagerAutonomyTarget(villager, 'construction'), true)
-  assert.equal(assignVillagerAutonomy(villager, 'construction'), true)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(villager, 'construction'), 'construction'), true)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'construction'), 'construction'), true)
   assert.equal(villager.dest, ownBuilding)
 })
 
@@ -907,8 +914,8 @@ test('construction autonomy repairs own damaged completed buildings', () => {
   owner.buildings.push(damagedBuilding)
   const villager = createVillager(owner)
 
-  assert.equal(hasVillagerAutonomyTarget(villager, 'construction'), true)
-  assert.equal(assignVillagerAutonomy(villager, 'construction'), true)
+  assert.equal(hasVillagerAutonomyTarget(equippedForJob(villager, 'construction'), 'construction'), true)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'construction'), 'construction'), true)
   assert.equal(villager.dest, damagedBuilding)
   assert.equal(villager.action, constants.ACTION_TYPES.build)
 })
@@ -1008,7 +1015,7 @@ test('hero villagers retain missing resource jobs without exploration or a retry
       },
     },
   })
-  assert.equal(assignVillagerAutonomy(villager, 'gold', { exploreWhenNoTarget: true }), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(villager, 'gold'), 'gold', { exploreWhenNoTarget: true }), false)
   assert.equal(villager.autonomousJob, 'gold')
   assert.equal(villager.exploringForAutonomy, false)
   assert.equal(villager.dest, null)
@@ -1088,7 +1095,7 @@ test('a leather reserve can use a carcass after its meat is depleted', () => {
 test('unavailable stone clears the old woodcutting role and records the blocked intention', () => {
   const { assignVillagerAutonomy } = loadVillagerAutonomy()
   const unit = createVillager(createOwner({ isPlayed: true }), { work: 'woodcutter', autonomousJob: 'wood' })
-  assert.equal(assignVillagerAutonomy(unit, 'stone'), false)
+  assert.equal(assignVillagerAutonomy(equippedForJob(unit, 'stone'), 'stone'), false)
   assert.equal(unit.work, null)
   assert.equal(unit.action, null)
   assert.equal(unit.dest, null)
@@ -1103,6 +1110,7 @@ test('zero-health mineral records remain harvestable until depleted or destroyed
     const mineral = { family: 'resource', type, label: job, i: 3, j: 4, hitPoints: 0, quantity: 23 }
     const owner = createOwner({ forgeUpgrades: { pickaxes: 2 }, foundedResources: { [type]: new Set([mineral]) } })
     const worker = createVillager(owner)
+    worker.inventory.activeWeapons.tool = 'pickaxe_bronze'
     assert.equal(hasVillagerAutonomyTarget(worker, job), true, job)
     assert.equal(assignVillagerAutonomy(worker, job), true, job)
     assert.equal(worker.dest, mineral, job)
@@ -1116,3 +1124,11 @@ test('zero-health mineral records remain harvestable until depleted or destroyed
     assert.equal(hasVillagerAutonomyTarget(worker, job), false, job)
   }
 })
+
+function equippedForJob(unit, job) {
+  const tool = job === 'wood' ? 'axe_ceramic' : job === 'construction' ? 'hammer_ceramic' : 'pickaxe_ceramic'
+  unit.inventory ??= {}
+  unit.inventory.activeWeapons ??= {}
+  unit.inventory.activeWeapons.tool = tool
+  return unit
+}

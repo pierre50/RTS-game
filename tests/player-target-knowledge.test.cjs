@@ -128,7 +128,7 @@ test('lost targets route to the remembered cell and resume only after shared det
     chief.action = action
     commands.push({ dest, action })
   }
-  const pursuit = loadTsModule('app/lib/units/targetPursuit.ts', {
+  const pursuit = loadTsModule('app/lib/units/combat/targetPursuit.ts', {
     mocks: {
       './playerTargetKnowledge': knowledge,
       '../mapSpaces': {
@@ -180,7 +180,7 @@ test('manual orders cancel an ongoing remembered-target search', () => {
     chief.dest = dest
     chief.action = action
   }
-  const pursuit = loadTsModule('app/lib/units/targetPursuit.ts', {
+  const pursuit = loadTsModule('app/lib/units/combat/targetPursuit.ts', {
     mocks: {
       './playerTargetKnowledge': knowledge,
       '../mapSpaces': {
@@ -258,6 +258,10 @@ test('hero resource jobs switch to distant deposits when the nearby supply is de
     const worker = {
       owner,
       type: 'Villager',
+      inventory: {
+        toolsInitialized: true,
+        activeWeapons: { tool: job === 'wood' ? 'axe_ceramic' : 'pickaxe_ceramic' },
+      },
       i: 0,
       j: 0,
       context: { map: { resources: [far, near] }, dayNight: { state: { hour: 10 } } },

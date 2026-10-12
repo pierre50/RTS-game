@@ -297,7 +297,7 @@ test('offline inhabitants are spread around buildings and fields with clear entr
 test('roads are reserved before districts and towers cover distinct village approaches', () => {
   const { validateSettlementRoads } = require('../tools/maps/settlements/settlement-roads.cjs')
   const { loadGenerationTs } = require('../tools/maps/load-generation-ts.cjs')
-  const { StartingVillageRoads } = loadGenerationTs('app/services/world/StartingVillageRoads.ts')
+  const { StartingVillageRoads } = loadGenerationTs('app/services/world/startingState/StartingVillageRoads.ts')
   const towerRange = require('../public/assets/data/gameplay/buildings.json').WatchTower.range
   for (const [seed, neighbors] of [
     [

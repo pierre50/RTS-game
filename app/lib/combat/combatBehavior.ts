@@ -3,7 +3,7 @@ import { createReservedPassageCellLookup } from '../buildings/passageCells'
 import { getCellsAroundPoint, getInstancePath } from '../grid'
 import { getEntitySpaceMapLike } from '../mapSpaces'
 import type { CombatBehaviorConfig, CombatRecoveryMode } from '../../types/config'
-import type { EnergyEntity, RuntimeEntity } from '../../types/entities'
+import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
 const CELL_WORLD_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
@@ -341,7 +341,15 @@ export function updateCombatRecoveryMovement(
   unit.combatMode = 'recover'
   unit.action = null
   unit.lastCombatRecoveryMoveAt = now
-  unit.sendTo?.(candidate.cell)
+  const recoveringUnit = unit as UnitEntity
+  if (unit.family === 'unit' && recoveringUnit.setDest && recoveringUnit.setPath) {
+    // This is part of the current attack, not a new order (which cancels the
+    // energy wait). The candidate already carries a validated recovery path.
+    recoveringUnit.setDest(candidate.cell)
+    recoveringUnit.setPath(candidate.path)
+  } else {
+    unit.sendTo?.(candidate.cell)
+  }
   return true
 }
 

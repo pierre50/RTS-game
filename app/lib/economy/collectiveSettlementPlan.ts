@@ -5,8 +5,7 @@ import { collectiveNeeds } from './collectiveNeeds'
 import { settlementAvailableStock, settlementStockGoals } from './collectiveStock'
 import { constructionAssignment } from './constructionAssignments'
 import {
-  advanceMaterialConstruction,
-  constructionWorkPoints,
+  constructionMaterialsReady,
   hasConstructionWork,
   materialAmount,
   remainingConstructionMaterials,
@@ -47,13 +46,9 @@ export function settlementVillagers(owner: Owner, anchor: Point, members: Collec
   )
 }
 
-/** Stored materials already cover the next work point. */
+/** Workers can build only when the complete recipe has arrived. */
 export function canAdvanceConstruction(site: CollectiveSite): boolean {
-  const preview = {
-    ...site,
-    constructionMaterials: site.constructionMaterials ? structuredClone(site.constructionMaterials) : undefined,
-  }
-  return advanceMaterialConstruction(preview, constructionWorkPoints(site) + 1, []) > constructionWorkPoints(site)
+  return hasConstructionWork(site) && constructionMaterialsReady(site)
 }
 
 export function createSettlementPlan(

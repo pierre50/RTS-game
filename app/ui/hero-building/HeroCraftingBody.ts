@@ -1,4 +1,5 @@
 import { getEquipmentDurability } from '../../lib/equipment/equipmentCondition'
+import { getHeroCraftRecipeLabel } from '../../lib/hero/heroCraftLabels'
 import { RESOURCE_ICON_IDS } from '../../constants'
 import { renderBuildingAvatar } from '../../lib/avatar'
 import { getIconPath } from '../../lib/graphics/assets'
@@ -7,6 +8,7 @@ import {
   craftHeroRecipe,
   getMissingCraftResources,
   getMaxHeroCraftCount,
+  getHeroCraftPayment,
   type HeroCraftRecipe,
 } from '../../lib/hero/heroCrafting'
 import { isHeroInteractionTargetReachable } from '../../lib/hero/heroActionRange'
@@ -21,21 +23,22 @@ import { inventoryCostMetaParts } from '../inventory/InventoryCostMeta'
 import { createInventoryEquipmentIcon } from '../inventory/InventoryItemIcons'
 import { createInventorySection } from '../inventory/InventorySection'
 
-export abstract class HeroCraftingBody {
+export abstract class HeroCraftingBody<B extends BuildingEntity | undefined = BuildingEntity> {
   craftPanel = document.createElement('div')
 
   constructor(
     protected menu: MenuHost,
-    protected building: BuildingEntity
+    protected building: B
   ) {
     this.craftPanel.className = 'forge-body'
-    this.renderCraft()
+    if (this.building) this.renderCraft()
   }
 
   abstract renderCraft(): void
 
   canUse(): boolean {
     const hero = this.menu.context.controls.heroUnit
+    if (!this.building) return Boolean(hero && !hero.isDead && !hero.isDestroyed)
     return Boolean(
       hero &&
         this.building.isBuilt &&
@@ -48,16 +51,20 @@ export abstract class HeroCraftingBody {
   getCraftCostMetaParts(
     cost: ResourceAmount,
     hero: UnitEntity | null | undefined
-  ): Array<{ text: string; className: string }> {
+  ): ReturnType<typeof inventoryCostMetaParts> {
     const { player } = this.menu.context
-    const totals = getPlayerResourceTotals(player, { hero, includeHero: Boolean(hero) })
+    const totals = getPlayerResourceTotals(player, {
+      hero,
+      includeHero: Boolean(hero),
+      settlement: this.building ?? hero,
+    })
     return inventoryCostMetaParts(cost, totals)
   }
 
   getCraftMissingResourceMessage(cost: ResourceAmount): string {
     const { player } = this.menu.context
     const hero = this.menu.context.controls.heroUnit
-    const missing = getMissingCraftResources(player, cost, hero)
+    const missing = getMissingCraftResources(player, cost, hero, this.building)
     const resource = Object.keys(missing)
       .map(key => t(key))
       .join(', ')
@@ -67,8 +74,18 @@ export abstract class HeroCraftingBody {
   createCraftButton(recipe: HeroCraftRecipe): HTMLElement {
     const { app, player } = this.menu.context
     const hero = this.menu.context.controls.heroUnit
-    const label = t(recipe.labelKey, recipe.materialKey ? { material: t(recipe.materialKey) } : undefined)
-    const disabled = !this.canUse() || !hero || !canCraftHeroRecipe(player, recipe, hero)
+    const label = getHeroCraftRecipeLabel(recipe)
+    const actionLabel = t(
+      recipe.category === 'cooking'
+        ? 'campfireCook'
+        : recipe.station === 'campfire'
+          ? 'campfirePrepare'
+          : 'craftAction'
+    )
+    const cost = getHeroCraftPayment(recipe, hero).cost
+    const batchCount = Math.min(10, getMaxHeroCraftCount(player, recipe, hero, this.building))
+    const batchLabel = `${actionLabel} ${batchCount || 10}`
+    const disabled = !this.canUse() || !hero || !canCraftHeroRecipe(player, recipe, hero, this.building)
     const { element, icon } = createInventoryActionRow({
       id: `craft-${recipe.id}`,
       className: 'inventory-craft-row',
@@ -78,21 +95,23 @@ export abstract class HeroCraftingBody {
       durability: getEquipmentDurability(recipe.outputEquipment),
       description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
       meta: '',
-      metaParts: this.getCraftCostMetaParts(recipe.cost, hero),
+      metaParts: Object.keys(cost).length
+        ? this.getCraftCostMetaParts(cost, hero)
+        : [{ text: t('craftPreparedMaterials') }],
       trailingAction: {
         disabled,
-        label: t(
-          recipe.category === 'cooking'
-            ? 'campfireCook'
-            : recipe.station === 'campfire'
-              ? 'campfirePrepare'
-              : 'inventoryTabCraft'
-        ),
+        label: `${actionLabel} 1`,
+        title: t('craftBatchShortcut', { action: batchLabel }),
         onClick: event => {
           if (!hero || !this.canUse()) return
-          const count = (event as MouseEvent)?.shiftKey ? getMaxHeroCraftCount(player, recipe, hero) : 1
-          if (!craftHeroRecipe(player, hero, recipe, count)) {
-            this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
+          const count = (event as MouseEvent)?.shiftKey
+            ? Math.min(10, getMaxHeroCraftCount(player, recipe, hero, this.building))
+            : 1
+          if (!craftHeroRecipe(player, hero, recipe, count, this.building)) {
+            this.menu.showMessage(
+              this.getCraftMissingResourceMessage(getHeroCraftPayment(recipe, hero).cost),
+              'warning'
+            )
             this.renderCraft()
             return
           }
@@ -103,7 +122,7 @@ export abstract class HeroCraftingBody {
       },
     })
     const action = element.querySelector<HTMLButtonElement>('.inventory-row-action-button')
-    if (action) action.dataset.craftMax = 'true'
+    if (action) action.dataset.craftBatchLabel = batchLabel
     const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
     if (recipe.iconResource) {
       const resourceIcon = document.createElement('img')
@@ -129,14 +148,20 @@ export abstract class HeroCraftingBody {
     return element
   }
 
-  protected appendSection(title: string, renderItems: (grid: HTMLDivElement) => void, description?: string): void {
-    this.craftPanel.appendChild(
-      createInventorySection({
-        title,
-        description,
-        gridClassName: 'forge-craft-body inventory-section-list',
-        renderItems,
-      })
-    )
+  protected appendSection(
+    title: string,
+    renderItems: (grid: HTMLDivElement) => void,
+    description?: string,
+    parent: HTMLElement = this.craftPanel
+  ): HTMLElement {
+    const section = createInventorySection({
+      title,
+      description,
+      gridClassName: 'forge-craft-body inventory-section-list',
+      presentation: 'recipes',
+      renderItems,
+    })
+    parent.appendChild(section)
+    return section
   }
 }

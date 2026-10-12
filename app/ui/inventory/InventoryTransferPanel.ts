@@ -30,6 +30,11 @@ export type InventoryTransferPanelOptions = {
   canTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
   moveEquipment?: typeof moveInventoryEquipment
   moveResource?: typeof moveInventoryResource
+  additionalItems?: (container: InventoryContainer) => HTMLElement[]
+  equipmentAction?: (
+    container: InventoryContainer,
+    equipment: string
+  ) => Parameters<typeof createInventoryEquipmentRow>[1]['secondaryAction']
 }
 
 export class InventoryTransferPanel {
@@ -43,9 +48,13 @@ export class InventoryTransferPanel {
   source: InventoryContainer
   canTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
   moveEquipment: typeof moveInventoryEquipment
+  additionalItems?: InventoryTransferPanelOptions['additionalItems']
+  equipmentAction?: InventoryTransferPanelOptions['equipmentAction']
   moveResource: typeof moveInventoryResource
 
   constructor(options: InventoryTransferPanelOptions) {
+    this.additionalItems = options.additionalItems
+    this.equipmentAction = options.equipmentAction
     this.header = options.header
     this.context = options.context
     this.destination = options.destination
@@ -74,6 +83,7 @@ export class InventoryTransferPanel {
     return createInventoryContents({
       action,
       inventory: container.inventory,
+      additionalItems: this.additionalItems?.(container),
       emptyText: t('inventoryEmptySlot'),
       title: container.label ?? t(container.labelKey),
       renderResource: (resource, amount) => this.createResourceButton(container, transferTarget, resource, amount),
@@ -128,10 +138,13 @@ export class InventoryTransferPanel {
     button.type = 'button'
     button.className = 'ui-btn inventory-transfer-all-button'
     button.textContent = action.allLabel
+    button.disabled = !this.canTransferAnyItem(container, transferTarget)
+    if (button.disabled) button.title = t('storageFull')
     button.addEventListener('click', evt => {
       evt.preventDefault()
       evt.stopPropagation()
       if (this.canTransfer?.(container, transferTarget) === false) return
+      if (!this.canTransferAnyItem(container, transferTarget)) return
       let movedCount = 0
       for (const resource of RESOURCE_STORAGE_NAMES) {
         if (this.moveResource(container, transferTarget, resource) > 0) movedCount += 1
@@ -149,6 +162,19 @@ export class InventoryTransferPanel {
       })
     })
     return button
+  }
+
+  private canTransferAnyItem(container: InventoryContainer, transferTarget: InventoryContainer): boolean {
+    const hasResource = RESOURCE_STORAGE_NAMES.some(resource => {
+      const available = Math.max(0, Math.floor(container.inventory.resources?.[resource] ?? 0))
+      const room = transferTarget.maxAcceptableResourceAmount?.(resource) ?? Number.POSITIVE_INFINITY
+      const amount = Math.min(available, Math.max(0, room))
+      return amount > 0 && transferTarget.canAcceptResource?.(resource, amount) !== false
+    })
+    return (
+      hasResource ||
+      (container.inventory.equipment ?? []).some(equipment => transferTarget.canAcceptEquipment?.(equipment) !== false)
+    )
   }
 
   private createResourceButton(
@@ -228,6 +254,7 @@ export class InventoryTransferPanel {
       equipment,
       count,
       labelContext: 'inventory transfer',
+      secondaryAction: this.equipmentAction?.(container, equipment),
 
       trailingAction:
         this.canTransfer?.(container, transferTarget) === false

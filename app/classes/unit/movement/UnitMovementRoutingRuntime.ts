@@ -1,3 +1,6 @@
+import { canUseResourceApproachCell } from '../../../lib/grid/resourceApproachDestination'
+import { takePreparedContactPath } from '../../../lib/grid/preparedContactPath'
+import { supplyTownArrows } from '../../../lib/units/supplies/townArrowSupply'
 import type { BuildingEntity } from '../../../types/entities'
 import { beginRoadJourney } from '../../../lib/units/roadJourney'
 import { ACTION_TYPES } from '../../../constants'
@@ -9,7 +12,9 @@ import {
 } from '../../../lib/buildings/passageCells'
 import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../../../lib/mapSpaces'
 import { cancelVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
-import { routeToRememberedTarget } from '../../../lib/units/targetPursuit'
+import { routeToRememberedTarget } from '../../../lib/units/combat/targetPursuit'
+import { alertUnitCombatAllies, clearUnitCombatAlert } from '../../../lib/units/unitCombatAlert'
+import { clearUnitAttacker, isUnitRetaliationTarget } from '../../../lib/units/unitRetaliation'
 import { cancelEnergyWait } from '../../../lib/units/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
@@ -159,6 +164,16 @@ export class UnitMovementRouting {
     if (unit.actionLocked) {
       return unit.queueOrder?.(dest ?? (() => {}), action)
     }
+    if (action !== ACTION_TYPES.attack) clearUnitCombatAlert(unit)
+    if (!(action === ACTION_TYPES.attack && dest && isRuntimeEntity(dest) && isUnitRetaliationTarget(unit, dest))) {
+      clearUnitAttacker(unit)
+    }
+    if (action === ACTION_TYPES.hunt && dest && unit.getActionCondition?.(dest, action)) {
+      if (supplyTownArrows(unit, unit.owner, { hunting: true })) {
+        unit.context?.menu?.refreshInventory?.()
+        unit.context?.menu?.updateTopbar?.()
+      }
+    }
     if (dest && isRuntimeEntity(dest) && routeToRememberedTarget(unit, dest, action)) return
     if (isRedundantMoveOrder(unit, dest, action, forceRepath)) return
     this.resetForNewOrder(action)
@@ -168,6 +183,7 @@ export class UnitMovementRouting {
       return
     }
     this.routeAdmittedOrder(dest, action, map, { allowBlockedGatherApproach, preserveAutonomy, allowPassageStop })
+    alertUnitCombatAllies(unit)
   }
 
   private resetForNewOrder(action: string | null): void {
@@ -265,7 +281,14 @@ export class UnitMovementRouting {
       }
     }
     if (!path.length) {
-      path = getInstancePath(unit, dest.i, dest.j, map, createPassagePathfindingOptions(passageLookup))
+      path =
+        takePreparedContactPath(
+          unit,
+          dest,
+          map,
+          cell => canUseResourceApproachCell(unit, cell, dest, { allowPassageStop: passageStopAllowed, passageLookup }),
+          createPassagePathfindingOptions(passageLookup)
+        ) ?? getInstancePath(unit, dest.i, dest.j, map, createPassagePathfindingOptions(passageLookup))
     }
     if (path.length) {
       unit.setDest?.(dest)

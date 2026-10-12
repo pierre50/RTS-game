@@ -1,62 +1,47 @@
 {
   "axe_ceramic": {
     "weapon": {
-      "power": 5
-    }
-  },
-  "axe_copper": {
-    "weapon": {
-      "power": 7
+      "power": 2
     }
   },
   "axe_bronze": {
     "weapon": {
-      "power": 9
+      "power": 4
     }
   },
   "axe_iron": {
     "weapon": {
-      "power": 11
+      "power": 5
     }
   },
   "pickaxe_ceramic": {
     "weapon": {
-      "power": 1
-    }
-  },
-  "pickaxe_copper": {
-    "weapon": {
-      "power": 3
+      "power": 2
     }
   },
   "pickaxe_bronze": {
     "weapon": {
-      "power": 5
+      "power": 4
     }
   },
   "pickaxe_iron": {
     "weapon": {
-      "power": 7
+      "power": 5
     }
   },
   "hammer_ceramic": {
     "weapon": {
-      "power": 1
-    }
-  },
-  "hammer_copper": {
-    "weapon": {
-      "power": 3
+      "power": 2
     }
   },
   "hammer_bronze": {
     "weapon": {
-      "power": 5
+      "power": 4
     }
   },
   "hammer_iron": {
     "weapon": {
-      "power": 7
+      "power": 5
     }
   },
   "meat": {},
@@ -67,19 +52,14 @@
       "power": 2
     }
   },
-  "scythe_copper": {
+  "scythe_bronze": {
     "weapon": {
       "power": 4
     }
   },
-  "scythe_bronze": {
-    "weapon": {
-      "power": 6
-    }
-  },
   "scythe_iron": {
     "weapon": {
-      "power": 8
+      "power": 5
     }
   },
   "longstick": {
@@ -115,11 +95,6 @@
       "power": 1
     }
   },
-  "arrow_copper": {
-    "weapon": {
-      "power": 2
-    }
-  },
   "arrow_bronze": {
     "weapon": {
       "power": 3
@@ -140,11 +115,6 @@
       "power": 1
     }
   },
-  "halberd": {
-    "weapon": {
-      "power": 17
-    }
-  },
   "boar_tusks": {
     "weapon": {
       "power": 3
@@ -160,16 +130,6 @@
       "power": 3
     }
   },
-  "sword_ceramic": {
-    "weapon": {
-      "power": 6
-    }
-  },
-  "sword_copper": {
-    "weapon": {
-      "power": 8
-    }
-  },
   "sword_bronze": {
     "weapon": {
       "power": 10
@@ -183,23 +143,8 @@
   "armor_leather": {
     "armor": 1
   },
-  "armor_mail_ceramic": {
-    "armor": 2
-  },
-  "armor_mail_copper": {
-    "armor": 2
-  },
-  "armor_mail_bronze": {
-    "armor": 3
-  },
   "armor_mail_iron": {
     "armor": 4
-  },
-  "armor_legion_ceramic": {
-    "armor": 2
-  },
-  "armor_legion_copper": {
-    "armor": 3
   },
   "armor_legion_bronze": {
     "armor": 4
@@ -207,10 +152,7 @@
   "armor_legion_iron": {
     "armor": 5
   },
-  "helmet_pointed_ceramic": {
-    "armor": 1
-  },
-  "helmet_pointed_copper": {
+  "helmet_pointed_leather": {
     "armor": 1
   },
   "helmet_pointed_bronze": {
@@ -219,10 +161,7 @@
   "helmet_pointed_iron": {
     "armor": 2
   },
-  "shoulder_legion_ceramic": {
-    "armor": 1
-  },
-  "shoulder_legion_copper": {
+  "shoulder_legion_leather": {
     "armor": 1
   },
   "shoulder_legion_bronze": {
@@ -231,10 +170,7 @@
   "shoulder_legion_iron": {
     "armor": 2
   },
-  "bracers_ceramic": {
-    "armor": 1
-  },
-  "bracers_copper": {
+  "bracers_leather": {
     "armor": 1
   },
   "bracers_bronze": {
@@ -251,36 +187,17 @@
   "plumage": {},
   "helmet_wings": {},
   "upward_horns_white": {},
-  "upward_horns_ceramic": {},
-  "helmet_barbuta_ceramic": {
-    "armor": 1
-  },
-  "helmet_barbuta_copper": {
-    "armor": 2
-  },
   "helmet_barbuta_bronze": {
     "armor": 2
   },
   "helmet_barbuta_iron": {
-    "armor": 3
-  },
-  "helmet_legion_ceramic": {
-    "armor": 1
-  },
-  "helmet_legion_copper": {
-    "armor": 2
+    "armor": 5
   },
   "helmet_legion_bronze": {
     "armor": 2
   },
   "helmet_legion_iron": {
-    "armor": 3
-  },
-  "helmet_nasal_ceramic": {
-    "armor": 1
-  },
-  "helmet_nasal_copper": {
-    "armor": 2
+    "armor": 4
   },
   "helmet_nasal_bronze": {
     "armor": 2
@@ -288,23 +205,11 @@
   "helmet_nasal_iron": {
     "armor": 3
   },
-  "helmet_bascinet_round_ceramic": {
-    "armor": 1
-  },
-  "helmet_bascinet_round_copper": {
-    "armor": 2
-  },
   "helmet_bascinet_round_bronze": {
     "armor": 2
   },
   "helmet_bascinet_round_iron": {
     "armor": 3
-  },
-  "helmet_norman_ceramic": {
-    "armor": 1
-  },
-  "helmet_norman_copper": {
-    "armor": 2
   },
   "helmet_norman_bronze": {
     "armor": 2
@@ -312,17 +217,14 @@
   "helmet_norman_iron": {
     "armor": 3
   },
-  "helmet_barbarian_ceramic": {
+  "helmet_barbarian_leather": {
     "armor": 1
   },
-  "helmet_barbarian_nasal_ceramic": {
+  "helmet_barbarian_nasal_leather": {
     "armor": 1
   },
   "sack_cloth_hood_leather": {},
-  "leg_armor_ceramic": {
-    "armor": 1
-  },
-  "leg_armor_copper": {
+  "leg_armor_leather": {
     "armor": 1
   },
   "leg_armor_bronze": {
@@ -331,11 +233,8 @@
   "leg_armor_iron": {
     "armor": 2
   },
-  "round_shield_ceramic_slash": {
+  "round_shield_wood_slash": {
     "armor": 1
-  },
-  "round_shield_copper_slash": {
-    "armor": 2
   },
   "round_shield_bronze_slash": {
     "armor": 2
@@ -343,5 +242,46 @@
   "round_shield_iron_slash": {
     "armor": 3
   },
-  "quiver": {}
+  "quiver": {},
+  "dagger_bronze": {
+    "weapon": {
+      "power": 6
+    }
+  },
+  "dagger_iron": {
+    "weapon": {
+      "power": 8
+    }
+  },
+  "mace_bronze": {
+    "weapon": {
+      "power": 10
+    }
+  },
+  "mace_iron": {
+    "weapon": {
+      "power": 12
+    }
+  },
+  "slingshot": {
+    "weapon": {
+      "power": 2,
+      "range": 3
+    }
+  },
+  "spear_ceramic": {
+    "weapon": {
+      "power": 4
+    }
+  },
+  "spear_bronze": {
+    "weapon": {
+      "power": 8
+    }
+  },
+  "spear_iron": {
+    "weapon": {
+      "power": 10
+    }
+  }
 }

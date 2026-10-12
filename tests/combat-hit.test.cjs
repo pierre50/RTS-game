@@ -43,8 +43,13 @@ function loadCombatHit({
   feedbackCalls = [],
   bloodCalls = [],
   buildingFragmentCalls = [],
+  wearCalls = [],
 } = {}) {
   return loadModule('app/lib/combat/combatHit.ts', {
+    '../equipment/equipmentWear': {
+      wearEquippedWeapon: (unit, kind) => wearCalls.push({ unit, kind }),
+      wearEquippedArmor() {},
+    },
     '../units/unitSuspension': { unitSuspensionReason: () => (suspended ? 'road-travel' : undefined) },
     '../constants': constants,
     './combat': { getHitPointsWithDamage: (source, target) => (target.hitPoints ?? 0) - rawDamage },
@@ -337,4 +342,16 @@ test('a projectile cannot damage or wake a distant traveler', () => {
   assert.equal(target.hitPoints, 20)
   assert.equal(attacked, false)
   assert.equal(feedbackCalls.length, 0)
+})
+
+test('a successful automatic parry wears both contacting weapons once; a failed block wears only the attacker', () => {
+  for (const parryResult of [true, false]) {
+    const wearCalls = []
+    const { applyCombatHit } = loadCombatHit({ parryResult, wearCalls })
+    const attacker = { family: 'unit', type: 'Villager' }
+    const target = makeTarget({ family: 'unit' })
+    applyCombatHit(attacker, target, { isMelee: true })
+    assert.equal(wearCalls.filter(c => c.unit === attacker && c.kind === 'melee').length, 1)
+    assert.equal(wearCalls.filter(c => c.unit === target && c.kind === 'melee').length, parryResult ? 1 : 0)
+  }
 })

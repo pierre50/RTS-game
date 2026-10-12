@@ -33,7 +33,7 @@ function validateSavedUnitOrders(unit: Record<string, unknown>): void {
     unit.equipmentDurability != null &&
     (!isObject(unit.equipmentDurability) ||
       Object.values(unit.equipmentDurability).some(
-        value => typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 100
+        value => typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100
       ))
   ) {
     fail('Invalid save file: equipment durability is invalid.')

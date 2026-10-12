@@ -13,6 +13,7 @@ function loadUnitResourceActions(overrides = {}) {
       '../../lib/contact/contactGeometry': { getContactAimDegree: () => 0 },
       '../../lib/contact/contactDebug': { showContactDebug: () => {} },
       '../../constants': {
+        ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
         UNIT_TYPES: { hero: 'Hero' },
         LOADING_TYPES: {
           berry: 'berry',
@@ -95,6 +96,7 @@ function loadUnitResourceGathering() {
   return loadTsModule('app/classes/unit/UnitResourceGathering.ts', {
     mocks: {
       '../../constants': {
+        ...require('./helpers/loadTsModule.cjs').loadTsModule('app/constants/index.ts'),
         LOADING_TYPES: { wood: 'wood' },
         RESOURCE_GATHER_SWINGS: {},
         RESOURCE_STOCKPILE_TYPES: {},
@@ -202,7 +204,7 @@ for (const [type, age, action] of [['Iron', 0, 'mineiron']]) {
       dest: target,
       action,
       sprite: {},
-      inventory: { resources: {} },
+      inventory: { activeWeapons: { tool: 'pickaxe_ceramic' }, resources: {} },
       context: { menu: { showMessage: (...args) => messages.push(args) } },
       getActionCondition: () => false,
       affectNewDest: () => assert.fail('the swing should be allowed'),
@@ -233,7 +235,7 @@ for (const [type, age, action] of [['Iron', 0, 'mineiron']]) {
     actions.startGathering = () => {
       gathering = true
     }
-    unit.inventory.equipment = ['pickaxe_bronze']
+    unit.inventory.activeWeapons.tool = 'pickaxe_bronze'
     actions.startMiningResource(action)
     assert.equal(gathering, true, 'obtaining a bronze pickaxe restores normal gathering')
   })
@@ -256,7 +258,7 @@ test('the final mining hit only grants the remaining stock', () => {
     action: 'minegold',
     work: 'goldminer',
     gatherAmount: { goldminer: 10 },
-    inventory: { resources: {} },
+    inventory: { activeWeapons: { tool: 'pickaxe_ceramic' }, resources: {} },
     sprite: {},
     getActionCondition: () => target.quantity > 0,
   }

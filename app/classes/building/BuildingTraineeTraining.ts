@@ -1,5 +1,5 @@
 import { completeTrainingRequest } from '../../lib/training/trainingRequests'
-import { getTrainingDurationDays } from '../../lib/training/trainingRules'
+import { getTrainingDurationDays, getTrainingStartingExperience } from '../../lib/training/trainingRules'
 import { definedProperties } from '../../lib/definedProperties'
 import { BUILDING_TYPES, FADE_DURATION_MS, MOUNTED_HORSE_SPEED_BONUS, UNIT_TYPES } from '../../constants'
 import { fadeOut } from '../../lib/entities/entityFade'
@@ -65,14 +65,15 @@ function getTrainingExtra(
     const traineeSpeed = Number(trainee.speed)
     if (Number.isFinite(traineeSpeed)) baseExtra.speed = traineeSpeed
   }
-  if (!isStableMountTraining(building, trainee, type)) return { ...baseExtra, experience: {} }
+  if (!isStableMountTraining(building, trainee, type))
+    return { ...baseExtra, experience: getTrainingStartingExperience(building, type) }
   const traineeSpeed = Number(trainee.speed)
   const mountedExtra: UnitCreationExtra = definedProperties({
     ...baseExtra,
     mountedOnHorse: true,
     hitPoints: trainee.hitPoints,
     speed: Number.isFinite(traineeSpeed) ? traineeSpeed + MOUNTED_HORSE_SPEED_BONUS : undefined,
-    experience: trainee.experience ? { ...trainee.experience } : undefined,
+    experience: getTrainingStartingExperience(building, type, trainee.experience),
   })
   mountedExtra.horseColor = stableHorse?.horseColor ?? trainee.horseColor
   return mountedExtra

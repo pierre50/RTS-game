@@ -1,7 +1,8 @@
+import { getTrainingStartingExperience } from '../../lib/training/trainingRules'
 import { renderUnitTypeAvatar } from '../../lib/avatar'
 import { t } from '../../lib/lang'
 import { formatTrainingEntryTimeRemaining } from '../../lib/buildings/trainingTimeRemaining'
-import { BUILDING_TRAINING_CAPACITY, isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
+import { getBuildingTrainingCapacity, isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
 import { cancelBuildingTrainingRequest, requestBuildingTraining } from '../../lib/training/trainingRequests'
 import type { BuildingEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
@@ -48,7 +49,7 @@ export function createHeroTrainingBody(
     count:
       (building.trainingQueue?.length ?? 0) +
       (building.trainingRequests?.filter(request => request.traineeLabel).length ?? 0),
-    max: BUILDING_TRAINING_CAPACITY,
+    max: getBuildingTrainingCapacity(building),
   })
   queue.appendChild(summary)
   for (const type of types) {
@@ -56,6 +57,14 @@ export function createHeroTrainingBody(
       requestBuildingTraining(building, type, 1)
     })
     recruit.classList.add('hero-training-choice')
+    const experience = document.createElement('small')
+    experience.textContent =
+      building.type === 'Stable'
+        ? t('buildingTrainingPreservesXp')
+        : t('buildingTrainingStartingXp', {
+            xp: Object.values(getTrainingStartingExperience(building, type)).reduce((sum, xp) => sum + xp, 0),
+          })
+    recruit.appendChild(experience)
     const avatar = document.createElement('canvas')
     avatar.width = avatar.height = 64
     if (building.owner && renderUnitTypeAvatar(menu.context.app, type, building.owner, avatar)) recruit.prepend(avatar)

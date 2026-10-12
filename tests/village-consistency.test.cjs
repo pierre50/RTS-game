@@ -24,14 +24,23 @@ const rules = {
   planBuildings: true,
 }
 
-test('new village heroes start with an equipped ceramic sword in both starting modes', () => {
+test('new village heroes start without equipment in both starting modes', () => {
   for (const heroOnly of [true, false]) {
     const terrain = Array.from({ length: 61 }, () => Array.from({ length: 61 }, () => ({ category: 'Land' })))
     const player = { type: 'Human', isPlayed: true, civ: 'Hellas', label: 'human' }
     const state = { players: [player], resources: [], animals: [] }
-    populateVillageBase(player, 0, { i: 30, j: 30 }, new OfflineWorldSpatial(terrain, state, () => 2), rules, {}, { heroOnly })
+    populateVillageBase(
+      player,
+      0,
+      { i: 30, j: 30 },
+      new OfflineWorldSpatial(terrain, state, () => 2),
+      rules,
+      {},
+      { heroOnly }
+    )
     const hero = player.units.find(unit => unit.type === 'Hero')
-    assert.equal(hero.inventory.activeWeapons.melee, 'sword_ceramic')
+    assert.deepEqual(hero.inventory.activeWeapons, {})
+    assert.deepEqual(hero.inventory.equipment, [])
     assert.ok(player.units.filter(unit => unit.type !== 'Hero').every(unit => !unit.inventory?.activeWeapons?.melee))
   }
 })

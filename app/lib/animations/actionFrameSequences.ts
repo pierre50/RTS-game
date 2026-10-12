@@ -1,46 +1,40 @@
-import { ACTION_TYPES, WORK_TYPES } from '../constants'
+import { hasNpcWeaponInventory, getNpcWeaponChoice } from '../units/combat/npcWeapons'
+import type { UnitEntity } from '../../types/entities'
 
 const TOOL_AXE_ACTION_FRAME_SEQUENCE = [5, 5, 4, 4, 3, 1, 0, 0, 0, 0]
 const TOOL_HAMMER_ACTION_FRAME_SEQUENCE = [5, 5, 4, 4, 1, 0, 0, 0, 0]
-type ActionToolKind = 'axe' | 'hammer' | 'pickaxe'
+const TOOL_DEFENSE_FRAME_SEQUENCE = [0, 1, 2, 3, 4, 5]
+const TOOL_COMBAT_FRAME_SEQUENCE = [5, 5, 4, 3, 1, 0]
+// Source pose 1 is the contact; pose 0 completes the follow-through.
+const TOOL_COMBAT_IMPACT_FRAME = 4
+type ActionToolKind = 'axe' | 'hammer' | 'pickaxe' | 'scythe'
 
 const TOOL_ACTION_FRAME_SEQUENCES: Record<ActionToolKind, number[]> = {
   axe: TOOL_AXE_ACTION_FRAME_SEQUENCE,
   hammer: TOOL_HAMMER_ACTION_FRAME_SEQUENCE,
   pickaxe: TOOL_AXE_ACTION_FRAME_SEQUENCE,
+  scythe: [0, 1, 2, 3, 4, 5],
 }
 
-const ACTION = {
-  build: ACTION_TYPES?.build ?? 'build',
-  chopwood: ACTION_TYPES?.chopwood ?? 'chopwood',
-  minecopper: ACTION_TYPES?.minecopper ?? 'minecopper',
-  minetin: ACTION_TYPES?.minetin ?? 'minetin',
-  minegold: ACTION_TYPES?.minegold ?? 'minegold',
-  mineiron: ACTION_TYPES?.mineiron ?? 'mineiron',
-  minestone: ACTION_TYPES?.minestone ?? 'minestone',
-}
-const WORK = {
-  builder: WORK_TYPES?.builder ?? 'builder',
-  goldminer: WORK_TYPES?.goldminer ?? 'goldminer',
-  stoneminer: WORK_TYPES?.stoneminer ?? 'stoneminer',
-  woodcutter: WORK_TYPES?.woodcutter ?? 'woodcutter',
-}
-
-const ACTION_FRAME_SEQUENCES: Record<string, number[]> = {
-  [`${WORK.builder}:${ACTION.build}`]: TOOL_HAMMER_ACTION_FRAME_SEQUENCE,
-  [`${WORK.goldminer}:${ACTION.minecopper}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
-  [`${WORK.goldminer}:${ACTION.minetin}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
-  [`${WORK.goldminer}:${ACTION.minegold}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
-  [`${WORK.goldminer}:${ACTION.mineiron}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
-  [`${WORK.stoneminer}:${ACTION.minestone}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
-  [`${WORK.woodcutter}:${ACTION.chopwood}`]: TOOL_AXE_ACTION_FRAME_SEQUENCE,
+// Only contexts without runtime equipment (for example economy estimates) use
+// a work-to-equipment fallback. Combat uses a shorter cycle of the same tool poses.
+const WORK_EQUIPMENT: Record<string, string> = {
+  builder: 'hammer',
+  woodcutter: 'axe',
+  stoneminer: 'pickaxe',
+  goldminer: 'pickaxe',
+  farmer: 'scythe',
 }
 
 type ActionFrameSequenceContext = {
+  heroDefenseActive?: boolean
+  heroDefenseReverseTaskId?: number | null
+  heroDefenseReleaseFallbackTaskId?: number | null
   action?: string | null
   actionFrameSequence?: number[] | null
   equipment?: string[] | null
   inventory?: {
+    toolsStowed?: boolean
     activeWeapons?: Partial<Record<string, string>>
     equipped?: Partial<Record<string, string>>
   } | null
@@ -52,48 +46,32 @@ function getActionToolKindForEquipment(equipment: string | null | undefined): Ac
   if (equipment === 'axe' || equipment.startsWith('axe_')) return 'axe'
   if (equipment === 'hammer' || equipment.startsWith('hammer_')) return 'hammer'
   if (equipment === 'pickaxe' || equipment.startsWith('pickaxe_')) return 'pickaxe'
+  if (equipment === 'scythe' || equipment.startsWith('scythe_')) return 'scythe'
   return null
 }
 
-function getHeroActiveWeaponEquipment(context: ActionFrameSequenceContext): string[] {
-  const activeWeapons = context.inventory?.activeWeapons ?? {}
-  const equipped = context.inventory?.equipped ?? {}
-  if (context.work === 'heroSword') {
-    return [activeWeapons.melee, activeWeapons.offhand, equipped.offhand].filter(
-      (item): item is string => typeof item === 'string' && item.length > 0
-    )
+function getContextActionEquipment(context: ActionFrameSequenceContext): string[] | null {
+  const unit = context as UnitEntity
+  if (context.action === 'attack' && hasNpcWeaponInventory(unit)) {
+    const weapon = getNpcWeaponChoice(unit).weapon
+    return weapon ? [weapon] : []
   }
-  if (context.work === (WORK_TYPES?.hunter ?? 'hunter')) {
-    return [activeWeapons.ranged, equipped.arrow].filter(
-      (item): item is string => typeof item === 'string' && item.length > 0
-    )
+  const inventory = context.inventory
+  if (inventory?.activeWeapons) {
+    const active = inventory.activeWeapons
+    const weapon =
+      context.work === 'heroSword'
+        ? active.melee
+        : context.work === 'hunter'
+          ? active.ranged
+          : inventory.toolsStowed
+            ? undefined
+            : active.tool
+    // An empty selected slot is authoritative; do not resurrect a previous tool.
+    return weapon ? [weapon] : []
   }
-  return []
-}
-
-function getContextActionEquipment(context: ActionFrameSequenceContext): string[] {
-  if (Array.isArray(context.equipment) && context.equipment.length) return context.equipment
-
-  const heroActiveEquipment = getHeroActiveWeaponEquipment(context)
-  if (heroActiveEquipment.length) return heroActiveEquipment
-
-  return []
-}
-
-function getActionToolKind(context: ActionFrameSequenceContext): ActionToolKind | null {
-  for (const equipment of getContextActionEquipment(context)) {
-    const kind = getActionToolKindForEquipment(equipment)
-    if (kind) return kind
-  }
-  if (context.work === WORK.builder) return 'hammer'
-  if (context.work === WORK.woodcutter) return 'axe'
-  if (context.work === WORK.stoneminer || context.work === WORK.goldminer) return 'pickaxe'
+  if (context.equipment?.length) return context.equipment
   return null
-}
-
-function getActionFrameSequence(work: string | null | undefined, action?: string | null): number[] | null {
-  if (!work || !action) return null
-  return ACTION_FRAME_SEQUENCES[`${work}:${action}`] ?? null
 }
 
 export function getConfiguredActionFrameSequence(
@@ -102,15 +80,23 @@ export function getConfiguredActionFrameSequence(
   { preferExplicit = false }: { preferExplicit?: boolean } = {}
 ): number[] | null {
   if (preferExplicit && explicitSequence?.length) return explicitSequence
-
-  const toolKind = getActionToolKind(context)
-  if (context.action && toolKind) return TOOL_ACTION_FRAME_SEQUENCES[toolKind]
-
-  const hasWorkActionContext = context.work !== undefined && context.action !== undefined
-  if (hasWorkActionContext) {
-    return getActionFrameSequence(context.work, context.action) ?? explicitSequence ?? null
+  const equipment = getContextActionEquipment(context)
+  const candidates = equipment ?? [WORK_EQUIPMENT[context.work ?? '']]
+  for (const item of candidates) {
+    const kind = getActionToolKindForEquipment(item)
+    if (kind) {
+      // Guard uses the original slash pose 2, including its reverse release.
+      if (
+        context.heroDefenseActive ||
+        context.heroDefenseReverseTaskId != null ||
+        context.heroDefenseReleaseFallbackTaskId != null
+      )
+        return TOOL_DEFENSE_FRAME_SEQUENCE
+      if (context.action === 'attack' && kind !== 'scythe') return TOOL_COMBAT_FRAME_SEQUENCE
+      return TOOL_ACTION_FRAME_SEQUENCES[kind]
+    }
   }
-
+  if (equipment !== null || context.work !== undefined) return explicitSequence ?? null
   return explicitSequence ?? context.actionFrameSequence ?? null
 }
 
@@ -136,6 +122,7 @@ export function getActionAnimationReleaseFrame(
   const sequence =
     typeof workOrContext === 'object' && workOrContext !== null
       ? getConfiguredActionFrameSequence(workOrContext)
-      : getActionFrameSequence(workOrContext, action)
+      : getConfiguredActionFrameSequence({ work: workOrContext, action })
+  if (sequence === TOOL_COMBAT_FRAME_SEQUENCE) return TOOL_COMBAT_IMPACT_FRAME
   return sequence?.length ? sequence.length - 1 : fallbackFrame
 }

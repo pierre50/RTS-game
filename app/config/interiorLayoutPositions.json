@@ -1,0 +1,710 @@
+{
+  "WatchTower": {
+    "0": {
+      "items": {
+        "chair-1": {
+          "offsetI": 0,
+          "offsetJ": -2,
+          "type": "CampChair",
+          "mirrored": false
+        },
+        "torch-stand-1": {
+          "offsetI": -2,
+          "offsetJ": -1,
+          "type": "CampTorchStand",
+          "mirrored": false
+        }
+      },
+      "rugs": [
+        {
+          "frame": 17,
+          "offsetX": -1,
+          "offsetY": -15
+        }
+      ],
+      "roomSize": 7
+    }
+  },
+  "Stable": {
+    "0": {
+      "items": {
+        "bucket-1": {
+          "offsetI": -3,
+          "offsetJ": 0,
+          "type": "CampBucket",
+          "mirrored": false
+        },
+        "bucket-2": {
+          "offsetI": -1,
+          "offsetJ": -3,
+          "type": "CampBucket",
+          "mirrored": false
+        },
+        "stable-light-1": {
+          "offsetI": -2,
+          "offsetJ": 3,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "stable-light-2": {
+          "offsetI": 2,
+          "offsetJ": 3,
+          "type": "CampBrazier",
+          "mirrored": false
+        }
+      },
+      "roomSize": 9
+    }
+  },
+  "StoragePit": {
+    "0": {
+      "items": {
+        "depot-light-1": {
+          "offsetI": 3,
+          "offsetJ": 2,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "depot-light-2": {
+          "offsetI": -3,
+          "offsetJ": 2,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "depot-light-3": {
+          "offsetI": 2,
+          "offsetJ": -3,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "storage-chest": {
+          "offsetI": 0,
+          "offsetJ": 0,
+          "type": "Chest",
+          "mirrored": false
+        },
+        "supply-shelf-1": {
+          "offsetI": -3,
+          "offsetJ": -1,
+          "type": "CampSupplyShelf",
+          "mirrored": false
+        },
+        "jar-large-1": {
+          "offsetI": -2,
+          "offsetJ": -3,
+          "type": "CampJarLarge",
+          "mirrored": false
+        },
+        "square-stool-1": {
+          "offsetI": -1,
+          "offsetJ": -2,
+          "type": "CampSquareStool",
+          "mirrored": false
+        },
+        "supply-shelf-2": {
+          "offsetI": -3,
+          "offsetJ": 0,
+          "type": "CampSupplyShelf",
+          "mirrored": false
+        },
+        "arrow-basket-1": {
+          "offsetI": -3,
+          "offsetJ": -2,
+          "type": "CampArrowBasket",
+          "mirrored": false
+        },
+        "jar-large-2": {
+          "offsetI": -3,
+          "offsetJ": 1,
+          "type": "CampJarLarge",
+          "mirrored": false
+        },
+        "table-1": {
+          "offsetI": -1,
+          "offsetJ": -3,
+          "type": "CampTable",
+          "mirrored": false
+        },
+        "square-stool-2": {
+          "offsetI": 0,
+          "offsetJ": -3,
+          "type": "CampSquareStool",
+          "mirrored": false
+        },
+        "blue-jar-1": {
+          "offsetI": 3,
+          "offsetJ": -2,
+          "type": "CampBlueJar",
+          "mirrored": false
+        },
+        "jar-small-1": {
+          "offsetI": 3,
+          "offsetJ": -1,
+          "type": "CampJarSmall",
+          "mirrored": false
+        }
+      },
+      "roomSize": 9
+    }
+  },
+  "Granary": {
+    "0": {
+      "items": {
+        "depot-light-1": {
+          "offsetI": 3,
+          "offsetJ": -1,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "depot-light-2": {
+          "offsetI": -2,
+          "offsetJ": 3,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "depot-light-3": {
+          "offsetI": 2,
+          "offsetJ": 3,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "storage-chest": {
+          "offsetI": 0,
+          "offsetJ": 0,
+          "type": "Chest",
+          "mirrored": false
+        },
+        "jar-large-1": {
+          "offsetI": 2,
+          "offsetJ": -3,
+          "type": "CampJarLarge",
+          "mirrored": false
+        },
+        "apple-basket-1": {
+          "offsetI": -3,
+          "offsetJ": -2,
+          "type": "CampAppleBasket",
+          "mirrored": false
+        },
+        "supply-shelf-1": {
+          "offsetI": -3,
+          "offsetJ": 0,
+          "type": "CampSupplyShelf",
+          "mirrored": false
+        },
+        "jar-small-1": {
+          "offsetI": -2,
+          "offsetJ": -3,
+          "type": "CampJarSmall",
+          "mirrored": false
+        },
+        "supply-shelf-2": {
+          "offsetI": -3,
+          "offsetJ": -1,
+          "type": "CampSupplyShelf",
+          "mirrored": false
+        },
+        "workbench-1": {
+          "offsetI": 0,
+          "offsetJ": -3,
+          "type": "CampWorkbench",
+          "mirrored": true
+        },
+        "blue-jar-1": {
+          "offsetI": 3,
+          "offsetJ": 1,
+          "type": "CampBlueJar",
+          "mirrored": false
+        },
+        "custom-38daf1b5-4fca-4e77-b332-f9ed52dd5bb1": {
+          "offsetI": -3,
+          "offsetJ": 1,
+          "type": "CampArrowBasket",
+          "mirrored": false
+        }
+      },
+      "roomSize": 9
+    }
+  },
+  "Barracks": {
+    "0": {
+      "items": {
+        "stump-stool-1": {
+          "offsetI": -2,
+          "offsetJ": -3,
+          "type": "CampStumpStool",
+          "mirrored": false
+        },
+        "forge-1": {
+          "offsetI": 0,
+          "offsetJ": -3,
+          "type": "CampForge",
+          "mirrored": false
+        },
+        "brazier-1": {
+          "offsetI": -2,
+          "offsetJ": 3,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "brazier-2": {
+          "offsetI": 3,
+          "offsetJ": -2,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "torch-stand-1": {
+          "offsetI": 2,
+          "offsetJ": 3,
+          "type": "CampTorchStand",
+          "mirrored": false
+        },
+        "arrow-basket-1": {
+          "offsetI": 3,
+          "offsetJ": 2,
+          "type": "CampArrowBasket",
+          "mirrored": false
+        },
+        "bench-1": {
+          "offsetI": 3,
+          "offsetJ": 0,
+          "type": "CampBench",
+          "mirrored": false
+        },
+        "custom-b0f386f4-2b41-43cc-a977-3d07b5752b93": {
+          "offsetI": -3,
+          "offsetJ": 0,
+          "type": "CampBench",
+          "mirrored": false
+        }
+      },
+      "rugs": [
+        {
+          "frame": 18,
+          "offsetX": 2,
+          "offsetY": -15.5
+        }
+      ],
+      "roomSize": 9
+    }
+  },
+  "TownCenter": {
+    "0": {
+      "items": {
+        "firecamp-center": {
+          "offsetI": 0,
+          "offsetJ": 0,
+          "type": "FireCamp",
+          "mirrored": false
+        },
+        "storage-chest": {
+          "offsetI": -4,
+          "offsetJ": 0,
+          "type": "Chest",
+          "mirrored": false
+        },
+        "bookcase-1": {
+          "offsetI": -4,
+          "offsetJ": 2,
+          "type": "CampBookcase",
+          "mirrored": false
+        },
+        "bookcase-2": {
+          "offsetI": -4,
+          "offsetJ": -2,
+          "type": "CampBookcase",
+          "mirrored": false
+        },
+        "mounted-skull-1": {
+          "offsetI": 2,
+          "offsetJ": -4,
+          "type": "CampMountedSkull",
+          "mirrored": true
+        },
+        "blue-jar-1": {
+          "offsetI": -4,
+          "offsetJ": -3,
+          "type": "CampBlueJar",
+          "mirrored": false
+        },
+        "jar-large-1": {
+          "offsetI": -3,
+          "offsetJ": -4,
+          "type": "CampJarLarge",
+          "mirrored": false
+        },
+        "fruit-bowl-1": {
+          "offsetI": -3,
+          "offsetJ": -3,
+          "type": "CampFruitBowl",
+          "mirrored": false
+        },
+        "brazier-1": {
+          "offsetI": -2,
+          "offsetJ": 4,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "throne-1": {
+          "offsetI": -1,
+          "offsetJ": -4,
+          "type": "CampThrone",
+          "mirrored": false
+        },
+        "brazier-2": {
+          "offsetI": 2,
+          "offsetJ": 4,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "arrow-basket-1": {
+          "offsetI": 3,
+          "offsetJ": -4,
+          "type": "CampArrowBasket",
+          "mirrored": false
+        },
+        "bench-1": {
+          "offsetI": 2,
+          "offsetJ": 0,
+          "type": "CampBench",
+          "mirrored": false
+        },
+        "stump-stool-1": {
+          "offsetI": 0,
+          "offsetJ": -4,
+          "type": "CampStumpStool",
+          "mirrored": false
+        },
+        "torch-stand-1": {
+          "offsetI": -4,
+          "offsetJ": 1,
+          "type": "CampTorchStand",
+          "mirrored": false
+        },
+        "torch-stand-2": {
+          "offsetI": -4,
+          "offsetJ": -1,
+          "type": "CampTorchStand",
+          "mirrored": false
+        },
+        "custom-11127ed8-e33d-484d-93aa-a06ea2d70252": {
+          "offsetI": -2,
+          "offsetJ": 0,
+          "type": "CampBench",
+          "mirrored": false
+        },
+        "custom-e8b20fc9-8129-48e3-bef3-69c9f6d221dd": {
+          "offsetI": 4,
+          "offsetJ": -2,
+          "type": "CampBlueJar",
+          "mirrored": false
+        }
+      },
+      "rugs": [
+        {
+          "frame": 17,
+          "offsetX": 128,
+          "offsetY": -48
+        },
+        {
+          "frame": 41,
+          "offsetX": 64,
+          "offsetY": -80
+        },
+        {
+          "frame": 17,
+          "offsetX": 96,
+          "offsetY": -64
+        },
+        {
+          "frame": 17,
+          "offsetX": 64,
+          "offsetY": -48
+        }
+      ],
+      "roomSize": 11
+    }
+  },
+  "Temple": {
+    "0": {
+      "items": {
+        "bench-1": {
+          "offsetI": -2,
+          "offsetJ": -1,
+          "type": "CampBench",
+          "mirrored": true
+        },
+        "chair-1": {
+          "offsetI": 0,
+          "offsetJ": -3,
+          "type": "CampChair",
+          "mirrored": false
+        },
+        "bench-2": {
+          "offsetI": -2,
+          "offsetJ": 1,
+          "type": "CampBench",
+          "mirrored": true
+        },
+        "brazier-1": {
+          "offsetI": -2,
+          "offsetJ": 3,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "brazier-2": {
+          "offsetI": -2,
+          "offsetJ": -3,
+          "type": "CampBrazier",
+          "mirrored": false
+        },
+        "bench-3": {
+          "offsetI": 2,
+          "offsetJ": -1,
+          "type": "CampBench",
+          "mirrored": true
+        },
+        "bench-4": {
+          "offsetI": 2,
+          "offsetJ": 1,
+          "type": "CampBench",
+          "mirrored": true
+        },
+        "torch-stand-1": {
+          "offsetI": 2,
+          "offsetJ": 3,
+          "type": "CampTorchStand",
+          "mirrored": false
+        },
+        "custom-369a9bd0-22b4-4d6c-a633-568add4a61bb": {
+          "offsetI": 2,
+          "offsetJ": -3,
+          "type": "CampBrazier",
+          "mirrored": false
+        }
+      },
+      "rugs": [],
+      "roomSize": 9
+    }
+  },
+  "House": {
+    "0": {
+      "items": {
+        "firecamp-center": {
+          "offsetI": 1,
+          "offsetJ": 0,
+          "type": "FireCamp",
+          "mirrored": false
+        },
+        "bedroll-1": {
+          "offsetI": -1,
+          "offsetJ": 0,
+          "type": "CampBedroll",
+          "mirrored": false
+        },
+        "custom-9c432fa6-e7d5-4d41-a32f-5329db475072": {
+          "offsetI": 2,
+          "offsetJ": -1,
+          "type": "CampJarSmall",
+          "mirrored": false
+        },
+        "custom-ba6b4666-cccb-499b-ad23-ac143c1e6a15": {
+          "offsetI": 0,
+          "offsetJ": -2,
+          "type": "CampBench",
+          "mirrored": true
+        }
+      },
+      "roomSize": 7
+    },
+    "1": {
+      "items": {
+        "firecamp-center": {
+          "offsetI": 0,
+          "offsetJ": 0,
+          "type": "FireCamp",
+          "mirrored": false
+        },
+        "supply-shelf-1": {
+          "offsetI": -1,
+          "offsetJ": -3,
+          "type": "CampSupplyShelf",
+          "mirrored": false
+        },
+        "jar-large-1": {
+          "offsetI": 3,
+          "offsetJ": -2,
+          "type": "CampJarLarge",
+          "mirrored": false
+        },
+        "arrow-basket-1": {
+          "offsetI": -2,
+          "offsetJ": 3,
+          "type": "CampArrowBasket",
+          "mirrored": false
+        },
+        "alchemy-table-1": {
+          "offsetI": 1,
+          "offsetJ": -3,
+          "type": "CampAlchemyTable",
+          "mirrored": false
+        },
+        "stump-stool-1": {
+          "offsetI": 1,
+          "offsetJ": -2,
+          "type": "CampStumpStool",
+          "mirrored": false
+        },
+        "table-1": {
+          "offsetI": 3,
+          "offsetJ": 2,
+          "type": "CampTable",
+          "mirrored": false
+        },
+        "bench-1": {
+          "offsetI": 3,
+          "offsetJ": 1,
+          "type": "CampBench",
+          "mirrored": true
+        },
+        "square-stool-1": {
+          "offsetI": 2,
+          "offsetJ": 2,
+          "type": "CampSquareStool",
+          "mirrored": false
+        },
+        "bedroll-1": {
+          "offsetI": -2,
+          "offsetJ": 1,
+          "type": "CampBedroll",
+          "mirrored": false
+        },
+        "bedroll-2": {
+          "offsetI": -2,
+          "offsetJ": -1,
+          "type": "CampBedroll",
+          "mirrored": false
+        }
+      },
+      "roomSize": 9
+    },
+    "2": {
+      "items": {
+        "supply-shelf-1": {
+          "offsetI": -4,
+          "offsetJ": -2,
+          "type": "CampSupplyShelf",
+          "mirrored": true
+        },
+        "jar-large-1": {
+          "offsetI": -4,
+          "offsetJ": -3,
+          "type": "CampJarLarge",
+          "mirrored": false
+        },
+        "arrow-basket-1": {
+          "offsetI": -2,
+          "offsetJ": 4,
+          "type": "CampArrowBasket",
+          "mirrored": false
+        },
+        "alchemy-table-1": {
+          "offsetI": 4,
+          "offsetJ": 0,
+          "type": "CampAlchemyTable",
+          "mirrored": false
+        },
+        "stump-stool-1": {
+          "offsetI": 4,
+          "offsetJ": 1,
+          "type": "CampStumpStool",
+          "mirrored": false
+        },
+        "table-1": {
+          "offsetI": 0,
+          "offsetJ": 1,
+          "type": "CampTable",
+          "mirrored": false
+        },
+        "bench-1": {
+          "offsetI": 1,
+          "offsetJ": 1,
+          "type": "CampBench",
+          "mirrored": false
+        },
+        "square-stool-1": {
+          "offsetI": 0,
+          "offsetJ": 2,
+          "type": "CampSquareStool",
+          "mirrored": false
+        },
+        "bedroll-1": {
+          "offsetI": -3,
+          "offsetJ": 3,
+          "type": "CampBedroll",
+          "mirrored": false
+        },
+        "bedroll-2": {
+          "offsetI": 3,
+          "offsetJ": -3,
+          "type": "CampBedroll",
+          "mirrored": true
+        },
+        "bedroll-3": {
+          "offsetI": -3,
+          "offsetJ": 1,
+          "type": "CampBedroll",
+          "mirrored": false
+        },
+        "bedroll-4": {
+          "offsetI": 1,
+          "offsetJ": -3,
+          "type": "CampBedroll",
+          "mirrored": true
+        },
+        "custom-7915be85-2e96-4859-9a44-938c3f91f79e": {
+          "offsetI": -3,
+          "offsetJ": -4,
+          "type": "CampForge",
+          "mirrored": false
+        },
+        "custom-fc387941-00a9-4c94-8ea8-98703c960712": {
+          "offsetI": 3,
+          "offsetJ": -1,
+          "type": "CampScreen",
+          "mirrored": false
+        },
+        "custom-e6137acc-0505-405f-940d-2b58aff7e4d3": {
+          "offsetI": -2,
+          "offsetJ": -2,
+          "type": "CampHide",
+          "mirrored": false
+        },
+        "custom-d71032b1-647b-4336-9e53-2824377c45c8": {
+          "offsetI": -1,
+          "offsetJ": 1,
+          "type": "CampBench",
+          "mirrored": false
+        },
+        "custom-bbe58b53-84c6-4ebb-ab9d-fbb65852ffe0": {
+          "offsetI": -1,
+          "offsetJ": -4,
+          "type": "CampBookcase",
+          "mirrored": true
+        },
+        "custom-4390494d-f919-4b1a-b70d-7ac6daaf8b11": {
+          "offsetI": 4,
+          "offsetJ": 3,
+          "type": "CampJarLarge",
+          "mirrored": false
+        },
+        "custom-e07ceb71-83b3-4556-a3f5-61462bfc4ddb": {
+          "offsetI": 3,
+          "offsetJ": 1,
+          "type": "CampRug",
+          "mirrored": false
+        }
+      }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { getBuildingAttackRange } from '../lib/buildings/towerCombat'
 import { Container, type Graphics } from 'pixi.js'
 import {
   average,
@@ -266,7 +267,7 @@ export class Projectile extends Container {
     const ownerRange =
       this.owner.family === FAMILY_TYPES.unit
         ? getUnitCombatRange(this.owner as UnitEntity)
-        : (this.owner as { range?: number }).range
+        : getBuildingAttackRange(this.owner)
     return ownerRange ? ownerRange * PROJECTILE_CELL_DISTANCE : undefined
   }
 

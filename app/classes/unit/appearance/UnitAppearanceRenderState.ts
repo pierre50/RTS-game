@@ -1,4 +1,8 @@
+import { getEquippedWorkTool, workToolFamily } from '../../../lib/equipment/workTools'
+import { equipmentBaseKey } from '../../../lib/equipment/equipmentCondition'
+import { hasNpcWeaponInventory, getNpcWeaponChoice, isNpcWeaponItem } from '../../../lib/units/combat/npcWeapons'
 import { equipmentVisualParts } from '../../../lib/equipment/helmetVariants'
+import { isInactiveArcherWeapon, usesArcherDagger } from '../../../lib/units/combat/unitArrows'
 import { resolveUnitForgeEquipment } from '../../../lib/equipment/forgeUpgrades'
 import { getMiningPickaxe } from '../../../lib/resources/miningEquipment'
 import { definedProperties } from '../../../lib/definedProperties'
@@ -12,7 +16,7 @@ import {
   getConfiguredActionFrameSequence,
 } from '../../../lib/animations/actionFrameSequences'
 import { getAppearanceLayerZIndex } from '../../../lib/lpc/appearanceLayers'
-import { civilizationKey } from '../../../lib/lpc/equipment'
+import { civilizationKey, dynamicEquipmentAsset } from '../../../lib/lpc/equipment'
 import type { DynamicEquipmentKey } from '../../../lib/lpc/equipmentData'
 import { loadDynamicEquipmentAssetQueued } from '../../../lib/lpc/lazyEquipmentAssets'
 import { getActionVisualSheetKey, SHOOTING_SHEET_KEY } from '../../../lib/units/visuals/actionVisualSheet'
@@ -35,6 +39,18 @@ export type AppearanceLayerRenderState = {
   spritesheet: { data?: { animationSpeed?: number } }
 }
 
+// A loaded atlas can legitimately omit a layer/animation. Remember completed
+// attempts too, or the appearance refresh recursively queues the same atlas.
+const equipmentRequests = new WeakMap<UnitRuntimeHost, Map<string, number>>()
+
+function resolveAppearanceEquipment(unit: UnitRuntimeHost, item: string): string {
+  if (!unit.isDead && unit.inventory?.toolsInitialized && workToolFamily(item))
+    return equipmentBaseKey(getEquippedWorkTool(unit) ?? item)
+  return (!unit.action || unit.action === 'attack') && hasNpcWeaponInventory(unit) && isNpcWeaponItem(item, unit)
+    ? item
+    : resolveUnitForgeEquipment(item, unit)
+}
+
 function shouldRequestMissingEquipmentLayer(unit: UnitRuntimeHost): boolean {
   if (!unit.context.map.ready) return false
   return unit.controlMode === 'hero' || unit.visible
@@ -46,10 +62,18 @@ function requestMissingEquipmentLayer(unit: UnitRuntimeHost, layer: RuntimeAppea
     layer.equipmentKey?.startsWith('pickaxe_')
       ? getMiningPickaxe(unit)
       : layer.equipmentKey
-        ? resolveUnitForgeEquipment(layer.equipmentKey, unit)
+        ? resolveAppearanceEquipment(unit, layer.equipmentKey)
         : undefined
   ) as DynamicEquipmentKey | undefined
   if (!equipmentKey) return
+  const atlasAlias = dynamicEquipmentAsset(equipmentKey).alias
+  let requests = equipmentRequests.get(unit)
+  if (!requests) {
+    requests = new Map()
+    equipmentRequests.set(unit, requests)
+  }
+  if (performance.now() < (requests.get(atlasAlias) ?? 0)) return
+  requests.set(atlasAlias, Number.POSITIVE_INFINITY)
   const request = loadDynamicEquipmentAssetQueued(
     equipmentKey,
     definedProperties({
@@ -58,8 +82,13 @@ function requestMissingEquipmentLayer(unit: UnitRuntimeHost, layer: RuntimeAppea
     })
   )
   void request
-    .then(() => unit.syncAppearanceLayers?.(unit.currentSheet))
-    .catch(error => console.warn(`Unable to load equipment appearance "${equipmentKey}"`, error))
+    .then(() => {
+      if (!unit.isDestroyed) unit.syncAppearanceLayers?.(unit.currentSheet)
+    })
+    .catch(error => {
+      requests.set(atlasAlias, performance.now() + 5000)
+      console.warn(`Unable to load equipment appearance "${equipmentKey}"`, error)
+    })
 }
 
 function getCachedSpritesheet(id: string) {
@@ -78,15 +107,22 @@ export function getLayerRenderState(
   const mountedRiderSheet =
     unit.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking].includes(sheet) ? SHEET_TYPES.action : sheet
   const visualSheet =
-    sheet === SHEET_TYPES.action ? getActionVisualSheetKey(unit.action, unit.type, unit.work) : mountedRiderSheet
+    sheet === SHEET_TYPES.action
+      ? unit.action === 'attack' && hasNpcWeaponInventory(unit)
+        ? getNpcWeaponChoice(unit).kind === 'ranged'
+          ? SHOOTING_SHEET_KEY
+          : SHEET_TYPES.action
+        : getActionVisualSheetKey(unit.action, unit.type, unit.work, usesArcherDagger(unit))
+      : mountedRiderSheet
   const actionWorkKey = unit.work && unit.action ? `${unit.work}:${unit.action}` : undefined
   const enabled = isLayerEnabled(unit, layer, actionWorkKey)
   const hidden = isLayerHidden(unit, layer, sheet)
+  if (!enabled || hidden) return null
   const { baseSheetId, mountedSheetOverride } = getLayerSheet(unit, layer, sheet, visualSheet, actionWorkKey)
   const sheetId = getVariantSheetId(unit, layer, baseSheetId)
   const spritesheet = sheetId ? getCachedSpritesheet(sheetId) : undefined
 
-  if (!enabled || hidden || !sheetId || !spritesheet?.textures) {
+  if (!sheetId || !spritesheet?.textures) {
     if (sheetId && !spritesheet?.textures) requestMissingEquipmentLayer(unit, layer)
     return null
   }
@@ -107,6 +143,20 @@ function isLayerEnabled(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, ac
 }
 
 function isLayerHidden(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, sheet: string) {
+  if (
+    !unit.isDead &&
+    unit.inventory?.toolsInitialized &&
+    workToolFamily(layer.equipmentKey) &&
+    workToolFamily(layer.equipmentKey) !== workToolFamily(getEquippedWorkTool(unit))
+  )
+    return true
+  if (
+    !hasNpcWeaponInventory(unit) &&
+    !unit.isDead &&
+    layer.equipmentKey &&
+    isInactiveArcherWeapon(unit, layer.equipmentKey)
+  )
+    return true
   // Sowing keeps the builder's slash animation, but uses bare hands.
   const isSowingTool =
     Boolean(layer.equipmentKey && layer.workTypes?.includes(WORK_TYPES.builder)) &&
@@ -117,7 +167,7 @@ function isLayerHidden(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer, she
     sheet === SHEET_TYPES.action &&
     typeof layer.hideOnOrAfterFrame === 'number' &&
     unit.sprite.currentFrame >= layer.hideOnOrAfterFrame
-  const equipmentKey = layer.equipmentKey && resolveUnitForgeEquipment(layer.equipmentKey, unit)
+  const equipmentKey = layer.equipmentKey && resolveAppearanceEquipment(unit, layer.equipmentKey)
   const isLootedCorpseEquipment =
     unit.isDead &&
     Array.isArray(unit.lootEquipment) &&
@@ -172,7 +222,7 @@ function getLayerSheet(
   const equipmentSheetId = layer.equipmentKey
     ? baseSheetId?.replace(
         /^equipments\/([^/]+)\//,
-        (_match, key: string) => `equipments/${resolveUnitForgeEquipment(key, unit)}/`
+        (_match, key: string) => `equipments/${resolveAppearanceEquipment(unit, key)}/`
       )
     : baseSheetId
   const workSheetId = layer.equipmentKey?.startsWith('pickaxe_')

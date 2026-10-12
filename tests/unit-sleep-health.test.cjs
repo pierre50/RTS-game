@@ -29,6 +29,19 @@ test('sleep restores health progressively inside and outside and stops on waking
   }
 })
 
+test('sleep refreshes the wounded bar and removes it on full recovery', () => {
+  const calls = []
+  const unit = sleeper({
+    shouldKeepHealthBarVisible() { return this.hitPoints < this.totalHitPoints },
+    drawHealthBar() { calls.push(['draw', this.hitPoints]) },
+    removeHealthBar() { calls.push(['remove', this.hitPoints]) },
+  })
+  updateUnitSleepHealth(unit, 60000)
+  updateUnitSleepHealth(unit, 8 * 60000)
+  updateUnitSleepHealth(unit, 60000)
+  assert.deepEqual(calls, [['draw', 32.5], ['remove', 100]])
+})
+
 test('sleep healing excludes dead units, travel and waiting before bedtime', () => {
   for (const extra of [
     { isDead: true },

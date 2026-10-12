@@ -1,42 +1,13 @@
-import { getResourceDisplayName } from '../utils/resourceDisplayName'
-import { t } from '../../lib/lang'
 import type { ResourceAmount } from '../../types/common'
+import type { ResourceCost } from '../ResourceCost'
 
-export function inventoryCostMetaParts(
-  cost: ResourceAmount,
-  totals: ResourceAmount
-): Array<{ text: string; className: string }> {
-  return Object.entries(cost)
-    .map(([resource, amount]) => {
-      const needed = Math.max(0, Math.floor(amount ?? 0))
-      if (needed <= 0) return null
-      const available = Math.max(0, Math.floor(totals[resource as keyof ResourceAmount] ?? 0))
-      const hasEnough = available >= needed
-      return {
-        text: `${getResourceDisplayName(resource)} ${available}/${needed}`,
-        className: hasEnough ? 'inventory-cost-is-available' : 'inventory-cost-is-missing',
-      }
-    })
-    .filter((part): part is { text: string; className: string } => Boolean(part))
+export type InventoryCostMetaPart = { resourceCost: ResourceCost }
+
+export function inventoryCostMetaParts(cost: ResourceAmount, totals: ResourceAmount): InventoryCostMetaPart[] {
+  return [{ resourceCost: { mode: 'craft', cost, available: totals } }]
 }
 
 /** Construction materials are delivered over time, never an upfront affordability check. */
-export function inventoryDeliveryMetaParts(
-  cost: ResourceAmount,
-  inProgress = false
-): Array<{ text: string; className: string }> {
-  const materials = Object.entries(cost)
-    .filter(([, amount]) => (amount ?? 0) > 0)
-    .map(([resource, amount]) => `${amount} ${t(resource)}`)
-    .join(', ')
-  // "Delivered" only makes sense for a site already under way, not a free catalogue entry.
-  if (!materials && !inProgress) return []
-  return [
-    {
-      text: materials
-        ? t(inProgress ? 'buildingUpgradeRemaining' : 'constructionMaterialsCost', { cost: materials })
-        : t('constructionMaterialsDelivered'),
-      className: '',
-    },
-  ]
+export function inventoryDeliveryMetaParts(cost: ResourceAmount, inProgress = false): InventoryCostMetaPart[] {
+  return [{ resourceCost: { mode: inProgress ? 'remaining' : 'delivery', cost } }]
 }

@@ -220,7 +220,10 @@ function placeStartingUnits(map: MapGenerationMap, player: PlayerLike, towncente
     towncenter.placeUnit?.(UNIT_TYPES.chief)
   } else if (player.isPlayed) {
     towncenter.placeUnit?.(UNIT_TYPES.villager, {
-      inventory: { ...startingVillagerInventory(), ...startingHeroInventory() },
+      inventory: {
+        resources: startingVillagerInventory(player.units, towncenter).resources,
+        ...startingHeroInventory(),
+      },
     })
   }
   for (let i = 0; i < startingCivilianCount; i++) {
@@ -228,7 +231,7 @@ function placeStartingUnits(map: MapGenerationMap, player: PlayerLike, towncente
     towncenter.placeUnit?.(UNIT_TYPES.villager, {
       gender,
       appearanceVariants: { gender },
-      inventory: startingVillagerInventory(),
+      inventory: startingVillagerInventory(player.units, towncenter),
     })
   }
 }

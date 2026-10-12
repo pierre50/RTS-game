@@ -76,19 +76,3 @@ export function refreshPopulationCapacity(
 }
 
 /** Physical beds in this room, including beds temporarily unavailable during renovation. */
-export function getBuildingBedCount(
-  building: CapacityBuilding,
-  owner: CapacityOwner & { buildings?: readonly CapacityBuilding[] }
-): number {
-  const spaceId = interiorId(building, owner)
-  return getPopulationCapacityFromBuildings(
-    [
-      ...(building.plannedBedLabels ?? []).map(label => ({ type: BUILDING_TYPES.campBedroll, label, isBuilt: true })),
-      ...(building.interiorBuildings ?? []),
-      ...(owner.buildings ?? [])
-        .filter(child => child.spaceId === spaceId)
-        .map(child => ({ ...child, spaceId: undefined })),
-    ],
-    owner
-  )
-}

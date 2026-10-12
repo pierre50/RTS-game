@@ -75,7 +75,7 @@ export class BuildingProduction {
     building.trainingStartedDay = null
     building.trainingCompleteDay = null
     building.queue.shift()
-    refundCost(building.owner, getUnitTrainingCost(building.owner, type))
+    refundCost(building.owner, getUnitTrainingCost(building.owner, type), { includeHero: false, settlement: building })
     this.activeTrainingExtra = undefined
     this.activeTrainingTrainee = null
     this.ejectTrainee()
@@ -263,7 +263,7 @@ export class BuildingProduction {
     if (
       building.isBuilt &&
       !building.isDead &&
-      (canAfford(building.owner, cost, { includeHero: false }) || alreadyPaid)
+      (canAfford(building.owner, cost, { includeHero: false, settlement: building }) || alreadyPaid)
     ) {
       if (!alreadyPaid) {
         success = this.enqueueUnitPurchase(type, cost)
@@ -306,12 +306,12 @@ export class BuildingProduction {
     const { menu } = building.context
     if (isAIControlledPlayer(building.owner)) {
       if (!building.queue.length && building.loading === null) {
-        payCost(building.owner, cost, { includeHero: false })
+        payCost(building.owner, cost, { includeHero: false, settlement: building })
         building.queue.push(type)
         return true
       }
     } else {
-      payCost(building.owner, cost, { includeHero: false })
+      payCost(building.owner, cost, { includeHero: false, settlement: building })
       building.queue.push(type)
       if (building.selected && building.owner.isPlayed) {
         menu.updateButtonContent(type, building.queue.filter((q: string) => q === type).length)
@@ -335,7 +335,7 @@ export class BuildingProduction {
 
     const cost = getUnitTrainingCost(building.owner, type)
     for (let index = 0; index < cancelled; index++) {
-      refundCost(building.owner, cost)
+      refundCost(building.owner, cost, { includeHero: false, settlement: building })
     }
     building.queue = building.queue.filter((queuedType: string) => queuedType !== type)
 

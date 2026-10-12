@@ -167,7 +167,7 @@ async function finishBoot(
 }
 
 export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
-  game._acquireWakeLock()
+  void game._acquireWakeLock()
   applyConfiguredSpeed(game)
   const continentStart = isContinentWorld(game.config?.worldId)
   const prologue = game._prepareTutorial && !continentStart ? new TutorialPrologue() : null

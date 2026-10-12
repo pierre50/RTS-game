@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kaelor · Intérieurs</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font: 15px system-ui;
+        background: #101522;
+        color: #e9edf3;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      header {
+        padding: 24px 28px;
+        border-bottom: 1px solid #323d51;
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      h1 {
+        font-size: 23px;
+        margin: 0 0 6px;
+        color: #f2dc9e;
+      }
+      p {
+        margin: 0;
+        color: #aebbd0;
+        line-height: 1.5;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 285px minmax(0, 1fr);
+        min-height: calc(100vh - 100px);
+      }
+      aside {
+        padding: 24px;
+        border-right: 1px solid #323d51;
+        background: #151c2b;
+      }
+      #level-control[hidden] {
+        display: none;
+      }
+      label.control {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 20px;
+        font-weight: 600;
+      }
+      select,
+      button {
+        font: inherit;
+        color: inherit;
+        background: #202b40;
+        border: 1px solid #45516b;
+        border-radius: 7px;
+        padding: 9px 11px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #304261;
+      }
+      select {
+        width: 100%;
+      }
+      input[type='checkbox'] {
+        accent-color: #e9cc83;
+        width: 17px;
+        height: 17px;
+      }
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin: 14px 0;
+      }
+      fieldset {
+        border: 0;
+        padding: 14px 0;
+        margin: 10px 0;
+        border-top: 1px solid #323d51;
+      }
+      legend {
+        color: #aebbd0;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding-right: 10px;
+      }
+      input[type='range'] {
+        width: 100%;
+        accent-color: #e9cc83;
+      }
+      .hint {
+        font-size: 12px;
+        margin-top: 20px;
+      }
+      main {
+        min-width: 0;
+        padding: 24px;
+      }
+      #stats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      #stats span {
+        background: #202b40;
+        padding: 8px 12px;
+        border-radius: 7px;
+      }
+      #viewport {
+        overflow: auto;
+        border: 1px solid #323d51;
+        border-radius: 10px;
+        background: #0c1120;
+        max-height: 72vh;
+        min-height: 420px;
+        display: grid;
+        align-items: start;
+        justify-items: center;
+      }
+      canvas {
+        image-rendering: pixelated;
+        display: block;
+        max-width: none;
+      }
+      #status {
+        margin-top: 12px;
+        font-size: 13px;
+        min-height: 20px;
+      }
+      details {
+        margin-top: 22px;
+      }
+      summary {
+        cursor: pointer;
+        color: #d8c795;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 14px;
+        font-size: 13px;
+      }
+      td,
+      th {
+        text-align: left;
+        border-bottom: 1px solid #323d51;
+        padding: 8px;
+      }
+      #error {
+        color: #ff9d9d;
+        white-space: pre-wrap;
+      }
+      a {
+        color: #f2dc9e;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid #ffe1a2;
+        outline-offset: 3px;
+      }
+      @media (max-width: 800px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        aside {
+          border-right: 0;
+          border-bottom: 1px solid #323d51;
+        }
+        header {
+          align-items: start;
+        }
+        main {
+          padding: 14px;
+        }
+        #viewport {
+          justify-items: start;
+        }
+        aside {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0 20px;
+        }
+        .hint {
+          grid-column: 1/-1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Intérieurs des bâtiments</h1>
+        <p>Formes, sprites et placement du mobilier issus du jeu.</p>
+      </div>
+      <div>
+        <button id="save" disabled>Enregistrer pour le jeu</button>
+        <p id="save-feedback" role="status" aria-live="polite" style="max-width: 520px; white-space: pre-line"></p>
+      </div>
+      <button id="export" disabled>Exporter en PNG</button>
+    </header>
+    <div class="layout">
+      <aside>
+        <div>
+          <label class="control">Bâtiment<select id="building"></select></label
+          ><label class="control" id="level-control">Niveau<select id="level"></select></label
+          ><label class="control"
+            >Aménagement<select id="preset">
+              <option value="ai">Décoration prédéfinie (IA)</option>
+              <option value="player">Bâtiment du joueur</option>
+            </select></label
+          >
+        </div>
+        <div>
+          <fieldset>
+            <legend>Édition</legend>
+            <label class="control">Taille de la pièce<select id="room-size"></select></label>
+            <p id="size-hint" class="hint"></p>
+            <p id="room-issues" style="color: #ffaaaa" aria-live="polite"></p>
+            <label class="check"><input type="checkbox" id="edit" />Modifier les meubles</label
+            ><button id="undo" disabled>Annuler la modification</button>
+            <p id="selection" class="hint"></p>
+            <button id="rotate" disabled>Tourner ↔</button>
+            <button id="remove" disabled>Supprimer</button>
+            <details>
+              <summary>Ajouter une décoration</summary>
+              <label class="control">Catalogue<select id="catalog"></select></label>
+              <canvas id="catalog-preview" width="160" height="100" aria-label="Aperçu du meuble"></canvas>
+              <button id="add" disabled>Ajouter dans la pièce</button>
+            </details>
+            <p class="hint">
+              Deux orientations miroir disponibles. Choisis une décoration, puis clique sur une case pour l’ajouter.
+            </p>
+            <p id="save-status" class="hint" aria-live="polite"></p>
+          </fieldset>
+          <fieldset>
+            <legend>Affichage</legend>
+            <label class="check"><input type="checkbox" id="furniture" checked />Mobilier</label
+            ><label class="check"><input type="checkbox" id="walls" checked />Murs</label
+            ><label class="check"><input type="checkbox" id="grid" />Grille</label
+            ><label class="check"><input type="checkbox" id="coordinates" />Coordonnées</label
+            ><label class="check"><input type="checkbox" id="mirror" />Orientation inversée</label
+            ><label class="check"><input type="checkbox" id="transparent" />Fond transparent à l’export</label>
+          </fieldset>
+          <label class="control"
+            >Zoom <span id="zoom-label">100 %</span
+            ><input id="zoom" type="range" min="50" max="200" step="25" value="100" /></label
+          ><button id="reset">Réinitialiser</button>
+        </div>
+        <p class="hint">
+          Aménagement des intérieurs neufs. Les meubles déjà placés dans une sauvegarde sont conservés. Glisse les
+          meubles puis clique sur « Enregistrer pour le jeu ». Les positions sont communes aux deux orientations, pour
+          le bâtiment et le niveau sélectionnés. Aucun chargement de sauvegarde. Sans personnages, chevaux, ombres ni
+          éclairage dynamique. Les grottes ne font pas partie de ce rapport.<br /><br />Après une modification du jeu,
+          relance <code>pnpm interiors:preview</code> puis recharge cette page.
+        </p>
+      </aside>
+      <main>
+        <div id="stats"></div>
+        <div id="viewport">
+          <canvas id="scene" width="1000" height="720" aria-label="Aperçu de l’intérieur"></canvas>
+        </div>
+        <p id="status" aria-live="polite">Chargement des sprites…</p>
+        <p id="error" role="alert"></p>
+        <details>
+          <summary>Mobilier et positions</summary>
+          <table>
+            <thead>
+              <tr>
+                <th>Élément</th>
+                <th>Case (i, j)</th>
+              </tr>
+            </thead>
+            <tbody id="items"></tbody>
+          </table>
+        </details>
+      </main>
+    </div>
+  </body>
+</html>

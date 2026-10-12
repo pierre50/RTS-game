@@ -1,35 +1,16 @@
-import { unitSuspensionReason } from '../units/unitSuspension'
-import { isReservedQuestTarget } from '../quests/questReservations'
+import { hasRequiredWorkTool } from '../equipment/workTools'
 import type { ActionProps, CombatEntity } from '../../types/combat'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import { shouldAttackBuildingForInteriorAccess } from '../buildings/interiorAccess'
 import { BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
-import { getEntityWeaponPower } from '../equipment/equipmentStats'
+import { isReservedQuestTarget } from '../quests/questReservations'
 import { unitHasDeliverableResourcesForBuilding } from '../resources/resourceDelivery'
-import { isBanditOwner, isBanditUnitType } from './bandits'
+import { unitSuspensionReason } from '../units/unitSuspension'
+import { canAttack, canConvert } from './combatCapabilities'
 import { isFriendlyTarget } from './combatRelations'
 import { getResourceActionConditions } from './resourceActionConditions'
 export { isValidCondition } from './configConditions'
 export { isWheatMature } from './resourceActionConditions'
-
-function canAttack(source?: CombatEntity | null): boolean {
-  return getEntityWeaponPower(source as Parameters<typeof getEntityWeaponPower>[0] | null | undefined) > 0
-}
-
-function canConvert(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
-  if (!source || source.type !== UNIT_TYPES.priest || !target) return false
-  const sourceOwner = source.owner
-  if (
-    !sourceOwner ||
-    isBanditOwner(sourceOwner as Parameters<typeof isBanditOwner>[0]) ||
-    !sourceOwner.isEnemy?.(target.owner as never)
-  )
-    return false
-  if (target.family === FAMILY_TYPES.unit) {
-    return target.type !== UNIT_TYPES.priest && !isBanditUnitType(target.type)
-  }
-  return false
-}
 
 export const getActionCondition = (
   source: CombatEntity,
@@ -38,6 +19,7 @@ export const getActionCondition = (
   props?: ActionProps
 ): boolean => {
   if (!action || !source || !target) return false
+  if (!hasRequiredWorkTool(source as UnitEntity, action)) return false
   if ((target as UnitEntity).ambientRoadGroup && action === 'convert') return false
   if ((source as UnitEntity).ambientRoadGroup && target.family === 'building' && action === 'attack') return false
   if (
@@ -55,6 +37,7 @@ export const getActionCondition = (
       (target.owner?.label === source.owner?.label ||
         (source.type === UNIT_TYPES.hero && isFriendlyTarget(source, target))) &&
       target.family === FAMILY_TYPES.building &&
+      !target.constructionPaused &&
       (target.hitPoints ?? 0) > 0 &&
       (Boolean(target.buildingUpgrade) || !target.isBuilt || (target.hitPoints ?? 0) < (target.totalHitPoints ?? 0)) &&
       !target.isDead,

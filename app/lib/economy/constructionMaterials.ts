@@ -15,6 +15,7 @@ export type BuildingUpgrade = {
   constructionTime: number
 }
 export type MaterialSite = {
+  constructionPaused?: boolean
   constructionTime?: number
   constructionWorkRequired?: number
   /** Completed construction work, from 0 to 1, independent of health. */
@@ -87,7 +88,9 @@ function constructionWorkSite(site: MaterialSite): MaterialSite {
     : site
 }
 export function hasConstructionWork(site: MaterialSite): boolean {
-  return (!site.isBuilt || Boolean(site.buildingUpgrade)) && !site.isDead && !site.isDestroyed
+  return (
+    (!site.isBuilt || Boolean(site.buildingUpgrade)) && !site.constructionPaused && !site.isDead && !site.isDestroyed
+  )
 }
 export function constructionWorkPoints(site: MaterialSite): number {
   return constructionProgress(site) * constructionWorkTotal(site)
@@ -98,7 +101,15 @@ export function constructionProgressPercentage(site: MaterialSite): number {
 
 /** Construction never heals damage. Completed buildings are repaired separately. */
 export function applyConstructionWork(site: MaterialSite, points: number): void {
-  if (site.isDead || site.isDestroyed || (site.hitPoints ?? 1) <= 0 || (site.isBuilt && !site.buildingUpgrade)) return
+  if (
+    site.constructionPaused ||
+    site.isDead ||
+    site.isDestroyed ||
+    (site.hitPoints ?? 1) <= 0 ||
+    (site.isBuilt && !site.buildingUpgrade)
+  )
+    return
+  if (!constructionMaterialsReady(site)) return
   initializeConstructionProgress(site)
   const work = site.buildingUpgrade ?? site
   work.constructionProgress = Math.max(constructionProgress(site), Math.min(1, points / constructionWorkTotal(site)))
@@ -137,65 +148,65 @@ export function remainingConstructionMaterials(site: MaterialSite): ResourceAmou
   return result
 }
 
-/** Every recipe item contributes the same share of construction; ingredients can be used separately. */
-export function advanceMaterialConstruction(
-  site: MaterialSite,
-  requestedWork: number,
-  stores: ResourceAmount[] = []
-): number {
-  site = constructionWorkSite(site)
-  stores = [...new Set(stores)]
-  const before = constructionWorkPoints(site)
-  const total = constructionWorkTotal(site)
+/** Materials are reserved at the site without completing any construction work. */
+export function deliverConstructionMaterials(site: MaterialSite, stores: ResourceAmount[]): ResourceAmount {
+  const delivered: ResourceAmount = {}
+  if (!hasConstructionWork(site) || (site.hitPoints ?? 1) <= 0 || !site.constructionMaterials) return delivered
   const state = site.constructionMaterials
-  if (!state || site.isBuilt) return Math.min(total, requestedWork)
-  if (!(total > 0)) return before
-  const entries = Object.entries(state.cost) as [keyof ResourceAmount, number][]
-  const cost = entries.reduce((sum, [, n]) => sum + Math.max(0, n), 0)
-  if (!cost) return Math.min(total, requestedWork)
-  const used = entries.reduce((sum, [key, n]) => sum + Math.min(n, state.consumed[key] ?? 0), 0)
-  const available = entries.reduce(
-    (sum, [key, n]) =>
-      sum +
-      Math.min(
-        Math.max(0, n - (state.consumed[key] ?? 0)),
-        (state.delivered[key] ?? 0) + stores.reduce((n, bag) => n + materialAmount(bag, key), 0)
-      ),
-    0
-  )
-  const next = Math.max(before, Math.min(total, requestedWork, ((used + available) / cost) * total))
-  if (next - before <= 1e-9) return before
-  let due = Math.max(0, Math.ceil(cost * (next / total) - 1e-9) - used)
-  for (const [key, n] of entries) {
-    let remaining = Math.min(due, Math.max(0, n - (state.consumed[key] ?? 0)))
-    const delivered = Math.min(state.delivered[key] ?? 0, remaining)
-    if (delivered) state.delivered[key] = (state.delivered[key] ?? 0) - delivered
-    remaining -= delivered
-    let taken = delivered
-    for (const bag of stores) {
-      const amount = takeMaterial(bag, key, Math.min(remaining, materialAmount(bag, key)))
-      taken += amount
-      remaining -= amount
+  for (const [name, missing] of Object.entries(remainingConstructionMaterials(site))) {
+    const key = name as keyof ResourceAmount
+    let remaining = missing
+    for (const bag of new Set(stores)) {
+      const amount = takeMaterial(bag, key, remaining)
+      if (amount > 0) {
+        state.delivered[key] = (state.delivered[key] ?? 0) + amount
+        delivered[key] = (delivered[key] ?? 0) + amount
+        remaining -= amount
+      }
+      if (remaining <= 0) break
     }
-    if (taken) state.consumed[key] = (state.consumed[key] ?? 0) + taken
-    due -= taken
+  }
+  return delivered
+}
+
+/** Legacy prepaid sites and zero-cost projects can start immediately. */
+export function constructionMaterialsReady(site: MaterialSite): boolean {
+  return Object.keys(remainingConstructionMaterials(site)).length === 0
+}
+
+/** Delivery progress is separate from completed work, including already paid legacy materials. */
+export function constructionMaterialPercentage(site: MaterialSite): number {
+  const state = site.constructionMaterials
+  if (!state) return 100
+  const total = Object.values(state.cost).reduce((sum, amount) => sum + Math.max(0, amount), 0)
+  const missing = Object.values(remainingConstructionMaterials(site)).reduce((sum, amount) => sum + amount, 0)
+  return total > 0 ? Math.max(0, Math.min(100, (100 * (total - missing)) / total)) : 100
+}
+
+/** Work starts only after the entire recipe is on site; no personal or depot stock is withdrawn here. */
+export function advanceMaterialConstruction(site: MaterialSite, requestedWork: number): number {
+  const before = constructionWorkPoints(site)
+  if (!hasConstructionWork(site) || (site.hitPoints ?? 1) <= 0 || !constructionMaterialsReady(site)) return before
+  const next = Math.max(before, Math.min(constructionWorkTotal(site), requestedWork))
+  if (next <= before) return before
+  const state = site.constructionMaterials
+  if (state) {
+    // Commit the reserved recipe once when work begins. Legacy consumed amounts remain paid.
+    for (const [name, cost] of Object.entries(state.cost)) {
+      const key = name as keyof ResourceAmount
+      const amount = Math.max(0, cost - (state.consumed[key] ?? 0))
+      if (amount > 0) {
+        state.delivered[key] = Math.max(0, (state.delivered[key] ?? 0) - amount)
+        state.consumed[key] = (state.consumed[key] ?? 0) + amount
+      }
+    }
   }
   return next
 }
 
-/** Report missing alternatives only when none of the carried ingredients can advance the site. */
-export function missingConstructionMaterialsForNextPoint(site: MaterialSite, bag: ResourceAmount = {}): ResourceAmount {
-  site = constructionWorkSite(site)
-  if (!site.constructionMaterials || site.isBuilt) return {}
-  const preview = { ...site, constructionMaterials: structuredClone(site.constructionMaterials) }
-  if (
-    advanceMaterialConstruction(preview, constructionWorkPoints(site) + 1, [{ ...bag }]) > constructionWorkPoints(site)
-  )
-    return {}
-  const missing: ResourceAmount = {}
-  for (const [name, count] of Object.entries(remainingConstructionMaterials(site)))
-    if (count > 0) missing[name as keyof ResourceAmount] = count
-  return missing
+/** All remaining ingredients must be delivered before a builder can work. Carried cargo is not on site. */
+export function missingConstructionMaterialsForNextPoint(site: MaterialSite): ResourceAmount {
+  return remainingConstructionMaterials(site)
 }
 
 /** Each ingredient is an alternative useful load; the pickup/gather action enforces total bag capacity. */

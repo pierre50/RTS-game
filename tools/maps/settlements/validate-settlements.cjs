@@ -48,7 +48,7 @@ function validateSettlements(prepared, terrain, heroSpawns) {
     if (
       stock.some(value => !Number.isFinite(value) || value < 0) ||
       (['Granary', 'StoragePit'].includes(building.type) &&
-        stock.reduce((sum, n) => sum + n, 0) > getStorageCapacity(building.type))
+        stock.reduce((sum, n) => sum + n, 0) > getStorageCapacity(building))
     )
       throw new Error(`${building.label}: invalid depot stock`)
   }

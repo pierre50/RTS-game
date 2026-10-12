@@ -1,3 +1,5 @@
+import { SOLDIER_CIVILIZATION_HELMET_EQUIPMENT } from './civilizationHelmets'
+import { SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT } from './civilizationHelmetDecorations'
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { UnitEquipmentDefinition, DynamicEquipmentKey, EquipmentOptions } from './equipmentData'
 
@@ -6,88 +8,51 @@ const HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME = 9
 const SOLDIER_EARLY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   { equipment: 'armor_leather', minLevel: 2, maxLevel: 9 },
   {
-    equipment: 'shoulder_legion_ceramic',
+    equipment: 'shoulder_legion_leather',
     minLevel: 4,
   },
   {
-    equipment: 'bracers_ceramic',
+    equipment: 'bracers_leather',
     minLevel: 5,
   },
   {
-    equipment: 'helmet_pointed_ceramic',
+    equipment: 'helmet_pointed_leather',
     minLevel: 6,
     maxLevel: 14,
   },
 ]
 
-const SOLDIER_CIVILIZATION_HELMET_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
-  {
-    equipment: 'helmet_barbuta_ceramic',
-    civilizations: ['Hellas'],
-    minLevel: 15,
-  },
-  {
-    equipment: 'helmet_legion_ceramic',
-    civilizations: ['Latium'],
-    minLevel: 15,
-  },
-  {
-    equipment: 'helmet_nasal_ceramic',
-    civilizations: ['Sumeria', 'Nobatia'],
-    minLevel: 15,
-  },
-  {
-    equipment: 'helmet_bascinet_round_ceramic',
-    civilizations: ['Kemet', 'Xia', 'Alba'],
-    minLevel: 15,
-  },
-  {
-    equipment: 'helmet_norman_ceramic',
-    civilizations: ['Nord'],
-    minLevel: 15,
-  },
-]
-
-const SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
-  { equipment: 'centurion_crest', civilizations: ['Hellas'], minLevel: 16 },
-  { equipment: 'centurion_plumage', civilizations: ['Latium'], minLevel: 16 },
-  { equipment: 'legion_plumage', civilizations: ['Sumeria'], minLevel: 16 },
-  { equipment: 'plumage', civilizations: ['Kemet', 'Xia', 'Nobatia'], minLevel: 16 },
-  { equipment: 'helmet_wings', civilizations: ['Alba'], minLevel: 16 },
-  { equipment: 'upward_horns_white', civilizations: ['Nord'], minLevel: 16 },
-]
-
 const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   {
-    equipment: 'armor_mail_ceramic',
+    equipment: 'armor_mail_iron',
     minLevel: 10,
     maxLevel: 17,
   },
   {
-    equipment: 'armor_legion_ceramic',
+    equipment: 'armor_legion_bronze',
     minLevel: 18,
   },
   {
-    equipment: 'leg_armor_ceramic',
+    equipment: 'leg_armor_leather',
     minLevel: 12,
   },
-  { equipment: 'cape_solid', minLevel: 14 },
   ...SOLDIER_CIVILIZATION_HELMET_EQUIPMENT,
   ...SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT,
 ]
 
 export const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>> = {
-  [UNIT_TYPES.chief]: [{ equipment: 'sword_ceramic' }],
+  [UNIT_TYPES.chief]: [{ equipment: 'sword_bronze' }],
   [UNIT_TYPES.infantry]: [
-    { equipment: 'sword_ceramic' },
+    { equipment: 'spear_ceramic' },
     ...SOLDIER_EARLY_ARMOR_EQUIPMENT,
     {
-      equipment: 'round_shield_ceramic_slash',
+      equipment: 'round_shield_wood_slash',
       minLevel: 8,
     },
     ...SOLDIER_HEAVY_ARMOR_EQUIPMENT,
   ],
   [UNIT_TYPES.bowman]: [
+    'dagger_bronze',
     'quiver',
     'bow',
     {
@@ -99,15 +64,15 @@ export const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefini
   ],
   [UNIT_TYPES.priest]: ['cane'],
   [UNIT_TYPES.banditChief]: [
-    'axe_ceramic',
+    'mace_bronze',
     'armor_leather',
-    'cape_solid',
-    'helmet_barbarian_ceramic',
-    'upward_horns_ceramic',
-    'round_shield_ceramic_slash',
+    'helmet_barbarian_leather',
+    'upward_horns_white',
+    'round_shield_wood_slash',
   ],
-  [UNIT_TYPES.banditSword]: ['sword_ceramic', 'helmet_barbarian_nasal_ceramic', 'round_shield_ceramic_slash'],
+  [UNIT_TYPES.banditSword]: ['sword_bronze', 'helmet_barbarian_nasal_leather', 'round_shield_wood_slash'],
   [UNIT_TYPES.banditArcher]: [
+    'dagger_bronze',
     'quiver',
     'bow',
     {
@@ -141,7 +106,7 @@ export const VILLAGER_WORK_EQUIPMENT: readonly {
   },
   {
     workType: 'heroSword',
-    equipment: 'sword_ceramic',
+    equipment: 'sword_bronze',
   },
   {
     workType: WORK_TYPES.farmer,

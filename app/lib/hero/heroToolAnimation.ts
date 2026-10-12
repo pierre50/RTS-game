@@ -1,8 +1,10 @@
+import { getEquippedWorkTool } from '../equipment/workTools'
 import { SHEET_TYPES } from '../constants'
 import { onSpriteLoopAtFrame } from '../graphics'
 import { logHeroSlashFrame, playReverseSlashRecovery } from '../entities/slashRecoveryAnimation'
 import { resetUnitCrouchPose } from '../units/visuals/unitCrouchPose'
 import type { UnitEntity } from '../../types/entities'
+import { getActionAnimationReleaseFrame, hasConfiguredActionFrameSequence } from '../animations/actionFrameSequences'
 
 const HERO_SWORD_POWER_FLASH_MS = 180
 
@@ -80,8 +82,12 @@ function getHeroSwordPowerFlashLayers(hero: UnitEntity): FlashableLayer[] {
   const host = hero as SwordPowerFlashHost
   const sprites = host.appearanceLayerSprites
   if (!sprites) return []
+  const weapon =
+    hero.work === 'heroSword'
+      ? hero.inventory?.activeWeapons?.melee
+      : (getEquippedWorkTool(hero) ?? hero.inventory?.activeWeapons?.melee)
   return (host.appearance?.layers ?? [])
-    .map((layer, index) => (layer.equipmentKey?.startsWith('sword_') ? sprites.get(index) : null))
+    .map((layer, index) => (layer.equipmentKey === weapon ? sprites.get(index) : null))
     .filter((layer): layer is FlashableLayer => Boolean(layer && layer.visible !== false))
 }
 
@@ -108,6 +114,9 @@ export function playHeroToolAnimation(
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed) return
 
+  const hasAuthoredGesture = hasConfiguredActionFrameSequence(hero)
+  if (impactFrame != null) impactFrame = getActionAnimationReleaseFrame(hero, hero.action, impactFrame)
+
   hero.actionLocked = true
   sprite.loop = false
   const finishAnimation = () => finishHeroToolAnimation(hero)
@@ -130,7 +139,8 @@ export function playHeroToolAnimation(
   onSpriteLoopAtFrame(sprite, impactFrame, () => {
     logHeroSlashFrame(hero, 'tool:impact', { impactFrame })
     onImpact()
-    if (options.recoveryAnimation !== 'reverseSlash') return
+    // Authored tool sequences already contain their return to rest.
+    if (hasAuthoredGesture || options.recoveryAnimation !== 'reverseSlash') return
     const handled = playReverseSlashRecovery(hero, {
       onComplete: finishAnimation,
       releaseFrame: impactFrame,
@@ -148,6 +158,7 @@ export function finishHeroToolAnimation(
 ): void {
   const sprite = hero.sprite
   logHeroSlashFrame(hero, 'tool:finish:start')
+  delete hero.heroPendingToolStrike
   if (hero.attackRecoveryAnimationTaskId != null) {
     hero.context?.scheduler?.remove?.(hero.attackRecoveryAnimationTaskId)
     hero.attackRecoveryAnimationTaskId = null

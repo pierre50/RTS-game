@@ -1,6 +1,8 @@
 import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
-import { canCampPursue } from '../../lib/units/campBehavior'
+import { canCampPursue } from '../../lib/units/camps/campBehavior'
+import { clearUnitCombatAlert } from '../../lib/units/unitCombatAlert'
+import { clearUnitAttacker, rememberUnitAttacker } from '../../lib/units/unitRetaliation'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import {
   evaluateCombatMorale,
@@ -64,7 +66,11 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
   }
   if (shouldSuppressAggroDuringCombatRecovery(unit)) return
   if (unit.handleIsAttacked?.(instance, unit)) return
-  if (!unit.getActionCondition(instance, ACTION_TYPES.attack)) return
+  rememberUnitAttacker(unit, instance)
+  if (!unit.getActionCondition(instance, ACTION_TYPES.attack)) {
+    clearUnitAttacker(unit)
+    return
+  }
   if (unit.dest === instance) return
 
   const currentDest = unit.dest
@@ -83,6 +89,8 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
 }
 
 export function stopUnit(unit: UnitStateHost): void {
+  clearUnitCombatAlert(unit)
+  clearUnitAttacker(unit)
   if (unit.isDead || unit.isDestroyed) return
   const heroControlled = isHeroControlled(unit)
   if (!heroControlled && unit.exploringForAutonomy && !unit.action) {

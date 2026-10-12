@@ -1,4 +1,5 @@
 import { removeHeroInventoryItem } from '../../lib/equipment/heroInventory'
+import { getEquipmentDisplayName } from '../../lib/equipment/equipmentNames'
 import { createInventoryContents } from './InventoryContents'
 import { getPlayerBuildingConfig } from '../../lib/buildings/buildingLevel'
 import { Assets } from 'pixi.js'
@@ -50,6 +51,7 @@ export type InventoryEquipmentRendererHost = {
 }
 
 function getHeroToolForWeaponSlot(slot: HeroWeaponSlot | null): HeroEquippedItem | null {
+  if (slot === 'tool') return 'interact'
   if (slot === 'melee') return 'sword'
   if (slot === 'ranged') return 'bow'
   return null
@@ -172,7 +174,7 @@ function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: stri
   const { element } = createInventoryEquipmentRow(menu.context, {
     id: `inventory-equipment-${item}`,
     equipment: item,
-    title: recipe ? t(recipe.labelKey) : placeableBuildingType ? t(placeableBuildingType) : undefined,
+    title: getEquipmentDisplayName(item),
     description: recipe?.descriptionKey ? t(recipe.descriptionKey) : undefined,
     count,
     icon,

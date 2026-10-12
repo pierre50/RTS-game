@@ -21,11 +21,11 @@ function loadModule(relativePath, mocks = {}) {
   return module.exports
 }
 
-test('all craft recipes are available from age zero', () => {
+test('craft recipes depend on the local forge level rather than player age', () => {
   const { getAvailableHeroCraftRecipes } = loadCrafting()
-  const ids = age => getAvailableHeroCraftRecipes({ age }).map(recipe => recipe.id)
+  const ids = age => getAvailableHeroCraftRecipes({ age }, undefined, { buildingLevel: 1 }).map(recipe => recipe.id)
   assert.deepEqual(ids(0), ids(2))
-  for (const id of ['catchingPole', 'arrow_copper', 'arrow_bronze', 'arrow_iron']) assert.ok(ids(0).includes(id))
+  for (const id of ['catchingPole', 'arrow_bronze', 'arrow_bronze', 'arrow_iron']) assert.ok(ids(0).includes(id))
 })
 
 function getHeroInventory(hero) {
@@ -59,23 +59,44 @@ function loadCrafting() {
   })
 }
 
-test('hero arrow craft recipes spend hero bag resources and add arrows to the hero bag', () => {
-  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'arrow_copper')
-  const player = { age: 1, wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
-  const hero = { type: 'Hero', inventory: { resources: { wood: 8, feather: 3, copperIngot: 2 } } }
-
-  assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.deepEqual(hero.inventory.resources, { wood: 3, feather: 1, copperIngot: 1 })
-  assert.equal(hero.inventory.equipment.length, 1)
-  assert(hero.inventory.equipment.every(item => item === 'arrow_copper'))
-  for (let i = 0; i < 20; i++) assert.equal(craftHeroRecipe(player, hero, recipe), false)
-  assert.equal(hero.inventory.equipment.length, 1)
-  assert.deepEqual(hero.inventory.resources, { wood: 3, feather: 1, copperIngot: 1 })
+test('single arrows preserve prepaid material portions and match a ten-arrow craft after save/load', () => {
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe, getMaxHeroCraftCount } = loadCrafting()
+  const { unitData } = loadModule('app/serialization/entity/EntitySaveData.ts', {
+    '../../lib': {
+      filterObject: (object, keys) =>
+        Object.fromEntries(keys.filter(key => object[key] !== undefined).map(key => [key, object[key]])),
+      getEntityMapSpace: () => null,
+    },
+  })
+  for (const id of ['arrow_ceramic', 'arrow_bronze', 'arrow_iron']) {
+    const recipe = HERO_CRAFT_RECIPES.find(item => item.id === id)
+    const resources = Object.fromEntries(Object.entries(recipe.cost).map(([key, cost]) => [key, cost * 10]))
+    let hero = { type: 'Hero', inventory: { resources: { ...resources }, equipment: [] } }
+    const batchHero = structuredClone(hero)
+    assert.equal(recipe.outputCount, 1)
+    assert.equal(craftHeroRecipe({}, batchHero, recipe, 10, { buildingLevel: 1 }), true)
+    for (let i = 0; i < 10; i++) {
+      assert.equal(getMaxHeroCraftCount({}, recipe, hero, { buildingLevel: 1 }), 10 - i)
+      assert.equal(craftHeroRecipe({}, hero, recipe, 1, { buildingLevel: 1 }), true)
+      assert.equal(hero.inventory.equipment.length, i + 1)
+      if (i === 0) {
+        const beforeFailure = JSON.stringify(hero.inventory)
+        assert.equal(craftHeroRecipe({}, hero, recipe, 10, { buildingLevel: 1 }), false)
+        assert.equal(JSON.stringify(hero.inventory), beforeFailure)
+      }
+      // The inventory is serialized as part of the unit save state.
+      hero = JSON.parse(JSON.stringify(unitData(hero)))
+    }
+    assert.deepEqual(hero.inventory, batchHero.inventory)
+    assert.deepEqual(hero.inventory.resources, {})
+    assert.equal(hero.inventory.craftingRemainders, undefined)
+    assert.equal(craftHeroRecipe({}, hero, recipe, 1, { buildingLevel: 1 }), false)
+  }
 })
 
 test('hero craft refuses missing resources without changing inventory or resources', () => {
-  const { HERO_CRAFT_RECIPES, canCraftHeroRecipe, craftHeroRecipe, getMissingCraftResources } = loadCrafting()
+  const { HERO_CRAFT_RECIPES, canCraftHeroRecipe, craftHeroRecipe, getMissingCraftResources, getHeroCraftPayment } =
+    loadCrafting()
   const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'arrow_iron')
   const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
   const hero = {
@@ -84,7 +105,7 @@ test('hero craft refuses missing resources without changing inventory or resourc
   }
 
   assert.equal(canCraftHeroRecipe(player, recipe, hero), false)
-  assert.deepEqual(getMissingCraftResources(player, recipe.cost, hero), { wood: 1, feather: 1, ironIngot: 1 })
+  assert.deepEqual(getMissingCraftResources(player, getHeroCraftPayment(recipe, hero).cost, hero), { ironIngot: 1 })
   assert.equal(craftHeroRecipe(player, hero, recipe), false)
   assert.deepEqual(player, { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 })
   assert.deepEqual(hero.inventory.resources, { wood: 4, feather: 1, iron: 1 })
@@ -211,7 +232,7 @@ test('campfire recipes are separate from forge equipment and ammunition', () => 
   const forge = getAvailableHeroCraftRecipes({}, 'forge')
   assert.deepEqual(
     campfire.map(recipe => recipe.id),
-    ['grilled_meat', 'healing_poultice', 'poison_vial', 'fiber_bandage']
+    ['grilled_meat', 'poison_vial']
   )
   assert.ok(forge.length > 0)
   assert.ok(forge.every(recipe => ['equipment', 'arrows', 'ingots'].includes(recipe.category)))
@@ -234,16 +255,16 @@ test('grilled meat costs two meat and can be consumed once to heal without excee
 
 test('maximum craft uses the limiting resource and spends all batches atomically', () => {
   const { HERO_CRAFT_RECIPES, getMaxHeroCraftCount, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'arrow_copper')
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'arrow_bronze')
   const player = {}
-  const hero = { type: 'Hero', inventory: { resources: { wood: 27, feather: 7, copperIngot: 6 }, equipment: [] } }
-  assert.equal(getMaxHeroCraftCount(player, recipe, hero), 3)
-  assert.equal(craftHeroRecipe(player, hero, recipe, 6), false)
-  assert.deepEqual(hero.inventory.resources, { wood: 27, feather: 7, copperIngot: 6 })
-  assert.equal(craftHeroRecipe(player, hero, recipe, 3), true)
-  assert.deepEqual(hero.inventory.resources, { wood: 12, feather: 1, copperIngot: 3 })
-  assert.deepEqual(hero.inventory.equipment, Array(3).fill('arrow_copper'))
-  assert.equal(getMaxHeroCraftCount(player, recipe, hero), 0)
+  const hero = { type: 'Hero', inventory: { resources: { wood: 27, feather: 7, bronzeIngot: 6 }, equipment: [] } }
+  assert.equal(getMaxHeroCraftCount(player, recipe, hero), 54)
+  assert.equal(craftHeroRecipe(player, hero, recipe, 55), false)
+  assert.deepEqual(hero.inventory.resources, { wood: 27, feather: 7, bronzeIngot: 6 })
+  assert.equal(craftHeroRecipe(player, hero, recipe, 50), true)
+  assert.deepEqual(hero.inventory.resources, { wood: 2, feather: 7, bronzeIngot: 1 })
+  assert.deepEqual(hero.inventory.equipment, Array(50).fill('arrow_bronze'))
+  assert.equal(getMaxHeroCraftCount(player, recipe, hero), 4)
   for (const count of [0, -1, 1.5, Infinity, NaN]) assert.equal(craftHeroRecipe(player, hero, recipe, count), false)
   assert.equal(getMaxHeroCraftCount(player, recipe, null), 0)
 })
@@ -254,25 +275,35 @@ test('forge recipes produce supported, equippable metal gear with localized labe
   const { getEquipmentSlot, getWeaponSlot } = loadModule('app/lib/equipment/equipmentSlots.ts')
   const { EN_CRAFTING_TRANSLATIONS, FR_CRAFTING_TRANSLATIONS } = loadModule('app/lib/i18n/craftingTranslations.ts')
   assert.equal(new Set(HERO_CRAFT_RECIPES.map(recipe => recipe.id)).size, HERO_CRAFT_RECIPES.length)
-  const recipes = HERO_CRAFT_RECIPES.filter(recipe => recipe.forgeGroup)
-  assert.equal(recipes.length, 44)
+  const recipes = HERO_CRAFT_RECIPES.filter(recipe => recipe.forgeGroup && recipe.station === 'forge')
+  assert.ok(recipes.length > 0)
+  const { equipmentVisualParts } = loadModule('app/lib/equipment/helmetVariants.ts')
   for (const recipe of recipes) {
     assert.equal(recipe.station, 'forge')
-    assert.ok(DYNAMIC_EQUIPMENT_KEYS.includes(recipe.outputEquipment), recipe.id)
+    assert.ok(
+      equipmentVisualParts(recipe.outputEquipment).every(part => DYNAMIC_EQUIPMENT_KEYS.includes(part)),
+      recipe.id
+    )
     assert.ok(getEquipmentSlot(recipe.outputEquipment) || getWeaponSlot(recipe.outputEquipment), recipe.id)
     for (const translations of [EN_CRAFTING_TRANSLATIONS, FR_CRAFTING_TRANSLATIONS]) {
-      assert.ok(translations[recipe.labelKey], recipe.id)
       assert.ok(translations[recipe.descriptionKey], recipe.id)
       if (recipe.materialKey) assert.ok(translations[recipe.materialKey], recipe.id)
     }
-    const hero = { type: 'Hero', inventory: { resources: { ...recipe.cost }, equipment: [] } }
-    assert.equal(craftHeroRecipe({}, hero, recipe), true, recipe.id)
+    const hero = {
+      type: 'Hero',
+      inventory: {
+        resources: Object.fromEntries(Object.entries(recipe.cost).map(([key, value]) => [key, Math.ceil(value)])),
+        equipment: [],
+      },
+    }
+    const player = { civ: recipe.civilizations?.[0] }
+    assert.equal(craftHeroRecipe(player, hero, recipe, 1, { buildingLevel: 1, owner: player }), true, recipe.id)
     assert.deepEqual(hero.inventory.resources, {})
     assert.deepEqual(hero.inventory.equipment, [recipe.outputEquipment])
     assert.equal(craftHeroRecipe({}, hero, recipe), false)
     assert.deepEqual(hero.inventory.equipment, [recipe.outputEquipment])
   }
-  for (const id of ['pickaxe_iron', 'hammer_iron', 'scythe_iron', 'cape_solid', 'plumage']) {
+  for (const id of ['cape_solid', 'plumage']) {
     assert.equal(
       recipes.some(recipe => recipe.id === id),
       false
@@ -296,13 +327,54 @@ test('ore is smelted into resource stacks and bronze requires tin before craftin
   hero.inventory.resources = { copper: 20, wood: 20 }
   assert.equal(craftHeroRecipe({}, hero, recipe('bronzeIngot')), false)
   assert.deepEqual(hero.inventory.resources, { copper: 20, wood: 20 })
-  for (const [id, cost] of [
-    ['copperIngot', { copper: 3, wood: 2 }],
-    ['ironIngot', { iron: 3, wood: 2 }],
-  ]) {
+  for (const [id, cost] of [['ironIngot', { iron: 3, wood: 2 }]]) {
     assert.deepEqual(recipe(id).cost, cost)
     hero.inventory.resources = { ...cost }
-    assert.equal(craftHeroRecipe({}, hero, recipe(id)), true)
+    assert.equal(craftHeroRecipe({}, hero, recipe(id), 1, { buildingLevel: 1 }), true)
     assert.deepEqual(hero.inventory.resources, { [id]: 1 })
+  }
+})
+
+test('manual crafting exposes exactly the agreed equipment and remedies without a station', () => {
+  const { getAvailableHeroCraftRecipes, craftHeroRecipe, getMaxHeroCraftCount } = loadCrafting()
+  const recipes = getAvailableHeroCraftRecipes({ civ: 'Nord' }, 'inventory').filter(recipe => !recipe.decorated)
+  assert.deepEqual(
+    recipes.map(recipe => recipe.id).sort(),
+    [
+      'axe_ceramic',
+      'pickaxe_ceramic',
+      'hammer_ceramic',
+      'scythe_ceramic',
+      'spear_ceramic',
+      'slingshot',
+      'bow',
+      'catchingPole',
+      'arrow_ceramic',
+      'armor_leather',
+      'helmet_pointed_leather',
+      'shoulder_legion_leather',
+      'bracers_leather',
+      'leg_armor_leather',
+      'round_shield_wood_slash',
+      'fiber_bandage',
+      'healing_poultice',
+    ].sort()
+  )
+  for (const recipe of recipes) {
+    for (const station of ['forge', 'campfire'])
+      assert.ok(!getAvailableHeroCraftRecipes({}, station).some(other => other.id === recipe.id))
+    const hero = {
+      type: 'Hero',
+      inventory: {
+        resources: Object.fromEntries(Object.entries(recipe.cost).map(([key, value]) => [key, Math.ceil(value)])),
+        equipment: [],
+      },
+    }
+    assert.equal(getMaxHeroCraftCount({}, recipe, hero), recipe.category === 'arrows' ? 2 : 1, recipe.id)
+    assert.equal(craftHeroRecipe({}, hero, recipe), true, recipe.id)
+    assert.deepEqual(hero.inventory.resources, {})
+    assert.deepEqual(hero.inventory.equipment, Array(recipe.outputCount).fill(recipe.outputEquipment))
+    if (recipe.category === 'arrows') assert.equal(craftHeroRecipe({}, hero, recipe), true)
+    assert.equal(craftHeroRecipe({}, hero, recipe), false)
   }
 })

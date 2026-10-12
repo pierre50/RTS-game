@@ -1,3 +1,6 @@
+import { getAuthoredInteriorRoomSize } from '../../app/lib/buildings/interiorRoomSize'
+import { getHouseInteriorLevel } from '../../app/lib/housing/houseLevels'
+import { prepareHouseBedPlans } from '../../app/lib/housing/householdBeds'
 import { furnishPendingBanditCave } from '../../app/classes/map/BanditCaveContent'
 import { mirrorInteriorBlueprint } from '../../app/lib/buildings/interiorOrientation'
 import { ensureCaveMinerals } from './BuildingInteriorSpaceMinerals'
@@ -84,31 +87,38 @@ function buildInteriorSpaceCells(
   const walkableCells: RuntimeCell[] = []
 
   for (let i = 0; i <= blueprint.size; i += 1) {
-    const row: RuntimeCell[] = []
+    const row: RuntimeCell[] = grid[i] ?? []
     grid[i] = row
     for (let j = 0; j <= blueprint.size; j += 1) {
       if (blueprint.terrain[i]?.[j] == null) continue
       const isFloor = maskValue(blueprint.floorMask, i, j) || !blueprint.floorMask
       const isExit = isBlueprintExitCell(blueprint, i, j)
-      const cell = new Cell(
-        {
-          i,
-          j,
-          z: relief[i]?.[j] ?? 0,
-          type: String(blueprint.terrain[i]?.[j] ?? 'Dirt'),
-          terrainHidden: !isFloor,
-        },
-        cellContext
-      ) as RuntimeCell
+      const cell =
+        row[j] ??
+        (new Cell(
+          {
+            i,
+            j,
+            z: relief[i]?.[j] ?? 0,
+            type: String(blueprint.terrain[i]?.[j] ?? 'Dirt'),
+            terrainHidden: !isFloor,
+          },
+          cellContext
+        ) as RuntimeCell)
       const cellView = cell as RuntimeCell &
         ContainerChild & { renderable?: boolean; sprite?: { renderable?: boolean } }
+      if (cell.type !== String(blueprint.terrain[i]?.[j] ?? 'Dirt'))
+        (cell as RuntimeCell & { setTerrainType?: (type: string) => void }).setTerrainType?.(
+          String(blueprint.terrain[i]?.[j] ?? 'Dirt')
+        )
+      cell.terrainHidden = !isFloor
       cell.spaceId = id
       cell.visible = isFloor
       cellView.renderable = isFloor
       cell.zIndex = i + j - 0.2
       cell.border = maskValue(blueprint.borderMask, i, j) && !isExit
       cell.waterBorder = false
-      cell.solid = !isFloor
+      cell.solid = !isFloor || (cell.has ? cell.solid : false)
       if (cellView.sprite) cellView.sprite.renderable = isFloor && cell.category !== 'Water'
       row[j] = cell
       if (isFloor) renderer.terrainLayer.addChild(cellView)
@@ -118,6 +128,7 @@ function buildInteriorSpaceCells(
   }
 
   formatTerrainReliefCells({ size: blueprint.size, grid })
+  for (const child of [...renderer.entityLayer.children]) if (child.label === 'interior-wall') child.destroy()
   addInteriorWalls(blueprint, renderer.entityLayer)
 
   if (!exitCell) exitCell = grid[center]?.[center] ?? walkableCells[0] ?? null
@@ -140,12 +151,17 @@ export function ensureBuildingInteriorSpace(
   building: BuildingEntity,
   blueprintData: MapBlueprint
 ): BuildingInteriorRuntimeSpace {
-  const prepared = createSquareLocalBlueprint(blueprintData)
+  const prepared = createSquareLocalBlueprint(
+    building.type !== 'Cave' && (building.type === 'House' || getAuthoredInteriorRoomSize(building) !== undefined)
+      ? createDefaultBuildingInteriorBlueprint(building)
+      : blueprintData
+  )
   const blueprint = building.placementMirrored ? mirrorInteriorBlueprint(prepared) : prepared
   const map = context.map
   const id = getBuildingInteriorSpaceId(building)
   const existing = getMapSpace(map, id)
   if (isBuildingInteriorRuntimeSpace(existing)) {
+    syncHouseInteriorSpace(context, building, existing)
     syncStableInteriorHorses(context, existing)
     furnishPendingBanditCave(context, existing, building)
     return existing
@@ -174,6 +190,7 @@ export function ensureBuildingInteriorSpace(
   const space: BuildingInteriorRuntimeSpace = {
     id,
     kind: 'interior',
+    houseInteriorLevel: building.type === 'House' ? getHouseInteriorLevel(building) : undefined,
     grid: built.grid,
     size: blueprint.size,
     ...(blueprint.localGridLayout === undefined ? {} : { localGridLayout: blueprint.localGridLayout }),
@@ -215,6 +232,35 @@ export function ensureRuntimeBuildingInteriorSpace(
   if (!building.isBuilt || building.isDead || building.isDestroyed) return null
   const space =
     existing ?? ensureBuildingInteriorSpace(context, building, createDefaultBuildingInteriorBlueprint(building))
-  if (space) furnishPendingBanditCave(context, space, building)
+  if (space) {
+    syncHouseInteriorSpace(context, building, space)
+    furnishPendingBanditCave(context, space, building)
+  }
   return space
+}
+
+/** Expand in place: cells, furniture and occupants retain their coordinates and identities. */
+export function syncHouseInteriorSpace(
+  context: GameContextLike,
+  building: BuildingEntity,
+  existing = getBuildingInteriorSpaceForBuilding(context, building)
+): void {
+  if (building.type !== 'House') return
+  if (building.owner) prepareHouseBedPlans(building.owner)
+  if (!existing || (existing.houseInteriorLevel ?? 1) >= getHouseInteriorLevel(building)) return
+  const source = createDefaultBuildingInteriorBlueprint(building)
+  const blueprint = building.placementMirrored ? mirrorInteriorBlueprint(source) : source
+  const built = buildInteriorSpaceCells(context, blueprint, existing.id, existing.renderer)
+  existing.exitCell = built.exitCell
+  existing.entryCell = built.exitCell
+  existing.entryPortal.targetCell = built.exitCell
+  existing.exitPortal.sourceCell = built.exitCell
+  existing.walkableCells = built.walkableCells
+  existing.idleCells = built.idleCells
+  existing.sleepCells = built.sleepCells
+  existing.houseInteriorLevel = getHouseInteriorLevel(building)
+  existing.defaultBuildingsPlaced = false
+  existing.houseGrowthOnly = true
+  ensureInteriorDefaultBuildings(context, existing)
+  existing.houseGrowthOnly = false
 }

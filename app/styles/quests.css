@@ -130,3 +130,21 @@
 .game-window .quest-list-item {
   width: 100%;
 }
+
+.quest-inline-resource {
+  display: inline;
+  color: var(--main-accent-hover);
+  font-weight: bold;
+}
+.quest-inline-resource img {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  object-fit: contain;
+  vertical-align: -0.2em;
+  image-rendering: pixelated;
+}
+.quest-tracker .quest-objective {
+  display: block;
+  margin-top: var(--ui-gap-6);
+}

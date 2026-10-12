@@ -1,7 +1,7 @@
 import { cancelRoadJourney } from '../../../lib/units/roadJourney'
 import { canMoveForVillageSupply } from '../../../lib/units/village/villageSupplyTrips'
 import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
-import { campAnchor, canCampPursue } from '../../../lib/units/campBehavior'
+import { campAnchor, canCampPursue } from '../../../lib/units/camps/campBehavior'
 import { isUnitSuspended, wakeUnitSimulation } from '../../../lib/units/unitSuspension'
 import { withinVillageActivity } from '../../../lib/units/village/villageActivity'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'

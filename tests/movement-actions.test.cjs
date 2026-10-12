@@ -489,7 +489,7 @@ function loadModule(relativePath, mocks) {
     }
     if (request.endsWith('/units/campBehavior')) {
       return requireFromTsFile(
-        path.join(__dirname, '../app/lib/units/campBehavior.ts'),
+        path.join(__dirname, '../app/lib/units/camps/campBehavior.ts'),
         filename,
         mocks,
         dependencyModules
@@ -3121,6 +3121,7 @@ test('blocked gather approach skips water cells before picking an approach', () 
     '../../lib': lib,
   })
   const unit = {
+    inventory: { toolsInitialized: true, activeWeapons: { tool: 'axe_ceramic' } },
     action: null,
     actionLocked: false,
     category: 'Unit',
@@ -3990,6 +3991,7 @@ test('force repath restarts a build action when the villager is already in range
     },
   })
   const unit = {
+    inventory: { toolsInitialized: true, activeWeapons: { tool: 'hammer_ceramic' } },
     action: constants.ACTION_TYPES.build,
     actionLocked: false,
     blockedGatherApproach: null,
@@ -4149,6 +4151,7 @@ test('low-level gather orders realign villager work before starting the action',
   })
   const grid = [[{ has: null, i: 0, j: 0, solid: false }]]
   const unit = {
+    inventory: { toolsInitialized: true, activeWeapons: { tool: 'axe_ceramic' } },
     action: null,
     actionLocked: false,
     blockedGatherApproach: null,

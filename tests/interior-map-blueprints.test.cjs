@@ -61,8 +61,8 @@ test('interior generator writes size-based rounded isometric dirt blueprints wit
         ['House', 2, 'building-size-2-001', 'house-size-2-001'],
         ['Barracks', 3, 'building-size-3-001', 'barracks-size-3-001'],
         ['Temple', 2, 'building-size-2-001', 'temple-size-2-001'],
-        ['Granary', 3, 'building-size-3-001', 'granary-size-3-001'],
-        ['StoragePit', 3, 'building-size-3-001', 'storage-pit-size-3-001'],
+        ['Granary', 2, 'building-size-2-001', 'granary-size-2-001'],
+        ['StoragePit', 2, 'building-size-2-001', 'storage-pit-size-2-001'],
         ['Stable', 3, 'building-size-3-001', 'stable-size-3-001'],
         ['WatchTower', 2, 'building-size-2-001', 'watch-tower-size-2-001'],
       ]
@@ -114,7 +114,8 @@ test('interior generator writes size-based rounded isometric dirt blueprints wit
         if (floorMask[index]) assert.equal(terrain[index], DIRT_INDEX)
         else assert.equal(terrain[index], WATER_INDEX)
       }
-      assert.equal(blueprint.floorShape.cornerRadius, 1.5)
+      assert.equal(blueprint.floorShape.cornerRadius, 0.5)
+      assert.equal([...floorMask].filter(Boolean).length, (2 * halfExtent + 1) ** 2 - 4)
       assert.equal(halfExtent, entry.buildingSize + 2)
     }
 

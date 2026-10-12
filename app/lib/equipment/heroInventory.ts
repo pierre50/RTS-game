@@ -1,5 +1,5 @@
 import { equipmentBaseKey } from './equipmentCondition'
-import { migrateHelmetInventory } from './helmetVariants'
+import { migrateEquipmentInventory } from './armorVariants'
 import type { UnitEntity } from '../../types/entities'
 
 // Loose items sitting in a bag (distinct from the fixed equipped-gear slots, which only a hero
@@ -19,9 +19,24 @@ export function removeLegacyQuiver(inventory: NonNullable<UnitEntity['inventory'
   if (inventory.activeWeapons) delete inventory.activeWeapons.quiver
 }
 
-export function getHeroInventory(hero: UnitEntity): Required<NonNullable<UnitEntity['inventory']>> {
+type UnitInventory = NonNullable<UnitEntity['inventory']>
+export function getHeroInventory(
+  hero: UnitEntity
+): Required<
+  Omit<
+    UnitInventory,
+    | 'craftingRemainders'
+    | 'npcArrows'
+    | 'npcWeaponsInitialized'
+    | 'banditWeaponMigrated'
+    | 'toolsInitialized'
+    | 'toolsStowed'
+    | 'toolSupplyTarget'
+  >
+> &
+  UnitInventory {
   hero.inventory = hero.inventory ?? {}
-  migrateHelmetInventory(hero.inventory)
+  migrateEquipmentInventory(hero.inventory)
   removeLegacyQuiver(hero.inventory)
   return Object.assign(hero.inventory, {
     resources: hero.inventory.resources ?? {},
@@ -33,7 +48,14 @@ export function getHeroInventory(hero: UnitEntity): Required<NonNullable<UnitEnt
 }
 
 export function removeHeroInventoryItem(hero: UnitEntity | null | undefined, item: string, count = 1): boolean {
-  if (!hero || !item || equipmentBaseKey(item) === 'quiver' || !Number.isFinite(count)) return false
+  if (
+    !hero ||
+    !item ||
+    equipmentBaseKey(item) === 'quiver' ||
+    equipmentBaseKey(item).startsWith('cape_') ||
+    !Number.isFinite(count)
+  )
+    return false
   const inventory = getHeroInventory(hero)
   const bag = inventory.equipment
   const amount = Math.max(1, Math.floor(count))
@@ -47,7 +69,14 @@ export function removeHeroInventoryItem(hero: UnitEntity | null | undefined, ite
 }
 
 export function addHeroInventoryItem(hero: UnitEntity | null | undefined, item: string, count = 1): boolean {
-  if (!hero || !item || equipmentBaseKey(item) === 'quiver' || !Number.isFinite(count)) return false
+  if (
+    !hero ||
+    !item ||
+    equipmentBaseKey(item) === 'quiver' ||
+    equipmentBaseKey(item).startsWith('cape_') ||
+    !Number.isFinite(count)
+  )
+    return false
   const inventory = getHeroInventory(hero)
   pushEquipmentCopies(inventory.equipment, item, Math.max(1, Math.floor(count)))
   return true

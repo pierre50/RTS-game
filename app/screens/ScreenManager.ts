@@ -74,7 +74,7 @@ export class ScreenManager {
     this.currentRuntime = new Game(this.app, this.gamebox, null, () => this.handleQuitRuntime())
     this.app.stage.addChild(this.currentRuntime)
     this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
-    this.currentRuntime.load(save)
+    this.currentRuntime.load(save).catch(error => console.error('Game loading failed', error))
   }
 
   handleQuitRuntime(): void {

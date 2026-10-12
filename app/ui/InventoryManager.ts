@@ -1,15 +1,18 @@
+import { MinimapNavigation } from './minimap/MinimapNavigation'
+import { HeroInventoryCraftingBody } from './inventory/HeroInventoryCraftingBody'
+import { arrangeInventoryEquipment } from './inventory/InventoryRpgLayout'
 import { createInventorySectionTitle } from './inventory/InventorySection'
-import { getIconPath } from '../lib/graphics/assets'
 import { Modal } from '../lib'
 import { getWeaponSlot, unequipHeroActiveWeaponSlot } from '../lib/equipment/equipmentLoot'
 import {
-  EQUIPPED_ITEM_WEAPON,
   getEquippedItemWeapon,
   HERO_TOOL_ORDER,
   isHeroToolAvailable,
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import { t } from '../lib/lang'
+import { getActiveInteractionSpace } from '../lib/mapSpaces'
+import { isBuildingInteriorRuntimeSpace } from '../../engine/services/BuildingInteriorSpaceLookup'
 import type { MenuButtonSpec } from '../types/ui'
 import { createEntityInfoContent } from './inspection/EntityInfoContent'
 import { appendInventoryEmptyIcon } from './inventory/InventoryActionRow'
@@ -25,15 +28,13 @@ import type { MenuHost } from './MenuHost'
 import { renderMinimapLegend } from './minimap/MinimapLegend'
 import { ModalTabs } from './Tabs'
 
-type ActionMenuTab = 'info' | 'tools' | 'minimap' | 'construction'
+type ActionMenuTab = 'info' | 'tools' | 'minimap' | 'construction' | 'craft'
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
   sword: 'heroToolSword',
   bow: 'heroToolBow',
 }
-
-const FREE_HAND_ICON = '003_50721'
 
 export class InventoryManager {
   menu: MenuHost
@@ -42,6 +43,7 @@ export class InventoryManager {
   infoPanel: HTMLDivElement
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
+  craftingBody: HeroInventoryCraftingBody
   constructionPanel: HTMLDivElement
   weaponPanel: HTMLDivElement
   equippedPanel: HTMLDivElement
@@ -49,6 +51,7 @@ export class InventoryManager {
   minimapLayout: HTMLDivElement
   minimapLegend: HTMLDivElement
   minimapSymbols: HTMLDivElement
+  private readonly mapNavigation: MinimapNavigation
   slots: Map<HeroEquippedItem, HTMLElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
@@ -72,7 +75,7 @@ export class InventoryManager {
     this.infoPanel = document.createElement('div')
     this.infoPanel.className = 'action-menu-page action-menu-info-page'
     this.toolsPanel = document.createElement('div')
-    this.toolsPanel.className = 'action-menu-page inventory-tools-page'
+    this.toolsPanel.className = 'action-menu-page inventory-tools-page inventory-rpg'
     this.minimapPanel = document.createElement('div')
     this.minimapPanel.className = 'action-menu-page action-menu-minimap-page'
     this.constructionPanel = document.createElement('div')
@@ -90,10 +93,14 @@ export class InventoryManager {
     this.minimapSymbols = document.createElement('div')
     this.minimapSymbols.className = 'minimap-shape-legend'
 
+    this.craftingBody = new HeroInventoryCraftingBody(menu, undefined)
+    this.craftingBody.craftPanel.classList.add('action-menu-page')
+
     this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
-        { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
+        { id: 'craft', label: t('inventoryTabCraft'), page: this.craftingBody.craftPanel },
+        { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
         { id: 'construction', label: t('inventoryTabConstruction'), page: this.constructionPanel },
       ],
@@ -103,20 +110,33 @@ export class InventoryManager {
       }
     )
 
-    this.toolsPanel.appendChild(this.weaponPanel)
-    this.toolsPanel.appendChild(this.equippedPanel)
-    this.toolsPanel.appendChild(this.lootedEquipmentPanel)
+    const equipmentColumn = document.createElement('div')
+    equipmentColumn.className = 'inventory-character-column'
+    equipmentColumn.append(this.equippedPanel, this.weaponPanel)
+    const bagColumn = document.createElement('div')
+    bagColumn.className = 'inventory-bag-column'
+    const details = document.createElement('div')
+    details.className = 'inventory-detail-dock'
+    bagColumn.append(this.lootedEquipmentPanel, details)
+    this.toolsPanel.setAttribute('data-window-hover-selection', '')
+    this.toolsPanel.append(equipmentColumn, bagColumn)
 
     this.panel.appendChild(this.modalTabs.element)
     const mapColumn = document.createElement('div')
     mapColumn.className = 'minimap-map-column'
-    mapColumn.append(menu.minimapWrap, this.minimapSymbols)
+    mapColumn.append(menu.minimapWrap)
     this.minimapLayout.append(mapColumn, this.minimapLegend)
     this.minimapPanel.appendChild(this.minimapLayout)
+    this.mapNavigation = new MinimapNavigation(menu, this.minimapPanel, () => this.renderMinimapLegend())
   }
 
   toggle(): void {
-    this.opened ? this.close() : this.open()
+    if (this.opened) {
+      this.close()
+    } else {
+      this.activeTab = 'tools'
+      this.open()
+    }
   }
 
   open(): void {
@@ -138,6 +158,13 @@ export class InventoryManager {
     this.modal._panel?.classList.add('inventory-panel', 'action-menu')
     this.mountTabs()
     this.showTab(this.activeTab)
+    if (this.activeTab === 'tools') {
+      const initialSlot = this.modal._panel?.querySelector<HTMLElement>('[data-window-default]')
+      if (initialSlot) {
+        initialSlot.tabIndex = 0
+        initialSlot.focus({ preventScroll: true })
+      }
+    }
   }
 
   mountTabs(): void {
@@ -150,6 +177,7 @@ export class InventoryManager {
     const modal = this.modal
     this.modal = undefined
     modal?.close()
+    this.mapNavigation.deactivate()
     this.menu.deactivateMiniMap()
     this.menu.clearActionHotkeys()
     if (!this.menu.context.controls.mouseBuilding) this.menu.updateActionTarget()
@@ -164,24 +192,41 @@ export class InventoryManager {
   }
 
   showTab(tab: ActionMenuTab): void {
+    const space = getActiveInteractionSpace(this.menu.context)
+    const canConstruct =
+      space?.kind !== 'interior' ||
+      (isBuildingInteriorRuntimeSpace(space) && space.building.owner === this.menu.context.player)
+    const constructionTab = this.modalTabs.tabs.buttons.get('construction')!
+    constructionTab.hidden = !canConstruct
+    constructionTab.disabled = !canConstruct
+    if (tab === 'construction' && !canConstruct) tab = 'tools'
     this.activeTab = tab
-    this.modal?._panel?.classList.toggle('window-catalog', tab === 'construction')
+    this.modal?._panel?.classList.toggle('window-catalog', tab === 'construction' || tab === 'craft')
     this.modalTabs.setActive(tab, { emit: false })
 
     if (tab === 'minimap') {
       this.menu.activateMiniMap()
       this.menu.clearActionHotkeys()
       this.renderMinimapLegend()
+      this.mapNavigation.activate()
       return
     }
 
+    this.mapNavigation.deactivate()
     this.menu.deactivateMiniMap()
 
     if (tab === 'construction') {
       this.renderConstruction()
+      const first = this.constructionPanel.querySelector<HTMLElement>('.inventory-construction-row')
+      if (first) {
+        first.setAttribute('data-window-default', '')
+        first.tabIndex = 0
+        first.focus({ preventScroll: true })
+      }
     } else {
       if (tab === 'tools') this.renderTools()
       else if (tab === 'info') this.renderInfo()
+      else if (tab === 'craft') this.craftingBody.renderCraft()
       this.menu.clearActionHotkeys()
     }
   }
@@ -198,7 +243,7 @@ export class InventoryManager {
   }
 
   renderMinimapLegend(): void {
-    renderMinimapLegend(this.minimapLegend, this.menu, this.minimapSymbols)
+    renderMinimapLegend(this.minimapLegend, this.menu, this.minimapSymbols, false)
   }
 
   getActiveWeaponEquipment(tool: HeroEquippedItem): string | undefined {
@@ -207,7 +252,6 @@ export class InventoryManager {
   }
 
   isActiveWeaponAvailable(tool: HeroEquippedItem): boolean {
-    if (tool === 'interact') return true
     return Boolean(
       this.getActiveWeaponEquipment(tool) && isHeroToolAvailable(this.menu.context.controls.heroUnit, tool)
     )
@@ -246,7 +290,7 @@ export class InventoryManager {
         id: `inventory-tool-${tool}`,
         className: 'inventory-weapon-row',
         title: t(TOOL_LABEL_KEYS[tool]),
-        description: info?.title ?? (tool === 'interact' ? '' : t('inventoryEmptySlot')),
+        description: info?.title ?? t('inventoryEmptySlot'),
         meta: equipment ? undefined : '',
         trailingAction:
           equipment && weaponSlot
@@ -261,20 +305,14 @@ export class InventoryManager {
               }
             : undefined,
       })
-      element.classList.toggle('empty', !available && tool !== 'interact')
-      if (EQUIPPED_ITEM_WEAPON[tool] && equipment) {
+      element.classList.toggle('empty', !available)
+      if (equipment) {
         const canvas = document.createElement('canvas')
         canvas.className = 'img'
         canvas.width = 64
         canvas.height = 64
         icon.appendChild(canvas)
         this.toolIcons.set(tool, canvas)
-      } else if (tool === 'interact') {
-        const image = document.createElement('img')
-        image.className = 'img'
-        image.src = getIconPath(FREE_HAND_ICON)
-        image.alt = ''
-        icon.appendChild(image)
       } else {
         appendInventoryEmptyIcon(icon)
       }
@@ -289,6 +327,7 @@ export class InventoryManager {
     this.renderToolIcons()
     this.renderEquippedEquipment()
     this.renderLootedEquipment()
+    arrangeInventoryEquipment(this)
   }
 
   restoreMinimap(): void {
@@ -322,9 +361,11 @@ export class InventoryManager {
     if (this.activeTab === 'construction') this.renderConstruction()
     if (this.activeTab === 'tools') this.renderTools()
     if (this.activeTab === 'info') this.renderInfo()
+    if (this.activeTab === 'craft') this.craftingBody.renderCraft()
   }
 
   destroy(): void {
+    this.mapNavigation.destroy()
     this.modal?.close()
     this.modal = undefined
     this.restoreMinimap()

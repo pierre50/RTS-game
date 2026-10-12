@@ -1303,7 +1303,11 @@ test('automatic return to construction retains the collective trip after the bui
     j: 0,
     collectiveTask: 'wood',
     collectiveHome: { i: 0, j: 0, spaceId: 'outside' },
-    inventory: { resources: { wood: 18, meat: 6, berry: 6 } },
+    inventory: {
+      toolsInitialized: true,
+      activeWeapons: { tool: 'hammer_ceramic' },
+      resources: { wood: 18, meat: 6, berry: 6 },
+    },
     sendToBuilding(target) {
       this.collectiveTask = null
       this.collectiveHome = undefined
@@ -1317,4 +1321,28 @@ test('automatic return to construction retains the collective trip after the bui
   assert.equal(unit.dest, site)
   assert.equal(unit.collectiveTask, 'construction')
   assert.equal(unit.collectiveHome.i, 0)
+})
+
+test('upgraded depots and interior chests share the new capacity without losing stock', () => {
+  const { getBuildingStorageCapacity, getBuildingStorageRemaining, buildingAcceptsInventoryResource } =
+    loadResourceDelivery()
+  for (const [type, resource] of [
+    ['StoragePit', 'wood'],
+    ['Granary', 'wheat'],
+  ]) {
+    const owner = { buildings: [] }
+    const chest = { type: 'Chest', family: 'building', owner, inventory: { resources: { [resource]: 300 } } }
+    const building = { type, family: 'building', buildingLevel: 0, owner, interiorBuildings: [chest] }
+    owner.buildings = [building, chest]
+    assert.equal(buildingAcceptsInventoryResource(chest, resource), false)
+    for (const level of [1, 2]) {
+      building.buildingLevel = level
+      assert.equal(getBuildingStorageCapacity(building), 300 * (level + 1))
+      assert.equal(getBuildingStorageCapacity(chest), 300 * (level + 1))
+      assert.equal(getBuildingStorageRemaining(chest), 300 * level)
+      assert.equal(buildingAcceptsInventoryResource(chest, resource, 300 * level), true)
+      assert.equal(buildingAcceptsInventoryResource(chest, resource, 300 * level + 1), false)
+      assert.equal(chest.inventory.resources[resource], 300)
+    }
+  }
 })

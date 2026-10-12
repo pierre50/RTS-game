@@ -1,3 +1,4 @@
+import { isCollectableGroundResource } from './heroGroundCollection'
 import { findNearestMountableHorse } from './heroMountTargets'
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
@@ -13,9 +14,10 @@ import { isTalkableNpc } from '../npc/npcInteraction'
 import { isUsableSleepTarget } from './heroSleep'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
-type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open'
+type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'collect'
 
 export type HeroProximityInteraction =
+  | { action: 'collect'; labelKey: 'heroInteractionCollect'; target: RuntimeEntity }
   | {
       action: 'communicate'
       labelKey: 'heroInteractionCommunicate'
@@ -156,6 +158,11 @@ export function resolveHeroProximityInteraction({
   if (!hero || hero.isDead || hero.isDestroyed) return null
 
   if (isHeroOnInteriorExitCell(hero)) return { action: 'exit', labelKey: 'heroInteractionExit' }
+
+  if (isCollectableGroundResource(openEntityTarget) && isHeroInteractionTargetReachable(hero, null, openEntityTarget))
+    return hero.actionLocked
+      ? null
+      : { action: 'collect', labelKey: 'heroInteractionCollect', target: openEntityTarget }
 
   const trap = resolveFacingRecoverableTrap(hero, openEntityTarget)
   if (trap) return { action: 'open', labelKey: 'heroInteractionOpenMenu', target: trap }

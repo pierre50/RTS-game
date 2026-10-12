@@ -1,3 +1,4 @@
+import { groundResourceJob } from '../../lib/resources/groundResourceRegrowth'
 import { readyConstructionSite } from '../../lib/economy/collectiveTasks'
 import { hasPriorityCombat } from '../../lib/units/autonomy/villagerAutonomyAvailability'
 import {
@@ -68,14 +69,19 @@ function isGatherAction(action: string | null | undefined): boolean {
   return Object.values(MINING_RESOURCE_CONFIG ?? {}).some(config => config.action === action)
 }
 
-function shouldDeliverBeforeGatherJobSwitch(unit: UnitEntity, work: string, action: string | null): boolean {
+function shouldDeliverBeforeGatherJobSwitch(
+  unit: UnitEntity,
+  target: RuntimeEntity,
+  work: string,
+  action: string | null
+): boolean {
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit) || unit.isDead) return false
   if (unit.action === ACTION_TYPES.delivery || unit.resourceDeliveryState) return false
   if (!isGatherAction(action) || !unitHasDeliverableResources(unit)) return false
   if (unit.owner && readyConstructionSite(unit.owner, unit)) return false
 
   const currentJob = unit.autonomousJob ?? getAutonomyJobForWork?.(unit.work) ?? null
-  const nextJob = getAutonomyJobForWork?.(work) ?? null
+  const nextJob = groundResourceJob(target.type) ?? getAutonomyJobForWork?.(work) ?? null
   return Boolean(currentJob && nextJob && currentJob !== nextJob)
 }
 
@@ -85,14 +91,14 @@ export function getDeliveryBeforeGatherJobSwitch(
   work: string,
   action: string | null
 ): { target: BuildingEntity; returnTask: UnitResourceDeliveryReturnTask } | null {
-  if (!shouldDeliverBeforeGatherJobSwitch(unit, work, action)) return null
+  if (!shouldDeliverBeforeGatherJobSwitch(unit, target, work, action)) return null
   const deliveryTarget = findResourceDeliveryTarget(unit)
   if (!deliveryTarget) return null
   return {
     target: deliveryTarget,
     returnTask: {
       action,
-      autonomousJob: getAutonomyJobForWork?.(work) ?? null,
+      autonomousJob: groundResourceJob(target.type) ?? getAutonomyJobForWork?.(work) ?? null,
       dest: target,
       work,
     },

@@ -1,3 +1,5 @@
+import { constructionToolPreparation } from '../units/supplies/toolPreparation'
+import { reconcileSettlementResidents } from '../territory/settlementResidents'
 import { DAILY_CONSUMPTION_PER_VILLAGER } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import type { UnitEntity } from '../../types/entities'
@@ -36,6 +38,7 @@ export function planCollectiveTasks<T extends CollectiveMember>(
   members: CollectiveMember[] = workers,
   acceptsJob: (unit: T, job: string) => boolean = () => true
 ): Map<T, CollectiveTask> {
+  reconcileSettlementResidents(owner)
   const result = new Map<T, CollectiveTask>()
   const pending = new Set(workers)
   for (const first of workers) {
@@ -66,6 +69,9 @@ export function collectiveHarvestBudget(
   resource: keyof ResourceAmount,
   limitToBag = true
 ): number {
+  const preparation = constructionToolPreparation(unit, owner)
+  if (preparation)
+    return Math.max(0, (preparation.reserve[resource] ?? 0) - (unit.inventory?.resources?.[resource] ?? 0))
   if (!unit.collectiveTask) return Infinity
   const anchor = collectiveAnchor(owner, unit)
   const members = settlementVillagers(owner, anchor, owner.units ?? [])

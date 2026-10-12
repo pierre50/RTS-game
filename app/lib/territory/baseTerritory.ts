@@ -1,6 +1,6 @@
 import { BASE_TERRITORY_RADIUS } from '../../config/territory'
 
-type Point = { i: number; j: number; spaceId?: string | null }
+type Point = { i: number; j: number; spaceId?: string | null; id?: string; townCenterId?: string }
 type TerritoryBuilding = Point & {
   type: string
   owner?: { label?: string } | null
@@ -36,12 +36,14 @@ export function getBaseTerritory<T extends TerritoryOwner>(
 ): BaseTerritory<T> | null {
   const position = territoryPosition(point, owners)
   if (!position) return null
+  const townCenterId = point.id ?? point.townCenterId ?? position.townCenterId
   let nearest: BaseTerritory<T> | null = null
   let best = BASE_TERRITORY_RADIUS ** 2
   for (const owner of owners) {
     for (const center of owner.buildings ?? []) {
       if (
         center.type !== 'TownCenter' ||
+        (townCenterId !== undefined && townCenterId !== `${owner.label}:${center.label}`) ||
         (center.owner && center.owner !== owner && center.owner.label !== owner.label) ||
         center.isBuilt === false ||
         center.isDead ||

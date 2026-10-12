@@ -1,6 +1,6 @@
 import { canSeekVillageResource } from '../village/villageSupplyTrips'
 import { withinVillageActivity } from '../village/villageActivity'
-import { nearestResourceRecords } from '../../../classes/resources/CompactResourceSet'
+import { CompactResourceSet, nearestResourceRecords } from '../../../classes/resources/CompactResourceSet'
 import { knownTarget, knowsEconomicTarget, playerSeesTarget, rememberedStaticTargets } from '../playerTargetKnowledge'
 import { sameMapSpace } from '../../mapSpaces'
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, WORK_TYPES } from '../../constants'
@@ -71,24 +71,50 @@ function knownState(unit: UnitEntity, entity: RuntimeEntity): RuntimeEntity {
   return (knownTarget(unit.owner, entity, unit) ?? {}) as RuntimeEntity
 }
 
-export function knownResources(unit: UnitEntity, type: string, limit = Infinity): RuntimeEntity[] {
+export function knownResources(
+  unit: UnitEntity,
+  type: string | readonly string[],
+  limit = Infinity,
+  area?: { i: number; j: number; radius: number }
+): RuntimeEntity[] {
+  const started = performance.now()
   const owner = unit.owner
+  const types = typeof type === 'string' ? [type] : type
+  const wanted = new Set(types)
+  const nearby = (resource: RuntimeEntity) =>
+    !area || (resource.i - area.i) ** 2 + (resource.j - area.j) ** 2 <= area.radius ** 2
+  const accepts = (resource: RuntimeEntity) =>
+    nearby(resource) && isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
+  const mapResources = unit.context?.map?.resources
+  if (area && mapResources instanceof CompactResourceSet) {
+    const result = mapResources.nearestInArea(types, unit, area, limit, accepts)
+    unit.context?.performance?.record('resources.localSearch', performance.now() - started)
+    return result
+  }
   const resources = new Set([
     ...nearestResourceRecords(
       unit.context?.map?.resources,
       type,
       unit,
       limit,
-      resource => isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
+      resource => nearby(resource) && isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
     ),
     ...rememberedStaticTargets(unit.owner),
   ])
-  const founded = owner?.foundedResources?.[type]
+  const founded = types.flatMap(name => [...(owner?.foundedResources?.[name] ?? [])])
   const source = [...new Map([...(founded ?? []), ...resources].map(resource => [resource.label, resource])).values()]
   const targets = source.filter(
-    resource => resource.type === type && isKnownToUnit(unit, resource) && isUsableResource(knownState(unit, resource))
+    resource =>
+      nearby(resource) &&
+      wanted.has(resource.type) &&
+      isKnownToUnit(unit, resource) &&
+      isUsableResource(knownState(unit, resource))
   )
-  return targets
+  return area
+    ? targets
+        .sort((a, b) => Math.hypot(a.i - unit.i, a.j - unit.j) - Math.hypot(b.i - unit.i, b.j - unit.j))
+        .slice(0, limit)
+    : targets
 }
 
 export function knownFoodTargets(unit: UnitEntity, limit = Infinity): RuntimeEntity[] {
@@ -158,6 +184,7 @@ export function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
     building =>
       withinVillageActivity(unit, building) &&
       building.owner === unit.owner &&
+      !building.constructionPaused &&
       isAliveEntity(building) &&
       (building.buildingUpgrade || !building.isBuilt || (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)) &&
       unit.getActionCondition?.(building, ACTION_TYPES.build)

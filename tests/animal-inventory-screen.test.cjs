@@ -21,7 +21,7 @@ function element() {
   }
 }
 
-test('animal loot count and hero bag load update after a partial pickup without exceeding capacity', () => {
+test('animal loot keeps its collection label and updates hero bag load without exceeding capacity', () => {
   const previous = global.document
   global.document = { createElement: element }
   try {
@@ -46,11 +46,11 @@ test('animal loot count and hero bag load update after a partial pickup without 
       },
     })
     new AnimalInventoryScreen(menu, animal)
-    assert.equal(panel.destination.label, 'animalLootCount:6')
+    assert.equal(panel.destination.label, 'inventoryLootAvailable')
     assert.equal(panel.canTransfer(panel.source), true)
     assert.equal(panel.moveResource(panel.destination, panel.source, 'meat', 5), 1)
     panel.onChange()
-    assert.equal(panel.destination.label, 'animalLootCount:5')
+    assert.equal(panel.destination.label, 'inventoryLootAvailable')
     assert.match(panel.source.label, /50\/50/)
     assert.equal(animal.inventory.resources.meat, 4)
     assert.equal(panel.moveResource(panel.destination, panel.source, 'leather', 1), 0)
@@ -58,7 +58,7 @@ test('animal loot count and hero bag load update after a partial pickup without 
     assert.equal(panel.moveResource(panel.source, panel.destination, 'meat', 1), 1)
     panel.onChange()
     assert.equal(animal.quantity, 5)
-    assert.equal(panel.destination.label, 'animalLootCount:6')
+    assert.equal(panel.destination.label, 'inventoryLootAvailable')
     assert.match(panel.source.label, /49\/50/)
     assert.equal(panel.moveResource(panel.destination, panel.source, 'meat', 1), 1)
     animal.isDestroyed = true

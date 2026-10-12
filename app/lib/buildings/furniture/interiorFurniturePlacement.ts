@@ -1,3 +1,4 @@
+import { getBuildingFootprintCells } from '../../grid/cells'
 import { isBuildingTraversable } from '../buildingTraversal'
 import type { RuntimeCell, RuntimeMap } from '../../../types/map'
 
@@ -73,4 +74,22 @@ export function getInteriorRoomCenter(space: {
     return cellDistance < bestDistance ? cell : best
   }, first)
   return { i: nearest.i, j: nearest.j }
+}
+
+/** Authored interiors use occupied cells, without the automatic placement safety margin. */
+export function getInteriorFurniturePlacementError(
+  grid: RuntimeMap['grid'],
+  item: { i: number; j: number; size: number; type: string; label?: string },
+  doors: Array<Pick<RuntimeCell, 'i' | 'j'> | null | undefined>
+): string | null {
+  const footprint = getBuildingFootprintCells(item.i, item.j, grid, item.size, undefined, item.type)
+  if (
+    footprint.length !== Math.max(1, Math.floor(item.size)) ** 2 ||
+    footprint.some(cell => cell.terrainHidden || cell.category === 'Water')
+  )
+    return 'Le meuble doit rester entièrement dans la pièce.'
+  if (footprint.some(cell => isNearInteriorDoor(cell, doors))) return 'Garde le passage de l’entrée libre.'
+  const occupied = footprint.find(cell => cell.has && (!item.label || cell.has.label !== item.label))
+  if (occupied) return `La case ${occupied.i}, ${occupied.j} est occupée par ${occupied.has!.type}.`
+  return null
 }

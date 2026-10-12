@@ -1,3 +1,4 @@
+import { initializeWorkTools } from '../../../lib/equipment/workToolMigration'
 import { hasConstructionWork } from '../../../lib/economy/constructionMaterials'
 import { reserveUsesFoodJob } from '../../../lib/economy/depotReserves'
 import {
@@ -26,6 +27,11 @@ export function planOfflineCollectiveWork(
   autonomousResidents = false,
   availability?: WorkAvailability
 ): void {
+  for (const unit of player.units ?? []) {
+    const actor = { ...unit, owner: player }
+    initializeWorkTools(actor)
+    unit.inventory = actor.inventory
+  }
   const members = (player.units ?? []).filter(
     unit =>
       unit.type === 'Villager' &&

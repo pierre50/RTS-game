@@ -35,7 +35,6 @@ const VISUAL_ONLY_EQUIPMENT = [
   'quiver',
   'sack_cloth_hood_leather',
   'stone',
-  'upward_horns_ceramic',
   'upward_horns_white',
 ]
 
@@ -84,12 +83,8 @@ function loadGameplayEquipmentJson() {
 }
 
 function getDynamicEquipmentKeys() {
-  const source = fs.readFileSync(path.join(__dirname, '../app/lib/lpc/equipmentData.ts'), 'utf8')
-  const match = source.match(
-    /const DYNAMIC_EQUIPMENT_KEYS = \[([\s\S]*?)\] as const satisfies readonly DynamicEquipmentKey\[\]/
-  )
-  assert.ok(match, 'DYNAMIC_EQUIPMENT_KEYS not found')
-  return [...match[1].matchAll(/'([^']+)'/g)].map(([, key]) => key)
+  return require('../tools/maps/load-generation-ts.cjs').loadGenerationTs('app/lib/lpc/equipmentData.ts')
+    .DYNAMIC_EQUIPMENT_KEYS
 }
 
 test('gameplay equipment data covers every dynamic equipment key', () => {
@@ -97,8 +92,8 @@ test('gameplay equipment data covers every dynamic equipment key', () => {
   const missing = getDynamicEquipmentKeys().filter(key => !Object.hasOwn(equipment, key))
 
   assert.deepEqual(missing, [])
-  assert.deepEqual(equipment.helmet_barbarian_ceramic, { armor: 1 })
-  assert.deepEqual(equipment.helmet_barbarian_nasal_ceramic, { armor: 1 })
+  assert.deepEqual(equipment.helmet_barbarian_leather, { armor: 1 })
+  assert.deepEqual(equipment.helmet_barbarian_nasal_leather, { armor: 1 })
 
   for (const visualOnly of VISUAL_ONLY_EQUIPMENT) {
     assert.deepEqual(equipment[visualOnly], {}, `${visualOnly} should remain visual-only`)
@@ -114,7 +109,7 @@ test('combat equipment data declares weapon and armor stats by role', () => {
     'bow_great',
     'bow_recurve',
     'cane',
-    'halberd',
+    'spear_iron',
     'longsword',
     'watch_tower_arrow',
     'wolf_bite',
@@ -133,7 +128,7 @@ test('combat equipment data declares weapon and armor stats by role', () => {
 
 test('the Fantassin qualifies for a melee parry with its sword', () => {
   const { isUnitMeleeWeaponEquipped } = loadEquipmentStats({
-    unitEquipment: { Fantassin: ['sword_ceramic'] },
+    unitEquipment: { Fantassin: ['sword_bronze'] },
   })
   assert.equal(isUnitMeleeWeaponEquipped({ type: 'Fantassin' }), true)
 })
@@ -147,7 +142,7 @@ test('a villager never qualifies, even mid-woodcutting with an axe equipped', ()
 
 test('a real weapon qualifies; the same unit carrying a bow never does', () => {
   const { isUnitMeleeWeaponEquipped } = loadEquipmentStats({
-    unitEquipment: { Fantassin: ['sword_copper'] },
+    unitEquipment: { Fantassin: ['sword_iron'] },
   })
   assert.equal(isUnitMeleeWeaponEquipped({ type: 'Fantassin' }), true)
   assert.equal(isUnitMeleeWeaponEquipped({ type: 'Fantassin', projectile: 'Arrow' }), false)
@@ -163,7 +158,7 @@ test('unit entities without weapon equipment use the unarmed fallback power', ()
 
 test('dynamic unit equipment is not frozen into config during base stat normalization', () => {
   const { applyEquipmentStatsToUnitConfig } = loadEquipmentStats({
-    unitEquipment: { Fantassin: ['sword_ceramic'] },
+    unitEquipment: { Fantassin: ['sword_bronze'] },
   })
   const infantryConfig = {}
   const towerConfig = { equipment: ['watch_tower_arrow'] }
@@ -175,37 +170,26 @@ test('dynamic unit equipment is not frozen into config during base stat normaliz
   assert.deepEqual(towerConfig.equipment, ['watch_tower_arrow'])
 })
 
-test('villager work equipment resolves material-specific stats by forge upgrade', () => {
-  const { getEntityWeaponPower } = loadEquipmentStats({
-    workEquipment: {
-      woodcutter: owner => (owner.forgeUpgrades?.axes >= 1 ? ['axe_copper'] : ['axe_ceramic']),
-    },
-  })
-
-  assert.equal(
-    getEntityWeaponPower({
-      family: 'unit',
-      type: 'Villager',
-      work: 'woodcutter',
-      owner: { age: 0, config: {} },
-    }),
-    5
-  )
-  assert.equal(
-    getEntityWeaponPower({
-      family: 'unit',
-      type: 'Villager',
-      work: 'woodcutter',
-      owner: { age: 0, forgeUpgrades: { axes: 1, weapons: 1 }, config: {} },
-    }),
-    7
-  )
+test('villager work damage uses the equipped tool rather than the forge upgrade', () => {
+  const { getEntityWeaponPower } = loadEquipmentStats({ workEquipment: { woodcutter: ['axe_ceramic'] } })
+  const unit = {
+    family: 'unit',
+    type: 'Villager',
+    work: 'woodcutter',
+    owner: { forgeUpgrades: { axes: 3 }, config: {} },
+    inventory: { activeWeapons: { tool: 'axe_ceramic' } },
+  }
+  assert.equal(getEntityWeaponPower(unit), 2)
+  unit.inventory.activeWeapons.tool = 'axe_bronze'
+  assert.equal(getEntityWeaponPower(unit), 4)
+  delete unit.inventory.activeWeapons.tool
+  assert.equal(getEntityWeaponPower(unit), 0.5)
 })
 
 test('infantry equipment resolves its sword material by forge upgrade', () => {
   const { getEntityWeaponPower } = loadEquipmentStats({
     unitEquipment: {
-      Fantassin: owner => (owner.forgeUpgrades?.weapons >= 1 ? ['sword_copper'] : ['sword_ceramic']),
+      Fantassin: owner => (owner.forgeUpgrades?.weapons >= 1 ? ['sword_iron'] : ['sword_bronze']),
     },
   })
 
@@ -215,7 +199,7 @@ test('infantry equipment resolves its sword material by forge upgrade', () => {
       type: 'Fantassin',
       owner: { age: 0, config: {} },
     }),
-    6
+    10
   )
   assert.equal(
     getEntityWeaponPower({
@@ -223,13 +207,13 @@ test('infantry equipment resolves its sword material by forge upgrade', () => {
       type: 'Fantassin',
       owner: { age: 0, forgeUpgrades: { axes: 1, weapons: 1 }, config: {} },
     }),
-    8
+    12
   )
 })
 
 test('unit combat stats ignore non-work roles and still use unit equipment', () => {
   const { getUnitRuntimeCombatStats } = loadEquipmentStats({
-    unitEquipment: { Fantassin: ['sword_ceramic', 'armor_leather'] },
+    unitEquipment: { Fantassin: ['sword_bronze', 'armor_leather'] },
     workEquipment: { woodcutter: ['axe_ceramic'] },
   })
   const config = {}
@@ -245,20 +229,20 @@ test('unit combat stats ignore non-work roles and still use unit equipment', () 
       config
     ),
     {
-      weaponPower: 6,
+      weaponPower: 10,
       armor: 1,
     }
   )
 })
 
-test('infantry equipment stats unlock armor by level and cap effective combat armor', () => {
+test('infantry equipment stats unlock armor by level and preserve protection above three', () => {
   const { getEntityWeaponPower, getUnitRuntimeCombatStats } = loadEquipmentStats({
     unitEquipment: {
       Fantassin: (owner, level) => {
         const age = owner.forgeUpgrades?.armor ?? 0
         const material = age >= 2 ? 'bronze' : age >= 1 ? 'copper' : 'ceramic'
         return [
-          age >= 1 ? 'sword_copper' : 'sword_ceramic',
+          age >= 1 ? 'sword_iron' : 'sword_bronze',
           ...(level >= 2 && level <= 9 ? ['armor_leather'] : []),
           ...(level >= 4 ? [`shoulder_legion_${material}`] : []),
           ...(level >= 5 ? [`bracers_${material}`] : []),
@@ -280,11 +264,11 @@ test('infantry equipment stats unlock armor by level and cap effective combat ar
   })
 
   assert.deepEqual(getUnitRuntimeCombatStats(makeUnit(0, 0), config), {
-    weaponPower: 6,
+    weaponPower: 10,
     armor: 0,
   })
-  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 15), config).armor, 3)
-  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 18), config).armor, 3)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 15), config).armor, 11)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 18), config).armor, 14)
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',
@@ -292,7 +276,7 @@ test('infantry equipment stats unlock armor by level and cap effective combat ar
       level: 15,
       owner: { age: 0, forgeUpgrades: { armor: 2, weapons: 2 }, config: {} },
     }),
-    8
+    12
   )
 })
 
@@ -325,25 +309,25 @@ test('hero inventory equipment drives runtime attack armor and range', () => {
         offhand: 'round_shield_ceramic_slash',
       },
       activeWeapons: {
-        melee: 'axe_ceramic',
+        melee: 'sword_bronze',
         ranged: 'bow_great',
       },
     },
   }
 
   assert.deepEqual(getUnitRuntimeCombatStats(hero, heroConfig), {
-    weaponPower: 5,
+    weaponPower: 10,
     armor: 3,
   })
   assert.deepEqual(getHeroInventoryWeaponCombatStats(hero), {
-    meleeWeaponPower: 5,
+    meleeWeaponPower: 10,
     rangedWeaponPower: 7,
   })
-  assert.equal(getEntityWeaponPower(hero), 5)
+  assert.equal(getEntityWeaponPower(hero), 10)
   assert.equal(getUnitCombatRange(hero), undefined)
 
   refreshUnitEquipmentStats(hero)
-  assert.equal(hero.weaponPower, 5)
+  assert.equal(hero.weaponPower, 10)
   assert.equal(hero.armor, 3)
 
   hero.work = 'hunter'
@@ -376,23 +360,27 @@ test('arrow materials add ranged damage without affecting melee damage or bow ra
       owner: { config: { equipment: definitions, units: { Hero: {} } } },
       inventory: {
         equipped: {},
-        activeWeapons: { ranged: 'bow', melee: 'sword_ceramic' },
+        activeWeapons: { ranged: 'bow', melee: 'sword_bronze' },
       },
     }
-    for (const [index, material] of ['ceramic', 'copper', 'bronze', 'iron'].entries()) {
+    for (const [index, material] of [
+      [0, 'ceramic'],
+      [2, 'bronze'],
+      [3, 'iron'],
+    ]) {
       const arrow = `arrow_${material}`
       hero.inventory.equipped.arrow = arrow
       assert.equal(getEquipmentCombatStats([arrow], definitions).weaponPower, index + 1)
       assert.equal(getEntityWeaponPower(hero), 6 + index)
       assert.equal(getUnitRuntimeCombatStats(hero, {}).weaponPower, 6 + index)
       assert.deepEqual(getHeroInventoryWeaponCombatStats(hero), {
-        meleeWeaponPower: 6,
+        meleeWeaponPower: 10,
         rangedWeaponPower: 6 + index,
       })
       assert.equal(getUnitCombatRange(hero), 4)
       assert.equal(getEntityMeleeWeapon({ equipment: ['bow', arrow] }), undefined)
       hero.work = 'heroSword'
-      assert.equal(getEntityWeaponPower(hero), 6)
+      assert.equal(getEntityWeaponPower(hero), 10)
       hero.work = 'hunter'
     }
     delete hero.inventory.activeWeapons.ranged
@@ -421,4 +409,20 @@ test('an unusable bow does not display damage from its equipped arrows', () => {
   const { getHeroInventoryWeaponCombatStats } = loadEquipmentStats()
   const hero = { inventory: { activeWeapons: { ranged: 'bow~condition:0' }, equipped: { arrow: 'arrow_iron' } } }
   assert.equal(getHeroInventoryWeaponCombatStats(hero).rangedWeaponPower, 0)
+})
+
+test('ordinary unit protection above three keeps every intact piece and excludes broken pieces', () => {
+  const { getUnitRuntimeCombatStats, applyEquipmentStatsToUnitConfig } = loadEquipmentStats()
+  const config = { equipment: ['armor_mail_iron', 'helmet_barbuta_iron'] }
+  applyEquipmentStatsToUnitConfig('Fantassin', config)
+  assert.equal(config.armor, 9)
+  const unit = {
+    type: 'Fantassin',
+    equipment: ['armor_mail_iron', 'helmet_barbuta_iron'],
+    equipmentDurability: { armor_mail_iron: 0 },
+    owner: { config: {} },
+  }
+  assert.equal(getUnitRuntimeCombatStats(unit, {}).armor, 5)
+  unit.equipmentDurability.armor_mail_iron = 100
+  assert.equal(getUnitRuntimeCombatStats(unit, {}).armor, 9)
 })

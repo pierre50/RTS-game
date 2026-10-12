@@ -1,3 +1,6 @@
+import { equipOwnedTool } from '../../../lib/units/supplies/toolPreparation'
+import { isGroundResourceType } from '../../../lib/resources/groundResourceRegrowth'
+import { getEquippedWorkTool, toolFamilyForWork } from '../../../lib/equipment/workTools'
 import { ANIMAL_CORPSE_DROPS } from '../../../config/animalGatherLoot'
 import { CELL_HEIGHT, CELL_WIDTH, STEP_TIME } from '../../../constants/core'
 import {
@@ -153,11 +156,22 @@ export function offlineResourceWork(
     harvestableQuantity(unit, resource) <= 0 ||
     (!isLiving(resource) && resource.type !== RESOURCE_TYPES.tree && !corpseResource(unit, resource)) ||
     !targetMatches(unit, resource) ||
-    !canMineIronResource({ ...unit, owner: player }, resource) ||
     (resource.type === RESOURCE_TYPES.wheat && (resource.currentFrame ?? wheatMatureFrame) < wheatMatureFrame)
   )
     return undefined
-  return RESOURCE_WORK[storedResource(unit, resource) ?? '']
+  if (isGroundResourceType(resource.type)) return getEquippedWorkTool(unit) ? 'forager' : undefined
+  const work = RESOURCE_WORK[storedResource(unit, resource) ?? '']
+  const required = toolFamilyForWork(work)
+  const candidate = {
+    ...unit,
+    inventory: {
+      ...unit.inventory,
+      equipment: [...(unit.inventory?.equipment ?? [])],
+      activeWeapons: { ...unit.inventory?.activeWeapons },
+    },
+  }
+  if (required && !equipOwnedTool(candidate, required)) return undefined
+  return canMineIronResource(candidate, resource) ? work : undefined
 }
 
 export function destinationLabel(unit: SaveEntityState): string | undefined {
@@ -196,7 +210,7 @@ function sumResourceAmount(resources: ResourceAmount | null | undefined): number
 // depotFor only guarantees at least 1 unit of room — a bigger request must be clamped or
 // depositChestResources rejects it outright (all-or-nothing) and progress stalls forever.
 export function depotRemainingCapacity(depot: SaveEntityState): number {
-  return Math.max(0, getStorageCapacity(depot.type) - sumResourceAmount(depot.inventory?.resources))
+  return Math.max(0, getStorageCapacity(depot) - sumResourceAmount(depot.inventory?.resources))
 }
 
 // Mirrors storageAcceptsResource/getStorageCapacity from the online delivery path (resourceDelivery.ts)
@@ -216,7 +230,7 @@ export function depotFor(
         allowsVillagerDeliveries(building) &&
         isOutsideSpaceId(building.spaceId) &&
         storageAcceptsResource(building.type, resource) &&
-        sumResourceAmount(building.inventory?.resources) < getStorageCapacity(building.type) &&
+        sumResourceAmount(building.inventory?.resources) < getStorageCapacity(building) &&
         spatial.reachable(target, building)
     )
     .sort((a, b) => distance(a, target) - distance(b, target))[0]

@@ -69,6 +69,29 @@ export class ResourceZoneIndex {
       )
   }
 
+  /** Visit occupied slots only in intersecting zones; newest slot wins after respawn. */
+  *inArea(minI: number, minJ: number, maxI: number, maxJ: number): IterableIterator<number> {
+    const firstI = Math.max(0, Math.floor(minI / ZONE_SIZE))
+    const firstJ = Math.max(0, Math.floor(minJ / ZONE_SIZE))
+    const lastI = Math.min(this.zoneStride - 1, Math.floor(maxI / ZONE_SIZE))
+    const lastJ = Math.min(this.zoneStride - 1, Math.floor(maxJ / ZONE_SIZE))
+    for (let zi = firstI; zi <= lastI; zi++)
+      for (let zj = firstJ; zj <= lastJ; zj++) {
+        const slots = this.zones.get(zi * this.zoneStride + zj)
+        if (!slots) continue
+        const seen = new Set<number>()
+        for (let offset = slots.length - 1; offset >= 0; offset--) {
+          const index = slots[offset] - 1
+          const position = this.positions[index]
+          if (seen.has(position)) continue
+          seen.add(position)
+          const i = Math.floor(position / this.stride),
+            j = position % this.stride
+          if (i >= minI && i <= maxI && j >= minJ && j <= maxJ) yield index
+        }
+      }
+  }
+
   /** Closest live slots, ties broken by slot order; the result keeps slot order. */
   nearest<T>(
     i: number,

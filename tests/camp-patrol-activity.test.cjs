@@ -22,7 +22,7 @@ function fixture(count = 12) {
     '../../lib': { findInstancesInSight: () => [], instancesDistance: () => 1 },
     '../../lib/combat/combatFeedback': { showAlertFeedback() {} },
     '../../lib/units/unitEnergy': { cancelEnergyWait() {} },
-    '../../lib/units/campBehavior': { campAnchor: u => u.campPatrolAnchor, canCampPursue: () => true },
+    '../../lib/units/camps/campBehavior': { campAnchor: u => u.campPatrolAnchor, canCampPursue: () => true },
     '../../lib/units/autonomy/walkAround': {
       canUnitStartAmbientWalk: u => !u.dest && !u.action,
       findUnitWalkAroundDestination: () => ({ i: 51, j: 50 }),
@@ -30,7 +30,7 @@ function fixture(count = 12) {
     '../rest/UnitRestRules': { isUnitRestWakeLocked: () => false },
   }
   const { CampPatrolSystem } = loadTsModule('app/services/patrol/CampPatrolSystem.ts', { mocks, moduleCache })
-  const { isCampPaused } = loadTsModule('app/lib/units/campActivity.ts', { mocks, moduleCache })
+  const { isCampPaused } = loadTsModule('app/lib/units/camps/campActivity.ts', { mocks, moduleCache })
   const { isUnitSuspended, wakeUnitSimulation } = loadTsModule('app/lib/units/unitSuspension.ts', {
     mocks,
     moduleCache,

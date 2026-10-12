@@ -1,3 +1,5 @@
+import { getEquippedWorkTool, workToolFamily } from './equipment/workTools'
+import { equipmentBaseKey } from './equipment/equipmentCondition'
 import { extractSquareAvatar, extractSquareCanvasAvatar } from './graphics/avatarCrop'
 import { Assets, Rectangle, type Texture } from 'pixi.js'
 import { SHEET_TYPES } from '../constants'
@@ -7,7 +9,6 @@ import { recolorCanvasByPalette, SOURCE_COLORS } from './graphics/colors'
 import { getTexture, type TextureRef } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { resolveUnitForgeEquipment } from './equipment/forgeUpgrades'
-import { getMiningPickaxe } from './resources/miningEquipment'
 import { getUnitEquipmentTier } from './units/unitExperience'
 import type { Application, Sprite } from 'pixi.js'
 import type { UnitAppearanceLayerConfig } from '../types/config'
@@ -23,6 +24,7 @@ const MAIN_SPRITE_LAYER_Z_INDEX = 10
 
 type PortraitSource = Pick<
   UnitEntity,
+  | 'isDead'
   | 'standingSheet'
   | 'walkingSheet'
   | 'sheetDirectionCounts'
@@ -65,6 +67,14 @@ function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
 }
 
 function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLayerConfig): Texture | null {
+  if (
+    !unit.isDead &&
+    unit.inventory?.toolsInitialized &&
+    workToolFamily(layer.equipmentKey) &&
+    workToolFamily(layer.equipmentKey) !== workToolFamily(getEquippedWorkTool(unit))
+  )
+    return null
+  if (layer.hideWhenEquippedSlots?.some(slot => unit.inventory?.equipped?.[slot])) return null
   const level = getUnitEquipmentTier(unit as UnitEntity)
   if (level < (layer.minLevel ?? 0) || level > (layer.maxLevel ?? Number.POSITIVE_INFINITY)) return null
   if (layer.workTypes?.length && (!unit.work || !layer.workTypes.includes(unit.work))) return null
@@ -73,7 +83,10 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   const sheetIdForLayer = layer[sheetKey as keyof UnitAppearanceLayerConfig] as string | undefined
   const baseSheetId = layer.equipmentKey
     ? sheetIdForLayer?.replace(/^equipments\/([^/]+)\//, (_match, key: string) => {
-        const equipment = key.startsWith('pickaxe_') ? getMiningPickaxe(unit) : resolveUnitForgeEquipment(key, unit)
+        const equipment =
+          workToolFamily(key) && !unit.isDead && unit.inventory?.toolsInitialized
+            ? equipmentBaseKey(getEquippedWorkTool(unit) ?? key)
+            : resolveUnitForgeEquipment(key, unit)
         return `equipments/${equipment}/`
       })
     : sheetIdForLayer
@@ -100,7 +113,8 @@ function renderLayeredUnitHeadAvatar(
   app: Application,
   unit: PortraitSource,
   baseTexture: Texture,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
+  fullBody = false
 ): boolean {
   const layers = unit.appearance?.layers
     ?.map((layer, index) => ({ layer, index, texture: getPortraitLayerTexture(unit, layer) }))
@@ -136,8 +150,23 @@ function renderLayeredUnitHeadAvatar(
     drawTexture(texture, layer)
   }
 
-  const scanHeight = Math.min(composed.height, Math.round(composed.height * HEAD_SCAN_HEIGHT_RATIO))
+  const scanHeight = Math.min(composed.height, Math.round(composed.height * (fullBody ? 1 : HEAD_SCAN_HEIGHT_RATIO)))
   return extractSquareCanvasAvatar(composed, scanHeight, canvas, unit.owner?.color ?? '', SOURCE_COLORS)
+}
+
+/** Full standing character with the same layered equipment and palette as the head portrait. */
+export function renderUnitBodyAvatar(app: Application, unit: PortraitSource, canvas: HTMLCanvasElement): boolean {
+  const texture = getUnitFacePortraitTexture(unit)
+  if (!texture?.width || !texture.height) return false
+  if (renderLayeredUnitHeadAvatar(app, unit, texture, canvas, true)) return true
+  return extractSquareAvatar(
+    app,
+    texture,
+    new Rectangle(texture.frame.x, texture.frame.y, texture.width, texture.height),
+    canvas,
+    unit.owner?.color ?? '',
+    SOURCE_COLORS
+  )
 }
 
 // Renders the unit's face into `canvas`, tightly cropped and scaled to fill

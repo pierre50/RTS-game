@@ -2,7 +2,7 @@ import { isInteriorTheftDefender } from '../../ai/AITheftDefense'
 import type { EnemyMemory } from '../../ai/AIThreatManager'
 import type { AIBuildingLike, AIEntityLike } from '../../ai/types'
 import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../../constants'
-import { hasInteriorCombatRoute } from '../../lib/units/interiorCombat'
+import { hasInteriorCombatRoute } from '../../lib/units/combat/interiorCombat'
 
 export type AIVillageDefenseHost = {
   getLivingChiefs(): AIEntityLike[]

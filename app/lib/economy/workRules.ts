@@ -1,8 +1,17 @@
 import { RESOURCE_GATHER_SWINGS } from '../../constants'
 
 /** Economic effects of a work impact, shared by animated workers and catch-up. */
-export function getWorkGatherAmount(amounts: Record<string, number> | undefined, work: string, bonus = 0): number {
-  return Math.max(1, Math.round(amounts?.[work] ?? 1)) + bonus
+export function getWorkGatherAmount(
+  amounts: Record<string, number> | undefined,
+  work: string,
+  bonus = 0,
+  hasFarmingTool = true,
+  toolTier = 0
+): number {
+  // Picking ears by hand always yields one; skill and material bonuses require a scythe.
+  if (work === 'farmer' && !hasFarmingTool) return 1
+  const stoneScytheBonus = work === 'farmer' && toolTier === 0 ? 1 : 0
+  return Math.max(1, Math.round(amounts?.[work] ?? 1)) + bonus + stoneScytheBonus
 }
 
 export function getResourceGatherSwings(resource: string, override?: number): number {

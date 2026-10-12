@@ -457,7 +457,7 @@ test('attack action frame sequence follows runtime equipment on the main sprite'
   )
   assert.deepEqual(
     axeBandit.sprite.textures.map(texture => texture.id),
-    [17, 17, 16, 16, 15, 13, 12, 12, 12, 12]
+    [17, 17, 16, 15, 13, 12]
   )
 })
 

@@ -1,3 +1,5 @@
+import { recordEconomyFlow } from '../lib/economy/economyTelemetry'
+import { RESOURCE_STOCKPILE_TYPES } from '../constants/entities'
 import { CompactResourceSet, materializedResources } from '../classes/resources/CompactResourceSet'
 import { RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { isWheatMature } from '../lib'
@@ -99,6 +101,10 @@ export class NaturalRegrowthSystem implements DailyWorldEventHandler {
         : NATURAL_REGROWTH_CONFIG.berryRegrowRatioPerDay
     const next = Math.min(total, quantity + Math.max(1, Math.ceil(total * ratio)))
     if (next !== quantity) {
+      recordEconomyFlow(null, 'renewed', {
+        [RESOURCE_STOCKPILE_TYPES[resource.type as keyof typeof RESOURCE_STOCKPILE_TYPES] ?? resource.type]:
+          next - quantity,
+      })
       resource.quantity = next
       resource.updateTexture?.()
       this.changed = true

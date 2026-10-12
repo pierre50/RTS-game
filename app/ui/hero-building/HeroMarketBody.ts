@@ -4,6 +4,9 @@ import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import { formatEquipmentStackLabel, getEquipmentStacks } from '../../lib/equipment/equipmentLoot'
 import {
   buyMarketEquipment,
+  buyMarketResource,
+  getMarketResourceOffers,
+  getMarketLevel,
   ensureMarketEquipmentStock,
   getEquipmentResaleGoldValue,
   getHeroGold,
@@ -56,9 +59,12 @@ function appendBuySlots(
   onChange: () => void
 ): void {
   const heroGold = getHeroGold(hero)
-  const marketOwner = building.owner ?? hero.owner
+  const marketOwner = building.owner
   const marketStock = ensureMarketEquipmentStock(building, { civilization: marketOwner?.civ })
-  for (const offer of getMarketEquipmentOffers(definedProperties({ civilization: marketOwner?.civ }), marketStock)) {
+  for (const offer of getMarketEquipmentOffers(
+    definedProperties({ civilization: marketOwner?.civ, buildingLevel: getMarketLevel(building) }),
+    marketStock
+  )) {
     const label = formatEquipmentStackLabel(offer.equipment, offer.count)
     const totalGold = offer.goldValue * offer.count
     const disabled = heroGold < offer.goldValue
@@ -95,6 +101,45 @@ function appendBuySlots(
       },
     })
     element.setAttribute('aria-label', t('marketBuyItem', { item: label, gold: String(totalGold) }))
+    grid.appendChild(element)
+  }
+}
+
+function appendBuyResourceSlots(
+  grid: HTMLDivElement,
+  building: BuildingEntity,
+  hero: UnitEntity,
+  menu: MenuHost,
+  onChange: () => void
+): void {
+  for (const offer of getMarketResourceOffers(building)) {
+    const label = `${t(offer.resource)} x${offer.count}`
+    const disabled = getHeroGold(hero) < offer.goldValue
+    const { element } = createInventoryResourceRow({
+      id: `market-buy-resource-${offer.resource}`,
+      className: 'inventory-loot-slot market-slot market-buy-slot',
+      disabled,
+      resource: offer.resource,
+      amount: offer.count,
+      meta: '',
+      mode: 'market-buy',
+      value: t('marketUnitPrice', { gold: formatGold(offer.goldValue) }),
+      showValue: false,
+      trailingAction: {
+        ariaLabel: t('marketBuyItem', { item: label, gold: String(offer.goldValue) }),
+        label: t('marketBuyTitle'),
+        disabled,
+        onAction: mode => {
+          const bought = buyMarketResource(hero, building, offer.resource, mode === 'one' ? 1 : offer.count)
+          if (!bought) return
+          menu.showMessage(
+            t('marketBoughtItem', { item: `${t(offer.resource)} x${bought}`, gold: String(bought * offer.goldValue) }),
+            'success'
+          )
+          handleMarketChange(menu, onChange)
+        },
+      },
+    })
     grid.appendChild(element)
   }
 }
@@ -223,11 +268,15 @@ export function createHeroMarketBody(
   panel.appendChild(
     createInventorySection({
       className: 'market-section',
+      presentation: 'market',
       gridClassName: 'inventory-section-list market-grid',
       title: t('marketStockTitle'),
       action: marketWallet,
       titleClassName: 'market-title',
-      renderItems: grid => appendBuySlots(grid, building, hero, menu, onChange),
+      renderItems: grid => {
+        appendBuySlots(grid, building, hero, menu, onChange)
+        appendBuyResourceSlots(grid, building, hero, menu, onChange)
+      },
     })
   )
 
@@ -239,6 +288,7 @@ export function createHeroMarketBody(
   panel.appendChild(
     createInventorySection({
       className: 'market-section',
+      presentation: 'market',
       emptyText: t('marketSellBagEmpty'),
       gridClassName: 'inventory-section-list market-grid',
       title: t('inventoryYourBag'),

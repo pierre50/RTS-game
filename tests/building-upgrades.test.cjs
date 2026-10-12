@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -13,10 +14,13 @@ const options = {
   },
 }
 const load = path => loadTsModule(path, options)
-const { completeBuildingUpgrade, nextBuildingUpgrade } = load('app/lib/buildings/buildingUpgrade.ts')
+const { completeBuildingUpgrade, getBuildingUpgradeCost, nextBuildingUpgrade } = load(
+  'app/lib/buildings/buildingUpgrade.ts'
+)
 const { startBuildingUpgrade, canStartBuildingUpgrade } = load('app/classes/building/BuildingUpgrade.ts')
 const {
   advanceMaterialConstruction,
+  deliverConstructionMaterials,
   applyConstructionWork,
   remainingConstructionMaterials,
   missingConstructionMaterialsForNextPoint,
@@ -25,7 +29,13 @@ const {
 const { consumeVillageWorkChange } = load('app/lib/units/village/villageWorkEvents.ts')
 function fixture() {
   const owner = { label: 'village', age: 0, populationMax: 5, config: { buildings: definitions } }
-  const hero = { owner, type: 'Hero', hitPoints: 45, isChief: true }
+  const hero = {
+    inventory: { activeWeapons: { tool: 'hammer_ceramic' } },
+    owner,
+    type: 'Hero',
+    hitPoints: 45,
+    isChief: true,
+  }
   const chest = { type: 'Chest', isBuilt: true, inventory: { resources: { wood: 200 } } }
   const building = {
     owner,
@@ -55,7 +65,7 @@ test('starting renovation preserves availability, health, interior and resources
   assert.equal(building.interiorBuildings[0], chest)
   assert.deepEqual(chest.inventory.resources, { wood: 200 })
   assert.deepEqual(building.inventory.resources, { stone: 100 })
-  assert.deepEqual(remainingConstructionMaterials(building), definitions.House.levelStats[1].cost)
+  assert.deepEqual(remainingConstructionMaterials(building), { wood: 40, stone: 30, fiber: 6 })
   assert.equal(consumeVillageWorkChange(owner), true)
   assert.equal(startBuildingUpgrade(building, hero), false)
 })
@@ -81,18 +91,20 @@ test('materials constrain independent renovation progress and completion applies
   const { owner, hero, building, chest } = fixture()
   startBuildingUpgrade(building, hero)
   const work = building.buildingUpgrade
-  assert.equal(advanceMaterialConstruction(building, work.constructionTime, []), 0)
-  const bag = { wood: 60 }
-  applyConstructionWork(building, advanceMaterialConstruction(building, work.constructionTime, [bag]))
-  assert.ok(work.constructionProgress > 0 && work.constructionProgress < 1)
+  assert.equal(advanceMaterialConstruction(building, work.constructionTime), 0)
+  const bag = { wood: 40 }
+  deliverConstructionMaterials(building, [bag])
+  applyConstructionWork(building, advanceMaterialConstruction(building, work.constructionTime))
+  assert.equal(work.constructionProgress, 0)
   assert.equal(completeBuildingUpgrade(building, definitions.House), false)
-  assert.deepEqual(remainingConstructionMaterials(building), { stone: 30, fiber: 4 })
-  assert.deepEqual(missingConstructionMaterialsForNextPoint(building, {}), { stone: 30, fiber: 4 })
+  assert.deepEqual(remainingConstructionMaterials(building), { stone: 30, fiber: 6 })
+  assert.deepEqual(missingConstructionMaterialsForNextPoint(building), { stone: 30, fiber: 6 })
   assert.equal(building.hitPoints, 60)
   // Combat damage during renovation does not reset construction progress.
   building.hitPoints = 40
-  Object.assign(bag, { stone: 30, fiber: 4 })
-  applyConstructionWork(building, advanceMaterialConstruction(building, work.constructionTime, [bag]))
+  Object.assign(bag, { stone: 30, fiber: 6 })
+  deliverConstructionMaterials(building, [bag])
+  applyConstructionWork(building, advanceMaterialConstruction(building, work.constructionTime))
   assert.equal(completeBuildingUpgrade(building, definitions.House), true)
   assert.equal(building.buildingLevel, 1)
   assert.equal(building.totalHitPoints, 125)
@@ -122,14 +134,13 @@ test('all eleven atlas buildings can renovate from level 1 to 2 and stop at the 
     assert.equal(nextBuildingUpgrade(config, 0), 1, type)
     assert.equal(startBuildingUpgrade(building, hero), true, type)
     assert.equal(building.buildingUpgrade.targetLevel, 2)
-    assert.equal(building.buildingUpgrade.constructionTime, config.constructionTime)
-    assert.deepEqual(remainingConstructionMaterials(building), target.cost)
+    assert.equal(building.buildingUpgrade.constructionTime, target.constructionWorkRequired)
+    const upgradeCost = target.upgradeCost
+    assert.deepEqual(remainingConstructionMaterials(building), upgradeCost)
     assert.equal(completeBuildingUpgrade(building, config), false)
-    const materials = { ...target.cost }
-    applyConstructionWork(
-      building,
-      advanceMaterialConstruction(building, building.buildingUpgrade.constructionTime, [materials])
-    )
+    const materials = { ...upgradeCost }
+    deliverConstructionMaterials(building, [materials])
+    applyConstructionWork(building, advanceMaterialConstruction(building, building.buildingUpgrade.constructionTime))
     assert.equal(completeBuildingUpgrade(building, config), true, type)
     assert.equal(building.buildingLevel, 2)
     assert.equal(building.totalHitPoints, target.totalHitPoints)
@@ -143,7 +154,13 @@ test('all eleven atlas buildings can renovate from level 1 to 2 and stop at the 
 test('collective planner delivers materials to a built building under renovation', () => {
   const { owner, hero, building } = fixture()
   startBuildingUpgrade(building, hero)
-  const unit = { type: 'Villager', i: 10, j: 11, inactif: true, inventory: { resources: { food: 10, wood: 10 } } }
+  const unit = {
+    type: 'Villager',
+    i: 10,
+    j: 11,
+    inactif: true,
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { food: 10, wood: 10 } },
+  }
   owner.units = [unit]
   const { planCollectiveTasks } = load('app/lib/economy/collectiveTasks.ts')
   const task = planCollectiveTasks(owner, [unit]).get(unit)
@@ -155,7 +172,13 @@ test('pre-delivered renovation material recruits builders even with full buildin
   building.hitPoints = 75
   startBuildingUpgrade(building, hero)
   building.constructionMaterials.delivered = { ...building.constructionMaterials.cost }
-  const unit = { type: 'Villager', i: 10, j: 11, inactif: true, inventory: { resources: { food: 10 } } }
+  const unit = {
+    type: 'Villager',
+    i: 10,
+    j: 11,
+    inactif: true,
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { food: 10 } },
+  }
   owner.units = [unit]
   const { planCollectiveTasks } = load('app/lib/economy/collectiveTasks.ts')
   assert.equal(planCollectiveTasks(owner, [unit]).get(unit)?.site, building)
@@ -173,10 +196,43 @@ test('offline construction completes renovation without recreating the building 
   const { buildOffline } = load('app/services/world/work/OfflineWorkImpacts.ts')
   const unit = {
     type: 'Villager',
-    inventory: { resources: { ...building.constructionMaterials.cost } },
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { ...building.constructionMaterials.cost } },
     buildQueue: ['house'],
   }
   const report = { buildingsCompleted: 0 }
+  let result
+  for (let tool = 0; tool < 10 && result?.status !== 'next'; tool++) {
+    unit.inventory.activeWeapons.tool = 'hammer_ceramic'
+    result = buildOffline(
+      {
+        state: {},
+        player: owner,
+        playerIndex: 0,
+        unit,
+        target: building,
+        spatial: {},
+        rules: { buildingConfig: () => definitions.House },
+        report,
+        cycle: 1,
+      },
+      100000
+    )
+  }
+  assert.equal(result.status, 'next')
+  assert.equal(building.buildingLevel, 1)
+  assert.equal(building.isBuilt, true)
+  assert.equal(building.hitPoints, 110)
+  assert.equal(owner.populationMax, 0)
+  assert.equal(building.interiorBuildings[0], chest)
+  assert.equal(report.buildingsCompleted, 1)
+})
+
+test('offline renovation deposits partial cargo without work, tool wear or budget consumption', () => {
+  const { buildOffline } = load('app/services/world/work/OfflineWorkImpacts.ts')
+  const { building, owner, hero } = fixture()
+  startBuildingUpgrade(building, hero)
+  const unit = { type: 'Villager', inventory: { ...workerInventory('hammer_ceramic'), resources: { wood: 40 } } }
+  const tool = unit.inventory.activeWeapons.tool
   const result = buildOffline(
     {
       state: {},
@@ -186,18 +242,17 @@ test('offline construction completes renovation without recreating the building 
       target: building,
       spatial: {},
       rules: { buildingConfig: () => definitions.House },
-      report,
-      cycle: 1,
+      report: { buildingsCompleted: 0 },
+      cycle: 1000,
     },
     100000
   )
   assert.equal(result.status, 'next')
-  assert.equal(building.buildingLevel, 1)
-  assert.equal(building.isBuilt, true)
-  assert.equal(building.hitPoints, 110)
-  assert.equal(owner.populationMax, 0)
-  assert.equal(building.interiorBuildings[0], chest)
-  assert.equal(report.buildingsCompleted, 1)
+  assert.equal(result.budget, 100000)
+  assert.equal(building.buildingUpgrade.constructionProgress, 0)
+  assert.deepEqual(building.constructionMaterials.delivered, { wood: 40 })
+  assert.deepEqual(building.constructionMaterials.consumed, {})
+  assert.equal(unit.inventory.activeWeapons.tool, tool)
 })
 
 test('offline construction finishes damaged sites by work progress and preserves the damage', () => {
@@ -210,7 +265,7 @@ test('offline construction finishes damaged sites by work progress and preserves
     totalHitPoints: 101,
     constructionProgress: 0.5,
   }
-  const unit = { type: 'Villager', buildQueue: ['site'] }
+  const unit = { inventory: workerInventory('hammer_ceramic'), type: 'Villager', buildQueue: ['site'] }
   const report = { buildingsCompleted: 0 }
   const result = buildOffline(
     {
@@ -242,7 +297,7 @@ test('offline repairs wait for full health while keeping construction complete',
       state: {},
       player: {},
       playerIndex: 0,
-      unit: { type: 'Villager' },
+      unit: { inventory: workerInventory('hammer_ceramic'), type: 'Villager' },
       target,
       spatial: {},
       report,
@@ -257,7 +312,7 @@ test('offline repairs wait for full health while keeping construction complete',
   assert.equal(report.buildingsCompleted, 0)
 })
 
-test('upgrade row displays construction costs, starts an unfunded project and then shows progress', () => {
+test('upgrade row displays only additional materials, starts an unfunded project and then shows progress', () => {
   const previous = global.document
   global.document = { createElement: () => ({ appendChild() {}, toDataURL: () => '' }) }
   const rows = []
@@ -269,7 +324,7 @@ test('upgrade row displays construction costs, starts an unfunded project and th
       '../../lib/lang': { t: (key, values = {}) => `${key} ${JSON.stringify(values)}` },
       '../ActionDetailsFactory': { formatActionCost: cost => JSON.stringify(cost) },
       '../inventory/InventoryActionRow': {
-        createInventoryActionRow: (row) => {
+        createInventoryActionRow: row => {
           rows.push(row)
           return { element: {}, icon: { appendChild() {} } }
         },
@@ -282,14 +337,15 @@ test('upgrade row displays construction costs, starts an unfunded project and th
     let refreshed = 0
     createHeroBuildingUpgrade(menu, building, () => refreshed++)
     assert.equal(rows[0].disabled, false)
-    assert.match(rows[0].metaParts[0].text, /constructionMaterialsCost/)
+    assert.deepEqual(rows[0].metaParts[0].constructionSite.cost, { wood: 40, stone: 30, fiber: 6 })
+    assert.equal(rows[0].metaParts[0].constructionSite.level, 1)
     assert.match(rows[0].description, /buildingUpgradeBedsPreserved/)
     rows[0].trailingAction.onClick()
     assert.equal(refreshed, 1)
     createHeroBuildingUpgrade(menu, building, () => refreshed++)
     assert.equal(rows[1].disabled, true)
-    assert.match(rows[1].title, /buildingUpgradeProgress/)
-    assert.match(rows[1].metaParts[0].text, /buildingUpgradeRemaining/)
+    assert.match(rows[1].title, /buildingUpgradeActiveTitle/)
+    assert.deepEqual(rows[1].metaParts, [])
     rows[0].trailingAction.onClick()
     assert.equal(refreshed, 1)
     delete building.buildingUpgrade
@@ -308,7 +364,7 @@ test('upgrade row displays construction costs, starts an unfunded project and th
     assert.match(rows[3].title, /"level":3/)
     rows[3].trailingAction.onClick()
     assert.equal(building.buildingUpgrade.targetLevel, 2)
-    assert.deepEqual(remainingConstructionMaterials(building), definitions.House.levelStats[2].cost)
+    assert.deepEqual(remainingConstructionMaterials(building), { wood: 40, stone: 25, fiber: 4 })
     delete building.buildingUpgrade
     building.buildingLevel = 2
     createHeroBuildingUpgrade(menu, building, () => refreshed++)
@@ -368,4 +424,24 @@ test('renovation closes entry before expelling units and reopens it on completio
   assert.equal(completeBuildingUpgrade(building, definitions.House), true)
   assert.equal(canUnitEnterBuildingInterior(hero, building), true)
   assert.equal(hasBuildingTrainingCapacity(building), true)
+})
+
+test('explicit upgrade costs preserve construction prices and legacy definitions never refund materials', () => {
+  const before = JSON.stringify(definitions.House)
+  assert.deepEqual(getBuildingUpgradeCost(definitions.House, 0, 1), { wood: 40, stone: 30, fiber: 6 })
+  assert.deepEqual(getBuildingUpgradeCost(definitions.House, 1, 2), { wood: 40, stone: 25, fiber: 4 })
+  assert.deepEqual(getBuildingUpgradeCost(definitions.House, 0, 2), { wood: 80, stone: 55, fiber: 10 })
+  assert.equal(JSON.stringify(definitions.House), before)
+  assert.deepEqual(
+    getBuildingUpgradeCost(
+      {
+        cost: { wood: 40, stone: 10, fiber: 4 },
+        levelStats: { 1: { cost: { wood: 30, stone: 10, iron: 5 } } },
+      },
+      0,
+      1
+    ),
+    { iron: 5 }
+  )
+  assert.deepEqual(getBuildingUpgradeCost({ cost: { wood: 40 }, levelStats: { 1: {} } }, 0, 1), {})
 })

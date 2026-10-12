@@ -1,3 +1,6 @@
+import { INTERIOR_LAYOUT_POSITIONS, isFullInteriorLayout } from '../../../config/interiorLayoutPositions'
+import { getInteriorLayoutLevel } from '../interiorLayoutLevel'
+import { getHouseProfile, type HouseLevelLike } from '../../housing/houseLevels'
 import { BUILDING_TYPES } from '../../../constants'
 import type { BuildingEntity } from '../../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../../types/map'
@@ -14,6 +17,8 @@ export type BuildingInteriorDecorationSpec = {
   offsetJ: number
   placement?: 'offset' | 'oppositeExitBorder' | 'oppositeExitInset'
   type: string
+  exactPlacement?: boolean
+  mirrored?: boolean
 }
 
 type DecorationTemplate = Omit<BuildingInteriorDecorationSpec, 'type'> & {
@@ -155,13 +160,53 @@ function resolveDecoration(template: DecorationTemplate): BuildingInteriorDecora
 }
 
 export function getBuildingInteriorDecorationLayout(
-  building: Pick<BuildingEntity, 'type'>,
+  building: Pick<BuildingEntity, 'type'> & HouseLevelLike,
   options: { includeFireCamp?: boolean } = {}
 ): BuildingInteriorDecorationSpec[] {
   if (building.type === BUILDING_TYPES.cave) return []
   const { includeFireCamp = true } = options
-  const layout = DECORATION_LAYOUTS[building.type] ?? DEFAULT_DECORATION_LAYOUT
-  return layout.filter(item => includeFireCamp || item.type !== 'fireCamp').map(resolveDecoration)
+  let layout = DECORATION_LAYOUTS[building.type] ?? DEFAULT_DECORATION_LAYOUT
+  if (building.type === BUILDING_TYPES.house) {
+    const { beds } = getHouseProfile(building)
+    if (beds === 1)
+      layout = layout
+        .filter(item => ['firecamp-center', 'bedroll-1', 'table-1'].includes(item.key))
+        .map(item => ({
+          ...item,
+          offsetI: Math.max(-2, Math.min(2, item.offsetI)),
+          offsetJ: Math.max(-2, Math.min(2, item.offsetJ)),
+        }))
+    if (beds === 4)
+      layout = [
+        ...layout,
+        { key: 'bedroll-3', type: 'campBedroll', offsetI: -5, offsetJ: 2, allowBorderPlacement: true },
+        { key: 'bedroll-4', type: 'campBedroll', offsetI: -5, offsetJ: -1, allowBorderPlacement: true },
+      ]
+  }
+  const positions = INTERIOR_LAYOUT_POSITIONS[building.type]?.[getInteriorLayoutLevel(building)]
+  if (positions && isFullInteriorLayout(positions)) {
+    return Object.entries(positions.items)
+      .filter(([, item]) => includeFireCamp || item.type !== BUILDING_TYPES.fireCamp)
+      .map(([key, item]) => {
+        const original = layout.find(template => template.key === key && BUILDING_TYPES[template.type] === item.type)
+        return {
+          ...(original ? resolveDecoration(original) : { allowBorderPlacement: true }),
+          ...item,
+          key,
+          placement: 'offset' as const,
+          exactPlacement: true,
+        }
+      })
+  }
+  return layout
+    .filter(item => includeFireCamp || item.type !== 'fireCamp')
+    .map(item => {
+      const position = positions?.[item.key]
+      return {
+        ...resolveDecoration(item),
+        ...(position ? { ...position, placement: 'offset' as const, exactPlacement: true } : {}),
+      }
+    })
 }
 
 export function interiorCellKey(cell: Pick<RuntimeCell, 'i' | 'j'>): string {

@@ -1,3 +1,4 @@
+import { collectGroundResource, isCollectableGroundResource } from '../lib/hero/heroGroundCollection'
 import { instanceIsInActiveOrTeamSight } from '../lib/grid/visibility'
 import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
@@ -61,6 +62,8 @@ export class HeroInteractionController {
 
     const hero = this.host.heroUnit
     if (!hero || target === hero || !isHeroInteractionTargetReachable(hero, null, target)) return false
+
+    if (isCollectableGroundResource(target)) return collectGroundResource(hero, target)
 
     const player = this.host.context.player
     if (target.family === FAMILY_TYPES.building) {

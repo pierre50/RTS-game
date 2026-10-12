@@ -12,7 +12,16 @@ function fixture() {
   }
   const targeting = loadTsModule('app/lib/hero/heroTargeting.ts', { moduleCache, mocks })
   const range = loadTsModule('app/lib/hero/heroActionRange.ts', { moduleCache, mocks })
-  const hero = { x: 0, y: 0, i: 0, j: 0, degree: 180, type: 'Villager', controlMode: 'hero' }
+  const hero = {
+    inventory: { activeWeapons: { tool: 'hammer_ceramic' } },
+    x: 0,
+    y: 0,
+    i: 0,
+    j: 0,
+    degree: 180,
+    type: 'Villager',
+    controlMode: 'hero',
+  }
   const building = (x, extra = {}) => ({ x, y: 0, i: 0, j: 0, family: 'building', size: 1, ...extra })
   return { candidates, hero, building, ...targeting, ...range }
 }
@@ -94,4 +103,46 @@ test('pointing at the raised scaffold selects its reachable building, not just i
   const cursor = { x: -10, y: -80 }
   // The nearest edge is to the left, well outside the cone toward this high part of the sprite.
   assert.equal(f.getDirectionalTargets(f.hero, [site], undefined, cursor)[0], site)
+})
+
+test('an axe starts and repeats resource work at examine range instead of charging', () => {
+  const f = fixture()
+  f.hero.inventory.activeWeapons.tool = 'axe_ceramic'
+  const tree = { x: 75, y: 0, i: 2, j: 0, family: 'resource', type: 'Tree', size: 1, quantity: 20 }
+  const actions = []
+  let charges = 0
+  f.hero.setDest = target => {
+    f.hero.dest = target
+  }
+  f.hero.getAction = action => actions.push(action)
+  const { triggerToolAttackAt } = loadTsModule('app/lib/hero/heroTools.ts', {
+    mocks: {
+      'pixi.js': { Assets: { cache: { get: () => null } } },
+      '../grid/visibility': { findInstancesInSight: (_hero, matches) => [tree].filter(matches) },
+      '../combat': { getActionCondition: () => true },
+      '../units/unitEnergy': { hasEnergyForAction: () => true },
+      '../../classes/unit/UnitResourceDeliveryCommands': { applyWorkForAction: () => {} },
+      './heroMeleeTools': {},
+      './heroDefense': {},
+      './heroToolAnimation': {},
+      './heroPowerCharge': {
+        beginHeroPowerChargeAt: () => {
+          charges++
+          return true
+        },
+      },
+    },
+  })
+  assert.equal(f.isHeroInteractionTargetReachable(f.hero, null, tree), true)
+  assert.equal(triggerToolAttackAt(f.hero, 'interact', tree), true)
+  assert.equal(triggerToolAttackAt(f.hero, 'interact', tree, true), true)
+  assert.deepEqual(actions, ['chopwood', 'chopwood'])
+  assert.equal(charges, 0)
+  assert.equal(f.hero.dest, tree)
+  tree.x = 500
+  tree.i = 10
+  assert.equal(triggerToolAttackAt(f.hero, 'interact', tree, true), false)
+  assert.equal(charges, 0)
+  assert.equal(triggerToolAttackAt(f.hero, 'interact', tree), true)
+  assert.equal(charges, 1)
 })

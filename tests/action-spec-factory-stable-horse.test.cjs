@@ -261,3 +261,19 @@ test('all building sites can be selected without paying materials upfront', () =
     assert.equal(factory.menu.mouseBuilding.type, type)
   }
 })
+
+test('construction preview carries the selected building level and its own cost', () => {
+  const { factory, player } = createFactory({ hero: {}, messages: [] })
+  player.config.buildings.House = {
+    cost: { wood: 30 },
+    size: 2,
+    levelStats: { 1: { cost: { wood: 60, stone: 20 }, totalHitPoints: 125 } },
+  }
+  factory.getActionBuildingButton('House', null, 1).onClick()
+  assert.equal(factory.menu.mouseBuilding.buildingLevel, 1)
+  assert.deepEqual(factory.menu.mouseBuilding.cost, { wood: 60, stone: 20 })
+  assert.equal(factory.menu.mouseBuilding.totalHitPoints, 125)
+  factory.getActionBuildingButton('House').onClick()
+  assert.equal(factory.menu.mouseBuilding.buildingLevel, 0)
+  assert.deepEqual(factory.menu.mouseBuilding.cost, { wood: 30 })
+})

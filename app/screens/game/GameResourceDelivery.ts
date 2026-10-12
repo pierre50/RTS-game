@@ -1,3 +1,4 @@
+import { belongsToSettlement, collectiveAnchor } from '../../lib/economy/collectiveConstruction'
 import { hasPriorityCombat } from '../../lib/units/autonomy/villagerAutonomyAvailability'
 import { automaticDepositAmount } from '../../lib/resources/resourceDelivery'
 import { withdrawDepotResources } from '../../lib/economy/depotPickup'
@@ -68,6 +69,8 @@ function scheduleResourceDeliveryUpdate(context: GameContextLike, unit: UnitEnti
 }
 
 function depositUnitResourcesIntoChest(unit: UnitEntity, building: BuildingEntity, chest: BuildingEntity): boolean {
+  if (unit.villageHome && unit.owner && !belongsToSettlement(unit.owner, collectiveAnchor(unit.owner, unit), building))
+    return false
   if (!unitHasDeliverableResourcesForBuilding(unit, building) || !unitHasDeliverableResourcesForBuilding(unit, chest))
     return false
   const source = createInventoryContainer(unit, { id: unit.label ?? 'unit', labelKey: 'unit' })
@@ -180,6 +183,14 @@ function exchangeAtInteriorChest(
   chest: BuildingEntity
 ): void {
   if (state.pickup) {
+    if (
+      unit.villageHome &&
+      unit.owner &&
+      !belongsToSettlement(unit.owner, collectiveAnchor(unit.owner, unit), building)
+    ) {
+      stopResourceDelivery(context, unit)
+      return
+    }
     withdrawDepotResources(unit, chest.inventory?.resources ?? {}, state.pickup)
     state.pickup = {}
     syncPlayerResourceFieldsFromChests(building.owner)

@@ -1,6 +1,6 @@
 import { assignVillageFoundingQuests } from '../quests/VillageFoundingQuests'
 import { QuestSystem } from '../quests/QuestSystem'
-import { startingVillagerInventory } from '../../lib/economy/startingProvisions'
+import { startingCompanionInventory } from '../../lib/economy/startingProvisions'
 import { createCampIntroductionDialogue } from './CampIntroductionDialogue'
 import { refreshPlayerVisibility } from '../visibility/UnitPerception'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
@@ -55,7 +55,7 @@ export async function prepareGameIntroduction(host: IntroductionHost): Promise<v
       gender: (hero.gender ?? hero.appearanceVariants?.gender) === 'female' ? 'male' : 'female',
       isChief: false,
       suppressCreateSound: true,
-      inventory: startingVillagerInventory(),
+      inventory: startingCompanionInventory(),
     },
     { preserveType: true }
   )

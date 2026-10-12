@@ -126,6 +126,91 @@ their identity, and one existing exception cannot exempt multiple functions.
 health verdict. `node tools/audit-report.cjs --skip-checks` and `--quick` generate
 explicitly INCOMPLETE diagnostic reports and exit unsuccessfully.
 
+## Modal UI reports
+
+Generate screenshots of the game's modal windows and screens:
+
+```bash
+pnpm ui:png
+```
+
+Open `reports/ui-gallery/index.html` to browse the PNG captures. The export also
+writes `manifest.json` with dimensions, overflows and errors. Captures use demo
+data and default to 1600 × 1000 pixels.
+
+```bash
+pnpm ui:png --list
+pnpm ui:png --only 02-forge,03-marche,12-dialogue
+pnpm ui:png --width 1920 --height 1080 --lang en
+```
+
+`pnpm ui:gallery` only builds the interactive gallery in `build/ui-gallery`.
+Use `--no-build` with `ui:png` to reuse an existing build; rebuild after code or
+style changes. See [the UI gallery documentation](tools/ui-gallery/README.md).
+
+## Interior editor
+
+Generate and serve the interior preview and furniture editor:
+
+```bash
+pnpm interiors:preview --serve
+```
+
+Open <http://127.0.0.1:8880>. Choose a building, its level when available and the
+AI layout, then enable **Modifier les meubles**. Move, add, rotate or remove
+furniture, adjust the room size and click **Enregistrer pour le jeu** to save
+the layout in `app/config/interiorLayoutPositions.json`. Rebuild the game to
+distribute the updated layouts; furniture already stored in a save is retained.
+
+```bash
+pnpm interiors:preview --serve --port 8881
+pnpm interiors:preview
+```
+
+The command without `--serve` generates `reports/interiors/index.html` for local
+viewing and PNG export, but saving edits requires the server. Rerun the command
+and reload the page after code or sprite changes. See
+[the interior editor documentation](tools/interiors-preview/README.md).
+
+## Economy report
+
+Generate the economy audit from the current game data:
+
+```bash
+pnpm economy:audit
+```
+
+Open `reports/economy/index.html`. The report covers building costs, resources,
+crafting, equipment, tool yields and durability, supply sources and progression
+scenarios. `reports/economy/economy.json` contains the data and source fingerprints.
+The audit reads the current files without modifying the game or maps.
+
+```bash
+pnpm economy:audit --map public/maps/worlds/world-test-1000/maps/world-test-1000-r0-0.map --zone-size 64
+pnpm economy:audit --save /path/to/partie.json
+pnpm economy:audit --capture /path/to/economy-flow.json
+```
+
+To measure a play session, open the game console with Enter and run:
+
+```text
+economy-flow start
+```
+
+After playing, inspect, stop and export the capture:
+
+```text
+economy-flow show
+economy-flow stop
+economy-flow export
+```
+
+Load the downloaded `economy-flow.json` in **Bilan joué** in the HTML report, or
+pass it with `--capture`. Export before reloading or quitting the game: captures
+are not stored in game saves. Use `--out` to change the report output folder and
+`--help` for all options. See [the economy audit documentation](docs/economy-audit.md)
+for measurement limits and objective timing commands.
+
 ## Useful structure
 
 - `app/`: game source code

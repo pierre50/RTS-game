@@ -125,6 +125,7 @@ function createCanvas() {
 function createMenu({ revealEverything = false, playerLabel = 'player' } = {}) {
   const appended = []
   const player = {
+    minimapPreferences: { zoom: 1, hiddenMarkers: [] },
     label: playerLabel,
     colorHex: '#00f',
     buildings: [],
@@ -1006,7 +1007,7 @@ test('debug fog draws one settlement icon and no foreign units or building detai
   assert.deepEqual(ctx.images, [])
 })
 
-test('AI sites remain single icons at every zoom while only personal details expand', () => {
+test('own buildings and villagers remain visible at every zoom while AI sites stay single icons', () => {
   const menu = createMenu()
   menu.context.player.views.isVisible = () => true
   const position = { x: 10, y: 10 }
@@ -1035,8 +1036,8 @@ test('AI sites remain single icons at every zoom while only personal details exp
       ctx.images.map(image => image[0].src.split('/').pop()),
       ['city.svg']
     )
-    assert.equal(ctx.rectangles.length, zoom >= 3 ? 1 : 0)
-    assert.equal(ctx.ellipses.length, zoom >= 3 ? 2 : 1)
+    assert.equal(ctx.rectangles.length, 1)
+    assert.equal(ctx.ellipses.length, 2)
   }
 })
 
@@ -1068,3 +1069,49 @@ test('tracked quest destinations render over unexplored terrain and update to th
   manager.updatePlayerMiniMapEvt()
   assert.equal(context.labels.length, 0)
 })
+
+test('minimap groups ten nearby villagers and excludes hidden units from the count', () => {
+  const hiddenMarkers = new Set()
+  const menu = createMenu()
+  const position = { x: 10, y: 10 }
+  menu.context.player.units = [
+    ...Array.from({ length: 10 }, () => ({ type: 'Villager', position })),
+    { type: 'Villager', position, isDead: true },
+    { type: 'Villager', position, shelterState: { status: 'inside' } },
+    { type: 'Villager', position, spaceId: 'interior:house' },
+  ]
+  const manager = new (loadMinimapManager({ hiddenMarkers }))(menu)
+  const ctx = menu.resourcesMinimap.context
+  manager.activate()
+  assert.equal(ctx.labels.filter(label => label[0] === '10').length, 1)
+  ctx.labels.length = 0
+  hiddenMarkers.add('self')
+  manager.updatePlayerMiniMapEvt()
+  assert.equal(ctx.labels.length, 0)
+})
+
+for (const rectangular of [false, true]) {
+  test(`place inspection follows painted markers and respects filters (${rectangular})`, () => {
+    const hiddenMarkers = new Set()
+    const menu = createMenu()
+    menu.context.player.minimapPreferences.zoom = 4
+    if (rectangular) menu.context.map.localGridLayout = { columns: 3, rows: 3 }
+    const rect = { left: 30, top: 40, width: 600, height: rectangular ? 600 : 300 }
+    menu.minimapMap.getBoundingClientRect = () => rect
+    const position = { x: 10, y: 10 }
+    menu.context.controls.heroUnit = { position, owner: menu.context.player }
+    menu.context.player.buildings = [{ type: 'TownCenter', i: 1, j: 1, size: 1, isBuilt: true, position }]
+    const manager = new (loadMinimapManager({ hiddenMarkers }))(menu)
+    manager.activate()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + rect.height / 2
+    assert.ok(manager.getPlaceAt(x, y))
+    assert.equal(manager.getPlaceAt(x + 40, y), undefined)
+    hiddenMarkers.add('base')
+    manager.updatePlayerMiniMapEvt()
+    assert.equal(manager.getPlaceAt(x, y), undefined)
+    hiddenMarkers.clear()
+    manager.updatePlayerMiniMapEvt()
+    assert.ok(manager.getPlaceAt(x, y))
+  })
+}

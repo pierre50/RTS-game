@@ -1,6 +1,5 @@
 import { t } from '../../lib/lang'
 import { getUnitBagTitle } from '../../lib/resources/resourceDelivery'
-import { createTitledEntityInfoContent } from '../inspection/EntityInfoContent'
 import type { Modal } from '../../lib'
 import type { AnimalEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
@@ -24,7 +23,7 @@ export class AnimalInventoryScreen {
   open(onClose: () => void): Modal {
     return createInspectionModal({
       proximity: { context: this.menu.context, targets: () => [this.animal] },
-      title: getEntityDisplayName(this.animal),
+      title: t('inventoryLootTitle', { name: getEntityDisplayName(this.animal) }),
       inspection: false,
       panelClass: 'inventory-transfer-modal',
       content: this.element,
@@ -39,20 +38,10 @@ export class AnimalInventoryScreen {
     if (!hero || animal.isDestroyed || !animal.isDead) return
     initializeAnimalCorpseLoot(animal)
     const source = createHeroBagContainer(hero, menu)
-    const lootLabel = () =>
-      t('animalLootCount', {
-        name: getEntityDisplayName(animal),
-        count:
-          (animal.inventory?.equipment?.length ?? 0) +
-          Object.values(animal.inventory?.resources ?? {}).reduce(
-            (sum, amount) => sum + Math.max(0, Math.floor(amount ?? 0)),
-            0
-          ),
-      })
     const destination = createInventoryContainer(animal, {
       id: animal.label,
-      labelKey: 'animal',
-      label: lootLabel(),
+      labelKey: 'inventoryLootAvailable',
+      label: t('inventoryLootAvailable'),
     })
     const transfer = new InventoryTransferPanel({
       context: menu.context,
@@ -69,13 +58,11 @@ export class AnimalInventoryScreen {
         return moved
       },
       onChange: () => {
-        destination.label = lootLabel()
         source.label = getUnitBagTitle(hero)
         menu.updateHeroStatus?.(hero)
         menu.refreshInventory?.()
       },
     })
-    this.element.appendChild(createTitledEntityInfoContent(menu.context.app, animal))
     this.element.appendChild(transfer.element)
   }
 }

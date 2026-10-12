@@ -55,6 +55,7 @@ export class MinimapInputController {
   }
 
   onPointerDown = (evt: PointerEvent): void => {
+    if (this.menu.minimapMap?.closest?.('.action-menu-minimap-page')) return
     if (evt.button !== 0 || this.pointerSession) return
     this.longClick = false
     const {

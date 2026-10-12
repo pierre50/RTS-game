@@ -1,8 +1,8 @@
+import { replenishSettlementMarketGold } from '../../lib/equipment/marketSettlementGold'
 import { BUILDING_TYPES } from '../../constants'
 import {
   MARKET_RESTOCK_INTERVAL_DAYS,
   resetMarketEquipmentStock,
-  replenishMarketGold,
   type MarketEquipmentOfferOptions,
 } from '../../lib/equipment/equipmentMarket'
 import type { GameContextLike } from '../../types/context'
@@ -33,11 +33,9 @@ export class MarketRestockSystem implements DailyWorldEventHandler {
 
     let marketChanged = false
     for (const player of this.context.players ?? []) {
+      if (replenishSettlementMarketGold(player)) marketChanged = true
       let restocked = 0
       for (const market of this.getRestockableMarkets(player)) {
-        const previousGold = market.marketGold
-        replenishMarketGold(market)
-        marketChanged ||= market.marketGold !== previousGold
         if (shouldRestockMarket(event.day)) {
           resetMarketEquipmentStock(market, marketOfferOptions(market, player))
           restocked++

@@ -1,3 +1,5 @@
+import type { MinimapPlace } from '../../types/minimap'
+import { t } from '../../lib/lang'
 import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
 import { canvasDrawDiamond, throttle } from '../../lib'
 import { getInteriorExitCell } from '../../lib/buildings/interiorExits'
@@ -41,6 +43,7 @@ export class MinimapManager {
   updatePlayerMiniMap: (owner?: PlayerLike) => void
   updateResourcesMiniMap: () => void
   updateCameraMiniMap: () => void
+  private places: MinimapPlace[] = []
   private displaySize?: MinimapDisplaySize
   private resizeObserver?: ResizeObserver
   private active: boolean
@@ -75,6 +78,36 @@ export class MinimapManager {
       })
       this.resizeObserver.observe(getMinimapElement(this.menu))
     }
+  }
+
+  pan(dx: number, dy: number): void {
+    this.geometry.pan(dx, dy)
+    this.redrawMiniMap()
+  }
+
+  getPlaceAt(clientX: number, clientY: number): MinimapPlace | undefined {
+    const element = getMinimapElement(this.menu)
+    const rect = element.getBoundingClientRect()
+    const transform = this.geometry.getMinimapTransform()
+    const crop = this.geometry.getLocalVisualCropPx(transform)
+    let nearest: MinimapPlace | undefined
+    let distance = 22
+    for (const place of this.places) {
+      const x =
+        rect.left - crop.x + ((place.x + transform.translate) / transform.canvasWidth) * (rect.width + 2 * crop.x)
+      const y = rect.top - crop.y + (place.y / transform.canvasHeight) * (rect.height + 2 * crop.y)
+      const delta = Math.hypot(x - clientX, y - clientY)
+      if (delta < distance) {
+        nearest = place
+        distance = delta
+      }
+    }
+    return nearest
+  }
+
+  recenter(): void {
+    this.geometry.resetZoomAnchor()
+    this.redrawMiniMap()
   }
 
   deactivate(): void {
@@ -354,8 +387,14 @@ export class MinimapManager {
     const space = this.geometry.getMinimapSpace()
     this.clearCanvas(context, canvas, transform)
     const redraw = () => this.updatePlayerMiniMap()
+    this.places = []
     const exitCell = getInteriorExitCell(map)
     if (exitCell && !isMinimapMarkerHidden(this.menu.context, 'exit')) {
+      this.places.push({
+        ...this.geometry.cellToMinimapPoint(exitCell, transform),
+        name: t('minimapExit'),
+        description: '',
+      })
       drawMinimapMarker(
         context,
         'exit',
@@ -369,7 +408,7 @@ export class MinimapManager {
     this.withMinimapViewSpace(player, () => {
       drawMinimapRoads(this.menu, this.geometry, transform, space.id, context)
       this.naturalResources.draw(this.menu, this.geometry, transform, space.id, context)
-      drawMinimapEntities(this.menu, this.geometry, knownBuildings, transform, space, context, redraw)
+      drawMinimapEntities(this.menu, this.geometry, knownBuildings, transform, space, context, redraw, this.places)
     })
     drawMinimapQuestMarkers(this.menu, this.geometry, transform, context)
   }

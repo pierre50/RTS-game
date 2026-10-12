@@ -1,6 +1,7 @@
+import { belongsToSettlement, collectiveAnchor } from '../../../lib/economy/collectiveConstruction'
 import { BUILDING_TYPES, UNIT_TYPES, MOUNTED_HORSE_SPEED_BONUS } from '../../../constants'
-import { BUILDING_TRAINING_CAPACITY } from '../../../lib/buildings/buildingTraining'
-import { getTrainingDurationDays } from '../../../lib/training/trainingRules'
+import { getBuildingTrainingCapacity } from '../../../lib/buildings/buildingTraining'
+import { getTrainingDurationDays, getTrainingStartingExperience } from '../../../lib/training/trainingRules'
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../../lib/chief'
 import { getVillagerWorkingMinutes } from '../../../lib/units/village/villagerSchedule'
 import { consumeStableHorse, getStableHorseAmount } from '../../../lib/horses/stableHorses'
@@ -26,7 +27,7 @@ export function advanceOfflineTrainingRequests(
 ): void {
   if (playerNeedsChiefForCommand(player) && !hasLivingChief(player)) return
   for (const building of player.buildings ?? []) {
-    if (!isLiving(building) || !building.isBuilt) continue
+    if (!isLiving(building) || !building.isBuilt || building.buildingUpgrade) continue
     const config = rules.buildingConfig(playerIndex, building.type)
     for (const request of [...(building.trainingRequests ?? [])]) {
       if (!config.units?.includes(request.type)) continue
@@ -50,7 +51,7 @@ export function advanceOfflineTrainingRequests(
         const incoming = (player.units ?? []).filter(
           unit => isLiving(unit) && unit.trainingTargetType && targetLabel(unit) === building.label
         ).length
-        if ((building.trainingQueue?.length ?? 0) + incoming >= BUILDING_TRAINING_CAPACITY) continue
+        if ((building.trainingQueue?.length ?? 0) + incoming >= getBuildingTrainingCapacity(building)) continue
         if (
           building.type === BUILDING_TYPES.stable &&
           getStableHorseAmount(building as unknown as BuildingEntity) <= incoming
@@ -63,6 +64,7 @@ export function advanceOfflineTrainingRequests(
             unit =>
               isLiving(unit) &&
               !unit.isChief &&
+              belongsToSettlement(player, collectiveAnchor(player, unit), building) &&
               unit.controlMode !== 'hero' &&
               !unit.followingHero &&
               !unit.trainingTargetType &&
@@ -102,7 +104,7 @@ export function advanceOfflineTrainingRequests(
       )
       if (request.travelRemainingMs > 0) continue
       // Saved incoming orders may exceed today's capacity; never admit an extra trainee.
-      if ((building.trainingQueue?.length ?? 0) >= BUILDING_TRAINING_CAPACITY) continue
+      if ((building.trainingQueue?.length ?? 0) >= getBuildingTrainingCapacity(building)) continue
       const mounting = building.type === BUILDING_TYPES.stable
       const horse = mounting ? consumeStableHorse(building as unknown as BuildingEntity) : null
       if (mounting && !horse) continue
@@ -120,7 +122,7 @@ export function advanceOfflineTrainingRequests(
           gender: unit.gender,
           inventory: unit.inventory,
           appearanceVariants: unit.appearanceVariants,
-          experience: mounting ? unit.experience : {},
+          experience: getTrainingStartingExperience(building, request.type, unit.experience),
           ...(mounting
             ? {
                 mountedOnHorse: true,

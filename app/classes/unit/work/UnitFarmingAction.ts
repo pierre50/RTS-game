@@ -1,3 +1,4 @@
+import { wearEquippedTool } from '../../../lib/equipment/equipmentWear'
 import { getHarvestAmount } from '../../../lib/economy/workRules'
 import { LOADING_TYPES, MENU_INFO_IDS, SOUND_CUES } from '../../../constants'
 import { showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../../lib'
@@ -64,6 +65,7 @@ function farmImpact(runtime: UnitResourceActions, workTickFrame: number): void {
     if (isHeroControlled(unit)) stopManualHeroAction(unit)
     return
   }
+  wearEquippedTool(unit, 'farm')
   harvestFarm(runtime, d, requestedGain, workTickFrame)
 }
 

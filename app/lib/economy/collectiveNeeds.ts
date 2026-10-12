@@ -1,3 +1,4 @@
+import { calculateVillagerArrivals } from '../buildings/townCenter'
 import { DAILY_CONSUMPTION_PER_VILLAGER, VILLAGER_ARRIVAL_CONFIG } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 
@@ -53,13 +54,9 @@ export function collectiveWorkerClaims(
 }
 
 // Cover the next upkeep payment as well as the reserve checked afterwards for arrivals.
-export function villageFoodReserve(population: number, populationMax: number): number {
+export function villageFoodReserve(population: number, populationMax: number, buildingLevel = 0): number {
   if (population <= 0) return 0
-  const arrivals = Math.min(
-    VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay,
-    Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate)),
-    Math.max(0, populationMax - population)
-  )
+  const arrivals = calculateVillagerArrivals({ population, populationMax, buildingLevel })
   return (
     (DAILY_CONSUMPTION_PER_VILLAGER.food ?? 0) *
     (population * (VILLAGER_ARRIVAL_CONFIG.currentPopulationReserveDays + 1) +

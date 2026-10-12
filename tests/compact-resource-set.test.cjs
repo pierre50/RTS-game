@@ -344,3 +344,78 @@ test('delta restoration starts authored wheat mature but preserves explicit save
   assert.equal(resources.byLabel('young').currentFrame, 0)
   assert.equal(resources.byLabel('growing').currentFrame, 1)
 })
+
+test('local multi-type nearest query is bounded, circular and does not materialize resources', () => {
+  const { resources, add, created } = setup()
+  add(62, 63)
+  add(65, 63, { type: 'Berrybush' })
+  add(64, 65)
+  add(67, 66) // inside bounding square but outside circle
+  add(900, 900)
+  const result = resources.nearestInArea(
+    ['Tree', 'Berrybush'],
+    { i: 64, j: 63 },
+    { i: 64, j: 63, radius: 3 },
+    2,
+    () => true
+  )
+  assert.deepEqual(
+    result.map(r => [r.i, r.j]),
+    [
+      [65, 63],
+      [62, 63],
+    ]
+  )
+  assert.equal(created(), 0)
+  assert.equal(resources.residentZoneCount, 0)
+})
+
+test('local query includes active and unpackable resources once and forgets depleted respawns', () => {
+  const { resources, add } = setup()
+  add(10, 10)
+  const old = resources.atCell(10010)
+  resources.delete(old)
+  add(10, 10, { type: 'Berrybush' })
+  const replacement = resources.atCell(10010)
+  resources.add({ i: 11, j: 10, type: 'Wheat', quantity: 2, spaceId: 'test-world' })
+  const query = () =>
+    resources.nearestInArea(
+      ['Tree', 'Berrybush', 'Wheat'],
+      { i: 10, j: 10 },
+      { i: 10, j: 10, radius: 5 },
+      8,
+      r => r.quantity > 0
+    )
+  assert.equal(query().length, 2)
+  assert.equal(query()[0], replacement)
+  resources.delete(replacement)
+  assert.deepEqual(
+    query().map(r => r.type),
+    ['Wheat']
+  )
+})
+
+test('local search only reads nearby occupied records even with many remote resources', t => {
+  const { resources, add, created } = setup()
+  for (let i = 100; i < 1000; i += 3) for (let j = 100; j < 1000; j += 3) add(i, j)
+  for (let i = 1; i < 60; i += 5) add(i, 10, { type: i % 2 ? 'Tree' : 'Berrybush' })
+  let reads = 0
+  const read = resources.read.bind(resources)
+  resources.read = index => {
+    reads++
+    return read(index)
+  }
+  const query = () =>
+    resources.nearestInArea(['Tree', 'Berrybush'], { i: 30, j: 10 }, { i: 30, j: 10, radius: 30 }, 8, () => true)
+  const start = performance.now()
+  assert.equal(query().length, 8)
+  const cold = performance.now() - start
+  assert.equal(reads, 12)
+  const warm = performance.now()
+  for (let n = 0; n < 100; n++) query()
+  t.diagnostic(
+    `90,012 resources: cold ${cold.toFixed(3)} ms, warm mean ${((performance.now() - warm) / 100).toFixed(3)} ms; 12 occupied records read per query, no empty-cell scan`
+  )
+  assert.equal(reads, 1212)
+  assert.equal(created(), 0)
+})

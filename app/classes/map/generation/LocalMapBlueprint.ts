@@ -1,3 +1,4 @@
+import { INTERIOR_CORNER_RADIUS } from '../../../config/interiors'
 import { createInteriorWallEdges } from '../../../lib/buildings/interiorWalls'
 import { definedProperties } from '../../../lib/definedProperties'
 import { blueprintToLocalGrid, createLocalMapLayout, localToGrid } from '../../../lib/localMapLayout'
@@ -120,7 +121,10 @@ function computeInteriorBorderMask(floorMask: number[][], size: number): number[
 }
 
 /** A rounded rectangle in world coordinates projects along the two isometric axes. */
-export function createIsometricInteriorBlueprint(source: MapBlueprint): MapBlueprint {
+export function createIsometricInteriorBlueprint(
+  source: MapBlueprint,
+  roomHalfExtent?: number | { halfWidth: number; halfDepth: number; cornerRadius: number }
+): MapBlueprint {
   if (source.localGridLayout || source.preserveLegacyGrid) return source
   const layout = createLocalMapLayout(source.size)
   const size = layout.columns - 1 + Math.ceil((layout.rows - 1) / 2)
@@ -128,13 +132,16 @@ export function createIsometricInteriorBlueprint(source: MapBlueprint): MapBluep
   const relief = createSparseGrid<number>(size)
   const floorMask = createSparseGrid<number>(size)
   const center = Math.round(size / 2)
-  const halfExtent = Math.floor((source.size - 3) / 2)
-  const cornerRadius = 1.5
+  const shape = typeof roomHalfExtent === 'object' ? roomHalfExtent : undefined
+  const halfExtent = typeof roomHalfExtent === 'number' ? roomHalfExtent : Math.floor((source.size - 3) / 2)
+  const halfWidth = shape?.halfWidth ?? halfExtent
+  const halfDepth = shape?.halfDepth ?? halfExtent
+  const cornerRadius = shape?.cornerRadius ?? INTERIOR_CORNER_RADIUS
 
   for (let i = 0; i <= size; i += 1) {
     for (let j = 0; j <= size; j += 1) {
-      const dx = Math.max(0, Math.abs(i - center) - halfExtent + cornerRadius)
-      const dy = Math.max(0, Math.abs(j - center) - halfExtent + cornerRadius)
+      const dx = Math.max(0, Math.abs(i - center) - halfWidth + cornerRadius)
+      const dy = Math.max(0, Math.abs(j - center) - halfDepth + cornerRadius)
       const isFloor = dx * dx + dy * dy <= cornerRadius * cornerRadius
       setInteriorCell(terrain, i, j, isFloor ? 'Dirt' : 'Water')
       setInteriorCell(relief, i, j, 0)
@@ -144,7 +151,7 @@ export function createIsometricInteriorBlueprint(source: MapBlueprint): MapBluep
 
   const borderMask = computeInteriorBorderMask(floorMask, size)
   // Midpoint of the front-left wall: one exposed edge and a straight approach.
-  const exit = { i: center, j: center + halfExtent }
+  const exit = { i: center, j: center + Math.floor(halfDepth) }
   setInteriorCell(borderMask, exit.i, exit.j, 0)
   const sourceExit = source.exits?.find(Boolean) as { i: number; j: number; id?: string } | undefined
 
@@ -164,6 +171,7 @@ export function createIsometricInteriorBlueprint(source: MapBlueprint): MapBluep
       type: 'rounded-isometric',
       center: { i: center, j: center },
       halfExtent,
+      ...(shape ? { halfWidth, halfDepth } : {}),
       cornerRadius,
     },
   })

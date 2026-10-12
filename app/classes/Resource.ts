@@ -1,3 +1,4 @@
+import { resourceVisualTexture } from '../lib/graphics/resourceMirroring'
 import type { AnimatedSprite } from 'pixi.js'
 import { Assets, Polygon, type Sprite } from 'pixi.js'
 import {
@@ -253,7 +254,7 @@ export class Resource extends Instance implements ResourceEntity {
     this.spawnTreeFragmentBurst()
     const texture = getTexture(textureRef, Assets)
     this.textureName = textureRefToString(textureRef)
-    sprite.texture = texture
+    sprite.texture = resourceVisualTexture(this, texture)
     const points = [-CELL_WIDTH / 2, 0, 0, -CELL_HEIGHT / 2, CELL_WIDTH / 2, 0, 0, CELL_HEIGHT / 2]
     sprite.hitArea = new Polygon(points)
     if (texture.defaultAnchor) {
@@ -285,7 +286,7 @@ export class Resource extends Instance implements ResourceEntity {
     if (!texture) return
 
     this.textureName = textureRefToString(textureRef)
-    this.sprite.texture = texture
+    this.sprite.texture = resourceVisualTexture(this, texture)
     if (texture.defaultAnchor) {
       this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
     }
@@ -303,7 +304,7 @@ export class Resource extends Instance implements ResourceEntity {
     if (textureRef) {
       const texture = getTexture(textureRef, Assets)
       this.textureName = textureRefToString(textureRef)
-      this.sprite.texture = texture
+      this.sprite.texture = resourceVisualTexture(this, texture)
       this.zIndex--
       this.syncShadow()
     }
@@ -384,7 +385,7 @@ export class Resource extends Instance implements ResourceEntity {
     if (!texture) return
 
     this.textureName = textureRefToString(textureRef)
-    this.sprite.texture = texture
+    this.sprite.texture = resourceVisualTexture(this, texture)
     if (texture.defaultAnchor) {
       this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
     }

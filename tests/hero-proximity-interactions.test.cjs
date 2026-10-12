@@ -777,3 +777,18 @@ test('a selected NPC is not replaced by a nearby companion horse', () => {
   assert.equal(interaction.target, npc)
   assert.equal(interaction.action, 'communicate')
 })
+
+test('ground resources offer collect and hide it while the hero is busy', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  for (const type of ['GroundWood', 'GroundStone']) {
+    const target = { family: 'resource', type, quantity: 1 }
+    const hero = makeHero()
+    assert.deepEqual(resolveHeroProximityInteraction({ hero, buildings: [], openEntityTarget: target }), {
+      action: 'collect',
+      labelKey: 'heroInteractionCollect',
+      target,
+    })
+    hero.actionLocked = true
+    assert.equal(resolveHeroProximityInteraction({ hero, buildings: [], openEntityTarget: target }), null)
+  }
+})

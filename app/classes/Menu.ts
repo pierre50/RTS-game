@@ -260,8 +260,8 @@ export default class Menu implements MenuLike {
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec {
     return this.actionSpecs.getBuildingTrainingStatusButton(type, building)
   }
-  getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
-    return this.actionSpecs.getActionBuildingButton(type, ownerOverride)
+  getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null, buildingLevel = 0): MenuButtonSpec {
+    return this.actionSpecs.getActionBuildingButton(type, ownerOverride, buildingLevel)
   }
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
     return this.actionSpecs.getActionMenuItems(selection)

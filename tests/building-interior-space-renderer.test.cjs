@@ -50,6 +50,10 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
   }
 
   const mocks = {
+    '../../config/interiorLayoutPositions': {
+      INTERIOR_LAYOUT_POSITIONS: overrides.interiorLayouts ?? {},
+      isFullInteriorLayout: layout => Object.hasOwn(layout, 'items'),
+    },
     '../../app/classes/Resource': { Resource: class {} },
     'pixi.js': { Container, Graphics, Sprite: class extends Container {} },
     './textures': { getTextureByFrame: () => ({}) },
@@ -731,17 +735,20 @@ test('runtime interior sleep refuses exit passages and sleeps only on a free res
   const exit = { i: 1, j: 1 }
   const rest = { i: 0, j: 1 }
   let sleeping = 0
-  const { putRestingUnitToSleep } = require('./helpers/loadTsModule.cjs').loadTsModule('app/services/rest/UnitRestSleep.ts', {
-    mocks: {
-      '../../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set([exit]) },
-      '../../lib/mapSpaces': { getEntityCell: unit => unit.currentCell },
-      './UnitRestShelter': {},
-      './UnitRestState': {},
-      '../../lib/entities/entityFade': {},
-      '../../lib/entities/overheadIndicator': { setUnitOverheadIndicator() {} },
-      './UnitSleepVisuals': { setSleepingOutsideFinalVisual: () => sleeping++ },
-    },
-  })
+  const { putRestingUnitToSleep } = require('./helpers/loadTsModule.cjs').loadTsModule(
+    'app/services/rest/UnitRestSleep.ts',
+    {
+      mocks: {
+        '../../lib/buildings/passageCells': { createReservedPassageCellLookup: () => new Set([exit]) },
+        '../../lib/mapSpaces': { getEntityCell: unit => unit.currentCell },
+        './UnitRestShelter': {},
+        './UnitRestState': {},
+        '../../lib/entities/entityFade': {},
+        '../../lib/entities/overheadIndicator': { setUnitOverheadIndicator() {} },
+        './UnitSleepVisuals': { setSleepingOutsideFinalVisual: () => sleeping++ },
+      },
+    }
+  )
   const unit = { context: {}, currentCell: exit, shelterState: { reason: 'sleep', status: 'inside' } }
   assert.equal(putRestingUnitToSleep(unit, { instant: true }), false)
   assert.equal(sleeping, 0)
@@ -1146,12 +1153,28 @@ test('mirrored interiors link the reflected outdoor door to the reflected room e
   }
   const space = ensureBuildingInteriorSpace(context, building, blueprint)
   assert.equal(space.exteriorEntryCell, grid[5][5])
-  assert.equal(space.exitCell, space.grid[2][1])
+  assert.equal(space.exitCell, space.grid[13][9])
   assert.equal(space.entryPortal.sourceCell, grid[5][5])
   assert.equal(space.entryPortal.targetCell, space.exitCell)
   assert.equal(space.exitPortal.targetCell, grid[5][5])
   assert.equal(ensureBuildingInteriorSpace(context, building, blueprint), space)
   assert.deepEqual(blueprint.exits, [{ i: 1, j: 2 }])
+  const retainedCell = space.grid[9][9]
+  const resident = { label: 'resident', currentCell: retainedCell }
+  retainedCell.has = resident
+  retainedCell.solid = false
+  const floorCount = space.walkableCells.length
+  building.buildingLevel = 2
+  assert.equal(ensureBuildingInteriorSpace(context, building, blueprint), space)
+  assert.equal(space.grid[9][9], retainedCell)
+  assert.equal(retainedCell.has, resident)
+  assert.equal(retainedCell.solid, false, 'upgrade preserves traversability of occupied cells')
+  assert.equal(space.walkableCells.length, floorCount)
+  assert.equal(space.exitCell, space.grid[13][9])
+  assert.equal(space.entryPortal.targetCell, space.exitCell)
+  const expandedCount = space.walkableCells.length
+  ensureBuildingInteriorSpace(context, building, blueprint)
+  assert.equal(space.walkableCells.length, expandedCount)
 })
 
 test('renovating building interiors expel living units while preserving stored horses', () => {
@@ -1271,4 +1294,41 @@ test('renovating building interiors expel living units while preserving stored h
     calls.find(call => call[0] === 'setActive'),
     ['setActive', false]
   )
+})
+
+test('game entry uses the authored tower size instead of the pre-generated interior map', () => {
+  const { ensureBuildingInteriorSpace } = loadBuildingInteriorSpaceSystem({
+    interiorLayouts: { WatchTower: { 0: { roomSize: 7, items: {} } } },
+  })
+  const context = {
+    app: { ticker: { add() {}, remove() {} } },
+    controls: {},
+    map: {
+      grid: [[{ i: 0, j: 0 }]],
+      spaces: new Map(),
+      randomItem: items => items[0],
+      addChild(child) {
+        child.parent = this
+      },
+    },
+  }
+  const building = {
+    type: 'WatchTower',
+    buildingLevel: 0,
+    size: 2,
+    label: 'tower-custom',
+    i: 0,
+    j: 0,
+    x: 0,
+    y: 0,
+    isBuilt: true,
+    owner: { type: 'Human', isPlayed: true, buildings: [] },
+    context,
+  }
+  const legacy = { size: 31, terrain: [], relief: [], exits: [{ i: 0, j: 0 }], resources: [] }
+  const space = ensureBuildingInteriorSpace(context, building, legacy)
+  const floor = space.grid.flat().filter(cell => !cell.terrainHidden)
+  assert.equal(floor.length, 21, '5 × 5 floor minus its four clipped corners')
+  assert.ok(space.size < legacy.size)
+  assert.ok(space.exitCell && !space.exitCell.terrainHidden)
 })

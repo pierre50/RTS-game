@@ -1,3 +1,4 @@
+import { rangedWeaponEquipment } from '../equipment/rangedWeapon'
 import { equipmentVisualParts } from '../equipment/helmetVariants'
 import { SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
@@ -45,7 +46,7 @@ function getInventoryAppearanceEquipment(unit: UnitEntity): string[] {
       .flatMap(equipmentVisualParts)
   }
   if (unit.work === WORK_TYPES.hunter) {
-    return [...equipped, activeWeapons.ranged, activeWeapons.ranged ? 'quiver' : undefined, arrow]
+    return [...equipped, ...rangedWeaponEquipment(activeWeapons.ranged, arrow)]
       .filter(isEquipmentKey)
       .flatMap(equipmentVisualParts)
   }
@@ -153,8 +154,8 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
 
   if (!isVillagerLike) {
     const actionSheet =
-      resolvedBakedUnit !== 'chief' && unit.type === UNIT_TYPES.bowman
-        ? bakedUnitActionAlias(resolvedBakedUnit, variant, 'shoot')
+      resolvedBakedUnit === 'bandit_archer'
+        ? bakedUnitActionAlias(resolvedBakedUnit, variant, 'slash')
         : bakedUnitAlias(resolvedBakedUnit, variant, 'action')
     unit.assets = {
       standingSheet: walking,
@@ -163,6 +164,13 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
         : {}),
       walkingSheet: walking,
       actionSheet,
+      meleeSheet: ['bandit_archer', 'priest'].includes(resolvedBakedUnit)
+        ? bakedUnitActionAlias(resolvedBakedUnit, variant, 'slash')
+        : actionSheet,
+      shootingSheet:
+        resolvedBakedUnit === 'bandit_archer'
+          ? bakedUnitAlias(resolvedBakedUnit, variant, 'action')
+          : bakedUnitActionAlias(resolvedBakedUnit, variant, 'shoot'),
       dyingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'dying'),
       corpseSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'corpse'),
     }
@@ -202,6 +210,8 @@ function applyVillagerWorkAssets(unit: UnitEntity, variant: string, resolvedBake
       ...(resolvedBakedUnit === 'villager' ? { sittingSheet: bodyAlias(variant, 'sitting') } : {}),
       walkingSheet: bodyWalking,
       actionSheet: actionAlias(variant, actionAnimation),
+      meleeSheet: actionAlias(variant, 'slash'),
+      shootingSheet: actionAlias(variant, 'shoot'),
       dyingSheet: bodyDying,
       corpseSheet: bodyCorpse,
     }

@@ -25,6 +25,7 @@
     "world:generate-large": "node tools/maps/generate-large-test.cjs",
     "world:generate": "node tools/generate-world-maps.cjs",
     "caves:generate": "node tools/generate-cave-maps.cjs",
+    "interiors:preview": "node tools/interiors-preview/build.cjs",
     "interiors:generate": "node tools/generate-interior-maps.cjs",
     "assets:interior-walls": "python3 scripts/build_interior_wall_textures.py",
     "assets:icons": "python3 scripts/retro_palette/build_icons.py",
@@ -33,6 +34,7 @@
     "assets:lpc:build-equipment": "python3 scripts/lpc/build_equipment.py",
     "assets:lpc:build-hero-appearance": "python3 scripts/lpc/build_hero_appearance.py",
     "assets:lpc:build-animals": "python3 scripts/lpc/build_animals.py",
+    "assets:lpc:build-pebble-projectile": "python3 scripts/lpc/build_pebble_projectile.py",
     "assets:lpc:build-arrow-projectiles": "python3 scripts/lpc/build_arrow_projectiles.py",
     "format": "prettier --write \"app/**/*.{ts,css}\" \"*.{js,json}\"",
     "test": "node --test tests/*.test.cjs",
@@ -43,13 +45,16 @@
     "architecture:json": "madge app engine --extensions ts --ts-config tsconfig.json --circular --json",
     "check:quick": "pnpm typecheck && pnpm lint && pnpm deadcode",
     "check": "pnpm audit:report",
+    "economy:audit": "node tools/economy-audit.cjs",
     "audit:code": "pnpm audit:report",
     "code:health": "node tools/audit-report.cjs",
     "health": "pnpm code:health",
     "audit:report": "node tools/audit-report.cjs",
     "precommit": "lint-staged",
     "lint": "eslint \"app/**/*.ts\" \"engine/**/*.ts\" \"tools/**/*.cjs\" \"tests/**/*.cjs\" main.js preload.js --max-warnings 0",
-    "health:baseline": "node tools/audit-report.cjs --update-baseline"
+    "health:baseline": "node tools/audit-report.cjs --update-baseline",
+    "ui:png": "node tools/ui-gallery/capture.cjs",
+    "ui:gallery": "node tools/ui-gallery/build.cjs"
   },
   "build": {
     "appId": "com.pierre50.dawn-of-empires",

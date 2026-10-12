@@ -6,7 +6,10 @@ import type { MinimapHostLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import { startTeleportDiagnostics, traceRuntime } from '../../lib/runtimeDiagnostics'
 
-export function teleportHeroFromMinimap(menu: MinimapHostLike, point: { x: number; y: number }): void {
+export function teleportHeroFromMinimap(
+  menu: Pick<MinimapHostLike, 'context' | 'minimapManager'>,
+  point: { x: number; y: number }
+): void {
   const { controls, map } = menu.context
   const hero = controls.heroUnit
   const space = getActiveMapSpace(map)

@@ -1,12 +1,10 @@
-import { getBuildingTrainingLoad } from '../lib/buildings/buildingTraining'
+import { hasBuildingTrainingCapacity } from '../lib/buildings/buildingTraining'
 import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import type { AIStrategy } from './AIStrategy'
 import type { AIBuildingLike, AIEntityLike, AIResourceAmount, AIStrategySnapshot } from './types'
 
-import { AI_BUILDING_TRAINING_CAPACITY } from './config'
-
 function hasAiBuildingTrainingCapacity(building: AIBuildingLike): boolean {
-  return getBuildingTrainingLoad(building) < AI_BUILDING_TRAINING_CAPACITY
+  return hasBuildingTrainingCapacity(building)
 }
 
 function canAiVillagerTrainAtBuilding(building: AIBuildingLike, villager: AIEntityLike, unitType: string): boolean {

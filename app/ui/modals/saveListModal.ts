@@ -31,15 +31,17 @@ function createSaveRow(state: SaveListState, { key, name, date }: SaveIndexEntry
     description: formatSaveDate(date),
     trailingAction: {
       label: t('load'),
-      onClick: async () => {
-        try {
-          await loadSavedGame(key, saveData => {
-            state.getModal().close()
-            state.onLoad(saveData)
-          })
-        } catch {
-          reportMaybeVisibleError(state, t('corruptSave'))
-        }
+      onClick: () => {
+        void (async () => {
+          try {
+            await loadSavedGame(key, saveData => {
+              state.getModal().close()
+              state.onLoad(saveData)
+            })
+          } catch {
+            reportMaybeVisibleError(state, t('corruptSave'))
+          }
+        })()
       },
     },
   }).element

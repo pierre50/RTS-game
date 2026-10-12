@@ -19,6 +19,7 @@ type TrainingCancellationHost = {
 
 function createRestoredTraineeExtra(trainee: TrainingTrainee): UnitCreationExtra {
   const extra: UnitCreationExtra = {
+    villageHome: trainee.villageHome,
     homeHouseLabel: trainee.homeHouseLabel,
     homeBedLabel: trainee.homeBedLabel,
     partnerLabel: trainee.partnerLabel,
@@ -70,7 +71,11 @@ function cancelConcurrentTrainingEntries(
     if (!restoreCancelledTrainee(host, entry.trainee)) continue
     entry.trainingDayChangeUnsubscribe?.()
     const unit = building.owner.config.units[entry.type]
-    if (unit) refundCost(building.owner, entry.cost ?? getUnitTrainingCost(building.owner, entry.type))
+    if (unit)
+      refundCost(building.owner, entry.cost ?? getUnitTrainingCost(building.owner, entry.type), {
+        includeHero: false,
+        settlement: building,
+      })
     restoreCancelledStableHorse(building, entry.extra)
     building.trainingQueue?.splice(building.trainingQueue.indexOf(entry), 1)
     cancelled = true
@@ -81,7 +86,10 @@ function cancelConcurrentTrainingEntries(
 function cancelClassicActiveTraining(building: BuildingControllerHost, host: TrainingCancellationHost): boolean {
   const activeType = building.loading !== null ? building.queue[0] : null
   if (!activeType || host.activeTrainingTrainee) return false
-  refundCost(building.owner, getUnitTrainingCost(building.owner, activeType))
+  refundCost(building.owner, getUnitTrainingCost(building.owner, activeType), {
+    includeHero: false,
+    settlement: building,
+  })
   building.trainingDayChangeUnsubscribe?.()
   building.trainingDayChangeUnsubscribe = null
   building.loading = null
@@ -103,7 +111,11 @@ function refundRemainingQueue(building: BuildingControllerHost, trainingEntryTyp
       continue
     }
     const unit = building.owner.config.units[type]
-    if (unit) refundCost(building.owner, getUnitTrainingCost(building.owner, type))
+    if (unit)
+      refundCost(building.owner, getUnitTrainingCost(building.owner, type), {
+        includeHero: false,
+        settlement: building,
+      })
     cancelled = true
   }
   return cancelled

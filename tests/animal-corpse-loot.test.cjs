@@ -29,7 +29,7 @@ function hunter(types = ['Granary', 'StoragePit']) {
     j: 0,
     inventory: { resources: {} },
   }))
-  return { type: 'Villager', owner, i: 0, j: 0, inventory: { resources: {} } }
+  return { type: 'Villager', owner, i: 0, j: 0, inventory: { activeWeapons: { tool: 'axe_ceramic' }, resources: {} } }
 }
 
 test('kill rolls materials once; opening and reload preserve exact remaining loot', () => {
@@ -129,6 +129,7 @@ test('returning hunters skip loot they cannot deposit', () => {
 
 test('a hungry hunter takes personal provisions without a completed town center or depot', () => {
   const unit = hunter([])
+  unit.inventory.equipment = ['hammer_ceramic']
   unit.owner.buildings.push({ type: 'TownCenter', isBuilt: false, i: 0, j: 0 })
   const animal = corpse({ meat: 20, leather: 2 })
   assert.equal(loot.canRecoverAnimalLootForDelivery(animal, unit), true)

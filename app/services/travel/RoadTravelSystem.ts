@@ -1,15 +1,16 @@
-import { CELL_WIDTH, CELL_HEIGHT, STEP_TIME } from '../../constants/core'
-import { ensureOutsideMapSpace, getEntitySpaceId, moveEntityToMapSpace } from '../../lib/mapSpaces'
-import { setUnitSuspension, unitSuspensionReason, wakeUnitSimulation } from '../../lib/units/unitSuspension'
-import { beginRoadJourney, registerRoadTravel, withRoadJourneyOrder } from '../../lib/units/roadJourney'
-import { getEnergyMoveSpeedMultiplier } from '../../lib/units/unitEnergy'
-import { ambientActivityArea } from '../world/AmbientActivityArea'
+import { CELL_HEIGHT, CELL_WIDTH, STEP_TIME } from '../../constants/core'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
 import { t } from '../../lib/lang'
+import { ensureOutsideMapSpace, getEntitySpaceId, moveEntityToMapSpace } from '../../lib/mapSpaces'
+import { beginRoadJourney, registerRoadTravel, withRoadJourneyOrder } from '../../lib/units/roadJourney'
+import { getEnergyMoveSpeedMultiplier } from '../../lib/units/unitEnergy'
+import { setUnitSuspension, unitSuspensionReason, wakeUnitSimulation } from '../../lib/units/unitSuspension'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
-import type { RuntimeCell } from '../../types/map'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
-import { planRoadRoute, planTownApproach, type RoadPoint } from './RoadRoute'
+import type { RuntimeCell } from '../../types/map'
+import { ambientActivityArea } from '../world/AmbientActivityArea'
+import { type RoadPoint } from './RoadRoute'
+import { isRoadTravelObserved, planRoadJourney } from './RoadTravelPolicy'
 
 type Journey = {
   town: BuildingEntity
@@ -101,12 +102,6 @@ export class RoadTravelSystem {
     return true
   }
 
-  private *uncachedPlan(unit: UnitEntity, town: BuildingEntity): Generator<void, RoadPoint[] | null> {
-    const route = yield* planRoadRoute(unit, town, this.context.map)
-    if (route) return route
-    return yield* planTownApproach(unit, town, this.context.map)
-  }
-
   private *plan(unit: UnitEntity, town: BuildingEntity): Generator<void, RoadPoint[] | null> {
     // Groups departing the same cell share the cooperative search, including while
     // it is pending. Local movement still validates obstacles when observed.
@@ -114,7 +109,7 @@ export class RoadTravelSystem {
     const now = this.context.scheduler.elapsedMs
     let shared = this.plans.get(key)
     if (!shared || (shared.result !== undefined && now - shared.created > 5000)) {
-      shared = { search: this.uncachedPlan(unit, town), created: now }
+      shared = { search: planRoadJourney(this.context, unit, town), created: now }
       if (this.plans.size >= 128) this.plans.delete(this.plans.keys().next().value!)
       this.plans.set(key, shared)
     }
@@ -160,10 +155,8 @@ export class RoadTravelSystem {
     if (failure && unit.owner?.isPlayed) this.context.menu?.showMessage(t('npcTravelNoRoute'), 'warning')
   }
 
-  private observed(point: RoadPoint, unit: UnitEntity, inCamera: (point: RoadPoint) => boolean): boolean {
-    const hero = this.context.controls?.heroUnit
-    if (hero) return getEntitySpaceId(hero) === 'outside' && distance(hero, point) <= 94
-    return inCamera(point)
+  private observed(point: RoadPoint, _unit: UnitEntity, inCamera: (point: RoadPoint) => boolean): boolean {
+    return isRoadTravelObserved(this.context, point, inCamera)
   }
 
   update(): void {

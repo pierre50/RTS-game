@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -32,7 +33,7 @@ function fixture(count = 6) {
     i: 11,
     j: 11,
     inactif: true,
-    inventory: { resources: { wheat: 12 } },
+    inventory: { ...workerInventory('axe_ceramic'), resources: { wheat: 12 } },
   }))
   const owner = {
     type: 'Human',
@@ -48,6 +49,7 @@ function fixture(count = 6) {
 test('reserve goals use the capacity of each completed depot', () => {
   const { owner, units, pit, granary } = fixture(1)
   owner.forgeUpgrades = { pickaxes: 2 }
+  units[0].inventory.activeWeapons.tool = 'pickaxe_bronze'
   const goals = settlementStockGoals(owner, units[0])
   assert.deepEqual(goals, { wood: 150, stone: 90, gold: 30, copper: 15, tin: 6, iron: 9, wheat: 300, food: 8 })
   owner.buildings.push({ ...pit, label: 'second' })
@@ -66,11 +68,11 @@ test('reserve goals use the capacity of each completed depot', () => {
   assert.deepEqual(settlementStockGoals(owner, units[0]), { food: 8 })
 })
 test('idle human workers divide stock deficits into bounded claims', () => {
-  const { owner, units } = fixture(10)
+  const { owner, units } = fixture(11)
   const jobs = [...planCollectiveTasks(owner, units).values()].map(task => task.job)
-  // The depot needs 150 wood; each provisioned bag has 18 free slots.
-  assert.deepEqual(jobs, [...Array(9).fill('wood'), 'stone'])
-  assert.equal(jobs.filter(job => job === 'wood').length, Math.ceil(150 / 18))
+  // The depot needs 150 wood; each provisioned bag has 15 free slots after carrying tools.
+  assert.deepEqual(jobs, [...Array(10).fill('wood'), 'stone'])
+  assert.equal(jobs.filter(job => job === 'wood').length, Math.ceil(150 / 15))
 })
 test('five missing wood claims one worker; cargo and manual assignments prevent duplicate work', () => {
   const { owner, units, pit } = fixture()
@@ -133,6 +135,8 @@ test('iron reserves unlock with suitable tools, not before', () => {
   owner.age = 0
   assert.equal(settlementStockGoals(owner, units[0]).iron, 0)
   units[0].inventory.equipment = ['pickaxe_bronze']
+  assert.equal(settlementStockGoals(owner, units[0]).iron, 0)
+  units[0].inventory.activeWeapons.tool = units[0].inventory.equipment.pop()
   assert.equal(settlementStockGoals(owner, units[0]).iron, 9)
 })
 test('automatic deliveries enforce depot roles and ignore legacy block flags', () => {
@@ -169,7 +173,7 @@ test('automatic deliveries enforce depot roles and ignore legacy block flags', (
 })
 
 test('three days away replenish within full-capacity targets and never deposit into the town center', () => {
-  const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
+  const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts', { moduleCache })
   const { owner, center, pit } = fixture()
   const state = {
     world: { size: 40 },
@@ -197,12 +201,25 @@ test('three days away replenish within full-capacity targets and never deposit i
     cycleMs: () => 1000,
     wheatMatureFrame: 5,
   }
+  const { startEconomyTelemetry, readEconomyTelemetry } = loadTsModule('app/lib/economy/economyTelemetry.ts', {
+    moduleCache,
+  })
+  startEconomyTelemetry(
+    () => 0,
+    () => state.players
+  )
   const report = simulateOfflineWorld(state, options)
+  const capture = readEconomyTelemetry(true)
+  const spent = key =>
+    capture.rows
+      .filter(row => row.kind === 'craftConsumed' && row.resource === key)
+      .reduce((sum, row) => sum + row.amount, 0)
   for (const [key, value] of Object.entries({ wood: 150, stone: 90, gold: 30, copper: 15, tin: 6, iron: 9 })) {
-    assert.ok((report.gathered[key] ?? 0) <= value, key)
-    assert.equal(pit.inventory.resources[key] ?? 0, report.gathered[key] ?? 0, key)
+    assert.ok((pit.inventory.resources[key] ?? 0) <= value, key)
+    assert.equal(pit.inventory.resources[key] ?? 0, (report.gathered[key] ?? 0) - spent(key), key)
     assert.equal(center.inventory.resources[key] ?? 0, 0, key)
   }
+  assert.ok(spent('wood') > 0 && spent('stone') > 0, 'worn tool replacements consume real materials')
   assert.equal(report.foodShortage, 0)
   assert.equal(report.foodConsumed, 6 * 4 * 3)
   const again = simulateOfflineWorld(state, { ...options, fromElapsedMs: 3 * day, toElapsedMs: 4 * day })
@@ -219,6 +236,7 @@ test('regional gathering without depots consumes only what fits and never banks 
   units[0].collectiveTask = 'food'
   units[0].inventory.resources = {}
   units[0].inventory.equipment = Array(29).fill('hammer')
+  units[0].inventory.npcArrows = { initialized: true }
   const berry = { type: 'Berrybush', label: 'berries', i: 15, j: 15, quantity: 100, hitPoints: 10 }
   const report = simulateOfflineWorld(
     { players: [owner], resources: [berry], animals: [] },

@@ -1,3 +1,4 @@
+const { workerInventory } = require('./helpers/workerInventory.cjs')
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
@@ -32,6 +33,7 @@ test('construction tries a farther site after a refused route, including on subs
   const far = { type: 'House', label: 'reachable', i: 4, j: 0 }
   const attempts = []
   const unit = {
+    inventory: workerInventory('hammer_ceramic'),
     type: 'Villager',
     label: 'worker',
     i: 0,
@@ -93,7 +95,7 @@ function deliveryFixture(phase = 'toBuilding') {
     context,
     collectiveTask: 'construction',
     autonomousJob: 'construction',
-    inventory: { resources: { wheat: 12 } },
+    inventory: { ...workerInventory('hammer_ceramic'), resources: { wheat: 12 } },
     resourceDeliveryState: { phase, building: depot, chest: depot, pickup: { stone: 10 } },
     sendToEvt() {
       return false

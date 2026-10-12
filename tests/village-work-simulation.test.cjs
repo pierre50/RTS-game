@@ -27,7 +27,7 @@ function fixture() {
   const grid = Array.from({ length: 90 }, (_, i) =>
     Array.from({ length: 90 }, (_, j) => ({ i, j, category: 'Grass', z: 0 }))
   )
-  const home = { id: 'center', i: 40, j: 40, spaceId: 'outside' }
+  const home = { id: 'owner:center', i: 36, j: 36, spaceId: 'outside' }
   const store = {
     type: 'TownCenter',
     family: 'building',
@@ -219,7 +219,7 @@ function settlement(type) {
     autonomousJob: null,
     collectiveTask: null,
     inactif: true,
-    inventory: { resources: { wheat: 24 } },
+    inventory: { resources: { wheat: 24 }, npcArrows: { initialized: true } },
   })
   tree.quantity = 20
   const stone = { ...tree, label: 'stone', type: 'Stone', j: 44, quantity: 20, hitPoints: 100 }

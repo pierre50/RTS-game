@@ -24,14 +24,23 @@ export function onSpriteLoopAtFrame(sprite: FrameChangeSprite, frame: number, cb
   // Bind after selecting the action sheet: walking/idle can have more frames.
   const impactFrame = sprite.textures?.length ? Math.min(frame, sprite.textures.length - 1) : frame
   let firedThisLoop = false
+  let firing = false
   sprite.onFrameChange = currentFrame => {
+    // Turning at release can replace textures, reset to frame 0, then restore
+    // the release frame synchronously. Those notifications are not a new loop.
+    if (firing) return
     if (currentFrame < impactFrame) {
       firedThisLoop = false
       return
     }
     if (firedThisLoop) return
     firedThisLoop = true
-    cb()
+    firing = true
+    try {
+      cb()
+    } finally {
+      firing = false
+    }
   }
 }
 

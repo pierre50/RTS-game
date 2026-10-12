@@ -57,7 +57,11 @@ export function prepareAutomaticParry(target: RuntimeEntity, now = performance.n
 export function attemptAutomaticParry(target: RuntimeEntity, now = performance.now()): boolean {
   if (!canUseAutomaticParry(target)) return false
   const unit = target as UnitEntity
-  if (unit.automaticParryActiveUntil == null || unit.automaticParryActiveUntil < now) {
+  if (
+    !isUnitMeleeWeaponEquipped(unit) ||
+    unit.automaticParryActiveUntil == null ||
+    unit.automaticParryActiveUntil < now
+  ) {
     unit.automaticParryActiveUntil = null
     return false
   }

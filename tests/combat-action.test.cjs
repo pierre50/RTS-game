@@ -784,6 +784,7 @@ test('early resource actions work without unlocking technologies', () => {
     '../constants': actionConstants,
   })
   const source = {
+    inventory: { activeWeapons: { tool: 'pickaxe_ceramic' }, equipment: ['arrow_ceramic'] },
     family: constants.FAMILY_TYPES.unit,
     hitPoints: 25,
     isDead: false,
@@ -1952,7 +1953,7 @@ test('a player villager attacks immediately instead of passing through the gathe
       },
     },
     '../../lib/units/playerTargetKnowledge': { playerSeesTarget: () => true },
-    '../../lib/units/campBehavior': { canCampPursue: () => true },
+    '../../lib/units/camps/campBehavior': { canCampPursue: () => true },
     '../../lib/units/unitSuspension': { wakeUnitSimulation: () => {} },
     './UnitResourceDeliveryCommands': {
       applyWorkForAction: (unit, work) => {
@@ -2017,4 +2018,71 @@ test('archer finishes its last attack loop but ignores a replaced animation', ()
   unit.isDead = true
   staleLoop()
   assert.equal(orders, 1)
+})
+
+test('archer attack releases exactly one carried arrow and switches to melee once empty', () => {
+  const shots = []
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../constants': constants,
+    '../../lib': { playAudibleSoundCue() {}, BOW_SHOOT_RELEASE_FRAME: 9 },
+    '../../lib/equipment/equipmentStats': {
+      getConfiguredEntityEquipment: () => ['bow'],
+      getUnitCombatRange: () => 4,
+      getEntityWeaponPower: () => 1,
+    },
+    '../../lib/equipment/equipmentWear': { wearEquippedWeapon() {} },
+    '../../lib/projectiles': { attachProjectileToMapSpace() {} },
+    '../Projectile': {
+      Projectile: class {
+        constructor(options) {
+          shots.push(options)
+        }
+      },
+    },
+  })
+  const unit = {
+    type: 'Bowman',
+    projectile: 'Arrow',
+    action: 'attack',
+    context: { map: {} },
+    inventory: { equipment: ['arrow_iron'], npcArrows: { initialized: true } },
+    dest: { family: 'unit' },
+    realDest: { x: 1, y: 1 },
+    getActionCondition: () => true,
+    stop() {
+      this.stopped = true
+    },
+    sendToEvt(dest, action) {
+      this.nextOrder = { dest, action }
+    },
+  }
+  let release
+  const combat = new UnitCombat(unit)
+  combat.runAttackLoop = (_frame, callback) => {
+    release = callback
+  }
+  combat.handleAttackAction()
+  assert.equal(unit.inventory.equipment.length, 1)
+  release(unit.dest)
+  release(unit.dest)
+  assert.equal(shots.length, 1)
+  assert.equal(shots[0].type, 'ArrowIron')
+  assert.equal(unit.inventory.equipment.length, 0)
+  assert.equal(unit.stopped, undefined)
+  assert.deepEqual(unit.nextOrder, { dest: unit.dest, action: 'attack' })
+})
+
+test('ranged combat wires target tracking into the shared attack loop', () => {
+  let updates = 0
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../lib': {},
+    '../Projectile': {},
+    '../../lib/combat/combatAttackLoop': {
+      runAttackLoopOnFrame: (_unit, callbacks) => callbacks.syncMovingTargetDirection(),
+    },
+  })
+  const combat = new UnitCombat({})
+  combat.syncMovingTargetDirection = () => updates++
+  combat.runAttackLoop(8, () => {})
+  assert.equal(updates, 1)
 })

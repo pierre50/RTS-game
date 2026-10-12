@@ -1,3 +1,10 @@
+import { isGroundResourceType } from '../../../lib/resources/groundResourceRegrowth'
+import { npcNeedsSupplies } from '../../../lib/units/supplies/npcSupplyStatus'
+import { returnOfflineWorkerForTool } from './OfflineToolReturn'
+import { equipOwnedTool } from '../../../lib/units/supplies/toolPreparation'
+import { toolFamilyForWork } from '../../../lib/equipment/workTools'
+import { initializeWorkTools } from '../../../lib/equipment/workToolMigration'
+import { belongsToSettlement, collectiveAnchor } from '../../../lib/economy/collectiveConstruction'
 import { hasConstructionWork } from '../../../lib/economy/constructionMaterials'
 import { TYPE_ACTION } from '../../../constants/entities'
 import { activeConstructionSite } from '../../../lib/economy/collectiveTasks'
@@ -46,33 +53,12 @@ export function advanceOfflineWorker(
   rules: OfflineWorkRules,
   report: OfflineWorldReport
 ): void {
+  const actor = { ...unit, owner: player }
+  initializeWorkTools(actor)
+  unit.inventory = actor.inventory
   const config = rules.unitConfig(playerIndex, unit.type)
   if (unit.resourceDelivery?.pickup) {
-    const delivery = unit.resourceDelivery
-    const reference = delivery.building
-    const label = typeof reference === 'string' ? reference : Array.isArray(reference) ? reference[2] : undefined
-    const depot = player.buildings?.find(building => building.label === label && isLiving(building) && building.isBuilt)
-    const point = depot && spatial.reachable(unit, depot) && spatial.findNear(depot, 6, unit)
-    if (!depot || !point) {
-      delete unit.resourceDelivery
-      return
-    }
-    const key = `pickup:${entityKey(depot)}`
-    const budget = milliseconds + (unit.offlineWork?.target === key ? unit.offlineWork.milliseconds : 0)
-    const duration = travelMs(unit, point, config) + 1000
-    if (budget < duration) {
-      unit.offlineWork = { target: key, milliseconds: budget }
-      return
-    }
-    spatial.move(unit, point)
-    const stores = savedBuildingsOwnedBy(player, state.players)
-    const chest = stores.find(
-      store => store.type === 'Chest' && communalStoreBuilding(store, { ...player, buildings: stores }) === depot
-    )
-    withdrawDepotResources(unit, (chest ?? depot).inventory?.resources ?? {}, delivery.pickup ?? {})
-    delete unit.resourceDelivery
-    delete unit.offlineWork
-    stopOfflineTask(unit)
+    pickupOfflineResources(state, player, unit, milliseconds, config, spatial)
     return
   }
   let budget =
@@ -80,6 +66,10 @@ export function advanceOfflineWorker(
       ? milliseconds
       : deliverOfflineInventory(player, unit, milliseconds, config, spatial, state.players)
   if (budget <= 0) return
+  if (unit.inventory?.toolsStowed || (unit.work === 'hunter' && npcNeedsSupplies(unit))) {
+    returnOfflineWorkerForTool(player, unit, budget, config, spatial)
+    return
+  }
   if (!unit.autonomousJob && !['builder', ...Object.values(RESOURCE_WORK)].includes(unit.work ?? '')) return
   const buildingTask = unit.autonomousJob === 'construction' || (!unit.autonomousJob && unit.work === 'builder')
   const validTarget = (resource: SaveEntityState) =>
@@ -140,6 +130,8 @@ export function advanceOfflineWorker(
     }
     const work = buildingTask ? 'builder' : stored && RESOURCE_WORK[stored]
     if (!work) continue
+    const family = isGroundResourceType(target.type) ? undefined : toolFamilyForWork(work)
+    if (family && !equipOwnedTool(unit, family) && work !== 'farmer') continue
     const key = `${work}:${entityKey(target)}`
     if (unit.offlineWork?.target === key) budget += unit.offlineWork.milliseconds
     unit.offlineWork = { target: key, milliseconds: 0 }
@@ -187,4 +179,46 @@ export function advanceOfflineWorker(
   }
   delete unit.offlineWork
   stopOfflineTask(unit)
+}
+
+function pickupOfflineResources(
+  state: SerializedSave,
+  player: SavePlayerState,
+  unit: SaveEntityState,
+  milliseconds: number,
+  config: ReturnType<OfflineWorkRules['unitConfig']>,
+  spatial: OfflineWorldSpatial
+): void {
+  const delivery = unit.resourceDelivery!
+  const reference = delivery.building
+  const label = typeof reference === 'string' ? reference : Array.isArray(reference) ? reference[2] : undefined
+  const depot = player.buildings?.find(
+    building =>
+      building.label === label &&
+      isLiving(building) &&
+      building.isBuilt &&
+      belongsToSettlement(player, collectiveAnchor(player, unit), building)
+  )
+  const point = depot && spatial.reachable(unit, depot) && spatial.findNear(depot, 6, unit)
+  if (!depot || !point) {
+    delete unit.resourceDelivery
+    return
+  }
+  const key = `pickup:${entityKey(depot)}`
+  const budget = milliseconds + (unit.offlineWork?.target === key ? unit.offlineWork.milliseconds : 0)
+  const duration = travelMs(unit, point, config) + 1000
+  if (budget < duration) {
+    unit.offlineWork = { target: key, milliseconds: budget }
+    return
+  }
+  spatial.move(unit, point)
+  const stores = savedBuildingsOwnedBy(player, state.players)
+  const chest = stores.find(
+    store => store.type === 'Chest' && communalStoreBuilding(store, { ...player, buildings: stores }) === depot
+  )
+  withdrawDepotResources(unit, (chest ?? depot).inventory?.resources ?? {}, delivery.pickup ?? {})
+  delete unit.resourceDelivery
+  delete unit.offlineWork
+  stopOfflineTask(unit)
+  return
 }

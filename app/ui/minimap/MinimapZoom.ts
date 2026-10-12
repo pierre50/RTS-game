@@ -6,10 +6,18 @@ export function getMinimapZoom(context: object): number {
 }
 
 export function changeMinimapZoom(context: object, direction: -1 | 1): number {
-  const index = LEVELS.findIndex(level => level === getMinimapZoom(context))
-  const zoom = LEVELS[Math.max(0, Math.min(LEVELS.length - 1, index + direction))]!
-  getMinimapPreferences(context).zoom = zoom
-  return zoom
+  const current = getMinimapZoom(context)
+  const zoom =
+    direction > 0
+      ? (LEVELS.find(level => level > current) ?? 4)
+      : ([...LEVELS].reverse().find(level => level < current) ?? 1)
+  return setMinimapZoom(context, zoom)
+}
+
+export function setMinimapZoom(context: object, zoom: number): number {
+  const value = Math.max(1, Math.min(4, zoom))
+  getMinimapPreferences(context).zoom = value
+  return value
 }
 
 /** Smaller overview markers, with a gentle increase up to their full size at maximum zoom. */
@@ -22,7 +30,7 @@ export function getMinimapPlaceScale(context: object): number {
   return 0.8 + 0.3 * (getMinimapZoom(context) - 1)
 }
 
-/** Overview at 100–200%; personal units, buildings and resources from 300%. */
+/** Additional troop and resource details from 300%; villagers and buildings remain visible at every zoom. */
 export function showMinimapDetails(context: object): boolean {
   return getMinimapZoom(context) >= 3
 }

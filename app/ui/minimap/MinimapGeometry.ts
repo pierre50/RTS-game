@@ -60,7 +60,7 @@ const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_X = 12
 const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_Y = 14
 const MINIMAP_UNIT_AVATAR_DISPLAY_SIZE = 6 * MINIMAP_RESOLUTION_SCALE
 export class MinimapGeometry {
-  private zoomAnchor?: { spaceId: string; zoom: number; x: number; y: number }
+  private zoomAnchor?: { spaceId: string; x: number; y: number }
 
   resetZoomAnchor(): void {
     this.zoomAnchor = undefined
@@ -128,31 +128,43 @@ export class MinimapGeometry {
   getMinimapTransform(): MinimapTransform {
     const base = this.getBaseTransform()
     const zoom = getMinimapZoom(this.menu.context)
-    if (zoom === 1) {
-      this.resetZoomAnchor()
-      return base
-    }
+    if (zoom === 1) return base
     const spaceId = this.getMinimapSpace().id
-    if (this.zoomAnchor?.spaceId !== spaceId || this.zoomAnchor.zoom !== zoom) {
+    if (this.zoomAnchor?.spaceId !== spaceId) {
       const hero = this.menu.context.controls?.heroUnit
       const position = hero && (hero.spaceId || 'outside') === spaceId ? getMinimapDrawPosition(hero) : null
       this.zoomAnchor = {
         spaceId,
-        zoom,
         x: position?.x ?? base.offsetX + (base.canvasWidth / 2 - 2 * base.translate) * base.factor,
         y: position?.y ?? base.offsetY + (base.canvasHeight / 2) * base.factor,
       }
     }
+    const factor = base.factor / zoom
     const centerX = this.zoomAnchor.x
     const centerY = this.zoomAnchor.y
     return {
       ...base,
-      factor: base.factor / zoom,
+      factor,
       inputFactor: base.inputFactor / zoom,
-      offsetX: centerX - (centerX - base.offsetX) / zoom,
-      offsetY: centerY - (centerY - base.offsetY) / zoom,
+      offsetX: centerX - (base.canvasWidth / 2 - 2 * base.translate) * factor,
+      offsetY: centerY - (base.canvasHeight / 2) * factor,
       layoutKey: `${base.layoutKey}:zoom:${zoom}:${centerX}:${centerY}`,
     }
+  }
+
+  /** Pan in viewport fractions; the center stays inside the map's world bounds. */
+  pan(dx: number, dy: number): void {
+    if (getMinimapZoom(this.menu.context) === 1) return
+    const transform = this.getMinimapTransform()
+    const anchor = this.zoomAnchor!
+    const bounds = transform.worldBounds ?? {
+      left: (-transform.size * CELL_WIDTH) / 2,
+      right: (transform.size * CELL_WIDTH) / 2,
+      top: 0,
+      bottom: transform.size * CELL_HEIGHT,
+    }
+    anchor.x = Math.max(bounds.left, Math.min(bounds.right, anchor.x + dx * transform.canvasWidth * transform.factor))
+    anchor.y = Math.max(bounds.top, Math.min(bounds.bottom, anchor.y + dy * transform.canvasHeight * transform.factor))
   }
 
   private getBaseTransform(): MinimapTransform {
@@ -289,8 +301,15 @@ export class MinimapGeometry {
       }
     }
     return {
-      x: (clientX - rect.left - rect.width / 2) * transform.inputFactor + transform.offsetX + transform.originX,
-      y: (clientY - rect.top - 3) * transform.inputFactor + transform.offsetY + transform.originY,
+      x:
+        (((clientX - rect.left) / Math.max(1, rect.width)) * transform.canvasWidth - 2 * transform.translate) *
+          transform.factor +
+        transform.offsetX +
+        transform.originX,
+      y:
+        ((clientY - rect.top) / Math.max(1, rect.height)) * transform.canvasHeight * transform.factor +
+        transform.offsetY +
+        transform.originY,
     }
   }
 }

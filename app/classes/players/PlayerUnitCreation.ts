@@ -27,7 +27,9 @@ export function createPlayerUnit(
   let unit = new Unit(
     definedProperties({
       ...options,
-      inventory: options.inventory ?? (type === UNIT_TYPES.villager ? startingVillagerInventory() : undefined),
+      inventory:
+        options.inventory ??
+        (type === UNIT_TYPES.villager ? startingVillagerInventory(this.units, options) : undefined),
       label,
       gender: identity.gender,
       assetCiv: identity.civ,

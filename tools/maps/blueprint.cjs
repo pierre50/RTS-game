@@ -1,3 +1,4 @@
+const { addGroundResources } = require('./ground-resources.cjs')
 const { TERRAIN_INDEX, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_TERRAIN_PARAMS } = require('./config.cjs')
 const {
   withResolvedSettlementLocals,
@@ -89,8 +90,10 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
     )
   }
   try {
-    return addVillageGroves(
-      finalizeBlueprintPayload(encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions))
+    return addGroundResources(
+      addVillageGroves(
+        finalizeBlueprintPayload(encodeBlueprint(map, size, seed, environmentId, options, spawns, banditCampPositions))
+      )
     )
   } catch (error) {
     if (error.code === 'CAVE_PLACEMENT_FAILED') return null

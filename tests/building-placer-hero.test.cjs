@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadBuildingPlacer() {
+function loadBuildingPlacer({ realPlacement = false } = {}) {
   const filename = path.join(__dirname, '../app/controllers/BuildingPlacer.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -31,7 +31,9 @@ function loadBuildingPlacer() {
       cartesianToIsometric: (i, j) => [i * 32 - j * 32, i * 16 + j * 16],
       isometricToCartesian: () => [0, 0],
       canAfford: () => true,
-      canPlaceBuildingAt: () => true,
+      canPlaceBuildingAt: realPlacement
+        ? require('./helpers/loadTsModule.cjs').loadTsModule('app/lib/grid/placement.ts').canPlaceBuildingAt
+        : () => true,
       hasBuildingPlacementClearance: (grid, i, j, building, options = {}) =>
         mocks['../lib']
           .getBuildingFootprintCells(i, j, grid, building.size)
@@ -371,4 +373,30 @@ test('wall placement creates sites without assigning inspected villagers', () =>
   )
   assert.equal(created.length, 2)
   assert.ok(created.every(site => site.type === 'SmallWall' && !site.isBuilt))
+})
+
+test('road overlap turns the preview red and rejects clicks and wall placement', () => {
+  const BuildingPlacer = loadBuildingPlacer({ realPlacement: true })
+  const grid = createGrid(7)
+  const controls = {
+    context: { map: { grid, revealEverything: true, roads: { version: 1, stride: 7, cells: [[24, 1]] } }, player: {} },
+    mouseBuilding: { type: 'House', size: 2 },
+    camera: { x: 0, y: 0 },
+    getCellUnderCursor: () => grid[2][2],
+  }
+  const placer = new BuildingPlacer(controls)
+  let tint
+  placer.tintMouseBuilding = value => {
+    tint = value
+  }
+  placer.getPreviewPosition = () => ({ x: 0, y: 0 })
+  placer.handleMouseMove()
+  assert.equal(tint, 0xff0000)
+  assert.equal(controls.mouseBuilding.isFree, false)
+  assert.equal(placer.handleMouseUp(grid[2][2]), undefined)
+  assert.equal(placer.canWallUseCell(grid[3][3], controls.context.player), false)
+  controls.getCellUnderCursor = () => grid[1][1]
+  placer.handleMouseMove()
+  assert.equal(tint, 0x00ff00)
+  assert.equal(controls.mouseBuilding.isFree, true)
 })

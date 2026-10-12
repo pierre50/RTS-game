@@ -11,6 +11,10 @@ function loadHeroInteractionController(calls) {
         FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
+      '../lib/grid/visibility': { instanceIsInActiveOrTeamSight: () => true },
+      './heroActionRange': {
+        isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
+      },
       '../lib/hero/heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
       },

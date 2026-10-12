@@ -1,3 +1,7 @@
+import { createConstructionSite, type ConstructionSiteOptions } from '../ConstructionSite'
+import { createInventoryDurabilityBar } from './InventoryPresentation'
+import { createResourceCost } from '../ResourceCost'
+import type { InventoryCostMetaPart } from './InventoryCostMeta'
 import { createValueBadge } from '../ValueBadge'
 import { createCombatStatInfo, type CombatStatInfo } from '../entity/CombatStatInfo'
 
@@ -12,7 +16,7 @@ type InventoryActionRowOptions = {
   stats?: CombatStatInfo[]
   category?: string
   metaClassName?: string
-  metaParts?: InventoryActionMetaPart[]
+  metaParts?: Array<InventoryActionMetaPart | InventoryCostMetaPart | { constructionSite: ConstructionSiteOptions }>
   className?: string
   disabled?: boolean
   id: string
@@ -68,8 +72,12 @@ export function createInventoryActionRow(options: InventoryActionRowOptions): In
     .filter(Boolean)
     .join(' ')
   element.setAttribute('aria-label', options.title)
+  element.title = options.title
   if (options.category) element.dataset.itemCategory = options.category
-  if (options.durability != null) element.dataset.equipmentDurability = String(options.durability)
+  if (options.durability != null) {
+    element.dataset.equipmentDurability = String(options.durability)
+    if (options.durability < 100) element.appendChild(createInventoryDurabilityBar(options.durability))
+  }
 
   const icon = document.createElement('span')
   icon.className = 'inventory-action-row-icon'
@@ -91,6 +99,14 @@ export function createInventoryActionRow(options: InventoryActionRowOptions): In
         const separator = document.createElement('span')
         separator.textContent = ' | '
         meta.appendChild(separator)
+      }
+      if ('constructionSite' in part) {
+        meta.appendChild(createConstructionSite(part.constructionSite))
+        return
+      }
+      if ('resourceCost' in part) {
+        meta.appendChild(createResourceCost(part.resourceCost))
+        return
       }
       const text = document.createElement('span')
       text.className = 'inventory-action-row-meta-part'

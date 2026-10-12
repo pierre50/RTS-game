@@ -1,7 +1,8 @@
+import { getEquippedWorkTool, workForTool } from '../equipment/workTools'
+import { rangedWeaponEquipment } from '../equipment/rangedWeapon'
 import { isEquipmentBroken } from '../equipment/equipmentCondition'
 import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { refreshBakedLpcUnitAssets } from '../lpc/baked'
-import type { DynamicEquipmentKey } from '../lpc/equipment'
 import { refreshUnitEquipmentStats } from '../equipment/equipmentStats'
 import { applyUnitActionFrameSequence } from '../units/visuals/unitWorkAppearance'
 import type { UnitEntity } from '../../types/entities'
@@ -17,14 +18,6 @@ const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
   bow: WORK_TYPES.hunter,
 }
 
-// Mirrors the base equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
-// in lpc/equipment.ts: heroSword->held sword, hunter->bow) so inventory tool
-// slots can render an icon. No entry for 'interact': bare hands.
-export const EQUIPPED_ITEM_WEAPON: Partial<Record<HeroEquippedItem, DynamicEquipmentKey>> = {
-  sword: 'sword_ceramic',
-  bow: 'bow',
-}
-
 function isEquipmentKey(value: string | null | undefined): value is string {
   return typeof value === 'string' && value.length > 0
 }
@@ -35,7 +28,7 @@ export function getEquippedItemWeapon(tool: HeroEquippedItem, hero?: UnitEntity 
       ? hero?.inventory?.activeWeapons?.melee
       : tool === 'bow'
         ? hero?.inventory?.activeWeapons?.ranged
-        : EQUIPPED_ITEM_WEAPON[tool]
+        : hero?.inventory?.activeWeapons?.tool
   return item
 }
 
@@ -50,13 +43,15 @@ export function isHeroToolAvailable(
 
 export function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): string[] {
   const activeWeapons = hero.inventory?.activeWeapons ?? {}
+  if (tool === 'interact') {
+    const item = getEquippedWorkTool(hero)
+    return item ? [item] : []
+  }
   if (tool === 'sword') {
     return [activeWeapons.melee, hero.inventory?.equipped?.offhand, activeWeapons.offhand].filter(isEquipmentKey)
   }
   if (tool === 'bow') {
-    return [activeWeapons.ranged, activeWeapons.ranged ? 'quiver' : undefined, hero.inventory?.equipped?.arrow].filter(
-      isEquipmentKey
-    )
+    return rangedWeaponEquipment(activeWeapons.ranged, hero.inventory?.equipped?.arrow)
   }
   return []
 }
@@ -78,7 +73,7 @@ export function isHeroCatchingPoleEquipped(
 }
 
 function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {
-  const work = EQUIPPED_ITEM_WORK[tool]
+  const work = tool === 'interact' ? workForTool(hero.inventory?.activeWeapons?.tool) : EQUIPPED_ITEM_WORK[tool]
   if (hero.work === work) {
     refreshBakedLpcUnitAssets(hero)
     refreshUnitEquipmentStats(hero)

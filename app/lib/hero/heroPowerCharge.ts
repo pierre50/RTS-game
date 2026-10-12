@@ -1,3 +1,4 @@
+import { HERO_POWER_CHARGE_MS } from './heroCombatRules'
 import { wearEquippedWeapon } from '../equipment/equipmentWear'
 import { isEquipmentBroken } from '../equipment/equipmentCondition'
 import { takeSprintAttackMultiplier } from '../units/movement/unitSprint'
@@ -12,27 +13,34 @@ import { drainTimedHeroEnergy, hasEnergyToStartTimedHeroAction } from './heroEne
 import { finishHeroToolAnimation } from './heroToolAnimation'
 import { MOUNTED_ATTACK_HALF_ANGLE, findFacingEntity, getHeroAimDegree } from './heroTargeting'
 import {
-  consumeHeroArrow,
+  consumeHeroRangedAmmunition,
   getHeroArrowSpawnPoint,
   getHeroMaxArrowDistance,
   getHeroPowerChargeHoldFrame,
   getHeroShootReleaseFrame,
-  hasHeroEquippedArrow,
+  hasHeroRangedAmmunition,
   hideReleasedBowArrowLayer,
   finishHeroCatchingPoleThrowAnimation,
   holdHeroCatchingPoleThrowFrame,
   throwCatchingPoleAt,
-  warnHeroNoArrowEquipped,
+  warnHeroNoRangedAmmunition,
 } from './heroProjectileTools'
-import { getHeroSwordChargeDamageMultiplier, getHeroWeaponDamage, triggerSwordAttackAt } from './heroMeleeTools'
+import {
+  getHeroSwordChargeDamageMultiplier,
+  getHeroWeaponDamage,
+  playEmptyHandWhiff,
+  triggerInteractMeleeAt,
+  triggerSwordAttackAt,
+} from './heroMeleeTools'
 import { getHeroPowerChargeToolForEquippedItem, type HeroEquippedItem } from './heroToolEquipment'
+
+import { getEquippedWorkTool } from '../equipment/workTools'
 
 const sprintChargeMultipliers = new WeakMap<UnitEntity, number>()
 
-type HeroPowerChargeTool = 'bow' | 'catchingPole' | 'sword'
+type HeroPowerChargeTool = 'bow' | 'catchingPole' | 'sword' | 'tool'
 
 const HERO_POWER_CHARGE_ENERGY_ACTION = 'heroPowerCharge'
-const HERO_POWER_CHARGE_MS = 700
 
 function getHeroPowerChargeRatio(hero: UnitEntity, now = performance.now()): number {
   if (hero.heroPowerChargeStart == null) return 0
@@ -109,7 +117,9 @@ export function aimHeroPowerChargeAt(hero: UnitEntity, destination: Point): bool
 export function isHeroPowerChargeActiveForTool(hero: UnitEntity, tool: HeroEquippedItem | null | undefined): boolean {
   return (
     hero.heroPowerChargeStart != null &&
-    hero.heroPowerChargeTool === getHeroPowerChargeToolForEquippedItem(hero, tool) &&
+    (hero.heroPowerChargeTool === 'tool'
+      ? tool === 'interact'
+      : hero.heroPowerChargeTool === getHeroPowerChargeToolForEquippedItem(hero, tool)) &&
     !hero.heroPowerReleaseQueued
   )
 }
@@ -118,7 +128,7 @@ export function updateHeroPowerCharge(hero: UnitEntity, now = performance.now())
   if (hero.heroPowerChargeStart == null) return
   if (hero.heroPowerReleaseQueued) return
   if (!drainHeroPowerChargeEnergy(hero, now)) {
-    releaseHeroPowerCharge(hero)
+    releaseHeroPowerCharge(hero, now)
     return
   }
   const ratio = getHeroPowerChargeRatio(hero, now)
@@ -145,6 +155,7 @@ function clearHeroPowerCharge(hero: UnitEntity): void {
   hero.heroPowerChargeFacingDegree = null
   hero.heroPowerChargeVisualLocked = false
   hero.heroPowerChargeLastEnergyAt = undefined
+  delete hero.heroPendingToolStrike
   delete hero.heroPowerChargeTool
   hero.removeHeroPowerBar?.()
 }
@@ -171,7 +182,12 @@ export function cancelHeroCatchingPole(hero: UnitEntity): void {
   hero.heroCatchingPoleThrow?.clearCatchingPoleThrow({ releaseHorse: true })
 }
 
-function finishHeroSwordChargeAttack(hero: UnitEntity, destination: Point, power: number): boolean {
+function finishHeroMeleeChargeAttack(hero: UnitEntity, destination: Point, power: number): boolean {
+  const isTool = hero.heroPowerChargeTool === 'tool'
+  if (isTool && getEquippedWorkTool(hero) !== hero.heroPendingToolStrike) {
+    cancelHeroPowerCharge(hero)
+    return false
+  }
   const sprintMultiplier = sprintChargeMultipliers.get(hero) ?? 1
   const sprite = hero.sprite
   clearHeroPowerCharge(hero)
@@ -181,11 +197,16 @@ function finishHeroSwordChargeAttack(hero: UnitEntity, destination: Point, power
     sprite.loop = true
   }
   hero.actionLocked = false
-  const triggered = triggerSwordAttackAt(hero, destination, {
+  const options = {
     damageMultiplier: getHeroSwordChargeDamageMultiplier(power) * sprintMultiplier,
     impactFrame: SLASH_IMPACT_FRAME,
     swordChargePower: power,
-  })
+  }
+  hero.degree = getHeroAimDegree(hero, destination)
+  const result = isTool ? triggerInteractMeleeAt(hero, options) : null
+  const triggered = isTool
+    ? result === 'triggered' || (result === 'miss' && playEmptyHandWhiff(hero, options))
+    : triggerSwordAttackAt(hero, destination, options)
   if (!triggered) finishHeroToolAnimation(hero)
   return triggered
 }
@@ -215,17 +236,23 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
       return
     }
   } else if (map) {
-    if (!hasHeroEquippedArrow(hero)) {
-      warnHeroNoArrowEquipped(hero)
+    if (!hasHeroRangedAmmunition(hero)) {
+      warnHeroNoRangedAmmunition(hero)
     } else {
+      const weaponPower = getHeroWeaponDamage(hero, 'bow')
+      const projectileType = consumeHeroRangedAmmunition(hero)
+      if (!projectileType) {
+        finishHeroToolAnimation(hero)
+        return
+      }
       const projectile = new Projectile(
         {
           owner: hero,
-          type: 'Arrow',
+          type: projectileType,
           target,
           destination,
           spawnPoint: getHeroArrowSpawnPoint(hero),
-          weaponPower: getHeroWeaponDamage(hero, 'bow'),
+          weaponPower,
           maxDistance: getHeroMaxArrowDistance(hero, power),
         },
         hero.context!
@@ -233,7 +260,6 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
       attachProjectileToMapSpace(projectile, map)
       hero.followAssistIntent =
         tool === 'bow' && target ? { action: ACTION_TYPES.hunt, target, targetLabel: target.label } : null
-      consumeHeroArrow(hero)
       wearEquippedWeapon(hero, 'ranged')
     }
   }
@@ -265,7 +291,7 @@ export function beginHeroPowerChargeAt(
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked || hero.isDead || hero.isDestroyed) return false
   if (!hasEnergyToStartPowerCharge(hero)) return false
-  sprintChargeMultipliers.set(hero, tool === 'sword' ? takeSprintAttackMultiplier(hero) : 1)
+  sprintChargeMultipliers.set(hero, tool === 'sword' || tool === 'tool' ? takeSprintAttackMultiplier(hero) : 1)
   hero.actionLocked = true
   const now = performance.now()
   hero.heroPowerChargeStart = now
@@ -274,6 +300,7 @@ export function beginHeroPowerChargeAt(
   hero.heroPowerChargeDestination = destination
   hero.heroPowerChargeTarget = target ?? null
   hero.heroPowerChargeTool = tool
+  if (tool === 'tool') hero.heroPendingToolStrike = getEquippedWorkTool(hero) ?? undefined
   hero.heroPowerReleaseQueued = false
   hero.heroPowerReleasePower = undefined
   hero.heroPowerChargeFacingDegree = hero.mountedOnHorse ? (hero.degree ?? null) : null
@@ -282,7 +309,7 @@ export function beginHeroPowerChargeAt(
   sprite.onFrameChange = undefined
   hero.syncShadow?.()
   hero.drawHeroPowerBar?.(0)
-  if (tool === 'sword') {
+  if (tool === 'sword' || tool === 'tool') {
     sprite.loop = true
     return true
   }
@@ -304,13 +331,13 @@ export function releaseHeroPowerCharge(hero: UnitEntity, now = performance.now()
   hero.heroPowerReleasePower = getHeroPowerChargeRatio(hero, now)
   hero.heroPowerChargeRatio = hero.heroPowerReleasePower
   hero.drawHeroPowerBar?.(hero.heroPowerReleasePower)
-  if (hero.heroPowerChargeTool === 'sword') {
+  if (hero.heroPowerChargeTool === 'sword' || hero.heroPowerChargeTool === 'tool') {
     const destination = hero.heroPowerChargeDestination
     if (!destination) {
       cancelHeroPowerCharge(hero)
       return false
     }
-    return finishHeroSwordChargeAttack(hero, destination, hero.heroPowerReleasePower)
+    return finishHeroMeleeChargeAttack(hero, destination, hero.heroPowerReleasePower)
   }
   const sprite = hero.sprite
   const releaseFrame = getHeroShootReleaseFrame(hero.heroPowerChargeTool)

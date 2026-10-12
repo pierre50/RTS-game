@@ -1,3 +1,4 @@
+import { renderWithStableInfoActions } from './StableInfoActions'
 import { AnimalInventoryScreen } from '../inventory/AnimalInventoryScreen'
 import { InteractionPanel } from './InteractionPanel'
 import { createTitledEntityInfoContent, TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoContent'
@@ -124,10 +125,8 @@ export class EntityInfoModalManager {
       if (title) title.textContent = getEntityTitle(entity)
     }
     infoPanel.replaceChildren()
-    this.layout?.secondaryActions.replaceChildren()
-    entity.interface?.info?.(infoPanel, {
-      ...TITLED_ENTITY_INFO_OPTIONS,
-      actionsContainer: this.layout?.secondaryActions,
+    renderWithStableInfoActions(this.layout?.secondaryActions, actionsContainer => {
+      entity.interface?.info?.(infoPanel, { ...TITLED_ENTITY_INFO_OPTIONS, actionsContainer })
     })
   }
 

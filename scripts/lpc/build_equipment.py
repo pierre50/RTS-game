@@ -8,6 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from build import RETRO_PALETTE_ROOT, animation_speed_for, bake_sheet
+from build_pebble_projectile import build_pebble_projectile
 from build_arrow_projectiles import ARROW_VARIANTS, build_arrow_projectiles
 from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS
 
@@ -27,6 +28,14 @@ ATLAS_MAX_WIDTH = 4096
 
 
 def equipment_family_path(equipment_key: str) -> str:
+    if equipment_key == "slingshot":
+        return "weapon/slingshot"
+    if equipment_key.startswith("dagger_"):
+        return "weapon/dagger"
+    if equipment_key.startswith("spear_"):
+        return "weapon/spear"
+    if equipment_key.startswith("mace_"):
+        return "weapon/mace"
     if equipment_key.startswith("armor_mail_"):
         return "armor/armor_mail"
     if equipment_key.startswith("armor_legion_"):
@@ -56,7 +65,7 @@ def equipment_family_path(equipment_key: str) -> str:
     if equipment_key.startswith("leg_armor_"):
         return "armor/leg_armor"
     if equipment_key.startswith("axe_"):
-        return "weapon/axe"
+        return "tool/axe"
     if equipment_key.startswith("pickaxe_"):
         return "tool/pickaxe"
     if equipment_key.startswith("hammer_"):
@@ -69,8 +78,6 @@ def equipment_family_path(equipment_key: str) -> str:
         return "weapon/bow"
     if equipment_key.startswith("arrow_"):
         return "weapon/arrow"
-    if equipment_key == "halberd":
-        return "weapon/halberd"
     if equipment_key.startswith("sword_") or equipment_key == "longsword":
         return "weapon/sword"
     if equipment_key.startswith("round_shield_"):
@@ -244,6 +251,9 @@ def bake_equipment_sheets(equipment, source_root: Path, output_root: Path, retro
 
 
 def build_equipment(source_root: Path, output_root: Path, only: set[str] | None = None) -> None:
+    if only is None or any(key.startswith("spear_") for key in only):
+        from build_spear import build_spear_sources
+        build_spear_sources(source_root)
     retro_palette_hex = find_hex_palette(RETRO_PALETTE_ROOT / "_")
     if retro_palette_hex is None:
         raise RuntimeError(f"no .hex palette found in {RETRO_PALETTE_ROOT}")
@@ -279,6 +289,8 @@ def build_equipment(source_root: Path, output_root: Path, only: set[str] | None 
 
     if only is None or PROJECTILE_EQUIPMENT_KEYS.intersection(only):
         build_arrow_projectiles(output_root=PROJECTILE_OUTPUT_ROOT)
+    if only is None or "slingshot" in only:
+        build_pebble_projectile()
 
     print(f"Generated {built} dynamic LPC equipment sheets into {display_path(output_root)}")
 

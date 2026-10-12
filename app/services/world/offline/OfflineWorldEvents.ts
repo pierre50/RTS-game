@@ -1,12 +1,10 @@
+import { replenishSettlementMarketGold } from '../../../lib/equipment/marketSettlementGold'
+import { replenishNpcArrows } from '../../../lib/units/combat/unitArrows'
 import { isStaticSettlement } from '../../../config/settlementProfiles'
 import { definedProperties } from '../../../lib/definedProperties'
 import { BUILDING_TYPES } from '../../../constants/entities'
 import { TRAP_PREY_TYPES } from '../../../lib/buildings/trapRules'
-import {
-  MARKET_RESTOCK_INTERVAL_DAYS,
-  replenishMarketGold,
-  resetMarketEquipmentStock,
-} from '../../../lib/equipment/equipmentMarket'
+import { MARKET_RESTOCK_INTERVAL_DAYS, resetMarketEquipmentStock } from '../../../lib/equipment/equipmentMarket'
 import type { SaveEntityState, SerializedSave } from '../../../types/save'
 import { distance, entityKey, isLiving, type OfflineWorldSpatial } from './OfflineWorldSpatial'
 import { stopOfflineTask, type OfflineWorkRules, type OfflineWorldReport } from './OfflineWorldWork'
@@ -103,10 +101,11 @@ export function applyOfflineDailyEvents(
 ): void {
   renewAnimals(state, day, spatial, rules, report)
   for (const player of state.players) {
+    if (day > 0) replenishSettlementMarketGold(player)
+    for (const unit of player.units ?? []) replenishNpcArrows(unit, day, player)
     for (const building of player.buildings ?? []) {
       if (!isLiving(building) || !building.isBuilt) continue
       if (building.type === BUILDING_TYPES.market && day > 0) {
-        replenishMarketGold(building)
         if (day % MARKET_RESTOCK_INTERVAL_DAYS === 0) {
           resetMarketEquipmentStock(building, definedProperties({ civilization: player.civ }))
           report.marketsRestocked++

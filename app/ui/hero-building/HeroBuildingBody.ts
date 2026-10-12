@@ -1,5 +1,4 @@
 import { createHeroVillageReport } from './HeroVillageReport'
-import { createHeroTechnologyBody } from './HeroTechnologyBody'
 import { createHeroDepotReservesBody } from './HeroDepotReservesBody'
 import { createHeroTrainingBody } from './HeroTrainingBody'
 import { createHeroBuildingContainerBody } from './HeroBuildingContainerBody'
@@ -23,8 +22,7 @@ export function renderHeroBuildingBody(host: HeroBuildingMenuManager, building: 
   }
   if (building.type === BUILDING_TYPES.townCenter && building.owner === host.menu.context.player) {
     host.transferPanel = null
-    host.body.appendChild(createHeroVillageReport(host.menu))
-    host.body.appendChild(createHeroTechnologyBody(building, host.menu, () => host.refresh()))
+    host.body.appendChild(createHeroVillageReport(host.menu, building))
     const training = createHeroTrainingBody(building, host.menu, () => host.refresh())
     if (training) host.body.appendChild(training)
     return true

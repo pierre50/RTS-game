@@ -1,3 +1,5 @@
+import { hasRequiredWorkTool, requiredWorkTool } from '../equipment/workTools'
+import { isHeroActionInRange } from './heroActionRange'
 import { canReachActionTarget } from '../actions/contactActions'
 import { getContactAimDegree } from '../contact/contactGeometry'
 import { Assets } from 'pixi.js'
@@ -196,7 +198,7 @@ function isContextActionTargetReachable(
 ): boolean {
   const action = getContextActionForTarget(contextAction, target)
   if (!action) return false
-  return canReachActionTarget(hero, target, action)
+  return isHeroActionInRange(hero, action, target) || canReachActionTarget(hero, target, action)
 }
 
 function blockContextActionWhileMounted(hero: UnitEntity): boolean {
@@ -219,6 +221,10 @@ export function performContextActionAt(hero: UnitEntity, destination?: Point): T
     if (blockContextActionWhileMounted(hero)) return 'miss'
     const unitAction = getContextActionForTarget(config.action, target)
     if (!unitAction) continue
+    if (!hasRequiredWorkTool(hero, unitAction)) {
+      hero.context?.menu?.showMessage?.(t(`toolRequired_${requiredWorkTool(unitAction)}`), 'warning')
+      return 'blocked'
+    }
     const action = config.resolve(hero, target)
     if (action) return runContextAction(hero, config.action, unitAction, action) ? 'triggered' : 'blocked'
     if (isDepletedBerrybush(target)) continue

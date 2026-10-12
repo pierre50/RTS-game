@@ -64,6 +64,7 @@ function loadResourceSpriteFactory() {
 
   const module = loadTsModule('app/classes/ResourceSpriteFactory.ts', {
     mocks: {
+      '../lib/graphics/resourceMirroring': { resourceVisualTexture: (_resource, texture) => texture },
       'pixi.js': { AnimatedSprite, Assets, Polygon: class {}, Sprite },
       '../constants': {
         RESOURCE_TYPES: {

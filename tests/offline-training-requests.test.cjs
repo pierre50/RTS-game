@@ -11,6 +11,7 @@ const { advanceOfflineTrainingRequests } = loadTsModule('app/services/world/offl
 function fixture() {
   const building = {
     type: 'Barracks',
+    buildingLevel: 1,
     label: 'b',
     i: 0,
     j: 0,
@@ -77,5 +78,32 @@ test('offline recruitment leaves heroes, followers, fighters and occupied transp
     f.run(0, 30)
     assert.equal(f.building.trainingQueue, undefined)
     assert.equal(f.building.trainingRequests[0].traineeLabel, undefined)
+  }
+})
+
+test('offline admission captures military specialty XP and does not re-award it after a saved upgrade', () => {
+  for (const [buildingLevel, xp] of [0, 50, 150].entries()) {
+    const f = fixture()
+    f.building.buildingLevel = buildingLevel
+    f.run(0, 20)
+    const entry = JSON.parse(JSON.stringify(f.building.trainingQueue[0]))
+    assert.deepEqual(entry.extra.experience, xp ? { melee: xp } : {})
+    assert.equal(entry.trainingCompleteDay - entry.trainingStartedDay, 3)
+    f.building.trainingQueue = [entry]
+    f.building.buildingLevel = 2
+    f.run(20, 21)
+    assert.deepEqual(entry.extra.experience, xp ? { melee: xp } : {})
+  }
+})
+
+test('offline military capacity counts all admitted recruits at each building level', () => {
+  for (const [buildingLevel, capacity] of [3, 5, 8].entries()) {
+    const f = fixture()
+    f.building.buildingLevel = buildingLevel
+    f.building.trainingRequests = Array.from({ length: 10 }, () => ({ type: 'Fantassin' }))
+    f.player.units = Array.from({ length: 10 }, (_, i) => ({ type: 'Villager', label: `r${i}`, i: 1, j: 0 }))
+    f.run(0, 100)
+    assert.equal(f.building.trainingQueue.length, capacity)
+    assert.equal(f.building.trainingRequests.length, 10 - capacity)
   }
 })

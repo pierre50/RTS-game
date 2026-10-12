@@ -19,9 +19,11 @@ export interface BuildingEntity extends RuntimeEntityBase {
   settlementName?: string
   scanForInitialTarget?: () => void
   heroHomeResident?: { label: string; name?: string }
+  houseInteriorLevel?: number
   plannedBedLabels?: string[]
   demolish?: () => void
   constructionWorkRequired?: number
+  constructionPaused?: boolean
   constructionProgress?: number
   constructionMaterials?: ConstructionMaterials
   buildingUpgrade?: BuildingUpgrade
@@ -78,6 +80,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   }
   marketGold?: number
   marketStock?: string[]
+  marketResourceStock?: ResourceAmount
   updateHitPoints?: (action: string) => void
   units?: string[]
   placeUnit?: (type: string, extra?: UnitCreationExtra, options?: { consumePopulationSlot?: boolean }) => boolean

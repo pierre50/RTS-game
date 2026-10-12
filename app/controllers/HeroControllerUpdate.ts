@@ -70,7 +70,11 @@ function getHeroActionMoveSpeedFactor(unit: UnitEntity): number {
 }
 
 function isHeroMeleeChargeAiming(unit: UnitEntity): boolean {
-  return unit.heroPowerChargeStart != null && unit.heroPowerChargeTool === 'sword' && !unit.heroPowerReleaseQueued
+  return (
+    unit.heroPowerChargeStart != null &&
+    (unit.heroPowerChargeTool === 'sword' || unit.heroPowerChargeTool === 'tool') &&
+    !unit.heroPowerReleaseQueued
+  )
 }
 
 function syncHeroLocomotionVisual(unit: UnitEntity, moving: boolean, animationSpeedFactor: number): void {
@@ -119,7 +123,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   let attacking = Boolean(unit.actionLocked)
   if (
     controller.defenseHeld &&
-    canHeroDefendWithTool(controller.equippedItem) &&
+    canHeroDefendWithTool(controller.equippedItem, unit) &&
     !attacking &&
     !unit.heroDefenseActive &&
     !unit.heroDefenseEnergyExhausted

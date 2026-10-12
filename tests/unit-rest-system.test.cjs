@@ -2536,7 +2536,7 @@ test('village activation at lunch wakes a villager left asleep overnight', () =>
 
 test('rest collection skips sleeping static owners before reading their units and retains dynamic trainees', () => {
   const { collectRestUnits } = loadModule('app/services/rest/UnitRestRuntimeHelpers.ts', {
-    '../../lib/units/campActivity': { isCampPaused: () => false },
+    '../../lib/units/camps/campActivity': { isCampPaused: () => false },
     '../../lib/units/visuals/unitSittingPose': {},
     '../../lib/buildings/passageCells': {},
     '../../lib/units/village/villageActivity': { isDistantOwner: owner => owner.distant },

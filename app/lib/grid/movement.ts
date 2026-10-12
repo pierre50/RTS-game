@@ -1,4 +1,5 @@
-import { findInstancePath, type PathfindingOptions } from '../../services/Pathfinding'
+import { takePreparedContactPath } from './preparedContactPath'
+import { findInstancePath, searchInstancePath, type PathfindingOptions } from '../../services/Pathfinding'
 import { randomItem, instancesDistance, getInstanceDegree } from '../maths'
 import { getCellsAroundPoint, getBuildingContactDistance } from './cells'
 import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../mapSpaces'
@@ -115,8 +116,24 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
   map: GameMap<TCell>,
   options: ClosestFreeCellPathOptions<TCell> = {}
 ): TCell[] {
+  const search = searchInstanceClosestFreeCellPath(instance, target, map, options, false)
+  let step = search.next()
+  while (!step.done) step = search.next()
+  return step.value
+}
+
+/** Shares the same contact selection rules, but yields between bounded A* batches. */
+export function* searchInstanceClosestFreeCellPath<TCell extends GridCell>(
+  instance: PathInstanceLike,
+  target: GridInstanceLike | TCell,
+  map: GameMap<TCell>,
+  options: ClosestFreeCellPathOptions<TCell> = {},
+  incremental = true
+): Generator<void, TCell[], void> {
   if (!targetIsInInstanceSpace(instance, target)) return []
   const pathMap = getPathMap(instance, map)
+  const prepared = takePreparedContactPath(instance, target, pathMap, options.isCellAllowed, options.pathfinding)
+  if (prepared) return prepared
   const occupiedInstance = (target as { has?: InstanceLike | null }).has ?? undefined
   const targetSize = 'size' in target && typeof target.size === 'number' ? target.size : 0
   const size = targetSize || occupiedInstance?.size || 1
@@ -132,12 +149,15 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
 
   let best: TCell[] = []
   for (const cell of candidates) {
+    yield
     const occupantLabel = (cell as TCell & PathCellOccupant).has?.label
     if (cell.solid && (!instance.label || occupantLabel !== instance.label)) continue
     if (cell.category === 'Water' || (cell.border && (!cell.waterBorder || cell.solid))) continue
     if (options.isCellAllowed && !options.isCellAllowed(cell)) continue
     if (best.length && Math.abs(cell.i - instance.i) + Math.abs(cell.j - instance.j) >= best.length) break
-    const path = getInstancePath(instance, cell.i, cell.j, pathMap, options.pathfinding)
+    const path = incremental
+      ? yield* searchInstancePath(instance, cell.i, cell.j, pathMap, options.pathfinding)
+      : getInstancePath(instance, cell.i, cell.j, pathMap, options.pathfinding)
     if (path.length && (!best.length || path.length < best.length)) best = path
   }
   return best

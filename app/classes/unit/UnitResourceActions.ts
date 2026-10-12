@@ -1,6 +1,8 @@
+import { isHeroActionInRange } from '../../lib/hero/heroActionRange'
+import { wearEquippedTool } from '../../lib/equipment/equipmentWear'
 import { getHarvestAmount } from '../../lib/economy/workRules'
 import { isCaveMineral } from '../../lib/resources/caveMinerals'
-import { MENU_INFO_IDS, MINING_RESOURCE_CONFIG, SHEET_TYPES, SOUND_CUES } from '../../constants'
+import { FAMILY_TYPES, MENU_INFO_IDS, MINING_RESOURCE_CONFIG, SHEET_TYPES, SOUND_CUES } from '../../constants'
 import { onSpriteLoopAtFrame, playAudibleSoundCue, showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../lib'
 import { canReachActionTarget, getActionContactTool, isActionTouchingTarget } from '../../lib/actions/contactActions'
 import { showContactDebug } from '../../lib/contact/contactDebug'
@@ -49,7 +51,10 @@ export class UnitResourceActions {
     if (target && !preparing) showContactDebug(unit, [target], getActionContactTool(unit, unit.action))
     if (
       target &&
-      (preparing ? canReachActionTarget(unit, target, unit.action) : isActionTouchingTarget(unit, target, unit.action))
+      ((target.family === FAMILY_TYPES.resource && isHeroActionInRange(unit, unit.action, target)) ||
+        (preparing
+          ? canReachActionTarget(unit, target, unit.action)
+          : isActionTouchingTarget(unit, target, unit.action)))
     ) {
       if (preparing) unit.degree = getContactAimDegree(unit, target)
       return true
@@ -160,6 +165,7 @@ export class UnitResourceActions {
     if (!this.prepareLoopingWorkAction() || !unit.sprite) return
     const workTickFrame = getWorkAnimationReleaseFrame(unit, releaseFrame)
     const releaseGatheredResources = (dest: RuntimeEntity, requestedGain: number) => {
+      wearEquippedTool(unit, unit.action)
       onRelease?.()
       onImpact?.(dest)
       if (!shouldReleaseGatheredResource(unit, dest, loadingType, gatherEvery)) {

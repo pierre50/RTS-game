@@ -13,7 +13,14 @@ const { getActionCondition } = loadTsModule('app/lib/combat/combatActionConditio
   },
 })
 const owner = { label: 'ally', isEnemy: other => other?.label === 'enemy' }
-const source = (patch = {}) => ({ family: F.unit, type: U.villager, hitPoints: 10, owner, ...patch })
+const source = (patch = {}) => ({
+  inventory: { activeWeapons: { tool: 'hammer_ceramic' } },
+  family: F.unit,
+  type: U.villager,
+  hitPoints: 10,
+  owner,
+  ...patch,
+})
 const building = (patch = {}) => ({
   family: F.building,
   owner,

@@ -1,3 +1,5 @@
+export { getHeroSwordChargeDamageMultiplier } from './heroCombatRules'
+import { getEquippedWorkTool } from '../equipment/workTools'
 import { isEquipmentBroken } from '../equipment/equipmentCondition'
 import { takeSprintAttackMultiplier } from '../units/movement/unitSprint'
 import { definedProperties } from '../definedProperties'
@@ -21,7 +23,6 @@ import { createContactStrike, isContactTouching } from '../contact/contactGeomet
 import { showContactDebug } from '../contact/contactDebug'
 
 const HERO_WHIFF_ENERGY_ACTION = 'heroWhiff'
-const HERO_SWORD_FULL_CHARGE_DAMAGE_BONUS = 0.5
 
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
 
@@ -29,11 +30,6 @@ type HeroMeleeAttackOptions = {
   damageMultiplier?: number
   impactFrame?: number
   swordChargePower?: number
-}
-
-export function getHeroSwordChargeDamageMultiplier(power: number): number {
-  const clampedPower = Math.max(0, Math.min(1, power))
-  return 1 + clampedPower * HERO_SWORD_FULL_CHARGE_DAMAGE_BONUS
 }
 
 export function getHeroWeaponDamage(hero: UnitEntity, tool: HeroEquippedItem): number {
@@ -72,7 +68,7 @@ function findHeroMeleeTargetInAim(
   degree = hero.degree ?? 0,
   debug = false
 ): RuntimeEntity | null {
-  const weapon = tool === 'sword' ? hero.inventory?.activeWeapons?.melee : undefined
+  const weapon = tool === 'sword' ? hero.inventory?.activeWeapons?.melee : getEquippedWorkTool(hero)
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
     target => canBeHeroMeleeTarget(hero, target, tool),
@@ -92,18 +88,21 @@ function findHeroMeleeTargetInAim(
   return nearest
 }
 
-export function playEmptyHandWhiff(hero: UnitEntity): boolean {
+export function playEmptyHandWhiff(hero: UnitEntity, options: HeroMeleeAttackOptions = {}): boolean {
   if (hero.actionLocked || !spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
+  hero.action = ACTION_TYPES.attack
   const degree = hero.degree ?? 0
-  const options = { damageMultiplier: takeSprintAttackMultiplier(hero) }
+  options = { ...options, damageMultiplier: (options.damageMultiplier ?? 1) * takeSprintAttackMultiplier(hero) }
   playHeroToolAnimation(hero, () => resolveHeroMeleeImpact(hero, 'interact', options, degree), SLASH_IMPACT_FRAME, {
     recoveryAnimation: 'reverseSlash',
+    swordChargePower: options.swordChargePower,
   })
   return true
 }
 
 function playMeleeWeaponWhiff(hero: UnitEntity, options: HeroMeleeAttackOptions = {}): boolean {
   if (hero.actionLocked || !spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
+  hero.action = ACTION_TYPES.attack
   const degree = hero.degree ?? 0
   playHeroToolAnimation(
     hero,
@@ -143,7 +142,7 @@ function resolveHeroMeleeImpact(
   lockedTarget?: RuntimeEntity | null
 ): void {
   if (hero.isDead || hero.isDestroyed) return
-  const weapon = tool === 'sword' ? hero.inventory?.activeWeapons?.melee : undefined
+  const weapon = tool === 'sword' ? hero.inventory?.activeWeapons?.melee : getEquippedWorkTool(hero)
   // Keep the target locked in at windup: only fall back to the nearest-in-arc candidate
   // (which could be an unrelated, diplomatically-sensitive bystander) if it escaped.
   const target =
@@ -186,7 +185,7 @@ function strikeHeroMeleeTarget(
   options: HeroMeleeAttackOptions = {}
 ): ToolActionResult {
   if (hero.actionLocked) return 'blocked'
-  const weapon = tool === 'sword' ? hero.inventory?.activeWeapons?.melee : undefined
+  const weapon = tool === 'sword' ? hero.inventory?.activeWeapons?.melee : getEquippedWorkTool(hero)
   const resolvedTarget = isContactTouching(hero, target, weapon) ? target : findHeroMeleeTargetInAim(hero, tool)
   if (!resolvedTarget) {
     return 'miss'
@@ -227,9 +226,12 @@ export function triggerSwordAttackAt(
   return playMeleeWeaponWhiff(hero, options)
 }
 
-export function triggerInteractMeleeAt(hero: UnitEntity): ToolActionResult {
+export function triggerInteractMeleeAt(hero: UnitEntity, options: HeroMeleeAttackOptions = {}): ToolActionResult {
   const meleeTarget = findHeroMeleeTargetInAim(hero, 'interact')
   if (!meleeTarget) return 'miss'
   if (hero.actionLocked) return 'blocked'
-  return strikeHeroMeleeTarget(hero, meleeTarget, 'interact', { damageMultiplier: takeSprintAttackMultiplier(hero) })
+  return strikeHeroMeleeTarget(hero, meleeTarget, 'interact', {
+    ...options,
+    damageMultiplier: (options.damageMultiplier ?? 1) * takeSprintAttackMultiplier(hero),
+  })
 }

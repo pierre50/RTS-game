@@ -93,6 +93,7 @@ function loadResourceVisuals() {
   }
 
   const mocks = {
+    '../lib/graphics/resourceMirroring': { resourceVisualTexture: (_resource, texture) => texture },
     'pixi.js': { AnimatedSprite, Assets, Rectangle, Sprite, Texture },
     '../lib': {
       bindAnimatedSpriteToTicker: () => {},
@@ -118,6 +119,8 @@ function loadResourceVisuals() {
       LABEL_TYPES: { shadow: 'shadow' },
       RESOURCE_TYPES: {
         tree: 'Tree',
+        groundWood: 'GroundWood',
+        groundStone: 'GroundStone',
         berrybush: 'Berrybush',
         fiberPlant: 'FiberPlant',
         medicinalHerb: 'MedicinalHerb',
@@ -381,3 +384,15 @@ test('visible fallen trees retain shadows until their sprite is hidden or destro
     resource.isDestroyed = false
   }
 })
+
+for (const type of ['GroundWood', 'GroundStone']) {
+  test(`${type} never creates a shadow and hides any existing shadow`, () => {
+    const { Sprite, createShadow, syncShadow } = loadResourceVisuals()
+    const resource = { type, sprite: new Sprite(), visible: true, usesTextureShadow: true }
+    assert.equal(createShadow(resource), null)
+    assert.equal(resource.usesTextureShadow, false)
+    resource.shadow = new Sprite()
+    syncShadow(resource)
+    assert.equal(resource.shadow.visible, false)
+  })
+}

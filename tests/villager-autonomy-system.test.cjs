@@ -30,7 +30,7 @@ function harness({ resume, extra = {}, count = 1, editor = false } = {}) {
   const exploration = loadTsModule('app/lib/units/autonomy/villagerExploration.ts')
   const { VillagerAutonomySystem } = loadTsModule('app/services/VillagerAutonomySystem.ts', {
     mocks: {
-      '../lib/units/autonomy/villagerJobDiagnostics': { logStationaryVillager: unit => stalledLogs.push(unit.label) },
+      './villagerJobDiagnostics': { logStationaryVillager: unit => stalledLogs.push(unit.label) },
       '../lib/units/autonomy/villagerExploration': exploration,
       '../lib/units/autonomy/villagerTaskRecovery': {
         resumeVillagerJobIntent(unit) {

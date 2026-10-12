@@ -1,3 +1,4 @@
+import { recordEconomyFlow } from '../../lib/economy/economyTelemetry'
 import { isRpgVillage } from '../../config/rpgVillages'
 import { getBuildingStorageRemaining } from '../../lib/resources/resourceDelivery'
 import { communalStoreBuilding } from '../../lib/economy/constructionStores'
@@ -49,6 +50,7 @@ export function replenishRpgVillage(owner: PlayerLike, day: number): boolean {
       )
       if (!amount) continue
       resources[key] = (resources[key] ?? 0) + amount
+      recordEconomyFlow(owner, 'supplied', { [key]: amount })
       free -= amount
       changed = true
     }

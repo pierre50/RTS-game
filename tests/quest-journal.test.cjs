@@ -39,7 +39,7 @@ function descendants(node) {
 
 test('journal opens empty, shows accepted quests, tracks one and disposes its modal', t => {
   const oldDocument = global.document
-  global.document = { createElement: element }
+  global.document = { createElement: element, createTextNode: textContent => ({ textContent, children: [] }) }
   t.after(() => {
     global.document = oldDocument
   })

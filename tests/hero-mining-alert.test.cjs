@@ -7,6 +7,7 @@ function attemptMining({ type = 'Copper', age = 0, touching = false, quantity = 
   const target = { type, family: 'resource', quantity }
   const hero = {
     type: 'Hero',
+    inventory: { toolsInitialized: true, activeWeapons: { tool: 'pickaxe_ceramic' } },
     controlMode: 'hero',
     owner: { age, isPlayed: true },
     context: { menu: { showMessage: (...args) => messages.push(args) } },
@@ -19,6 +20,7 @@ function attemptMining({ type = 'Copper', age = 0, touching = false, quantity = 
     mocks: {
       'pixi.js': { Assets: { cache: { get: () => null } } },
       '../actions/contactActions': { canReachActionTarget: () => touching },
+      './heroActionRange': { isHeroActionInRange: () => touching },
       '../contact/contactGeometry': { getContactAimDegree: () => 0 },
       '../units/visuals/actionVisualSheet': { getActionVisualSheetKey: () => 'action' },
       '../combat': {
@@ -71,6 +73,7 @@ test('holding interact repeats locked mining swings and releasing stops them', (
   })
   const unit = {
     type: 'Hero',
+    inventory: { toolsInitialized: true, activeWeapons: { tool: 'pickaxe_ceramic' } },
     controlMode: 'hero',
     owner: { age: 0 },
     action: 'mineiron',

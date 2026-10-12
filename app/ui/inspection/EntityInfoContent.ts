@@ -1,3 +1,4 @@
+import { createEntitySummary, moveEntitySummary } from './EntitySummary'
 import { FAMILY_TYPES } from '../../constants'
 import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '../../lib/avatar'
 import type { Application } from 'pixi.js'
@@ -43,7 +44,16 @@ export function createEntityInfoContent(
   content.className = 'entity-info-modal selection-info active'
   entity.interface?.info?.(content, options)
 
-  const avatar = createEntityAvatar(app, entity)
+  const avatar = entity.family === FAMILY_TYPES.resource ? null : createEntityAvatar(app, entity)
+  if (!options?.hideIdentity) {
+    const { summary, info } = createEntitySummary()
+    if (avatar) summary.prepend(avatar)
+    moveEntitySummary(content, info)
+    const wrapper = document.createElement('div')
+    wrapper.className = 'entity-details'
+    wrapper.append(summary, content)
+    return wrapper
+  }
   if (!avatar) return content
 
   const wrapper = document.createElement('div')

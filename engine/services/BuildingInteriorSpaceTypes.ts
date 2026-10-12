@@ -35,6 +35,8 @@ export type InteriorSpaceMapAdapter = Pick<
 export type BuildingInteriorRuntimeSpace = RuntimeMapSpace & {
   building: BuildingEntity
   defaultBuildingsPlaced?: boolean
+  houseGrowthOnly?: boolean
+  houseInteriorLevel?: number
   entryPortal: RuntimeMapSpacePortal
   exteriorEntryCell: RuntimeCell | null
   exitPortal: RuntimeMapSpacePortal

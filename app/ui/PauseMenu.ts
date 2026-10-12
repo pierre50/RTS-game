@@ -140,11 +140,13 @@ export class PauseMenu {
     })
   }
 
-  _btn(label: string, onClick: (evt: MouseEvent) => void): HTMLButtonElement {
+  _btn(label: string, onClick: (evt: MouseEvent) => void | Promise<void>): HTMLButtonElement {
     const button = document.createElement('button')
     button.className = 'ui-btn'
     button.innerText = label
-    button.addEventListener('click', onClick)
+    button.addEventListener('click', evt => {
+      Promise.resolve(onClick(evt)).catch(error => console.error('Menu action failed', error))
+    })
     return button
   }
 }

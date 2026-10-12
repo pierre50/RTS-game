@@ -1,3 +1,4 @@
+import type { MinimapPlace } from './minimap'
 import type { DialogueSequence } from './dialogue'
 import type { SchedulerOptions } from '../lib/actionScheduler'
 import type { NeutralVillageQuests } from '../services/quests/NeutralVillageQuests'
@@ -166,7 +167,7 @@ export interface MenuLike {
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
   getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
-  getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
+  getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null, buildingLevel?: number): MenuButtonSpec
   init?(): void
   destroy?(): void
   toggleQuests?(): void
@@ -202,7 +203,10 @@ interface EntityPreviewLike {
   set(selection: RuntimeEntity | PlaceableBuildingConfig | null): void
 }
 
-interface MinimapManagerLike {
+export interface MinimapManagerLike {
+  getPlaceAt?(clientX: number, clientY: number): MinimapPlace | undefined
+  pan?(dx: number, dy: number): void
+  recenter?(): void
   refreshMiniMap?(): void
   getMinimapFactor(): number
   getMinimapWorldPoint?(

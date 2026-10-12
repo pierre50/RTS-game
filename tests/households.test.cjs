@@ -6,7 +6,7 @@ const { getPopulationCapacityFromBuildings } = loadTsModule('app/lib/buildings/b
 function fixture() {
   const owner = { label: 'village', type: 'AI', units: [], buildings: [] }
   const add = (label, gender = 'male') => { const unit = { type: 'Villager', label, name: label, gender }; owner.units.push(unit); return unit }
-  for (let i = 0; i < 3; i++) owner.buildings.push({ type: 'House', label: `h${i}`, i: i * 10, j: 0, isBuilt: true })
+  for (let i = 0; i < 3; i++) owner.buildings.push({ type: 'House', buildingLevel: 1, label: `h${i}`, i: i * 10, j: 0, isBuilt: true })
   return { owner, add }
 }
 test('generation creates stable couples, homes and exact future bed IDs without rendering interiors', () => {
@@ -25,21 +25,21 @@ test('generation creates stable couples, homes and exact future bed IDs without 
   homes.reconcileHouseholds(saved)
   assert.deepEqual(saved, owner)
 })
-test('daily newcomers occupy vacant houses without marrying or moving existing residents', () => {
+test('daily newcomers share free beds without marrying or moving existing residents', () => {
   const { owner, add } = fixture()
   const first = add('First')
   homes.reconcileHouseholds(owner)
   const previous = { ...first }
   const second = add('Second', 'female')
   homes.reconcileHouseholds(owner)
-  assert.notEqual(first.homeHouseLabel, second.homeHouseLabel)
+  assert.equal(first.homeHouseLabel, second.homeHouseLabel)
   assert.equal(second.partnerLabel, undefined)
   assert.deepEqual(first, previous)
-  assert.equal(homes.getVacantHomeCount(owner), 1)
+  assert.equal(homes.getVacantHomeCount(owner), 2)
   add('Third'); add('Fourth')
   homes.reconcileHouseholds(owner)
-  assert.equal(homes.getVacantHomeCount(owner), 0)
-  assert.equal(owner.units.filter(u => !u.homeHouseLabel).length, 1)
+  assert.equal(homes.getVacantHomeCount(owner), 1)
+  assert.equal(owner.units.filter(u => !u.homeHouseLabel).length, 0)
 })
 test('loaded interiors replace planned beds; removing a bed never regenerates it or evicts the household', () => {
   const { owner, add } = fixture()
@@ -75,7 +75,7 @@ test('a death releases a bed, preserves the surviving partner’s home and does 
   assert.equal(a.partnerLabel, undefined)
   const arrival = add('New')
   homes.reconcileHouseholds(owner)
-  assert.notEqual(arrival.homeHouseLabel, home)
+  assert.equal(arrival.homeHouseLabel, home)
 })
 test('legacy shared-house assignments are repaired without reviving removed furniture', () => {
   const { owner, add } = fixture()
@@ -83,9 +83,8 @@ test('legacy shared-house assignments are repaired without reviving removed furn
   house.interiorBuildings = []
   for (let i = 0; i < 4; i++) add(`resident${i}`).homeHouseLabel = house.label
   homes.reconcileHouseholds(owner)
-  assert.equal(homes.getHouseResidents(owner, house).length, 1)
+  assert.equal(homes.getHouseResidents(owner, house).length, 0)
   assert.equal(house.plannedBedLabels, undefined)
-  assert.equal(homes.getHouseResidents(owner, house)[0].homeBedLabel, undefined)
 })
 
 test('training preserves the trainee home and its reserved bed', () => {
@@ -99,7 +98,8 @@ test('training preserves the trainee home and its reserved bed', () => {
   homes.reconcileHouseholds(owner)
   assert.equal(resident.homeHouseLabel, home)
   assert.equal(resident.homeBedLabel, bed)
-  assert.notEqual(newcomer.homeHouseLabel, home)
+  assert.equal(newcomer.homeHouseLabel, home)
+  assert.notEqual(newcomer.homeBedLabel, bed)
 })
 
 test('hero house remains reserved while travelling and saved references survive another region', () => {
@@ -113,7 +113,7 @@ test('hero house remains reserved while travelling and saved references survive 
   const saved = JSON.parse(JSON.stringify(owner))
   homes.reconcileHouseholds(saved)
   assert.equal(homes.getHouseResidents(saved, saved.buildings[0])[0].label, hero.label)
-  assert.equal(homes.getVacantHomeCount(saved), 2)
+  assert.equal(homes.getVacantHomeCount(saved), 3)
   homes.reconcileHouseholds({ units: [hero], buildings: [] })
   assert.equal(hero.homeHouseLabel, house.label)
 })

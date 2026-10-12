@@ -1,4 +1,4 @@
-import { canReachActionTarget, usesUnitContactAction } from '../actions/contactActions'
+import { canReachActionTarget, isWorkContactAction, usesUnitContactAction } from '../actions/contactActions'
 import { CELL_HEIGHT, FAMILY_TYPES } from '../constants'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import { getBuildingContactDistance } from '../grid/cells'
@@ -56,7 +56,19 @@ export function isHeroActionInRange(
   action: string | null | undefined,
   target: RuntimeEntity | null | undefined
 ): boolean {
-  if (!target || !isHeroControlled(unit) || target.isDestroyed || !sameMapSpace(unit, target)) return false
+  if (
+    !target ||
+    !isHeroControlled(unit) ||
+    unit.isDead ||
+    unit.isDestroyed ||
+    target.isDestroyed ||
+    !sameMapSpace(unit, target)
+  )
+    return false
+  // Resource work uses the same forgiving range as the examine prompt, including at impact.
+  if (target.family === FAMILY_TYPES.resource && isWorkContactAction(action)) {
+    return isHeroNearTargetFootprint(unit, target) || instanceContactInstance(unit, target)
+  }
   if (usesUnitContactAction(unit, action)) return canReachActionTarget(unit, target, action)
   return isHeroNearTargetFootprint(unit, target)
 }
@@ -67,7 +79,8 @@ export function isHeroInteractionTargetReachable(
   target: RuntimeEntity | null | undefined
 ): boolean {
   if (!target || target === unit || target.isDestroyed || !sameMapSpace(unit, target)) return false
-  if (usesUnitContactAction(unit, action)) return canReachActionTarget(unit, target, action)
+  if (usesUnitContactAction(unit, action))
+    return isHeroActionInRange(unit, action, target) || canReachActionTarget(unit, target, action)
   if (isHeroActionInRange(unit, action, target)) return true
   return instanceContactInstance(unit, target)
 }

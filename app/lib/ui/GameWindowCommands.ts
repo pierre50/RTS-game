@@ -1,3 +1,5 @@
+import { getWindowInteraction } from './GameWindowInteraction'
+import { getVariantRow } from './VariantRow'
 import { getGamepadGlyph } from '../input/gamepadGlyph'
 import { getGamepadButtonIndex } from '../audio/settings'
 import { t } from '../lang'
@@ -9,6 +11,7 @@ export type Command = {
   pad: number
   padModifier?: number
   glyph: string
+  continuous?: boolean
   disabled?: boolean
   danger?: boolean
   hold?: boolean
@@ -84,25 +87,41 @@ export function availableCommands(host: CommandHost): Command[] {
     }
   }
   const row = host.getSelected()
+  const variant = getVariantRow(row)
+  if (variant) {
+    for (const direction of [-1, 1])
+      commands.push({
+        id: direction < 0 ? 'previous-variant' : 'next-variant',
+        label: t(direction < 0 ? 'windowPrevious' : 'windowNext'),
+        key: direction < 0 ? 'ArrowLeft' : 'ArrowRight',
+        pad: -1,
+        glyph: direction < 0 ? '←' : '→',
+        disabled: !variant.canStep(direction),
+        run: () => {
+          variant.step(direction)
+          host.scheduleRefresh()
+        },
+      })
+  }
   const buttons = row?.matches(ROW) ? [...row.querySelectorAll<HTMLButtonElement>('.inventory-row-action-button')] : []
   const primary =
     buttons.find(button => !button.matches('.inventory-row-action-button--delete')) ??
     (row instanceof HTMLButtonElement ? row : null)
   if (primary) {
     commands.push(buttonCommand(primary, 'primary', 'Enter', 0))
-    if (primary.dataset.craftMax === 'true') {
+    if (primary.dataset.craftBatchLabel) {
       commands.push({
-        ...buttonCommand(primary, 'craft-max', 'Shift+Enter', 0),
+        ...buttonCommand(primary, 'craft-batch', 'Shift+Enter', 0),
         padModifier: 6,
         glyph: `${getGamepadGlyph(6)} + ${getGamepadGlyph(0)}`,
-        label: t('craftMaximum'),
+        label: primary.dataset.craftBatchLabel,
         run: () => {
           if (primary.isConnected && !primary.disabled)
             primary.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
         },
       })
     }
-    if (primary.dataset.inventoryTransferSlot === 'true') {
+    if (primary.dataset.inventoryTransferSlot === 'true' && row?.querySelector('.inventory-quantity-badge')) {
       commands.push({
         ...buttonCommand(primary, 'stack', 'Shift+Enter', 2),
         label: t('windowWholeStack'),
@@ -186,6 +205,17 @@ export function availableCommands(host: CommandHost): Command[] {
       command.glyph = getGamepadGlyph(pad)
       assigned.add(pad)
     }
+  }
+  const interaction = getWindowInteraction(host.panel)
+  if (interaction) {
+    const own = interaction.commands()
+    return [
+      ...own,
+      ...commands.filter(
+        command =>
+          ['previous-tab', 'next-tab', 'close'].includes(command.id) && !own.some(item => item.id === command.id)
+      ),
+    ]
   }
   return commands
 }

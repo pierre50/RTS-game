@@ -1,0 +1,40 @@
+{
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "commit": "58ce1aa479e4df32845a73a5d0afc221c3a893c2",
+  "upstream": "spritesheets/hat/cloth/hood_sack/adult/slash.png",
+  "local": "spritesheets/hat/cloth/hood_sack/adult/slash/leather.png",
+  "credits": "sheet_definitions/hat_hood_sack_cloth.json",
+  "notes": "Exact RGBA mapping from upstream walk.png to the existing local walk/leather.png; geometry and alpha preserved. Generated equipment still passes through duel.hex.",
+  "rgba_mapping": [
+    {
+      "source": [40, 24, 32, 129],
+      "target": [0, 0, 0, 129]
+    },
+    {
+      "source": [40, 24, 32, 255],
+      "target": [43, 28, 29, 255]
+    },
+    {
+      "source": [77, 74, 93, 255],
+      "target": [49, 18, 16, 255]
+    },
+    {
+      "source": [149, 128, 128, 255],
+      "target": [75, 43, 19, 255]
+    },
+    {
+      "source": [196, 181, 159, 255],
+      "target": [112, 67, 37, 255]
+    },
+    {
+      "source": [229, 230, 199, 255],
+      "target": [117, 80, 45, 255]
+    },
+    {
+      "source": [255, 255, 255, 255],
+      "target": [154, 111, 55, 255]
+    }
+  ],
+  "source_sha256": "2c0598c89f727199170dd907d96d062aab0fba3face24c1dcd28b137f532d40d",
+  "sha256": "ed04739c1c7786cc2f8efc2060b48fa7d6d6eb346b67cf8b45d9a2fbde07a772"
+}

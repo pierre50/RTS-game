@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadAccounting() {
   const constants = {
-    BUILDING_TYPES: { granary: 'Granary', storagePit: 'StoragePit', chest: 'Chest' },
+    BUILDING_TYPES: { townCenter: 'TownCenter', granary: 'Granary', storagePit: 'StoragePit', chest: 'Chest' },
     RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
     RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
     UNIT_TYPES: { hero: 'Hero' },

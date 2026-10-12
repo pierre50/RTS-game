@@ -18,6 +18,7 @@ function fixture(count = 10) {
   const building = {
     label: 'barracks',
     type: 'Barracks',
+    buildingLevel: 1,
     isBuilt: true,
     i: 0,
     j: 0,
@@ -169,7 +170,6 @@ test('cancelling an incoming request releases only its recruit and does not over
   assert.equal(building.trainingRequests.length, 0)
 })
 
-
 test('renovation blocks recruitment and dispatch until the building reopens', () => {
   const { owner, building } = fixture(1)
   building.buildingUpgrade = { targetLevel: 1 }
@@ -181,4 +181,17 @@ test('renovation blocks recruitment and dispatch until the building reopens', ()
   delete building.buildingUpgrade
   dispatchTrainingRequests(owner)
   assert.equal(owner.units[0].trainingTargetType, 'Fantassin')
+})
+
+test('military levels reserve 3, 5 and 8 places including incoming recruits', () => {
+  for (const [buildingLevel, capacity] of [3, 5, 8].entries()) {
+    const { owner, building } = fixture(12)
+    building.buildingLevel = buildingLevel
+    requestBuildingTraining(building, 'Fantassin', 12)
+    assert.equal(owner.units.filter(unit => unit.trainingTargetType).length, capacity)
+    for (const unit of [...owner.units].filter(unit => unit.trainingTargetType)) enter(building, unit)
+    dispatchTrainingRequests(owner)
+    assert.equal(building.trainingQueue.length, capacity)
+    assert.equal(owner.units.filter(unit => unit.trainingTargetType).length, 0)
+  }
 })

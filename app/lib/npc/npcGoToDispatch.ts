@@ -8,7 +8,6 @@ import { applyDiplomaticAggression } from '../combat/diplomaticAggression'
 import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getMapSpace } from '../mapSpaces'
 import { resolveClickTarget } from './npcTargetResolution'
-export { resolveHoverTarget } from './npcTargetResolution'
 
 function resetNpcDirectives(target: UnitEntity): void {
   cancelRoadJourney(target)

@@ -1,3 +1,4 @@
+import type { NpcArrowState } from '../lib/units/combat/unitArrows'
 import type { RoadJourney } from '../lib/units/roadJourney'
 import type { AmbientTrafficState } from '../services/travel/ambient/AmbientTrafficState'
 import type { RoadLayer } from '../lib/terrain/roadLayer'
@@ -36,6 +37,7 @@ export type SaveEntityState = {
   collectiveHome?: { i: number; j: number; spaceId?: string | null }
   constructionTime?: number
   constructionWorkRequired?: number
+  constructionPaused?: boolean
   constructionProgress?: number
   constructionMaterials?: ConstructionMaterials
   buildingUpgrade?: BuildingUpgrade
@@ -76,9 +78,11 @@ export type SaveEntityState = {
   homeBedLabel?: string
   partnerLabel?: string
   heroHomeResident?: { label: string; name?: string }
+  houseInteriorLevel?: number
   plannedBedLabels?: string[]
   interiorUnfurnished?: boolean
   interiorBuildings?: SaveEntityState[]
+  townCenterId?: string
   interiorPortalId?: string
   interiorOwner?: string
   offlineWork?: { target: string; milliseconds: number }
@@ -125,6 +129,14 @@ export type SaveEntityState = {
   isNaturalResource?: boolean
   isChief?: boolean
   inventory?: {
+    toolsInitialized?: boolean
+    toolsStowed?: boolean
+    toolSupplyTarget?: string
+    npcWeaponsInitialized?: boolean
+    banditWeaponMigrated?: boolean
+    npcArrows?: NpcArrowState
+    /** Unused prepaid crafting materials, in tenths of a resource unit. */
+    craftingRemainders?: ResourceAmount
     resources?: ResourceAmount
     equipment?: string[]
     equipped?: Partial<Record<HeroEquipmentSlot, string>>
@@ -153,6 +165,7 @@ export type SaveEntityState = {
   lootEquipment?: string[]
   marketGold?: number
   marketStock?: string[]
+  marketResourceStock?: ResourceAmount
   mountedOnHorse?: boolean
   name?: string
   path?: SaveGridPoint[]

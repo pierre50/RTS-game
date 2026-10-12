@@ -1,4 +1,5 @@
 import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
+import { RESOURCE_TYPES } from '../constants/entities'
 import type { GridPosition, Point } from '../types/grid'
 
 type Direction = 'north' | 'south' | 'west' | 'northwest' | 'southwest' | 'east' | 'northeast' | 'southeast'
@@ -149,7 +150,9 @@ export function instancesDistance(a: PositionLike, b: PositionLike, useCartesian
  * render-only offset applied to child sprites, never to x/y) so this is a pure i+j sort key.
  * @param {object} instance
  */
-export function getInstanceZIndex(instance: Point & { z?: number | null; zIndexOffset?: number }): number {
+export function getInstanceZIndex(instance: Point & { z?: number | null; zIndexOffset?: number; type?: string }): number {
+  // Loose wood and stones stay above terrain (-0.5), below shadows and all standing entities.
+  if (instance.type === RESOURCE_TYPES.groundWood || instance.type === RESOURCE_TYPES.groundStone) return -0.25
   return (instance.y + getReliefLiftPixels(instance.z)) / HALF_CELL_HEIGHT + (instance.zIndexOffset ?? 0)
 }
 

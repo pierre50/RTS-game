@@ -31,7 +31,6 @@ export const AI_DIFFICULTIES = {
   },
 }
 
-export { BUILDING_TRAINING_CAPACITY as AI_BUILDING_TRAINING_CAPACITY } from '../lib/training/trainingRules'
 export const AI_ABSTRACT_DAILY_RECRUITS = 2
 
 export const MAX_VILLAGERS = 50

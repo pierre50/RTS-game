@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { StartingResourceRelocation } = loadTsModule('app/services/world/StartingResourceRelocation.ts')
+const { StartingResourceRelocation } = loadTsModule('app/services/world/startingState/StartingResourceRelocation.ts')
 const { OfflineWorldSpatial } = loadTsModule('app/services/world/offline/OfflineWorldSpatial.ts')
 
 function fixture() {

@@ -1,3 +1,10 @@
+import {
+  groundRespawnCandidates,
+  isGroundResourceType,
+  groundResourceSurroundings,
+} from '../../../lib/resources/groundResourceRegrowth'
+import { recordEconomyFlow } from '../../../lib/economy/economyTelemetry'
+import { RESOURCE_STOCKPILE_TYPES } from '../../../constants/entities'
 import { createNonReservedPassageCellCondition } from '../../../lib/buildings/passageCells'
 import type { GameContextLike } from '../../../types/context'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../../config/gameplay'
@@ -19,21 +26,44 @@ import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from './Resour
 
 export function respawnNaturalResource(runtime: MapResources, slot: SaveEntityState): boolean {
   if (!Object.hasOwn(NATURAL_RESOURCE_REGROWTH_BY_TYPE, slot.type)) return false
-  const wheat = slot.type === RESOURCE_TYPES.wheat
-  const destination = slot
   const nonPassage = createNonReservedPassageCellCondition(runtime.map.context as GameContextLike)
-  const cell = runtime.map.grid[slot.i]?.[slot.j]
+  const wheat = slot.type === RESOURCE_TYPES.wheat
+  const destination = isGroundResourceType(slot.type)
+    ? groundRespawnCandidates(slot).find(point => {
+        const cell = runtime.map.grid[point.i]?.[point.j]
+        if (
+          !isAvailableNaturalResourceCell(cell) ||
+          cell.terrainHidden ||
+          !nonPassage(cell) ||
+          hasWaterBorderWithin(runtime.map.grid, point.i, point.j, WATER_BORDER_PLACEMENT_CLEARANCE)
+        )
+          return false
+        return groundResourceSurroundings(slot.type, point, (i, j) => {
+          const nearby = runtime.map.grid[i]?.[j]
+          const entity = nearby?.has
+          return {
+            building: entity?.family === 'building',
+            ground: Boolean(entity && !entity.isDestroyed && !entity.isDead && isGroundResourceType(entity.type)),
+            tree: Boolean(
+              entity?.type === RESOURCE_TYPES.tree && !entity.isDead && entity.hitPoints !== 0 && nearby?.z === cell.z
+            ),
+          }
+        })
+      })
+    : slot
+  if (!destination) return false
+  const cell = runtime.map.grid[destination.i]?.[destination.j]
   if (
     !cell ||
     cell.terrainHidden ||
     !nonPassage(cell) ||
-    hasWaterBorderWithin(runtime.map.grid, slot.i, slot.j, WATER_BORDER_PLACEMENT_CLEARANCE)
+    hasWaterBorderWithin(runtime.map.grid, destination.i, destination.j, WATER_BORDER_PLACEMENT_CLEARANCE)
   )
     return false
-  // Renewal is local: a blocked original site is deferred, never relocated by a continent-wide search.
-  if (!isAvailableNaturalResourceCell(runtime.map.grid[slot.i]?.[slot.j])) return false
-  for (let i = slot.i - 2; i <= slot.i + 2; i++)
-    for (let j = slot.j - 2; j <= slot.j + 2; j++)
+  // Ground items can move locally; other resources retain their original site.
+  if (!isAvailableNaturalResourceCell(runtime.map.grid[destination.i]?.[destination.j])) return false
+  for (let i = destination.i - 2; i <= destination.i + 2; i++)
+    for (let j = destination.j - 2; j <= destination.j + 2; j++)
       if (runtime.map.grid[i]?.[j]?.has?.family === 'building') return false
   const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
   const totalQuantity =
@@ -59,6 +89,9 @@ export function respawnNaturalResource(runtime: MapResources, slot: SaveEntitySt
       })
     )
   )
+  recordEconomyFlow(null, 'renewed', {
+    [RESOURCE_STOCKPILE_TYPES[slot.type as keyof typeof RESOURCE_STOCKPILE_TYPES] ?? slot.type]: quantity,
+  })
   return true
 }
 

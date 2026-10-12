@@ -130,3 +130,28 @@ python3 scripts/lpc/audit_equipment.py
 - `build_animals.py`: bakes the wildlife spritesheets (see above).
 - `sync.py`: downloads the sources from the Universal LPC repository.
 - `audit_equipment.py`: diagnoses empty layer/animation combinations.
+
+## Long slash spear (stone, bronze, iron)
+
+`spear_ceramic` (the existing stone material key), `spear_bronze`, and
+`spear_iron` share the accepted long spear silhouette: the shaft extends 40%
+towards the point, leaving the original hand grip and rear shaft intact. Walk
+and slash use 192px source cells and separate back/front layers. The rounded
+sweep uses opaque palette colors, with no antialiasing or thrust animation.
+
+`build_spear.py` regenerates the neutral source layers from the local halberd
+using the geometry in `build_spear_prototype.py`. Input/output hashes make this
+step incremental; both unit and equipment builds run it automatically. Sources
+are stored under `spritesheets/weapon/polearm/spear_slash/`. Original credits
+and derivative attribution are in `sheet_definitions/weapon_polearm_spear_slash.json`.
+The dedicated `spear_metal_source` palette recolors the point and sweep without
+recoloring the wood. Generated variants share `weapon/spear/texture.png` and
+`texture.json` in the runtime equipment directory.
+
+```bash
+python3 scripts/lpc/build_equipment.py --only spear_ceramic spear_bronze spear_iron
+```
+
+Always build all three variants together since they share one atlas. Runtime
+equipment metadata, material recipes and the wider melee slash contact profile
+are registered in the game; the stone variant uses manual crafting.

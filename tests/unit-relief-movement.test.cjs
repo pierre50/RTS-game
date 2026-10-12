@@ -27,7 +27,7 @@ function fixture() {
       updateInstanceRenderVisibility: noop,
       moveTowardPoint,
     },
-    '../../../lib/units/targetPursuit': { updateTargetPursuit: () => false },
+    '../../../lib/units/combat/targetPursuit': { updateTargetPursuit: () => false },
     '../../../lib/units/unitControl': { isHeroControlled: () => false },
     '../../../lib/units/unitEnergy': { getEnergyMoveSpeedMultiplier: unit => unit.energySpeedFactor ?? 1 },
     './UnitHeroDirectMovementCollision': { getHeroTerrainCollisionBlockerNearPoint: () => null },

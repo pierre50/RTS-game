@@ -186,3 +186,16 @@ test('roads leave two cells around resources and the entire cave footprint', () 
     assert.throws(() => validateSettlementRoads(roads, invalid, terrain), /road blocked/)
   }
 })
+
+test('generation rejects a building whose footprint overlaps a planned road', () => {
+  const { prepared, terrain } = fixture()
+  const roads = prepareSettlementRoads(prepared, terrain)
+  const [id] = roads.cells[Math.floor(roads.cells.length / 2)]
+  prepared.players[0].buildings.push({
+    type: 'House',
+    size: 2,
+    i: Math.floor(id / roads.stride) - 1,
+    j: (id % roads.stride) - 1,
+  })
+  assert.throws(() => validateSettlementRoads(roads, prepared, terrain), /road blocked/)
+})

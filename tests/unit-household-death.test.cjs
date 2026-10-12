@@ -61,8 +61,9 @@ test('death of a sole resident immediately frees the house and bed before corpse
   assert.deepEqual(getHouseResidents(owner, house), [newcomer])
 })
 
-test('a surviving partner retains the home; death of the last partner makes it assignable again', () => {
+test('a surviving partner retains their bed while the other bed becomes available', () => {
   const { house, owner, add } = fixture()
+  house.buildingLevel = 1
   const first = add('Alice'),
     second = add('Bob')
   first.partnerLabel = second.label
@@ -71,7 +72,7 @@ test('a surviving partner retains the home; death of the last partner makes it a
   const secondBed = second.homeBedLabel
   die(first)
   assert.deepEqual(getHouseResidents(owner, house), [second])
-  assert.equal(getVacantHomeCount(owner), 0)
+  assert.equal(getVacantHomeCount(owner), 1)
   assert.equal(second.homeBedLabel, secondBed)
   assert.equal(second.partnerLabel, undefined)
   die(second)

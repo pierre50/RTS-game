@@ -6,6 +6,10 @@ const babel = require('@babel/core')
 
 function loadControls(mockOverrides = {}) {
   const mocks = {
+    '../lib/hero/heroGroundCollection': {
+      collectGroundResource: () => false,
+      isCollectableGroundResource: () => false,
+    },
     '../ui/BuildingPlacementHelp': {
       BuildingPlacementHelp: class {
         constructor(actions) {

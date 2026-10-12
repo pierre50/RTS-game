@@ -9,7 +9,7 @@ test('inventory exposes local map and construction tabs without Worlds', t => {
   t.after(() => {
     global.document = previous
   })
-  global.document = { createElement: () => ({ appendChild() {}, append() {} }) }
+  global.document = { createElement: () => ({ appendChild() {}, append() {}, setAttribute() {} }) }
   const filename = path.join(__dirname, '../app/ui/InventoryManager.ts')
   const { code } = babel.transformSync(fs.readFileSync(filename, 'utf8'), {
     filename,
@@ -19,6 +19,12 @@ test('inventory exposes local map and construction tabs without Worlds', t => {
   let tabs
   new Function('module', 'exports', 'require', code)(loaded, loaded.exports, request => {
     if (request === '../lib/lang') return { t: key => key }
+    if (request === './inventory/HeroInventoryCraftingBody')
+      return {
+        HeroInventoryCraftingBody: class {
+          craftPanel = { classList: { add() {} } }
+        },
+      }
     if (request === './Tabs')
       return {
         ModalTabs: class {
@@ -32,7 +38,7 @@ test('inventory exposes local map and construction tabs without Worlds', t => {
   new loaded.exports.InventoryManager({ minimapWrap: {} })
   assert.deepEqual(
     tabs.map(tab => tab.id),
-    ['info', 'tools', 'minimap', 'construction']
+    ['tools', 'craft', 'info', 'minimap', 'construction']
   )
 })
 
@@ -53,7 +59,7 @@ test('closing and reopening inventory remembers every tab and releases the minim
       return {
         Modal: class {
           constructor() {
-            this._panel = { classList: { add() {} } }
+            this._panel = { classList: { add() {} }, querySelector: () => null }
           }
           close() {}
         },
@@ -61,7 +67,7 @@ test('closing and reopening inventory remembers every tab and releases the minim
     return {}
   })
   const { InventoryManager } = loaded.exports
-  for (const tab of ['info', 'tools', 'minimap', 'construction']) {
+  for (const tab of ['info', 'tools', 'craft', 'minimap', 'construction']) {
     const calls = []
     const manager = Object.create(InventoryManager.prototype)
     Object.assign(manager, {
@@ -82,5 +88,9 @@ test('closing and reopening inventory remembers every tab and releases the minim
     assert.equal(manager.activeTab, tab)
     manager.open()
     assert.deepEqual(calls, ['detach', tab])
+    manager.toggle()
+    manager.toggle()
+    assert.equal(manager.activeTab, 'tools')
+    assert.deepEqual(calls, ['detach', tab, 'detach', 'tools'])
   }
 })

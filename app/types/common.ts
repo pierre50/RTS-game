@@ -15,7 +15,6 @@ export type ResourceAmount = Partial<
     | 'gold'
     | 'copper'
     | 'tin'
-    | 'copperIngot'
     | 'bronzeIngot'
     | 'ironIngot'
     | 'iron',

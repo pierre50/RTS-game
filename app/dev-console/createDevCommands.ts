@@ -1,3 +1,4 @@
+import { economyFlowCommand } from './actions/economyFlow'
 import { Assets } from 'pixi.js'
 import { DevCommandRegistry } from './DevCommandRegistry'
 import { RESOURCE_STORAGE_NAMES } from '../constants'
@@ -47,6 +48,13 @@ import { isAiDebugPlayer } from './actions/DebugOverlayRenderers'
 const RESOURCE_NAMES = ['all', 'food', ...RESOURCE_STORAGE_NAMES]
 
 function registerCoreCommands(registry: DevCommandRegistry): void {
+  registry.register({
+    name: 'economy-flow',
+    usage: 'economy-flow [start|stop|show|export|goal identifiant|phase nom|finish]',
+    describe: 'Mesurer les récoltes, consommations et renouvellements en direct et hors écran',
+    complete: () => ['start', 'stop', 'show', 'export', 'goal', 'phase', 'finish'],
+    run: economyFlowCommand,
+  })
   registry.register({
     name: 'economy',
     usage: 'economy [all|civilization|player|region] [--json]',

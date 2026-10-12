@@ -1,9 +1,10 @@
+import { migrateEquipmentRecord } from '../lib/equipment/equipmentMaterials'
 import { migrateLegacyProgression } from './LegacyProgressionMigration'
-import { startingHeroInventory } from '../lib/economy/startingProvisions'
+import { startingHeroInventory, balanceStartingVillagerTools } from '../lib/economy/startingProvisions'
 import type { MapBlueprint } from '../classes/map/MapGenerationTypes'
 import type { GameConfig, SavePlayerState, SerializedSave } from '../types/save'
 
-/** Materialize authored entities verbatim. No placement, resource transfer or AI orders. */
+/** Materialize authored entities and distribute starting tools. No placement or resource transfer. */
 export function preparedSettlementState(
   initial: SerializedSave,
   blueprint: MapBlueprint,
@@ -15,6 +16,8 @@ export function preparedSettlementState(
   const state = structuredClone(initial)
   const data = structuredClone(prepared)
   data.players.forEach(migrateLegacyProgression)
+  migrateEquipmentRecord(data)
+  for (const player of data.players) balanceStartingVillagerTools(player.units ?? [])
   delete state.resourceDelta
   const activeCivilizations = new Set(initial.players.filter(player => player.type === 'AI').map(player => player.civ))
   const excludedFields = new Set(

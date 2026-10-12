@@ -1,3 +1,4 @@
+import { reconcileSettlementResidents } from '../lib/territory/settlementResidents'
 import { AmbientTrafficSystem } from './travel/ambient/AmbientTrafficSystem'
 import { RoadTravelSystem } from './travel/RoadTravelSystem'
 import { getDeferredVillages } from './world/distantVillages/DeferredVillageStore'
@@ -13,7 +14,7 @@ import {
   VILLAGE_PATH_MARGIN,
   VILLAGE_SIMULATION_STEP_MS,
 } from '../config/villageActivity'
-import { campDistance } from '../lib/units/campBehavior'
+import { campDistance } from '../lib/units/camps/campBehavior'
 import { getEntitySpaceId } from '../lib/mapSpaces'
 import {
   registerVillageFlush,
@@ -80,10 +81,12 @@ export class VillageActivitySystem {
   private reconcile(): void {
     const active = new Set<string>()
     for (const owner of this.context.players ?? []) {
+      reconcileSettlementResidents(owner)
       if (owner.isPlayed || owner.type !== 'AI') continue
       const centers = (owner.buildings ?? []).filter(
         b =>
-          (b.type === 'TownCenter' || (owner.settlementType === 'outpost' && b.type === 'FireCamp')) &&
+          b.type === 'TownCenter' &&
+          b.isBuilt !== false &&
           !b.isDead &&
           !b.isDestroyed &&
           getEntitySpaceId(b) === 'outside'
@@ -99,27 +102,6 @@ export class VillageActivitySystem {
             simplified: false,
             since: this.context.scheduler.elapsedMs,
           })
-      }
-      for (const unit of owner.units ?? []) {
-        if (unit.campPatrolAnchor || unit.banditCampAnchor || unit.isDead || unit.isDestroyed) continue
-        if (!unit.villageHome || !active.has(unit.villageHome.id)) {
-          const position =
-            getEntitySpaceId(unit) === 'outside'
-              ? unit
-              : (this.context.map.spaces
-                  ?.get(getEntitySpaceId(unit))
-                  ?.portals?.find(portal => portal.targetSpaceId === 'outside')?.targetCell ?? unit)
-          const nearest = centers.reduce<(typeof centers)[number] | undefined>(
-            (best, center) =>
-              !best ||
-              Math.hypot(position.i - center.i, position.j - center.j) <
-                Math.hypot(position.i - best.i, position.j - best.j)
-                ? center
-                : best,
-            undefined
-          )
-          unit.villageHome = nearest ? this.villages.get(`${owner.label}:${nearest.label}`)?.home : undefined
-        }
       }
     }
     for (const [id, village] of this.villages) {

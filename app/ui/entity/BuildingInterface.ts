@@ -1,8 +1,7 @@
-import { appendConstructionInfo } from './ConstructionInfo'
+import { appendConstructionInfo, createConstructionPauseButton } from './ConstructionInfo'
 import { canHeroDemolishBuilding } from '../../lib/buildings/buildingDemolition'
 import { isInteriorFurniture } from '../../lib/buildings/furniture/interiorFurnitureCatalog'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
-import { getEntityDescription } from './EntityDescription'
 import { BUILDING_TYPES, PLAYER_TYPES } from '../../constants'
 import { HORSE_COLOR_PALETTES, isHorseColor } from '../../lib/horses/horseColors'
 import { t } from '../../lib/lang'
@@ -26,6 +25,8 @@ export class BuildingInterface {
     if (building.type === BUILDING_TYPES.stable && building.isBuilt) {
       element.appendChild(this.getStableHorseElement())
     }
+    const pauseButton = createConstructionPauseButton(building)
+    if (pauseButton) (options?.actionsContainer ?? element).appendChild(pauseButton)
     if (canHeroDemolishBuilding(building)) {
       ;(options?.actionsContainer ?? element).appendChild(this.getDeleteBuildingButton())
     }
@@ -104,11 +105,11 @@ export class BuildingInterface {
       building.totalHitPoints,
       {
         hideType: options?.hideIdentity,
-        description: building.isBuilt ? getEntityDescription(building) : t('constructionSiteDescription'),
+        description: building.isBuilt ? undefined : t('constructionSiteDescription'),
       }
     )
 
-    if (!building.isBuilt) appendConstructionInfo(element, building)
+    if (!building.isBuilt || building.buildingUpgrade) appendConstructionInfo(element, building)
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
       appendQuantityInfo(element, menu.icons!['food'], building.quantity)

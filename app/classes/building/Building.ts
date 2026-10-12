@@ -55,6 +55,7 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   cave?: CaveDefinition
   placementMirrored?: boolean
   buildingLevel?: number
+  houseInteriorLevel?: number
   assetLevel?: number
   trainingQueue?: SavedTrainingEntry[]
   trainingRequests?: BuildingEntity['trainingRequests']
@@ -67,12 +68,14 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   spaceId?: string
   constructionTime?: number
   constructionWorkRequired?: number
+  constructionPaused?: boolean
   constructionProgress?: number
   constructionMaterials?: BuildingEntity['constructionMaterials']
   buildingUpgrade?: BuildingEntity['buildingUpgrade']
   inventory?: BuildingEntity['inventory']
   marketGold?: number
   marketStock?: string[]
+  marketResourceStock?: ResourceAmount
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   isBuilt?: boolean
@@ -118,6 +121,7 @@ export class Building extends Instance implements BuildingEntity {
   interface!: EntityInterfaceLike
   placementMirrored = false
   buildingLevel!: number
+  houseInteriorLevel?: number
   assetType?: string
   textureName?: string
   useSpriteShadow?: boolean
@@ -146,11 +150,13 @@ export class Building extends Instance implements BuildingEntity {
   }
   constructionTime?: number
   constructionWorkRequired?: number
+  constructionPaused?: boolean
   constructionProgress?: number
   constructionMaterials?: BuildingEntity['constructionMaterials']
   buildingUpgrade?: BuildingEntity['buildingUpgrade']
   marketGold?: number
   marketStock?: string[]
+  marketResourceStock?: ResourceAmount
   visualSettingsCleanup: (() => void) | null
 
   constructor(options: BuildingOptions, context: GameContextLike) {
@@ -187,7 +193,11 @@ export class Building extends Instance implements BuildingEntity {
 
     this.assignProperties(options)
     this.buildingLevel = getBuildingLevel(options)
+    if (this.type === 'House') this.houseInteriorLevel = options.houseInteriorLevel ?? this.buildingLevel
     this.assignProperties(getBuildingConfigForLevel(this.owner.config.buildings[this.type], this.buildingLevel))
+    // Saved projects keep their original work budget, including legacy health-based sites.
+    if (options.constructionWorkRequired != null) this.constructionWorkRequired = options.constructionWorkRequired
+    else if (options.hitPoints != null) delete this.constructionWorkRequired
     // Enforce this after saved options and config so existing decorations are protected too.
     if (CAMP_DECORATION_BUILDING_TYPES.some(type => type === this.type)) this.indestructible = true
     this.stableHorses = stableHorsesFromOptions(options)

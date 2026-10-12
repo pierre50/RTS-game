@@ -1,3 +1,5 @@
+import { observeEconomyChange } from './economy/economyTelemetry'
+import { resourceTransactionOptions } from './resources/playerResourceStores'
 import type { ResourceTotalOptions } from './resources/playerResourceStores'
 import {
   depositChestResources,
@@ -21,9 +23,16 @@ function resourceEntries(cost: ResourceLedger): Array<[ResourceName, number]> {
  * @param {object} player - The player object containing resources.
  * @param {object} cost - An object representing the costs to refund.
  */
-export function refundCost(player: ResourceLedger | null | undefined, cost: ResourceLedger | null | undefined): void {
+function refundCostImpl(
+  player: ResourceLedger | null | undefined,
+  cost: ResourceLedger | null | undefined,
+  options: ResourceTotalOptions = {}
+): void {
   if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return
-  if (hasPlayerResourceChests(player) && depositChestResources(player, cost)) return
+  if (hasPlayerResourceChests(player)) {
+    depositChestResources(player, cost, options)
+    return
+  }
   for (const [prop, amount] of resourceEntries(cost)) {
     player[prop] = (player[prop] || 0) + amount
   }
@@ -34,7 +43,7 @@ export function refundCost(player: ResourceLedger | null | undefined, cost: Reso
  * @param {object} player - The player object containing resources.
  * @param {object} cost - An object representing the costs to pay.
  */
-export function payCost(
+function payCostImpl(
   player: ResourceLedger | null | undefined,
   cost: ResourceLedger | null | undefined,
   options: ResourceTotalOptions = {}
@@ -62,9 +71,45 @@ export function canAfford(
 ): boolean {
   if (!cost || typeof cost !== 'object') return true
   if (!player || typeof player !== 'object') return false
-  const resources = hasPlayerResourceChests(player) ? getPlayerResourceTotals(player, options) : player
+  const resources = hasPlayerResourceChests(player)
+    ? getPlayerResourceTotals(player, resourceTransactionOptions(player, options))
+    : player
   for (const [prop, amount] of resourceEntries(cost)) {
     if ((resources[prop] || 0) < amount) return false
   }
   return true
+}
+
+export function payCost(
+  player: ResourceLedger | null | undefined,
+  cost: ResourceLedger | null | undefined,
+  options: ResourceTotalOptions = {}
+): void {
+  observeEconomyChange(
+    player,
+    'payment',
+    () =>
+      player && hasPlayerResourceChests(player)
+        ? getPlayerResourceTotals(player, resourceTransactionOptions(player, options))
+        : (player ?? {}),
+    'removed',
+    () => payCostImpl(player, cost, options)
+  )
+}
+
+export function refundCost(
+  player: ResourceLedger | null | undefined,
+  cost: ResourceLedger | null | undefined,
+  options: ResourceTotalOptions = {}
+): void {
+  observeEconomyChange(
+    player,
+    'refund',
+    () =>
+      player && hasPlayerResourceChests(player)
+        ? getPlayerResourceTotals(player, resourceTransactionOptions(player, options))
+        : (player ?? {}),
+    'added',
+    () => refundCostImpl(player, cost, options)
+  )
 }

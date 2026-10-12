@@ -76,29 +76,29 @@ function createCombatConfig() {
 
 test('bandit combat pacing stays in ARPG hit-count ranges', () => {
   const config = createCombatConfig()
-  const heroSword = getEquipmentStats(['sword_ceramic'])
+  const heroSword = getEquipmentStats(['sword_bronze'])
   const heroBow = getEquipmentStats(['bow'])
   const banditChief = config.units.BanditChief
   const banditSword = config.units.BanditSword
   const banditArcher = config.units.BanditArcher
 
-  assert.equal(hitsToKill(heroSword, banditArcher), 3)
-  assert.equal(hitsToKill(heroSword, banditSword), 4)
-  assert.equal(hitsToKill(heroSword, banditChief), 8)
+  assert.equal(hitsToKill(heroSword, banditArcher), 2)
+  assert.equal(hitsToKill(heroSword, banditSword), 3)
+  assert.equal(hitsToKill(heroSword, banditChief), 4)
   assert.equal(hitsToKill(heroBow, banditArcher), 4)
   assert.equal(hitsToKill(heroBow, banditSword), 5)
   assert.equal(hitsToKill(heroBow, banditChief), 9)
 })
 
-test('trainable non-siege units use ARPG health pacing against starting hero weapons', () => {
-  const heroSword = getEquipmentStats(['sword_ceramic'])
+test('trainable non-siege units use ARPG health pacing against a bronze sword and a bow', () => {
+  const heroSword = getEquipmentStats(['sword_bronze'])
   const heroBow = getEquipmentStats(['bow'])
 
-  assert.equal(hitsToKill(heroSword, units.Villager), 3)
-  assert.equal(hitsToKill(heroSword, units.Priest), 3)
-  assert.equal(hitsToKill(heroSword, units.Bowman), 4)
-  assert.equal(hitsToKill(heroSword, units.Fantassin), 4)
-  assert.equal(hitsToKill(heroSword, units.Chief), 7)
+  assert.equal(hitsToKill(heroSword, units.Villager), 2)
+  assert.equal(hitsToKill(heroSword, units.Priest), 2)
+  assert.equal(hitsToKill(heroSword, units.Bowman), 2)
+  assert.equal(hitsToKill(heroSword, units.Fantassin), 3)
+  assert.equal(hitsToKill(heroSword, units.Chief), 4)
   assert.equal(hitsToKill(heroBow, units.Bowman), 4)
   assert.equal(hitsToKill(heroBow, units.Fantassin), 5)
   assert.equal(hitsToKill(heroBow, units.Chief), 8)
@@ -114,19 +114,19 @@ test('hero starts without equipped arrows', () => {
   )
 })
 
-test('animals stay quick to resolve with starting hero weapons', () => {
-  const heroSword = getEquipmentStats(['sword_ceramic'])
+test('animals stay quick to resolve with a bronze sword and a bow', () => {
+  const heroSword = getEquipmentStats(['sword_bronze'])
   const heroBow = getEquipmentStats(['bow'])
 
-  assert.equal(hitsToKill(heroSword, animals.Wolf), 4)
-  assert.equal(hitsToKill(heroSword, animals.Boar), 4)
+  assert.equal(hitsToKill(heroSword, animals.Wolf), 2)
+  assert.equal(hitsToKill(heroSword, animals.Boar), 3)
   assert.equal(hitsToKill(heroBow, animals.Wolf), 4)
   assert.equal(hitsToKill(heroBow, animals.Boar), 5)
-  assert.equal(hitsToKill(heroSword, animals.Deer), 3)
+  assert.equal(hitsToKill(heroSword, animals.Deer), 2)
   assert.equal(hitsToKill(heroSword, animals.Hare), 1)
   assert.equal(hitsToKill(heroSword, animals.BlackGrouse), 1)
-  assert.equal(hitsToKill(heroSword, animals.Fox), 2)
-  assert.equal(hitsToKill(heroSword, animals.Horse), 4)
+  assert.equal(hitsToKill(heroSword, animals.Fox), 1)
+  assert.equal(hitsToKill(heroSword, animals.Horse), 2)
 })
 
 test('starting bandits remain dangerous without deleting the hero instantly', () => {
@@ -134,10 +134,10 @@ test('starting bandits remain dangerous without deleting the hero instantly', ()
   const hero = config.units.Hero
   const banditChief = { ...config.units.BanditChief, ...getEquipmentStats(config.units.BanditChief.equipment) }
   const banditSword = { ...config.units.BanditSword, ...getEquipmentStats(config.units.BanditSword.equipment) }
-  const banditArcher = { ...config.units.BanditArcher, ...getEquipmentStats(config.units.BanditArcher.equipment) }
+  const banditArcher = { ...config.units.BanditArcher, ...getEquipmentStats(['bow', 'arrow_ceramic']) }
 
-  assert.equal(hitsToKill(banditChief, hero), 12)
-  assert.equal(hitsToKill(banditSword, hero), 9)
+  assert.equal(hitsToKill(banditChief, hero), 5)
+  assert.equal(hitsToKill(banditSword, hero), 5)
   // Bow (5) + ceramic arrow (1) minus the hero's unified armor (1).
   assert.equal(damagePerHit(banditArcher, hero), 5)
   assert.equal(hitsToKill(banditArcher, hero), 9)

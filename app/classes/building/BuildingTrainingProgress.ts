@@ -1,3 +1,4 @@
+import { trainedInventory } from '../../lib/training/trainedInventory'
 import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { getTrainingProgress, isTrainingComplete } from '../../lib/training/trainingRules'
 import { ACTION_TYPES } from '../../constants'
@@ -113,7 +114,9 @@ export function finishUnitTraining(
   const placementExtra = trainee
     ? {
         ...extra,
+        inventory: trainedInventory(trainee.type, type, extra?.inventory ?? trainee.inventory),
         label: trainee.label,
+        villageHome: trainee.villageHome,
         homeHouseLabel: trainee.homeHouseLabel,
         homeBedLabel: trainee.homeBedLabel,
         partnerLabel: trainee.partnerLabel,

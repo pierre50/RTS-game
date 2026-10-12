@@ -1,0 +1,159 @@
+{
+  "frames": {
+    "000_graphics_resources_ground_wood_1.png": {
+      "frame": {
+        "x": 17,
+        "y": 25,
+        "w": 25,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 25,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 25,
+        "h": 16
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "001_graphics_resources_ground_wood_2.png": {
+      "frame": {
+        "x": 62,
+        "y": 22,
+        "w": 30,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 30,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 30,
+        "h": 20
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "002_graphics_resources_ground_wood_3.png": {
+      "frame": {
+        "x": 110,
+        "y": 24,
+        "w": 27,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 27,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 27,
+        "h": 17
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "003_graphics_resources_ground_stone_1.png": {
+      "frame": {
+        "x": 19,
+        "y": 63,
+        "w": 19,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 19,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 19,
+        "h": 17
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "004_graphics_resources_ground_stone_2.png": {
+      "frame": {
+        "x": 64,
+        "y": 64,
+        "w": 23,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 23,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 23,
+        "h": 16
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "005_graphics_resources_ground_stone_3.png": {
+      "frame": {
+        "x": 112,
+        "y": 63,
+        "w": 23,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 23,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 23,
+        "h": 17
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    }
+  },
+  "meta": {
+    "app": "manual",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 154,
+      "h": 102
+    },
+    "scale": 1
+  }
+}

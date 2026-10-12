@@ -18,6 +18,8 @@ function loadHeroMarketBody(overrides = {}) {
         getWeaponSlot: () => null,
       },
       '../../lib/equipment/equipmentMarket': {
+        getMarketLevel: () => 0,
+        getMarketResourceOffers: () => [],
         buyMarketEquipment: () => false,
         ensureMarketEquipmentStock: () => [],
         getEquipmentGoldValue: () => 0,
@@ -167,6 +169,7 @@ test('hero market blocks hostile, wary and enemy markets', () => {
 
 test('market rows show unit price tags without repeated lot totals', () => {
   const rows = []
+  const purchases = []
   const sections = []
   const makeRow = options => {
     rows.push(options)
@@ -179,6 +182,12 @@ test('market rows show unit price tags without repeated lot totals', () => {
       getEquipmentStacks: () => [{ equipment: 'sword', count: 2 }],
     },
     '../../lib/equipment/equipmentMarket': {
+      getMarketLevel: () => 0,
+      getMarketResourceOffers: () => [{ resource: 'wood', count: 30, goldValue: 3 }],
+      buyMarketResource: (_hero, _building, resource, count) => {
+        purchases.push([resource, count])
+        return 1
+      },
       getMarketGold: () => 1000,
       getHeroGold: hero => hero.inventory.resources.gold,
       ensureMarketEquipmentStock: () => [],
@@ -188,7 +197,7 @@ test('market rows show unit price tags without repeated lot totals', () => {
     },
     '../inventory/InventoryItemRows': {
       createInventoryEquipmentRow: (_context, options) => makeRow(options),
-      createInventoryResourceRow: (options) => makeRow(options),
+      createInventoryResourceRow: options => makeRow(options),
     },
     '../inventory/InventorySection': {
       createInventorySection: options => {
@@ -201,18 +210,26 @@ test('market rows show unit price tags without repeated lot totals', () => {
   const restore = installMockDocument()
   const owner = { label: 'player' }
   const hero = { owner, inventory: { resources: { gold: 19, wood: 5 }, equipment: [] } }
-  const menu = { context: { controls: { heroUnit: hero } } }
+  const menu = { context: { controls: { heroUnit: hero } }, showMessage() {} }
   try {
     createHeroMarketBody({ owner }, menu, () => {})
     assert.deepEqual(
       rows.map(row => row.value),
-      ['marketUnitPrice:20 gold', 'marketUnitPrice:2 gold', 'marketUnitPrice:8 gold']
+      ['marketUnitPrice:20 gold', 'marketUnitPrice:3 gold', 'marketUnitPrice:2 gold', 'marketUnitPrice:8 gold']
     )
     assert.equal(sections[0].action.textContent, '1000 gold')
     assert.equal(sections[1].action.textContent, '19 gold')
     assert.ok(rows.every(row => row.metaParts === undefined))
     assert.equal(rows[0].description, '')
-    assert.equal(rows[2].description, '')
+    assert.equal(rows[3].description, '')
+    assert.equal(rows[1].mode, 'market-buy')
+    assert.equal(rows[1].amount, 30)
+    rows[1].trailingAction.onAction('one')
+    rows[1].trailingAction.onAction('all')
+    assert.deepEqual(purchases, [
+      ['wood', 1],
+      ['wood', 30],
+    ])
     assert.equal(rows[0].disabled, true)
     hero.inventory.resources.gold = 20
     rows.length = 0

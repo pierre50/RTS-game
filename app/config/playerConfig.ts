@@ -1,3 +1,4 @@
+import { TOWN_CENTER_DEFENSE, TOWN_CENTER_LEVELS } from './townCenter'
 import { getCivilizationDefinition } from './civilizations'
 import { CAMP_DECORATION_BUILDING_TYPES, BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { SOUND_CUES } from '../constants/sounds'
@@ -53,12 +54,11 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     attackRecoveryMs: 760,
     trainingDays: 0,
     equipment: [
-      'axe_ceramic',
+      'mace_bronze',
       'armor_leather',
-      'cape_solid',
-      'helmet_barbarian_ceramic',
-      'upward_horns_ceramic',
-      'round_shield_ceramic_slash',
+      'helmet_barbarian_leather',
+      'upward_horns_white',
+      'round_shield_wood_slash',
     ],
     combatBehaviorPreset: 'meleeAggressive',
     cost: {},
@@ -70,7 +70,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     speed: 1.3,
     attackRecoveryMs: 640,
     trainingDays: 0,
-    equipment: ['sword_ceramic', 'helmet_barbarian_nasal_ceramic', 'round_shield_ceramic_slash'],
+    equipment: ['sword_bronze', 'helmet_barbarian_nasal_leather', 'round_shield_wood_slash'],
     combatBehaviorPreset: 'meleeAggressive',
     sounds: {
       hit: SOUND_CUES.unit.swordAttack,
@@ -84,7 +84,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     speed: 1.3,
     attackRecoveryMs: 800,
     trainingDays: 0,
-    equipment: ['quiver', 'bow', 'arrow_ceramic', 'sack_cloth_hood_leather'],
+    equipment: ['dagger_bronze', 'quiver', 'bow', 'arrow_ceramic', 'sack_cloth_hood_leather'],
     corpseLootArrowMin: 3,
     corpseLootArrowMax: 8,
     projectile: 'Arrow',
@@ -125,6 +125,15 @@ const BUILDING_TYPES_WITHOUT_HERO_OCCLUSION_FADE = new Set<string>([
 const BUILDING_TYPES_WITH_SPRITE_SHADOW = new Set<string>([...CAMP_DECORATION_BUILDING_TYPES])
 
 const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
+  Pebble: {
+    size: 2,
+    speed: 20,
+    assets: 'projectiles/pebble',
+    staticFrame: 0,
+    spawnOffsetY: 10,
+    sounds: { launch: SOUND_CUES.projectile.arrowLaunch },
+    trajectory: { kind: 'arc', minArcHeight: 4, arcHeightFactor: 0.06, maxArcHeight: 16 },
+  },
   Arrow: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
   ArrowCeramic: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
   ArrowCopper: arrowProjectileConfig('projectiles/arrow_copper', LPC_ARROW_PROJECTILE_CONFIG),
@@ -202,5 +211,7 @@ export function createPlayerData(baseConfig: PlayerConfigLike, civ: string): Pla
     }
   }
 
+  if (config.buildings.TownCenter)
+    Object.assign(config.buildings.TownCenter, TOWN_CENTER_DEFENSE, { range: TOWN_CENTER_LEVELS[0].range })
   return config
 }

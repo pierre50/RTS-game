@@ -1,3 +1,4 @@
+import { readEconomyTelemetry } from '../lib/economy/economyTelemetry'
 import { createDevCommands } from './createDevCommands'
 import type { DevCommandRegistry } from './DevCommandRegistry'
 import type { DevConsoleRuntimeContext } from './types'
@@ -31,6 +32,7 @@ export class DevConsole {
   }
 
   destroy(): void {
+    readEconomyTelemetry(true)
     document.removeEventListener('keydown', this._onKeyDown)
     this.close()
   }
@@ -92,12 +94,12 @@ export class DevConsole {
     }
     if (evt.key === 'Enter') {
       evt.preventDefault()
-      this.executeInput()
+      void this.executeInput()
       return
     }
     if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'c' && !this.input!.value) {
       evt.preventDefault()
-      this.copyLastMessage()
+      void this.copyLastMessage()
       return
     }
     if (evt.key === 'ArrowUp') {
@@ -118,7 +120,7 @@ export class DevConsole {
 
   onSubmit(evt: Event): void {
     evt.preventDefault()
-    this.executeInput()
+    void this.executeInput()
   }
 
   async executeInput(): Promise<void> {

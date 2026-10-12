@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict')
+const { createInventoryContainer, moveInventoryResource } = require('./helpers/loadTsModule.cjs').loadTsModule('app/lib/inventory/inventoryContainers.ts')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
@@ -106,7 +107,7 @@ test('death rolls once, and corpse inspection and pickup never refill the loot',
   lifecycle.die()
   assert.equal(rolls, firstRolls)
 
-  const { getUnitCorpseLootResources, pickupCorpseResource } = loadTsModule('app/lib/equipment/equipmentLoot.ts', {
+  const { getUnitCorpseLootResources } = loadTsModule('app/lib/equipment/equipmentLoot.ts', {
     mocks: {
       '../objectives/ageRules': {},
       '../lpc': {},
@@ -117,8 +118,8 @@ test('death rolls once, and corpse inspection and pickup never refill the loot',
   const hero = {}
   const resources = { ...getUnitCorpseLootResources(unit) }
   for (const [resource, amount] of Object.entries(resources)) {
-    assert.equal(pickupCorpseResource(unit, hero, resource), amount)
-    assert.equal(pickupCorpseResource(unit, hero, resource), 0)
+    assert.equal(moveInventoryResource(createInventoryContainer(unit, { id: 'corpse', labelKey: 'corpse' }), createInventoryContainer(hero, { id: 'hero', labelKey: 'hero' }), resource), amount)
+    assert.equal(moveInventoryResource(createInventoryContainer(unit, { id: 'corpse', labelKey: 'corpse' }), createInventoryContainer(hero, { id: 'hero', labelKey: 'hero' }), resource), 0)
   }
   assert.deepEqual(hero.inventory.resources, resources)
   assert.deepEqual(getUnitCorpseLootResources(unit), {})

@@ -225,13 +225,23 @@ test('interior construction lists furniture sections only and starts placement',
   try {
     const { renderInventoryConstruction } = loadTsModule('app/ui/InventoryConstruction.ts', {
       mocks: {
-        '../lib/lang': { t: key => key },
+        '../lib/lang': { t: key => key, getLang: () => 'fr' },
         '../lib/avatar': { renderBuildingAvatar: () => false },
         '../lib/audio/settings': { getReservedGameplayHotkeys: () => [] },
         './inventory/InventoryCostMeta': { inventoryDeliveryMetaParts: () => [] },
-        './inventory/InventorySection': { createInventorySectionTitle: () => new Element() },
+        './inventory/InventorySection': {
+          createInventorySection: ({ presentation, renderItems }) => {
+            assert.equal(presentation, 'recipes')
+            const section = new Element()
+            section.className = 'inventory-section'
+            const list = new Element()
+            renderItems(list)
+            section.appendChild(list)
+            return section
+          },
+        },
         './inventory/InventoryActionRow': {
-          createInventoryActionRow: (row) => {
+          createInventoryActionRow: row => {
             rows.push(row)
             return { element: new Element(), icon: new Element() }
           },
@@ -274,6 +284,7 @@ test('interior construction lists furniture sections only and starts placement',
     assert.equal(new Set(ids).size, ids.length, 'every item appears in a single section')
     assert.ok(!ids.includes('House'))
     assert.ok(!ids.includes('Trap'))
+    assert.ok(rows.every(row => row.metaParts[0].constructionSite))
     const sections = host.constructionPanel.children.filter(child => child.className === 'inventory-section')
     assert.ok(sections.length > 1)
     rows.find(row => row.id === 'CampTable').trailingAction.onClick({})
@@ -290,6 +301,83 @@ test('interior construction lists furniture sections only and starts placement',
     hotkeys.get('CampTable')()
     assert.deepEqual(previewPointer, { x: 580, y: 340 }, 'construction shortcuts also center the preview')
     assert.equal(closed, true)
+  } finally {
+    global.document = previousDocument
+  }
+})
+
+test('right construction menu updates the duration description when switching building levels', () => {
+  const previousDocument = global.document
+  class Element {
+    constructor() {
+      this.childNodes = []
+      this.attributes = {}
+    }
+    appendChild(child) {
+      this.childNodes.push(child)
+      return child
+    }
+    replaceChildren(...children) {
+      this.childNodes = children
+    }
+    setAttribute(key, value) {
+      this.attributes[key] = value
+    }
+    getAttribute(key) {
+      return this.attributes[key]
+    }
+  }
+  global.document = { createElement: () => new Element() }
+  const rows = []
+  let variant
+  try {
+    const { renderInventoryConstruction } = loadTsModule('app/ui/InventoryConstruction.ts', {
+      mocks: {
+        '../lib/avatar': { renderBuildingAvatar: () => false },
+        '../lib/audio/settings': { getReservedGameplayHotkeys: () => [] },
+        '../lib/ui/VariantRow': {
+          attachVariantRow: (_row, options) => {
+            variant = options
+          },
+        },
+        './inventory/InventorySection': {
+          createInventorySection: ({ renderItems }) => {
+            const list = new Element()
+            renderItems(list)
+            return list
+          },
+        },
+        './inventory/InventoryActionRow': {
+          createInventoryActionRow: options => {
+            rows.push(options)
+            return { element: new Element(), icon: new Element() }
+          },
+        },
+      },
+    })
+    const { menu, controls, player } = fixture()
+    controls.heroUnit.spaceId = 'outside'
+    player.config.buildings = { House: definitions.House }
+    menu.clearActionHotkeys = () => {}
+    menu.assignActionHotkey = () => null
+    menu.setActionHotkey = () => {}
+    menu.getActionBuildingButton = type => ({ id: type, details: { title: 'Maison', description: 'Un abri.' } })
+    renderInventoryConstruction({ menu, constructionPanel: new Element(), close() {} })
+    assert.equal(rows[0].description, 'Un abri.')
+    assert.equal(rows[0].metaParts[0].constructionSite.level, 0)
+    assert.equal(
+      rows[0].metaParts[0].constructionSite.config.constructionWorkRequired,
+      definitions.House.constructionWorkRequired
+    )
+    variant.onChange(1)
+    assert.equal(rows[1].metaParts[0].constructionSite.level, 1)
+    assert.equal(
+      rows[1].metaParts[0].constructionSite.config.constructionWorkRequired,
+      definitions.House.levelStats[1].constructionWorkRequired
+    )
+    variant.onChange(2)
+    assert.equal(rows[2].metaParts[0].constructionSite.level, 2)
+    assert.deepEqual(rows[2].metaParts[0].constructionSite.cost, definitions.House.levelStats[2].cost)
   } finally {
     global.document = previousDocument
   }

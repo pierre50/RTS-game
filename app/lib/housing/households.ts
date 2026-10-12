@@ -1,3 +1,4 @@
+import { getBaseTerritory } from '../territory/baseTerritory'
 import { BUILDING_TYPES, UNIT_TYPES } from '../../constants/entities'
 import { prepareHouseBedPlans, getHouseBedLabels } from './householdBeds'
 
@@ -6,16 +7,22 @@ export type HouseholdUnit = {
   type?: string
   name?: string
   gender?: 'male' | 'female'
+  followingHero?: boolean
   controlMode?: string
   isDead?: boolean
   isDestroyed?: boolean
   i?: number
   j?: number
+  spaceId?: string | null
+  villageHome?: { i: number; j: number; spaceId?: string | null }
   homeHouseLabel?: string
   homeBedLabel?: string
   partnerLabel?: string
 }
 export type HouseholdBuilding = {
+  buildingLevel?: number
+  assetLevel?: unknown
+  houseInteriorLevel?: number
   type: string
   label?: string
   i?: number
@@ -107,7 +114,12 @@ export function reconcileHouseholds(owner: HouseholdOwner | undefined): void {
     if (resident && (!living(resident) || resident.homeHouseLabel !== house.label)) delete house.heroHomeResident
   }
   const claimedBeds = new Set<string>()
-  const claimedHomes = new Map<string, HouseholdUnit[]>()
+  for (const house of houses) {
+    if (house.heroHomeResident && !byLabel.has(house.heroHomeResident.label)) {
+      const bed = getHouseBedLabels(owner, house)[0]
+      if (bed) claimedBeds.add(bed)
+    }
+  }
   for (const unit of residents) {
     if (unit.partnerLabel && byLabel.get(unit.partnerLabel)?.partnerLabel !== unit.label) delete unit.partnerLabel
     const house = unit.homeHouseLabel ? houseByLabel.get(unit.homeHouseLabel) : null
@@ -118,20 +130,13 @@ export function reconcileHouseholds(owner: HouseholdOwner | undefined): void {
       }
       continue
     }
-    const occupants = claimedHomes.get(house.label!) ?? []
-    if (
-      occupants.length &&
-      !(occupants.length === 1 && occupants[0].partnerLabel === unit.label && unit.partnerLabel === occupants[0].label)
-    ) {
-      delete unit.homeHouseLabel
-      delete unit.homeBedLabel
-      continue
-    }
-    occupants.push(unit)
-    claimedHomes.set(house.label!, occupants)
     const beds = getHouseBedLabels(owner, house)
     if (!unit.homeBedLabel || !beds.includes(unit.homeBedLabel) || claimedBeds.has(unit.homeBedLabel)) {
       unit.homeBedLabel = beds.find(label => !claimedBeds.has(label))
+    }
+    if (!unit.homeBedLabel) {
+      delete unit.homeHouseLabel
+      continue
     }
     if (unit.homeBedLabel) claimedBeds.add(unit.homeBedLabel)
   }
@@ -140,22 +145,22 @@ export function reconcileHouseholds(owner: HouseholdOwner | undefined): void {
     .sort((a, b) => a.label!.localeCompare(b.label!))) {
     if (unit.homeHouseLabel) continue
     const partner = unit.partnerLabel ? byLabel.get(unit.partnerLabel) : undefined
-    const group = partner && !hero(partner) && !partner.homeHouseLabel ? [unit, partner] : [unit]
+    let group = partner && living(partner) && !hero(partner) && !partner.homeHouseLabel ? [unit, partner] : [unit]
     const available = houses
-      .filter(h => {
-        if (h.buildingUpgrade) return false
-        const occupants = getHouseResidents(owner, h)
-        return (
-          (occupants.length === 0 || (partner && occupants.length === 1 && occupants[0] === partner)) &&
-          getHouseBedLabels(owner, h).filter(label => !claimedBeds.has(label)).length >= group.length
-        )
-      })
+      .filter(h => !h.buildingUpgrade && householdTown(owner, h) === householdTown(owner, unit.villageHome ?? unit))
       .sort((a, b) => {
+        const withPartner = (h: HouseholdBuilding) => (partner?.homeHouseLabel === h.label ? 0 : 1)
         const distance = (h: HouseholdBuilding) =>
           Math.abs((h.i ?? 0) - (unit.i ?? 0)) + Math.abs((h.j ?? 0) - (unit.j ?? 0))
-        return distance(a) - distance(b) || a.label!.localeCompare(b.label!)
+        return withPartner(a) - withPartner(b) || distance(a) - distance(b) || a.label!.localeCompare(b.label!)
       })
-    const house = available[0]
+    const fits = (h: HouseholdBuilding, count: number) =>
+      getHouseBedLabels(owner, h).filter(label => !claimedBeds.has(label)).length >= count
+    let house = available.find(h => fits(h, group.length))
+    if (!house && group.length > 1) {
+      group = [unit]
+      house = available.find(h => fits(h, 1))
+    }
     if (!house) continue
     const beds = getHouseBedLabels(owner, house).filter(label => !claimedBeds.has(label))
     group.forEach((member, index) => {
@@ -166,15 +171,61 @@ export function reconcileHouseholds(owner: HouseholdOwner | undefined): void {
   }
 }
 
-export function getVacantHomeCount(owner: HouseholdOwner): number {
+/** Same nearest-center rule as the construction territory, including overlapping circles. */
+export function householdTown(
+  owner: HouseholdOwner,
+  point: { i?: number; j?: number; spaceId?: string | null }
+): HouseholdBuilding | undefined {
+  if (point.i == null || point.j == null) return undefined
+  const buildings = (owner.buildings ?? []).filter(
+    (b): b is HouseholdBuilding & { i: number; j: number } => b.i != null && b.j != null
+  )
+  const sites = buildings.map(building => ({
+    ...building,
+    interiorBuildings: building.interiorBuildings?.map(child => ({
+      type: child.type,
+      i: child.i ?? 0,
+      j: child.j ?? 0,
+      spaceId: child.spaceId,
+    })),
+  }))
+  const center = getBaseTerritory({ ...point, i: point.i, j: point.j }, [
+    { label: owner.label, buildings: sites },
+  ])?.center
+  return center ? buildings[sites.findIndex(site => site === center)] : undefined
+}
+
+export function getVacantHomes(owner: HouseholdOwner, town?: HouseholdBuilding): HouseholdBuilding[] {
   return (owner.buildings ?? []).filter(
     h =>
+      (!town || householdTown(owner, h) === town) &&
       h.type === BUILDING_TYPES.house &&
       h.label &&
       h.isBuilt &&
       living(h) &&
       !h.buildingUpgrade &&
-      !getHouseResidents(owner, h).length &&
-      getHouseBedLabels(owner, h).length > 0
-  ).length
+      getFreeHouseBedLabels(owner, h).length > 0
+  )
+}
+
+export function getVacantHomeCount(owner: HouseholdOwner): number {
+  return getVacantHomes(owner).length
+}
+
+/** Read-only availability also covers legacy residents without a saved bed assignment. */
+export function getFreeHouseBedLabels(owner: HouseholdOwner, house: HouseholdBuilding): string[] {
+  const beds = getHouseBedLabels(owner, house)
+  const residents = getHouseResidents(owner, house)
+  const occupied = new Set(
+    residents.flatMap(unit => (unit.homeBedLabel && beds.includes(unit.homeBedLabel) ? [unit.homeBedLabel] : []))
+  )
+  let unassigned = residents.length - occupied.size
+  return beds.filter(label => {
+    if (occupied.has(label)) return false
+    if (unassigned > 0) {
+      unassigned--
+      return false
+    }
+    return true
+  })
 }

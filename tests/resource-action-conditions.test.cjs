@@ -11,13 +11,13 @@ const { getResourceActionConditions, isWheatMature } = loadTsModule('app/lib/com
 const villager = () => ({
   type: U.villager,
   owner: { age: 0, forgeUpgrades: { pickaxes: 2 } },
-  inventory: { equipment: ['pickaxe_bronze'] },
+  inventory: { activeWeapons: { tool: 'pickaxe_bronze' }, equipment: ['arrow_ceramic'] },
 })
 const available = { quantity: 5, hitPoints: 10, isDead: false }
 const allowed = (action, source, target) => Boolean(getResourceActionConditions(source, target)[action]?.())
 
 test('villagers can hunt from the first age without technologies', () => {
-  const source = { type: U.villager, owner: { age: 0 } }
+  const source = { type: U.villager, owner: { age: 0 }, inventory: { equipment: ['arrow_ceramic'] } }
   assert.equal(allowed('hunt', source, { ...available, family: F.animal, type: 'Deer' }), true)
 })
 
@@ -50,7 +50,7 @@ test('iron mining requires at least a bronze work pickaxe for heroes and village
     for (const type of [U.villager, U.hero]) {
       assert.equal(allowed('mineiron', { type, owner: { age } }, iron), false)
       assert.equal(
-        allowed('mineiron', { type, owner: { age }, inventory: { equipment: ['pickaxe_bronze'] } }, iron),
+        allowed('mineiron', { type, owner: { age }, inventory: { activeWeapons: { tool: 'pickaxe_bronze' } } }, iron),
         true
       )
     }
@@ -60,8 +60,16 @@ test('iron mining requires at least a bronze work pickaxe for heroes and village
 test('hunting, collecting meat and capturing horses follow animal state', () => {
   const animal = { ...available, family: F.animal, type: 'Horse' }
   assert.equal(allowed('hunt', villager(), animal), true)
-  assert.equal(allowed('hunt', { type: U.villager }, animal), true)
-  assert.equal(allowed('hunt', { type: U.hero }, animal), true)
+  assert.equal(allowed('hunt', { type: U.villager }, animal), false)
+  assert.equal(allowed('hunt', { type: U.hero }, animal), false)
+  assert.equal(
+    allowed(
+      'hunt',
+      { type: U.hero, inventory: { equipped: { arrow: 'arrow_ceramic' }, equippedCounts: { arrow: 1 } } },
+      animal
+    ),
+    true
+  )
   for (const patch of [{ quantity: undefined }, { hitPoints: undefined }, { isDead: true }, { family: F.unit }]) {
     assert.equal(allowed('hunt', villager(), { ...animal, ...patch }), false)
   }

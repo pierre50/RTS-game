@@ -1,3 +1,4 @@
+import { isRoadCell, type RoadLayer } from '../terrain/roadLayer'
 import type { ContainerChild } from 'pixi.js'
 import { instancesDistance } from '../maths'
 import { FAMILY_TYPES, LABEL_TYPES } from '../../constants'
@@ -216,10 +217,11 @@ export function canPlaceBuildingAt<TCell extends GridCell = GridCell>(
     isExplored = null,
     canUseCell = null,
     allowBorder = false,
-  }: Partial<PlacementVisibility<TCell>> & { allowBorder?: boolean } = {}
+    roads,
+  }: Partial<PlacementVisibility<TCell>> & { allowBorder?: boolean; roads?: RoadLayer } = {}
 ): boolean {
   const { cells, expectedCells } = getPlacementFootprintCells(grid, i, j, building)
-  if (cells.length !== expectedCells) return false
+  if (cells.length !== expectedCells || cells.some(cell => isRoadCell(roads, cell))) return false
 
   const visibility: PlacementVisibility<TCell> = {
     requireVisible,

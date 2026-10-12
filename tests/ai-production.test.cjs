@@ -633,6 +633,7 @@ test('ai training ignores unavailable villagers and does not reserve failed move
 
 test('ai training shares capacity accounting without counting mirrored concurrent entries twice', () => {
   const { strategy, barracks, villager } = strategyFixture()
+  barracks.buildingLevel = 1
   barracks.loading = 0
   barracks.queue = ['Fantassin', 'Fantassin', 'Fantassin']
   barracks.trainingQueue = [{}, {}, {}]
@@ -691,7 +692,7 @@ test('ai growth reserves respect housing capacity, population and the daily arri
   assert.equal(strategy.getVillagerGrowthFoodReserve(), 160)
   ai.population = 100
   ai.populationMax = 200
-  assert.equal(strategy.getVillagerGrowthFoodReserve(), 1700)
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 1620)
 })
 
 test('AI ignores legacy age costs when planning its economy', () => {

@@ -1,13 +1,13 @@
+import { attachVariantRow } from '../lib/ui/VariantRow'
 import { INTERIOR_FURNITURE_CATEGORIES, isInteriorFurniture } from '../lib/buildings/furniture/interiorFurnitureCatalog'
-import { createInventorySectionTitle } from './inventory/InventorySection'
+import { createInventorySection } from './inventory/InventorySection'
 import { isSowingPlacement } from '../lib/buildings/campConstruction'
 import { getActiveInteractionSpace } from '../lib/mapSpaces'
-import { inventoryDeliveryMetaParts } from './inventory/InventoryCostMeta'
 import { t } from '../lib/lang'
 import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES } from '../constants'
 import { renderBuildingAvatar, renderTextureRefAvatar } from '../lib/avatar'
 import { getReservedGameplayHotkeys } from '../lib/audio/settings'
-import { getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
+import { getBuildingLevels, getPlayerBuildingConfig } from '../lib/buildings/buildingLevel'
 import { createInventoryActionRow } from './inventory/InventoryActionRow'
 import type { RuntimeEntity } from '../types/entities'
 import type { MenuButtonSpec, MenuDetails, MenuDetailsSource } from '../types/ui'
@@ -48,6 +48,8 @@ type InventoryConstructionHost = {
   close(): void
 }
 
+const selectedLevels = new WeakMap<InventoryConstructionHost, Map<string, number>>()
+
 function isHeroConstructionBuildingType(type: string): boolean {
   return type === BUILDING_TYPES.campBrazier || !HIDDEN_HERO_CONSTRUCTION_BUILDINGS.has(type)
 }
@@ -82,19 +84,59 @@ export function renderInventoryConstruction(host: InventoryConstructionHost): vo
   const usedKeys = new Set<string>(getReservedGameplayHotkeys())
   const buttons = getInventoryConstructionButtons(host.menu).filter(button => !button.hide || !button.hide())
   for (const group of groupConstructionButtons(buttons, interior)) {
-    const section = document.createElement('section')
-    section.className = 'inventory-section'
-    section.appendChild(createInventorySectionTitle(t(group.titleKey)))
-    const list = document.createElement('div')
-    list.className = 'inventory-section-list'
-    section.appendChild(list)
-    for (const button of group.buttons) {
-      const hotkey = host.menu.assignActionHotkey(button.id || '', usedKeys)
-      const actionButton = createInventoryConstructionActionButton(host, button)
-      const element = createInventoryConstructionRow(host, selection, actionButton, buttons.indexOf(button), hotkey)
-      list.appendChild(element)
-      bindConstructionHotkey(host, selection, actionButton, hotkey)
-    }
+    const section = createInventorySection({
+      title: t(group.titleKey),
+      presentation: 'recipes',
+      renderItems: list => {
+        for (const button of group.buttons) {
+          const hotkey = host.menu.assignActionHotkey(button.id || '', usedKeys)
+          const type = button.id || ''
+          const levels = isSowingPlacement(type)
+            ? [0]
+            : getBuildingLevels(host.menu.context.player.config.buildings[type])
+          let remembered = selectedLevels.get(host)
+          if (!remembered) selectedLevels.set(host, (remembered = new Map()))
+          let level = remembered.get(type) ?? 0
+          if (!levels.includes(level)) level = 0
+          let row: HTMLElement | undefined
+          const render = (): void => {
+            const actionButton = createInventoryConstructionActionButton(
+              host,
+              host.menu.getActionBuildingButton(type, null, level)
+            )
+            const next = createInventoryConstructionRow(
+              host,
+              selection,
+              actionButton,
+              buttons.indexOf(button),
+              hotkey,
+              level,
+              levels.length > 1
+            )
+            if (row) {
+              row.replaceChildren(...Array.from(next.childNodes))
+              row.title = next.title
+              row.setAttribute('aria-label', next.getAttribute('aria-label') || '')
+            } else {
+              row = next
+              list.appendChild(row)
+            }
+            if (levels.length > 1)
+              attachVariantRow(row, {
+                index: levels.indexOf(level),
+                count: levels.length,
+                onChange: index => {
+                  level = levels[index]
+                  remembered.set(type, level)
+                  render()
+                },
+              })
+            bindConstructionHotkey(host, selection, actionButton, hotkey)
+          }
+          render()
+        }
+      },
+    })
     host.constructionPanel.appendChild(section)
   }
 }
@@ -135,17 +177,19 @@ function createInventoryConstructionRow(
   selection: RuntimeEntity,
   button: MenuButtonSpec,
   index: number,
-  _hotkey: string | null
+  _hotkey: string | null,
+  level = 0,
+  hasVariants = false
 ): HTMLElement {
   const disabled = button.disabled?.(selection) ?? false
   const details = resolveMenuDetails(button.details)
   const { player } = host.menu.context
-  const config = button.id ? getPlayerBuildingConfig(player, button.id) : undefined
+  const config = button.id ? getPlayerBuildingConfig(player, button.id, level) : undefined
   const sowing = isSowingPlacement(button.id ?? '')
   const costMetaParts = config?.cost
     ? sowing
       ? [{ text: t('constructionSowingCost'), className: '' }]
-      : inventoryDeliveryMetaParts(config.cost)
+      : [{ constructionSite: { config, level, cost: config.cost } }]
     : []
   const detailsCostPrefix = t('detailsCost', { cost: '' }).trim().toLowerCase()
   const detailsHpPrefix = t('detailsBuildingHP', { value: '' }).trim().toLowerCase()
@@ -157,7 +201,9 @@ function createInventoryConstructionRow(
     id: button.id || `construction-${index}`,
     className: 'inventory-construction-row',
     disabled,
-    title: details?.title ?? t(button.id || ''),
+    title: hasVariants
+      ? t('constructionVariantTitle', { name: details?.title ?? t(button.id || ''), level: level + 1 })
+      : (details?.title ?? t(button.id || '')),
     description: details?.description,
     meta: detailsMeta.join(' | '),
     metaParts: costMetaParts,
@@ -170,12 +216,17 @@ function createInventoryConstructionRow(
       },
     },
   })
-  renderConstructionButtonAvatar(host.menu, icon, button)
+  renderConstructionButtonAvatar(host.menu, icon, button, level)
 
   return element
 }
 
-function renderConstructionButtonAvatar(menu: MenuHost, icon: HTMLElement, button: MenuButtonSpec): void {
+function renderConstructionButtonAvatar(
+  menu: MenuHost,
+  icon: HTMLElement,
+  button: MenuButtonSpec,
+  level: number
+): void {
   if (!button.id) return
   const img = document.createElement('img')
   img.className = 'img'
@@ -187,7 +238,7 @@ function renderConstructionButtonAvatar(menu: MenuHost, icon: HTMLElement, butto
   const rendered =
     button.id === BUILDING_TYPES.farm
       ? renderTextureRefAvatar(app, WHEAT_FARM_AVATAR_REF, canvas)
-      : renderBuildingAvatar(app, button.id, player, canvas)
+      : renderBuildingAvatar(app, button.id, { ...player, level }, canvas)
   if (rendered) img.src = canvas.toDataURL()
   icon.appendChild(img)
 }

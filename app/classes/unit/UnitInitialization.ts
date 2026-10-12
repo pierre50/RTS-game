@@ -1,5 +1,10 @@
+import { initializeWorkTools } from '../../lib/equipment/workToolMigration'
+import { initializeNpcWeapons } from '../../lib/units/combat/npcWeapons'
+import { getUnitEquipment, getUnitWorkEquipment } from '../../lib/equipment/equipmentStats'
+import { initializeNpcArrows } from '../../lib/units/combat/unitArrows'
+import { reconcileSettlementResidents } from '../../lib/territory/settlementResidents'
 import { removeLegacyQuiver } from '../../lib/equipment/heroInventory'
-import { migrateHelmetInventory } from '../../lib/equipment/helmetVariants'
+import { migrateEquipmentInventory } from '../../lib/equipment/armorVariants'
 import { getVillagerSchedule } from '../../lib/units/village/villagerSchedule'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import type { Texture } from 'pixi.js'
@@ -148,9 +153,17 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   const inventory = options.inventory ?? unit.inventory
   if (inventory) {
     unit.inventory = structuredClone(inventory)
-    migrateHelmetInventory(unit.inventory)
+    migrateEquipmentInventory(unit.inventory)
     removeLegacyQuiver(unit.inventory)
   }
+  initializeNpcWeapons(unit, [
+    ...getUnitEquipment(unit.type, unitConfig, unit.owner, undefined, unit.owner.civ),
+    ...(unit.type === UNIT_TYPES.villager
+      ? [...getUnitWorkEquipment('hunter', unit), ...getUnitWorkEquipment(unit.work, unit)]
+      : []),
+  ])
+  initializeWorkTools(unit)
+  initializeNpcArrows(unit)
   unit.mountedOnHorse = options.mountedOnHorse ?? unit.mountedOnHorse
   if (unit.mountedOnHorse) {
     unit.horseColor = isHorseColor(options.horseColor)
@@ -205,6 +218,7 @@ export function registerInitialUnitMapPresence(unit: UnitRuntimeHost): void {
     unit.currentCell.place(unit)
     unit.currentCell.solid = true
     unit.owner.units.push(unit)
+    reconcileSettlementResidents({ ...unit.owner, units: [unit] })
     map.addToInstanceBucket(unit)
   }
 }

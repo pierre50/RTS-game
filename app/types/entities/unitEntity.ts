@@ -1,3 +1,4 @@
+import type { NpcArrowState } from '../../lib/units/combat/unitArrows'
 import type { RoadJourney } from '../../lib/units/roadJourney'
 import type { VillageHome } from '../../lib/units/village/villageActivity'
 import type { CampBehavior } from '../camp'
@@ -50,6 +51,7 @@ export type UnitRestState = {
 }
 
 export type UnitCreationExtra = {
+  villageHome?: VillageHome
   homeHouseLabel?: string
   homeBedLabel?: string
   partnerLabel?: string
@@ -276,7 +278,8 @@ export interface UnitEntity extends EnergyEntity {
   heroPowerChargeRatio?: number
   heroPowerChargeDestination?: Point | null
   heroPowerChargeTarget?: RuntimeEntity | null
-  heroPowerChargeTool?: 'bow' | 'catchingPole' | 'sword'
+  heroPowerChargeTool?: 'bow' | 'catchingPole' | 'sword' | 'tool'
+  heroPendingToolStrike?: string
   heroPowerReleaseQueued?: boolean
   heroPowerReleasePower?: number
   heroPowerChargeFacingDegree?: number | null
@@ -291,10 +294,19 @@ export interface UnitEntity extends EnergyEntity {
   heroDefenseReverseTaskId?: number | null
   heroDefenseReleaseFallbackTaskId?: number | null
   showHeroDefenseFlash?: () => void
+  onHeroDefenseBlock?: () => void
   lastParrySuccessAt?: number
   parryStreak?: number
   contextAction?: HeroContextAction | null
   inventory?: {
+    toolsInitialized?: boolean
+    toolsStowed?: boolean
+    toolSupplyTarget?: string
+    npcWeaponsInitialized?: boolean
+    banditWeaponMigrated?: boolean
+    npcArrows?: NpcArrowState
+    /** Unused prepaid crafting materials, in tenths of a resource unit. */
+    craftingRemainders?: ResourceAmount
     resources?: ResourceAmount
     equipment?: string[]
     equipped?: Partial<Record<HeroEquipmentSlot, string>>

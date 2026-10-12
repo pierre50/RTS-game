@@ -1,12 +1,3 @@
-import { wearEquippedWeapon } from '../../lib/equipment/equipmentWear'
-import { isBrokenCombatWeapon } from '../../lib/equipment/equipmentCondition'
-import { getConfiguredEntityEquipment } from '../../lib/equipment/equipmentStats'
-import { takeSprintAttackMultiplier } from '../../lib/units/movement/unitSprint'
-import { isVillagerWorkTargetRejected } from '../../lib/units/autonomy/villagerAutonomyTargeting'
-import { definedProperties } from '../../lib/definedProperties'
-import { showContactDebug } from '../../lib/contact/contactDebug'
-import { isContactTouching, getContactAimDegree } from '../../lib/contact/contactGeometry'
-import { getUnitMeleeWeapon, usesMeleeAttack } from '../../lib/combat/unitMelee'
 import {
   ACTION_TYPES,
   CELL_HEIGHT,
@@ -18,54 +9,54 @@ import {
 } from '../../constants'
 import {
   applyCombatHit,
-  evaluateCombatMorale,
+  BOW_SHOOT_RELEASE_FRAME,
   findInstancesInSight,
   getClosestInstanceWithPath,
-  BOW_SHOOT_RELEASE_FRAME,
   playAudibleSoundCue,
   prepareAutomaticParry,
   SLASH_IMPACT_FRAME,
   syncMovedActionTarget,
 } from '../../lib'
-import { Projectile } from '../Projectile'
-import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/units/unitExperience'
-import { showAlertThenAggressionFeedback } from '../../lib/combat/combatFeedback'
-import { canAutoAcquireTarget } from '../../lib/units/unitControl'
-import { getEntityWeaponPower, getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipment/equipmentStats'
-import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
-import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
-import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
-import { canVillagerAutonomouslyHunt } from '../../lib/units/autonomy/villagerHunting'
+import { getActionAnimationReleaseFrame } from '../../lib/animations/actionFrameSequences'
 import { canUnitEnterBuildingInteriorForAssault } from '../../lib/buildings/interiorAccess'
+import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
+import { markCombatAttack } from '../../lib/combat/combatBehavior'
+import { getUnitMeleeWeapon, usesMeleeAttack } from '../../lib/combat/unitMelee'
+import { showContactDebug } from '../../lib/contact/contactDebug'
+import { getContactAimDegree, isContactTouching } from '../../lib/contact/contactGeometry'
+import { definedProperties } from '../../lib/definedProperties'
+import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
+import { isBrokenCombatWeapon } from '../../lib/equipment/equipmentCondition'
+import {
+  getConfiguredEntityEquipment,
+  getEntityWeaponPower,
+  getUnitCombatRange,
+} from '../../lib/equipment/equipmentStats'
+import { wearEquippedWeapon } from '../../lib/equipment/equipmentWear'
+import { attachProjectileToMapSpace } from '../../lib/projectiles'
+import { isVillagerWorkTargetRejected } from '../../lib/units/autonomy/villagerAutonomyTargeting'
+import { canVillagerAutonomouslyHunt } from '../../lib/units/autonomy/villagerHunting'
+import { getNpcWeaponChoice, hasNpcWeaponInventory, sameNpcWeapon } from '../../lib/units/combat/npcWeapons'
+import { consumeRangedAmmunition } from '../../lib/units/combat/rangedShot'
+import { hasUnitArrow, npcArrowCapacity, usesArcherDagger } from '../../lib/units/combat/unitArrows'
+import { takeSprintAttackMultiplier } from '../../lib/units/movement/unitSprint'
+import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/units/unitExperience'
+import { applyUnitActivitySpritesheets } from '../../lib/units/visuals/unitSpriteAssets'
+import { setUnitVisualSheet } from '../../lib/units/visuals/unitVisualTransition'
 import {
   ensureRuntimeBuildingInteriorSpace,
   routeUnitIntoBuildingInteriorSpace,
 } from '../../services/BuildingInteriorSpaceSystem'
-import { attachProjectileToMapSpace } from '../../lib/projectiles'
-import { setUnitVisualSheet } from '../../lib/units/visuals/unitVisualTransition'
-import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
+import { Projectile } from '../Projectile'
+import { detectCombatThreat } from './UnitCombatDetection'
+import { getMeleeImpactSound } from './UnitCombatSounds'
 
 const PROJECTILE_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
-}
-
-function isSlashingMeleeEquipment(item: string): boolean {
-  return item === 'longsword' || item.startsWith('sword_') || item === 'axe' || item.startsWith('axe_')
-}
-
-function getMeleeImpactEquipment(unit: UnitEntity): string[] {
-  if (Array.isArray(unit.equipment) && unit.equipment.length) return unit.equipment
-  return unit.work && typeof getUnitWorkEquipment === 'function' ? getUnitWorkEquipment(unit.work, unit) : []
-}
-
-function getMeleeImpactSound(unit: UnitEntity, target: RuntimeEntity | null): CommandSound {
-  if (target?.family === FAMILY_TYPES.unit && getMeleeImpactEquipment(unit).some(isSlashingMeleeEquipment)) {
-    return SOUND_CUES?.unit?.swordAttack ?? unit.sounds?.hit
-  }
-  return unit.sounds?.hit
 }
 
 type AttackLoopVisualOptions = {
@@ -81,25 +72,31 @@ export class UnitCombat {
     this.unit = unit
   }
 
-  // Loops the current action sheet indefinitely (like the Hero's own swings, which just play at
-  // their fixed baked speed) and fires once per pass at releaseFrame — attack cadence is however
-  // fast that animation naturally runs, not a separate rateOfFire-driven timer. Shared by melee
-  // and ranged; onFire receives the current target so each caller only supplies its own effect
-  // (apply a hit, launch a projectile).
+  // One impact per animation, followed by recovery; re-evaluate carried weapons
+  // before each windup and release so inventory changes cannot fire stale attacks.
   runAttackLoop(
     releaseFrame: number,
     onFire: (dest: RuntimeEntity | null) => boolean | void,
     visualOptions: AttackLoopVisualOptions = {}
   ) {
     const unit = this.unit
+    const initialWeapon = hasNpcWeaponInventory(unit) ? getNpcWeaponChoice(unit) : null
     runAttackLoopOnFrame(
       unit,
       definedProperties({
         releaseFrame,
+        validateAttack: initialWeapon
+          ? () => {
+              const next = getNpcWeaponChoice(unit)
+              if (sameNpcWeapon(next, initialWeapon)) return true
+              unit.sendToEvt?.(unit.dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
+              return false
+            }
+          : undefined,
         trackTargetOnRelease: visualOptions.trackTargetOnRelease,
-        syncMovingTargetDirection:
-          visualOptions.trackTargetOnRelease === false ? () => this.syncMovingTargetDirection() : undefined,
+        syncMovingTargetDirection: () => this.syncMovingTargetDirection(),
         prepareAttackSheet: () => {
+          applyUnitActivitySpritesheets(unit)
           setUnitVisualSheet(unit, SHEET_TYPES.action, {
             clearCallbacks: ['onComplete', 'onFrameChange'],
             frame: 0,
@@ -180,34 +177,7 @@ export class UnitCombat {
   }
 
   detect(instance: RuntimeEntity | null) {
-    const unit = this.unit
-    if (unit.context?.editor) return
-    if (!canAutoAcquireTarget(unit)) return
-    if (shouldSuppressAggroDuringCombatRecovery(unit)) return
-    if (!instance || instance.family !== FAMILY_TYPES.unit) return
-    if (!unit.getActionCondition?.(instance, ACTION_TYPES.attack)) return
-
-    const isVillager = unit.type === UNIT_TYPES.villager
-    const isIdleCombatUnit = !isVillager && !unit.path?.length && !unit.dest
-    const canInterruptCivilianTask = isVillager && unit.action !== ACTION_TYPES.attack
-
-    if (isVillager && evaluateCombatMorale(unit, instance) === 'flee') {
-      ;(unit as UnitEntity & { runaway?: (target: RuntimeEntity) => void }).runaway?.(instance)
-      return
-    }
-
-    if (isIdleCombatUnit || canInterruptCivilianTask) {
-      showAlertThenAggressionFeedback(unit, () => {
-        if (unit.context?.editor || !canAutoAcquireTarget(unit)) return
-        if (!unit.getActionCondition?.(instance, ACTION_TYPES.attack)) return
-        if (unit.sendToAttack) {
-          unit.sendToAttack(instance, { keepPrevious: isVillager })
-          return
-        }
-        if (unit.path?.length || unit.dest) return
-        unit.sendTo?.(instance, ACTION_TYPES.attack)
-      })
-    }
+    detectCombatThreat(this.unit, instance)
   }
 
   tryHunterTarget(action: string): boolean {
@@ -248,9 +218,21 @@ export class UnitCombat {
     const map = unit.context?.map
     const menu = unit.context?.menu
     const player = unit.owner
+    const inventoryCombat = hasNpcWeaponInventory(unit)
     const rangedAttackRange = getUnitCombatRange(unit)
+    if (
+      !inventoryCombat &&
+      npcArrowCapacity(unit) &&
+      unit.type !== UNIT_TYPES.villager &&
+      !hasUnitArrow(unit) &&
+      !usesArcherDagger(unit)
+    ) {
+      unit.stop?.()
+      return
+    }
     markCombatAttack(unit)
-    if (getConfiguredEntityEquipment(unit).some(isBrokenCombatWeapon)) {
+    applyUnitActivitySpritesheets(unit)
+    if (!inventoryCombat && getConfiguredEntityEquipment(unit).some(isBrokenCombatWeapon)) {
       unit.stop?.()
       return
     }
@@ -259,27 +241,56 @@ export class UnitCombat {
       unit.affectNewDest?.()
       return
     }
-    if (rangedAttackRange && unit.projectile && unit.type !== UNIT_TYPES.villager) {
+    if (rangedAttackRange && (inventoryCombat || (unit.projectile && unit.type !== UNIT_TYPES.villager))) {
       this.runAttackLoop(BOW_SHOOT_RELEASE_FRAME, dest => {
         if (!dest || !unit.realDest || !map) return
+        const weaponPower = getEntityWeaponPower(unit)
+        const firedWeapon = inventoryCombat ? getNpcWeaponChoice(unit) : null
+        if (firedWeapon && firedWeapon.kind !== 'ranged') {
+          applyUnitActivitySpritesheets(unit)
+          unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
+          return false
+        }
+        const projectileType = inventoryCombat || npcArrowCapacity(unit) ? consumeRangedAmmunition(unit) : null
+        if ((inventoryCombat || npcArrowCapacity(unit)) && !projectileType) {
+          if (inventoryCombat || usesArcherDagger(unit)) {
+            applyUnitActivitySpritesheets(unit)
+            unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
+          } else unit.stop?.()
+          return
+        }
         playAudibleSoundCue(unit, unit.sounds?.attack, { profile: 'combat' })
         const projectile = new Projectile(
           {
             owner: unit,
+            weaponPower,
             target: dest,
-            type: unit.projectile || '',
+            type: projectileType ?? unit.projectile ?? '',
             destination: unit.realDest,
-            maxDistance: rangedAttackRange * PROJECTILE_CELL_DISTANCE,
+            maxDistance: (firedWeapon?.range ?? rangedAttackRange) * PROJECTILE_CELL_DISTANCE,
           },
           unit.context!
         )
         attachProjectileToMapSpace(projectile, map)
-        wearEquippedWeapon(unit, 'ranged')
+        wearEquippedWeapon(
+          unit,
+          'ranged',
+          firedWeapon?.weapon ? unit.inventory?.equipment?.indexOf(firedWeapon.weapon) : undefined
+        )
+        if (
+          (inventoryCombat && firedWeapon && !sameNpcWeapon(getNpcWeaponChoice(unit), firedWeapon)) ||
+          (!inventoryCombat && usesArcherDagger(unit))
+        ) {
+          // The last arrow still flies; resume the order with melee range and art.
+          applyUnitActivitySpritesheets(unit)
+          unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
+          return false
+        }
       })
     } else {
       let sprintMultiplier = 1
       this.runAttackLoop(
-        SLASH_IMPACT_FRAME,
+        getActionAnimationReleaseFrame(unit, ACTION_TYPES.attack, SLASH_IMPACT_FRAME),
         dest => {
           const attackSprintMultiplier = sprintMultiplier
           sprintMultiplier = 1

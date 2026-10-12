@@ -14,7 +14,7 @@ test('equipment classification distinguishes armor, helmet decorations and weapo
   const armor = {
     helmet_iron: 'helmet',
     cloth_hood_red: 'helmet',
-    cape_red: 'cape',
+    cape_red: null,
     armor_iron: 'armor',
     leg_iron: 'legs',
     shoulder_iron: 'shoulders',
@@ -37,14 +37,17 @@ test('equipment classification distinguishes armor, helmet decorations and weapo
     assert.equal(getEquipmentSlot(`${prefix}_red`), expected)
   }
   for (const [item, slot] of Object.entries({
-    quiver: 'quiver',
+    quiver: null,
     catchingPole: 'melee',
     bow: 'ranged',
     bow_recurve: 'ranged',
     sword_iron: 'melee',
-    axe_iron: 'melee',
+    axe_iron: 'tool',
+    pickaxe_bronze: 'tool',
+    hammer_copper: 'tool',
+    scythe_ceramic: 'tool',
     longsword: 'melee',
-    halberd: 'melee',
+    spear_iron: 'melee',
     cane: 'melee',
     longstick: 'melee',
   })) {
@@ -56,9 +59,10 @@ test('equipment classification distinguishes armor, helmet decorations and weapo
   for (const slot of HERO_EQUIPMENT_SLOTS) assert.match(getHeroEquipmentSlotLabelKey(slot), /^heroEquipmentSlot/)
 })
 
-test('loot labels omit empty and faction fragments and display stack counts only above one', () => {
-  assert.equal(formatEquipmentLootLabel('_BANDIT__sword_iron_'), 'Sword Iron')
-  assert.equal(formatEquipmentLootLabel(''), '')
-  assert.equal(formatEquipmentStackLabel('arrow_wood'), 'Arrow Wood')
-  assert.equal(formatEquipmentStackLabel('arrow_wood', 3), 'Arrow Wood x3')
+test('loot labels use catalog names and display stack counts only above one', () => {
+  assert.equal(formatEquipmentLootLabel('sword_iron'), 'Épée en fer')
+  assert.equal(formatEquipmentLootLabel('unknown'), 'Équipement inconnu')
+  assert.equal(formatEquipmentLootLabel(''), 'Équipement inconnu')
+  assert.equal(formatEquipmentStackLabel('arrow_ceramic'), 'Flèche en pierre')
+  assert.equal(formatEquipmentStackLabel('arrow_ceramic', 3), 'Flèche en pierre x3')
 })

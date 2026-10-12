@@ -3,6 +3,8 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const { getEquipmentSlot } = loadTsModule('app/lib/equipment/equipmentSlots.ts')
 
 function loadHeroInventoryAction() {
   const filename = path.join(__dirname, '../app/dev-console/actions/heroInventory.ts')
@@ -24,15 +26,7 @@ function loadHeroInventoryAction() {
           hero.onAddHeroInventoryItem?.(item)
           return true
         },
-        getEquipmentSlot: item =>
-          item.startsWith('helmet_') ||
-          item.startsWith('armor_') ||
-          item.startsWith('shoulder_') ||
-          item.startsWith('leg_') ||
-          item.includes('shield') ||
-          item.startsWith('arrow_')
-            ? 'gear'
-            : null,
+        getEquipmentSlot,
         getWeaponSlot: item => (['sword_ceramic', 'bow', 'catchingPole'].includes(item) ? 'weapon' : null),
       }
     }
@@ -50,6 +44,9 @@ function loadHeroInventoryAction() {
           'meat',
           'round_shield_ceramic_slash',
           'quiver',
+          'cape_solid',
+          'helmet_wings',
+          'plumage',
         ],
       }
     }
@@ -144,6 +141,11 @@ test('hero inventory dev command can add one requested item', () => {
     ok: true,
     message: 'Added sword_ceramic to hero inventory',
   })
+  assert.deepEqual(hero.inventory.equipment, ['sword_ceramic', 'sword_ceramic'])
+
+  for (const item of ['quiver', 'cape_solid', 'helmet_wings', 'plumage']) {
+    assert.equal(addHeroInventoryEquipment(context, item).ok, false)
+  }
   assert.deepEqual(hero.inventory.equipment, ['sword_ceramic', 'sword_ceramic'])
 
   assert.deepEqual(addHeroInventoryEquipment(context, 'not_real'), {

@@ -34,7 +34,7 @@ export function validateMinimapBuildingMemory(value: unknown): void {
 
 export function validateMinimapPreferences(value: unknown): void {
   if (value === undefined) return
-  if (!isObject(value) || ![1, 1.5, 2, 3, 4].includes(Number(value.zoom)) || typeof value.zoom !== 'number')
+  if (!isObject(value) || !isFiniteNumber(value.zoom) || value.zoom < 1 || value.zoom > 4)
     fail('Invalid save file: minimap zoom is invalid.')
   validateArray(value.hiddenMarkers, 'minimap filters')
   if (value.hiddenMarkers.some(key => typeof key !== 'string' || !key))

@@ -3,6 +3,8 @@
 /* Generates small interior map blueprints. These use the same compact terrain /
  * relief encoding as world maps, but keep their own manifest because interiors
  * are selected by building type instead of world size/environment. */
+const { loadGenerationTs } = require('./maps/load-generation-ts.cjs')
+const { INTERIOR_CORNER_RADIUS } = loadGenerationTs('app/config/interiors.ts')
 const fs = require('node:fs')
 const path = require('node:path')
 const { createInteriorWalls, writeInteriorWallAtlas } = require('./maps/interior-walls.cjs')
@@ -160,7 +162,7 @@ function buildingInterior({ buildingSize, id, seed, size }) {
   const borderMask = new Uint8Array(width * width)
   const center = Math.round(localSize / 2)
   const halfExtent = Math.floor((size - 3) / 2)
-  const cornerRadius = 1.5
+  const cornerRadius = INTERIOR_CORNER_RADIUS
   const indexOf = (i, j) => i * width + j
 
   // Round only the corners of a rectangle aligned with the world grid.

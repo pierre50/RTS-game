@@ -19,6 +19,7 @@ function makeElement() {
 test('hero bag actions equip weapons and delete one item or the displayed stack', () => {
   const calls = []
   let equipAction = null
+  let equipmentTitle = null
   let deleteEquipmentAction = null
   let deleteResourceAction = null
   const hero = {
@@ -77,7 +78,7 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
           unequipHeroInventorySlot: () => false,
         },
         '../../lib/hero/heroCrafting': {
-          HERO_CRAFT_RECIPES: [],
+          HERO_CRAFT_RECIPES: [{ outputEquipment: 'sword_bronze', materialKey: 'forgeMaterial_bronze' }],
           getHeroConsumableHealing: () => 0,
           useHeroConsumableItem: () => false,
         },
@@ -89,11 +90,12 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
         },
         './InventoryItemRows': {
           createInventoryEquipmentRow: (context, options) => {
+            equipmentTitle = options.title
             equipAction = options.trailingAction
             deleteEquipmentAction = options.secondaryAction
             return { element: makeElement(), icon: makeElement() }
           },
-          createInventoryResourceRow: (options) => {
+          createInventoryResourceRow: options => {
             if (options.amount === 99) deleteResourceAction = options.secondaryAction
             return { element: makeElement(), icon: makeElement() }
           },
@@ -110,6 +112,7 @@ test('hero bag actions equip weapons and delete one item or the displayed stack'
     })
 
     renderInventoryLootedEquipment(host)
+    assert.equal(equipmentTitle, 'Épée en bronze')
     assert.ok(equipAction)
 
     equipAction.onAction('one')

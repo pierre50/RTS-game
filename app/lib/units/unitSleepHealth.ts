@@ -3,6 +3,7 @@ import { UNIT_TYPES } from '../../constants/entities'
 import type { UnitEntity } from '../../types/entities'
 import type { SaveEntityState } from '../../types/save'
 import { notifyHeroHealthChanged } from './unitHealth'
+import { syncEntityHealthDisplay } from '../entities/entityHealthDisplay'
 import { getVillagerSchedule, hasDailyRestSchedule } from './village/villagerSchedule'
 
 const HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
@@ -30,7 +31,10 @@ export function updateUnitSleepHealth(unit: UnitEntity, elapsedMs: number): void
   if (!isHero && (rest?.reason !== 'sleep' || (rest.status !== 'inside' && rest.status !== 'outside'))) return
   const previousHitPoints = unit.hitPoints
   restoreUnitSleepHealth(unit, elapsedMs)
-  if (unit.hitPoints !== previousHitPoints) notifyHeroHealthChanged(unit)
+  if (unit.hitPoints !== previousHitPoints) {
+    notifyHeroHealthChanged(unit)
+    syncEntityHealthDisplay(unit)
+  }
 }
 
 /** Integrate scheduled sleep across midnight, including partial nights on an unloaded map. */

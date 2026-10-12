@@ -10,6 +10,7 @@ import {
   isMountedAttackAimBlocked,
   releaseHeroDefense,
   releaseHeroPowerCharge,
+  releaseHeroToolStrike,
   triggerToolAttackAt,
   triggerSwordAttackAt,
   type HeroEquippedItem,
@@ -46,7 +47,7 @@ export class HeroActionInputController {
     if (isMountedAttackAimBlocked(hero, point)) return false
     this.host.facePoint(point)
     hero.stop?.()
-    return triggerToolAttackAt(hero, this.host.equippedItem, point)
+    return triggerToolAttackAt(hero, this.host.equippedItem, point, this.host.mouseHeld)
   }
 
   handleDirectAttack(): void {
@@ -77,6 +78,7 @@ export class HeroActionInputController {
       return
     }
     if (this.host.equippedItem === 'interact') this.host.interactInputOwner = 'mouse'
+    this.host.mouseHeld = false
     this.host.primaryClickPoint = this.host.controls.getWorldPointUnderCursor()
     const triggered = this.attackTowardPoint(this.host.primaryClickPoint)
     this.host.mouseHeld = triggered
@@ -86,7 +88,7 @@ export class HeroActionInputController {
   handleDefenseKeyDown(): void {
     const wasHeld = this.host.defenseHeld
     this.host.defenseHeld = true
-    if (!canHeroDefendWithTool(this.host.equippedItem)) return
+    if (!canHeroDefendWithTool(this.host.equippedItem, this.host.heroUnit)) return
     const unit = this.host.heroUnit
     if (!unit) return
     if (!wasHeld) unit.heroDefenseEnergyExhausted = false
@@ -106,7 +108,6 @@ export class HeroActionInputController {
   }
 
   handleSecondaryPointerDown(): void {
-    this.host.defenseHeld = true
     this.handleDefenseKeyDown()
   }
 
@@ -125,6 +126,17 @@ export class HeroActionInputController {
       return
     }
     if (button !== 0) return
+    if (unit?.heroPendingToolStrike) {
+      this.host.mouseHeld = false
+      this.host.primaryClickPoint = null
+      this.host.interactInputOwner = null
+      if (this.host.equippedItem === 'interact') {
+        releaseHeroToolStrike(unit, this.host.controls.getWorldPointUnderCursor())
+      } else {
+        cancelHeroActiveToolAction(unit)
+      }
+      return
+    }
     if (unit && isHeroPowerChargeActiveForTool(unit, this.host.equippedItem) && releaseHeroPowerCharge(unit)) {
       this.host.mouseHeld = false
       this.host.primaryClickPoint = null
