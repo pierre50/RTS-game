@@ -14,7 +14,8 @@ function fixture(type = 'Bowman', equipment = []) {
     isBuilt: true,
     inventory: { resources: { wood: 100, stone: 100, bronzeIngot: 100, ironIngot: 100, sinew: 100, leather: 100 } },
   }
-  const forge = { type: 'Forge', label: 'forge', i: 11, j: 10, isBuilt: true }
+  // Upgraded forge (FORGE_IRON_REQUIRED_LEVEL): iron weapons can be produced.
+  const forge = { type: 'Forge', label: 'forge', i: 11, j: 10, isBuilt: true, buildingLevel: 1 }
   const owner = { type: 'Human', label: 'player', buildings: [town, forge] }
   const unit = { type, i: 12, j: 10, inventory: { equipment, toolsInitialized: true, activeWeapons: {} } }
   return { town, forge, owner, unit }

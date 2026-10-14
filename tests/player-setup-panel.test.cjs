@@ -18,7 +18,7 @@ const { PlayerSetupPanel } = loadModule(path.join(__dirname, '../app/ui/setup/Pl
       { labelKey: 'civLatium', value: 'Latium' },
     ],
   },
-  '../config/playerNames': {
+  '../config/world/playerNames': {
     randomPlayerNameForCivilization: (civ, gender) => `${civ}-${gender === 'female' ? 'female' : 'male'}-name`,
     isGeneratedPlayerName: name => /^.+-(male|female)-name$/.test(name),
   },

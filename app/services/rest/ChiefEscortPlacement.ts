@@ -6,6 +6,8 @@ import { getBuildingInteriorSpaceForUnit } from '../../../engine/services/Buildi
 import { hasInteriorCombatRoute } from '../../lib/units/combat/interiorCombat'
 import { isUnitRestWakeLocked } from './UnitRestRules'
 import { placeUnitAtCell, stopUnitForRest } from './UnitRestState'
+import { setUnitVisualSheet } from '../../lib/units/visuals/unitVisualTransition'
+import { SHEET_TYPES } from '../../constants'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -74,5 +76,6 @@ export function settleChiefEscortAtPost(unit: UnitEntity, context: GameContextLi
     unit.shelterState.previousAction = null
   }
   if (unit.currentCell !== target) placeUnitAtCell(unit, target)
+  setUnitVisualSheet(unit, SHEET_TYPES.standing, { play: 'stop' })
   return true
 }

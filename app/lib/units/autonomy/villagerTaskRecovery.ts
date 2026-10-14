@@ -1,4 +1,4 @@
-import { isRpgVillager } from '../../../config/rpgVillages'
+import { isRpgVillager } from '../../../config/world/rpgVillages'
 import { canRecoverAnimalLootForDelivery } from '../../equipment/animalCorpseLoot'
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { getEntityCell } from '../../mapSpaces'

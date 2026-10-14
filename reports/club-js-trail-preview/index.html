@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gourdin · test de traînée JS</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#151b22;color:#f0eee7}
+body{max-width:950px;margin:28px auto;padding:0 18px}
+h1{font-size:1.6rem;margin:0 0 8px}p{color:#b9c4cb;line-height:1.45}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:20px 0}
+button,select{font:inherit;color:#f0eee7;background:#293541;border:1px solid #536679;border-radius:7px;padding:8px 10px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{background:#222d36;border:1px solid #435361;border-radius:10px;padding:12px}
+h2{font-size:1.1rem;margin:0 0 10px}
+canvas{display:block;width:100%;height:auto;background:#364550;border-radius:6px;image-rendering:pixelated}
+.order{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:4px;margin-top:10px;font-variant-numeric:tabular-nums}
+.order span{min-width:22px;padding:3px;text-align:center;background:#34434f;border-radius:4px}
+.order span.active{background:#e7bb5d;color:#20252a;font-weight:700}
+.order b{color:#a8b6c0;font-weight:400}
+@media(max-width:650px){.card{padding:6px}.order{gap:1px}.order span{min-width:16px;padding:2px;font-size:.75rem}}
+</style>
+<h1>Gourdin · traînée dessinée en JS</h1>
+<p>Les deux côtés utilisent le même sprite sans traînée. Seul l’effet change. La traînée est tracée derrière le personnage à basse résolution, uniquement pendant le mouvement du gourdin.</p>
+<div class="controls">
+  <button id="toggle">Pause</button>
+  <button id="next">Image suivante</button>
+  <button id="hold" aria-pressed="false">Maintenir l’attaque</button>
+  <label>Suite <select id="sequence"><option value="regular">Régulier</option><option value="reverse">Inverse</option></select></label>
+  <label>Vitesse <select id="speed"><option value="1">10 images/s</option><option value=".5">5 images/s</option><option value="1.5">15 images/s</option></select></label>
+  <label>Vue <select id="direction"><option value="3">Face</option><option value="0">Dos</option><option value="1">Gauche</option><option value="2">Droite</option></select></label>
+</div>
+<div class="cards">
+  <section class="card"><h2>Sans traînée</h2><canvas id="clean" width="320" height="320"></canvas><div class="order" id="clean-order"></div></section>
+  <section class="card"><h2>Traînée JS</h2><canvas id="effect" width="320" height="320"></canvas><div class="order" id="effect-order"></div></section>
+</div>
+<p>Base visuelle : prototype LPC du gourdin sans traînée. Ce test est local et ne modifie pas les sprites du jeu.</p>
+<script>
+const atlas=new Image();atlas.src='../lpc-club-v1/slash-atlas.png';
+const sequences={regular:[0,1,2,3,4,5,3,1],reverse:[1,3,5,4,3,2,1,0]};
+// Position de l’extrémité du gourdin, par direction et image du sprite.
+const tips=[
+  [[115,100],[55,123],[45,103],[45,90],[99,56],[119,65]],
+  [[57,118],[76,124],[93,100],[58,120],[32,86],[38,71]],
+  [[92,120],[58,124],[44,93],[86,108],[104,117],[117,108]],
+  [[104,115],[93,124],[66,108],[101,116],[123,84],[118,74]],
+];
+const canvases=[document.getElementById('clean'),document.getElementById('effect')];
+let step=0,elapsed=0,last=0,playing=true,holding=false;
+function pixelArc(ctx,from,to){
+  // Une traînée courte orientée selon le déplacement de la tête du gourdin.
+  // Le ventre courbé donne du volume, les deux extrémités restent pointues.
+  const dx=to[0]-from[0],dy=to[1]-from[1];
+  const distance=Math.hypot(dx,dy);
+  if(distance<2)return;
+  const ux=dx/distance,uy=dy/distance;
+  const nx=-uy,ny=ux;
+  const length=Math.min(24,distance*.65);
+  const back=[to[0]-ux*length,to[1]-uy*length];
+  const mid=[(to[0]+back[0])/2,(to[1]+back[1])/2];
+  const curve=5,width=4;
+  const outer=[mid[0]+nx*(curve+width),mid[1]+ny*(curve+width)];
+  const inner=[mid[0]+nx*(curve-width),mid[1]+ny*(curve-width)];
+  ctx.beginPath();ctx.moveTo(...to);
+  ctx.quadraticCurveTo(...outer,...back);
+  ctx.quadraticCurveTo(...inner,...to);
+  ctx.closePath();ctx.fillStyle='rgba(246,194,110,.48)';ctx.fill();
+  ctx.beginPath();ctx.moveTo(...to);ctx.quadraticCurveTo(...outer,...back);
+  ctx.strokeStyle='rgba(255,234,170,.75)';ctx.lineWidth=1.4;ctx.stroke();
+}
+function drawTrail(ctx,seq,direction){
+  const active=seq===sequences.regular ? step>=4&&step<=5 : step>=2&&step<=4;
+  if(holding||!active)return;
+  const a=tips[direction][seq[step-1]],b=tips[direction][seq[step]];
+  if(Math.hypot(b[0]-a[0],b[1]-a[1])>55)return;
+  pixelArc(ctx,a,b);
+}
+function render(){
+  const seq=sequences[document.getElementById('sequence').value];
+  const direction=+document.getElementById('direction').value;
+  const frame=holding?0:seq[step];
+  for(const [index,canvas] of canvases.entries()){
+    const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+    ctx.fillStyle='#364550';ctx.fillRect(0,0,320,320);
+    ctx.fillStyle='#27343e';ctx.beginPath();ctx.ellipse(160,244,78,12,0,0,Math.PI*2);ctx.fill();
+    ctx.save();ctx.translate(0,0);ctx.scale(2,2);
+    if(index===1)drawTrail(ctx,seq,direction);
+    if(atlas.complete&&atlas.naturalWidth)ctx.drawImage(atlas,frame*160,direction*160,160,160,0,0,160,160);
+    ctx.restore();
+    ctx.fillStyle='#e2e9ed';ctx.font='13px system-ui';ctx.fillText('Image '+frame,10,307);
+    document.getElementById(index?'effect-order':'clean-order').innerHTML=
+      seq.map((pose,i)=>'<span'+(!holding&&i===step?' class="active"':'')+'>'+pose+'</span>').join('<b>→</b>');
+  }
+}
+function tick(time){
+  const delta=Math.min(100,time-last||0);last=time;
+  if(playing&&!holding){
+    elapsed+=delta*Number(document.getElementById('speed').value);
+    while(elapsed>=100){elapsed-=100;step=(step+1)%sequences[document.getElementById('sequence').value].length}
+  }
+  render();requestAnimationFrame(tick);
+}
+document.getElementById('toggle').onclick=()=>{playing=!playing;document.getElementById('toggle').textContent=playing?'Pause':'Lecture'};
+document.getElementById('next').onclick=()=>{
+  playing=false;document.getElementById('toggle').textContent='Lecture';
+  step=(step+1)%sequences[document.getElementById('sequence').value].length;
+  elapsed=0;render();
+};
+document.getElementById('hold').onclick=()=>{
+  holding=!holding;
+  const button=document.getElementById('hold');
+  button.textContent=holding?'Relâcher l’attaque':'Maintenir l’attaque';
+  button.setAttribute('aria-pressed',String(holding));
+  if(!holding){step=0;elapsed=0}
+};
+document.getElementById('sequence').onchange=()=>{step=0;elapsed=0};
+requestAnimationFrame(tick);
+</script>
+</html>

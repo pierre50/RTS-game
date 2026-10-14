@@ -3,7 +3,7 @@ import { deferredVillageBuildings } from '../../services/world/distantVillages/D
 import { reconcileHouseholds } from '../../lib/housing/households'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import type { ForgeUpgrades } from '../../lib/equipment/forgeUpgrades'
-import type { SettlementType, DevelopmentMode } from '../../config/settlementProfiles'
+import type { SettlementType, DevelopmentMode } from '../../config/world/settlementProfiles'
 import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { Assets } from 'pixi.js'
 import { createPlayerData } from '../../config/playerConfig'

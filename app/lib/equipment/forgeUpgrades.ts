@@ -27,6 +27,7 @@ function forgeFamilyForEquipment(equipment: string): ForgeFamily | undefined {
     equipment.startsWith('sword_') ||
     equipment.startsWith('dagger_') ||
     equipment.startsWith('mace_') ||
+    equipment.startsWith('club_') ||
     equipment.startsWith('spear_')
   )
     return 'weapons'
@@ -40,6 +41,7 @@ export function resolveForgeEquipment(equipment: string, owner?: ForgeUpgradeOwn
   if (!family) return migrateEquipmentMaterial(equipment)
   const tier = getForgeTier(owner, family)
   if (equipment === 'bow') return tier >= 2 ? 'bow_recurve' : 'bow'
+  if (equipment === 'club_ceramic') return equipment
   if (/^(dagger|mace)_/.test(equipment)) return equipment.replace(/_(bronze|iron)$/, tier >= 3 ? '_iron' : '_bronze')
   if (equipment.startsWith('spear_'))
     return equipment.replace(/_(ceramic|bronze|iron)$/, tier >= 3 ? '_iron' : tier >= 1 ? '_bronze' : '_ceramic')
@@ -65,7 +67,7 @@ export function resolveUnitForgeEquipment(
   if (unit.isDead && unit.lootEquipment) {
     const familyKey = (item: string) => {
       const key = equipmentBaseKey(item)
-      if (/^(sword|axe|dagger|mace|spear)_/.test(key)) return 'melee'
+      if (/^(sword|axe|dagger|mace|club|spear)_/.test(key)) return 'melee'
       if (/^armor_/.test(key)) return 'torso'
       if (/^helmet_/.test(key)) return 'helmet'
       return key.replace(/_(ceramic|copper|bronze|iron|leather|wood)(?=_|$)/, '_material')

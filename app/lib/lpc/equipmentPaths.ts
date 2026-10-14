@@ -46,20 +46,17 @@ function equipmentFamilyPath(equipment: DynamicEquipmentKey): string {
   if (equipment.startsWith('dagger_')) return 'weapon/dagger'
   if (equipment.startsWith('spear_')) return 'weapon/spear'
   if (equipment.startsWith('mace_')) return 'weapon/mace'
-  if (equipment.startsWith('sword_') || equipment === 'longsword') return 'weapon/sword'
+  if (equipment === 'club_ceramic') return 'weapon/club'
+  if (equipment.startsWith('sword_curved_')) return 'weapon/sword_curved'
+  if (equipment.startsWith('sword_')) return 'weapon/sword'
   if (equipment.startsWith('round_shield_')) return 'weapon/round_shield'
   if (equipment === 'cape_solid') return 'accessory/cape'
-  if (
-    equipment === 'crest' ||
-    equipment === 'centurion_crest' ||
-    equipment === 'centurion_plumage' ||
-    equipment === 'legion_plumage' ||
-    equipment === 'plumage'
-  ) {
+  if (equipment === 'centurion_crest' || equipment === 'legion_plumage' || equipment === 'plumage') {
     return 'accessory/plumage'
   }
   if (equipment.startsWith('upward_horns_')) return 'accessory/upward_horns'
   if (equipment === 'helmet_wings') return 'accessory/helmet_wings'
+  if (equipment === 'horns_short') return 'accessory/horns_short'
   if (equipment === 'sack_cloth_hood_leather') return 'helmet/sack_cloth_hood'
   if (equipment === 'cane') return 'weapon/cane'
   if (equipment === 'quiver') return 'weapon/quiver'

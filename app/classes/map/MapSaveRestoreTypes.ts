@@ -1,5 +1,5 @@
 import type { ForgeUpgrades } from '../../lib/equipment/forgeUpgrades'
-import type { SettlementType, DevelopmentMode } from '../../config/settlementProfiles'
+import type { SettlementType, DevelopmentMode } from '../../config/world/settlementProfiles'
 import type { TargetObservation } from '../../lib/units/playerTargetKnowledge'
 import type { SaveEntityState, SavedAIState } from '../../types/save'
 

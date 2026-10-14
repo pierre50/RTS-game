@@ -69,6 +69,20 @@ export function findFacingEntity(
   return getDirectionalTarget(hero, candidates)
 }
 
+function isMobileTarget(target: RuntimeEntity): boolean {
+  return target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal
+}
+
+// Both sprites contain the cursor: a unit or animal drawn over a building/resource (a villager
+// lying on a bed) is the visible target. The bed's footprint edge otherwise always scores closer.
+function compareCursorStacking(a: RuntimeEntity, b: RuntimeEntity): number {
+  const aMobile = isMobileTarget(a)
+  if (aMobile === isMobileTarget(b)) return 0
+  const [mobile, fixed] = aMobile ? [a, b] : [b, a]
+  if ((mobile.zIndex ?? 0) < (fixed.zIndex ?? 0)) return 0
+  return aMobile ? -1 : 1
+}
+
 function cursorDistanceToTarget(target: RuntimeEntity, cursor: Point): number {
   const sprite = target.sprite
   // A roof or scaffold can be under the pointer even though its ground footprint is not.
@@ -120,7 +134,7 @@ export function getDirectionalTargets<T extends RuntimeEntity>(
       (a, b) =>
         Number(b.cursorDistance <= CURSOR_TARGET_TOLERANCE) - Number(a.cursorDistance <= CURSOR_TARGET_TOLERANCE) ||
         (a.cursorDistance <= CURSOR_TARGET_TOLERANCE && b.cursorDistance <= CURSOR_TARGET_TOLERANCE
-          ? a.cursorDistance - b.cursorDistance
+          ? a.cursorDistance - b.cursorDistance || compareCursorStacking(a.target, b.target)
           : 0) ||
         a.score - b.score ||
         a.dist - b.dist ||

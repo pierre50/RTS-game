@@ -2,7 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-const { CONTINENT_WORLD_PRESETS } = loadTsModule('app/config/continentWorlds.ts')
+const { CONTINENT_WORLD_PRESETS } = loadTsModule('app/config/world/continentWorlds.ts')
 for (const { edge } of CONTINENT_WORLD_PRESETS) {
   test(`custom ${edge} prepares the camp and starts its introduction after reveal`, async () => {
     const events = []

@@ -1,4 +1,4 @@
-import { isRpgVillager, RPG_VILLAGE_WORKERS } from '../../config/rpgVillages'
+import { isRpgVillager, RPG_VILLAGE_WORKERS } from '../../config/world/rpgVillages'
 import { isChiefEscort } from '../../lib/units/chiefEscort'
 import { isChiefUnit } from '../../lib/chief'
 import { isUnitSuspended } from '../../lib/units/unitSuspension'

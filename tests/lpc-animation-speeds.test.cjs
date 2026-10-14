@@ -97,10 +97,12 @@ test('dynamic equipment action sheets stay in sync with slash body sheets', () =
   const aliases = dynamicEquipmentAliases()
   const pickaxeAction = aliases.find(alias => alias.alias === 'equipments/pickaxe_ceramic/front/action/male')
   const bowAction = aliases.find(alias => alias.alias === 'equipments/bow/front/action')
+  const spearAction = aliases.find(alias => alias.alias === 'equipments/spear_ceramic/front/action')
   const corpse = aliases.find(alias => alias.alias.endsWith('/corpse'))
 
   assert.equal(pickaxeAction?.animationSpeed, 0.25)
   assert.equal(bowAction?.animationSpeed, 0.3)
+  assert.equal(spearAction?.animationSpeed, 0.375)
   assert.equal(corpse?.animationSpeed, 0)
 })
 

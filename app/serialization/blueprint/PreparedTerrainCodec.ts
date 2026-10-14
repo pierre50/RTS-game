@@ -24,13 +24,30 @@ function encodeEntry(view: DataView, offset: number, entry: PreparedTerrainCell,
   view.setUint8(offset + 6, entry.relief ? requireInteger(entry.relief[1] * 2, 255) : 0)
   const patches = entry.patches ?? []
   if (patches.some(direction => !DIRECTIONS.includes(direction))) throw new Error('Invalid prepared terrain patch')
+  // Low nibble: directions with a border. High nibble: those drawn with the alternate
+  // ground (bits 3-5 of the ground byte) instead of the primary one (bits 0-2), so
+  // records written before alternate grounds existed decode unchanged.
+  const alternates = Object.entries(entry.grounds ?? {}).filter(([, ground]) => ground && ground !== entry.ground)
+  const alternateGrounds = new Set(alternates.map(([, ground]) => ground))
+  if (alternateGrounds.size > 1 || alternates.some(([direction]) => !patches.includes(direction)))
+    throw new Error('Invalid prepared terrain grounds')
   view.setUint8(
     offset + 7,
-    DIRECTIONS.reduce((mask, direction, bit) => mask | (patches.includes(direction) ? 1 << bit : 0), 0)
+    DIRECTIONS.reduce(
+      (mask, direction, bit) =>
+        mask |
+        (patches.includes(direction) ? 1 << bit : 0) |
+        (alternates.some(([alternate]) => alternate === direction) ? 1 << (bit + 4) : 0),
+      0
+    )
   )
-  const ground = entry.ground ? GROUNDS.indexOf(entry.ground) + 1 : 0
-  if (entry.ground && !ground) throw new Error('Invalid prepared terrain ground')
-  view.setUint8(offset + 8, ground)
+  view.setUint8(offset + 8, encodeGround(entry.ground) | (encodeGround(alternates[0]?.[1]) << 3))
+}
+
+function encodeGround(ground: string | undefined): number {
+  const index = ground ? GROUNDS.indexOf(ground as (typeof GROUNDS)[number]) + 1 : 0
+  if (ground && !index) throw new Error('Invalid prepared terrain ground')
+  return index
 }
 
 export function encodePreparedTerrain(entries: PreparedTerrainCell[], size: number): Uint8Array {
@@ -46,9 +63,19 @@ function decodeEntry(view: DataView, offset: number, size: number): PreparedTerr
   const water = view.getUint8(offset + 4)
   const relief = view.getUint8(offset + 5)
   const height = view.getUint8(offset + 6)
-  const patches = view.getUint8(offset + 7)
-  const groundIndex = view.getUint8(offset + 8)
-  if (index >= (size + 1) ** 2 || patches > 15 || groundIndex > GROUNDS.length)
+  const mask = view.getUint8(offset + 7)
+  const patches = mask & 15
+  const alternateMask = mask >> 4
+  const groundByte = view.getUint8(offset + 8)
+  const groundIndex = groundByte & 7
+  const alternateIndex = groundByte >> 3
+  if (
+    index >= (size + 1) ** 2 ||
+    groundIndex > GROUNDS.length ||
+    alternateIndex > GROUNDS.length ||
+    (alternateMask & ~patches) !== 0 ||
+    !alternateMask !== !alternateIndex
+  )
     throw new Error('Invalid prepared terrain')
   const entry: PreparedTerrainCell = { i: Math.floor(index / (size + 1)), j: index % (size + 1) }
   if (water) entry.water = [WATER_SHEET, String(water - 1).padStart(3, '0')]
@@ -56,6 +83,11 @@ function decodeEntry(view: DataView, offset: number, size: number): PreparedTerr
   if (patches) entry.patches = DIRECTIONS.filter((_, bit) => patches & (1 << bit))
   const ground = GROUNDS[groundIndex - 1]
   if (ground) entry.ground = ground
+  const alternate = GROUNDS[alternateIndex - 1]
+  if (alternate)
+    entry.grounds = Object.fromEntries(
+      DIRECTIONS.filter((_, bit) => alternateMask & (1 << bit)).map(direction => [direction, alternate])
+    )
   return entry
 }
 

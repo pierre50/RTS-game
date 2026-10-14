@@ -1,5 +1,5 @@
 import { getDeferredVillages } from './distantVillages/DeferredVillageStore'
-import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isStaticSettlement } from '../../config/world/settlementProfiles'
 import { flushNaturalGrowth } from '../NaturalGrowthQueue'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { VILLAGE_ACTIVITY_RADIUS } from '../../config/villageActivity'

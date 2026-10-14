@@ -1,4 +1,4 @@
-import { isRpgVillager } from '../../../config/rpgVillages'
+import { isRpgVillager } from '../../../config/world/rpgVillages'
 import { unitSuspensionReason } from '../unitSuspension'
 import { ACTION_TYPES } from '../../../constants'
 import { shouldVillagerWork } from '../village/villagerSchedule'

@@ -19,6 +19,7 @@ test('inventory exposes local map and construction tabs without Worlds', t => {
   let tabs
   new Function('module', 'exports', 'require', code)(loaded, loaded.exports, request => {
     if (request === '../lib/lang') return { t: key => key }
+    if (request === './minimap/MinimapNavigation') return { MinimapNavigation: class {} }
     if (request === './inventory/HeroInventoryCraftingBody')
       return {
         HeroInventoryCraftingBody: class {
@@ -75,6 +76,7 @@ test('closing and reopening inventory remembers every tab and releases the minim
       opened: true,
       pausedByMenu: false,
       modal: { close() {} },
+      mapNavigation: { deactivate: () => calls.push('release') },
       menu: {
         context: { paused: true, controls: {} },
         deactivateMiniMap: () => calls.push('detach'),
@@ -87,10 +89,10 @@ test('closing and reopening inventory remembers every tab and releases the minim
     manager.close()
     assert.equal(manager.activeTab, tab)
     manager.open()
-    assert.deepEqual(calls, ['detach', tab])
+    assert.deepEqual(calls, ['release', 'detach', tab])
     manager.toggle()
     manager.toggle()
     assert.equal(manager.activeTab, 'tools')
-    assert.deepEqual(calls, ['detach', tab, 'detach', 'tools'])
+    assert.deepEqual(calls, ['release', 'detach', tab, 'release', 'detach', 'tools'])
   }
 })

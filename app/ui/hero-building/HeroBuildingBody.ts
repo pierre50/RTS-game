@@ -2,6 +2,7 @@ import { createHeroVillageReport } from './HeroVillageReport'
 import { createHeroDepotReservesBody } from './HeroDepotReservesBody'
 import { createHeroTrainingBody } from './HeroTrainingBody'
 import { createHeroBuildingContainerBody } from './HeroBuildingContainerBody'
+import { createHeroConstructionBody } from './HeroConstructionBody'
 import { HeroCampfireBody } from './HeroCampfireBody'
 import { HeroForgeBody } from './HeroForgeBody'
 import { createHeroMarketBody } from './HeroMarketBody'
@@ -12,7 +13,10 @@ import type { HeroBuildingMenuManager } from '../HeroBuildingMenuManager'
 export function renderHeroBuildingBody(host: HeroBuildingMenuManager, building: BuildingEntity): boolean {
   if (!building.isBuilt) {
     host.transferPanel = null
-    return false
+    const construction = createHeroConstructionBody(building, host.menu, () => host.refresh())
+    if (!construction) return false
+    host.body.appendChild(construction)
+    return true
   }
   const reserves = createHeroDepotReservesBody(building, host.menu, () => host.render())
   if (reserves) {

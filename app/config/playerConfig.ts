@@ -70,7 +70,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     speed: 1.3,
     attackRecoveryMs: 640,
     trainingDays: 0,
-    equipment: ['sword_bronze', 'helmet_barbarian_nasal_leather', 'round_shield_wood_slash'],
+    equipment: ['club_ceramic', 'helmet_barbarian_nasal_leather', 'horns_short', 'round_shield_wood_slash'],
     combatBehaviorPreset: 'meleeAggressive',
     sounds: {
       hit: SOUND_CUES.unit.swordAttack,

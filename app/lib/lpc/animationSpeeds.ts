@@ -1,5 +1,7 @@
 const LPC_RUNTIME_ANIMATION_SPEED = 0.3
 const LPC_SLASH_ANIMATION_SPEED = 0.25
+// Nine spear poses should take about as long as the original six-pose slash.
+const LPC_SPEAR_SLASH_ANIMATION_SPEED = LPC_SLASH_ANIMATION_SPEED * (9 / 6)
 const LPC_CORPSE_ANIMATION_SPEED = 0
 const PIXI_ANIMATION_FPS = 60
 
@@ -9,6 +11,10 @@ function animationFrameMs(animationSpeed: number): number {
 
 export function lpcSlashFrameMs(): number {
   return animationFrameMs(LPC_SLASH_ANIMATION_SPEED)
+}
+
+export function lpcSpearSlashAnimationSpeed(): number {
+  return LPC_SPEAR_SLASH_ANIMATION_SPEED
 }
 
 export function lpcAnimationSpeedForAlias(alias: string): number {

@@ -1,0 +1,1 @@
+Club LPC par bluecarrot16, [LPC] More Weapons: https://opengameart.org/content/lpc-more-weapons. Licences OGA-BY 3.0+, GPL 3.0, CC-BY 4.0. Marche composée à partir de la forme originale du club, recalée sur les neuf poses du héros Hellas ; slash natif reverse-oversize, avec correction ciblée sur la sixième image vue de haut ; hurt dérivé et corrigé.

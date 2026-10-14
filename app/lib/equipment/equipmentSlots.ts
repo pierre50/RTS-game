@@ -55,7 +55,7 @@ export function getWeaponSlot(equipment: string): HeroWeaponSlot | null {
     equipment.startsWith('dagger_') ||
     equipment.startsWith('spear_') ||
     equipment.startsWith('mace_') ||
-    equipment === 'longsword' ||
+    equipment === 'club_ceramic' ||
     equipment === 'cane' ||
     equipment === 'catchingPole' ||
     equipment === 'longstick'

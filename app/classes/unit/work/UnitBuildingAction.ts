@@ -124,7 +124,10 @@ function blockUnfundedBuild(runtime: UnitResourceActions): boolean {
     return true
   }
   if (!runtime.ensureWorkContact(unit.dest, true)) return true
-  const delivered = deliverConstructionMaterials(unit.dest, [unit.inventory?.resources ?? {}])
+  const delivered =
+    isHeroControlled(unit) && !unit.dest.isBuilt
+      ? {}
+      : deliverConstructionMaterials(unit.dest, [unit.inventory?.resources ?? {}])
   if (Object.keys(delivered).length) {
     notifyVillageWorkChanged(unit.owner)
     syncEntityHealthDisplay(
@@ -146,7 +149,7 @@ function blockUnfundedBuild(runtime: UnitResourceActions): boolean {
   const resources = Object.entries(missing)
     .map(([key, count]) => `${count} ${t(key)}`)
     .join(', ')
-  unit.context?.menu?.showMessage(t('constructionMissingMaterials', { resources }), 'warning')
+  unit.context?.menu?.showMessage(t('constructionMissingMaterialsInMenu', { resources }), 'warning')
   stopManualHeroAction(unit)
   return true
 }

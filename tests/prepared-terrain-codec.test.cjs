@@ -26,6 +26,25 @@ test('terrain codec round-trips all visual fields and respects buffer slices', (
   assert.deepEqual(decode(encode([{ i: 65535, j: 65535 }], 65535), 65535), [{ i: 65535, j: 65535 }])
 })
 
+test('terrain codec keeps a second ground per direction and decodes legacy records unchanged', () => {
+  const mixed = {
+    i: 1,
+    j: 2,
+    patches: ['north', 'south', 'east'],
+    ground: 'Desert',
+    grounds: { north: 'DarkForest', east: 'DarkForest' },
+  }
+  assert.deepEqual(decode(encode([mixed], 5), 5), [mixed])
+  const legacy = encode([{ i: 1, j: 2, patches: ['north'], ground: 'Snow' }], 5)
+  assert.equal(legacy[7], 1)
+  assert.equal(legacy[8], 5)
+  assert.throws(
+    () => encode([{ ...mixed, grounds: { north: 'DarkForest', east: 'Dirt' } }], 5),
+    /Invalid prepared terrain grounds/
+  )
+  assert.throws(() => encode([{ ...mixed, grounds: { west: 'DarkForest' } }], 5), /Invalid prepared terrain grounds/)
+})
+
 test('terrain encoding rejects values that would be silently truncated or wrapped', () => {
   for (const size of [-1, 0.5, NaN, Infinity, 65536]) {
     assert.throws(() => encode([], size), /Invalid prepared terrain/)
@@ -53,6 +72,8 @@ test('terrain decoding rejects truncated data and invalid coordinates, masks and
     [0, 36],
     [7, 16],
     [8, 6],
+    [8, 8],
+    [8, 48],
   ]) {
     const bytes = new Uint8Array(9)
     bytes[offset] = value

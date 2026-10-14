@@ -6,7 +6,7 @@ function usesMeleeImpactSound(item: string): boolean {
   return (
     item.startsWith('dagger_') ||
     item.startsWith('mace_') ||
-    item === 'longsword' ||
+    item.startsWith('club_') ||
     item.startsWith('sword_') ||
     item === 'axe' ||
     item.startsWith('axe_')

@@ -1,6 +1,6 @@
 import { reconcileHouseholds } from '../../lib/housing/households'
-import { isContinentWorld } from '../../config/continentWorlds'
-import { isLargeMapIsolationTest } from '../../config/largeMapTest'
+import { isContinentWorld } from '../../config/world/continentWorlds'
+import { isLargeMapIsolationTest } from '../../config/world/largeMapTest'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
 import { Assets } from 'pixi.js'
 import { worldEconomyFactors } from '../../config/worldEconomyBalance'

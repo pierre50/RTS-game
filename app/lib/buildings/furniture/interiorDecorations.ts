@@ -1,5 +1,5 @@
 import { INTERIOR_LAYOUT_POSITIONS, isFullInteriorLayout } from '../../../config/interiorLayoutPositions'
-import { getInteriorLayoutLevel } from '../interiorLayoutLevel'
+import { getInteriorLayoutLevel } from '../interior/interiorLayoutLevel'
 import { getHouseProfile, type HouseLevelLike } from '../../housing/houseLevels'
 import { BUILDING_TYPES } from '../../../constants'
 import type { BuildingEntity } from '../../../types/entities'

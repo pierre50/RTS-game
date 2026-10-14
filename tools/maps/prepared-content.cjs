@@ -42,9 +42,13 @@ function prepareContent(blueprint) {
       },
       setPatchBorder(direction, ground = 'Desert') {
         const data = entry(this)
+        // First ground wins per direction, like the runtime cell. A second ground on another
+        // side (dark forest + shore) is kept per direction instead of overwriting the cell's.
         data.patches ??= []
-        if (!data.patches.includes(direction)) data.patches.push(direction)
-        data.ground = ground
+        if (data.patches.includes(direction)) return
+        data.patches.push(direction)
+        data.ground ??= ground
+        if (ground !== data.ground) (data.grounds ??= {})[direction] = ground
       },
     }))
   )

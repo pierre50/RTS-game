@@ -61,6 +61,30 @@ test('escort activation uses separate safe posts without moving reserve troops',
   assert.equal(settleChiefEscortAtPost(f.reserve, f.context), false)
   assert.deepEqual([f.reserve.i, f.reserve.j], [0, 2])
 })
+test('settling a walking escort also stops its walking animation', () => {
+  const f = fixture()
+  const sheets = []
+  const layers = []
+  f.guard.currentSheet = 'walkingSheet'
+  f.guard.sprite = {
+    playing: true,
+    stop() {
+      this.playing = false
+    },
+  }
+  f.guard.setTextures = sheet => {
+    f.guard.currentSheet = sheet
+    sheets.push(sheet)
+  }
+  f.guard.syncAppearanceLayers = sheet => layers.push(sheet)
+
+  assert.equal(settleChiefEscortAtPost(f.guard, f.context), true)
+  assert.deepEqual(f.guard.path, [])
+  assert.equal(f.guard.currentSheet, 'standingSheet')
+  assert.equal(f.guard.sprite.playing, false)
+  assert.deepEqual(sheets, ['standingSheet'])
+  assert.deepEqual(layers, ['standingSheet'])
+})
 test('combat, orders, alerts and interior transfers never teleport guards', () => {
   for (const change of [
     { action: 'attack' },

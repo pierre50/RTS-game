@@ -1,4377 +1,9 @@
 {
   "frames": {
-    "000_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 65,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 130,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 195,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 260,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 325,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "006_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 390,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "007_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 455,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "008_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 520,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "009_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 585,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "010_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 650,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "011_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 715,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "012_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 780,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "013_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 845,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "014_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 910,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "015_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 975,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "016_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 1040,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "017_graphics_equipments_upward_horns_ceramic_back_action.png": {
-      "frame": {
-        "x": 1105,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_back_corpse.png": {
-      "frame": {
-        "x": 1170,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_back_dying.png": {
-      "frame": {
-        "x": 1235,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_back_dying.png": {
-      "frame": {
-        "x": 1300,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_back_dying.png": {
-      "frame": {
-        "x": 1365,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_back_dying.png": {
-      "frame": {
-        "x": 1430,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_back_dying.png": {
-      "frame": {
-        "x": 1495,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_back_dying.png": {
-      "frame": {
-        "x": 1560,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 1625,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 1690,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 1755,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 1820,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 1885,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 1950,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "006_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2015,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "007_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2080,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "008_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2145,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "009_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2210,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "010_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2275,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "011_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2340,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "012_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2405,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "013_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2470,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "014_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2535,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "015_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2600,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "016_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2665,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "017_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2730,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "018_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2795,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "019_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2860,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "020_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2925,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "021_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 2990,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "022_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3055,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "023_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3120,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "024_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3185,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "025_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3250,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "026_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3315,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "027_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3380,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "028_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3445,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "029_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3510,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "030_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3575,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "031_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3640,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "032_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3705,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "033_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3770,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "034_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3835,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "035_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3900,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "036_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 3965,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "037_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 4030,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "038_graphics_equipments_upward_horns_ceramic_back_shooting.png": {
-      "frame": {
-        "x": 0,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 65,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 130,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 195,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 260,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 325,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 390,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "006_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 455,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "007_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 520,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "008_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 585,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "009_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 650,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "010_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 715,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "011_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 780,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "012_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 845,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "013_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 910,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "014_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 975,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "015_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1040,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "016_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1105,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "017_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1170,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "018_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1235,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "019_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1300,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "020_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1365,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "021_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1430,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "022_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1495,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "023_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1560,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "024_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1625,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "025_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1690,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "026_graphics_equipments_upward_horns_ceramic_back_walking.png": {
-      "frame": {
-        "x": 1755,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 1820,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 1885,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 1950,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2015,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2080,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2145,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "006_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2210,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "007_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2275,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "008_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2340,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "009_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2405,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "010_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2470,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "011_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2535,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "012_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2600,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "013_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2665,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "014_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2730,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "015_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2795,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "016_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2860,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "017_graphics_equipments_upward_horns_ceramic_front_action.png": {
-      "frame": {
-        "x": 2925,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_front_corpse.png": {
-      "frame": {
-        "x": 2990,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_front_dying.png": {
-      "frame": {
-        "x": 3055,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_front_dying.png": {
-      "frame": {
-        "x": 3120,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_front_dying.png": {
-      "frame": {
-        "x": 3185,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_front_dying.png": {
-      "frame": {
-        "x": 3250,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_front_dying.png": {
-      "frame": {
-        "x": 3315,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_front_dying.png": {
-      "frame": {
-        "x": 3380,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3445,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3510,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3575,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3640,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3705,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3770,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "006_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3835,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "007_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3900,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "008_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 3965,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "009_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 4030,
-        "y": 65,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "010_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 0,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "011_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 65,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "012_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 130,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "013_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 195,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "014_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 260,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "015_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 325,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "016_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 390,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "017_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 455,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "018_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 520,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "019_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 585,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "020_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 650,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "021_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 715,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "022_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 780,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "023_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 845,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "024_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 910,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "025_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 975,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "026_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1040,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "027_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1105,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "028_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1170,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "029_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1235,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "030_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1300,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "031_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1365,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "032_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1430,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "033_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1495,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "034_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1560,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "035_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1625,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "036_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1690,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "037_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1755,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "038_graphics_equipments_upward_horns_ceramic_front_shooting.png": {
-      "frame": {
-        "x": 1820,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "000_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 1885,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "001_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 1950,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "002_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2015,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "003_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2080,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "004_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2145,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "005_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2210,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "006_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2275,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "007_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2340,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "008_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2405,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "009_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2470,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "010_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2535,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "011_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2600,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "012_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2665,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "013_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2730,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "014_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2795,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "015_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2860,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "016_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2925,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "017_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 2990,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "018_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3055,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "019_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3120,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "020_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3185,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "021_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3250,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "022_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3315,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "023_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3380,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "024_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3445,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "025_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3510,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
-    "026_graphics_equipments_upward_horns_ceramic_front_walking.png": {
-      "frame": {
-        "x": 3575,
-        "y": 130,
-        "w": 64,
-        "h": 64
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.86
-      }
-    },
     "000_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 3640,
-        "y": 130,
+        "x": 0,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4394,8 +26,8 @@
     },
     "001_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 3705,
-        "y": 130,
+        "x": 65,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4418,8 +50,8 @@
     },
     "002_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 3770,
-        "y": 130,
+        "x": 130,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4442,8 +74,8 @@
     },
     "003_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 3835,
-        "y": 130,
+        "x": 195,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4466,8 +98,8 @@
     },
     "004_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 3900,
-        "y": 130,
+        "x": 260,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4490,8 +122,8 @@
     },
     "005_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 3965,
-        "y": 130,
+        "x": 325,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4514,8 +146,8 @@
     },
     "006_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 4030,
-        "y": 130,
+        "x": 390,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4538,8 +170,8 @@
     },
     "007_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 0,
-        "y": 195,
+        "x": 455,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4562,8 +194,8 @@
     },
     "008_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 65,
-        "y": 195,
+        "x": 520,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4586,8 +218,8 @@
     },
     "009_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 130,
-        "y": 195,
+        "x": 585,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4610,8 +242,8 @@
     },
     "010_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 195,
-        "y": 195,
+        "x": 650,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4634,8 +266,8 @@
     },
     "011_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 260,
-        "y": 195,
+        "x": 715,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4658,8 +290,8 @@
     },
     "012_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 325,
-        "y": 195,
+        "x": 780,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4682,8 +314,8 @@
     },
     "013_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 390,
-        "y": 195,
+        "x": 845,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4706,8 +338,8 @@
     },
     "014_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 455,
-        "y": 195,
+        "x": 910,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4730,8 +362,8 @@
     },
     "015_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 520,
-        "y": 195,
+        "x": 975,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4754,8 +386,8 @@
     },
     "016_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 585,
-        "y": 195,
+        "x": 1040,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4778,8 +410,8 @@
     },
     "017_graphics_equipments_upward_horns_white_back_action.png": {
       "frame": {
-        "x": 650,
-        "y": 195,
+        "x": 1105,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4802,8 +434,8 @@
     },
     "000_graphics_equipments_upward_horns_white_back_corpse.png": {
       "frame": {
-        "x": 715,
-        "y": 195,
+        "x": 1170,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4826,8 +458,8 @@
     },
     "000_graphics_equipments_upward_horns_white_back_dying.png": {
       "frame": {
-        "x": 780,
-        "y": 195,
+        "x": 1235,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4850,8 +482,8 @@
     },
     "001_graphics_equipments_upward_horns_white_back_dying.png": {
       "frame": {
-        "x": 845,
-        "y": 195,
+        "x": 1300,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4874,8 +506,8 @@
     },
     "002_graphics_equipments_upward_horns_white_back_dying.png": {
       "frame": {
-        "x": 910,
-        "y": 195,
+        "x": 1365,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4898,8 +530,8 @@
     },
     "003_graphics_equipments_upward_horns_white_back_dying.png": {
       "frame": {
-        "x": 975,
-        "y": 195,
+        "x": 1430,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4922,8 +554,8 @@
     },
     "004_graphics_equipments_upward_horns_white_back_dying.png": {
       "frame": {
-        "x": 1040,
-        "y": 195,
+        "x": 1495,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4946,8 +578,8 @@
     },
     "005_graphics_equipments_upward_horns_white_back_dying.png": {
       "frame": {
-        "x": 1105,
-        "y": 195,
+        "x": 1560,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4970,8 +602,8 @@
     },
     "000_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1170,
-        "y": 195,
+        "x": 1625,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -4994,8 +626,8 @@
     },
     "001_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1235,
-        "y": 195,
+        "x": 1690,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5018,8 +650,8 @@
     },
     "002_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1300,
-        "y": 195,
+        "x": 1755,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5042,8 +674,8 @@
     },
     "003_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1365,
-        "y": 195,
+        "x": 1820,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5066,8 +698,8 @@
     },
     "004_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1430,
-        "y": 195,
+        "x": 1885,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5090,8 +722,8 @@
     },
     "005_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1495,
-        "y": 195,
+        "x": 1950,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5114,8 +746,8 @@
     },
     "006_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1560,
-        "y": 195,
+        "x": 2015,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5138,8 +770,8 @@
     },
     "007_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1625,
-        "y": 195,
+        "x": 2080,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5162,8 +794,8 @@
     },
     "008_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1690,
-        "y": 195,
+        "x": 2145,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5186,8 +818,8 @@
     },
     "009_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1755,
-        "y": 195,
+        "x": 2210,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5210,8 +842,8 @@
     },
     "010_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1820,
-        "y": 195,
+        "x": 2275,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5234,8 +866,8 @@
     },
     "011_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1885,
-        "y": 195,
+        "x": 2340,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5258,8 +890,8 @@
     },
     "012_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 1950,
-        "y": 195,
+        "x": 2405,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5282,8 +914,8 @@
     },
     "013_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2015,
-        "y": 195,
+        "x": 2470,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5306,8 +938,8 @@
     },
     "014_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2080,
-        "y": 195,
+        "x": 2535,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5330,8 +962,8 @@
     },
     "015_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2145,
-        "y": 195,
+        "x": 2600,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5354,8 +986,8 @@
     },
     "016_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2210,
-        "y": 195,
+        "x": 2665,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5378,8 +1010,8 @@
     },
     "017_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2275,
-        "y": 195,
+        "x": 2730,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5402,8 +1034,8 @@
     },
     "018_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2340,
-        "y": 195,
+        "x": 2795,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5426,8 +1058,8 @@
     },
     "019_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2405,
-        "y": 195,
+        "x": 2860,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5450,8 +1082,8 @@
     },
     "020_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2470,
-        "y": 195,
+        "x": 2925,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5474,8 +1106,8 @@
     },
     "021_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2535,
-        "y": 195,
+        "x": 2990,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5498,8 +1130,8 @@
     },
     "022_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2600,
-        "y": 195,
+        "x": 3055,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5522,8 +1154,8 @@
     },
     "023_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2665,
-        "y": 195,
+        "x": 3120,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5546,8 +1178,8 @@
     },
     "024_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2730,
-        "y": 195,
+        "x": 3185,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5570,8 +1202,8 @@
     },
     "025_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2795,
-        "y": 195,
+        "x": 3250,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5594,8 +1226,8 @@
     },
     "026_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2860,
-        "y": 195,
+        "x": 3315,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5618,8 +1250,8 @@
     },
     "027_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2925,
-        "y": 195,
+        "x": 3380,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5642,8 +1274,8 @@
     },
     "028_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 2990,
-        "y": 195,
+        "x": 3445,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5666,8 +1298,8 @@
     },
     "029_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3055,
-        "y": 195,
+        "x": 3510,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5690,8 +1322,8 @@
     },
     "030_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3120,
-        "y": 195,
+        "x": 3575,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5714,8 +1346,8 @@
     },
     "031_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3185,
-        "y": 195,
+        "x": 3640,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5738,8 +1370,8 @@
     },
     "032_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3250,
-        "y": 195,
+        "x": 3705,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5762,8 +1394,8 @@
     },
     "033_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3315,
-        "y": 195,
+        "x": 3770,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5786,8 +1418,8 @@
     },
     "034_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3380,
-        "y": 195,
+        "x": 3835,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5810,8 +1442,8 @@
     },
     "035_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3445,
-        "y": 195,
+        "x": 3900,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5834,8 +1466,8 @@
     },
     "036_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3510,
-        "y": 195,
+        "x": 3965,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5858,8 +1490,8 @@
     },
     "037_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3575,
-        "y": 195,
+        "x": 4030,
+        "y": 0,
         "w": 64,
         "h": 64
       },
@@ -5882,8 +1514,8 @@
     },
     "038_graphics_equipments_upward_horns_white_back_shooting.png": {
       "frame": {
-        "x": 3640,
-        "y": 195,
+        "x": 0,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -5906,8 +1538,8 @@
     },
     "000_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 3705,
-        "y": 195,
+        "x": 65,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -5930,8 +1562,8 @@
     },
     "001_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 3770,
-        "y": 195,
+        "x": 130,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -5954,8 +1586,8 @@
     },
     "002_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 3835,
-        "y": 195,
+        "x": 195,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -5978,8 +1610,8 @@
     },
     "003_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 3900,
-        "y": 195,
+        "x": 260,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6002,8 +1634,8 @@
     },
     "004_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 3965,
-        "y": 195,
+        "x": 325,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6026,8 +1658,8 @@
     },
     "005_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 4030,
-        "y": 195,
+        "x": 390,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6050,8 +1682,8 @@
     },
     "006_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 0,
-        "y": 260,
+        "x": 455,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6074,8 +1706,8 @@
     },
     "007_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 65,
-        "y": 260,
+        "x": 520,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6098,8 +1730,8 @@
     },
     "008_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 130,
-        "y": 260,
+        "x": 585,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6122,8 +1754,8 @@
     },
     "009_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 195,
-        "y": 260,
+        "x": 650,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6146,8 +1778,8 @@
     },
     "010_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 260,
-        "y": 260,
+        "x": 715,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6170,8 +1802,8 @@
     },
     "011_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 325,
-        "y": 260,
+        "x": 780,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6194,8 +1826,8 @@
     },
     "012_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 390,
-        "y": 260,
+        "x": 845,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6218,8 +1850,8 @@
     },
     "013_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 455,
-        "y": 260,
+        "x": 910,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6242,8 +1874,8 @@
     },
     "014_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 520,
-        "y": 260,
+        "x": 975,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6266,8 +1898,8 @@
     },
     "015_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 585,
-        "y": 260,
+        "x": 1040,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6290,8 +1922,8 @@
     },
     "016_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 650,
-        "y": 260,
+        "x": 1105,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6314,8 +1946,8 @@
     },
     "017_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 715,
-        "y": 260,
+        "x": 1170,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6338,8 +1970,8 @@
     },
     "018_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 780,
-        "y": 260,
+        "x": 1235,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6362,8 +1994,8 @@
     },
     "019_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 845,
-        "y": 260,
+        "x": 1300,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6386,8 +2018,8 @@
     },
     "020_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 910,
-        "y": 260,
+        "x": 1365,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6410,8 +2042,8 @@
     },
     "021_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 975,
-        "y": 260,
+        "x": 1430,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6434,8 +2066,8 @@
     },
     "022_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 1040,
-        "y": 260,
+        "x": 1495,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6458,8 +2090,8 @@
     },
     "023_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 1105,
-        "y": 260,
+        "x": 1560,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6482,8 +2114,8 @@
     },
     "024_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 1170,
-        "y": 260,
+        "x": 1625,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6506,8 +2138,8 @@
     },
     "025_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 1235,
-        "y": 260,
+        "x": 1690,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6530,8 +2162,8 @@
     },
     "026_graphics_equipments_upward_horns_white_back_walking.png": {
       "frame": {
-        "x": 1300,
-        "y": 260,
+        "x": 1755,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6554,8 +2186,8 @@
     },
     "000_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1365,
-        "y": 260,
+        "x": 1820,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6578,8 +2210,8 @@
     },
     "001_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1430,
-        "y": 260,
+        "x": 1885,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6602,8 +2234,8 @@
     },
     "002_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1495,
-        "y": 260,
+        "x": 1950,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6626,8 +2258,8 @@
     },
     "003_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1560,
-        "y": 260,
+        "x": 2015,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6650,8 +2282,8 @@
     },
     "004_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1625,
-        "y": 260,
+        "x": 2080,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6674,8 +2306,8 @@
     },
     "005_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1690,
-        "y": 260,
+        "x": 2145,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6698,8 +2330,8 @@
     },
     "006_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1755,
-        "y": 260,
+        "x": 2210,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6722,8 +2354,8 @@
     },
     "007_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1820,
-        "y": 260,
+        "x": 2275,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6746,8 +2378,8 @@
     },
     "008_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1885,
-        "y": 260,
+        "x": 2340,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6770,8 +2402,8 @@
     },
     "009_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 1950,
-        "y": 260,
+        "x": 2405,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6794,8 +2426,8 @@
     },
     "010_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2015,
-        "y": 260,
+        "x": 2470,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6818,8 +2450,8 @@
     },
     "011_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2080,
-        "y": 260,
+        "x": 2535,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6842,8 +2474,8 @@
     },
     "012_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2145,
-        "y": 260,
+        "x": 2600,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6866,8 +2498,8 @@
     },
     "013_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2210,
-        "y": 260,
+        "x": 2665,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6890,8 +2522,8 @@
     },
     "014_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2275,
-        "y": 260,
+        "x": 2730,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6914,8 +2546,8 @@
     },
     "015_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2340,
-        "y": 260,
+        "x": 2795,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6938,8 +2570,8 @@
     },
     "016_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2405,
-        "y": 260,
+        "x": 2860,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6962,8 +2594,8 @@
     },
     "017_graphics_equipments_upward_horns_white_front_action.png": {
       "frame": {
-        "x": 2470,
-        "y": 260,
+        "x": 2925,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -6986,8 +2618,8 @@
     },
     "000_graphics_equipments_upward_horns_white_front_corpse.png": {
       "frame": {
-        "x": 2535,
-        "y": 260,
+        "x": 2990,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7010,8 +2642,8 @@
     },
     "000_graphics_equipments_upward_horns_white_front_dying.png": {
       "frame": {
-        "x": 2600,
-        "y": 260,
+        "x": 3055,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7034,8 +2666,8 @@
     },
     "001_graphics_equipments_upward_horns_white_front_dying.png": {
       "frame": {
-        "x": 2665,
-        "y": 260,
+        "x": 3120,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7058,8 +2690,8 @@
     },
     "002_graphics_equipments_upward_horns_white_front_dying.png": {
       "frame": {
-        "x": 2730,
-        "y": 260,
+        "x": 3185,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7082,8 +2714,8 @@
     },
     "003_graphics_equipments_upward_horns_white_front_dying.png": {
       "frame": {
-        "x": 2795,
-        "y": 260,
+        "x": 3250,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7106,8 +2738,8 @@
     },
     "004_graphics_equipments_upward_horns_white_front_dying.png": {
       "frame": {
-        "x": 2860,
-        "y": 260,
+        "x": 3315,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7130,8 +2762,8 @@
     },
     "005_graphics_equipments_upward_horns_white_front_dying.png": {
       "frame": {
-        "x": 2925,
-        "y": 260,
+        "x": 3380,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7154,8 +2786,8 @@
     },
     "000_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 2990,
-        "y": 260,
+        "x": 3445,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7178,8 +2810,8 @@
     },
     "001_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3055,
-        "y": 260,
+        "x": 3510,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7202,8 +2834,8 @@
     },
     "002_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3120,
-        "y": 260,
+        "x": 3575,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7226,8 +2858,8 @@
     },
     "003_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3185,
-        "y": 260,
+        "x": 3640,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7250,8 +2882,8 @@
     },
     "004_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3250,
-        "y": 260,
+        "x": 3705,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7274,8 +2906,8 @@
     },
     "005_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3315,
-        "y": 260,
+        "x": 3770,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7298,8 +2930,8 @@
     },
     "006_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3380,
-        "y": 260,
+        "x": 3835,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7322,8 +2954,8 @@
     },
     "007_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3445,
-        "y": 260,
+        "x": 3900,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7346,8 +2978,8 @@
     },
     "008_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3510,
-        "y": 260,
+        "x": 3965,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7370,8 +3002,8 @@
     },
     "009_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3575,
-        "y": 260,
+        "x": 4030,
+        "y": 65,
         "w": 64,
         "h": 64
       },
@@ -7394,8 +3026,8 @@
     },
     "010_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3640,
-        "y": 260,
+        "x": 0,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7418,8 +3050,8 @@
     },
     "011_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3705,
-        "y": 260,
+        "x": 65,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7442,8 +3074,8 @@
     },
     "012_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3770,
-        "y": 260,
+        "x": 130,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7466,8 +3098,8 @@
     },
     "013_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3835,
-        "y": 260,
+        "x": 195,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7490,8 +3122,8 @@
     },
     "014_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3900,
-        "y": 260,
+        "x": 260,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7514,8 +3146,8 @@
     },
     "015_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 3965,
-        "y": 260,
+        "x": 325,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7538,8 +3170,8 @@
     },
     "016_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 4030,
-        "y": 260,
+        "x": 390,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7562,8 +3194,8 @@
     },
     "017_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 0,
-        "y": 325,
+        "x": 455,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7586,8 +3218,8 @@
     },
     "018_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 65,
-        "y": 325,
+        "x": 520,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7610,8 +3242,8 @@
     },
     "019_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 130,
-        "y": 325,
+        "x": 585,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7634,8 +3266,8 @@
     },
     "020_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 195,
-        "y": 325,
+        "x": 650,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7658,8 +3290,8 @@
     },
     "021_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 260,
-        "y": 325,
+        "x": 715,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7682,8 +3314,8 @@
     },
     "022_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 325,
-        "y": 325,
+        "x": 780,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7706,8 +3338,8 @@
     },
     "023_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 390,
-        "y": 325,
+        "x": 845,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7730,8 +3362,8 @@
     },
     "024_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 455,
-        "y": 325,
+        "x": 910,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7754,8 +3386,8 @@
     },
     "025_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 520,
-        "y": 325,
+        "x": 975,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7778,8 +3410,8 @@
     },
     "026_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 585,
-        "y": 325,
+        "x": 1040,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7802,8 +3434,8 @@
     },
     "027_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 650,
-        "y": 325,
+        "x": 1105,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7826,8 +3458,8 @@
     },
     "028_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 715,
-        "y": 325,
+        "x": 1170,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7850,8 +3482,8 @@
     },
     "029_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 780,
-        "y": 325,
+        "x": 1235,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7874,8 +3506,8 @@
     },
     "030_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 845,
-        "y": 325,
+        "x": 1300,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7898,8 +3530,8 @@
     },
     "031_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 910,
-        "y": 325,
+        "x": 1365,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7922,8 +3554,8 @@
     },
     "032_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 975,
-        "y": 325,
+        "x": 1430,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7946,8 +3578,8 @@
     },
     "033_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 1040,
-        "y": 325,
+        "x": 1495,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7970,8 +3602,8 @@
     },
     "034_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 1105,
-        "y": 325,
+        "x": 1560,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -7994,8 +3626,8 @@
     },
     "035_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 1170,
-        "y": 325,
+        "x": 1625,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8018,8 +3650,8 @@
     },
     "036_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 1235,
-        "y": 325,
+        "x": 1690,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8042,8 +3674,8 @@
     },
     "037_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 1300,
-        "y": 325,
+        "x": 1755,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8066,8 +3698,8 @@
     },
     "038_graphics_equipments_upward_horns_white_front_shooting.png": {
       "frame": {
-        "x": 1365,
-        "y": 325,
+        "x": 1820,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8090,8 +3722,8 @@
     },
     "000_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1430,
-        "y": 325,
+        "x": 1885,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8114,8 +3746,8 @@
     },
     "001_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1495,
-        "y": 325,
+        "x": 1950,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8138,8 +3770,8 @@
     },
     "002_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1560,
-        "y": 325,
+        "x": 2015,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8162,8 +3794,8 @@
     },
     "003_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1625,
-        "y": 325,
+        "x": 2080,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8186,8 +3818,8 @@
     },
     "004_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1690,
-        "y": 325,
+        "x": 2145,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8210,8 +3842,8 @@
     },
     "005_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1755,
-        "y": 325,
+        "x": 2210,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8234,8 +3866,8 @@
     },
     "006_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1820,
-        "y": 325,
+        "x": 2275,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8258,8 +3890,8 @@
     },
     "007_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1885,
-        "y": 325,
+        "x": 2340,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8282,8 +3914,8 @@
     },
     "008_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 1950,
-        "y": 325,
+        "x": 2405,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8306,8 +3938,8 @@
     },
     "009_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2015,
-        "y": 325,
+        "x": 2470,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8330,8 +3962,8 @@
     },
     "010_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2080,
-        "y": 325,
+        "x": 2535,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8354,8 +3986,8 @@
     },
     "011_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2145,
-        "y": 325,
+        "x": 2600,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8378,8 +4010,8 @@
     },
     "012_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2210,
-        "y": 325,
+        "x": 2665,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8402,8 +4034,8 @@
     },
     "013_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2275,
-        "y": 325,
+        "x": 2730,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8426,8 +4058,8 @@
     },
     "014_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2340,
-        "y": 325,
+        "x": 2795,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8450,8 +4082,8 @@
     },
     "015_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2405,
-        "y": 325,
+        "x": 2860,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8474,8 +4106,8 @@
     },
     "016_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2470,
-        "y": 325,
+        "x": 2925,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8498,8 +4130,8 @@
     },
     "017_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2535,
-        "y": 325,
+        "x": 2990,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8522,8 +4154,8 @@
     },
     "018_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2600,
-        "y": 325,
+        "x": 3055,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8546,8 +4178,8 @@
     },
     "019_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2665,
-        "y": 325,
+        "x": 3120,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8570,8 +4202,8 @@
     },
     "020_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2730,
-        "y": 325,
+        "x": 3185,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8594,8 +4226,8 @@
     },
     "021_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2795,
-        "y": 325,
+        "x": 3250,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8618,8 +4250,8 @@
     },
     "022_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2860,
-        "y": 325,
+        "x": 3315,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8642,8 +4274,8 @@
     },
     "023_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2925,
-        "y": 325,
+        "x": 3380,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8666,8 +4298,8 @@
     },
     "024_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 2990,
-        "y": 325,
+        "x": 3445,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8690,8 +4322,8 @@
     },
     "025_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 3055,
-        "y": 325,
+        "x": 3510,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8714,8 +4346,8 @@
     },
     "026_graphics_equipments_upward_horns_white_front_walking.png": {
       "frame": {
-        "x": 3120,
-        "y": 325,
+        "x": 3575,
+        "y": 130,
         "w": 64,
         "h": 64
       },
@@ -8744,7 +4376,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 4094,
-      "h": 389
+      "h": 194
     },
     "scale": 1
   }

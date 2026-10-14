@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const gameplay = loadTsModule('app/config/gameplay.ts')
+const marketConfig = loadTsModule('app/config/market.ts')
 const { advanceDeferredVillage } = loadTsModule('app/services/world/distantVillages/DeferredVillageEconomy.ts', {
   mocks: {
     'pixi.js': { Assets: { cache: { get: () => undefined } } },
@@ -120,12 +121,15 @@ for (const mode of ['static', 'dynamic']) {
       marketStock: [],
     })
     const market = () => f.state.buildings.find(building => building.label === 'market')
+    // Level-0 market: the daily allowance is a configured fraction of its gold target.
+    const dailyGold = Math.floor(marketConfig.MARKET_GOLD_TARGETS[0] * marketConfig.MARKET_DAILY_GOLD_FRACTION)
+    assert.ok(dailyGold > 0 && 2 * dailyGold <= marketConfig.MARKET_GOLD_TARGETS[0])
     advanceDeferredVillage(f.context, f.owner, f.state, 0, day, () => {})
-    assert.equal(market().marketGold, 200)
+    assert.equal(market().marketGold, dailyGold)
     advanceDeferredVillage(f.context, f.owner, f.state, day, 2 * day, () => {})
-    assert.equal(market().marketGold, 400)
+    assert.equal(market().marketGold, 2 * dailyGold)
     assert.ok(market().marketStock.length > 0)
     advanceDeferredVillage(f.context, f.owner, f.state, 2 * day, 2 * day, () => {})
-    assert.equal(market().marketGold, 400)
+    assert.equal(market().marketGold, 2 * dailyGold)
   })
 }

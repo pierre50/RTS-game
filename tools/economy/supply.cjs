@@ -5,10 +5,9 @@ const {
   getEquipmentResaleGoldValue,
   getResourceGoldValue,
   getMarketResourceOffers,
-  MARKET_GOLD_TARGETS,
   MARKET_RESTOCK_INTERVAL_DAYS,
 } = load('app/lib/equipment/equipmentMarket.ts')
-const { MARKET_RESOURCE_BUY_MULTIPLIER, EQUIPMENT_RESALE_PERCENT } = load('app/config/market.ts')
+const { MARKET_GOLD_TARGETS, MARKET_RESOURCE_BUY_MULTIPLIER, EQUIPMENT_RESALE_PERCENT } = load('app/config/market.ts')
 const { CIVILIZATIONS } = load('app/config/civilizations.ts')
 const { EQUIPMENT_NAMES } = load('app/lib/i18n/equipmentNames.ts')
 // Reads declared physical inventories only; legacy player totals are often mirrors, never extra stock.

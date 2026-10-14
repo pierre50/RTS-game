@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Poses de défense · armes et outils</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#151b22;color:#f0eee7}
+body{max-width:1550px;margin:24px auto;padding:0 18px}h1{font-size:1.7rem;margin:0 0 8px}
+p{color:#b9c4cb;line-height:1.45;margin:0 0 12px}select{font:inherit;color:#f0eee7;background:#293541;border:1px solid #536679;border-radius:7px;padding:7px 10px}
+.controls{position:sticky;top:0;z-index:2;background:#151b22;padding:10px 0 14px;display:flex;gap:16px;align-items:center}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.9rem;color:#c7d1d8}.legend b{border-radius:4px;padding:3px 6px}
+.current{background:#886b3d;color:#fff3d1}.candidate{background:#437864;color:#e7fff4}.empty{background:#8b4646;color:#ffe3e3}
+section{margin:0 0 18px;background:#222d36;border:1px solid #435361;border-radius:10px;padding:12px}
+section h2{font-size:1.12rem;margin:0 0 5px}section p{font-size:.85rem;margin:0 0 9px}
+.frames{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}.pose{flex:1 0 170px;max-width:236px;background:#293742;border:1px solid #465968;border-radius:7px;padding:6px}
+.pose.current-pose{border-color:#c7a45e}.pose.candidate-pose{border-color:#80bf9a}
+.pose-header{min-height:39px;display:flex;align-items:start;justify-content:space-between;gap:4px;font-size:.83rem}.tag{font-size:.68rem;border-radius:4px;padding:2px 4px;text-align:right}
+canvas{display:block;width:100%;height:auto;background:#364550;border-radius:5px;image-rendering:pixelated}
+.warning{color:#ffb7a7;font-size:.76rem;min-height:18px;padding-top:5px}
+@media(max-width:700px){.frames{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.pose{max-width:none;min-width:0}}
+</style>
+<h1>Poses possibles pour la défense</h1>
+<p>Chaque ligne fige les 6 images existantes avec le personnage et son arme. La pose 5 est celle avec la main levée. La pose marquée « en jeu » correspond à l’image que la défense tient maintenant. Les traînées visibles sont celles des sprites du jeu.</p>
+<div class="controls">
+  <label>Vue <select id="direction"><option value="1">Face</option><option value="2">Dos</option><option value="0">Profil</option></select></label>
+  <div class="legend"><b class="current">Défense en jeu</b><b class="candidate">Main levée · image 5</b><b class="empty">Arme absente</b></div>
+</div>
+<main id="rows"></main>
+<p>Cette comparaison ne change aucune animation. Elle sert à choisir une pose par arme avant de créer les images de garde sans traînée.</p>
+<script>
+const rows=[
+  {title:'Épée droite',family:'weapon/sword',variant:'sword_iron'},
+  {title:'Épée courbe',family:'weapon/sword_curved',variant:'sword_curved_iron',empty:{0:[1]}},
+  {title:'Dague',family:'weapon/dagger',variant:'dagger_iron',empty:{0:[0,1,2,3]}},
+  {title:'Masse',family:'weapon/mace',variant:'mace_iron'},
+  {title:'Gourdin',family:'weapon/club',variant:'club_ceramic',current:5,note:'La garde utilise désormais directement la pose source 5, sans traverser les images du coup.'},
+  {title:'Long bâton',family:'weapon/longstick',variant:'longstick',empty:{0:[1]}},
+  {title:'Hache · combat',family:'tool/axe',variant:'axe_iron',gendered:true,current:5},
+  {title:'Pioche · combat',family:'tool/pickaxe',variant:'pickaxe_iron',gendered:true,current:5},
+  {title:'Marteau · combat',family:'tool/hammer',variant:'hammer_iron',gendered:true,current:5,empty:{all:[2,3]}},
+  {title:'Faux · combat',family:'tool/scythe',variant:'scythe_iron'},
+];
+const base='../../public/assets/graphics/',atlas={},cards=[];
+function getAtlas(family){
+  if(atlas[family])return atlas[family];
+  const path=base+(family==='body'?'units/hero/hellas/male/':'equipments/'+family+'/');
+  const image=new Image();image.src=path+'texture.png';
+  const entry=atlas[family]={image,frames:null};
+  fetch(path+'texture.json').then(r=>r.json()).then(data=>entry.frames=data.frames);
+  return entry;
+}
+function paint(ctx,family,key,x,y,scale){
+  const asset=getAtlas(family),data=asset.frames?.[key];if(!data||!asset.image.complete)return;
+  const f=data.frame;
+  ctx.drawImage(asset.image,f.x,f.y,f.w,f.h,
+    x-f.w*scale*(data.anchor?.x??.5),y-f.h*scale*(data.anchor?.y??.5),f.w*scale,f.h*scale);
+}
+function isEmpty(row,frame,direction){return row.empty?.all?.includes(frame)||row.empty?.[direction]?.includes(frame)}
+for(const row of rows){
+  getAtlas(row.family);
+  const section=document.createElement('section');
+  const title=document.createElement('h2');title.textContent=row.title;section.append(title);
+  if(row.note){const note=document.createElement('p');note.textContent=row.note;section.append(note)}
+  const frames=document.createElement('div');frames.className='frames';
+  for(let pose=0;pose<6;pose++){
+    const card=document.createElement('div');card.className='pose'+(pose===(row.current??2)?' current-pose':'')+(pose===5?' candidate-pose':'');
+    const header=document.createElement('div');header.className='pose-header';
+    const label=document.createElement('strong');label.textContent='Image '+pose;header.append(label);
+    if(pose===(row.current??2)||pose===5){const tag=document.createElement('span');tag.className='tag '+(pose===5?'candidate':'current');tag.textContent=pose===5?(row.current===5?'En jeu · main levée':'Main levée'):'En jeu';header.append(tag)}
+    card.append(header);
+    const canvas=document.createElement('canvas');canvas.width=360;canvas.height=230;card.append(canvas);
+    const warning=document.createElement('div');warning.className='warning';card.append(warning);
+    frames.append(card);cards.push({row,pose,canvas,warning});
+  }
+  section.append(frames);document.getElementById('rows').append(section);
+}
+function draw({row,pose,canvas,warning}){
+  const direction=+document.getElementById('direction').value;
+  const index=String(direction*6+pose).padStart(3,'0');
+  const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle='#364550';ctx.fillRect(0,0,360,230);
+  ctx.fillStyle='#27343e';ctx.beginPath();ctx.ellipse(180,199,75,12,0,0,Math.PI*2);ctx.fill();
+  const x=180,y=175,scale=2.25;
+  const layer=side=>index+'_graphics_equipments_'+row.variant+'_'+side+'_action'+(row.gendered?'_male':'')+'.png';
+  paint(ctx,row.family,layer('back'),x,y,scale);
+  paint(ctx,'body',index+'_graphics_units_hero_hellas_male_action_slash.png',x,y,scale);
+  paint(ctx,row.family,layer('front'),x,y,scale);
+  warning.textContent=isEmpty(row,pose,direction)?'Arme absente sur cette image':'';
+}
+getAtlas('body');
+function render(){for(const card of cards)draw(card)}
+document.getElementById('direction').onchange=render;
+Promise.all(Object.values(atlas).map(a=>new Promise(resolve=>{
+  if(a.image.complete&&a.frames)return resolve();
+  const wait=setInterval(()=>{if(a.image.complete&&a.frames){clearInterval(wait);resolve()}},20);
+}))).then(render);
+</script>
+</html>

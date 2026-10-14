@@ -2,9 +2,13 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+const interiorSyncs = []
 const { BuildingLifecycle } = loadTsModule('app/classes/building/BuildingLifecycle.ts', {
   mocks: {
     'pixi.js': { AnimatedSprite: class {} },
+    '../../services/BuildingInteriorSpaceSystem': {
+      syncHouseInteriorSpace: (context, building) => interiorSyncs.push(building),
+    },
     '../../lib': { getPercentage: (hp, total) => (hp * 100) / total, updateInstanceVisibility() {} },
     '../../lib/lang': { t: key => key },
     '../../lib/buildings/townCenterClaim': { competingTownCenterSites: () => [] },
@@ -75,7 +79,10 @@ test('renovation completion refreshes exterior and restores existing beds withou
   }
   building.owner.buildings = [building]
   const lifecycle = new BuildingLifecycle(building)
+  interiorSyncs.length = 0
   lifecycle.updateHitPoints('build')
+  // The upgraded house's interior space is re-synced to the new level.
+  assert.deepEqual(interiorSyncs, [building])
   assert.equal(building.buildingUpgrade, undefined)
   assert.equal(building.buildingLevel, 1)
   assert.equal(building.hitPoints, 110)

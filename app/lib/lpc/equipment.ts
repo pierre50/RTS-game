@@ -1,7 +1,8 @@
 import { resolveForgeEquipment, type ForgeUpgradeOwner } from '../equipment/forgeUpgrades'
 import { definedProperties } from '../definedProperties'
 import { SHEET_TYPES } from '../../constants'
-import { lpcAnimationSpeedForSheet } from './animationSpeeds'
+import { lpcAnimationSpeedForSheet, lpcSpearSlashAnimationSpeed } from './animationSpeeds'
+import { SPEAR_SLASH_WEAPON_FRAMES } from '../animations/spearSlashFrames'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import {
   ACTION_BACKED_SHOOTING_EQUIPMENT_KEYS,
@@ -49,6 +50,7 @@ export { DYNAMIC_EQUIPMENT_KEYS, civilizationKey } from './equipmentData'
 export type { DynamicEquipmentAlias, DynamicEquipmentKey } from './equipmentData'
 
 function animationSpeedForEquipmentSheet(equipment: DynamicEquipmentKey, sheet: EquipmentLoadSheet): number {
+  if (sheet === 'action' && equipment.startsWith('spear_')) return lpcSpearSlashAnimationSpeed()
   return lpcAnimationSpeedForSheet(sheet, { slashAction: !NON_SLASH_ACTION_EQUIPMENT_KEYS.has(equipment) })
 }
 
@@ -97,6 +99,8 @@ function layerConfig(
         ? BACK_WORN_DEATH_Z_INDEX
         : undefined,
     ...options,
+    actionFrameSequence:
+      options.actionFrameSequence ?? (equipment.startsWith('spear_') ? SPEAR_SLASH_WEAPON_FRAMES : undefined),
     appearanceVariantKey: GENDERED_EQUIPMENT_KEYS.has(equipment) ? 'gender' : undefined,
     palette: PLAYER_COLORED_EQUIPMENT_KEYS.has(equipment) ? 'player' : undefined,
     mountedCut: MOUNTED_UNCUT_EQUIPMENT_KEYS.has(equipment) ? false : options.mountedCut,

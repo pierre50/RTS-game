@@ -149,7 +149,7 @@ test('receiving a bow after initialization does not grant a second starting arro
 
 for (const gender of ['male', 'female']) {
   test(`a ${gender} villager carries war weapons but only fights with tools or light weapons`, () => {
-    const unit = npc(['sword_iron', 'longsword', 'spear_iron', 'mace_iron', 'dagger_bronze'], {
+    const unit = npc(['sword_iron', 'spear_iron', 'mace_iron', 'dagger_bronze'], {
       type: 'Villager',
       gender,
     })
@@ -163,7 +163,7 @@ for (const gender of ['male', 'female']) {
     unit.inventory.equipment.pop()
     assert.equal(api.getNpcWeaponChoice(unit).weapon, undefined)
     assert.equal(stats.getEntityWeaponPower(unit), 0.5)
-    assert.equal(unit.inventory.equipment.length, 4)
+    assert.equal(unit.inventory.equipment.length, 3)
     for (const item of [
       'axe_iron',
       'pickaxe_iron',
@@ -205,7 +205,7 @@ test('an NPC immediately selects a stronger sword transferred from the hero and 
 test('bandit combat axes migrate once to their issued weapon without restoring missing items', () => {
   for (const [type, replacement] of [
     ['BanditChief', 'mace_bronze'],
-    ['BanditSword', 'sword_bronze'],
+    ['BanditSword', 'club_ceramic'],
   ]) {
     const unit = npc(['axe_ceramic~condition:37'], { type })
     api.initializeNpcWeapons(unit, [replacement])
@@ -231,13 +231,13 @@ test('tools in an NPC bag never substitute for weapons; an equipped tool can sti
   assert.equal(stats.getEntityWeaponPower(unit), equipment.axe_iron.weapon.power)
 })
 
-test('Bandit1 loadout and appearance use a mace, Bandit2 a sword', () => {
+test('Bandit1 loadout and appearance use a mace, Bandit2 the stone club', () => {
   const { createPlayerData } = loadTsModule('app/config/playerConfig.ts')
   const { dynamicEquipmentForUnit, dynamicEquipmentAsset } = loadTsModule('app/lib/lpc/equipment.ts')
   const config = createPlayerData({ units: {}, buildings: {}, projectiles: {}, equipment }, 'Alba')
   for (const [type, weapon] of [
     ['BanditChief', 'mace_bronze'],
-    ['BanditSword', 'sword_bronze'],
+    ['BanditSword', 'club_ceramic'],
   ]) {
     assert.ok(config.units[type].equipment.includes(weapon))
     assert.ok(!config.units[type].equipment.some(item => item.startsWith('axe_')))

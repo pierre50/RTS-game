@@ -1,0 +1,1 @@
+Prototype dérivé des sprites LPC de l'épée arming (brass) présents dans scripts/lpc/spritesheets/weapon/sword/arming. Poses et calques originaux conservés; lame recolorée en bois, tête de pierre ajoutée. Voir les crédits LPC du projet.

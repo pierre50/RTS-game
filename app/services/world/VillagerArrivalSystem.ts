@@ -1,14 +1,12 @@
 import { planVillagerArrivals } from '../../lib/population/villagerArrivals'
 import { getVacantHomes, getFreeHouseBedLabels, reconcileHouseholds } from '../../lib/housing/households'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
-import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isStaticSettlement } from '../../config/world/settlementProfiles'
 import { PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import type { DailyWorldEvent, DailyWorldEventHandler } from '../dailyEvents/DailyWorldEventTypes'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitCreationExtra } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
-
-export { calculateVillagerArrivals } from '../../lib/population/villagerArrivals'
 
 export class VillagerArrivalSystem implements DailyWorldEventHandler {
   context: GameContextLike

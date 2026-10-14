@@ -16,7 +16,7 @@ test('every exposed floor edge has a wall, except every side of an exit', () => 
   const maps = [buildingInterior({ buildingSize: 2, id: 'test', seed: 123, size: 11 })]
   for (const tier of ['small', 'medium', 'large'])
     for (const variant of tier === 'small' ? ['circle'] : VARIANTS) maps.push(createCave(tier, variant, 4242))
-  const { createInteriorWallEdges } = loadTsModule('app/lib/buildings/interiorWalls.ts')
+  const { createInteriorWallEdges } = loadTsModule('app/lib/buildings/interior/interiorWalls.ts')
   for (const map of maps) {
     const width = map.size + 1
     const floor = Buffer.from(map.floorMask, 'base64')

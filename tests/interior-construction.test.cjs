@@ -228,7 +228,6 @@ test('interior construction lists furniture sections only and starts placement',
         '../lib/lang': { t: key => key, getLang: () => 'fr' },
         '../lib/avatar': { renderBuildingAvatar: () => false },
         '../lib/audio/settings': { getReservedGameplayHotkeys: () => [] },
-        './inventory/InventoryCostMeta': { inventoryDeliveryMetaParts: () => [] },
         './inventory/InventorySection': {
           createInventorySection: ({ presentation, renderItems }) => {
             assert.equal(presentation, 'recipes')

@@ -12,7 +12,7 @@ const houses = count =>
     isBuilt: true,
     interiorBuildings: [bed],
   }))
-const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
+const { loadTsModule, requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadVillagerArrivalSystem() {
   const filename = path.join(__dirname, '../app/services/world/VillagerArrivalSystem.ts')
@@ -266,7 +266,7 @@ test('a daily arrival uses a free bed in an occupied home', () => {
 })
 
 test('village arrivals remain limited by housing rather than the old 200 cap', () => {
-  const { calculateVillagerArrivals } = loadVillagerArrivalSystem()
+  const { calculateVillagerArrivals } = loadTsModule('app/lib/buildings/townCenter.ts')
   assert.equal(calculateVillagerArrivals({ population: 200, populationMax: 205, buildingLevel: 2 }), 3)
   assert.equal(calculateVillagerArrivals({ population: 205, populationMax: 205 }), 0)
 })

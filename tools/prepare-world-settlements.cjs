@@ -30,6 +30,7 @@ function rulesHash() {
       ...[
         'load-generation-ts',
         'settlements/prepare-settlements',
+        'settlements/clear-entrance-trees',
         'settlements/settlement-animals',
         'noise',
         'settlements/distribute-settlement-units',

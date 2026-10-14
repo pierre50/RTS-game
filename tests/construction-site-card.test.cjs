@@ -76,8 +76,9 @@ test('active card preserves delivered and consumed totals and estimates remainin
     assert.equal(card.find('construction-work-status').children.at(-1).textContent, '50%')
     site.constructionPaused = true
     const paused = createConstructionSite(constructionSiteOptions(site))
-    assert.equal(paused.find('construction-work-status').children.at(-1).textContent, '⏸')
-    assert.equal(paused.find('construction-site-progress').value, 50)
+    assert.equal(paused.find('construction-work-status').children[0].textContent, 'En pause')
+    assert.equal(paused.find('construction-work-status').children.length, 1)
+    assert.equal(paused.find('construction-site-progress'), null)
   }))
 test('delivery phase shows material progress, and old paid projects never appear unfunded', () =>
   withDocument(() => {

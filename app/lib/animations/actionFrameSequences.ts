@@ -1,10 +1,13 @@
 import { hasNpcWeaponInventory, getNpcWeaponChoice } from '../units/combat/npcWeapons'
 import type { UnitEntity } from '../../types/entities'
+import { SPEAR_SLASH_BODY_FRAMES } from './spearSlashFrames'
 
 const TOOL_AXE_ACTION_FRAME_SEQUENCE = [5, 5, 4, 4, 3, 1, 0, 0, 0, 0]
 const TOOL_HAMMER_ACTION_FRAME_SEQUENCE = [5, 5, 4, 4, 1, 0, 0, 0, 0]
 const TOOL_DEFENSE_FRAME_SEQUENCE = [0, 1, 2, 3, 4, 5]
+const REVERSED_DEFENSE_FRAME_SEQUENCE = [5, 5, 5]
 const TOOL_COMBAT_FRAME_SEQUENCE = [5, 5, 4, 3, 1, 0]
+const CLUB_SLASH_FRAME_SEQUENCE = [5, 4, 3, 2, 1, 0]
 // Source pose 1 is the contact; pose 0 completes the follow-through.
 const TOOL_COMBAT_IMPACT_FRAME = 4
 type ActionToolKind = 'axe' | 'hammer' | 'pickaxe' | 'scythe'
@@ -82,16 +85,20 @@ export function getConfiguredActionFrameSequence(
   if (preferExplicit && explicitSequence?.length) return explicitSequence
   const equipment = getContextActionEquipment(context)
   const candidates = equipment ?? [WORK_EQUIPMENT[context.work ?? '']]
+  const defending =
+    context.heroDefenseActive ||
+    context.heroDefenseReverseTaskId != null ||
+    context.heroDefenseReleaseFallbackTaskId != null
   for (const item of candidates) {
+    if (item?.startsWith('spear_')) return SPEAR_SLASH_BODY_FRAMES
+    // Reverse attack animations have a raised-hand pose at source frame 5.
+    // Keep that pose throughout guard and release so slash trails cannot flash.
+    if (defending && (item === 'club_ceramic' || item?.startsWith('club_ceramic~')))
+      return REVERSED_DEFENSE_FRAME_SEQUENCE
+    if (item === 'club_ceramic' || item?.startsWith('club_ceramic~')) return CLUB_SLASH_FRAME_SEQUENCE
     const kind = getActionToolKindForEquipment(item)
     if (kind) {
-      // Guard uses the original slash pose 2, including its reverse release.
-      if (
-        context.heroDefenseActive ||
-        context.heroDefenseReverseTaskId != null ||
-        context.heroDefenseReleaseFallbackTaskId != null
-      )
-        return TOOL_DEFENSE_FRAME_SEQUENCE
+      if (defending) return kind === 'scythe' ? TOOL_DEFENSE_FRAME_SEQUENCE : REVERSED_DEFENSE_FRAME_SEQUENCE
       if (context.action === 'attack' && kind !== 'scythe') return TOOL_COMBAT_FRAME_SEQUENCE
       return TOOL_ACTION_FRAME_SEQUENCES[kind]
     }

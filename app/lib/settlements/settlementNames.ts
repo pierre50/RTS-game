@@ -1,4 +1,4 @@
-import { CIVILIZATION_SETTLEMENT_NAMES } from '../../config/settlementNames'
+import { CIVILIZATION_SETTLEMENT_NAMES } from '../../config/world/settlementNames'
 
 type Settlement = { type: string; settlementName?: string }
 type Owner = { civ?: string; buildings?: Settlement[] }

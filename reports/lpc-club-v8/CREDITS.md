@@ -1,0 +1,1 @@
+Club LPC par bluecarrot16, [LPC] More Weapons: https://opengameart.org/content/lpc-more-weapons. Licences OGA-BY 3.0+, GPL 3.0, CC-BY 4.0. Marche 2–4/9 vue gauche alignée sur la main droite cachée, d'après les poses de l'épée LPC et sur le calque arrière. Slash natif reverse-oversize ; hurt dérivé.

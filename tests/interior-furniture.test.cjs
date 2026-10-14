@@ -4,7 +4,24 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { furnishInterior, ensureInteriorDefaultBuildings } = require('./helpers/interiorFurnitureFixture.cjs')
 const atlas = require('../public/assets/graphics/structures/decorations/texture.json')
 const { getBuildingAsset } = loadTsModule('app/lib/graphics/assets.ts')
-const { preservesInteriorPassages } = loadTsModule('app/lib/buildings/furniture/interiorFurniturePlacement.ts')
+const { preservesInteriorPassages, getInteriorRoomCenter } = loadTsModule(
+  'app/lib/buildings/furniture/interiorFurniturePlacement.ts'
+)
+const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/furniture/interiorDecorations.ts')
+
+// Preset rooms follow the layouts authored in tools/interiors-preview (app/config/interiorLayoutPositions.json).
+function authoredItem(type, key) {
+  const item = getBuildingInteriorDecorationLayout({ type, buildingLevel: 1 }).find(entry => entry.key === key)
+  assert.ok(item, `${type}: no authored ${key}`)
+  return item
+}
+
+function authoredCell(space, item, mirrored) {
+  const center = getInteriorRoomCenter(space)
+  return mirrored
+    ? [center.i + item.offsetJ, center.j + item.offsetI]
+    : [center.i + item.offsetI, center.j + item.offsetJ]
+}
 
 const expectedFurniture = {
   House: [
@@ -35,7 +52,7 @@ const expectedFurniture = {
     'CampTorchStand',
   ],
   Barracks: ['CampStumpStool', 'CampForge', 'CampBrazier', 'CampTorchStand', 'CampArrowBasket', 'CampBench'],
-  Temple: ['CampMountedSkull', 'CampBench', 'CampChair', 'CampBrazier', 'CampTorchStand'],
+  Temple: ['CampBench', 'CampChair', 'CampBrazier', 'CampTorchStand'],
   Granary: [
     'CampBrazier',
     'Chest',
@@ -63,8 +80,8 @@ const expectedFurniture = {
 }
 const expectedCounts = {
   House: 11,
-  TownCenter: 16,
-  Barracks: 7,
+  TownCenter: 18,
+  Barracks: 8,
   Temple: 9,
   Granary: 12,
   StoragePit: 14,
@@ -138,8 +155,8 @@ test('house beds are inside the room and its reversed shelf survives saving in b
     assert.equal(beds.length, 2)
     const wallBed = beds.find(item => item.label.endsWith(':bedroll-1'))
     const backBed = beds.find(item => item.label.endsWith(':bedroll-2'))
-    assert.deepEqual([wallBed.i, wallBed.j], mirrored ? [11, 6] : [6, 11])
-    assert.deepEqual([backBed.i, backBed.j], mirrored ? [8, 6] : [6, 8])
+    assert.deepEqual([wallBed.i, wallBed.j], authoredCell(space, authoredItem('House', 'bedroll-1'), mirrored))
+    assert.deepEqual([backBed.i, backBed.j], authoredCell(space, authoredItem('House', 'bedroll-2'), mirrored))
     const { canPlaceBuildingAt } = loadTsModule('app/lib/grid/placement.ts')
     const placementGrid = space.grid.map(row =>
       row.map(cell => ({
@@ -183,7 +200,8 @@ test('saved house beds retain valid positions, including manually placed beds', 
     const second = saved.find(item => item.label.endsWith(':bedroll-2'))
     Object.assign(second, mirrored ? { i: 8, j: 11 } : { i: 11, j: 8 })
     second.hitPoints = 17
-    saved.push({ type: 'CampBedroll', label: 'manual-bed', i: 11, j: 11, placementMirrored: !mirrored })
+    // A free diagonal spot, valid in both orientations, beside the authored furniture.
+    saved.push({ type: 'CampBedroll', label: 'manual-bed', i: 7, j: 7, placementMirrored: !mirrored })
     const restored = furnishInterior('House', saved, mirrored)
     const beds = restored.owner.buildings.filter(item => item.type === 'CampBedroll')
     assert.equal(beds.length, 3)
@@ -191,18 +209,17 @@ test('saved house beds retain valid positions, including manually placed beds', 
     assert.deepEqual([moved.i, moved.j], mirrored ? [8, 11] : [11, 8])
     assert.equal(moved.hitPoints, 17)
     const manual = beds.find(item => item.label === 'manual-bed')
-    assert.deepEqual([manual.i, manual.j, manual.placementMirrored], [11, 11, !mirrored])
+    assert.deepEqual([manual.i, manual.j, manual.placementMirrored], [7, 7, !mirrored])
     ensureInteriorDefaultBuildings(restored.context, restored.space)
     assert.equal(restored.owner.buildings.filter(item => item.type === 'CampBedroll').length, 3)
   }
 })
 
-test('real placement rules keep generated house beds separated along the back wall with complete floor support', () => {
+test('real placement rules keep generated house beds separated at their authored cells with complete floor support', () => {
   const { ensureInteriorDefaultBuildings: furnish } = loadTsModule(
     'engine/services/BuildingInteriorSpaceDecorations.ts'
   )
   const { getBuildingFootprintCells } = loadTsModule('app/lib/grid/cells.ts')
-  const { getInteriorRoomCenter } = loadTsModule('app/lib/buildings/furniture/interiorFurniturePlacement.ts')
   for (const mirrored of [false, true]) {
     const { owner, space, context } = furnishInterior('House', undefined, mirrored)
     owner.buildings = []
@@ -214,13 +231,8 @@ test('real placement rules keep generated house beds separated along the back wa
     furnish(context, space)
     const beds = owner.buildings.filter(item => item.type === 'CampBedroll')
     assert.equal(beds.length, 2)
-    const center = getInteriorRoomCenter(space)
-    const axis = mirrored ? 'j' : 'i'
-    assert.equal(beds[0][axis], center[axis] - 3)
-    assert.equal(beds[1][axis], center[axis] - 3)
-    const alongWall = mirrored ? 'i' : 'j'
-    assert.equal(beds[0][alongWall], center[alongWall] + 2)
-    assert.equal(beds[1][alongWall], center[alongWall])
+    assert.deepEqual([beds[0].i, beds[0].j], authoredCell(space, authoredItem('House', 'bedroll-1'), mirrored))
+    assert.deepEqual([beds[1].i, beds[1].j], authoredCell(space, authoredItem('House', 'bedroll-2'), mirrored))
     const footprints = beds.map(bed => getBuildingFootprintCells(bed.i, bed.j, space.grid, 2, undefined, bed.type))
     for (let index = 0; index < beds.length; index++) {
       assert.equal(footprints[index].length, 4)
@@ -230,32 +242,23 @@ test('real placement rules keep generated house beds separated along the back wa
   }
 })
 
-test('furniture groups follow the new straight walls and keep the door approach clear', () => {
-  const checks = {
-    House: [
-      ['CampSupplyShelf', 8, 5],
-      ['CampTable', 12, 9],
-      ['CampAlchemyTable', 10, 5],
-    ],
-    TownCenter: [
-      ['FireCamp', 11, 11],
-      ['Chest', 6, 11],
-      ['CampThrone', 11, 6],
-    ],
-    Stable: [
-      ['CampBucket', 7, 8],
-      ['CampBucket', 15, 10],
-    ],
-  }
-  for (const [type, expected] of Object.entries(checks)) {
-    const { owner } = furnishInterior(type)
-    for (const [furniture, i, j] of expected) {
-      assert.ok(
-        owner.buildings.some(item => item.type === furniture && item.i === i && item.j === j),
-        `${type}: ${furniture} at ${i},${j}`
-      )
+test('furniture groups land on their authored cells and keep the door approach clear', () => {
+  for (const type of Object.keys(expectedFurniture))
+    for (const mirrored of [false, true]) {
+      const { owner, space } = furnishInterior(type, undefined, mirrored)
+      const layout = getBuildingInteriorDecorationLayout({ type, buildingLevel: 1 })
+      assert.equal(owner.buildings.length, layout.length, `${type}: every authored item is placed`)
+      for (const item of layout) {
+        const placed = owner.buildings.find(entry => entry.label.endsWith(`:default:${item.key}`))
+        assert.ok(placed, `${type}: missing ${item.key}`)
+        assert.equal(placed.type, item.type)
+        assert.deepEqual([placed.i, placed.j], authoredCell(space, item, mirrored), `${type}: ${item.key}`)
+        assert.ok(
+          Math.max(Math.abs(placed.i - space.exitCell.i), Math.abs(placed.j - space.exitCell.j)) > 1,
+          `${type}: ${item.key} blocks the door approach`
+        )
+      }
     }
-  }
 })
 
 test('hides and rugs render on the floor without occupying cells or intercepting input', () => {
@@ -287,9 +290,9 @@ test('hides and rugs render on the floor without occupying cells or intercepting
   })
   for (const [type, expectedCount] of Object.entries({
     House: 0,
-    TownCenter: 5,
+    TownCenter: 4,
     Barracks: 1,
-    Temple: 3,
+    Temple: 0,
     WatchTower: 1,
     Stable: 0,
     Granary: 0,
@@ -370,12 +373,14 @@ test('mirrored rooms reflect furniture placement and restore saved positions wit
       normal.owner.buildings.map(({ type, i, j }) => ({ type, i: j, j: i })),
       type
     )
+    // Each authored item may be rotated in the editor; the room mirror flips that orientation.
+    const authoredMirror = item => Boolean(authoredItem(type, item.label.split(':default:')[1]).mirrored)
     assert.ok(
-      normal.owner.buildings.every(item => item.placementMirrored === false),
+      normal.owner.buildings.every(item => item.placementMirrored === authoredMirror(item)),
       type
     )
     assert.ok(
-      mirrored.owner.buildings.every(item => item.placementMirrored === true),
+      mirrored.owner.buildings.every(item => item.placementMirrored === !authoredMirror(item)),
       type
     )
     const saved = JSON.parse(JSON.stringify(mirrored.owner.buildings))

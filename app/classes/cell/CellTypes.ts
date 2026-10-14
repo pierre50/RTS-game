@@ -25,8 +25,9 @@ export type CellContextLike = {
 }
 
 export type CellTerrainAppearance = {
-  patchBorders: Set<string> | null
-  patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
+  // Per-direction ground: a cell between two biomes (e.g. dark forest and a shore) needs a
+  // different border sheet on each side.
+  patchBorders: Map<string, 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'> | null
   relief: { index: number; elevation: number } | null
   waterBorder: { resourceName: string; index: number } | null
 }
@@ -69,7 +70,6 @@ export type CellCommonStateTarget = CellCommonStateSource & {
 export function createEmptyTerrainAppearance(): CellTerrainAppearance {
   return {
     patchBorders: null,
-    patchBorderGroundType: null,
     relief: null,
     waterBorder: null,
   }

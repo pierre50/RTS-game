@@ -5,17 +5,23 @@ import { teleportRuntimeUnitToCell } from '../../lib/units/unitPlacement'
 import type { MinimapHostLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import { startTeleportDiagnostics, traceRuntime } from '../../lib/runtimeDiagnostics'
+import { withMinimapPlayerVision } from './MinimapVisibility'
 
 export function teleportHeroFromMinimap(
   menu: Pick<MinimapHostLike, 'context' | 'minimapManager'>,
   point: { x: number; y: number }
 ): void {
-  const { controls, map } = menu.context
+  const { controls, map, player } = menu.context
   const hero = controls.heroUnit
   const space = getActiveMapSpace(map)
   if (!hero || hero.isDead || hero.isDestroyed || !space || getEntitySpaceId(hero) !== space.id) return
   const [i, j] = isometricToCartesian(point.x - (space.origin?.x ?? 0), point.y - (space.origin?.y ?? 0))
   if (!Number.isFinite(i) || !Number.isFinite(j) || i < 0 || j < 0 || i > space.size || j > space.size) return
+  // Fast travel only reaches ground the player has already uncovered.
+  const revealed = map.revealEverything || map.revealTerrain
+  const explored = (ci: number, cj: number) =>
+    revealed || withMinimapPlayerVision(player, space.id, () => !!player?.views?.isViewed(ci, cj))
+  if (!explored(Math.round(i), Math.round(j))) return
   startTeleportDiagnostics({ fromI: hero.i, fromJ: hero.j, toI: i, toJ: j, space: space.id })
   traceRuntime('teleport', () => {
     // Find nearby land when the click falls on a building, tree or water edge.
@@ -33,7 +39,8 @@ export function teleportHeroFromMinimap(
             cell.category === 'Water' ||
             cell.waterBorder ||
             cell.border ||
-            cell.terrainHidden
+            cell.terrainHidden ||
+            !explored(cell.i, cell.j)
           )
             continue
           const distance = di * di + dj * dj

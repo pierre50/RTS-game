@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { isLargeMapIsolationTest, isolateLargeMapConfig, isolateLargeMapBlueprint } =
-  loadTsModule('app/config/largeMapTest.ts')
+  loadTsModule('app/config/world/largeMapTest.ts')
 
 test('both continent sizes keep the human setup, rival villages, caves and bandit camps', () => {
   for (const edge of [1000, 5000]) {

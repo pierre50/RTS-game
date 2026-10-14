@@ -1,6 +1,6 @@
-import { getInteriorLayoutLevel } from '../../app/lib/buildings/interiorLayoutLevel'
+import { getInteriorLayoutLevel } from '../../app/lib/buildings/interior/interiorLayoutLevel'
 export { getInteriorLayoutLevel }
-import { getInteriorRoomSize, INTERIOR_ROOM_SIZES } from '../../app/lib/buildings/interiorRoomSize'
+import { getInteriorRoomSize, INTERIOR_ROOM_SIZES } from '../../app/lib/buildings/interior/interiorRoomSize'
 export { INTERIOR_ROOM_SIZES }
 import { INTERIOR_FURNITURE_CATEGORIES } from '../../app/lib/buildings/furniture/interiorFurnitureCatalog'
 import {
@@ -12,7 +12,7 @@ import { getInteriorFurniturePlacementError } from '../../app/lib/buildings/furn
 import definitions from '../../public/assets/data/gameplay/buildings.json'
 import { getBuildingLevels, getBuildingConfigForLevel } from '../../app/lib/buildings/buildingLevel'
 import { createDefaultBuildingInteriorBlueprint } from '../../engine/services/BuildingInteriorSpaceLayout'
-import { mirrorInteriorBlueprint } from '../../app/lib/buildings/interiorOrientation'
+import { mirrorInteriorBlueprint } from '../../app/lib/buildings/interior/interiorOrientation'
 import { ensureInteriorDefaultBuildings } from '../../engine/services/BuildingInteriorSpaceDecorations'
 import { getBuildingFootprintCells } from '../../app/lib/grid/cells'
 import { isBuildingTraversable } from '../../app/lib/buildings/buildingTraversal'
@@ -21,7 +21,7 @@ import { getInteriorWallGeometry } from '../../app/lib/terrain/interiorWallGeome
 import { createInteriorWallOcclusionCheck } from '../../app/lib/terrain/interiorWallOcclusion'
 import { getInteriorFloorDecorations } from '../../app/lib/buildings/furniture/interiorFloorDecorations'
 import { getInteriorRoomCenter } from '../../app/lib/buildings/furniture/interiorFurniturePlacement'
-import { BUILDING_INTERIOR_TYPES } from '../../app/lib/buildings/interiorProfiles'
+import { BUILDING_INTERIOR_TYPES } from '../../app/lib/buildings/interior/interiorProfiles'
 
 export const furnitureCatalog = INTERIOR_FURNITURE_CATEGORIES
 

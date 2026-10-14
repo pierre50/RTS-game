@@ -7,7 +7,7 @@ const { equipmentVisualParts } = loadTsModule('app/lib/equipment/helmetVariants.
 
 const ornaments = {
   Hellas: 'centurion_crest',
-  Latium: 'centurion_plumage',
+  Latium: 'centurion_crest',
   Sumeria: 'legion_plumage',
   Kemet: 'plumage',
   Xia: 'plumage',

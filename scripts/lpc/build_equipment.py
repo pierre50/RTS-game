@@ -10,7 +10,7 @@ from pathlib import Path
 from build import RETRO_PALETTE_ROOT, animation_speed_for, bake_sheet
 from build_pebble_projectile import build_pebble_projectile
 from build_arrow_projectiles import ARROW_VARIANTS, build_arrow_projectiles
-from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS
+from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS, Sheet
 
 from equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER, active_layer_keys, has_animation_content
 from image_pipeline import compose_frame, open_layer, source_frames
@@ -21,6 +21,7 @@ from simple_darken_border import DARKEN_FACTOR, darken_border
 
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
 SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
+SPEAR_ACTION_SHEET = Sheet("action", "slash", 9, 3, keep_every_other_frame=False)
 OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "equipments"
 PROJECTILE_OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/projectiles"
 PROJECTILE_EQUIPMENT_KEYS = {f"arrow_{variant}" for variant in ARROW_VARIANTS}
@@ -36,6 +37,8 @@ def equipment_family_path(equipment_key: str) -> str:
         return "weapon/spear"
     if equipment_key.startswith("mace_"):
         return "weapon/mace"
+    if equipment_key == "club_ceramic":
+        return "weapon/club"
     if equipment_key.startswith("armor_mail_"):
         return "armor/armor_mail"
     if equipment_key.startswith("armor_legion_"):
@@ -78,7 +81,9 @@ def equipment_family_path(equipment_key: str) -> str:
         return "weapon/bow"
     if equipment_key.startswith("arrow_"):
         return "weapon/arrow"
-    if equipment_key.startswith("sword_") or equipment_key == "longsword":
+    if equipment_key.startswith("sword_curved_"):
+        return "weapon/sword_curved"
+    if equipment_key.startswith("sword_"):
         return "weapon/sword"
     if equipment_key.startswith("round_shield_"):
         return "weapon/round_shield"
@@ -86,12 +91,14 @@ def equipment_family_path(equipment_key: str) -> str:
         return "resource/carried"
     if equipment_key == "cape_solid":
         return "accessory/cape"
-    if equipment_key in {"crest", "centurion_crest", "centurion_plumage", "legion_plumage", "plumage"}:
+    if equipment_key in {"centurion_crest", "legion_plumage", "plumage"}:
         return "accessory/plumage"
     if equipment_key.startswith("upward_horns_"):
         return "accessory/upward_horns"
     if equipment_key == "helmet_wings":
         return "accessory/helmet_wings"
+    if equipment_key == "horns_short":
+        return "accessory/horns_short"
     if equipment_key == "sack_cloth_hood_leather":
         return "helmet/sack_cloth_hood"
     if equipment_key == "cane":
@@ -187,9 +194,14 @@ def write_equipment_family_atlas(output_dir: Path, source_dirs: list[Path]) -> N
 
 
 def sheet_plan(equipment) -> dict[str, tuple[str, object]]:
+    action_sheet = (
+        SPEAR_ACTION_SHEET
+        if equipment.key.startswith("spear_")
+        else SHEET_BY_ANIMATION[equipment.action_animation]
+    )
     plan = {
         "walking": ("walk", SHEET_BY_KEY["walking"]),
-        "action": (equipment.action_animation, SHEET_BY_ANIMATION[equipment.action_animation]),
+        "action": (equipment.action_animation, action_sheet),
     }
     if equipment.action_animation != "shoot" and has_animation_content(equipment, "shoot"):
         plan["shooting"] = ("shoot", SHEET_BY_ANIMATION["shoot"])
@@ -254,6 +266,12 @@ def build_equipment(source_root: Path, output_root: Path, only: set[str] | None 
     if only is None or any(key.startswith("spear_") for key in only):
         from build_spear import build_spear_sources
         build_spear_sources(source_root)
+    if only is None or "club_ceramic" in only:
+        from build_club import build_club_sources
+        build_club_sources(source_root)
+    if only is None or any(key.startswith("hammer_") for key in only):
+        from build_hammer_slash import build_hammer_slash_sources
+        build_hammer_slash_sources(source_root)
     retro_palette_hex = find_hex_palette(RETRO_PALETTE_ROOT / "_")
     if retro_palette_hex is None:
         raise RuntimeError(f"no .hex palette found in {RETRO_PALETTE_ROOT}")

@@ -3,45 +3,33 @@ import { AmbientTrafficSystem } from './travel/ambient/AmbientTrafficSystem'
 import { RoadTravelSystem } from './travel/RoadTravelSystem'
 import { getDeferredVillages } from './world/distantVillages/DeferredVillageStore'
 import { AMBIENT_CAMERA_MARGIN, AMBIENT_CAMERA_EXIT_MARGIN } from './world/AmbientActivityArea'
-import { isStaticSettlement } from '../config/settlementProfiles'
-import { isVillageSupplyTrip, villageWorkNeedsLiveSearch } from '../lib/units/village/villageSupplyTrips'
-import { observeVillage } from './world/VillageObservation'
+import { isStaticSettlement } from '../config/world/settlementProfiles'
+import { isVillageSupplyTrip } from '../lib/units/village/villageSupplyTrips'
+import { observeVillage, type VillageObservation } from './world/VillageObservation'
 import { PlayerWorkActivitySystem } from './world/PlayerWorkActivitySystem'
 import {
-  VILLAGE_ACTIVITY_RADIUS,
   VILLAGE_DETAIL_ENTER_RADIUS,
   VILLAGE_DETAIL_EXIT_RADIUS,
-  VILLAGE_PATH_MARGIN,
   VILLAGE_SIMULATION_STEP_MS,
 } from '../config/villageActivity'
-import { campDistance } from '../lib/units/camps/campBehavior'
-import { getEntitySpaceId } from '../lib/mapSpaces'
-import {
-  registerVillageFlush,
-  villageHome,
-  withinVillageActivity,
-  type VillageHome,
-} from '../lib/units/village/villageActivity'
+import { registerVillageFlush, villageHome, withinVillageActivity } from '../lib/units/village/villageActivity'
 import { setUnitSuspension } from '../lib/units/unitSuspension'
 import { shouldVillagerWork } from '../lib/units/village/villagerSchedule'
 import { CampLeashController } from './patrol/CampLeashController'
 import { advanceVillageWork } from './world/VillageWorkSimulation'
 import { DistantVillageSystem } from './world/distantVillages/DistantVillageSystem'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
-import type { UnitEntity } from '../types/entities'
-import type { PlayerLike } from '../types/player'
-
-type Village = { home: VillageHome; owner: PlayerLike; units: UnitEntity[]; simplified: boolean; since: number }
-const GATHER_ACTIONS = new Set([
-  'chopwood',
-  'forageberry',
-  'farm',
-  'minestone',
-  'minegold',
-  'minecopper',
-  'minetin',
-  'mineiron',
-])
+import {
+  activeTownCenters,
+  isVillageSimulationSupported,
+  reportAbstractVillageState,
+  reportVillageState,
+  suspendVillageWorkers,
+  villageResidentsChanged,
+  villageUnitNeedsLeash,
+  villageWorkerCount,
+  type Village,
+} from './VillageActivityRules'
 
 export class VillageActivitySystem {
   private ambientTraffic: AmbientTrafficSystem
@@ -83,15 +71,7 @@ export class VillageActivitySystem {
     for (const owner of this.context.players ?? []) {
       reconcileSettlementResidents(owner)
       if (owner.isPlayed || owner.type !== 'AI') continue
-      const centers = (owner.buildings ?? []).filter(
-        b =>
-          b.type === 'TownCenter' &&
-          b.isBuilt !== false &&
-          !b.isDead &&
-          !b.isDestroyed &&
-          getEntitySpaceId(b) === 'outside'
-      )
-      for (const center of centers) {
+      for (const center of activeTownCenters(owner)) {
         const id = `${owner.label}:${center.label}`
         active.add(id)
         if (!this.villages.has(id))
@@ -108,40 +88,10 @@ export class VillageActivitySystem {
       const next = (village.owner.units ?? []).filter(
         unit => !unit.isDead && !unit.isDestroyed && villageHome(unit)?.id === id
       )
-      if (!active.has(id) || next.length !== village.units.length || next.some(unit => !village.units.includes(unit)))
-        this.wake(village)
+      if (!active.has(id) || villageResidentsChanged(village, next)) this.wake(village)
       village.units = next
       if (!active.has(id)) this.villages.delete(id)
     }
-  }
-
-  private supported(village: Village): boolean {
-    // Static settlements are owned exclusively by DistantVillageSystem. Never
-    // fall back to the legacy per-village economic suspension for their workers.
-    if (isStaticSettlement(village.owner)) return false
-    return (
-      village.units.some(unit => unit.type === 'Villager') &&
-      village.units.every(unit =>
-        unit.type !== 'Villager'
-          ? !unit.action && !unit.spacePortalState
-          : getEntitySpaceId(unit) === 'outside' &&
-            !villageWorkNeedsLiveSearch(unit) &&
-            !unit.shelterState &&
-            !unit.spacePortalState &&
-            !unit.resourceDeliveryState &&
-            !unit.trainingTargetType &&
-            !unit.pendingOrder &&
-            !unit.combatMode &&
-            !unit.waitingForEnergyAction &&
-            !unit.actionLocked &&
-            shouldVillagerWork(unit) &&
-            (!unit.action || GATHER_ACTIONS.has(unit.action)) &&
-            withinVillageActivity(unit, unit) &&
-            (!unit.dest || withinVillageActivity(unit, unit.dest)) &&
-            (['food', 'wood', 'stone', 'gold', 'copper', 'tin', 'iron'].includes(unit.autonomousJob ?? '') ||
-              ['woodcutter', 'forager', 'farmer', 'stoneminer', 'goldminer'].includes(unit.work ?? ''))
-      )
-    )
   }
 
   private observation(village: Village) {
@@ -189,7 +139,7 @@ export class VillageActivitySystem {
     this.context.performance?.markEvent?.('village.wake', {
       village: village.home.id,
       civilization: village.owner.civ ?? '',
-      workers: village.units.filter(unit => unit.type === 'Villager').length,
+      workers: villageWorkerCount(village),
       pendingMs: this.context.scheduler.elapsedMs - village.since,
     })
     this.advance(village)
@@ -226,72 +176,44 @@ export class VillageActivitySystem {
     )
     for (const village of this.villages.values()) {
       if (this.distant.has(village.owner)) {
-        if (report)
-          this.context.performance?.markEvent?.('village.state', {
-            village: village.home.id,
-            civilization: village.owner.civ ?? '',
-            abstract: true,
-            simplified: true,
-            observed: false,
-            units: village.units.length,
-          })
+        if (report) reportAbstractVillageState(this.context, village)
         continue
       }
-      const observation = observations.get(village)
-      const observed = observation?.reason !== 'distant'
-      const supported = this.supported(village)
-      if (report)
-        this.context.performance?.markEvent?.('village.state', {
-          village: village.home.id,
-          civilization: village.owner.civ ?? '',
-          simplified: village.simplified,
-          observed,
-          observationReason: observation?.reason ?? 'unknown',
-          observer: observation?.actor ?? '',
-          observerDistance: observation?.distance ?? -1,
-          supported,
-          units: village.units.length,
-          activities: [...new Set(village.units.map(unit => unit.action ?? 'idle'))].join(','),
-        })
-      if (observed || !supported) this.wake(village)
-      else if (!village.simplified) {
-        this.context.performance?.markEvent?.('village.sleep', {
-          village: village.home.id,
-          civilization: village.owner.civ ?? '',
-          workers: village.units.filter(unit => unit.type === 'Villager').length,
-        })
-        village.simplified = true
-        village.since = now
-        for (const unit of village.units) {
-          if (unit.type !== 'Villager') continue
-          setUnitSuspension(unit, { reason: 'distant-work', wake: () => this.wake(village) })
-          unit.stopInterval?.()
-          unit.stopTimeout?.()
-          unit.path = []
-          unit.gatherProgressState = null
-          unit.sprite?.stop?.()
-          if (unit.sprite) {
-            delete unit.sprite.onFrameChange
-            delete unit.sprite.onLoop
-            delete unit.sprite.onComplete
-          }
-        }
-      } else if (now - village.since >= VILLAGE_SIMULATION_STEP_MS) this.advance(village)
-      if (village.simplified) continue
-      for (const unit of village.units) {
-        if (isVillageSupplyTrip(unit)) continue
-        if (unit.action !== 'attack' && unit.dest && !withinVillageActivity(unit, unit.dest)) {
-          this.leash.recall(unit)
-        }
-        if (
-          unit.action === 'attack' ||
-          unit.campBehavior?.phase === 'pursue' ||
-          unit.campBehavior?.phase === 'return' ||
-          campDistance(unit) > VILLAGE_ACTIVITY_RADIUS + VILLAGE_PATH_MARGIN
-        )
-          this.leash.update(unit)
-      }
+      this.updateLiveVillage(village, observations.get(village), report, now)
     }
+  }
+
+  private updateLiveVillage(
+    village: Village,
+    observation: VillageObservation | undefined,
+    report: boolean,
+    now: number
+  ): void {
+    const observed = observation?.reason !== 'distant'
+    const supported = isVillageSimulationSupported(village)
+    if (report) reportVillageState(this.context, village, observation, supported)
+    if (observed || !supported) this.wake(village)
+    else if (!village.simplified) this.suspendVillage(village, now)
+    else if (now - village.since >= VILLAGE_SIMULATION_STEP_MS) this.advance(village)
+    if (village.simplified) return
+    for (const unit of village.units) {
+      if (isVillageSupplyTrip(unit)) continue
+      if (unit.action !== 'attack' && unit.dest && !withinVillageActivity(unit, unit.dest)) {
+        this.leash.recall(unit)
+      }
+      if (villageUnitNeedsLeash(unit)) this.leash.update(unit)
+    }
+  }
+
+  private suspendVillage(village: Village, now: number): void {
+    this.context.performance?.markEvent?.('village.sleep', {
+      village: village.home.id,
+      civilization: village.owner.civ ?? '',
+      workers: villageWorkerCount(village),
+    })
+    village.simplified = true
+    village.since = now
+    suspendVillageWorkers(village, () => this.wake(village))
   }
 
   flush(): void {

@@ -1,4 +1,4 @@
-import { hasRequiredWorkTool, requiredWorkTool } from '../../../lib/equipment/workTools'
+import { workToolBlockedMessageKey } from '../../../lib/equipment/workTools'
 import { t } from '../../../lib/lang'
 import { isVillageResourceWorker } from '../../../lib/units/village/villageSupplyTrips'
 import { playerSeesTarget, observeTarget } from '../../../lib/units/playerTargetKnowledge'
@@ -103,9 +103,10 @@ export class UnitMovement {
       allowPassageStop = false,
     }: SendToOptions = {}
   ) {
-    if (!hasRequiredWorkTool(this.unit, action)) {
+    const toolBlockedMessage = workToolBlockedMessageKey(this.unit, action, (dest as RuntimeEntity | null)?.type)
+    if (toolBlockedMessage) {
       if (!preserveAutonomy && !forceRepath && this.unit.owner?.isPlayed)
-        this.unit.context?.menu?.showMessage?.(t(`toolRequired_${requiredWorkTool(action)}`), 'warning')
+        this.unit.context?.menu?.showMessage?.(t(toolBlockedMessage), 'warning')
       return
     }
     const startedAt = performance.now()

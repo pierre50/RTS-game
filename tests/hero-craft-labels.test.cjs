@@ -23,7 +23,7 @@ for (const language of ['fr', 'en']) {
       const helmet = FORGE_EQUIPMENT_RECIPES.find(recipe => recipe.id === 'helmet_pointed_bronze')
       assert.equal(
         getHeroCraftRecipeLabel(helmet),
-        language === 'fr' ? 'Casque pointu en bronze' : 'Bronze pointed helmet'
+        language === 'fr' ? 'Casque conique en bronze' : 'Bronze conical helmet'
       )
       assert.equal(getHeroCraftRecipeLabel({ outputEquipment: 'bow' }), language === 'fr' ? 'Arc' : 'Bow')
     } finally {

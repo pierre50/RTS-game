@@ -1,4 +1,4 @@
-import { hasRequiredWorkTool, requiredWorkTool } from '../equipment/workTools'
+import { workForToolUse, workToolBlockedMessageKey } from '../equipment/workTools'
 import { isHeroActionInRange } from './heroActionRange'
 import { canReachActionTarget } from '../actions/contactActions'
 import { getContactAimDegree } from '../contact/contactGeometry'
@@ -113,7 +113,7 @@ function resolveHeroGatherAction(
     showIronMiningBlockedMessage(hero, target)
     return null
   }
-  return () => runHeroGatherAction(hero, target, action, work)
+  return () => runHeroGatherAction(hero, target, action, workForToolUse(hero, action, resourceKind(target), work))
 }
 
 const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
@@ -214,6 +214,7 @@ export function performContextActionAt(hero: UnitEntity, destination?: Point): T
     CLICK_TARGET_SEARCH_RANGE
   )
 
+  let firstToolBlockedMessage: string | undefined
   for (const target of getDirectionalTargets(hero, candidates, undefined, destination)) {
     const config = HERO_CONTEXT_ACTIONS.find(candidate => candidate.matches(target))
     if (!config) continue
@@ -221,9 +222,11 @@ export function performContextActionAt(hero: UnitEntity, destination?: Point): T
     if (blockContextActionWhileMounted(hero)) return 'miss'
     const unitAction = getContextActionForTarget(config.action, target)
     if (!unitAction) continue
-    if (!hasRequiredWorkTool(hero, unitAction)) {
-      hero.context?.menu?.showMessage?.(t(`toolRequired_${requiredWorkTool(unitAction)}`), 'warning')
-      return 'blocked'
+    // A target the held tool cannot work never stows that tool; another target may still suit it.
+    const toolBlockedMessage = workToolBlockedMessageKey(hero, unitAction, resourceKind(target))
+    if (toolBlockedMessage) {
+      firstToolBlockedMessage ??= toolBlockedMessage
+      continue
     }
     const action = config.resolve(hero, target)
     if (action) return runContextAction(hero, config.action, unitAction, action) ? 'triggered' : 'blocked'
@@ -231,5 +234,9 @@ export function performContextActionAt(hero: UnitEntity, destination?: Point): T
     return 'blocked'
   }
 
+  if (firstToolBlockedMessage) {
+    hero.context?.menu?.showMessage?.(t(firstToolBlockedMessage), 'warning')
+    return 'blocked'
+  }
   return 'miss'
 }

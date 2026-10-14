@@ -4,6 +4,7 @@ import {
   moveInventoryEquipment,
   moveInventoryResource,
   type InventoryContainer,
+  type InventoryStorage,
 } from '../../lib/inventory/inventoryContainers'
 import { t } from '../../lib/lang'
 import { createInventoryEquipmentRow, createInventoryResourceRow } from './InventoryItemRows'
@@ -31,6 +32,9 @@ export type InventoryTransferPanelOptions = {
   moveEquipment?: typeof moveInventoryEquipment
   moveResource?: typeof moveInventoryResource
   additionalItems?: (container: InventoryContainer) => HTMLElement[]
+  visibleInventory?: (container: InventoryContainer) => InventoryStorage
+  emptyText?: (container: InventoryContainer) => string
+  showItemCount?: (container: InventoryContainer) => boolean
   equipmentAction?: (
     container: InventoryContainer,
     equipment: string
@@ -49,11 +53,17 @@ export class InventoryTransferPanel {
   canTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
   moveEquipment: typeof moveInventoryEquipment
   additionalItems?: InventoryTransferPanelOptions['additionalItems']
+  visibleInventory?: InventoryTransferPanelOptions['visibleInventory']
+  emptyText?: InventoryTransferPanelOptions['emptyText']
+  showItemCount?: InventoryTransferPanelOptions['showItemCount']
   equipmentAction?: InventoryTransferPanelOptions['equipmentAction']
   moveResource: typeof moveInventoryResource
 
   constructor(options: InventoryTransferPanelOptions) {
     this.additionalItems = options.additionalItems
+    this.visibleInventory = options.visibleInventory
+    this.emptyText = options.emptyText
+    this.showItemCount = options.showItemCount
     this.equipmentAction = options.equipmentAction
     this.header = options.header
     this.context = options.context
@@ -79,12 +89,14 @@ export class InventoryTransferPanel {
   }
 
   private createContainerBlock(container: InventoryContainer, transferTarget: InventoryContainer): HTMLElement {
-    const action = this.createTransferAllButton(container, transferTarget)
+    const inventory = this.visibleInventory?.(container) ?? container.inventory
+    const action = this.createTransferAllButton(container, transferTarget, inventory)
     return createInventoryContents({
       action,
-      inventory: container.inventory,
+      inventory,
       additionalItems: this.additionalItems?.(container),
-      emptyText: t('inventoryEmptySlot'),
+      emptyText: this.emptyText?.(container) ?? t('inventoryEmptySlot'),
+      showItemCount: this.showItemCount?.(container),
       title: container.label ?? t(container.labelKey),
       renderResource: (resource, amount) => this.createResourceButton(container, transferTarget, resource, amount),
       renderEquipment: (equipment, count) => this.createEquipmentButton(container, transferTarget, equipment, count),
@@ -120,18 +132,19 @@ export class InventoryTransferPanel {
     }
   }
 
-  private hasTransferableItems(container: InventoryContainer): boolean {
+  private hasTransferableItems(inventory: InventoryStorage): boolean {
     const hasResource = RESOURCE_STORAGE_NAMES.some(
-      resource => Math.max(0, Math.floor(container.inventory.resources?.[resource] ?? 0)) > 0
+      resource => Math.max(0, Math.floor(inventory.resources?.[resource] ?? 0)) > 0
     )
-    return hasResource || Boolean(container.inventory.equipment?.length)
+    return hasResource || Boolean(inventory.equipment?.length)
   }
 
   private createTransferAllButton(
     container: InventoryContainer,
-    transferTarget: InventoryContainer
+    transferTarget: InventoryContainer,
+    inventory: InventoryStorage
   ): HTMLButtonElement | undefined {
-    if (this.canTransfer?.(container, transferTarget) === false || !this.hasTransferableItems(container))
+    if (this.canTransfer?.(container, transferTarget) === false || !this.hasTransferableItems(inventory))
       return undefined
     const action = this.getTransferAction(container, transferTarget)
     const button = document.createElement('button')

@@ -3,7 +3,6 @@ import { SOLDIER_CIVILIZATION_HELMET_EQUIPMENT } from '../lpc/civilizationHelmet
 import { SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT } from '../lpc/civilizationHelmetDecorations'
 import { decorateHelmet } from '../equipment/helmetVariants'
 import type { ResourceAmount } from '../../types/common'
-import type { DynamicEquipmentKey } from '../lpc/equipmentData'
 import type { HeroCraftRecipe } from './heroCraftRecipes'
 
 type ForgePattern = {
@@ -76,6 +75,16 @@ const BASE_FORGE_EQUIPMENT_RECIPES: readonly HeroCraftRecipe[] = [
     outputCount: 1,
     cost: { wood: 2, leather: 1, sinew: 1 },
   },
+  {
+    id: 'club_ceramic',
+    outputEquipment: 'club_ceramic',
+    station: 'inventory',
+    category: 'equipment',
+    forgeGroup: 'weapons',
+    descriptionKey: 'craftManualEquipmentDescription',
+    outputCount: 1,
+    cost: { stone: 4, wood: 3, fiber: 2 },
+  },
   ...[
     ['armor_leather', { leather: 5, fiber: 2 }],
     ['helmet_pointed_leather', { leather: 2, fiber: 1 }],
@@ -93,7 +102,7 @@ const BASE_FORGE_EQUIPMENT_RECIPES: readonly HeroCraftRecipe[] = [
     forgeGroup: id === 'round_shield_wood_slash' ? ('shields' as const) : ('armor' as const),
     outputCount: 1,
   })),
-  ...(['dagger', 'mace'] as const).flatMap(weapon =>
+  ...(['dagger', 'mace', 'sword_curved'] as const).flatMap(weapon =>
     (['bronze', 'iron'] as const).map(material => ({
       id: `${weapon}_${material}`,
       outputEquipment: `${weapon}_${material}`,
@@ -103,7 +112,11 @@ const BASE_FORGE_EQUIPMENT_RECIPES: readonly HeroCraftRecipe[] = [
       materialKey: `forgeMaterial_${material}`,
       descriptionKey: 'craftForgeDescription_weapons',
       outputCount: 1,
-      cost: { [`${material}Ingot`]: weapon === 'mace' ? 2 : 1, wood: weapon === 'mace' ? 3 : 1, leather: 1 },
+      cost: {
+        [`${material}Ingot`]: weapon === 'mace' || weapon.startsWith('sword_') ? 2 : 1,
+        wood: weapon === 'mace' ? 3 : weapon.startsWith('sword_') ? 2 : 1,
+        leather: 1,
+      },
     }))
   ),
   ...PATTERNS.flatMap(pattern =>
@@ -130,18 +143,6 @@ const BASE_FORGE_EQUIPMENT_RECIPES: readonly HeroCraftRecipe[] = [
         }
       }
     )
-  ),
-  ...([['longsword', { ironIngot: 4, wood: 3, leather: 2 }]] satisfies [DynamicEquipmentKey, ResourceAmount][]).map(
-    ([equipment, cost]) => ({
-      id: equipment,
-      station: 'forge' as const,
-      category: 'equipment' as const,
-      forgeGroup: 'weapons' as const,
-      descriptionKey: 'craftForgeDescription_weapons',
-      outputEquipment: equipment,
-      outputCount: 1,
-      cost,
-    })
   ),
 ]
 
@@ -170,13 +171,16 @@ export const FORGE_EQUIPMENT_RECIPES: readonly HeroCraftRecipe[] = BASE_FORGE_EQ
   ]
 })
 
-/** All materials of the same model share a row; helmet decorations remain distinct choices. */
+/** All materials and decorations of the same helmet model share a row. */
 export function groupForgeRecipeVariants(recipes: readonly HeroCraftRecipe[]): HeroCraftRecipe[][] {
   const groups = new Map<string, HeroCraftRecipe[]>()
   for (const recipe of recipes) {
     const key =
       recipe.category === 'equipment' || recipe.category === 'arrows'
-        ? recipe.outputEquipment.replace(/_(wood|leather|ceramic|copper|bronze|iron)(?=_|~|$)/, '')
+        ? (recipe.outputEquipment.startsWith('helmet_')
+            ? recipe.outputEquipment.split('~')[0]!
+            : recipe.outputEquipment
+          ).replace(/_(wood|leather|ceramic|copper|bronze|iron)(?=_|~|$)/, '')
         : recipe.id
     const group = groups.get(key) ?? []
     group.push(recipe)

@@ -1,6 +1,6 @@
 import { t } from '../../lib/lang'
 import { CIVILIZATIONS } from '../../config/civilizations'
-import { isGeneratedPlayerName, randomPlayerNameForCivilization } from '../../config/playerNames'
+import { isGeneratedPlayerName, randomPlayerNameForCivilization } from '../../config/world/playerNames'
 import {
   defaultHeroAppearance,
   normalizeHeroAppearance,

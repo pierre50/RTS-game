@@ -168,9 +168,9 @@ test('equipment loot labels use localized catalog names', () => {
     }
   )
 
-  assert.equal(formatEquipmentLootLabel('round_shield_wood_slash'), 'Bouclier rond en bois et cuir')
+  assert.equal(formatEquipmentLootLabel('round_shield_wood_slash'), 'Bouclier rond')
   assert.equal(formatEquipmentLootLabel('axe_ceramic'), 'Hache en pierre')
-  assert.equal(formatEquipmentStackLabel('round_shield_wood_slash', 2), 'Bouclier rond en bois et cuir x2')
+  assert.equal(formatEquipmentStackLabel('round_shield_wood_slash', 2), 'Bouclier rond x2')
   assert.deepEqual(getEquipmentStacks(['bow', 'bow', 'helmet_barbarian_leather']), [
     { equipment: 'bow', count: 2 },
     { equipment: 'helmet_barbarian_leather', count: 1 },

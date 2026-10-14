@@ -1,0 +1,1 @@
+Club LPC par bluecarrot16, [LPC] More Weapons: https://opengameart.org/content/lpc-more-weapons. Licences OGA-BY 3.0+, GPL 3.0, CC-BY 4.0. Marche dérivée du club avec pivot de rotation sur le bout du manche et prises latérales recalées sur la main ; slash natif reverse-oversize ; hurt dérivé.

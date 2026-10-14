@@ -80,17 +80,17 @@ export function createConstructionSite(options: ConstructionSiteOptions): HTMLEl
     status.className = 'construction-work-status'
     const label = document.createElement('span')
     label.textContent = paused
-      ? t('constructionPaused')
+      ? t('constructionPausedStatus')
       : t(supplied ? 'constructionBuildStage' : 'constructionDeliveryStage')
     status.appendChild(label)
-    if (supplied || paused) {
+    if (supplied && !paused) {
       const bar = document.createElement('progress')
       bar.className = 'construction-site-progress'
       bar.max = 100
       bar.value = percentage
       bar.setAttribute('aria-label', t('constructionBuildStage'))
       const value = document.createElement('span')
-      value.textContent = paused ? '⏸' : `${Math.floor(percentage)}%`
+      value.textContent = `${Math.floor(percentage)}%`
       status.append(bar, value)
     }
     root.appendChild(status)

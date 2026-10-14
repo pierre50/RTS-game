@@ -105,6 +105,39 @@ test('pointing at the raised scaffold selects its reachable building, not just i
   assert.equal(f.getDirectionalTargets(f.hero, [site], undefined, cursor)[0], site)
 })
 
+test('a villager lying on a bed under the cursor wins over the bed', () => {
+  const f = fixture()
+  const bedSprite = { x: 0, y: 0, width: 144, height: 96, anchor: { x: 0.5, y: 0.83 } }
+  const bed = f.building(-60, { type: 'CampBedroll', zIndex: 10, sprite: bedSprite })
+  const sleeper = {
+    x: -61,
+    y: -12,
+    i: 0,
+    j: 0,
+    family: 'unit',
+    zIndex: 10,
+    sprite: { x: 0, y: 0, width: 40, height: 30 },
+  }
+  const cursor = { x: -61, y: -20 }
+  assert.equal(f.getDirectionalTargets(f.hero, [bed, sleeper], undefined, cursor)[0], sleeper)
+  assert.equal(f.getDirectionalTargets(f.hero, [sleeper, bed], undefined, cursor)[0], sleeper)
+})
+
+test('a unit drawn behind a building does not steal the cursor from it', () => {
+  const f = fixture()
+  const house = f.building(-60, { zIndex: 10, sprite: { x: 0, y: 0, width: 120, height: 120 } })
+  const hidden = {
+    x: -60,
+    y: -30,
+    i: 0,
+    j: 0,
+    family: 'unit',
+    zIndex: 5,
+    sprite: { x: 0, y: 0, width: 40, height: 60 },
+  }
+  assert.equal(f.getDirectionalTargets(f.hero, [hidden, house], undefined, { x: -60, y: -50 })[0], house)
+})
+
 test('an axe starts and repeats resource work at examine range instead of charging', () => {
   const f = fixture()
   f.hero.inventory.activeWeapons.tool = 'axe_ceramic'

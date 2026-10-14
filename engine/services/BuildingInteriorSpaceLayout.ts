@@ -1,4 +1,4 @@
-import { getInteriorRoomSize } from '../../app/lib/buildings/interiorRoomSize'
+import { getInteriorRoomSize } from '../../app/lib/buildings/interior/interiorRoomSize'
 import { getCaveInteriorBlueprint } from '../../app/lib/buildings/caveBlueprint'
 import type { MapBlueprint } from '../../app/classes/map/MapGeneration'
 import { createIsometricInteriorBlueprint } from '../../app/classes/map/generation/LocalMapBlueprint'

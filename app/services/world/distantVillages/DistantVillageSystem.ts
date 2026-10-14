@@ -2,10 +2,10 @@ import { reconcileSettlementResidents } from '../../../lib/territory/settlementR
 import { configureVillageNightWatch } from '../../../lib/units/village/villageNightWatch'
 import { DAY_NIGHT_CONFIG } from '../../../config/gameplay'
 import { restoreOfflineUnitSleepHealth } from '../../../lib/units/unitSleepHealth'
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import { traceRuntime } from '../../../lib/runtimeDiagnostics'
 import { villageWorkNeedsLiveSearch } from '../../../lib/units/village/villageSupplyTrips'
-import { isContinentWorld } from '../../../config/continentWorlds'
+import { isContinentWorld } from '../../../config/world/continentWorlds'
 import { getEntitySpaceId } from '../../../lib/mapSpaces'
 import { cancelEnergyWait, updateUnitEnergy } from '../../../lib/units/unitEnergy'
 import {

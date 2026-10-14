@@ -90,7 +90,8 @@ function validateSettlements(prepared, terrain, heroSpawns) {
     }
     for (const building of player.buildings) {
       const entry = getBuildingInteriorEntryPosition({ ...buildings[building.type], ...building })
-      if (entry && !visited.has(key(entry))) throw new Error(`${building.label}: blocked entrance`)
+      if (entry && !visited.has(key(entry)))
+        throw new Error(`${building.label}: blocked entrance at ${key(entry)}`)
       const edge = footprint(building).some(p =>
         [
           [1, 0],

@@ -6,6 +6,8 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const publicPath = assetPath => path.join(__dirname, '..', 'public', assetPath)
 const sharedTypes = new Set(['ArcheryRange', 'Market', 'StoragePit', 'Forge'])
+// Levels whose atlas anchors were hand-tuned to seat that sprite on its footprint.
+const tunedAnchorLevels = { Granary: [0], StoragePit: [0] }
 
 test('all civilizations resolve the unified building atlas and matching shared shadows', async () => {
   const { Assets, Spritesheet, Texture, TextureSource } = await import('pixi.js')
@@ -55,6 +57,7 @@ test('all civilizations resolve the unified building atlas and matching shared s
     for (const type of Object.keys(config.buildings[0])) {
       const textures = []
       const shadows = []
+      const anchorLevels = [0, 1, 2].filter(level => !tunedAnchorLevels[type]?.includes(level))
       for (const level of [0, 1, 2]) {
         const ref = getBuildingAsset(type, { level }, configAssets).images.final
         assert.equal(ref.sheet, 'buildings')
@@ -65,16 +68,22 @@ test('all civilizations resolve the unified building atlas and matching shared s
         shadows.push(shadow)
         assert.equal(texture.width, textures[0].width)
         assert.equal(texture.height, textures[0].height)
-        assert.deepEqual(texture.defaultAnchor, textures[0].defaultAnchor)
         assert.equal(texture.source, textures[0].source)
         assert.deepEqual(shadow.frame, shadows[0].frame)
-        assert.deepEqual(shadow.defaultAnchor, shadows[0].defaultAnchor)
       }
-      // Removing a rustic duplicate must resolve to the village sprite, never a neighbour.
-      assert.equal(textures[0] === textures[1], sharedTypes.has(type))
-      assert.notEqual(textures[1], textures[2])
-      assert.equal(textures[1].frame.x, textures[2].frame.x)
-      assert.ok(textures[1].frame.y < textures[2].frame.y)
+      for (const level of anchorLevels.slice(1)) {
+        assert.deepEqual(textures[level].defaultAnchor, textures[anchorLevels[0]].defaultAnchor, `${type} ${level}`)
+        assert.deepEqual(shadows[level].defaultAnchor, shadows[anchorLevels[0]].defaultAnchor, `${type} ${level}`)
+      }
+      // Shared types have no rustic art: they open on the village sprite and upgrade one level earlier,
+      // keeping the upgraded sprite at the last level. Never resolve to a neighbouring frame.
+      const shared = sharedTypes.has(type)
+      const [village, upgraded] = shared ? [textures[0], textures[1]] : [textures[1], textures[2]]
+      if (shared) assert.equal(textures[2], textures[1], type)
+      else assert.notEqual(textures[0], textures[1], type)
+      assert.notEqual(village, upgraded, type)
+      assert.equal(village.frame.x, upgraded.frame.x, type)
+      assert.ok(village.frame.y < upgraded.frame.y, type)
     }
   }
   assert.equal(usedFrames.size, 29)

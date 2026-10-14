@@ -1,6 +1,6 @@
 import { replenishSettlementMarketGold } from '../../../lib/equipment/marketSettlementGold'
 import { replenishNpcArrows } from '../../../lib/units/combat/unitArrows'
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import { definedProperties } from '../../../lib/definedProperties'
 import { BUILDING_TYPES } from '../../../constants/entities'
 import { TRAP_PREY_TYPES } from '../../../lib/buildings/trapRules'

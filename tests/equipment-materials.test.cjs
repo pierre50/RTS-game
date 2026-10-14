@@ -61,7 +61,7 @@ test('legacy inventories and corpse stock migrate without repairing or dropping 
   migrateEquipmentRecord(player)
   assert.equal(player.units[0].inventory.equipment, bag)
   assert.deepEqual(player.units[0].inventory.equipment, ['sword_bronze~condition:0', 'arrow_ceramic', 'arrow_ceramic'])
-  assert.equal(player.units[0].inventory.equipped.helmet, 'helmet_pointed_leather~decor:centurion_plumage~condition:40')
+  assert.equal(player.units[0].inventory.equipped.helmet, 'helmet_pointed_leather~decor:legion_plumage~condition:40')
   assert.equal(player.units[0].inventory.activeWeapons.melee, 'sword_bronze')
   assert.equal(player.units[0].inventory.equippedCounts.arrow, 12)
   assert.deepEqual(player.corpses[0].lootEquipment, ['armor_leather~condition:20'])

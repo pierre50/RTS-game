@@ -70,11 +70,12 @@ def tool_layer(path: str, palette: str | None = None, **kwargs) -> LayerSpec:
 
 def smash_tool_equipment(tool: str, palette: str | None = None) -> dict[str, Equipment]:
     slash_fallback_group = None if tool == "hammer" else f"{tool}_slash"
+    slash_root = "tools/smash/completed" if tool == "hammer" else "tools/smash"
     return {
         "walk": Equipment(foreground=(tool_layer(f"tools/smash/universal/{{variant}}/walk/{tool}.png", palette),)),
         "slash": Equipment(
-            background=(tool_layer(f"tools/smash/background/{tool}.png", palette, fallback_group=slash_fallback_group),),
-            foreground=(tool_layer(f"tools/smash/foreground/{tool}.png", palette, fallback_group=slash_fallback_group),),
+            background=(tool_layer(f"{slash_root}/background/{tool}.png", palette, fallback_group=slash_fallback_group),),
+            foreground=(tool_layer(f"{slash_root}/foreground/{tool}.png", palette, fallback_group=slash_fallback_group),),
         ),
     }
 
@@ -139,9 +140,24 @@ def arming_sword_equipment(palette: str | None = None) -> dict[str, Equipment]:
     }
 
 
+def antique_sword_equipment(weapon: str, palette: str) -> dict[str, Equipment]:
+    def layer(path: str) -> LayerSpec:
+        return LayerSpec(f"weapon/sword/{weapon}/{path}/{weapon}.png", palette)
+
+    hurt_background = (layer("universal_behind/hurt"),) if weapon == "saber" else ()
+    return {
+        "walk": Equipment(background=(layer("universal_behind/walk"),), foreground=(layer("walk"),)),
+        "slash": Equipment(
+            background=(layer("attack_slash/behind"),),
+            foreground=(layer("attack_slash"),),
+        ),
+        "hurt": Equipment(background=hurt_background, foreground=(layer("hurt"),)),
+    }
+
+
 def dagger_equipment(palette: str) -> dict[str, Equipment]:
     def layer(path: str) -> LayerSpec:
-        return LayerSpec(f"weapon/sword/dagger/{path}/dagger.png", palette, source_palette="dagger_metal_source")
+        return LayerSpec(f"weapon/sword/dagger/{path}/dagger.png", palette)
 
     return {
         "walk": Equipment(background=(layer("behind/walk"),), foreground=(layer("walk"),)),
@@ -169,6 +185,18 @@ def mace_equipment(palette: str) -> dict[str, Equipment]:
         "walk": Equipment(background=(layer("universal_behind/walk"),), foreground=(layer("walk"),)),
         "slash": Equipment(background=(layer("attack_slash/behind"),), foreground=(layer("attack_slash"),)),
         "hurt": Equipment(background=(layer("universal_behind/hurt"),), foreground=(layer("hurt"),)),
+    }
+
+
+def club_equipment() -> dict[str, Equipment]:
+    def layer(path: str) -> LayerSpec:
+        return LayerSpec(f"weapon/blunt/club_playable/{path}/club.png", frame_size=192)
+
+    return {
+        "walk": Equipment(background=(layer("walk/behind"),), foreground=(layer("walk"),)),
+        "slash": Equipment(background=(layer("attack_slash/behind"),),
+                           foreground=(layer("attack_slash"),)),
+        "hurt": Equipment(background=(layer("hurt/behind"),), foreground=(layer("hurt"),)),
     }
 
 
@@ -248,12 +276,12 @@ def cape_solid_equipment() -> dict[str, Equipment]:
 
 def hat_accessory_equipment(path: str, include_hurt: bool = False) -> dict[str, Equipment]:
     equipment = {
-        "walk": Equipment(foreground=(LayerSpec(f"{path}/adult/walk.png", "player_blue"),)),
-        "slash": Equipment(foreground=(LayerSpec(f"{path}/adult/slash.png", "player_blue"),)),
-        "shoot": Equipment(foreground=(LayerSpec(f"{path}/adult/shoot.png", "player_blue"),)),
+        "walk": Equipment(foreground=(LayerSpec(f"{path}/adult/walk.png", "white"),)),
+        "slash": Equipment(foreground=(LayerSpec(f"{path}/adult/slash.png", "white"),)),
+        "shoot": Equipment(foreground=(LayerSpec(f"{path}/adult/shoot.png", "white"),)),
     }
     if include_hurt:
-        equipment["hurt"] = Equipment(foreground=(LayerSpec(f"{path}/adult/hurt.png", "player_blue"),))
+        equipment["hurt"] = Equipment(foreground=(LayerSpec(f"{path}/adult/hurt.png", "white"),))
     return equipment
 
 
@@ -303,6 +331,7 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "dagger_iron": dagger_equipment("iron"),
     "mace_bronze": mace_equipment("bronze"),
     "mace_iron": mace_equipment("iron"),
+    "club_ceramic": club_equipment(),
     "axe_ceramic": smash_tool_equipment("axe", "ceramic"),
     "axe_bronze": smash_tool_equipment("axe", "bronze"),
     "axe_iron": smash_tool_equipment("axe", "iron"),
@@ -426,6 +455,8 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "arrow_iron": arrow_equipment("iron"),
     "sword_bronze": arming_sword_equipment("bronze"),
     "sword_iron": arming_sword_equipment("iron"),
+    "sword_curved_bronze": antique_sword_equipment("saber", "bronze"),
+    "sword_curved_iron": antique_sword_equipment("saber", "iron"),
     "armor_leather": torso_armor_equipment("torso/armour/leather", "leather", include_hurt=True),
     "armor_mail_iron": recolored_torso_armor_equipment("torso/chainmail", "gray", "iron"),
     "armor_legion_bronze": torso_armor_equipment("torso/armour/legion", "bronze"),
@@ -460,24 +491,12 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "leg_armor_bronze": torso_armor_equipment("legs/armour/plate", "bronze"),
     "leg_armor_iron": torso_armor_equipment("legs/armour/plate", "iron"),
     "cape_solid": cape_solid_equipment(),
-    "crest": hat_accessory_equipment("hat/accessory/crest"),
     "centurion_crest": hat_accessory_equipment("hat/accessory/crest_centurion"),
-    "centurion_plumage": hat_accessory_equipment("hat/accessory/plumage_centurion", include_hurt=True),
     "legion_plumage": hat_accessory_equipment("hat/accessory/plumage_legion", include_hurt=True),
     "plumage": hat_accessory_equipment("hat/accessory/plumage"),
     "helmet_wings": split_hat_accessory_equipment("hat/accessory/wings", palette=None),
     "upward_horns_white": split_hat_accessory_equipment("hat/accessory/horns_upward", palette=None, include_hurt=True),
-    # Silver arming sword only. The matching shield is generated separately.
-    "longsword": {
-        "walk": Equipment(
-            background=(LayerSpec("weapon/sword/arming/universal/bg/walk/silver.png"),),
-            foreground=(LayerSpec("weapon/sword/arming/universal/fg/walk/silver.png"),),
-        ),
-        "slash": Equipment(
-            background=(LayerSpec("weapon/sword/arming/attack_slash/bg/silver.png"),),
-            foreground=(LayerSpec("weapon/sword/arming/attack_slash/fg/silver.png"),),
-        ),
-    },
+    "horns_short": split_hat_accessory_equipment("hat/accessory/horns_short", palette=None, include_hurt=True),
     # Walking stick. Only ships walk art (no spellcast pose), so it's dropped
     # during the action animation rather than shown floating in the wrong hand position.
     "cane": {
@@ -508,6 +527,7 @@ EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
     "dagger_iron": "slash",
     "mace_bronze": "slash",
     "mace_iron": "slash",
+    "club_ceramic": "slash",
     "axe_ceramic": "slash",
     "axe_bronze": "slash",
     "axe_iron": "slash",
@@ -533,6 +553,8 @@ EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
     "arrow_iron": "shoot",
     "sword_bronze": "slash",
     "sword_iron": "slash",
+    "sword_curved_bronze": "slash",
+    "sword_curved_iron": "slash",
     "armor_leather": "slash",
     "armor_mail_iron": "slash",
     "armor_legion_bronze": "slash",
@@ -563,14 +585,12 @@ EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
     "leg_armor_bronze": "slash",
     "leg_armor_iron": "slash",
     "cape_solid": "slash",
-    "crest": "slash",
     "centurion_crest": "slash",
-    "centurion_plumage": "slash",
     "legion_plumage": "slash",
     "plumage": "slash",
     "helmet_wings": "slash",
     "upward_horns_white": "slash",
-    "longsword": "slash",
+    "horns_short": "slash",
     "round_shield_wood_slash": "slash",
     "round_shield_bronze_slash": "slash",
     "round_shield_iron_slash": "slash",

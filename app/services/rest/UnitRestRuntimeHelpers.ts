@@ -1,4 +1,4 @@
-import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isStaticSettlement } from '../../config/world/settlementProfiles'
 import { isCampPaused } from '../../lib/units/camps/campActivity'
 import { syncUnitSittingPose } from '../../lib/units/visuals/unitSittingPose'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'

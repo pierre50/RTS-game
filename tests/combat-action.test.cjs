@@ -834,7 +834,14 @@ test('early resource actions work without unlocking technologies', () => {
   const otherVillager = { owner: source.owner, type: constants.UNIT_TYPES.villager }
   wheat.isUsedBy = otherVillager
   assert.equal(getActionCondition(source, wheat, 'farm'), false)
-  assert.equal(getActionCondition({ ...source, type: constants.UNIT_TYPES.hero }, wheat, 'farm'), true)
+  // A hero never has an unrelated held tool silently put away: the pickaxe blocks farming,
+  // while bare hands or a scythe may still pick wheat reserved by another villager.
+  const hero = { ...source, type: constants.UNIT_TYPES.hero }
+  assert.equal(getActionCondition(hero, wheat, 'farm'), false)
+  const handsHero = { ...hero, inventory: { ...source.inventory, activeWeapons: {} } }
+  assert.equal(getActionCondition(handsHero, wheat, 'farm'), true)
+  const scytheHero = { ...hero, inventory: { ...source.inventory, activeWeapons: { tool: 'scythe_ceramic' } } }
+  assert.equal(getActionCondition(scytheHero, wheat, 'farm'), true)
 })
 
 test('military units fight on until critically wounded, then retreat from a real threat', () => {

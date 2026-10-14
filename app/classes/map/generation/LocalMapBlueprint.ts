@@ -1,5 +1,5 @@
 import { INTERIOR_CORNER_RADIUS } from '../../../config/interiors'
-import { createInteriorWallEdges } from '../../../lib/buildings/interiorWalls'
+import { createInteriorWallEdges } from '../../../lib/buildings/interior/interiorWalls'
 import { definedProperties } from '../../../lib/definedProperties'
 import { blueprintToLocalGrid, createLocalMapLayout, localToGrid } from '../../../lib/localMapLayout'
 import type { MapBlueprint } from '../MapGenerationTypes'

@@ -1326,9 +1326,10 @@ test('automatic return to construction retains the collective trip after the bui
 test('upgraded depots and interior chests share the new capacity without losing stock', () => {
   const { getBuildingStorageCapacity, getBuildingStorageRemaining, buildingAcceptsInventoryResource } =
     loadResourceDelivery()
-  for (const [type, resource] of [
-    ['StoragePit', 'wood'],
-    ['Granary', 'wheat'],
+  // Granaries have three levels (300/600/900); storage pits are two-level and jump straight to 900.
+  for (const [type, resource, capacities] of [
+    ['StoragePit', 'wood', { 1: 900, 2: 900 }],
+    ['Granary', 'wheat', { 1: 600, 2: 900 }],
   ]) {
     const owner = { buildings: [] }
     const chest = { type: 'Chest', family: 'building', owner, inventory: { resources: { [resource]: 300 } } }
@@ -1337,11 +1338,12 @@ test('upgraded depots and interior chests share the new capacity without losing 
     assert.equal(buildingAcceptsInventoryResource(chest, resource), false)
     for (const level of [1, 2]) {
       building.buildingLevel = level
-      assert.equal(getBuildingStorageCapacity(building), 300 * (level + 1))
-      assert.equal(getBuildingStorageCapacity(chest), 300 * (level + 1))
-      assert.equal(getBuildingStorageRemaining(chest), 300 * level)
-      assert.equal(buildingAcceptsInventoryResource(chest, resource, 300 * level), true)
-      assert.equal(buildingAcceptsInventoryResource(chest, resource, 300 * level + 1), false)
+      const capacity = capacities[level]
+      assert.equal(getBuildingStorageCapacity(building), capacity)
+      assert.equal(getBuildingStorageCapacity(chest), capacity)
+      assert.equal(getBuildingStorageRemaining(chest), capacity - 300)
+      assert.equal(buildingAcceptsInventoryResource(chest, resource, capacity - 300), true)
+      assert.equal(buildingAcceptsInventoryResource(chest, resource, capacity - 300 + 1), false)
       assert.equal(chest.inventory.resources[resource], 300)
     }
   }

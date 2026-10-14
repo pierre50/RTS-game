@@ -63,7 +63,11 @@ function fixture(resources = {}, cost = { wood: 100, stone: 50 }, extraMocks = {
     getWorkSound: () => 'build',
     playSound: () => calls.sound++,
   }
-  return { unit, site, calls, runtime, load, start: () => handleBuildAction(runtime) }
+  const deposit = () => {
+    const { deliverConstructionMaterials } = load('app/lib/economy/constructionMaterials.ts')
+    return deliverConstructionMaterials(site, [unit.inventory.resources])
+  }
+  return { unit, site, calls, runtime, load, deposit, start: () => handleBuildAction(runtime) }
 }
 test('an unfunded hero build stops before animation and reports the exact missing materials', () => {
   const f = fixture()
@@ -77,20 +81,21 @@ test('an unfunded hero build stops before animation and reports the exact missin
   assert.equal(f.calls.messages[0][1], 'warning')
   assert.equal(f.site.hitPoints, 101)
 })
-test('partial hero delivery reserves cargo and stops before animation without advancing work', () => {
+test('striking an unfunded site leaves hero cargo in the bag for the transfer menu', () => {
   const f = fixture({ wood: 20 })
   f.start()
   assert.equal(f.site.constructionProgress, 0)
-  assert.equal(f.unit.inventory.resources.wood, 0)
-  assert.deepEqual(f.site.constructionMaterials.delivered, { wood: 20 })
+  assert.equal(f.unit.inventory.resources.wood, 20)
+  assert.deepEqual(f.site.constructionMaterials.delivered, {})
   assert.deepEqual(f.site.constructionMaterials.consumed, {})
   assert.equal(f.calls.animation, 0)
   assert.equal(f.calls.energy, 0)
   assert.equal(f.calls.sound, 0)
-  assert.match(f.calls.messages[0][0], /80 Bois, 50 Pierre/)
+  assert.match(f.calls.messages[0][0], /100 Bois, 50 Pierre/)
 })
 test('complete delivery starts animation but only a work impact advances construction', () => {
   const f = fixture({ wood: 100, stone: 50 })
+  f.deposit()
   f.start()
   assert.equal(f.site.constructionProgress, 0)
   assert.equal(f.calls.animation, 1)
@@ -118,10 +123,11 @@ test('legacy paid construction and repairs still allow work without charging mat
   assert.equal(f.calls.messages.length, 0)
 })
 
-test('live construction reserves the whole recipe and leaves only excess cargo in the bag', () => {
+test('construction reserves the whole recipe and leaves only excess cargo in the bag', () => {
   for (const controlMode of ['hero', 'npc']) {
     const f = fixture({ wood: 120, stone: 60 })
     f.unit.controlMode = controlMode
+    if (controlMode === 'hero') f.deposit()
     f.start()
     assert.deepEqual(f.unit.inventory.resources, { wood: 20, stone: 10 })
     assert.deepEqual(f.site.constructionMaterials.delivered, { wood: 100, stone: 50 })
@@ -151,6 +157,7 @@ test('a villager with no remaining useful material stops without animation', () 
 test('live construction consumes work and materials without healing combat damage', () => {
   const f = fixture({ wood: 4 }, { wood: 4 })
   f.site.constructionWorkRequired = 4
+  f.deposit()
   f.start()
   f.runtime.impact()
   assert.equal(f.site.constructionProgress, 0.25)
@@ -173,6 +180,7 @@ test('a lone hero finishes each camp site through real work impacts, including t
       constructionTime: config.constructionTime,
       constructionWorkRequired: config.constructionTime,
     })
+    f.deposit()
     f.start()
     for (let impact = 0; impact < 4; impact++) f.runtime.impact()
     assert.equal(f.site.hitPoints, config.totalHitPoints)
@@ -336,6 +344,7 @@ test('every interior furnishing completes through hero work and applies its fina
     const lifecycle = new BuildingLifecycle(f.site)
     f.site.updateHitPoints = action => lifecycle.updateHitPoints(action)
     f.site.updateTexture = () => lifecycle.updateTexture()
+    f.deposit()
     f.start()
     for (let impact = 0; impact < 100 && !f.site.isBuilt; impact++) f.runtime.impact()
     assert.equal(f.site.isBuilt, true, `${type}: construction must finish`)

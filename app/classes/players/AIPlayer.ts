@@ -1,4 +1,4 @@
-import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isStaticSettlement } from '../../config/world/settlementProfiles'
 import { traceRuntime } from '../../lib/runtimeDiagnostics'
 import { hasInteriorCombatRoute } from '../../lib/units/combat/interiorCombat'
 import { isDistantOwner } from '../../lib/units/village/villageActivity'

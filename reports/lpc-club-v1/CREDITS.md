@@ -1,0 +1,1 @@
+Club LPC original par bluecarrot16, [LPC] More Weapons: https://opengameart.org/content/lpc-more-weapons. Licences OGA-BY 3.0+, GPL 3.0, CC-BY 4.0. Toutes les poses utilisent le club original repositionné selon la mace LPC pour la marche et l'épée arming LPC pour le slash. Les poses hurt et quelques prises ont été corrigées sur la main. La traînée slash reste à créer.

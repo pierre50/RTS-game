@@ -346,6 +346,7 @@ test('manual crafting exposes exactly the agreed equipment and remedies without 
       'hammer_ceramic',
       'scythe_ceramic',
       'spear_ceramic',
+      'club_ceramic',
       'slingshot',
       'bow',
       'catchingPole',

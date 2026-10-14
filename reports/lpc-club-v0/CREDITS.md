@@ -1,0 +1,1 @@
+Club original de bluecarrot16, [LPC] More Weapons, https://opengameart.org/content/lpc-more-weapons ; licences OGA-BY 3.0+, GPL 3.0 et CC-BY 4.0. Sprites source du générateur LPC, commit 58ce1aa479e4df32845a73a5d0afc221c3a893c2. Le slash est intact ; marche et hurt sont des poses provisoires dérivées du club original.

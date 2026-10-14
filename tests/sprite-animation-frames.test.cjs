@@ -447,9 +447,11 @@ test('attack action frame sequence follows runtime equipment on the main sprite'
   })
   const bareHand = makeHost([])
   const axeBandit = makeHost(['axe_ceramic', 'armor_leather'])
+  const spearInfantry = makeHost(['spear_ceramic'])
 
   setUnitTexture('actionSheet', bareHand)
   setUnitTexture('actionSheet', axeBandit)
+  setUnitTexture('actionSheet', spearInfantry)
 
   assert.deepEqual(
     bareHand.sprite.textures.map(texture => texture.id),
@@ -459,6 +461,12 @@ test('attack action frame sequence follows runtime equipment on the main sprite'
     axeBandit.sprite.textures.map(texture => texture.id),
     [17, 17, 16, 15, 13, 12]
   )
+  assert.deepEqual(
+    spearInfantry.sprite.textures.map(texture => texture.id),
+    [12, 13, 14, 14, 15, 15, 16, 16, 17]
+  )
+  assert.equal(spearInfantry.sprite.animationSpeed, 0.375)
+  assert.equal(bareHand.sprite.animationSpeed, 0.25)
 })
 
 test('mounted units use action art for idle, walking and animated attack actions', () => {

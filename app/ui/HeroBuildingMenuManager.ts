@@ -21,6 +21,7 @@ import { heroSleepButton } from './hero-building/HeroSleepButton'
 import { canHeroTradeAtMarket } from './hero-building/HeroMarketBody'
 import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
+import { remainingConstructionMaterials } from '../lib/economy/constructionMaterials'
 
 function isSleepTarget(building: BuildingEntity): boolean {
   return building.type === BUILDING_TYPES.fireCamp || building.type === BUILDING_TYPES.campBedroll
@@ -237,11 +238,14 @@ export class HeroBuildingMenuManager {
     this.marketOpen =
       building.type === BUILDING_TYPES.market && canHeroTradeAtMarket(building, this.menu.context.controls.heroUnit)
     const inventoryMode = Boolean(
-      building.isBuilt &&
-        (this.marketOpen ||
-          building.type === BUILDING_TYPES.chest ||
-          building.type === BUILDING_TYPES.forge ||
-          building.type === BUILDING_TYPES.fireCamp)
+      (!building.isBuilt &&
+        building.owner === this.menu.context.controls.heroUnit?.owner &&
+        Object.keys(remainingConstructionMaterials(building)).length > 0) ||
+        (building.isBuilt &&
+          (this.marketOpen ||
+            building.type === BUILDING_TYPES.chest ||
+            building.type === BUILDING_TYPES.forge ||
+            building.type === BUILDING_TYPES.fireCamp))
     )
     const managementMode = inventoryMode || this.isManagedBuilding(building)
     setInspectionWindowSize(this.modal, managementMode ? 'large' : 'small')

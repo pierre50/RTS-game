@@ -75,6 +75,21 @@
   gap: var(--ui-gap-18);
   align-items: start;
 }
+.game-window .interaction-panel-content:has(.construction-transfer-panel) .construction-site .resource-cost {
+  display: none;
+}
+.game-window .construction-transfer-panel .resource-cost {
+  display: flex;
+}
+.game-window .construction-transfer-panel .resource-cost-list {
+  display: grid;
+  gap: var(--ui-gap-8);
+}
+.game-window .construction-ready-instruction {
+  padding: var(--ui-gap-12);
+  border-left: 3px solid var(--text-color-gold, #f6df92);
+  background: var(--window-section-bg);
+}
 .game-window .unit-inventory-screen > .entity-info-wrapper,
 .game-window .unit-inventory-screen > .entity-info-modal {
   margin-bottom: var(--ui-gap-18);

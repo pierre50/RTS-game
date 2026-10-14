@@ -10,7 +10,9 @@ const { canAutonomouslyWork } = load('app/lib/equipment/workTools.ts')
 
 for (const type of ['Hero', 'Villager']) {
   test(`${type} harvests mature wheat by hand with no usable scythe, preserving stock and other tools`, () => {
-    for (const tool of [undefined, 'axe_iron', 'scythe_iron~condition:0', 'scythe_iron']) {
+    // A hero holding another tool is blocked instead (see the tool/target rule test below).
+    const tools = [undefined, 'scythe_iron~condition:0', 'scythe_iron', ...(type === 'Villager' ? ['axe_iron'] : [])]
+    for (const tool of tools) {
       const unit = {
         type,
         work: 'farmer',
@@ -81,4 +83,47 @@ test('stone scythe yields two wheat, then a broken scythe falls back to hand har
   gatherOffline(step, 200)
   assert.equal(target.quantity, 17)
   assert.equal(unit.inventory.resources.wheat, 3)
+})
+
+test('Hero harvests wheat and wild grass bare-handed or with a scythe, never with another held tool', () => {
+  const targets = [
+    { type: 'Wheat', action: 'farm', sprite: { currentFrame: 5, textures: Array(6).fill({}) } },
+    { type: 'MedicinalHerb', action: 'forageberry' },
+    { type: 'ToxicHerb', action: 'forageberry' },
+    { type: 'FiberPlant', action: 'forageberry' },
+  ]
+  for (const { action, ...fields } of targets) {
+    const target = { ...fields, family: 'resource', quantity: 5 }
+    for (const [tool, allowed] of [
+      [undefined, true],
+      ['scythe_iron', true],
+      ['axe_iron', false],
+      ['pickaxe_iron', false],
+      ['hammer_iron', false],
+      ['axe_iron~condition:0', true],
+    ]) {
+      const hero = { type: 'Hero', hitPoints: 20, inventory: { activeWeapons: { tool } } }
+      assert.equal(getActionCondition(hero, target, action), allowed, `${target.type} with ${tool}`)
+    }
+    const stowed = { type: 'Hero', hitPoints: 20, inventory: { toolsStowed: true, activeWeapons: { tool: 'axe_iron' } } }
+    assert.equal(getActionCondition(stowed, target, action), true)
+    const villager = { type: 'Villager', hitPoints: 20, inventory: { activeWeapons: { tool: 'axe_iron' } } }
+    assert.equal(getActionCondition(villager, target, action), true)
+  }
+})
+
+test('a hero scything wild grass swings as a farmer and wears the scythe; bare hands keep foraging', () => {
+  const { workForToolUse, workToolUse, workToolBlockedMessageKey } = load('app/lib/equipment/workTools.ts')
+  const hero = { type: 'Hero', inventory: { activeWeapons: { tool: 'scythe_iron' } } }
+  assert.equal(workForToolUse(hero, 'forageberry', 'MedicinalHerb', 'forager'), 'farmer')
+  assert.equal(workToolUse(hero, 'forageberry', 'MedicinalHerb'), 'tool')
+  assert.equal(workToolBlockedMessageKey(hero, 'forageberry', 'Berrybush'), 'toolWrong_hands')
+  hero.inventory.activeWeapons.tool = 'axe_iron'
+  assert.equal(workToolBlockedMessageKey(hero, 'forageberry', 'FiberPlant'), 'toolWrong_scythe')
+  assert.equal(workToolBlockedMessageKey(hero, 'minestone', 'Stone'), 'toolRequired_pickaxe')
+  hero.inventory.toolsStowed = true
+  assert.equal(workForToolUse(hero, 'forageberry', 'MedicinalHerb', 'forager'), 'forager')
+  const forager = { type: 'Villager', work: 'forager', inventory: { activeWeapons: { tool: 'scythe_iron' } } }
+  assert.equal(workToolUse(forager, 'forageberry', 'MedicinalHerb'), 'hands')
+  assert.equal(workForToolUse(forager, 'forageberry', 'MedicinalHerb', 'forager'), 'forager')
 })

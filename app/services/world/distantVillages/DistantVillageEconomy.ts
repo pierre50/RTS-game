@@ -1,4 +1,4 @@
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import { serializeEconomyPlayer } from '../../../serialization/VillageEconomySnapshot'
 import { advanceVillageWork } from '../VillageWorkSimulation'
 import { planOfflineBuildings } from '../offline/OfflineWorldBuildingPlanner'

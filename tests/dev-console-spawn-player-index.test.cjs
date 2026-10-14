@@ -265,6 +265,32 @@ test('building towncenter refreshes the interface after dev-console spawn', () =
   ])
 })
 
+test('building spawn applies a supported level and rejects unsupported levels', () => {
+  const { spawnBuilding } = loadSpawnActions()
+  const created = []
+  const currentPlayer = {
+    config: { buildings: { TownCenter: { size: 3, levelStats: { 1: {}, 2: {} } } } },
+    hasBuilt: [],
+    createBuilding: options => {
+      created.push(options)
+      return { updateTexture: () => {} }
+    },
+  }
+  const context = {
+    player: currentPlayer,
+    players: [currentPlayer],
+    menu: { updateTopbar: () => {} },
+  }
+
+  assert.equal(spawnBuilding(context, 'towncenter', null, '2').ok, true)
+  assert.equal(created[0].buildingLevel, 2)
+  assert.deepEqual(spawnBuilding(context, 'towncenter', null, '3'), {
+    ok: false,
+    message: 'Invalid level for TownCenter: 3. Available levels: 0, 1, 2',
+  })
+  assert.equal(created.length, 1)
+})
+
 test('spawn rejects an invalid player index', () => {
   const { spawnUnits } = loadSpawnActions()
   const context = {

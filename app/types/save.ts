@@ -4,7 +4,7 @@ import type { AmbientTrafficState } from '../services/travel/ambient/AmbientTraf
 import type { RoadLayer } from '../lib/terrain/roadLayer'
 import type { BuildingUpgrade } from '../lib/economy/constructionMaterials'
 import type { ForgeUpgrades } from '../lib/equipment/forgeUpgrades'
-import type { SettlementType, DevelopmentMode } from '../config/settlementProfiles'
+import type { SettlementType, DevelopmentMode } from '../config/world/settlementProfiles'
 import type { DepotReservePolicy } from '../lib/economy/depotReserves'
 import type { TrainingRequest } from './training'
 import type { ConstructionMaterials } from '../lib/economy/constructionMaterials'

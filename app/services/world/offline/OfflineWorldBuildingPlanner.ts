@@ -1,4 +1,4 @@
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import { createConstructionMaterials } from '../../../lib/economy/constructionMaterials'
 import { generatedBuildingMirrored } from '../../../lib/buildings/generatedBuildingOrientation'
 import { AI_DIFFICULTIES, MAX_BUILDINGS } from '../../../ai/config'

@@ -1,4 +1,4 @@
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import { isDistantOwner } from './villageActivity'
 import { DAY_NIGHT_CONFIG } from '../../../config/gameplay'
 import type { GameContextLike } from '../../../types/context'

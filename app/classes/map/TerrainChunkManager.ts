@@ -21,8 +21,7 @@ type TerrainDecoration = {
 type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number }
   relief?: { index: number; elevation: number }
-  patchBorders?: string[]
-  patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
+  patchBorders?: ReadonlyMap<string, 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'> | null
 }
 export type TerrainSourceCell = RuntimeCell & {
   _terrainAppearance: TerrainAppearance
@@ -235,8 +234,8 @@ export class TerrainChunkManager {
     if (appearance.relief) {
       cell.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
     }
-    for (const direction of appearance.patchBorders ?? []) {
-      cell.setPatchBorder(direction, appearance.patchBorderGroundType ?? undefined)
+    for (const [direction, groundType] of appearance.patchBorders ?? []) {
+      cell.setPatchBorder(direction, groundType)
     }
     for (const decoration of sourceTerrain.getTerrainDecorations?.() ?? []) {
       const sprite = new Sprite(decoration.texture)

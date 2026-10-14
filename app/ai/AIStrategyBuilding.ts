@@ -149,6 +149,8 @@ function buyCoreInfrastructure(options: {
     phase: ai.phase,
     desiredBarracks,
     buildings: [
+      // Built town-center levels set the expected daily villager wave.
+      ...ai.buildings.filter(building => building.type === BUILDING_TYPES.townCenter),
       ...barracks,
       ...granarys,
       ...markets,

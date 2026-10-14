@@ -76,11 +76,16 @@ test('cave potential counts assigned plans, not one copy of every catalogue vari
     data.market.offers.some(o => o.equipment === 'tin'),
     false
   )
+  // Markets are two-level buildings: level 1 is the base market, level 2 the upgraded one.
   assert.deepEqual(
     data.market.levels.map(level => level.gold),
-    [250, 600, 1200]
+    [250, 600]
   )
-  assert.equal(data.market.resources.find(offer => offer.level === 3 && offer.resource === 'ironIngot').goldValue, 51)
+  assert.equal(
+    data.market.resources.some(offer => offer.level === 1 && offer.resource === 'ironIngot'),
+    false
+  )
+  assert.equal(data.market.resources.find(offer => offer.level === 2 && offer.resource === 'ironIngot').goldValue, 51)
   assert.equal(
     data.market.offers.some(offer => offer.level === 1 && offer.equipment === 'axe_iron'),
     false

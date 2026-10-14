@@ -59,7 +59,7 @@ are connected, within 30 cells of the base, leave a one-cell clearance around
 building footprints, avoid entrances and their immediate
 approaches, and prefer a two-cell gap between inhabitants. This runs offline only;
 new games restore these positions and existing saves retain their own positions.
-Population sizes still come from `app/config/settlementProfiles.ts`.
+Population sizes still come from `app/config/world/settlementProfiles.ts`.
 
 New games consume the sidecar registered by the world-directory command in
 `manifest.json`. Loading verifies the source and sidecar checksums and the rules
@@ -129,7 +129,9 @@ An empty animal list is authoritative; saved populations are restored normally.
 
 `terrainAppearanceData` packs each affected cell in nine bytes: grid index (u32 LE),
 water frame + 1, relief frame + 1, half-step elevation, direction bitmask and ground
-index. Frames/ground zero mean absent. The game applies these records once; editing
+index. Frames/ground zero mean absent. A cell bordering two biomes (dark forest on one
+side, a shore on another) flags the alternate-ground directions in the bitmask's high
+nibble and stores that ground in bits 3-5 of the ground byte. The game applies these records once; editing
 terrain later can still rebuild its appearance normally.
 
 Each world manifest also points to a `.scenery.json` sidecar. These contain only a

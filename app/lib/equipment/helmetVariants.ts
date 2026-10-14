@@ -3,12 +3,13 @@ import type { UnitEntity } from '../../types/entities'
 
 const DECOR_PREFIXES = [
   'upward_horns',
+  'horns_short',
   'helmet_wings',
   'plumage',
   'centurion_crest',
-  'centurion_plumage',
+  'centurion_plumage', // Legacy save migration.
   'legion_plumage',
-  'crest',
+  'crest', // Legacy save migration.
 ]
 
 export function isHelmetDecoration(item: string): boolean {

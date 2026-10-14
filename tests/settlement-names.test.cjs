@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { assignSettlementNames } = loadTsModule('app/lib/settlements/settlementNames.ts')
-const { CIVILIZATION_SETTLEMENT_NAMES } = loadTsModule('app/config/settlementNames.ts')
+const { CIVILIZATION_SETTLEMENT_NAMES } = loadTsModule('app/config/world/settlementNames.ts')
 const { CIVILIZATIONS } = loadTsModule('app/config/civilizations.ts')
 
 test('every civilization names both human and AI towns without collisions', () => {

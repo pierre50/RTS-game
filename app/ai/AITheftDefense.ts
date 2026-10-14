@@ -1,6 +1,6 @@
 import { ACTION_TYPES, UNIT_TYPES } from '../constants'
 import { isChiefUnit } from '../lib/chief'
-import { hasInteriorCombatCapacity } from '../lib/buildings/interiorCombatCapacity'
+import { hasInteriorCombatCapacity } from '../lib/buildings/interior/interiorCombatCapacity'
 import { getEntitySpaceId, sameMapSpace } from '../lib/mapSpaces'
 import { playerSeesTarget } from '../lib/units/playerTargetKnowledge'
 import { getBuildingInteriorSpaceForUnit } from '../../engine/services/BuildingInteriorSpaceLookup'

@@ -34,8 +34,11 @@ const defaults = {
 test('house time separates gathering, round trips, construction and non-overlapping pauses', () => {
   const result = estimateObjective(data, defaults)
   assert.deepEqual(result.missing, { wood: 40, stone: 10 })
-  assert.deepEqual(result.phases, { harvest: 150, travel: 100, build: 180, craft: 0, pause: 107.5 })
-  assert.equal(result.total, 537.5)
+  // Construction work comes from buildings.json (constructionWorkRequired), at a stone tool's multiplier of 1.
+  const houseWork = buildings.find(b => b.type === 'House' && b.level === 0).constructionWork
+  const active = 150 + 100 + houseWork
+  assert.deepEqual(result.phases, { harvest: 150, travel: 100, build: houseWork, craft: 0, pause: active / 4 })
+  assert.equal(result.total, active + active / 4)
   assert.equal(result.nextWoodBefore, result.nextWoodAfter)
 })
 test('available ingots reduce raw requirements; absent forge is added once', () => {
@@ -44,7 +47,7 @@ test('available ingots reduce raw requirements; absent forge is added once', () 
   assert.equal(result.steps.find(s => s.label === 'bronzeIngot').batches, 1)
   const absent = estimateObjective(data, { ...defaults, objective: 'hache-bronze', forgeReady: false })
   assert.deepEqual(absent.missing, { wood: 68, stone: 20, copper: 4, tin: 2 })
-  assert.equal(absent.phases.build, 480)
+  assert.equal(absent.phases.build, buildings.find(b => b.type === 'Forge' && b.level === 0).constructionWork)
   assert.ok(absent.nextWoodAfter < absent.nextWoodBefore)
   const owned = estimateObjective(data, {
     ...defaults,

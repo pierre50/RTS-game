@@ -5,7 +5,7 @@ import {
   RPG_VILLAGE_TICK_MS,
   RPG_VILLAGE_DECISION_MS,
   RPG_VILLAGE_WORKERS,
-} from '../../config/rpgVillages'
+} from '../../config/world/rpgVillages'
 import { isDistantOwner } from '../../lib/units/village/villageActivity'
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
 import { canUnitStartAmbientWalk } from '../../lib/units/autonomy/walkAround'

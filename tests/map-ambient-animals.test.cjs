@@ -61,7 +61,7 @@ function loadMapGeneration() {
       INFANTRY_TECH_UPGRADES: {},
       ARCHER_TECH_UPGRADES: {},
     },
-    '../../config/resourcePresets': {
+    '../../config/world/resourcePresets': {
       CIVILIZATION_LEVEL_RESOURCE_BONUS: {},
     },
     '../../config/mapSizes': {

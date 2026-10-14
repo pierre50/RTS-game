@@ -3,6 +3,7 @@ import { createCombatStatInfo } from '../entity/CombatStatInfo'
 import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
 import type { InventoryManager } from '../InventoryManager'
 import { createEquipmentRowInfo, formatGold } from './InventoryDetails'
+import { renderInventoryEquipmentImage } from './InventoryItemIcons'
 
 export function renderInventoryToolIcons(this: InventoryManager): void {
   const { app } = this.menu.context
@@ -13,7 +14,10 @@ export function renderInventoryToolIcons(this: InventoryManager): void {
   for (const [tool, canvas] of this.toolIcons) {
     const equipment = this.getActiveWeaponEquipment(tool)
     canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
-    if (equipment) renderEquipmentAvatarLazy(app, equipment, canvas, 'inventory', this.menu.context.performance)
+    delete canvas.dataset.toolIcon
+    if (equipment && !renderInventoryEquipmentImage(canvas, equipment)) {
+      renderEquipmentAvatarLazy(app, equipment, canvas, 'inventory', this.menu.context.performance)
+    }
     const info = equipment ? createEquipmentRowInfo(equipment, 1, undefined, { showValue: false }) : undefined
 
     const slot = this.slots.get(tool)

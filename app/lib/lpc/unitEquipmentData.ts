@@ -43,7 +43,7 @@ const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
 export const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>> = {
   [UNIT_TYPES.chief]: [{ equipment: 'sword_bronze' }],
   [UNIT_TYPES.infantry]: [
-    { equipment: 'spear_ceramic' },
+    { equipment: 'club_ceramic' },
     ...SOLDIER_EARLY_ARMOR_EQUIPMENT,
     {
       equipment: 'round_shield_wood_slash',
@@ -70,7 +70,12 @@ export const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefini
     'upward_horns_white',
     'round_shield_wood_slash',
   ],
-  [UNIT_TYPES.banditSword]: ['sword_bronze', 'helmet_barbarian_nasal_leather', 'round_shield_wood_slash'],
+  [UNIT_TYPES.banditSword]: [
+    'club_ceramic',
+    'helmet_barbarian_nasal_leather',
+    'horns_short',
+    'round_shield_wood_slash',
+  ],
   [UNIT_TYPES.banditArcher]: [
     'dagger_bronze',
     'quiver',

@@ -41,14 +41,14 @@ export function canNpcWieldWeapon(unit: NpcWeaponUnit, item: string): boolean {
   if (unit.type !== 'Villager') return true
   const key = equipmentBaseKey(item)
   return (
-    /^(axe|pickaxe|hammer|scythe|dagger|bow)(_|$)/.test(key) ||
+    /^(axe|pickaxe|hammer|scythe|dagger|club|bow)(_|$)/.test(key) ||
     ['slingshot', 'longstick', 'catchingPole', 'cane'].includes(key)
   )
 }
 
 /** Replace the former issued combat axes once, preserving wear and removed weapons. */
 function migrateBanditWeapon(unit: UnitEntity): void {
-  const replacement = unit.type === 'BanditChief' ? 'mace_bronze' : unit.type === 'BanditSword' ? 'sword_bronze' : null
+  const replacement = unit.type === 'BanditChief' ? 'mace_bronze' : unit.type === 'BanditSword' ? 'club_ceramic' : null
   if (!replacement || unit.isDead || unit.inventory?.banditWeaponMigrated) return
   unit.inventory ??= {}
   const replace = (item: string) =>

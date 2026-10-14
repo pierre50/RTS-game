@@ -1,6 +1,6 @@
 import { freezeLegacySettlements } from '../../services/world/SettlementMigration'
 import { traceLoad, traceLoadAsync } from '../../lib/loadDiagnostics'
-import { isContinentWorld } from '../../config/continentWorlds'
+import { isContinentWorld } from '../../config/world/continentWorlds'
 import { migrateTutorialVillageOwner } from '../../services/tutorial/TutorialVillageMigration'
 import type { NewGameBootOptions } from './GameWorldBoot'
 import { TutorialPrologue } from '../../ui/TutorialPrologue'

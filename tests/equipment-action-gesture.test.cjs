@@ -47,7 +47,7 @@ test('switching to a sword, bare hands or stowed tools cannot reuse a stale tool
   assert.equal(sequence(context), null)
 })
 
-test('every tool uses original guard poses through the reverse release', () => {
+test('reversed tools hold the raised-hand pose through guard and release', () => {
   for (const family of ['axe', 'pickaxe', 'hammer', 'scythe']) {
     const context = { action: 'attack', inventory: { activeWeapons: { tool: `${family}_ceramic` } } }
     for (const state of [
@@ -55,8 +55,20 @@ test('every tool uses original guard poses through the reverse release', () => {
       { heroDefenseReverseTaskId: 1 },
       { heroDefenseReleaseFallbackTaskId: 2 },
     ]) {
-      assert.deepEqual(sequence({ ...context, ...state }), [0, 1, 2, 3, 4, 5])
+      assert.deepEqual(sequence({ ...context, ...state }), family === 'scythe' ? [0, 1, 2, 3, 4, 5] : [5, 5, 5])
     }
     assert.deepEqual(sequence(context), family === 'scythe' ? [0, 1, 2, 3, 4, 5] : [5, 5, 4, 3, 1, 0])
+  }
+})
+
+test('club uses the raised-hand pose for defense without changing its attack order', () => {
+  const context = { work: 'heroSword', inventory: { activeWeapons: { melee: 'club_ceramic' } } }
+  assert.deepEqual(sequence(context), [5, 4, 3, 2, 1, 0])
+  for (const state of [
+    { heroDefenseActive: true },
+    { heroDefenseReverseTaskId: 1 },
+    { heroDefenseReleaseFallbackTaskId: 2 },
+  ]) {
+    assert.deepEqual(sequence({ ...context, ...state }), [5, 5, 5])
   }
 })

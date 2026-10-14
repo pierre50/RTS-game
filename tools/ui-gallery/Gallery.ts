@@ -402,7 +402,7 @@ function showQuests(name: string): boolean {
   return false
 }
 
-function show(name: string) {
+function resetScreen() {
   cleanup?.()
   cleanup = undefined
   modal?.close()
@@ -413,115 +413,147 @@ function show(name: string) {
   for (let remaining = 0; document.querySelector('.modal') && remaining < 5; remaining++)
     document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   if (document.querySelector('.modal')) throw new Error('La fenêtre précédente ne se ferme pas')
-  if (['Paramètres', 'Paramètres graphiques', 'Commandes clavier', 'Commandes manette'].includes(name)) {
-    modal = openSettingsModal()
-    const index = ['Paramètres', 'Paramètres graphiques', 'Commandes clavier', 'Commandes manette'].indexOf(name)
-    ;(
-      modal._panel?.querySelectorAll<HTMLButtonElement>('.settings-topbar .ui-tab')[index] ??
-      modal._panel?.querySelectorAll<HTMLButtonElement>('.ui-tab')[index]
-    )?.click()
-    return
+}
+
+const SETTINGS_SCREENS = ['Paramètres', 'Paramètres graphiques', 'Commandes clavier', 'Commandes manette']
+function showSettings(name: string): boolean {
+  if (!SETTINGS_SCREENS.includes(name)) return false
+  modal = openSettingsModal()
+  const index = SETTINGS_SCREENS.indexOf(name)
+  ;(
+    modal._panel?.querySelectorAll<HTMLButtonElement>('.settings-topbar .ui-tab')[index] ??
+    modal._panel?.querySelectorAll<HTMLButtonElement>('.ui-tab')[index]
+  )?.click()
+  return true
+}
+
+function showLoot(name: string): boolean {
+  if (name !== 'Butin' && name !== 'Butin animal') return false
+  const screen =
+    name === 'Butin'
+      ? new UnitInventoryScreen(host, {
+          ...hero,
+          label: 'gallery-corpse',
+          lootEquipment: ['bow', 'arrow_ceramic'],
+          isDead: true,
+          hitPoints: 0,
+          inventory: { equipment: ['bow', 'arrow_ceramic'], resources: { wood: 5 } },
+        })
+      : new AnimalInventoryScreen(host, {
+          type: 'Wolf',
+          family: 'animal',
+          label: 'gallery-wolf-corpse',
+          isDead: true,
+          hitPoints: 0,
+          i: 0,
+          j: 1,
+          inventory: { resources: { meat: 5, leather: 2 } },
+        } as any)
+  modal = screen.open(() => {})
+  return true
+}
+
+function showResourceSheet() {
+  const entity: any = {
+    type: 'Stone',
+    family: 'resource',
+    quantity: 120,
+    totalQuantity: 200,
+    sprite: { texture: getTextureByFrame('resources/minerals', 3, Assets) },
   }
-  if (name === 'Butin' || name === 'Butin animal') {
-    const screen =
-      name === 'Butin'
-        ? new UnitInventoryScreen(host, {
-            ...hero,
-            label: 'gallery-corpse',
-            lootEquipment: ['bow', 'arrow_ceramic'],
-            isDead: true,
-            hitPoints: 0,
-            inventory: { equipment: ['bow', 'arrow_ceramic'], resources: { wood: 5 } },
-          })
-        : new AnimalInventoryScreen(host, {
-            type: 'Wolf',
-            family: 'animal',
-            label: 'gallery-wolf-corpse',
-            isDead: true,
-            hitPoints: 0,
-            i: 0,
-            j: 1,
-            inventory: { resources: { meat: 5, leather: 2 } },
-          } as any)
-    modal = screen.open(() => {})
-    return
+  entity.interface = {
+    info: (target: HTMLElement, options: any) =>
+      new ResourceInterface(entity).setDefaultInterface(target, {} as any, options),
   }
+  const inspection = new EntityInfoModalManager(host)
+  if (!inspection.open(entity)) throw new Error('Impossible d’ouvrir la fiche de ressource')
+  modal = inspection.modal
+  cleanup = () => inspection.close()
+}
+
+function showStandalone(name: string): boolean {
   if (name === 'Fiche de ressource') {
-    const entity: any = {
-      type: 'Stone',
-      family: 'resource',
-      quantity: 120,
-      totalQuantity: 200,
-      sprite: { texture: getTextureByFrame('resources/minerals', 3, Assets) },
-    }
-    entity.interface = {
-      info: (target: HTMLElement, options: any) =>
-        new ResourceInterface(entity).setDefaultInterface(target, {} as any, options),
-    }
-    const inspection = new EntityInfoModalManager(host)
-    if (!inspection.open(entity)) throw new Error('Impossible d’ouvrir la fiche de ressource')
-    modal = inspection.modal
-    cleanup = () => inspection.close()
-    return
+    showResourceSheet()
+    return true
   }
   if (name === 'Sauvegardes') {
     openSaveListModal({ onLoad() {} })
-    return
+    return true
   }
   if (name === 'Nouvelle partie') {
     const config = new MapConfig({ onPlay() {} })
     modal = config._modal
-    return
+    return true
   }
   if (name === 'Erreur de sauvegarde') {
     modal = new Modal({
       title: 'Sauvegarde invalide',
       content: node('p', '', 'Impossible de charger cette sauvegarde de démonstration.'),
     })
-    return
+    return true
   }
-  if (showInventory(name)) return
-  if (name === 'Chantier en cours' || name === 'Chantier en pause') {
-    const site = building('House')
-    site.isBuilt = false
-    site.constructionWorkRequired = player.config.buildings.House.constructionWorkRequired
-    site.constructionProgress = 0.4
-    site.constructionPaused = name === 'Chantier en pause'
-    site.constructionMaterials = {
-      cost: player.config.buildings.House.cost,
-      delivered: {},
-      consumed: player.config.buildings.House.cost,
-    }
-    const body = node('div', 'entity-info-modal selection-info active')
-    new BuildingInterface(site).renderInfo(body, player.config.buildings.House)
-    modal = createInspectionModal({ title: name, content: body, size: 'small', onClose() {} })
-    return
-  }
-  if (name === 'Amélioration du bâtiment') {
-    const body = node('div', 'building-upgrade-sheet-content')
-    const upgrade = createHeroBuildingUpgrade(host, building('Forge'), () => {})
-    if (!upgrade) throw new Error('La fixture ne propose aucune amélioration')
-    body.append(info('Forge'), upgrade)
-    modal = createInspectionModal({
-      title: 'Amélioration du bâtiment',
-      content: body,
-      panelClass: 'building-upgrade-sheet',
-      size: 'small',
-      onClose() {},
-    })
-    return
-  }
+  return false
+}
 
-  if (name === 'Pause') {
-    new PauseMenu(host).open()
-    return
+function showConstructionSite(name: string): boolean {
+  if (name !== 'Chantier en cours' && name !== 'Chantier en pause') return false
+  const site = building('House')
+  site.isBuilt = false
+  site.constructionWorkRequired = player.config.buildings.House.constructionWorkRequired
+  site.constructionProgress = 0.4
+  site.constructionPaused = name === 'Chantier en pause'
+  site.constructionMaterials = {
+    cost: player.config.buildings.House.cost,
+    delivered: {},
+    consumed: player.config.buildings.House.cost,
   }
-  if (showQuests(name)) return
-  const content = node('div', 'interaction-panel-content')
-  const information = node('div', 'interaction-information')
-  const actions = node('div', 'interaction-actions')
-  information.appendChild(info(name))
-  content.append(information, actions)
+  const body = node('div', 'entity-info-modal selection-info active')
+  new BuildingInterface(site).renderInfo(body, player.config.buildings.House)
+  modal = createInspectionModal({ title: name, content: body, size: 'small', onClose() {} })
+  return true
+}
+
+function showUpgrade(name: string): boolean {
+  if (name !== 'Amélioration du bâtiment') return false
+  const body = node('div', 'building-upgrade-sheet-content')
+  const upgrade = createHeroBuildingUpgrade(host, building('Forge'), () => {})
+  if (!upgrade) throw new Error('La fixture ne propose aucune amélioration')
+  body.append(info('Forge'), upgrade)
+  modal = createInspectionModal({
+    title: 'Amélioration du bâtiment',
+    content: body,
+    panelClass: 'building-upgrade-sheet',
+    size: 'small',
+    onClose() {},
+  })
+  return true
+}
+
+function showPause(name: string): boolean {
+  if (name !== 'Pause') return false
+  new PauseMenu(host).open()
+  return true
+}
+
+function appendDialogue(information: HTMLElement, actions: HTMLElement) {
+  information.appendChild(
+    node(
+      'p',
+      'npc-orders-chatter-line',
+      'Les voyageurs arrivent blessés. Si tu trouves des herbes près de la rivière, rapporte-les-moi.'
+    )
+  )
+  const choices = node('div', 'npc-orders-options')
+  for (const label of ['Parlons des voyageurs blessés.', 'Me suivre', 'Rester ici', 'Voir le sac']) {
+    const button = node('button', 'ui-btn', label)
+    choices.append(button)
+  }
+  actions.append(choices)
+  actions.append(node('button', 'ui-btn npc-orders-exit', 'Terminer la conversation'))
+}
+
+/** Fills the interaction panel actions and returns its panel classes. */
+function fillInteractionActions(name: string, information: HTMLElement, actions: HTMLElement): string {
   let classes = 'inventory-transfer-modal'
   if (['Feu de camp', 'Forge'].includes(name)) {
     const body = node('div', 'hero-building-menu-body')
@@ -542,21 +574,18 @@ function show(name: string) {
     actions.append(createHeroDepotReservesBody(building('StoragePit'), host, () => show(name))!)
   } else if (name === 'Dialogue / ordres') {
     classes = 'npc-orders-panel'
-    information.appendChild(
-      node(
-        'p',
-        'npc-orders-chatter-line',
-        'Les voyageurs arrivent blessés. Si tu trouves des herbes près de la rivière, rapporte-les-moi.'
-      )
-    )
-    const choices = node('div', 'npc-orders-options')
-    for (const label of ['Parlons des voyageurs blessés.', 'Me suivre', 'Rester ici', 'Voir le sac']) {
-      const button = node('button', 'ui-btn', label)
-      choices.append(button)
-    }
-    actions.append(choices)
-    actions.append(node('button', 'ui-btn npc-orders-exit', 'Terminer la conversation'))
+    appendDialogue(information, actions)
   }
+  return classes
+}
+
+function showInteraction(name: string) {
+  const content = node('div', 'interaction-panel-content')
+  const information = node('div', 'interaction-information')
+  const actions = node('div', 'interaction-actions')
+  information.appendChild(info(name))
+  content.append(information, actions)
+  const classes = fillInteractionActions(name, information, actions)
   modal = createInspectionModal({
     title: name === 'Fiche de bâtiment' ? getBuildingDisplayName(building('House')) : name,
     content,
@@ -568,6 +597,13 @@ function show(name: string) {
     '.inventory-action-row, .npc-orders-options button, .hero-training-choice'
   )
   select?.focus()
+}
+
+function show(name: string) {
+  resetScreen()
+  if (showSettings(name) || showLoot(name) || showStandalone(name) || showInventory(name)) return
+  if (showConstructionSite(name) || showUpgrade(name) || showPause(name) || showQuests(name)) return
+  showInteraction(name)
 }
 picker.onchange = () => show(picker.value)
 audit.onclick = async () => {

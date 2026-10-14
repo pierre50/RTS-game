@@ -1,4 +1,4 @@
-import { BUILDING_INTERIOR_TYPES } from '../../../lib/buildings/interiorProfiles'
+import { BUILDING_INTERIOR_TYPES } from '../../../lib/buildings/interior/interiorProfiles'
 import { storagePitResources } from '../../../lib/grid/storagePitPlacement'
 import type { RoadLayer } from '../../../lib/terrain/roadLayer'
 import type { SaveEntityState, SaveGridPoint, SerializedSave } from '../../../types/save'
@@ -141,7 +141,11 @@ export class StartingVillageLayout {
       [center, ...buildings].find(building => types.includes(building.type)) ?? fallback
     switch (type) {
       case 'Farm':
-        return nearest(['Granary'], this.farmSites.get(center)![0] ?? plan.farms)
+        // Each new depot gathers its own share of fields around it.
+        return (
+          buildings.filter(building => building.type === 'Granary').at(-1) ??
+          (center.type === 'Granary' ? center : (this.farmSites.get(center)![0] ?? plan.farms))
+        )
       case 'Granary':
         return this.farmSites.get(center)![0] ?? plan.farms
       case 'House': {
@@ -219,6 +223,11 @@ export class StartingVillageLayout {
 
   planFields(center: SaveEntityState, anchor: SaveEntityState, size: number, count: number): SaveGridPoint[] | null {
     return selectStartingFieldSites(this.siteCandidates(center, anchor, size, 'Farm', 6), size, count)
+  }
+
+  fieldCount(center: SaveEntityState): number {
+    this.plan(center)
+    return this.farmSites.get(center)!.length
   }
 
   clearField(center: SaveEntityState, point: SaveGridPoint, size: number, civilization: string): void {

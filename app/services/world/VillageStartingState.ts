@@ -1,4 +1,4 @@
-import { SETTLEMENT_PROFILES, defaultSettlementType } from '../../config/settlementProfiles'
+import { SETTLEMENT_PROFILES, defaultSettlementType } from '../../config/world/settlementProfiles'
 import { StartingVillageLayout } from './startingState/StartingVillageLayout'
 import { OfflineWorldSpatial, isLiving, type OfflineTerrainCell } from './offline/OfflineWorldSpatial'
 import type { OfflineWorkRules } from './offline/OfflineWorldWork'

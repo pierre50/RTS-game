@@ -30,7 +30,7 @@ test('placement territory uses the economic radius, follows the camera, and clea
   const { BuildingTerritoryPreview } = loadTsModule('app/controllers/BuildingTerritoryPreview.ts', {
     mocks: { 'pixi.js': { Graphics } },
   })
-  const { BASE_TERRITORY_RADIUS } = loadTsModule('app/config/territory.ts')
+  const { BASE_TERRITORY_RADIUS } = loadTsModule('app/config/world/territory.ts')
   const town = { type: 'TownCenter', i: 50, j: 50, isBuilt: true }
   const controls = {
     context: {

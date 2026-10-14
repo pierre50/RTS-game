@@ -1,5 +1,5 @@
-import { isRpgVillager } from '../../config/rpgVillages'
-import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isRpgVillager } from '../../config/world/rpgVillages'
+import { isStaticSettlement } from '../../config/world/settlementProfiles'
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
 import { VillageScheduleGate, villageCalendarMinute } from '../../lib/units/village/villageScheduleGate'
 import { notifyVillageWorkChanged } from '../../lib/units/village/villageWorkEvents'

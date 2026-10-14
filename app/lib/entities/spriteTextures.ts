@@ -4,6 +4,8 @@ import { getSpriteFrameSelection, type DirectionOrder, type TextureMap } from '.
 export { getAnimationFrames, getSpriteFrameSelection, getMirroredHalfArcFrameIndex } from './spriteFrameSelection'
 import { SHEET_TYPES } from '../constants'
 import { applyActionFrameSequence, getConfiguredActionFrameSequence } from '../animations/actionFrameSequences'
+import { isSpearSlashBodySequence } from '../animations/spearSlashFrames'
+import { lpcSpearSlashAnimationSpeed } from '../lpc/animationSpeeds'
 import type { AnimatedSprite, Ticker } from 'pixi.js'
 
 type MutableSheetObject = { [key: string]: SheetLike | object | string | number | boolean | null | undefined }
@@ -158,7 +160,10 @@ function updateUnitTexture(sheet: string, instance: UnitTextureInstance): void {
   // UnitLifecycle uses corpse playback as its decay timer. Appearance refreshes
   // after looting must not replace that speed with the static corpse asset's zero.
   if (!(sameSheet && sheet === SHEET_TYPES.corpse && instance.sprite.onComplete)) {
-    instance.sprite.animationSpeed = getUnitSpritesheetAnimationSpeed(selectedSheet, sheet)
+    instance.sprite.animationSpeed =
+      isSpearSlashBodySequence(configuredActionFrameSequence)
+        ? lpcSpearSlashAnimationSpeed()
+        : getUnitSpritesheetAnimationSpeed(selectedSheet, sheet)
   }
   playSelectedUnitSheet(sheet, instance, selectedSheet, mountedActionSheet, goto, sameTextures)
 }

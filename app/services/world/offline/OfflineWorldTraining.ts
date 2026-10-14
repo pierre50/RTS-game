@@ -1,5 +1,5 @@
 import { trainedInventory } from '../../../lib/training/trainedInventory'
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import { getTrainingProgress, isTrainingComplete } from '../../../lib/training/trainingRules'
 import { definedProperties } from '../../../lib/definedProperties'
 import type { SaveEntityState, SerializedSave } from '../../../types/save'

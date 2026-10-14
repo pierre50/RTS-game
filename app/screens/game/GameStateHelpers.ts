@@ -1,6 +1,6 @@
 import type { SavedGameData } from '../../classes/map/MapGeneration'
-import { getEnvironmentForCiv } from '../../config/environments'
-import { DEFAULT_WORLD_ID } from '../../config/worlds'
+import { getEnvironmentForCiv } from '../../config/world/environments'
+import { DEFAULT_WORLD_ID } from '../../config/world/worlds'
 import { CELL_HEIGHT, CELL_WIDTH, type EnvironmentId } from '../../constants'
 import type { GameConfig, SaveEntityState, SerializedSave } from '../../types/save'
 import type { RuntimeMap } from '../../types/map'

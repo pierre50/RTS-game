@@ -31,9 +31,14 @@ const buildingPlacementOrder = (type: string) => DISTRICT_BUILDING_ORDER.indexOf
 export function populateStartingVillage(setup: StartingVillageSetup, profile: VillageStartProfile): void {
   const village = createStartingVillage(setup, profile)
   const { player, index, rules } = village
-  // Give fields a real depot anchor before filling the agricultural district.
-  addMissingBuildings(village, 'Granary', profile.buildings.Granary ?? 0)
-  addStartingWheatFields(village)
+  // Give fields a real depot anchor before filling the agricultural district. Pair each
+  // depot with its share of fields so later depots cannot crowd the earlier farmland.
+  const granaries = Math.max(1, profile.buildings.Granary ?? 0)
+  const fields = profile.wheatFields ?? 0
+  for (let n = 1; n <= granaries; n++) {
+    addMissingBuildings(village, 'Granary', Math.min(n, profile.buildings.Granary ?? 0))
+    addStartingWheatFields(village, Math.round((fields * n) / granaries) - Math.round((fields * (n - 1)) / granaries))
+  }
   for (const [type, count] of Object.entries(profile.buildings).sort(
     ([a], [b]) => buildingPlacementOrder(a) - buildingPlacementOrder(b)
   ))

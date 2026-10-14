@@ -105,11 +105,6 @@
       "power": 4
     }
   },
-  "longsword": {
-    "weapon": {
-      "power": 11
-    }
-  },
   "cane": {
     "weapon": {
       "power": 1
@@ -136,6 +131,16 @@
     }
   },
   "sword_iron": {
+    "weapon": {
+      "power": 12
+    }
+  },
+  "sword_curved_bronze": {
+    "weapon": {
+      "power": 10
+    }
+  },
+  "sword_curved_iron": {
     "weapon": {
       "power": 12
     }
@@ -180,13 +185,12 @@
     "armor": 2
   },
   "cape_solid": {},
-  "crest": {},
   "centurion_crest": {},
-  "centurion_plumage": {},
   "legion_plumage": {},
   "plumage": {},
   "helmet_wings": {},
   "upward_horns_white": {},
+  "horns_short": {},
   "helmet_barbuta_bronze": {
     "armor": 2
   },
@@ -261,6 +265,11 @@
   "mace_iron": {
     "weapon": {
       "power": 12
+    }
+  },
+  "club_ceramic": {
+    "weapon": {
+      "power": 6
     }
   },
   "slingshot": {

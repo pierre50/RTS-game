@@ -263,7 +263,7 @@ function loadGame({
       },
     },
     '../config/civilizations': { CIVILIZATIONS: [{ value: 'Hellas' }] },
-    '../config/environments': { getEnvironmentForCiv: () => 'temperate' },
+    '../config/world/environments': { getEnvironmentForCiv: () => 'temperate' },
     '../lib/maths': {
       cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
       getGroundReliefLevel: () => 0,

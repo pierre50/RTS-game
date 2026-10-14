@@ -153,7 +153,7 @@ Chaque arrivée nécessite un lit libre dans une maison habitable et une place d
 
 ### Forge : déblocage du fer
 
-La première amélioration de la forge (niveau interne 1, N2 affiché) débloque la production des lingots et équipements en fer, y compris les flèches, les casques décorés et l’épée longue. La forge initiale conserve le bronze. La forge ne possède que ces deux niveaux. L’amélioration ne nécessite ni minerai ni lingot de fer.
+La première amélioration de la forge (niveau interne 1, N2 affiché) débloque la production des lingots et équipements en fer, y compris les flèches et les casques décorés. La forge initiale conserve le bronze. La forge ne possède que ces deux niveaux. L’amélioration ne nécessite ni minerai ni lingot de fer.
 
 Le seuil est centralisé dans `app/config/forge.ts` et appliqué par `app/lib/equipment/forgeProduction.ts` au catalogue, à la validation des fabrications et aux approvisionnements automatiques, en direct et hors écran. Les habitants utilisent la meilleure forge achevée de leur village ; une forge distante ne débloque pas la production locale. Les équipements en fer déjà possédés ou stockés restent utilisables et les réparations restent accessibles à tout niveau. La fabrication demeure instantanée, sans file ni nouveau stockage.
 

@@ -175,6 +175,12 @@ test('automatic deliveries enforce depot roles and ignore legacy block flags', (
 test('three days away replenish within full-capacity targets and never deposit into the town center', () => {
   const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts', { moduleCache })
   const { owner, center, pit } = fixture()
+  // Tools now last hundreds of contacts (EQUIPMENT_DURABILITY): start them nearly worn so that
+  // three days of work really breaks and replaces them.
+  for (const unit of owner.units) {
+    unit.inventory.activeWeapons.tool = 'axe_ceramic~uses:5'
+    unit.inventory.equipment = unit.inventory.equipment.map(item => `${item}~uses:5`)
+  }
   const state = {
     world: { size: 40 },
     runtime: { dayNightElapsedMs: 0 },

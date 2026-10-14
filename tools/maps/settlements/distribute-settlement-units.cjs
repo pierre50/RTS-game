@@ -2,7 +2,7 @@ const buildings = require('../../../public/assets/data/gameplay/buildings.json')
 const { footprint } = require('./validate-settlements.cjs')
 const { loadGenerationTs } = require('../load-generation-ts.cjs')
 const { getBuildingInteriorEntryPosition } = loadGenerationTs('app/lib/buildings/interiors.ts')
-const { RPG_VILLAGE_WORKERS } = loadGenerationTs('app/config/rpgVillages.ts')
+const { RPG_VILLAGE_WORKERS } = loadGenerationTs('app/config/world/rpgVillages.ts')
 const key = p => `${p.i}:${p.j}`
 const distance = (a, b) => Math.max(Math.abs(a.i - b.i), Math.abs(a.j - b.j))
 const directions = [

@@ -1,5 +1,5 @@
 import { notifyVillageWorkChanged } from '../units/village/villageWorkEvents'
-import { getEquippedWorkTool, toolFamilyForWork, workToolFamily, requiredWorkTool } from './workTools'
+import { getEquippedWorkTool, toolFamilyForWork, workToolFamily, workToolUse } from './workTools'
 import { hasNpcWeaponInventory, getNpcWeaponChoice } from '../units/combat/npcWeapons'
 import type { UnitEntity } from '../../types/entities'
 import {
@@ -84,9 +84,9 @@ export function wearEquippedWeapon(unit: UnitEntity, kind: 'melee' | 'ranged', s
       ? equipmentBaseKey(item) === 'slingshot' || item.startsWith('bow')
       : item.startsWith('spear_') ||
         item.startsWith('mace_') ||
+        item.startsWith('club_') ||
         item.startsWith('sword_') ||
-        item.startsWith('dagger_') ||
-        equipmentBaseKey(item) === 'longsword'
+        item.startsWith('dagger_')
   )
 }
 
@@ -108,7 +108,8 @@ export function wearEquippedArmor(unit: UnitEntity): void {
 
 export function wearEquippedTool(unit: UnitEntity, action?: string | null): void {
   const item = getEquippedWorkTool(unit)
-  if (!item || (action && requiredWorkTool(action) !== workToolFamily(item))) return
+  const targetType = (unit.dest as { type?: string } | null | undefined)?.type
+  if (!item || (action && workToolUse(unit, action, targetType) !== 'tool')) return
   worn(unit, item, next => {
     unit.inventory!.activeWeapons!.tool = next
   })

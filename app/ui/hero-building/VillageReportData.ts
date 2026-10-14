@@ -8,7 +8,7 @@ import {
   householdTown,
 } from '../../lib/housing/households'
 import { getPopulationCapacityFromBuildings } from '../../lib/buildings/buildingOccupancy'
-import { isStaticSettlement } from '../../config/settlementProfiles'
+import { isStaticSettlement } from '../../config/world/settlementProfiles'
 import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 

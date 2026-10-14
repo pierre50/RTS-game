@@ -68,6 +68,7 @@ function loadLayout() {
     mocks: {
       '../../lib/avatar': { renderUnitBodyAvatar() {} },
       '../../lib/lang': { t: key => key },
+      './InventoryItemIcons': { createInventorySlingshotStoneIcon: () => element() },
       './InventoryItemRows': { createInventoryResourceRow: () => ({ element: element() }) },
     },
   })

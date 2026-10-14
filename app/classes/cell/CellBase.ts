@@ -70,8 +70,7 @@ export class CellBase extends RuntimeCellContainer {
   cellTerrain!: CellTerrain
   unregisterWaterBorderSurface: (() => void) | null
   _terrainAppearance: {
-    patchBorders: Set<string> | null
-    patchBorderGroundType?: PatchBorderGroundType | null
+    patchBorders: Map<string, PatchBorderGroundType> | null
     relief: { index: number; elevation: number } | null
     waterBorder: { resourceName: string; index: number } | null
   }

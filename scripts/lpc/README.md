@@ -8,6 +8,33 @@ and corpse sheets are shared from the default villager job.
 
 ## Generate the baked sprites
 
+The stone club (`club_ceramic`) is generated from the accepted LPC club
+prototype when running `python3 scripts/lpc/build_equipment.py --only club_ceramic`.
+Three small stone studs are fixed to the master club before the walking
+poses are rotated, keeping them stable across frames; slash and hurt receive
+the same studs on their club head. This is the approved `lpc-club-spiked-v1`
+preview, not a separate runtime variant.
+Its walk, slash and hurt layers are written to
+`spritesheets/weapon/blunt/club_playable/`; the runtime atlas is written to
+`public/assets/graphics/equipments/weapon/club/`. The slash source columns
+remain synchronized with the body, and the game plays both in order 5–0.
+
+### Fill missing action cells by rotation
+
+`rotated_action_frames.py` provides `write_rotated_action_frames` for layered
+LPC equipment. Give it a source directory with `background/` and `foreground/`
+sprites, an output directory, a cell size, and a mapping from `(direction row,
+missing frame)` to `RotatedPose` recipes. Each recipe specifies the source
+frame, rotation pivot at the grip, angle, and final position. `LayerTransfer`
+can put a selected part of the handle behind the body so the hand covers it.
+The builder rejects occupied destination cells and preserves all other frames.
+
+`build_hammer_slash.py` is the first recipe set. It fills the hammer's empty
+slash frames 2 and 3 for every direction. `build_equipment.py` runs it before
+baking the ceramic, bronze, and iron hammer atlases. To use the same method for
+another weapon, add its recipes and point its equipment layers at the generated
+background and foreground sheets.
+
 ### Villager sit source preparation
 
 The village outfits now use sit-compatible tops and plain long skirts. Female
@@ -136,8 +163,12 @@ python3 scripts/lpc/audit_equipment.py
 `spear_ceramic` (the existing stone material key), `spear_bronze`, and
 `spear_iron` share the accepted long spear silhouette: the shaft extends 40%
 towards the point, leaving the original hand grip and rear shaft intact. Walk
-and slash use 192px source cells and separate back/front layers. The rounded
-sweep uses opaque palette colors, with no antialiasing or thrust animation.
+and slash use 192px source cells and separate back/front layers. Slash has nine
+weapon cells per direction while the six body poses play as
+`0 1 2 2 3 3 4 4 5`; the game's spear-only action sequence keeps those cells
+aligned. The shaft overlap is split against the reference body silhouette at
+the held poses. The rounded sweep uses opaque palette colors, with no
+antialiasing or thrust animation.
 
 `build_spear.py` regenerates the neutral source layers from the local halberd
 using the geometry in `build_spear_prototype.py`. Input/output hashes make this

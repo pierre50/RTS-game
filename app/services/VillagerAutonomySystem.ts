@@ -1,4 +1,4 @@
-import { isRpgVillage, isRpgVillager } from '../config/rpgVillages'
+import { isRpgVillage, isRpgVillager } from '../config/world/rpgVillages'
 import { ACTION_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { flushTrainingRequests } from '../lib/training/trainingRequests'
 import { hasVillagerAutonomyTarget } from '../lib/units/autonomy/villagerAutonomy'

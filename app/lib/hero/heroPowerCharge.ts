@@ -1,33 +1,24 @@
 import { HERO_POWER_CHARGE_MS } from './heroCombatRules'
-import { wearEquippedWeapon } from '../equipment/equipmentWear'
 import { isEquipmentBroken } from '../equipment/equipmentCondition'
 import { takeSprintAttackMultiplier } from '../units/movement/unitSprint'
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
-import { Projectile } from '../../classes/Projectile'
+import { SHEET_TYPES } from '../constants'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import { onSpriteLoopAtFrame, SLASH_IMPACT_FRAME } from '../graphics'
 import { angleDelta, degreeToDirection } from '../maths'
-import { attachProjectileToMapSpace } from '../projectiles'
 import { drainTimedHeroEnergy, hasEnergyToStartTimedHeroAction } from './heroEnergy'
 import { finishHeroToolAnimation } from './heroToolAnimation'
-import { MOUNTED_ATTACK_HALF_ANGLE, findFacingEntity, getHeroAimDegree } from './heroTargeting'
+import { MOUNTED_ATTACK_HALF_ANGLE, getHeroAimDegree } from './heroTargeting'
+import { getHeroPowerChargeHoldFrame, getHeroShootReleaseFrame } from './heroProjectileTools'
 import {
-  consumeHeroRangedAmmunition,
-  getHeroArrowSpawnPoint,
-  getHeroMaxArrowDistance,
-  getHeroPowerChargeHoldFrame,
-  getHeroShootReleaseFrame,
-  hasHeroRangedAmmunition,
-  hideReleasedBowArrowLayer,
-  finishHeroCatchingPoleThrowAnimation,
-  holdHeroCatchingPoleThrowFrame,
-  throwCatchingPoleAt,
-  warnHeroNoRangedAmmunition,
-} from './heroProjectileTools'
+  continueHeroPowerChargeAnimation,
+  findBowHuntTarget,
+  freezeHeroPowerChargeFrame,
+  launchHeroPowerChargeShot,
+  playHeroPowerChargeShotRelease,
+} from './heroPowerChargeEffects'
 import {
   getHeroSwordChargeDamageMultiplier,
-  getHeroWeaponDamage,
   playEmptyHandWhiff,
   triggerInteractMeleeAt,
   triggerSwordAttackAt,
@@ -61,35 +52,6 @@ function drainHeroPowerChargeEnergy(hero: UnitEntity, now = performance.now()): 
     HERO_POWER_CHARGE_MS,
     now
   )
-}
-
-function freezeHeroPowerChargeFrame(hero: UnitEntity, frame?: number): void {
-  const sprite = hero.sprite
-  if (!sprite || hero.currentSheet !== SHEET_TYPES.action) return
-  const lastFrame = Math.max(0, sprite.textures.length - 1)
-  const holdFrame = getHeroPowerChargeHoldFrame(hero.heroPowerChargeTool)
-  hero.heroPowerChargeVisualLocked = true
-  sprite.loop = false
-  sprite.gotoAndStop(Math.max(0, Math.min(frame ?? holdFrame, lastFrame)))
-  hero.syncShadow?.()
-  hero.syncAppearanceLayers?.(SHEET_TYPES.action)
-}
-
-function continueHeroPowerChargeAnimation(hero: UnitEntity): void {
-  const sprite = hero.sprite
-  if (!sprite || hero.currentSheet !== SHEET_TYPES.action || hero.heroPowerReleaseQueued) return
-  if (hero.heroPowerChargeVisualLocked) {
-    freezeHeroPowerChargeFrame(hero)
-    return
-  }
-  const holdFrame = getHeroPowerChargeHoldFrame(hero.heroPowerChargeTool)
-  sprite.loop = false
-  sprite.onComplete = undefined
-  onSpriteLoopAtFrame(sprite, holdFrame, () => freezeHeroPowerChargeFrame(hero))
-  if (!sprite.playing && sprite.currentFrame < holdFrame) sprite.play()
-  if (sprite.currentFrame >= holdFrame) freezeHeroPowerChargeFrame(hero)
-  hero.syncShadow?.()
-  hero.syncAppearanceLayers?.(SHEET_TYPES.action)
 }
 
 export function aimHeroPowerChargeAt(hero: UnitEntity, destination: Point): boolean {
@@ -160,18 +122,6 @@ function clearHeroPowerCharge(hero: UnitEntity): void {
   hero.removeHeroPowerBar?.()
 }
 
-function findBowHuntTarget(hero: UnitEntity): RuntimeEntity | null {
-  return findFacingEntity(
-    hero,
-    target =>
-      target.family === FAMILY_TYPES.animal &&
-      target.type !== 'Horse' &&
-      !target.isDead &&
-      !target.isDestroyed &&
-      (target.hitPoints ?? 1) > 0
-  )
-}
-
 export function cancelHeroPowerCharge(hero: UnitEntity): void {
   if (hero.heroPowerChargeStart == null) return
   clearHeroPowerCharge(hero)
@@ -225,61 +175,9 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
   }
   const target = hero.heroPowerChargeTarget ?? (tool === 'bow' ? (findBowHuntTarget(hero) ?? undefined) : undefined)
   clearHeroPowerCharge(hero)
-  const map = hero.context?.map
   const sprite = hero.sprite
-  if (tool === 'catchingPole') {
-    const catchingPole = throwCatchingPoleAt(hero, destination, power, {
-      onThrowResolved: () => finishHeroCatchingPoleThrowAnimation(hero),
-    })
-    if (!catchingPole) {
-      finishHeroToolAnimation(hero)
-      return
-    }
-  } else if (map) {
-    if (!hasHeroRangedAmmunition(hero)) {
-      warnHeroNoRangedAmmunition(hero)
-    } else {
-      const weaponPower = getHeroWeaponDamage(hero, 'bow')
-      const projectileType = consumeHeroRangedAmmunition(hero)
-      if (!projectileType) {
-        finishHeroToolAnimation(hero)
-        return
-      }
-      const projectile = new Projectile(
-        {
-          owner: hero,
-          type: projectileType,
-          target,
-          destination,
-          spawnPoint: getHeroArrowSpawnPoint(hero),
-          weaponPower,
-          maxDistance: getHeroMaxArrowDistance(hero, power),
-        },
-        hero.context!
-      )
-      attachProjectileToMapSpace(projectile, map)
-      hero.followAssistIntent =
-        tool === 'bow' && target ? { action: ACTION_TYPES.hunt, target, targetLabel: target.label } : null
-      wearEquippedWeapon(hero, 'ranged')
-    }
-  }
-  if (!sprite) {
-    finishHeroToolAnimation(hero)
-    return
-  }
-  if (tool === 'bow') {
-    hideReleasedBowArrowLayer(hero, sprite)
-  } else if (tool === 'catchingPole') {
-    holdHeroCatchingPoleThrowFrame(hero)
-    return
-  } else {
-    hero.syncAppearanceLayers?.(SHEET_TYPES.action)
-  }
-  sprite.onFrameChange = undefined
-  sprite.onComplete = () => finishHeroToolAnimation(hero)
-  sprite.loop = false
-  if (sprite.currentFrame >= sprite.textures.length - 1) finishHeroToolAnimation(hero)
-  else sprite.play()
+  if (!launchHeroPowerChargeShot(hero, tool, destination, target, power)) return
+  playHeroPowerChargeShotRelease(hero, sprite, tool)
 }
 
 export function beginHeroPowerChargeAt(

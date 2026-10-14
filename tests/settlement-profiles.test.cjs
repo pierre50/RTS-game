@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { SETTLEMENT_PROFILES, defaultSettlementType } = loadTsModule('app/config/settlementProfiles.ts')
+const { SETTLEMENT_PROFILES, defaultSettlementType } = loadTsModule('app/config/world/settlementProfiles.ts')
 const { applyVillageStartingState, villageStartProfiles } = loadTsModule('app/services/world/VillageStartingState.ts')
 const { simulateOfflineWorld } = loadTsModule('app/services/world/offline/OfflineWorldSimulation.ts')
 const buildings = require('../public/assets/data/gameplay/buildings.json')
@@ -104,7 +104,7 @@ for (const type of ['outpost', 'village', 'city']) {
       abstractVillages: true,
     })
     const economicState = player => JSON.parse(JSON.stringify(player, (key, value) =>
-      ['constructionProgress', 'dailySchedule', 'marketStock', 'marketGold', 'npcArrows'].includes(key) ? undefined : value))
+      ['constructionProgress', 'dailySchedule', 'marketStock', 'marketResourceStock', 'marketGold', 'npcArrows'].includes(key) ? undefined : value))
     assert.deepEqual(economicState(state.players[0]), economicState(before), 'ten days away must preserve losses, resource stocks and population')
     const afterFirstVisit = structuredClone(state.players[0])
     simulateOfflineWorld(state, { ...rules, terrain, fromElapsedMs: 10 * 1440000, toElapsedMs: 11 * 1440000 })
@@ -172,8 +172,7 @@ test('several settlements of one faction generate one chief and one extra escort
 test('cities start with completed upgrades, full upgraded health and upgraded housing', () => {
   const city = generate('city').players[0]
   const houses = city.buildings.filter(building => building.type === 'House')
-  const { countResidentHouseholds } = loadTsModule('app/lib/housing/households.ts')
-  assert.equal(houses.length, countResidentHouseholds(city))
+  assert.equal(houses.length, Math.ceil(city.units.length / 4))
   for (const house of houses) {
     assert.equal(house.buildingLevel, 2)
     assert.equal(house.hitPoints, 188)
@@ -186,7 +185,7 @@ test('cities start with completed upgrades, full upgraded health and upgraded ho
   assert.equal(center.buildingLevel, 2)
   assert.equal(center.hitPoints, 1425)
   assert.equal(center.totalHitPoints, 1425)
-  assert.equal(city.populationMax, houses.length * 2)
+  assert.equal(city.populationMax, houses.length * 4)
   assert.equal(city.buildings.find(building => building.type === 'Forge').buildingLevel, 2)
   const village = generate('village').players[0]
   assert.ok(village.buildings.filter(building => buildings[building.type].levelStats).every(b => b.buildingLevel === 1))

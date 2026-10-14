@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const { getBaseTerritory } = loadTsModule('app/lib/territory/baseTerritory.ts')
-const { BASE_TERRITORY_RADIUS: radius } = loadTsModule('app/config/territory.ts')
+const { BASE_TERRITORY_RADIUS: radius } = loadTsModule('app/config/world/territory.ts')
 const { getPlayerResourceTotals, withdrawChestResources } = loadTsModule('app/lib/resources/playerResourceTotals.ts')
 
 function base(label = 'p', i = 0) {

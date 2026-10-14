@@ -1,4 +1,4 @@
-import { BASE_TERRITORY_RADIUS } from '../../config/territory'
+import { BASE_TERRITORY_RADIUS } from '../../config/world/territory'
 
 type Point = { i: number; j: number; spaceId?: string | null; id?: string; townCenterId?: string }
 type TerritoryBuilding = Point & {

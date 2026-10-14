@@ -21,11 +21,11 @@ type ActionProfileName = keyof typeof CONTACT_ACTION_PROFILES
 const TOOL_FAMILIES: Record<string, ActionProfileName> = {
   sword: 'sword',
   dagger: 'dagger',
-  longsword: 'sword',
   cane: 'sword',
   axe: 'axe',
   hammer: 'axe',
   mace: 'axe',
+  club: 'axe',
   spear: 'spear',
   pike: 'spear',
   lance: 'spear',
@@ -33,11 +33,15 @@ const TOOL_FAMILIES: Record<string, ActionProfileName> = {
   scythe: 'scythe',
 }
 const MATERIALS = ['ceramic', 'copper', 'bronze', 'iron']
-export const CONTACT_TOOL_PROFILES: Readonly<Record<string, ActionProfileName>> = Object.fromEntries(
-  Object.entries(TOOL_FAMILIES).flatMap(([tool, profile]) =>
-    [tool, ...MATERIALS.map(material => `${tool}_${material}`)].map(key => [key, profile])
-  )
-)
+export const CONTACT_TOOL_PROFILES: Readonly<Record<string, ActionProfileName>> = {
+  ...Object.fromEntries(
+    Object.entries(TOOL_FAMILIES).flatMap(([tool, profile]) =>
+      [tool, ...MATERIALS.map(material => `${tool}_${material}`)].map(key => [key, profile])
+    )
+  ),
+  sword_curved_bronze: 'sword',
+  sword_curved_iron: 'sword',
+}
 
 // Optional exact-key exceptions. Per-entity gameplay config can also set `contact`;
 // equipment config can set `contact` to override that item's action profile.

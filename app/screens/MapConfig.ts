@@ -1,11 +1,11 @@
-import { CONTINENT_WORLD_PRESETS } from '../config/continentWorlds'
+import { CONTINENT_WORLD_PRESETS } from '../config/world/continentWorlds'
 import { definedProperties } from '../lib/definedProperties'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { buildSelectRow } from '../ui/utils/formUtils'
-import { DEFAULT_WORLD_ID } from '../config/worlds'
+import { DEFAULT_WORLD_ID } from '../config/world/worlds'
 import { PlayerSetupPanel } from '../ui/setup/PlayerSetupPanel'
-import { RESOURCES_MAP } from '../config/resourcePresets'
+import { RESOURCES_MAP } from '../config/world/resourcePresets'
 import type { GameConfig } from '../types/save'
 
 const DIFFICULTIES = [

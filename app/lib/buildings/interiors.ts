@@ -3,7 +3,7 @@ import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import { sameGridCell } from '../grid/interactionCells'
 import { isOutsideSpaceId } from '../mapSpaces'
-import { BUILDING_INTERIOR_TYPES } from './interiorProfiles'
+import { BUILDING_INTERIOR_TYPES } from './interior/interiorProfiles'
 
 const DEFAULT_BUILDING_INTERIOR_ENTRY_OFFSET = { i: 1, j: 2 }
 

@@ -1,6 +1,6 @@
 import { Graphics } from 'pixi.js'
 import { CELL_WIDTH, CELL_HEIGHT } from '../constants/gridGeometry'
-import { BASE_TERRITORY_RADIUS } from '../config/territory'
+import { BASE_TERRITORY_RADIUS } from '../config/world/territory'
 import { getBaseTerritory } from '../lib/territory/baseTerritory'
 import type { ControlsLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'

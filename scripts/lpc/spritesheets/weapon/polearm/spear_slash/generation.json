@@ -1,10 +1,10 @@
 {
-  "inputHash": "495c3de538b8488ac9c1254866139c87b34cbe3113af0940be6264a0c92eb71d",
+  "inputHash": "2637438e371a03c363e2a35e8c2b4394707bc1b3ac091f8e7cb29014b0d7949a",
   "outputs": {
     "walk/spear.png": "0fae196fa034ea766c404507b43be811261c68beba828564dbec44c717a5a13a",
     "walk/behind/spear.png": "9d0c5d4b25f5bf9bb7a8af51b5d7149543abb387da921290a2f5318f547c8152",
-    "attack_slash/spear.png": "ff8dc5114b0460e16be5c76388e1de10a5ba5429a1416619f9f2a8677706c538",
-    "attack_slash/behind/spear.png": "96345973e89827acac9b89c518cd78f6a382a0068c5da3117c4c4778a4170b81",
+    "attack_slash/spear.png": "be89744cb3cc55408328604705b18a5c37d91d588ef8866aba2e97a182d94a00",
+    "attack_slash/behind/spear.png": "dbfbf50c4c94ff92d910898297b15a44f35e2e32bfea029834d5489b943f7903",
     "hurt/spear.png": "43d501b0c657baac4768d49eb13a5021e26f9b7000643cb87550c92f9a4bf9ef",
     "hurt/behind/spear.png": "6e6abf9b681ea4bd324d13706b21c82e90aa5b41f0e80883d6c1c710e6bac0d7"
   }

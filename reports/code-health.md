@@ -1,6 +1,6 @@
 # Code Health Report
 
-Generated: 2026-10-11T16:48:00.815Z
+Generated: 2026-10-14T08:45:28.569Z
 
 ## Global Score
 
@@ -30,7 +30,7 @@ Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **FA
 | Hotspots | 10/10 | 0 |
 | Tests and critical coverage | 10/10 | 0 |
 
-Largest score loss: **none**. Gate blockers: Quality regressions: fail; 1709 new or worsened debt finding(s).
+Largest score loss: **none**. Gate blockers: Quality regressions: fail; 1774 new or worsened debt finding(s).
 
 | Target Score | Max Risky Hotspots | Hotspots To Clear |
 | --- | --- | --- |
@@ -40,11 +40,11 @@ Largest score loss: **none**. Gate blockers: Quality regressions: fail; 1709 new
 
 ## Summary
 
-- Files analyzed: 1181
-- Total lines: 143822
-- Code lines: 133264
-- AST branch decisions: 30665
-- AST functions/methods: 11532
+- Files analyzed: 1237
+- Total lines: 148955
+- Code lines: 138063
+- AST branch decisions: 31711
+- AST functions/methods: 12012
 - Duplication: 0 clones, 0%
 - Import cycles: 0 cycles / baseline 0
 
@@ -58,14 +58,14 @@ Largest score loss: **none**. Gate blockers: Quality regressions: fail; 1709 new
 | Dead code | PASS |  |
 | Import cycles | PASS | 0 cycles / baseline gate 0 |
 | Typed async rules | PASS |  |
-| Behavior tests | PASS | 4117/4117 passed |
+| Behavior tests | PASS | 4256/4256 passed |
 | Critical branch coverage | PASS |  |
 | Source consistency | PASS |  |
 | Quality regressions | FAIL |  |
 
 ## Regression Control
 
-Baseline: loaded. Existing debt: **2470**. New or worsened findings: **1709**.
+Baseline: loaded. Existing debt: **2524**. New or worsened findings: **1774**.
 
 | Rule | File | Value | Limit |
 | --- | --- | --- | --- |
@@ -79,41 +79,41 @@ Baseline: loaded. Existing debt: **2470**. New or worsened findings: **1709**.
 | double-assertion | app/ai/AIEconomyFoodManager.ts:242 | 1 | 0 |
 | double-assertion | app/ai/AIEconomyFoodManager.ts:279 | 1 | 0 |
 | double-assertion | app/ai/AIEconomyHorseCapture.ts:32 | 1 | 0 |
-| function-lines | app/ai/AIStrategyBuilding.ts:113 | 155 | 80 |
+| function-lines | app/ai/AIStrategyBuilding.ts:112 | 156 | 80 |
 | function-lines | app/ai/AIStrategyBuilding.ts:269 | 119 | 80 |
 
 ## Critical Test Coverage
 
-Branch coverage: **90.07%** (7531/8361). All files in the configured critical domains are included, including files never loaded by tests. Existing per-file coverage cannot decrease; new files require 80% branch coverage.
+Branch coverage: **90.07%** (7650/8493). All files in the configured critical domains are included, including files never loaded by tests. Existing per-file coverage cannot decrease; new files require 80% branch coverage.
 
 | File | Branches covered | Percent |
 | --- | --- | --- |
 | app/lib/units/energyRules.ts | 3/5 | 60 |
-| app/classes/unit/movement/UnitMovement.ts | 89/138 | 64.49 |
+| app/classes/unit/movement/UnitMovement.ts | 91/140 | 65 |
 | app/lib/units/village/villageGroundRecovery.ts | 74/113 | 65.48 |
 | app/lib/units/unitActionTarget.ts | 7/10 | 70 |
 | app/lib/combat/diplomaticAggression.ts | 52/71 | 73.23 |
-| app/lib/combat/parry.ts | 29/39 | 74.35 |
+| app/lib/combat/parry.ts | 30/40 | 75 |
 | app/lib/units/autonomy/villagerDropoffDistance.ts | 21/28 | 75 |
 | app/lib/units/roadJourney.ts | 6/8 | 75 |
-| app/lib/combat/combatHit.ts | 65/86 | 75.58 |
 | app/lib/units/supplies/npcSupplyStatus.ts | 25/33 | 75.75 |
 | app/classes/unit/movement/UnitMoveOrderAdmission.ts | 38/50 | 76 |
-| app/classes/unit/movement/UnitHeroDirectMovementCollision.ts | 91/118 | 77.11 |
+| app/classes/unit/movement/UnitHeroDirectMovementCollision.ts | 94/122 | 77.04 |
+| app/serialization/blueprint/WorldMapBlueprintSelection.ts | 28/36 | 77.77 |
 
 ## Function Complexity
 
 | Function | Complexity | Nesting | Lines |
 | --- | --- | --- | --- |
-| app/serialization/validation/PlayerRecordValidation.ts:115 validatePlayerBuildings | 78 | 4 | 149 |
-| app/ui/minimap/MinimapEntityLayer.ts:16 drawMinimapEntities | 77 | 5 | 136 |
 | app/serialization/validation/SaveUnitValidators.ts:78 validatePlayerUnits | 76 | 3 | 124 |
 | app/serialization/QuestSave.ts:4 validateQuestJournal | 70 | 4 | 116 |
+| tools/interiors-preview/layout-store.cjs:25 createLayoutStore.save | 68 | 4 | 116 |
 | app/lib/npc/npcRoutineChatter.ts:29 pickNpcRoutineChatterLine | 65 | 4 | 86 |
 | app/lib/terrain/reliefAppearance.ts:4 getReliefAppearance | 65 | 20 | 53 |
 | tools/maps/LocalMapRelief.ts:10 normalizeLocalMapRelief | 58 | 5 | 139 |
 | app/services/VillagerAutonomySystem.ts:88 VillagerAutonomySystem.check | 55 | 2 | 80 |
 | app/classes/map/generation/BlueprintResourceLoading.ts:38 loadBlueprintResourceBatches | 54 | 4 | 111 |
+| engine/services/BuildingInteriorSpaceDecorations.ts:141 ensureInteriorDefaultBuildings | 53 | 4 | 138 |
 | app/controllers/HeroControllerUpdate.ts:94 updateHeroControllerRuntime | 52 | 3 | 141 |
 | app/serialization/validation/SaveAmbientTrafficValidation.ts:6 validateAmbientTraffic | 51 | 3 | 73 |
 | app/services/visibility/UnitPerception.ts:100 updateVisibilityNow | 51 | 4 | 96 |
@@ -122,18 +122,18 @@ Branch coverage: **90.07%** (7531/8361). All files in the configured critical do
 
 | File | Kind | Risk | LOC | Branches | Max Block | Churn 90d | Why |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| app/serialization/validation/PlayerRecordValidation.ts | app | 254.9 | 265 | 115 | 156 | 5 | complexite elevee |
-| app/controllers/HeroController.ts | runtime | 249.5 | 530 | 78 | 87 | 55 | souvent modifie |
+| app/controllers/HeroController.ts | runtime | 251.5 | 530 | 78 | 87 | 56 | souvent modifie |
 | app/services/tutorial/TutorialOpening.ts | runtime | 247.2 | 351 | 112 | 153 | 4 | complexite elevee |
 | app/classes/unit/UnitCombat.ts | runtime | 236.6 | 333 | 77 | 116 | 36 | souvent modifie, beaucoup de dependances |
-| app/classes/map/terrain/MapTerrainBake.ts | runtime | 235.4 | 659 | 113 | 123 | 5 | complexite elevee |
+| app/classes/map/terrain/MapTerrainBake.ts | runtime | 232.4 | 658 | 111 | 123 | 5 | complexite elevee |
 | app/serialization/ZonedSaveFormat.ts | app | 231.1 | 256 | 107 | 149 | 3 | complexite elevee |
-| app/services/world/offline/OfflineWorldSimulation.ts | runtime | 230.7 | 338 | 93 | 149 | 4 | beaucoup de dependances |
-| app/ui/NpcOrdersManager.ts | ui | 225.5 | 446 | 77 | 96 | 40 | souvent modifie, beaucoup de dependances |
-| app/serialization/validation/SaveUnitValidators.ts | app | 224.7 | 217 | 113 | 131 | 3 | complexite elevee |
+| app/serialization/validation/SaveUnitValidators.ts | app | 227.7 | 217 | 113 | 131 | 4 | complexite elevee |
+| app/ui/NpcOrdersManager.ts | ui | 227.5 | 446 | 77 | 96 | 41 | souvent modifie, beaucoup de dependances |
+| app/services/world/offline/OfflineWorldSimulation.ts | runtime | 226.4 | 333 | 89 | 149 | 5 | beaucoup de dependances |
+| engine/services/BuildingInteriorSpaceDecorations.ts | runtime | 219.9 | 279 | 111 | 138 | 0 | complexite elevee |
 | app/classes/players/Player.ts | runtime | 213.3 | 288 | 71 | 55 | 42 | souvent modifie, beaucoup de dependances |
-| engine/services/BuildingInteriorSpaceDecorations.ts | runtime | 211.6 | 273 | 104 | 141 | 0 | complexite elevee |
 | app/services/wildlife/WildlifeSystem.ts | runtime | 211.3 | 309 | 106 | 132 | 1 | complexite elevee |
+| app/services/CollectiveVillageWork.ts | runtime | 210.7 | 237 | 84 | 156 | 6 | score de risque relatif eleve |
 
 ## Score Moves
 
@@ -146,16 +146,16 @@ No risky hotspots currently count against the score.
 | File | Kind | LOC | Branches | Imports |
 | --- | --- | --- | --- | --- |
 | app/services/weather/WeatherSystem.ts | runtime | 718 | 92 | 16 |
-| app/classes/map/terrain/MapTerrainBake.ts | runtime | 659 | 113 | 19 |
-| tools/ui-gallery/Gallery.ts | app | 629 | 67 | 30 |
+| tools/ui-gallery/Gallery.ts | app | 688 | 75 | 31 |
+| app/classes/map/terrain/MapTerrainBake.ts | runtime | 658 | 111 | 19 |
 | app/classes/players/AIPlayer.ts | runtime | 578 | 67 | 23 |
 | app/lib/audio/settings.ts | library | 576 | 57 | 2 |
-| app/lib/lpc/equipmentData.ts | data/config | 575 | 2 | 4 |
 | app/services/PerformanceMonitor.ts | runtime | 575 | 70 | 0 |
+| app/lib/lpc/equipmentData.ts | data/config | 560 | 2 | 4 |
 | app/classes/map/resources/MapResources.ts | runtime | 558 | 52 | 15 |
 | app/lib/entities/spriteFragmentBurst.ts | library | 558 | 68 | 5 |
+| app/types/save.ts | types | 552 | 0 | 29 |
 | app/screens/Game.ts | ui | 551 | 39 | 37 |
-| app/types/save.ts | types | 549 | 0 | 29 |
 | app/classes/HeroCatchingPoleThrow.ts | runtime | 546 | 89 | 13 |
 
 ## Data And Config Files
@@ -164,18 +164,18 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 
 | File | Kind | LOC | Branches |
 | --- | --- | --- | --- |
-| app/lib/lpc/equipmentData.ts | data/config | 575 | 2 |
-| app/lib/i18n/fr.ts | data/config | 477 | 0 |
-| app/lib/i18n/en.ts | data/config | 474 | 0 |
-| app/serialization/entity/EntitySaveData.ts | data/config | 425 | 41 |
+| app/lib/lpc/equipmentData.ts | data/config | 560 | 2 |
+| app/lib/i18n/fr.ts | data/config | 503 | 0 |
+| app/lib/i18n/en.ts | data/config | 500 | 0 |
+| app/serialization/entity/EntitySaveData.ts | data/config | 432 | 41 |
 | app/constants/entities.ts | data/config | 353 | 0 |
-| app/lib/i18n/questTranslations.ts | data/config | 287 | 0 |
-| app/lib/i18n/heroTranslations.ts | data/config | 230 | 0 |
-| app/config/playerConfig.ts | data/config | 215 | 15 |
+| app/lib/i18n/questTranslations.ts | data/config | 321 | 0 |
+| app/lib/i18n/heroTranslations.ts | data/config | 234 | 0 |
+| app/config/playerConfig.ts | data/config | 218 | 16 |
 | app/config/assetManifest.ts | data/config | 204 | 0 |
 | app/lib/i18n/entityNames.ts | data/config | 193 | 0 |
 | app/lib/i18n/entityDetails.ts | data/config | 179 | 0 |
-| app/lib/lpc/unitEquipmentData.ts | data/config | 138 | 0 |
+| app/lib/lpc/unitEquipmentData.ts | data/config | 143 | 0 |
 
 ## Complexity Signals
 
@@ -184,12 +184,12 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | app/services/travel/RoadTravelSystem.ts | 119 | 101 | 353 |
 | app/services/travel/ambient/AmbientTrafficSystem.ts | 118 | 77 | 311 |
 | app/services/spacePortal/SpacePortalSystem.ts | 117 | 43 | 362 |
-| app/serialization/validation/PlayerRecordValidation.ts | 115 | 156 | 265 |
-| app/classes/map/terrain/MapTerrainBake.ts | 113 | 123 | 659 |
 | app/classes/resources/CompactResourceSet.ts | 113 | 27 | 534 |
 | app/serialization/validation/SaveUnitValidators.ts | 113 | 131 | 217 |
 | app/dev-console/actions/DebugMapRenderers.ts | 112 | 92 | 461 |
 | app/services/tutorial/TutorialOpening.ts | 112 | 153 | 351 |
+| app/classes/map/terrain/MapTerrainBake.ts | 111 | 123 | 658 |
+| engine/services/BuildingInteriorSpaceDecorations.ts | 111 | 138 | 279 |
 | tools/maps/settlements/settlement-roads.cjs | 109 | 87 | 285 |
 | app/serialization/ZonedSaveFormat.ts | 107 | 149 | 256 |
 | app/services/wildlife/WildlifeSystem.ts | 106 | 132 | 309 |
@@ -198,18 +198,18 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 
 | File | Churn 90d | Risk | LOC |
 | --- | --- | --- | --- |
-| app/types/save.ts | 60 | 144.5 | 549 |
+| app/types/save.ts | 61 | 146.6 | 552 |
 | app/config/assetManifest.ts | 60 | 29.1 | 204 |
-| app/types/entities.ts | 59 | 24.2 | 24 |
+| app/types/context.ts | 58 | 125.4 | 374 |
 | app/serialization/SaveSerializer.ts | 57 | 205.9 | 250 |
-| app/types/context.ts | 57 | 123.3 | 370 |
-| app/controllers/HeroController.ts | 55 | 249.5 | 530 |
-| app/screens/Game.ts | 54 | 200.7 | 551 |
+| app/types/entities.ts | 57 | 23.4 | 24 |
+| app/controllers/HeroController.ts | 56 | 251.5 | 530 |
+| app/screens/Game.ts | 55 | 202.7 | 551 |
 | app/lib/i18n/translations.ts | 48 | 19.4 | 8 |
 | app/classes/map/MapGeneration.ts | 47 | 188.3 | 377 |
-| app/ui/InventoryManager.ts | 45 | 163.4 | 369 |
+| app/ui/InventoryManager.ts | 46 | 165.5 | 374 |
 | app/classes/players/Player.ts | 42 | 213.3 | 288 |
-| app/classes/building/BuildingLifecycle.ts | 42 | 153.4 | 194 |
+| app/lib/i18n/en.ts | 42 | 96.5 | 500 |
 
 ## Project Hygiene
 
@@ -252,9 +252,9 @@ No folder exceeds the current file-count warning.
 
 | Style | Files |
 | --- | --- |
-| PascalCase | 626 |
-| camelCase | 476 |
-| mixed | 79 |
+| PascalCase | 643 |
+| camelCase | 509 |
+| mixed | 85 |
 
 ### Naming Mismatches
 

@@ -21,7 +21,7 @@ function fixture() {
   const { affectNewDest } = loadTsModule('app/classes/unit/movement/UnitAffectNewDest.ts', {
     mocks: {
       '../../../lib/economy/constructionMaterials': { constructionProgress: dest => dest.constructionProgress ?? 0 },
-      '../../../config/rpgVillages': { isRpgVillager: () => rules.rpg },
+      '../../../config/world/rpgVillages': { isRpgVillager: () => rules.rpg },
       '../../../lib/units/village/villageStateEvents': { notifyVillageStateChanged: mark('notify') },
       '../../../lib/units/combat/targetPursuit': { updateTargetPursuit: () => rules.pursue },
       '../../../lib/units/autonomy/villagerExploration': {

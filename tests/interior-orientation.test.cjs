@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { mirrorInteriorBlueprint } = loadTsModule('app/lib/buildings/interiorOrientation.ts')
+const { mirrorInteriorBlueprint } = loadTsModule('app/lib/buildings/interior/interiorOrientation.ts')
 const { getInteriorWallGeometry } = loadTsModule('app/lib/terrain/interiorWallGeometry.ts')
 const catalog = require('../public/maps/interiors/cave/catalog.json')
 const { decodeInteriorPayload } = loadTsModule('app/serialization/blueprint/InteriorBlueprintLoader.ts')

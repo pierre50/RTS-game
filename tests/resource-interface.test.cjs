@@ -48,8 +48,20 @@ function makeFakeClassList() {
 
 function makeFakeElement() {
   const el = {
+    nodeType: 1,
     classList: makeFakeClassList(),
     children: [],
+    get childNodes() {
+      return this.children
+    },
+    isEqualNode(other) {
+      return (
+        other?.className === this.className &&
+        other.textContent === this.textContent &&
+        other.children.length === this.children.length &&
+        this.children.every((child, index) => child.isEqualNode?.(other.children[index]))
+      )
+    },
     textContent: '',
     type: '',
     title: '',

@@ -81,10 +81,6 @@ export type AssetOwner = {
   civ?: string
 }
 
-const INTERFACE_ICON_SHEETS: Record<string, string> = {
-  '50721': 'command-icons',
-}
-
 export type BuildingWithAssetOwner = {
   buildingLevel?: number
   assetLevel?: AssetLevel
@@ -96,11 +92,8 @@ export type BuildingWithAssetOwner = {
 
 export function getIconPath(name: string): string {
   if (name.startsWith('stat/')) return `assets/icons/attributes/${name.slice('stat/'.length)}.svg`
-  if (name.startsWith('resource/')) return `assets/icons/resources/pixel/${name.slice('resource/'.length)}.png`
-  const id = name.split('_')[1]
-  const index = name.split('_')[0]
-  const sheet = INTERFACE_ICON_SHEETS[id] || id
-  return `assets/interface/${sheet}/${index}.png`
+  if (name.startsWith('resource/')) return `assets/icons/resources/${name.slice('resource/'.length)}.png`
+  throw new Error(`Unknown icon: ${name}`)
 }
 
 export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetCacheLike): BuildingAsset {

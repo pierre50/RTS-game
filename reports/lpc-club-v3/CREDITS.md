@@ -1,0 +1,1 @@
+Club LPC par bluecarrot16, [LPC] More Weapons: https://opengameart.org/content/lpc-more-weapons. Licences OGA-BY 3.0+, GPL 3.0, CC-BY 4.0. Slash natif reverse-oversize ; seule la sixième image vue de haut est retournée autour de sa prise en main pour dégager la tête.

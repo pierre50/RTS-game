@@ -45,6 +45,8 @@ export type DynamicEquipmentKey =
   | 'sword_copper'
   | 'sword_ceramic'
   | 'sword_bronze'
+  | 'sword_curved_bronze'
+  | 'sword_curved_iron'
   | 'dagger_bronze'
   | 'dagger_iron'
   | 'spear_ceramic'
@@ -52,6 +54,7 @@ export type DynamicEquipmentKey =
   | 'spear_iron'
   | 'mace_bronze'
   | 'mace_iron'
+  | 'club_ceramic'
   | 'sword_iron'
   | 'armor_leather'
   | 'armor_mail_ceramic'
@@ -102,15 +105,12 @@ export type DynamicEquipmentKey =
   | 'leg_armor_bronze'
   | 'leg_armor_iron'
   | 'cape_solid'
-  | 'crest'
   | 'centurion_crest'
-  | 'centurion_plumage'
   | 'legion_plumage'
   | 'plumage'
   | 'helmet_wings'
   | 'upward_horns_white'
-  | 'upward_horns_ceramic'
-  | 'longsword'
+  | 'horns_short'
   | 'round_shield_wood_slash'
   | 'round_shield_copper_slash'
   | 'round_shield_bronze_slash'
@@ -201,9 +201,7 @@ export const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, read
   leg_armor_copper: ['front'],
   leg_armor_bronze: ['front'],
   leg_armor_iron: ['front'],
-  crest: ['front'],
   centurion_crest: ['front'],
-  centurion_plumage: ['front'],
   legion_plumage: ['front'],
   plumage: ['front'],
   round_shield_wood_slash: ['front'],
@@ -311,34 +309,23 @@ export const WEARABLE_SHOOTING_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'arrow_iron',
   'quiver',
   'cape_solid',
-  'crest',
   'centurion_crest',
-  'centurion_plumage',
   'legion_plumage',
   'plumage',
   'helmet_wings',
   'upward_horns_white',
-  'upward_horns_ceramic',
+  'horns_short',
 ])
 
-export const PLAYER_COLORED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
-  'cape_solid',
-  'crest',
-  'centurion_crest',
-  'centurion_plumage',
-  'legion_plumage',
-  'plumage',
-])
+export const PLAYER_COLORED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>(['cape_solid'])
 
 export const HELMET_DECOR_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
-  'crest',
   'centurion_crest',
-  'centurion_plumage',
   'legion_plumage',
   'plumage',
   'helmet_wings',
   'upward_horns_white',
-  'upward_horns_ceramic',
+  'horns_short',
 ])
 
 export const BACK_WORN_DEATH_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>(['cape_solid', 'quiver'])
@@ -370,14 +357,12 @@ export const ACTION_BACKED_SHOOTING_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey
 ])
 
 export const MOUNTED_WALKING_SHEET_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
-  'crest',
   'centurion_crest',
-  'centurion_plumage',
   'legion_plumage',
   'plumage',
   'helmet_wings',
   'upward_horns_white',
-  'upward_horns_ceramic',
+  'horns_short',
 ])
 
 export const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
@@ -409,6 +394,7 @@ export const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'spear_ceramic',
   'spear_bronze',
   'spear_iron',
+  'club_ceramic',
 
   'sword_copper',
   'sword_ceramic',
@@ -441,15 +427,12 @@ export const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'helmet_barbarian_leather',
   'helmet_barbarian_nasal_leather',
   'sack_cloth_hood_leather',
-  'crest',
   'centurion_crest',
-  'centurion_plumage',
   'legion_plumage',
   'plumage',
   'helmet_wings',
   'upward_horns_white',
-  'upward_horns_ceramic',
-  'longsword',
+  'horns_short',
   'round_shield_wood_slash',
   'round_shield_copper_slash',
   'round_shield_bronze_slash',
@@ -467,7 +450,6 @@ export const EQUIPMENT_SHEET_OVERRIDES: Partial<
   bow_great: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   bow_recurve: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   cape_solid: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
-  centurion_plumage: { front: EQUIPMENT_DEATH_SHEETS },
   helmet_barbarian_leather: { front: EQUIPMENT_DEATH_SHEETS },
   helmet_barbarian_nasal_leather: { front: EQUIPMENT_DEATH_SHEETS },
   legion_plumage: { front: EQUIPMENT_DEATH_SHEETS },
@@ -476,6 +458,8 @@ export const EQUIPMENT_SHEET_OVERRIDES: Partial<
   sword_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   sword_copper: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   sword_bronze: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  sword_curved_bronze: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  sword_curved_iron: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   dagger_bronze: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   dagger_iron: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   spear_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
@@ -483,9 +467,10 @@ export const EQUIPMENT_SHEET_OVERRIDES: Partial<
   spear_iron: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   mace_bronze: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   mace_iron: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  club_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   sword_iron: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   upward_horns_white: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
-  upward_horns_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  horns_short: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   cane: { front: ['walking'] },
   arrow_ceramic: { front: ['action'] },
   arrow_copper: { front: ['action'] },
@@ -518,10 +503,13 @@ export const DYNAMIC_EQUIPMENT_KEYS = [
   'spear_ceramic',
   'spear_bronze',
   'spear_iron',
+  'club_ceramic',
 
   'sword_copper',
   'sword_ceramic',
   'sword_bronze',
+  'sword_curved_bronze',
+  'sword_curved_iron',
   'dagger_bronze',
   'dagger_iron',
   'mace_bronze',
@@ -530,15 +518,12 @@ export const DYNAMIC_EQUIPMENT_KEYS = [
   ...WEARABLE_EQUIPMENT_KEY_LIST,
   ...SOLDIER_LAYER_EQUIPMENT_KEY_LIST,
   'cape_solid',
-  'crest',
   'centurion_crest',
-  'centurion_plumage',
   'legion_plumage',
   'plumage',
   'helmet_wings',
   'upward_horns_white',
-  'upward_horns_ceramic',
-  'longsword',
+  'horns_short',
   'round_shield_wood_slash',
   'round_shield_copper_slash',
   'round_shield_bronze_slash',

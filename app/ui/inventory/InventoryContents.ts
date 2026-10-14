@@ -26,6 +26,7 @@ export function createInventoryContents(options: {
   title: string
   emptyText: string
   action?: HTMLElement
+  showItemCount?: boolean
   additionalItems?: HTMLElement[]
   renderResource: (resource: keyof ResourceAmount, amount: number) => HTMLElement
   renderEquipment: (equipment: string, count: number) => HTMLElement
@@ -35,7 +36,7 @@ export function createInventoryContents(options: {
     presentation: 'items',
     emptyText: options.emptyText,
     action: options.action,
-    showItemCount: true,
+    showItemCount: options.showItemCount ?? true,
     renderItems: grid => {
       for (const item of options.additionalItems ?? []) grid.appendChild(item)
       for (const resource of RESOURCE_STORAGE_NAMES) {

@@ -26,9 +26,10 @@ test('leather and wooden equipment share their model row with metal variants', (
     leatherArmor.map(recipe => recipe.id),
     ['armor_leather']
   )
-  for (const group of groups) {
-    assert.equal(new Set(group.map(recipe => recipe.outputEquipment.split('~')[1])).size, 1)
-  }
+  const pointed = groups.find(group => group.some(recipe => recipe.id === 'helmet_pointed_leather'))
+  assert.equal(pointed[0].id, 'helmet_pointed_leather')
+  assert.equal(pointed[1].id, 'helmet_pointed_leather~decor:centurion_crest')
+  assert.ok(pointed.findIndex(recipe => recipe.id === 'helmet_pointed_bronze') > 1)
   for (const recipe of FORGE_EQUIPMENT_RECIPES.filter(recipe => recipe.id.startsWith('helmet_pointed_leather~'))) {
     const group = groups.find(group => group.includes(recipe))
     assert.ok(group.some(variant => variant.id === recipe.id.replace('_leather', '_bronze')))
@@ -37,18 +38,18 @@ test('leather and wooden equipment share their model row with metal variants', (
   assert.equal(groups.flat().length, FORGE_EQUIPMENT_RECIPES.length)
 })
 
-test('material groups preserve distinct helmet models, decorations and valid equipment assets', () => {
+test('material groups preserve distinct helmet models and valid equipment assets', () => {
   const { DYNAMIC_EQUIPMENT_KEYS } = loadTsModule('app/lib/lpc/equipmentData.ts')
   const recipes = getAvailableHeroCraftRecipes({ civ: 'Nord' }, 'forge', { buildingLevel: 1, owner: { civ: 'Hellas' } })
   const groups = groupForgeRecipeVariants(recipes)
   const pointed = groups.find(group => group.some(recipe => recipe.id === 'helmet_pointed_bronze'))
   assert.deepEqual(
     pointed.map(recipe => recipe.id),
-    ['helmet_pointed_bronze', 'helmet_pointed_iron']
+    ['helmet_pointed_bronze', 'helmet_pointed_bronze~decor:centurion_crest',
+      'helmet_pointed_iron', 'helmet_pointed_iron~decor:centurion_crest']
   )
   for (const group of groups.filter(group => group[0].outputEquipment.startsWith('helmet_'))) {
-    assert.equal(new Set(group.map(recipe => Boolean(recipe.decorated))).size, 1)
-    assert.equal(new Set(group.map(recipe => recipe.outputEquipment.split('~')[1])).size, 1)
+    assert.equal(new Set(group.map(recipe => recipe.outputEquipment.split('~')[0].replace(/_(leather|ceramic|bronze|iron)$/, ''))).size, 1)
   }
   for (const recipe of FORGE_EQUIPMENT_RECIPES) {
     assert.ok(DYNAMIC_EQUIPMENT_KEYS.includes(recipe.outputEquipment.split('~')[0]))
@@ -118,9 +119,9 @@ test('forge reuses the shared selector, retains row focus and crafts the selecte
   getVariantRow(row).step(1)
   assert.equal(grid.childNodes[0], row)
   row.childNodes[0].craft()
-  assert.equal(crafted, 'helmet_pointed_bronze')
-  assert.equal(row.title, 'helmet_pointed_bronze')
+  assert.equal(crafted, 'helmet_pointed_leather~decor:centurion_crest')
+  assert.equal(row.title, 'helmet_pointed_leather~decor:centurion_crest')
   const refreshed = element()
   host.appendMaterialRow(refreshed, recipes)
-  assert.equal(refreshed.childNodes[0].title, 'helmet_pointed_bronze')
+  assert.equal(refreshed.childNodes[0].title, 'helmet_pointed_leather~decor:centurion_crest')
 })

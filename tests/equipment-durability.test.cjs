@@ -11,7 +11,7 @@ test('old items start pristine, condition is bounded and consumables never gain 
   assert.equal(worn('bow', 100), 'bow')
   assert.equal(worn('arrow_iron', 20), 'arrow_iron')
   assert.equal(remaining('arrow_iron'), null)
-  assert.equal(condition.equipmentBaseKey(worn('longsword', 50)), 'longsword')
+  assert.equal(condition.equipmentBaseKey(worn('sword_iron', 50)), 'sword_iron')
 })
 
 test('copies retain their own condition through equipping, swapping, stacking and JSON saves', () => {

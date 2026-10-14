@@ -1,5 +1,5 @@
 import type { ForgeUpgrades } from '../lib/equipment/forgeUpgrades'
-import type { SettlementType, DevelopmentMode } from '../config/settlementProfiles'
+import type { SettlementType, DevelopmentMode } from '../config/world/settlementProfiles'
 import type { MinimapBuildingMemory, MinimapPreferences } from './minimap'
 import type { GameContextLike } from './context'
 import type { RuntimeCell } from './map'

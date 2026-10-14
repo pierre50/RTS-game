@@ -7,6 +7,7 @@ const { preparedSettlementState } = loadTsModule('app/serialization/PreparedSett
 const { buildWorldRegionPlayerConfigs } = loadTsModule('app/screens/game/WorldRegionPlayers.ts')
 const { countResidentHouseholds } = loadTsModule('app/lib/housing/households.ts')
 const { getHouseBedLabels } = loadTsModule('app/lib/housing/householdBeds.ts')
+const { getHouseProfile } = loadTsModule('app/lib/housing/houseLevels.ts')
 const { CIVILIZATIONS } = loadTsModule('app/config/civilizations.ts')
 class Human {
   constructor(options) {
@@ -99,7 +100,11 @@ test('shipped continent restores 42 distinct AI settlements and an empty hero st
         if (workers.length >= 4)
           assert.equal(new Set(workers.map(unit => unit.inventory.activeWeapons.tool.split('_')[0])).size, 4)
         if (player.settlementType !== 'outpost') {
-          assert.equal(player.buildings.filter(b => b.type === 'House').length, countResidentHouseholds(player))
+          // Each household (single or couple) takes two beds; upgraded city houses hold two households.
+          const householdSlots = player.buildings
+            .filter(b => b.type === 'House')
+            .reduce((sum, house) => sum + getHouseProfile(house).beds / 2, 0)
+          assert.equal(householdSlots, countResidentHouseholds(player))
           const assignedBeds = new Set()
           for (const unit of player.units) {
             const house = player.buildings.find(b => b.label === unit.homeHouseLabel)

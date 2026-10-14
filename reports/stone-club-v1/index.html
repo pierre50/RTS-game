@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><title>Massue de pierre · V1</title>
+<style>
+body{background:#181d26;color:#eef0f5;font:16px system-ui;margin:32px auto;max-width:1320px;padding:0 20px}
+p{color:#b9c2d1;line-height:1.5}a{color:#b7ddff}
+button,select,input{font:inherit;margin:8px;padding:8px}
+canvas{display:block;width:100%;max-width:1280px;background:#303641;border-radius:12px;image-rendering:pixelated}
+</style>
+<h1>Massue de pierre · V1</h1>
+<p>Prototype LPC sur le héros Hellas. Quatre directions pour la marche et l'attaque ; six poses pour la chute.</p>
+<button id="play">Pause</button>
+<label>Animation <select id="anim"><option value="walk">Walk</option><option value="slash">Slash</option><option value="hurt">Hurt</option></select></label>
+<label>Vitesse <select id="speed"><option value="150">Normale</option><option value="300">Ralenti</option><option value="80">Rapide</option></select></label>
+<label>Image <input id="frame" type="range" min="0" max="8" value="0"></label> <span id="count"></span>
+<canvas id="view" width="1280" height="320"></canvas>
+<p>Les calques de cette étude ne sont pas encore intégrés à l'équipement du jeu.</p>
+<script>
+const atlases={walk:new Image(),slash:new Image(),hurt:new Image()};
+for(const name of Object.keys(atlases))atlases[name].src=name+'-atlas.png';
+const canvas=document.getElementById('view'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+const anim=document.getElementById('anim'),speed=document.getElementById('speed');
+const range=document.getElementById('frame'),count=document.getElementById('count');
+let playing=true,index=0,last=0;
+document.getElementById('play').onclick=()=>{playing=!playing;document.getElementById('play').textContent=playing?'Pause':'Lecture'};
+anim.onchange=()=>{index=0;range.max=anim.value==='walk'?8:5};
+range.oninput=()=>{index=+range.value;playing=false;document.getElementById('play').textContent='Lecture'};
+function render(time){
+ const name=anim.value,n=name==='walk'?9:6,directions=name==='hurt'?1:4,img=atlases[name];
+ if(playing&&time-last>+speed.value){index=(index+1)%n;last=time}
+ range.value=index;count.textContent=(index+1)+' / '+n;
+ ctx.fillStyle='#303641';ctx.fillRect(0,0,1280,320);
+ if(img.complete&&img.naturalWidth){for(let row=0;row<directions;row++)
+   ctx.drawImage(img,index*160,row*160,160,160,directions===1?480:row*320,0,320,320)}
+ requestAnimationFrame(render)
+}requestAnimationFrame(render);
+</script></html>

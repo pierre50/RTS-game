@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "commit": "58ce1aa479e4df32845a73a5d0afc221c3a893c2",
+  "credits": "sheet_definitions/weapon_blunt_club.json",
+  "files": [
+    {
+      "path": "spritesheets/weapon/blunt/club/club.png",
+      "sha256": "0b7a0ecaae2b7f2f9d2f5651626bb676c721397b68d8f9c2b756f7ec6cba4c97"
+    },
+    {
+      "path": "spritesheets/weapon/blunt/club/background/club.png",
+      "sha256": "7b43488dc66a589d506738cb9cd89f55b234dc8544b07be57a03296fbf75bc80"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { getInteriorLayoutLevel } from '../interiorLayoutLevel'
+import { getInteriorLayoutLevel } from '../interior/interiorLayoutLevel'
 import {
   INTERIOR_LAYOUT_POSITIONS,
   isFullInteriorLayout,

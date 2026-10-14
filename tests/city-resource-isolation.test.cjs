@@ -59,7 +59,8 @@ test('forge crafting uses the station town and an isolated station only the hero
     station: 'forge',
     category: 'ingots',
     cost: { wood: 3 },
-    outputResource: 'ironIngot',
+    // Bronze: iron production is separately gated on the forge level (FORGE_IRON_REQUIRED_LEVEL).
+    outputResource: 'bronzeIngot',
     outputEquipment: '',
     outputCount: 1,
   }

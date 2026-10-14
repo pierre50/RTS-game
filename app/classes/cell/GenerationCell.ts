@@ -67,7 +67,6 @@ export class GenerationCell extends LogicalCell implements RuntimeCell {
       terrainTextureName: textureRef ? textureRefToString(textureRef) : '',
       _terrainAppearance: {
         patchBorders: null,
-        patchBorderGroundType: null,
         relief: null,
         waterBorder: null,
       },
@@ -104,7 +103,6 @@ export class GenerationCell extends LogicalCell implements RuntimeCell {
       this.waterBorder = false
     }
     this._terrainAppearance.patchBorders = null
-    this._terrainAppearance.patchBorderGroundType = null
     this._terrainAppearance.relief = null
     if (!preserveWaterBorder) this._terrainAppearance.waterBorder = null
   }
@@ -143,9 +141,9 @@ export class GenerationCell extends LogicalCell implements RuntimeCell {
   }
 
   setPatchBorder(direction: string, groundType: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' = 'Desert'): void {
-    if (!this._terrainAppearance.patchBorders) this._terrainAppearance.patchBorders = new Set()
-    this._terrainAppearance.patchBorders.add(direction)
-    this._terrainAppearance.patchBorderGroundType = groundType
+    // First ground wins per direction, matching CellTerrain.setPatchBorder's alreadySet guard.
+    if (!this._terrainAppearance.patchBorders) this._terrainAppearance.patchBorders = new Map()
+    if (!this._terrainAppearance.patchBorders.has(direction)) this._terrainAppearance.patchBorders.set(direction, groundType)
   }
 
   getTerrainDecorations(): TerrainDecoration[] {

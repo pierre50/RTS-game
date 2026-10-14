@@ -25,10 +25,9 @@ const constants = {
 const VISUAL_ONLY_EQUIPMENT = [
   'cape_solid',
   'centurion_crest',
-  'centurion_plumage',
-  'crest',
   'gold',
   'helmet_wings',
+  'horns_short',
   'legion_plumage',
   'meat',
   'plumage',
@@ -98,6 +97,11 @@ test('gameplay equipment data covers every dynamic equipment key', () => {
   for (const visualOnly of VISUAL_ONLY_EQUIPMENT) {
     assert.deepEqual(equipment[visualOnly], {}, `${visualOnly} should remain visual-only`)
   }
+  // Retired ornaments only survive as legacy save migrations.
+  for (const legacy of ['crest', 'centurion_plumage']) {
+    assert.equal(Object.hasOwn(equipment, legacy), false, legacy)
+    assert.equal(getDynamicEquipmentKeys().includes(legacy), false, legacy)
+  }
 })
 
 test('combat equipment data declares weapon and armor stats by role', () => {
@@ -110,7 +114,6 @@ test('combat equipment data declares weapon and armor stats by role', () => {
     'bow_recurve',
     'cane',
     'spear_iron',
-    'longsword',
     'watch_tower_arrow',
     'wolf_bite',
   ])

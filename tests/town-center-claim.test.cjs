@@ -7,6 +7,7 @@ const { BuildingLifecycle } = loadTsModule('app/classes/building/BuildingLifecyc
     'pixi.js': { AnimatedSprite: class {} },
     '../../lib': { getPercentage: (hp, total) => (hp * 100) / total, updateInstanceVisibility() {} },
     '../../lib/lang': { t: key => key },
+    '../../services/BuildingInteriorSpaceSystem': { syncHouseInteriorSpace() {} },
     './BuildingSowing': { finishSowingTile: () => false },
     './BuildingDestruction': {},
     './BuildingFinalTexture': {},

@@ -1,5 +1,5 @@
 import { recordEconomyFlow } from '../../lib/economy/economyTelemetry'
-import { isRpgVillage } from '../../config/rpgVillages'
+import { isRpgVillage } from '../../config/world/rpgVillages'
 import { getBuildingStorageRemaining } from '../../lib/resources/resourceDelivery'
 import { communalStoreBuilding } from '../../lib/economy/constructionStores'
 import { syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'

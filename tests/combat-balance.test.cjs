@@ -137,7 +137,9 @@ test('starting bandits remain dangerous without deleting the hero instantly', ()
   const banditArcher = { ...config.units.BanditArcher, ...getEquipmentStats(['bow', 'arrow_ceramic']) }
 
   assert.equal(hitsToKill(banditChief, hero), 5)
-  assert.equal(hitsToKill(banditSword, hero), 5)
+  // Starting sword bandits now carry a ceramic club (6) against the hero's unified armor (1).
+  assert.equal(damagePerHit(banditSword, hero), 5)
+  assert.equal(hitsToKill(banditSword, hero), 9)
   // Bow (5) + ceramic arrow (1) minus the hero's unified armor (1).
   assert.equal(damagePerHit(banditArcher, hero), 5)
   assert.equal(hitsToKill(banditArcher, hero), 9)

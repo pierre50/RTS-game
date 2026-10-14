@@ -56,8 +56,7 @@ function getTerrainCameraController(controls: TerrainMapContext['controls']): Te
 type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number } | null
   relief?: { index: number; elevation: number } | null
-  patchBorders?: Iterable<string> | null
-  patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
+  patchBorders?: ReadonlyMap<string, 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'> | null
 }
 
 type TerrainDecoration = {
@@ -308,7 +307,7 @@ export class MapTerrainBake {
             corpses: new Set<RuntimeEntity>(),
             _terrainAppearance: {
               ...appearance,
-              patchBorders: new Set(appearance.patchBorders ?? []),
+              patchBorders: new Map(appearance.patchBorders ?? []),
               relief: appearance.relief ?? null,
               waterBorder: appearance.waterBorder ?? null,
             },
@@ -321,8 +320,8 @@ export class MapTerrainBake {
           if (appearance.waterBorder)
             visual.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
           if (appearance.relief) visual.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
-          for (const direction of appearance.patchBorders ?? [])
-            visual.setPatchBorder(direction, appearance.patchBorderGroundType ?? undefined)
+          for (const [direction, groundType] of appearance.patchBorders ?? [])
+            visual.setPatchBorder(direction, groundType)
           for (const decoration of this.decorations.get(source) ?? []) {
             const sprite = new Sprite(decoration.texture)
             sprite.position.copyFrom(decoration.position)
@@ -600,8 +599,8 @@ export class MapTerrainBake {
       const appearance = source._terrainAppearance ?? {}
       if (appearance.waterBorder) cell.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
       if (appearance.relief) cell.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
-      for (const direction of appearance.patchBorders ?? []) {
-        cell.setPatchBorder(direction, appearance.patchBorderGroundType ?? undefined)
+      for (const [direction, groundType] of appearance.patchBorders ?? []) {
+        cell.setPatchBorder(direction, groundType)
       }
     }
     this.map.context.performance?.record?.(

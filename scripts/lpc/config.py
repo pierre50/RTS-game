@@ -112,9 +112,6 @@ PALETTES: dict[str, list[str]] = {
         "#C4B59F",
         "#E5E6C7",
     ],
-    # Dagger blade only; retain the original brown grip.
-    "dagger_metal_source": ["#1D131E", "#4D4A5D", "#726B7E", "#B19998", "#C4B59F", "#E5E6C7", "#FFFFFF"],
-
     # ── Cloth ───────────────────────────────────────────────────────────────
     "white":       ["#2E1026", "#554769", "#917A7B", "#BBAFA4", "#EADBC9", "#F5F7FA"],
     "cloth_brown": ["#1D131E", "#411E05", "#4B2B13", "#62351C", "#744B30", "#996B4A"],

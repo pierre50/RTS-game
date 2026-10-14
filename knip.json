@@ -19,6 +19,12 @@
     "app/services/BuildingInteriorSpaceSystem.ts": ["exports"],
     "engine/services/BuildingInteriorSpaceSystemRuntime.ts": ["exports"],
     "app/services/TributeRaidRules.ts": ["exports"],
-    "app/serialization/CampaignSave.ts": ["exports"]
+    "app/serialization/CampaignSave.ts": ["exports"],
+    "app/lib/buildings/interior/interiorRoomSize.ts": ["exports"],
+    "app/lib/buildings/towerCombat.ts": ["exports"],
+    "app/lib/equipment/forgeUpgrades.ts": ["exports"],
+    "app/lib/housing/households.ts": ["exports"],
+    "app/lib/housing/houseLevels.ts": ["exports"],
+    "app/ui/inventory/InventoryItemIcons.ts": ["exports"]
   }
 }

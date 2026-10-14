@@ -2,12 +2,13 @@ const { loadGenerationTs: load } = require('../maps/load-generation-ts.cjs')
 const { startingVillagerInventory } = load('app/lib/economy/startingProvisions.ts')
 const { supplyTownTool, supplyTownWeapons } = load('app/lib/units/supplies/townToolSupply.ts')
 const { getNpcWeaponChoice } = load('app/lib/units/combat/npcWeapons.ts')
-const { hasRequiredWorkTool, canAutonomouslyWork } = load('app/lib/equipment/workTools.ts')
+const { canDoWorkWithTool, canAutonomouslyWork } = load('app/lib/equipment/workTools.ts')
 const { getEquipmentDurability } = load('app/lib/equipment/equipmentCondition.ts')
 const { FORGE_EQUIPMENT_RECIPES } = load('app/lib/hero/heroForgeRecipes.ts')
 const { createPlayerData } = load('app/config/playerConfig.ts')
 const { dynamicEquipmentForUnit } = load('app/lib/lpc/equipment.ts')
 const { EQUIPMENT_NAMES } = load('app/lib/i18n/equipmentNames.ts')
+const { FORGE_IRON_REQUIRED_LEVEL } = load('app/config/forge.ts')
 const equipment = require('../../public/assets/data/gameplay/equipment.json')
 function fixture(item = 'axe_ceramic') {
   const center = {
@@ -18,7 +19,8 @@ function fixture(item = 'axe_ceramic') {
     isBuilt: true,
     inventory: { resources: { wood: 100, stone: 100, bronzeIngot: 100, ironIngot: 100 } },
   }
-  const forge = { type: 'Forge', i: 11, j: 10, isBuilt: true }
+  // Upgraded forge: iron production is gated behind the first forge upgrade.
+  const forge = { type: 'Forge', i: 11, j: 10, isBuilt: true, buildingLevel: FORGE_IRON_REQUIRED_LEVEL }
   const owner = {
     label: 'audit-player',
     type: 'Human',
@@ -96,8 +98,8 @@ function npcEquipmentCatalogue() {
   check('Arme remplacée : pas de deuxième fabrication', false, supplyTownWeapons(soldier.unit, soldier.owner))
   const f = fixture()
   f.unit.inventory.activeWeapons.tool = 'axe_ceramic'
-  check('Hache équipée : couper du bois', true, hasRequiredWorkTool(f.unit, 'chopwood'))
-  check('Hache équipée : miner sans pioche', false, hasRequiredWorkTool(f.unit, 'minestone'))
+  check('Hache équipée : couper du bois', true, canDoWorkWithTool(f.unit, 'chopwood'))
+  check('Hache équipée : miner sans pioche', false, canDoWorkWithTool(f.unit, 'minestone'))
   check('Outil équipé sans arme : combat avec la hache', 'axe_ceramic', getNpcWeaponChoice(f.unit).weapon)
   f.unit.inventory.equipment.push('dagger_bronze')
   check('Dague utilisable prioritaire sur l’outil', 'dagger_bronze', getNpcWeaponChoice(f.unit).weapon)
@@ -170,6 +172,10 @@ function npcEquipmentCatalogue() {
   rescue.unit.inventory.activeWeapons.tool = 'axe_ceramic~condition:0'
   check('Prochaine casse : retour au métal en stock', true, supplyTownTool(rescue.unit, rescue.owner))
   check('Outil métallique rééquipé', 'axe_bronze', rescue.unit.inventory.activeWeapons.tool)
+  const lowForge = fixture('axe_iron')
+  lowForge.forge.buildingLevel = 0
+  check('Forge non améliorée : pas de fabrication en fer', true, supplyTownTool(lowForge.unit, lowForge.owner))
+  check('Forge non améliorée : repli payé sur la pierre', 'axe_ceramic', lowForge.unit.inventory.activeWeapons.tool)
   const stock = fixture()
   stock.forge.inventory = { equipment: ['axe_ceramic~condition:60'] }
   const before = structuredClone(stock.center.inventory.resources)
@@ -185,18 +191,16 @@ function npcEquipmentCatalogue() {
     ['Bandit2', 'BanditSword'],
     ['Bandit3', 'BanditArcher'],
   ].map(([label, type]) => ({ label, type, equipment: config.units[type].equipment }))
-  for (const [tier, material] of [
-    [0, 'ceramic'],
-    [2, 'bronze'],
-    [3, 'iron'],
-  ]) {
+  // Infantry fights with a ceramic club at every forge tier; forge weapon upgrades no longer swap it.
+  for (const tier of [0, 2, 3]) {
     const items = dynamicEquipmentForUnit('Fantassin', { forgeUpgrades: { weapons: tier } }, 1, 'Alba')
     loadouts.push({
-      label: `Fantassin — ${EQUIPMENT_NAMES[`spear_${material}`].fr}`,
+      label: `Fantassin — forge ${tier}`,
       type: 'Fantassin',
       equipment: items,
     })
-    check(`Fantassin : ${EQUIPMENT_NAMES[`spear_${material}`].fr}`, true, items.includes(`spear_${material}`))
+    check(`Fantassin forge ${tier} : ${EQUIPMENT_NAMES.club_ceramic.fr}`, true, items.includes('club_ceramic'))
+    check(`Fantassin forge ${tier} : aucune lance`, false, items.some(item => item.startsWith('spear_')))
   }
   check('Hallebarde retirée du catalogue', false, Object.hasOwn(equipment, 'halberd'))
   return { replacements, checks, loadouts, passed: replacements.every(r => r.passed) && checks.every(c => c.passed) }

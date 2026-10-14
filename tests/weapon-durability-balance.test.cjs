@@ -19,7 +19,6 @@ test('weapons break on their exact last contact or shot and preserve the budget 
     ['dagger_iron', 900, 'melee'],
     ['mace_bronze', 600, 'melee'],
     ['mace_iron', 900, 'melee'],
-    ['longsword', 900, 'melee'],
     ['bow', 600, 'ranged'],
     ['bow_great', 600, 'ranged'],
     ['bow_recurve', 600, 'ranged'],
@@ -58,7 +57,7 @@ test('legacy NPC percentage storage loses exactly one contact on each hit', () =
 
 test('weapon repairs scale with their own recipe, never exceeding any ingredient of a new weapon', () => {
   const recipes = HERO_CRAFT_RECIPES.filter(r =>
-    /^(sword_|spear_|mace_|dagger_|bow|longsword$|slingshot$)/.test(r.outputEquipment)
+    /^(sword_|spear_|mace_|dagger_|bow|slingshot$)/.test(r.outputEquipment)
   )
   for (const recipe of recipes) {
     for (const percent of [0, 20, 50, 99, 100]) {

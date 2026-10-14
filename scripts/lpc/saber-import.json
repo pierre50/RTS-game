@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator",
+  "commit": "58ce1aa479e4df32845a73a5d0afc221c3a893c2",
+  "credits": "sheet_definitions/weapon_sword_saber.json",
+  "files": [
+    { "path": "spritesheets/weapon/sword/saber/walk/saber.png", "sha256": "2f5d246ecd70322cefe0d490c5872cd0c486fde2657a044d23d09e60160acdd6" },
+    { "path": "spritesheets/weapon/sword/saber/universal_behind/walk/saber.png", "sha256": "c56429adddbb49bfae3f5b6cef1e350181a8864d8b3643e60d65c0492adc36c7" },
+    { "path": "spritesheets/weapon/sword/saber/hurt/saber.png", "sha256": "e1e14017545d7cf1f566c814b9832a7d294daad15051e4dd38e3365555588ca2" },
+    { "path": "spritesheets/weapon/sword/saber/universal_behind/hurt/saber.png", "sha256": "0fe14ed10eea8525cf33999ba5005cc2edd1f4feede750aec68448aad1c46efd" },
+    { "path": "spritesheets/weapon/sword/saber/attack_slash/behind/saber.png", "sha256": "6301247029fcefa708db3016d33dea6ab9a1720d25e902415cf4e904ade14cae" },
+    { "path": "spritesheets/weapon/sword/saber/attack_slash/saber.png", "sha256": "efab2cb608e71df73cd4446a364c94a24856157eabf454a6f0a4862a8d4a1d3c" }
+  ]
+}

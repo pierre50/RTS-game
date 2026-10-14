@@ -7,6 +7,9 @@ import type { UnitEntity } from '../../types/entities'
 import { getActionAnimationReleaseFrame, hasConfiguredActionFrameSequence } from '../animations/actionFrameSequences'
 
 const HERO_SWORD_POWER_FLASH_MS = 180
+const HERO_SWORD_POWER_FLASH_MIN_POWER = 0.33
+const HERO_SWORD_POWER_FLASH_STRONG_POWER = 0.66
+const HERO_SWORD_POWER_FLASH_MIN_ALPHA = 0.35
 
 export type FlashableLayer = {
   alpha?: number
@@ -93,11 +96,13 @@ function getHeroSwordPowerFlashLayers(hero: UnitEntity): FlashableLayer[] {
 
 function showHeroSwordPowerFlash(hero: UnitEntity, power: number | undefined): void {
   const clampedPower = Math.max(0, Math.min(1, power ?? 0))
-  if (clampedPower <= 0) return
+  // A quick tap still accumulates a few percent of charge; only deliberate holds should glow.
+  if (clampedPower < HERO_SWORD_POWER_FLASH_MIN_POWER) return
   const targets = getHeroSwordPowerFlashLayers(hero)
-  const tint = clampedPower >= 0.66 ? 0xfff06a : 0xffc857
+  const tint = clampedPower >= HERO_SWORD_POWER_FLASH_STRONG_POWER ? 0xfff06a : 0xffc857
+  const intensity = (clampedPower - HERO_SWORD_POWER_FLASH_MIN_POWER) / (1 - HERO_SWORD_POWER_FLASH_MIN_POWER)
   flashHeroLayers(hero, targets, {
-    alpha: Math.min(1, 0.72 + clampedPower * 0.28),
+    alpha: HERO_SWORD_POWER_FLASH_MIN_ALPHA + intensity * (1 - HERO_SWORD_POWER_FLASH_MIN_ALPHA),
     blendMode: 'add',
     durationMs: HERO_SWORD_POWER_FLASH_MS,
     taskLabel: 'hero.swordPowerFlash',

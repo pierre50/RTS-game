@@ -172,17 +172,17 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'building',
     aliases: ['build'],
-    usage: 'building <type> [playerIndex]',
-    describe: 'Spawn a building near cursor (playerIndex from list players)',
+    usage: 'building <type> [playerIndex] [level]',
+    describe: 'Spawn a building near cursor (playerIndex from list players, level defaults to 0)',
     complete: (args, { player, players }) =>
       args.length === 1
         ? players.map((_, index) => String(index))
         : args.length === 0
           ? [...Object.keys(player?.config?.buildings || {}), ...DECO_BUILDING_COMPLETIONS]
           : [],
-    run: ([type, playerIndex], context) => {
-      if (!type) return { ok: false, message: 'Usage: building <type> [playerIndex]' }
-      return spawnBuilding(context, type, playerIndex)
+    run: ([type, playerIndex, level], context) => {
+      if (!type) return { ok: false, message: 'Usage: building <type> [playerIndex] [level]' }
+      return spawnBuilding(context, type, playerIndex, level)
     },
   })
 

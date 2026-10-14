@@ -34,7 +34,6 @@ function loadHeroInventoryAction() {
       return {
         DYNAMIC_EQUIPMENT_KEYS: [
           'sword_ceramic',
-          'longsword',
           'bow',
           'arrow_copper',
           'helmet_barbarian_ceramic',

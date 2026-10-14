@@ -92,8 +92,7 @@ export type TerrainCellLike = {
   assets?: TextureRef[]
   terrainTextureName?: string
   _terrainAppearance?: {
-    patchBorders?: Set<string> | null
-    patchBorderGroundType?: PatchBorderGroundType | null
+    patchBorders?: Map<string, PatchBorderGroundType> | null
     relief?: { index: number; elevation: number } | null
     waterBorder?: { resourceName: string; index: number } | null
   }
@@ -218,7 +217,6 @@ export class CellTerrain {
     cell.unregisterWaterBorderSurface = null
     if (cell._terrainAppearance) {
       cell._terrainAppearance.patchBorders = null
-      cell._terrainAppearance.patchBorderGroundType = null
       cell._terrainAppearance.relief = null
       cell._terrainAppearance.waterBorder = null
     }
@@ -289,9 +287,8 @@ export class CellTerrain {
     sprite.zIndex = 10
     cell.addChild(sprite)
     if (cell._terrainAppearance) {
-      if (!cell._terrainAppearance.patchBorders) cell._terrainAppearance.patchBorders = new Set()
-      cell._terrainAppearance.patchBorders.add(direction)
-      cell._terrainAppearance.patchBorderGroundType = groundType
+      if (!cell._terrainAppearance.patchBorders) cell._terrainAppearance.patchBorders = new Map()
+      cell._terrainAppearance.patchBorders.set(direction, groundType)
     }
   }
 

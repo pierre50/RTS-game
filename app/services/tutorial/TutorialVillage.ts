@@ -1,4 +1,4 @@
-import { SETTLEMENT_PROFILES } from '../../config/settlementProfiles'
+import { SETTLEMENT_PROFILES } from '../../config/world/settlementProfiles'
 import type { GameConfig } from '../../types/save'
 
 /** New-game setup only: materialize the tutorial through the existing village generator. */

@@ -89,7 +89,6 @@ test('held equipment translates while clothing follows the compressed body', () 
     'bow_great',
     'bow_recurve',
     'spear_iron',
-    'longsword',
     'cane',
     'arrow_wood',
     'axe_iron',
@@ -106,7 +105,7 @@ test('held equipment translates while clothing follows the compressed body', () 
   fullyCrouch(value)
   for (const [index, source] of value.appearanceLayerSprites) {
     const mesh = source.parent.children[0]
-    assert.equal(mesh.vertices[mesh.vertices.length - 1], index < 13 ? 68 : 64)
+    assert.equal(mesh.vertices[mesh.vertices.length - 1], index < 12 ? 68 : 64)
   }
   resetUnitCrouchPose(value)
   for (const source of value.appearanceLayerSprites.values()) assert.equal(source.alpha, 0.8)

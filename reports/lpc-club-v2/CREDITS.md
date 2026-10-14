@@ -1,0 +1,1 @@
+Club LPC original par bluecarrot16, [LPC] More Weapons: https://opengameart.org/content/lpc-more-weapons. Licences OGA-BY 3.0+, GPL 3.0, CC-BY 4.0. Le slash conserve les deux calques et tous les pixels d'origine, en inversant l'ordre des six frames selon slash_reverse_oversize du générateur LPC. La marche est alignée sur la mace LPC et le hurt est provisoire.

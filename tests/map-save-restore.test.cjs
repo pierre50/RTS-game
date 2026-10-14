@@ -168,7 +168,20 @@ test('restoring player entities preserves saved unit types instead of applying n
     corpses: [{ i: 5, j: 6, type: 'Fantassin', currentSheet: 'corpse' }],
   })
 
-  assert.deepEqual(player.buildings, [{ i: 1, j: 2, type: 'House', interiorUnfurnished: true, skipBuiltEffects: true, deferTrainingResume: true }])
+  // Saved fields survive; a house saved without an interior also gets its household bed plan on restore.
+  assert.deepEqual(player.buildings, [
+    {
+      i: 1,
+      j: 2,
+      type: 'House',
+      interiorUnfurnished: true,
+      skipBuiltEffects: true,
+      deferTrainingResume: true,
+      houseInteriorLevel: 0,
+      interiorPortalId: 'owner:1,2,House',
+      plannedBedLabels: ['interior:owner:1,2,House:default:bedroll-1'],
+    },
+  ])
   assert.equal(player.units[0].type, 'Villager')
   assert.equal(player.corpses[0].type, 'Fantassin')
   assert.equal(createUnitCalls[0].options.suppressCreateSound, true)

@@ -106,6 +106,12 @@ test('interior decorations vary by building type', () => {
   const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/furniture/interiorDecorations.ts', {
     mocks: { '../../constants': { BUILDING_TYPES } },
   })
+  // Preset rooms follow the layouts authored in tools/interiors-preview.
+  const { INTERIOR_LAYOUT_POSITIONS } = loadTsModule('app/config/interiorLayoutPositions.ts')
+  const authoredPosition = (type, key) => {
+    const { offsetI, offsetJ } = INTERIOR_LAYOUT_POSITIONS[type][0].items[key]
+    return { offsetI, offsetJ }
+  }
 
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Stable' }).map(item => item.type),
@@ -113,7 +119,16 @@ test('interior decorations vary by building type', () => {
   )
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Barracks' }).map(item => item.type),
-    ['CampStumpStool', 'CampForge', 'CampBrazier', 'CampBrazier', 'CampTorchStand', 'CampArrowBasket', 'CampBench']
+    [
+      'CampStumpStool',
+      'CampForge',
+      'CampBrazier',
+      'CampBrazier',
+      'CampTorchStand',
+      'CampArrowBasket',
+      'CampBench',
+      'CampBench',
+    ]
   )
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'TownCenter' })
@@ -132,8 +147,10 @@ test('interior decorations vary by building type', () => {
     {
       key: 'storage-chest',
       type: 'Chest',
-      offsetI: -1,
-      offsetJ: -5,
+      ...authoredPosition('Granary', 'storage-chest'),
+      mirrored: false,
+      placement: 'offset',
+      exactPlacement: true,
       allowBorderPlacement: true,
       buildingOptions: { indestructible: true },
     }
@@ -143,8 +160,10 @@ test('interior decorations vary by building type', () => {
     {
       key: 'storage-chest',
       type: 'Chest',
-      offsetI: -1,
-      offsetJ: -5,
+      ...authoredPosition('StoragePit', 'storage-chest'),
+      mirrored: false,
+      placement: 'offset',
+      exactPlacement: true,
       allowBorderPlacement: true,
       buildingOptions: { indestructible: true },
     }
@@ -152,7 +171,6 @@ test('interior decorations vary by building type', () => {
   assert.deepEqual(
     getBuildingInteriorDecorationLayout({ type: 'Temple' }).map(item => item.type),
     [
-      'CampMountedSkull',
       'CampBench',
       'CampChair',
       'CampBench',
@@ -161,6 +179,7 @@ test('interior decorations vary by building type', () => {
       'CampBench',
       'CampBench',
       'CampTorchStand',
+      'CampBrazier',
     ]
   )
 })

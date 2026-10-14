@@ -35,7 +35,7 @@ export function getEquipmentRepairCost(item: string): ResourceAmount {
   if (remaining == null || remaining >= 100) return {}
   const wear = (100 - remaining) / 100
   const key = equipmentBaseKey(migrateEquipmentMaterial(item))
-  if (/^(sword_|spear_|mace_|dagger_|pike_|lance_|bow|longsword$|slingshot$)/.test(key)) {
+  if (/^(sword_|spear_|mace_|club_|dagger_|pike_|lance_|bow|slingshot$)/.test(key)) {
     // Uncraftable bow variants share the basic bow's maintenance ingredients.
     const recipe =
       HERO_CRAFT_RECIPES.find(recipe => recipe.outputEquipment === key) ??
@@ -62,7 +62,7 @@ export function getEquipmentRepairCost(item: string): ResourceAmount {
   if (key.startsWith('bow')) return { wood: Math.ceil(6 * wear), sinew: Math.ceil(2 * wear) }
   if (key === 'armor_leather') return { leather: Math.ceil(6 * wear) }
   const material =
-    key.includes('iron') || key === 'longsword'
+    key.includes('iron')
       ? 'ironIngot'
       : key.includes('ceramic')
         ? 'stone'

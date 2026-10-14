@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Armes de mêlée et outils · rythmes propres</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#151b22;color:#f0eee7}
+body{max-width:1420px;margin:24px auto;padding:0 18px}
+h1{font-size:1.7rem;margin:0 0 8px}p{color:#b9c4cb;line-height:1.4;margin:0 0 14px}
+.controls{display:flex;align-items:center;gap:16px;margin:18px 0 24px;position:sticky;top:0;background:#151b22;padding:10px 0;z-index:2}
+button,select{font:inherit;color:#f0eee7;background:#293541;border:1px solid #536679;border-radius:7px;padding:7px 10px}
+.head,.row{display:grid;grid-template-columns:210px repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.head{font-weight:700;color:#f3d087;margin-bottom:10px}.row{margin-bottom:14px}
+.label,.card{background:#222d36;border:1px solid #435361;border-radius:10px;padding:12px;min-height:226px}
+.label h2{font-size:1.05rem;margin:0 0 8px}.label p{font-size:.84rem;margin:8px 0;color:#aebbc4}
+.label select{max-width:100%;font-size:.85rem}
+canvas{display:block;width:100%;max-width:360px;height:auto;margin:0 auto;background:#364550;border-radius:6px;image-rendering:pixelated}
+.order{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:3px;margin-top:8px;font-variant-numeric:tabular-nums}
+.order span{min-width:19px;padding:3px;text-align:center;border-radius:4px;background:#34434f;font-size:.8rem}
+.order span.active{background:#e7bb5d;color:#20252a;font-weight:700}
+.order span.empty{outline:1px solid #d68476;color:#efb2a7}
+.order b{font-size:.8rem;color:#a8b6c0;font-weight:400}.missing{color:#aebbc4;padding:54px 8px;text-align:center}
+@media(max-width:760px){
+  .head,.row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .head div:first-child{display:none}
+  .label{grid-column:1/-1;min-height:0;display:flex;align-items:center;gap:10px}
+  .label h2{margin:0}.label p{margin:0}
+  .card{min-height:0;padding:6px}.order{gap:1px}.order span{min-width:14px;padding:2px;font-size:.7rem}
+}
+</style>
+<h1>Armes de mêlée et outils · rythmes propres</h1>
+<p>Chaque arme et outil utilise ici sa suite d’images de combat du jeu. À droite, la même suite est lue à l’envers pour comparer. « Maintenir l’attaque » fige la première image de chaque suite, puis « Relâcher » relance le coup. Un contour rouge signale une image où l’arme ou l’outil est absent.</p>
+<div class="controls">
+  <button id="toggle">Pause</button>
+  <button id="hold" aria-pressed="false">Maintenir l’attaque</button>
+  <label>Vitesse <select id="speed"><option value="1">10 images/s</option><option value="0.5">Ralenti · 5 images/s</option><option value="1.5">Rapide · 15 images/s</option></select></label>
+  <label>Vue <select id="direction"><option value="2">Face</option><option value="0">Dos</option><option value="1">Profil</option></select></label>
+</div>
+<div class="head"><div>Arme ou outil</div><div>Rythme du jeu</div><div>Lecture inverse</div></div>
+<main id="rows"></main>
+<script>
+const standard=[0,1,2,3,4,5];
+const club=[5,4,3,2,1,0];
+const toolCombat=[5,5,4,3,1,0];
+function getSequence(row,kind){
+  const sequence=row.sequence??standard;
+  return kind==='regular'?sequence:[...sequence].reverse();
+}
+const emptyWeaponFrames={
+  'weapon/dagger':{0:[0,1,2,3]},
+  'weapon/sword_curved':{0:[1]},
+  'weapon/longstick':{0:[1]},
+};
+function weaponFrameIsEmpty(row,frame,direction){
+  const empty=emptyWeaponFrames[row.family];
+  return Boolean(empty?.all?.includes(frame)||empty?.[direction]?.includes(frame));
+}
+const rows=[
+  {title:'Épée droite',family:'weapon/sword',variants:['sword_iron','sword_bronze']},
+  {title:'Épée courbe',family:'weapon/sword_curved',variants:['sword_curved_iron','sword_curved_bronze']},
+  {title:'Dague',family:'weapon/dagger',variants:['dagger_iron','dagger_bronze']},
+  {title:'Masse',family:'weapon/mace',variants:['mace_iron','mace_bronze']},
+  {title:'Gourdin',family:'weapon/club',variants:['club_ceramic'],sequence:club},
+  {title:'Long bâton',family:'weapon/longstick',variants:['longstick']},
+  {title:'Hache · combat',family:'tool/axe',variants:['axe_iron','axe_bronze','axe_ceramic','axe_copper'],gendered:true,sequence:toolCombat},
+  {title:'Pioche · combat',family:'tool/pickaxe',variants:['pickaxe_iron','pickaxe_bronze','pickaxe_ceramic','pickaxe_copper'],gendered:true,sequence:toolCombat},
+  {title:'Marteau · combat',family:'tool/hammer',variants:['hammer_iron','hammer_bronze','hammer_ceramic'],gendered:true,sequence:toolCombat},
+  {title:'Faux · combat',family:'tool/scythe',variants:['scythe_iron','scythe_bronze','scythe_ceramic','scythe_copper']},
+  {title:'Canne',family:'weapon/cane',variants:['cane'],missing:true,note:'Pas de sprites d’action dans le jeu'},
+];
+const root=document.getElementById('rows'),atlas={},scenes=[];
+const base='../../public/assets/graphics/';
+function getAtlas(family){
+  if(atlas[family])return atlas[family];
+  const path=base+(family==='body'?'units/hero/hellas/male/':'equipments/'+family+'/');
+  const version=family==='tool/hammer'?'?v=hammer-rotated-20261014f':'';
+  const image=new Image();image.src=path+'texture.png'+version;
+  const entry=atlas[family]={image,frames:null};
+  fetch(path+'texture.json'+version).then(r=>r.json()).then(data=>entry.frames=data.frames);
+  return entry;
+}
+getAtlas('body');
+for(const row of rows){
+  if(!row.missing)getAtlas(row.family);
+  const wrap=document.createElement('section');wrap.className='row';
+  const label=document.createElement('div');label.className='label';
+  const title=document.createElement('h2');title.textContent=row.title;label.append(title);
+  if(row.note){const note=document.createElement('p');note.textContent=row.note;label.append(note)}
+  row.selected=row.variants[0];wrap.append(label);
+  for(const kind of ['regular','reverse']){
+    const card=document.createElement('div');card.className='card';
+    if(row.missing){const note=document.createElement('div');note.className='missing';note.textContent='Aucune animation d’attaque à afficher';card.append(note)}
+    else{
+      const canvas=document.createElement('canvas');canvas.width=360;canvas.height=230;card.append(canvas);
+      const order=document.createElement('div');order.className='order';card.append(order);
+      scenes.push({row,kind,canvas,order,step:0,elapsed:0});
+    }
+    wrap.append(card);
+  }
+  root.append(wrap);
+}
+function paintLayer(ctx,family,key,anchorX,anchorY,scale){
+  const a=getAtlas(family),data=a.frames?.[key];if(!data||!a.image.complete)return;
+  const f=data.frame,x=anchorX-f.w*scale*(data.anchor?.x??0.5),y=anchorY-f.h*scale*(data.anchor?.y??0.5);
+  ctx.drawImage(a.image,f.x,f.y,f.w,f.h,x,y,f.w*scale,f.h*scale);
+}
+function draw(scene){
+  const {row,kind,canvas,order,step}=scene,seq=getSequence(row,kind),weaponPose=holding?seq[0]:seq[step];
+  const bodyPose=weaponPose;
+  const direction=+document.getElementById('direction').value;
+  const bodyIndex=String(direction*6+bodyPose).padStart(3,'0');
+  const weaponIndex=String(direction*(row.weaponFrameCount??6)+weaponPose).padStart(3,'0');
+  const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle='#364550';ctx.fillRect(0,0,360,230);
+  ctx.fillStyle='#27343e';ctx.beginPath();ctx.ellipse(180,199,75,12,0,0,Math.PI*2);ctx.fill();
+  const x=180,y=175,scale=2.25,variant=row.selected;
+  const layer=(side)=>weaponIndex+'_graphics_equipments_'+variant+'_'+side+'_action'+(row.gendered?'_male':'')+'.png';
+  paintLayer(ctx,row.family,layer('back'),x,y,scale);
+  paintLayer(ctx,'body',bodyIndex+'_graphics_units_hero_hellas_male_action_slash.png',x,y,scale);
+  paintLayer(ctx,row.family,layer('front'),x,y,scale);
+  ctx.fillStyle='#e2e9ed';ctx.font='14px system-ui';ctx.fillText('Image '+weaponPose,10,218);
+  if(holding){ctx.fillStyle='#f3d087';ctx.font='bold 13px system-ui';ctx.fillText('ATTAQUE MAINTENUE',10,24)}
+  if(weaponFrameIsEmpty(row,weaponPose,direction)){
+    ctx.fillStyle='#efb2a7';ctx.font='bold 13px system-ui';ctx.fillText('Arme / outil absent sur cette image',10,24);
+  }
+  order.innerHTML=seq.map((frame,i)=>'<span class="'+(!holding&&i===step?'active ':'')+(weaponFrameIsEmpty(row,frame,direction)?'empty':'')+'">'+frame+'</span>').join('<b>→</b>');
+}
+const defaultFrameMs=1000/10;
+let playing=true,holding=false,last=0;
+function tick(time){
+  const delta=Math.min(100,time-last||0);last=time;
+  if(playing&&!holding)for(const scene of scenes){
+    scene.elapsed+=delta*Number(document.getElementById('speed').value);
+    while(scene.elapsed>=defaultFrameMs){
+      scene.elapsed-=defaultFrameMs;
+      scene.step=(scene.step+1)%getSequence(scene.row,scene.kind).length;
+    }
+  }
+  for(const scene of scenes)if(scene.canvas.getBoundingClientRect().bottom>0&&scene.canvas.getBoundingClientRect().top<innerHeight)draw(scene);
+  requestAnimationFrame(tick);
+}
+document.getElementById('toggle').onclick=()=>{playing=!playing;document.getElementById('toggle').textContent=playing?'Pause':'Lecture'};
+document.getElementById('hold').onclick=()=>{
+  holding=!holding;
+  const button=document.getElementById('hold');
+  button.textContent=holding?'Relâcher l’attaque':'Maintenir l’attaque';
+  button.setAttribute('aria-pressed',String(holding));
+  if(!holding)for(const scene of scenes){scene.step=0;scene.elapsed=0}
+};
+requestAnimationFrame(tick);
+</script>
+</html>

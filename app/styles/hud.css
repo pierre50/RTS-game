@@ -1504,7 +1504,7 @@
 
 /* One fixed ARPG target in gameplay and menus, also shared by the gamepad. */
 body {
-  --hero-cursor-image: url('../../public/assets/interface/pointers/main/target.png');
+  --hero-cursor-image: url('../../public/assets/interface/pointers/target.png');
   --hero-cursor-x: 16;
   --hero-cursor-y: 16;
   --game-pointer: var(--hero-cursor-image) var(--hero-cursor-x) var(--hero-cursor-y), auto;
@@ -2192,8 +2192,8 @@ body.hero-game-cursor #hero-virtual-cursor.is-visible {
   accent-color: #f6df92;
 }
 .construction-site.is-paused {
-  border-left-color: #a9adbf;
+  border-left-color: var(--text-color-gold, #f6df92);
 }
-.construction-site.is-paused .construction-site-progress {
-  accent-color: #a9adbf;
+.construction-site.is-paused .construction-work-status {
+  color: var(--text-color-gold, #f6df92);
 }

@@ -15,7 +15,6 @@ import { sameMapSpace } from '../mapSpaces'
 
 type Center = HouseholdBuilding & { buildingLevel?: number; assetLevel?: unknown }
 type Owner = HouseholdOwner & { population?: number; populationMax?: number }
-export { calculateVillagerArrivals } from '../buildings/townCenter'
 
 /** One allowance for nearby centers, using only local residents, homes and communal provisions. */
 export function planVillagerArrivals(owner: Owner) {

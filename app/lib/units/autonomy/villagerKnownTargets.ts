@@ -5,49 +5,15 @@ import { knownTarget, knowsEconomicTarget, playerSeesTarget, rememberedStaticTar
 import { sameMapSpace } from '../../mapSpaces'
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, WORK_TYPES } from '../../constants'
 import { getGaiaAnimals } from '../../playerState'
-import { isWildHorse } from '../../horses/horseTaming'
 import { canVillagerAutonomouslyHunt } from './villagerHunting'
+import {
+  isAliveEntity,
+  isCapturableHorse,
+  isUsableCarcassForTask,
+  isUsableResource,
+} from './villagerTargetPredicates'
 import { targetWorkerLoad } from './villagerAutonomyTargeting'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../../types/entities'
-
-function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
-  return Boolean(entity && !entity.isDead && !entity.isDestroyed && (entity.hitPoints ?? 1) > 0)
-}
-
-function isUsableResource(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
-  // Harvestability depends on remaining stock, not health: minerals may have no
-  // hit points, and felled trees still contain wood.
-  return Boolean(
-    entity &&
-      !entity.isDead &&
-      !entity.isDestroyed &&
-      entity.family === FAMILY_TYPES.resource &&
-      (entity.quantity ?? 1) > 0
-  )
-}
-
-function isUsableAnimalCarcass(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
-  return Boolean(
-    entity &&
-      entity.family === FAMILY_TYPES.animal &&
-      entity.isDead &&
-      !entity.isDestroyed &&
-      (entity.quantity ?? 0) > 0
-  )
-}
-
-function isCapturableHorse(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
-  return Boolean(
-    entity &&
-      entity.family === FAMILY_TYPES.animal &&
-      entity.type === 'Horse' &&
-      isWildHorse(entity) &&
-      !entity.isDead &&
-      !entity.isDestroyed &&
-      !(entity as { companionOwner?: UnitEntity | null }).companionOwner &&
-      !(entity as { isCatchingPoleCaught?: boolean }).isCatchingPoleCaught
-  )
-}
 
 function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean {
   if (target.family === FAMILY_TYPES.resource && target.type === RESOURCE_TYPES.wheat) {
@@ -160,16 +126,7 @@ export function knownFoodTargets(unit: UnitEntity, limit = Infinity): RuntimeEnt
     ...wheat.filter(target => isKnownToUnit(unit, target) && isUsableResource(knownState(unit, target))),
     ...carcasses.filter(target => {
       if (!isKnownToUnit(unit, target)) return false
-      const state = knownState(unit, target)
-      if (['leather', 'sinew', 'feather'].includes(unit.collectiveTask ?? '')) {
-        return (
-          state.isDead &&
-          !target.isDestroyed &&
-          'inventory' in target &&
-          (target.inventory?.resources?.[unit.collectiveTask as 'leather' | 'sinew' | 'feather'] ?? 0) > 0
-        )
-      }
-      return isUsableAnimalCarcass(state)
+      return isUsableCarcassForTask(unit, target, knownState(unit, target))
     }),
     ...prey,
   ].filter(

@@ -1,4 +1,4 @@
-import { hasRequiredWorkTool } from '../equipment/workTools'
+import { canDoWorkWithTool } from '../equipment/workTools'
 import type { ActionProps, CombatEntity } from '../../types/combat'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import { shouldAttackBuildingForInteriorAccess } from '../buildings/interiorAccess'
@@ -19,7 +19,7 @@ export const getActionCondition = (
   props?: ActionProps
 ): boolean => {
   if (!action || !source || !target) return false
-  if (!hasRequiredWorkTool(source as UnitEntity, action)) return false
+  if (!canDoWorkWithTool(source as UnitEntity, action, target.type)) return false
   if ((target as UnitEntity).ambientRoadGroup && action === 'convert') return false
   if ((source as UnitEntity).ambientRoadGroup && target.family === 'building' && action === 'attack') return false
   if (

@@ -9,18 +9,21 @@ const BEFORE = Math.floor((FIELD_SIZE - 1) / 2)
 const AFTER = FIELD_SIZE - BEFORE - 1
 
 /** Reserve agriculture before other buildings, decorations and newly spawned units
- * fragment the remaining free terrain. */
-export function addStartingWheatFields(village: StartingVillage): void {
+ * fragment the remaining free terrain. Plants `count` more fields (default: the whole profile). */
+export function addStartingWheatFields(village: StartingVillage, count = village.profile.wheatFields ?? 0): void {
   const fields = village.profile.wheatFields ?? 0
   if (!Number.isInteger(fields) || fields < 0 || fields > 20) throw new Error('Invalid starting wheat field count')
+  const planted = village.layout.fieldCount(village.center)
+  if (!Number.isInteger(count) || count < 0 || planted + count > fields)
+    throw new Error('Invalid starting wheat field count')
   const granary =
-    village.buildings.find(building => building.type === 'Granary' && isLiving(building)) ?? village.center
-  const points = village.layout.planFields(village.center, granary, FIELD_SIZE, fields)
+    village.buildings.filter(building => building.type === 'Granary' && isLiving(building)).at(-1) ?? village.center
+  const points = village.layout.planFields(village.center, granary, FIELD_SIZE, count)
   if (!points) throw new Error(`No space for starting wheat fields in ${village.player.civ}`)
-  points.forEach((point, field) => {
+  points.forEach((point, index) => {
     village.layout.clearField(village.center, point, FIELD_SIZE, village.player.civ ?? '')
     village.layout.recordSite(village.center, 'Farm', point, FIELD_SIZE)
-    plantWheatField(village, point, field)
+    plantWheatField(village, point, planted + index)
   })
 }
 

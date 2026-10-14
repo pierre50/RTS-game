@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sprite en volume · 4 vues</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #151a23; color: #f1f3f7; }
+      main { max-width: 1400px; margin: auto; padding: 28px; }
+      h1 { font-size: 1.7rem; margin: 0 0 8px; }
+      p { color: #b9c3d2; line-height: 1.45; }
+      .layout { display: grid; grid-template-columns: minmax(230px, 290px) minmax(0, 1fr); gap: 20px; }
+      .panel, .viewport { background: #202735; border: 1px solid #354052; border-radius: 14px; }
+      .panel { padding: 20px; }
+      .panel h2 { font-size: 1.05rem; margin: 0 0 12px; }
+      .sources { display: flex; gap: 7px; margin: 0 0 18px; }
+      figure { margin: 0; min-width: 0; flex: 1; text-align: center; color: #b9c3d2; font-size: 0.8rem; }
+      .sources canvas { width: 100%; aspect-ratio: 1; display: block; image-rendering: pixelated; background: #2c3545; border-radius: 8px; }
+      .views { display: flex; gap: 6px; margin: 14px 0; }
+      .views button { flex: 1; }
+      label { display: block; margin: 18px 0; color: #dbe2ee; }
+      label span { float: right; font-variant-numeric: tabular-nums; color: #9fd3ff; }
+      input[type="range"] { width: 100%; margin: 10px 0 0; accent-color: #83c5f7; }
+      input[type="file"] { width: 100%; margin-top: 9px; }
+      button { background: #354d67; color: white; border: 1px solid #6684a5; padding: 9px 12px; border-radius: 7px; cursor: pointer; }
+      button:hover { background: #446685; }
+      .viewport { min-height: 620px; position: relative; overflow: hidden; }
+      #renderCanvas { width: 100%; height: 620px; display: block; touch-action: none; }
+      .hint { position: absolute; left: 16px; bottom: 12px; margin: 0; font-size: 0.85rem; pointer-events: none; }
+      #status { min-height: 22px; color: #f1be87; font-size: 0.9rem; }
+      @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .viewport { order: -1; } .viewport, #renderCanvas { min-height: 440px; height: 440px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Sprite en volume · 4 vues</h1>
+      <p>Les vues de face, de dos et de profil du villageois servent à construire et colorer un volume 3D.</p>
+      <div class="layout">
+        <section class="panel">
+          <h2>Sprites sources</h2>
+          <div class="sources">
+            <figure><canvas id="source" width="64" height="64" aria-label="Sprite de face"></canvas><figcaption>Face</figcaption></figure>
+            <figure><canvas id="sourceBack" width="64" height="64" aria-label="Sprite de dos"></canvas><figcaption>Dos</figcaption></figure>
+            <figure><canvas id="sourceSide" width="64" height="64" aria-label="Sprite de profil"></canvas><figcaption>Profil</figcaption></figure>
+          </div>
+          <button id="reset" type="button">Villageois du jeu</button>
+          <label>Remplacer la face<input id="uploadFront" type="file" accept="image/png,image/webp" /></label>
+          <label>Remplacer le dos<input id="uploadBack" type="file" accept="image/png,image/webp" /></label>
+          <label>Remplacer le profil<input id="uploadSide" type="file" accept="image/png,image/webp" /></label>
+          <div class="views" aria-label="Angle de vue">
+            <button type="button" data-view="front">Face</button>
+            <button type="button" data-view="right">Droite</button>
+            <button type="button" data-view="back">Dos</button>
+            <button type="button" data-view="left">Gauche</button>
+          </div>
+          <label>Épaisseur <span id="depthValue">0,80</span><input id="depth" type="range" min="0.04" max="1.2" step="0.02" value="0.80" /></label>
+          <label>Seuil de transparence <span id="alphaValue">32</span><input id="alpha" type="range" min="1" max="254" step="1" value="32" /></label>
+          <label>Obscurité des côtés <span id="shadeValue">25 %</span><input id="shade" type="range" min="0" max="70" step="1" value="25" /></label>
+          <label><input id="spin" type="checkbox" /> Rotation automatique</label>
+          <div id="status" role="status"></div>
+        </section>
+        <section class="viewport">
+          <canvas id="renderCanvas" aria-label="Prévisualisation 3D Babylon.js"></canvas>
+          <p class="hint">Glisser pour tourner · Molette pour zoomer</p>
+        </section>
+      </div>
+    </main>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="./preview.js"></script>
+  </body>
+</html>

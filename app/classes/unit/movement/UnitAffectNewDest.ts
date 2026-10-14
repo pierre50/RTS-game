@@ -1,6 +1,6 @@
 import { constructionProgress } from '../../../lib/economy/constructionMaterials'
 import type { BuildingUpgrade } from '../../../lib/economy/constructionMaterials'
-import { isRpgVillager } from '../../../config/rpgVillages'
+import { isRpgVillager } from '../../../config/world/rpgVillages'
 import { notifyVillageStateChanged } from '../../../lib/units/village/villageStateEvents'
 import { updateTargetPursuit } from '../../../lib/units/combat/targetPursuit'
 import { scheduleVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'

@@ -9,9 +9,9 @@ const { canRepairEquipment } = loadTsModule('app/lib/equipment/equipmentRepair.t
   mocks: { '../hero/heroActionRange': { isHeroInteractionTargetReachable: () => true } },
 })
 
-test('all iron production, including ingots, arrows, longswords and decorated helmets, requires the first forge upgrade', () => {
+test('all iron production, including ingots, arrows, weapons and decorated helmets, requires the first forge upgrade', () => {
   const recipes = HERO_CRAFT_RECIPES.filter(r => r.outputResource === 'ironIngot' || r.cost.ironIngot > 0)
-  for (const id of ['ironIngot', 'arrow_iron', 'longsword', 'axe_iron', 'armor_mail_iron'])
+  for (const id of ['ironIngot', 'arrow_iron', 'sword_iron', 'axe_iron', 'armor_mail_iron'])
     assert.ok(recipes.some(r => r.id === id))
   assert.ok(recipes.some(r => r.decorated))
   for (const recipe of recipes) {

@@ -7,7 +7,7 @@
     "iron"
   ],
   "source_generator": "scripts/lpc/build_spear.py",
-  "notes": "Halberd-derived shaft and narrow spear tip, outward length +40%; opaque dagger slash trails aligned by pose without scaling. 192px walk/slash frames, no thrust. Walking shaft normalized to 48 pixels to match extended slash poses; grip and rear shaft preserved. Six 192px hurt poses derived from the halberd fall, with a 48px shaft; final pose supplies the corpse overlay.",
+  "notes": "Halberd-derived shaft and narrow spear tip, outward length +40%; opaque dagger slash trails aligned by pose without scaling. 192px walk/slash frames, no thrust. Slash has nine spear cells per direction, aligned with repeated six-pose body frames; held poses split depth against the reference body silhouette. Walking shaft normalized to 48 pixels to match extended slash poses; grip and rear shaft preserved. Six 192px hurt poses derived from the halberd fall, with a 48px shaft; final pose supplies the corpse overlay.",
   "credits": [
     {
       "file": "weapon/polearm/halberd",

@@ -46,7 +46,7 @@ test('NPC audit runs all material payments and combat fallback scenarios against
   assert.equal(result.passed, true)
   assert.ok(result.checks.length >= 14)
   assert.ok(result.loadouts.find(u => u.label === 'Bandit1').equipment.includes('mace_bronze'))
-  assert.ok(result.loadouts.find(u => u.label === 'Bandit2').equipment.includes('sword_bronze'))
+  assert.ok(result.loadouts.find(u => u.label === 'Bandit2').equipment.includes('club_ceramic'))
   for (const item of result.replacements) {
     assert.equal(item.durability, 100)
     assert.deepEqual(item.consumed, item.recipeCost)

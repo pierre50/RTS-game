@@ -14,8 +14,7 @@ export function getEquipmentMaxUses(item: string): number {
   const key = equipmentBaseKey(item)
   if (key.startsWith('bow')) return EQUIPMENT_DURABILITY.bow
   if (key === 'slingshot') return EQUIPMENT_DURABILITY.slingshot
-  if (key === 'longsword') return EQUIPMENT_DURABILITY.longsword
-  if (!/^(axe|pickaxe|hammer|scythe|sword|spear|mace|dagger|pike|lance)(_|$)/.test(key))
+  if (!/^(axe|pickaxe|hammer|scythe|sword|spear|mace|club|dagger|pike|lance)(_|$)/.test(key))
     return EQUIPMENT_DURABILITY.armorCondition
   if (key.endsWith('_iron')) return EQUIPMENT_DURABILITY.materials.iron
   if (key.endsWith('_bronze')) return EQUIPMENT_DURABILITY.materials.bronze
@@ -28,11 +27,10 @@ export function equipmentBaseKey(item: string): string {
 export function hasEquipmentDurability(item: string): boolean {
   const key = equipmentBaseKey(item)
   return (
-    /^(axe|hammer|mace|spear|pike|lance|pickaxe|scythe)_/.test(key) ||
+    /^(axe|hammer|mace|club|spear|pike|lance|pickaxe|scythe)_/.test(key) ||
     ['axe', 'cane', 'longstick', 'catchingPole'].includes(key) ||
     key.startsWith('sword_') ||
     key.startsWith('dagger_') ||
-    key === 'longsword' ||
     key === 'slingshot' ||
     key.startsWith('bow') ||
     key.startsWith('armor_') ||
@@ -80,9 +78,9 @@ export function isBrokenCombatWeapon(item: string): boolean {
     (equipmentBaseKey(item) === 'slingshot' ||
       item.startsWith('spear_') ||
       item.startsWith('mace_') ||
+      item.startsWith('club_') ||
       item.startsWith('dagger_') ||
       item.startsWith('bow') ||
-      item.startsWith('sword_') ||
-      item.startsWith('longsword'))
+      item.startsWith('sword_'))
   )
 }

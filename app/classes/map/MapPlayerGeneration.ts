@@ -1,4 +1,4 @@
-import { defaultSettlementType } from '../../config/settlementProfiles'
+import { defaultSettlementType } from '../../config/world/settlementProfiles'
 import { startingHeroInventory, startingVillagerInventory } from '../../lib/economy/startingProvisions'
 import { definedProperties } from '../../lib/definedProperties'
 import { playerColors } from '../../lib'

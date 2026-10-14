@@ -1,5 +1,5 @@
 import { CIVILIZATIONS } from '../../config/civilizations'
-import { isContinentWorld } from '../../config/continentWorlds'
+import { isContinentWorld } from '../../config/world/continentWorlds'
 import { playerColors } from '../../lib/graphics/playerColorData'
 import { playableColor } from '../../lib/graphics/playableColor'
 import { factionIdForCivilization } from '../../lib/campaign/playerRoster'

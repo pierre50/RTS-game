@@ -3,24 +3,21 @@ import { consumeGamepadButtons } from '../input/gamepadConsumption'
 import { LANG_CHANGE_EVENT, t } from '../lang'
 import { availableCommands, type Command } from './GameWindowCommands'
 import { GameWindowControls } from './GameWindowControls'
+import { confirmationCommands, retainedConfirmation, windowCommandSignature } from './GameWindowConfirmation'
 import {
-  firstConstructionRow,
   findRetainedWindowItem,
   getClickedWindowRow,
   getWindowItemForTarget,
-  getWindowNavigationPoint,
-  hasSteppableWindowField,
   isReplacedWindowSelection,
   isWindowItemCandidate,
   lostWindowSelectionFocus,
   markWindowSelection,
-  preferActiveWindowTab,
   renderDockedWindowDetails,
   unmarkWindowSelection,
   WINDOW_ITEMS,
 } from './GameWindowElements'
 import { renderCommandFooter } from './GameWindowFooter'
-import { adjustWindowField, enhanceWindowForms } from './GameWindowForms'
+import { enhanceWindowForms } from './GameWindowForms'
 import {
   getKeyConfirmationChoice,
   getWindowGamepad,
@@ -28,10 +25,9 @@ import {
   isUnboundWindowKey,
   readWindowKeyIntent,
 } from './GameWindowInput'
-import { findDirectionalTarget } from './GameWindowNavigation'
-import { scrollWindowInformation, scrollWindowSelectionIntoView } from './GameWindowScroll'
+import { moveWindowSelection } from './GameWindowMove'
+import { scrollWindowSelectionIntoView } from './GameWindowScroll'
 import { isTabNavigationCommand, renderWindowTabHints } from './GameWindowTabHints'
-import { getVariantRow } from './VariantRow'
 
 /** Shared selection, detail panel and input-aware footer. Domain actions stay with their owners. */
 export class GameWindow {
@@ -188,61 +184,17 @@ export class GameWindow {
       scheduleRefresh: () => this.scheduleRefresh(),
       switchPanel: direction => this.switchPanel(direction),
     })
-    if (
-      this.confirmation &&
-      !this.commands.some(command => command.id === this.confirmation?.id && !command.disabled)
-    ) {
-      this.confirmation = null
-    }
+    this.confirmation = retainedConfirmation(this.confirmation, this.commands)
     const commands = this.confirmation
-      ? [
-          {
-            ...this.confirmation,
-            id: 'confirm',
-            label: t('windowConfirm'),
-            key: 'Enter',
-            pad: 0,
-            glyph: 'A',
-            danger: false,
-            hold: false,
-            confirm: false,
-            run: () => {
-              const command = this.commands.find(item => item.id === this.confirmation?.id)
-              this.confirmation = null
-              if (command && !command.disabled) command.run()
-              this.signature = ''
-              this.scheduleRefresh()
-            },
-          },
-          {
-            id: 'cancel',
-            label: t('cancel'),
-            key: 'Escape',
-            pad: 1,
-            glyph: 'B',
-            run: () => {
-              this.confirmation = null
-              this.renderCommands()
-            },
-          },
-        ]
+      ? confirmationCommands(
+          this.confirmation,
+          () => this.confirmPending(),
+          () => this.cancelPending()
+        )
       : this.commands
     renderWindowTabHints(this.panel, this.selected, commands, this.mode)
     const footerCommands = commands.filter(command => !isTabNavigationCommand(command))
-    const signature = JSON.stringify([
-      this.mode,
-      Boolean(this.items().length),
-      this.confirmation?.label,
-      commands.map(({ id, label, key, pad, disabled, description, hold }) => [
-        id,
-        label,
-        key,
-        pad,
-        disabled,
-        description,
-        hold,
-      ]),
-    ])
+    const signature = windowCommandSignature(this.mode, Boolean(this.items().length), this.confirmation, commands)
     // Keep DOM focus on footer buttons through live resource/health refreshes.
     if (signature === this.signature) return
     this.signature = signature
@@ -255,6 +207,19 @@ export class GameWindow {
       execute: command => this.execute(command),
       resolveCommand: command => (this.confirmation ? command : this.commands.find(item => item.id === command.id)),
     })
+  }
+
+  private confirmPending(): void {
+    const command = this.commands.find(item => item.id === this.confirmation?.id)
+    this.confirmation = null
+    if (command && !command.disabled) command.run()
+    this.signature = ''
+    this.scheduleRefresh()
+  }
+
+  private cancelPending(): void {
+    this.confirmation = null
+    this.renderCommands()
   }
 
   private execute(command: Command): void {
@@ -314,45 +279,17 @@ export class GameWindow {
   }
 
   private move(dx: number, dy: number): void {
-    const interaction = getWindowInteraction(this.panel)
-    if (interaction) {
-      interaction.move(dx, dy)
-      this.scheduleRefresh()
-      return
-    }
-    const variant = getVariantRow(this.selected)
-    if (dx && variant) {
-      variant.step(dx)
-      this.scheduleRefresh()
-      return
-    }
-    if (dx && hasSteppableWindowField(this.selected)) {
-      adjustWindowField(this.selected, dx)
-      this.scheduleRefresh()
-      return
-    }
-    const items = this.items()
-    if (!items.length && dy) {
-      scrollWindowInformation(this.panel, dy * 48, this.selected)
-      return
-    }
-    // Enter construction in reading order, independent of the tab's horizontal
-    // position or the catalogue's previous scroll position.
-    const firstConstruction = firstConstructionRow(items, this.selected, dy)
-    if (firstConstruction) {
-      this.select(firstConstruction, true)
-      return
-    }
-    const index = findDirectionalTarget(
-      items.map(item => getWindowNavigationPoint(item, Boolean(dy))),
-      items.indexOf(this.selected!),
+    moveWindowSelection(
+      {
+        panel: this.panel,
+        selected: this.selected,
+        items: () => this.items(),
+        select: (element, focus) => this.select(element, focus),
+        scheduleRefresh: () => this.scheduleRefresh(),
+      },
       dx,
       dy
     )
-    let next: HTMLElement | null = items[index] ?? null
-    if (dy < 0) next = preferActiveWindowTab(items, next, this.selected)
-    if (dx && this.selected?.matches('.ui-tab') && next?.matches('.ui-tab')) next.click()
-    this.select(next, true)
   }
 
   private switchPanel(direction: number): void {

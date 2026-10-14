@@ -430,6 +430,9 @@ function loadModule(relativePath, mocks) {
     if (request === './UnitDirectedActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectedActions.ts'))
     }
+    if (request === './UnitCommandRouting') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitCommandRouting.ts'))
+    }
     if (request.endsWith('/terrain/reliefSurface') || request.endsWith('/terrain/reliefMovement')) {
       return requireFromTsFile(
         path.join(__dirname, '../app/lib/terrain', request.split('/').at(-1) + '.ts'),

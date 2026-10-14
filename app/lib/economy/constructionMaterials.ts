@@ -174,15 +174,6 @@ export function constructionMaterialsReady(site: MaterialSite): boolean {
   return Object.keys(remainingConstructionMaterials(site)).length === 0
 }
 
-/** Delivery progress is separate from completed work, including already paid legacy materials. */
-export function constructionMaterialPercentage(site: MaterialSite): number {
-  const state = site.constructionMaterials
-  if (!state) return 100
-  const total = Object.values(state.cost).reduce((sum, amount) => sum + Math.max(0, amount), 0)
-  const missing = Object.values(remainingConstructionMaterials(site)).reduce((sum, amount) => sum + amount, 0)
-  return total > 0 ? Math.max(0, Math.min(100, (100 * (total - missing)) / total)) : 100
-}
-
 /** Work starts only after the entire recipe is on site; no personal or depot stock is withdrawn here. */
 export function advanceMaterialConstruction(site: MaterialSite, requestedWork: number): number {
   const before = constructionWorkPoints(site)

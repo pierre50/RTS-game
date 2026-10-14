@@ -25,7 +25,11 @@ test('forge crafts into the hero bag and rechecks proximity, construction and de
       '../../lib/ui/VariantRow': { attachVariantRow() {} },
       '../../lib/avatar': {},
       '../inventory/InventoryItemRows': {
-        createInventoryEquipmentRow: () => ({ element: {} }),
+        // Craft rows are equipment rows; record their options to drive the craft buttons.
+        createInventoryEquipmentRow: (_context, options) => {
+          rows.push(options)
+          return { element: { querySelector: () => null }, icon: { appendChild() {} } }
+        },
         createInventoryResourceRow: () => ({ element: {} }),
       },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
@@ -95,7 +99,8 @@ test('forge remains exterior and uses its atlas sprite across levels and civiliz
     for (const level of [0, 1, 2]) {
       assert.deepEqual(getBuildingAsset('Forge', { level }, { cache: { get: () => data } }).images.final, {
         sheet: 'buildings',
-        frame: level === 2 ? 28 : 17,
+        // Forge is a two-level building (TWO_LEVEL_BUILDINGS): the upgraded sprite starts at level 1.
+        frame: level === 0 ? 17 : 28,
       })
     }
   }
@@ -142,7 +147,11 @@ test('forge keeps repairs and personal crafting without village research', () =>
         getPlayerResourceTotals: () => ({ wood: 500, copper: 500, iron: 500 }),
       },
       '../inventory/InventoryItemRows': {
-        createInventoryEquipmentRow: () => ({ element: {} }),
+        // Craft rows are equipment rows; record their options to drive the craft buttons.
+        createInventoryEquipmentRow: (_context, options) => {
+          rows.push(options)
+          return { element: element(), icon: element() }
+        },
         createInventoryResourceRow: () => ({ element: {} }),
       },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
@@ -201,7 +210,11 @@ test('campfire prepares consumables into the hero bag and rechecks proximity, co
       '../../lib/ui/VariantRow': { attachVariantRow() {} },
       '../../lib/avatar': {},
       '../inventory/InventoryItemRows': {
-        createInventoryEquipmentRow: () => ({ element: {} }),
+        // Craft rows are equipment rows; record their options to drive the craft buttons.
+        createInventoryEquipmentRow: (_context, options) => {
+          rows.push(options)
+          return { element: { querySelector: () => null }, icon: { appendChild() {} } }
+        },
         createInventoryResourceRow: () => ({ element: {} }),
       },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },

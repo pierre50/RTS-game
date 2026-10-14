@@ -3,7 +3,6 @@ export const EQUIPMENT_DURABILITY = {
   materials: { ceramic: 300, bronze: 600, iron: 900 },
   bow: 600,
   slingshot: 300,
-  longsword: 900,
   armorCondition: 100,
   weaponRepairRecipeFraction: 0.5,
 } as const

@@ -42,10 +42,12 @@ test('equipping each tool swaps a real item and unlocks only its associated acti
     assert.equal(hero.inventory.equipment.length, 3)
     assert.equal(hero.inventory.equipment.includes(item), false)
     for (const [other, otherAction] of Object.entries(actions))
-      assert.equal(tools.hasRequiredWorkTool(hero, otherAction), otherAction === 'farm' || family === other)
-    assert.equal(tools.hasRequiredWorkTool(hero, 'forageberry'), true)
+      assert.equal(tools.canDoWorkWithTool(hero, otherAction), family === other)
+    assert.equal(tools.canDoWorkWithTool(hero, 'forageberry', 'Berrybush'), false)
+    assert.equal(tools.canDoWorkWithTool(hero, 'forageberry', 'MedicinalHerb'), family === 'scythe')
     hero.inventory.toolsStowed = true
-    assert.equal(tools.hasRequiredWorkTool(hero, action), action === 'farm')
+    assert.equal(tools.canDoWorkWithTool(hero, action), action === 'farm')
+    assert.equal(tools.canDoWorkWithTool(hero, 'forageberry', 'Berrybush'), true)
     hero.inventory.toolsStowed = false
   }
 })
@@ -57,9 +59,9 @@ test('bag tools and forge research never replace an absent, wrong or broken equi
     owner: { forgeUpgrades: { pickaxes: 3 } },
   }
   assert.deepEqual(getUnitWorkEquipment('stoneminer', hero), [])
-  assert.equal(tools.hasRequiredWorkTool(hero, 'minestone'), false)
+  assert.equal(tools.canDoWorkWithTool(hero, 'minestone'), false)
   hero.inventory.activeWeapons.tool = 'pickaxe_bronze~condition:0'
-  assert.equal(tools.hasRequiredWorkTool(hero, 'minestone'), false)
+  assert.equal(tools.canDoWorkWithTool(hero, 'minestone'), false)
   assert.equal(load('app/lib/resources/miningEquipment.ts').hasIronMiningPickaxe(hero), false)
   hero.inventory.activeWeapons.tool = 'pickaxe_ceramic'
   assert.deepEqual(getUnitWorkEquipment('stoneminer', hero), ['pickaxe_ceramic'])
@@ -76,7 +78,7 @@ test('work and melee wear the very same Tool item, while the separate sword is u
   wearEquippedWeapon(hero, 'melee')
   assert.equal(hero.inventory.activeWeapons.tool, 'pickaxe_bronze~condition:0')
   assert.equal(hero.inventory.activeWeapons.melee, 'sword_iron')
-  assert.equal(tools.hasRequiredWorkTool(hero, 'mineiron'), false)
+  assert.equal(tools.canDoWorkWithTool(hero, 'mineiron'), false)
 })
 
 test('NPCs use the equipped tool in combat, never another tool from the bag', () => {

@@ -26,7 +26,7 @@ export const MARKET_RESOURCE_COUNTS: Partial<Record<keyof ResourceAmount, readon
   ironIngot: [0, 4],
 }
 export const MARKET_MATERIAL_MIN_LEVEL: Record<string, number> = { copper: 0, bronze: 0, iron: 1 }
-export const MARKET_EQUIPMENT_MIN_LEVEL: Record<string, number> = { bow: 0, bow_great: 1, bow_recurve: 1, longsword: 1 }
+export const MARKET_EQUIPMENT_MIN_LEVEL: Record<string, number> = { bow: 0, bow_great: 1, bow_recurve: 1 }
 export const MARKET_USED_VALUE_FLOOR = 0.15
 
 export const METAL_TIER_GOLD_VALUES: Record<string, number> = {
@@ -74,8 +74,8 @@ export const EQUIPMENT_BASE_GOLD_VALUES: Record<string, number> = {
   sword: 140,
   dagger: 80,
   mace: 140,
+  club: 90,
   spear: 110,
-  longsword: 520,
   armor_leather: 180,
   armor_mail: 340,
   armor_legion: 520,
@@ -84,14 +84,12 @@ export const EQUIPMENT_BASE_GOLD_VALUES: Record<string, number> = {
   bracers: 120,
   leg_armor: 140,
   round_shield: 180,
-  crest: 160,
   centurion_crest: 320,
-  centurion_plumage: 340,
   legion_plumage: 260,
   plumage: 160,
   helmet_wings: 260,
   upward_horns_white: 220,
-  upward_horns_ceramic: 260,
+  horns_short: 220,
   sack_cloth_hood_leather: 180,
   cane: 120,
   longstick: 80,

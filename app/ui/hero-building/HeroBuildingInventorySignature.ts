@@ -33,5 +33,6 @@ export function getHeroBuildingInteractiveInventorySignature(
       ...inventorySignature(hero),
     ].join('|')
   }
+  if (!building.isBuilt && building.constructionMaterials) return inventorySignature(hero).join('|')
   return ''
 }

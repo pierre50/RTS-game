@@ -450,12 +450,14 @@ test('construction info offers pause and resume, replacing progress with the pau
     assert.equal(button.attributes.get('aria-pressed'), 'true')
     const paused = document.createElement('div')
     info.renderInfo(paused, {})
+    assert.equal(paused.querySelector('.construction-site-progress'), null)
+    // The status label is the real translated 'constructionPausedStatus' (lang module is not mocked here).
     assert.match(
       paused
         .querySelector('.construction-work-status')
         .children.map(child => child.textContent)
         .join(' '),
-      /⏸/
+      /^(Paused|En pause)$/
     )
     assert.doesNotMatch(
       paused

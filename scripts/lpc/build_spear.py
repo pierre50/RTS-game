@@ -6,8 +6,15 @@ import hashlib
 import json
 import shutil
 import tempfile
-from config import DEFAULT_SOURCE_ROOT
-from build_spear_prototype import build_layers, lengthen_layers, build_hurt_layers
+from PIL import Image
+from config import DEFAULT_SOURCE_ROOT, PROJECT_ROOT
+from build_spear_prototype import (
+    build_layers,
+    build_hurt_layers,
+    expand_slash_timeline,
+    lengthen_layers,
+    split_slash_depth_against_body,
+)
 
 
 def build_spear_sources(source_root: Path = DEFAULT_SOURCE_ROOT) -> None:
@@ -16,6 +23,8 @@ def build_spear_sources(source_root: Path = DEFAULT_SOURCE_ROOT) -> None:
     inputs = [Path(__file__), Path(__file__).with_name('build_spear_prototype.py')]
     dagger_root = source_root / 'weapon/sword/dagger'
     inputs.extend(dagger_root / layer / 'dagger.png' for layer in ('behind/slash', 'slash'))
+    hero_root = PROJECT_ROOT / 'public/assets/graphics/units/hero/hellas/male'
+    inputs.extend((hero_root / 'texture.png', hero_root / 'texture.json'))
     outputs = []
     for animation in ('walk', 'attack_slash'):
         for layer in ('', 'behind/'):
@@ -32,9 +41,16 @@ def build_spear_sources(source_root: Path = DEFAULT_SOURCE_ROOT) -> None:
             return
     with tempfile.TemporaryDirectory(prefix='lpc-spear-') as temporary:
         work = Path(temporary)
+        hero_texture = Image.open(hero_root / 'texture.png').convert('RGBA')
+        hero_frames = json.loads((hero_root / 'texture.json').read_text())['frames']
         for animation, size, columns in [('walk', 64, 13), ('attack_slash', 192, 6)]:
             _, short = build_layers(animation, size, columns, source_root=origin, output_root=work)
-            lengthen_layers(short, animation, columns, output_root=work, dagger_root=dagger_root)
+            long = lengthen_layers(short, animation, columns, output_root=work, dagger_root=dagger_root)
+            if animation == 'attack_slash':
+                poses = split_slash_depth_against_body(expand_slash_timeline(long), hero_texture, hero_frames)
+                slash_root = work / 'sources-long/attack_slash'
+                poses[0].save(slash_root / 'behind/spear.png')
+                poses[1].save(slash_root / 'spear.png')
         build_hurt_layers(source_root=origin, output_root=work)
         target.mkdir(parents=True, exist_ok=True)
         shutil.copytree(work/'sources-long', target, dirs_exist_ok=True)

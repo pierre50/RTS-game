@@ -1,4 +1,4 @@
-import { isContinentWorld } from '../../config/continentWorlds'
+import { isContinentWorld } from '../../config/world/continentWorlds'
 import { definedProperties } from '../../lib/definedProperties'
 import { loadPreparedSettlements } from '../PreparedSettlementsLoader'
 import { decodeMapBlueprintPayload } from './MapBlueprintDecoding'

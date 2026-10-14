@@ -6,6 +6,7 @@ import { Resource } from '../../classes/Resource'
 import { Player } from '../../classes/players/Player'
 import { BUILDING_TYPES, FADE_DURATION_MS, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
 import { getBuildingFootprintCells } from '../../lib'
+import { getBuildingLevel, getBuildingLevels } from '../../lib/buildings/buildingLevel'
 import { fadeIn } from '../../lib/entities/entityFade'
 import type { PlayerLike } from '../../types/player'
 
@@ -274,7 +275,8 @@ export function spawnAnimal(context: DevConsoleContext, typeName: string, count:
 export function spawnBuilding(
   context: DevConsoleContext,
   typeName: string,
-  playerIndex: string | number | null = null
+  playerIndex: string | number | null = null,
+  level: string | number | null = null
 ): CommandResult {
   const { menu } = context
   const resolved = resolveOwner(context, playerIndex)
@@ -287,6 +289,11 @@ export function spawnBuilding(
     return { ok: false, message: `Unknown building${suffix}: ${typeName}` }
   }
   const config = { ...owner.config.buildings[type], type }
+  const requestedLevel = level == null ? 0 : Number(level)
+  const availableLevels = getBuildingLevels(config).filter(value => getBuildingLevel({ type, buildingLevel: value }) === value)
+  if (!Number.isInteger(requestedLevel) || !availableLevels.includes(requestedLevel)) {
+    return { ok: false, message: `Invalid level for ${type}: ${level}. Available levels: ${availableLevels.join(', ')}` }
+  }
 
   const cell = getSpawnCell(context, { buildingConfig: config })
   if (!cell) return { ok: false, message: 'No buildable cell near cursor' }
@@ -295,7 +302,7 @@ export function spawnBuilding(
     return spawnWheatField(context, owner, cell, ownerIndex, playerIndex != null)
   }
 
-  const building = owner.createBuilding(withCellSpaceId(cell, { i: cell.i, j: cell.j, type, isBuilt: true }))
+  const building = owner.createBuilding(withCellSpaceId(cell, { i: cell.i, j: cell.j, type, isBuilt: true, buildingLevel: requestedLevel }))
   owner.hasBuilt ??= []
   if (!owner.hasBuilt.includes(type)) owner.hasBuilt.push(type)
   ;(building as { updateTexture?: () => void }).updateTexture?.()

@@ -1,7 +1,7 @@
 import { savedBuildingsWithInteriors } from '../../../serialization/InteriorBuildingSave'
 import { getBuildingFootprintCells } from '../../../lib/grid/cells'
 import type { RuntimeCell } from '../../../types/map'
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import { VILLAGE_DETAIL_ENTER_RADIUS } from '../../../config/villageActivity'
 import { setDistantOwner } from '../../../lib/units/village/villageActivity'
 import { ambientActivityArea } from '../AmbientActivityArea'

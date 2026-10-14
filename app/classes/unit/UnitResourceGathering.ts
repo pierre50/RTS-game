@@ -106,11 +106,14 @@ export function isFarmHarvestTarget(
 }
 
 export function getGatherAmount(unit: UnitEntity): number {
+  // Only the tool of the unit's trade counts: work selection already follows the tool actually swung.
+  const family = workToolFamily(getEquippedWorkTool(unit))
+  const usesTool = Boolean(family) && toolFamilyForWork(unit.work) === family
   return getWorkGatherAmount(
     unit.gatherAmount,
     unit.work ?? '',
-    getGatherXpBonus(unit) + (toolFamilyForWork(unit.work) ? getWorkToolTier(unit) : 0),
-    workToolFamily(getEquippedWorkTool(unit)) === 'scythe',
+    getGatherXpBonus(unit) + (usesTool ? getWorkToolTier(unit) : 0),
+    usesTool && family === 'scythe',
     getWorkToolTier(unit)
   )
 }

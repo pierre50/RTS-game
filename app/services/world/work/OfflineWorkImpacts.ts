@@ -1,10 +1,10 @@
 import { isGroundResourceType } from '../../../lib/resources/groundResourceRegrowth'
 import {
-  hasRequiredWorkTool,
+  canDoWorkWithTool,
   getWorkToolTier,
   getEquippedWorkTool,
-  requiredWorkTool,
   workToolFamily,
+  workToolUse,
 } from '../../../lib/equipment/workTools'
 import { getEquipmentRemainingUses, withEquipmentRemainingUses } from '../../../lib/equipment/equipmentCondition'
 import { observeEconomyChange, recordEconomyFlow } from '../../../lib/economy/economyTelemetry'
@@ -83,7 +83,7 @@ export function buildOffline(step: WorkStep, budget: number): StepResult {
     stopOfflineTask(unit)
     return { budget, status: 'next' }
   }
-  if (!hasRequiredWorkTool(unit, 'build')) return { budget, status: 'skip' }
+  if (!canDoWorkWithTool(unit, 'build', target.type)) return { budget, status: 'skip' }
   const buildingConfig = getBuildingConfigForLevel(
     rules.buildingConfig(playerIndex, target.type),
     target.buildingUpgrade?.targetLevel ?? getBuildingLevel(target)
@@ -172,9 +172,9 @@ export function gatherOffline(step: WorkStep, budget: number): StepResult {
           ironminer: 'mineiron',
         } as Record<string, string>
       )[work])
-  if (!hasRequiredWorkTool(unit, action)) return { budget, status: 'skip' }
+  if (!canDoWorkWithTool(unit, action, target.type)) return { budget, status: 'skip' }
   const family = workToolFamily(getEquippedWorkTool(unit))
-  const needsTool = Boolean(requiredWorkTool(action)) && family === requiredWorkTool(action)
+  const needsTool = workToolUse(unit, action, target.type) === 'tool'
   const gatherAmounts = config.gatherAmount as Record<string, number> | undefined
   const gain = getWorkGatherAmount(
     gatherAmounts,

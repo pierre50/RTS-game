@@ -1,4 +1,4 @@
-import { SETTLEMENT_PROFILES, defaultSettlementType } from '../../../config/settlementProfiles'
+import { SETTLEMENT_PROFILES, defaultSettlementType } from '../../../config/world/settlementProfiles'
 import { PLAYER_TYPES } from '../../../constants'
 import { getBuildingConfigForLevel } from '../../../lib/buildings/buildingLevel'
 import type { OfflineWorkRules } from '../offline/OfflineWorldWork'

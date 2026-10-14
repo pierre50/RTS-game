@@ -351,7 +351,7 @@ test('AI resources are requested for placed projects instead of hypothetical bui
   assert.deepEqual(strategy.getEconomicDemand(), { food: 148, gold: 0, stone: 0, wood: 0 })
 })
 
-test('ai building strategy anticipates automatic villager waves before adding houses', () => {
+function buyHousesWithTownCenterLevel(buildingLevel) {
   const bought = []
   const AIStrategy = loadAIStrategy({
     lib: {
@@ -360,7 +360,14 @@ test('ai building strategy anticipates automatic villager waves before adding ho
   })
   const ai = {
     buildings: [
-      { type: 'TownCenter', isBuilt: true, i: 8, j: 8, inventory: { resources: { wood: 200, stone: 20, wheat: 1 } } },
+      {
+        type: 'TownCenter',
+        isBuilt: true,
+        buildingLevel,
+        i: 8,
+        j: 8,
+        inventory: { resources: { wood: 200, stone: 20, wheat: 1 } },
+      },
     ],
     age: 0,
     buyBuilding: (i, j, type) => {
@@ -407,8 +414,13 @@ test('ai building strategy anticipates automatic villager waves before adding ho
     notBuiltHouses: [],
   })
 
-  assert.equal(actions, 1)
-  assert.deepEqual(bought, [[10, 11, 'House']])
+  return { actions, bought }
+}
+
+test('ai building strategy anticipates automatic villager waves before adding houses', () => {
+  // 17/20 leaves three free beds: enough for a level-0 wave (1 + 1 spare), not for a level-2 wave (3 + 1 spare).
+  assert.deepEqual(buyHousesWithTownCenterLevel(0), { actions: 0, bought: [] })
+  assert.deepEqual(buyHousesWithTownCenterLevel(2), { actions: 1, bought: [[10, 11, 'House']] })
 })
 
 test('ai building strategy adds passage clearance to construction searches', () => {

@@ -169,7 +169,7 @@ Les anciens suffixes `~condition:N` restent des pourcentages : un outil à 50 % 
 
 ## Durabilité et réparation des armes
 
-Les armes de mêlée ont 300 contacts en pierre, 600 en bronze et 900 en fer ; l’épée longue a 900 contacts. Tous les arcs ont 600 tirs et le lance-pierre 300. Les dégâts, coûts de fabrication, munitions, parades et armures sont inchangés. Un contact de mêlée consomme un usage même paré ; un tir consomme un usage à son lancement, même s’il rate. Les coups dans le vide ne consomment pas de durabilité.
+Les armes de mêlée ont 300 contacts en pierre, 600 en bronze et 900 en fer. Tous les arcs ont 600 tirs et le lance-pierre 300. Les dégâts, coûts de fabrication, munitions, parades et armures sont inchangés. Un contact de mêlée consomme un usage même paré ; un tir consomme un usage à son lancement, même s’il rate. Les coups dans le vide ne consomment pas de durabilité.
 
 La réparation des armes utilise la recette actuelle de chaque objet : `ceil(coût par objet × 0,5 × fraction usée)` par ingrédient, sans dépasser le coût de fabrication de cet ingrédient. Une arme intacte ne coûte rien à réparer. Les petits ingrédients peuvent donc coûter autant que dans la recette neuve à cause des arrondis. Les variantes d’arc sans recette propre utilisent celle de l’arc simple. Les coûts de réparation des outils et armures sont conservés.
 

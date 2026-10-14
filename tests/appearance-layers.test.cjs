@@ -107,11 +107,6 @@ test('helmet decor with hurt art exposes death sheets', () => {
     '../../constants': constants,
   })
 
-  const latiumLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Latium')
-  const latiumPlumage = latiumLayers.find(layer => layer.equipmentKey === 'centurion_plumage')
-  assert.equal(latiumPlumage?.dyingSheet, 'equipments/centurion_plumage/front/dying')
-  assert.equal(latiumPlumage?.corpseSheet, 'equipments/centurion_plumage/front/corpse')
-
   const babylonianLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Sumeria')
   const legionPlumage = babylonianLayers.find(layer => layer.equipmentKey === 'legion_plumage')
   assert.equal(legionPlumage?.dyingSheet, 'equipments/legion_plumage/front/dying')
@@ -837,7 +832,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       { forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 } },
       0
     ),
-    ['spear_ceramic']
+    ['club_ceramic']
   )
   assert.deepEqual(
     dynamicEquipmentForUnit(
@@ -845,7 +840,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       { forgeUpgrades: { axes: 0, pickaxes: 0, hammers: 0, weapons: 0, armor: 0, arrows: 0 } },
       2
     ),
-    ['spear_ceramic', 'armor_leather']
+    ['club_ceramic', 'armor_leather']
   )
   assert.deepEqual(
     dynamicEquipmentForUnit(
@@ -854,7 +849,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       15
     ),
     [
-      'spear_bronze',
+      'club_ceramic',
       'shoulder_legion_bronze',
       'bracers_bronze',
       'round_shield_bronze_slash',
@@ -870,7 +865,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       15
     ),
     [
-      'spear_iron',
+      'club_ceramic',
       'shoulder_legion_iron',
       'bracers_iron',
       'round_shield_iron_slash',
@@ -886,7 +881,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       16
     ),
     [
-      'spear_bronze',
+      'club_ceramic',
       'shoulder_legion_bronze',
       'bracers_bronze',
       'round_shield_bronze_slash',
@@ -903,7 +898,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       18
     ),
     [
-      'spear_bronze',
+      'club_ceramic',
       'shoulder_legion_bronze',
       'bracers_bronze',
       'round_shield_bronze_slash',
@@ -920,7 +915,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       20
     ),
     [
-      'spear_bronze',
+      'club_ceramic',
       'shoulder_legion_bronze',
       'bracers_bronze',
       'round_shield_bronze_slash',
@@ -945,7 +940,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
       { forgeUpgrades: { axes: 2, pickaxes: 2, hammers: 2, weapons: 2, armor: 2, arrows: 2 } },
       20,
       'Latium'
-    ).includes('centurion_plumage'),
+    ).includes('centurion_crest'),
     true
   )
   assert.equal(
@@ -1022,7 +1017,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
   )
 
   const layers = dynamicEquipmentLayersForUnit('Fantassin')
-  const sword = layers.find(layer => layer.walkingSheet === 'equipments/spear_ceramic/front/walking')
+  const sword = layers.find(layer => layer.walkingSheet === 'equipments/club_ceramic/front/walking')
   const shield = layers.find(layer => layer.walkingSheet === 'equipments/round_shield_wood_slash/front/walking')
   const leather = layers.find(layer => layer.walkingSheet === 'equipments/armor_leather/front/walking')
   const mail = layers.find(layer => layer.walkingSheet === 'equipments/armor_mail_iron/front/walking')
@@ -1058,7 +1053,7 @@ test('infantry equipment layers unlock by level and switch metal by forge resear
   assert.equal(crest, undefined)
   assert.equal(centurionCrest?.minLevel, 16)
   assert.equal(centurionCrest?.maxLevel, undefined)
-  assert.equal(centurionCrest?.palette, 'player')
+  assert.equal(centurionCrest?.palette, undefined)
   assert.equal(centurionCrest?.mountedSheet, 'equipments/centurion_crest/front/walking')
   assert.equal(centurionPlumage, undefined)
   const nordLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nord')
@@ -1193,8 +1188,9 @@ test('bandit units use fixed runtime equipment loadouts', () => {
     'round_shield_wood_slash',
   ])
   assert.deepEqual(dynamicEquipmentForUnit('BanditSword'), [
-    'sword_bronze',
+    'club_ceramic',
     'helmet_barbarian_nasal_leather',
+    'horns_short',
     'round_shield_wood_slash',
   ])
   assert.deepEqual(dynamicEquipmentForUnit('BanditArcher'), [
@@ -1222,9 +1218,9 @@ test('bandit units use fixed runtime equipment loadouts', () => {
   assert.equal(shield?.corpseSheet, undefined)
 
   const swordLayers = dynamicEquipmentLayersForUnit('BanditSword')
-  const sword = swordLayers.find(layer => layer.walkingSheet === 'equipments/sword_bronze/front/walking')
-  assert.equal(sword?.dyingSheet, 'equipments/sword_bronze/front/dying')
-  assert.equal(sword?.corpseSheet, 'equipments/sword_bronze/front/corpse')
+  const sword = swordLayers.find(layer => layer.walkingSheet === 'equipments/club_ceramic/front/walking')
+  assert.equal(sword?.dyingSheet, 'equipments/club_ceramic/front/dying')
+  assert.equal(sword?.corpseSheet, 'equipments/club_ceramic/front/corpse')
 
   const archerLayers = dynamicEquipmentLayersForUnit('BanditArcher')
   const hood = archerLayers.find(layer => layer.walkingSheet === 'equipments/sack_cloth_hood_leather/front/walking')

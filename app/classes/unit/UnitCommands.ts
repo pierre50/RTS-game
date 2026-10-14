@@ -1,26 +1,9 @@
-import {
-  ACTION_TYPES,
-  MINING_RESOURCE_CONFIG,
-  RESOURCE_TYPES,
-  SHEET_TYPES,
-  UNIT_TYPES,
-  WORK_TYPES,
-} from '../../constants'
-import {
-  getAutonomyJobForWork,
-  getInstanceDegree,
-  getInstancePath,
-  isWheatMature,
-  setVillagerAutonomy,
-} from '../../lib'
+import { ACTION_TYPES, MINING_RESOURCE_CONFIG, RESOURCE_TYPES, SHEET_TYPES, WORK_TYPES } from '../../constants'
 import type { ActionProps } from '../../lib/combat'
 import { applyDiplomaticAggression } from '../../lib/combat/diplomaticAggression'
 import { getNearestAvailableStableForUnit } from '../../lib/horses/horseCapture'
-import { t } from '../../lib/lang'
+import { workForToolUse } from '../../lib/equipment/workTools'
 import { canCampPursue } from '../../lib/units/camps/campBehavior'
-import { knownTarget, playerSeesTarget } from '../../lib/units/playerTargetKnowledge'
-import { routeToRememberedTarget } from '../../lib/units/combat/targetPursuit'
-import { isHeroControlled } from '../../lib/units/unitControl'
 import { wakeUnitSimulation } from '../../lib/units/unitSuspension'
 import type {
   BuildingEntity,
@@ -33,12 +16,18 @@ import type {
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { currentResourceRecord, isCompactResourceRecord, resolveResource } from '../resources/CompactResourceSet'
-import { canShowTargetAlert, checkActionCondition, isRuntimeEntity } from './UnitCommandConditions'
+import { checkActionCondition, isRuntimeEntity } from './UnitCommandConditions'
 import {
-  applyWorkForAction,
-  getDeliveryBeforeGatherJobSwitch,
-  sendUnitToDelivery,
-} from './UnitResourceDeliveryCommands'
+  applyOrderWork,
+  dispatchOrder,
+  interruptRestForAttack,
+  rejectBlockedOrder,
+  releaseCollectiveTask,
+  rememberPreviousTask,
+  routeToKnownUnseenTarget,
+  sendUnitToArrivalCell,
+} from './UnitCommandRouting'
+import { getDeliveryBeforeGatherJobSwitch, sendUnitToDelivery } from './UnitResourceDeliveryCommands'
 
 export class UnitCommands {
   unit: UnitEntity
@@ -80,104 +69,36 @@ export class UnitCommands {
       if (!current || current.isDestroyed) return false
       target = resolveResource(current)
     }
-    if (!playerSeesTarget(unit.owner, target) && knownTarget(unit.owner, target, unit)) {
-      if (!immediate && !unit.assigningAutonomousJob) {
-        unit.collectiveTask = null
-        unit.collectiveHome = undefined
-      }
-      applyWorkForAction(unit, work, action)
-      setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(work) ?? null)
-      if (routeToRememberedTarget(unit, target, action)) return true
-    }
+    work = workForToolUse(unit, action, target.type, work)
+    if (routeToKnownUnseenTarget(unit, target, work, action, immediate)) return true
     if (target.isDestroyed) return false
     if (!preserveBuildQueue) unit.buildQueue = []
-    if (action && !checkActionCondition(unit, target, action, actionProps)) {
-      if (
-        action === ACTION_TYPES.farm &&
-        target.type === RESOURCE_TYPES.wheat &&
-        !isWheatMature(target) &&
-        canShowTargetAlert(unit, target)
-      ) {
-        unit.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
-      }
-      return false
-    }
-    if (action === ACTION_TYPES.attack && unit.context?.unitRest?.interruptRestForCombat?.(unit, target)) return true
+    if (rejectBlockedOrder(unit, target, action, immediate, actionProps)) return false
+    if (interruptRestForAttack(unit, target, action)) return true
     if (unit.actionLocked) {
       return unit.queueOrder?.(() =>
         this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps)
       )
     }
-    // A direct order takes ownership even when it repeats the current automatic task.
-    if (!immediate && !unit.assigningAutonomousJob) {
-      unit.collectiveTask = null
-      unit.collectiveHome = undefined
-    }
+    releaseCollectiveTask(unit, immediate)
     if (this.isRedundantOrder(target, work, action)) return false
 
     const deliveryTransition = getDeliveryBeforeGatherJobSwitch(unit, target, work, action)
     if (deliveryTransition) return this.sendToDelivery(deliveryTransition.target, deliveryTransition.returnTask)
 
-    // The hero never auto-resumes a previous job — it's player-controlled, not AI, and
-    // silently walking it back to a gather spot would be the same unwanted autonomy as
-    // pathing it there in the first place.
-    const shouldRememberPreviousTask =
-      keepPrevious &&
-      unit.type === UNIT_TYPES.villager &&
-      !isHeroControlled(unit) &&
-      unit.work !== WORK_TYPES.builder &&
-      unit.action !== ACTION_TYPES.build &&
-      unit.dest &&
-      !unit.previousDest
-
-    if (shouldRememberPreviousTask) {
-      unit.previousDest = unit.dest
-      unit.previousWork = unit.work
-    } else if (!keepPrevious) {
-      unit.previousWork = null
-    }
-
-    applyWorkForAction(unit, work, action)
-    setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(work) ?? null)
+    rememberPreviousTask(unit, keepPrevious)
+    applyOrderWork(unit, work, action)
     unit.previousDest = keepPrevious ? unit.previousDest : null
-
-    // AI job switches must bypass the public command throttle, otherwise the villager
-    // can change work/action while still keeping the old destination.
-    if (immediate || action === ACTION_TYPES.attack || !unit.owner?.isPlayed) {
-      return unit.sendToEvt?.(target, action ?? undefined)
-    }
-    return unit.sendTo?.(target, action ?? undefined)
+    return dispatchOrder(unit, target, action, immediate)
   }
 
   sendToWithCell(target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) {
     const unit = this.unit
-    const map = unit.context?.map
-    if (action === ACTION_TYPES.attack && unit.context?.unitRest?.interruptRestForCombat?.(unit, target)) return true
+    if (interruptRestForAttack(unit, target, action)) return true
     if (unit.actionLocked) {
       return unit.queueOrder?.(() => this.sendToWithCell(target, arrivalCell, action))
     }
-    unit.handleChangeDest?.()
-    unit.stopInterval?.()
-    if (!target || target.isDestroyed || unit.isDead || !arrivalCell) return false
-    if (action && !checkActionCondition(unit, target, action)) return false
-    if (unit.isUnitAtDest?.(action, target)) {
-      unit.setDest?.(target)
-      unit.action = action
-      unit.degree = getInstanceDegree(unit, target.x, target.y)
-      unit.getAction?.(action)
-      return true
-    }
-    if (!map) return false
-    const path = getInstancePath(unit, arrivalCell.i, arrivalCell.j, map)
-    if (path.length) {
-      unit.setDest?.(target)
-      unit.action = action
-      unit.setPath?.(path)
-      return true
-    } else {
-      unit.sendToEvt?.(target, action)
-      return true
-    }
+    return sendUnitToArrivalCell(unit, target, arrivalCell, action)
   }
 
   sendToAttack(target: RuntimeEntity, options: UnitCommandOptions = {}) {

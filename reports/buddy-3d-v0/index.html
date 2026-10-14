@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Villageois capsule · modèle 3D</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #131922; color: #f2f5fa; }
+      main { max-width: 1400px; margin: auto; padding: 28px; }
+      h1 { margin: 0 0 8px; font-size: 1.8rem; }
+      p { color: #b8c5d2; line-height: 1.45; }
+      .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+      .stage, .panel { background: #202b39; border: 1px solid #34485b; border-radius: 14px; overflow: hidden; }
+      .stage { position: relative; min-height: 640px; }
+      #renderCanvas { display: block; width: 100%; height: 640px; touch-action: none; }
+      .stage p { position: absolute; left: 18px; bottom: 12px; pointer-events: none; font-size: .88rem; }
+      .panel { padding: 20px; }
+      .panel h2 { margin: 0 0 12px; font-size: 1.12rem; }
+      .views { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
+      .models { display: grid; gap: 8px; margin-bottom: 20px; }
+      .models button[aria-pressed="true"] { background: #2375a7; border-color: #a2d8ff; }
+      .walk-controls { display: grid; gap: 10px; margin-bottom: 22px; }
+      .walk-controls label { color: #c5d0dc; }
+      .walk-controls label span { float: right; color: #9fd3ff; }
+      .walk-controls input { width: 100%; margin-top: 10px; accent-color: #83c5f7; }
+      button, .download { background: #3c5874; border: 1px solid #7193b4; border-radius: 7px; color: white; cursor: pointer; padding: 10px; font: inherit; text-align: center; text-decoration: none; }
+      button:hover, .download:hover { background: #4c6d8d; }
+      .atlas { display: block; width: 100%; image-rendering: pixelated; border-radius: 8px; background: #303948; }
+      .downloads { display: grid; gap: 8px; margin-top: 16px; }
+      #status { color: #f4c793; min-height: 24px; }
+      @media (max-width: 800px) {
+        .layout { grid-template-columns: 1fr; }
+        .stage, #renderCanvas { min-height: 460px; height: 460px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Villageois capsule · modèle 3D</h1>
+      <p>Une pilule simple, les mains rapprochées et des chaussures détaillées de taille proche des mains. La texture du villageois couvre le corps, les mains et les pieds ; l’animation Walk reste intégrée au modèle.</p>
+      <div class="layout">
+        <section class="stage">
+          <canvas id="renderCanvas" aria-label="Personnage 3D Babylon.js"></canvas>
+          <p>Glisser pour tourner · Molette pour zoomer</p>
+        </section>
+        <section class="panel">
+          <h2>Choisir le modèle</h2>
+          <div class="models">
+            <button type="button" data-model="reference" aria-pressed="true">Pilule simple</button>
+            <button type="button" data-model="original" aria-pressed="false">Première version</button>
+          </div>
+          <h2>Voir le personnage</h2>
+          <div class="views">
+            <button type="button" data-view="front">Face</button>
+            <button type="button" data-view="right">Droite</button>
+            <button type="button" data-view="back">Dos</button>
+            <button type="button" data-view="left">Gauche</button>
+          </div>
+          <div class="walk-controls">
+            <button id="toggleWalk" type="button">Pause</button>
+            <label>Vitesse de marche <span id="speedValue">1,0×</span><input id="walkSpeed" type="range" min="0.4" max="2" step="0.1" value="1" /></label>
+          </div>
+          <h2>Image UV du modèle</h2>
+          <img class="atlas" id="atlasPreview" src="./buddy-simple-uv.png" alt="Atlas UV du personnage" />
+          <p>La bande supérieure enveloppe le corps. Les carrés inférieurs colorent chaussures et mains.</p>
+          <div class="downloads">
+            <a class="download" href="./buddy-reference-walk.glb" download>Télécharger la pilule simple 3D</a>
+            <a class="download" href="./buddy.glb" download>Télécharger la première version</a>
+            <a class="download" id="atlasDownload" href="./buddy-simple-uv.png" download>Télécharger l’image UV</a>
+          </div>
+          <p>Mains et chaussures issues du modèle de <a href="https://sketchfab.com/3d-models/team-buddies-4914868b3a6742f08db2386084e0f8a4">Zakaria991, Team Buddies</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>), adaptées pour ce prototype.</p>
+          <p id="status" role="status">Chargement du modèle…</p>
+        </section>
+      </div>
+    </main>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="./preview.js"></script>
+  </body>
+</html>

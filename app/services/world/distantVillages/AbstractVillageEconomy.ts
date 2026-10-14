@@ -1,5 +1,5 @@
 import { belongsToSettlement, collectiveAnchor } from '../../../lib/economy/collectiveConstruction'
-import { isStaticSettlement } from '../../../config/settlementProfiles'
+import { isStaticSettlement } from '../../../config/world/settlementProfiles'
 import {
   getTrainingDurationDays,
   getBuildingTrainingCapacity,

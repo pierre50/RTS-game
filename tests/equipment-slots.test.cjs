@@ -46,7 +46,6 @@ test('equipment classification distinguishes armor, helmet decorations and weapo
     pickaxe_bronze: 'tool',
     hammer_copper: 'tool',
     scythe_ceramic: 'tool',
-    longsword: 'melee',
     spear_iron: 'melee',
     cane: 'melee',
     longstick: 'melee',

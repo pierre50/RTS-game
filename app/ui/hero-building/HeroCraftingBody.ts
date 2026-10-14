@@ -1,4 +1,3 @@
-import { getEquipmentDurability } from '../../lib/equipment/equipmentCondition'
 import { getHeroCraftRecipeLabel } from '../../lib/hero/heroCraftLabels'
 import { RESOURCE_ICON_IDS } from '../../constants'
 import { renderBuildingAvatar } from '../../lib/avatar'
@@ -18,9 +17,8 @@ import { getPlayerResourceTotals } from '../../lib/resources/playerResourceTotal
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { MenuHost } from '../MenuHost'
-import { createInventoryActionRow } from '../inventory/InventoryActionRow'
 import { inventoryCostMetaParts } from '../inventory/InventoryCostMeta'
-import { createInventoryEquipmentIcon } from '../inventory/InventoryItemIcons'
+import { createInventoryEquipmentRow } from '../inventory/InventoryItemRows'
 import { createInventorySection } from '../inventory/InventorySection'
 
 export abstract class HeroCraftingBody<B extends BuildingEntity | undefined = BuildingEntity> {
@@ -86,15 +84,18 @@ export abstract class HeroCraftingBody<B extends BuildingEntity | undefined = Bu
     const batchCount = Math.min(10, getMaxHeroCraftCount(player, recipe, hero, this.building))
     const batchLabel = `${actionLabel} ${batchCount || 10}`
     const disabled = !this.canUse() || !hero || !canCraftHeroRecipe(player, recipe, hero, this.building)
-    const { element, icon } = createInventoryActionRow({
+    const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
+    const customIcon = recipe.iconResource || placeableBuildingType ? document.createElement('span') : undefined
+    const rowOptions = {
       id: `craft-${recipe.id}`,
       className: 'inventory-craft-row',
       disabled,
       title: label,
-      quantity: recipe.outputCount,
-      durability: getEquipmentDurability(recipe.outputEquipment),
+      count: recipe.outputCount,
       description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
       meta: '',
+      icon: customIcon,
+      labelContext: 'craft',
       metaParts: Object.keys(cost).length
         ? this.getCraftCostMetaParts(cost, hero)
         : [{ text: t('craftPreparedMaterials') }],
@@ -102,7 +103,7 @@ export abstract class HeroCraftingBody<B extends BuildingEntity | undefined = Bu
         disabled,
         label: `${actionLabel} 1`,
         title: t('craftBatchShortcut', { action: batchLabel }),
-        onClick: event => {
+        onClick: (event: Event) => {
           if (!hero || !this.canUse()) return
           const count = (event as MouseEvent)?.shiftKey
             ? Math.min(10, getMaxHeroCraftCount(player, recipe, hero, this.building))
@@ -120,30 +121,29 @@ export abstract class HeroCraftingBody<B extends BuildingEntity | undefined = Bu
           this.renderCraft()
         },
       },
+    }
+    const { element, icon } = createInventoryEquipmentRow(this.menu.context, {
+      ...rowOptions,
+      equipment: recipe.outputEquipment,
     })
     const action = element.querySelector<HTMLButtonElement>('.inventory-row-action-button')
     if (action) action.dataset.craftBatchLabel = batchLabel
-    const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
     if (recipe.iconResource) {
       const resourceIcon = document.createElement('img')
       resourceIcon.className = 'img inventory-resource-icon'
       resourceIcon.src = getIconPath(RESOURCE_ICON_IDS[recipe.iconResource].commodity)
       resourceIcon.alt = ''
       icon.appendChild(resourceIcon)
-    } else {
-      if (placeableBuildingType) {
-        const img = document.createElement('img')
-        img.className = 'img'
-        img.alt = ''
-        const canvas = document.createElement('canvas')
-        canvas.width = 120
-        canvas.height = 120
-        renderBuildingAvatar(app, placeableBuildingType, player, canvas)
-        img.src = canvas.toDataURL()
-        icon.appendChild(img)
-      } else {
-        icon.appendChild(createInventoryEquipmentIcon(this.menu.context, recipe.outputEquipment, 'craft'))
-      }
+    } else if (placeableBuildingType) {
+      const img = document.createElement('img')
+      img.className = 'img'
+      img.alt = ''
+      const canvas = document.createElement('canvas')
+      canvas.width = 120
+      canvas.height = 120
+      renderBuildingAvatar(app, placeableBuildingType, player, canvas)
+      img.src = canvas.toDataURL()
+      icon.appendChild(img)
     }
     return element
   }

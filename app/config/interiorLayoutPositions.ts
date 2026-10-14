@@ -1,7 +1,7 @@
 import positions from './interiorLayoutPositions.json'
 
-export type InteriorFurniturePosition = { offsetI: number; offsetJ: number }
-export type InteriorFurnitureItem = InteriorFurniturePosition & { type: string; mirrored: boolean }
+type InteriorFurniturePosition = { offsetI: number; offsetJ: number }
+type InteriorFurnitureItem = InteriorFurniturePosition & { type: string; mirrored: boolean }
 export type InteriorRug = {
   frame: number
   offsetX: number

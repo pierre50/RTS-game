@@ -1,0 +1,1 @@
+Club LPC par bluecarrot16, [LPC] More Weapons: https://opengameart.org/content/lpc-more-weapons. Licences OGA-BY 3.0+, GPL 3.0, CC-BY 4.0. Marche 2–4/9 vue gauche : massue relevée derrière le torse, dans la main droite cachée. Slash natif reverse-oversize ; hurt dérivé.

@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { planVillagerArrivals, calculateVillagerArrivals } = loadTsModule('app/lib/population/villagerArrivals.ts')
+const { planVillagerArrivals } = loadTsModule('app/lib/population/villagerArrivals.ts')
+const { calculateVillagerArrivals } = loadTsModule('app/lib/buildings/townCenter.ts')
 const { getBuildingCombatProfile, getBuildingAttackRange } = loadTsModule('app/lib/buildings/towerCombat.ts')
 const { getStorageCapacity } = loadTsModule('app/lib/resources/storagePolicy.ts')
 function village(level, offset = 0, population = 20, food = 1000) {

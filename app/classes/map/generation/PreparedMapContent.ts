@@ -10,6 +10,9 @@ export type PreparedTerrainCell = {
   relief?: [string, number]
   patches?: string[]
   ground?: PatchBorderGroundType
+  // Directions whose border uses a different ground than `ground` (a grass cell wedged
+  // between dark forest and a shore needs both sheets).
+  grounds?: Partial<Record<string, PatchBorderGroundType>>
 }
 const caves = new WeakMap<object, NonNullable<MapBlueprint['caves']>>()
 
@@ -40,7 +43,7 @@ export function applyPreparedTerrain(
     if (data.water) cell.setWaterBorder?.(...data.water)
     if (waterOnly) continue
     if (data.relief) cell.setReliefBorder?.(data.relief[0], data.relief[1] * CELL_DEPTH)
-    for (const direction of data.patches ?? []) cell.setPatchBorder?.(direction, data.ground)
+    for (const direction of data.patches ?? []) cell.setPatchBorder?.(direction, data.grounds?.[direction] ?? data.ground)
   }
 }
 

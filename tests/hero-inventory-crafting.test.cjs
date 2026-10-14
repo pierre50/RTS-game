@@ -27,7 +27,13 @@ test('inventory crafts without a building, supports bounded batches and refuses 
       '../../lib/ui/VariantRow': { attachVariantRow() {} },
       '../../lib/avatar': {},
       '../inventory/InventoryItemRows': {
-        createInventoryEquipmentRow: () => ({ element: {} }),
+        // Craft rows are equipment rows; record their options and expose the batch action button.
+        createInventoryEquipmentRow: (_context, options) => {
+          rows.push(options)
+          const action = { dataset: {} }
+          actions.push(action)
+          return { element: { querySelector: () => action }, icon: { appendChild() {} } }
+        },
         createInventoryResourceRow: () => ({ element: {} }),
       },
       '../inventory/InventoryCostMeta': { inventoryCostMetaParts: () => [] },
@@ -58,7 +64,7 @@ test('inventory crafts without a building, supports bounded batches and refuses 
     assert.ok(!rows.some(row => ['craft-arrow_bronze', 'craft-grilled_meat', 'craft-poison_vial'].includes(row.id)))
     const arrows = rows.find(row => row.id === 'craft-arrow_ceramic')
     assert.equal(arrows.disabled, false)
-    assert.equal(arrows.quantity, 1)
+    assert.equal(arrows.count, 1)
     assert.equal(arrows.trailingAction.label, 'craftAction 1')
     assert.equal(actions[rows.indexOf(arrows)].dataset.craftBatchLabel, 'craftAction 10')
     arrows.trailingAction.onClick()

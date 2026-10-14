@@ -1,4 +1,4 @@
-import { hasRequiredWorkTool } from '../equipment/workTools'
+import { canDoWorkWithTool } from '../equipment/workTools'
 import { MINING_RESOURCE_CONFIG, UNIT_TYPES } from '../../constants'
 import { isHeroControlled } from '../units/unitControl'
 import { t } from '../lang'
@@ -17,7 +17,7 @@ export function canHeroStrikeLockedMine(
   action: string | null | undefined = unit.action
 ): boolean {
   return Boolean(
-    hasRequiredWorkTool(unit, action) &&
+    canDoWorkWithTool(unit, action, target?.type) &&
       unit.type === UNIT_TYPES.hero &&
       isHeroControlled(unit) &&
       target &&

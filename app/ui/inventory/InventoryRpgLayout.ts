@@ -1,6 +1,7 @@
 import { getHeroEquipmentSlotLabelKey } from '../../lib/equipment/equipmentSlots'
 import { isSlingshot } from '../../lib/equipment/rangedWeapon'
 import { createInventoryResourceRow } from './InventoryItemRows'
+import { createInventorySlingshotStoneIcon } from './InventoryItemIcons'
 import type { HeroEquipmentSlot } from '../../types/entities'
 import type { InventoryManager } from '../InventoryManager'
 import { renderUnitBodyAvatar } from '../../lib/avatar'
@@ -43,6 +44,7 @@ export function arrangeInventoryEquipment(host: InventoryManager): void {
     const { element } = createInventoryResourceRow({
       id: 'inventory-ranged-stones',
       resource: 'stone',
+      icon: createInventorySlingshotStoneIcon(),
       amount,
       className: 'inventory-ranged-stones',
       description: t('inventorySlingshotAmmoHint'),

@@ -20,6 +20,7 @@ import { isHeroControlled } from '../../../lib/units/unitControl'
 import { getEntitySpaceMapLike, sameMapSpace } from '../../../lib/mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
+import { clearNpcYieldWhenSeparated, shouldIgnoreYieldingNpc } from './HeroNpcYield'
 
 function blocksHeroDirectMoveAtPoint(
   entity: RuntimeEntity | null | undefined,
@@ -97,11 +98,15 @@ export function getHeroDirectMoveBlockerAtPoint(
   y: number
 ): RuntimeEntity | null {
   if (!cell) return null
+  clearNpcYieldWhenSeparated(unit)
   const map = getEntitySpaceMapLike(unit, unit.context?.map)
   for (const entity of getNearbyHeroCollisionEntities(cell, map, unit)) {
     if (entity === unit) continue
     if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) {
-      if (blocksHeroMobileDirectMoveAtPoint(unit, entity, x, y)) return entity
+      if (blocksHeroMobileDirectMoveAtPoint(unit, entity, x, y)) {
+        if (entity.family === FAMILY_TYPES.unit && shouldIgnoreYieldingNpc(unit, entity as UnitEntity)) continue
+        return entity
+      }
       continue
     }
     if (blocksHeroDirectMoveAtPoint(entity, x, y, map, unit.x, unit.y)) return entity

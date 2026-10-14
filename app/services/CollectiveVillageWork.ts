@@ -4,7 +4,7 @@ import { getEquippedWorkTool } from '../lib/equipment/workTools'
 import { hasPendingAutonomyPlan } from './AutonomyPlanningQueue'
 import { planBlockedVillagerRecovery } from '../lib/economy/blockedVillagerInventory'
 import { hasConstructionWork } from '../lib/economy/constructionMaterials'
-import { isRpgVillage } from '../config/rpgVillages'
+import { isRpgVillage } from '../config/world/rpgVillages'
 import { consumeVillageWorkChange, notifyVillageWorkChanged } from '../lib/units/village/villageWorkEvents'
 import { hasCollectiveVillageEvent, settleCollectiveVillageEvents } from './CollectiveVillageEvents'
 import {

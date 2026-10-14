@@ -63,9 +63,32 @@ test('every spear walking, slash, dying and corpse runtime alias exists in its s
     for (const alias of aliases) {
       const frames = Object.keys(atlas.frames).filter(k => k.endsWith(alias.frameSuffix))
       assert.ok(frames.length > 0, alias.alias)
+      if (alias.alias.endsWith('/action')) assert.equal(frames.length, 27, alias.alias)
       if (alias.alias.endsWith('/dying')) assert.equal(frames.length, 6, alias.alias)
       if (alias.alias.endsWith('/corpse')) assert.equal(frames.length, 1, alias.alias)
     }
+  }
+})
+
+test('spear slash advances nine weapon cells while repeating only the body poses', () => {
+  const { getConfiguredActionFrameSequence, getActionAnimationReleaseFrame } = load(
+    'app/lib/animations/actionFrameSequences.ts'
+  )
+  const { dynamicEquipmentLayersForEquipment } = load('app/lib/lpc/equipment.ts')
+  const body = [0, 1, 2, 2, 3, 3, 4, 4, 5]
+  const weapon = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+  assert.deepEqual(getConfiguredActionFrameSequence({ action: 'attack', equipment: ['spear_iron'] }), body)
+  assert.deepEqual(
+    getConfiguredActionFrameSequence({
+      action: 'interact',
+      work: 'heroSword',
+      inventory: { activeWeapons: { melee: 'spear_bronze' } },
+    }),
+    body
+  )
+  assert.equal(getActionAnimationReleaseFrame({ action: 'attack', equipment: ['spear_iron'] }, 'attack', 5), 8)
+  for (const layer of dynamicEquipmentLayersForEquipment(['spear_iron'])) {
+    assert.deepEqual(layer.actionFrameSequence, weapon)
   }
 })
 
@@ -94,17 +117,13 @@ test('old copper tools and ingots migrate once, preserving wear and ore quantiti
   assert.deepEqual(save, once)
 })
 
-test('infantry receives spears across material tiers; halberds disappear and old equipment migrates', () => {
+test('infantry receives the stone club across material tiers; halberds disappear and old equipment migrates', () => {
   const { dynamicEquipmentForUnit, DYNAMIC_EQUIPMENT_KEYS } = load('app/lib/lpc/equipment.ts')
   const { HERO_CRAFT_RECIPES } = load('app/lib/hero/heroCraftRecipes.ts')
   const { migrateEquipmentRecord } = load('app/lib/equipment/equipmentMaterials.ts')
-  for (const [tier, material] of [
-    [0, 'ceramic'],
-    [2, 'bronze'],
-    [3, 'iron'],
-  ]) {
+  for (const tier of [0, 2, 3]) {
     const issued = dynamicEquipmentForUnit('Fantassin', { forgeUpgrades: { weapons: tier } }, 0)
-    assert.ok(issued.includes(`spear_${material}`))
+    assert.ok(issued.includes('club_ceramic'))
     assert.ok(!issued.some(key => key.startsWith('sword_')))
   }
   assert.ok(!DYNAMIC_EQUIPMENT_KEYS.includes('halberd'))
