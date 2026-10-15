@@ -82,8 +82,6 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   resume?: () => void
   getChildByLabel?: (label: string) => Container | Sprite | AnimatedSprite | null
   addChild?: Container['addChild']
-  addChildAt: Container['addChildAt']
-  removeChild: Container['removeChild']
   updateTexture?: () => void
   drawHealthBar?: () => void
   removeHealthBar?: () => void

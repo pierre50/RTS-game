@@ -56,6 +56,12 @@ module.exports = (_env, argv = {}) => {
         maxInitialRequests: Infinity,
         minSize: 20000,
         cacheGroups: {
+          babylon: {
+            test: /[\\/]node_modules[\\/]@babylonjs[\\/]/,
+            name: 'babylon',
+            chunks: 'async',
+            priority: 20,
+          },
           pixi: {
             test: /[\\/]node_modules[\\/]pixi\.js[\\/]/,
             name: 'pixi',

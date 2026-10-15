@@ -10,12 +10,14 @@ test('completed buildings and construction ghosts initialize directly from their
   })
   const ref = { sheet: 'buildings', frame: 10 }
   const ghosts = []
-  const { createInitialBuildingSprite } = loadTsModule('app/classes/building/BuildingSetup.ts', {
+  const { PixiBuildingView } = loadTsModule('app/rendering/pixi/PixiBuildingView.ts', {
     mocks: {
       'pixi.js': pixi,
       '../../lib/buildings/campConstruction': { assignCampBrazierAppearance: () => {} },
-      './BuildingTrainingPreview': { BuildingTrainingPreview: class {} },
-      './BuildingVisuals': { applyBuildingConstructionGhost: building => ghosts.push(building) },
+      './PixiBuildingTrainingPreview': { BuildingTrainingPreview: class {} },
+      './PixiBuildingDestruction': { showBuildingDestruction() {} },
+      './PixiBuildingVisuals': { applyBuildingConstructionGhost: building => ghosts.push(building) },
+      './PixiBuildingFinalTexture': { applyBuildingFinalTexture() {} },
       '../../lib': {
         getBuildingAsset: (type, owner) => {
           assert.equal(type, 'House')
@@ -33,7 +35,7 @@ test('completed buildings and construction ghosts initialize directly from their
   })
   for (const isBuilt of [true, false]) {
     const building = { type: 'House', buildingLevel: 1, size: 2, isBuilt, reliefLift: -4, createShadow: () => null }
-    createInitialBuildingSprite(building)
+    new PixiBuildingView(building).createInitialSprite()
     assert.equal(building.sprite.texture, texture)
     assert.equal(building.textureName, '10_buildings')
     assert.equal(building.sprite.anchor.x, 0.45)

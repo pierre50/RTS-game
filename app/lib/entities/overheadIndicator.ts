@@ -1,8 +1,9 @@
 import { LABEL_TYPES } from '../constants'
 import { getEntityHudTopY } from './entityHudPosition'
 import { HUD_FADE_MS, HUD_FADE_STEP_MS } from './hudFade'
-import { getReliefOffset } from '../maths'
 import { createStatusBubble } from './statusBubble'
+import { pixiHudLocalPosition } from '../../rendering/pixi/PixiEntityHudAnchor'
+import type { Container } from 'pixi.js'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 
@@ -38,13 +39,20 @@ function getFiniteOffset(value: number | undefined): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
+function getIndicatorContainer(entity: RuntimeEntity): Container {
+  return ((entity as RuntimeEntity & { displayObject?: Container }).displayObject ?? entity) as Container
+}
+
 function updateIndicatorPosition(entity: RuntimeEntity, indicator: OverheadIndicatorDisplay): void {
   const host = entity as OverheadIndicatorHost
-  indicator.x = getFiniteOffset(host.overheadIndicatorOffsetX)
-  indicator.y =
-    getEntityHudTopY(entity, INDICATOR_TOP_GAP) +
-    getReliefOffset(entity) +
+  const position = pixiHudLocalPosition(
+    host,
+    getEntityHudTopY(entity, INDICATOR_TOP_GAP),
+    getFiniteOffset(host.overheadIndicatorOffsetX),
     getFiniteOffset(host.overheadIndicatorOffsetY)
+  )
+  indicator.x = position.x
+  indicator.y = position.y
 }
 
 function destroyOverheadIndicator(indicator: OverheadIndicatorDisplay): void {
@@ -81,7 +89,7 @@ export function clearEntityOverheadIndicator(
   entity: RuntimeEntity,
   options: { fade?: boolean; label?: string } = {}
 ): void {
-  const existing = entity.getChildByLabel?.(options.label ?? LABEL_TYPES.overheadIndicator)
+  const existing = getIndicatorContainer(entity).getChildByLabel?.(options.label ?? LABEL_TYPES.overheadIndicator)
   if (!existing) return
   const indicator = existing as OverheadIndicatorDisplay
   if (options.fade === false || !entity.context?.scheduler) {
@@ -123,7 +131,7 @@ export function setEntityOverheadIndicator(
   indicator.label = options.label ?? LABEL_TYPES.overheadIndicator
   updateIndicatorPosition(entity, indicator)
   indicator.zIndex = 120
-  entity.addChild?.(indicator)
+  getIndicatorContainer(entity).addChild?.(indicator)
   syncIndicatorPositionWhileVisible(entity, indicator)
 }
 

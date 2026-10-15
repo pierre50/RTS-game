@@ -13,6 +13,7 @@ import {
   updateCombatRecoveryMovement,
 } from '../combat/combatBehavior'
 import { isHeroControlled } from './unitControl'
+import { getEntityAnimation } from '../../rendering/UnitAnimation'
 import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
@@ -251,7 +252,7 @@ export function waitForEnergy(
     return false
   } else if (!heroControlled) {
     unit.setTextures?.(SHEET_TYPES.standing)
-    if (unit.sprite && 'stop' in unit.sprite) unit.sprite.stop()
+    getEntityAnimation(unit)?.stop()
   }
   startEnergyWaitInterval(unit)
   return false

@@ -4,6 +4,7 @@ import { getBuildingContactDistance } from '../../lib/grid/cells'
 import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import { fadeOut } from '../../lib/entities/entityFade'
 import { setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
+import { getEntityDisplayObject } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { UnitEntity } from '../../types/entities'
@@ -187,7 +188,7 @@ export function removeTributeRaidUnitFromRuntime(unit: TributeRaidUnit): void {
   if (unit.owner) unit.owner.population = Math.max(0, (unit.owner.population ?? 0) - 1)
   fadeOut(unit, FADE_DURATION_MS, () => {
     unit.isDestroyed = true
-    unit.context?.map?.removeChild(unit)
+    unit.context?.map?.removeChild(getEntityDisplayObject(unit))
     unit.destroy?.({ children: true, texture: false })
   })
 }

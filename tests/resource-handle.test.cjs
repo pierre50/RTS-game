@@ -112,3 +112,31 @@ test('a failed view initialization is cleaned up and can be retried on the same 
   assert.equal(hasResourceView(handle), true)
   assert.equal(attempts, 2)
 })
+
+test('the view hook receives the mounted view and keeps the logical identity', () => {
+  const views = []
+  const handle = createResourceHandle(
+    { label: 'stone-1', visible: false, isDestroyed: false },
+    {
+      method() {},
+      bounds: () => ({}),
+      create(resource) {
+        const view = { visible: true, destroy() {} }
+        attachResourceView(resource, view)
+        return view
+      },
+      sync(resource, view) {
+        assert.equal(resource, handle)
+        views.push(view)
+      },
+      release(_resource, view) {
+        view.destroy()
+      },
+    }
+  )
+  handle.visible = true
+  handle.syncShadow()
+  handle.syncShadow()
+  assert.equal(views.length, 2)
+  assert.equal(views[0], views[1])
+})

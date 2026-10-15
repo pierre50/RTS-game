@@ -6,20 +6,19 @@ import { completeBuildingUpgrade } from '../../lib/buildings/buildingUpgrade'
 import { notifyVillageWorkChanged } from '../../lib/units/village/villageWorkEvents'
 import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { finishSowingTile } from './BuildingSowing'
-import { AnimatedSprite } from 'pixi.js'
 import { wakeDistantOwner } from '../../lib/units/village/villageActivity'
-import { ACTION_TYPES, LABEL_TYPES } from '../../constants'
+import { ACTION_TYPES } from '../../constants'
 import { getPercentage, updateInstanceVisibility } from '../../lib'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
 import { BuildingDestruction } from './BuildingDestruction'
 import { applyBuildingFinalTexture } from './BuildingFinalTexture'
 import {
-  CAMPFIRE_DECORATION_LABEL,
-  CAMPFIRE_SMOKE_DECORATION_LABEL,
   type FireAnimation,
   generateBuildingFire,
   hasBuildingFlameVisual,
+  pauseBuildingVisuals,
   playBuildingBurningSound,
+  resumeBuildingVisuals,
   startFlameAmbientSound,
   stopFlameAmbientSound,
   syncBuildingCampfireDecoration,
@@ -152,39 +151,17 @@ export class BuildingLifecycle {
 
   pause(): void {
     const building = this.building
-    const sprite = building.sprite
-    this.spriteWasPlayingBeforePause = Boolean(sprite instanceof AnimatedSprite && sprite.playing)
-    if (this.spriteWasPlayingBeforePause && sprite instanceof AnimatedSprite) sprite.stop()
-    const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).stop())
-    const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
-    campfireDecoration?.stop()
-    const campfireSmoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL) as AnimatedSprite | null
-    campfireSmoke?.stop()
+    this.spriteWasPlayingBeforePause = pauseBuildingVisuals(building)
     stopFlameAmbientSound(building)
-    const deco = building.getChildByLabel(LABEL_TYPES.deco)
-    const stoppableDeco = deco as { stop?: () => void } | null
-    stoppableDeco?.stop?.()
   }
 
   resume(): void {
     const building = this.building
-    if (this.spriteWasPlayingBeforePause && building.sprite instanceof AnimatedSprite) {
-      building.sprite.play()
-    }
+    resumeBuildingVisuals(building, this.spriteWasPlayingBeforePause)
     this.spriteWasPlayingBeforePause = false
-    const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).play())
-    const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
-    campfireDecoration?.play()
-    const campfireSmoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL) as AnimatedSprite | null
-    campfireSmoke?.play()
     if (hasBuildingFlameVisual(building) && building.isBuilt && !building.isDead && !building.isDestroyed) {
       startFlameAmbientSound(building)
     }
-    const deco = building.getChildByLabel(LABEL_TYPES.deco)
-    const playableDeco = deco as { play?: () => void } | null
-    playableDeco?.play?.()
   }
 
   die(demolition = false): void {

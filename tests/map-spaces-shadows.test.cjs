@@ -50,6 +50,7 @@ function createMap() {
 
 const {
   addDisplayObjectToMapSpaceContainer,
+  addEntityToMapSpaceContainer,
   attachEntityShadowsToMapSpace,
   ensureOutsideMapSpace,
   getEntitySpaceGrid,
@@ -58,6 +59,40 @@ const {
   mocks: {
     '../constants': { BUCKET_SIZE: 8, CELL_HEIGHT: 32, CELL_WIDTH: 64 },
   },
+})
+
+test('a composed unit keeps its logical identity while its display moves between spaces', () => {
+  const map = createMap()
+  const targetCell = createCell(1, 1)
+  const interior = {
+    container: createContainer('interior-entities'),
+    grid: [[null, null], [null, targetCell]],
+    id: 'interior:test',
+    kind: 'interior',
+    origin: { x: 100, y: 50 },
+    size: 1,
+  }
+  map.spaces.set(interior.id, interior)
+  const entity = {
+    currentCell: map.grid[0][0],
+    displayObject: { label: 'unit-display' },
+    i: 0,
+    j: 0,
+    label: 'unit',
+    shadow: null,
+    syncShadow() {},
+  }
+  entity.currentCell.has = entity
+
+  addEntityToMapSpaceContainer(map, entity)
+  assert.equal(entity.displayObject.parent, map)
+  assert.ok(!map.children.includes(entity))
+
+  moveEntityToMapSpace(map, entity, interior, targetCell)
+  assert.equal(entity.displayObject.parent, interior.container)
+  assert.equal(entity.displayObject.spaceId, interior.id)
+  assert.equal(targetCell.has, entity)
+  assert.ok(!map.children.includes(entity.displayObject))
 })
 
 test('space-aware helpers resolve the grid and container for plain display objects', () => {

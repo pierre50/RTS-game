@@ -65,6 +65,35 @@ function loadCameraController(zoom = 1, refreshEntity) {
   return module.exports.CameraController
 }
 
+test('camera tracks display destruction without requiring entity event methods', () => {
+  const CameraController = loadCameraController()
+  const controller = new CameraController({
+    app: { screen: { width: 64, height: 32 } },
+    map: { grid: [[{}]], size: 0 },
+  })
+  let onDestroyed
+  let subscriptions = 0
+  const instance = {
+    displayObject: {
+      once(event, callback) {
+        assert.equal(event, 'destroyed')
+        subscriptions++
+        onDestroyed = callback
+      },
+    },
+    once() { throw new Error('entity event proxy should not be called') },
+  }
+  const bounds = { minX: 0, minY: 0, width: 10, height: 10 }
+
+  controller.trackRenderCandidate(instance, bounds)
+  controller.trackRenderCandidate(instance, bounds)
+  assert.equal(controller.renderCandidates.has(instance), true)
+  assert.equal(subscriptions, 1)
+
+  onDestroyed()
+  assert.equal(controller.renderCandidates.has(instance), false)
+})
+
 test('shares one viewport across a visibility refresh and uses fresh bounds afterwards', () => {
   const CameraController = loadCameraController(1, () => {
     for (let i = 0; i < 200; i++) {

@@ -1,4 +1,4 @@
-import type { Texture, Ticker } from 'pixi.js'
+import type { Container, Texture, Ticker } from 'pixi.js'
 import { Assets, AnimatedSprite } from 'pixi.js'
 import { BUILDING_TYPES, LABEL_TYPES } from '../constants'
 import { getTexture, getTextureByFrame } from '../graphics/textures'
@@ -31,7 +31,8 @@ type WallTickerApp = {
 }
 
 export type WallBuilding = {
-  addChild: (child: AnimatedSprite) => void
+  addChild?: (child: AnimatedSprite) => void
+  displayObject?: Pick<Container, 'addChild' | 'getChildByLabel'>
   context: {
     app?: WallTickerApp
     map: {
@@ -39,7 +40,7 @@ export type WallBuilding = {
       spaces?: Map<string, { grid: Grid<WallCell> }>
     }
   }
-  getChildByLabel: (label: string) => { destroy: () => void } | null
+  getChildByLabel?: (label: string) => { destroy: () => void } | null
   i: number
   j: number
   isBuilt?: boolean
@@ -98,7 +99,8 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
     wall.sprite.anchor.copyFrom(wall.sprite.texture.defaultAnchor)
   }
 
-  const existingFill = wall.getChildByLabel(LABEL_TYPES.deco)
+  const display = wall.displayObject ?? wall
+  const existingFill = display.getChildByLabel?.(LABEL_TYPES.deco)
   if (existingFill) existingFill.destroy()
 
   if (frame === 2) {
@@ -118,7 +120,7 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
     changeSpriteColor(flagSprite as RecolorableSprite, wall.owner.color ?? 'blue')
     bindAnimatedSpriteToTicker(flagSprite, wall.context.app)
     flagSprite.play()
-    wall.addChild(flagSprite)
+    display.addChild?.(flagSprite)
   }
 }
 

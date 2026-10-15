@@ -19,6 +19,12 @@ importers:
 
   .:
     dependencies:
+      '@babylonjs/core':
+        specifier: 9.30.0
+        version: 9.30.0
+      '@babylonjs/loaders':
+        specifier: 9.30.0
+        version: 9.30.0(@babylonjs/core@9.30.0)(babylonjs-gltf2interface@9.30.0)
       '@pixi/sound':
         specifier: ^6.0.1
         version: 6.0.1(pixi.js@8.19.0)
@@ -657,6 +663,15 @@ packages:
   '@babel/types@7.29.8':
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
+
+  '@babylonjs/core@9.30.0':
+    resolution: {integrity: sha512-rV+kc7B9oEtREaWh0YYNinoqYshRbHLHj7t4s4woDjDXFXWKHu1d8S914CNfs3KTOI8V8DvoVKLe2yDHZXfZEA==}
+
+  '@babylonjs/loaders@9.30.0':
+    resolution: {integrity: sha512-jwA1HqtPzcMDfWxU9v2hp6y1Kat4i+oypBKDOYiatreTsItHRuuA7wXpRteWtJHd5islHOdkfOAVxjU1b7ctIQ==}
+    peerDependencies:
+      '@babylonjs/core': ^9.0.0
+      babylonjs-gltf2interface: ^9.0.0
 
   '@dependents/detective-less@5.0.3':
     resolution: {integrity: sha512-v6oD9Ukp+N7V4n6p5I/+mM5fIohSfkrDSGlFm5w/pYmchvbk+sMIHsLxrFJ5Lnujewj1BzWL0K84d88lwZAMQA==}
@@ -1769,6 +1784,9 @@ packages:
     resolution: {integrity: sha512-M762rNHfSF1EV3SLtnCJXFoQbbIIz0OyRwnCmV0KPC7qosSfCO0QLTSuJX3ayAebubhE6oYBAYPrBA5ljowaZg==}
     peerDependencies:
       '@babel/core': ^7.4.0 || ^8.0.0-0 <8.0.0
+
+  babylonjs-gltf2interface@9.30.0:
+    resolution: {integrity: sha512-eqpcCUIr22LIuDmtM6VELnhey+b3CZ/bRGf0z+8VTNC2CxU6Fm9qEkkTJYrw0aqo44SNnKcCBGux9q0GElv9wA==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -5402,6 +5420,13 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@babylonjs/core@9.30.0': {}
+
+  '@babylonjs/loaders@9.30.0(@babylonjs/core@9.30.0)(babylonjs-gltf2interface@9.30.0)':
+    dependencies:
+      '@babylonjs/core': 9.30.0
+      babylonjs-gltf2interface: 9.30.0
+
   '@dependents/detective-less@5.0.3':
     dependencies:
       gonzales-pe: 4.3.0
@@ -6749,6 +6774,8 @@ snapshots:
       '@babel/helper-define-polyfill-provider': 0.6.8(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
+
+  babylonjs-gltf2interface@9.30.0: {}
 
   balanced-match@1.0.2: {}
 

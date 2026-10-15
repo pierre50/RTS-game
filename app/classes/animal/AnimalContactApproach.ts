@@ -11,6 +11,7 @@ import { getEntitySpaceMapLike, sameMapSpace } from '../../lib/mapSpaces'
 import { degreeToDirection, getInstanceZIndex, isometricToCartesian } from '../../lib/maths'
 import { updateInstanceVisibility } from '../../lib/grid/visibility'
 import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../../lib/units/unitEnergy'
+import { getEntityAnimation } from '../../rendering/UnitAnimation'
 import type { RuntimeEntity } from '../../types/entities'
 import type { AnimalControllerHost } from './AnimalTypes'
 
@@ -87,7 +88,8 @@ function commitContactStep(
   if (animal.currentSheet !== sheet || degreeToDirection(oldDegree) !== degreeToDirection(animal.degree)) {
     animal.setTextures(sheet)
   }
-  if (!animal.sprite.playing) animal.sprite.play()
+  const animation = getEntityAnimation(animal)
+  if (animation && !animation.playing) animation.play()
   updateInstanceVisibility(animal)
 }
 

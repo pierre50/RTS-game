@@ -81,6 +81,8 @@
     ]
   },
   "dependencies": {
+    "@babylonjs/core": "9.30.0",
+    "@babylonjs/loaders": "9.30.0",
     "@pixi/sound": "^6.0.1",
     "lz-string": "^1.5.0",
     "pixi-filters": "^6.1.5",

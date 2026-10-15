@@ -54,3 +54,25 @@ test('late projectile fade cannot touch a cleared projectile', () => {
   fireFade()
   assert.deepEqual(calls, ['impact', 'destroy'])
 })
+
+test('tree embedding moves only the display while flight coordinates stay in map space', () => {
+  const { lifecycle, projectile } = fixture()
+  const removed = []
+  const added = []
+  const positions = []
+  const display = {
+    parent: { removeChild(child) { removed.push(child) } },
+    position: { set(x, y) { positions.push([x, y]) } },
+  }
+  projectile.displayObject = display
+  projectile.x = 30
+  projectile.y = 40
+  const tree = { x: 10, y: 20, addChild(child) { added.push(child) } }
+
+  lifecycle.stickProjectileInTree(projectile, tree)
+
+  assert.deepEqual(removed, [display])
+  assert.deepEqual(added, [display])
+  assert.deepEqual(positions, [[20, 19]])
+  assert.deepEqual([projectile.x, projectile.y], [30, 40])
+})

@@ -3,6 +3,7 @@ import { isBanditOwner, playAudibleSoundCue, showConversionFeedback, syncMovedAc
 import { grantUnitXp, XP_CATEGORIES, XP_CONVERT_SUCCESS } from '../../lib/units/unitExperience'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import { isConvertibleEntity, transferEntityOwner } from '../../lib/entities/entityOwnerTransfer'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 const BASE_CONVERSION_MIN_CHANTS = 3
@@ -98,8 +99,8 @@ export class UnitConversionAction {
   handleConvertAction() {
     const unit = this.unit
     const map = unit.context?.map
-    const sprite = unit.sprite
-    if (!sprite) return
+    const animation = getUnitAnimation(unit)
+    if (!animation) return
     if (!unit.getActionCondition?.(unit.dest)) {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'start' })
@@ -108,7 +109,7 @@ export class UnitConversionAction {
     }
     unit.conversionChants = 0
     unit.setTextures?.(SHEET_TYPES.action)
-    sprite.onLoop = () => {
+    animation.onLoop(() => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
         if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'loop' })
@@ -128,6 +129,6 @@ export class UnitConversionAction {
       if (unit.conversionChants >= minChants && map && map.random() < chance && dest) {
         this.convertTarget(dest)
       }
-    }
+    })
   }
 }

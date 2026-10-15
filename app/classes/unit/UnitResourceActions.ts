@@ -3,7 +3,8 @@ import { wearEquippedTool } from '../../lib/equipment/equipmentWear'
 import { getHarvestAmount } from '../../lib/economy/workRules'
 import { isCaveMineral } from '../../lib/resources/caveMinerals'
 import { FAMILY_TYPES, MENU_INFO_IDS, MINING_RESOURCE_CONFIG, SHEET_TYPES, SOUND_CUES } from '../../constants'
-import { onSpriteLoopAtFrame, playAudibleSoundCue, showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../lib'
+import { playAudibleSoundCue, showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../lib'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import { canReachActionTarget, getActionContactTool, isActionTouchingTarget } from '../../lib/actions/contactActions'
 import { showContactDebug } from '../../lib/contact/contactDebug'
 import { getContactAimDegree } from '../../lib/contact/contactGeometry'
@@ -60,7 +61,7 @@ export class UnitResourceActions {
       return true
     }
     // A missed tool stroke must never advance gathering progress or emit resources.
-    if (unit.sprite) delete unit.sprite.onFrameChange
+    getUnitAnimation(unit)?.clearFrameCallback()
     unit.actionLocked = false
     if (isHeroControlled(unit)) stopManualHeroAction(unit)
     else if (target) unit.sendToEvt?.(target, unit.action ?? null, { forceRepath: true })
@@ -70,10 +71,11 @@ export class UnitResourceActions {
 
   bindWorkImpact(frame: number, impact: () => void): void {
     const unit = this.unit
-    if (!unit.sprite) return
+    const animation = getUnitAnimation(unit)
+    if (!animation) return
     const target = unit.dest
     const action = unit.action
-    onSpriteLoopAtFrame(unit.sprite, frame, () => {
+    animation.onFrameEachLoop(frame, () => {
       if (unit.isDead || unit.isDestroyed || unit.dest !== target || unit.action !== action) return
       impact()
     })
@@ -90,7 +92,7 @@ export class UnitResourceActions {
     }
     if (!this.ensureWorkContact(isRuntimeEntity(unit.dest) ? unit.dest : null, true)) return false
     unit.setTextures?.(SHEET_TYPES.action)
-    if (!unit.sprite) return false
+    if (!getUnitAnimation(unit)) return false
     restartManualHeroActionAnimation(unit)
     lockManualHeroAction(unit)
     return true
@@ -162,7 +164,7 @@ export class UnitResourceActions {
       unit.affectNewDest?.()
       return
     }
-    if (!this.prepareLoopingWorkAction() || !unit.sprite) return
+    if (!this.prepareLoopingWorkAction()) return
     const workTickFrame = getWorkAnimationReleaseFrame(unit, releaseFrame)
     const releaseGatheredResources = (dest: RuntimeEntity, requestedGain: number) => {
       wearEquippedTool(unit, unit.action)

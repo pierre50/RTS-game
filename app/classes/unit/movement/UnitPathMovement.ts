@@ -89,9 +89,7 @@ function stepUnitPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolea
   if (shouldWaitForMovingBlocker(unit, nextCell)) return
   if (handleBlockedPathCell(unit, nextCell, dest)) return
 
-  const sprite = unit.sprite
-  if (!sprite) return
-  if (!sprite.playing) sprite.play()
+  if (!unit.isVisualAnimationPlaying?.()) unit.playVisualAnimation?.()
 
   const sprintFactor = getSprintMoveFactor(unit, true, true)
   const moveSpeed = getReliefMovementDistance(
@@ -129,7 +127,7 @@ function shouldWaitForMovingBlocker(unit: UnitEntity, nextCell: NonNullable<Unit
     nextCellHas.label === unit.label ||
     !nextCellHas.hasPath?.() ||
     instancesDistance(unit, nextCellHas) > 1 ||
-    !nextCellHas.sprite?.playing
+    !nextCellHas.isVisualAnimationPlaying?.()
   ) {
     return false
   }
@@ -144,7 +142,7 @@ function shouldWaitForMovingBlocker(unit: UnitEntity, nextCell: NonNullable<Unit
       pathLength: nextCellHas.path?.length ?? 0,
     },
   })
-  unit.sprite?.stop()
+  unit.stopVisualAnimation?.()
   return true
 }
 

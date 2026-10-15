@@ -25,6 +25,7 @@ function fixture(type = 'CampBedroll', parentType = 'House') {
     stopInterval() {},
     startTimeout() {},
     getChildByLabel() {},
+    showDestruction() {},
   }
   owner.buildings.push(parent, building)
   return { owner, parent, building }

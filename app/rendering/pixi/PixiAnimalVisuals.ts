@@ -12,7 +12,7 @@ import { recolorHorseTextures, type HorseColor } from '../../lib/horses/horseCol
 import type { Texture } from 'pixi.js'
 import type { GameContextLike } from '../../types/context'
 import type { InteractiveSprite } from '../../types/pixi'
-import { FLYING_ALTITUDE } from './AnimalTypes'
+import { FLYING_ALTITUDE } from '../../classes/animal/AnimalTypes'
 
 type AnimalVisualHost = {
   altitude: number

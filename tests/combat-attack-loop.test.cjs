@@ -63,6 +63,38 @@ function makeAttackLoopSubject() {
   return { attacker, target }
 }
 
+test('attack release uses the animation port when the attacker has no sprite', () => {
+  const { attacker, target } = makeAttackLoopSubject()
+  delete attacker.sprite
+  const calls = []
+  let release
+  attacker.visualAnimation = {
+    clearCompleteCallback: () => calls.push('clearComplete'),
+    clearFrameCallback: () => calls.push('clearFrame'),
+    clearLoopCallback: () => calls.push('clearLoop'),
+    setLoop: loop => calls.push(['loop', loop]),
+    onFrameEachLoop: (frame, callback) => {
+      calls.push(['releaseFrame', frame])
+      release = callback
+    },
+  }
+
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+  runAttackLoopOnFrame(attacker, {
+    releaseFrame: 4,
+    prepareAttackSheet: () => calls.push('prepare'),
+    onOutOfRange: () => calls.push('outOfRange'),
+    onTargetUnavailable: () => calls.push('unavailable'),
+    onReadyToAttack: readyTarget => calls.push(['hit', readyTarget]),
+  })
+  release()
+
+  assert.deepEqual(calls, [
+    ['loop', true], 'clearComplete', 'clearFrame', 'clearLoop', 'prepare',
+    ['releaseFrame', 4], ['hit', target],
+  ])
+})
+
 test('attack loop waits for energy before preparing attack animation', () => {
   const calls = []
   const { attacker, target } = makeAttackLoopSubject()

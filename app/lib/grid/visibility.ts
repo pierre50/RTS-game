@@ -53,6 +53,7 @@ export type RenderableInstance = VisibilityEntity &
       | null
     isDestroyed?: boolean
     once?: (event: 'destroyed', callback: () => void) => unknown
+    displayObject?: { once: (event: 'destroyed', callback: () => void) => unknown }
     size?: number
     sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
     syncShadow?: () => void

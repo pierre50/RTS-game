@@ -148,8 +148,10 @@ export function snapshotVillageEntity(entity: RuntimeEntity): SaveEntityState {
     const value = (entity as unknown as Record<string, unknown>)[field]
     if (value !== undefined) result[field] = structuredClone(value)
   }
-  const animated = entity as RuntimeEntity & { sprite?: { currentFrame?: number }; currentFrame?: number }
-  const frame = animated.sprite?.currentFrame ?? animated.currentFrame
+  const animated = entity as RuntimeEntity & { sprite?: { currentFrame?: number }; currentFrame?: number; growthStage?: number }
+  const frame = animated.type === 'Wheat'
+    ? animated.growthStage ?? animated.currentFrame ?? animated.sprite?.currentFrame
+    : animated.sprite?.currentFrame ?? animated.currentFrame
   if (frame != null) result.currentFrame = frame
   const unit = entity as UnitEntity
   if (unit.resourceDeliveryState?.pickup && unit.resourceDeliveryState.building) {

@@ -35,6 +35,7 @@ import { ResourceInterface } from '../ui/entity/ResourceInterface'
 import { Instance } from './Instance'
 import { advanceResourceWheatGrowth } from './resource/ResourceWheatGrowth'
 import { createLogicalResource } from './resources/LogicalResource'
+import { PixiResourceView } from '../rendering/pixi/PixiResourceView'
 import { die } from './resources/ResourceDepletion'
 import {
   resourceFootprintCells,
@@ -74,12 +75,19 @@ import {
 
 export type { ResourceOptions } from './ResourceTexture'
 
+const pixiResourceViewFactory = {
+  create: (resource: Resource) => new PixiResourceView(resource),
+  isDisplayMethod: (key: string) => PixiResourceView.isDisplayMethod(key),
+}
+
 export class Resource extends Instance implements ResourceEntity {
   declare spaceId?: string
   deferredSpriteBounds?: { width: number; height: number; anchor: { x: number; y: number } }
   private deferredVisuals?: () => void
   resourceInterface: ResourceInterface
   quantity!: number
+  growthStage?: number
+  growthStageCount?: number
   interface: EntityInterfaceLike
   declare sprite: Sprite | AnimatedSprite
   shadow: ResourceShadow | null
@@ -119,7 +127,7 @@ export class Resource extends Instance implements ResourceEntity {
       }
     }
     if (!context.editor && !definition?.isAnimated && options.textureName && !options.isDead && !options.isDestroyed) {
-      return createLogicalResource(options, context, Resource.prototype)
+      return createLogicalResource(options, context, Resource.prototype, pixiResourceViewFactory)
     }
     return context.map.addChild(new Resource(options, context))
   }

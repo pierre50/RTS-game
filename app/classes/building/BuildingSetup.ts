@@ -1,35 +1,18 @@
-import { constructionProgressPercentage } from '../../lib/economy/constructionMaterials'
 import { registerFurnitureSurface } from '../../lib/terrain/furnitureSurface'
 import { isBuildingTraversable } from '../../lib/buildings/buildingTraversal'
-import { assignCampBrazierAppearance } from '../../lib/buildings/campConstruction'
 import { ownerSharesVision } from '../../lib/units/playerVisionAccess'
-import { Assets, Polygon, Sprite } from 'pixi.js'
-import { FAMILY_TYPES, LABEL_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
+import { FAMILY_TYPES, PASSABLE_RESOURCE_TYPES } from '../../constants'
 import {
-  attachEntityShadowsToMapSpace,
-  cartesianToIsometric,
   clearCellTerrainSet,
-  getBuildingAsset,
-  getBuildingAssetOwner,
   getEntityMapSpace,
   getBuildingFootprintCells,
-  getGroundReliefLevel,
-  getInstanceZIndex,
-  getReliefLiftPixels,
-  getTexture,
   STABLE_HORSE_CAPACITY,
   HORSE_TAMING_STATUS,
-  textureRefToString,
   updateInstanceVisibility,
 } from '../../lib'
-import { applyBuildingConstructionGhost, syncBuildingConstructionReveal } from './BuildingVisuals'
-import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import type { Building, BuildingOptions } from './Building'
 import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
 import type { RuntimeCell } from '../../types/map'
-import type { Texture } from 'pixi.js'
-
-type BuildingTexture = Texture & { hitArea?: number[] }
 
 export function stableHorsesFromOptions(
   options: BuildingOptions
@@ -52,41 +35,11 @@ export function resumeInitialBuildingWork(building: Building): void {
 }
 
 export function setupBuildingTransform(building: Building): void {
-  const { map, controls } = building.context
-  const space = getEntityMapSpace(building, map)
-  const grid = space?.grid ?? map.grid
-  const anchorCell = grid[building.i]?.[building.j]
-  if (!anchorCell) throw new Error(`Cannot spawn building on missing cell (${building.i}, ${building.j})`)
-  const [flatX, flatY] = cartesianToIsometric(building.i, building.j)
-  building.x = flatX
-  building.y = flatY
-  building.z = anchorCell.z
-  building.zIndex = getInstanceZIndex(building)
-  building.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(anchorCell))
-  building.visible = map.revealEverything && controls.instanceInCamera(building)
+  building.buildingView.mount(building.getVisualState())
 }
 
 export function createInitialBuildingSprite(building: Building): void {
-  assignCampBrazierAppearance(building)
-  const assets = getBuildingAsset(building.assetType || building.type, getBuildingAssetOwner(building), Assets)
-  const spriteSheet = assets.images?.final
-  if (!spriteSheet) throw new Error(`Missing final texture for building: ${building.assetType || building.type}`)
-  building.textureName = textureRefToString(spriteSheet)
-  const texture = getTexture(spriteSheet, Assets) as BuildingTexture
-  building.sprite = Sprite.from(texture)
-  const interactiveSprite = building.sprite as Sprite & { updateAnchor?: boolean }
-  interactiveSprite.updateAnchor = true
-  building.sprite.label = LABEL_TYPES.sprite
-  building.sprite.hitArea = texture.hitArea
-    ? new Polygon(texture.hitArea)
-    : new Polygon([-32 * building.size, 0, 0, -16 * building.size, 32 * building.size, 0, 0, 16 * building.size])
-  if (texture.defaultAnchor) building.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
-  building.sprite.position.y = building.reliefLift ?? 0
-  if (!building.isBuilt) {
-    building.sprite.scale.x = Boolean(assets.mirrored) !== Boolean(building.placementMirrored) ? -1 : 1
-    applyBuildingConstructionGhost(building)
-  }
-  building.shadow = building.createShadow()
+  building.buildingView.createInitialSprite()
 }
 
 export function occupyBuildingFootprint(building: Building): void {
@@ -128,18 +81,7 @@ export function occupyBuildingFootprint(building: Building): void {
 }
 
 export function attachInitialBuildingVisuals(building: Building): void {
-  building.sprite.eventMode = 'static'
-  building.sprite.roundPixels = true
-  building.bindSpriteInteractions()
-  attachEntityShadowsToMapSpace(building.context.map, building)
-  building.addChild(building.sprite)
-  if (!building.isBuilt) {
-    syncBuildingConstructionReveal(building, constructionProgressPercentage(building))
-  }
-  building.buildingTrainingPreview = new BuildingTrainingPreview(building)
-  building.buildingTrainingPreview.update()
-  if (building.shouldKeepHealthBarVisible()) building.drawHealthBar()
-  if (building.shouldKeepHealthBarVisible()) building.drawEnergyBar()
+  building.buildingView.attachInitialVisuals()
 }
 
 export function activateBuiltBuilding(building: Building): void {

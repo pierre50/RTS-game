@@ -3,6 +3,8 @@ import type { RuntimeEntityBase } from './entityBase'
 import type { RuntimeEntity } from './entityRuntime'
 
 export interface ResourceEntity extends RuntimeEntityBase {
+  growthStage?: number
+  growthStageCount?: number
   advanceWheatGrowth?: (frames?: number) => boolean
   textureName?: string
   startsMature?: boolean

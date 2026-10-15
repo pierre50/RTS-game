@@ -11,21 +11,14 @@ import {
   updateInstanceVisibility,
 } from '../../lib'
 import { detachStableInteriorHorse } from '../../lib/horses/stableHorses'
-import { getEntityCell, getEntitySpaceMapLike } from '../../lib/mapSpaces'
-import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
+import { getEntityCell, getEntityDisplayObject, getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
-import { playSpriteAnimationFromStart } from '../../lib/entities/spriteAnimation'
+import { getEntityAnimation } from '../../rendering/UnitAnimation'
 import type { SchedulerTaskId } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { AnimalControllerHost } from './AnimalTypes'
-
-type ParentDisplay = {
-  parent?: {
-    removeChild: (child: unknown) => unknown
-  } | null
-}
 
 const DEATH_FALL_STEPS = 8
 const DEATH_FALL_STEP_MS = 40
@@ -42,9 +35,10 @@ export class AnimalLifecycle {
   }
 
   setCorpseFrame(frame: number): void {
-    const { sprite } = this.animal
-    const lastFrame = Math.max(sprite.textures.length - 1, 0)
-    sprite.currentFrame = Math.min(frame, lastFrame)
+    const animation = getEntityAnimation(this.animal)
+    if (!animation) return
+    const lastFrame = Math.max(animation.frameCount - 1, 0)
+    animation.seek(Math.min(frame, lastFrame), false)
   }
 
   canSettleCorpseOnCell(cell: RuntimeCell | null | undefined): cell is RuntimeCell {
@@ -145,11 +139,12 @@ export class AnimalLifecycle {
     animal.setTextures(SHEET_TYPES.dying)
     animal.zIndex--
     animal.syncShadow()
-    playSpriteAnimationFromStart(animal.sprite, {
-      clearFrameChange: true,
-      loop: false,
-    })
-    animal.sprite.onComplete = runAfterDeathFlash(animal.sprite, () => {
+    const animation = getEntityAnimation(animal)
+    animation?.clearFrameCallback()
+    animation?.clearLoopCallback()
+    animation?.setLoop(false)
+    animation?.restart()
+    animation?.onDeathComplete(() => {
       if (animal.isDestroyed || animal.currentSheet !== SHEET_TYPES.dying) return
       animal.decompose()
     })
@@ -186,7 +181,7 @@ export class AnimalLifecycle {
     const animal = this.animal
     clearEntityVisualFeedback(animal)
     animal.setTextures(SHEET_TYPES.corpse)
-    animal.sprite.animationSpeed = 0
+    getEntityAnimation(animal)?.setSpeed(0)
     updateInstanceRenderVisibility(animal)
     initializeAnimalCorpseLoot(animal)
     // Keep this saved field for compatibility; it now measures the lifetime of
@@ -238,7 +233,8 @@ export class AnimalLifecycle {
     if (index >= 0) {
       animal.owner.units.splice(index, 1)
     }
-    ;(animal as ParentDisplay).parent?.removeChild(animal)
+    const display = getEntityDisplayObject(animal)
+    display.parent?.removeChild(display)
     animal.destroy({ children: true, texture: false })
   }
 }

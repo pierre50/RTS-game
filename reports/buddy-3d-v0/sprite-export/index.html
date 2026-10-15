@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buddy · essai spritesheet marche droite</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; padding: 28px; background: #172638; color: #edf3f7; }
+    main { max-width: 950px; margin: auto; }
+    h1 { margin: 0 0 10px; }
+    p { color: #bacbd8; line-height: 1.5; }
+    .samples { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .tile { width: 288px; height: 288px; background: #63864b; image-rendering: pixelated; }
+    .sheet { display: block; max-width: 100%; background-color: #394552; background-image: linear-gradient(45deg, #445263 25%, transparent 25%), linear-gradient(-45deg, #445263 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #445263 75%), linear-gradient(-45deg, transparent 75%, #445263 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0; image-rendering: pixelated; }
+    a { display: inline-block; margin: 16px 0; padding: 10px 15px; border-radius: 7px; background: #3575a2; color: white; text-decoration: none; }
+    #renderCanvas { position: absolute; left: -10000px; top: 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Marche vers la droite · épée et bouclier</h1>
+    <p>Premier export automatique du modèle 3D : 12 images transparentes de 96 × 96 px, prises au même angle. Le contour foncé fait un pixel.</p>
+    <p id="status">Conversion en cours…</p>
+    <div class="samples">
+      <canvas class="tile" id="animated" width="96" height="96" aria-label="Animation de marche exportée"></canvas>
+      <img class="sheet" id="sheet" alt="Spritesheet de la marche vers la droite" />
+    </div>
+    <a id="download" download="buddy-walk-right-sword-shield.png" hidden>Télécharger la spritesheet PNG</a>
+    <canvas id="renderCanvas" width="96" height="96"></canvas>
+  </main>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="../foot-motion.js"></script>
+  <script src="../buddy-actions.js"></script>
+  <script src="../buddy-sword.js"></script>
+  <script src="../buddy-shield.js"></script>
+  <script src="./export.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buddy — mini scène</title>
+  <style>
+    :root { color-scheme: light; font-family: ui-rounded, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { background: #bcdce0; }
+    #renderCanvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+    .hud { position: fixed; inset: 0; pointer-events: none; color: #243a32; }
+    .top { position: absolute; top: 24px; left: 24px; display: flex; align-items: center; gap: 14px; }
+    .back { pointer-events: auto; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; background: #fffdf3e8; color: inherit; text-decoration: none; box-shadow: 0 5px 18px #354c3830; font-size: 21px; }
+    .title { padding: 8px 15px; border-radius: 14px; background: #fffdf3e8; box-shadow: 0 5px 18px #354c3830; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.25; }
+    .title small { display: block; margin-top: 3px; color: #668071; font-size: 11px; }
+    .help { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 10px 17px; border-radius: 14px; background: #fffdf3e8; box-shadow: 0 5px 18px #354c3830; white-space: normal; width: max-content; max-width: calc(100vw - 24px); text-align: center; font-size: 13px; }
+    kbd { display: inline-block; padding: 2px 6px; margin: 0 1px; border-radius: 5px; background: #dce9db; font: inherit; font-weight: 700; }
+    #status { position: absolute; bottom: 24px; right: 24px; padding: 9px 13px; border-radius: 12px; background: #fffdf3e8; font-size: 12px; }
+    .weapon { position: absolute; top: 24px; right: 24px; pointer-events: auto; padding: 8px 12px; border-radius: 12px; background: #fffdf3e8; box-shadow: 0 5px 18px #354c3830; font-size: 12px; }
+    .weapon-row { display: flex; align-items: center; gap: 8px; }
+    .weapon label { display: block; }
+    .weapon label + label { margin-top: 10px; }
+    .weapon img { width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated; }
+    .weapon select { display: block; margin-top: 4px; width: 160px; font: inherit; }
+    #status.ready { display: none; }
+    @media (max-width: 600px) { .top { top: 12px; left: 12px; } .help { bottom: 12px; font-size: 11px; } .weapon { top: 70px; right: 12px; } #status { bottom: 70px; right: 12px; } }
+  </style>
+</head>
+<body>
+  <canvas id="renderCanvas" tabindex="0" aria-label="Mini scène 3D du Buddy"></canvas>
+  <div class="hud">
+    <div class="top"><a class="back" href="../" aria-label="Retour au modèle 3D">←</a><div class="title"><h1>Buddy · petite promenade</h1><small>Vue isométrique sans perspective</small></div></div>
+    <div class="weapon">
+      <label for="weaponSelect">Arme ou outil
+        <span class="weapon-row"><img id="weaponIcon" src="../../../assets/icon-sources/icons/melee-weapons/sword_iron.png" alt="Icône de l’épée en fer" />
+          <select id="weaponSelect">
+          <optgroup label="Armes"><option value="sword-iron">Épée en fer</option><option value="sword-bronze">Épée en bronze</option><option value="dagger-iron">Dague en fer</option><option value="dagger-bronze">Dague en bronze</option><option value="spear-iron">Lance en fer</option><option value="spear-bronze">Lance en bronze</option></optgroup>
+          <optgroup label="Armes de tir"><option value="bow">Arc</option><option value="bow-recurve">Arc recourbé</option><option value="bow-great">Grand arc</option><option value="slingshot">Lance-pierre</option></optgroup>
+          <optgroup label="Outils"><option value="axe-iron">Hache en fer</option><option value="axe-bronze">Hache en bronze</option><option value="axe-ceramic">Hache en céramique</option><option value="hammer-iron">Marteau en fer</option><option value="hammer-bronze">Marteau en bronze</option><option value="hammer-ceramic">Marteau en céramique</option><option value="pickaxe-iron">Pioche en fer</option><option value="pickaxe-bronze">Pioche en bronze</option><option value="pickaxe-ceramic">Pioche en céramique</option><option value="scythe-iron">Faux en fer</option><option value="scythe-bronze">Faux en bronze</option><option value="scythe-ceramic">Faux en céramique</option><option value="longstick">Bâton</option><option value="catchingPole">Perche de capture</option></optgroup>
+          <option value="none">Sans équipement</option>
+          </select>
+        </span>
+      </label>
+      <label for="shieldSelect">Bouclier
+        <span class="weapon-row"><img id="shieldIcon" src="../../../assets/icon-sources/icons/shields/round_shield_iron_slash.png" alt="Icône du bouclier rond en fer" />
+          <select id="shieldSelect"><option value="iron">Bouclier rond en fer</option><option value="bronze">Bouclier rond en bronze</option><option value="wood">Bouclier rond en bois</option><option value="none">Sans bouclier</option></select>
+        </span>
+      </label>
+    </div>
+    <div id="status" role="status">Chargement du personnage…</div>
+    <div class="help"><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches · Déplacer<br /><kbd>Shift</kbd> · Courir &nbsp;·&nbsp; <kbd>C</kbd> · S’accroupir &nbsp;·&nbsp; <kbd>Espace</kbd> · Bloquer &nbsp;·&nbsp; Souris · Orienter (recul ralenti) &nbsp;·&nbsp; Épée : clic bref · Coup latéral, maintenir puis relâcher · Grand slash chargé &nbsp;·&nbsp; Arc et lance-pierre : maintenir puis relâcher · Tir chargé</div>
+  </div>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="../foot-motion.js?v=foot-plant-1"></script>
+  <script src="../buddy-actions.js?v=foot-plant-1"></script>
+  <script src="../buddy-sword.js?v=recurve-nocks-53"></script>
+  <script src="../buddy-shield.js?v=grip-pose-6"></script>
+  <script src="./scene.js?v=walk-cadence-1"></script>
+</body>
+</html>

@@ -28,16 +28,13 @@ function fixture() {
       './UnitMovementHelpers': { SLIDE_PROBE_ANGLES: [Math.PI / 4] },
     },
   })
-  const unit = { x: 0, y: 0, sprite: {}, context: { map: {} } }
+  const unit = { x: 0, y: 0, context: { map: {} } }
   return { movement: new UnitDirectMovement(unit), unit, rules, calls, debug }
 }
-test('direct movement requires a map, sprite, nonzero direction and positive distance', () => {
+test('direct movement requires a map, nonzero direction and positive distance', () => {
   const { movement, unit, rules, calls, debug } = fixture()
   assert.equal(movement.moveDirect(0, 0, 1), false)
   assert.equal(movement.moveDirect(1, 0, 0), false)
-  delete unit.sprite
-  assert.equal(movement.moveDirect(1, 0, 1), false)
-  unit.sprite = {}
   delete unit.context
   assert.equal(movement.moveDirect(1, 0, 1), false)
   assert.equal(movement.getDirectMoveCandidateDebug(1, 0, 1), null)

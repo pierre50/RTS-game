@@ -2,6 +2,7 @@ import { habitatCells, maintainWildlifeHome } from './WildlifeHabitat'
 import type { DailyWorldEvent } from '../dailyEvents/DailyWorldEventTypes'
 import { CORPSE_TIME, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import { isometricToCartesian } from '../../lib'
+import { getEntityDisplayObject } from '../../lib/mapSpaces'
 import { ambientActivityArea, AMBIENT_CAMERA_MARGIN, AMBIENT_CAMERA_EXIT_MARGIN } from '../world/AmbientActivityArea'
 import { serializeWildAnimal } from '../../serialization/SaveSerializer'
 import { getWildlifeStore, installWildlifeStore, isWildlife, WILDLIFE_RENEW_DAYS } from './WildlifeStore'
@@ -135,12 +136,13 @@ export class WildlifeSystem {
     const index = gaia.animals.indexOf(animal)
     if (index >= 0) gaia.animals.splice(index, 1)
     if (!animal.isDead && !animal.isDestroyed) gaia.population = Math.max(0, gaia.population - 1)
-    const display = animal as AnimalEntity & {
-      parent?: { removeChild(child: unknown): void }
-      destroy(options: unknown): void
-    }
-    display.parent?.removeChild(animal)
-    display.destroy({ children: true, texture: false, textureSource: false })
+    const display = getEntityDisplayObject(animal)
+    display.parent?.removeChild(display)
+    ;(animal as AnimalEntity & { destroy(options: unknown): void }).destroy({
+      children: true,
+      texture: false,
+      textureSource: false,
+    })
   }
   update(): void {
     const store = getWildlifeStore(this.context.map)

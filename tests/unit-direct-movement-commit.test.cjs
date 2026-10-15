@@ -43,6 +43,12 @@ function fixture() {
         events.push('play')
       },
     },
+    isVisualAnimationPlaying() {
+      return this.sprite.playing
+    },
+    playVisualAnimation() {
+      this.sprite.play()
+    },
     setTextures: sheet => events.push(['textures', sheet]),
     applyReliefLift: level => events.push(['relief', level]),
   }
@@ -120,10 +126,12 @@ test('non-hero movement supports an absent context map and optional visual hooks
   assert.ok(!events.includes('render'))
 })
 
-test('a unit without a sprite cannot commit a movement', () => {
+test('a unit without a Pixi sprite can commit a movement', () => {
   const { commitDirectMove, events, unit, attempt } = fixture()
   delete unit.sprite
-  assert.equal(commitDirectMove(attempt, 1, 0), false)
-  assert.equal(unit.x, 0)
-  assert.deepEqual(events, [])
+  unit.isVisualAnimationPlaying = () => false
+  unit.playVisualAnimation = () => events.push('play')
+  assert.equal(commitDirectMove(attempt, 1, 0), true)
+  assert.equal(unit.x, 1)
+  assert.ok(events.includes('play'))
 })

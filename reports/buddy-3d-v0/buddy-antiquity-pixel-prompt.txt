@@ -1,0 +1,7 @@
+ImageGen edit of buddy-antiquity-soft-uv.png for a square UV texture atlas.
+Keep the body wrap in the upper 70% and four lower swatches for boots, hands,
+dark boot areas, and blue fabric. Repaint in crisp, moderately detailed pixel
+art with a limited palette. Keep brown hair, a friendly simple face, peach
+skin across the entire horizontal band at ear and cheek height, and a clean
+blue neckline below the chin. Remove all gold ornaments, scarf, embroidery,
+stripes, fabric grain, square cheek patches, and photorealistic textures.

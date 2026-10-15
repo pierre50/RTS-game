@@ -94,7 +94,7 @@ function loadBuildingVisuals(libMocks = {}) {
   }
 
   return {
-    ...loadTsModule('app/classes/building/BuildingVisuals.ts', {
+    ...loadTsModule('app/rendering/pixi/PixiBuildingVisuals.ts', {
       mocks: {
         'pixi.js': {
           AnimatedSprite,

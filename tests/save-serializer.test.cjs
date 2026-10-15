@@ -693,6 +693,21 @@ test('saving an unseen static resource does not materialize its sprite', () => {
   assert.equal(save.resources[0].textureName, 'tree_0')
 })
 
+test('saving unseen wheat preserves logical growth without materializing its sprite', () => {
+  const resource = {
+    label: 'unseen-wheat',
+    type: 'Wheat',
+    i: 1,
+    j: 1,
+    textureName: 'wheat_0',
+    growthStage: 2,
+    deferredSpriteBounds: {},
+  }
+  Object.defineProperty(resource, 'sprite', { get: () => assert.fail('save should not create visuals') })
+  const save = serializeGame(makeContext({ resources: new Set([resource]) }))
+  assert.equal(save.resources[0].currentFrame, 2)
+})
+
 test('cave identity, interior chest state and occupant positions survive serialization', () => {
   const context = makeContext()
   const owner = context.players[0]

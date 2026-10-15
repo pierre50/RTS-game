@@ -12,12 +12,12 @@ import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
 import {
   BOW_SHOOT_RELEASE_FRAME,
   getHuntingAimPoint,
-  onSpriteLoopAtFrame,
   playerCanSeeInstance,
   syncMovedActionTarget,
 } from '../../../lib'
 import { attachProjectileToMapSpace } from '../../../lib/projectiles'
 import { isHeroControlled } from '../../../lib/units/unitControl'
+import { getUnitAnimation } from '../../../rendering/UnitAnimation'
 import { spendOrWaitForEnergy } from '../../../lib/units/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import { Projectile } from '../../Projectile'
@@ -124,8 +124,8 @@ export function handleUnitHuntAction(unit: UnitEntity): void {
   }
   const map = unit.context?.map
   const player = unit.owner
-  const sprite = unit.sprite
-  if (!sprite) return
+  const animation = getUnitAnimation(unit)
+  if (!animation) return
   if (!unit.getActionCondition?.(unit.dest)) {
     unit.affectNewDest?.()
     return
@@ -135,6 +135,6 @@ export function handleUnitHuntAction(unit: UnitEntity): void {
     return
   }
   unit.setTextures?.(SHEET_TYPES.action)
-  sprite.onLoop = () => updateHuntLoop(unit, player)
-  onSpriteLoopAtFrame(sprite, BOW_SHOOT_RELEASE_FRAME, () => releaseHuntingProjectile(unit, map))
+  animation.onLoop(() => updateHuntLoop(unit, player))
+  animation.onFrameEachLoop(BOW_SHOOT_RELEASE_FRAME, () => releaseHuntingProjectile(unit, map))
 }

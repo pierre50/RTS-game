@@ -467,6 +467,11 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     gatherAmount: { forager: 1 },
     dest: berryBush,
     sprite: {},
+    visualAnimation: {
+      clearCallbacks() {},
+      setLoop() {},
+      onFrameEachLoop(_frame, callback) { callback() },
+    },
     context: { controls: { instanceIsAudible: () => false }, menu: { updateInfo: () => {} }, player: {}, map: {} },
     owner: { food: 0 },
     getActionCondition: () => true,

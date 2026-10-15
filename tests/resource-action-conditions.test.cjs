@@ -111,3 +111,8 @@ test('mature wheat respects ownership of the harvest task while allowing the her
     assert.equal(isWheatMature(target), false)
   }
 })
+
+test('wheat maturity uses logical growth state without materializing a sprite', () => {
+  assert.equal(isWheatMature({ type: R.wheat, growthStage: 2, growthStageCount: 3 }), true)
+  assert.equal(isWheatMature({ type: R.wheat, growthStage: 1, growthStageCount: 3 }), false)
+})

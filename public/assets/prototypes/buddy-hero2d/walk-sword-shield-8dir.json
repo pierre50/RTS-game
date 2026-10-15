@@ -1,0 +1,18 @@
+{
+  "image": "walk-sword-shield-8dir.png",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "framesPerDirection": 12,
+  "idleFrame": 0,
+  "directions": [
+    "up",
+    "up-right",
+    "right",
+    "down-right",
+    "down",
+    "down-left",
+    "left",
+    "up-left"
+  ],
+  "equipment": ["sword-iron", "shield-iron"]
+}

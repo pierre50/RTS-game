@@ -1,74 +1,28 @@
-import { AnimatedSprite, Assets, Container } from 'pixi.js'
 import { sound, type IMediaInstance } from '@pixi/sound'
-import { BUILDING_TYPES, LABEL_TYPES, SOUND_CUES } from '../../constants'
-import {
-  bindAnimatedSpriteToTicker,
-  getAnimationFrames,
-  getBuildingFootprintRadius,
-  getHeroDistanceSoundVolume,
-  playAudibleSoundCue,
-} from '../../lib'
-import type { EntityLightSourceConfig } from '../../types/entities'
+import { SOUND_CUES } from '../../constants'
+import { getHeroDistanceSoundVolume, playAudibleSoundCue } from '../../lib'
 import type { BuildingControllerHost } from './BuildingTypes'
-import type { Texture } from 'pixi.js'
+import {
+  CAMPFIRE_DECORATION_LABEL,
+  CAMPFIRE_SMOKE_DECORATION_LABEL,
+  clearBuildingDamageFireVisual,
+  generateBuildingFireVisual,
+  hasBuildingCampfireDecorationVisual,
+  hasBuildingDamageFireVisual,
+  hasBuildingFlameVisual,
+  pauseBuildingVisuals,
+  resumeBuildingVisuals,
+  syncBuildingCampfireDecorationVisual,
+  type FireAnimation,
+} from '../../rendering/pixi/PixiBuildingFire'
 
-type LightedAnimatedSprite = AnimatedSprite & { lightSource?: EntityLightSourceConfig }
-type RuntimeContainer = Container
+export { CAMPFIRE_DECORATION_LABEL, CAMPFIRE_SMOKE_DECORATION_LABEL, hasBuildingFlameVisual }
+export type { FireAnimation }
+export { pauseBuildingVisuals, resumeBuildingVisuals }
+
 type FlameTicker = { deltaMS?: number; elapsedMS?: number }
-
-const BUILDING_FIRE_SHEETS = {
-  light: { fireStart: 0, smokeStart: 0 },
-  medium: { fireStart: 8, smokeStart: 8 },
-  heavy: { fireStart: 16, smokeStart: 16 },
-} as const
-
-export const CAMPFIRE_DECORATION_LABEL = 'campfireDecorationFire'
-export const CAMPFIRE_SMOKE_DECORATION_LABEL = 'campfireDecorationSmoke'
-const BUILDING_FIRE_SMOKE_LABEL = 'buildingFireSmoke'
-const BUILDING_FIRE_ANIMATION_FRAME_COUNT = 8
-const BUILDING_FIRE_TEXTURES = {
-  fire: 'effects/fire',
-  smoke: 'effects/smoke',
-} as const
-
-export type FireAnimation = keyof typeof BUILDING_FIRE_SHEETS
-
 const FLAME_SOUND_BASE_VOLUME = 0.62
 const FLAME_SOUND_LERP_PER_SECOND = 7
-
-const CAMPFIRE_DECORATION_LIGHT: EntityLightSourceConfig = {
-  color: '#ffad4f',
-  flicker: 0.09,
-  intensity: 1.08,
-  radius: 500,
-  offsetY: -8,
-  verticalScale: 0.68,
-}
-
-function getDecorationFlameProfile(type: string): { y: number; scale: number; light: EntityLightSourceConfig } | null {
-  if (type === BUILDING_TYPES.fireCamp) return { y: -9, scale: 1, light: CAMPFIRE_DECORATION_LIGHT }
-  // Bowl centers measured relative to the deco atlas ground anchors.
-  if (type === BUILDING_TYPES.campBrazier) {
-    return { y: -44, scale: 0.65, light: { ...CAMPFIRE_DECORATION_LIGHT, radius: 420, intensity: 0.8 } }
-  }
-  if (type === BUILDING_TYPES.campTorchStand) {
-    return { y: -33, scale: 0.5, light: { ...CAMPFIRE_DECORATION_LIGHT, radius: 220, intensity: 0.7 } }
-  }
-  return null
-}
-
-const BUILDING_FIRE_LIGHT: EntityLightSourceConfig = {
-  color: '#ff9d45',
-  flicker: 0.12,
-  intensity: 0.98,
-  radius: 180,
-  offsetY: -12,
-  verticalScale: 0.72,
-}
-
-function attachFireLight(sprite: LightedAnimatedSprite, config: EntityLightSourceConfig = BUILDING_FIRE_LIGHT): void {
-  sprite.lightSource = config
-}
 
 function lerp(current: number, target: number, amount: number): number {
   return current + (target - current) * Math.max(0, Math.min(1, amount))
@@ -85,18 +39,6 @@ function updateFlameSoundVolume(building: BuildingControllerHost, elapsedMs = 16
   if (!loop) return
   const elapsedSeconds = Math.max(0, Math.min(elapsedMs, 250)) / 1000
   loop.volume = lerp(loop.volume, getFlameTargetVolume(building), elapsedSeconds * FLAME_SOUND_LERP_PER_SECOND)
-}
-
-function getBuildingFireFrames(variant: FireAnimation, sheetType: keyof typeof BUILDING_FIRE_TEXTURES): Texture[] {
-  const sheet = Assets.cache.get(BUILDING_FIRE_TEXTURES[sheetType])
-  if (!sheet?.textures) return []
-  const frameOffset = BUILDING_FIRE_SHEETS[variant][sheetType === 'fire' ? 'fireStart' : 'smokeStart']
-  const frames = getAnimationFrames(sheet.textures) as Texture[]
-  return frames.slice(frameOffset, frameOffset + BUILDING_FIRE_ANIMATION_FRAME_COUNT)
-}
-
-export function hasBuildingFlameVisual(building: BuildingControllerHost): boolean {
-  return Boolean(building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) || building.getChildByLabel(LABEL_TYPES.fire))
 }
 
 export function startFlameAmbientSound(building: BuildingControllerHost): void {
@@ -133,118 +75,13 @@ export function stopFlameAmbientSound(building: BuildingControllerHost): void {
 }
 
 export function syncBuildingCampfireDecoration(building: BuildingControllerHost): void {
-  const existing = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
-  const existingSmoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL)
-
-  const profile = getDecorationFlameProfile(building.assetType || building.type)
-  if (!profile) {
-    existing?.destroy({ children: true })
-    existingSmoke?.destroy({ children: true })
-    if (!building.getChildByLabel(LABEL_TYPES.fire)) stopFlameAmbientSound(building)
-    return
-  }
-
-  const fireTextures = getBuildingFireFrames('light', 'fire')
-  const smokeTextures = getBuildingFireFrames('light', 'smoke')
-  if (!fireTextures.length || !smokeTextures.length) return
-  const flameY = profile.y + (building.reliefLift ?? 0)
-  const smokeY = flameY
-
-  if (existing instanceof AnimatedSprite) {
-    existing.textures = fireTextures
-    attachFireLight(existing as LightedAnimatedSprite, profile.light)
-    existing.position.set(0, flameY)
-    existing.scale.set(profile.scale)
-    existing.gotoAndPlay(0)
-  }
-
-  if (existingSmoke instanceof AnimatedSprite) {
-    existingSmoke.textures = smokeTextures
-    existingSmoke.position.set(0, smokeY)
-    existingSmoke.scale.set(profile.scale)
-    existingSmoke.gotoAndPlay(0)
-  }
-
-  if (!(existingSmoke instanceof AnimatedSprite)) {
-    const smoke = new AnimatedSprite(smokeTextures)
-    bindAnimatedSpriteToTicker(smoke, building.context.app)
-    smoke.label = CAMPFIRE_SMOKE_DECORATION_LABEL
-    smoke.eventMode = 'none'
-    smoke.roundPixels = true
-    smoke.position.set(0, smokeY)
-    smoke.scale.set(profile.scale)
-    smoke.animationSpeed = 0.3
-    smoke.gotoAndPlay(0)
-    building.addChild(smoke)
-  }
-
-  if (!(existing instanceof AnimatedSprite)) {
-    const fire = new AnimatedSprite(fireTextures) as LightedAnimatedSprite
-    bindAnimatedSpriteToTicker(fire, building.context.app)
-    fire.label = CAMPFIRE_DECORATION_LABEL
-    attachFireLight(fire, profile.light)
-    fire.eventMode = 'none'
-    fire.roundPixels = true
-    fire.position.set(0, flameY)
-    fire.scale.set(profile.scale)
-    fire.animationSpeed = 0.3
-    fire.gotoAndPlay(0)
-    building.addChild(fire)
-  }
-
-  if (building.isBuilt) startFlameAmbientSound(building)
+  const result = syncBuildingCampfireDecorationVisual(building)
+  if (result === 'removed' && !hasBuildingDamageFireVisual(building)) stopFlameAmbientSound(building)
+  if (result === 'active' && building.isBuilt) startFlameAmbientSound(building)
 }
 
 export function generateBuildingFire(building: BuildingControllerHost, fireState: FireAnimation): void {
-  const fireTextures = getBuildingFireFrames(fireState, 'fire')
-  const smokeTextures = getBuildingFireFrames(fireState, 'smoke')
-  if (!fireTextures.length || !smokeTextures.length) return
-
-  const fire = building.getChildByLabel(LABEL_TYPES.fire)
-
-  if (fire) {
-    for (let i = 0; i < fire.children.length; i++) {
-      const child = fire.children[i] as LightedAnimatedSprite
-      if (child.label === BUILDING_FIRE_SMOKE_LABEL) {
-        child.textures = smokeTextures
-      } else {
-        child.textures = fireTextures
-        attachFireLight(child)
-      }
-      child.play()
-    }
-    startFlameAmbientSound(building)
-    return
-  }
-
-  const newFire = new Container() as RuntimeContainer
-  newFire.label = LABEL_TYPES.fire
-  newFire.eventMode = 'none'
-  for (const [x, y] of getBuildingFirePositions(building.size)) {
-    const smokeSprite = new AnimatedSprite(smokeTextures) as LightedAnimatedSprite
-    bindAnimatedSpriteToTicker(smokeSprite, building.context.app)
-    smokeSprite.label = BUILDING_FIRE_SMOKE_LABEL
-    smokeSprite.eventMode = 'none'
-    smokeSprite.roundPixels = true
-    smokeSprite.x = x
-    smokeSprite.y = y + 16
-    smokeSprite.animationSpeed = 0.3
-    smokeSprite.play()
-    newFire.addChild(smokeSprite)
-
-    const spriteFire = new AnimatedSprite(fireTextures) as LightedAnimatedSprite
-    bindAnimatedSpriteToTicker(spriteFire, building.context.app)
-    attachFireLight(spriteFire)
-    spriteFire.eventMode = 'none'
-    spriteFire.roundPixels = true
-    spriteFire.x = x
-    spriteFire.y = y
-    spriteFire.play()
-    spriteFire.animationSpeed = 0.3
-    newFire.addChild(spriteFire)
-  }
-  building.addChild(newFire)
-  startFlameAmbientSound(building)
+  if (generateBuildingFireVisual(building, fireState)) startFlameAmbientSound(building)
 }
 
 export function updateBuildingFireDamage(building: BuildingControllerHost, percentage: number): void {
@@ -259,10 +96,9 @@ export function updateBuildingFireDamage(building: BuildingControllerHost, perce
     playBuildingBurningSound(building)
     building.generateFire('light')
   } else if (percentage >= 75) {
-    const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    if (fire) building.removeChild(fire)
+    clearBuildingDamageFireVisual(building)
     building.hasActiveBurningSound = false
-    if (!building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)) stopFlameAmbientSound(building)
+    if (!hasBuildingCampfireDecorationVisual(building)) stopFlameAmbientSound(building)
   }
 }
 
@@ -272,15 +108,4 @@ export function playBuildingBurningSound(building: BuildingControllerHost): void
     profile: 'building',
   })
   if (playedCue) building.hasActiveBurningSound = true
-}
-
-function getBuildingFirePositions(size: number): number[][] {
-  const radius = getBuildingFootprintRadius(size)
-  if (radius <= 0) return [[0, 0]]
-  return [
-    [0, -32 * radius],
-    [-64 * radius, 0],
-    [0, 32 * radius],
-    [64 * radius, 0],
-  ]
 }

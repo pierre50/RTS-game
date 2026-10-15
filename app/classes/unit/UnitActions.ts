@@ -4,6 +4,7 @@ import { handleCaptureHorseAction } from './UnitCaptureHorseAction'
 import { UnitDirectedActions } from './UnitDirectedActions'
 import { UnitResourceActions } from './UnitResourceActions'
 import { setActionSpriteLoop } from './UnitManualHeroWork'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import { UnitConversionAction } from './UnitConversionAction'
 import {
   clearInvalidPreviousTask as clearInvalidPreviousUnitTask,
@@ -113,14 +114,13 @@ export class UnitActions {
 
   getAction(name: string) {
     const unit = this.unit
-    const sprite = unit.sprite
-    if (!sprite) return
+    const animation = getUnitAnimation(unit)
+    if (!animation) return
     const preserveCaptureHorseCatchingPoleAnimation =
       name === ACTION_TYPES.captureHorse &&
       (Boolean(unit.heroCatchingPoleThrow) || unit.attackRecoveryAnimationTaskId != null)
     if (!preserveCaptureHorseCatchingPoleAnimation) setActionSpriteLoop(unit, true)
-    sprite.onLoop = undefined
-    sprite.onFrameChange = undefined
+    animation.clearCallbacks()
     switch (name) {
       case ACTION_TYPES.farm:
         this.handleFarmAction()

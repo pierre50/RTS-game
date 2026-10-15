@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Buddy · spritesheet 8 directions</title>
+  <style>
+    body { margin: 0; padding: 24px; background: #172638; color: #edf3f7; font-family: system-ui, sans-serif; }
+    #renderCanvas { position: absolute; left: -10000px; top: 0; }
+    #animated { width: 288px; height: 288px; background: #63864b; image-rendering: pixelated; }
+    #sheet { display: block; max-width: 100%; background: #394552; image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+  <h1>Buddy : marche dans 8 directions</h1>
+  <p id="status">Conversion en cours…</p>
+  <canvas id="animated" width="96" height="96"></canvas>
+  <img id="sheet" class="sheet" alt="Spritesheet du héros, huit directions" />
+  <canvas id="renderCanvas" width="96" height="96"></canvas>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="../foot-motion.js"></script>
+  <script src="../buddy-actions.js"></script>
+  <script src="../buddy-sword.js"></script>
+  <script src="../buddy-shield.js"></script>
+  <script src="./export-8dir.js"></script>
+</body>
+</html>

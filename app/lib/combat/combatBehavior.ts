@@ -4,6 +4,7 @@ import { getCellsAroundPoint, getInstancePath } from '../grid'
 import { getEntitySpaceMapLike } from '../mapSpaces'
 import type { CombatBehaviorConfig, CombatRecoveryMode } from '../../types/config'
 import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import { getEntityAnimation } from '../../rendering/UnitAnimation'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
 const CELL_WORLD_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
@@ -298,7 +299,7 @@ function findCombatRecoveryCell(
 function stopRecoveryVisuals(unit: EnergyEntity): void {
   unit.action = null
   unit.setTextures?.(SHEET_TYPES.standing)
-  if (unit.sprite && 'stop' in unit.sprite) unit.sprite.stop()
+  getEntityAnimation(unit)?.stop()
 }
 
 export function enterCombatRecovery(unit: EnergyEntity, target: RuntimeEntity): void {

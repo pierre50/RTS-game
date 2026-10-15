@@ -1,7 +1,8 @@
 import type { AnimatedSprite, Graphics } from 'pixi.js'
 import type { UnitInterface } from '../../ui/entity/UnitInterface'
 import type { HorseColor } from '../../lib/horses/horseColors'
-import type { GameContextLike, SchedulerLike } from '../../types/context'
+import type { GameContextLike } from '../../types/context'
+import type { DirectionOrder } from '../../lib/entities/spriteFrameSelection'
 import type {
   BuildingEntity,
   RuntimeEntity,
@@ -95,7 +96,7 @@ declare module './Unit' {
     appearanceLayerSprites: Map<number, AnimatedSprite>
     reliefLift: number
     sheetDirectionCounts?: Record<string, number>
-    sheetDirectionOrders?: Record<string, string[]>
+    sheetDirectionOrders?: Record<string, DirectionOrder>
     spriteScale?: number
     visualSettingsCleanup: (() => void) | null
 
@@ -116,7 +117,7 @@ declare module './Unit' {
     experience: NonNullable<UnitEntity['experience']>
 
     interface?: NonNullable<UnitEntity['interface']>
-    context: GameContextLike & { scheduler: SchedulerLike }
+    context: GameContextLike
 
     commonSendTo(
       target: RuntimeEntity,

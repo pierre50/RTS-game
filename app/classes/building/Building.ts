@@ -1,16 +1,17 @@
 import { initializeConstructionProgress } from '../../lib/economy/constructionMaterials'
 import type { CaveDefinition } from '../../types/cave'
 import { getBuildingLevel, getBuildingConfigForLevel } from '../../lib/buildings/buildingLevel'
-import type { AnimatedSprite, Graphics, Sprite, Text, Texture } from 'pixi.js'
+import type { AnimatedSprite, Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import { CAMP_DECORATION_BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
-import { canUpdateMinimap } from '../../lib'
+import { canUpdateMinimap, getActionCondition, setUnitTexture, uuidv4 } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
 import { stopFlameAmbientSound } from './BuildingFire'
 import type { FireAnimation } from './BuildingFire'
 import { BuildingProduction } from './BuildingProduction'
 import type { BuildingTrainingPreview } from './BuildingTrainingPreview'
-import { Instance } from '../Instance'
+import type { CombatEntity, UnitTextureInstance } from '../../lib'
+import { isTeamHealthBarRestricted, isHeroTeamUnit } from '../../rendering/EntityHudBars'
 import { BuildingCombat } from './BuildingCombat'
 import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { createBuildingEntityInterface } from './BuildingInterfaceSetup'
@@ -23,14 +24,7 @@ import {
   setupBuildingTransform,
   stableHorsesFromOptions,
 } from './BuildingSetup'
-import {
-  createBuildingShadow,
-  destroyBuildingVisuals,
-  getBuildingShadowTexture,
-  syncBuildingVisualSettings,
-  updateBuildingShadow,
-  type BuildingShadow,
-} from './BuildingVisuals'
+import type { BuildingShadow } from '../../rendering/pixi/PixiBuildingVisuals'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
   BuildingEntity,
@@ -46,6 +40,9 @@ import type { ResourceAmount } from '../../types/common'
 import type { BuildingConfig } from '../../types/config'
 import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
 import type { SavedTrainingEntry, SavedTrainingExtra, TrainingTrainee } from '../../types/training'
+import { PixiBuildingView } from '../../rendering/pixi/PixiBuildingView'
+import { buildingVisualState, type BuildingDestructionGroundTarget, type BuildingVisualState } from '../../rendering/BuildingView'
+import { getEntityMapSpace } from '../../lib/mapSpaces'
 
 type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
@@ -82,7 +79,36 @@ export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
   skipBuiltEffects?: boolean
 }
 
-export class Building extends Instance implements BuildingEntity {
+export class Building implements BuildingEntity {
+  context: GameContextLike
+  label: string
+  selected = false
+  isDead = false
+  isDestroyed = false
+  interval: SchedulerTaskId | null = null
+  timeoutId: SchedulerTaskId | null = null
+  family!: string
+  type!: string
+  spaceId?: string
+  i!: number
+  j!: number
+  z!: number | null
+  size!: number
+  degree!: number
+  owner!: NonNullable<BuildingEntity['owner']>
+  hitPoints!: number
+  totalHitPoints!: number
+  energy?: number
+  totalEnergy?: number
+  reliefLift?: number
+  action?: string | null
+  playingBeforePause?: boolean
+  private mapX = 0
+  private mapY = 0
+  private renderVisible = true
+  private renderOrder = 0
+  private renderAlpha = 1
+  readonly buildingView: PixiBuildingView
   declare settlementName?: string
   buildingInterface: BuildingInterface
   buildingLifecycle: BuildingLifecycle
@@ -160,7 +186,9 @@ export class Building extends Instance implements BuildingEntity {
   visualSettingsCleanup: (() => void) | null
 
   constructor(options: BuildingOptions, context: GameContextLike) {
-    super(context)
+    this.context = context
+    this.label = uuidv4()
+    this.buildingView = new PixiBuildingView(this)
 
     const { map } = context
 
@@ -238,6 +266,75 @@ export class Building extends Instance implements BuildingEntity {
     map.addToInstanceBucket(this)
   }
 
+  get displayObject(): Container { return this.buildingView.container }
+  get x(): number { return this.mapX }
+  set x(value: number) { this.mapX = value; if (this.buildingView) this.displayObject.x = value }
+  get y(): number { return this.mapY }
+  set y(value: number) { this.mapY = value; if (this.buildingView) this.displayObject.y = value }
+  get zIndex(): number { return this.renderOrder }
+  set zIndex(value: number) { this.renderOrder = value; if (this.buildingView) this.displayObject.zIndex = value }
+  get visible(): boolean { return this.renderVisible }
+  set visible(value: boolean) { this.renderVisible = value; if (this.buildingView) this.displayObject.visible = value }
+  get alpha(): number { return this.renderAlpha }
+  set alpha(value: number) { this.renderAlpha = value; if (this.buildingView) this.displayObject.alpha = value }
+  get parent(): Container | null { return this.displayObject.parent }
+  get width(): number { return this.displayObject.width }
+  get height(): number { return this.displayObject.height }
+  get destroyed(): boolean { return this.displayObject.destroyed }
+
+  assignProperties(source: object | null | undefined): void {
+    if (!source) return
+    for (const [key, value] of Object.entries(source)) {
+      if (key === 'name') {
+        Object.defineProperty(this, key, { configurable: true, enumerable: true, writable: true, value })
+      } else {
+        ;(this as Record<string, unknown>)[key] = value
+      }
+    }
+  }
+
+  stopTimeout(): void {
+    if (this.timeoutId != null) {
+      this.context.scheduler.remove(this.timeoutId)
+      this.timeoutId = null
+    }
+  }
+
+  shouldKeepHealthBarVisible(): boolean {
+    if (isTeamHealthBarRestricted(this)) return false
+    const showEntityBars = Boolean(this.context.map.debugEntityBarsVisible)
+    const showForFamily = this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.animal
+    const showForHeroTeam = isHeroTeamUnit(this) && this.hitPoints < this.totalHitPoints
+    const isHeroUnit = this.context.controls?.heroUnit?.label === this.label
+    return Boolean(showForFamily && (showEntityBars || showForHeroTeam) && !isHeroUnit && !this.isDead && !this.isDestroyed)
+  }
+
+  shouldKeepEnergyBarVisible(): boolean {
+    const showEntityBars = Boolean(this.context.map.debugEntityBarsVisible)
+    const showForFamily = this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building || this.family === FAMILY_TYPES.animal
+    const isHeroUnit = this.context.controls?.heroUnit?.label === this.label
+    return Boolean(showForFamily && showEntityBars && !isHeroUnit && !this.isDead && !this.isDestroyed)
+  }
+
+  drawHealthBar(): void { this.buildingView.drawHealthBar() }
+  drawEnergyBar(): void { this.buildingView.drawEnergyBar() }
+  drawHeroPowerBar(ratio: number): void { this.buildingView.drawHeroPowerBar(ratio) }
+  removeHealthBar(): void { this.buildingView.removeHealthBar() }
+  removeEnergyBar(): void { this.buildingView.removeEnergyBar() }
+  removeHeroPowerBar(): void { this.buildingView.removeHeroPowerBar() }
+  step(): void { if (this.hitPoints <= 0) this.die() }
+  getActionCondition(target: object | null | undefined, action = this.action ?? undefined): boolean {
+    return getActionCondition(this, target as CombatEntity, action)
+  }
+  setTextures(sheet: string): void { setUnitTexture(sheet, this as unknown as UnitTextureInstance) }
+
+  getVisualState(): BuildingVisualState {
+    const space = getEntityMapSpace(this, this.context.map)
+    const cell = (space?.grid ?? this.context.map.grid)[this.i]?.[this.j]
+    if (!cell) throw new Error(`Cannot spawn building on missing cell (${this.i}, ${this.j})`)
+    return buildingVisualState(this, cell, this.context.map.revealEverything && this.context.controls.instanceInCamera(this))
+  }
+
   selectForPlayedOwner(): void {
     if (this.owner.selectedBuilding !== this) {
       this.owner.unselectAll()
@@ -261,7 +358,7 @@ export class Building extends Instance implements BuildingEntity {
     })
   }
 
-  override startInterval(
+  startInterval(
     callback: () => void,
     time: number,
     immediateOrName: boolean | string = 'building.interval',
@@ -272,7 +369,7 @@ export class Building extends Instance implements BuildingEntity {
     this.intervalId = this.context.scheduler.add(callback, (time * 1000) / 100, intervalName)
   }
 
-  override stopInterval(): void {
+  stopInterval(): void {
     if (this.intervalId != null) {
       this.context.scheduler.remove(this.intervalId)
       this.intervalId = null
@@ -309,19 +406,28 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingCombat.scanForInitialTarget()
   }
 
-  override select(): void {
+  select(): void {
     if (this.selected) return
     const {
       context: { menu, player },
     } = this
-    super.select()
+    this.selected = true
+    this.drawHealthBar()
+    this.drawEnergyBar()
     if (this.loading !== null && this.owner.isPlayed) this.updateTrainingPreview()
     canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
-  override unselect(): void {
+  unselect(): void {
     if (!this.selected) return
-    super.unselect()
+    this.selected = false
+    if (this.shouldKeepHealthBarVisible()) {
+      this.drawHealthBar()
+      this.drawEnergyBar()
+    } else {
+      this.removeHealthBar()
+      this.removeEnergyBar()
+    }
     const {
       context: { menu, player },
     } = this
@@ -329,15 +435,15 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   getShadowTexture(): Texture | null {
-    return getBuildingShadowTexture(this)
+    return this.buildingView.getShadowTexture()
   }
 
   createShadow(): BuildingShadow | null {
-    return createBuildingShadow(this)
+    return this.buildingView.createShadow()
   }
 
   updateShadow(shadow: BuildingShadow | null = this.shadow): void {
-    updateBuildingShadow(this, shadow)
+    this.buildingView.updateShadow(shadow)
   }
 
   syncShadow(): void {
@@ -345,10 +451,14 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   syncVisualSettings(): void {
-    syncBuildingVisualSettings(this)
+    this.buildingView.syncVisualSettings()
   }
 
-  override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+  showDestruction(groundTargets: BuildingDestructionGroundTarget[]): void {
+    this.buildingView.showDestruction(groundTargets)
+  }
+
+  destroy(options?: Parameters<Container['destroy']>[0]): void {
     stopFlameAmbientSound(this)
     this.trainingDayChangeUnsubscribe?.()
     this.trainingDayChangeUnsubscribe = null
@@ -358,8 +468,8 @@ export class Building extends Instance implements BuildingEntity {
     }
     this.buildingTrainingPreview?.destroy()
     this.buildingTrainingPreview = null
-    destroyBuildingVisuals(this)
-    super.destroy(options)
+    this.buildingView.destroy()
+    this.displayObject.destroy(options)
   }
 
   // BuildingLifecycle
@@ -368,7 +478,7 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   finalTexture(): void {
-    return this.buildingLifecycle.finalTexture()
+    this.buildingView.applyFinalTexture()
   }
 
   generateFire(spriteId: FireAnimation): void {
@@ -383,11 +493,11 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingLifecycle.updateHitPoints(action)
   }
 
-  override pause(): void {
+  pause(): void {
     return this.buildingLifecycle.pause()
   }
 
-  override resume(): void {
+  resume(): void {
     return this.buildingLifecycle.resume()
   }
 
@@ -395,7 +505,7 @@ export class Building extends Instance implements BuildingEntity {
     this.buildingLifecycle.die(true)
   }
 
-  override die(): void {
+  die(): void {
     return this.buildingLifecycle.die()
   }
 

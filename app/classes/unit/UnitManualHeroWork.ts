@@ -1,5 +1,5 @@
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/units/unitControl'
-import { onSpriteLoopAtFrame } from '../../lib/graphics'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import { logHeroSlashFrame, playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import { hasConfiguredActionFrameSequence } from '../../lib/animations/actionFrameSequences'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -17,16 +17,16 @@ export function stopManualHeroAction(unit: UnitEntity): void {
 }
 
 function stopManualHeroActionAfterLoop(unit: UnitEntity): void {
-  const sprite = unit.sprite
-  if (!sprite) {
+  const animation = getUnitAnimation(unit)
+  if (!animation) {
     stopManualHeroAction(unit)
     return
   }
-  sprite.onLoop = () => {
-    sprite.onLoop = undefined
+  animation.onLoop(() => {
+    animation.clearLoopCallback()
     unit.actionLocked = false
     stopManualHeroAction(unit)
-  }
+  })
 }
 
 export function lockManualHeroAction(unit: UnitEntity): void {
@@ -36,7 +36,7 @@ export function lockManualHeroAction(unit: UnitEntity): void {
 
 export function restartManualHeroActionAnimation(unit: UnitEntity): void {
   if (!isHeroControlled(unit)) return
-  unit.sprite?.gotoAndPlay?.(0)
+  getUnitAnimation(unit)?.restart()
 }
 
 function resumeManualHeroWorkAction(
@@ -76,11 +76,7 @@ function finishManualHeroWorkRecovery(
   if (!isHeroControlled(unit)) return false
   const actionAtRelease = context.action
   const destAtRelease = context.dest
-  const sprite = unit.sprite
-  if (sprite) {
-    sprite.onFrameChange = undefined
-    sprite.onLoop = undefined
-  }
+  getUnitAnimation(unit)?.clearCallbacks()
   setActionSpriteLoop(unit, false)
   const handled = playReverseSlashRecovery(unit, {
     onComplete: () => {
@@ -97,10 +93,7 @@ function finishManualHeroWorkRecovery(
 function resumeOrStopManualHeroWork(unit: UnitEntity, context: ManualHeroWorkContext): void {
   const actionAtRelease = context.action
   const destAtRelease = context.dest
-  if (unit.sprite) {
-    unit.sprite.onFrameChange = undefined
-    unit.sprite.onLoop = undefined
-  }
+  getUnitAnimation(unit)?.clearCallbacks()
   setActionSpriteLoop(unit, true)
   unit.actionLocked = false
   resumeManualHeroWorkAction(unit, actionAtRelease, destAtRelease)
@@ -120,14 +113,14 @@ export function finishManualHeroWorkSwing(
     preferExplicit: true,
   })
   const shouldSkipReverseRecovery = hasCustomActionFrameSequence && animationReleaseFrame >= releaseFrame
-  const sprite = unit.sprite
-  const currentFrame = Math.floor(sprite?.currentFrame ?? releaseFrame)
-  if (isHeroControlled(unit) && sprite && targetReleaseFrame > currentFrame) {
+  const animation = getUnitAnimation(unit)
+  const currentFrame = Math.floor(animation?.currentFrame ?? releaseFrame)
+  if (isHeroControlled(unit) && animation && targetReleaseFrame > currentFrame) {
     let released = false
     const finishAtVisualRelease = () => {
       if (released) return
       released = true
-      sprite.onLoop = undefined
+      animation.clearLoopCallback()
       if (shouldSkipReverseRecovery) {
         resumeOrStopManualHeroWork(unit, context)
         return
@@ -135,8 +128,8 @@ export function finishManualHeroWorkSwing(
       if (finishManualHeroWorkRecovery(unit, targetReleaseFrame, context)) return
       if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
     }
-    sprite.onLoop = finishAtVisualRelease
-    onSpriteLoopAtFrame(sprite, targetReleaseFrame, () => finishAtVisualRelease())
+    animation.onLoop(finishAtVisualRelease)
+    animation.onFrameEachLoop(targetReleaseFrame, () => finishAtVisualRelease())
     return
   }
   if (shouldSkipReverseRecovery) {
@@ -148,11 +141,5 @@ export function finishManualHeroWorkSwing(
 }
 
 export function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
-  if (unit.sprite) unit.sprite.loop = loop
-  if (unit.shadow) unit.shadow.loop = loop
-  const layers = (unit as UnitEntity & { appearanceLayerSprites?: Map<number, { loop: boolean }> })
-    .appearanceLayerSprites
-  for (const sprite of layers?.values() ?? []) {
-    sprite.loop = loop
-  }
+  getUnitAnimation(unit)?.setLoop(loop)
 }

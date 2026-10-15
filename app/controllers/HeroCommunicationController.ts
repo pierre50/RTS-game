@@ -1,4 +1,4 @@
-import { Graphics } from 'pixi.js'
+import { Graphics, type Container } from 'pixi.js'
 import { getReliefOffset } from '../lib'
 import { LABEL_TYPES } from '../constants'
 import { heroCanCommand } from '../lib/chief'
@@ -13,6 +13,7 @@ import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import { drawCommIndicatorCells } from './HeroControllerSupport'
+import { getEntityDisplayObject } from '../lib/mapSpaces'
 
 type HeroCommunicationHost = {
   commChargeStart: number
@@ -38,7 +39,7 @@ export function beginHeroCommCharge(controller: HeroCommunicationHost): void {
   const indicator = new Graphics()
   indicator.label = LABEL_TYPES.commRadius
   indicator.zIndex = -1
-  hero.addChildAt(indicator, 0)
+  ;(getEntityDisplayObject(hero) as Container).addChildAt(indicator, 0)
   controller.commIndicator = indicator
 }
 

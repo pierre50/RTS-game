@@ -26,6 +26,7 @@ import { showContactDebug } from '../../lib/contact/contactDebug'
 import { getContactAimDegree, isContactTouching } from '../../lib/contact/contactGeometry'
 import { definedProperties } from '../../lib/definedProperties'
 import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import { isBrokenCombatWeapon } from '../../lib/equipment/equipmentCondition'
 import {
   getConfiguredEntityEquipment,
@@ -149,18 +150,18 @@ export class UnitCombat {
   finishAttackAfterCurrentLoop() {
     const unit = this.unit
     if (unit.isDead || unit.isDestroyed) return
-    const sprite = unit.sprite
-    if (!sprite) {
+    const animation = getUnitAnimation(unit)
+    if (!animation) {
       unit.affectNewDest?.()
       return
     }
 
     unit.actionLocked = true
-    sprite.onFrameChange = undefined
+    animation.clearFrameCallback()
     const token = unit.visualAnimationToken
     const action = unit.action
     const dest = unit.dest
-    sprite.onLoop = () => {
+    animation.onLoop(() => {
       if (
         unit.isDead ||
         unit.isDestroyed ||
@@ -169,11 +170,11 @@ export class UnitCombat {
         unit.dest !== dest
       )
         return
-      sprite.onLoop = undefined
+      animation.clearLoopCallback()
       unit.actionLocked = false
       const hadPendingOrder = unit.flushPendingOrder?.()
       if (!hadPendingOrder) unit.affectNewDest?.()
-    }
+    })
   }
 
   detect(instance: RuntimeEntity | null) {

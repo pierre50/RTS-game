@@ -16,6 +16,7 @@ type ResourceSaveSource = Pick<SaveEntityState, 'i' | 'j' | 'type'> &
     >
   > & {
     deferredSpriteBounds?: unknown
+    growthStage?: number
     sprite?: object | null
   }
 function pick<T extends object, K extends keyof T>(value: T, keys: K[]): Pick<T, K> {
@@ -38,7 +39,9 @@ export function resourceData(resource: ResourceSaveSource): SaveEntityState {
     ]),
     textureName: (resource.textureName || '').split('.')[0] ?? '',
   }
-  if (!resource.deferredSpriteBounds) {
+  if (typeof resource.growthStage === 'number') {
+    data.currentFrame = resource.growthStage
+  } else if (!resource.deferredSpriteBounds) {
     const sprite = resource.sprite
     const frame = sprite && 'currentFrame' in sprite ? sprite.currentFrame : undefined
     if (typeof frame === 'number') data.currentFrame = frame

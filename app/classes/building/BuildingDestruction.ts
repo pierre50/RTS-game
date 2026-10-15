@@ -3,15 +3,12 @@ import { canHeroDemolishBuilding, getFurnitureContainer } from '../../lib/buildi
 import { isInteriorFurniture } from '../../lib/buildings/furniture/interiorFurnitureCatalog'
 import { removeFurnitureSurface } from '../../lib/terrain/furnitureSurface'
 import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
-import { definedProperties } from '../../lib/definedProperties'
-import { LABEL_TYPES, SOUND_CUES } from '../../constants'
+import { SOUND_CUES } from '../../constants'
 import {
   canUpdateMinimap,
   getBuildingFootprintCells,
   isAIControlledPlayer,
   playAudibleSoundCue,
-  spawnSpriteFragmentBurst,
-  type SpriteFragmentBurstGroundTarget,
   updateInstanceVisibility,
 } from '../../lib'
 import { refreshPopulationCapacity } from '../../lib/buildings/buildingOccupancy'
@@ -22,65 +19,13 @@ import {
   destroyBuildingInteriorInventory,
 } from '../../services/BuildingInteriorSpaceSystem'
 import type { RuntimeCell } from '../../types/map'
-import { CAMPFIRE_DECORATION_LABEL, CAMPFIRE_SMOKE_DECORATION_LABEL, stopFlameAmbientSound } from './BuildingFire'
+import { stopFlameAmbientSound } from './BuildingFire'
 import type { BuildingControllerHost } from './BuildingTypes'
-import { clearBuildingConstructionReveal } from './BuildingVisuals'
 
 const BUILDING_DESTRUCTION_CLEAR_MS = 940
 
 export class BuildingDestruction {
   constructor(private readonly building: BuildingControllerHost) {}
-
-  private spawnDestructionBurst(): void {
-    const building = this.building
-    const space = getEntityMapSpace(building, building.context.map)
-    const footprintCells = getBuildingFootprintCells(
-      building.i,
-      building.j,
-      space?.grid ?? building.context.map.grid,
-      building.size,
-      undefined,
-      building.type
-    )
-    const groundTargets: SpriteFragmentBurstGroundTarget[] = footprintCells.map(cell =>
-      definedProperties({
-        x: cell.x,
-        y: cell.y,
-        zIndex: cell.zIndex,
-      })
-    )
-    const footprintArea = Math.max(1, footprintCells.length)
-    spawnSpriteFragmentBurst({
-      context: building.context,
-      host: building,
-      sprite: building.sprite,
-      layer: building.parent,
-      fragmentSize: 14,
-      maxFragments: Math.min(96, 28 + footprintArea * 8),
-      durationMs: BUILDING_DESTRUCTION_CLEAR_MS,
-      gravity: 0.0026,
-      minSpeed: 0.014,
-      maxSpeed: 0.09,
-      upwardVelocity: 0.045,
-      settleToBottom: true,
-      lockX: true,
-      groundTargets,
-      settleSpread: Math.max(34, Math.sqrt(footprintArea) * 24),
-      settleStrength: 0.00006,
-      groundBounce: 0.09,
-    })
-  }
-
-  private clearDestroyedSprite(): void {
-    const building = this.building
-    building.sprite.eventMode = 'none'
-    building.sprite.visible = false
-    building.sprite.parent?.removeChild(building.sprite)
-    building.sprite.destroy({ children: true, texture: false })
-    building.shadow?.parent?.removeChild(building.shadow)
-    building.shadow?.destroy({ children: true, texture: false })
-    building.shadow = null
-  }
 
   die(demolition = false): void {
     const building = this.building
@@ -125,13 +70,11 @@ export class BuildingDestruction {
     }
     this.removeOwnerReferences()
     reconcileHouseholds(building.owner)
-    this.destroyDecorations()
-
-    // Fragments must not inherit the construction ghost's transparency or tint.
-    clearBuildingConstructionReveal(building)
-    this.spawnDestructionBurst()
+    const footprintCells = getBuildingFootprintCells(building.i, building.j, grid, building.size, undefined, building.type)
+    building.showDestruction(footprintCells.map(cell =>
+      cell.zIndex == null ? { x: cell.x, y: cell.y } : { x: cell.x, y: cell.y, zIndex: cell.zIndex }
+    ))
     updateInstanceVisibility(building)
-    this.clearDestroyedSprite()
     getBuildingFootprintCells(
       building.i,
       building.j,
@@ -179,19 +122,6 @@ export class BuildingDestruction {
     }
   }
 
-  private destroyDecorations(): void {
-    const building = this.building
-    for (const label of [
-      LABEL_TYPES.color,
-      LABEL_TYPES.deco,
-      LABEL_TYPES.fire,
-      CAMPFIRE_DECORATION_LABEL,
-      CAMPFIRE_SMOKE_DECORATION_LABEL,
-    ]) {
-      building.getChildByLabel(label)?.destroy()
-    }
-  }
-
   clear(): void {
     const building = this.building
     if (building.isDestroyed) return
@@ -214,7 +144,6 @@ export class BuildingDestruction {
       building.type
     )
     building.isDestroyed = true
-    building.parent?.removeChild(building)
     building.destroy({ children: true, texture: false })
   }
 }

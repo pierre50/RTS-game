@@ -4,8 +4,9 @@ import type { RuntimeMap } from '../types/map'
 
 type ProjectileEquipmentOwner = ForgeUpgradeOwner
 
-type RuntimeProjectileDisplay = ContainerChild & {
+type RuntimeProjectileDisplay = {
   attachToMapSpace?: () => void
+  displayObject?: ContainerChild
 }
 
 const MATERIAL_ARROW_PROJECTILES = ['ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron'] as const
@@ -24,5 +25,5 @@ export function attachProjectileToMapSpace(projectile: RuntimeProjectileDisplay,
     projectile.attachToMapSpace()
     return
   }
-  map.addChild(projectile)
+  map.addChild(projectile.displayObject ?? (projectile as ContainerChild))
 }

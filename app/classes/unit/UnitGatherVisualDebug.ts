@@ -1,4 +1,5 @@
 import { SHEET_TYPES } from '../../constants'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 const GATHER_VISUAL_DEBUG_STORAGE_KEY = 'rts.debug.gatherVisual'
@@ -23,6 +24,7 @@ export function logGatherVisualState(unit: UnitEntity, dest: RuntimeEntity, load
   const currentSheet = unit.currentSheet ?? null
   const expectedSheet = SHEET_TYPES.action
   const mismatch = Boolean(currentSheet) && currentSheet !== expectedSheet
+  const animation = getUnitAnimation(unit)
 
   const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
   const key = unit.label ?? `${unit.type ?? 'unit'}:${unit.i},${unit.j}`
@@ -45,8 +47,8 @@ export function logGatherVisualState(unit: UnitEntity, dest: RuntimeEntity, load
       currentSheet,
       expectedSheet,
       pathLength: unit.path?.length ?? 0,
-      spritePlaying: unit.sprite?.playing,
-      spriteFrame: unit.sprite?.currentFrame,
+      spritePlaying: animation?.playing,
+      spriteFrame: animation?.currentFrame,
       hasActionSheet: Boolean(unit.actionSheet),
       actionSheetTextureCount: getSheetTextureCount(unit.actionSheet),
       hasWalkingSheet: Boolean(unit.walkingSheet),

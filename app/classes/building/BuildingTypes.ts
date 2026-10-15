@@ -11,6 +11,7 @@ import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 import type { FireAnimation } from './BuildingFire'
 import type { TrainingEntry, TrainingTrainee } from '../../types/training'
+import type { BuildingDestructionGroundTarget } from '../../rendering/BuildingView'
 
 type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
@@ -34,7 +35,18 @@ export type BuildingControllerHost = Omit<
   | 'die'
   | 'destroy'
 > &
-  Container & {
+  Pick<
+    Container,
+    | 'label'
+    | 'x'
+    | 'y'
+    | 'zIndex'
+    | 'visible'
+    | 'alpha'
+    | 'width'
+    | 'height'
+    | 'parent'
+  > & {
     context: GameContextLike
     owner: PlayerLike
     sprite: BuildingSprite
@@ -88,6 +100,7 @@ export type BuildingControllerHost = Omit<
     onBuilt(): void
     die(): void
     clear(): void
+    showDestruction(groundTargets: BuildingDestructionGroundTarget[]): void
     buyUnit(
       type: string,
       alreadyPaid?: boolean,
@@ -96,7 +109,7 @@ export type BuildingControllerHost = Omit<
       trainee?: UnitEntity | null
     ): boolean | undefined | void
     cancelAllUnitTraining?(): boolean
-    destroy(options?: { children?: boolean; texture?: boolean }): void
+    destroy(options?: Parameters<Container['destroy']>[0]): void
   }
 
 export type TrainingBuilding = BuildingControllerHost & {

@@ -28,8 +28,6 @@ import type { UnitResourceActions } from '../UnitResourceActions'
 export function handleChopWoodAction(runtime: UnitResourceActions) {
   const unit = runtime.unit
   if (!runtime.prepareLoopingWorkAction()) return
-  const sprite = unit.sprite
-  if (!sprite) return
   const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
   runtime.bindWorkImpact(workTickFrame, () => chopImpact(runtime, workTickFrame))
 }

@@ -1,9 +1,10 @@
 import type { UnitEntity } from '../../../types/entities'
+import { getUnitAnimation } from '../../../rendering/UnitAnimation'
 
-type SpriteCallbackName = 'onComplete' | 'onFrameChange' | 'onLoop'
+type AnimationCallbackName = 'onComplete' | 'onFrameChange' | 'onLoop'
 
 type UnitVisualTransitionOptions = {
-  clearCallbacks?: boolean | SpriteCallbackName[]
+  clearCallbacks?: boolean | AnimationCallbackName[]
   frame?: number
   invalidateAnimation?: boolean
   loop?: boolean
@@ -13,11 +14,15 @@ type UnitVisualTransitionOptions = {
   syncShadow?: boolean
 }
 
-function clearSpriteCallbacks(unit: UnitEntity, callbacks: boolean | SpriteCallbackName[] = true): void {
-  if (!unit.sprite || callbacks === false) return
+function clearVisualCallbacks(unit: UnitEntity, callbacks: boolean | AnimationCallbackName[] = true): void {
+  if (callbacks === false) return
+  const animation = getUnitAnimation(unit)
+  if (!animation) return
   const names = callbacks === true ? (['onComplete', 'onFrameChange', 'onLoop'] as const) : callbacks
   for (const name of names) {
-    delete unit.sprite[name]
+    if (name === 'onComplete') animation.clearCompleteCallback()
+    else if (name === 'onFrameChange') animation.clearFrameCallback()
+    else animation.clearLoopCallback()
   }
 }
 
@@ -30,9 +35,9 @@ export function isUnitVisualAnimationCurrent(unit: UnitEntity, token: number): b
   return unit.visualAnimationToken === token
 }
 
-export function cancelUnitVisualAnimation(unit: UnitEntity, callbacks: boolean | SpriteCallbackName[] = true): void {
+export function cancelUnitVisualAnimation(unit: UnitEntity, callbacks: boolean | AnimationCallbackName[] = true): void {
   beginUnitVisualAnimation(unit)
-  clearSpriteCallbacks(unit, callbacks)
+  clearVisualCallbacks(unit, callbacks)
 }
 
 export function setUnitVisualSheet(
@@ -51,16 +56,16 @@ export function setUnitVisualSheet(
 ): number {
   const token = invalidateAnimation ? beginUnitVisualAnimation(unit) : (unit.visualAnimationToken ?? 0)
   unit.setTextures?.(sheet)
-  clearSpriteCallbacks(unit, clearCallbacks)
-  if (unit.sprite && loop !== undefined) unit.sprite.loop = loop
+  clearVisualCallbacks(unit, clearCallbacks)
+  const animation = getUnitAnimation(unit)
+  if (loop !== undefined) animation?.setLoop(loop)
 
-  if (unit.sprite && frame !== undefined) {
-    if (play === 'play') unit.sprite.gotoAndPlay?.(frame)
-    else unit.sprite.gotoAndStop?.(frame)
-  } else if (unit.sprite && play === 'play') {
-    unit.sprite.play?.()
-  } else if (unit.sprite && play === 'stop') {
-    unit.sprite.stop?.()
+  if (frame !== undefined) {
+    animation?.seek(frame, play === 'play')
+  } else if (play === 'play') {
+    animation?.play()
+  } else if (play === 'stop') {
+    animation?.stop()
   }
 
   if (syncMountedHorse) unit.syncMountedHorseSprite?.()

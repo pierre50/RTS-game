@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-test('a missing spritesheet during construction leaves no registered unit or blocked cell', () => {
+test('unit construction cleans failed spawns and keeps the runtime separate from its display', () => {
   const cell = {
     has: null,
     solid: false,
@@ -56,7 +56,25 @@ test('a missing spritesheet during construction leaves no registered unit or blo
   const { Unit } = loadTsModule('app/classes/unit/Unit.ts', {
     mocks: {
       '../Instance': { Instance },
-      '../../lib': {},
+      '../../lib': { uuidv4: () => 'unit-test' },
+      '../../lib/mapSpaces': { getEntitySpaceMapLike: () => null },
+      '../../rendering/UnitView': { unitVisualState: () => ({}) },
+      '../../rendering/pixi/PixiUnitView': {
+        PixiUnitView: class {
+          constructor() {
+            this.container = {
+              destroyed: false,
+              x: 0,
+              y: 0,
+              destroy() {
+                this.destroyed = true
+              },
+            }
+          }
+          mount() {}
+          unmount() {}
+        },
+      },
       './UnitRuntimeShape': {},
       '../../lib/units/unitEnergy': {},
       './UnitBanditDebug': {},
@@ -71,9 +89,19 @@ test('a missing spritesheet during construction leaves no registered unit or blo
         initializeUnitRuntimeState() {},
         initializeUnitWorkRole() {},
         setupUnitInterface() {},
-        applyUnitSpawnConfiguration(unit) {
+        registerInitialUnitMapPresence(unit) {
+          unit.currentCell = cell
+          cell.place(unit)
+          owner.units.push(unit)
+          bucket.add(unit)
+        },
+        loadConfiguredUnitSpritesheets() {},
+        setupUnitCommandDispatch() {},
+        scheduleInitialUnitVisibilityUpdate() {},
+        applyUnitSpawnConfiguration(unit, options) {
           failedUnit = unit
           Object.assign(unit, { owner, type: 'Villager', assets: { standingSheet: 'missing-villager' } })
+          if (options.valid) unit.standingSheet = { textures: {} }
           return cell
         },
       },
@@ -87,4 +115,11 @@ test('a missing spritesheet during construction leaves no registered unit or blo
   assert.deepEqual(owner.units, [])
   assert.deepEqual(owner.corpses, [])
   assert.equal(failedUnit.destroyed, true)
+
+  const workingUnit = new Unit({ valid: true }, context)
+  assert.equal(workingUnit instanceof Instance, false)
+  assert.notEqual(workingUnit.displayObject, workingUnit)
+  workingUnit.x = 24
+  workingUnit.y = 48
+  assert.deepEqual([workingUnit.displayObject.x, workingUnit.displayObject.y], [24, 48])
 })

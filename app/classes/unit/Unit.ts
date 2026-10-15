@@ -1,9 +1,13 @@
 import { isUnitSuspended } from '../../lib/units/unitSuspension'
 import { getUnitRestVisualSheet } from '../../lib/units/visuals/unitSittingPose'
-import type { AnimatedSprite } from 'pixi.js'
-import { LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
-import { canUpdateMinimap } from '../../lib'
-import { Instance } from '../Instance'
+import type { AnimatedSprite, Container, ContainerChild } from 'pixi.js'
+import { FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
+import { canUpdateMinimap, uuidv4 } from '../../lib'
+import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
+import { unitVisualState, type UnitVisualState } from '../../rendering/UnitView'
+import type { UnitAnimation } from '../../rendering/UnitAnimation'
+import { PixiUnitView } from '../../rendering/pixi/PixiUnitView'
+import { drawInstanceEnergyBar, drawInstanceHealthBar, drawInstanceHeroPowerBar, removeInstanceHudBar, isTeamHealthBarRestricted, isHeroTeamUnit } from '../InstanceHudBars'
 import './UnitRuntimeShape'
 import { resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/units/unitEnergy'
 import { watchBanditStep } from './UnitBanditDebug'
@@ -11,6 +15,7 @@ import { syncUnitAppearanceLayers } from './appearance/UnitAppearanceLayers'
 import { handleUnitIsAttacked, stopUnit } from './UnitStateHandlers'
 import {
   applyUnitSpawnConfiguration,
+  assertUnitVisualAssets,
   getCachedUnitSpritesheet,
   initializeUnitRuntimeState,
   initializeUnitServices,
@@ -20,15 +25,10 @@ import {
   scheduleInitialUnitVisibilityUpdate,
   setupUnitCommandDispatch,
   setupUnitInterface,
-  setupUnitPointerInteraction,
-  setupUnitPrimarySprite,
 } from './UnitInitialization'
 import {
   applyUnitOwnerColorToSprite,
-  applyUnitReliefLift,
   createUnitShadow,
-  pauseUnitVisuals,
-  resumeUnitVisuals,
   syncUnitShadow,
   syncUnitVisualSettings,
 } from './appearance/UnitVisualState'
@@ -66,27 +66,54 @@ import type { UnitSpawnOptions } from './UnitTypes'
 
 export type { UnitSpawnOptions } from './UnitTypes'
 
-export class Unit extends Instance implements UnitEntity {
+export class Unit implements UnitEntity {
+  context: GameContextLike
+  label: string
+  selected = false
+  isDead = false
+  isDestroyed = false
+  interval: number | null = null
+  timeoutId: number | null = null
+  family!: string
+  type!: string
+  i!: number
+  j!: number
+  z!: number | null
+  size!: number
+  degree!: number
+  owner!: NonNullable<UnitEntity['owner']>
+  hitPoints!: number
+  totalHitPoints!: number
+  action?: string | null
+  playingBeforePause?: boolean
+  private mapX = 0
+  private mapY = 0
+  private renderVisible = true
+  private renderOrder = 0
+  private renderAlpha = 1
   declare sprite: AnimatedSprite
   declare reliefLift: number
   exploringForAutonomy = false
   private isMovingStep = false
+  private readonly unitView: PixiUnitView
 
   constructor(options: UnitSpawnOptions, context: GameContextLike) {
-    super(context)
-    this.sortableChildren = true
-
+    this.context = context
+    this.label = options.label ?? uuidv4()
+    this.unitView = new PixiUnitView(this, id => {
+      if (id === this.label) this.context.editor?.handleEntityInteraction?.(this)
+    })
     initializeUnitServices(this)
     initializeUnitRuntimeState(this)
     try {
-      const spawnCell = applyUnitSpawnConfiguration(this, options)
+      applyUnitSpawnConfiguration(this, options)
       registerInitialUnitMapPresence(this)
       initializeUnitWorkRole(this)
       loadConfiguredUnitSpritesheets(this)
       setupUnitInterface(this)
-      setupUnitPrimarySprite(this, spawnCell)
+      assertUnitVisualAssets(this)
+      this.unitView.mount(this.getVisualState())
       setupUnitCommandDispatch(this)
-      setupUnitPointerInteraction(this)
       scheduleInitialUnitVisibilityUpdate(this)
     } catch (error) {
       this.isDestroyed = true
@@ -107,6 +134,178 @@ export class Unit extends Instance implements UnitEntity {
       this.destroy({ children: true, texture: false })
       throw error
     }
+  }
+
+  get displayObject(): Container {
+    return this.unitView.container
+  }
+
+  get visualAnimation(): UnitAnimation {
+    return this.unitView
+  }
+
+  get x(): number {
+    return this.mapX
+  }
+
+  set x(value: number) {
+    this.mapX = value
+    if (this.unitView) this.displayObject.x = value
+  }
+
+  get y(): number {
+    return this.mapY
+  }
+
+  set y(value: number) {
+    this.mapY = value
+    if (this.unitView) this.displayObject.y = value
+  }
+
+  get visible(): boolean {
+    return this.renderVisible
+  }
+
+  set visible(value: boolean) {
+    this.renderVisible = value
+    if (this.unitView) this.displayObject.visible = value
+  }
+
+  get zIndex(): number {
+    return this.renderOrder
+  }
+
+  set zIndex(value: number) {
+    this.renderOrder = value
+    if (this.unitView) this.displayObject.zIndex = value
+  }
+
+  get alpha(): number {
+    return this.renderAlpha
+  }
+
+  set alpha(value: number) {
+    this.renderAlpha = value
+    if (this.unitView) this.displayObject.alpha = value
+  }
+
+  get parent(): Container | null {
+    return this.displayObject.parent
+  }
+
+  get width(): number {
+    return this.displayObject.width
+  }
+
+  get height(): number {
+    return this.displayObject.height
+  }
+
+  get destroyed(): boolean {
+    return this.displayObject.destroyed
+  }
+
+  get sortableChildren(): boolean {
+    return this.displayObject.sortableChildren
+  }
+
+  set sortableChildren(value: boolean) {
+    this.displayObject.sortableChildren = value
+  }
+
+  get eventMode(): Container['eventMode'] {
+    return this.displayObject.eventMode
+  }
+
+  set eventMode(value: Container['eventMode']) {
+    this.displayObject.eventMode = value
+  }
+
+  addChild: Container['addChild'] = ((...children: ContainerChild[]) =>
+    this.displayObject.addChild(...children)) as Container['addChild']
+
+  addChildAt: Container['addChildAt'] = ((child: ContainerChild, index: number) =>
+    this.displayObject.addChildAt(child, index)) as Container['addChildAt']
+
+  removeChild: Container['removeChild'] = ((...children: ContainerChild[]) =>
+    this.displayObject.removeChild(...children)) as Container['removeChild']
+
+  getChildByLabel: Container['getChildByLabel'] = ((label: string) =>
+    this.displayObject.getChildByLabel(label)) as Container['getChildByLabel']
+
+  getChildIndex(child: ContainerChild): number {
+    return this.displayObject.getChildIndex(child)
+  }
+
+  on: Container['on'] = ((...args: Parameters<Container['on']>) =>
+    this.displayObject.on(...args)) as Container['on']
+
+  once: Container['once'] = ((...args: Parameters<Container['once']>) =>
+    this.displayObject.once(...args)) as Container['once']
+
+  assignProperties(source: object | null | undefined): void {
+    if (!source) return
+    for (const [key, value] of Object.entries(source)) {
+      if (key === 'name') {
+        Object.defineProperty(this, key, { configurable: true, enumerable: true, writable: true, value })
+      } else {
+        ;(this as Record<string, unknown>)[key] = value
+      }
+    }
+  }
+
+  stopInterval(): void {
+    if (this.interval) {
+      this.context.scheduler.remove(this.interval)
+      this.interval = null
+    }
+  }
+
+  stopTimeout(): void {
+    if (this.timeoutId != null) {
+      this.context.scheduler.remove(this.timeoutId)
+      this.timeoutId = null
+    }
+  }
+
+  shouldKeepHealthBarVisible(): boolean {
+    if (isTeamHealthBarRestricted(this)) return false
+    const showEntityBars = Boolean(this.context.map.debugEntityBarsVisible)
+    const showForHeroTeam = isHeroTeamUnit(this) && this.hitPoints < this.totalHitPoints
+    const isHeroUnit = this.context.controls?.heroUnit?.label === this.label
+    return Boolean(
+      this.family === FAMILY_TYPES.unit && (showEntityBars || showForHeroTeam) && !isHeroUnit && !this.isDead && !this.isDestroyed
+    )
+  }
+
+  shouldKeepEnergyBarVisible(): boolean {
+    const showEntityBars = Boolean(this.context.map.debugEntityBarsVisible)
+    const isHeroUnit = this.context.controls?.heroUnit?.label === this.label
+    return Boolean(this.family === FAMILY_TYPES.unit && showEntityBars && !isHeroUnit && !this.isDead && !this.isDestroyed)
+  }
+
+  drawHealthBar(): void {
+    drawInstanceHealthBar(this)
+  }
+
+  drawEnergyBar(): void {
+    drawInstanceEnergyBar(this)
+  }
+
+  drawHeroPowerBar(ratio: number): void {
+    drawInstanceHeroPowerBar(this, ratio)
+  }
+
+  removeHealthBar(): void {
+    removeInstanceHudBar(this, LABEL_TYPES.healthBar)
+  }
+
+  removeEnergyBar(): void {
+    removeInstanceHudBar(this, LABEL_TYPES.energyBar)
+  }
+
+  removeHeroPowerBar(): void {
+    removeInstanceHudBar(this, LABEL_TYPES.powerBar)
   }
 
   createShadow(source: AnimatedSprite = this.sprite, label: string = LABEL_TYPES.shadow) {
@@ -181,7 +380,27 @@ export class Unit extends Instance implements UnitEntity {
   // (pathing/collision/zIndex), so this offsets the sprite, shadow and equipment layers to
   // represent the sampled ground height immediately. Never touches this.x/y or zIndex.
   applyReliefLift(level: number): void {
-    applyUnitReliefLift(this, level)
+    this.unitView.update(this.getVisualState(level))
+  }
+
+  getVisualState(level?: number): UnitVisualState {
+    return unitVisualState(this, getEntitySpaceMapLike(this, this.context.map), level)
+  }
+
+  syncVisualState(): void {
+    this.unitView.update(this.getVisualState())
+  }
+
+  isVisualAnimationPlaying(): boolean {
+    return this.unitView.isAnimationPlaying()
+  }
+
+  playVisualAnimation(): void {
+    this.unitView.playAnimation()
+  }
+
+  stopVisualAnimation(): void {
+    this.unitView.stopAnimation()
   }
 
   syncAppearanceLayers(sheet: string) {
@@ -190,57 +409,47 @@ export class Unit extends Instance implements UnitEntity {
     syncUnitAppearanceLayers(this, visualSheet)
   }
 
-  override setTextures(sheet: string) {
+  setTextures(sheet: string) {
     sheet = getUnitRestVisualSheet(this, sheet)
-    super.setTextures(sheet)
-    this.applyOwnerColorToSprite()
-    this.syncShadow()
-    this.syncMountedHorseSprite()
-    this.syncAppearanceLayers(sheet)
-    this.updateMountedRiderMask(sheet)
+    this.unitView.setAction(sheet)
+    this.syncVisualState()
   }
 
   applyOwnerColorToSprite() {
     applyUnitOwnerColorToSprite(this)
   }
 
-  override pause() {
-    super.pause()
-    pauseUnitVisuals(this)
+  pause() {
+    this.unitView.pause()
   }
 
-  override resume() {
-    if (resumeUnitVisuals(this)) {
-      this.playingBeforePause = undefined
-      return
-    }
-    super.resume()
-    for (const sprite of [this.shadow, this.horseSprite, this.horseShadow]) {
-      if (this.sprite.playing) sprite?.play()
-      else sprite?.stop()
-    }
-    this.syncAppearanceLayers(this.currentSheet)
+  resume() {
+    this.unitView.resume()
   }
 
-  override select() {
+  select() {
     if (this.selected) return
-    super.select()
+    this.selected = true
+    this.unitView.setSelected(true)
+    this.syncVisualState()
     const {
       context: { menu, player },
     } = this
     canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
-  override unselect() {
+  unselect() {
     if (!this.selected) return
-    super.unselect()
+    this.selected = false
+    this.unitView.setSelected(false)
+    this.syncVisualState()
     const {
       context: { menu, player },
     } = this
     canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
-  override hasPath() {
+  hasPath() {
     return this.path.length > 0
   }
 
@@ -253,11 +462,7 @@ export class Unit extends Instance implements UnitEntity {
       this.stop()
       return
     }
-    this.sprite.loop = this.loop ?? true
-    if (this.shadow) this.shadow.loop = this.sprite.loop
-    for (const sprite of this.appearanceLayerSprites.values()) {
-      sprite.loop = this.loop ?? true
-    }
+    this.unitView.setAnimationLoop(this.loop ?? true)
     this.setTextures(SHEET_TYPES.walking)
     this.inactif = false
     this.path = path
@@ -306,7 +511,7 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitActions.getAction(name)
   }
 
-  override getActionCondition(
+  getActionCondition(
     target: object | null | undefined,
     action = this.action ?? undefined,
     props?: ActionProps | UnitCreationExtra
@@ -334,11 +539,11 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitMovement.destHasMoved()
   }
 
-  override moveToPath() {
+  moveToPath() {
     return this.unitMovement.moveToPath()
   }
 
-  override step(): void {
+  step(): void {
     if (this.isMovingStep) return
     this.isMovingStep = true
     const beforeX = this.x
@@ -349,7 +554,8 @@ export class Unit extends Instance implements UnitEntity {
         watchBanditStep(this, beforeX, beforeY)
         return
       }
-      super.step()
+      if (this.hitPoints <= 0) this.die()
+      else if (this.hasPath()) this.moveToPath()
       watchBanditStep(this, beforeX, beforeY)
     } finally {
       this.isMovingStep = false
@@ -373,7 +579,7 @@ export class Unit extends Instance implements UnitEntity {
     return stopUnit(this)
   }
 
-  override startInterval(callback: () => void, time: number, immediate = true, name = 'unit.interval') {
+  startInterval(callback: () => void, time: number, immediate = true, name = 'unit.interval') {
     if (this.isDead) {
       return
     }
@@ -404,7 +610,7 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitLifecycle.death()
   }
 
-  override die() {
+  die() {
     return this.unitLifecycle.die()
   }
 
@@ -501,13 +707,8 @@ export class Unit extends Instance implements UnitEntity {
     this.unitInterface.setDefaultInterface(element, data, options)
   }
 
-  override destroy(options?: Parameters<Instance['destroy']>[0]): void {
-    this.visualSettingsCleanup?.()
-    this.visualSettingsCleanup = null
-    this.shadow?.parent?.removeChild(this.shadow)
-    this.shadow?.destroy({ children: true, texture: false })
-    this.shadow = null
-    this.removeMountedHorseSprite()
-    super.destroy(options)
+  destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.unitView.unmount()
+    this.displayObject.destroy(options)
   }
 }

@@ -115,7 +115,7 @@ function handleIdleDestination(unit: UnitEntity): void {
     unit.path = []
     notifyVillageStateChanged(unit.owner)
     unit.inactif = true
-    unit.sprite?.stop()
+    unit.stopVisualAnimation?.()
     unit.setTextures?.(SHEET_TYPES.standing)
     scheduleVillagerExplorationResume(unit, actor => resumeVillagerAutonomy?.(actor))
     return

@@ -88,7 +88,9 @@ function fixture() {
       map: { grid: [[], [cell]], updateInstanceBucket() {} },
       menu: { isMiniMapActive: () => false, updatePlayerMiniMap: mark('minimap') },
     },
-    sprite: { playing: false, play: mark('play'), stop: mark('spriteStop') },
+    isVisualAnimationPlaying: () => false,
+    playVisualAnimation: mark('play'),
+    stopVisualAnimation: mark('animationStop'),
     currentSheet: 'walkingSheet',
     action: null,
     affectNewDest: mark('replace'),
@@ -122,7 +124,7 @@ test('path watchdog repaths the original task and stops when recovery is exhaust
   assert.deepEqual(calls, [['stop']])
 })
 test('path step clears invalid paths and refuses missing or destroyed destinations', () => {
-  for (const mode of ['pursue', 'map', 'path', 'cell', 'dest', 'destroyed', 'sprite', 'contact']) {
+  for (const mode of ['pursue', 'map', 'path', 'cell', 'dest', 'destroyed', 'contact']) {
     const { unit, rules, calls, step } = fixture()
     if (mode === 'pursue') rules.pursue = true
     if (mode === 'map') delete unit.context
@@ -130,7 +132,6 @@ test('path step clears invalid paths and refuses missing or destroyed destinatio
     if (mode === 'cell') unit.path = [{ i: 99, j: 99 }]
     if (mode === 'dest') unit.dest = null
     if (mode === 'destroyed') unit.dest.isDestroyed = true
-    if (mode === 'sprite') delete unit.sprite
     if (mode === 'contact') rules.contact = true
     step()
     assert.equal(
@@ -143,9 +144,9 @@ test('path step clears invalid paths and refuses missing or destroyed destinatio
 })
 test('path movement waits for a nearby moving unit and repaths a blocked cell', () => {
   const { unit, cell, rules, calls, step } = fixture()
-  cell.has = { family: 'unit', label: 'other', hasPath: () => true, sprite: { playing: true } }
+  cell.has = { family: 'unit', label: 'other', hasPath: () => true, isVisualAnimationPlaying: () => true }
   step()
-  assert.ok(calls.some(([event]) => event === 'spriteStop'))
+  assert.ok(calls.some(([event]) => event === 'animationStop'))
   assert.equal(unit.i, 0)
   cell.has = unit
   cell.solid = true
@@ -166,6 +167,12 @@ test('path movement waits for a nearby moving unit and repaths a blocked cell', 
     calls.some(([event]) => event === 'send'),
     false
   )
+})
+test('path movement advances without a Pixi sprite', () => {
+  const { unit, calls, step } = fixture()
+  step()
+  assert.equal(unit.i, 1)
+  assert.ok(calls.some(([event]) => event === 'play'))
 })
 test('arrival handles moved targets, immediate actions, recovery and reserved passages', () => {
   for (const mode of ['moved', 'arrived', 'recover', 'passage', 'retry', 'replace']) {

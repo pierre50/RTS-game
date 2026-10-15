@@ -7,7 +7,7 @@ import { getReliefOffset, getTerrainSetZIndex, isometricToCartesian, randomRange
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'
 import { TREE_STICK_HEIGHT, TREE_STICK_JITTER } from './ProjectileGeometry'
-import type { EmbeddedMaskKind, ProjectileSprite } from './ProjectileVisuals'
+import type { EmbeddedMaskKind, ProjectileSprite } from '../rendering/pixi/PixiProjectileVisuals'
 
 type LandingCell = {
   category?: string
@@ -19,6 +19,10 @@ type LandingCell = {
 
 type LifecycleProjectile = {
   context: GameContextLike
+  displayObject?: {
+    parent?: { removeChild(child: unknown): unknown } | null
+    position: { set(x: number, y: number): void }
+  }
   embeddedMask?: unknown
   i: number
   interval: SchedulerTaskId | null
@@ -115,12 +119,13 @@ export function stickProjectileInTree(projectile: LifecycleProjectile, tree: Res
 
   projectile.treeAnchor = tree
   const jitterX = randomRange(-TREE_STICK_JITTER, TREE_STICK_JITTER)
-  projectile.parent?.removeChild(projectile)
-  projectile.position.set(
+  const display = projectile.displayObject ?? projectile
+  display.parent?.removeChild(display)
+  display.position.set(
     projectile.x - tree.x + jitterX,
     projectile.y - tree.y + getReliefOffset(tree) - TREE_STICK_HEIGHT
   )
-  tree.addChild?.(projectile as unknown as Parameters<NonNullable<ResourceEntity['addChild']>>[0])
+  tree.addChild?.(display as unknown as Parameters<NonNullable<ResourceEntity['addChild']>>[0])
   projectile.once('destroyed', () => {
     projectile.isDestroyed = true
     projectile.stopTimeout()
@@ -148,6 +153,7 @@ export function clearProjectile(projectile: LifecycleProjectile): void {
     const cell = grid?.[projectile.i]?.[projectile.j]
     cell?.corpses.delete(projectile as unknown as RuntimeEntity)
   }
-  projectile.parent?.removeChild(projectile)
+  const display = projectile.displayObject ?? projectile
+  display.parent?.removeChild(display)
   projectile.destroy({ children: true, texture: false })
 }

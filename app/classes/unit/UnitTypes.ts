@@ -24,8 +24,7 @@ export type UnitRuntimeHost = Omit<
   | 'currentSheet'
   | 'currentFrame'
   | 'sendTo'
-> &
-  Container & {
+> & {
     context: GameContextLike
     owner: PlayerLike
     sprite: AnimatedSprite
@@ -65,6 +64,10 @@ export type UnitRuntimeHost = Omit<
     syncMountedRiderPosition(): void
     syncShadow(shadow?: AnimatedSprite | null, source?: AnimatedSprite | null): void
     getChildByLabel(label: string): Container | AnimatedSprite | null
+    getChildIndex(child: Container | AnimatedSprite | Graphics): number
+    addChild: Container['addChild']
+    addChildAt: Container['addChildAt']
+    removeChild: Container['removeChild']
     death?(): void
     decompose?(): void
   }

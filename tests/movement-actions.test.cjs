@@ -181,6 +181,39 @@ function loadModule(relativePath, mocks) {
     return module.exports
   }
   const localRequire = (request, originalRequest = request, importer = filename) => {
+    if (request.endsWith('/rendering/UnitAnimation')) {
+      return {
+        getUnitAnimation: unit => {
+          if (unit.visualAnimation) return unit.visualAnimation
+          const sprite = unit.sprite
+          if (!sprite) return null
+          return {
+            get currentFrame() { return sprite.currentFrame },
+            get frameCount() { return sprite.textures?.length ?? 0 },
+            get playing() { return Boolean(sprite.playing) },
+            clearCallbacks() { sprite.onLoop = undefined; sprite.onFrameChange = undefined },
+            clearFrameCallback() { sprite.onFrameChange = undefined },
+            clearLoopCallback() { sprite.onLoop = undefined },
+            onLoop(callback) { sprite.onLoop = callback },
+            onComplete(callback) { sprite.onComplete = callback },
+            onDeathComplete(callback) { sprite.onComplete = callback },
+            onFrameEachLoop(frame, callback) {
+              const register = mocks['../../lib']?.onSpriteLoopAtFrame
+              if (register && !importer.endsWith('/UnitManualHeroWork.ts')) register(sprite, frame, callback)
+              else sprite.onFrameChange = currentFrame => { if (currentFrame >= frame) callback() }
+            },
+            restart() { sprite.gotoAndPlay?.(0) },
+            setLoop(loop) {
+              sprite.loop = loop
+              if (unit.shadow) unit.shadow.loop = loop
+              for (const layer of unit.appearanceLayerSprites?.values() ?? []) layer.loop = loop
+            },
+            setSpeed(speed) { sprite.animationSpeed = speed },
+            stop() { sprite.stop?.() },
+          }
+        },
+      }
+    }
     if (request.endsWith('/grid/visibility')) {
       return { updateInstanceRenderVisibility: mocks['../../lib']?.updateInstanceRenderVisibility ?? (() => {}) }
     }
@@ -1518,6 +1551,7 @@ test('combat recovery idles when its reposition path finishes without an action'
       play: () => calls.push(['sprite.play']),
       stop: () => calls.push(['sprite.stop']),
     },
+    stopVisualAnimation: () => calls.push(['sprite.stop']),
     stop: () => calls.push(['stop']),
     stopInterval: () => calls.push(['stopInterval']),
     waitingForEnergyAction: constants.ACTION_TYPES.attack,
@@ -1709,6 +1743,7 @@ test('combat recovery with no active action pauses instead of using the generic 
     path: [{ i: 1, j: 1 }],
     setTextures: sheet => calls.push(['setTextures', sheet]),
     sprite: { stop: () => calls.push(['sprite.stop']) },
+    stopVisualAnimation: () => calls.push(['sprite.stop']),
     stop: () => calls.push(['stop']),
     stopInterval: () => calls.push(['stopInterval']),
     waitingForEnergyAction: constants.ACTION_TYPES.attack,
@@ -5405,6 +5440,7 @@ test('completed autonomy exploration resumes after a scheduled pause without rec
     realDest: { i: 1, j: 1 },
     setTextures: sheet => calls.push(['setTextures', sheet]),
     sprite: { stop: () => calls.push(['sprite.stop']) },
+    stopVisualAnimation: () => calls.push(['sprite.stop']),
     stop: () => calls.push(['stop']),
     stopInterval: () => calls.push(['stopInterval']),
   }

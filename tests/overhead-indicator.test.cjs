@@ -274,3 +274,31 @@ test('quest indicator cleanup preserves the independently owned sleep indicator'
   assert.equal(npc.children.length, 1)
   assert.equal(npc.children[0].label, 'overheadIndicator')
 })
+
+test('overhead indicator attaches to a logical entity display object', () => {
+  const { setUnitOverheadIndicator, clearUnitOverheadIndicator } = loadModule('app/lib/entities/overheadIndicator.ts', {
+    '../constants': {
+      FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+      LABEL_TYPES: { overheadIndicator: 'overheadIndicator' },
+    },
+    './statusBubble': { createStatusBubble: () => new MockContainer() },
+  })
+  const displayObject = new MockContainer()
+  displayObject.x = 120
+  displayObject.y = 80
+  displayObject.getChildByLabel = label => displayObject.children.find(child => child.label === label)
+  const unit = createUnit({
+    x: 120,
+    y: 80,
+    family: 'unit',
+    currentCell: { z: 3 },
+    displayObject,
+    getChildByLabel: () => assert.fail('indicator must query the display object'),
+    addChild: () => assert.fail('indicator must attach to the display object'),
+  })
+  setUnitOverheadIndicator(unit, 'sleep')
+  assert.equal(displayObject.children.length, 1)
+  assert.equal(displayObject.children[0].y, -48)
+  clearUnitOverheadIndicator(unit, { fade: false })
+  assert.equal(displayObject.children.length, 0)
+})

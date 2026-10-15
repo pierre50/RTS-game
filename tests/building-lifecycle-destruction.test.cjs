@@ -17,7 +17,7 @@ const destructionCases = [
 ]
 
 for (const scenario of destructionCases) {
-  test(`${scenario.name}: destruction frees the footprint, animates fragments and never spawns a chest`, () => {
+  test(`${scenario.name}: destruction frees the footprint, requests visuals once and never spawns a chest`, () => {
     const calls = []
     const createdBuildings = []
     let timeoutCallback = null
@@ -135,6 +135,7 @@ for (const scenario of destructionCases) {
         calls.push(['startTimeout', time])
       },
       updateShadow: () => calls.push(['updateShadow', building.isDead]),
+      showDestruction: groundTargets => calls.push(['showDestruction', groundTargets]),
     }
     owner.buildings.push(building)
     for (const cell of footprintCells) cell.has = building
@@ -219,21 +220,9 @@ for (const scenario of destructionCases) {
     lifecycle.die()
     assert.equal(owner.wood, 0)
     if (scenario.inventory) assert.deepEqual(building.inventory, { resources: {}, equipment: [] })
-    assert.equal(calls.filter(call => call[0] === 'spawnSpriteFragmentBurst').length, 1)
+    assert.equal(calls.filter(call => call[0] === 'showDestruction').length, 1)
 
     assert.equal(building.isDead, true)
-    assert.equal(building.sprite.eventMode, 'none')
-    assert.equal(building.sprite.visible, false)
-    assert.equal(building.sprite.destroyed, true)
-    assert.equal(constructionRevealSprite.destroyed, true)
-    assert.equal(constructionRevealMask.destroyed, true)
-    assert.equal(building.constructionRevealSprite, null)
-    assert.equal(building.constructionRevealMask, null)
-    assert.equal(building.sprite.mask, null)
-    assert.equal(building.sprite.alpha, 1)
-    assert.equal(building.sprite.tint, 0xffffff)
-    assert.equal(shadow.destroyed, true)
-    assert.equal(building.shadow, null)
     assert.equal(building.textureName, undefined)
     assert.equal(owner.buildings.length, 0)
     if (scenario.delivered) assert.deepEqual(building.constructionMaterials.delivered, {})
@@ -257,20 +246,13 @@ for (const scenario of destructionCases) {
         { has: null, solid: false, hasCorpse: false },
       ]
     )
-    const burstCall = calls.find(call => call[0] === 'spawnSpriteFragmentBurst')
-    assert.equal(burstCall?.[1].host, building)
-    assert.equal(burstCall?.[1].sprite, building.sprite)
-    assert.equal(burstCall?.[1].lockX, true)
-    assert.equal(burstCall?.[1].maxFragments, 60)
-    assert.deepEqual(burstCall?.[1].groundTargets, [
+    assert.deepEqual(calls.find(call => call[0] === 'showDestruction')?.[1], [
       { x: 0, y: 128, zIndex: 8 },
       { x: -32, y: 144, zIndex: 9 },
       { x: 32, y: 144, zIndex: 9 },
       { x: 0, y: 160, zIndex: 10 },
     ])
     assert.deepEqual(createdBuildings, [])
-    assert.ok(calls.some(call => call[0] === 'destroySprite'))
-    assert.ok(calls.some(call => call[0] === 'destroyShadow'))
     assert.ok(calls.some(call => call[0] === 'updateInstanceVisibility'))
   })
 }

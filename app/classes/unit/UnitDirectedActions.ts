@@ -4,7 +4,6 @@ import { takeAnimalLootForDelivery } from '../../lib/equipment/animalCorpseLoot'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, SOUND_CUES } from '../../constants'
 import {
   SLASH_IMPACT_FRAME,
-  onSpriteLoopAtFrame,
   showHealingFeedback,
   syncMovedActionTarget,
   showResourceGainFeedback,
@@ -13,6 +12,7 @@ import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/visuals/unitVisualTransition'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
@@ -58,7 +58,7 @@ export class UnitDirectedActions {
       if (buildingBusy) {
         unit.path = []
         unit.setTextures?.(SHEET_TYPES.standing)
-        unit.sprite?.stop?.()
+        getUnitAnimation(unit)?.stop()
         return
       }
       unit.trainingTargetType = null
@@ -70,15 +70,15 @@ export class UnitDirectedActions {
     const unit = this.unit
     const menu = unit.context?.menu
     const player = unit.owner
-    const sprite = unit.sprite
-    if (!sprite) return
+    const animation = getUnitAnimation(unit)
+    if (!animation) return
     if (!unit.getActionCondition?.(unit.dest)) {
       unit.affectNewDest?.()
       return
     }
     unit.setTextures?.(SHEET_TYPES.action)
     let feedbackTarget: RuntimeEntity | null = null
-    sprite.onLoop = () => {
+    animation.onLoop(() => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
         unit.affectNewDest?.()
@@ -92,7 +92,7 @@ export class UnitDirectedActions {
       if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
         if (this.healTarget(dest, feedbackTarget !== dest, { menu, player })) feedbackTarget = dest
       }
-    }
+    })
   }
 
   private healTarget(
@@ -146,8 +146,8 @@ export class UnitDirectedActions {
 
   private animateAnimalLoot(target: RuntimeEntity): void {
     const unit = this.unit
-    const sprite = unit.sprite
-    if (!sprite) return
+    const animation = getUnitAnimation(unit)
+    if (!animation) return
     const token = setUnitVisualSheet(unit, SHEET_TYPES.harvest, { frame: 0, loop: false, play: 'play' })
     const isCurrent = () =>
       isUnitVisualAnimationCurrent(unit, token) &&
@@ -156,7 +156,7 @@ export class UnitDirectedActions {
       unit.dest === target &&
       unit.action === ACTION_TYPES.takemeat
     let harvested = false
-    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+    animation.onFrameEachLoop(SLASH_IMPACT_FRAME, () => {
       if (!isCurrent() || harvested) return
       harvested = true
       if (
@@ -171,11 +171,11 @@ export class UnitDirectedActions {
         showResourceGainFeedback(unit, moved)
       }
     })
-    sprite.onComplete = () => {
+    animation.onComplete(() => {
       if (!isCurrent()) return
       // Clear the finished swing before delivery or autonomy selects the next action.
       setUnitVisualSheet(unit, SHEET_TYPES.standing, { frame: 0, loop: true, play: 'stop' })
       if (!unit.sendToDelivery?.()) unit.stop?.()
-    }
+    })
   }
 }

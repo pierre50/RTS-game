@@ -30,8 +30,6 @@ export function handleFarmAction(runtime: UnitResourceActions) {
   if (!dest) return
   if (!isHeroControlled(unit)) dest.isUsedBy = unit
   if (!runtime.prepareLoopingWorkAction()) return
-  const sprite = unit.sprite
-  if (!sprite) return
   const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
   runtime.bindWorkImpact(workTickFrame, () => farmImpact(runtime, workTickFrame))
 }

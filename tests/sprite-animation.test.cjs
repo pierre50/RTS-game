@@ -140,6 +140,20 @@ test('unit death starts the dying animation through the shared helper', () => {
     j: 0,
     owner: { corpses: [] },
     sprite,
+    visualAnimation: {
+      clearCompleteCallback() { sprite.onComplete = undefined },
+      clearFrameCallback() { sprite.onFrameChange = undefined },
+      clearLoopCallback() { sprite.onLoop = undefined },
+      setLoop(loop) { sprite.loop = loop },
+      seek(frame, play) {
+        if (play) sprite.gotoAndPlay(frame)
+        else sprite.gotoAndStop(frame)
+      },
+      onDeathComplete(callback) {
+        sprite.onFrameChange = () => calls.push(['deathFlashFrame'])
+        sprite.onComplete = callback
+      },
+    },
     zIndex: 4,
     setTextures(sheet) {
       calls.push(['setTextures', sheet])

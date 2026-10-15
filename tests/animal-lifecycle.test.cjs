@@ -153,7 +153,7 @@ test('animal death always starts the dying animation from the first frame', () =
   assert.deepEqual(calls, [['setTextures', 'dyingSheet'], ['syncShadow'], ['gotoAndPlay', 0]])
   assert.equal(sprite.loop, false)
   assert.equal(sprite.onLoop, undefined)
-  assert.equal(typeof sprite.onFrameChange, 'function')
+  assert.equal(sprite.onFrameChange, undefined)
   assert.equal(typeof sprite.onComplete, 'function')
   assert.equal(sprite.currentFrame, 0)
 })

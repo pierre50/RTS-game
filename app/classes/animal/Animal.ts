@@ -2,39 +2,45 @@ import type { InventoryStorage } from '../../lib/inventory/inventoryContainers'
 import { initializeAnimalCorpseLoot } from '../../lib/equipment/animalCorpseLoot'
 import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
-import { Assets, AnimatedSprite } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES } from '../../constants'
+import type { AnimatedSprite, Container, ContainerChild } from 'pixi.js'
+import { FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
-  attachEntityShadowsToMapSpace,
   getInstanceZIndex,
-  bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
-  getAnimationFrames,
   getEntityMapSpace,
+  getActionCondition,
+  uuidv4,
 } from '../../lib'
+import type { CombatEntity } from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import { routeEntityAwayFromPassageCell } from '../../lib/buildings/passageCells'
 import { AnimalInterface } from '../../ui/entity/AnimalInterface'
-import { Instance } from '../Instance'
+import {
+  drawInstanceEnergyBar,
+  drawInstanceHealthBar,
+  drawInstanceHeroPowerBar,
+  removeInstanceHudBar,
+  isTeamHealthBarRestricted,
+  isHeroTeamUnit,
+} from '../InstanceHudBars'
 import { AnimalLifecycle } from './AnimalLifecycle'
 import type { AnimalEntity, EntityInfoRenderOptions, UnitSounds } from '../../types/entities'
 import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
 import { AnimalBehavior } from './AnimalBehavior'
-import { AnimalVisuals } from './AnimalVisuals'
 import type { AnimalDestination, AnimalMoveOptions } from './AnimalTypes'
-import type { Texture } from 'pixi.js'
-import type { GameContextLike } from '../../types/context'
+import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
-import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { getHorseColorFromSeed, isHorseColor, type HorseColor } from '../../lib/horses/horseColors'
 import { getHorseTamingStatus, shouldHorseFleeFromThreat, type HorseTamingStatus } from '../../lib/horses/horseTaming'
-import { getAnimalRenderBounds } from './AnimalRenderBounds'
+import { animalVisualState, type AnimalVisualState } from '../../rendering/AnimalView'
+import { PixiAnimalView, getCachedAnimalSpritesheet } from '../../rendering/pixi/PixiAnimalView'
+import type { UnitAnimation } from '../../rendering/UnitAnimation'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; spaceId?: string; type: string }
@@ -43,102 +49,102 @@ type AnimalShadow = AnimatedSprite
 const LANDING_STEPS = 8
 const LANDING_STEP_MS = 40
 
-function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
-  return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
-}
-
 function numberCoordinate(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined
 }
 
-export class Animal extends Instance implements AnimalEntity {
+export class Animal implements AnimalEntity {
+  context: GameContextLike
+  label: string
+  selected = false
+  isDead = false
+  isDestroyed = false
+  interval: SchedulerTaskId | null = null
+  timeoutId: SchedulerTaskId | null = null
+  family!: string
+  type!: string
+  spaceId?: string
+  i!: number
+  j!: number
+  z!: number | null
+  size!: number
+  degree!: number
+  owner!: NonNullable<AnimalEntity['owner']>
+  hitPoints!: number
+  totalHitPoints!: number
+  action?: string | null
+  playingBeforePause?: boolean
+  private mapX = 0
+  private mapY = 0
+  private renderVisible = true
+  private renderOrder = 0
+  private renderAlpha = 1
   animalInterface: AnimalInterface
   animalLifecycle: AnimalLifecycle
   animalMovement: AnimalMovement
   animalCombat: AnimalCombat
   animalBehavior: AnimalBehavior
-  animalVisuals: AnimalVisuals
   declare sprite: InteractiveSprite
-  private renderSprite?: InteractiveSprite
-  private visualsReady = false
-  private movementAnimationPlaying = true
+  private readonly animalView: PixiAnimalView
+
+  get displayObject(): Container { return this.animalView.container }
+  get x(): number { return this.mapX }
+  set x(value: number) { this.mapX = value; if (this.animalView) this.displayObject.x = value }
+  get y(): number { return this.mapY }
+  set y(value: number) { this.mapY = value; if (this.animalView) this.displayObject.y = value }
+  get visible(): boolean { return this.renderVisible }
+  set visible(value: boolean) { this.renderVisible = value; if (this.animalView) this.displayObject.visible = value }
+  get zIndex(): number { return this.renderOrder }
+  set zIndex(value: number) { this.renderOrder = value; if (this.animalView) this.displayObject.zIndex = value }
+  get alpha(): number { return this.renderAlpha }
+  set alpha(value: number) { this.renderAlpha = value; if (this.animalView) this.displayObject.alpha = value }
+  get parent(): Container | null { return this.displayObject.parent }
+  get width(): number { return this.displayObject.width }
+  get height(): number { return this.displayObject.height }
+  get destroyed(): boolean { return this.displayObject.destroyed }
+  get eventMode(): Container['eventMode'] { return this.displayObject.eventMode }
+  set eventMode(value: Container['eventMode']) { this.displayObject.eventMode = value }
+  addChild: Container['addChild'] = ((...children: ContainerChild[]) =>
+    this.displayObject.addChild(...children)) as Container['addChild']
+  addChildAt: Container['addChildAt'] = ((child: ContainerChild, index: number) =>
+    this.displayObject.addChildAt(child, index)) as Container['addChildAt']
+  removeChild: Container['removeChild'] = ((...children: ContainerChild[]) =>
+    this.displayObject.removeChild(...children)) as Container['removeChild']
+  getChildByLabel: Container['getChildByLabel'] = ((label: string) =>
+    this.displayObject.getChildByLabel(label)) as Container['getChildByLabel']
+  on: Container['on'] = ((...args: Parameters<Container['on']>) =>
+    this.displayObject.on(...args)) as Container['on']
 
   getVisualSprite(): InteractiveSprite | undefined {
-    return this.renderSprite
+    return this.animalView.sprite
+  }
+
+  get visualAnimation(): UnitAnimation {
+    return this.animalView.animation
   }
 
   get deferredSpriteBounds() {
-    if (this.renderSprite || !this.visualsReady) return undefined
-    const sheet =
-      this.currentSheet === SHEET_TYPES.flying
-        ? this.flyingSheet
-        : this.currentSheet === SHEET_TYPES.running
-          ? this.runningSheet
-          : this.currentSheet === SHEET_TYPES.standing
-            ? this.standingSheet
-            : this.walkingSheet
-    return getAnimalRenderBounds(sheet ?? this.walkingSheet, this.spriteScale ?? 1)
+    return this.animalView.deferredBounds
   }
 
   getMovementAnimationPlaying(): boolean {
-    return this.renderSprite?.playing ?? this.movementAnimationPlaying
+    return this.animalView.getMovementPlaying()
   }
 
   setMovementAnimationPlaying(playing: boolean): void {
-    this.movementAnimationPlaying = playing
-    if (playing) this.renderSprite?.play()
-    else this.renderSprite?.stop()
+    this.animalView.setMovementPlaying(playing)
   }
 
   private ensureVisuals(): InteractiveSprite {
-    if (this.renderSprite) return this.renderSprite
-    if (this.isDestroyed) throw new Error('Cannot create visuals for a destroyed animal')
-    const initialSheet = this.standingSheet ?? this.walkingSheet
-    const sprite = new AnimatedSprite(getAnimationFrames(initialSheet.textures, 'south') as Texture[])
-    this.renderSprite = sprite
-    bindAnimatedSpriteToTicker(sprite, this.context.app)
-    sprite.label = LABEL_TYPES.sprite
-    sprite.eventMode = 'auto'
-    sprite.roundPixels = true
-    sprite.loop = this.loop ?? true
-    sprite.updateAnchor = true
-    this.addChild(sprite)
-    super.setTextures(this.currentSheet)
-    this.animalVisuals.afterSetTextures()
-    sprite.currentFrame = Math.min(this.currentFrame, sprite.textures.length - 1)
-    sprite.position.y = -this.altitude + this.reliefLift
-    if (!this.movementAnimationPlaying) sprite.stop()
-    this.shadow = this.createShadow()
-    attachEntityShadowsToMapSpace(this.context.map, this)
-    this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
-    return sprite
+    return this.animalView.ensure()
   }
 
   private releaseVisuals(): void {
-    const sprite = this.renderSprite
-    // Combat and death callbacks are gameplay clocks until those are moved to
-    // the scheduler. Never evict an animation that still owns such a callback.
-    if (
-      !sprite ||
-      this.isDead ||
-      this.selected ||
-      this.action === ACTION_TYPES.attack ||
-      sprite.onComplete ||
-      sprite.onLoop ||
-      sprite.onFrameChange
-    )
-      return
-    this.currentFrame = sprite.currentFrame
-    this.loop = sprite.loop
-    this.movementAnimationPlaying = this.playingBeforePause ?? sprite.playing
-    this.visualSettingsCleanup?.()
-    this.visualSettingsCleanup = null
-    this.shadow?.parent?.removeChild(this.shadow)
-    this.shadow?.destroy({ children: true, texture: false })
-    this.shadow = null
-    sprite.parent?.removeChild(sprite)
-    sprite.destroy({ children: true, texture: false })
-    this.renderSprite = undefined
+    this.animalView.release()
+  }
+
+  getVisualState(): AnimalVisualState {
+    return animalVisualState(this, getEntitySpaceMapLike(this, this.context.map))
   }
 
   spriteScale?: number
@@ -207,7 +213,8 @@ export class Animal extends Instance implements AnimalEntity {
   lastCombatRecoveryMoveAt?: AnimalEntity['lastCombatRecoveryMoveAt']
 
   constructor(options: AnimalOptions, context: GameContextLike) {
-    super(context)
+    this.context = context
+    this.label = uuidv4()
 
     const {
       context: { map },
@@ -218,7 +225,7 @@ export class Animal extends Instance implements AnimalEntity {
     this.animalMovement = new AnimalMovement(this)
     this.animalCombat = new AnimalCombat(this)
     this.animalBehavior = new AnimalBehavior(this)
-    this.animalVisuals = new AnimalVisuals(this)
+    this.animalView = new PixiAnimalView(this)
     this.shadow = null
     this.visualSettingsCleanup = null
 
@@ -280,7 +287,7 @@ export class Animal extends Instance implements AnimalEntity {
     map.addToInstanceBucket(this)
 
     for (const [key, value] of Object.entries(this.assets)) {
-      Object.assign(this, { [key]: getCachedSpritesheet(value) })
+      Object.assign(this, { [key]: getCachedAnimalSpritesheet(value) })
     }
 
     this.interface = {
@@ -297,7 +304,7 @@ export class Animal extends Instance implements AnimalEntity {
       configurable: true,
       get: this.ensureVisuals,
     })
-    this.visualsReady = true
+    this.animalView.markReady()
     if (this.isDead) {
       this.currentSheet === SHEET_TYPES.corpse ? this.decompose() : this.death()
     }
@@ -317,6 +324,91 @@ export class Animal extends Instance implements AnimalEntity {
 
     updateInstanceVisibility(this)
     this.animalBehavior.start()
+  }
+
+  private assignProperties(source: object | null | undefined): void {
+    if (!source) return
+    for (const [key, value] of Object.entries(source)) {
+      if (key === 'name') {
+        Object.defineProperty(this, key, { configurable: true, enumerable: true, writable: true, value })
+      } else {
+        ;(this as Record<string, unknown>)[key] = value
+      }
+    }
+  }
+
+  startInterval(
+    callback: () => void,
+    time: number,
+    immediate = true,
+    name = `${this.family || 'animal'}.interval`
+  ): void {
+    this.stopInterval()
+    this.interval = this.context.scheduler.add(callback, time, name)
+    if (immediate) callback()
+  }
+
+  stopInterval(): void {
+    if (this.interval) {
+      this.context.scheduler.remove(this.interval)
+      this.interval = null
+    }
+  }
+
+  stopTimeout(): void {
+    if (this.timeoutId != null) {
+      this.context.scheduler.remove(this.timeoutId)
+      this.timeoutId = null
+    }
+  }
+
+  shouldKeepHealthBarVisible(): boolean {
+    if (isTeamHealthBarRestricted(this)) return false
+    const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
+    const showForHeroTeam = isHeroTeamUnit(this) && this.hitPoints < this.totalHitPoints
+    const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
+    return Boolean((showEntityBars || showForHeroTeam) && !isHeroUnit && !this.isDead && !this.isDestroyed)
+  }
+
+  shouldKeepEnergyBarVisible(): boolean {
+    const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
+    const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
+    return Boolean(showEntityBars && !isHeroUnit && !this.isDead && !this.isDestroyed)
+  }
+
+  drawHealthBar(): void { drawInstanceHealthBar(this) }
+  drawEnergyBar(): void { drawInstanceEnergyBar(this) }
+  drawHeroPowerBar(ratio: number): void { drawInstanceHeroPowerBar(this, ratio) }
+  removeHealthBar(): void { removeInstanceHudBar(this, LABEL_TYPES.healthBar) }
+  removeEnergyBar(): void { removeInstanceHudBar(this, LABEL_TYPES.energyBar) }
+  removeHeroPowerBar(): void { removeInstanceHudBar(this, LABEL_TYPES.powerBar) }
+
+  select(): void {
+    if (this.selected) return
+    this.selected = true
+    this.drawHealthBar()
+    this.drawEnergyBar()
+  }
+
+  unselect(): void {
+    if (!this.selected) return
+    this.selected = false
+    if (this.shouldKeepHealthBarVisible()) {
+      this.drawHealthBar()
+      this.drawEnergyBar()
+    } else {
+      this.removeHealthBar()
+      this.removeEnergyBar()
+    }
+  }
+
+  step(): void {
+    if (this.hitPoints <= 0) this.die()
+    else if (this.hasPath()) this.moveToPath()
+  }
+
+  getActionCondition(target: object | null | undefined, action = this.action ?? undefined): boolean {
+    return getActionCondition(this, target as CombatEntity, action)
   }
 
   stop(): void {
@@ -367,18 +459,18 @@ export class Animal extends Instance implements AnimalEntity {
   }
 
   createShadow(): AnimalShadow {
-    return this.animalVisuals.createShadow()
+    return this.animalView.visuals.createShadow()
   }
 
   syncShadow(shadow?: AnimalShadow | null): void {
-    if (!this.visualsReady) return
+    if (!this.animalView.isReady) return
     if (this.visible && !this.isDestroyed) this.ensureVisuals()
     else if (!this.context.editor) this.releaseVisuals()
-    this.animalVisuals.syncShadow(shadow ?? this.shadow)
+    this.animalView.visuals.syncShadow(shadow ?? this.shadow)
   }
 
   setAltitude(altitude: number): void {
-    this.animalVisuals.setAltitude(altitude)
+    this.animalView.visuals.setAltitude(altitude)
   }
 
   // Render-only: this is the SOLE source of visual relief for the animal — this.x/y stay flat
@@ -389,38 +481,38 @@ export class Animal extends Instance implements AnimalEntity {
   // raised, directly usable as a Pixi position.y offset — see getReliefOffset for the shared
   // "instance.y + offset = visual y" accessor.
   applyReliefLift(level: number): void {
-    this.animalVisuals.applyReliefLift(level)
+    this.animalView.visuals.applyReliefLift(level)
   }
 
   syncVisualSettings(): void {
-    this.animalVisuals.syncVisualSettings()
+    this.animalView.visuals.syncVisualSettings()
   }
 
-  override setTextures(sheet: string): void {
-    if (!this.renderSprite && !this.visible && !this.isDead) {
-      if (this.currentSheet !== sheet) this.currentFrame = 0
-      this.currentSheet = sheet
-      this.movementAnimationPlaying = true
-      return
+  setTextures(sheet: string): void {
+    this.animalView.setTextures(sheet)
+  }
+
+  pause(): void {
+    const sprite = this.getVisualSprite()
+    if (sprite) {
+      this.playingBeforePause ??= Boolean(sprite.playing)
+      sprite.stop()
     }
-    this.ensureVisuals()
-    super.setTextures(sheet)
-    this.animalVisuals.afterSetTextures()
-  }
-
-  override pause(): void {
-    if (this.renderSprite) super.pause()
     this.shadow?.stop()
   }
 
-  override resume(): void {
-    if (this.renderSprite) super.resume()
-    else this.playingBeforePause = undefined
+  resume(): void {
+    const sprite = this.getVisualSprite()
+    if (sprite) {
+      if (this.playingBeforePause !== false) sprite.play()
+      else sprite.stop()
+    }
+    this.playingBeforePause = undefined
     this.shadow?.play()
   }
 
   // AnimalLifecycle
-  override die(): void {
+  die(): void {
     return this.animalLifecycle.die()
   }
   death(): void {
@@ -437,7 +529,7 @@ export class Animal extends Instance implements AnimalEntity {
   }
 
   // AnimalMovement
-  override hasPath(): boolean {
+  hasPath(): boolean {
     return this.animalMovement.hasPath()
   }
   setDest(dest: AnimalDestination | null): void {
@@ -455,7 +547,7 @@ export class Animal extends Instance implements AnimalEntity {
   sendTo(dest: AnimalDestination | null, action?: string | null, options?: AnimalMoveOptions): void {
     return this.animalMovement.sendTo(dest, action ?? null, options)
   }
-  override moveToPath(): void {
+  moveToPath(): void {
     return this.animalMovement.moveToPath()
   }
 
@@ -479,7 +571,7 @@ export class Animal extends Instance implements AnimalEntity {
     return this.animalCombat.getAction(name)
   }
 
-  override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+  destroy(options?: Parameters<Container['destroy']>[0]): void {
     this.animalBehavior.stop()
     this.animalLifecycle.stopDeathFall()
     this.stopInterval()
@@ -491,7 +583,7 @@ export class Animal extends Instance implements AnimalEntity {
     this.shadow?.parent?.removeChild(this.shadow)
     this.shadow?.destroy({ children: true, texture: false })
     this.shadow = null
-    super.destroy(options)
-    this.renderSprite = undefined
+    this.displayObject.destroy(options)
+    this.animalView.clearReference()
   }
 }

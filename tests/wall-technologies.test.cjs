@@ -75,3 +75,31 @@ test('isolated walls and wall endpoints use the tower block frame', () => {
   updateWallTexture(vertical)
   assert.deepEqual(vertical.sprite.texture, { sheet: 'buildings/wall/level-1', frame: 1 })
 })
+
+test('wall decorations attach to the display object without calling entity container methods', () => {
+  const owner = {}
+  const grid = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({ has: null })))
+  const children = []
+  const displayObject = {
+    addChild: child => children.push(child),
+    getChildByLabel: () => null,
+  }
+  const wall = {
+    type: 'SmallWall',
+    owner,
+    context: { map: { grid } },
+    i: 1,
+    j: 1,
+    isBuilt: true,
+    sprite: { anchor: { copyFrom: () => {} }, texture: null },
+    displayObject,
+    addChild: () => { throw new Error('entity addChild should not be called') },
+    getChildByLabel: () => { throw new Error('entity getChildByLabel should not be called') },
+  }
+  grid[1][1].has = wall
+
+  updateWallTexture(wall)
+
+  assert.equal(children.length, 1)
+  assert.equal(children[0].label, 'deco')
+})

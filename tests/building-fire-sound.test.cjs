@@ -2,6 +2,54 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+test('pausing and resuming a building preserves its sprite playback and resumes flame layers', () => {
+  class Sprite {
+    playing = false
+    play() { this.playing = true }
+    stop() { this.playing = false }
+  }
+  const { pauseBuildingVisuals, resumeBuildingVisuals, CAMPFIRE_DECORATION_LABEL, CAMPFIRE_SMOKE_DECORATION_LABEL } =
+    loadTsModule('app/rendering/pixi/PixiBuildingFire.ts', {
+      mocks: {
+        'pixi.js': { AnimatedSprite: Sprite, Assets: {}, Container: class {} },
+        '../../constants': { BUILDING_TYPES: {}, LABEL_TYPES: { fire: 'fire', deco: 'deco' } },
+        '../../lib': {},
+      },
+    })
+  const sprite = new Sprite()
+  const flame = new Sprite()
+  const campfire = new Sprite()
+  const smoke = new Sprite()
+  const deco = new Sprite()
+  sprite.play()
+  flame.play()
+  campfire.play()
+  smoke.play()
+  deco.play()
+  const layers = {
+    fire: { children: [flame] },
+    [CAMPFIRE_DECORATION_LABEL]: campfire,
+    [CAMPFIRE_SMOKE_DECORATION_LABEL]: smoke,
+    deco,
+  }
+  const building = {
+    sprite,
+    displayObject: { getChildByLabel: label => layers[label] ?? null },
+    getChildByLabel: () => { throw new Error('fire visuals must use the display container') },
+  }
+
+  const wasPlaying = pauseBuildingVisuals(building)
+  assert.equal(wasPlaying, true)
+  for (const layer of [sprite, flame, campfire, smoke, deco]) assert.equal(layer.playing, false)
+  resumeBuildingVisuals(building, wasPlaying)
+  for (const layer of [sprite, flame, campfire, smoke, deco]) assert.equal(layer.playing, true)
+
+  sprite.stop()
+  assert.equal(pauseBuildingVisuals(building), false)
+  resumeBuildingVisuals(building, false)
+  assert.equal(sprite.playing, false)
+})
+
 test('generated building flames start the shared flame ambient loop', () => {
   const played = []
   const tickerCallbacks = []
@@ -60,6 +108,20 @@ test('generated building flames start the shared flame ambient loop', () => {
     },
   }
 
+  const displayObject = {
+    children: [],
+    addChild(child) {
+      this.children.push(child)
+      return child
+    },
+    getChildByLabel(label) {
+      return this.children.find(child => child.label === label) ?? null
+    },
+  }
+  building.displayObject = displayObject
+  building.addChild = () => { throw new Error('flames must attach to the display container') }
+  building.getChildByLabel = () => { throw new Error('flames must query the display container') }
+
   const { generateBuildingFire } = loadTsModule('app/classes/building/BuildingFire.ts', {
     mocks: {
       '@pixi/sound': {
@@ -102,6 +164,7 @@ test('generated building flames start the shared flame ambient loop', () => {
   assert.equal(played[0].options.loop, true)
   assert.equal(building.flameSoundLoop.volume, 0.33)
   assert.equal(tickerCallbacks.length, 1)
+  assert.equal(displayObject.children.length, 1)
 })
 
 test('stopping building flame ambient sound removes ticker and stops loop', () => {

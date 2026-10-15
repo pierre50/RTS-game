@@ -17,6 +17,11 @@ TextureStyle.defaultOptions.scaleMode = 'nearest'
     console.error('No #game container found')
     return
   }
+  if (new URLSearchParams(window.location.search).has('babylon-terrain')) {
+    const { mountBabylonTerrainPrototype } = await import('./dev/babylonTerrainPrototype')
+    await mountBabylonTerrainPrototype(gamebox)
+    return
+  }
   new VirtualKeyboard()
   const gameRoot = gamebox
 
@@ -72,4 +77,9 @@ TextureStyle.defaultOptions.scaleMode = 'nearest'
 
   const screenManager = new ScreenManager(app, gameRoot)
   screenManager.start()
+  if (new URLSearchParams(window.location.search).has('buddy3d')) {
+    import('./dev/buddy3dOverlay')
+      .then(({ mountBuddy3DOverlay }) => mountBuddy3DOverlay(screenManager))
+      .catch(error => console.error('Buddy 3D preview failed', error))
+  }
 })().catch(error => console.error('Application startup failed', error))

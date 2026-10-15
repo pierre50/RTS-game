@@ -170,5 +170,5 @@ export function pauseCombatRecoveryMove(unit: UnitEntity): void {
   unit.action = null
   unit.stopInterval?.()
   unit.setTextures?.(SHEET_TYPES.standing)
-  unit.sprite?.stop()
+  unit.stopVisualAnimation?.()
 }

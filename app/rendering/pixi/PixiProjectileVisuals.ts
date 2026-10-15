@@ -2,22 +2,18 @@ import { AnimatedSprite, Assets, Graphics, type Texture } from 'pixi.js'
 import {
   degreeToDirection,
   degreesToRadians,
-  getArcHeightForDistance,
-  getArcProgressOffset,
-  pointsDistance,
-} from '../lib/maths'
+} from '../../lib/maths'
 import {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   getMirroredHalfArcFrameIndex,
-} from '../lib/entities/spriteTextures'
-import { LABEL_TYPES } from '../constants'
-import { getShadowsEnabled } from '../lib/audio/settings'
-import { getEntityMapSpace, mapSpaceRendersShadows } from '../lib/mapSpaces'
-import type { GameContextLike } from '../types/context'
-import type { Point } from '../types/grid'
+} from '../../lib/entities/spriteTextures'
+import { LABEL_TYPES } from '../../constants'
+import { getShadowsEnabled } from '../../lib/audio/settings'
+import { getEntityMapSpace, mapSpaceRendersShadows } from '../../lib/mapSpaces'
+import type { GameContextLike } from '../../types/context'
+import type { Point } from '../../types/grid'
 import {
-  EMBEDDED_MASK_PROJECTILE_TYPES,
   EMBEDDED_MASK_SIZE,
   EMBEDDED_PARALLEL_CUT_THRESHOLD,
   EMBEDDED_TIP_DEPTH,
@@ -33,7 +29,10 @@ import {
   getDirectionalFrameIndex,
   getSortedTextureNames,
   type ProjectileTexture,
-} from './ProjectileGeometry'
+  canUseEmbeddedMask,
+  getEmbeddedMaskJitter,
+} from '../../classes/ProjectileGeometry'
+import type { ProjectileTrajectoryFrame } from '../../classes/ProjectileTrajectory'
 
 export type RuntimeProjectileVisual = {
   animationSpeed?: number
@@ -75,8 +74,6 @@ export type RuntimeProjectileVisual = {
 
 export type ProjectileSprite = AnimatedSprite
 export type EmbeddedMaskKind = 'ground' | 'tree'
-
-const EMBED_DEPTH_JITTER = 3
 
 function projectileShadowVisible(projectile: RuntimeProjectileVisual): boolean {
   const map = projectile.context.map
@@ -217,31 +214,10 @@ export function createSprite(projectile: RuntimeProjectileVisual, degree: number
   return sprite
 }
 
-export function createTrajectoryState(projectile: RuntimeProjectileVisual): { kind: string; arcHeight: number } | null {
-  if (projectile.trajectory?.kind !== 'arc') {
-    return null
-  }
-
-  return {
-    kind: 'arc',
-    arcHeight: getArcHeightForDistance(projectile.totalDistance, projectile.trajectory),
-  }
-}
-
-export function updateTrajectoryVisual(projectile: RuntimeProjectileVisual): void {
-  if (!projectile.sprite) {
-    return
-  }
-
-  const { spawnOrigin } = projectile
-  const traveledDistance = pointsDistance(spawnOrigin.x, spawnOrigin.y, projectile.x, projectile.y)
-  const progress = Math.max(0, Math.min(1, traveledDistance / projectile.totalDistance))
-  projectile.sprite.y = projectile.trajectoryState
-    ? -getArcProgressOffset(progress, projectile.trajectoryState.arcHeight)
-    : 0
-  const groundY = projectile.groundOrigin.y + (projectile.destinationPoint.y - projectile.groundOrigin.y) * progress
-  projectile.currentAltitude = Math.max(0, groundY - (projectile.y + projectile.sprite.y))
-  projectile.updateShadowVisual(progress)
+export function updateTrajectoryVisual(projectile: RuntimeProjectileVisual, frame: ProjectileTrajectoryFrame): void {
+  if (!projectile.sprite) return
+  projectile.sprite.y = frame.spriteOffsetY
+  projectile.updateShadowVisual(frame.progress)
 }
 
 export function updateShadowVisual(projectile: RuntimeProjectileVisual, progress: number): void {
@@ -289,15 +265,6 @@ export function createImpactEffect(projectile: RuntimeProjectileVisual, x: numbe
   }
   projectile.context.map.addChild(sprite)
   sprite.play()
-}
-
-export function canUseEmbeddedMask(projectile: RuntimeProjectileVisual): boolean {
-  return EMBEDDED_MASK_PROJECTILE_TYPES.has(projectile.type)
-}
-
-export function getEmbeddedMaskJitter(projectile: RuntimeProjectileVisual): number {
-  const seed = Math.abs(Math.round(projectile.x * 13 + projectile.y * 17 + (projectile.degree ?? 0) * 7))
-  return (seed % (EMBED_DEPTH_JITTER * 2 + 1)) - EMBED_DEPTH_JITTER
 }
 
 export function applyEmbeddedMask(projectile: RuntimeProjectileVisual, kind: EmbeddedMaskKind): void {

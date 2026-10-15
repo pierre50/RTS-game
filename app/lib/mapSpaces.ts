@@ -18,6 +18,12 @@ type DisplayEntity = RuntimeEntity &
     shadow?: (ContainerChild & { parent?: Container | null }) | null
   }
 
+type EntityWithDisplayObject = RuntimeEntity & { displayObject?: SpaceDisplayObject }
+
+export function getEntityDisplayObject(entity: RuntimeEntity): SpaceDisplayObject {
+  return (entity as EntityWithDisplayObject).displayObject ?? (entity as DisplayEntity)
+}
+
 export type SpaceMapLike = Pick<RuntimeMap, 'grid' | 'mapType' | 'size'> & {
   context?: unknown
   instanceBuckets?: RuntimeMap['instanceBuckets']
@@ -151,7 +157,11 @@ export function addDisplayObjectToMapSpaceContainer(map: RuntimeMap, display: Sp
 }
 
 export function addEntityToMapSpaceContainer(map: RuntimeMap, entity: RuntimeEntity): void {
-  addDisplayObjectToMapSpaceContainer(map, entity as DisplayEntity)
+  const display = getEntityDisplayObject(entity)
+  const space = getMapSpace(map, entity.spaceId) ?? ensureOutsideMapSpace(map)
+  display.spaceId = entity.spaceId
+  addDisplayToContainer(display, space.container)
+  sortMapSpaceContainer(space)
   attachEntityShadowsToMapSpace(map, entity)
 }
 
@@ -322,7 +332,7 @@ export function moveEntityToMapSpace(
   space: RuntimeMapSpace,
   cell: RuntimeCell
 ): void {
-  const display = entity as DisplayEntity
+  const display = getEntityDisplayObject(entity)
   const previousSpace = getEntityMapSpace(entity, map)
   if (previousSpace?.id !== space.id) detachStableInteriorHorse(entity, map)
   const previousCell = entity.currentCell ?? previousSpace?.grid[entity.i]?.[entity.j] ?? map.grid[entity.i]?.[entity.j]
@@ -339,6 +349,7 @@ export function moveEntityToMapSpace(
 
   if (space.id === OUTSIDE_SPACE_ID) delete entity.spaceId
   else entity.spaceId = space.id
+  display.spaceId = entity.spaceId
 
   const [x, y] = cartesianToIsometric(cell.i, cell.j)
   entity.i = cell.i

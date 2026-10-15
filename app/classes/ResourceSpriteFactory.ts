@@ -50,6 +50,8 @@ function stopWheatAtInitialGrowthFrame(resource: Resource, sprite: AnimatedSprit
   const lastFrame = Math.max(0, sprite.textures.length - 1)
   const frame =
     options.startsMature === true ? lastFrame : Math.max(0, Math.min(lastFrame, Math.floor(options.currentFrame ?? 0)))
+  resource.growthStage = frame
+  resource.growthStageCount = lastFrame + 1
   sprite.gotoAndStop(frame)
   if (resource.isWindAnimatedWheat()) resource.startWindMotion()
 }

@@ -78,3 +78,25 @@ test('unloaded prey artwork is skipped and can be displayed when available', () 
   syncTrapPreyVisual(building)
   assert.equal(building.children.length, 1)
 })
+
+test('trap prey attaches to the building view without using container methods on the entity', () => {
+  const { syncTrapPreyVisual, clearTrapPreyVisual, building } = fixture()
+  const displayObject = {
+    children: building.children,
+    addChildAt(child, index) {
+      this.children.splice(index, 0, child)
+      child.parent = this
+    },
+    getChildByLabel(label) {
+      return this.children.find(child => child.label === label)
+    },
+  }
+  building.displayObject = displayObject
+  building.addChildAt = () => { throw new Error('entity must not own the Pixi child') }
+  building.getChildByLabel = () => { throw new Error('entity must not query Pixi children') }
+  syncTrapPreyVisual(building)
+  assert.equal(displayObject.children.length, 2)
+  assert.equal(displayObject.children[0].parent, displayObject)
+  clearTrapPreyVisual(building)
+  assert.deepEqual(displayObject.children, [building.sprite])
+})

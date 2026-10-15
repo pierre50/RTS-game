@@ -209,7 +209,7 @@ export function debugCombatMove(
       combatMode: unit.combatMode,
       waitingForEnergyAction: unit.waitingForEnergyAction,
       currentSheet: unit.currentSheet,
-      spritePlaying: unit.sprite?.playing,
+      spritePlaying: unit.isVisualAnimationPlaying?.(),
       i: unit.i,
       j: unit.j,
       x: Math.round((unit.x ?? 0) * 100) / 100,

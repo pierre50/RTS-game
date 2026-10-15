@@ -4,6 +4,7 @@ import type { VillageHome } from '../../lib/units/village/villageActivity'
 import type { CampBehavior } from '../camp'
 import type { VillagerSchedule } from '../../lib/units/village/villagerSchedule'
 import type { AnimatedSprite } from 'pixi.js'
+import type { UnitAnimation } from '../../rendering/UnitAnimation'
 import type { ActionProps } from '../combat'
 import type { CombatBehaviorConfig, ConfigValue, UnitAppearanceConfig } from '../config'
 import type { ResourceAmount } from '../common'
@@ -153,6 +154,7 @@ type UnitResourceDeliveryState = {
 }
 
 export interface EnergyEntity extends RuntimeEntityBase {
+  visualAnimation?: UnitAnimation
   action?: string | null
   dest?: RuntimeEntity | RuntimeCell | null
   path?: RuntimeCell[]
@@ -191,6 +193,9 @@ export interface EnergyEntity extends RuntimeEntityBase {
 }
 
 export interface UnitEntity extends EnergyEntity {
+  isVisualAnimationPlaying?: () => boolean
+  playVisualAnimation?: () => void
+  stopVisualAnimation?: () => void
   ambientRoadGroup?: string
   roadJourney?: RoadJourney
   lastMealAt?: number

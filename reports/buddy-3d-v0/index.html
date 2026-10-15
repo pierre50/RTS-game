@@ -1,82 +1,107 @@
 <!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Villageois capsule · modèle 3D</title>
-    <style>
-      :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-      * { box-sizing: border-box; }
-      body { margin: 0; background: #131922; color: #f2f5fa; }
-      main { max-width: 1400px; margin: auto; padding: 28px; }
-      h1 { margin: 0 0 8px; font-size: 1.8rem; }
-      p { color: #b8c5d2; line-height: 1.45; }
-      .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
-      .stage, .panel { background: #202b39; border: 1px solid #34485b; border-radius: 14px; overflow: hidden; }
-      .stage { position: relative; min-height: 640px; }
-      #renderCanvas { display: block; width: 100%; height: 640px; touch-action: none; }
-      .stage p { position: absolute; left: 18px; bottom: 12px; pointer-events: none; font-size: .88rem; }
-      .panel { padding: 20px; }
-      .panel h2 { margin: 0 0 12px; font-size: 1.12rem; }
-      .views { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
-      .models { display: grid; gap: 8px; margin-bottom: 20px; }
-      .models button[aria-pressed="true"] { background: #2375a7; border-color: #a2d8ff; }
-      .walk-controls { display: grid; gap: 10px; margin-bottom: 22px; }
-      .walk-controls label { color: #c5d0dc; }
-      .walk-controls label span { float: right; color: #9fd3ff; }
-      .walk-controls input { width: 100%; margin-top: 10px; accent-color: #83c5f7; }
-      button, .download { background: #3c5874; border: 1px solid #7193b4; border-radius: 7px; color: white; cursor: pointer; padding: 10px; font: inherit; text-align: center; text-decoration: none; }
-      button:hover, .download:hover { background: #4c6d8d; }
-      .atlas { display: block; width: 100%; image-rendering: pixelated; border-radius: 8px; background: #303948; }
-      .downloads { display: grid; gap: 8px; margin-top: 16px; }
-      #status { color: #f4c793; min-height: 24px; }
-      @media (max-width: 800px) {
-        .layout { grid-template-columns: 1fr; }
-        .stage, #renderCanvas { min-height: 460px; height: 460px; }
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>Villageois capsule · modèle 3D</h1>
-      <p>Une pilule simple, les mains rapprochées et des chaussures détaillées de taille proche des mains. La texture du villageois couvre le corps, les mains et les pieds ; l’animation Walk reste intégrée au modèle.</p>
-      <div class="layout">
-        <section class="stage">
-          <canvas id="renderCanvas" aria-label="Personnage 3D Babylon.js"></canvas>
-          <p>Glisser pour tourner · Molette pour zoomer</p>
-        </section>
-        <section class="panel">
-          <h2>Choisir le modèle</h2>
-          <div class="models">
-            <button type="button" data-model="reference" aria-pressed="true">Pilule simple</button>
-            <button type="button" data-model="original" aria-pressed="false">Première version</button>
-          </div>
-          <h2>Voir le personnage</h2>
-          <div class="views">
-            <button type="button" data-view="front">Face</button>
-            <button type="button" data-view="right">Droite</button>
-            <button type="button" data-view="back">Dos</button>
-            <button type="button" data-view="left">Gauche</button>
-          </div>
-          <div class="walk-controls">
-            <button id="toggleWalk" type="button">Pause</button>
-            <label>Vitesse de marche <span id="speedValue">1,0×</span><input id="walkSpeed" type="range" min="0.4" max="2" step="0.1" value="1" /></label>
-          </div>
-          <h2>Image UV du modèle</h2>
-          <img class="atlas" id="atlasPreview" src="./buddy-simple-uv.png" alt="Atlas UV du personnage" />
-          <p>La bande supérieure enveloppe le corps. Les carrés inférieurs colorent chaussures et mains.</p>
-          <div class="downloads">
-            <a class="download" href="./buddy-reference-walk.glb" download>Télécharger la pilule simple 3D</a>
-            <a class="download" href="./buddy.glb" download>Télécharger la première version</a>
-            <a class="download" id="atlasDownload" href="./buddy-simple-uv.png" download>Télécharger l’image UV</a>
-          </div>
-          <p>Mains et chaussures issues du modèle de <a href="https://sketchfab.com/3d-models/team-buddies-4914868b3a6742f08db2386084e0f8a4">Zakaria991, Team Buddies</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>), adaptées pour ce prototype.</p>
-          <p id="status" role="status">Chargement du modèle…</p>
-        </section>
-      </div>
-    </main>
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <script src="./preview.js"></script>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Villageois capsule · modèle 3D</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #131922; color: #f2f5fa; }
+    main { max-width: 1400px; margin: auto; padding: 28px; }
+    h1 { margin: 0 0 8px; font-size: 1.8rem; }
+    p { color: #b8c5d2; line-height: 1.45; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+    .stage, .panel { background: #202b39; border: 1px solid #34485b; border-radius: 14px; overflow: hidden; }
+    .stage { position: relative; min-height: 640px; }
+    #renderCanvas { display: block; width: 100%; height: 640px; touch-action: none; }
+    .stage p { position: absolute; left: 18px; right: 18px; bottom: 12px; pointer-events: none; font-size: .88rem; }
+    .panel { padding: 20px; }
+    .panel h2 { margin: 0 0 12px; font-size: 1.12rem; }
+    .views { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
+    .models { display: grid; gap: 8px; margin-bottom: 20px; }
+    .models button[aria-pressed="true"] { background: #2375a7; border-color: #a2d8ff; }
+    .walk-controls { display: grid; gap: 10px; margin-bottom: 22px; }
+    .walk-controls label, .equipment label { color: #c5d0dc; }
+    .walk-controls label span { float: right; color: #9fd3ff; }
+    .walk-controls input { width: 100%; margin-top: 10px; accent-color: #83c5f7; }
+    .walk-controls select, .equipment select { display: block; width: 100%; margin-top: 8px; }
+    .equipment { margin-bottom: 22px; }
+    .equipment-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; color: #b8c5d2; font-size: .86rem; }
+    .equipment-preview img { width: 48px; height: 48px; object-fit: contain; image-rendering: pixelated; }
+    .equipment .shield-picker { display: block; margin-top: 18px; }
+    button, select, .download { background: #3c5874; border: 1px solid #7193b4; border-radius: 7px; color: white; cursor: pointer; padding: 10px; font: inherit; text-align: center; text-decoration: none; }
+    button:hover, .download:hover { background: #4c6d8d; }
+    .atlas { display: block; width: 100%; image-rendering: pixelated; border-radius: 8px; background: #303948; }
+    .downloads { display: grid; gap: 8px; margin-top: 16px; }
+    #status { color: #f4c793; min-height: 24px; }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } .stage, #renderCanvas { min-height: 460px; height: 460px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Villageois capsule · modèle 3D</h1>
+    <p>Le même Buddy que dans la mini scène, présenté ici de près pour voir le modèle et ses animations.</p>
+    <div class="layout">
+      <section class="stage">
+        <canvas id="renderCanvas" tabindex="0" aria-label="Aperçu 3D du Buddy"></canvas>
+        <p>Glisser pour tourner · Molette pour zoomer · Shift pour courir · C pour s’accroupir · Espace pour bloquer · Épée : clic bref = coup latéral, maintenir puis relâcher = grand slash chargé · Arc et lance-pierre : maintenir puis relâcher = tir chargé</p>
+      </section>
+      <section class="panel">
+        <a class="download" href="./mini-scene/" style="display:block;margin-bottom:20px">Jouer dans la mini scène →</a>
+        <h2>Choisir le modèle</h2>
+        <div class="models">
+          <button type="button" data-model="antiquity" aria-pressed="true">Villageois stylisé</button>
+          <button type="button" data-model="reference" aria-pressed="false">Texture classique</button>
+          <button type="button" data-model="original" aria-pressed="false">Première version</button>
+        </div>
+        <h2>Voir le personnage</h2>
+        <div class="views">
+          <button type="button" data-view="front">Face</button>
+          <button type="button" data-view="right">Droite</button>
+          <button type="button" data-view="back">Dos</button>
+          <button type="button" data-view="left">Gauche</button>
+        </div>
+        <div class="walk-controls">
+          <label for="animationSelect">Animation
+            <select id="animationSelect"><option value="Walk">Walk</option><option value="Thrust">Thrust</option><option value="SideSlash">Side Slash</option><option value="Slash">Grand Slash</option><option value="Chop">Coup vertical</option><option value="Shot">Shot</option></select>
+          </label>
+          <button id="toggleWalk" type="button">Pause</button>
+          <label>Vitesse de l’animation <span id="speedValue">1,0×</span><input id="walkSpeed" type="range" min="0.4" max="2" step="0.1" value="1" /></label>
+        </div>
+        <div class="equipment">
+          <label for="swordSelect">Équipement dans la main droite
+            <select id="swordSelect">
+              <optgroup label="Armes"><option value="sword-iron">Épée en fer</option><option value="sword-bronze">Épée en bronze</option><option value="dagger-iron">Dague en fer</option><option value="dagger-bronze">Dague en bronze</option><option value="spear-iron">Lance en fer</option><option value="spear-bronze">Lance en bronze</option></optgroup>
+              <optgroup label="Armes de tir"><option value="bow">Arc</option><option value="bow-recurve">Arc recourbé</option><option value="bow-great">Grand arc</option><option value="slingshot">Lance-pierre</option></optgroup>
+              <optgroup label="Outils"><option value="axe-iron">Hache en fer</option><option value="axe-bronze">Hache en bronze</option><option value="axe-ceramic">Hache en céramique</option><option value="hammer-iron">Marteau en fer</option><option value="hammer-bronze">Marteau en bronze</option><option value="hammer-ceramic">Marteau en céramique</option><option value="pickaxe-iron">Pioche en fer</option><option value="pickaxe-bronze">Pioche en bronze</option><option value="pickaxe-ceramic">Pioche en céramique</option><option value="scythe-iron">Faux en fer</option><option value="scythe-bronze">Faux en bronze</option><option value="scythe-ceramic">Faux en céramique</option><option value="longstick">Bâton</option><option value="catchingPole">Perche de capture</option></optgroup>
+              <option value="none">Sans équipement</option>
+            </select>
+          </label>
+          <div class="equipment-preview"><img id="swordSprite" src="../../assets/icon-sources/icons/melee-weapons/sword_iron.png" alt="Icône de l’épée en fer" /><span>Sprite du jeu</span></div>
+          <label class="shield-picker" for="shieldSelect">Bouclier dans la main gauche
+            <select id="shieldSelect"><option value="iron">Bouclier rond en fer</option><option value="bronze">Bouclier rond en bronze</option><option value="wood">Bouclier rond en bois</option><option value="none">Sans bouclier</option></select>
+          </label>
+          <div class="equipment-preview"><img id="shieldSprite" src="../../assets/icon-sources/icons/shields/round_shield_iron_slash.png" alt="Icône du bouclier rond en fer" /><span>Sprite du jeu</span></div>
+        </div>
+        <h2>Image UV du modèle</h2>
+        <img class="atlas" id="atlasPreview" src="./buddy-antiquity-pixel-uv.png" alt="Atlas UV du personnage" />
+        <p>La bande supérieure enveloppe le corps. Les carrés inférieurs colorent chaussures et mains.</p>
+        <div class="downloads">
+          <a class="download" href="./buddy-antiquity-pixel-actions-v23.glb" download>Télécharger le modèle de base GLB</a>
+          <a class="download" id="atlasDownload" href="./buddy-antiquity-pixel-uv.png" download>Télécharger l’image UV</a>
+        </div>
+        <p>Mains et chaussures issues du modèle de <a href="https://sketchfab.com/3d-models/team-buddies-4914868b3a6742f08db2386084e0f8a4">Zakaria991, Team Buddies</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>), adaptées pour ce prototype.</p>
+        <p id="status" role="status">Chargement du modèle…</p>
+      </section>
+    </div>
+  </main>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="./foot-motion.js?v=foot-plant-1"></script>
+  <script src="./buddy-actions.js?v=foot-plant-1"></script>
+  <script src="./buddy-sword.js?v=recurve-nocks-53"></script>
+  <script src="./buddy-shield.js?v=grip-pose-6"></script>
+  <script src="./preview.js?v=sling-level-20"></script>
+</body>
 </html>

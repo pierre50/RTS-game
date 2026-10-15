@@ -242,9 +242,10 @@ export class CameraController {
     const viewport = this.visibilityRefreshViewport ?? this.getViewportRect()
     if (rectangleIntersectsViewport(bounds, viewport, CAMERA_CULL_MARGIN)) {
       this.renderCandidates.add(instance)
-      if (instance.once && !this.observedCandidates.has(instance)) {
+      const eventSource = instance.displayObject ?? instance
+      if (eventSource.once && !this.observedCandidates.has(instance)) {
         this.observedCandidates.add(instance)
-        instance.once('destroyed', () => this.renderCandidates.delete(instance))
+        eventSource.once('destroyed', () => this.renderCandidates.delete(instance))
       }
     } else {
       this.renderCandidates.delete(instance)

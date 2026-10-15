@@ -9,6 +9,34 @@ const { isClearing, CLEARING_RADIUS } = require('../caves/sites.cjs')
 const CORE = 144
 const HALO = 24
 const EDGE = CORE + 2 * HALO
+const BERRY_GROUP_SIZE = 5
+
+function addRandomBerryGroups(map, startI, startJ, reserved, isLand) {
+  const inCore = resource =>
+    resource.i >= HALO &&
+    resource.i < HALO + CORE &&
+    resource.j >= HALO &&
+    resource.j < HALO + CORE &&
+    isLand(startI + resource.i - HALO, startJ + resource.j - HALO) &&
+    !reserved(resource)
+  const coreResources = [...map.resources].filter(inCore)
+  const target = coreResources.filter(resource => resource.type === 'Stone').length
+  let berryCount = coreResources.filter(resource => resource.type === 'Berrybush').length
+  let attempts = 0
+
+  while (berryCount < target && attempts++ < target * 80) {
+    // Keep the whole group in the retained core, so patch overlap does not
+    // change the density or duplicate groups along patch boundaries.
+    const center = {
+      i: map.randomRange(HALO + 3, HALO + CORE - 4),
+      j: map.randomRange(HALO + 3, HALO + CORE - 4),
+    }
+    if (!inCore(center)) continue
+    if ([-3, 0, 3].some(di => [-3, 0, 3].some(dj => reserved({ i: center.i + di, j: center.j + dj })))) continue
+    const quantity = Math.min(BERRY_GROUP_SIZE, target - berryCount)
+    if (map.placeResourceGroupAt(center, 'Berrybush', quantity, 2)) berryCount += quantity
+  }
+}
 
 async function generateLargeContent(
   terrain,
@@ -99,6 +127,7 @@ async function generateLargeContent(
       const options = createMacroTreeOptions(rows, 'Grass', seed, { i: originI, j: originJ })
       await runtimeNeutralResources.call(scope, spawns, options)
       await runtimeBiomeTrees.call(scope, spawns, options)
+      addRandomBerryGroups(map, startI, startJ, reserved, (i, j) => isLand(valueAt(i, j)))
       const localResources = [...map.resources]
         .filter(resource => !reserved(resource))
         .map(({ type, i, j, quantity, textureName, startsMature }) => ({

@@ -87,12 +87,13 @@ export function clearGeneratedGameplayState(map: MapGenerationMap): void {
   ])
   for (const child of [...(map.children || [])]) {
     if (!child.family || !dynamicFamilies.has(child.family)) continue
-    child.stopInterval?.()
-    child.stopTimeout?.()
-    child.animalBehavior?.stop?.()
-    child.isDestroyed = true
+    const entity = (child as typeof child & { runtimeEntity?: typeof child }).runtimeEntity ?? child
+    entity.stopInterval?.()
+    entity.stopTimeout?.()
+    entity.animalBehavior?.stop?.()
+    entity.isDestroyed = true
     map.removeChild(child)
-    child.destroy?.({ children: true, texture: false, textureSource: false })
+    entity.destroy?.({ children: true, texture: false, textureSource: false })
   }
   const packed = getPackedCellStore(map.grid)
   if (packed) packed.resourceAt = undefined

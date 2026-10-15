@@ -316,7 +316,7 @@ export class UnitMovement {
     search.expand()
     unit.exploringForAutonomy = false
     unit.stopInterval?.()
-    unit.sprite?.stop()
+    unit.stopVisualAnimation?.()
     return false
   }
 

@@ -225,6 +225,31 @@ test('replacing generated entities stops every provisional AI before replacing t
   assert.deepEqual(map.context.players, [])
 })
 
+test('clearing generated units disposes their runtime through the Pixi display', () => {
+  const calls = []
+  const runtimeEntity = {
+    stopInterval: () => calls.push('stopInterval'),
+    stopTimeout: () => calls.push('stopTimeout'),
+    destroy: () => calls.push('destroyRuntime'),
+  }
+  const display = { family: 'unit', runtimeEntity }
+  const map = {
+    children: [display],
+    context: { app: {}, gamebox: {}, scheduler: {}, players: [] },
+    grid: [],
+    removeChild(child) {
+      assert.equal(child, display)
+      calls.push('removeDisplay')
+    },
+  }
+  map.context.map = map
+
+  savedGeneration().clearGeneratedGameplayState(map)
+
+  assert.equal(runtimeEntity.isDestroyed, true)
+  assert.deepEqual(calls, ['stopInterval', 'stopTimeout', 'removeDisplay', 'destroyRuntime'])
+})
+
 test('loading a 1000 seed save restores the same assigned civilization sites as a new game', async () => {
   const manifest = require('../public/maps/worlds/world-test-1000/manifest.json')
   const { assignContinentVillages } = loadTsModule('app/lib/campaign/continentVillagePlacement.ts')

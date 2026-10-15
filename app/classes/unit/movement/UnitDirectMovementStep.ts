@@ -23,7 +23,7 @@ function prepareDirectMove(
   const unit = state.unit
   const contextMap = unit.context?.map
   const map = getEntitySpaceMapLike(unit, contextMap)
-  if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return null
+  if (!map || (dirX === 0 && dirY === 0) || distance <= 0) return null
 
   const candidate = getDirectMoveCandidate(unit, map, dirX, dirY, distance)
   const { rawI, rawJ } = candidate

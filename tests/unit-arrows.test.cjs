@@ -160,6 +160,10 @@ test('hunting consumes one real arrow at release and cannot spawn an extra proje
     controlMode: 'standard',
     inventory: { equipment: ['arrow_copper'], npcArrows: { initialized: true } },
     sprite: {},
+    visualAnimation: {
+      onLoop() {},
+      onFrameEachLoop(_frame, callback) { release = callback },
+    },
     context: { map: {} },
     dest: { family: 'animal' },
     realDest: { x: 1, y: 1 },

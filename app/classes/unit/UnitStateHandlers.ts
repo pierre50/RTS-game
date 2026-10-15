@@ -19,6 +19,7 @@ import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '..
 import { clearSleepingVisualState, keepSleepingOutsideVisual } from '../../services/rest/UnitSleepVisuals'
 import { debugBanditStop } from './UnitBanditDebug'
 import { UnitActions } from './UnitActions'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -151,11 +152,7 @@ function resetStoppedUnitState(unit: UnitStateHost): void {
   unit.action = null
   unit.dest = null
   unit.realDest = null
-  unit.sprite.loop = unit.loop ?? true
-  if (unit.shadow) unit.shadow.loop = unit.sprite.loop
-  for (const sprite of unit.appearanceLayerSprites.values()) {
-    sprite.loop = unit.loop ?? true
-  }
+  getUnitAnimation(unit)?.setLoop(unit.loop ?? true)
 }
 
 function placeStoppedUnit(unit: UnitStateHost, heroControlled: boolean): void {

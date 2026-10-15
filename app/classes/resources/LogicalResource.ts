@@ -1,9 +1,7 @@
-import { Container, EventEmitter, Polygon } from 'pixi.js'
-import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES, PASSABLE_RESOURCE_TYPES, RESOURCE_TYPES } from '../../constants'
+import { FAMILY_TYPES, PASSABLE_RESOURCE_TYPES, RESOURCE_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
   getEntityCell,
-  getEntityMapSpace,
   getGroundReliefLevel,
   getInstanceZIndex,
   getReliefLiftPixels,
@@ -11,17 +9,15 @@ import {
   parseTextureRef,
 } from '../../lib'
 import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
-import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { invalidateEconomicKnowledge } from '../../services/world/EconomicKnowledgeUpdates'
+import { resourceVisualState, type ResourceViewAdapter } from '../../rendering/ResourceView'
 import { ResourceInterface } from '../../ui/entity/ResourceInterface'
 import { Instance } from '../Instance'
 import type { Resource } from '../Resource'
 import { getResourceConfig, type ResourceOptions } from '../ResourceTexture'
-import { prepareStaticResourceTexture } from '../ResourceSpriteFactory'
 import type { GameContextLike } from '../../types/context'
 import type { EntityInfoRenderOptions } from '../../types/entities'
 import {
-  attachResourceView,
   createResourceHandle,
   hasResourceView,
   releaseResourceView,
@@ -29,33 +25,24 @@ import {
   type ResourceHandleState,
   type ResourceView,
 } from './ResourceHandle'
+import { ResourceEvents } from './ResourceEvents'
 
-// The adapter preserves the existing gameplay API while only its optional view is a Container.
+// The handle preserves the gameplay API while the renderer owns its disposable view.
 const asResource = (state: ResourceHandleState) => state as unknown as Resource
-const emitters = new WeakMap<object, EventEmitter>()
-const bounds = new Map<string, { width: number; height: number; anchor: { x: number; y: number } }>()
+export type ResourceViewFactory = {
+  create(resource: Resource): ResourceViewAdapter<ResourceView>
+  isDisplayMethod(key: string): boolean
+}
+const emitters = new WeakMap<object, ResourceEvents>()
 const defaults = new WeakMap<object, object>()
 
-function emitter(resource: object): EventEmitter {
+function emitter(resource: object): ResourceEvents {
   let value = emitters.get(resource)
   if (!value) {
-    value = new EventEmitter()
+    value = new ResourceEvents()
     emitters.set(resource, value)
   }
   return value
-}
-function dropView(state: ResourceHandleState, view: ResourceView): void {
-  const resource = asResource(state)
-  resource.stopWindMotion()
-  resource.visualSettingsCleanup?.()
-  resource.visualSettingsCleanup = null
-  resource.shadow?.parent?.removeChild(resource.shadow)
-  resource.shadow?.destroy({ children: true, texture: false })
-  resource.shadow = null
-  const container = view as unknown as Container
-  container.parent?.removeChild(container)
-  container.destroy({ children: true, texture: false, textureSource: false })
-  delete state.sprite
 }
 
 const overrides: Record<string, unknown> = {
@@ -108,13 +95,22 @@ const overrides: Record<string, unknown> = {
     return new ResourceInterface(asResource(this)).setDefaultInterface(...args)
   },
 }
-const hookCache = new WeakMap<Resource, ResourceHandleHooks>()
-function resourceHooks(prototype: Resource): ResourceHandleHooks {
-  const cached = hookCache.get(prototype)
+const hookCache = new WeakMap<ResourceViewFactory, ResourceHandleHooks>()
+function resourceHooks(prototype: Resource, viewFactory: ResourceViewFactory): ResourceHandleHooks {
+  const cached = hookCache.get(viewFactory)
   if (cached) return cached
+  const adapters = new WeakMap<ResourceHandleState, ResourceViewAdapter<ResourceView>>()
+  const adapterFor = (state: ResourceHandleState): ResourceViewAdapter<ResourceView> => {
+    let adapter = adapters.get(state)
+    if (!adapter) {
+      adapter = viewFactory.create(asResource(state))
+      adapters.set(state, adapter)
+    }
+    return adapter
+  }
   const hooks: ResourceHandleHooks = {
     isDisplayMethod(key) {
-      return typeof Object.getOwnPropertyDescriptor(Container.prototype, key)?.value === 'function'
+      return viewFactory.isDisplayMethod(key)
     },
     property(state, key) {
       if (key === 'interface') {
@@ -136,67 +132,31 @@ function resourceHooks(prototype: Resource): ResourceHandleHooks {
       )
     },
     bounds(state) {
-      const resource = asResource(state)
-      const key = `${resource.type}:${resource.textureName}:${resource.spriteScale ?? 1}`
-      let result = bounds.get(key)
-      if (!result) {
-        const cell = getEntityCell(resource, resource.context.map)!
-        const { texture } = prepareStaticResourceTexture(resource, cell)
-        result = {
-          width: texture.width * (resource.spriteScale ?? 1),
-          height: texture.height * (resource.spriteScale ?? 1),
-          anchor: { x: texture.defaultAnchor?.x ?? 0, y: texture.defaultAnchor?.y ?? 0 },
-        }
-        bounds.set(key, result)
-      }
-      return result
+      return adapterFor(state).bounds(resourceVisualState(asResource(state)))
     },
     create(state) {
-      const resource = asResource(state)
-      const container = new Container()
-      const view = container as unknown as ResourceView
-      attachResourceView(state, view)
-      container.position.set(resource.x, resource.y)
-      container.zIndex = resource.zIndex
-      container.visible = resource.visible
-      container.alpha = Number(state.alpha ?? 1)
-      container.eventMode = 'auto'
-      container.label = resource.label
-      const space = getEntityMapSpace(resource, resource.context.map)
-      ;(space?.container ?? resource.context.map).addChild(container)
-      resource.initializeResourceVisuals(
-        resource as unknown as ResourceOptions,
-        getEntityCell(resource, resource.context.map)!
-      )
-      if (resource.type === RESOURCE_TYPES.tree && resource.hitPoints <= 0 && !resource.isDead) {
-        resource.sprite.hitArea = new Polygon([
-          -CELL_WIDTH / 2,
-          0,
-          0,
-          -CELL_HEIGHT / 2,
-          CELL_WIDTH / 2,
-          0,
-          0,
-          CELL_HEIGHT / 2,
-        ])
-      }
-      resource.visualSettingsCleanup = onVisualSettingsChange(() => resource.syncVisualSettings())
-      return view
+      return adapterFor(state).mount(resourceVisualState(asResource(state)))
     },
-    release: dropView,
-    sync(state) {
-      prototype.syncShadow.call(asResource(state))
+    release(state, view) {
+      adapterFor(state).unmount(view)
+      delete state.sprite
+    },
+    sync(state, view) {
+      const resource = asResource(state)
+      if (view) adapterFor(state).update(view, resourceVisualState(resource))
+      prototype.syncShadow.call(resource)
     },
   }
 
-  hookCache.set(prototype, hooks)
+  hookCache.set(viewFactory, hooks)
   return hooks
 }
 
 export function createLogicalResource(
   options: ResourceOptions,
   context: GameContextLike,
-  prototype: Resource
+  prototype: Resource,
+  viewFactory: ResourceViewFactory
 ): Resource {
   const definition = getResourceConfig().resources[options.type]
   let shared = defaults.get(definition)
@@ -225,7 +185,7 @@ export function createLogicalResource(
     context,
     label: (options as { label?: string }).label ?? uuidv4(),
   }) as ResourceHandleState
-  const resource = asResource(createResourceHandle(state, resourceHooks(prototype)))
+  const resource = asResource(createResourceHandle(state, resourceHooks(prototype, viewFactory)))
   const cell = getEntityCell(resource, context.map)
   if (!cell) throw new Error(`Missing resource cell ${options.i},${options.j}`)
   resource.quantity = resource.quantity ?? resource.totalQuantity

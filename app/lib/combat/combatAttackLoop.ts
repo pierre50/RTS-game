@@ -1,10 +1,8 @@
 import type { RuntimeCell } from '../../types/map'
-import type { RuntimeEntity } from '../../types/entities'
-import type { EnergyEntity, UnitSendToOptions } from '../../types/entities'
-import type { UnitCreationExtra } from '../../types/entities'
+import type { EnergyEntity, RuntimeEntity, UnitCreationExtra, UnitSendToOptions } from '../../types/entities'
 import type { ActionProps } from './combat'
 import { instancesDistance } from '../maths'
-import { onSpriteLoopAtFrame } from '../graphics'
+import { getEntityAnimation } from '../../rendering/UnitAnimation'
 import { hasEnergyForAction, spendOrWaitForEnergy, waitForEnergy } from '../units/unitEnergy'
 import { debugLog } from '../debug'
 
@@ -131,6 +129,10 @@ type AttackRecoveryHandle = Pick<EnergyEntity, 'attackRecoveryAnimationTaskId' |
   sprite?: { onLoop?: (() => void) | undefined } | null
 }
 
+function getAttackAnimation(attacker: AttackFrameActor | AttackRecoveryHandle) {
+  return getEntityAnimation(attacker as EnergyEntity)
+}
+
 function getAttackLoopActorState(attacker: AttackFrameActor): AttackLoopActorState {
   return attacker as AttackLoopActorState
 }
@@ -159,7 +161,10 @@ export function clearCombatAttackRecovery(attacker: AttackRecoveryHandle): void 
     attacker.context?.scheduler?.remove?.(attacker.attackRecoveryAnimationTaskId)
     attacker.attackRecoveryAnimationTaskId = null
   }
-  if (hadRecovery && attacker.sprite && 'onLoop' in attacker.sprite) attacker.sprite.onLoop = undefined
+  if (hadRecovery) {
+    const animation = getAttackAnimation(attacker)
+    if (animation?.canSignalLoop) animation.clearLoopCallback()
+  }
 }
 
 function finishAttackRecovery(
@@ -196,12 +201,12 @@ function beginAttackRecovery(
   const recoveryMs = getAttackRecoveryMs(attacker)
   if (!recoveryMs) return
 
-  const sprite = attacker.sprite
+  const animation = getAttackAnimation(attacker)
   const actor = getAttackLoopActorState(attacker)
   const actionAtAttack = attacker.action ?? null
   clearCombatAttackRecovery(attacker)
   const generation = recoveryGenerations.get(attacker)
-  let animationComplete = !sprite || !('onLoop' in sprite)
+  let animationComplete = !animation?.canSignalLoop
   let timerComplete = false
   let taskId: number | null = null
   const isCurrentRecovery = (): boolean =>
@@ -227,12 +232,12 @@ function beginAttackRecovery(
 
   const customRecoveryAnimation =
     callbacks.playRecoveryAnimation?.(callbacks.releaseFrame, markAnimationComplete) === true
-  if (!customRecoveryAnimation && sprite && 'onLoop' in sprite) {
-    sprite.onLoop = () => {
+  if (!customRecoveryAnimation && animation?.canSignalLoop) {
+    animation.onLoop(() => {
       if (!isCurrentRecovery()) return
-      sprite.onLoop = undefined
+      animation.clearLoopCallback()
       markAnimationComplete()
-    }
+    })
   }
 
   const scheduler = attacker.context?.scheduler
@@ -305,26 +310,26 @@ function resolveReadyAttackTarget(
 }
 
 export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: AttackFrameCallbacks): void {
-  const sprite = attacker.sprite
-  if (!sprite) return
+  const animation = getAttackAnimation(attacker)
+  if (!animation) return
 
   const clearAttackCallbacks = (): void => {
-    sprite.onFrameChange = undefined
-    if ('onLoop' in sprite) sprite.onLoop = undefined
+    animation.clearFrameCallback()
+    animation.clearLoopCallback()
   }
 
   const readiness = resolveReadyAttackTarget(attacker, callbacks, 'preflight')
   if (readiness.status !== 'ready') return
 
-  sprite.loop = true
-  if ('onComplete' in sprite) sprite.onComplete = undefined
+  animation.setLoop(true)
+  animation.clearCompleteCallback()
   clearAttackCallbacks()
   callbacks.prepareAttackSheet()
   callbacks.onAttackPrepared?.(readiness.target)
 
   const actionAtWindup = attacker.action
   const targetAtWindup = readiness.target
-  onSpriteLoopAtFrame(sprite, callbacks.releaseFrame, () => {
+  animation.onFrameEachLoop(callbacks.releaseFrame, () => {
     const actor = getAttackLoopActorState(attacker)
     if (actor.isDead || actor.isDestroyed || attacker.action !== actionAtWindup || attacker.dest !== targetAtWindup)
       return

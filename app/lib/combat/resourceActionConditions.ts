@@ -6,6 +6,7 @@ import type { UnitEntity } from '../../types/entities'
 import { hasAnimalCorpseLoot } from '../equipment/animalCorpseLoot'
 import { canGatherCaveMineral } from '../resources/caveMinerals'
 import type { CombatEntity } from '../../types/combat'
+import { resourceGrowthState } from '../../rendering/ResourceGrowth'
 import {
   ACTION_TYPES,
   FAMILY_TYPES,
@@ -37,16 +38,8 @@ function isVillagerOrHero(source?: CombatEntity | null): boolean {
 
 export function isWheatMature(target?: CombatEntity | null): boolean {
   if (!target || target.type !== RESOURCE_TYPES.wheat) return false
-  const sprite = target.sprite as { currentFrame?: number; textures?: unknown[] } | null | undefined
-  if (
-    !sprite ||
-    typeof sprite.currentFrame !== 'number' ||
-    !Array.isArray(sprite.textures) ||
-    !sprite.textures.length
-  ) {
-    return false
-  }
-  return sprite.currentFrame >= sprite.textures.length - 1
+  const growth = resourceGrowthState(target)
+  return Boolean(growth && growth.count > 0 && growth.stage >= growth.count - 1)
 }
 
 function isDepletedBerrybush(target?: CombatEntity | null): boolean {

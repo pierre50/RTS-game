@@ -137,7 +137,7 @@ function loadBuilding() {
         CAMP_DECORATION_BUILDING_TYPES: loadTsModule('app/constants/entities.ts').CAMP_DECORATION_BUILDING_TYPES,
         FAMILY_TYPES: { building: 'building' },
       },
-      '../../lib': {},
+      '../../lib': { uuidv4: () => 'test-building' },
       '../Instance': {
         Instance: class {
           constructor(context) {
@@ -165,6 +165,9 @@ function loadBuilding() {
         stableHorsesFromOptions: () => [],
       },
       './BuildingVisuals': {},
+      '../../rendering/pixi/PixiBuildingView': { PixiBuildingView: class {} },
+      '../../rendering/BuildingView': {},
+      '../../lib/mapSpaces': {},
     },
   }).Building
 }

@@ -158,6 +158,10 @@ test('hunting release snapshots the last stone damage and range before switching
   Object.assign(unit, {
     action: 'hunt',
     sprite: {},
+    visualAnimation: {
+      onLoop() {},
+      onFrameEachLoop(_frame, callback) { release = callback },
+    },
     context: { map: {} },
     realDest: { x: 160, y: 0 },
     getActionCondition: () => true,

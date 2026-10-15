@@ -6,35 +6,20 @@ import { reconcileSettlementResidents } from '../../lib/territory/settlementResi
 import { removeLegacyQuiver } from '../../lib/equipment/heroInventory'
 import { migrateEquipmentInventory } from '../../lib/equipment/armorVariants'
 import { getVillagerSchedule } from '../../lib/units/village/villagerSchedule'
-import { Assets, AnimatedSprite } from 'pixi.js'
-import type { Texture } from 'pixi.js'
+import { Assets } from 'pixi.js'
+import { FAMILY_TYPES, MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
-  FAMILY_TYPES,
-  LABEL_TYPES,
-  MOUNTED_HORSE_SPEED_BONUS,
-  SHEET_TYPES,
-  UNIT_TYPES,
-  WORK_TYPES,
-} from '../../constants'
-import {
-  bindAnimatedSpriteToTicker,
-  attachEntityShadowsToMapSpace,
   cartesianToIsometric,
-  getAnimationFrames,
   getInstanceZIndex,
   getEntityMapSpace,
   getEntityCell,
   throttle,
   updateInstanceVisibility,
 } from '../../lib'
-import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
-import { syncEntityRelief } from '../../lib/terrain/reliefSurface'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { getHorseColorFromSeed, isHorseColor } from '../../lib/horses/horseColors'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
-import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
-import { applyUnitActionFrameSequence, getUnitWorkActionSheet } from '../../lib/units/visuals/unitWorkAppearance'
 import { applyUnitActivitySpritesheets } from '../../lib/units/visuals/unitSpriteAssets'
 import { UnitInterface } from '../../ui/entity/UnitInterface'
 import { UnitActions } from './UnitActions'
@@ -50,8 +35,6 @@ import type { UnitRuntimeHost, UnitSpawnOptions } from './UnitTypes'
 
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
 type AssignableUnit = UnitRuntimeHost & { assignProperties(source: object | null | undefined): void }
-
-const MAIN_SPRITE_LAYER_Z_INDEX = 10
 
 export function getCachedUnitSpritesheet(id: string): SpritesheetLike | undefined {
   return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
@@ -251,43 +234,11 @@ export function setupUnitInterface(unit: UnitRuntimeHost): void {
   }
 }
 
-export function setupUnitPrimarySprite(unit: UnitRuntimeHost, spawnCell: RuntimeCell): void {
-  unit.eventMode = 'static'
-  applyUnitActionFrameSequence(unit, unit.work, unit.action)
-  unit.actionSheet = unit.actionSheet || getUnitWorkActionSheet(unit, unit.work, unit.action)
-  if (!unit.standingSheet?.textures) {
-    throw new Error(
-      `Missing standing spritesheet for ${unit.type} (${unit.owner.civ ?? 'Hellas'}): ${unit.assets?.standingSheet ?? unit.allAssets?.default?.standingSheet}`
-    )
-  }
-  unit.sprite = new AnimatedSprite(
-    getAnimationFrames((unit.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
+export function assertUnitVisualAssets(unit: UnitRuntimeHost): void {
+  if (unit.standingSheet?.textures) return
+  throw new Error(
+    `Missing standing spritesheet for ${unit.type} (${unit.owner.civ ?? 'Hellas'}): ${unit.assets?.standingSheet ?? unit.allAssets?.default?.standingSheet}`
   )
-  bindAnimatedSpriteToTicker(unit.sprite, unit.context.app)
-  unit.sprite.label = LABEL_TYPES.sprite
-  unit.sprite.eventMode = 'auto'
-  unit.sprite.roundPixels = true
-  unit.sprite.loop = unit.loop ?? true
-  unit.sprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX
-  unit.shadow = unit.createShadow?.() ?? null
-  attachEntityShadowsToMapSpace(unit.context.map, unit)
-  unit.addChild(unit.sprite)
-  unit.setupMountedHorseSprite?.()
-  unit.visualSettingsCleanup = onVisualSettingsChange(() => unit.syncVisualSettings?.())
-  if (unit.isDead) {
-    unit.currentSheet === SHEET_TYPES.corpse ? unit.decompose?.() : unit.death?.()
-  }
-  unit.setTextures?.(unit.currentSheet)
-
-  unit.sprite.currentFrame = Math.min(unit.currentFrame, unit.sprite.textures.length - 1)
-  unit.syncShadow?.()
-  unit.syncAppearanceLayers?.(unit.currentSheet)
-  syncEntityRelief(getEntitySpaceMapLike(unit, unit.context.map), unit, spawnCell)
-  unit.sprite.updateAnchor = true
-  if (unit.shouldKeepHealthBarVisible?.()) {
-    unit.drawHealthBar?.()
-    unit.drawEnergyBar?.()
-  }
 }
 
 export function setupUnitCommandDispatch(unit: UnitRuntimeHost): void {
@@ -302,15 +253,6 @@ export function setupUnitCommandDispatch(unit: UnitRuntimeHost): void {
     : (target: RuntimeCell | RuntimeEntity, action?: string) => {
         unit.sendToEvt?.(target, action)
       }
-}
-
-export function setupUnitPointerInteraction(unit: UnitRuntimeHost): void {
-  unit.on('pointerup', () => {
-    const {
-      context: { editor },
-    } = unit
-    if (editor?.handleEntityInteraction?.(unit)) return
-  })
 }
 
 export function scheduleInitialUnitVisibilityUpdate(unit: UnitRuntimeHost): void {

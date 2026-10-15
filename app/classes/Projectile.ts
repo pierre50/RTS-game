@@ -1,5 +1,5 @@
 import { getBuildingAttackRange } from '../lib/buildings/towerCombat'
-import { Container, type Graphics } from 'pixi.js'
+import type { Container, ContainerChild, Graphics } from 'pixi.js'
 import {
   average,
   degreeToDirection,
@@ -10,7 +10,7 @@ import {
   uuidv4,
 } from '../lib/maths'
 import { moveTowardPoint } from '../lib/grid/movement'
-import { addDisplayObjectToMapSpaceContainer } from '../lib/mapSpaces'
+import { addDisplayObjectToMapSpaceContainer, getEntitySpaceMapLike } from '../lib/mapSpaces'
 import { getEffectiveProjectileType } from '../lib/projectiles'
 import { playAudibleSoundCue, type AudibleInstance } from '../lib/audio/sound'
 import { getUnitCombatRange } from '../lib/equipment/equipmentStats'
@@ -26,20 +26,10 @@ import {
   debugProjectileGeometry,
   getProjectileDestinationVisualDelta,
   getProjectileVisualOffset,
-} from './ProjectileGeometry'
-import {
-  applyEmbeddedMask,
   canUseEmbeddedMask,
-  createImpactEffect,
-  createShadowSprite,
-  createSprite,
-  createTrajectoryState,
   getEmbeddedMaskJitter,
-  updateShadowVisual,
-  updateTrajectoryVisual,
-  type EmbeddedMaskKind,
-  type ProjectileSprite,
-} from './ProjectileVisuals'
+} from './ProjectileGeometry'
+import type { EmbeddedMaskKind, ProjectileSprite } from '../rendering/pixi/PixiProjectileVisuals'
 import {
   canProjectileCollideWith,
   findProjectileCollisionTarget,
@@ -54,6 +44,9 @@ import {
   stickProjectileInTree,
   stopProjectileTimeout,
 } from './ProjectileLifecycle'
+import { PixiProjectileView } from '../rendering/pixi/PixiProjectileView'
+import { projectileVisualState, type ProjectileVisualState } from '../rendering/ProjectileView'
+import { createProjectileTrajectoryState, sampleProjectileTrajectory } from './ProjectileTrajectory'
 
 type ProjectileOptions = {
   owner: RuntimeEntity
@@ -69,14 +62,45 @@ type ProjectileOptions = {
 
 type ProjectileSpawnOffset = { x?: number; y?: number }
 
-export class Projectile extends Container {
+export class Projectile {
   context: GameContextLike
+  label: string
   family: string
   interval: SchedulerTaskId | null
   timeoutId: SchedulerTaskId | null
   isDestroyed: boolean
   sprite?: ProjectileSprite
   shadow?: ProjectileSprite
+  private readonly projectileView: PixiProjectileView
+  private mapX = 0
+  private mapY = 0
+  private renderOrder = 0
+  private renderAlpha = 1
+  private renderVisible = true
+
+  get displayObject(): Container { return this.projectileView.container }
+  get x(): number { return this.mapX }
+  set x(value: number) { this.mapX = value; if (this.projectileView) this.displayObject.x = value }
+  get y(): number { return this.mapY }
+  set y(value: number) { this.mapY = value; if (this.projectileView) this.displayObject.y = value }
+  get zIndex(): number { return this.renderOrder }
+  set zIndex(value: number) { this.renderOrder = value; if (this.projectileView) this.displayObject.zIndex = value }
+  get alpha(): number { return this.renderAlpha }
+  set alpha(value: number) { this.renderAlpha = value; if (this.projectileView) this.displayObject.alpha = value }
+  get visible(): boolean { return this.renderVisible }
+  set visible(value: boolean) { this.renderVisible = value; if (this.projectileView) this.displayObject.visible = value }
+  get parent(): Container | null { return this.projectileView?.container.parent ?? null }
+  get position(): Container['position'] { return this.displayObject.position }
+  get destroyed(): boolean { return this.projectileView?.container.destroyed ?? false }
+  get width(): number { return this.projectileView?.container.width ?? 0 }
+  get height(): number { return this.projectileView?.container.height ?? 0 }
+  addChild: Container['addChild'] = ((...children: ContainerChild[]) =>
+    this.displayObject.addChild(...children)) as Container['addChild']
+  once: Container['once'] = ((...args: Parameters<Container['once']>) =>
+    this.displayObject.once(...args)) as Container['once']
+  destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.displayObject.destroy(options)
+  }
 
   owner!: RuntimeEntity
   type!: string
@@ -94,6 +118,8 @@ export class Projectile extends Container {
   z!: number
   destinationPoint!: Point
   groundOrigin!: Point
+  terrainOrigin!: Point
+  terrainDestination!: Point
   totalDistance!: number
   spawnOrigin!: Point
   maxDistance?: number
@@ -101,9 +127,8 @@ export class Projectile extends Container {
   minSpeedFactor?: number
   minDamageFactor?: number
   trajectoryState: { kind: string; arcHeight: number } | null = null
-  // Current height (px) above the ground point directly below the projectile — kept in sync each
-  // tick by updateTrajectoryVisual() regardless of whether shadows are visually enabled, since
-  // tree-trunk collision needs it to tell an overhead arced shot from a trunk-level one.
+  // Current height (px) above the ground point directly below the projectile. Flight sampling
+  // updates it without a sprite because tree collision needs it even when shadows are hidden.
   currentAltitude: number = 0
   // Set once the projectile embeds in a tree, see stickInTree() — used by clear() to know it must
   // not touch cell.corpses (only ground-landed/grid-registered projectiles use that).
@@ -132,11 +157,10 @@ export class Projectile extends Container {
   sounds?: { launch?: CommandSound; impact?: CommandSound }
 
   constructor(options: ProjectileOptions, context: GameContextLike) {
-    super()
-
     this.context = context
     this.label = uuidv4()
     this.family = FAMILY_TYPES.projectile
+    this.projectileView = new PixiProjectileView(this)
     this.interval = null
     this.timeoutId = null
     this.isDestroyed = false
@@ -183,6 +207,10 @@ export class Projectile extends Container {
     this.sprite = sprite
     this.spawnOrigin = { x: this.x, y: this.y }
     this.groundOrigin = { x: this.owner.x, y: this.owner.y + getReliefOffset(this.owner) }
+    this.terrainOrigin = { x: this.owner.x, y: this.owner.y }
+    this.terrainDestination = this.destination
+      ? { x: this.destination.x, y: this.destination.y }
+      : { x: targetPoint.x, y: targetPoint.y }
     this.destinationPoint = this.getVisualDestinationPoint(targetX, targetY)
     this.totalDistance = Math.max(
       pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.destinationPoint.x, this.destinationPoint.y),
@@ -248,19 +276,24 @@ export class Projectile extends Container {
   }
 
   attachToMapSpace(): void {
-    addDisplayObjectToMapSpaceContainer(this.context.map, this)
+    Object.assign(this.displayObject, { spaceId: this.spaceId })
+    addDisplayObjectToMapSpaceContainer(this.context.map, this.displayObject)
+  }
+
+  getVisualState(): ProjectileVisualState {
+    return projectileVisualState(this, getEntitySpaceMapLike(this, this.context.map))
   }
 
   createShadowSprite(source: ProjectileSprite): ProjectileSprite {
-    return createShadowSprite(this, source)
+    return this.projectileView.createShadowSprite(source)
   }
 
   createSprite(degree: number): ProjectileSprite {
-    return createSprite(this, degree)
+    return this.projectileView.createSprite(degree)
   }
 
   createTrajectoryState() {
-    return createTrajectoryState(this)
+    return createProjectileTrajectoryState(this)
   }
 
   getOwnerProjectileMaxDistance(): number | undefined {
@@ -315,15 +348,17 @@ export class Projectile extends Container {
   }
 
   updateTrajectoryVisual() {
-    updateTrajectoryVisual(this)
+    const frame = sampleProjectileTrajectory(this)
+    this.currentAltitude = frame.altitude
+    this.projectileView.updateTrajectory(frame)
   }
 
   updateShadowVisual(progress: number) {
-    updateShadowVisual(this, progress)
+    this.projectileView.updateShadow(progress)
   }
 
   createImpactEffect(x: number, y: number) {
-    createImpactEffect(this, x, y)
+    this.projectileView.createImpactEffect(x, y)
   }
 
   getProjectileScale(): number {
@@ -339,7 +374,7 @@ export class Projectile extends Container {
   }
 
   applyEmbeddedMask(kind: EmbeddedMaskKind) {
-    applyEmbeddedMask(this, kind)
+    this.projectileView.applyEmbeddedMask(kind)
   }
 
   // Same i+j depth key every other entity uses, nudged by how high the projectile currently
@@ -399,8 +434,8 @@ export class Projectile extends Container {
 
   // A shot blocked by a tree trunk: freeze it and re-parent into the tree's own container (after
   // shadow/sprite in its children, so it draws in front of the trunk, embedded like a stuck
-  // arrow) instead of the cell.corpses route landOnGround() uses. This makes it inherit the
-  // tree's depth for free and, if the tree is felled while the arrow is still stuck, ride along
+  // arrow) instead of the cell.corpses route landOnGround() uses. The display gains the tree's
+  // depth while the projectile keeps its map coordinates. If the tree is felled, the display rides
   // with the tree's own destroy({children: true}) cascade. That cascade bypasses our own clear(),
   // so listen for Pixi's 'destroyed' event to keep isDestroyed/the fade timer in sync regardless
   // of which path tears this down.

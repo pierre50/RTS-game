@@ -36,7 +36,7 @@ export function debugBanditStop(unit: UnitEntity, reason: string): void {
       action: unit.action,
       combatMode: unit.combatMode,
       currentSheet: unit.currentSheet,
-      spritePlaying: unit.sprite?.playing,
+      spritePlaying: unit.isVisualAnimationPlaying?.(),
       i: unit.i,
       j: unit.j,
       pathLength: unit.path?.length ?? 0,
@@ -83,7 +83,7 @@ function debugBanditStep(unit: UnitEntity, reason: string): void {
       work: unit.work,
       combatMode: unit.combatMode,
       currentSheet: unit.currentSheet,
-      spritePlaying: unit.sprite?.playing,
+      spritePlaying: unit.isVisualAnimationPlaying?.(),
       inactif: unit.inactif,
       interval: (unit as { interval?: unknown }).interval,
       i: unit.i,
@@ -133,7 +133,7 @@ export function watchBanditStep(unit: UnitEntity, beforeX: number, beforeY: numb
     return
   }
   const walking =
-    unit.currentSheet === SHEET_TYPES.walking || Boolean(unit.sprite?.playing && (unit.path?.length ?? 0) > 0)
+    unit.currentSheet === SHEET_TYPES.walking || Boolean(unit.isVisualAnimationPlaying?.() && (unit.path?.length ?? 0) > 0)
   if (!walking || unit.isDead || unit.isDestroyed) {
     banditStepDebugState.delete(unit)
     return
@@ -148,7 +148,7 @@ export function watchBanditStep(unit: UnitEntity, beforeX: number, beforeY: numb
     } else {
       unit.stopInterval?.()
       unit.setTextures?.(SHEET_TYPES.standing)
-      unit.sprite?.stop()
+      unit.stopVisualAnimation?.()
       unit.inactif = true
     }
     banditStepDebugState.delete(unit)

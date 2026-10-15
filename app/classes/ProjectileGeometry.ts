@@ -42,6 +42,16 @@ export const GROUND_EMBED_DEPTH = 5
 export const TREE_EMBED_DEPTH = 4
 export const EMBEDDED_TIP_DEPTH = 9
 export const EMBEDDED_PARALLEL_CUT_THRESHOLD = 0.35
+const EMBED_DEPTH_JITTER = 3
+
+export function canUseEmbeddedMask(projectile: { type: string }): boolean {
+  return EMBEDDED_MASK_PROJECTILE_TYPES.has(projectile.type)
+}
+
+export function getEmbeddedMaskJitter(projectile: { x: number; y: number; degree?: number }): number {
+  const seed = Math.abs(Math.round(projectile.x * 13 + projectile.y * 17 + (projectile.degree ?? 0) * 7))
+  return (seed % (EMBED_DEPTH_JITTER * 2 + 1)) - EMBED_DEPTH_JITTER
+}
 
 const PROJECTILE_GEOMETRY_DEBUG_THROTTLE_MS = 250
 const PROJECTILE_GEOMETRY_DEBUG = false

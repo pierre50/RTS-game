@@ -26,11 +26,11 @@ export class UnitDirectMovement {
     const unit = this.unit
     const contextMap = unit.context?.map
     const map = getEntitySpaceMapLike(unit, contextMap)
-    if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) {
+    if (!map || (dirX === 0 && dirY === 0) || distance <= 0) {
       debugBlockedDirectMove(
         unit,
         'precondition',
-        { hasMap: Boolean(map), hasSprite: Boolean(unit.sprite), distance },
+        { hasMap: Boolean(map), distance },
         dirX,
         dirY
       )

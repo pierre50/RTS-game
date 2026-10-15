@@ -172,9 +172,6 @@ function loadProjectile(libOverrides = {}) {
     if (request === './ProjectileGeometry') {
       return loadLocalTs('ProjectileGeometry.ts')
     }
-    if (request === './ProjectileVisuals') {
-      return loadLocalTs('ProjectileVisuals.ts')
-    }
     if (request === './ProjectileCollision') {
       return loadLocalTs('ProjectileCollision.ts')
     }
@@ -509,6 +506,10 @@ test('mounted archers spawn arrows from the visual rider height', () => {
 
   assert.equal(projectile.y, 66)
   assert.equal(projectile.destinationPoint.y, 164)
+  assert.notEqual(projectile.displayObject, projectile)
+  assert.equal(projectile.displayObject.runtimeEntity, projectile)
+  projectile.x = 125
+  assert.equal(projectile.displayObject.x, 125)
 })
 
 test('directional spawn offsets move arrows toward the firing side', () => {

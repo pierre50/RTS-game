@@ -13,6 +13,7 @@ export function die(this: Host, immediate?: boolean) {
   }
   if (!immediate && resetHarvestedWheat(this)) {
     this.stopWindMotion()
+    this.growthStage = 0
     if (this.sprite instanceof AnimatedSprite) this.sprite.gotoAndStop(0)
     this.syncShadow()
     this.context.menu?.refreshInventory?.()

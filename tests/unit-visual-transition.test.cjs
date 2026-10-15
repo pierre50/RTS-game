@@ -85,3 +85,31 @@ test('setUnitVisualSheet can keep the current animation token for internal sheet
   assert.equal(typeof unit.sprite.onFrameChange, 'function')
   assert.equal(typeof unit.sprite.onLoop, 'function')
 })
+
+test('visual transitions work through the animation port without a sprite', () => {
+  const { setUnitVisualSheet } = loadUnitVisualTransition()
+  const calls = []
+  const unit = {
+    visualAnimation: {
+      clearFrameCallback: () => calls.push('clearFrame'),
+      clearLoopCallback: () => calls.push('clearLoop'),
+      setLoop: loop => calls.push(['loop', loop]),
+      seek: (frame, play) => calls.push(['seek', frame, play]),
+    },
+    setTextures: sheet => calls.push(['sheet', sheet]),
+  }
+
+  const token = setUnitVisualSheet(unit, 'attack', {
+    clearCallbacks: ['onFrameChange', 'onLoop'],
+    frame: 2,
+    loop: false,
+    play: 'play',
+    syncLayers: false,
+    syncShadow: false,
+  })
+
+  assert.equal(token, 1)
+  assert.deepEqual(calls, [
+    ['sheet', 'attack'], 'clearFrame', 'clearLoop', ['loop', false], ['seek', 2, true],
+  ])
+})

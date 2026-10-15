@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 test('saved placement mirror composes with asset orientation and survives texture refreshes', () => {
   let assetMirrored = false
-  const { applyBuildingFinalTexture } = loadTsModule('app/classes/building/BuildingFinalTexture.ts', {
+  const { applyBuildingFinalTexture } = loadTsModule('app/rendering/pixi/PixiBuildingFinalTexture.ts', {
     mocks: {
       'pixi.js': { AnimatedSprite: class {}, Assets: { cache: { get: () => ({}) } }, Polygon: class {} },
       '../../constants': { LABEL_TYPES: { color: 'color' } },
@@ -17,8 +17,8 @@ test('saved placement mirror composes with asset orientation and survives textur
         changeSpriteColorDirectly() {},
       },
       '../../lib/buildings/walls': { isWall: () => false },
-      './BuildingFire': { syncBuildingCampfireDecoration() {} },
-      './BuildingVisuals': { clearBuildingConstructionReveal() {} },
+      '../../classes/building/BuildingFire': { syncBuildingCampfireDecoration() {} },
+      './PixiBuildingVisuals': { clearBuildingConstructionReveal() {} },
     },
   })
   for (const placementMirrored of [true, false, undefined]) {

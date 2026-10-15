@@ -33,8 +33,6 @@ export function handleBuildAction(runtime: UnitResourceActions) {
   const unit = runtime.unit
   if (blockUnfundedBuild(runtime)) return
   if (!runtime.prepareLoopingWorkAction()) return
-  const sprite = unit.sprite
-  if (!sprite) return
   const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
   runtime.bindWorkImpact(workTickFrame, () => buildImpact(runtime, workTickFrame))
 }

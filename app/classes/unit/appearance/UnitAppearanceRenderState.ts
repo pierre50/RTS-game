@@ -53,7 +53,7 @@ function resolveAppearanceEquipment(unit: UnitRuntimeHost, item: string): string
 
 function shouldRequestMissingEquipmentLayer(unit: UnitRuntimeHost): boolean {
   if (!unit.context.map.ready) return false
-  return unit.controlMode === 'hero' || unit.visible
+  return unit.controlMode === 'hero' || Boolean(unit.visible)
 }
 
 function requestMissingEquipmentLayer(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer): void {

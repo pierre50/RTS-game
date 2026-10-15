@@ -25,7 +25,6 @@ export function commitDirectMove(attempt: DirectMoveAttempt, facingDirX: number,
     heroControlled,
     effectiveDistance,
   } = attempt
-  if (!unit.sprite) return false
   const oldI = unit.i
   const oldJ = unit.j
   const oldDeg = unit.degree ?? 0
@@ -55,7 +54,7 @@ export function commitDirectMove(attempt: DirectMoveAttempt, facingDirX: number,
   syncEntityRelief(attempt.map, unit)
   playMovementSurfaceAudio(unit, effectiveDistance, { previousX: beforeX, previousY: beforeY })
   if (!unit.actionLocked) {
-    if (!unit.sprite.playing) unit.sprite.play()
+    if (!unit.isVisualAnimationPlaying?.()) unit.playVisualAnimation?.()
     if (!wasWalking || degreeToDirection(oldDeg) !== degreeToDirection(unit.degree ?? 0)) {
       unit.setTextures?.(SHEET_TYPES.walking)
     }

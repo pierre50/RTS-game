@@ -16,7 +16,7 @@ export type ResourceHandleHooks = {
   create(handle: ResourceHandleState): ResourceView
   release(handle: ResourceHandleState, view: ResourceView): void
   bounds(handle: ResourceHandleState): unknown
-  sync(handle: ResourceHandleState): void
+  sync(handle: ResourceHandleState, view: ResourceView | undefined): void
 }
 type Entry = { state: ResourceHandleState; hooks: ResourceHandleHooks; view?: ResourceView; creating?: boolean }
 const entries = new WeakMap<object, Entry>()
@@ -55,9 +55,9 @@ function syncHandle(this: ResourceHandleState): void {
   const entry = entries.get(this)!
   if (this.visible) {
     ensureView(this, entry)
-    entry.hooks.sync(this)
+    entry.hooks.sync(this, entry.view)
   } else if (!this.selected && !this.isDead) releaseResourceView(this)
-  else if (entry.view) entry.hooks.sync(this)
+  else if (entry.view) entry.hooks.sync(this, entry.view)
 }
 
 const handler: ProxyHandler<ResourceHandleState> = {

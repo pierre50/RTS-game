@@ -7,36 +7,6 @@ function setup(options = {}) {
   const ticks = new Set()
   const sheet = { textures: { south: Texture.EMPTY } }
   let stops = 0
-  class Instance extends Container {
-    constructor(context) {
-      super()
-      this.context = context
-      this.label = 'animal-1'
-      this.isDestroyed = false
-      this.isDead = false
-    }
-    assignProperties(values) {
-      Object.assign(this, values)
-    }
-    shouldKeepHealthBarVisible() {
-      return false
-    }
-    stopInterval() {}
-    stopTimeout() {}
-    setTextures(sheetName) {
-      this.currentSheet = sheetName
-      this.sprite.textures = [Texture.EMPTY]
-      this.sprite.play()
-    }
-    pause() {
-      this.playingBeforePause ??= this.sprite.playing
-      this.sprite.stop()
-    }
-    resume() {
-      if (this.playingBeforePause !== false) this.sprite.play()
-      this.playingBeforePause = undefined
-    }
-  }
   const Controller = class {
     constructor(animal) {
       this.animal = animal
@@ -44,7 +14,6 @@ function setup(options = {}) {
   }
   const { Animal } = loadTsModule('app/classes/animal/Animal.ts', {
     mocks: {
-      '../Instance': { Instance },
       './AnimalLifecycle': {
         AnimalLifecycle: class extends Controller {
           stopDeathFall() {}
@@ -68,6 +37,12 @@ function setup(options = {}) {
         getAnimationFrames: textures => Object.values(textures),
         getReliefLiftPixels: level => level * 16,
         getEntityMapPoint: animal => ({ x: animal.x, y: animal.y }),
+        uuidv4: () => 'animal-1',
+        setUnitTexture: (sheetName, animal) => {
+          animal.currentSheet = sheetName
+          animal.sprite.textures = [Texture.EMPTY]
+          animal.sprite.play()
+        },
         isEntityInActiveMapSpace: () => true,
         setSpriteFiltersPreservingDamageFeedback() {},
         attachEntityShadowsToMapSpace: (map, animal) => map.addChild(animal.shadow),
@@ -115,7 +90,7 @@ function setup(options = {}) {
     },
   }
   const animal = new Animal({ i: 0, j: 0, type: 'Deer', owner, ...options }, { map, app: {}, editor: null })
-  map.addChild(animal)
+  map.addChild(animal.displayObject)
   return { animal, cell, map, ticks, stops: () => stops }
 }
 
@@ -124,6 +99,7 @@ test('cold animals retain occupancy and simulation state without animation alloc
   assert.equal(cell.has, animal)
   assert.equal(cell.solid, true)
   assert.equal(animal.getVisualSprite(), undefined)
+  assert.deepEqual(animal.getVisualState().position, { x: 0, y: 0, z: 0 })
   animal.setTextures('walkingSheet')
   animal.setMovementAnimationPlaying(false)
   animal.applyReliefLift(3)
@@ -134,6 +110,20 @@ test('cold animals retain occupancy and simulation state without animation alloc
   assert.ok(animal.deferredSpriteBounds)
   assert.equal(animal.getVisualSprite(), undefined)
   assert.equal(ticks.size, 0)
+  animal.destroy({ children: true })
+})
+
+test('animal simulation state and Pixi display remain separate', () => {
+  const { animal, map } = setup()
+  assert.equal(animal instanceof Container, false)
+  assert.equal(animal.displayObject instanceof Container, true)
+  assert.equal(animal.displayObject.runtimeEntity, animal)
+  assert.equal(map.children.includes(animal.displayObject), true)
+  animal.x = 48
+  animal.y = 24
+  animal.zIndex = 17
+  animal.visible = true
+  assert.deepEqual([animal.displayObject.x, animal.displayObject.y, animal.displayObject.zIndex, animal.displayObject.visible], [48, 24, 17, true])
   animal.destroy({ children: true })
 })
 
@@ -155,6 +145,19 @@ test('camera round trips reclaim both animations and retain the same animal and 
     assert.equal(cell.has, animal)
     assert.equal(animal.hitPoints, 27)
   }
+  animal.destroy({ children: true })
+})
+
+test('animal combat can request animation events through the view', () => {
+  const { animal, ticks } = setup()
+  assert.equal(animal.getVisualSprite(), undefined)
+  const animation = animal.visualAnimation
+  assert.ok(animal.getVisualSprite())
+  assert.equal(ticks.size, 2)
+  let impacts = 0
+  animation.onFrameEachLoop(0, () => { impacts++ })
+  animal.getVisualSprite().onFrameChange(0)
+  assert.equal(impacts, 1)
   animal.destroy({ children: true })
 })
 

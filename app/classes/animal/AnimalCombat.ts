@@ -18,6 +18,7 @@ import {
 import { createReservedPassageCellLookup, shouldEntityAvoidPassageStop } from '../../lib/buildings/passageCells'
 import { getEntitySpaceGrid } from '../../lib/mapSpaces'
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
+import { getEntityAnimation } from '../../rendering/UnitAnimation'
 import {
   markCombatAttack,
   markCombatFlee,
@@ -228,7 +229,7 @@ export class AnimalCombat {
           trackTargetOnRelease: false,
           prepareAttackSheet: () => {
             animal.setTextures(SHEET_TYPES.action)
-            animal.sprite.gotoAndPlay(0)
+            getEntityAnimation(animal)?.restart()
             animal.syncShadow()
           },
           prepareRecoverySheet: () => {

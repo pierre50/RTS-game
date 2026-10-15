@@ -2,7 +2,7 @@ import { reconcileHouseholds } from '../../lib/housing/households'
 import { notifyVillageStateChanged } from '../../lib/units/village/villageStateEvents'
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
-import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
+import { getUnitAnimation } from '../../rendering/UnitAnimation'
 import { updateInstanceRenderVisibility } from '../../lib/grid/visibility'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
@@ -14,10 +14,10 @@ import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/unit
 import { clearSleepingVisualState } from '../../services/rest/UnitSleepVisuals'
 import { cancelHeroDefense } from '../../lib/hero/heroDefense'
 import { cancelHeroPowerCharge } from '../../lib/hero/heroPowerCharge'
-import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
 type ParentDisplay = {
+  displayObject?: { parent?: { removeChild: (child: unknown) => unknown } | null }
   parent?: {
     removeChild: (child: unknown) => unknown
   } | null
@@ -33,17 +33,18 @@ export class UnitLifecycle {
   decompose() {
     const unit = this.unit
     const map = unit.context?.map
-    const sprite = unit.sprite as AnimatedSprite
+    const animation = getUnitAnimation(unit)
+    if (!animation) return
     clearEntityVisualFeedback(unit)
     const token = setUnitVisualSheet(unit, SHEET_TYPES.corpse, {
       frame: 0,
       loop: false,
       play: 'play',
     })
-    sprite.animationSpeed = sprite.textures.length / (CORPSE_TIME * 60)
-    sprite.onComplete = () => {
+    animation.setSpeed(animation.frameCount / (CORPSE_TIME * 60))
+    animation.onComplete(() => {
       if (isUnitVisualAnimationCurrent(unit, token)) fadeOutThenClear(unit, FADE_DURATION_MS)
-    }
+    })
     if (map) {
       const cell = getEntityCell(unit, map)
       if (cell?.has === unit) {
@@ -58,7 +59,8 @@ export class UnitLifecycle {
   death() {
     const unit = this.unit
     clearEntityVisualFeedback(unit)
-    const sprite = unit.sprite as AnimatedSprite
+    const animation = getUnitAnimation(unit)
+    if (!animation) return
     const token = setUnitVisualSheet(unit, SHEET_TYPES.dying, {
       frame: 0,
       loop: false,
@@ -69,7 +71,7 @@ export class UnitLifecycle {
     unit.deathAnimationComplete = new Promise<void>(resolve => {
       finishDeath = resolve
     })
-    sprite.onComplete = runAfterDeathFlash(sprite, () => {
+    animation.onDeathComplete(() => {
       if (!isUnitVisualAnimationCurrent(unit, token)) return
       updateInstanceVisibility(unit)
       const corpses = unit.owner?.corpses
@@ -148,7 +150,8 @@ export class UnitLifecycle {
     }
     if (map) {
       getEntityCell(unit, map)?.corpses.delete(unit)
-      ;(unit as ParentDisplay).parent?.removeChild(unit)
+      const display = (unit as ParentDisplay).displayObject ?? (unit as ParentDisplay)
+      display.parent?.removeChild(display)
     }
     unit.destroy?.({
       children: true,

@@ -30,7 +30,7 @@ export function tryStartUnitContactApproach(
   return startContactApproach({
     actor: unit,
     ...(gathering ? { stallPolicy: GATHER_CONTACT_STALL } : {}),
-    wait: () => unit.sprite?.stop(),
+    wait: () => unit.stopVisualAnimation?.(),
     isTargetValid: () => sameMapSpace(unit, target) && Boolean(unit.getActionCondition?.(target, action)),
     isCurrent: () => unit.dest === target && unit.action === action,
     sample: () => sampleActionApproach(unit, target, action),

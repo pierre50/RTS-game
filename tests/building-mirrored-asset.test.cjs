@@ -6,7 +6,7 @@ test('mirrored building assets flip once before shadow generation and reset for 
   const { getBuildingAsset } = loadTsModule('app/lib/graphics/assets.ts')
   const texture = { defaultAnchor: { x: 0.5, y: 0.6 } }
   const shadowScales = []
-  const { applyBuildingFinalTexture } = loadTsModule('app/classes/building/BuildingFinalTexture.ts', {
+  const { applyBuildingFinalTexture } = loadTsModule('app/rendering/pixi/PixiBuildingFinalTexture.ts', {
     mocks: {
       'pixi.js': { AnimatedSprite: class {}, Assets: { cache: { get: () => ({}) } }, Polygon: class {} },
       '../../constants': { LABEL_TYPES: { color: 'color' } },
@@ -19,8 +19,8 @@ test('mirrored building assets flip once before shadow generation and reset for 
         changeSpriteColorDirectly: () => {},
       },
       '../../lib/buildings/walls': { isWall: () => false },
-      './BuildingFire': { syncBuildingCampfireDecoration: () => {} },
-      './BuildingVisuals': { clearBuildingConstructionReveal: () => {} },
+      '../../classes/building/BuildingFire': { syncBuildingCampfireDecoration: () => {} },
+      './PixiBuildingVisuals': { clearBuildingConstructionReveal: () => {} },
     },
   })
   const building = {
